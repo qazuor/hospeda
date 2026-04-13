@@ -1,0 +1,1453 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-060",
+    "title": "Model Subclass Transaction Propagation",
+    "created": "2026-04-09T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Run pre-implementation audit grep commands",
+            "description": "Before touching any code, run all verification greps to baseline the current state.\n\n(1) Count getDb() call sites: `rg 'getDb()' packages/db/src/models/ --type ts --glob '!base.model.ts' -c` \u2014 expect ~51.\n(2) Count findWithRelations overrides that drop tx: `rg 'findWithRelations' packages/db/src/models/ --type ts -l`.\n(3) Count findWithRelations with narrow relations type: `rg 'relations: Record<string, boolean>' packages/db/src/models/ --type ts`.\n(4) Verify reference implementations exist: `rg 'DrizzleClient' packages/db/src/models/user/rRolePermission.model.ts`.\n(5) Confirm DrizzleClient type is exported from @repo/db: `rg 'DrizzleClient' packages/db/src/index.ts`.\n(6) Confirm getClient(tx) exists on BaseModel: `rg 'getClient' packages/db/src/base/base.model.ts`.\n(7) Confirm findAll signature (tx is 4th positional): `rg 'findAll' packages/db/src/base/base.model.ts`.\n(8) Confirm count signature (tx via options object): `rg 'count\\(' packages/db/src/base/base.model.ts`.\n\nDocument all results. Fail fast if BaseModel.getClient does not exist \u2014 this is a prerequisite from SPEC-058.\n\nTest requirements: No code changes. Record baseline numbers.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [
+                {
+                    "title": "Count getDb() call sites (expect ~51)",
+                    "completed": true
+                },
+                {
+                    "title": "Verify DrizzleClient is exported from @repo/db index",
+                    "completed": true
+                },
+                {
+                    "title": "Verify BaseModel.getClient(tx) method exists",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm findAll tx is 4th positional parameter",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm count() uses { tx } options object pattern",
+                    "completed": true
+                },
+                {
+                    "title": "Verify reference impls (rRolePermission, rUserPermission) exist",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "audit"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Document tx threading patterns with code examples",
+            "description": "Create a concise cheat-sheet comment block (or internal note) capturing the 6-step mechanical pattern to apply to every model method. This is for developer reference during implementation:\n\n```\n// PATTERN: Adding tx to a model method\n// Step 1: Add tx?: DrizzleClient as last parameter\n// Step 2: Replace getDb() \u2192 this.getClient(tx)\n// Step 3: findWithRelations: relations type = Record<string, boolean | Record<string, unknown>>\n// Step 4a: this.findAll(where, opts, conds, tx)  \u2014 tx is 4th positional\n// Step 4b: this.count(where, { tx })             \u2014 tx in options object\n// Step 4c: this.findOne(where, tx)               \u2014 tx positional (confirm from BaseModel)\n// Step 5: Remove getDb import from file header\n// Step 6: Add import type { DrizzleClient } from '@repo/db'\n```\n\nAlso document the fallback pattern for findWithRelations:\n```ts\noverride async findWithRelations(\n  where: WhereClause,\n  relations: Record<string, boolean | Record<string, unknown>>,\n  tx?: DrizzleClient\n): Promise<Entity | null> {\n  // ...\n  return this.findOne(where, tx); // MUST pass tx\n}\n```\n\nNo files modified. Reference file: internal developer note only.\n\nTest requirements: None \u2014 documentation task.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-004", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Document 6-step mechanical pattern",
+                    "completed": true
+                },
+                {
+                    "title": "Document findAll 4th-positional gotcha",
+                    "completed": true
+                },
+                {
+                    "title": "Document count() options-object gotcha",
+                    "completed": true
+                },
+                {
+                    "title": "Document findWithRelations fallback tx threading",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "documentation"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Fix LSP violation in RRolePermissionModel (Phase 0)",
+            "description": "Fix the reference implementation RRolePermissionModel.\n\nFile: `packages/db/src/models/user/rRolePermission.model.ts`\n\nChanges required:\n1. Change `NodePgDatabase` import \u2192 `import type { DrizzleClient } from '@repo/db'` (remove NodePgDatabase import)\n2. Fix findWithRelations relations parameter type: `Record<string, boolean>` \u2192 `Record<string, boolean | Record<string, unknown>>`\n3. Ensure tx parameter is present in findWithRelations and all custom methods\n4. Ensure all getDb() calls are already replaced (this is a reference impl \u2014 verify first)\n\nExpected signature:\n```ts\noverride async findWithRelations(\n  where: WhereClause,\n  relations: Record<string, boolean | Record<string, unknown>>,\n  tx?: DrizzleClient\n): Promise<RRolePermission | null>\n```\n\nTest requirements:\n- File: `packages/db/src/models/user/__tests__/rRolePermission.model.test.ts` (create if missing)\n- Test 1: findWithRelations works without tx (backward compat)\n- Test 2: findWithRelations receives and uses tx when provided (mock DrizzleClient)\n- Run: `pnpm typecheck --filter @repo/db`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                {
+                    "title": "Replace NodePgDatabase with DrizzleClient import",
+                    "completed": true
+                },
+                {
+                    "title": "Fix relations type to include Record<string, unknown>",
+                    "completed": true
+                },
+                {
+                    "title": "Verify no getDb() calls remain in this file",
+                    "completed": true
+                },
+                {
+                    "title": "Write/update unit tests for findWithRelations tx threading",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase0", "lsp"],
+            "phase": "phase0",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Fix LSP violation in RUserPermissionModel (Phase 0)",
+            "description": "Fix the reference implementation RUserPermissionModel.\n\nFile: `packages/db/src/models/user/rUserPermission.model.ts`\n\nChanges required:\n1. Change `NodePgDatabase` import \u2192 `import type { DrizzleClient } from '@repo/db'`\n2. Fix findWithRelations relations type: `Record<string, boolean>` \u2192 `Record<string, boolean | Record<string, unknown>>`\n3. Ensure tx is present in all custom methods and findWithRelations\n4. Verify no getDb() calls remain\n\nExpected signature matches T-003 pattern.\n\nTest requirements:\n- File: `packages/db/src/models/user/__tests__/rUserPermission.model.test.ts` (create if missing)\n- Test 1: findWithRelations without tx (backward compat)\n- Test 2: findWithRelations with tx (tx threading)\n- Run: `pnpm typecheck --filter @repo/db`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                {
+                    "title": "Replace NodePgDatabase with DrizzleClient import",
+                    "completed": true
+                },
+                {
+                    "title": "Fix relations type to include Record<string, unknown>",
+                    "completed": true
+                },
+                {
+                    "title": "Verify no getDb() calls remain in this file",
+                    "completed": true
+                },
+                {
+                    "title": "Write/update unit tests for findWithRelations tx threading",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase0", "lsp"],
+            "phase": "phase0",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Verify Phase 0 reference implementations compile correctly",
+            "description": "After T-003 and T-004, run a targeted typecheck to confirm phase 0 reference implementations are correct before using them as pattern guides.\n\nCommands:\n```bash\npnpm typecheck --filter @repo/db\n# Also verify with grep:\nrg 'NodePgDatabase' packages/db/src/models/user/rRolePermission.model.ts\nrg 'NodePgDatabase' packages/db/src/models/user/rUserPermission.model.ts\nrg 'Record<string, boolean>' packages/db/src/models/user/rRolePermission.model.ts | rg -v 'unknown'\nrg 'Record<string, boolean>' packages/db/src/models/user/rUserPermission.model.ts | rg -v 'unknown'\n```\nAll commands must return zero results.\n\nTest requirements: Run existing tests: `pnpm test --filter @repo/db -- rRolePermission rUserPermission`",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-006", "T-007", "T-008", "T-009", "T-010", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Run pnpm typecheck --filter @repo/db",
+                    "completed": true
+                },
+                {
+                    "title": "Grep zero NodePgDatabase in both files",
+                    "completed": true
+                },
+                {
+                    "title": "Grep zero narrow relations type in both files",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase0", "verification"],
+            "phase": "phase0",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Fix tx propagation in AmenityModel.findWithRelations (Phase 1)",
+            "description": "Apply tx threading to AmenityModel.\n\nFile: `packages/db/src/models/accommodation/amenity.model.ts`\n\nChanges:\n1. Replace `getDb()` with `this.getClient(tx)` in all methods\n2. Fix `findWithRelations` override:\n   - Add `tx?: DrizzleClient` as last param\n   - Fix relations type: `Record<string, boolean | Record<string, unknown>>`\n   - Thread tx to inner `this.findOne(where, tx)` call\n3. Remove `getDb` import\n4. Add `import type { DrizzleClient } from '@repo/db'`\n\nThis is a Phase 1 \"simple\" model \u2014 only findWithRelations override, no custom methods.\n\nTest requirements:\n- File: `packages/db/src/models/accommodation/__tests__/amenity.model.test.ts`\n- Test 1: `findWithRelations(where, relations)` without tx \u2014 returns entity\n- Test 2: `findWithRelations(where, relations, tx)` \u2014 tx passed to getClient\n- Mock `this.getClient` to verify it receives the tx argument",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Replace getDb() with this.getClient(tx)",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findWithRelations relations type + add tx param",
+                    "completed": true
+                },
+                {
+                    "title": "Thread tx to this.findOne(where, tx)",
+                    "completed": true
+                },
+                {
+                    "title": "Remove getDb import, add DrizzleClient import",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests (backward compat + tx threading)",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase1", "accommodation"],
+            "phase": "phase1",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Fix tx propagation in RDestinationAttractionModel.findWithRelations (Phase 1)",
+            "description": "Apply tx threading to RDestinationAttractionModel.\n\nFile: `packages/db/src/models/destination/rDestinationAttraction.model.ts`\n\nChanges:\n1. Replace `getDb()` with `this.getClient(tx)` in all methods\n2. Fix `findWithRelations` override (add tx, fix relations type, thread tx to findOne)\n3. Remove `getDb` import, add `import type { DrizzleClient } from '@repo/db'`\n\nPhase 1 \u2014 simple model, findWithRelations only.\n\nTest requirements:\n- File: `packages/db/src/models/destination/__tests__/rDestinationAttraction.model.test.ts`\n- Test 1: findWithRelations without tx (backward compat)\n- Test 2: findWithRelations with tx (tx threading to getClient)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Replace getDb() with this.getClient(tx)",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findWithRelations signature (relations type + tx param)",
+                    "completed": true
+                },
+                {
+                    "title": "Thread tx to this.findOne(where, tx)",
+                    "completed": true
+                },
+                {
+                    "title": "Swap imports",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase1", "destination"],
+            "phase": "phase1",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Fix tx propagation in EventModel.findWithRelations (Phase 1)",
+            "description": "Apply tx threading to EventModel.\n\nFile: `packages/db/src/models/event/event.model.ts`\n\nChanges:\n1. Replace `getDb()` with `this.getClient(tx)` in all methods\n2. Fix `findWithRelations` override (tx param + relations type fix + thread to findOne)\n3. Remove `getDb` import, add `import type { DrizzleClient } from '@repo/db'`\n\nPhase 1 \u2014 simple model.\n\nTest requirements:\n- File: `packages/db/src/models/event/__tests__/event.model.test.ts`\n- Test 1: findWithRelations without tx\n- Test 2: findWithRelations with tx",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Replace getDb() with this.getClient(tx)",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findWithRelations signature",
+                    "completed": true
+                },
+                {
+                    "title": "Thread tx to findOne fallback",
+                    "completed": true
+                },
+                {
+                    "title": "Swap imports",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase1", "event"],
+            "phase": "phase1",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Fix tx propagation in EventOrganizerModel (Phase 1)",
+            "description": "Apply tx threading to EventOrganizerModel. Note: this file is orphaned at root level.\n\nFile: `packages/db/src/models/eventOrganizer.model.ts` (root-level orphan \u2014 fix in place, do not move)\n\nChanges:\n1. Replace `getDb()` with `this.getClient(tx)` in all methods\n2. Fix `findWithRelations` override (tx param + relations type + thread to findOne)\n3. Remove `getDb` import, add `import type { DrizzleClient } from '@repo/db'`\n\nPhase 1 \u2014 simple model.\n\nTest requirements:\n- File: `packages/db/src/models/__tests__/eventOrganizer.model.test.ts`\n- Test 1: findWithRelations without tx\n- Test 2: findWithRelations with tx",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Locate exact file path (root-level orphan)",
+                    "completed": true
+                },
+                {
+                    "title": "Replace getDb() with this.getClient(tx)",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findWithRelations signature",
+                    "completed": true
+                },
+                {
+                    "title": "Swap imports",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase1", "event"],
+            "phase": "phase1",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Fix tx propagation in PostSponsorshipModel.findWithRelations (Phase 1)",
+            "description": "Apply tx threading to PostSponsorshipModel.\n\nFile: `packages/db/src/models/post/postSponsorship.model.ts`\n\nChanges:\n1. Replace `getDb()` with `this.getClient(tx)` in all methods\n2. Fix `findWithRelations` override (tx param + relations type + thread to findOne)\n3. Remove `getDb` import, add `import type { DrizzleClient } from '@repo/db'`\n\nPhase 1 \u2014 simple model.\n\nTest requirements:\n- File: `packages/db/src/models/post/__tests__/postSponsorship.model.test.ts`\n- Test 1: findWithRelations without tx\n- Test 2: findWithRelations with tx",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Replace getDb() with this.getClient(tx)",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findWithRelations signature",
+                    "completed": true
+                },
+                {
+                    "title": "Thread tx to findOne fallback",
+                    "completed": true
+                },
+                {
+                    "title": "Swap imports",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase1", "post"],
+            "phase": "phase1",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Verify Phase 1 typecheck passes",
+            "description": "After all Phase 1 tasks (T-006 through T-010) are complete, run targeted verification.\n\nCommands:\n```bash\npnpm typecheck --filter @repo/db\nrg 'getDb()' packages/db/src/models/accommodation/amenity.model.ts packages/db/src/models/destination/rDestinationAttraction.model.ts packages/db/src/models/event/event.model.ts packages/db/src/models/eventOrganizer.model.ts packages/db/src/models/post/postSponsorship.model.ts --type ts\n# All must return zero results\npnpm test --filter @repo/db -- amenity rDestinationAttraction event eventOrganizer postSponsorship\n```\n\nTest requirements: Run phase 1 model tests.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-006", "T-007", "T-008", "T-009", "T-010"],
+            "blocks": ["T-012", "T-013", "T-014", "T-016", "T-017", "T-018", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Run typecheck --filter @repo/db",
+                    "completed": true
+                },
+                {
+                    "title": "Run grep zero getDb() on phase 1 files",
+                    "completed": true
+                },
+                {
+                    "title": "Run phase 1 model tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase1", "verification"],
+            "phase": "phase1",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Fix tx propagation in PostModel custom methods (Phase 2)",
+            "description": "Apply tx threading to PostModel.\n\nFile: `packages/db/src/models/post/post.model.ts`\n\nMethods to fix:\n1. `incrementLikes(id, tx?)` \u2014 replace getDb() with this.getClient(tx)\n2. `decrementLikes(id, tx?)` \u2014 replace getDb() with this.getClient(tx)\n3. `findWithRelations(where, relations, tx?)` \u2014 fix type + thread tx to findOne fallback\n\nImport changes: remove getDb, add DrizzleClient.\n\nCritical: incrementLikes and decrementLikes use raw SQL update \u2014 the getClient(tx) swap must preserve the existing query logic.\n\nTest requirements:\n- File: `packages/db/src/models/post/__tests__/post.model.test.ts`\n- Test 1: incrementLikes without tx (backward compat)\n- Test 2: incrementLikes with tx \u2014 verify getClient called with tx\n- Test 3: decrementLikes without tx\n- Test 4: decrementLikes with tx\n- Test 5: findWithRelations with tx",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Fix incrementLikes: add tx param + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix decrementLikes: add tx param + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findWithRelations: relations type + tx + thread to findOne",
+                    "completed": true
+                },
+                {
+                    "title": "Swap imports",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for all 3 methods",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase2", "post"],
+            "phase": "phase2",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Fix tx propagation in SponsorshipLevelModel (Phase 2)",
+            "description": "Apply tx threading to SponsorshipLevelModel.\n\nFile: `packages/db/src/models/sponsorship/sponsorshipLevel.model.ts`\n\nMethods to fix:\n1. `findBySlug(slug, tx?)` \u2014 replace getDb() with this.getClient(tx)\n2. `findActiveByTargetType(targetType, tx?)` \u2014 delegate method: must call `this.findAll(where, undefined, undefined, tx)` (4th positional!)\n3. `findWithRelations(where, relations, tx?)` \u2014 fix type + thread tx to findOne\n\nCritical gotcha for findActiveByTargetType: it's a delegate that calls findAll \u2014 tx goes as 4th positional argument, NOT 2nd.\n\nTest requirements:\n- File: `packages/db/src/models/sponsorship/__tests__/sponsorshipLevel.model.test.ts`\n- Test 1: findBySlug without tx\n- Test 2: findBySlug with tx \u2014 getClient receives tx\n- Test 3: findActiveByTargetType with tx \u2014 findAll called with tx as 4th arg\n- Test 4: findWithRelations with tx",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Fix findBySlug: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findActiveByTargetType delegate: this.findAll(where, undefined, undefined, tx)",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findWithRelations: type + tx + findOne threading",
+                    "completed": true
+                },
+                {
+                    "title": "Swap imports",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests including delegate tx pattern",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase2", "sponsorship"],
+            "phase": "phase2",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Fix tx propagation in SponsorshipPackageModel (Phase 2)",
+            "description": "Apply tx threading to SponsorshipPackageModel.\n\nFile: `packages/db/src/models/sponsorship/sponsorshipPackage.model.ts`\n\nMethods to fix:\n1. `findBySlug(slug, tx?)` \u2014 replace getDb() with this.getClient(tx)\n2. `findActive(tx?)` \u2014 delegate: `this.findAll(where, undefined, undefined, tx)` (4th positional)\n3. `findWithRelations(where, relations, tx?)` \u2014 fix type + thread tx\n\nCritical: findActive is a delegate calling findAll \u2014 tx is 4th positional.\n\nTest requirements:\n- File: `packages/db/src/models/sponsorship/__tests__/sponsorshipPackage.model.test.ts`\n- Test 1: findBySlug with/without tx\n- Test 2: findActive with tx \u2014 verify findAll called with tx as 4th positional\n- Test 3: findWithRelations with tx",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Fix findBySlug: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findActive delegate: this.findAll(where, undefined, undefined, tx)",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findWithRelations: type + tx + findOne threading",
+                    "completed": true
+                },
+                {
+                    "title": "Swap imports",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase2", "sponsorship"],
+            "phase": "phase2",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Fix tx propagation in OwnerPromotionModel (Phase 2)",
+            "description": "Apply tx threading to OwnerPromotionModel.\n\nFile: `packages/db/src/models/owner-promotion/ownerPromotion.model.ts`\n\nMethods to fix:\n1. `findBySlug(slug, tx?)` \u2014 replace getDb() with this.getClient(tx)\n2. `findActiveByAccommodationId(id, tx?)` \u2014 replace getDb() with this.getClient(tx)\n3. `findActiveByOwnerId(ownerId, tx?)` \u2014 replace getDb() with this.getClient(tx)\n4. `findByOwnerId(ownerId, tx?)` \u2014 delegate: `this.findAll(where, undefined, undefined, tx)`\n5. `findWithRelations(where, relations, tx?)` \u2014 fix type + thread tx\n\nTest requirements:\n- File: `packages/db/src/models/owner-promotion/__tests__/ownerPromotion.model.test.ts`\n- Test each method: backward compat (no tx) + tx threading\n- For findByOwnerId: verify findAll called with tx as 4th positional",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Fix findBySlug, findActiveByAccommodationId, findActiveByOwnerId: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findByOwnerId delegate: this.findAll(where, undefined, undefined, tx)",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findWithRelations: type + tx",
+                    "completed": true
+                },
+                {
+                    "title": "Swap imports",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for all methods",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase2", "owner-promotion"],
+            "phase": "phase2",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Fix tx propagation in SponsorshipModel custom methods (Phase 2)",
+            "description": "Apply tx threading to SponsorshipModel.\n\nFile: `packages/db/src/models/sponsorship/sponsorship.model.ts`\n\nMethods to fix:\n1. `findBySlug(slug, tx?)` \u2014 replace getDb() with this.getClient(tx)\n2. `findActiveByTarget(target, tx?)` \u2014 replace getDb() with this.getClient(tx)\n3. `findBySponsorUserId(userId, tx?)` \u2014 delegate: `this.findAll(where, undefined, undefined, tx)`\n4. `findByStatus(status, tx?)` \u2014 delegate: `this.findAll(where, undefined, undefined, tx)`\n5. `findWithRelations(where, relations, tx?)` \u2014 fix type + thread tx\n\nTest requirements:\n- File: `packages/db/src/models/sponsorship/__tests__/sponsorship.model.test.ts`\n- Test each method: backward compat + tx threading\n- Delegate methods: verify findAll called with tx as 4th positional",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Fix findBySlug and findActiveByTarget: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findBySponsorUserId and findByStatus delegates",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findWithRelations",
+                    "completed": true
+                },
+                {
+                    "title": "Swap imports",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase2", "sponsorship"],
+            "phase": "phase2",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Fix tx propagation in RevalidationConfigModel (Phase 2)",
+            "description": "Apply tx threading to RevalidationConfigModel.\n\nFile: `packages/db/src/models/revalidation/revalidation-config.model.ts`\n\nMethods to fix:\n1. `findByEntityType(entityType, tx?)` \u2014 replace getDb() with this.getClient(tx)\n2. `findAllEnabled(tx?)` \u2014 replace getDb() with this.getClient(tx) OR use delegate pattern with this.findAll\n\nNote: This model may not have a findWithRelations override. Verify and skip LSP fix if not applicable.\n\nTest requirements:\n- File: `packages/db/src/models/revalidation/__tests__/revalidation-config.model.test.ts`\n- Test 1: findByEntityType without tx (backward compat)\n- Test 2: findByEntityType with tx\n- Test 3: findAllEnabled with/without tx",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Fix findByEntityType: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findAllEnabled: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Check if findWithRelations exists \u2014 fix if present",
+                    "completed": true
+                },
+                {
+                    "title": "Swap imports",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase2", "revalidation"],
+            "phase": "phase2",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Fix tx propagation in RevalidationLogModel (Phase 3)",
+            "description": "Apply tx threading to RevalidationLogModel.\n\nFile: `packages/db/src/models/revalidation/revalidation-log.model.ts`\n\nMethods to fix:\n1. `deleteOlderThan(date, tx?)` \u2014 replace getDb() with this.getClient(tx) \u2014 mutation, important for tx atomicity\n2. `findWithFilters(filters, tx?)` \u2014 replace getDb() with this.getClient(tx)\n3. `findLastCronEntry(tx?)` \u2014 replace getDb() with this.getClient(tx)\n4. `findWithRelations(where, relations, tx?)` \u2014 fix type + thread tx (if present)\n\nCritical: deleteOlderThan is a DELETE statement \u2014 tx support is critical for atomic cron operations.\n\nTest requirements:\n- File: `packages/db/src/models/revalidation/__tests__/revalidation-log.model.test.ts`\n- Test 1: deleteOlderThan without tx\n- Test 2: deleteOlderThan with tx \u2014 critical atomicity test\n- Test 3: findWithFilters with tx\n- Test 4: findLastCronEntry with tx",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Fix deleteOlderThan: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findWithFilters: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findLastCronEntry: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findWithRelations if present",
+                    "completed": true
+                },
+                {
+                    "title": "Swap imports",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests including tx atomicity test for deleteOlderThan",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase3", "revalidation"],
+            "phase": "phase3",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Fix tx propagation in RAccommodationAmenityModel (Phase 3)",
+            "description": "Apply tx threading to RAccommodationAmenityModel.\n\nFile: `packages/db/src/models/accommodation/rAccommodationAmenity.model.ts`\n\nMethods to fix:\n1. `countAccommodationsByAmenityIds(ids, tx?)` \u2014 replace getDb() with this.getClient(tx) \u2014 uses count query pattern\n2. `findWithRelations(where, relations, tx?)` \u2014 fix type + thread tx\n\nNote: countAccommodationsByAmenityIds may use the raw db client for a GROUP BY query. Verify it uses getDb() and swap to this.getClient(tx).\n\nTest requirements:\n- File: `packages/db/src/models/accommodation/__tests__/rAccommodationAmenity.model.test.ts`\n- Test 1: countAccommodationsByAmenityIds without tx\n- Test 2: countAccommodationsByAmenityIds with tx \u2014 verify getClient called with tx\n- Test 3: findWithRelations with tx",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Fix countAccommodationsByAmenityIds: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findWithRelations: type + tx",
+                    "completed": true
+                },
+                {
+                    "title": "Swap imports",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase3", "accommodation"],
+            "phase": "phase3",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Verify Phase 2 typecheck passes",
+            "description": "After all Phase 2 tasks complete (T-012 through T-017), run targeted verification.\n\nCommands:\n```bash\npnpm typecheck --filter @repo/db\n# Grep zero getDb() on phase 2 files:\nrg 'getDb()' packages/db/src/models/post/post.model.ts packages/db/src/models/sponsorship/sponsorshipLevel.model.ts packages/db/src/models/sponsorship/sponsorshipPackage.model.ts packages/db/src/models/owner-promotion/ownerPromotion.model.ts packages/db/src/models/sponsorship/sponsorship.model.ts packages/db/src/models/revalidation/revalidation-config.model.ts\npnpm test --filter @repo/db -- post.model sponsorshipLevel sponsorshipPackage ownerPromotion sponsorship.model revalidationConfig\n```\n\nAll must return zero getDb() results.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-012", "T-013", "T-014", "T-015", "T-016", "T-017"],
+            "blocks": ["T-021", "T-022", "T-023"],
+            "subtasks": [
+                {
+                    "title": "Run typecheck --filter @repo/db",
+                    "completed": true
+                },
+                {
+                    "title": "Grep zero getDb() on all phase 2 files",
+                    "completed": true
+                },
+                {
+                    "title": "Run phase 2 model tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase2", "verification"],
+            "phase": "phase2",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Fix tx propagation in RAccommodationFeatureModel (Phase 3)",
+            "description": "Apply tx threading to RAccommodationFeatureModel.\n\nFile: `packages/db/src/models/accommodation/rAccommodationFeature.model.ts`\n\nMethods to fix:\n1. `countAccommodationsByFeatureIds(ids, tx?)` \u2014 replace getDb() with this.getClient(tx)\n2. `findWithRelations(where, relations, tx?)` \u2014 fix type + thread tx\n\nPattern mirrors T-019 (RAccommodationAmenityModel).\n\nTest requirements:\n- File: `packages/db/src/models/accommodation/__tests__/rAccommodationFeature.model.test.ts`\n- Test 1: countAccommodationsByFeatureIds without tx\n- Test 2: countAccommodationsByFeatureIds with tx\n- Test 3: findWithRelations with tx",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-020"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                {
+                    "title": "Fix countAccommodationsByFeatureIds: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findWithRelations: type + tx",
+                    "completed": true
+                },
+                {
+                    "title": "Swap imports",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase3", "accommodation"],
+            "phase": "phase3",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Fix tx propagation in REntityTagModel (Phase 3)",
+            "description": "Apply tx threading to REntityTagModel.\n\nFile: `packages/db/src/models/tag/rEntityTag.model.ts`\n\nMethods to fix:\n1. `findAllWithTags(entityType, entityId, tx?)` \u2014 replace getDb() with this.getClient(tx)\n2. `findAllWithEntities(tagId, tx?)` \u2014 replace getDb() with this.getClient(tx)\n3. `findPopularTags(limit, tx?)` \u2014 replace getDb() with this.getClient(tx)\n4. `findWithRelations(where, relations, tx?)` \u2014 fix type + thread tx\n\nTest requirements:\n- File: `packages/db/src/models/tag/__tests__/rEntityTag.model.test.ts`\n- Test each custom method: backward compat + tx threading\n- Test findWithRelations with tx",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-020"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                {
+                    "title": "Fix findAllWithTags: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findAllWithEntities: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findPopularTags: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findWithRelations: type + tx",
+                    "completed": true
+                },
+                {
+                    "title": "Swap imports",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for all methods",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase3", "tag"],
+            "phase": "phase3",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Fix tx propagation in ExchangeRateModel (Phase 3)",
+            "description": "Apply tx threading to ExchangeRateModel. This model uses a subquery pattern \u2014 careful attention required.\n\nFile: `packages/db/src/models/exchange-rate/exchange-rate.model.ts`\n\nMethods to fix:\n1. `findLatestRate(fromCurrency, toCurrency, tx?)` \u2014 replace getDb() with this.getClient(tx); contains subquery using db reference\n2. `findLatestRates(currency, tx?)` \u2014 replace getDb() with this.getClient(tx)\n3. `findRateHistory(from, to, options, tx?)` \u2014 replace getDb() with this.getClient(tx)\n4. `findManualOverrides(tx?)` \u2014 replace getDb() with this.getClient(tx)\n5. `findAllWithDateRange(from, to, tx?)` \u2014 SUBQUERY PATTERN: the inner subquery reference must also use this.getClient(tx), NOT a separate getDb() call\n\nCritical subquery pattern:\n```ts\n// BEFORE:\nconst db = getDb();\nconst sub = db.select()...;\nconst result = db.select()...from(sub)...;\n// AFTER:\nconst db = this.getClient(tx);\nconst sub = db.select()...;  // same db reference\nconst result = db.select()...from(sub)...;\n```\n\nTest requirements:\n- File: `packages/db/src/models/exchange-rate/__tests__/exchange-rate.model.test.ts`\n- Test each method with tx threading\n- Special test for findAllWithDateRange: verify both outer and inner queries use same client reference",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-020"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                {
+                    "title": "Fix findLatestRate and findLatestRates: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findRateHistory and findManualOverrides: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findAllWithDateRange subquery pattern: single getClient(tx) call for both outer and inner query",
+                    "completed": true
+                },
+                {
+                    "title": "Swap imports",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests including subquery tx test",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase3", "exchange-rate", "subquery"],
+            "phase": "phase3",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Fix tx propagation in RevalidationLogModel (Phase 3 continued)",
+            "description": "Confirm T-018 covers RevalidationLogModel and run Phase 3 verification after T-018, T-019 (RAccommodationAmenity), T-021, T-022, T-023 are complete.\n\nNote: T-018 already covers RevalidationLogModel. This task is the Phase 3 verification checkpoint.\n\nCommands:\n```bash\npnpm typecheck --filter @repo/db\nrg 'getDb()' packages/db/src/models/revalidation/revalidation-log.model.ts packages/db/src/models/accommodation/rAccommodationAmenity.model.ts packages/db/src/models/accommodation/rAccommodationFeature.model.ts packages/db/src/models/tag/rEntityTag.model.ts packages/db/src/models/exchange-rate/exchange-rate.model.ts\npnpm test --filter @repo/db -- revalidation-log rAccommodationAmenity rAccommodationFeature rEntityTag exchange-rate\n```",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-018", "T-019", "T-021", "T-022", "T-023"],
+            "blocks": ["T-025", "T-028"],
+            "subtasks": [
+                {
+                    "title": "Run typecheck --filter @repo/db",
+                    "completed": true
+                },
+                {
+                    "title": "Grep zero getDb() on all phase 3 files",
+                    "completed": true
+                },
+                {
+                    "title": "Run phase 3 model tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase3", "verification"],
+            "phase": "phase3",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Fix tx in AccommodationModel.countByFilters and search methods (Phase 4a)",
+            "description": "Apply tx threading to AccommodationModel \u2014 first batch of methods.\n\nFile: `packages/db/src/models/accommodation/accommodation.model.ts`\n\nMethods to fix in this task:\n1. `countByFilters(filters, tx?)` \u2014 replace getDb() with this.getClient(tx)\n2. `search(query, options, tx?)` \u2014 replace getDb() with this.getClient(tx)\n3. `searchWithRelations(query, options, tx?)` \u2014 replace getDb() with this.getClient(tx); may call this.search internally \u2014 thread tx\n\nThis is the most complex model (~10+ methods). Split across T-025 and T-026.\n\nTest requirements:\n- File: `packages/db/src/models/accommodation/__tests__/accommodation.model.test.ts`\n- Test 1: countByFilters without tx\n- Test 2: countByFilters with tx\n- Test 3: search with tx\n- Test 4: searchWithRelations with tx \u2014 verify inner search call also gets tx",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-024"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                {
+                    "title": "Fix countByFilters: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix search: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix searchWithRelations: add tx + thread to internal search call",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for these 3 methods",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase4", "accommodation"],
+            "phase": "phase4",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Fix tx in AccommodationModel.findTopRated, updateStats, findWithRelations (Phase 4b)",
+            "description": "Continue tx threading in AccommodationModel \u2014 second batch.\n\nFile: `packages/db/src/models/accommodation/accommodation.model.ts`\n\nMethods to fix in this task:\n1. `findTopRated(limit, filters, tx?)` \u2014 replace getDb() with this.getClient(tx)\n2. `updateStats(id, stats, tx?)` \u2014 delegate method: call signature TBD \u2014 if it calls a BaseModel method, thread tx correctly\n3. `findWithRelations(where, relations, tx?)` \u2014 fix relations type (LSP) + add tx + thread to findOne fallback\n\nAlso: remove getDb import, add `import type { DrizzleClient } from '@repo/db'`\n\nTest requirements (continue accommodation test file from T-025):\n- Test: findTopRated with tx\n- Test: updateStats with tx \u2014 verify underlying query uses same client\n- Test: findWithRelations with tx",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-025"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                {
+                    "title": "Fix findTopRated: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix updateStats delegate: thread tx to BaseModel call",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findWithRelations: LSP type fix + tx + findOne threading",
+                    "completed": true
+                },
+                {
+                    "title": "Swap imports",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for remaining methods",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase4", "accommodation"],
+            "phase": "phase4",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Verify AccommodationModel typecheck and tests pass",
+            "description": "After T-025 and T-026, verify AccommodationModel is fully corrected.\n\nCommands:\n```bash\npnpm typecheck --filter @repo/db\nrg 'getDb()' packages/db/src/models/accommodation/accommodation.model.ts\n# Must return zero results\npnpm test --filter @repo/db -- accommodation.model\n```",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-026"],
+            "blocks": ["T-028"],
+            "subtasks": [
+                {
+                    "title": "Grep zero getDb() in accommodation.model.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Run typecheck",
+                    "completed": true
+                },
+                {
+                    "title": "Run accommodation model tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase4", "accommodation", "verification"],
+            "phase": "phase4",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Fix tx in DestinationModel traversal methods (Phase 4c)",
+            "description": "Apply tx threading to DestinationModel \u2014 tree traversal methods batch.\n\nFile: `packages/db/src/models/destination/destination.model.ts`\n\nMethods to fix in this task:\n1. `findChildren(parentId, tx?)` \u2014 replace getDb() with this.getClient(tx)\n2. `findDescendants(ancestorId, tx?)` \u2014 N+1 recursive pattern: calls itself recursively \u2014 thread tx to each recursive call\n3. `findAncestors(nodeId, tx?)` \u2014 N+1 recursive pattern: calls itself recursively \u2014 thread tx\n4. `findByPath(path, tx?)` \u2014 replace getDb() with this.getClient(tx)\n\nCritical: findDescendants and findAncestors call themselves recursively. tx must be threaded through all recursive calls. Example:\n```ts\nasync findDescendants(parentId: string, tx?: DrizzleClient): Promise<Destination[]> {\n  const children = await this.findChildren(parentId, tx);  // thread tx\n  const all = [...children];\n  for (const child of children) {\n    const descendants = await this.findDescendants(child.id, tx);  // thread tx recursively\n    all.push(...descendants);\n  }\n  return all;\n}\n```\n\nTest requirements:\n- File: `packages/db/src/models/destination/__tests__/destination.model.test.ts`\n- Test 1: findChildren with tx\n- Test 2: findDescendants with tx \u2014 verify recursive calls thread tx\n- Test 3: findAncestors with tx \u2014 verify recursive calls thread tx\n- Test 4: findByPath with tx",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-024", "T-027"],
+            "blocks": ["T-029"],
+            "subtasks": [
+                {
+                    "title": "Fix findChildren: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findDescendants recursive: thread tx through all recursive calls",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findAncestors recursive: thread tx through all recursive calls",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findByPath: add tx + replace getDb()",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests including recursive tx threading tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase4", "destination", "recursion"],
+            "phase": "phase4",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Fix tx in DestinationModel search and aggregate methods (Phase 4d)",
+            "description": "Continue tx threading in DestinationModel \u2014 search and aggregate methods.\n\nFile: `packages/db/src/models/destination/destination.model.ts`\n\nMethods to fix in this task:\n1. `findAllByAttractionId(attractionId, tx?)` \u2014 replace getDb() with this.getClient(tx)\n2. `searchWithAttractions(query, options, tx?)` \u2014 replace getDb() with this.getClient(tx); N+1: may call findAllByAttractionId internally \u2014 thread tx\n3. `getAttractionsMap(ids, tx?)` \u2014 replace getDb() with this.getClient(tx)\n4. `search(query, options, tx?)` \u2014 replace getDb() with this.getClient(tx)\n5. `countByFilters(filters, tx?)` \u2014 replace getDb() with this.getClient(tx)\n6. `isDescendant(nodeId, ancestorId, tx?)` \u2014 delegate: calls findAncestors(nodeId, tx) \u2014 thread tx\n7. `findWithRelations(where, relations, tx?)` \u2014 fix LSP type + add tx + thread to findOne\n\nAlso: remove getDb import, add `import type { DrizzleClient } from '@repo/db'`\n\nTest requirements (continue destination test file from T-028):\n- Test each new method with tx\n- isDescendant: verify findAncestors called with tx\n- searchWithAttractions: verify inner N+1 calls get tx",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-028"],
+            "blocks": ["T-030"],
+            "subtasks": [
+                {
+                    "title": "Fix findAllByAttractionId, getAttractionsMap, search, countByFilters",
+                    "completed": true
+                },
+                {
+                    "title": "Fix searchWithAttractions: thread tx to internal N+1 calls",
+                    "completed": true
+                },
+                {
+                    "title": "Fix isDescendant delegate: thread tx to findAncestors call",
+                    "completed": true
+                },
+                {
+                    "title": "Fix findWithRelations: LSP type fix + tx + findOne threading",
+                    "completed": true
+                },
+                {
+                    "title": "Swap imports",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for all remaining methods",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase4", "destination", "n-plus-one"],
+            "phase": "phase4",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Verify DestinationModel typecheck and tests pass",
+            "description": "After T-028 and T-029, verify DestinationModel is fully corrected.\n\nCommands:\n```bash\npnpm typecheck --filter @repo/db\nrg 'getDb()' packages/db/src/models/destination/destination.model.ts\n# Must return zero\npnpm test --filter @repo/db -- destination.model\n```",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-029"],
+            "blocks": ["T-031"],
+            "subtasks": [
+                {
+                    "title": "Grep zero getDb() in destination.model.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Run typecheck",
+                    "completed": true
+                },
+                {
+                    "title": "Run destination model tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "phase4", "destination", "verification"],
+            "phase": "phase4",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Run final verification grep commands (Phase 5)",
+            "description": "Run all four spec-mandated verification grep commands \u2014 all must return zero results.\n\n```bash\n# 1. Zero getDb() calls remain in model subclasses\nrg 'getDb\\(\\)' packages/db/src/models/ --type ts --glob '!base.model.ts'\n\n# 2. Zero narrow relations types (LSP violations)\nrg 'relations: Record<string, boolean>' packages/db/src/models/ --type ts | rg -v 'Record<string, unknown>'\n\n# 3. Zero getDb imports in fixed files\nrg 'import.*getDb.*from' packages/db/src/models/ --type ts --glob '!base.model.ts'\n\n# 4. Zero findAll called with tx as 2nd positional (common mistake)\nrg 'this\\.findAll\\(\\{[^}]+\\},\\s*tx\\)' packages/db/src/models/ --type ts\n```\n\nIf any command returns results: identify the file, go back to the relevant task, and fix.\n\nTest requirements: All 4 greps must return zero results before proceeding to T-032.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-030"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                {
+                    "title": "Run grep: zero getDb() in model subclasses",
+                    "completed": true
+                },
+                {
+                    "title": "Run grep: zero narrow relations types",
+                    "completed": true
+                },
+                {
+                    "title": "Run grep: zero getDb imports in non-base files",
+                    "completed": true
+                },
+                {
+                    "title": "Run grep: zero findAll(where, tx) 2nd positional mistakes",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "verification", "grep"],
+            "phase": "verification",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Run full typecheck on @repo/db package (Phase 5)",
+            "description": "Run TypeScript typecheck on the entire @repo/db package after all model fixes.\n\n```bash\npnpm typecheck --filter @repo/db\n```\n\nExpected: zero type errors. If errors exist, fix the offending model before proceeding.\n\nCommon typecheck errors to watch for:\n- `Type 'X' is not assignable to type 'Record<string, boolean | Record<string, unknown>>'` \u2014 LSP violation not fully fixed\n- `Expected 3 arguments, but got 4` \u2014 findAll called with wrong arity\n- `Property 'tx' does not exist on type 'Options'` \u2014 count() options type mismatch\n\nTest requirements: `pnpm typecheck --filter @repo/db` must exit 0.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-031"],
+            "blocks": ["T-033"],
+            "subtasks": [
+                {
+                    "title": "Run pnpm typecheck --filter @repo/db",
+                    "completed": true
+                },
+                {
+                    "title": "Fix any LSP type errors if found",
+                    "completed": true
+                },
+                {
+                    "title": "Fix any findAll arity errors if found",
+                    "completed": true
+                },
+                {
+                    "title": "Fix any count() options errors if found",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "verification", "typecheck"],
+            "phase": "verification",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Run full test suite for @repo/db models (Phase 5)",
+            "description": "Run the complete test suite for all model files after all phases are complete.\n\n```bash\npnpm test --filter @repo/db\n```\n\nExpected: all tests pass, zero failures, minimum 90% coverage on modified files.\n\nIf tests fail:\n- Identify which model's tests are failing\n- Check if the method signature change broke a test expectation\n- Confirm backward compat: all methods still work without tx param\n\nAlso check that downstream packages that import model classes still compile:\n```bash\npnpm typecheck --filter @repo/service-core\npnpm typecheck --filter apps/api\n```\n\nTest requirements: `pnpm test --filter @repo/db` exits 0 with \u226590% coverage.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-032"],
+            "blocks": ["T-034"],
+            "subtasks": [
+                {
+                    "title": "Run pnpm test --filter @repo/db",
+                    "completed": true
+                },
+                {
+                    "title": "Fix any failing tests",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm typecheck --filter @repo/service-core",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm typecheck --filter apps/api",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "verification", "tests"],
+            "phase": "verification",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Run biome lint on modified model files (Phase 5)",
+            "description": "Run biome lint on all modified model files to ensure no lint violations.\n\n```bash\npnpm lint --filter @repo/db\n# Or targeted:\nnpx biome check packages/db/src/models/ --write\n```\n\nCommon biome issues to watch for in this context:\n- `noUnusedVariables` \u2014 if tx parameter is declared but never used (should be passed to getClient)\n- `useDefaultParameterLast` \u2014 tx?: DrizzleClient must be the LAST parameter in all method signatures\n- Import ordering issues after adding DrizzleClient import\n\nTest requirements: `pnpm lint --filter @repo/db` exits 0.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-033"],
+            "blocks": ["T-035"],
+            "subtasks": [
+                {
+                    "title": "Run pnpm lint --filter @repo/db",
+                    "completed": true
+                },
+                {
+                    "title": "Fix any useDefaultParameterLast violations (tx must be last)",
+                    "completed": true
+                },
+                {
+                    "title": "Fix any noUnusedVariables violations",
+                    "completed": true
+                },
+                {
+                    "title": "Fix any import ordering issues",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "verification", "lint"],
+            "phase": "verification",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Update SPEC-060 status to completed",
+            "description": "Mark SPEC-060 as completed after all verification checks pass.\n\nSteps:\n1. Update spec file status if it exists at `.claude/specs/SPEC-060-model-subclass-tx-propagation/spec.md`\n2. Update this state.json: set all task statuses to `completed`, update summary counts\n3. Update `.claude/tasks/index.json`: set SPEC-060 status to `completed`, update progress to final count\n\nFinal acceptance checklist (all must be true):\n- [ ] All 18 model files updated (grep confirms 0 getDb() calls)\n- [ ] All 51 getDb() call sites replaced\n- [ ] All 14 findWithRelations overrides accept tx\n- [ ] All 16 LSP violations fixed (relations type)\n- [ ] All 7 delegate methods forward tx\n- [ ] pnpm typecheck exits 0\n- [ ] pnpm test exits 0\n- [ ] pnpm lint exits 0\n\nTest requirements: All 4 spec verification greps return zero results.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-034"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Confirm all 4 spec greps return zero results",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm pnpm typecheck exits 0",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm pnpm test exits 0",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm pnpm lint exits 0",
+                    "completed": true
+                },
+                {
+                    "title": "Update state.json summary and task statuses",
+                    "completed": true
+                },
+                {
+                    "title": "Update index.json SPEC-060 entry to completed",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "models", "verification", "spec-management"],
+            "phase": "verification",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-04-10T00:00:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 35,
+        "pending": 35,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}

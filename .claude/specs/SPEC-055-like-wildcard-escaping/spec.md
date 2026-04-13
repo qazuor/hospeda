@@ -1,6 +1,6 @@
 # SPEC-055: LIKE Wildcard Character Escaping & Broken $ilike Refactor
 
-> **Status**: draft
+> **Status**: completed
 > **Priority**: P2
 > **Complexity**: Medium-High
 > **Origin**: SPEC-049 GAP-049-008

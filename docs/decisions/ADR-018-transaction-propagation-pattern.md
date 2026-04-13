@@ -2,7 +2,12 @@
 
 ## Status
 
-Accepted
+Superseded (2026-04-10)
+
+The `QueryContext` wrapper interface described in this ADR was never implemented in production code.
+SPEC-060 gap remediation (GAP-047) removed the `QueryContext` export from `@repo/db` and all
+re-exports. The codebase uses bare `tx?: DrizzleClient` positional parameters throughout instead.
+The rest of this ADR remains accurate for context and historical reference.
 
 ## Context
 
