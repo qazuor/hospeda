@@ -2,7 +2,7 @@
  * Public post list endpoint
  * Returns paginated list of public posts
  */
-import { PostPublicSchema, PostSearchHttpSchema } from '@repo/schemas';
+import { type HttpPostSearch, PostPublicSchema, PostSearchHttpSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -27,7 +27,11 @@ export const publicListPostsRoute = createPublicListRoute({
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        const result = await postService.list(actor, query || {});
+        const result = await postService.search(actor, {
+            ...(query as HttpPostSearch),
+            page,
+            pageSize
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

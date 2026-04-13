@@ -2,7 +2,11 @@
  * Public event location list endpoint
  * Returns paginated list of public event locations
  */
-import { EventLocationPublicSchema, EventLocationSearchHttpSchema } from '@repo/schemas';
+import {
+    EventLocationPublicSchema,
+    type EventLocationSearchHttp,
+    EventLocationSearchHttpSchema
+} from '@repo/schemas';
 import { EventLocationService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -27,7 +31,11 @@ export const publicListEventLocationsRoute = createPublicListRoute({
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        const result = await eventLocationService.list(actor, query || {});
+        const result = await eventLocationService.search(actor, {
+            ...(query as EventLocationSearchHttp),
+            page,
+            pageSize
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

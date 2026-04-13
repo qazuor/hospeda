@@ -2,7 +2,11 @@
  * Public attraction list endpoint
  * Returns paginated list of public attractions
  */
-import { AttractionPublicSchema, AttractionSearchHttpSchema } from '@repo/schemas';
+import {
+    AttractionPublicSchema,
+    AttractionSearchHttpSchema,
+    type HttpAttractionSearch
+} from '@repo/schemas';
 import { AttractionService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -27,7 +31,11 @@ export const publicListAttractionsRoute = createPublicListRoute({
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        const result = await attractionService.list(actor, query || {});
+        const result = await attractionService.search(actor, {
+            ...(query as HttpAttractionSearch),
+            page,
+            pageSize
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

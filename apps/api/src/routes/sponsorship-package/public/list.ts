@@ -2,7 +2,11 @@
  * Public sponsorship package list endpoint
  * Returns paginated list of public sponsorship packages
  */
-import { SponsorshipPackageSchema, SponsorshipPackageSearchSchema } from '@repo/schemas';
+import {
+    SponsorshipPackageSchema,
+    type SponsorshipPackageSearchInput,
+    SponsorshipPackageSearchSchema
+} from '@repo/schemas';
 import { ServiceError, SponsorshipPackageService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -27,7 +31,11 @@ export const sponsorshipPackageListRoute = createPublicListRoute({
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        const result = await sponsorshipPackageService.list(actor, query || {});
+        const result = await sponsorshipPackageService.search(actor, {
+            ...(query as SponsorshipPackageSearchInput),
+            page,
+            limit: pageSize
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

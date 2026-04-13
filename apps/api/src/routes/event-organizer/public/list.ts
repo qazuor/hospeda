@@ -2,7 +2,11 @@
  * Public event organizer list endpoint
  * Returns paginated list of public event organizers
  */
-import { EventOrganizerPublicSchema, EventOrganizerSearchHttpSchema } from '@repo/schemas';
+import {
+    EventOrganizerPublicSchema,
+    type EventOrganizerSearchHttp,
+    EventOrganizerSearchHttpSchema
+} from '@repo/schemas';
 import { EventOrganizerService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -27,7 +31,11 @@ export const publicListEventOrganizersRoute = createPublicListRoute({
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        const result = await eventOrganizerService.list(actor, query || {});
+        const result = await eventOrganizerService.search(actor, {
+            ...(query as EventOrganizerSearchHttp),
+            page,
+            pageSize
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

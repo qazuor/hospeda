@@ -2,7 +2,7 @@
  * Public event list endpoint
  * Returns paginated list of public events
  */
-import { EventPublicSchema, EventSearchHttpSchema } from '@repo/schemas';
+import { EventPublicSchema, EventSearchHttpSchema, type HttpEventSearch } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -27,7 +27,11 @@ export const publicListEventsRoute = createPublicListRoute({
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        const result = await eventService.list(actor, query || {});
+        const result = await eventService.search(actor, {
+            ...(query as HttpEventSearch),
+            page,
+            pageSize
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

@@ -2,7 +2,11 @@
  * Public sponsorship level list endpoint
  * Returns paginated list of public sponsorship levels
  */
-import { SponsorshipLevelSchema, SponsorshipLevelSearchSchema } from '@repo/schemas';
+import {
+    SponsorshipLevelSchema,
+    type SponsorshipLevelSearchInput,
+    SponsorshipLevelSearchSchema
+} from '@repo/schemas';
 import { ServiceError, SponsorshipLevelService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -27,7 +31,11 @@ export const sponsorshipLevelListRoute = createPublicListRoute({
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        const result = await sponsorshipLevelService.list(actor, query || {});
+        const result = await sponsorshipLevelService.search(actor, {
+            ...(query as SponsorshipLevelSearchInput),
+            page,
+            limit: pageSize
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

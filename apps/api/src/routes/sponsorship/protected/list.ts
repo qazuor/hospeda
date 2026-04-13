@@ -2,7 +2,11 @@
  * Protected sponsorship list endpoint
  * Returns paginated list of sponsorships (authenticated users only)
  */
-import { SponsorshipProtectedSchema, SponsorshipSearchSchema } from '@repo/schemas';
+import {
+    SponsorshipProtectedSchema,
+    type SponsorshipSearchInput,
+    SponsorshipSearchSchema
+} from '@repo/schemas';
 import { ServiceError, SponsorshipService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -27,7 +31,11 @@ export const protectedSponsorshipListRoute = createProtectedListRoute({
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        const result = await sponsorshipService.list(actor, query || {});
+        const result = await sponsorshipService.search(actor, {
+            ...(query as SponsorshipSearchInput),
+            page,
+            limit: pageSize
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

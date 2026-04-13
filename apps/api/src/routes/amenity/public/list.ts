@@ -2,7 +2,11 @@
  * Public amenity list endpoint
  * Returns paginated list of public amenities
  */
-import { AmenityPublicSchema, AmenitySearchHttpSchema } from '@repo/schemas';
+import {
+    AmenityPublicSchema,
+    AmenitySearchHttpSchema,
+    type HttpAmenitySearch
+} from '@repo/schemas';
 import { AmenityService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -27,7 +31,11 @@ export const publicListAmenitiesRoute = createPublicListRoute({
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        const result = await amenityService.list(actor, query || {});
+        const result = await amenityService.search(actor, {
+            ...(query as HttpAmenitySearch),
+            page,
+            pageSize
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
