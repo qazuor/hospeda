@@ -123,9 +123,8 @@
     background: var(--core-card);
     border: 1px solid var(--border);
     border-radius: 16px;
-    box-shadow:
-        0 8px 30px oklch(from var(--core-foreground) l c h / 0.1),
-        0 2px 8px oklch(from var(--core-foreground) l c h / 0.06);
+    box-shadow: 0 8px 30px oklch(from var(--core-foreground) l c h / 0.1), 0 2px 8px
+        oklch(from var(--core-foreground) l c h / 0.06);
     padding: 8px 0;
     min-width: 260px;
     max-height: 360px;

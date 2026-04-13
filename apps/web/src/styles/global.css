@@ -1,5 +1,5 @@
 /* --- Component styles (must precede all non-import statements per CSS spec) --- */
-@import './components.css';
+@import "./components.css";
 
 /* ==========================================================================
    Hospeda Web2 — Global Styles
@@ -63,10 +63,10 @@
     --footer-border: oklch(from var(--surface-dark-foreground) l c h / 0.15);
 
     /* --- Hospeda brand colors --- */
-    --hospeda-sky: oklch(0.80 0.08 259);
+    --hospeda-sky: oklch(0.8 0.08 259);
     --hospeda-sky-light: oklch(0.88 0.06 259);
     --hospeda-river: oklch(0.63 0.19 259);
-    --hospeda-forest: oklch(0.50 0.14 155);
+    --hospeda-forest: oklch(0.5 0.14 155);
     --hospeda-sand: oklch(0.93 0.03 85);
 
     /* --- Social proof avatar gradient stops --- */
@@ -74,7 +74,7 @@
     --avatar-1-to: oklch(0.36 0.12 255);
     --avatar-2-from: oklch(0.65 0.15 75);
     --avatar-2-to: oklch(0.78 0.17 80);
-    --avatar-3-from: oklch(0.50 0.10 195);
+    --avatar-3-from: oklch(0.5 0.1 195);
     --avatar-3-to: oklch(0.65 0.13 195);
     --avatar-4-from: oklch(0.42 0.12 155);
     --avatar-4-to: oklch(0.62 0.16 155);
@@ -124,7 +124,7 @@
     /* --- Shadows --- */
     --shadow-card: 0 4px 12px -2px oklch(from var(--core-foreground) l c h / 0.08);
     --shadow-card-hover: 0 12px 24px -4px oklch(from var(--core-foreground) l c h / 0.12);
-    --shadow-search: 0 4px 60px oklch(from var(--core-foreground) l c h / 0.10);
+    --shadow-search: 0 4px 60px oklch(from var(--core-foreground) l c h / 0.1);
     --shadow-nav: 0 2px 4px oklch(from var(--core-foreground) l c h / 0.15);
 
     /* --- Transitions --- */
@@ -189,25 +189,25 @@
     --info-foreground: oklch(0.1 0.02 259);
 
     /* Surface tokens (dark) */
-    --surface-warm: oklch(0.20 0.03 50);
-    --surface-dark: oklch(0.10 0.02 160);
+    --surface-warm: oklch(0.2 0.03 50);
+    --surface-dark: oklch(0.1 0.02 160);
 
     /* Footer surface tokens (dark) */
     --footer-bg: oklch(0.12 0.02 220);
     --footer-fg: oklch(0.85 0.01 210);
-    --footer-fg-muted: oklch(0.60 0.02 240);
+    --footer-fg-muted: oklch(0.6 0.02 240);
     --footer-newsletter-bg: oklch(0.18 0.025 220);
-    --footer-newsletter-fg: oklch(0.80 0.01 210);
+    --footer-newsletter-fg: oklch(0.8 0.01 210);
     --footer-newsletter-border: oklch(0.3 0.02 220);
     --footer-link: oklch(0.65 0.01 210);
-    --footer-link-hover: oklch(0.90 0.01 210);
+    --footer-link-hover: oklch(0.9 0.01 210);
     --footer-border: oklch(from var(--brand-accent) l c h / 0.2);
 
     /* Social proof avatar gradient stops (dark) */
-    --avatar-1-from: oklch(0.30 0.10 255);
+    --avatar-1-from: oklch(0.3 0.1 255);
     --avatar-1-to: oklch(0.42 0.14 255);
     --avatar-2-from: oklch(0.68 0.16 75);
-    --avatar-2-to: oklch(0.80 0.18 80);
+    --avatar-2-to: oklch(0.8 0.18 80);
     --avatar-3-from: oklch(0.52 0.11 195);
     --avatar-3-to: oklch(0.68 0.14 195);
     --avatar-4-from: oklch(0.45 0.13 155);
@@ -279,4 +279,3 @@ svg {
         transition-duration: 0.01ms !important;
     }
 }
-

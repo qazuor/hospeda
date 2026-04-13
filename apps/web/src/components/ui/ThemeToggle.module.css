@@ -11,9 +11,7 @@
     background: transparent;
     cursor: pointer;
     color: var(--core-foreground);
-    transition:
-        background-color var(--duration-fast) ease,
-        color var(--duration-fast) ease;
+    transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
     flex-shrink: 0;
 }
 

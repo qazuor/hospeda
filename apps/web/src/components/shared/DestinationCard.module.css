@@ -49,12 +49,22 @@
 .gradient {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.3) 40%, transparent 100%);
+    background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0.7) 0%,
+        rgba(0, 0, 0, 0.3) 40%,
+        transparent 100%
+    );
     transition: background var(--duration-normal) ease;
 }
 
 .card:hover .gradient {
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 50%, rgba(0, 0, 0, 0.1) 100%);
+    background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0.8) 0%,
+        rgba(0, 0, 0, 0.4) 50%,
+        rgba(0, 0, 0, 0.1) 100%
+    );
 }
 
 .contentBlock {
@@ -113,7 +123,8 @@
     align-items: center;
     opacity: 0;
     visibility: hidden;
-    transition: opacity var(--duration-normal) ease, visibility var(--duration-normal) ease, background-color var(--duration-normal) ease;
+    transition: opacity var(--duration-normal) ease, visibility var(--duration-normal) ease,
+        background-color var(--duration-normal) ease;
 }
 
 .card:hover .circle {

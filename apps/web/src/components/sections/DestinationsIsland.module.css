@@ -392,8 +392,7 @@
     text-decoration: none;
     border: none;
     cursor: pointer;
-    transition: background-color var(--duration-fast) ease,
-        box-shadow var(--duration-fast) ease,
+    transition: background-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease,
         transform var(--duration-fast) ease;
 }
 
