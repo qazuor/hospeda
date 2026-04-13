@@ -68,6 +68,7 @@ export const AccommodationSearchHttpSchema = BaseHttpSearchSchema.extend({
     types: createArrayQueryParam('Filter by multiple accommodation types'),
     amenities: createArrayQueryParam('Filter by required amenity IDs'),
     features: createArrayQueryParam('Filter by required feature IDs'),
+    destinationIds: createArrayQueryParam('Filter by multiple destination IDs'),
 
     // Include relation flags (opt-in for heavier queries)
     includeAmenities: createBooleanQueryParam('Include accommodation amenities in response'),
@@ -160,11 +161,13 @@ export const httpToDomainAccommodationSearch = (
 
     // Entity-specific filters that exist in BOTH schemas
     type: httpParams.type,
+    types: httpParams.types,
     isFeatured: httpParams.isFeatured,
     minPrice: httpParams.minPrice,
     maxPrice: httpParams.maxPrice,
     currency: httpParams.currency,
     destinationId: httpParams.destinationId,
+    destinationIds: httpParams.destinationIds,
     latitude: httpParams.latitude,
     longitude: httpParams.longitude,
     radius: httpParams.radius,

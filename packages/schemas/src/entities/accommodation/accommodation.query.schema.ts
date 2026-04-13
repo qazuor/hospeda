@@ -31,6 +31,7 @@ import { AccommodationSchema } from './accommodation.schema.js';
 export const AccommodationFiltersSchema = z.object({
     // Basic filters
     type: AccommodationTypeEnumSchema.optional(),
+    types: z.array(z.string()).optional(),
     isFeatured: z.boolean().optional(),
 
     // Price range filters
@@ -44,6 +45,7 @@ export const AccommodationFiltersSchema = z.object({
 
     // Location filters
     destinationId: z.string().uuid().optional(),
+    destinationIds: z.array(z.string()).optional(),
     country: z.string().length(2).optional(),
     city: z.string().optional(),
     latitude: z.number().min(-90).max(90).optional(),
@@ -87,6 +89,7 @@ export type AccommodationFilters = z.infer<typeof AccommodationFiltersSchema>;
 export const AccommodationSearchSchema = BaseSearchSchema.extend({
     // Entity-specific filters
     type: AccommodationTypeEnumSchema.optional(),
+    types: z.array(z.string()).optional(),
     isFeatured: z.boolean().optional(),
     minPrice: z.number().min(0).optional(),
     maxPrice: z.number().min(0).optional(),
@@ -94,6 +97,7 @@ export const AccommodationSearchSchema = BaseSearchSchema.extend({
     createdAfter: z.date().optional(),
     createdBefore: z.date().optional(),
     destinationId: z.string().uuid().optional(),
+    destinationIds: z.array(z.string()).optional(),
     country: z.string().length(2).optional(),
     city: z.string().optional(),
     latitude: z.number().min(-90).max(90).optional(),
