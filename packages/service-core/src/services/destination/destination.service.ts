@@ -38,7 +38,13 @@ import {
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
-import type { Actor, ServiceConfig, ServiceLogger, ServiceOutput } from '../../types';
+import type {
+    Actor,
+    ServiceConfig,
+    ServiceContext,
+    ServiceLogger,
+    ServiceOutput
+} from '../../types';
 import { ServiceError } from '../../types';
 import { serviceLogger } from '../../utils';
 import { generateDestinationSlug } from './destination.helpers';
@@ -176,7 +182,11 @@ export class DestinationService extends BaseCrudService<
      * @param _actor - The actor performing the search (not used here)
      * @returns A paginated list of destinations matching the filters
      */
-    protected async _executeSearch(params: DestinationSearchInput, _actor: Actor) {
+    protected async _executeSearch(
+        params: DestinationSearchInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ) {
         const {
             page = 1,
             pageSize = 10,
@@ -230,7 +240,11 @@ export class DestinationService extends BaseCrudService<
      * @param _actor - The actor performing the count (not used here)
      * @returns An object with the total count
      */
-    protected async _executeCount(params: DestinationSearchInput, _actor: Actor) {
+    protected async _executeCount(
+        params: DestinationSearchInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ) {
         const { page, pageSize, sortBy, sortOrder, ...filterParams } = params;
         const count = await this.model.count(filterParams);
         return { count };
@@ -444,7 +458,8 @@ export class DestinationService extends BaseCrudService<
      */
     protected async _beforeCreate(
         data: DestinationCreateInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<Partial<Destination>> {
         const result: Partial<Destination> = {};
 
@@ -511,32 +526,29 @@ export class DestinationService extends BaseCrudService<
      * @param actor - The actor performing the update.
      * @param id - The ID of the destination to update.
      * @param data - The update input data.
-     * @param tx - Optional outer transaction client. When provided, both the parent
+     * @param ctx - Optional service context. When provided with a transaction, both the parent
      *   row update and the descendant path cascade use this same transaction.
      */
     public async update(
         actor: Actor,
         id: string,
         data: DestinationUpdateInput,
-        tx?: DrizzleClient
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<Destination>> {
         this._updateId = id;
         this._pendingPathUpdate = undefined;
         try {
-            // Thread tx into super.update so the parent row update participates
+            // Thread ctx into super.update so the parent row update participates
             // in the outer transaction when one is provided.
-            const result =
-                tx !== undefined
-                    ? await super.update(actor, id, data, tx)
-                    : await super.update(actor, id, data);
+            const result = await super.update(actor, id, data, ctx);
 
             if (this._pendingPathUpdate) {
                 const { parentId, oldPath, newPath } = this._pendingPathUpdate;
-                // When an outer tx is provided, use it for full atomicity.
-                // Without an outer tx, the cascade runs outside the parent update's
+                // When ctx.tx is provided, use it for full atomicity.
+                // Without a transaction, the cascade runs outside the parent update's
                 // transaction — full atomicity requires Phase 4 route-level wrapping.
-                if (tx !== undefined) {
-                    await this.model.updateDescendantPaths(parentId, oldPath, newPath, tx);
+                if (ctx?.tx !== undefined) {
+                    await this.model.updateDescendantPaths(parentId, oldPath, newPath, ctx.tx);
                 } else {
                     await this.model.updateDescendantPaths(parentId, oldPath, newPath);
                 }
@@ -559,7 +571,8 @@ export class DestinationService extends BaseCrudService<
      */
     protected async _beforeUpdate(
         data: DestinationUpdateInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<Partial<Destination>> {
         const result: Partial<Destination> = {};
 
@@ -666,7 +679,11 @@ export class DestinationService extends BaseCrudService<
         return result;
     }
 
-    protected async _afterCreate(entity: Destination): Promise<Destination> {
+    protected async _afterCreate(
+        entity: Destination,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Destination> {
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'destination',
@@ -681,7 +698,11 @@ export class DestinationService extends BaseCrudService<
         return entity;
     }
 
-    protected async _afterUpdate(entity: Destination): Promise<Destination> {
+    protected async _afterUpdate(
+        entity: Destination,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Destination> {
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'destination',
@@ -698,7 +719,8 @@ export class DestinationService extends BaseCrudService<
 
     protected async _afterUpdateVisibility(
         entity: Destination,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<Destination> {
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -716,7 +738,11 @@ export class DestinationService extends BaseCrudService<
 
     private _lastDeletedDestinationSlug: string | undefined;
 
-    protected async _beforeSoftDelete(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeSoftDelete(
+        id: string,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<string> {
         const entity = await this.model.findById(id);
         this._lastDeletedDestinationSlug = entity?.slug;
         return id;
@@ -724,7 +750,8 @@ export class DestinationService extends BaseCrudService<
 
     protected async _afterSoftDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         const slug = this._lastDeletedDestinationSlug;
         this._lastDeletedDestinationSlug = undefined;
@@ -742,7 +769,11 @@ export class DestinationService extends BaseCrudService<
         return result;
     }
 
-    protected async _beforeHardDelete(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeHardDelete(
+        id: string,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<string> {
         const entity = await this.model.findById(id);
         this._lastDeletedDestinationSlug = entity?.slug;
         return id;
@@ -750,7 +781,8 @@ export class DestinationService extends BaseCrudService<
 
     protected async _afterHardDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         const slug = this._lastDeletedDestinationSlug;
         this._lastDeletedDestinationSlug = undefined;
@@ -770,7 +802,11 @@ export class DestinationService extends BaseCrudService<
 
     private _lastRestoredDestinationSlug: string | undefined;
 
-    protected async _beforeRestore(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeRestore(
+        id: string,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<string> {
         const entity = await this.model.findById(id);
         this._lastRestoredDestinationSlug = entity?.slug;
         return id;
@@ -778,7 +814,8 @@ export class DestinationService extends BaseCrudService<
 
     protected async _afterRestore(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         const slug = this._lastRestoredDestinationSlug;
         this._lastRestoredDestinationSlug = undefined;

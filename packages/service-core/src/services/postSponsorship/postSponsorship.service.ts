@@ -1,4 +1,4 @@
-import type { DrizzleClient, PostSponsorshipModel } from '@repo/db';
+import type { PostSponsorshipModel } from '@repo/db';
 import {
     PostModel as RealPostModel,
     PostSponsorshipModel as RealPostSponsorshipModel
@@ -10,7 +10,7 @@ import {
     PostSponsorshipUpdateInputSchema
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base';
-import type { Actor, ServiceConfig } from '../../types';
+import type { Actor, ServiceConfig, ServiceContext } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './postSponsorship.normalizers';
 import {
     checkCanCountPostSponsorship,
@@ -100,7 +100,7 @@ export class PostSponsorshipService extends BaseCrudService<
     protected async _afterCreate(
         entity: PostSponsorship,
         actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<PostSponsorship> {
         this.logger.info(`Linking post ${entity.postId} to sponsorship ${entity.id}`);
 
@@ -111,7 +111,7 @@ export class PostSponsorshipService extends BaseCrudService<
         await postModel.update(
             { id: entity.postId },
             { sponsorshipId: entity.id, updatedById: actor.id },
-            _tx
+            _ctx.tx
         );
 
         return entity;
@@ -128,7 +128,7 @@ export class PostSponsorshipService extends BaseCrudService<
     protected async _beforeSoftDelete(
         id: string,
         actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<string> {
         // Get the sponsorship entity to know which post to update
         const sponsorship = await this.model.findOne({ id });
@@ -139,7 +139,7 @@ export class PostSponsorshipService extends BaseCrudService<
             await postModel.update(
                 { id: sponsorship.postId },
                 { sponsorshipId: undefined, updatedById: actor.id },
-                _tx
+                _ctx.tx
             );
         }
 
@@ -157,7 +157,7 @@ export class PostSponsorshipService extends BaseCrudService<
     protected async _beforeHardDelete(
         id: string,
         actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<string> {
         // Get the sponsorship entity to know which post to update
         const sponsorship = await this.model.findOne({ id });
@@ -168,7 +168,7 @@ export class PostSponsorshipService extends BaseCrudService<
             await postModel.update(
                 { id: sponsorship.postId },
                 { sponsorshipId: undefined, updatedById: actor.id },
-                _tx
+                _ctx.tx
             );
         }
 
@@ -177,7 +177,8 @@ export class PostSponsorshipService extends BaseCrudService<
 
     protected async _executeSearch(
         params: PostSponsorshipSearchInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ items: PostSponsorship[]; total: number }> {
         const {
             sponsorId,
@@ -199,7 +200,8 @@ export class PostSponsorshipService extends BaseCrudService<
 
     protected async _executeCount(
         params: PostSponsorshipSearchInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         const { sponsorId, postId, fromDate, toDate, isHighlighted } = params;
         const where: Record<string, unknown> = {};

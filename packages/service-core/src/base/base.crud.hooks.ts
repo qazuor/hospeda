@@ -1,8 +1,7 @@
-import type { DrizzleClient } from '@repo/db';
 import type { VisibilityEnum } from '@repo/schemas';
 import type { ZodObject } from 'zod';
 import type { z } from 'zod';
-import type { Actor, BaseModel, ListOptions, PaginatedListOutput } from '../types';
+import type { Actor, BaseModel, ListOptions, PaginatedListOutput, ServiceContext } from '../types';
 import { BaseCrudPermissions } from './base.crud.permissions';
 
 /**
@@ -43,13 +42,13 @@ export abstract class BaseCrudHooks<
      *
      * @param data - The normalized data for the new entity.
      * @param _actor - The user or system performing the action.
-     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns A partial entity object with the processed data to merge before insertion.
      */
     protected async _beforeCreate(
         data: z.infer<TCreateSchema>,
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<Partial<TEntity>> {
         return data as Partial<TEntity>;
     }
@@ -60,13 +59,13 @@ export abstract class BaseCrudHooks<
      *
      * @param entity - The newly created entity.
      * @param _actor - The user or system performing the action.
-     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns The created entity, allowing for final modifications if needed.
      */
     protected async _afterCreate(
         entity: TEntity,
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<TEntity> {
         return entity;
     }
@@ -77,13 +76,13 @@ export abstract class BaseCrudHooks<
      *
      * @param data - The normalized update data.
      * @param _actor - The user or system performing the action.
-     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns A partial entity object with the processed data to merge before the update.
      */
     protected async _beforeUpdate(
         data: z.infer<TUpdateSchema>,
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<Partial<TEntity>> {
         return data as Partial<TEntity>;
     }
@@ -94,13 +93,13 @@ export abstract class BaseCrudHooks<
      *
      * @param entity - The updated entity.
      * @param _actor - The user or system performing the action.
-     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns The updated entity.
      */
     protected async _afterUpdate(
         entity: TEntity,
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<TEntity> {
         return entity;
     }
@@ -112,12 +111,14 @@ export abstract class BaseCrudHooks<
      * @param field - The field to query by.
      * @param value - The value to match.
      * @param _actor - The user or system performing the action.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns An object with the (potentially modified) field and value.
      */
     protected async _beforeGetByField(
         field: string,
         value: unknown,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ field: string; value: unknown }> {
         return { field, value };
     }
@@ -127,11 +128,13 @@ export abstract class BaseCrudHooks<
      *
      * @param entity - The fetched entity, or null if not found.
      * @param _actor - The user or system performing the action.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns The fetched entity or null.
      */
     protected async _afterGetByField(
         entity: TEntity | null,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<TEntity | null> {
         return entity;
     }
@@ -142,9 +145,14 @@ export abstract class BaseCrudHooks<
      *
      * @param options - The pagination and relations options for the query.
      * @param _actor - The user or system performing the action.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns The processed options.
      */
-    protected async _beforeList(options: ListOptions, _actor: Actor): Promise<ListOptions> {
+    protected async _beforeList(
+        options: ListOptions,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<ListOptions> {
         return options;
     }
 
@@ -154,11 +162,13 @@ export abstract class BaseCrudHooks<
      *
      * @param result - The paginated list of entities.
      * @param _actor - The user or system performing the action.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns The paginated list of entities.
      */
     protected async _afterList(
         result: PaginatedListOutput<TEntity>,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<PaginatedListOutput<TEntity>> {
         return result;
     }
@@ -168,13 +178,13 @@ export abstract class BaseCrudHooks<
      *
      * @param id - The ID of the entity to soft-delete.
      * @param _actor - The user or system performing the action.
-     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns The ID of the entity.
      */
     protected async _beforeSoftDelete(
         id: string,
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<string> {
         return id;
     }
@@ -184,13 +194,13 @@ export abstract class BaseCrudHooks<
      *
      * @param result - An object containing the count of affected rows.
      * @param _actor - The user or system performing the action.
-     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns The result object.
      */
     protected async _afterSoftDelete(
         result: { count: number },
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         return result;
     }
@@ -200,13 +210,13 @@ export abstract class BaseCrudHooks<
      *
      * @param id - The ID of the entity to hard-delete.
      * @param _actor - The user or system performing the action.
-     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns The ID of the entity.
      */
     protected async _beforeHardDelete(
         id: string,
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<string> {
         return id;
     }
@@ -216,13 +226,13 @@ export abstract class BaseCrudHooks<
      *
      * @param result - An object containing the count of affected rows.
      * @param _actor - The user or system performing the action.
-     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns The result object.
      */
     protected async _afterHardDelete(
         result: { count: number },
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         return result;
     }
@@ -232,13 +242,13 @@ export abstract class BaseCrudHooks<
      *
      * @param id - The ID of the entity to restore.
      * @param _actor - The user or system performing the action.
-     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns The ID of the entity.
      */
     protected async _beforeRestore(
         id: string,
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<string> {
         return id;
     }
@@ -248,13 +258,13 @@ export abstract class BaseCrudHooks<
      *
      * @param result - An object containing the count of affected rows.
      * @param _actor - The user or system performing the action.
-     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns The result object.
      */
     protected async _afterRestore(
         result: { count: number },
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         return result;
     }
@@ -265,11 +275,13 @@ export abstract class BaseCrudHooks<
      *
      * @param params - The search parameters.
      * @param _actor - The user or system performing the action.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns The processed search parameters.
      */
     protected async _beforeSearch(
         params: z.infer<TSearchSchema>,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<z.infer<TSearchSchema>> {
         return params;
     }
@@ -280,11 +292,13 @@ export abstract class BaseCrudHooks<
      *
      * @param result - The paginated list of found entities.
      * @param _actor - The user or system performing the action.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns The paginated list of entities.
      */
     protected async _afterSearch(
         result: PaginatedListOutput<TEntity>,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<PaginatedListOutput<TEntity>> {
         return result;
     }
@@ -295,11 +309,13 @@ export abstract class BaseCrudHooks<
      *
      * @param params - The search parameters (only filters are typically used).
      * @param _actor - The user or system performing the action.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns The processed parameters.
      */
     protected async _beforeCount(
         params: z.infer<TSearchSchema>,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<z.infer<TSearchSchema>> {
         return params;
     }
@@ -309,11 +325,13 @@ export abstract class BaseCrudHooks<
      *
      * @param result - The count result.
      * @param _actor - The user or system performing the action.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns The count result.
      */
     protected async _afterCount(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         return result;
     }
@@ -324,12 +342,14 @@ export abstract class BaseCrudHooks<
      * @param _entity - The entity being updated.
      * @param newVisibility - The new visibility state.
      * @param _actor - The user or system performing the action.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns The new visibility state.
      */
     protected async _beforeUpdateVisibility(
         _entity: TEntity,
         newVisibility: VisibilityEnum,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<VisibilityEnum> {
         return newVisibility;
     }
@@ -339,9 +359,14 @@ export abstract class BaseCrudHooks<
      *
      * @param entity - The updated entity.
      * @param _actor - The user or system performing the action.
+     * @param _ctx - Service execution context carrying transaction and hookState.
      * @returns The updated entity.
      */
-    protected async _afterUpdateVisibility(entity: TEntity, _actor: Actor): Promise<TEntity> {
+    protected async _afterUpdateVisibility(
+        entity: TEntity,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<TEntity> {
         return entity;
     }
 }

@@ -68,6 +68,7 @@ import type {
     AdminSearchExecuteParams,
     PaginatedListOutput,
     ServiceConfig,
+    ServiceContext,
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
@@ -306,7 +307,8 @@ export class AccommodationService extends BaseCrudService<
      */
     protected async _beforeCreate(
         data: AccommodationCreateInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<Partial<Accommodation>> {
         // Only generate a slug if one is not already provided
         if (!data.slug) {
@@ -335,7 +337,7 @@ export class AccommodationService extends BaseCrudService<
     protected async _afterCreate(
         entity: Accommodation,
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<Accommodation> {
         if (entity.destinationId) {
             await this.destinationService.updateAccommodationsCount(entity.destinationId);
@@ -359,7 +361,11 @@ export class AccommodationService extends BaseCrudService<
         return entity;
     }
 
-    protected async _afterUpdate(entity: Accommodation): Promise<Accommodation> {
+    protected async _afterUpdate(
+        entity: Accommodation,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Accommodation> {
         const destinationSlug = entity.destinationId
             ? await this._resolveDestinationSlug(entity.destinationId)
             : undefined;
@@ -381,7 +387,8 @@ export class AccommodationService extends BaseCrudService<
 
     protected async _afterUpdateVisibility(
         entity: Accommodation,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<Accommodation> {
         const destinationSlug = entity.destinationId
             ? await this._resolveDestinationSlug(entity.destinationId)
@@ -402,7 +409,11 @@ export class AccommodationService extends BaseCrudService<
         return entity;
     }
 
-    protected async _beforeRestore(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeRestore(
+        id: string,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<string> {
         const entity = await this.model.findById(id);
         if (entity) {
             this._lastRestoredAccommodation = {
@@ -416,7 +427,8 @@ export class AccommodationService extends BaseCrudService<
 
     protected async _afterRestore(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         const restored = this._lastRestoredAccommodation;
         this._lastRestoredAccommodation = undefined;
@@ -442,7 +454,11 @@ export class AccommodationService extends BaseCrudService<
         return result;
     }
 
-    protected async _beforeSoftDelete(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeSoftDelete(
+        id: string,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<string> {
         const entity = await this.model.findById(id);
         if (entity) {
             this._lastDeletedEntity = {
@@ -456,7 +472,8 @@ export class AccommodationService extends BaseCrudService<
 
     protected async _afterSoftDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<CountResponse> {
         const deleted = this._lastDeletedEntity;
         this._lastDeletedEntity = undefined;
@@ -482,7 +499,11 @@ export class AccommodationService extends BaseCrudService<
         return result;
     }
 
-    protected async _beforeHardDelete(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeHardDelete(
+        id: string,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<string> {
         const entity = await this.model.findById(id);
         if (entity) {
             this._lastDeletedEntity = {
@@ -496,7 +517,8 @@ export class AccommodationService extends BaseCrudService<
 
     protected async _afterHardDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<CountResponse> {
         const deleted = this._lastDeletedEntity;
         this._lastDeletedEntity = undefined;
@@ -537,7 +559,11 @@ export class AccommodationService extends BaseCrudService<
      * @param actor The actor performing the search.
      * @returns A paginated list of accommodations with destination and owner populated.
      */
-    protected async _executeSearch(params: AccommodationSearchInput, actor: Actor) {
+    protected async _executeSearch(
+        params: AccommodationSearchInput,
+        actor: Actor,
+        _ctx: ServiceContext
+    ) {
         const hasVipAccess =
             actor.entitlements?.has('vip_promotions_access') ||
             hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
@@ -555,7 +581,11 @@ export class AccommodationService extends BaseCrudService<
      * @param actor The actor performing the count.
      * @returns An object containing the total count of accommodations matching the criteria.
      */
-    protected async _executeCount(params: AccommodationSearchInput, actor: Actor) {
+    protected async _executeCount(
+        params: AccommodationSearchInput,
+        actor: Actor,
+        _ctx: ServiceContext
+    ) {
         const hasVipAccess =
             actor.entitlements?.has('vip_promotions_access') ||
             hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
@@ -593,7 +623,11 @@ export class AccommodationService extends BaseCrudService<
                     : validatedParams;
 
                 // 3. Lifecycle Hook: Before Search
-                const processedParams = await this._beforeSearch(normalizedParams, validatedActor);
+                const processedParams = await this._beforeSearch(
+                    normalizedParams,
+                    validatedActor,
+                    {}
+                );
 
                 // 4. Execute search with relations
                 const page = processedParams.page ?? 1;
@@ -632,7 +666,7 @@ export class AccommodationService extends BaseCrudService<
                     pageSize
                 };
 
-                await this._afterSearch(adaptedResult, validatedActor);
+                await this._afterSearch(adaptedResult, validatedActor, {});
 
                 // 6. Return in AccommodationSearchResult format
                 return {

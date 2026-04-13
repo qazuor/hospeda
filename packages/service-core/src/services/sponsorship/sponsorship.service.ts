@@ -16,7 +16,8 @@ import type {
     Actor,
     AdminSearchExecuteParams,
     PaginatedListOutput,
-    ServiceConfig
+    ServiceConfig,
+    ServiceContext
 } from '../../types';
 import {
     checkCanAdminList,
@@ -200,7 +201,11 @@ export class SponsorshipService extends BaseCrudService<
     /**
      * Executes the search for sponsorships.
      */
-    protected async _executeSearch(params: SponsorshipSearchInput, _actor: Actor) {
+    protected async _executeSearch(
+        params: SponsorshipSearchInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ) {
         const { page = 1, limit = 20, ...filterParams } = params;
         return this.model.findAll(filterParams, { page, pageSize: limit });
     }
@@ -208,7 +213,11 @@ export class SponsorshipService extends BaseCrudService<
     /**
      * Executes the count for sponsorships.
      */
-    protected async _executeCount(params: SponsorshipSearchInput, _actor: Actor) {
+    protected async _executeCount(
+        params: SponsorshipSearchInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ) {
         const { page: _page, limit: _limit, ...filterParams } = params;
         const count = await this.model.count(filterParams);
         return { count };

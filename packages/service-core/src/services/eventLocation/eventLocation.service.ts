@@ -9,7 +9,13 @@ import {
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base';
-import type { Actor, PaginatedListOutput, ServiceConfig, ServiceOutput } from '../../types';
+import type {
+    Actor,
+    PaginatedListOutput,
+    ServiceConfig,
+    ServiceContext,
+    ServiceOutput
+} from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './eventLocation.normalizers';
 import {
@@ -121,7 +127,8 @@ export class EventLocationService extends BaseCrudService<
 
     protected async _executeSearch(
         params: EventLocationSearchInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<PaginatedListOutput<EventLocation>> {
         try {
             const { page = 1, pageSize = 20, sortBy, sortOrder, q, city, ...otherFilters } = params;
@@ -152,7 +159,8 @@ export class EventLocationService extends BaseCrudService<
 
     protected async _executeCount(
         params: EventLocationSearchInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         try {
             const {

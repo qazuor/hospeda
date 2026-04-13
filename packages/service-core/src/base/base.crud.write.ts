@@ -1,10 +1,10 @@
-import type { DrizzleClient } from '@repo/db';
 import { ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import type { ZodObject } from 'zod';
 import { z } from 'zod';
 import {
     type Actor,
     type BaseModel,
+    type ServiceContext,
     ServiceError,
     type ServiceInput,
     type ServiceOutput
@@ -52,13 +52,13 @@ export abstract class BaseCrudWrite<
      *
      * @param actor - The user or system performing the action.
      * @param data - The input data for the new entity, matching `TCreateSchema`.
-     * @param tx - Optional transaction client. When provided, the operation participates in the existing transaction.
+     * @param ctx - Optional service context. When provided with a transaction, the operation participates in the existing transaction.
      * @returns A `ServiceOutput` containing the created entity or a `ServiceError`.
      */
     public async create(
         actor: Actor,
         data: z.infer<TCreateSchema>,
-        tx?: DrizzleClient
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<TEntity>> {
         return this.runWithLoggingAndValidation({
             methodName: 'create',
@@ -71,10 +71,12 @@ export abstract class BaseCrudWrite<
                     (await this.normalizers?.create?.(validatedData, validatedActor)) ??
                     validatedData;
 
-                const processedData =
-                    tx !== undefined
-                        ? await this._beforeCreate(normalizedData, validatedActor, tx)
-                        : await this._beforeCreate(normalizedData, validatedActor);
+                const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+                const processedData = await this._beforeCreate(
+                    normalizedData,
+                    validatedActor,
+                    resolvedCtx
+                );
 
                 const finalData = { ...normalizedData, ...processedData };
 
@@ -84,19 +86,17 @@ export abstract class BaseCrudWrite<
                 payload.createdById = validatedActor.id;
                 payload.updatedById = validatedActor.id;
 
-                const entity =
-                    tx !== undefined
-                        ? await this.model.create(payload as unknown as Partial<TEntity>, tx)
-                        : await this.model.create(payload as unknown as Partial<TEntity>);
+                const entity = await this.model.create(
+                    payload as unknown as Partial<TEntity>,
+                    ctx?.tx
+                );
                 if (!entity) {
                     throw new ServiceError(
                         ServiceErrorCode.INTERNAL_ERROR,
                         `Failed to create ${this.entityName}. The operation returned no result.`
                     );
                 }
-                return tx !== undefined
-                    ? this._afterCreate(entity, validatedActor, tx)
-                    : this._afterCreate(entity, validatedActor);
+                return this._afterCreate(entity, validatedActor, resolvedCtx);
             }
         });
     }
@@ -115,14 +115,14 @@ export abstract class BaseCrudWrite<
      * @param actor - The user or system performing the action.
      * @param id - The ID of the entity to update.
      * @param data - The update data, matching `TUpdateSchema`.
-     * @param tx - Optional transaction client. When provided, the operation participates in the existing transaction.
+     * @param ctx - Optional service context. When provided with a transaction, the operation participates in the existing transaction.
      * @returns A `ServiceOutput` containing the updated entity or a `ServiceError`.
      */
     public async update(
         actor: Actor,
         id: string,
         data: z.infer<TUpdateSchema>,
-        tx?: DrizzleClient
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<TEntity>> {
         const methodName = `update(id=${id})`;
         return this.runWithLoggingAndValidation({
@@ -143,10 +143,12 @@ export abstract class BaseCrudWrite<
                     ? await this.normalizers.update(validData, validActor)
                     : validData;
 
-                const processedData =
-                    tx !== undefined
-                        ? await this._beforeUpdate(normalizedData, validActor, tx)
-                        : await this._beforeUpdate(normalizedData, validActor);
+                const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+                const processedData = await this._beforeUpdate(
+                    normalizedData,
+                    validActor,
+                    resolvedCtx
+                );
 
                 const payload = {
                     ...normalizedData,
@@ -179,14 +181,11 @@ export abstract class BaseCrudWrite<
                     ? filteredPayload
                     : ({ updatedById: validActor.id } as unknown as Partial<TEntity>);
 
-                const updatedEntity =
-                    tx !== undefined
-                        ? await this.model.update(
-                              where as Record<string, unknown>,
-                              finalPayload,
-                              tx
-                          )
-                        : await this.model.update(where as Record<string, unknown>, finalPayload);
+                const updatedEntity = await this.model.update(
+                    where as Record<string, unknown>,
+                    finalPayload,
+                    ctx?.tx
+                );
 
                 if (!updatedEntity) {
                     const entityExists = await this.model.findById(updateId);
@@ -208,9 +207,7 @@ export abstract class BaseCrudWrite<
                     );
                 }
 
-                return tx !== undefined
-                    ? this._afterUpdate(updatedEntity, validActor, tx)
-                    : this._afterUpdate(updatedEntity, validActor);
+                return this._afterUpdate(updatedEntity, validActor, resolvedCtx);
             }
         });
     }
@@ -223,13 +220,13 @@ export abstract class BaseCrudWrite<
      *
      * @param actor - The user or system performing the action.
      * @param id - The ID of the entity to soft-delete.
-     * @param tx - Optional transaction client. When provided, the operation participates in the existing transaction.
+     * @param ctx - Optional service context. When provided with a transaction, the operation participates in the existing transaction.
      * @returns A `ServiceOutput` with the count of affected rows or a `ServiceError`.
      */
     public async softDelete(
         actor: Actor,
         id: string,
-        tx?: DrizzleClient
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ count: number }>> {
         const methodName = `softDelete(id=${id})`;
         return this.runWithLoggingAndValidation({
@@ -247,20 +244,13 @@ export abstract class BaseCrudWrite<
                 if ((entity as TEntity).deletedAt) {
                     return { count: 0 };
                 }
-                const processedId =
-                    tx !== undefined
-                        ? await this._beforeSoftDelete(id, validActor, tx)
-                        : await this._beforeSoftDelete(id, validActor);
+                const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+                const processedId = await this._beforeSoftDelete(id, validActor, resolvedCtx);
                 const where = { id: processedId };
                 const result = {
-                    count:
-                        tx !== undefined
-                            ? await this.model.softDelete(where as Record<string, unknown>, tx)
-                            : await this.model.softDelete(where as Record<string, unknown>)
+                    count: await this.model.softDelete(where as Record<string, unknown>, ctx?.tx)
                 };
-                return tx !== undefined
-                    ? this._afterSoftDelete(result, validActor, tx)
-                    : this._afterSoftDelete(result, validActor);
+                return this._afterSoftDelete(result, validActor, resolvedCtx);
             }
         });
     }
@@ -273,9 +263,14 @@ export abstract class BaseCrudWrite<
      *
      * @param actor - The user or system performing the action.
      * @param id - The ID of the entity to hard-delete.
+     * @param ctx - Optional service context. Passed to lifecycle hooks.
      * @returns A `ServiceOutput` with the count of affected rows or a `ServiceError`.
      */
-    public async hardDelete(actor: Actor, id: string): Promise<ServiceOutput<{ count: number }>> {
+    public async hardDelete(
+        actor: Actor,
+        id: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ count: number }>> {
         const methodName = `hardDelete(id=${id})`;
         return this.runWithLoggingAndValidation({
             methodName,
@@ -292,11 +287,12 @@ export abstract class BaseCrudWrite<
                 if ((entity as TEntity).deletedAt) {
                     return { count: 0 };
                 }
-                const processedId = await this._beforeHardDelete(id, validActor);
+                const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+                const processedId = await this._beforeHardDelete(id, validActor, resolvedCtx);
                 const where = { id: processedId };
                 // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
                 const result = { count: await this.model.hardDelete(where as any) };
-                return this._afterHardDelete(result, validActor);
+                return this._afterHardDelete(result, validActor, resolvedCtx);
             }
         });
     }
@@ -309,13 +305,13 @@ export abstract class BaseCrudWrite<
      *
      * @param actor - The user or system performing the action.
      * @param id - The ID of the entity to restore.
-     * @param tx - Optional transaction client. When provided, the operation participates in the existing transaction.
+     * @param ctx - Optional service context. When provided with a transaction, the operation participates in the existing transaction.
      * @returns A `ServiceOutput` with the count of affected rows or a `ServiceError`.
      */
     public async restore(
         actor: Actor,
         id: string,
-        tx?: DrizzleClient
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ count: number }>> {
         const methodName = `restore(id=${id})`;
         return this.runWithLoggingAndValidation({
@@ -333,12 +329,10 @@ export abstract class BaseCrudWrite<
                 if (!(entity as TEntity).deletedAt) {
                     return { count: 0 };
                 }
+                const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
                 let processedId: string;
                 try {
-                    processedId =
-                        tx !== undefined
-                            ? await this._beforeRestore(id, validActor, tx)
-                            : await this._beforeRestore(id, validActor);
+                    processedId = await this._beforeRestore(id, validActor, resolvedCtx);
                 } catch (err) {
                     if (err instanceof ServiceError && err.code === ServiceErrorCode.INTERNAL_ERROR)
                         throw err;
@@ -350,16 +344,10 @@ export abstract class BaseCrudWrite<
                 }
                 let count: number;
                 try {
-                    count =
-                        tx !== undefined
-                            ? await this.model.restore(
-                                  { id: processedId } as Record<string, unknown>,
-                                  tx
-                              )
-                            : await this.model.restore({ id: processedId } as Record<
-                                  string,
-                                  unknown
-                              >);
+                    count = await this.model.restore(
+                        { id: processedId } as Record<string, unknown>,
+                        ctx?.tx
+                    );
                 } catch (err) {
                     if (err instanceof ServiceError && err.code === ServiceErrorCode.INTERNAL_ERROR)
                         throw err;
@@ -371,9 +359,7 @@ export abstract class BaseCrudWrite<
                 }
                 const result = { count };
                 try {
-                    await (tx !== undefined
-                        ? this._afterRestore(result, validActor, tx)
-                        : this._afterRestore(result, validActor));
+                    await this._afterRestore(result, validActor, resolvedCtx);
                 } catch (err) {
                     if (err instanceof ServiceError && err.code === ServiceErrorCode.INTERNAL_ERROR)
                         throw err;
@@ -396,12 +382,14 @@ export abstract class BaseCrudWrite<
      * @param actor - The user or system performing the action.
      * @param id - The ID of the entity to update.
      * @param visibility - The new visibility state.
+     * @param ctx - Optional service context. Passed to lifecycle hooks.
      * @returns A `ServiceOutput` containing the updated entity or a `ServiceError`.
      */
     public async updateVisibility(
         actor: Actor,
         id: string,
-        visibility: VisibilityEnum
+        visibility: VisibilityEnum,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<TEntity>> {
         return this.runWithLoggingAndValidation({
             methodName: 'updateVisibility',
@@ -425,12 +413,14 @@ export abstract class BaseCrudWrite<
 
                 await this._canUpdateVisibility(validActor, entity, validData.visibility);
 
+                const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
                 let processedVisibility: VisibilityEnum;
                 try {
                     processedVisibility = await this._beforeUpdateVisibility(
                         entity,
                         validData.visibility,
-                        validActor
+                        validActor,
+                        resolvedCtx
                     );
                 } catch (err) {
                     if (
@@ -472,7 +462,7 @@ export abstract class BaseCrudWrite<
                 }
 
                 try {
-                    await this._afterUpdateVisibility(updatedEntity, validActor);
+                    await this._afterUpdateVisibility(updatedEntity, validActor, resolvedCtx);
                 } catch (err) {
                     if (
                         err instanceof ServiceError &&

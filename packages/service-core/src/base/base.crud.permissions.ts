@@ -6,6 +6,7 @@ import {
     type BaseModel,
     type PaginatedListOutput,
     type ServiceConfig,
+    type ServiceContext,
     ServiceError
 } from '../types';
 import { hasPermission } from '../utils/permission';
@@ -267,7 +268,8 @@ export abstract class BaseCrudPermissions<
      */
     protected abstract _executeSearch(
         params: z.infer<TSearchSchema>,
-        actor: Actor
+        actor: Actor,
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<TEntity>>;
 
     /**
@@ -279,6 +281,7 @@ export abstract class BaseCrudPermissions<
      */
     protected abstract _executeCount(
         params: z.infer<TSearchSchema>,
-        actor: Actor
+        actor: Actor,
+        ctx: ServiceContext
     ): Promise<{ count: number }>;
 }

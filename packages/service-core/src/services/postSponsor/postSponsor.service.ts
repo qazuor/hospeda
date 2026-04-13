@@ -14,7 +14,7 @@ import {
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base';
-import type { Actor, PaginatedListOutput, ServiceConfig } from '../../types';
+import type { Actor, PaginatedListOutput, ServiceConfig, ServiceContext } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './postSponsor.normalizers';
 import { checkCanManagePostSponsor } from './postSponsor.permissions';
 
@@ -90,7 +90,8 @@ export class PostSponsorService extends BaseCrudService<
 
     protected async _executeSearch(
         params: PostSponsorSearchInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<PaginatedListOutput<PostSponsor>> {
         const { name, type, q, page = 1, pageSize = 20, sortBy, sortOrder } = params;
         const where: Record<string, unknown> = {};
@@ -120,7 +121,8 @@ export class PostSponsorService extends BaseCrudService<
     }
     protected async _executeCount(
         params: PostSponsorSearchInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         const { name, type, q } = params;
         const where: Record<string, unknown> = {};

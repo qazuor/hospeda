@@ -23,6 +23,7 @@ import type {
     AdminSearchExecuteParams,
     PaginatedListOutput,
     ServiceConfig,
+    ServiceContext,
     ServiceOutput
 } from '../../types';
 import { DestinationService } from '../destination/destination.service';
@@ -141,7 +142,8 @@ export class DestinationReviewService extends BaseCrudService<
     }
     protected async _executeSearch(
         params: DestinationReviewSearchInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<PaginatedListOutput<DestinationReview>> {
         const { page, pageSize, ...filters } = params;
         return this.model.findAll({ ...filters, deletedAt: null }, { page, pageSize });
@@ -149,7 +151,8 @@ export class DestinationReviewService extends BaseCrudService<
 
     protected async _executeCount(
         params: DestinationReviewSearchInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         const { page: _p, pageSize: _ps, ...filters } = params;
         const count = await this.model.count({ ...filters, deletedAt: null });
@@ -213,7 +216,7 @@ export class DestinationReviewService extends BaseCrudService<
     protected async _afterCreate(
         entity: DestinationReview,
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<DestinationReview> {
         // Compute per-review average from JSONB rating dimensions and persist it
         const reviewAvg = computeReviewAverageRating(entity.rating as Record<string, unknown>);
@@ -222,10 +225,10 @@ export class DestinationReviewService extends BaseCrudService<
             {
                 averageRating: reviewAvg
             },
-            _tx
+            _ctx.tx
         );
 
-        await this.recalculateAndUpdateDestinationStats(entity.destinationId, _tx);
+        await this.recalculateAndUpdateDestinationStats(entity.destinationId, _ctx.tx);
         const destinationSlug = await this._resolveDestinationSlug(entity.destinationId);
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -249,7 +252,7 @@ export class DestinationReviewService extends BaseCrudService<
     protected async _afterUpdate(
         entity: DestinationReview,
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<DestinationReview> {
         // Recompute per-review average from JSONB rating dimensions and persist it
         const reviewAvg = computeReviewAverageRating(entity.rating as Record<string, unknown>);
@@ -258,11 +261,11 @@ export class DestinationReviewService extends BaseCrudService<
             {
                 averageRating: reviewAvg
             },
-            _tx
+            _ctx.tx
         );
 
         // Recalculate parent destination stats after rating change
-        await this.recalculateAndUpdateDestinationStats(entity.destinationId, _tx);
+        await this.recalculateAndUpdateDestinationStats(entity.destinationId, _ctx.tx);
 
         const destinationSlug = await this._resolveDestinationSlug(entity.destinationId);
         try {
@@ -281,7 +284,8 @@ export class DestinationReviewService extends BaseCrudService<
 
     protected async _afterUpdateVisibility(
         entity: DestinationReview,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<DestinationReview> {
         const destinationSlug = await this._resolveDestinationSlug(entity.destinationId);
         try {
@@ -303,7 +307,11 @@ export class DestinationReviewService extends BaseCrudService<
      */
     private _lastDeletedDestinationId: string | undefined;
 
-    protected async _beforeSoftDelete(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeSoftDelete(
+        id: string,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<string> {
         const review = await this.model.findOne({ id });
         this._lastDeletedDestinationId = review?.destinationId;
         return id;
@@ -317,12 +325,12 @@ export class DestinationReviewService extends BaseCrudService<
     protected async _afterSoftDelete(
         result: { count: number },
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         const deletedDestinationId = this._lastDeletedDestinationId;
         this._lastDeletedDestinationId = undefined;
         if (deletedDestinationId) {
-            await this.recalculateAndUpdateDestinationStats(deletedDestinationId, _tx);
+            await this.recalculateAndUpdateDestinationStats(deletedDestinationId, _ctx.tx);
         }
         const destinationSlug = deletedDestinationId
             ? await this._resolveDestinationSlug(deletedDestinationId)
@@ -341,7 +349,11 @@ export class DestinationReviewService extends BaseCrudService<
         return result;
     }
 
-    protected async _beforeHardDelete(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeHardDelete(
+        id: string,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<string> {
         const review = await this.model.findOne({ id });
         this._lastDeletedDestinationId = review?.destinationId;
         return id;
@@ -355,12 +367,12 @@ export class DestinationReviewService extends BaseCrudService<
     protected async _afterHardDelete(
         result: { count: number },
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         const deletedDestinationId = this._lastDeletedDestinationId;
         this._lastDeletedDestinationId = undefined;
         if (deletedDestinationId) {
-            await this.recalculateAndUpdateDestinationStats(deletedDestinationId, _tx);
+            await this.recalculateAndUpdateDestinationStats(deletedDestinationId, _ctx.tx);
         }
         const destinationSlug = deletedDestinationId
             ? await this._resolveDestinationSlug(deletedDestinationId)
@@ -395,12 +407,12 @@ export class DestinationReviewService extends BaseCrudService<
     protected async _afterRestore(
         result: { count: number },
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         if (this._lastRestoredDestinationIdForReview) {
             await this.recalculateAndUpdateDestinationStats(
                 this._lastRestoredDestinationIdForReview,
-                _tx
+                _ctx.tx
             );
         }
         const destinationSlug = this._lastRestoredDestinationIdForReview

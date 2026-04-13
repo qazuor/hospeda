@@ -30,7 +30,7 @@ import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type { ServiceOutput } from '../../types';
-import { type Actor, type ServiceConfig, ServiceError } from '../../types';
+import { type Actor, type ServiceConfig, type ServiceContext, ServiceError } from '../../types';
 import { generateAmenitySlug } from './amenity.helpers';
 import {
     checkCanAddAmenityToAccommodation,
@@ -145,7 +145,11 @@ export class AmenityService extends BaseCrudRelatedService<
         checkCanAdminList(actor);
     }
 
-    protected async _afterCreate(entity: Amenity): Promise<Amenity> {
+    protected async _afterCreate(
+        entity: Amenity,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Amenity> {
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'amenity'
@@ -159,7 +163,11 @@ export class AmenityService extends BaseCrudRelatedService<
         return entity;
     }
 
-    protected async _afterUpdate(entity: Amenity): Promise<Amenity> {
+    protected async _afterUpdate(
+        entity: Amenity,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Amenity> {
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'amenity'
@@ -173,7 +181,11 @@ export class AmenityService extends BaseCrudRelatedService<
         return entity;
     }
 
-    protected async _afterUpdateVisibility(entity: Amenity, _actor: Actor): Promise<Amenity> {
+    protected async _afterUpdateVisibility(
+        entity: Amenity,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Amenity> {
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'amenity'
@@ -189,7 +201,8 @@ export class AmenityService extends BaseCrudRelatedService<
 
     protected async _afterSoftDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -206,7 +219,8 @@ export class AmenityService extends BaseCrudRelatedService<
 
     protected async _afterHardDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -223,7 +237,8 @@ export class AmenityService extends BaseCrudRelatedService<
 
     protected async _afterRestore(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -449,7 +464,11 @@ export class AmenityService extends BaseCrudRelatedService<
      * @param _actor - The actor performing the search.
      * @returns An object containing the search results, page, pageSize, and total count.
      */
-    protected async _executeSearch(params: AmenitySearchInput, _actor: Actor) {
+    protected async _executeSearch(
+        params: AmenitySearchInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ) {
         const { page = 1, pageSize = 10, ...filterParams } = params;
         return this.model.findAll(filterParams, { page, pageSize });
     }
@@ -499,7 +518,7 @@ export class AmenityService extends BaseCrudRelatedService<
      * @param _actor - The actor performing the count.
      * @returns An object containing the count of amenities.
      */
-    protected async _executeCount(params: AmenitySearchInput, _actor: Actor) {
+    protected async _executeCount(params: AmenitySearchInput, _actor: Actor, _ctx: ServiceContext) {
         const { ...filterParams } = params;
         const count = await this.model.count(filterParams);
         return { count };
@@ -511,7 +530,8 @@ export class AmenityService extends BaseCrudRelatedService<
      */
     protected async _beforeCreate(
         data: z.infer<typeof AmenityCreateInputSchema>,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<Partial<Amenity>> {
         let slug = data.slug;
         if (!slug && data.name) {
@@ -528,7 +548,8 @@ export class AmenityService extends BaseCrudRelatedService<
      */
     protected async _beforeUpdate(
         data: z.infer<typeof AmenityUpdateInputSchema>,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<Partial<Amenity>> {
         let slug = data.slug;
         const type = data.type ? (data.type as AmenitiesTypeEnum) : undefined;

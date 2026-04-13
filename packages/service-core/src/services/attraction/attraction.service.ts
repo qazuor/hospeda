@@ -31,6 +31,7 @@ import {
     type Actor,
     type PaginatedListOutput,
     type ServiceConfig,
+    type ServiceContext,
     ServiceError,
     type ServiceOutput
 } from '../../types';
@@ -113,7 +114,8 @@ export class AttractionService extends BaseCrudRelatedService<
      */
     protected async _beforeCreate(
         data: AttractionCreateInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<Partial<Attraction>> {
         let slug = (data as { slug?: string }).slug;
         if (!slug && data.name) {
@@ -128,7 +130,8 @@ export class AttractionService extends BaseCrudRelatedService<
      */
     protected async _beforeUpdate(
         data: AttractionUpdateInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<Partial<Attraction>> {
         let slug = (data as { slug?: string }).slug;
         if (!slug && data.name) {
@@ -430,7 +433,8 @@ export class AttractionService extends BaseCrudRelatedService<
 
     protected async _executeSearch(
         params: AttractionSearchInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<PaginatedListOutput<Attraction>> {
         const { name, slug, isFeatured, isBuiltin, destinationId } = params;
         const where: Record<string, unknown> = {};
@@ -445,7 +449,8 @@ export class AttractionService extends BaseCrudRelatedService<
 
     protected async _executeCount(
         params: AttractionSearchInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<CountResponse> {
         const { name, slug, isFeatured, isBuiltin, destinationId } = params;
         const where: Record<string, unknown> = {};

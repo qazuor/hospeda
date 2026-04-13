@@ -38,7 +38,7 @@ import {
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
-import type { Actor, ServiceConfig, ServiceOutput } from '../../types';
+import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { generatePostSlug } from './post.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './post.normalizers';
@@ -118,7 +118,11 @@ export class PostService extends BaseCrudService<
      * @param data - The input data
      * @returns Normalized and enriched data
      */
-    protected async _beforeCreate(data: PostCreateInput): Promise<Partial<Post>> {
+    protected async _beforeCreate(
+        data: PostCreateInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Partial<Post>> {
         const normalized = normalizeCreateInput(data);
         if (!normalized.category || !normalized.title) {
             throw new ServiceError(
@@ -180,7 +184,11 @@ export class PostService extends BaseCrudService<
      * @param _actor - The actor performing the update (not used)
      * @returns Normalized and enriched data
      */
-    protected async _beforeUpdate(data: PostUpdateInput, _actor: Actor): Promise<Partial<Post>> {
+    protected async _beforeUpdate(
+        data: PostUpdateInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Partial<Post>> {
         // The id to use for business logic is stored in this._updateId (set in update method)
         const id = this._updateId;
         if (!id) {
@@ -382,7 +390,7 @@ export class PostService extends BaseCrudService<
         await super._canAdminList(actor);
         checkCanAdminList(actor);
     }
-    protected async _afterCreate(entity: Post): Promise<Post> {
+    protected async _afterCreate(entity: Post, _actor: Actor, _ctx: ServiceContext): Promise<Post> {
         const tagSlugs = entity.tags?.map((t) => t.slug);
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -399,7 +407,7 @@ export class PostService extends BaseCrudService<
         return entity;
     }
 
-    protected async _afterUpdate(entity: Post): Promise<Post> {
+    protected async _afterUpdate(entity: Post, _actor: Actor, _ctx: ServiceContext): Promise<Post> {
         const tagSlugs = entity.tags?.map((t) => t.slug);
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -416,7 +424,11 @@ export class PostService extends BaseCrudService<
         return entity;
     }
 
-    protected async _afterUpdateVisibility(entity: Post, _actor: Actor): Promise<Post> {
+    protected async _afterUpdateVisibility(
+        entity: Post,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Post> {
         const tagSlugs = entity.tags?.map((t) => t.slug);
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -436,7 +448,11 @@ export class PostService extends BaseCrudService<
     private _lastRestoredPost: { slug: string; tagSlugs?: string[] } | undefined;
     private _lastDeletedPost: { slug: string; tagSlugs?: string[] } | undefined;
 
-    protected async _beforeRestore(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeRestore(
+        id: string,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<string> {
         const entity = await this.model.findById(id);
         if (entity) {
             this._lastRestoredPost = {
@@ -449,7 +465,8 @@ export class PostService extends BaseCrudService<
 
     protected async _afterRestore(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         const restored = this._lastRestoredPost;
         this._lastRestoredPost = undefined;
@@ -468,7 +485,11 @@ export class PostService extends BaseCrudService<
         return result;
     }
 
-    protected async _beforeSoftDelete(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeSoftDelete(
+        id: string,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<string> {
         const entity = await this.model.findById(id);
         if (entity) {
             this._lastDeletedPost = {
@@ -481,7 +502,8 @@ export class PostService extends BaseCrudService<
 
     protected async _afterSoftDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         const deleted = this._lastDeletedPost;
         this._lastDeletedPost = undefined;
@@ -500,7 +522,11 @@ export class PostService extends BaseCrudService<
         return result;
     }
 
-    protected async _beforeHardDelete(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeHardDelete(
+        id: string,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<string> {
         const entity = await this.model.findById(id);
         if (entity) {
             this._lastDeletedPost = {
@@ -513,7 +539,8 @@ export class PostService extends BaseCrudService<
 
     protected async _afterHardDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         const deleted = this._lastDeletedPost;
         this._lastDeletedPost = undefined;
@@ -538,7 +565,7 @@ export class PostService extends BaseCrudService<
      * @param actor - The actor performing the search.
      * @returns A paginated list of posts matching the criteria.
      */
-    protected async _executeSearch(params: PostListInput, _actor: Actor) {
+    protected async _executeSearch(params: PostListInput, _actor: Actor, _ctx: ServiceContext) {
         const { page = 1, pageSize = 10, ...filterParams } = params;
         return this.model.findAll(filterParams, { page, pageSize });
     }
@@ -549,7 +576,7 @@ export class PostService extends BaseCrudService<
      * @param actor - The actor performing the count.
      * @returns An object containing the total count of posts matching the criteria.
      */
-    protected async _executeCount(params: PostListInput, _actor: Actor) {
+    protected async _executeCount(params: PostListInput, _actor: Actor, _ctx: ServiceContext) {
         const { ...filterParams } = params;
         const count = await this.model.count(filterParams);
         return { count };

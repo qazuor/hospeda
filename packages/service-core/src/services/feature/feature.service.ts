@@ -20,7 +20,7 @@ import {
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { ServiceOutput } from '../../types';
-import { type Actor, type ServiceConfig, ServiceError } from '../../types';
+import { type Actor, type ServiceConfig, type ServiceContext, ServiceError } from '../../types';
 import { generateFeatureSlug } from './feature.helpers';
 import {
     checkCanAddFeatureToAccommodation,
@@ -83,7 +83,8 @@ export class FeatureService extends BaseCrudRelatedService<
      */
     protected async _beforeCreate(
         data: z.infer<typeof CreateFeatureSchema>,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<Partial<Feature>> {
         let slug = data.slug;
         if (!slug && data.name) {
@@ -108,7 +109,8 @@ export class FeatureService extends BaseCrudRelatedService<
      */
     protected async _beforeUpdate(
         data: z.infer<typeof UpdateFeatureSchema>,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<Partial<Feature>> {
         let slug = data.slug;
         if (!slug && data.name) {
@@ -176,7 +178,8 @@ export class FeatureService extends BaseCrudRelatedService<
     }
     protected async _executeSearch(
         params: z.infer<typeof SearchFeatureSchema>,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ items: Feature[]; total: number }> {
         const { name, slug, isFeatured, isBuiltin } = params;
         const where: Record<string, unknown> = {};
@@ -190,7 +193,8 @@ export class FeatureService extends BaseCrudRelatedService<
 
     protected async _executeCount(
         params: z.infer<typeof SearchFeatureSchema>,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         const { name, slug, isFeatured, isBuiltin } = params;
         const where: Record<string, unknown> = {};

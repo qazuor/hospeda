@@ -1,6 +1,6 @@
 import { ServiceErrorCode } from '@repo/schemas';
 import type { ZodTypeAny, z } from 'zod';
-import type { Actor, ServiceConfig, ServiceLogger, ServiceOutput } from '../types';
+import type { Actor, ServiceConfig, ServiceContext, ServiceLogger, ServiceOutput } from '../types';
 import { ServiceError } from '../types';
 import {
     logError,
@@ -40,13 +40,16 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
         methodName,
         input,
         schema,
+        ctx,
         execute
     }: {
         methodName: string;
         input: { actor: Actor } & Record<string, unknown>;
         schema: TInput;
-        execute: (data: z.infer<TInput>, actor: Actor) => Promise<TOutput>;
+        ctx?: ServiceContext;
+        execute: (data: z.infer<TInput>, actor: Actor, ctx: ServiceContext) => Promise<TOutput>;
     }): Promise<ServiceOutput<TOutput>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
         const { actor, ...params } = input;
         this.logMethodStart(methodName, params, actor);
         try {
@@ -97,12 +100,15 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
                 return { error };
             }
             const validData = validationResult.data;
-            const result = await execute(validData, actor);
+            const result = await execute(validData, actor, resolvedCtx);
             logMethodEnd(`${this.entityName}.${methodName}`, result);
             return { data: result };
         } catch (error) {
             if (error instanceof ServiceError) {
                 logError(`${this.entityName}.${methodName}`, error, params, actor);
+                if (ctx?.tx) {
+                    throw error;
+                }
                 return { error };
             }
 
@@ -117,6 +123,9 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
                 error
             );
             logError(`${this.entityName}.${methodName}`, serviceError, params, actor);
+            if (ctx?.tx) {
+                throw serviceError;
+            }
             return { error: serviceError };
         }
     }

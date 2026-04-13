@@ -17,7 +17,7 @@ import {
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, ServiceConfig, ServiceOutput } from '../../types';
+import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './userBookmark.normalizers';
 import { canAccessBookmark, canCreateBookmark } from './userBookmark.permissions';
@@ -267,7 +267,11 @@ export class UserBookmarkService extends BaseCrudService<
         });
     }
 
-    protected async _executeSearch(params: UserBookmarkSearchInput, _actor: Actor) {
+    protected async _executeSearch(
+        params: UserBookmarkSearchInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ) {
         const { page, pageSize, ...searchFilters } = params;
 
         const { items, total } = await this.model.findAll(
@@ -277,7 +281,11 @@ export class UserBookmarkService extends BaseCrudService<
         return { items, total };
     }
 
-    protected async _executeCount(params: UserBookmarkSearchInput, _actor: Actor) {
+    protected async _executeCount(
+        params: UserBookmarkSearchInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ) {
         const { page, pageSize, sortBy, sortOrder, ...searchFilters } = params;
 
         const count = await this.model.count({ ...searchFilters, deletedAt: null });

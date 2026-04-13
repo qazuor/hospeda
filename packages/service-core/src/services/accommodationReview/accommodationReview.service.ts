@@ -35,6 +35,7 @@ import {
     type AdminSearchExecuteParams,
     type PaginatedListOutput,
     type ServiceConfig,
+    type ServiceContext,
     ServiceError,
     type ServiceOutput
 } from '../../types';
@@ -158,7 +159,8 @@ export class AccommodationReviewService extends BaseCrudService<
     }
     protected async _executeSearch(
         params: AccommodationReviewSearchParams,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<PaginatedListOutput<AccommodationReview>> {
         const { page, pageSize, ...filters } = params;
         return this.model.findAll({ ...filters, deletedAt: null }, { page, pageSize });
@@ -166,7 +168,8 @@ export class AccommodationReviewService extends BaseCrudService<
 
     protected async _executeCount(
         params: AccommodationReviewSearchParams,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<CountResponse> {
         const { page: _p, pageSize: _ps, ...filters } = params;
         const count = await this.model.count({ ...filters, deletedAt: null });
@@ -229,7 +232,8 @@ export class AccommodationReviewService extends BaseCrudService<
      */
     protected async _beforeCreate(
         data: AccommodationReviewCreateInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<Partial<AccommodationReview>> {
         const existing = await this.model.findOne({
             userId: data.userId,
@@ -266,10 +270,10 @@ export class AccommodationReviewService extends BaseCrudService<
     protected async _afterCreate(
         entity: AccommodationReview,
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<AccommodationReview> {
-        await this.computeAndStoreReviewAverage(entity, _tx);
-        await this.recalculateAndUpdateAccommodationStats(entity.accommodationId, _tx);
+        await this.computeAndStoreReviewAverage(entity, _ctx.tx);
+        await this.recalculateAndUpdateAccommodationStats(entity.accommodationId, _ctx.tx);
         const accommodationSlug = await this._resolveAccommodationSlug(entity.accommodationId);
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -288,10 +292,10 @@ export class AccommodationReviewService extends BaseCrudService<
     protected async _afterUpdate(
         entity: AccommodationReview,
         _actor: Actor,
-        _tx?: DrizzleClient
+        _ctx: ServiceContext
     ): Promise<AccommodationReview> {
-        await this.computeAndStoreReviewAverage(entity, _tx);
-        await this.recalculateAndUpdateAccommodationStats(entity.accommodationId, _tx);
+        await this.computeAndStoreReviewAverage(entity, _ctx.tx);
+        await this.recalculateAndUpdateAccommodationStats(entity.accommodationId, _ctx.tx);
         const accommodationSlug = await this._resolveAccommodationSlug(entity.accommodationId);
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -309,7 +313,8 @@ export class AccommodationReviewService extends BaseCrudService<
 
     protected async _afterUpdateVisibility(
         entity: AccommodationReview,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<AccommodationReview> {
         const accommodationSlug = await this._resolveAccommodationSlug(entity.accommodationId);
         try {
@@ -331,7 +336,11 @@ export class AccommodationReviewService extends BaseCrudService<
      */
     private _lastDeletedAccommodationId: string | undefined;
 
-    protected async _beforeSoftDelete(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeSoftDelete(
+        id: string,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<string> {
         const review = await this.model.findOne({ id });
         this._lastDeletedAccommodationId = review?.accommodationId;
         return id;
@@ -339,7 +348,8 @@ export class AccommodationReviewService extends BaseCrudService<
 
     protected async _afterSoftDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<CountResponse> {
         const deletedAccommodationId = this._lastDeletedAccommodationId;
         this._lastDeletedAccommodationId = undefined;
@@ -363,7 +373,11 @@ export class AccommodationReviewService extends BaseCrudService<
         return result;
     }
 
-    protected async _beforeHardDelete(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeHardDelete(
+        id: string,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<string> {
         const review = await this.model.findOne({ id });
         this._lastDeletedAccommodationId = review?.accommodationId;
         return id;
@@ -371,7 +385,8 @@ export class AccommodationReviewService extends BaseCrudService<
 
     protected async _afterHardDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<CountResponse> {
         const deletedAccommodationId = this._lastDeletedAccommodationId;
         this._lastDeletedAccommodationId = undefined;
@@ -397,7 +412,11 @@ export class AccommodationReviewService extends BaseCrudService<
 
     private _lastRestoredAccommodationId: string | undefined;
 
-    protected async _beforeRestore(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeRestore(
+        id: string,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<string> {
         const review = await this.model.findOne({ id });
         this._lastRestoredAccommodationId = review?.accommodationId;
         return id;
@@ -405,7 +424,8 @@ export class AccommodationReviewService extends BaseCrudService<
 
     protected async _afterRestore(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         if (this._lastRestoredAccommodationId) {
             await this.recalculateAndUpdateAccommodationStats(this._lastRestoredAccommodationId);

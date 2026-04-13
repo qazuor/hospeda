@@ -39,6 +39,7 @@ import type {
     AdminSearchExecuteParams,
     PaginatedListOutput,
     ServiceConfig,
+    ServiceContext,
     ServiceOutput
 } from '../../types';
 import { type Actor, ServiceError } from '../../types';
@@ -184,7 +185,11 @@ export class EventService extends BaseCrudService<
     /**
      * Lifecycle hook: normalizes input before creating an event and generates slug.
      */
-    protected async _beforeCreate(input: EventCreateInput, _actor: Actor): Promise<Partial<Event>> {
+    protected async _beforeCreate(
+        input: EventCreateInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Partial<Event>> {
         const normalized = await normalizeCreateInput(input);
 
         // Only generate a slug if one is not already provided
@@ -209,7 +214,11 @@ export class EventService extends BaseCrudService<
     /**
      * Lifecycle hook: normalizes input before updating an event and updates slug if relevant fields change.
      */
-    protected async _beforeUpdate(input: EventUpdateInput, _actor: Actor): Promise<Partial<Event>> {
+    protected async _beforeUpdate(
+        input: EventUpdateInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Partial<Event>> {
         const normalized = await normalizeUpdateInput(input);
         // If category, name, or date.start is present in update, regenerate slug
         if (
@@ -231,7 +240,11 @@ export class EventService extends BaseCrudService<
         return normalized;
     }
 
-    protected async _afterCreate(entity: Event): Promise<Event> {
+    protected async _afterCreate(
+        entity: Event,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Event> {
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
@@ -247,7 +260,11 @@ export class EventService extends BaseCrudService<
         return entity;
     }
 
-    protected async _afterUpdate(entity: Event): Promise<Event> {
+    protected async _afterUpdate(
+        entity: Event,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Event> {
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
@@ -263,7 +280,11 @@ export class EventService extends BaseCrudService<
         return entity;
     }
 
-    protected async _afterUpdateVisibility(entity: Event, _actor: Actor): Promise<Event> {
+    protected async _afterUpdateVisibility(
+        entity: Event,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Event> {
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
@@ -282,7 +303,11 @@ export class EventService extends BaseCrudService<
     private _lastRestoredEvent: { slug: string; category?: string } | undefined;
     private _lastDeletedEvent: { slug: string; category?: string } | undefined;
 
-    protected async _beforeRestore(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeRestore(
+        id: string,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<string> {
         const entity = await this.model.findById(id);
         if (entity) {
             this._lastRestoredEvent = {
@@ -295,7 +320,8 @@ export class EventService extends BaseCrudService<
 
     protected async _afterRestore(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         const restored = this._lastRestoredEvent;
         this._lastRestoredEvent = undefined;
@@ -314,7 +340,11 @@ export class EventService extends BaseCrudService<
         return result;
     }
 
-    protected async _beforeSoftDelete(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeSoftDelete(
+        id: string,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<string> {
         const entity = await this.model.findById(id);
         if (entity) {
             this._lastDeletedEvent = { slug: entity.slug, category: entity.category };
@@ -324,7 +354,8 @@ export class EventService extends BaseCrudService<
 
     protected async _afterSoftDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         const deleted = this._lastDeletedEvent;
         this._lastDeletedEvent = undefined;
@@ -343,7 +374,11 @@ export class EventService extends BaseCrudService<
         return result;
     }
 
-    protected async _beforeHardDelete(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeHardDelete(
+        id: string,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<string> {
         const entity = await this.model.findById(id);
         if (entity) {
             this._lastDeletedEvent = { slug: entity.slug, category: entity.category };
@@ -353,7 +388,8 @@ export class EventService extends BaseCrudService<
 
     protected async _afterHardDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         const deleted = this._lastDeletedEvent;
         this._lastDeletedEvent = undefined;
@@ -424,7 +460,7 @@ export class EventService extends BaseCrudService<
      * @param _actor - The actor performing the search
      * @returns Paginated list of events matching the criteria
      */
-    protected async _executeSearch(params: EventSearchInput, _actor: Actor) {
+    protected async _executeSearch(params: EventSearchInput, _actor: Actor, _ctx: ServiceContext) {
         const { page = 1, pageSize = 10, ...filterParams } = params;
         return this.model.findAll(filterParams, { page, pageSize });
     }
@@ -435,7 +471,7 @@ export class EventService extends BaseCrudService<
      * @param _actor - The actor performing the count
      * @returns Count of events matching the criteria
      */
-    protected async _executeCount(params: EventSearchInput, _actor: Actor) {
+    protected async _executeCount(params: EventSearchInput, _actor: Actor, _ctx: ServiceContext) {
         const { ...filterParams } = params;
         const count = await this.model.count(filterParams);
         return { count };

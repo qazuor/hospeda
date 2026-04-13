@@ -14,7 +14,7 @@ import {
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service.js';
-import type { Actor, ServiceConfig, ServiceOutput } from '../../types/index.js';
+import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
 import { calculateInverseRate } from './exchange-rate.helpers.js';
 import { normalizeCreateInput, normalizeUpdateInput } from './exchange-rate.normalizers.js';
@@ -145,7 +145,8 @@ export class ExchangeRateService extends BaseCrudService<
             page?: number;
             pageSize?: number;
         },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ) {
         const { page = 1, pageSize = 10, ...searchParams } = params;
 
@@ -168,7 +169,8 @@ export class ExchangeRateService extends BaseCrudService<
      */
     protected async _executeCount(
         params: z.infer<typeof ExchangeRateSearchInputSchema>,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ) {
         const { ...filterParams } = params;
         const count = await this.model.count(filterParams);

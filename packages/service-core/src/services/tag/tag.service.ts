@@ -26,7 +26,7 @@ import {
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
-import type { Actor, ServiceConfig, ServiceOutput } from '../../types';
+import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './tag.normalizers';
 import {
@@ -170,7 +170,7 @@ export class TagService extends BaseCrudRelatedService<
         checkCanAdminList(actor);
     }
 
-    protected async _afterCreate(entity: Tag): Promise<Tag> {
+    protected async _afterCreate(entity: Tag, _actor: Actor, _ctx: ServiceContext): Promise<Tag> {
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'tag'
@@ -184,7 +184,7 @@ export class TagService extends BaseCrudRelatedService<
         return entity;
     }
 
-    protected async _afterUpdate(entity: Tag): Promise<Tag> {
+    protected async _afterUpdate(entity: Tag, _actor: Actor, _ctx: ServiceContext): Promise<Tag> {
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'tag'
@@ -198,7 +198,11 @@ export class TagService extends BaseCrudRelatedService<
         return entity;
     }
 
-    protected async _afterUpdateVisibility(entity: Tag, _actor: Actor): Promise<Tag> {
+    protected async _afterUpdateVisibility(
+        entity: Tag,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Tag> {
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'tag'
@@ -214,7 +218,8 @@ export class TagService extends BaseCrudRelatedService<
 
     protected async _afterSoftDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -231,7 +236,8 @@ export class TagService extends BaseCrudRelatedService<
 
     protected async _afterHardDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -248,7 +254,8 @@ export class TagService extends BaseCrudRelatedService<
 
     protected async _afterRestore(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -269,7 +276,11 @@ export class TagService extends BaseCrudRelatedService<
      * @param _actor The actor performing the search.
      * @returns A paginated list of tags matching the criteria.
      */
-    protected async _executeSearch(params: z.infer<typeof TagSearchInputSchema>, _actor: Actor) {
+    protected async _executeSearch(
+        params: z.infer<typeof TagSearchInputSchema>,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ) {
         const { page = 1, pageSize = 10, ...filterParams } = params;
         return this.model.findAll(filterParams, { page, pageSize });
     }
@@ -280,7 +291,11 @@ export class TagService extends BaseCrudRelatedService<
      * @param _actor The actor performing the count.
      * @returns An object containing the total count of tags matching the criteria.
      */
-    protected async _executeCount(params: z.infer<typeof TagSearchInputSchema>, _actor: Actor) {
+    protected async _executeCount(
+        params: z.infer<typeof TagSearchInputSchema>,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ) {
         const { ...filterParams } = params;
         const count = await this.model.count(filterParams);
         return { count };

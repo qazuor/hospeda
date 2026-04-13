@@ -17,7 +17,7 @@ import {
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, PaginatedListOutput, ServiceConfig } from '../../types';
+import type { Actor, PaginatedListOutput, ServiceConfig, ServiceContext } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils';
 import * as helpers from './eventOrganizer.helpers';
@@ -125,7 +125,8 @@ export class EventOrganizerService extends BaseCrudService<
     // --- Core Logic ---
     protected async _executeSearch(
         params: EventOrganizerSearchInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<PaginatedListOutput<EventOrganizer>> {
         const { page = 1, pageSize = 10, sortBy, sortOrder, q, name, ...otherFilters } = params;
         const where: Record<string, unknown> = { ...otherFilters };
@@ -144,7 +145,8 @@ export class EventOrganizerService extends BaseCrudService<
 
     protected async _executeCount(
         params: EventOrganizerSearchInput,
-        _actor: Actor
+        _actor: Actor,
+        _ctx: ServiceContext
     ): Promise<{ count: number }> {
         const {
             page: _page,

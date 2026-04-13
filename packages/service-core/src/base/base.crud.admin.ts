@@ -2,7 +2,13 @@ import type { AdminInfoType } from '@repo/schemas';
 import { AdminInfoSchema, ServiceErrorCode } from '@repo/schemas';
 import type { ZodObject } from 'zod';
 import { z } from 'zod';
-import { type BaseModel, ServiceError, type ServiceInput, type ServiceOutput } from '../types';
+import {
+    type BaseModel,
+    type ServiceContext,
+    ServiceError,
+    type ServiceInput,
+    type ServiceOutput
+} from '../types';
 import { normalizeAdminInfo } from '../utils';
 import { BaseCrudWrite } from './base.crud.write';
 
@@ -35,13 +41,16 @@ export abstract class BaseCrudAdmin<
      * @returns `ServiceOutput<{ adminInfo: unknown }>` with the admin metadata.
      */
     public async getAdminInfo(
-        input: ServiceInput<{ id: string }>
+        input: ServiceInput<{ id: string }>,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ adminInfo: unknown }>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
         return this.runWithLoggingAndValidation({
             methodName: 'getAdminInfo',
             input,
             schema: z.object({ id: z.string() }),
-            execute: async ({ id }, actor) => {
+            ctx: resolvedCtx,
+            execute: async ({ id }, actor, _execCtx) => {
                 const entity = await this.model.findById(id);
                 if (!entity) {
                     throw new ServiceError(
@@ -64,13 +73,16 @@ export abstract class BaseCrudAdmin<
      * @returns `ServiceOutput<{ adminInfo: AdminInfoType }>` with the stored metadata.
      */
     public async setAdminInfo(
-        input: ServiceInput<{ id: string; adminInfo: AdminInfoType }>
+        input: ServiceInput<{ id: string; adminInfo: AdminInfoType }>,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ adminInfo: AdminInfoType }>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
         return this.runWithLoggingAndValidation({
             methodName: 'setAdminInfo',
             input,
             schema: z.object({ id: z.string(), adminInfo: AdminInfoSchema }),
-            execute: async ({ id, adminInfo }, actor) => {
+            ctx: resolvedCtx,
+            execute: async ({ id, adminInfo }, actor, _execCtx) => {
                 const entity = await this.model.findById(id);
                 if (!entity) {
                     throw new ServiceError(

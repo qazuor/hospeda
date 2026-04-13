@@ -12,7 +12,7 @@ import {
     SponsorshipLevelUpdateInputSchema
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, ServiceConfig } from '../../types';
+import type { Actor, ServiceConfig, ServiceContext } from '../../types';
 import { ServiceError } from '../../types';
 
 /**
@@ -178,7 +178,11 @@ export class SponsorshipLevelService extends BaseCrudService<
     /**
      * Executes the search for sponsorship levels.
      */
-    protected async _executeSearch(params: SponsorshipLevelSearchInput, _actor: Actor) {
+    protected async _executeSearch(
+        params: SponsorshipLevelSearchInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ) {
         const { page = 1, limit = 20, ...filterParams } = params;
         return this.model.findAll(filterParams, { page, pageSize: limit });
     }
@@ -186,7 +190,11 @@ export class SponsorshipLevelService extends BaseCrudService<
     /**
      * Executes the count for sponsorship levels.
      */
-    protected async _executeCount(params: SponsorshipLevelSearchInput, _actor: Actor) {
+    protected async _executeCount(
+        params: SponsorshipLevelSearchInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ) {
         const { page, limit, ...filterParams } = params;
         const count = await this.model.count(filterParams);
         return { count };
