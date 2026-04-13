@@ -142,6 +142,7 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
      * @param actor - Actor performing the action
      * @param entityName - Entity name for logs/errors
      * @param permissionCheck - Permission function (optional)
+     * @param _ctx - Service context for future transaction support (Phase 4)
      */
     protected async _getAndValidateEntity<
         TEntity,
@@ -152,7 +153,8 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
         actor: Actor,
         entityName: string,
         permissionCheck: (actor: Actor, entity: TEntity) => Promise<void> | void = async () =>
-            Promise.resolve()
+            Promise.resolve(),
+        _ctx?: ServiceContext
     ): Promise<TEntity> {
         const entityOrNull = await model.findById(id);
         // validateEntity throws if not exists, so entity is never null

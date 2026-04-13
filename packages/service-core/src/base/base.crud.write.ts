@@ -64,6 +64,7 @@ export abstract class BaseCrudWrite<
             methodName: 'create',
             input: { actor, ...data },
             schema: this.createSchema,
+            ctx,
             execute: async (validatedData, validatedActor) => {
                 await this._canCreate(validatedActor, validatedData);
 
@@ -129,6 +130,7 @@ export abstract class BaseCrudWrite<
             methodName,
             input: { actor, ...data },
             schema: this.updateSchema,
+            ctx,
             execute: async (validData, validActor) => {
                 const updateId = id;
                 await this._getAndValidateEntity(
@@ -233,6 +235,7 @@ export abstract class BaseCrudWrite<
             methodName,
             input: { actor },
             schema: z.object({}),
+            ctx,
             execute: async (_, validActor) => {
                 const entity = await this._getAndValidateEntity(
                     this.model,
@@ -276,6 +279,7 @@ export abstract class BaseCrudWrite<
             methodName,
             input: { actor },
             schema: z.object({}),
+            ctx,
             execute: async (_, validActor) => {
                 const entity = await this._getAndValidateEntity(
                     this.model,
@@ -318,6 +322,7 @@ export abstract class BaseCrudWrite<
             methodName,
             input: { actor },
             schema: z.object({}),
+            ctx,
             execute: async (_, validActor) => {
                 const entity = await this._getAndValidateEntity(
                     this.model,
@@ -395,6 +400,7 @@ export abstract class BaseCrudWrite<
             methodName: 'updateVisibility',
             input: { actor, visibility },
             schema: z.object({ visibility: z.nativeEnum(VisibilityEnum) }),
+            ctx,
             execute: async (validData, validActor) => {
                 const entity = await this._getAndValidateEntity<TEntity, typeof this.model>(
                     this.model,
