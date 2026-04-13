@@ -17,6 +17,7 @@ import {
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
+import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type {
     Actor,
@@ -72,7 +73,11 @@ export class DestinationReviewService extends BaseCrudService<
     protected override getSearchableColumns(): string[] {
         return ['title', 'content'];
     }
-    protected normalizers = {
+    protected normalizers: CrudNormalizersFromSchemas<
+        typeof DestinationReviewCreateInputSchema,
+        typeof DestinationReviewUpdateInputSchema,
+        typeof DestinationReviewSearchInputSchema
+    > = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput
     };

@@ -14,6 +14,7 @@ import {
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service.js';
+import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
 import { calculateInverseRate } from './exchange-rate.helpers.js';
@@ -67,7 +68,11 @@ export class ExchangeRateService extends BaseCrudService<
         return undefined;
     }
 
-    protected normalizers = {
+    protected normalizers: CrudNormalizersFromSchemas<
+        typeof ExchangeRateCreateInputSchema,
+        typeof ExchangeRateUpdateInputSchema,
+        typeof ExchangeRateSearchInputSchema
+    > = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput
     };

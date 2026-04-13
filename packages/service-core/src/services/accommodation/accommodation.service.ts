@@ -62,6 +62,7 @@ import {
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
+import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type {
     Actor,
@@ -156,7 +157,11 @@ export class AccommodationService extends BaseCrudService<
     /**
      * @inheritdoc
      */
-    protected normalizers = {
+    protected normalizers: CrudNormalizersFromSchemas<
+        typeof AccommodationCreateInputSchema,
+        typeof AccommodationUpdateInputSchema,
+        typeof AccommodationSearchSchema
+    > = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput,
         list: normalizeListInput,
@@ -617,7 +622,7 @@ export class AccommodationService extends BaseCrudService<
 
                 // 2. Normalization
                 const normalizedParams = this.normalizers?.search
-                    ? await this.normalizers.search(validatedParams)
+                    ? await this.normalizers.search(validatedParams, validatedActor)
                     : validatedParams;
 
                 // 3. Lifecycle Hook: Before Search

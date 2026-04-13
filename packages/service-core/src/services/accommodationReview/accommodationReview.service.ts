@@ -29,6 +29,7 @@ import {
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
+import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import {
     type Actor,
@@ -89,7 +90,11 @@ export class AccommodationReviewService extends BaseCrudService<
         return ['title', 'content'];
     }
 
-    protected normalizers = {
+    protected normalizers: CrudNormalizersFromSchemas<
+        typeof AccommodationReviewCreateInputSchema,
+        typeof AccommodationReviewUpdateInputSchema,
+        typeof AccommodationReviewSearchParamsSchema
+    > = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput
     };
@@ -354,7 +359,7 @@ export class AccommodationReviewService extends BaseCrudService<
     ): Promise<CountResponse> {
         const deletedAccommodationId = ctx.hookState?.deletedAccommodationId;
         if (deletedAccommodationId) {
-            await this.recalculateAndUpdateAccommodationStats(deletedAccommodationId);
+            await this.recalculateAndUpdateAccommodationStats(deletedAccommodationId, ctx.tx);
         }
         const accommodationSlug = deletedAccommodationId
             ? await this._resolveAccommodationSlug(deletedAccommodationId)
@@ -392,7 +397,7 @@ export class AccommodationReviewService extends BaseCrudService<
     ): Promise<CountResponse> {
         const deletedAccommodationId = ctx.hookState?.deletedAccommodationId;
         if (deletedAccommodationId) {
-            await this.recalculateAndUpdateAccommodationStats(deletedAccommodationId);
+            await this.recalculateAndUpdateAccommodationStats(deletedAccommodationId, ctx.tx);
         }
         const accommodationSlug = deletedAccommodationId
             ? await this._resolveAccommodationSlug(deletedAccommodationId)
@@ -430,7 +435,7 @@ export class AccommodationReviewService extends BaseCrudService<
     ): Promise<{ count: number }> {
         const restoredAccommodationId = ctx.hookState?.restoredAccommodationId;
         if (restoredAccommodationId) {
-            await this.recalculateAndUpdateAccommodationStats(restoredAccommodationId);
+            await this.recalculateAndUpdateAccommodationStats(restoredAccommodationId, ctx.tx);
         }
         const accommodationSlug = restoredAccommodationId
             ? await this._resolveAccommodationSlug(restoredAccommodationId)

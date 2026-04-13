@@ -4,7 +4,6 @@ import type {
     EventOrganizerCreateInput,
     EventOrganizerListInput,
     EventOrganizerSearchInput,
-    EventOrganizerUpdateInput,
     VisibilityEnum
 } from '@repo/schemas';
 import {
@@ -17,6 +16,7 @@ import {
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
+import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type { Actor, PaginatedListOutput, ServiceConfig, ServiceContext } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils';
@@ -51,15 +51,13 @@ export class EventOrganizerService extends BaseCrudService<
     protected getDefaultListRelations() {
         return undefined;
     }
-    protected readonly normalizers = {
-        create: normalizeCreateInput as unknown as (
-            data: EventOrganizerCreateInput,
-            actor: Actor
-        ) => EventOrganizerCreateInput,
-        update: normalizeUpdateInput as unknown as (
-            data: EventOrganizerUpdateInput,
-            actor: Actor
-        ) => EventOrganizerUpdateInput
+    protected readonly normalizers: CrudNormalizersFromSchemas<
+        typeof EventOrganizerCreateInputSchema,
+        typeof EventOrganizerUpdateInputSchema,
+        typeof EventOrganizerSearchInputSchema
+    > = {
+        create: normalizeCreateInput,
+        update: normalizeUpdateInput
     };
     protected readonly helpers = helpers;
 

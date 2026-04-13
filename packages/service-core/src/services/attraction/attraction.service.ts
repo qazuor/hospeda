@@ -27,6 +27,7 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
+import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import {
     type Actor,
     type PaginatedListOutput,
@@ -90,7 +91,11 @@ export class AttractionService extends BaseCrudRelatedService<
     }
 
     protected readonly destinationModel: DestinationModel;
-    protected normalizers = {
+    protected normalizers: CrudNormalizersFromSchemas<
+        typeof AttractionCreateInputSchema,
+        typeof AttractionUpdateInputSchema,
+        typeof AttractionSearchInputSchema
+    > = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput,
         list: normalizeListInput,

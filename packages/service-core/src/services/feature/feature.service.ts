@@ -19,6 +19,7 @@ import {
 } from '@repo/schemas';
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
+import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type { ServiceOutput } from '../../types';
 import { type Actor, type ServiceConfig, type ServiceContext, ServiceError } from '../../types';
 import { generateFeatureSlug } from './feature.helpers';
@@ -65,10 +66,14 @@ export class FeatureService extends BaseCrudRelatedService<
         return undefined;
     }
 
-    protected readonly normalizers = {
+    protected readonly normalizers: CrudNormalizersFromSchemas<
+        typeof CreateFeatureSchema,
+        typeof UpdateFeatureSchema,
+        typeof SearchFeatureSchema
+    > = {
         list: normalizeListInput,
         view: normalizeViewInput
-    } as const;
+    };
 
     protected readonly accommodationModel: AccommodationModel;
 

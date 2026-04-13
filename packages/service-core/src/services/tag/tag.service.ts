@@ -25,6 +25,7 @@ import {
 } from '@repo/schemas';
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
+import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -90,7 +91,11 @@ export class TagService extends BaseCrudRelatedService<
         return undefined;
     }
 
-    protected normalizers = {
+    protected normalizers: CrudNormalizersFromSchemas<
+        typeof TagCreateInputSchema,
+        typeof TagUpdateInputSchema,
+        typeof TagSearchInputSchema
+    > = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput
     };

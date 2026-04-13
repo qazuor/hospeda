@@ -9,6 +9,7 @@ import {
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base';
+import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type {
     Actor,
     PaginatedListOutput,
@@ -56,7 +57,11 @@ export class EventLocationService extends BaseCrudService<
         return ['placeName', 'city'];
     }
 
-    protected normalizers = {
+    protected normalizers: CrudNormalizersFromSchemas<
+        typeof EventLocationCreateInputSchema,
+        typeof EventLocationUpdateInputSchema,
+        typeof EventLocationSearchInputSchema
+    > = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput
     };

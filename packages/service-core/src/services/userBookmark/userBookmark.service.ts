@@ -17,6 +17,7 @@ import {
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
+import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './userBookmark.normalizers';
@@ -45,7 +46,11 @@ export class UserBookmarkService extends BaseCrudService<
     protected getDefaultListRelations() {
         return { user: true };
     }
-    protected normalizers = {
+    protected normalizers: CrudNormalizersFromSchemas<
+        typeof UserBookmarkCreateInputSchema,
+        typeof UserBookmarkUpdateInputSchema,
+        typeof UserBookmarkSearchSchema
+    > = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput
     };

@@ -37,6 +37,7 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
+import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type {
     Actor,
@@ -108,7 +109,11 @@ export class DestinationService extends BaseCrudService<
         return ['name', 'description'];
     }
 
-    protected normalizers = {
+    protected normalizers: CrudNormalizersFromSchemas<
+        typeof DestinationCreateInputSchema,
+        typeof DestinationUpdateInputSchema,
+        typeof DestinationSearchSchema
+    > = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput,
         list: normalizeListInput,
@@ -543,8 +548,7 @@ export class DestinationService extends BaseCrudService<
             if (resolvedCtx.hookState?.pendingPathUpdate) {
                 const { parentId, oldPath, newPath } = resolvedCtx.hookState.pendingPathUpdate;
                 // When resolvedCtx.tx is provided, use it for full atomicity.
-                // Without a transaction, the cascade runs outside the parent update's
-                // transaction .. full atomicity requires Phase 4 route-level wrapping.
+                // Without a transaction the cascade runs in a separate operation.
                 if (resolvedCtx.tx !== undefined) {
                     await this.model.updateDescendantPaths(
                         parentId,

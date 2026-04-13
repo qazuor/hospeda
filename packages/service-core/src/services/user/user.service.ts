@@ -23,6 +23,7 @@ import {
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
+import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type {
     Actor,
     AdminSearchExecuteParams,
@@ -68,12 +69,16 @@ export class UserService extends BaseCrudService<
     protected readonly model: UserModel;
     protected readonly schema = UserSchema;
     protected readonly filterSchema = UserSearchSchema;
-    protected readonly normalizers = {
+    protected readonly normalizers: CrudNormalizersFromSchemas<
+        typeof UserCreateInputSchema,
+        typeof UserUpdateInputSchema,
+        typeof UserSearchSchema
+    > = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput,
         list: normalizeListInput,
         view: normalizeViewInput
-    } as const;
+    };
     protected readonly logger: ServiceLogger;
     protected readonly createSchema = UserCreateInputSchema;
     protected readonly updateSchema = UserUpdateInputSchema;
