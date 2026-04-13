@@ -16,11 +16,14 @@ import ErrorBanner from '@/components/shared/ErrorBanner.astro';
 import Pagination from '@/components/shared/Pagination.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import { FilterSidebar } from '@/components/shared/FilterSidebar.client';
-import { accommodationsApi } from '@/lib/api/endpoints';
+import type { FilterGroup } from '@/components/shared/FilterSidebar.client';
+import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi } from '@/lib/api/endpoints';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
+import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -28,51 +31,150 @@ const { t } = createTranslations(locale);
 // Read pagination and filter params from URL
 const url = Astro.url;
 const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
-const pageSize = 9;
+const pageSize = 20;
 
 // Extract filter params
 const q = url.searchParams.get('q') ?? undefined;
-const type = url.searchParams.get('type') ?? undefined;
-const destinationId = url.searchParams.get('destinationId') ?? undefined;
+const types = url.searchParams.get('types') ?? undefined;
+const destinationIds = url.searchParams.get('destinationIds') ?? undefined;
 const minPrice = url.searchParams.get('minPrice') ? Number(url.searchParams.get('minPrice')) : undefined;
 const maxPrice = url.searchParams.get('maxPrice') ? Number(url.searchParams.get('maxPrice')) : undefined;
 const sortBy = url.searchParams.get('sortBy') ?? undefined;
 const sortOrder = (url.searchParams.get('sortOrder') as 'asc' | 'desc') ?? undefined;
 const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
+const minGuests = url.searchParams.get('minGuests') ? Number(url.searchParams.get('minGuests')) : undefined;
+const maxGuests = url.searchParams.get('maxGuests') ? Number(url.searchParams.get('maxGuests')) : undefined;
+const minBedrooms = url.searchParams.get('minBedrooms') ? Number(url.searchParams.get('minBedrooms')) : undefined;
+const maxBedrooms = url.searchParams.get('maxBedrooms') ? Number(url.searchParams.get('maxBedrooms')) : undefined;
+const minBathrooms = url.searchParams.get('minBathrooms') ? Number(url.searchParams.get('minBathrooms')) : undefined;
+const maxBathrooms = url.searchParams.get('maxBathrooms') ? Number(url.searchParams.get('maxBathrooms')) : undefined;
+const minRating = url.searchParams.get('minRating') ? Number(url.searchParams.get('minRating')) : undefined;
+const amenitiesParam = url.searchParams.get('amenities') ?? undefined;
+const featuresParam = url.searchParams.get('features') ?? undefined;
+const includeNoPrice = url.searchParams.get('includeNoPrice') === 'true' ? true : undefined;
+const includeNoReviews = url.searchParams.get('includeNoReviews') === 'true' ? true : undefined;
+
+// Fetch destinations for filter dropdown
+const destinationsResult = await destinationsApi.list({ pageSize: 100, sortBy: 'name', sortOrder: 'asc' });
+const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
+
+// Fetch amenities for filter chips
+const amenitiesResult = await amenitiesApi.list({ pageSize: 100, isActive: true, sortBy: 'name', sortOrder: 'asc' });
+const amenities = amenitiesResult.ok ? amenitiesResult.data.items : [];
+
+// Fetch features for filter chips
+const featuresResult = await featuresApi.list({ pageSize: 100, isActive: true, sortBy: 'displayWeight', sortOrder: 'desc' });
+const features = featuresResult.ok ? featuresResult.data.items : [];
 
 // Fetch accommodations
 const result = await accommodationsApi.list({
 	page,
 	pageSize,
 	q,
-	type,
-	destinationId,
+	types,
+	destinationIds,
 	minPrice,
 	maxPrice,
 	sortBy,
 	sortOrder,
 	isFeatured,
+	minGuests,
+	maxGuests,
+	minBedrooms,
+	maxBedrooms,
+	minBathrooms,
+	maxBathrooms,
+	minRating,
+	amenities: amenitiesParam,
+	features: featuresParam,
+	includeAmenities: true,
+	includeNoPrice,
+	includeNoReviews,
 });
 
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
-const total = result.ok ? result.data.total : 0;
-const totalPages = result.ok ? Math.ceil(total / pageSize) : 0;
+const total = result.ok ? result.data.pagination.total : 0;
+const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 
 // Transform items for cards
 const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }));
 
+// --- Natural language filter summary ---
+// Build catalogs from the fetched data for the summary builder.
+// Destinations, amenities, and features use id→name from the API.
+// The summary module maps these keys to human-readable labels per locale.
+const summaryLocale = (locale === 'en' ? 'en' : 'es') as SummaryLocale;
+
+const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({
+	key: d.id,
+	label: { es: d.name, en: d.name }
+}));
+const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({
+	key: a.id,
+	label: { es: a.name, en: a.name }
+}));
+const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({
+	key: f.id,
+	label: { es: f.name, en: f.name }
+}));
+
+// When types are active the API already filters by type, so `total` is the
+// type-specific count (equivalent to `subjectTotal`). Pass it explicitly so the
+// builder can render "hoteles" instead of the generic "hospedajes".
+const typesArray = types?.split(',').filter(Boolean) ?? [];
+const filterSummary = buildAccommodationListingSummary({
+	locale: summaryLocale,
+	filters: {
+		types: typesArray.length > 0 ? typesArray : undefined,
+		text: q,
+		price: (minPrice !== undefined || maxPrice !== undefined || includeNoPrice)
+			? { min: minPrice, max: maxPrice, includeWithoutPrice: includeNoPrice }
+			: undefined,
+		destinations: destinationIds?.split(',').filter(Boolean),
+		guests: minGuests,
+		amenities: amenitiesParam?.split(',').filter(Boolean),
+		services: featuresParam?.split(',').filter(Boolean),
+		minRating,
+		includeWithoutRating: includeNoReviews,
+		bedrooms: minBedrooms,
+		bathrooms: minBathrooms,
+		featured: isFeatured ?? null,
+	},
+	counts: {
+		shown: cards.length,
+		globalTotal: total,
+		// When types are filtered, `total` is already the type-specific count
+		// from the API, so it doubles as `subjectTotal`.
+		subjectTotal: typesArray.length > 0 ? total : undefined,
+	},
+	sort: sortBy ? { key: sortBy, direction: sortOrder ?? 'asc' } : undefined,
+	catalogs: {
+		types: DEFAULT_TYPE_GRAMMAR,
+		destinations: destinationCatalog,
+		amenities: amenityCatalog,
+		services: featureCatalog,
+	},
+});
+
 // Filter configuration for sidebar
-const filterGroups = [
+// Order: search → featured (toggle, inline) → type → destination → amenities → features → price → rest
+const filterGroups: FilterGroup[] = [
 	{
 		id: 'q',
-		label: t('accommodations.filters.search', 'Buscar'),
-		type: 'search' as const,
+		label: t('accommodations.sidebar.search', 'Búsqueda por texto'),
+		type: 'search',
+		placeholder: t('accommodations.sidebar.searchPlaceholder', 'Buscar por nombre o descripción...'),
 	},
 	{
-		id: 'type',
-		label: t('accommodations.filters.type', 'Tipo de Alojamiento'),
-		type: 'checkbox' as const,
+		id: 'isFeatured',
+		label: t('accommodations.sidebar.featured', 'Solo destacados'),
+		type: 'toggle',
+	},
+	{
+		id: 'types',
+		label: t('accommodations.sidebar.type', 'Tipo de Alojamiento'),
+		type: 'checkbox',
 		options: [
 			{ value: 'APARTMENT', label: t('accommodations.types.apartment', 'Departamento') },
 			{ value: 'HOUSE', label: t('accommodations.types.house', 'Casa') },
@@ -86,21 +188,78 @@ const filterGroups = [
 		],
 	},
 	{
+		id: 'destinationIds',
+		label: t('accommodations.sidebar.destination', 'Destino'),
+		type: 'select-search',
+		options: destinations.map((d) => ({ value: d.id, label: d.name })),
+		maxVisible: 8,
+	},
+	{
+		id: 'amenities',
+		label: t('accommodations.sidebar.amenities', 'Comodidades'),
+		type: 'icon-chips',
+		options: amenities.map((a) => ({ value: a.id, label: a.name, icon: a.icon ?? undefined })),
+		maxVisible: 10,
+	},
+	{
+		id: 'features',
+		label: t('accommodations.sidebar.features', 'Características'),
+		type: 'icon-chips',
+		options: features.map((f) => ({ value: f.id, label: f.name, icon: f.icon ?? undefined })),
+		maxVisible: 10,
+	},
+	{
 		id: 'price',
-		label: t('accommodations.filters.pricePerNight', 'Precio por noche'),
-		type: 'range' as const,
+		label: t('accommodations.sidebar.priceRange', 'Precio por noche'),
+		type: 'dual-range',
 		min: 5000,
 		max: 150000,
 		step: 1000,
+		format: 'currency',
+		includeNullLabel: t('accommodations.sidebar.includeNoPrice', 'Incluir sin precio'),
+		includeNullParam: 'includeNoPrice',
 	},
-] as const;
+	{
+		id: 'minGuests',
+		label: t('accommodations.sidebar.adults', 'Adultos'),
+		type: 'stepper',
+		min: 0,
+		max: 20,
+		defaultValue: 0,
+		suffix: t('accommodations.chips.guests', 'huéspedes'),
+	},
+	{
+		id: 'minRating',
+		label: t('accommodations.sidebar.rating', 'Calificación'),
+		type: 'stars',
+		includeNullLabel: t('accommodations.sidebar.includeNoReviews', 'Incluir sin calificación'),
+		includeNullParam: 'includeNoReviews',
+	},
+	{
+		id: 'minBedrooms',
+		label: t('accommodations.sidebar.bedrooms', 'Dormitorios'),
+		type: 'stepper',
+		min: 0,
+		max: 10,
+		defaultValue: 0,
+	},
+	{
+		id: 'minBathrooms',
+		label: t('accommodations.sidebar.bathrooms', 'Baños'),
+		type: 'stepper',
+		min: 0,
+		max: 10,
+		defaultValue: 0,
+	},
+];
 
 const sortOptions = [
 	{ value: 'relevance', label: t('accommodations.sort.relevance', 'Relevancia') },
 	{ value: 'price_asc', label: t('accommodations.sort.priceAsc', 'Precio: menor a mayor') },
 	{ value: 'price_desc', label: t('accommodations.sort.priceDesc', 'Precio: mayor a menor') },
 	{ value: 'rating', label: t('accommodations.sort.rating', 'Mejor valorados') },
-] as const;
+	{ value: 'recent', label: t('accommodations.sort.recent', 'Más recientes') },
+];
 
 // ItemList JSON-LD
 const jsonLd = {
@@ -117,6 +276,24 @@ const jsonLd = {
 };
 
 const baseUrl = buildUrl({ locale, path: 'alojamientos' });
+
+// Build initial filter params for the sidebar (avoids hydration flash)
+const initialParams: Record<string, string> = {};
+if (q) initialParams.q = q;
+if (types) initialParams.types = types;
+if (destinationIds) initialParams.destinationIds = destinationIds;
+if (minPrice !== undefined) initialParams.minPrice = String(minPrice);
+if (maxPrice !== undefined) initialParams.maxPrice = String(maxPrice);
+if (sortBy) initialParams.sortBy = sortBy;
+if (isFeatured) initialParams.isFeatured = 'true';
+if (minGuests !== undefined) initialParams.minGuests = String(minGuests);
+if (minBedrooms !== undefined) initialParams.minBedrooms = String(minBedrooms);
+if (minBathrooms !== undefined) initialParams.minBathrooms = String(minBathrooms);
+if (minRating !== undefined) initialParams.minRating = String(minRating);
+if (amenitiesParam) initialParams.amenities = amenitiesParam;
+if (featuresParam) initialParams.features = featuresParam;
+if (includeNoPrice) initialParams.includeNoPrice = 'true';
+if (includeNoReviews) initialParams.includeNoReviews = 'true';
 ---
 
 <ListingLayout
@@ -140,20 +317,16 @@ const baseUrl = buildUrl({ locale, path: 'alojamientos' });
 		tagline={t('accommodations.tagline', 'Encontrá tu lugar ideal')}
 		title={t('accommodations.title', 'Alojamientos')}
 		totalCount={total}
+		filterSummary={filterSummary}
 	/>
 
 	<FilterSidebar
 		slot="filters"
-		client:visible
+		client:load
 		locale={locale}
 		filters={filterGroups}
 		sortOptions={sortOptions}
-		defaultSort="relevance"
-		onFiltersChange={(params) => {
-			const newUrl = new URL(window.location.href);
-			newUrl.search = params.toString();
-			window.location.href = newUrl.href;
-		}}
+		initialParams={initialParams}
 	/>
 
 	{hasError && !result.ok && (
@@ -169,13 +342,15 @@ const baseUrl = buildUrl({ locale, path: 'alojamientos' });
 	)}
 
 	{!hasError && cards.length > 0 && (
-		<div class="acc-grid">
-			{cards.map((card, i) => (
-				<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
-					<AccommodationCard data={card} locale={locale} />
-				</div>
-			))}
-		</div>
+		<>
+			<div class="acc-grid">
+				{cards.map((card, i) => (
+					<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
+						<AccommodationCard data={card} locale={locale} />
+					</div>
+				))}
+			</div>
+		</>
 	)}
 
 	{totalPages > 1 && (
@@ -185,26 +360,54 @@ const baseUrl = buildUrl({ locale, path: 'alojamientos' });
 			totalPages={totalPages}
 			baseUrl={baseUrl.slice(0, -1)}
 			locale={locale}
+			searchParams={(() => {
+				const sp = new URLSearchParams();
+				if (q) sp.set('q', q);
+				if (types) sp.set('types', types);
+				if (destinationIds) sp.set('destinationIds', destinationIds);
+				if (minPrice !== undefined) sp.set('minPrice', String(minPrice));
+				if (maxPrice !== undefined) sp.set('maxPrice', String(maxPrice));
+				if (sortBy) sp.set('sortBy', sortBy);
+				if (sortOrder) sp.set('sortOrder', sortOrder);
+				if (isFeatured) sp.set('isFeatured', 'true');
+				if (minGuests !== undefined) sp.set('minGuests', String(minGuests));
+				if (minBedrooms !== undefined) sp.set('minBedrooms', String(minBedrooms));
+				if (minBathrooms !== undefined) sp.set('minBathrooms', String(minBathrooms));
+				if (minRating !== undefined) sp.set('minRating', String(minRating));
+				if (amenitiesParam) sp.set('amenities', amenitiesParam);
+				if (featuresParam) sp.set('features', featuresParam);
+				if (includeNoPrice) sp.set('includeNoPrice', 'true');
+				if (includeNoReviews) sp.set('includeNoReviews', 'true');
+				return sp;
+			})()}
 		/>
 	)}
 </ListingLayout>
 
+
 <style>
+	/*
+	 * Responsive grid: auto-fill with a 260px minimum so the browser determines
+	 * how many columns fit rather than relying on fixed breakpoints that break
+	 * when the sidebar narrows the available content area.
+	 */
 	.acc-grid {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 		gap: var(--space-card-gap);
 	}
 
-	@media (max-width: 1024px) {
-		.acc-grid {
-			grid-template-columns: repeat(2, 1fr);
-		}
-	}
-
-	@media (max-width: 640px) {
+	@media (max-width: 480px) {
 		.acc-grid {
 			grid-template-columns: 1fr;
 		}
 	}
+
+	/* Dim the grid while a filter navigation is in flight */
+	:global([data-filters-loading]) .acc-grid {
+		opacity: 0.4;
+		pointer-events: none;
+		transition: opacity 0.2s ease;
+	}
+
 </style>

@@ -96,16 +96,11 @@ const baseUrl = buildUrl({ locale, path: 'publicaciones' });
 
 	<FilterSidebar
 		slot="filters"
-		client:visible
+		client:load
 		locale={locale}
 		filters={filterGroups}
 		sortOptions={sortOptions}
 		defaultSort="publishedAt"
-		onFiltersChange={(params) => {
-			const newUrl = new URL(window.location.href);
-			newUrl.search = params.toString();
-			window.location.href = newUrl.href;
-		}}
 	/>
 
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="publicaciones" />}

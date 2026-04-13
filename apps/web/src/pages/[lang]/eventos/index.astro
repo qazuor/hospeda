@@ -94,16 +94,11 @@ const baseUrl = buildUrl({ locale, path: 'eventos' });
 
 	<FilterSidebar
 		slot="filters"
-		client:visible
+		client:load
 		locale={locale}
 		filters={filterGroups}
 		sortOptions={sortOptions}
 		defaultSort="startDate"
-		onFiltersChange={(params) => {
-			const newUrl = new URL(window.location.href);
-			newUrl.search = params.toString();
-			window.location.href = newUrl.href;
-		}}
 	/>
 
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="eventos" />}

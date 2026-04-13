@@ -13,11 +13,18 @@ if (!Number.isInteger(page) || page < 1) {
 	return new Response(null, { status: 404 });
 }
 
-// Page 1 → redirect to canonical (no /page/1/ in URL)
+// Page 1 → redirect to canonical (no /page/1/ in URL), preserving filter params
 if (page === 1) {
-	return Astro.redirect(`/${Astro.params.lang}/alojamientos/`, 301);
+	const filterParams = new URLSearchParams(Astro.url.search);
+	filterParams.delete('page');
+	const qs = filterParams.toString();
+	const base = `/${Astro.params.lang}/alojamientos/`;
+	return Astro.redirect(qs ? `${base}?${qs}` : base, 301);
 }
 
-// Rewrite to parent listing with page query param
-return Astro.rewrite(`/${Astro.params.lang}/alojamientos/?page=${page}`);
+// Rewrite to parent listing preserving filter query params
+const originalParams = new URLSearchParams(Astro.url.search);
+originalParams.delete('page'); // avoid duplication
+originalParams.set('page', String(page));
+return Astro.rewrite(`/${Astro.params.lang}/alojamientos/?${originalParams.toString()}`);
 ---

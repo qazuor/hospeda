@@ -5,9 +5,11 @@
 import type {
     AccommodationPublic,
     AccommodationSummary,
+    AmenityPublic,
     DestinationPublic,
     EventPublic,
     EventSummary,
+    FeaturePublic,
     PostListItem,
     PostPublic,
     PostSummary
@@ -55,8 +57,10 @@ export const accommodationsApi = {
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
         type?: string;
+        types?: string;
         isFeatured?: boolean;
         destinationId?: string;
+        destinationIds?: string;
         includeAmenities?: boolean;
         includeFeatures?: boolean;
         minPrice?: number;
@@ -73,6 +77,13 @@ export const accommodationsApi = {
         hasWifi?: boolean;
         allowsPets?: boolean;
         hasParking?: boolean;
+        amenities?: string;
+        /** Comma-separated feature IDs to filter by. */
+        features?: string;
+        /** Include accommodations without a listed price. */
+        includeNoPrice?: boolean;
+        /** Include accommodations without any reviews/rating. */
+        includeNoReviews?: boolean;
     }): Promise<ApiResult<PaginatedResponse<AccommodationPublic>>> {
         return apiClient.getList({ path: `${BASE}/accommodations`, params });
     },
@@ -137,6 +148,40 @@ export const accommodationsApi = {
      */
     getSummary({ id }: { readonly id: string }): Promise<ApiResult<AccommodationSummary>> {
         return apiClient.get({ path: `${BASE}/accommodations/${id}/summary` });
+    }
+};
+
+// --- Amenities ---
+
+/** Public amenity API endpoints */
+export const amenitiesApi = {
+    /** List amenities with pagination and filters */
+    list(params?: {
+        page?: number;
+        pageSize?: number;
+        isActive?: boolean;
+        isFeatured?: boolean;
+        sortBy?: string;
+        sortOrder?: 'asc' | 'desc';
+    }): Promise<ApiResult<PaginatedResponse<AmenityPublic>>> {
+        return apiClient.getList({ path: `${BASE}/amenities`, params });
+    }
+};
+
+// --- Features ---
+
+/** Public feature API endpoints */
+export const featuresApi = {
+    /** List features with pagination and filters */
+    list(params?: {
+        page?: number;
+        pageSize?: number;
+        isActive?: boolean;
+        isFeatured?: boolean;
+        sortBy?: string;
+        sortOrder?: 'asc' | 'desc';
+    }): Promise<ApiResult<PaginatedResponse<FeaturePublic>>> {
+        return apiClient.getList({ path: `${BASE}/feature`, params });
     }
 };
 
