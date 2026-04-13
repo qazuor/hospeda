@@ -93,6 +93,7 @@ import {
     checkCanUpdate,
     checkCanView
 } from './accommodation.permissions';
+import type { AccommodationHookState } from './accommodation.types';
 
 /** Entity-specific filter fields for accommodation admin search. */
 type AccommodationEntityFilters = EntityFilters<typeof AccommodationAdminSearchSchema>;
@@ -412,11 +413,11 @@ export class AccommodationService extends BaseCrudService<
     protected async _beforeRestore(
         id: string,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<AccommodationHookState>
     ): Promise<string> {
         const entity = await this.model.findById(id);
-        if (entity) {
-            this._lastRestoredAccommodation = {
+        if (entity && ctx.hookState) {
+            ctx.hookState.restoredAccommodation = {
                 slug: entity.slug,
                 destinationId: entity.destinationId,
                 type: entity.type
@@ -428,10 +429,9 @@ export class AccommodationService extends BaseCrudService<
     protected async _afterRestore(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<AccommodationHookState>
     ): Promise<{ count: number }> {
-        const restored = this._lastRestoredAccommodation;
-        this._lastRestoredAccommodation = undefined;
+        const restored = ctx.hookState?.restoredAccommodation;
         if (restored?.destinationId) {
             await this.destinationService.updateAccommodationsCount(restored.destinationId);
         }
@@ -457,11 +457,11 @@ export class AccommodationService extends BaseCrudService<
     protected async _beforeSoftDelete(
         id: string,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<AccommodationHookState>
     ): Promise<string> {
         const entity = await this.model.findById(id);
-        if (entity) {
-            this._lastDeletedEntity = {
+        if (entity && ctx.hookState) {
+            ctx.hookState.deletedEntity = {
                 destinationId: entity.destinationId,
                 slug: entity.slug,
                 type: entity.type
@@ -473,10 +473,9 @@ export class AccommodationService extends BaseCrudService<
     protected async _afterSoftDelete(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<AccommodationHookState>
     ): Promise<CountResponse> {
-        const deleted = this._lastDeletedEntity;
-        this._lastDeletedEntity = undefined;
+        const deleted = ctx.hookState?.deletedEntity;
         if (deleted?.destinationId) {
             await this.destinationService.updateAccommodationsCount(deleted.destinationId);
         }
@@ -502,11 +501,11 @@ export class AccommodationService extends BaseCrudService<
     protected async _beforeHardDelete(
         id: string,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<AccommodationHookState>
     ): Promise<string> {
         const entity = await this.model.findById(id);
-        if (entity) {
-            this._lastDeletedEntity = {
+        if (entity && ctx.hookState) {
+            ctx.hookState.deletedEntity = {
                 destinationId: entity.destinationId,
                 slug: entity.slug,
                 type: entity.type
@@ -518,10 +517,9 @@ export class AccommodationService extends BaseCrudService<
     protected async _afterHardDelete(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<AccommodationHookState>
     ): Promise<CountResponse> {
-        const deleted = this._lastDeletedEntity;
-        this._lastDeletedEntity = undefined;
+        const deleted = ctx.hookState?.deletedEntity;
         if (deleted?.destinationId) {
             await this.destinationService.updateAccommodationsCount(deleted.destinationId);
         }

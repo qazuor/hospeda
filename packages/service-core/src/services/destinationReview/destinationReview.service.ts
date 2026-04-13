@@ -36,6 +36,7 @@ import {
     checkCanUpdateDestinationReview,
     checkCanViewDestinationReview
 } from './destinationReview.permissions';
+import type { DestinationReviewHookState } from './destinationReview.types';
 
 /** Entity-specific filter fields for destination review admin search. */
 type DestinationReviewEntityFilters = EntityFilters<typeof DestinationReviewAdminSearchSchema>;
@@ -305,32 +306,31 @@ export class DestinationReviewService extends BaseCrudService<
     /**
      * Captures the destinationId before soft delete so stats can be recalculated after deletion.
      */
-    private _lastDeletedDestinationId: string | undefined;
-
     protected async _beforeSoftDelete(
         id: string,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<DestinationReviewHookState>
     ): Promise<string> {
         const review = await this.model.findOne({ id });
-        this._lastDeletedDestinationId = review?.destinationId;
+        if (ctx.hookState) {
+            ctx.hookState.deletedDestinationId = review?.destinationId;
+        }
         return id;
     }
 
     /**
      * @param result - The soft-delete result with count of affected rows.
      * @param _actor - The actor who performed the soft delete.
-     * @param _tx - Optional transaction client. When provided, stat updates run within the transaction.
+     * @param ctx - Service context with hook state for passing data between before/after hooks.
      */
     protected async _afterSoftDelete(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<DestinationReviewHookState>
     ): Promise<{ count: number }> {
-        const deletedDestinationId = this._lastDeletedDestinationId;
-        this._lastDeletedDestinationId = undefined;
+        const deletedDestinationId = ctx.hookState?.deletedDestinationId;
         if (deletedDestinationId) {
-            await this.recalculateAndUpdateDestinationStats(deletedDestinationId, _ctx.tx);
+            await this.recalculateAndUpdateDestinationStats(deletedDestinationId, ctx.tx);
         }
         const destinationSlug = deletedDestinationId
             ? await this._resolveDestinationSlug(deletedDestinationId)
@@ -352,27 +352,28 @@ export class DestinationReviewService extends BaseCrudService<
     protected async _beforeHardDelete(
         id: string,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<DestinationReviewHookState>
     ): Promise<string> {
         const review = await this.model.findOne({ id });
-        this._lastDeletedDestinationId = review?.destinationId;
+        if (ctx.hookState) {
+            ctx.hookState.deletedDestinationId = review?.destinationId;
+        }
         return id;
     }
 
     /**
      * @param result - The hard-delete result with count of affected rows.
      * @param _actor - The actor who performed the hard delete.
-     * @param _tx - Optional transaction client. When provided, stat updates run within the transaction.
+     * @param ctx - Service context with hook state for passing data between before/after hooks.
      */
     protected async _afterHardDelete(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<DestinationReviewHookState>
     ): Promise<{ count: number }> {
-        const deletedDestinationId = this._lastDeletedDestinationId;
-        this._lastDeletedDestinationId = undefined;
+        const deletedDestinationId = ctx.hookState?.deletedDestinationId;
         if (deletedDestinationId) {
-            await this.recalculateAndUpdateDestinationStats(deletedDestinationId, _ctx.tx);
+            await this.recalculateAndUpdateDestinationStats(deletedDestinationId, ctx.tx);
         }
         const destinationSlug = deletedDestinationId
             ? await this._resolveDestinationSlug(deletedDestinationId)
@@ -391,34 +392,35 @@ export class DestinationReviewService extends BaseCrudService<
         return result;
     }
 
-    private _lastRestoredDestinationIdForReview: string | undefined;
-
-    protected async _beforeRestore(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeRestore(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<DestinationReviewHookState>
+    ): Promise<string> {
         const review = await this.model.findOne({ id });
-        this._lastRestoredDestinationIdForReview = review?.destinationId;
+        if (ctx.hookState) {
+            ctx.hookState.restoredDestinationIdForReview = review?.destinationId;
+        }
         return id;
     }
 
     /**
      * @param result - The restore result with count of affected rows.
      * @param _actor - The actor who performed the restore.
-     * @param _tx - Optional transaction client. When provided, stat updates run within the transaction.
+     * @param ctx - Service context with hook state for passing data between before/after hooks.
      */
     protected async _afterRestore(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<DestinationReviewHookState>
     ): Promise<{ count: number }> {
-        if (this._lastRestoredDestinationIdForReview) {
-            await this.recalculateAndUpdateDestinationStats(
-                this._lastRestoredDestinationIdForReview,
-                _ctx.tx
-            );
+        const restoredDestinationId = ctx.hookState?.restoredDestinationIdForReview;
+        if (restoredDestinationId) {
+            await this.recalculateAndUpdateDestinationStats(restoredDestinationId, ctx.tx);
         }
-        const destinationSlug = this._lastRestoredDestinationIdForReview
-            ? await this._resolveDestinationSlug(this._lastRestoredDestinationIdForReview)
+        const destinationSlug = restoredDestinationId
+            ? await this._resolveDestinationSlug(restoredDestinationId)
             : undefined;
-        this._lastRestoredDestinationIdForReview = undefined;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'destination_review',

@@ -461,7 +461,9 @@ export class EventService extends BaseCrudService<
      * @returns Paginated list of events matching the criteria
      */
     protected async _executeSearch(params: EventSearchInput, _actor: Actor, _ctx: ServiceContext) {
-        const { page = 1, pageSize = 10, ...filterParams } = params;
+        // NOTE: destinationId is stripped — event_locations has no destinationId FK.
+        // Until the DB schema is extended, this filter cannot be applied.
+        const { page = 1, pageSize = 10, destinationId: _destinationId, ...filterParams } = params;
         return this.model.findAll(filterParams, { page, pageSize });
     }
 
@@ -472,7 +474,8 @@ export class EventService extends BaseCrudService<
      * @returns Count of events matching the criteria
      */
     protected async _executeCount(params: EventSearchInput, _actor: Actor, _ctx: ServiceContext) {
-        const { ...filterParams } = params;
+        // NOTE: destinationId stripped for same reason as _executeSearch.
+        const { destinationId: _destinationId, ...filterParams } = params;
         const count = await this.model.count(filterParams);
         return { count };
     }

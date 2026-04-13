@@ -190,6 +190,15 @@ export abstract class BaseCrudRead<
                     execCtx
                 );
 
+                // Defensive guard: validate that _beforeList returned valid ListOptions
+                const guardResult = listOptionsSchema.safeParse(processedOptions);
+                if (!guardResult.success) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        `_beforeList returned invalid options: ${guardResult.error.message}`
+                    );
+                }
+
                 const relationsToUse = processedOptions.relations ?? this.getDefaultListRelations();
                 const whereClause = processedOptions.where ?? {};
 
@@ -207,6 +216,16 @@ export abstract class BaseCrudRead<
                 const additionalConditions = searchCondition ? [searchCondition] : undefined;
 
                 const sortBy = processedOptions.sortBy;
+                if (sortBy) {
+                    const table = this.model.getTable();
+                    const tableRecord = table as unknown as Record<string, unknown>;
+                    if (!Object.prototype.hasOwnProperty.call(tableRecord, sortBy)) {
+                        throw new ServiceError(
+                            ServiceErrorCode.VALIDATION_ERROR,
+                            `Invalid sort field "${sortBy}". Field does not exist on ${this.entityName} table.`
+                        );
+                    }
+                }
                 const sortOrder = processedOptions.sortOrder;
 
                 const result = relationsToUse

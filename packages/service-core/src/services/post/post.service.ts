@@ -53,6 +53,7 @@ import {
     checkCanUpdatePost,
     checkCanViewPost
 } from './post.permissions';
+import type { PostHookState } from './post.types';
 
 /**
  * Service for managing posts. Implements business logic, permissions, and hooks for Post entities.
@@ -92,11 +93,6 @@ export class PostService extends BaseCrudService<
     protected override getSearchableColumns(): string[] {
         return ['title', 'content'];
     }
-
-    /**
-     * Private property to temporarily store the id for update operations.
-     */
-    private _updateId: string | undefined;
 
     /**
      * Initializes a new instance of the PostService.
@@ -187,10 +183,10 @@ export class PostService extends BaseCrudService<
     protected async _beforeUpdate(
         data: PostUpdateInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<PostHookState>
     ): Promise<Partial<Post>> {
-        // The id to use for business logic is stored in this._updateId (set in update method)
-        const id = this._updateId;
+        // The id to use for business logic is stored in ctx.hookState (set in update method)
+        const id = ctx.hookState?.updateId;
         if (!id) {
             throw new ServiceError(
                 ServiceErrorCode.VALIDATION_ERROR,
@@ -445,17 +441,14 @@ export class PostService extends BaseCrudService<
         return entity;
     }
 
-    private _lastRestoredPost: { slug: string; tagSlugs?: string[] } | undefined;
-    private _lastDeletedPost: { slug: string; tagSlugs?: string[] } | undefined;
-
     protected async _beforeRestore(
         id: string,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<PostHookState>
     ): Promise<string> {
         const entity = await this.model.findById(id);
-        if (entity) {
-            this._lastRestoredPost = {
+        if (entity && ctx.hookState) {
+            ctx.hookState.restoredPost = {
                 slug: entity.slug,
                 tagSlugs: entity.tags?.map((t) => t.slug)
             };
@@ -466,10 +459,9 @@ export class PostService extends BaseCrudService<
     protected async _afterRestore(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<PostHookState>
     ): Promise<{ count: number }> {
-        const restored = this._lastRestoredPost;
-        this._lastRestoredPost = undefined;
+        const restored = ctx.hookState?.restoredPost;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
@@ -488,11 +480,11 @@ export class PostService extends BaseCrudService<
     protected async _beforeSoftDelete(
         id: string,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<PostHookState>
     ): Promise<string> {
         const entity = await this.model.findById(id);
-        if (entity) {
-            this._lastDeletedPost = {
+        if (entity && ctx.hookState) {
+            ctx.hookState.deletedPost = {
                 slug: entity.slug,
                 tagSlugs: entity.tags?.map((t) => t.slug)
             };
@@ -503,10 +495,9 @@ export class PostService extends BaseCrudService<
     protected async _afterSoftDelete(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<PostHookState>
     ): Promise<{ count: number }> {
-        const deleted = this._lastDeletedPost;
-        this._lastDeletedPost = undefined;
+        const deleted = ctx.hookState?.deletedPost;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
@@ -525,11 +516,11 @@ export class PostService extends BaseCrudService<
     protected async _beforeHardDelete(
         id: string,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<PostHookState>
     ): Promise<string> {
         const entity = await this.model.findById(id);
-        if (entity) {
-            this._lastDeletedPost = {
+        if (entity && ctx.hookState) {
+            ctx.hookState.deletedPost = {
                 slug: entity.slug,
                 tagSlugs: entity.tags?.map((t) => t.slug)
             };
@@ -540,10 +531,9 @@ export class PostService extends BaseCrudService<
     protected async _afterHardDelete(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<PostHookState>
     ): Promise<{ count: number }> {
-        const deleted = this._lastDeletedPost;
-        this._lastDeletedPost = undefined;
+        const deleted = ctx.hookState?.deletedPost;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
@@ -1015,13 +1005,19 @@ export class PostService extends BaseCrudService<
     public async update(
         actor: Actor,
         id: string,
-        data: z.infer<typeof PostUpdateSchema>
+        data: z.infer<typeof PostUpdateSchema>,
+        ctx?: ServiceContext<PostHookState>
     ): Promise<ServiceOutput<Post>> {
-        this._updateId = id;
+        const resolvedCtx: ServiceContext<PostHookState> = { hookState: {}, ...ctx };
+        if (resolvedCtx.hookState) {
+            resolvedCtx.hookState.updateId = id;
+        }
         try {
-            return await super.update(actor, id, data);
+            return await super.update(actor, id, data, resolvedCtx as ServiceContext);
         } finally {
-            this._updateId = undefined;
+            if (resolvedCtx.hookState) {
+                resolvedCtx.hookState.updateId = undefined;
+            }
         }
     }
 }

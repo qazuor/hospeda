@@ -49,6 +49,7 @@ import {
     checkCanUpdateAccommodationReview,
     checkCanViewAccommodationReview
 } from './accommodationReview.permissions';
+import type { AccommodationReviewHookState } from './accommodationReview.types';
 
 /** Entity-specific filter fields for accommodation review admin search. */
 type AccommodationReviewEntityFilters = EntityFilters<typeof AccommodationReviewAdminSearchSchema>;
@@ -334,25 +335,24 @@ export class AccommodationReviewService extends BaseCrudService<
     /**
      * Captures the accommodationId before soft delete so stats can be recalculated after deletion.
      */
-    private _lastDeletedAccommodationId: string | undefined;
-
     protected async _beforeSoftDelete(
         id: string,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<AccommodationReviewHookState>
     ): Promise<string> {
         const review = await this.model.findOne({ id });
-        this._lastDeletedAccommodationId = review?.accommodationId;
+        if (ctx.hookState) {
+            ctx.hookState.deletedAccommodationId = review?.accommodationId;
+        }
         return id;
     }
 
     protected async _afterSoftDelete(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<AccommodationReviewHookState>
     ): Promise<CountResponse> {
-        const deletedAccommodationId = this._lastDeletedAccommodationId;
-        this._lastDeletedAccommodationId = undefined;
+        const deletedAccommodationId = ctx.hookState?.deletedAccommodationId;
         if (deletedAccommodationId) {
             await this.recalculateAndUpdateAccommodationStats(deletedAccommodationId);
         }
@@ -376,20 +376,21 @@ export class AccommodationReviewService extends BaseCrudService<
     protected async _beforeHardDelete(
         id: string,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<AccommodationReviewHookState>
     ): Promise<string> {
         const review = await this.model.findOne({ id });
-        this._lastDeletedAccommodationId = review?.accommodationId;
+        if (ctx.hookState) {
+            ctx.hookState.deletedAccommodationId = review?.accommodationId;
+        }
         return id;
     }
 
     protected async _afterHardDelete(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<AccommodationReviewHookState>
     ): Promise<CountResponse> {
-        const deletedAccommodationId = this._lastDeletedAccommodationId;
-        this._lastDeletedAccommodationId = undefined;
+        const deletedAccommodationId = ctx.hookState?.deletedAccommodationId;
         if (deletedAccommodationId) {
             await this.recalculateAndUpdateAccommodationStats(deletedAccommodationId);
         }
@@ -410,30 +411,30 @@ export class AccommodationReviewService extends BaseCrudService<
         return result;
     }
 
-    private _lastRestoredAccommodationId: string | undefined;
-
     protected async _beforeRestore(
         id: string,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<AccommodationReviewHookState>
     ): Promise<string> {
         const review = await this.model.findOne({ id });
-        this._lastRestoredAccommodationId = review?.accommodationId;
+        if (ctx.hookState) {
+            ctx.hookState.restoredAccommodationId = review?.accommodationId;
+        }
         return id;
     }
 
     protected async _afterRestore(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<AccommodationReviewHookState>
     ): Promise<{ count: number }> {
-        if (this._lastRestoredAccommodationId) {
-            await this.recalculateAndUpdateAccommodationStats(this._lastRestoredAccommodationId);
+        const restoredAccommodationId = ctx.hookState?.restoredAccommodationId;
+        if (restoredAccommodationId) {
+            await this.recalculateAndUpdateAccommodationStats(restoredAccommodationId);
         }
-        const accommodationSlug = this._lastRestoredAccommodationId
-            ? await this._resolveAccommodationSlug(this._lastRestoredAccommodationId)
+        const accommodationSlug = restoredAccommodationId
+            ? await this._resolveAccommodationSlug(restoredAccommodationId)
             : undefined;
-        this._lastRestoredAccommodationId = undefined;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'accommodation_review',

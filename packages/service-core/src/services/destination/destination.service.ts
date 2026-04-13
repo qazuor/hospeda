@@ -73,6 +73,7 @@ import {
     checkCanUpdateDestinationVisibility,
     checkCanViewDestination
 } from './destination.permission';
+import type { DestinationHookState } from './destination.types';
 
 /**
  * Service for domain-specific logic related to Destinations.
@@ -91,12 +92,6 @@ export class DestinationService extends BaseCrudService<
     protected readonly model: DestinationModel;
     protected readonly logger: ServiceLogger;
 
-    /**
-     * Temporarily stores the entity ID during update operations,
-     * so _beforeUpdate can access the current entity for reparenting logic.
-     */
-    private _updateId: string | undefined;
-    private _pendingPathUpdate: { parentId: string; oldPath: string; newPath: string } | undefined;
     protected readonly createSchema = DestinationCreateInputSchema;
     protected readonly updateSchema = DestinationUpdateInputSchema;
     protected readonly searchSchema = DestinationSearchSchema;
@@ -533,22 +528,30 @@ export class DestinationService extends BaseCrudService<
         actor: Actor,
         id: string,
         data: DestinationUpdateInput,
-        ctx?: ServiceContext
+        ctx?: ServiceContext<DestinationHookState>
     ): Promise<ServiceOutput<Destination>> {
-        this._updateId = id;
-        this._pendingPathUpdate = undefined;
+        const resolvedCtx: ServiceContext<DestinationHookState> = { hookState: {}, ...ctx };
+        if (resolvedCtx.hookState) {
+            resolvedCtx.hookState.updateId = id;
+            resolvedCtx.hookState.pendingPathUpdate = undefined;
+        }
         try {
-            // Thread ctx into super.update so the parent row update participates
+            // Thread resolvedCtx into super.update so the parent row update participates
             // in the outer transaction when one is provided.
-            const result = await super.update(actor, id, data, ctx);
+            const result = await super.update(actor, id, data, resolvedCtx);
 
-            if (this._pendingPathUpdate) {
-                const { parentId, oldPath, newPath } = this._pendingPathUpdate;
-                // When ctx.tx is provided, use it for full atomicity.
+            if (resolvedCtx.hookState?.pendingPathUpdate) {
+                const { parentId, oldPath, newPath } = resolvedCtx.hookState.pendingPathUpdate;
+                // When resolvedCtx.tx is provided, use it for full atomicity.
                 // Without a transaction, the cascade runs outside the parent update's
-                // transaction — full atomicity requires Phase 4 route-level wrapping.
-                if (ctx?.tx !== undefined) {
-                    await this.model.updateDescendantPaths(parentId, oldPath, newPath, ctx.tx);
+                // transaction .. full atomicity requires Phase 4 route-level wrapping.
+                if (resolvedCtx.tx !== undefined) {
+                    await this.model.updateDescendantPaths(
+                        parentId,
+                        oldPath,
+                        newPath,
+                        resolvedCtx.tx
+                    );
                 } else {
                     await this.model.updateDescendantPaths(parentId, oldPath, newPath);
                 }
@@ -556,8 +559,10 @@ export class DestinationService extends BaseCrudService<
 
             return result;
         } finally {
-            this._updateId = undefined;
-            this._pendingPathUpdate = undefined;
+            if (resolvedCtx.hookState) {
+                resolvedCtx.hookState.updateId = undefined;
+                resolvedCtx.hookState.pendingPathUpdate = undefined;
+            }
         }
     }
 
@@ -572,7 +577,7 @@ export class DestinationService extends BaseCrudService<
     protected async _beforeUpdate(
         data: DestinationUpdateInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<DestinationHookState>
     ): Promise<Partial<Destination>> {
         const result: Partial<Destination> = {};
 
@@ -585,7 +590,7 @@ export class DestinationService extends BaseCrudService<
         }
 
         // Fetch current destination
-        const id = this._updateId;
+        const id = ctx.hookState?.updateId;
         if (!id) {
             return result;
         }
@@ -645,7 +650,13 @@ export class DestinationService extends BaseCrudService<
 
             // Update descendants if path changed
             if (current.path !== newPath) {
-                this._pendingPathUpdate = { parentId: id, oldPath: current.path, newPath };
+                if (ctx.hookState) {
+                    ctx.hookState.pendingPathUpdate = {
+                        parentId: id,
+                        oldPath: current.path,
+                        newPath
+                    };
+                }
             }
         } else if (hasParentChange && newParentId === null) {
             // Moving to top-level
@@ -653,8 +664,8 @@ export class DestinationService extends BaseCrudService<
             result.path = computeHierarchyPath({ parentPath: null, slug: newSlug });
             result.pathIds = '';
 
-            if (current.path !== result.path) {
-                this._pendingPathUpdate = {
+            if (current.path !== result.path && ctx.hookState) {
+                ctx.hookState.pendingPathUpdate = {
                     parentId: id,
                     oldPath: current.path,
                     newPath: result.path
@@ -667,8 +678,8 @@ export class DestinationService extends BaseCrudService<
                 : null;
             result.path = computeHierarchyPath({ parentPath, slug: newSlug });
 
-            if (current.path !== result.path) {
-                this._pendingPathUpdate = {
+            if (current.path !== result.path && ctx.hookState) {
+                ctx.hookState.pendingPathUpdate = {
                     parentId: id,
                     oldPath: current.path,
                     newPath: result.path
@@ -736,25 +747,24 @@ export class DestinationService extends BaseCrudService<
         return entity;
     }
 
-    private _lastDeletedDestinationSlug: string | undefined;
-
     protected async _beforeSoftDelete(
         id: string,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<DestinationHookState>
     ): Promise<string> {
         const entity = await this.model.findById(id);
-        this._lastDeletedDestinationSlug = entity?.slug;
+        if (ctx.hookState) {
+            ctx.hookState.deletedDestinationSlug = entity?.slug;
+        }
         return id;
     }
 
     protected async _afterSoftDelete(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<DestinationHookState>
     ): Promise<{ count: number }> {
-        const slug = this._lastDeletedDestinationSlug;
-        this._lastDeletedDestinationSlug = undefined;
+        const slug = ctx.hookState?.deletedDestinationSlug;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'destination',
@@ -772,20 +782,21 @@ export class DestinationService extends BaseCrudService<
     protected async _beforeHardDelete(
         id: string,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<DestinationHookState>
     ): Promise<string> {
         const entity = await this.model.findById(id);
-        this._lastDeletedDestinationSlug = entity?.slug;
+        if (ctx.hookState) {
+            ctx.hookState.deletedDestinationSlug = entity?.slug;
+        }
         return id;
     }
 
     protected async _afterHardDelete(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<DestinationHookState>
     ): Promise<{ count: number }> {
-        const slug = this._lastDeletedDestinationSlug;
-        this._lastDeletedDestinationSlug = undefined;
+        const slug = ctx.hookState?.deletedDestinationSlug;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'destination',
@@ -800,25 +811,24 @@ export class DestinationService extends BaseCrudService<
         return result;
     }
 
-    private _lastRestoredDestinationSlug: string | undefined;
-
     protected async _beforeRestore(
         id: string,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<DestinationHookState>
     ): Promise<string> {
         const entity = await this.model.findById(id);
-        this._lastRestoredDestinationSlug = entity?.slug;
+        if (ctx.hookState) {
+            ctx.hookState.restoredDestinationSlug = entity?.slug;
+        }
         return id;
     }
 
     protected async _afterRestore(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<DestinationHookState>
     ): Promise<{ count: number }> {
-        const slug = this._lastRestoredDestinationSlug;
-        this._lastRestoredDestinationSlug = undefined;
+        const slug = ctx.hookState?.restoredDestinationSlug;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'destination',
