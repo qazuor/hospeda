@@ -1,4 +1,5 @@
-import { AccommodationModel, DestinationModel, withTransaction } from '@repo/db';
+import { AccommodationModel, DestinationModel } from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type {
     AccommodationListItem,
@@ -502,28 +503,43 @@ export class DestinationService extends BaseCrudService<
     }
 
     /**
-     * Overrides update to wrap hierarchy path changes and the parent entity update
-     * in a single transaction, preventing descendant path corruption if the parent
-     * update fails.
+     * Overrides update to propagate a transaction through to the parent entity update
+     * and any descendant path cascade, ensuring both operations are atomic when an
+     * outer transaction is provided. Without an outer tx, the parent update and
+     * descendant cascade still run in their own scoped transactions.
+     *
+     * @param actor - The actor performing the update.
+     * @param id - The ID of the destination to update.
+     * @param data - The update input data.
+     * @param tx - Optional outer transaction client. When provided, both the parent
+     *   row update and the descendant path cascade use this same transaction.
      */
     public async update(
         actor: Actor,
         id: string,
-        data: DestinationUpdateInput
+        data: DestinationUpdateInput,
+        tx?: DrizzleClient
     ): Promise<ServiceOutput<Destination>> {
         this._updateId = id;
         this._pendingPathUpdate = undefined;
         try {
-            // _beforeUpdate stores pending path change instead of executing it
-            const result = await super.update(actor, id, data);
+            // Thread tx into super.update so the parent row update participates
+            // in the outer transaction when one is provided.
+            const result =
+                tx !== undefined
+                    ? await super.update(actor, id, data, tx)
+                    : await super.update(actor, id, data);
 
-            // If there is a pending descendant path update, run it inside a transaction
-            // together with re-applying the parent update to guarantee atomicity.
             if (this._pendingPathUpdate) {
                 const { parentId, oldPath, newPath } = this._pendingPathUpdate;
-                await withTransaction(async (tx) => {
+                // When an outer tx is provided, use it for full atomicity.
+                // Without an outer tx, the cascade runs outside the parent update's
+                // transaction — full atomicity requires Phase 4 route-level wrapping.
+                if (tx !== undefined) {
                     await this.model.updateDescendantPaths(parentId, oldPath, newPath, tx);
-                });
+                } else {
+                    await this.model.updateDescendantPaths(parentId, oldPath, newPath);
+                }
             }
 
             return result;
@@ -785,6 +801,7 @@ export class DestinationService extends BaseCrudService<
      * Internal system operation called from review services during cascading updates.
      * @param destinationId - The ID of the destination to update
      * @param stats - Object with reviewsCount, averageRating, and rating
+     * @param tx - Optional transaction client for atomic multi-step operations
      * @internal
      */
     public async updateStatsFromReview(
@@ -793,26 +810,36 @@ export class DestinationService extends BaseCrudService<
             reviewsCount: number;
             averageRating: number;
             rating: DestinationRatingInput | undefined;
-        }
+        },
+        tx?: DrizzleClient
     ): Promise<void> {
-        await this.model.updateById(destinationId, {
-            reviewsCount: stats.reviewsCount,
-            averageRating: stats.averageRating,
-            rating: stats.rating as DestinationRatingInput | undefined
-        });
+        await this.model.updateById(
+            destinationId,
+            {
+                reviewsCount: stats.reviewsCount,
+                averageRating: stats.averageRating,
+                rating: stats.rating as DestinationRatingInput | undefined
+            },
+            tx
+        );
     }
 
     /**
      * Updates accommodationsCount for a destination by counting active accommodations.
      * Internal system operation called from accommodation services during cascading updates.
+     * @param destinationId - The ID of the destination to update
+     * @param tx - Optional transaction client for atomic multi-step operations
      * @internal
      */
-    public async updateAccommodationsCount(destinationId: string): Promise<void> {
+    public async updateAccommodationsCount(
+        destinationId: string,
+        tx?: DrizzleClient
+    ): Promise<void> {
         const accommodationCount = await this.accommodationModel.count({
             destinationId,
             deletedAt: null
         });
-        await this.model.updateById(destinationId, { accommodationsCount: accommodationCount });
+        await this.model.updateById(destinationId, { accommodationsCount: accommodationCount }, tx);
     }
 
     // ========================================================================

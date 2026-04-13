@@ -1,3 +1,4 @@
+import type { DrizzleClient } from '@repo/db';
 import { ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import type { ZodObject } from 'zod';
 import { z } from 'zod';
@@ -51,11 +52,13 @@ export abstract class BaseCrudWrite<
      *
      * @param actor - The user or system performing the action.
      * @param data - The input data for the new entity, matching `TCreateSchema`.
+     * @param tx - Optional transaction client. When provided, the operation participates in the existing transaction.
      * @returns A `ServiceOutput` containing the created entity or a `ServiceError`.
      */
     public async create(
         actor: Actor,
-        data: z.infer<TCreateSchema>
+        data: z.infer<TCreateSchema>,
+        tx?: DrizzleClient
     ): Promise<ServiceOutput<TEntity>> {
         return this.runWithLoggingAndValidation({
             methodName: 'create',
@@ -68,7 +71,10 @@ export abstract class BaseCrudWrite<
                     (await this.normalizers?.create?.(validatedData, validatedActor)) ??
                     validatedData;
 
-                const processedData = await this._beforeCreate(normalizedData, validatedActor);
+                const processedData =
+                    tx !== undefined
+                        ? await this._beforeCreate(normalizedData, validatedActor, tx)
+                        : await this._beforeCreate(normalizedData, validatedActor);
 
                 const finalData = { ...normalizedData, ...processedData };
 
@@ -78,15 +84,19 @@ export abstract class BaseCrudWrite<
                 payload.createdById = validatedActor.id;
                 payload.updatedById = validatedActor.id;
 
-                // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
-                const entity = await this.model.create(payload as any);
+                const entity =
+                    tx !== undefined
+                        ? await this.model.create(payload as unknown as Partial<TEntity>, tx)
+                        : await this.model.create(payload as unknown as Partial<TEntity>);
                 if (!entity) {
                     throw new ServiceError(
                         ServiceErrorCode.INTERNAL_ERROR,
                         `Failed to create ${this.entityName}. The operation returned no result.`
                     );
                 }
-                return this._afterCreate(entity, validatedActor);
+                return tx !== undefined
+                    ? this._afterCreate(entity, validatedActor, tx)
+                    : this._afterCreate(entity, validatedActor);
             }
         });
     }
@@ -105,12 +115,14 @@ export abstract class BaseCrudWrite<
      * @param actor - The user or system performing the action.
      * @param id - The ID of the entity to update.
      * @param data - The update data, matching `TUpdateSchema`.
+     * @param tx - Optional transaction client. When provided, the operation participates in the existing transaction.
      * @returns A `ServiceOutput` containing the updated entity or a `ServiceError`.
      */
     public async update(
         actor: Actor,
         id: string,
-        data: z.infer<TUpdateSchema>
+        data: z.infer<TUpdateSchema>,
+        tx?: DrizzleClient
     ): Promise<ServiceOutput<TEntity>> {
         const methodName = `update(id=${id})`;
         return this.runWithLoggingAndValidation({
@@ -131,7 +143,10 @@ export abstract class BaseCrudWrite<
                     ? await this.normalizers.update(validData, validActor)
                     : validData;
 
-                const processedData = await this._beforeUpdate(normalizedData, validActor);
+                const processedData =
+                    tx !== undefined
+                        ? await this._beforeUpdate(normalizedData, validActor, tx)
+                        : await this._beforeUpdate(normalizedData, validActor);
 
                 const payload = {
                     ...normalizedData,
@@ -164,8 +179,14 @@ export abstract class BaseCrudWrite<
                     ? filteredPayload
                     : ({ updatedById: validActor.id } as unknown as Partial<TEntity>);
 
-                // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
-                const updatedEntity = await this.model.update(where as any, finalPayload);
+                const updatedEntity =
+                    tx !== undefined
+                        ? await this.model.update(
+                              where as Record<string, unknown>,
+                              finalPayload,
+                              tx
+                          )
+                        : await this.model.update(where as Record<string, unknown>, finalPayload);
 
                 if (!updatedEntity) {
                     const entityExists = await this.model.findById(updateId);
@@ -187,7 +208,9 @@ export abstract class BaseCrudWrite<
                     );
                 }
 
-                return this._afterUpdate(updatedEntity, validActor);
+                return tx !== undefined
+                    ? this._afterUpdate(updatedEntity, validActor, tx)
+                    : this._afterUpdate(updatedEntity, validActor);
             }
         });
     }
@@ -200,9 +223,14 @@ export abstract class BaseCrudWrite<
      *
      * @param actor - The user or system performing the action.
      * @param id - The ID of the entity to soft-delete.
+     * @param tx - Optional transaction client. When provided, the operation participates in the existing transaction.
      * @returns A `ServiceOutput` with the count of affected rows or a `ServiceError`.
      */
-    public async softDelete(actor: Actor, id: string): Promise<ServiceOutput<{ count: number }>> {
+    public async softDelete(
+        actor: Actor,
+        id: string,
+        tx?: DrizzleClient
+    ): Promise<ServiceOutput<{ count: number }>> {
         const methodName = `softDelete(id=${id})`;
         return this.runWithLoggingAndValidation({
             methodName,
@@ -219,11 +247,20 @@ export abstract class BaseCrudWrite<
                 if ((entity as TEntity).deletedAt) {
                     return { count: 0 };
                 }
-                const processedId = await this._beforeSoftDelete(id, validActor);
+                const processedId =
+                    tx !== undefined
+                        ? await this._beforeSoftDelete(id, validActor, tx)
+                        : await this._beforeSoftDelete(id, validActor);
                 const where = { id: processedId };
-                // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
-                const result = { count: await this.model.softDelete(where as any) };
-                return this._afterSoftDelete(result, validActor);
+                const result = {
+                    count:
+                        tx !== undefined
+                            ? await this.model.softDelete(where as Record<string, unknown>, tx)
+                            : await this.model.softDelete(where as Record<string, unknown>)
+                };
+                return tx !== undefined
+                    ? this._afterSoftDelete(result, validActor, tx)
+                    : this._afterSoftDelete(result, validActor);
             }
         });
     }
@@ -245,13 +282,16 @@ export abstract class BaseCrudWrite<
             input: { actor },
             schema: z.object({}),
             execute: async (_, validActor) => {
-                await this._getAndValidateEntity(
+                const entity = await this._getAndValidateEntity(
                     this.model,
                     id,
                     validActor,
                     this.entityName,
                     this._canHardDelete.bind(this)
                 );
+                if ((entity as TEntity).deletedAt) {
+                    return { count: 0 };
+                }
                 const processedId = await this._beforeHardDelete(id, validActor);
                 const where = { id: processedId };
                 // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
@@ -269,9 +309,14 @@ export abstract class BaseCrudWrite<
      *
      * @param actor - The user or system performing the action.
      * @param id - The ID of the entity to restore.
+     * @param tx - Optional transaction client. When provided, the operation participates in the existing transaction.
      * @returns A `ServiceOutput` with the count of affected rows or a `ServiceError`.
      */
-    public async restore(actor: Actor, id: string): Promise<ServiceOutput<{ count: number }>> {
+    public async restore(
+        actor: Actor,
+        id: string,
+        tx?: DrizzleClient
+    ): Promise<ServiceOutput<{ count: number }>> {
         const methodName = `restore(id=${id})`;
         return this.runWithLoggingAndValidation({
             methodName,
@@ -290,7 +335,10 @@ export abstract class BaseCrudWrite<
                 }
                 let processedId: string;
                 try {
-                    processedId = await this._beforeRestore(id, validActor);
+                    processedId =
+                        tx !== undefined
+                            ? await this._beforeRestore(id, validActor, tx)
+                            : await this._beforeRestore(id, validActor);
                 } catch (err) {
                     if (err instanceof ServiceError && err.code === ServiceErrorCode.INTERNAL_ERROR)
                         throw err;
@@ -302,8 +350,16 @@ export abstract class BaseCrudWrite<
                 }
                 let count: number;
                 try {
-                    // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
-                    count = await this.model.restore({ id: processedId } as any);
+                    count =
+                        tx !== undefined
+                            ? await this.model.restore(
+                                  { id: processedId } as Record<string, unknown>,
+                                  tx
+                              )
+                            : await this.model.restore({ id: processedId } as Record<
+                                  string,
+                                  unknown
+                              >);
                 } catch (err) {
                     if (err instanceof ServiceError && err.code === ServiceErrorCode.INTERNAL_ERROR)
                         throw err;
@@ -315,7 +371,9 @@ export abstract class BaseCrudWrite<
                 }
                 const result = { count };
                 try {
-                    await this._afterRestore(result, validActor);
+                    await (tx !== undefined
+                        ? this._afterRestore(result, validActor, tx)
+                        : this._afterRestore(result, validActor));
                 } catch (err) {
                     if (err instanceof ServiceError && err.code === ServiceErrorCode.INTERNAL_ERROR)
                         throw err;
@@ -350,7 +408,7 @@ export abstract class BaseCrudWrite<
             input: { actor, visibility },
             schema: z.object({ visibility: z.nativeEnum(VisibilityEnum) }),
             execute: async (validData, validActor) => {
-                const entity = await this._getAndValidateEntity(
+                const entity = await this._getAndValidateEntity<TEntity, typeof this.model>(
                     this.model,
                     id,
                     validActor,

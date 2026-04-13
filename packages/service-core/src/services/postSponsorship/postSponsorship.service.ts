@@ -1,4 +1,4 @@
-import type { PostSponsorshipModel } from '@repo/db';
+import type { DrizzleClient, PostSponsorshipModel } from '@repo/db';
 import {
     PostModel as RealPostModel,
     PostSponsorshipModel as RealPostSponsorshipModel
@@ -87,50 +87,49 @@ export class PostSponsorshipService extends BaseCrudService<
     }
 
     /**
-     * After creating a post sponsorship, update the post's sponsorship_id field
+     * After creating a post sponsorship, update the post's sponsorship_id field.
+     *
+     * Runs inside the same transaction as the create operation so that a failure
+     * here rolls back the entire operation instead of leaving orphaned data.
+     *
+     * @param entity - The newly created PostSponsorship entity
+     * @param actor - The actor performing the operation
+     * @param _tx - Optional transaction client propagated from the caller
+     * @returns The unchanged entity after the post has been linked
      */
-    protected async _afterCreate(entity: PostSponsorship, actor: Actor): Promise<PostSponsorship> {
-        try {
-            this.logger.info(
-                `Executing _afterCreate hook for PostSponsorship: ${entity.id} -> Post: ${entity.postId}`
-            );
+    protected async _afterCreate(
+        entity: PostSponsorship,
+        actor: Actor,
+        _tx?: DrizzleClient
+    ): Promise<PostSponsorship> {
+        this.logger.info(`Linking post ${entity.postId} to sponsorship ${entity.id}`);
 
-            const postModel = new RealPostModel();
+        const postModel = new RealPostModel();
 
-            // Update the post's sponsorship_id to point to this new sponsorship
-            const updateResult = await postModel.update(
-                { id: entity.postId },
-                {
-                    sponsorshipId: entity.id,
-                    updatedById: actor.id
-                }
-            );
+        // Update the post's sponsorship_id to point to this new sponsorship.
+        // Errors are intentionally not caught so the transaction can roll back.
+        await postModel.update(
+            { id: entity.postId },
+            { sponsorshipId: entity.id, updatedById: actor.id },
+            _tx
+        );
 
-            if (updateResult) {
-                this.logger.info(
-                    `Successfully updated post ${entity.postId} with sponsorship_id: ${entity.id}`
-                );
-            } else {
-                this.logger.warn(
-                    `Failed to update post ${entity.postId} with sponsorship_id: ${entity.id}`
-                );
-            }
-
-            return entity;
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            this.logger.error(
-                `Error in _afterCreate hook for PostSponsorship ${entity.id}: ${errorMessage}`
-            );
-            // Don't throw the error to avoid breaking the creation process
-            return entity;
-        }
+        return entity;
     }
 
     /**
-     * Before deleting a post sponsorship, clear the post's sponsorship_id field
+     * Before soft-deleting a post sponsorship, clear the post's sponsorship_id field.
+     *
+     * @param id - The ID of the PostSponsorship being deleted
+     * @param actor - The actor performing the operation
+     * @param _tx - Optional transaction client propagated from the caller
+     * @returns The unchanged id after the post has been unlinked
      */
-    protected async _beforeSoftDelete(id: string, actor: Actor): Promise<string> {
+    protected async _beforeSoftDelete(
+        id: string,
+        actor: Actor,
+        _tx?: DrizzleClient
+    ): Promise<string> {
         // Get the sponsorship entity to know which post to update
         const sponsorship = await this.model.findOne({ id });
         if (sponsorship) {
@@ -139,10 +138,8 @@ export class PostSponsorshipService extends BaseCrudService<
             // Clear the post's sponsorship_id when the sponsorship is deleted
             await postModel.update(
                 { id: sponsorship.postId },
-                {
-                    sponsorshipId: undefined,
-                    updatedById: actor.id
-                }
+                { sponsorshipId: undefined, updatedById: actor.id },
+                _tx
             );
         }
 
@@ -150,9 +147,18 @@ export class PostSponsorshipService extends BaseCrudService<
     }
 
     /**
-     * Before hard deleting a post sponsorship, clear the post's sponsorship_id field
+     * Before hard-deleting a post sponsorship, clear the post's sponsorship_id field.
+     *
+     * @param id - The ID of the PostSponsorship being hard deleted
+     * @param actor - The actor performing the operation
+     * @param _tx - Optional transaction client propagated from the caller
+     * @returns The unchanged id after the post has been unlinked
      */
-    protected async _beforeHardDelete(id: string, actor: Actor): Promise<string> {
+    protected async _beforeHardDelete(
+        id: string,
+        actor: Actor,
+        _tx?: DrizzleClient
+    ): Promise<string> {
         // Get the sponsorship entity to know which post to update
         const sponsorship = await this.model.findOne({ id });
         if (sponsorship) {
@@ -161,10 +167,8 @@ export class PostSponsorshipService extends BaseCrudService<
             // Clear the post's sponsorship_id when the sponsorship is hard deleted
             await postModel.update(
                 { id: sponsorship.postId },
-                {
-                    sponsorshipId: undefined,
-                    updatedById: actor.id
-                }
+                { sponsorshipId: undefined, updatedById: actor.id },
+                _tx
             );
         }
 

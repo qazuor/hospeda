@@ -1,4 +1,5 @@
 import { DestinationModel, DestinationReviewModel, destinationReviews, gte, lte } from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import {
     type DestinationReview,
@@ -187,8 +188,13 @@ export class DestinationReviewService extends BaseCrudService<
 
     /**
      * Recalculates and updates the stats (reviewsCount, averageRating, rating) for the given destination.
+     * @param destinationId - The ID of the destination whose stats need updating
+     * @param tx - Optional transaction client for atomic multi-step operations
      */
-    private async recalculateAndUpdateDestinationStats(destinationId: string): Promise<void> {
+    private async recalculateAndUpdateDestinationStats(
+        destinationId: string,
+        tx?: DrizzleClient
+    ): Promise<void> {
         // Get all active reviews for the destination
         const reviews = await this.model
             .findAll({ destinationId, deletedAt: null }, undefined)
@@ -196,20 +202,30 @@ export class DestinationReviewService extends BaseCrudService<
         // Usar el helper para calcular los stats
         const stats = calculateStatsFromReviews(reviews as DestinationReview[]);
         // Update stats in Destination via DestinationService
-        await this.destinationService.updateStatsFromReview(destinationId, stats);
+        await this.destinationService.updateStatsFromReview(destinationId, stats, tx);
     }
 
-    protected async _afterCreate(entity: DestinationReview): Promise<DestinationReview> {
+    /**
+     * @param entity - The newly created review entity.
+     * @param _actor - The actor who performed the create.
+     * @param _tx - Optional transaction client. When provided, stat updates run within the transaction.
+     */
+    protected async _afterCreate(
+        entity: DestinationReview,
+        _actor: Actor,
+        _tx?: DrizzleClient
+    ): Promise<DestinationReview> {
         // Compute per-review average from JSONB rating dimensions and persist it
         const reviewAvg = computeReviewAverageRating(entity.rating as Record<string, unknown>);
         await this.model.update(
             { id: entity.id },
             {
                 averageRating: reviewAvg
-            }
+            },
+            _tx
         );
 
-        await this.recalculateAndUpdateDestinationStats(entity.destinationId);
+        await this.recalculateAndUpdateDestinationStats(entity.destinationId, _tx);
         const destinationSlug = await this._resolveDestinationSlug(entity.destinationId);
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -225,18 +241,28 @@ export class DestinationReviewService extends BaseCrudService<
         return entity;
     }
 
-    protected async _afterUpdate(entity: DestinationReview): Promise<DestinationReview> {
+    /**
+     * @param entity - The updated review entity.
+     * @param _actor - The actor who performed the update.
+     * @param _tx - Optional transaction client. When provided, stat updates run within the transaction.
+     */
+    protected async _afterUpdate(
+        entity: DestinationReview,
+        _actor: Actor,
+        _tx?: DrizzleClient
+    ): Promise<DestinationReview> {
         // Recompute per-review average from JSONB rating dimensions and persist it
         const reviewAvg = computeReviewAverageRating(entity.rating as Record<string, unknown>);
         await this.model.update(
             { id: entity.id },
             {
                 averageRating: reviewAvg
-            }
+            },
+            _tx
         );
 
         // Recalculate parent destination stats after rating change
-        await this.recalculateAndUpdateDestinationStats(entity.destinationId);
+        await this.recalculateAndUpdateDestinationStats(entity.destinationId, _tx);
 
         const destinationSlug = await this._resolveDestinationSlug(entity.destinationId);
         try {
@@ -283,14 +309,20 @@ export class DestinationReviewService extends BaseCrudService<
         return id;
     }
 
+    /**
+     * @param result - The soft-delete result with count of affected rows.
+     * @param _actor - The actor who performed the soft delete.
+     * @param _tx - Optional transaction client. When provided, stat updates run within the transaction.
+     */
     protected async _afterSoftDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _tx?: DrizzleClient
     ): Promise<{ count: number }> {
         const deletedDestinationId = this._lastDeletedDestinationId;
         this._lastDeletedDestinationId = undefined;
         if (deletedDestinationId) {
-            await this.recalculateAndUpdateDestinationStats(deletedDestinationId);
+            await this.recalculateAndUpdateDestinationStats(deletedDestinationId, _tx);
         }
         const destinationSlug = deletedDestinationId
             ? await this._resolveDestinationSlug(deletedDestinationId)
@@ -315,14 +347,20 @@ export class DestinationReviewService extends BaseCrudService<
         return id;
     }
 
+    /**
+     * @param result - The hard-delete result with count of affected rows.
+     * @param _actor - The actor who performed the hard delete.
+     * @param _tx - Optional transaction client. When provided, stat updates run within the transaction.
+     */
     protected async _afterHardDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _tx?: DrizzleClient
     ): Promise<{ count: number }> {
         const deletedDestinationId = this._lastDeletedDestinationId;
         this._lastDeletedDestinationId = undefined;
         if (deletedDestinationId) {
-            await this.recalculateAndUpdateDestinationStats(deletedDestinationId);
+            await this.recalculateAndUpdateDestinationStats(deletedDestinationId, _tx);
         }
         const destinationSlug = deletedDestinationId
             ? await this._resolveDestinationSlug(deletedDestinationId)
@@ -349,13 +387,20 @@ export class DestinationReviewService extends BaseCrudService<
         return id;
     }
 
+    /**
+     * @param result - The restore result with count of affected rows.
+     * @param _actor - The actor who performed the restore.
+     * @param _tx - Optional transaction client. When provided, stat updates run within the transaction.
+     */
     protected async _afterRestore(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _tx?: DrizzleClient
     ): Promise<{ count: number }> {
         if (this._lastRestoredDestinationIdForReview) {
             await this.recalculateAndUpdateDestinationStats(
-                this._lastRestoredDestinationIdForReview
+                this._lastRestoredDestinationIdForReview,
+                _tx
             );
         }
         const destinationSlug = this._lastRestoredDestinationIdForReview

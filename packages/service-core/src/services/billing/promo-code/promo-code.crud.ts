@@ -9,6 +9,7 @@
  */
 
 import {
+    type DrizzleClient,
     type QZPayBillingPromoCode,
     and,
     billingPromoCodes,
@@ -63,6 +64,7 @@ export function mapDbToPromoCode(dbPromoCode: QZPayBillingPromoCode): PromoCode 
  * @param input - Promo code creation data
  * @param options - Optional settings
  * @param options.livemode - Whether to create in live mode (default: false)
+ * @param options.tx - Optional Drizzle transaction client
  * @returns Created PromoCode or error
  *
  * @example
@@ -76,10 +78,10 @@ export function mapDbToPromoCode(dbPromoCode: QZPayBillingPromoCode): PromoCode 
  */
 export async function createPromoCode(
     input: CreatePromoCodeInput,
-    options: { readonly livemode?: boolean } = {}
+    options: { readonly livemode?: boolean; readonly tx?: DrizzleClient } = {}
 ) {
     try {
-        const db = getDb();
+        const db = options.tx ?? getDb();
         const code = input.code.toUpperCase();
 
         const config: Record<string, unknown> = {};
@@ -128,6 +130,7 @@ export async function createPromoCode(
  * Normalizes the code to uppercase before querying.
  *
  * @param code - Promo code string (case-insensitive)
+ * @param tx - Optional Drizzle transaction client
  * @returns PromoCode or NOT_FOUND error
  *
  * @example
@@ -138,9 +141,9 @@ export async function createPromoCode(
  * }
  * ```
  */
-export async function getPromoCodeByCode(code: string) {
+export async function getPromoCodeByCode(code: string, tx?: DrizzleClient) {
     try {
-        const db = getDb();
+        const db = tx ?? getDb();
         const normalizedCode = code.toUpperCase();
 
         const [dbPromoCode] = await db
@@ -172,6 +175,7 @@ export async function getPromoCodeByCode(code: string) {
  * Get a promo code by its database ID.
  *
  * @param id - UUID of the promo code record
+ * @param tx - Optional Drizzle transaction client
  * @returns PromoCode or NOT_FOUND error
  *
  * @example
@@ -179,9 +183,9 @@ export async function getPromoCodeByCode(code: string) {
  * const result = await getPromoCodeById('550e8400-e29b-41d4-a716-446655440000');
  * ```
  */
-export async function getPromoCodeById(id: string) {
+export async function getPromoCodeById(id: string, tx?: DrizzleClient) {
     try {
-        const db = getDb();
+        const db = tx ?? getDb();
 
         const [promoCode] = await db
             .select()
@@ -216,6 +220,7 @@ export async function getPromoCodeById(id: string) {
  *
  * @param id - Promo code ID
  * @param input - Fields to update (all optional)
+ * @param tx - Optional Drizzle transaction client
  * @returns Updated PromoCode or error
  *
  * @example
@@ -223,9 +228,9 @@ export async function getPromoCodeById(id: string) {
  * const result = await updatePromoCode('abc', { isActive: false });
  * ```
  */
-export async function updatePromoCode(id: string, input: UpdatePromoCodeInput) {
+export async function updatePromoCode(id: string, input: UpdatePromoCodeInput, tx?: DrizzleClient) {
     try {
-        const db = getDb();
+        const db = tx ?? getDb();
 
         const updateData: Partial<QZPayBillingPromoCode> = {};
 
@@ -289,6 +294,7 @@ export async function updatePromoCode(id: string, input: UpdatePromoCodeInput) {
  * Soft-delete a promo code by setting active = false.
  *
  * @param id - Promo code ID
+ * @param tx - Optional Drizzle transaction client
  * @returns Success or NOT_FOUND error
  *
  * @example
@@ -296,9 +302,9 @@ export async function updatePromoCode(id: string, input: UpdatePromoCodeInput) {
  * await deletePromoCode('550e8400-e29b-41d4-a716-446655440000');
  * ```
  */
-export async function deletePromoCode(id: string) {
+export async function deletePromoCode(id: string, tx?: DrizzleClient) {
     try {
-        const db = getDb();
+        const db = tx ?? getDb();
 
         const [deletedPromoCode] = await db
             .update(billingPromoCodes)
@@ -332,6 +338,7 @@ export async function deletePromoCode(id: string) {
  * Results are ordered by createdAt descending.
  *
  * @param filters - Filter and pagination options
+ * @param tx - Optional Drizzle transaction client
  * @returns Paginated list of promo codes with total count
  *
  * @example
@@ -342,9 +349,9 @@ export async function deletePromoCode(id: string) {
  * }
  * ```
  */
-export async function listPromoCodes(filters: ListPromoCodesFilters = {}) {
+export async function listPromoCodes(filters: ListPromoCodesFilters = {}, tx?: DrizzleClient) {
     try {
-        const db = getDb();
+        const db = tx ?? getDb();
         const { page = 1, pageSize = 20, active, expired, codeSearch } = filters;
 
         const conditions = [];

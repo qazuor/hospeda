@@ -155,7 +155,7 @@ export class ServiceError extends Error {
 }
 
 export type { PaginatedListOutput } from '@repo/schemas';
-export type { BaseModel, DrizzleClient, QueryContext } from '@repo/db';
+export type { BaseModel, DrizzleClient } from '@repo/db';
 
 // --- Search Types ---
 export type SortingType = z.infer<typeof HttpSortingSchema>;

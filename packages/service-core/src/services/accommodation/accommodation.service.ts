@@ -6,6 +6,7 @@ import {
     accommodations,
     sql
 } from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import {
     type Accommodation,
@@ -331,7 +332,11 @@ export class AccommodationService extends BaseCrudService<
         }
     }
 
-    protected async _afterCreate(entity: Accommodation): Promise<Accommodation> {
+    protected async _afterCreate(
+        entity: Accommodation,
+        _actor: Actor,
+        _tx?: DrizzleClient
+    ): Promise<Accommodation> {
         if (entity.destinationId) {
             await this.destinationService.updateAccommodationsCount(entity.destinationId);
         }
@@ -520,19 +525,24 @@ export class AccommodationService extends BaseCrudService<
     // --- Core Logic ---
     /**
      * @inheritdoc
-     * Executes the database search for accommodations.
-     * This implementation ensures that any branded types (like `UserId`) are
-     * cast to primitives before being passed to the database model.
+     * Executes the database search for accommodations with destination and owner relations.
+     *
+     * Uses `searchWithRelations` so that the destination and owner objects are always
+     * included in the response, matching the behaviour of the `list` method.
+     * All AccommodationSearchInput fields are forwarded to the model, including
+     * price-range filters (JSONB), capacity ranges (JSONB extraInfo), minRating,
+     * and amenity EXISTS subquery filters.
+     *
      * @param params The validated and processed search parameters.
      * @param actor The actor performing the search.
-     * @returns A paginated list of accommodations matching the criteria.
+     * @returns A paginated list of accommodations with destination and owner populated.
      */
     protected async _executeSearch(params: AccommodationSearchInput, actor: Actor) {
         const hasVipAccess =
             actor.entitlements?.has('vip_promotions_access') ||
             hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
-        return this.model.search({
+        return this.model.searchWithRelations({
             ...params,
             excludeRestricted: !hasVipAccess
         });
@@ -601,9 +611,11 @@ export class AccommodationService extends BaseCrudService<
                     sortOrder: processedParams.sortOrder,
                     q: processedParams.q,
                     type: processedParams.type,
+                    types: processedParams.types,
                     minPrice: processedParams.minPrice,
                     maxPrice: processedParams.maxPrice,
                     destinationId: processedParams.destinationId,
+                    destinationIds: processedParams.destinationIds,
                     amenities: processedParams.amenities,
                     isFeatured: processedParams.isFeatured,
                     isAvailable: processedParams.isAvailable,
@@ -1182,15 +1194,23 @@ export class AccommodationService extends BaseCrudService<
 
     /**
      * Updates the stats (reviewsCount, averageRating, rating) for the accommodation from a review service.
+     * @param accommodationId - The ID of the accommodation to update
+     * @param stats - The computed review stats to persist
+     * @param tx - Optional transaction client to propagate DB writes into an existing transaction
      */
     async updateStatsFromReview(
         accommodationId: string,
-        stats: { reviewsCount: number; averageRating: number; rating: AccommodationRatingInput }
+        stats: { reviewsCount: number; averageRating: number; rating: AccommodationRatingInput },
+        tx?: DrizzleClient
     ): Promise<void> {
-        await this.model.updateById(accommodationId, {
-            reviewsCount: stats.reviewsCount,
-            averageRating: stats.averageRating,
-            rating: stats.rating
-        });
+        await this.model.updateById(
+            accommodationId,
+            {
+                reviewsCount: stats.reviewsCount,
+                averageRating: stats.averageRating,
+                rating: stats.rating
+            },
+            tx
+        );
     }
 }

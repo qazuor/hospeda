@@ -5,6 +5,7 @@ import {
     gte,
     lte
 } from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import {
     type AccommodationReview,
@@ -204,8 +205,13 @@ export class AccommodationReviewService extends BaseCrudService<
 
     /**
      * Recalculates and updates the stats (reviewsCount, averageRating, rating) for the given accommodation.
+     * @param accommodationId - The ID of the accommodation to update stats for
+     * @param _tx - Optional transaction client to propagate DB writes into an existing transaction
      */
-    private async recalculateAndUpdateAccommodationStats(accommodationId: string): Promise<void> {
+    private async recalculateAndUpdateAccommodationStats(
+        accommodationId: string,
+        _tx?: DrizzleClient
+    ): Promise<void> {
         // Get all active reviews for the accommodation
         const reviews = await this.model
             .findAll({ accommodationId, deletedAt: null }, undefined)
@@ -213,7 +219,7 @@ export class AccommodationReviewService extends BaseCrudService<
         // Usar el helper para calcular los stats
         const stats = calculateStatsFromReviews(reviews);
         // Update stats in Accommodation via AccommodationService
-        await this.accommodationService.updateStatsFromReview(accommodationId, stats);
+        await this.accommodationService.updateStatsFromReview(accommodationId, stats, _tx);
     }
 
     /**
@@ -243,20 +249,27 @@ export class AccommodationReviewService extends BaseCrudService<
      * Computes the per-review average from the JSONB rating dimensions
      * (cleanliness, hospitality, services, accuracy, communication, location)
      * and persists it to the review's averageRating column.
+     * @param entity - The accommodation review entity
+     * @param _tx - Optional transaction client to propagate DB writes into an existing transaction
      */
-    private async computeAndStoreReviewAverage(entity: AccommodationReview): Promise<void> {
+    private async computeAndStoreReviewAverage(
+        entity: AccommodationReview,
+        _tx?: DrizzleClient
+    ): Promise<void> {
         const rating = entity.rating as Record<string, number>;
         const values = Object.values(rating).filter((v) => typeof v === 'number');
         const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
         const roundedAvg = Math.round(avg * 100) / 100;
-        await this.model.updateById(entity.id, {
-            averageRating: roundedAvg
-        });
+        await this.model.updateById(entity.id, { averageRating: roundedAvg }, _tx);
     }
 
-    protected async _afterCreate(entity: AccommodationReview): Promise<AccommodationReview> {
-        await this.computeAndStoreReviewAverage(entity);
-        await this.recalculateAndUpdateAccommodationStats(entity.accommodationId);
+    protected async _afterCreate(
+        entity: AccommodationReview,
+        _actor: Actor,
+        _tx?: DrizzleClient
+    ): Promise<AccommodationReview> {
+        await this.computeAndStoreReviewAverage(entity, _tx);
+        await this.recalculateAndUpdateAccommodationStats(entity.accommodationId, _tx);
         const accommodationSlug = await this._resolveAccommodationSlug(entity.accommodationId);
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -272,9 +285,13 @@ export class AccommodationReviewService extends BaseCrudService<
         return entity;
     }
 
-    protected async _afterUpdate(entity: AccommodationReview): Promise<AccommodationReview> {
-        await this.computeAndStoreReviewAverage(entity);
-        await this.recalculateAndUpdateAccommodationStats(entity.accommodationId);
+    protected async _afterUpdate(
+        entity: AccommodationReview,
+        _actor: Actor,
+        _tx?: DrizzleClient
+    ): Promise<AccommodationReview> {
+        await this.computeAndStoreReviewAverage(entity, _tx);
+        await this.recalculateAndUpdateAccommodationStats(entity.accommodationId, _tx);
         const accommodationSlug = await this._resolveAccommodationSlug(entity.accommodationId);
         try {
             getRevalidationService()?.scheduleRevalidation({

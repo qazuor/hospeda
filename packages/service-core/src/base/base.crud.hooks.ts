@@ -1,3 +1,4 @@
+import type { DrizzleClient } from '@repo/db';
 import type { VisibilityEnum } from '@repo/schemas';
 import type { ZodObject } from 'zod';
 import type { z } from 'zod';
@@ -43,11 +44,13 @@ export abstract class BaseCrudHooks<
      *
      * @param data - The normalized data for the new entity.
      * @param _actor - The user or system performing the action.
+     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
      * @returns A partial entity object with the processed data to merge before insertion.
      */
     protected async _beforeCreate(
         data: z.infer<TCreateSchema>,
-        _actor: Actor
+        _actor: Actor,
+        _tx?: DrizzleClient
     ): Promise<Partial<TEntity>> {
         return data as Partial<TEntity>;
     }
@@ -58,9 +61,14 @@ export abstract class BaseCrudHooks<
      *
      * @param entity - The newly created entity.
      * @param _actor - The user or system performing the action.
+     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
      * @returns The created entity, allowing for final modifications if needed.
      */
-    protected async _afterCreate(entity: TEntity, _actor: Actor): Promise<TEntity> {
+    protected async _afterCreate(
+        entity: TEntity,
+        _actor: Actor,
+        _tx?: DrizzleClient
+    ): Promise<TEntity> {
         return entity;
     }
 
@@ -70,11 +78,13 @@ export abstract class BaseCrudHooks<
      *
      * @param data - The normalized update data.
      * @param _actor - The user or system performing the action.
+     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
      * @returns A partial entity object with the processed data to merge before the update.
      */
     protected async _beforeUpdate(
         data: z.infer<TUpdateSchema>,
-        _actor: Actor
+        _actor: Actor,
+        _tx?: DrizzleClient
     ): Promise<Partial<TEntity>> {
         return data as Partial<TEntity>;
     }
@@ -85,9 +95,14 @@ export abstract class BaseCrudHooks<
      *
      * @param entity - The updated entity.
      * @param _actor - The user or system performing the action.
+     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
      * @returns The updated entity.
      */
-    protected async _afterUpdate(entity: TEntity, _actor: Actor): Promise<TEntity> {
+    protected async _afterUpdate(
+        entity: TEntity,
+        _actor: Actor,
+        _tx?: DrizzleClient
+    ): Promise<TEntity> {
         return entity;
     }
 
@@ -154,9 +169,14 @@ export abstract class BaseCrudHooks<
      *
      * @param id - The ID of the entity to soft-delete.
      * @param _actor - The user or system performing the action.
+     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
      * @returns The ID of the entity.
      */
-    protected async _beforeSoftDelete(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeSoftDelete(
+        id: string,
+        _actor: Actor,
+        _tx?: DrizzleClient
+    ): Promise<string> {
         return id;
     }
 
@@ -165,11 +185,13 @@ export abstract class BaseCrudHooks<
      *
      * @param result - An object containing the count of affected rows.
      * @param _actor - The user or system performing the action.
+     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
      * @returns The result object.
      */
     protected async _afterSoftDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _tx?: DrizzleClient
     ): Promise<{ count: number }> {
         return result;
     }
@@ -179,9 +201,14 @@ export abstract class BaseCrudHooks<
      *
      * @param id - The ID of the entity to hard-delete.
      * @param _actor - The user or system performing the action.
+     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
      * @returns The ID of the entity.
      */
-    protected async _beforeHardDelete(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeHardDelete(
+        id: string,
+        _actor: Actor,
+        _tx?: DrizzleClient
+    ): Promise<string> {
         return id;
     }
 
@@ -190,11 +217,13 @@ export abstract class BaseCrudHooks<
      *
      * @param result - An object containing the count of affected rows.
      * @param _actor - The user or system performing the action.
+     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
      * @returns The result object.
      */
     protected async _afterHardDelete(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _tx?: DrizzleClient
     ): Promise<{ count: number }> {
         return result;
     }
@@ -204,9 +233,14 @@ export abstract class BaseCrudHooks<
      *
      * @param id - The ID of the entity to restore.
      * @param _actor - The user or system performing the action.
+     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
      * @returns The ID of the entity.
      */
-    protected async _beforeRestore(id: string, _actor: Actor): Promise<string> {
+    protected async _beforeRestore(
+        id: string,
+        _actor: Actor,
+        _tx?: DrizzleClient
+    ): Promise<string> {
         return id;
     }
 
@@ -215,11 +249,13 @@ export abstract class BaseCrudHooks<
      *
      * @param result - An object containing the count of affected rows.
      * @param _actor - The user or system performing the action.
+     * @param _tx - Optional transaction client. When provided, hook runs within the transaction.
      * @returns The result object.
      */
     protected async _afterRestore(
         result: { count: number },
-        _actor: Actor
+        _actor: Actor,
+        _tx?: DrizzleClient
     ): Promise<{ count: number }> {
         return result;
     }

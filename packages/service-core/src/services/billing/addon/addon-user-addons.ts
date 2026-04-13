@@ -9,6 +9,7 @@
 
 import { getAddonBySlug } from '@repo/billing';
 import { getDb } from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
 import { and, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
@@ -348,15 +349,21 @@ export async function queryActiveAddonPurchases({
  * This is the raw DB operation without any Sentry, logging, or notification
  * side effects. Use from the API layer which wraps with infra concerns.
  *
+ * When `tx` is provided the update runs inside the caller's transaction.
+ * When omitted the function acquires its own connection via `getDb()`.
+ *
  * @param purchaseId - The purchase record UUID.
+ * @param tx - Optional Drizzle transaction client.
  * @returns Number of rows updated (0 or 1).
  */
 export async function cancelAddonPurchaseRecord({
-    purchaseId
+    purchaseId,
+    tx
 }: {
     readonly purchaseId: string;
+    readonly tx?: DrizzleClient;
 }): Promise<number> {
-    const db = getDb();
+    const db = tx ?? getDb();
 
     const updateResult = await db
         .update(billingAddonPurchases)

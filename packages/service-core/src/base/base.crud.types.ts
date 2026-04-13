@@ -1,3 +1,4 @@
+import type { DrizzleClient } from '@repo/db';
 import type { ListRelationsConfig } from '@repo/schemas';
 import type { ZodObject } from 'zod';
 import type { z } from 'zod';
@@ -49,3 +50,12 @@ export type CrudNormalizersFromSchemas<
     TUpdateSchema extends ZodObject,
     TSearchSchema extends ZodObject
 > = CrudNormalizers<z.infer<TCreateSchema>, z.infer<TUpdateSchema>, z.infer<TSearchSchema>>;
+
+/**
+ * Options shared by all write operations (create, update, softDelete, restore).
+ * Pass `tx` to enlist the operation in an existing Drizzle transaction.
+ */
+export type BaseCrudWriteOptions = {
+    /** Optional transaction client. When provided, the write operation participates in the existing transaction. */
+    tx?: DrizzleClient;
+};

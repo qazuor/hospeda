@@ -302,7 +302,9 @@ export class TagService extends BaseCrudRelatedService<
             schema: TagGetPopularInputSchema,
             execute: async (validated) => {
                 await this._canList(actor);
-                const results = await this.relatedModel.findPopularTags(validated.limit ?? 10);
+                const results = await this.relatedModel.findPopularTags({
+                    limit: validated.limit ?? 10
+                });
                 const tagsList: Tag[] = results.map((row) => row.tag as Tag);
                 return { tags: tagsList };
             }
