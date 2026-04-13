@@ -1,10 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import vercel from '@astrojs/vercel';
 import sentry from '@sentry/astro';
 import { defineConfig } from 'astro/config';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { validateWebEnv } from './src/env.ts';
 
 const rootDir = resolve(new URL('.', import.meta.url).pathname, '../../');
@@ -86,6 +86,12 @@ export default defineConfig({
         remotePatterns: [
             { hostname: 'localhost' },
             { hostname: '*.vercel.app' },
+            // TODO: seed/demo data only — remove these when real client images are stored in our CDN
+            { hostname: '*.pexels.com' },
+            { hostname: 'images.pexels.com' },
+            { hostname: '*.unsplash.com' },
+            { hostname: 'images.unsplash.com' },
+            // end TODO
             ...(apiHostname && apiHostname !== 'localhost' ? [{ hostname: apiHostname }] : [])
         ]
     },
