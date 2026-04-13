@@ -29,6 +29,13 @@ vi.mock('@repo/billing', () => ({
     getAddonBySlug: vi.fn()
 }));
 
+vi.mock('@repo/db', () => ({
+    withTransaction: vi.fn(
+        async (callback: (tx: unknown) => Promise<unknown>, existingTx?: unknown) =>
+            callback(existingTx)
+    )
+}));
+
 vi.mock('@repo/db/schemas/billing', () => ({
     billingAddonPurchases: {
         id: 'id',

@@ -35,6 +35,7 @@ vi.mock('@repo/db/schemas', () => ({
         limitAdjustments: 'limit_adjustments',
         entitlementAdjustments: 'entitlement_adjustments',
         metadata: 'metadata',
+        entitlementRemovalPending: 'entitlement_removal_pending',
         createdAt: 'created_at',
         updatedAt: 'updated_at'
     }
@@ -469,13 +470,14 @@ describe('AddonExpirationService', () => {
             expect(result.success).toBe(true);
             expect(result.data?.purchaseId).toBe('purchase_123');
 
-            // Verify database WAS updated despite entitlement failure
+            // Verify database WAS updated despite entitlement failure,
+            // and the dedicated boolean column (not JSONB metadata) was set.
             expect(mockDb.update).toHaveBeenCalled();
             expect(mockDb.set).toHaveBeenCalledWith(
                 expect.objectContaining({
                     status: 'expired',
                     updatedAt: expect.any(Date),
-                    metadata: { entitlementRemovalPending: true }
+                    entitlementRemovalPending: true
                 })
             );
         });
@@ -944,13 +946,14 @@ describe('AddonExpirationService', () => {
             expect(result.success).toBe(true);
             expect(result.data?.purchaseId).toBe('purchase_123');
 
-            // Verify status WAS updated in database despite entitlement failure
+            // Verify status WAS updated in database despite entitlement failure,
+            // and the dedicated boolean column (not JSONB metadata) was set.
             expect(mockDb.update).toHaveBeenCalled();
             expect(mockDb.set).toHaveBeenCalledWith(
                 expect.objectContaining({
                     status: 'expired',
                     updatedAt: expect.any(Date),
-                    metadata: { entitlementRemovalPending: true }
+                    entitlementRemovalPending: true
                 })
             );
         });

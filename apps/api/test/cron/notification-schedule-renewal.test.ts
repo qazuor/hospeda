@@ -24,6 +24,20 @@ import {
 } from '../../src/cron/jobs/notification-schedule.job';
 import type { CronJobContext } from '../../src/cron/types';
 
+// Mock @repo/db — required for pg_try_advisory_lock concurrency guard (GAP-034)
+vi.mock('@repo/db', () => ({
+    getDb: vi.fn().mockReturnValue({
+        execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+    }),
+    billingNotificationLog: { customerId: 'customer_id', type: 'type', sentAt: 'sent_at' },
+    eq: vi.fn((_col: unknown, _val: unknown) => ({ __eq: true })),
+    sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+        __sql: true,
+        strings,
+        values
+    }))
+}));
+
 // Mock billing middleware
 vi.mock('../../src/middlewares/billing', () => ({
     getQZPayBilling: vi.fn()

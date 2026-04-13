@@ -86,6 +86,7 @@ vi.mock('@repo/db', () => ({
     desc: vi.fn((field) => `desc(${field})`),
     eq: vi.fn((field, value) => ({ field, value, op: 'eq' })),
     ilike: vi.fn((field, value) => ({ field, value, op: 'ilike' })),
+    safeIlike: vi.fn((field, value) => ({ field, value, op: 'safeIlike' })),
     isNull: vi.fn((field) => ({ field, op: 'isNull' })),
     lte: vi.fn((field, value) => ({ field, value, op: 'lte' })),
     or: vi.fn((...args) => ({ op: 'or', conditions: args })),

@@ -66,9 +66,18 @@ vi.mock('../../src/utils/logger', () => ({
 
 // Minimal @repo/db mock: only for the onEvent audit insert callback.
 // The dunning job's onEvent handler writes directly to billingDunningAttempts.
+// sql is required for pg_try_advisory_lock (concurrency guard added in GAP-035).
 vi.mock('@repo/db', () => ({
-    getDb: vi.fn().mockReturnValue({ insert: mockDbInsert }),
-    billingDunningAttempts: { _: 'billingDunningAttempts' }
+    getDb: vi.fn().mockReturnValue({
+        insert: mockDbInsert,
+        execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+    }),
+    billingDunningAttempts: { _: 'billingDunningAttempts' },
+    sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+        __sql: true,
+        strings,
+        values
+    }))
 }));
 
 // Service layer mock: billing config constants

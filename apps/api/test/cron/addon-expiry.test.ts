@@ -61,6 +61,7 @@ vi.mock('@repo/db', () => ({
         subscriptionId: 'subscription_id',
         status: 'status',
         metadata: 'metadata',
+        entitlementRemovalPending: 'entitlement_removal_pending',
         deletedAt: 'deleted_at',
         canceledAt: 'canceled_at',
         updatedAt: 'updated_at'

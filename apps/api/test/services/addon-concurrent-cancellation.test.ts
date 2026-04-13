@@ -43,6 +43,21 @@ vi.mock('drizzle-orm', async (importOriginal) => {
 
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(),
+    // withTransaction is required by addon-lifecycle-cancellation.service.ts
+    // When called with an existing tx as second arg, it executes callback(tx) directly.
+    withTransaction: vi.fn(
+        async (callback: (tx: unknown) => Promise<unknown>, existingTx?: unknown) => {
+            if (existingTx) {
+                return callback(existingTx);
+            }
+            // No outer tx: run callback with a minimal stub tx
+            return callback({
+                update: vi.fn(() => ({
+                    set: vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) }))
+                }))
+            });
+        }
+    ),
     billingSubscriptions: {
         id: 'id',
         status: 'status',

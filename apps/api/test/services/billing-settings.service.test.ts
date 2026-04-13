@@ -12,14 +12,25 @@ import {
     resetBillingSettingsService
 } from '../../src/services/billing-settings.service';
 
-// Hoist shared mock functions for drizzle operators
-const { mockEq } = vi.hoisted(() => ({
-    mockEq: vi.fn((field: string, value: unknown) => ({ eq: field, value }))
+// Hoist shared mock functions for drizzle operators and getDb reference
+const { mockEq, mockGetDb } = vi.hoisted(() => ({
+    mockEq: vi.fn((field: string, value: unknown) => ({ eq: field, value })),
+    mockGetDb: vi.fn()
 }));
 
 // Mock @repo/db
 vi.mock('@repo/db', () => ({
-    getDb: vi.fn(),
+    getDb: mockGetDb,
+    // withTransaction is required by BillingSettingsService.updateSettings (in @repo/service-core).
+    // Delegates to callback(existingTx) or callback(getDb()) so the test's mockDb
+    // (set via mockGetDb.mockReturnValue(...) in beforeEach) is used as the transaction client.
+    withTransaction: vi.fn((callback: (tx: unknown) => Promise<unknown>, existingTx?: unknown) => {
+        if (existingTx) {
+            return callback(existingTx);
+        }
+        // Lazily resolve so the mockReturnValue set in beforeEach is used at call time
+        return callback(mockGetDb());
+    }),
     billingSettings: {
         key: 'key',
         value: 'value',

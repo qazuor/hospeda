@@ -167,7 +167,10 @@ describe('Actor Middleware', () => {
             expect(data.actor.permissions).toEqual([]);
         });
 
-        it('should fallback to guest actor when DB query fails', async () => {
+        it('should return 503 when DB query fails during permission resolution', async () => {
+            // The actor middleware throws HTTPException(503) on DB errors rather than
+            // silently falling back to a guest actor. This ensures auth failures are
+            // visible and not silently ignored.
             const authUser = createAuthUser();
             mockGetPermissionsForRole.mockRejectedValue(new Error('Database error'));
 
@@ -179,10 +182,7 @@ describe('Actor Middleware', () => {
 
             const res = await app.request('/test');
 
-            expect(res.status).toBe(200);
-            const data = await res.json();
-            expect(data.actor.role).toBe(RoleEnum.GUEST);
-            expect(mockCreateGuestActor).toHaveBeenCalled();
+            expect(res.status).toBe(503);
         });
 
         it('should default role to USER when auth user has no role', async () => {

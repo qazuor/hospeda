@@ -504,4 +504,255 @@ describe('TrialService', () => {
             ).rejects.toThrow('Billing not enabled');
         });
     });
+
+    describe('reconcileDuplicateSubscriptions', () => {
+        it('should cancel the older subscription when two active subscriptions exist', async () => {
+            // Arrange — simulate the GAP-012 scenario: cancel failed during upgrade,
+            // leaving both the old trialing sub and the new active sub alive.
+            const customerId = 'customer-dup-001';
+            const olderCreatedAt = '2026-01-10T10:00:00.000Z';
+            const newerCreatedAt = '2026-01-10T10:05:00.000Z';
+
+            const olderTrialSub = {
+                id: 'sub-old-trial',
+                customerId,
+                status: 'trialing',
+                createdAt: olderCreatedAt
+            };
+            const newerActiveSub = {
+                id: 'sub-new-active',
+                customerId,
+                status: 'active',
+                createdAt: newerCreatedAt
+            };
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                olderTrialSub,
+                newerActiveSub
+            ] as never);
+            vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
+
+            // Act
+            const result = await trialService.reconcileDuplicateSubscriptions({ customerId });
+
+            // Assert — the older subscription (trialing) must be cancelled
+            expect(result.cancelledCount).toBe(1);
+            expect(result.cancelledIds).toContain('sub-old-trial');
+            expect(result.keptId).toBe('sub-new-active');
+            expect(mockBilling.subscriptions.cancel).toHaveBeenCalledTimes(1);
+            expect(mockBilling.subscriptions.cancel).toHaveBeenCalledWith('sub-old-trial');
+        });
+
+        it('should cancel all older subscriptions when three or more active exist', async () => {
+            // Arrange — edge case: three live subscriptions (e.g., retry storm)
+            const customerId = 'customer-dup-002';
+
+            const subs = [
+                {
+                    id: 'sub-a',
+                    customerId,
+                    status: 'active',
+                    createdAt: '2026-01-10T09:00:00.000Z'
+                },
+                {
+                    id: 'sub-b',
+                    customerId,
+                    status: 'active',
+                    createdAt: '2026-01-10T09:30:00.000Z'
+                },
+                { id: 'sub-c', customerId, status: 'active', createdAt: '2026-01-10T10:00:00.000Z' }
+            ];
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(subs as never);
+            vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
+
+            // Act
+            const result = await trialService.reconcileDuplicateSubscriptions({ customerId });
+
+            // Assert — sub-c (newest) is kept, sub-a and sub-b are cancelled
+            expect(result.cancelledCount).toBe(2);
+            expect(result.cancelledIds).toContain('sub-a');
+            expect(result.cancelledIds).toContain('sub-b');
+            expect(result.cancelledIds).not.toContain('sub-c');
+            expect(result.keptId).toBe('sub-c');
+        });
+
+        it('should be a no-op when only one active subscription exists', async () => {
+            // Arrange
+            const customerId = 'customer-single-001';
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                {
+                    id: 'sub-only',
+                    customerId,
+                    status: 'active',
+                    createdAt: '2026-01-10T10:00:00.000Z'
+                }
+            ] as never);
+
+            // Act
+            const result = await trialService.reconcileDuplicateSubscriptions({ customerId });
+
+            // Assert
+            expect(result.cancelledCount).toBe(0);
+            expect(result.cancelledIds).toHaveLength(0);
+            expect(result.keptId).toBe('sub-only');
+            expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+        });
+
+        it('should be a no-op when the customer has no subscriptions', async () => {
+            // Arrange
+            const customerId = 'customer-empty-001';
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([] as never);
+
+            // Act
+            const result = await trialService.reconcileDuplicateSubscriptions({ customerId });
+
+            // Assert
+            expect(result.cancelledCount).toBe(0);
+            expect(result.cancelledIds).toHaveLength(0);
+            expect(result.keptId).toBeNull();
+            expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+        });
+
+        it('should return null keptId and 0 cancelled when billing is disabled', async () => {
+            // Arrange
+            const trialServiceNoBilling = new TrialService(null);
+
+            // Act
+            const result = await trialServiceNoBilling.reconcileDuplicateSubscriptions({
+                customerId: 'customer-123'
+            });
+
+            // Assert
+            expect(result.cancelledCount).toBe(0);
+            expect(result.cancelledIds).toHaveLength(0);
+            expect(result.keptId).toBeNull();
+        });
+
+        it('should continue cancelling remaining duplicates if one cancel call fails', async () => {
+            // Arrange — three live subs. After sorting descending by createdAt:
+            //   duplicates iteration order: [sub-middle, sub-oldest]
+            // First cancel call (sub-middle) fails; second (sub-oldest) succeeds.
+            const customerId = 'customer-partial-fail';
+
+            const subs = [
+                {
+                    id: 'sub-oldest',
+                    customerId,
+                    status: 'trialing',
+                    createdAt: '2026-01-01T00:00:00.000Z'
+                },
+                {
+                    id: 'sub-middle',
+                    customerId,
+                    status: 'trialing',
+                    createdAt: '2026-01-02T00:00:00.000Z'
+                },
+                {
+                    id: 'sub-newest',
+                    customerId,
+                    status: 'active',
+                    createdAt: '2026-01-03T00:00:00.000Z'
+                }
+            ];
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(subs as never);
+            // Sorted descending: newest, middle, oldest → duplicates: [middle, oldest]
+            // First call (sub-middle) fails, second call (sub-oldest) succeeds
+            vi.spyOn(mockBilling.subscriptions, 'cancel')
+                .mockRejectedValueOnce(new Error('Network timeout'))
+                .mockResolvedValue({} as never);
+
+            // Act
+            const result = await trialService.reconcileDuplicateSubscriptions({ customerId });
+
+            // Assert — sub-middle cancel failed (not counted), sub-oldest cancel succeeded
+            expect(result.cancelledCount).toBe(1);
+            expect(result.cancelledIds).toContain('sub-oldest');
+            expect(result.cancelledIds).not.toContain('sub-middle');
+            expect(result.keptId).toBe('sub-newest');
+            // Both cancel calls were attempted despite first failure
+            expect(mockBilling.subscriptions.cancel).toHaveBeenCalledTimes(2);
+        });
+
+        it('should ignore cancelled and non-live subscriptions when counting duplicates', async () => {
+            // Arrange — one active + one already-cancelled: not a duplicate scenario
+            const customerId = 'customer-mixed-001';
+
+            const subs = [
+                {
+                    id: 'sub-canceled',
+                    customerId,
+                    status: 'canceled',
+                    createdAt: '2026-01-01T00:00:00.000Z'
+                },
+                {
+                    id: 'sub-active',
+                    customerId,
+                    status: 'active',
+                    createdAt: '2026-01-10T00:00:00.000Z'
+                }
+            ];
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(subs as never);
+
+            // Act
+            const result = await trialService.reconcileDuplicateSubscriptions({ customerId });
+
+            // Assert — only one live subscription, no cancellation needed
+            expect(result.cancelledCount).toBe(0);
+            expect(result.keptId).toBe('sub-active');
+            expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+        });
+
+        it('should trigger reconciliation inside reactivateFromTrial when trial cancel fails', async () => {
+            // Arrange — this is the exact GAP-012 scenario end-to-end
+            const customerId = 'customer-gap012';
+            const newPlanId = 'plan-owner-pro';
+
+            const existingTrialSub = {
+                id: 'sub-trial-gap012',
+                customerId,
+                status: 'trialing',
+                createdAt: '2026-01-10T10:00:00.000Z'
+            };
+            const newActiveSub = {
+                id: 'sub-active-gap012',
+                customerId,
+                planId: newPlanId,
+                status: 'active',
+                createdAt: '2026-01-10T10:05:00.000Z'
+            };
+
+            // getByCustomerId is called twice: once in reactivateFromTrial (before create),
+            // once inside reconcileDuplicateSubscriptions (called after cancel fails)
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId')
+                .mockResolvedValueOnce([existingTrialSub] as never)
+                .mockResolvedValueOnce([existingTrialSub, newActiveSub] as never);
+
+            vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue(newActiveSub as never);
+
+            // First cancel call (in reactivateFromTrial loop) fails
+            // Second cancel call (in reconcileDuplicateSubscriptions) succeeds
+            vi.spyOn(mockBilling.subscriptions, 'cancel')
+                .mockRejectedValueOnce(new Error('QZPay timeout'))
+                .mockResolvedValueOnce({} as never);
+
+            // Act
+            const resultId = await trialService.reactivateFromTrial({
+                customerId,
+                planId: newPlanId
+            });
+
+            // Assert — new subscription is returned AND reconciliation cancelled the duplicate
+            expect(resultId).toBe('sub-active-gap012');
+            expect(mockBilling.subscriptions.cancel).toHaveBeenCalledTimes(2);
+            // First attempt (failed) in reactivateFromTrial loop
+            expect(mockBilling.subscriptions.cancel).toHaveBeenNthCalledWith(1, 'sub-trial-gap012');
+            // Second attempt (success) in reconcileDuplicateSubscriptions
+            expect(mockBilling.subscriptions.cancel).toHaveBeenNthCalledWith(2, 'sub-trial-gap012');
+        });
+    });
 });

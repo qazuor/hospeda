@@ -22,7 +22,13 @@ vi.mock('@repo/db', () => ({
     eq: vi.fn((_col: unknown, _val: unknown) => ({ __eq: true })),
     isNull: vi.fn((_col: unknown) => ({ __isNull: true })),
     and: vi.fn((...conditions: unknown[]) => ({ __and: true, conditions })),
-    lt: vi.fn((_col: unknown, _val: unknown) => ({ __lt: true }))
+    lt: vi.fn((_col: unknown, _val: unknown) => ({ __lt: true })),
+    // sql is required for pg_try_advisory_lock (concurrency guard added in GAP-009)
+    sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+        __sql: true,
+        strings,
+        values
+    }))
 }));
 
 vi.mock('@repo/billing', () => ({
@@ -181,6 +187,7 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
     /**
      * Common arrangement: single dead-letter event in the queue plus a db mock
      * that reflects the event is NOT already processed in billingWebhookEvents.
+     * execute() is required for the pg_try_advisory_lock concurrency guard (GAP-009).
      */
     function arrangeDb(
         deadLetterRows: unknown[],
@@ -203,6 +210,7 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
             .mockResolvedValueOnce(webhookEventRows);
 
         const db = {
+            execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
             select: vi.fn(() => ({
                 from: vi.fn(() => ({
                     where: vi.fn(() => ({
@@ -501,6 +509,7 @@ describe('webhookRetryJob.handler — retryMercadoPagoPaymentUpdated', () => {
             where: vi.fn().mockResolvedValue(undefined)
         };
         const db = {
+            execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
             select: vi.fn(() => ({
                 from: vi.fn(() => ({
                     where: vi.fn(() => ({
@@ -601,6 +610,7 @@ describe('webhookRetryJob.handler — retryMercadoPagoPaymentUpdated', () => {
             where: vi.fn().mockResolvedValue(undefined)
         };
         const db = {
+            execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
             select: vi
                 .fn()
                 .mockReturnValueOnce({
@@ -661,6 +671,7 @@ describe('webhookRetryJob.handler — retryMercadoPagoPaymentUpdated', () => {
             where: vi.fn().mockResolvedValue(undefined)
         };
         const db = {
+            execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
             select: vi.fn(() => ({
                 from: vi.fn(() => ({
                     where: vi.fn(() => ({
@@ -729,6 +740,7 @@ describe('webhookRetryJob.handler — retryMercadoPagoPaymentUpdated', () => {
             where: vi.fn().mockResolvedValue(undefined)
         };
         const db = {
+            execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
             select: vi.fn(() => ({
                 from: vi.fn(() => ({
                     where: vi.fn(() => ({
@@ -785,6 +797,7 @@ describe('webhookRetryJob.handler — batch processing', () => {
     it('should return success with no-events message when dead letter queue is empty', async () => {
         // Arrange
         const db = {
+            execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
             select: vi.fn(() => ({
                 from: vi.fn(() => ({
                     where: vi.fn(() => ({
@@ -814,6 +827,7 @@ describe('webhookRetryJob.handler — batch processing', () => {
         // Arrange
         const events = [makeDeadLetterEvent({ id: 'evt-1' }), makeDeadLetterEvent({ id: 'evt-2' })];
         const db = {
+            execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
             select: vi.fn(() => ({
                 from: vi.fn(() => ({
                     where: vi.fn(() => ({
@@ -850,6 +864,7 @@ describe('webhookRetryJob.handler — batch processing', () => {
             where: vi.fn().mockResolvedValue(undefined)
         };
         const db = {
+            execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
             select: vi.fn(() => ({
                 from: vi.fn(() => ({
                     where: vi.fn(() => ({
@@ -937,6 +952,7 @@ describe('webhookRetryJob.handler — batch processing', () => {
         };
 
         const db = {
+            execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
             select: vi.fn(() => {
                 selectCallCount++;
                 if (selectCallCount === 1) {
@@ -1002,6 +1018,7 @@ describe('webhookRetryJob.handler — batch processing', () => {
     it('should return success=false when the batch query itself throws', async () => {
         // Arrange
         const db = {
+            execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
             select: vi.fn(() => ({
                 from: vi.fn(() => ({
                     where: vi.fn(() => ({
