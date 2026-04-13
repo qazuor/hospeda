@@ -263,6 +263,7 @@ export function MobileMenu({
     // ------------------------------------------------------------------
     return (
         <div
+            // biome-ignore lint/a11y/useSemanticElements: CSS-animated overlay; <dialog> open/close API would conflict with the slide-in animation
             role="dialog"
             aria-modal="true"
             aria-label={t('nav.mobileMenu', 'Navigation menu')}

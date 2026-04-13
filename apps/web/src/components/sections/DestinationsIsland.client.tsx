@@ -44,6 +44,7 @@ interface DestinationsIslandProps {
 function renderStars(rating: number): ReactElement[] {
     return Array.from({ length: 5 }, (_, i) => (
         <span
+            // biome-ignore lint/suspicious/noArrayIndexKey: static fixed-length star array, order never changes
             key={i}
             className={styles.cardStar}
             aria-hidden="true"
@@ -181,12 +182,12 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                 </header>
 
                 {/* Embla carousel */}
-                <div
+                <section
                     className={styles.carouselRoot}
-                    role="region"
                     aria-roledescription="carousel"
                     aria-label={t('home.featuredDestinations.title', 'Destinos populares')}
                     onKeyDown={handleKeyDown}
+                    // biome-ignore lint/a11y/noNoninteractiveTabindex: carousel needs keyboard focus for arrow-key navigation
                     tabIndex={0}
                 >
                     <div
@@ -268,7 +269,7 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                             })}
                         </div>
                     </div>
-                </div>
+                </section>
 
                 {/* Slide counter + arrow navigation (replaces dots when >7 items) */}
                 <nav

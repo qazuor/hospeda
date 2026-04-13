@@ -14,6 +14,7 @@ import 'react-day-picker/style.css';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import type { IconProps } from '@repo/icons';
 import {
     AccommodationIcon,
     BuildingIcon,
@@ -67,10 +68,7 @@ const ACCOMMODATION_TYPES = [
 type AccommodationType = (typeof ACCOMMODATION_TYPES)[number];
 
 /** Maps each accommodation type to a Phosphor icon component. */
-const TYPE_ICONS: Record<
-    AccommodationType,
-    React.ComponentType<{ size?: number; weight?: string; 'aria-hidden'?: string }>
-> = {
+const TYPE_ICONS: Record<AccommodationType, React.ComponentType<IconProps>> = {
     HOTEL: BuildingIcon,
     APARTMENT: BuildingIcon,
     HOUSE: HomeIcon,
@@ -222,6 +220,7 @@ function SearchBarInner({ locale, destinations }: SearchBarProps) {
         <div
             ref={barRef}
             className={styles.searchBar}
+            // biome-ignore lint/a11y/useSemanticElements: <search> element has inconsistent browser support
             role="search"
             aria-label={t('home.searchBar.searchAriaLabel', 'Buscar alojamientos')}
         >
@@ -235,6 +234,7 @@ function SearchBarInner({ locale, destinations }: SearchBarProps) {
                     )}
                     onClick={() => togglePanel('destination')}
                     onKeyDown={(e) => e.key === 'Enter' && togglePanel('destination')}
+                    // biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button>
                     role="button"
                     tabIndex={0}
                     aria-expanded={activePanel === 'destination'}
@@ -272,6 +272,7 @@ function SearchBarInner({ locale, destinations }: SearchBarProps) {
                     )}
                     onClick={() => togglePanel('type')}
                     onKeyDown={(e) => e.key === 'Enter' && togglePanel('type')}
+                    // biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button>
                     role="button"
                     tabIndex={0}
                     aria-expanded={activePanel === 'type'}
@@ -309,6 +310,7 @@ function SearchBarInner({ locale, destinations }: SearchBarProps) {
                     )}
                     onClick={() => togglePanel('dates')}
                     onKeyDown={(e) => e.key === 'Enter' && togglePanel('dates')}
+                    // biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button>
                     role="button"
                     tabIndex={0}
                     aria-expanded={activePanel === 'dates'}
@@ -340,6 +342,7 @@ function SearchBarInner({ locale, destinations }: SearchBarProps) {
                     className={cn(styles.col, activePanel === 'guests' && styles.colActive)}
                     onClick={() => togglePanel('guests')}
                     onKeyDown={(e) => e.key === 'Enter' && togglePanel('guests')}
+                    // biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button>
                     role="button"
                     tabIndex={0}
                     aria-expanded={activePanel === 'guests'}
@@ -390,12 +393,14 @@ function SearchBarInner({ locale, destinations }: SearchBarProps) {
 
             {/* --- Destination panel --- */}
             {activePanel === 'destination' && (
+                // biome-ignore lint/a11y/useFocusableInteractive: listbox children (buttons) handle focus
                 <div
                     className={cn(
                         styles.panel,
                         styles.destinationPanel,
                         openDirection === 'up' && styles.panelUp
                     )}
+                    // biome-ignore lint/a11y/useSemanticElements: custom styled dropdown cannot use native <select>
                     role="listbox"
                 >
                     {/* Clear option */}
@@ -404,6 +409,7 @@ function SearchBarInner({ locale, destinations }: SearchBarProps) {
                             type="button"
                             className={cn(styles.dropdownItem, styles.dropdownItemClear)}
                             onClick={() => handleSelectDestination(null)}
+                            // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
                             role="option"
                             aria-selected={false}
                         >
@@ -419,6 +425,7 @@ function SearchBarInner({ locale, destinations }: SearchBarProps) {
                                 selectedDestination?.id === dest.id && styles.dropdownItemActive
                             )}
                             onClick={() => handleSelectDestination(dest)}
+                            // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
                             role="option"
                             aria-selected={selectedDestination?.id === dest.id}
                         >
@@ -438,12 +445,14 @@ function SearchBarInner({ locale, destinations }: SearchBarProps) {
 
             {/* --- Type panel --- */}
             {activePanel === 'type' && (
+                // biome-ignore lint/a11y/useFocusableInteractive: listbox children (buttons) handle focus
                 <div
                     className={cn(
                         styles.panel,
                         styles.typePanel,
                         openDirection === 'up' && styles.panelUp
                     )}
+                    // biome-ignore lint/a11y/useSemanticElements: custom multi-select dropdown cannot use native <select>
                     role="listbox"
                     aria-multiselectable="true"
                 >
@@ -473,6 +482,7 @@ function SearchBarInner({ locale, destinations }: SearchBarProps) {
                                     type="button"
                                     className={styles.typeItem}
                                     onClick={() => handleToggleType(type)}
+                                    // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
                                     role="option"
                                     aria-selected={isChecked}
                                 >
@@ -525,6 +535,7 @@ function SearchBarInner({ locale, destinations }: SearchBarProps) {
                         styles.calendarPanel,
                         openDirection === 'up' && styles.panelUp
                     )}
+                    // biome-ignore lint/a11y/useSemanticElements: popover panel, not a modal — <dialog> API requires open/close management incompatible with conditional render
                     role="dialog"
                     aria-label={t('home.searchBar.datesLabel', 'Fechas')}
                 >
@@ -558,6 +569,7 @@ function SearchBarInner({ locale, destinations }: SearchBarProps) {
                         styles.guestsPanel,
                         openDirection === 'up' && styles.panelUp
                     )}
+                    // biome-ignore lint/a11y/useSemanticElements: popover panel, not a modal — <dialog> API requires open/close management incompatible with conditional render
                     role="dialog"
                     aria-label={t('home.searchBar.guestsLabel', 'Huéspedes')}
                 >
