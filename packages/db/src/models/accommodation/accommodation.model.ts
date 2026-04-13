@@ -6,12 +6,13 @@ import type {
     UserSummary
 } from '@repo/schemas';
 import type { AnyColumn, SQL } from 'drizzle-orm';
-import { and, asc, count, desc, eq, exists, gte, inArray, isNull, ne, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, exists, gte, inArray, isNull, ne, or, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 import { rAccommodationAmenity } from '../../schemas/accommodation/r_accommodation_amenity.dbschema.ts';
 import { rAccommodationFeature } from '../../schemas/accommodation/r_accommodation_feature.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
+import { safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
@@ -89,6 +90,14 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         }
         if (params.minRating !== undefined) {
             whereClauses.push(gte(accommodations.averageRating, params.minRating));
+        }
+        if (params.q) {
+            whereClauses.push(
+                or(
+                    safeIlike(accommodations.name, params.q),
+                    safeIlike(accommodations.description, params.q)
+                ) as SQL<unknown>
+            );
         }
 
         const where = and(...whereClauses);
@@ -190,6 +199,14 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                             )
                         )
                 )
+            );
+        }
+        if (params.q) {
+            whereClauses.push(
+                or(
+                    safeIlike(accommodations.name, params.q),
+                    safeIlike(accommodations.description, params.q)
+                ) as SQL<unknown>
             );
         }
 
@@ -329,6 +346,14 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                             )
                         )
                 )
+            );
+        }
+        if (params.q) {
+            whereClauses.push(
+                or(
+                    safeIlike(accommodations.name, params.q),
+                    safeIlike(accommodations.description, params.q)
+                ) as SQL<unknown>
             );
         }
 
