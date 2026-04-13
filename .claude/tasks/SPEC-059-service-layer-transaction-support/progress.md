@@ -1,6 +1,6 @@
 # SPEC-059 Progress — Service-Layer Transaction Support
 
-**Status**: in-progress | **Progress**: 7/32 tasks (22%)
+**Status**: completed | **Progress**: 32/32 tasks (100%)
 **Last updated**: 2026-04-13
 
 ---
@@ -66,23 +66,44 @@ Same pattern. Also update `_getAndValidateEntity` in `base.service.ts` to accept
 
 ---
 
-## Remaining phases
+## Completed — Phase 3: hookState migrations (T-013 → T-023) ✅
 
-### Phase 3: hookState migrations (T-013 → T-023) — depends on T-012
-- T-013: 13 stateless services — add `ctx` to `_executeSearch`/`_executeCount`
-- T-014: UserService + ExchangeRateService
-- T-015: 6 stateful services — signatures only
-- T-016–T-023: Replace mutable instance fields with `ctx.hookState` in 6 services
+| Task | Description | Commit |
+|------|-------------|--------|
+| T-013 | 13 stateless services (done by T-012 cascade) | 9edbaacf |
+| T-014 | UserService hooks (T-009 cascade) + ExchangeRateService 4 custom methods | 4ecf23d6 |
+| T-015 | 6 stateful services (done by T-012 cascade) | 9edbaacf |
+| T-016+T-017 | DestinationService hookState (4 mutable fields → ctx.hookState) | 4ecf23d6 |
+| T-018 | AccommodationService hookState (2 mutable fields) | 4ecf23d6 |
+| T-019+T-020 | PostService hookState (3 mutable fields + update override) | 4ecf23d6 |
+| T-021 | EventService hookState (2 mutable fields) | 4ecf23d6 |
+| T-022 | AccommodationReviewService hookState (2 mutable fields) | 4ecf23d6 |
+| T-023 | DestinationReviewService hookState (2 mutable fields) | 4ecf23d6 |
 
-### Phase 4: ctx.tx propagation (T-024–T-026) — NEEDS SPEC-060
-- T-024: DestinationService.update() — replace withTransaction with ctx.tx
-- T-025: AccommodationReviewService stats — pass ctx.tx to model
-- T-026: DestinationReviewService stats — pass ctx.tx to model
+**All mutable instance fields eliminated — zero shared state across requests.**
 
-### Testing (T-027–T-032) — can start after respective tasks
-- T-027: withServiceTransaction tests (unblocked now — T-005/T-006 done)
-- T-028: runWithLoggingAndValidation tx error-rethrow (after T-008)
-- T-029–T-032: hookState + backward compat tests
+---
+
+## Completed — Phase 4: ctx.tx propagation (T-024–T-026) ✅
+
+| Task | Description | Commit |
+|------|-------------|--------|
+| T-024 | DestinationService update() conditional ctx.tx (already implemented, comment cleanup) | a9ff7673 |
+| T-025 | AccommodationReviewService _afterSoftDelete/_afterHardDelete/_afterRestore pass ctx.tx | 6258ecce |
+| T-026 | DestinationReviewService already passing ctx.tx (no changes needed) | 4ecf23d6 |
+
+### Completed — Testing (T-027–T-032) ✅
+
+| Task | Description | Commit |
+|------|-------------|--------|
+| T-027 | withServiceTransaction tests (commit, rollback, timeout, baseCtx) | ee7d187e |
+| T-028 | runWithLoggingAndValidation rethrow (ServiceError, unknown, DbError) | ee7d187e |
+| T-029 | AccommodationService hookState concurrency isolation | ee7d187e |
+| T-030 | DestinationService hookState (instance fields eliminated) | ee7d187e |
+| T-031 | backward compat — all methods work without ctx | ee7d187e |
+| T-032 | hookState init edge cases (tx without hookState, preserve existing) | ee7d187e |
+
+**38 tests across 6 files, all passing.**
 
 ---
 
