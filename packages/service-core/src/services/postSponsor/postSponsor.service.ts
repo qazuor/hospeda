@@ -13,10 +13,17 @@ import {
     PostSponsorUpdateInputSchema
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
+import { z } from 'zod';
 import { BaseCrudService } from '../../base';
-import type { Actor, PaginatedListOutput, ServiceConfig, ServiceContext } from '../../types';
+import type {
+    Actor,
+    PaginatedListOutput,
+    ServiceConfig,
+    ServiceContext,
+    ServiceOutput
+} from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './postSponsor.normalizers';
-import { checkCanManagePostSponsor } from './postSponsor.permissions';
+import { checkCanAdminList, checkCanManagePostSponsor } from './postSponsor.permissions';
 
 /**
  * Service for managing PostSponsor entities.
@@ -88,6 +95,15 @@ export class PostSponsorService extends BaseCrudService<
         checkCanManagePostSponsor(actor);
     }
 
+    /**
+     * @inheritdoc
+     * Verifies admin access via base class, then checks POST_SPONSOR_VIEW.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
+    }
+
     protected async _executeSearch(
         params: PostSponsorSearchInput,
         _actor: Actor,
@@ -154,35 +170,42 @@ export class PostSponsorService extends BaseCrudService<
     public async searchForList(
         actor: Actor,
         params: PostSponsorSearchInput
-    ): Promise<PostSponsorListOutput> {
-        this._canSearch(actor);
-        const { name, type, q, page = 1, pageSize = 10, sortBy, sortOrder } = params;
+    ): Promise<ServiceOutput<PostSponsorListOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'searchForList',
+            input: { actor, ...params },
+            schema: z.record(z.string(), z.unknown()),
+            execute: async (_validatedParams, validatedActor) => {
+                await this._canSearch(validatedActor);
+                const { name, type, q, page = 1, pageSize = 10, sortBy, sortOrder } = params;
 
-        const where: Record<string, unknown> = {};
-        if (type) {
-            where.type = type;
-        }
+                const where: Record<string, unknown> = {};
+                if (type) {
+                    where.type = type;
+                }
 
-        const additionalConditions: SQL[] = [];
-        if (name) {
-            additionalConditions.push(safeIlike(postSponsors.name, name));
-        }
-        if (q) {
-            const orCondition = or(
-                safeIlike(postSponsors.name, q),
-                safeIlike(postSponsors.description, q)
-            );
-            if (orCondition) additionalConditions.push(orCondition);
-        }
+                const additionalConditions: SQL[] = [];
+                if (name) {
+                    additionalConditions.push(safeIlike(postSponsors.name, name));
+                }
+                if (q) {
+                    const orCondition = or(
+                        safeIlike(postSponsors.name, q),
+                        safeIlike(postSponsors.description, q)
+                    );
+                    if (orCondition) additionalConditions.push(orCondition);
+                }
 
-        const result = await this.model.findAll(
-            where,
-            { page, pageSize, sortBy, sortOrder },
-            additionalConditions
-        );
-        return {
-            items: result.items,
-            total: result.total
-        };
+                const result = await this.model.findAll(
+                    where,
+                    { page, pageSize, sortBy, sortOrder },
+                    additionalConditions
+                );
+                return {
+                    items: result.items,
+                    total: result.total
+                };
+            }
+        });
     }
 }

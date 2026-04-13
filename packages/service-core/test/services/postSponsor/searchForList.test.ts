@@ -34,9 +34,9 @@ describe('PostSponsorService.searchForList', () => {
         const result = await service.searchForList(actor, { page: 1, pageSize: 10 });
 
         // Assert
-        expect(result.items).toHaveLength(1);
-        expect(result.items[0]).toEqual(entity);
-        expect(result.total).toBe(1);
+        expect(result.data?.items).toHaveLength(1);
+        expect(result.data?.items[0]).toEqual(entity);
+        expect(result.data?.total).toBe(1);
     });
 
     it('should return empty items when model returns none', async () => {
@@ -47,24 +47,30 @@ describe('PostSponsorService.searchForList', () => {
         const result = await service.searchForList(actor, { page: 1, pageSize: 10 });
 
         // Assert
-        expect(result.items).toHaveLength(0);
-        expect(result.total).toBe(0);
+        expect(result.data?.items).toHaveLength(0);
+        expect(result.data?.total).toBe(0);
     });
 
-    it('should throw ServiceError when actor is null', async () => {
-        // Act & Assert -- _canSearch throws immediately for null actor
+    it('should return error when actor is null', async () => {
+        // Act -- runWithLoggingAndValidation captures errors as result.error
         // @ts-expect-error intentional null
-        await expect(service.searchForList(null, { page: 1, pageSize: 10 })).rejects.toThrow();
+        const result = await service.searchForList(null, { page: 1, pageSize: 10 });
+
+        // Assert
+        expect(result.data).toBeUndefined();
+        expect(result.error).toBeDefined();
     });
 
-    it('should throw ServiceError when actor lacks POST_SPONSOR_MANAGE permission', async () => {
+    it('should return error when actor lacks POST_SPONSOR_MANAGE permission', async () => {
         // Arrange
         const unprivilegedActor = createActor({ permissions: [] });
 
-        // Act & Assert
-        await expect(
-            service.searchForList(unprivilegedActor, { page: 1, pageSize: 10 })
-        ).rejects.toThrow();
+        // Act
+        const result = await service.searchForList(unprivilegedActor, { page: 1, pageSize: 10 });
+
+        // Assert
+        expect(result.data).toBeUndefined();
+        expect(result.error).toBeDefined();
     });
 
     it('should forward page and pageSize to model.findAll', async () => {
@@ -210,14 +216,16 @@ describe('PostSponsorService.searchForList', () => {
         expect((additionalConditions as unknown[]).length).toBeGreaterThan(0);
     });
 
-    it('should propagate model errors as thrown exceptions', async () => {
+    it('should return error result when model throws', async () => {
         // Arrange
         asMock(model.findAll).mockRejectedValueOnce(new Error('DB error'));
 
-        // Act & Assert -- searchForList throws directly, does not return Result
-        await expect(service.searchForList(actor, { page: 1, pageSize: 10 })).rejects.toThrow(
-            'DB error'
-        );
+        // Act -- searchForList now returns ServiceOutput, does not throw
+        const result = await service.searchForList(actor, { page: 1, pageSize: 10 });
+
+        // Assert
+        expect(result.data).toBeUndefined();
+        expect(result.error).toBeDefined();
     });
 
     it('should call model.findAll exactly once per invocation', async () => {

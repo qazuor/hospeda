@@ -33,6 +33,23 @@ export const canAccessBookmark = (actor: Actor | undefined, bookmark: UserBookma
 };
 
 /**
+ * Checks if an actor has the USER_BOOKMARK_VIEW_ANY permission for admin list operations.
+ * Requires USER_BOOKMARK_VIEW_ANY permission in addition to admin access
+ * (admin access is verified by the base class default).
+ *
+ * @param actor - The user or system performing the action.
+ * @throws {ServiceError} If the actor lacks USER_BOOKMARK_VIEW_ANY permission.
+ */
+export function checkCanAdminList(actor: Actor): void {
+    if (!actor.permissions?.includes(PermissionEnum.USER_BOOKMARK_VIEW_ANY)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: USER_BOOKMARK_VIEW_ANY required for admin list'
+        );
+    }
+}
+
+/**
  * Verifies that the actor is allowed to create a bookmark for the given user.
  * Only the owner with USER_BOOKMARK_CREATE permission can create bookmarks for themselves.
  *

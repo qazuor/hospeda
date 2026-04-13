@@ -21,7 +21,11 @@ import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './userBookmark.normalizers';
-import { canAccessBookmark, canCreateBookmark } from './userBookmark.permissions';
+import {
+    canAccessBookmark,
+    canCreateBookmark,
+    checkCanAdminList
+} from './userBookmark.permissions';
 
 /**
  * Service for managing user bookmarks (favorites).
@@ -104,6 +108,16 @@ export class UserBookmarkService extends BaseCrudService<
     protected _canRestore(actor: Actor, entity: UserBookmark): void {
         canAccessBookmark(actor, entity);
     }
+
+    /**
+     * @inheritdoc
+     * Verifies admin access via base class, then checks USER_BOOKMARK_VIEW_ANY.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
+    }
+
     protected _canUpdateVisibility(
         actor: Actor,
         entity: UserBookmark,

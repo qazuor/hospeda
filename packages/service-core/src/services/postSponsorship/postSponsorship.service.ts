@@ -13,6 +13,7 @@ import { BaseCrudService } from '../../base';
 import type { Actor, ServiceConfig, ServiceContext } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './postSponsorship.normalizers';
 import {
+    checkCanAdminList,
     checkCanCountPostSponsorship,
     checkCanCreatePostSponsorship,
     checkCanDeletePostSponsorship,
@@ -84,6 +85,15 @@ export class PostSponsorshipService extends BaseCrudService<
     }
     protected _canUpdateVisibility(_actor: Actor, _entity: unknown, _newVisibility: unknown) {
         checkCanUpdatePostSponsorship(_actor, _entity);
+    }
+
+    /**
+     * @inheritdoc
+     * Verifies admin access via base class, then checks POST_SPONSORSHIP_VIEW.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
     }
 
     /**

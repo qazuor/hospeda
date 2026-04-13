@@ -20,6 +20,7 @@ import { ServiceError } from '../../types/index.js';
 import { calculateInverseRate } from './exchange-rate.helpers.js';
 import { normalizeCreateInput, normalizeUpdateInput } from './exchange-rate.normalizers.js';
 import {
+    checkCanAdminList,
     checkCanCountExchangeRate,
     checkCanCreateExchangeRate,
     checkCanDeleteExchangeRate,
@@ -133,6 +134,15 @@ export class ExchangeRateService extends BaseCrudService<
         _newVisibility: unknown
     ): void {
         checkCanUpdateExchangeRate(actor);
+    }
+
+    /**
+     * @inheritdoc
+     * Verifies admin access via base class, then checks EXCHANGE_RATE_VIEW.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
     }
 
     // ============================================================================

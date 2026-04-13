@@ -137,3 +137,20 @@ export const checkCanCountExchangeRate = (actor: Actor): void => {
         );
     }
 };
+
+/**
+ * Checks if an actor has the EXCHANGE_RATE_VIEW permission for admin list operations.
+ * Requires EXCHANGE_RATE_VIEW permission in addition to admin access
+ * (admin access is verified by the base class default).
+ *
+ * @param actor - The actor performing the action.
+ * @throws {ServiceError} If the actor lacks EXCHANGE_RATE_VIEW permission.
+ */
+export const checkCanAdminList = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.EXCHANGE_RATE_VIEW)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: EXCHANGE_RATE_VIEW required for admin list'
+        );
+    }
+};
