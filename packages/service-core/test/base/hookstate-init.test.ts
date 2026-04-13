@@ -124,8 +124,11 @@ describe('BaseCrudService: hookState initialization edge cases', () => {
         // Arrange
         const ctx: ServiceContext | undefined = undefined;
 
-        // Act - simulate the resolvedCtx pattern
-        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+        // Act - simulate the resolvedCtx pattern (cast needed for TS spread)
+        const resolvedCtx: ServiceContext = {
+            hookState: {},
+            ...((ctx as ServiceContext | undefined) ?? {})
+        };
 
         // Assert - spreading undefined is a no-op, defaults are kept
         expect(resolvedCtx.hookState).toEqual({});
