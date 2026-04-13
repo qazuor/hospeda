@@ -168,6 +168,20 @@
             "status": "pending",
             "progress": "0/18",
             "path": "SPEC-058-basemodel-interface-alignment"
+        },
+        {
+            "specId": "SPEC-075",
+            "title": "Web App Complete Page Structure",
+            "status": "in-progress",
+            "progress": "8/66",
+            "path": "SPEC-075-web-complete-page-structure"
+        },
+        {
+            "specId": "SPEC-060-gaps",
+            "title": "SPEC-060 Gap Remediation — All 56 Gaps",
+            "status": "in-progress",
+            "progress": "5/58",
+            "path": "SPEC-060-gaps"
         }
     ],
     "standalone": {

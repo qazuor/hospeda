@@ -2133,5 +2133,7 @@
         "completed": 58,
         "blocked": 0,
         "averageComplexity": 2.7
-    }
+    },
+    "status": "completed",
+    "completedAt": "2026-04-13T14:00:52.531019+00:00"
 }

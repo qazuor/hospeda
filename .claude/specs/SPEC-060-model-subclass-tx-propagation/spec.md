@@ -1,6 +1,6 @@
 # SPEC-060: Model Subclass Transaction Propagation
 
-> **Status**: draft
+> **Status**: completed
 > **Priority**: P1
 > **Complexity**: High
 > **Origin**: SPEC-053 gaps (GAP-023, GAP-024, GAP-032, GAP-067, GAP-068)
