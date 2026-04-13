@@ -295,7 +295,7 @@ export abstract class BaseCrudWrite<
                 const processedId = await this._beforeHardDelete(id, validActor, resolvedCtx);
                 const where = { id: processedId };
                 // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
-                const result = { count: await this.model.hardDelete(where as any) };
+                const result = { count: await this.model.hardDelete(where as any, ctx?.tx) };
                 return this._afterHardDelete(result, validActor, resolvedCtx);
             }
         });
