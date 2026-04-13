@@ -11,7 +11,7 @@
  * - Increments attempts count on failure
  * - Marks as permanently failed after 5 attempts with admin alert
  * - Processes in batches of 50 to avoid timeouts
- * - Idempotent execution (safe to run concurrently)
+ * - Uses pg_try_advisory_lock to prevent concurrent execution across instances
  *
  * @module cron/jobs/webhook-retry
  */
@@ -25,7 +25,8 @@ import {
     eq,
     getDb,
     isNull,
-    lt
+    lt,
+    sql
 } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
 import { getQZPayBilling } from '../../middlewares/billing.js';
@@ -342,6 +343,24 @@ export const webhookRetryJob: CronJobDefinition = {
     handler: async (ctx) => {
         const { logger, startedAt, dryRun } = ctx;
 
+        // ── Concurrency guard (GAP-009) ───────────────────────────────────────
+        // Prevent concurrent execution across multiple API instances.
+        const lockKey = 1001;
+        const db = getDb();
+        const lockResult = await db.execute(
+            sql`SELECT pg_try_advisory_lock(${lockKey}) AS acquired`
+        );
+        if (!lockResult.rows[0]?.acquired) {
+            logger.warn('Could not acquire advisory lock — skipping run', { lockKey });
+            return {
+                success: true,
+                message: 'Skipped — another instance is already running',
+                processed: 0,
+                errors: 0,
+                durationMs: 0
+            };
+        }
+
         logger.info('Starting webhook retry job', {
             dryRun,
             startedAt: startedAt.toISOString()
@@ -353,8 +372,6 @@ export const webhookRetryJob: CronJobDefinition = {
         let permanentlyFailed = 0;
 
         try {
-            const db = getDb();
-
             // Query unresolved events from dead letter queue
             // Unresolved = resolved_at IS NULL
             const unresolvedEvents = await db

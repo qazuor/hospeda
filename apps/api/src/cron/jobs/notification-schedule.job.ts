@@ -17,7 +17,7 @@
  * @module cron/jobs/notification-schedule
  */
 
-import { billingNotificationLog, eq, getDb } from '@repo/db';
+import { billingNotificationLog, eq, getDb, sql } from '@repo/db';
 import { type NotificationPayload, NotificationType, RetryService } from '@repo/notifications';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { processDbNotificationRetries } from '../../services/notification-retry.service.js';
@@ -166,6 +166,24 @@ export const notificationScheduleJob: CronJobDefinition = {
 
     handler: async (ctx) => {
         const { logger, startedAt, dryRun } = ctx;
+
+        // ── Concurrency guard (GAP-034) ───────────────────────────────────────
+        // Prevent concurrent execution across multiple API instances.
+        const lockKey = 1002;
+        const db = getDb();
+        const lockResult = await db.execute(
+            sql`SELECT pg_try_advisory_lock(${lockKey}) AS acquired`
+        );
+        if (!lockResult.rows[0]?.acquired) {
+            logger.warn('Could not acquire advisory lock — skipping run', { lockKey });
+            return {
+                success: true,
+                message: 'Skipped — another instance is already running',
+                processed: 0,
+                errors: 0,
+                durationMs: 0
+            };
+        }
 
         // Load settings from DB, falling back to compile-time constants
         const billingSettings = await loadBillingSettings();

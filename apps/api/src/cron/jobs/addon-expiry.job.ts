@@ -1061,11 +1061,11 @@ export const addonExpiryJob: CronJobDefinition = {
                 });
             }
 
-            // 6. Entitlement reconciliation retry (GAP-043-069)
+            // 6. Entitlement reconciliation retry (T-039 / GAP-011)
             // Retries removeAddonEntitlements() for purchases where the initial
-            // entitlement removal failed during expiry processing but the status
-            // was already updated to 'expired'. The flag is stored in
-            // metadata->>'entitlementRemovalPending' = 'true'.
+            // entitlement removal failed during expiry processing but the DB status
+            // was already updated to 'expired'. Tracked via the dedicated boolean column
+            // `entitlement_removal_pending` instead of JSONB metadata.
             // Limited to 10 per run to stay within the 2-minute cron window.
             let entitlementReconciled = 0;
             let entitlementReconcileErrors = 0;
@@ -1087,7 +1087,7 @@ export const addonExpiryJob: CronJobDefinition = {
                         and(
                             eq(billingAddonPurchases.status, 'expired'),
                             isNull(billingAddonPurchases.deletedAt),
-                            sql<boolean>`${billingAddonPurchases.metadata}->>'entitlementRemovalPending' = 'true'`
+                            eq(billingAddonPurchases.entitlementRemovalPending, true)
                         )
                     )
                     .limit(10);
@@ -1125,16 +1125,13 @@ export const addonExpiryJob: CronJobDefinition = {
                         const newRetryCount = retryCount + 1;
 
                         if (removeResult.success) {
-                            // Clear the pending flag on success
-                            const { entitlementRemovalPending: _removed, ...restMeta } =
-                                meta as Record<string, unknown> & {
-                                    entitlementRemovalPending?: unknown;
-                                };
+                            // Clear the dedicated flag column and record the retry count in metadata
                             await db
                                 .update(billingAddonPurchases)
                                 .set({
+                                    entitlementRemovalPending: false,
                                     metadata: {
-                                        ...restMeta,
+                                        ...meta,
                                         entitlementRemovalRetries: newRetryCount
                                     },
                                     updatedAt: new Date()
@@ -1150,7 +1147,7 @@ export const addonExpiryJob: CronJobDefinition = {
                                 addonSlug: purchase.addonSlug
                             });
                         } else {
-                            // Keep flag set; escalate to Sentry after 3 retries
+                            // Keep flag set; record retry count and escalate to Sentry after 3 retries
                             await db
                                 .update(billingAddonPurchases)
                                 .set({

@@ -23,7 +23,7 @@
 import { createSubscriptionLifecycle } from '@qazuor/qzpay-core';
 import type { LifecycleEvent, QZPayCurrency } from '@qazuor/qzpay-core';
 import { DUNNING_RETRY_INTERVALS } from '@repo/billing';
-import { billingDunningAttempts, getDb } from '@repo/db';
+import { billingDunningAttempts, getDb, sql } from '@repo/db';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { sendSubscriptionCancelledNotification } from '../../routes/webhooks/mercadopago/notifications.js';
 import { loadBillingSettings } from '../../utils/billing-settings.js';
@@ -105,6 +105,24 @@ export const dunningJob: CronJobDefinition = {
 
     handler: async (ctx) => {
         const { logger, startedAt, dryRun } = ctx;
+
+        // ── Concurrency guard (GAP-035) ───────────────────────────────────────
+        // Prevent concurrent execution across multiple API instances.
+        const lockKey = 1003;
+        const db = getDb();
+        const lockResult = await db.execute(
+            sql`SELECT pg_try_advisory_lock(${lockKey}) AS acquired`
+        );
+        if (!lockResult.rows[0]?.acquired) {
+            logger.warn('Could not acquire advisory lock — skipping run', { lockKey });
+            return {
+                success: true,
+                message: 'Skipped — another instance is already running',
+                processed: 0,
+                errors: 0,
+                durationMs: 0
+            };
+        }
 
         // Load settings from DB, falling back to compile-time constants
         const billingSettings = await loadBillingSettings();
