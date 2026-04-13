@@ -73,7 +73,7 @@
         },
         {
             "specId": "SPEC-020-GAPS",
-            "title": "SPEC-020 Deployment Readiness — Gaps Remediation",
+            "title": "SPEC-020 Deployment Readiness \u2014 Gaps Remediation",
             "status": "pending",
             "progress": "0/17",
             "path": "SPEC-020-gaps-remediation"
@@ -101,7 +101,7 @@
         },
         {
             "specId": "SPEC-043-GAPS",
-            "title": "SPEC-043 Addon Lifecycle Events — Gaps Remediation",
+            "title": "SPEC-043 Addon Lifecycle Events \u2014 Gaps Remediation",
             "status": "pending",
             "progress": "0/65",
             "path": "SPEC-043-gaps-remediation"
@@ -115,7 +115,7 @@
         },
         {
             "specId": "SPEC-034-GAPS",
-            "title": "SPEC-034 ISR Revalidation — Gaps Remediation",
+            "title": "SPEC-034 ISR Revalidation \u2014 Gaps Remediation",
             "status": "pending",
             "progress": "0/28",
             "path": "SPEC-034-gaps-remediation"
@@ -178,10 +178,24 @@
         },
         {
             "specId": "SPEC-060-gaps",
-            "title": "SPEC-060 Gap Remediation — All 56 Gaps",
+            "title": "SPEC-060 Gap Remediation \u2014 All 56 Gaps",
             "status": "in-progress",
             "progress": "5/58",
             "path": "SPEC-060-gaps"
+        },
+        {
+            "specId": "SPEC-059",
+            "title": "Service-Layer Transaction Support & Concurrency Safety",
+            "status": "in-progress",
+            "progress": "7/32",
+            "path": "SPEC-059-service-layer-transaction-support"
+        },
+        {
+            "specId": "SPEC-068",
+            "title": "Type-Safe list() Options via Generics",
+            "status": "completed",
+            "progress": "4/4",
+            "path": "SPEC-068-list-execute-search-generics"
         }
     ],
     "standalone": {

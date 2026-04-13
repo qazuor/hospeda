@@ -1,6 +1,6 @@
 # SPEC-059: Service-Layer Transaction Support & Concurrency Safety
 
-> **Status**: draft
+> **Status**: in-progress
 > **Priority**: P1
 > **Complexity**: High
 > **Origin**: SPEC-053 gaps (GAP-010, GAP-013/025, GAP-014, GAP-029, GAP-034, GAP-055, GAP-057, GAP-058, GAP-063, GAP-064, GAP-065)

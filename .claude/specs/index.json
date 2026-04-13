@@ -1,138 +1,21 @@
-[
-    {
-        "specId": "SPEC-009",
-        "title": "Admin ISR/Regeneration Management",
-        "type": "feature",
-        "complexity": "high",
-        "status": "draft",
-        "path": "SPEC-009-admin-isr-regeneration"
-    },
-    {
-        "specId": "SPEC-014",
-        "title": "i18n Complete Translations (EN/PT)",
-        "type": "feature",
-        "complexity": "high",
-        "status": "completed",
-        "path": "SPEC-014-i18n-complete-translations"
-    },
-    {
-        "specId": "SPEC-019",
-        "title": "Security & Permissions Hardening",
-        "type": "security",
-        "complexity": "high",
-        "status": "completed",
-        "path": "SPEC-019-security-permissions-hardening"
-    },
-    {
-        "specId": "SPEC-025",
-        "title": "Staging Environment Setup & Deployment Pipeline",
-        "type": "infrastructure",
-        "complexity": "high",
-        "status": "draft",
-        "path": "SPEC-025-staging-environment-setup"
-    },
-    {
-        "specId": "SPEC-026",
-        "title": "Security Testing Gaps",
-        "type": "security",
-        "complexity": "medium",
-        "status": "completed",
-        "path": "SPEC-026-security-testing-gaps"
-    },
-    {
-        "specId": "SPEC-028",
-        "title": "IVA/Tax Handling",
-        "type": "billing",
-        "complexity": "high",
-        "status": "deferred",
-        "path": "SPEC-028-iva-tax-handling"
-    },
-    {
-        "specId": "SPEC-029",
-        "title": "Web Homepage Redesign: New Visual Identity",
-        "type": "feature",
-        "complexity": "high",
-        "status": "draft",
-        "path": "SPEC-029-web-homepage-redesign"
-    },
-    {
-        "specId": "SPEC-047",
-        "title": "CSP unsafe-inline Removal (Pre-Phase 2 Hardening)",
-        "type": "security",
-        "complexity": "medium",
-        "status": "draft",
-        "path": "SPEC-047-csp-unsafe-inline-removal"
-    },
-    {
-        "specId": "SPEC-049",
-        "title": "Admin List Filtering: adminList() Method for BaseCrudService",
-        "type": "bugfix",
-        "complexity": "high",
-        "status": "in-progress",
-        "path": "SPEC-049-admin-list-filtering"
-    },
-    {
-        "specId": "SPEC-052",
-        "title": "Type-Safe Entity Filters via Generics",
-        "type": "refactor",
-        "complexity": "medium",
-        "status": "completed",
-        "path": "SPEC-052-type-safe-entity-filters"
-    },
-    {
-        "specId": "SPEC-062",
-        "title": "Runtime Response Schema Enforcement",
-        "type": "security",
-        "complexity": "high",
-        "status": "draft",
-        "path": "SPEC-062-runtime-response-validation"
-    },
-    {
-        "specId": "SPEC-063",
-        "title": "Lifecycle State Standardization",
-        "type": "architectural-consistency",
-        "complexity": "high",
-        "status": "draft",
-        "path": "SPEC-063-lifecycle-state-standardization"
-    },
-    {
-        "specId": "SPEC-056",
-        "title": "Numeric Column String Coercion",
-        "type": "bugfix",
-        "complexity": "medium",
-        "status": "completed",
-        "path": "SPEC-056-numeric-column-coercion"
-    },
-    {
-        "specId": "SPEC-065",
-        "title": "Figma to Code: Homepage Production Migration",
-        "type": "feature",
-        "complexity": "high",
-        "status": "completed",
-        "path": "SPEC-065-figma-to-code-homepage"
-    },
-    {
-        "specId": "SPEC-067",
-        "title": "Web App Production Hardening",
-        "type": "hardening",
-        "complexity": "xl",
-        "status": "completed",
-        "path": "SPEC-067-web-production-hardening"
-    },
-    {
-        "specId": "SPEC-058",
-        "title": "Align BaseModel Interface with Implementation",
-        "type": "refactor",
-        "complexity": "medium",
-        "status": "completed",
-        "path": "SPEC-058-basemodel-interface-alignment"
-    },
-    {
-        "specId": "SPEC-068",
-        "title": "Type-Safe list() Options via Generics",
-        "type": "refactor",
-        "complexity": "medium",
-        "status": "draft",
-        "path": "SPEC-068-list-execute-search-generics"
-    }
-]
+{
+    "version": "1.0",
+    "specs": [
+        {
+            "specId": "SPEC-059",
+            "title": "Service-Layer Transaction Support & Concurrency Safety",
+            "status": "in-progress",
+            "complexity": "high",
+            "path": "SPEC-059-service-layer-transaction-support",
+            "created": "2026-04-13T00:00:00.000Z"
+        },
+        {
+            "specId": "SPEC-077",
+            "title": "Accommodation Detail Page (Full Rebuild)",
+            "status": "draft",
+            "complexity": "high",
+            "path": "SPEC-077-accommodation-detail-page-rebuild",
+            "created": "2026-04-13T14:00:00.000Z"
+        }
+    ]
+}
