@@ -120,6 +120,12 @@
         "petFriendly": "Aceita pets",
         "rating": "Avaliação mínima",
         "stars": "estrelas",
+        "capacity": "Capacidade",
+        "adults": "Adultos",
+        "children": "Crianças",
+        "bedrooms": "Quartos",
+        "bathrooms": "Banheiros",
+        "featured": "Apenas destaques",
         "clearAll": "Limpar filtros",
         "activeFilters": "Filtros ativos",
         "removeFilter": "Remover filtro {{name}}"

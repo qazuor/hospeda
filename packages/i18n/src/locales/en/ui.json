@@ -153,5 +153,26 @@
     },
     "breadcrumbs": {
         "progress": "Progress"
+    },
+    "filter": {
+        "title": "Filters",
+        "apply": "Apply filters",
+        "clearAll": "Clear filters",
+        "remove": "Remove filter",
+        "sortBy": "Sort by",
+        "searchPlaceholder": "Search...",
+        "min": "minimum",
+        "max": "maximum",
+        "minRating": "Minimum rating",
+        "showMore": "Show more",
+        "showLess": "Show less",
+        "searchOptions": "Search...",
+        "selected": "selected",
+        "stars": "stars",
+        "featured": "Featured",
+        "openFilters": "Filters",
+        "closeFilters": "Close filters",
+        "activeCount": "{{count}} active filter",
+        "activeCountPlural": "{{count}} active filters"
     }
 }

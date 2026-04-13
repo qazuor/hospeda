@@ -120,6 +120,12 @@
         "petFriendly": "Admite mascotas",
         "rating": "Calificación mínima",
         "stars": "estrellas",
+        "capacity": "Capacidad",
+        "adults": "Adultos",
+        "children": "Menores",
+        "bedrooms": "Dormitorios",
+        "bathrooms": "Baños",
+        "featured": "Solo destacados",
         "clearAll": "Limpiar filtros",
         "activeFilters": "Filtros activos",
         "removeFilter": "Quitar filtro {{name}}"

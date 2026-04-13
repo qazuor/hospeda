@@ -120,6 +120,12 @@
         "petFriendly": "Pet friendly",
         "rating": "Minimum rating",
         "stars": "stars",
+        "capacity": "Capacity",
+        "adults": "Adults",
+        "children": "Children",
+        "bedrooms": "Bedrooms",
+        "bathrooms": "Bathrooms",
+        "featured": "Featured only",
         "clearAll": "Clear filters",
         "activeFilters": "Active filters",
         "removeFilter": "Remove {{name}} filter"
