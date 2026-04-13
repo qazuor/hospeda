@@ -50,7 +50,7 @@ describe('UserService.list', () => {
         expectSuccess(result);
         expect(result.data?.items?.length).toBe(2);
         expect(asMock(userModelMock.findAllWithCounts)).toHaveBeenCalledWith(
-            { page: 1, pageSize: 2 },
+            {},
             { page: 1, pageSize: 2 }
         );
     });
@@ -61,7 +61,7 @@ describe('UserService.list', () => {
         expectSuccess(result);
         expect(result.data?.items?.length).toBe(2);
         expect(asMock(userModelMock.findAllWithCounts)).toHaveBeenCalledWith(
-            { page: 1, pageSize: 2 },
+            {},
             { page: 1, pageSize: 2 }
         );
     });
@@ -110,8 +110,17 @@ describe('UserService.list', () => {
         await serviceWithNorm.list(admin, { page: 1, pageSize: 10 });
         expect(normalizer).toHaveBeenCalledWith({ page: 1, pageSize: 10 }, admin);
         expect(asMock(userModelMock.findAllWithCounts)).toHaveBeenCalledWith(
-            { page: 99, pageSize: 10 },
+            {},
             { page: 99, pageSize: 10 }
+        );
+    });
+
+    it('should pass where filters correctly to findAllWithCounts', async () => {
+        asMock(userModelMock.findAllWithCounts).mockResolvedValue(paginated(entities, 1, 10));
+        await service.list(admin, { page: 1, pageSize: 10, where: { status: 'active' } });
+        expect(asMock(userModelMock.findAllWithCounts)).toHaveBeenCalledWith(
+            { status: 'active' },
+            { page: 1, pageSize: 10 }
         );
     });
 });

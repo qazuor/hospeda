@@ -27,8 +27,10 @@ import { BaseCrudService } from '../../base/base.crud.service';
 import type {
     Actor,
     AdminSearchExecuteParams,
+    ListOptions,
     PaginatedListOutput,
     ServiceConfig,
+    ServiceContext,
     ServiceLogger,
     ServiceOutput
 } from '../../types';
@@ -226,7 +228,11 @@ export class UserService extends BaseCrudService<
     /**
      * Normalizes and generates slug before creating a user.
      */
-    protected async _beforeCreate(data: UserCreateInput, _actor: Actor): Promise<Partial<User>> {
+    protected async _beforeCreate(
+        data: UserCreateInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Partial<User>> {
         // Ensure data is properly typed for normalization
         const cleanData = data as Partial<User>;
         const normalized = await normalizeUserInput(cleanData);
@@ -237,7 +243,11 @@ export class UserService extends BaseCrudService<
      * Normalizes and generates slug before updating a user.
      * Bookmarks are always omitted from the result (even if type allows).
      */
-    protected async _beforeUpdate(data: Partial<User>, _actor: Actor): Promise<Partial<User>> {
+    protected async _beforeUpdate(
+        data: Partial<User>,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Partial<User>> {
         // Remove bookmarks before normalization to avoid type errors
         const { bookmarks, ...rest } = data;
         return normalizeUserInput(rest) as Partial<User>;
@@ -446,33 +456,42 @@ export class UserService extends BaseCrudService<
     /**
      * Override the list method to use findAllWithCounts for better performance
      */
-    public async list(
-        actor: Actor,
-        options: { page?: number; pageSize?: number; relations?: Record<string, boolean> } = {}
-    ) {
+    public override async list(actor: Actor, options: ListOptions = {}, ctx?: ServiceContext) {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
         return this.runWithLoggingAndValidation({
             methodName: 'list',
             input: { actor, ...options },
+            ctx: resolvedCtx,
             schema: z.object({
                 page: z.number().optional(),
                 pageSize: z.number().optional(),
-                relations: z.record(z.string(), z.boolean()).optional()
+                search: z.string().max(200).optional(),
+                relations: z
+                    .record(z.string(), z.union([z.boolean(), z.record(z.string(), z.unknown())]))
+                    .optional(),
+                where: z.record(z.string(), z.unknown()).optional(),
+                sortBy: z.string().optional(),
+                sortOrder: z.enum(['asc', 'desc']).optional()
             }),
-            execute: async (validatedOptions, validatedActor) => {
+            execute: async (validatedOptions, validatedActor, execCtx) => {
                 await this._canList(validatedActor);
 
                 const normalized =
                     (await this.normalizers?.list?.(validatedOptions || {}, validatedActor)) ??
                     (validatedOptions || {});
-                const processedOptions = await this._beforeList(normalized, validatedActor);
+                const processedOptions = await this._beforeList(
+                    normalized,
+                    validatedActor,
+                    execCtx
+                );
 
                 // Use the efficient findAllWithCounts method
-                const result = await this.model.findAllWithCounts(processedOptions, {
+                const result = await this.model.findAllWithCounts(processedOptions.where ?? {}, {
                     page: processedOptions.page,
                     pageSize: processedOptions.pageSize
                 });
 
-                return this._afterList(result, validatedActor);
+                return this._afterList(result, validatedActor, execCtx);
             }
         });
     }
