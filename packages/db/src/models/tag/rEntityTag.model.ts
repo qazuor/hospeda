@@ -6,10 +6,13 @@ import { tags } from '../../schemas/tag/tag.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
 
 export class REntityTagModel extends BaseModelImpl<EntityTag> {
     protected table = rEntityTag;
     public entityName = 'rEntityTag';
+
+    protected override readonly validRelationKeys = ['tag'] as const;
 
     protected getTableName(): string {
         return 'rEntityTags';
@@ -26,13 +29,14 @@ export class REntityTagModel extends BaseModelImpl<EntityTag> {
         relations: Record<string, boolean | Record<string, unknown>>,
         tx?: DrizzleClient
     ): Promise<EntityTag | null> {
-        const db = this.getClient(tx);
+        warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
         try {
             const withObj: Record<string, true> = {};
             for (const key of ['tag']) {
                 if (relations[key]) withObj[key] = true;
             }
             if (Object.keys(withObj).length > 0) {
+                const db = this.getClient(tx);
                 const result = await db.query.rEntityTag.findFirst({
                     where: (fields, { eq }) => eq(fields.tagId, where.tagId as string),
                     with: withObj
@@ -121,11 +125,12 @@ export class REntityTagModel extends BaseModelImpl<EntityTag> {
 
     /**
      * Finds the most popular tags by usage count, ordered descending.
-     * @param limit - Maximum number of tags to return (default: 10)
+     * @param params - Options object with optional limit (default: 10)
+     * @param tx - Optional transaction client
      * @returns Array of { tag, usageCount }
      */
     async findPopularTags(
-        limit = 10,
+        { limit = 10 }: { limit?: number } = {},
         tx?: DrizzleClient
     ): Promise<Array<{ tag: unknown; usageCount: number }>> {
         const db = this.getClient(tx);

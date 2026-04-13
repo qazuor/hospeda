@@ -4,6 +4,7 @@ import { eventOrganizers } from '../../schemas/event/event_organizer.dbschema.ts
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
 
 /**
  * Model for the EventOrganizer entity.
@@ -18,6 +19,8 @@ export class EventOrganizerModel extends BaseModelImpl<EventOrganizer> {
      * The entity name for logging and error context.
      */
     public entityName = 'eventOrganizers';
+
+    protected override readonly validRelationKeys = ['events'] as const;
 
     /**
      * Returns the Drizzle query key for this model.
@@ -40,10 +43,11 @@ export class EventOrganizerModel extends BaseModelImpl<EventOrganizer> {
         relations: Record<string, boolean | Record<string, unknown>>,
         tx?: DrizzleClient
     ): Promise<EventOrganizer | null> {
-        const db = this.getClient(tx);
+        warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
         try {
             // Supports 'events' relation
             if (relations.events) {
+                const db = this.getClient(tx);
                 const result = await db.query.eventOrganizers.findFirst({
                     where: (fields, { eq }) => eq(fields.id, where.id as string),
                     with: { events: true }

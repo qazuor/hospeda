@@ -44,7 +44,7 @@ import {
     uuid,
     varchar
 } from 'drizzle-orm/pg-core';
-import { BaseModel } from '../src/base/base.model';
+import { BaseModelImpl as BaseModel } from '../src/base/base.model';
 import type * as schema from '../src/schemas/index.js';
 import { buildWhereClause } from '../src/utils/drizzle-helpers';
 import { DbError } from '../src/utils/error';

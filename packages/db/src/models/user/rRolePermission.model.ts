@@ -4,10 +4,13 @@ import { rolePermission } from '../../schemas/user/r_role_permission.dbschema.ts
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
 
 export class RRolePermissionModel extends BaseModelImpl<RolePermissionAssignment> {
     protected table = rolePermission;
     public entityName = 'rolePermission';
+
+    protected override readonly validRelationKeys = ['role', 'permission'] as const;
 
     protected getTableName(): string {
         return 'rRolePermissions';
@@ -25,13 +28,14 @@ export class RRolePermissionModel extends BaseModelImpl<RolePermissionAssignment
         relations: Record<string, boolean | Record<string, unknown>>,
         tx?: DrizzleClient
     ): Promise<RolePermissionAssignment | null> {
-        const db = this.getClient(tx);
+        warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
         try {
             const withObj: Record<string, true> = {};
             for (const key of ['role', 'permission']) {
                 if (relations[key]) withObj[key] = true;
             }
             if (Object.keys(withObj).length > 0) {
+                const db = this.getClient(tx);
                 const result = await db.query.rolePermission.findFirst({
                     where: (fields, { eq }) => eq(fields.role, where.role as string),
                     with: withObj

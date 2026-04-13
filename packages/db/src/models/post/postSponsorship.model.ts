@@ -4,10 +4,13 @@ import { postSponsorships } from '../../schemas/post/post_sponsorship.dbschema.t
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
 
 export class PostSponsorshipModel extends BaseModelImpl<PostSponsorship> {
     protected table = postSponsorships;
     public entityName = 'postSponsorships';
+
+    protected override readonly validRelationKeys = ['post', 'sponsor'] as const;
 
     protected getTableName(): string {
         return 'postSponsorships';
@@ -24,13 +27,14 @@ export class PostSponsorshipModel extends BaseModelImpl<PostSponsorship> {
         relations: Record<string, boolean | Record<string, unknown>>,
         tx?: DrizzleClient
     ): Promise<PostSponsorship | null> {
-        const db = this.getClient(tx);
+        warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
         try {
             const withObj: Record<string, boolean> = {};
             for (const key of ['post', 'sponsor']) {
                 if (relations[key]) withObj[key] = true;
             }
             if (Object.keys(withObj).length > 0) {
+                const db = this.getClient(tx);
                 const result = await db.query.postSponsorships.findFirst({
                     where: (fields, { eq }) => eq(fields.postId, where.postId as string),
                     with: withObj

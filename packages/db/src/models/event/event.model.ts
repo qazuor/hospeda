@@ -4,10 +4,21 @@ import { events } from '../../schemas/event/event.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
 
 export class EventModel extends BaseModelImpl<Event> {
     protected table = events;
     public entityName = 'events';
+
+    protected override readonly validRelationKeys = [
+        'author',
+        'createdBy',
+        'updatedBy',
+        'deletedBy',
+        'location',
+        'organizer',
+        'tags'
+    ] as const;
 
     protected getTableName(): string {
         return 'events';
@@ -24,7 +35,7 @@ export class EventModel extends BaseModelImpl<Event> {
         relations: Record<string, boolean | Record<string, unknown>>,
         tx?: DrizzleClient
     ): Promise<Event | null> {
-        const db = this.getClient(tx);
+        warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
         try {
             const withObj: Record<string, boolean> = {};
             for (const key of [
@@ -39,6 +50,7 @@ export class EventModel extends BaseModelImpl<Event> {
                 if (relations[key]) withObj[key] = true;
             }
             if (Object.keys(withObj).length > 0) {
+                const db = this.getClient(tx);
                 const result = await db.query.events.findFirst({
                     where: (fields, { eq }) => eq(fields.id, where.id as string),
                     with: withObj

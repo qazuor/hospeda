@@ -5,6 +5,7 @@ import { sponsorships } from '../../schemas/sponsorship/sponsorship.dbschema.ts'
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
 
 /**
  * Model for managing sponsorships in the database.
@@ -13,6 +14,15 @@ import { logError, logQuery } from '../../utils/logger.ts';
 export class SponsorshipModel extends BaseModelImpl<Sponsorship> {
     protected table = sponsorships;
     public entityName = 'sponsorships';
+
+    protected override readonly validRelationKeys = [
+        'sponsorUser',
+        'level',
+        'package',
+        'createdBy',
+        'updatedBy',
+        'deletedBy'
+    ] as const;
 
     protected getTableName(): string {
         return 'sponsorships';
@@ -162,7 +172,7 @@ export class SponsorshipModel extends BaseModelImpl<Sponsorship> {
         relations: Record<string, boolean | Record<string, unknown>>,
         tx?: DrizzleClient
     ): Promise<Sponsorship | null> {
-        const db = this.getClient(tx);
+        warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
         try {
             const withObj: Record<string, boolean | Record<string, unknown>> = {};
             for (const key of [
@@ -177,6 +187,7 @@ export class SponsorshipModel extends BaseModelImpl<Sponsorship> {
             }
 
             if (Object.keys(withObj).length > 0) {
+                const db = this.getClient(tx);
                 const result = await db.query.sponsorships.findFirst({
                     where: (fields, { eq }) => eq(fields.id, where.id as string),
                     with: withObj

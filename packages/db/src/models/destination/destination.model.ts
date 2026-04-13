@@ -22,10 +22,21 @@ import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
 
 export class DestinationModel extends BaseModelImpl<Destination> {
     protected table = destinations;
     public entityName = 'destinations';
+
+    protected override readonly validRelationKeys = [
+        'accommodations',
+        'reviews',
+        'tags',
+        'attractions',
+        'createdBy',
+        'updatedBy',
+        'deletedBy'
+    ] as const;
 
     protected getTableName(): string {
         return 'destinations';
@@ -42,7 +53,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
         relations: Record<string, boolean | Record<string, unknown>>,
         tx?: DrizzleClient
     ): Promise<Destination | null> {
-        const db = this.getClient(tx);
+        warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
         try {
             // Dynamically build the 'with' object
             const withObj: Record<string, boolean> = {};
@@ -58,6 +69,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                 if (relations[key]) withObj[key] = true;
             }
             if (Object.keys(withObj).length > 0) {
+                const db = this.getClient(tx);
                 const result = await db.query.destinations.findFirst({
                     where: (fields, { eq }) => eq(fields.id, where.id as string),
                     with: withObj
@@ -82,21 +94,28 @@ export class DestinationModel extends BaseModelImpl<Destination> {
 
     /**
      * Finds all destinations related to a given attraction by attractionId.
-     * Performs a join between destinations and r_destination_attraction.
+     * Performs a join between destinations and r_destination_attraction to find
+     * all destinations that are linked to the specified attraction.
      *
      * @param attractionId - The ID of the attraction to filter by
-     * @returns Promise resolving to an array of DestinationType
+     * @param tx - Optional transaction client
+     * @returns Promise resolving to an array of Destination
      * @throws DbError if the database query fails
      */
     async findAllByAttractionId(attractionId: string, tx?: DrizzleClient): Promise<Destination[]> {
         const db = this.getClient(tx);
         try {
-            const results = await db.query.destinations.findMany({
-                where: (fields, { eq }) => eq(fields.id, attractionId),
-                with: { attractions: true }
-            });
-            logQuery(this.entityName, 'findAllByAttractionId', { attractionId }, results);
-            return results as unknown as Destination[];
+            const results = await db
+                .select({ destination: destinations })
+                .from(destinations)
+                .innerJoin(
+                    rDestinationAttraction,
+                    eq(rDestinationAttraction.destinationId, destinations.id)
+                )
+                .where(eq(rDestinationAttraction.attractionId, attractionId));
+            const mapped = results.map((r) => r.destination);
+            logQuery(this.entityName, 'findAllByAttractionId', { attractionId }, mapped);
+            return mapped as Destination[];
         } catch (error) {
             logError(this.entityName, 'findAllByAttractionId', { attractionId }, error as Error);
             throw new DbError(
@@ -198,7 +217,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
             const totalResult = await db.select({ count: count() }).from(destinations).where(where);
             return {
                 items: destinationsWithAttractions as DestinationWithAttractionNames[],
-                total: totalResult[0]?.count ?? 0
+                total: Number(totalResult[0]?.count ?? 0)
             };
         } catch (error) {
             logError(this.entityName, 'searchWithAttractions', params, error as Error);
@@ -342,7 +361,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                 .limit(pageSize)
                 .offset(offset);
             const totalResult = await db.select({ count: count() }).from(destinations).where(where);
-            return { items: items as Destination[], total: totalResult[0]?.count ?? 0 };
+            return { items: items as Destination[], total: Number(totalResult[0]?.count ?? 0) };
         } catch (error) {
             logError(this.entityName, 'search', params, error as Error);
             throw new DbError(this.entityName, 'search', params, (error as Error).message);
@@ -640,7 +659,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
 
             const where = whereClauses.length > 0 ? and(...whereClauses) : undefined;
             const totalResult = await db.select({ count: count() }).from(destinations).where(where);
-            return { count: totalResult[0]?.count ?? 0 };
+            return { count: Number(totalResult[0]?.count ?? 0) };
         } catch (error) {
             logError(this.entityName, 'countByFilters', params, error as Error);
             throw new DbError(this.entityName, 'countByFilters', params, (error as Error).message);

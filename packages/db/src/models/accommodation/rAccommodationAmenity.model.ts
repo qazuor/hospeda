@@ -5,10 +5,13 @@ import { rAccommodationAmenity } from '../../schemas/accommodation/r_accommodati
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
 
 export class RAccommodationAmenityModel extends BaseModelImpl<AccommodationAmenityRelation> {
     protected table = rAccommodationAmenity;
     public entityName = 'rAccommodationAmenity';
+
+    protected override readonly validRelationKeys = ['accommodation', 'amenity'] as const;
 
     protected getTableName(): string {
         return 'rAccommodationAmenities';
@@ -71,13 +74,14 @@ export class RAccommodationAmenityModel extends BaseModelImpl<AccommodationAmeni
         relations: Record<string, boolean | Record<string, unknown>>,
         tx?: DrizzleClient
     ): Promise<AccommodationAmenityRelation | null> {
-        const db = this.getClient(tx);
+        warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
         try {
             const withObj: Record<string, true> = {};
             for (const key of ['accommodation', 'amenity']) {
                 if (relations[key]) withObj[key] = true;
             }
             if (Object.keys(withObj).length > 0) {
+                const db = this.getClient(tx);
                 const result = await db.query.rAccommodationAmenity.findFirst({
                     where: (fields, { eq }) =>
                         eq(fields.accommodationId, where.accommodationId as string),

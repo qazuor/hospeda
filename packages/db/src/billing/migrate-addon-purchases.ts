@@ -124,6 +124,7 @@ function initBillingInstance(db: DrizzleClient): QZPayBilling {
  * Input for backfillLimit helper
  */
 interface BackfillLimitInput {
+    db: DrizzleClient;
     billing: QZPayBilling;
     customerId: string;
     subscriptionId: string;
@@ -142,13 +143,16 @@ interface BackfillLimitInput {
  * plan does not define the requested limit key. Callers should treat null as
  * "no base limit known" and skip the set operation.
  *
+ * @param db - Drizzle database client (or transaction) to use for the query
  * @param subscriptionId - ID of the subscription to look up
  * @param limitKey - The limit key to find in the plan definition
  * @returns The canonical base plan limit value, or null if not found
  */
-async function getBasePlanLimit(subscriptionId: string, limitKey: string): Promise<number | null> {
-    const db = getDb();
-
+async function getBasePlanLimit(
+    db: DrizzleClient,
+    subscriptionId: string,
+    limitKey: string
+): Promise<number | null> {
     // Fetch the subscription's plan_id to resolve the canonical plan slug
     const rows = await db
         .select({ planId: billingSubscriptions.planId })
@@ -185,8 +189,17 @@ async function getBasePlanLimit(subscriptionId: string, limitKey: string): Promi
  * @param input - Backfill parameters
  */
 async function backfillLimit(input: BackfillLimitInput): Promise<void> {
-    const { billing, customerId, subscriptionId, addonSlug, addonDef, purchaseId, stats, verbose } =
-        input;
+    const {
+        db,
+        billing,
+        customerId,
+        subscriptionId,
+        addonSlug,
+        addonDef,
+        purchaseId,
+        stats,
+        verbose
+    } = input;
 
     const limitKey = addonDef.affectsLimitKey;
     const limitIncrease = addonDef.limitIncrease;
@@ -200,7 +213,7 @@ async function backfillLimit(input: BackfillLimitInput): Promise<void> {
         return;
     }
 
-    const basePlanLimit = await getBasePlanLimit(subscriptionId, limitKey);
+    const basePlanLimit = await getBasePlanLimit(db, subscriptionId, limitKey);
 
     if (basePlanLimit === null) {
         logger.warn(
@@ -774,6 +787,7 @@ export async function migrateAddonPurchases(input: MigrationOptions = {}): Promi
                                 addonDef.limitIncrease !== undefined
                             ) {
                                 await backfillLimit({
+                                    db,
                                     billing,
                                     customerId: subscription.customerId,
                                     subscriptionId: subscription.id,

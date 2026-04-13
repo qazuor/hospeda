@@ -4,10 +4,17 @@ import { rDestinationAttraction } from '../../schemas/destination/r_destination_
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
 
 export class RDestinationAttractionModel extends BaseModelImpl<DestinationAttractionRelation> {
     protected table = rDestinationAttraction;
     public entityName = 'rDestinationAttraction';
+
+    protected override readonly validRelationKeys = [
+        'destination',
+        'attraction',
+        'destinationsWithAttraction'
+    ] as const;
 
     protected getTableName(): string {
         return 'rDestinationAttractions';
@@ -24,13 +31,14 @@ export class RDestinationAttractionModel extends BaseModelImpl<DestinationAttrac
         relations: Record<string, boolean | Record<string, unknown>>,
         tx?: DrizzleClient
     ): Promise<DestinationAttractionRelation | null> {
-        const db = this.getClient(tx);
+        warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
         try {
             const withObj: Record<string, true> = {};
             for (const key of ['destination', 'attraction', 'destinationsWithAttraction']) {
                 if (relations[key]) withObj[key] = true;
             }
             if (Object.keys(withObj).length > 0) {
+                const db = this.getClient(tx);
                 const result = await db.query.rDestinationAttraction.findFirst({
                     where: (fields, { eq }) =>
                         eq(fields.destinationId, where.destinationId as string),

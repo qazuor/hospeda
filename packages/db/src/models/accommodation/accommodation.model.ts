@@ -6,7 +6,7 @@ import type {
     UserSummary
 } from '@repo/schemas';
 import type { AnyColumn, SQL } from 'drizzle-orm';
-import { and, asc, count, desc, eq, exists, inArray, isNull, ne, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, exists, gte, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 import { rAccommodationAmenity } from '../../schemas/accommodation/r_accommodation_amenity.dbschema.ts';
@@ -14,10 +14,13 @@ import { rAccommodationFeature } from '../../schemas/accommodation/r_accommodati
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
 
 export class AccommodationModel extends BaseModelImpl<Accommodation> {
     protected table = accommodations;
     public entityName = 'accommodations';
+
+    protected override readonly validRelationKeys = ['destination'] as const;
 
     protected getTableName(): string {
         return 'accommodations';
@@ -33,7 +36,11 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         if (params.ownerId) {
             whereClauses.push(eq(accommodations.ownerId, params.ownerId));
         }
-        if (params.type) {
+        if (params.types && params.types.length > 0) {
+            whereClauses.push(
+                inArray(accommodations.type, params.types as (typeof accommodations.type._.data)[])
+            );
+        } else if (params.type) {
             whereClauses.push(eq(accommodations.type, params.type));
         }
         if (params.minPrice !== undefined) {
@@ -42,18 +49,53 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         if (params.maxPrice !== undefined) {
             whereClauses.push(sql`${accommodations.price} <= ${params.maxPrice}`);
         }
-        if (params.destinationId) {
+        if (params.destinationIds && params.destinationIds.length > 0) {
+            whereClauses.push(inArray(accommodations.destinationId, params.destinationIds));
+        } else if (params.destinationId) {
             whereClauses.push(eq(accommodations.destinationId, params.destinationId));
         }
         if (params.excludeRestricted) {
             whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
+        }
+        if (params.minGuests !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'capacity')::int >= ${params.minGuests}`
+            );
+        }
+        if (params.maxGuests !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'capacity')::int <= ${params.maxGuests}`
+            );
+        }
+        if (params.minBedrooms !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'bedrooms')::int >= ${params.minBedrooms}`
+            );
+        }
+        if (params.maxBedrooms !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'bedrooms')::int <= ${params.maxBedrooms}`
+            );
+        }
+        if (params.minBathrooms !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'bathrooms')::int >= ${params.minBathrooms}`
+            );
+        }
+        if (params.maxBathrooms !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'bathrooms')::int <= ${params.maxBathrooms}`
+            );
+        }
+        if (params.minRating !== undefined) {
+            whereClauses.push(gte(accommodations.averageRating, params.minRating));
         }
 
         const where = and(...whereClauses);
 
         const totalQuery = db.select({ count: count() }).from(this.table).where(where);
         const totalResult = await totalQuery;
-        return { count: totalResult[0]?.count ?? 0 };
+        return { count: Number(totalResult[0]?.count ?? 0) };
     }
 
     public async search(
@@ -66,7 +108,11 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         if (params.ownerId) {
             whereClauses.push(eq(accommodations.ownerId, params.ownerId));
         }
-        if (params.type) {
+        if (params.types && params.types.length > 0) {
+            whereClauses.push(
+                inArray(accommodations.type, params.types as (typeof accommodations.type._.data)[])
+            );
+        } else if (params.type) {
             whereClauses.push(eq(accommodations.type, params.type));
         }
         if (params.minPrice !== undefined) {
@@ -75,11 +121,46 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         if (params.maxPrice !== undefined) {
             whereClauses.push(sql`${accommodations.price} <= ${params.maxPrice}`);
         }
-        if (params.destinationId) {
+        if (params.destinationIds && params.destinationIds.length > 0) {
+            whereClauses.push(inArray(accommodations.destinationId, params.destinationIds));
+        } else if (params.destinationId) {
             whereClauses.push(eq(accommodations.destinationId, params.destinationId));
         }
         if (params.excludeRestricted) {
             whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
+        }
+        if (params.minGuests !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'capacity')::int >= ${params.minGuests}`
+            );
+        }
+        if (params.maxGuests !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'capacity')::int <= ${params.maxGuests}`
+            );
+        }
+        if (params.minBedrooms !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'bedrooms')::int >= ${params.minBedrooms}`
+            );
+        }
+        if (params.maxBedrooms !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'bedrooms')::int <= ${params.maxBedrooms}`
+            );
+        }
+        if (params.minBathrooms !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'bathrooms')::int >= ${params.minBathrooms}`
+            );
+        }
+        if (params.maxBathrooms !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'bathrooms')::int <= ${params.maxBathrooms}`
+            );
+        }
+        if (params.minRating !== undefined) {
+            whereClauses.push(gte(accommodations.averageRating, params.minRating));
         }
         if (params.amenities && params.amenities.length > 0) {
             whereClauses.push(
@@ -140,7 +221,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         const totalQuery = db.select({ count: count() }).from(this.table).where(where);
 
         const [items, totalResult] = await Promise.all([resultsQuery, totalQuery]);
-        const total = totalResult[0]?.count ?? 0;
+        const total = Number(totalResult[0]?.count ?? 0);
 
         return { items: items as unknown as Accommodation[], total };
     }
@@ -166,7 +247,11 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         if (params.ownerId) {
             whereClauses.push(eq(accommodations.ownerId, params.ownerId));
         }
-        if (params.type) {
+        if (params.types && params.types.length > 0) {
+            whereClauses.push(
+                inArray(accommodations.type, params.types as (typeof accommodations.type._.data)[])
+            );
+        } else if (params.type) {
             whereClauses.push(eq(accommodations.type, params.type));
         }
         if (params.minPrice !== undefined) {
@@ -175,11 +260,46 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         if (params.maxPrice !== undefined) {
             whereClauses.push(sql`${accommodations.price} <= ${params.maxPrice}`);
         }
-        if (params.destinationId) {
+        if (params.destinationIds && params.destinationIds.length > 0) {
+            whereClauses.push(inArray(accommodations.destinationId, params.destinationIds));
+        } else if (params.destinationId) {
             whereClauses.push(eq(accommodations.destinationId, params.destinationId));
         }
         if (params.excludeRestricted) {
             whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
+        }
+        if (params.minGuests !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'capacity')::int >= ${params.minGuests}`
+            );
+        }
+        if (params.maxGuests !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'capacity')::int <= ${params.maxGuests}`
+            );
+        }
+        if (params.minBedrooms !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'bedrooms')::int >= ${params.minBedrooms}`
+            );
+        }
+        if (params.maxBedrooms !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'bedrooms')::int <= ${params.maxBedrooms}`
+            );
+        }
+        if (params.minBathrooms !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'bathrooms')::int >= ${params.minBathrooms}`
+            );
+        }
+        if (params.maxBathrooms !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'bathrooms')::int <= ${params.maxBathrooms}`
+            );
+        }
+        if (params.minRating !== undefined) {
+            whereClauses.push(gte(accommodations.averageRating, params.minRating));
         }
         if (params.amenities && params.amenities.length > 0) {
             whereClauses.push(
@@ -276,7 +396,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                     owner?: UserSummary;
                 }
             >,
-            total: totalResult[0]?.count ?? 0
+            total: Number(totalResult[0]?.count ?? 0)
         };
     }
 
@@ -286,15 +406,17 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
      *
      * Optimized to load all relations in a single query using Drizzle's `with` clause.
      */
-    public async findTopRated(params: {
-        limit?: number;
-        destinationId?: string;
-        type?: string;
-        onlyFeatured?: boolean;
-        excludeRestricted?: boolean;
-        tx?: DrizzleClient;
-    }): Promise<Accommodation[]> {
-        const db = this.getClient(params.tx);
+    public async findTopRated(
+        params: {
+            limit?: number;
+            destinationId?: string;
+            type?: string;
+            onlyFeatured?: boolean;
+            excludeRestricted?: boolean;
+        },
+        tx?: DrizzleClient
+    ): Promise<Accommodation[]> {
+        const db = this.getClient(tx);
         const {
             limit = 10,
             destinationId,
@@ -355,9 +477,10 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         relations: Record<string, boolean | Record<string, unknown>>,
         tx?: DrizzleClient
     ): Promise<Accommodation | null> {
-        const db = this.getClient(tx);
+        warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
         try {
             if (relations.destination) {
+                const db = this.getClient(tx);
                 const result = await db.query.accommodations.findFirst({
                     where: (fields, { eq }) => eq(fields.id, where.id as string),
                     with: { destination: true }

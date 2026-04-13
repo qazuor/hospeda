@@ -1,5 +1,14 @@
 import { relations, sql } from 'drizzle-orm';
-import { index, jsonb, pgTable, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+    boolean,
+    index,
+    jsonb,
+    pgTable,
+    timestamp,
+    uniqueIndex,
+    uuid,
+    varchar
+} from 'drizzle-orm/pg-core';
 import { billingAddons, billingCustomers, billingSubscriptions } from '../../billing/index.ts';
 
 /**
@@ -75,6 +84,36 @@ export const billingAddonPurchases = pgTable(
             .$type<EntitlementAdjustment[]>()
             .default([]),
         metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
+        /**
+         * Flag indicating that the DB expiry completed successfully but the subsequent
+         * QZPay entitlement removal call failed.
+         *
+         * When `true`, the reconciliation phase of the `addon-expiry` cron job will retry
+         * the entitlement removal and clear this flag on success.
+         *
+         * Set to `true` exclusively by {@link AddonExpirationService.expireAddon} when
+         * `AddonEntitlementService.removeAddonEntitlements` throws or returns a failure result
+         * after the `billing_addon_purchases` row has already been updated to `status='expired'`.
+         *
+         * NOTE: This column is TypeScript-schema-only. Apply the column to a live database with:
+         * `ALTER TABLE billing_addon_purchases ADD COLUMN IF NOT EXISTS entitlement_removal_pending BOOLEAN NOT NULL DEFAULT false;`
+         */
+        entitlementRemovalPending: boolean('entitlement_removal_pending').notNull().default(false),
+        /**
+         * Flag indicating that the QZPay entitlement grant failed during the last
+         * activation attempt and needs to be re-applied by the async reconciliation job.
+         *
+         * Set to `true` when `activateAddon` succeeds at the DB level but the subsequent
+         * QZPay `applyAddonEntitlements` call throws. The reconciliation cron job picks up
+         * rows where `needs_entitlement_sync = true` and retries the grant.
+         *
+         * Reset to `false` once the reconciliation job succeeds, or cleared to `false` on
+         * the next successful activation.
+         *
+         * NOTE: This column is TypeScript-schema-only. Apply the column to a live database with:
+         * `ALTER TABLE billing_addon_purchases ADD COLUMN IF NOT EXISTS needs_entitlement_sync BOOLEAN NOT NULL DEFAULT false;`
+         */
+        needsEntitlementSync: boolean('needs_entitlement_sync').default(false).notNull(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
         deletedAt: timestamp('deleted_at', { withTimezone: true })

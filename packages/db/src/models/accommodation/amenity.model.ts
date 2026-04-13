@@ -4,10 +4,13 @@ import { amenities } from '../../schemas/accommodation/amenity.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
 
 export class AmenityModel extends BaseModelImpl<Amenity> {
     protected table = amenities;
     public entityName = 'amenities';
+
+    protected override readonly validRelationKeys = ['accommodations'] as const;
 
     protected getTableName(): string {
         return 'amenities';
@@ -24,9 +27,10 @@ export class AmenityModel extends BaseModelImpl<Amenity> {
         relations: Record<string, boolean | Record<string, unknown>>,
         tx?: DrizzleClient
     ): Promise<Amenity | null> {
-        const db = this.getClient(tx);
+        warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
         try {
             if (relations.accommodations) {
+                const db = this.getClient(tx);
                 const result = await db.query.amenities.findFirst({
                     where: (fields, { eq }) => eq(fields.id, where.id as string),
                     with: { accommodationAmenities: true }
