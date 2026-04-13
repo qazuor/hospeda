@@ -30,10 +30,13 @@ export const publicSearchFeaturesRoute = createPublicListRoute({
     responseSchema: FeatureListItemSchema,
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const searchParams = query as HttpFeatureSearch;
-        const { page, pageSize } = extractPaginationParams(searchParams);
+        const { page, pageSize } = extractPaginationParams(query || {});
 
-        const result = await featureService.search(actor, searchParams);
+        const result = await featureService.search(actor, {
+            ...(query as HttpFeatureSearch),
+            page,
+            pageSize
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

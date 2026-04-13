@@ -1,8 +1,16 @@
 /**
  * Public feature list endpoint
- * Returns paginated list of public features
+ * Returns paginated list of public features with full filter support.
+ *
+ * All filter params from FeatureSearchHttpSchema are forwarded to
+ * featureService.search() via the HttpFeatureSearch type, which is the
+ * type the FeatureService search schema is built from.
  */
-import { FeatureListItemSchema, FeatureSearchHttpSchema } from '@repo/schemas';
+import {
+    FeatureListItemSchema,
+    FeatureSearchHttpSchema,
+    type HttpFeatureSearch
+} from '@repo/schemas';
 import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -28,7 +36,8 @@ export const publicListFeaturesRoute = createPublicListRoute({
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        const result = await featureService.list(actor, {
+        const result = await featureService.search(actor, {
+            ...(query as HttpFeatureSearch),
             page,
             pageSize
         });
