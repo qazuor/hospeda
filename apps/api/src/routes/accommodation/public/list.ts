@@ -2,18 +2,24 @@
  * Public accommodation list endpoint
  * Returns paginated list of public accommodations with filtering, search, and sorting.
  *
- * Supported filters:
+ * Supported filters (all wired through to the model via service.search()):
  * - type: accommodation type (direct column match)
  * - isFeatured: featured flag (direct column match)
  * - destinationId: filter by destination (direct column match)
- * - q: text search on name (ilike)
+ * - q: full-text search on name and description
+ * - minPrice, maxPrice: price range (JSONB field)
+ * - minGuests, maxGuests: guest capacity range (JSONB extraInfo.capacity)
+ * - minBedrooms, maxBedrooms: bedroom count range (JSONB extraInfo.bedrooms)
+ * - minBathrooms, maxBathrooms: bathroom count range (JSONB extraInfo.bathrooms)
+ * - minRating: minimum average rating
+ * - amenities: array of amenity UUIDs (EXISTS subquery filter)
  * - sortBy/sortOrder: sorting on direct table columns
- * - includeAmenities/includeFeatures: relation includes
  */
 import {
     AccommodationPublicSchema,
+    type AccommodationSearchHttp,
     AccommodationSearchHttpSchema,
-    type ListRelationsConfig
+    httpToDomainAccommodationSearch
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
@@ -22,59 +28,6 @@ import { extractPaginationParams, getPaginationResponse } from '../../../utils/p
 import { createPublicListRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
-
-/** Check if a query param value is truthy (handles both boolean and string from Zod transform) */
-function isTruthyParam(value: unknown): boolean {
-    return value === true || value === 'true';
-}
-
-/**
- * Builds a relations config object from include boolean query params.
- * Merges with the default service relations (destination, owner).
- */
-function buildRelationsFromQuery(query: Record<string, unknown>): ListRelationsConfig {
-    const relations: Record<string, boolean | Record<string, unknown>> = {
-        destination: true,
-        owner: true
-    };
-
-    if (isTruthyParam(query.includeAmenities)) {
-        relations.amenities = { amenity: true };
-    }
-
-    if (isTruthyParam(query.includeFeatures)) {
-        relations.features = { feature: true };
-    }
-
-    return relations;
-}
-
-/**
- * Builds a where clause from query params that map to direct table columns.
- * Uses the _like suffix convention for text search fields.
- * Only includes params that have actual values (not undefined/null).
- */
-function buildWhereFromQuery(query: Record<string, unknown>): Record<string, unknown> {
-    const where: Record<string, unknown> = {};
-
-    // Direct column filters
-    if (query.type && typeof query.type === 'string') {
-        where.type = query.type;
-    }
-    if (query.isFeatured !== undefined) {
-        where.isFeatured = isTruthyParam(query.isFeatured);
-    }
-    if (query.destinationId && typeof query.destinationId === 'string') {
-        where.destinationId = query.destinationId;
-    }
-
-    // Text search using _like suffix (triggers ilike in buildWhereClause)
-    if (query.q && typeof query.q === 'string' && query.q.trim().length > 0) {
-        where.name_like = query.q.trim();
-    }
-
-    return where;
-}
 
 /** Allowed sort fields for public accommodation list */
 const ALLOWED_SORT_FIELDS = new Set([
@@ -86,27 +39,25 @@ const ALLOWED_SORT_FIELDS = new Set([
 ]);
 
 /**
- * Extracts and validates sorting params from query.
- * Returns undefined values if sort field is not in the allowed list.
+ * Validates the sortBy field against the allowed public sort columns.
+ * Returns undefined if the field is not in the allow-list to prevent
+ * sorting on internal or sensitive columns.
  */
-function extractSortParams(query: Record<string, unknown>): {
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-} {
-    const sortBy = typeof query.sortBy === 'string' ? query.sortBy : undefined;
-    const sortOrder =
-        query.sortOrder === 'asc' || query.sortOrder === 'desc' ? query.sortOrder : undefined;
-
+function sanitizeSortBy(sortBy: string | undefined): string | undefined {
     if (sortBy && ALLOWED_SORT_FIELDS.has(sortBy)) {
-        return { sortBy, sortOrder: sortOrder ?? 'asc' };
+        return sortBy;
     }
-
-    return {};
+    return undefined;
 }
 
 /**
  * GET /api/v1/public/accommodations
  * List accommodations - Public endpoint
+ *
+ * All filter params from AccommodationSearchHttpSchema are converted to the
+ * domain search input via httpToDomainAccommodationSearch and forwarded to
+ * accommodationService.search(), which delegates to model.search() with
+ * full support for price ranges, capacity ranges, rating, and amenity filters.
  */
 export const publicListAccommodationsRoute = createPublicListRoute({
     method: 'get',
@@ -120,25 +71,25 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        const parsedQuery = query || {};
-        const hasIncludes =
-            isTruthyParam(parsedQuery.includeAmenities) ||
-            isTruthyParam(parsedQuery.includeFeatures);
-        const relations = hasIncludes ? buildRelationsFromQuery(parsedQuery) : undefined;
+        // Convert all HTTP query params to domain search input.
+        // This maps: type, isFeatured, destinationId, q, minPrice, maxPrice,
+        // minGuests, maxGuests, minBedrooms, maxBedrooms, minBathrooms,
+        // maxBathrooms, minRating, maxRating, amenities, sortBy, sortOrder,
+        // currency, latitude, longitude, radius, checkIn, checkOut, isAvailable.
+        const domainParams = httpToDomainAccommodationSearch(
+            (query ?? {}) as AccommodationSearchHttp
+        );
 
-        // Build where clause from supported direct-column filters + text search
-        const where = buildWhereFromQuery(parsedQuery);
-        const hasWhere = Object.keys(where).length > 0;
+        // Enforce the public allow-list for sort fields to prevent sorting
+        // on internal or sensitive columns.
+        const safeSortBy = sanitizeSortBy(domainParams.sortBy);
 
-        // Extract validated sorting params
-        const { sortBy, sortOrder } = extractSortParams(parsedQuery);
-
-        const result = await accommodationService.list(actor, {
+        const result = await accommodationService.search(actor, {
+            ...domainParams,
             page,
             pageSize,
-            ...(relations ? { relations } : {}),
-            ...(hasWhere ? { where } : {}),
-            ...(sortBy ? { sortBy, sortOrder } : {})
+            sortBy: safeSortBy,
+            sortOrder: safeSortBy ? (domainParams.sortOrder ?? 'asc') : undefined
         });
 
         if (result.error) {
