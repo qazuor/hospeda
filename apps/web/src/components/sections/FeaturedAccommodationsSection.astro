@@ -12,7 +12,7 @@ import { AccommodationTypeEnum } from '@repo/schemas';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { getAccommodationTypeColor } from '@/lib/colors';
+import { getAccommodationTypeColor, getAccommodationTypeLabel } from '@/lib/colors';
 import { accommodationsApi, toAccommodationCardProps } from '@/lib/api';
 import type { AccommodationCardData } from '@/lib/api/transforms';
 import SectionHeader from '@/components/shared/SectionHeader.astro';
@@ -47,7 +47,7 @@ try {
 }
 
 const typeBadges: BadgeRowItem[] = ACCOMMODATION_TYPES.map((type) => ({
-  label: t(`common.enums.accommodationType.${type}`),
+  label: getAccommodationTypeLabel({ type, t }),
   href: buildUrl({ locale, path: `/alojamientos/tipo/${type}/` }),
   colorScheme: getAccommodationTypeColor({ type }),
 }));

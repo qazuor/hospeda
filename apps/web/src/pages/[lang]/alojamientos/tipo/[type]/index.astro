@@ -18,6 +18,7 @@ import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { getAccommodationTypeLabel } from '@/lib/colors';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -54,7 +55,7 @@ const total = result.ok ? result.data.total : 0;
 const totalPages = result.ok ? Math.ceil(total / pageSize) : 0;
 const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }));
 
-const typeLabel = t(`accommodations.types.${typeSlug}`, typeSlug ?? '');
+const typeLabel = getAccommodationTypeLabel({ type: typeSlug ?? '', t });
 const baseUrl = buildUrl({ locale, path: `alojamientos/tipo/${typeSlug}` });
 ---
 

@@ -13,7 +13,7 @@ import {
 	StarIcon,
 } from '@repo/icons';
 import { resolveAmenityIcon } from './accommodation-card-icons';
-import { getAccommodationTypeColor } from '@/lib/colors';
+import { getAccommodationTypeColor, getAccommodationTypeLabel, getBadgeStatusColor } from '@/lib/colors';
 import { formatPrice } from '@/lib/format-utils';
 import { buildUrl } from '@/lib/urls';
 import { createTranslations } from '@/lib/i18n';
@@ -46,6 +46,8 @@ const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const isNew = data.createdAt
 	? (Date.now() - new Date(data.createdAt).getTime()) < THIRTY_DAYS_MS
 	: false;
+const featuredColors = getBadgeStatusColor({ status: 'featured' });
+const newColors = getBadgeStatusColor({ status: 'new' });
 
 ---
 
@@ -82,14 +84,21 @@ const isNew = data.createdAt
 
 			<!-- Status corner (diagonal) - shown for accommodations created in the last 30 days -->
 			{isNew && (
-				<div class="acc-card__status-corner" aria-hidden="true">
+				<div
+					class="acc-card__status-corner"
+					aria-hidden="true"
+					style={`--corner-bg: ${newColors.bg}; --corner-text: ${newColors.text};`}
+				>
 					<span class="acc-card__status-text">{t('home.accommodations.badge.new', 'Nuevo')}</span>
 				</div>
 			)}
 
 			<!-- Featured badge -->
 			{data.isFeatured && (
-				<div class="acc-card__featured-badge">
+				<div
+					class="acc-card__featured-badge"
+					style={`background-color: ${featuredColors.bg}; color: ${featuredColors.text};`}
+				>
 					<span>{t('home.accommodations.badge.featured', 'Destacado')}</span>
 				</div>
 			)}
@@ -118,7 +127,7 @@ const isNew = data.createdAt
 			<!-- Category + Location row -->
 			<div class="acc-card__category-row">
 				<span class="acc-card__category-badge">
-					{t(`common.enums.accommodationType.${data.type.toLowerCase()}`, data.type).toUpperCase()}
+					{getAccommodationTypeLabel({ type: data.type, t }).toUpperCase()}
 				</span>
 				<div class="acc-card__location-bar">
 					<LocationIcon size={12} weight="fill" aria-hidden="true" />
@@ -253,7 +262,7 @@ const isNew = data.createdAt
 		left: 0;
 		width: 0;
 		height: 0;
-		border-top: 80px solid var(--brand-accent);
+		border-top: 80px solid var(--corner-bg);
 		border-right: 80px solid transparent;
 	}
 
@@ -266,7 +275,7 @@ const isNew = data.createdAt
 		font-weight: 700;
 		font-size: 14px;
 		line-height: 22.4px;
-		color: var(--primary-foreground);
+		color: var(--corner-text);
 		white-space: nowrap;
 	}
 
@@ -275,8 +284,6 @@ const isNew = data.createdAt
 		position: absolute;
 		bottom: 48px;
 		right: 16px;
-		background-color: var(--brand-accent);
-		color: var(--primary-foreground);
 		font-family: var(--font-sans);
 		font-weight: 700;
 		font-size: 14px;

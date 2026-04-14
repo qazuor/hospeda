@@ -22,6 +22,7 @@ import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { getAccommodationTypeLabel } from '@/lib/colors';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
 
@@ -176,15 +177,15 @@ const filterGroups: FilterGroup[] = [
 		label: t('accommodations.sidebar.type', 'Tipo de Alojamiento'),
 		type: 'checkbox',
 		options: [
-			{ value: 'APARTMENT', label: t('accommodations.types.apartment', 'Departamento') },
-			{ value: 'HOUSE', label: t('accommodations.types.house', 'Casa') },
-			{ value: 'COUNTRY_HOUSE', label: t('accommodations.types.countryHouse', 'Casa Quinta') },
-			{ value: 'CABIN', label: t('accommodations.types.cabin', 'Cabaña') },
-			{ value: 'HOTEL', label: t('accommodations.types.hotel', 'Hotel') },
-			{ value: 'HOSTEL', label: t('accommodations.types.hostel', 'Hostel') },
-			{ value: 'CAMPING', label: t('accommodations.types.camping', 'Camping') },
-			{ value: 'ROOM', label: t('accommodations.types.room', 'Habitación') },
-			{ value: 'RESORT', label: t('accommodations.types.resort', 'Resort') },
+			{ value: 'APARTMENT', label: getAccommodationTypeLabel({ type: 'APARTMENT', t }) },
+			{ value: 'HOUSE', label: getAccommodationTypeLabel({ type: 'HOUSE', t }) },
+			{ value: 'COUNTRY_HOUSE', label: getAccommodationTypeLabel({ type: 'COUNTRY_HOUSE', t }) },
+			{ value: 'CABIN', label: getAccommodationTypeLabel({ type: 'CABIN', t }) },
+			{ value: 'HOTEL', label: getAccommodationTypeLabel({ type: 'HOTEL', t }) },
+			{ value: 'HOSTEL', label: getAccommodationTypeLabel({ type: 'HOSTEL', t }) },
+			{ value: 'CAMPING', label: getAccommodationTypeLabel({ type: 'CAMPING', t }) },
+			{ value: 'ROOM', label: getAccommodationTypeLabel({ type: 'ROOM', t }) },
+			{ value: 'RESORT', label: getAccommodationTypeLabel({ type: 'RESORT', t }) },
 		],
 	},
 	{
