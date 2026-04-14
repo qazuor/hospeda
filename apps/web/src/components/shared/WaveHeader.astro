@@ -1,0 +1,225 @@
+---
+/**
+ * @file WaveHeader.astro
+ * @description Reusable sticky wave header with smooth compact mode on scroll.
+ * Used by ListingLayout and DetailLayout.
+ *
+ * IMPORTANT: This component wraps the ENTIRE page content (header + body)
+ * so that the sticky bar has a tall-enough parent to stick for the full scroll.
+ * Pass page body content via the default slot.
+ *
+ * Architecture:
+ *   <WaveHeader>
+ *     <breadcrumbs slot="breadcrumbs" />
+ *     <header slot="content" />
+ *     <body-content />  ← default slot
+ *   </WaveHeader>
+ *
+ * Wave technique: SVG filled with --surface-warm hangs below the bar via
+ * absolute positioning, creating a wavy overhang. Content scrolls behind it.
+ */
+
+interface Props {
+  /** Top padding for expanded state. Listing uses 3rem, detail uses 2rem. */
+  readonly paddingTop?: string;
+  /** Extra CSS classes on the root element. */
+  readonly class?: string;
+}
+
+const { paddingTop = '3rem', class: className } = Astro.props;
+---
+
+<div
+  class:list={['wave-header', className]}
+  style={`--wave-header-padding-top: ${paddingTop};`}
+  data-wave-header
+>
+  {/* Sentinel: sits at the top of the wrapper in normal flow.
+      When it scrolls out of view (past the navbar), compact mode activates. */}
+  <div class="wave-header__sentinel" data-wave-sentinel></div>
+
+  {/* Sticky bar: sticks below navbar for the full page scroll */}
+  <div class="wave-header__bar">
+    <div class="wave-header__breadcrumbs">
+      <div class="wave-header__container">
+        <slot name="breadcrumbs" />
+      </div>
+    </div>
+
+    <div class="wave-header__content">
+      <div class="wave-header__container">
+        <slot name="content" />
+      </div>
+    </div>
+
+    {/* Wave hangs below the bar via absolute positioning.
+        SVG fills the TOP with warm color, bottom is transparent.
+        Content scrolls behind the wave overhang. */}
+    <div class="wave-header__wave" aria-hidden="true">
+      <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <path d="M0,64 C288,120 576,0 864,64 C1152,128 1440,32 1440,32 L1440,0 L0,0 Z" fill="var(--surface-warm, #fdf6f0)" />
+      </svg>
+    </div>
+  </div>
+
+  {/* Page body: default slot. Being inside .wave-header gives the sticky bar
+      a tall parent so it can stick for the entire page scroll. */}
+  <slot />
+</div>
+
+<script>
+  /**
+   * WaveHeader scroll observer.
+   * Only toggles a CSS class. All visual changes are CSS transitions.
+   * Compatible with Astro View Transitions.
+   */
+  function initWaveHeaders(): void {
+    const headers = document.querySelectorAll<HTMLElement>('[data-wave-header]');
+    const navbar = document.querySelector<HTMLElement>('.header');
+    const navbarHeight = navbar?.getBoundingClientRect().height ?? 80;
+
+    for (const header of headers) {
+      const sentinel = header.querySelector<HTMLElement>('[data-wave-sentinel]');
+      const bar = header.querySelector<HTMLElement>('.wave-header__bar');
+      if (!sentinel || !bar) continue;
+
+      if (header.dataset.waveInitialized === 'true') continue;
+      header.dataset.waveInitialized = 'true';
+
+      // Set sticky top dynamically to match actual navbar height
+      bar.style.top = `${navbarHeight}px`;
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            header.classList.toggle('wave-header--compact', !entry.isIntersecting);
+          }
+        },
+        {
+          rootMargin: `-${navbarHeight}px 0px 0px 0px`,
+          threshold: 0,
+        }
+      );
+
+      observer.observe(sentinel);
+
+      document.addEventListener('astro:before-swap', () => {
+        observer.disconnect();
+        header.dataset.waveInitialized = '';
+      }, { once: true });
+    }
+  }
+
+  initWaveHeaders();
+  document.addEventListener('astro:after-swap', initWaveHeaders);
+</script>
+
+<style>
+  /* =========================================================
+   * Expanded (default) state
+   * ========================================================= */
+  .wave-header {
+    position: relative;
+  }
+
+  .wave-header__sentinel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 20px;
+    pointer-events: none;
+  }
+
+  .wave-header__bar {
+    position: sticky;
+    top: 80px; /* fallback, JS overrides with actual navbar height */
+    z-index: calc(var(--z-nav, 50) - 1);
+    /* No background here: breadcrumbs + content have their own warm bg.
+       This lets the wave SVG sit on a transparent background so the
+       wavy edge reveals the page bg below. */
+  }
+
+  .wave-header__container {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding: 0 var(--space-container-x);
+  }
+
+  .wave-header__breadcrumbs {
+    padding-top: var(--wave-header-padding-top, 3rem);
+    padding-bottom: 0.75rem;
+    overflow: hidden;
+    max-height: 80px;
+    opacity: 1;
+    background-color: var(--surface-warm);
+    transition:
+      max-height 0.3s ease,
+      opacity 0.2s ease,
+      padding 0.3s ease;
+  }
+
+  .wave-header__content {
+    padding-bottom: 1.5rem;
+    background-color: var(--surface-warm);
+    transition: padding 0.3s ease;
+  }
+
+  /* Wave: in flow but with negative margin so content overlaps behind it.
+     SVG fills top with warm color, bottom is transparent.
+     This creates a seamless warm-to-content transition with no white gap. */
+  .wave-header__wave {
+    line-height: 0;
+    position: relative;
+    pointer-events: none;
+    transition: margin-bottom 0.3s ease;
+  }
+
+  .wave-header__wave svg {
+    width: 100%;
+    height: 80px;
+    display: block;
+    transition: height 0.3s ease;
+  }
+
+  /* =========================================================
+   * Compact (scrolled) state — all CSS transitions, no JS
+   * ========================================================= */
+  .wave-header--compact .wave-header__breadcrumbs {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    pointer-events: none;
+  }
+
+  .wave-header--compact .wave-header__content {
+    padding-top: 1.7rem;
+    padding-bottom: 0;
+    position: relative;
+    z-index: 2;
+  }
+
+  .wave-header--compact .wave-header__wave {
+    z-index: 1;
+    margin-bottom: -48px;
+  }
+
+  .wave-header--compact .wave-header__wave svg {
+    height: 48px;
+    margin-top: -10px;
+    filter: drop-shadow(0px 15px 5px #fff);
+  }
+
+  /* =========================================================
+   * Reduced motion
+   * ========================================================= */
+  @media (prefers-reduced-motion: reduce) {
+    .wave-header__breadcrumbs,
+    .wave-header__content,
+    .wave-header__wave,
+    .wave-header__wave svg {
+      transition: none;
+    }
+  }
+</style>
