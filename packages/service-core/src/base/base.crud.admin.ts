@@ -50,8 +50,8 @@ export abstract class BaseCrudAdmin<
             input,
             schema: z.object({ id: z.string() }),
             ctx: resolvedCtx,
-            execute: async ({ id }, actor, _execCtx) => {
-                const entity = await this.model.findById(id);
+            execute: async ({ id }, actor, execCtx) => {
+                const entity = await this.model.findById(id, execCtx?.tx);
                 if (!entity) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
@@ -82,8 +82,8 @@ export abstract class BaseCrudAdmin<
             input,
             schema: z.object({ id: z.string(), adminInfo: AdminInfoSchema }),
             ctx: resolvedCtx,
-            execute: async ({ id, adminInfo }, actor, _execCtx) => {
-                const entity = await this.model.findById(id);
+            execute: async ({ id, adminInfo }, actor, execCtx) => {
+                const entity = await this.model.findById(id, execCtx?.tx);
                 if (!entity) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
@@ -95,9 +95,13 @@ export abstract class BaseCrudAdmin<
                 if (!normalized) {
                     throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'Invalid adminInfo');
                 }
-                await this.model.update({ id }, {
-                    adminInfo: normalized
-                } as unknown as Partial<TEntity>);
+                await this.model.update(
+                    { id },
+                    {
+                        adminInfo: normalized
+                    } as unknown as Partial<TEntity>,
+                    execCtx?.tx
+                );
                 return { adminInfo: normalized };
             }
         });
