@@ -40,7 +40,13 @@ class NoIdModel extends BaseModel<{ foo: string }> {
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
-    logError: vi.fn()
+    logError: vi.fn(),
+    dbLogger: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn()
+    }
 }));
 
 describe('BaseModel', () => {
@@ -957,6 +963,271 @@ describe('BaseModel', () => {
                     hasRelations: true
                 }
             );
+        });
+    });
+
+    describe('findOneWithRelations', () => {
+        class DummyModelWithTableName extends DummyModel {
+            protected getTableName(): string {
+                return 'dummies';
+            }
+        }
+
+        let modelWithTableName: DummyModelWithTableName;
+
+        beforeEach(() => {
+            modelWithTableName = new DummyModelWithTableName();
+        });
+
+        it('should fall back to findOne when no relations are requested (empty object)', async () => {
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({ where: () => ({ limit: () => [{ id: '1', name: 'test' }] }) })
+                })
+            });
+
+            const result = await modelWithTableName.findOneWithRelations({ id: '1' }, {});
+
+            expect(result).toEqual({ id: '1', name: 'test' });
+            expect(logQuery).toHaveBeenCalledWith(
+                'dummy',
+                'findOneWithRelations',
+                expect.objectContaining({ where: { id: '1' }, relations: {} }),
+                'Falling back to findOne - no relations requested'
+            );
+        });
+
+        it('should fall back to findOne when all relation values are false', async () => {
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({ where: () => ({ limit: () => [{ id: '1' }] }) })
+                })
+            });
+
+            const result = await modelWithTableName.findOneWithRelations(
+                { id: '1' },
+                { destination: false, owner: false }
+            );
+
+            expect(result).toEqual({ id: '1' });
+            expect(logQuery).toHaveBeenCalledWith(
+                'dummy',
+                'findOneWithRelations',
+                expect.objectContaining({
+                    where: { id: '1' },
+                    relations: { destination: false, owner: false }
+                }),
+                'Falling back to findOne - no relations requested'
+            );
+        });
+
+        it('should use query.tableName.findFirst with relations when relations requested', async () => {
+            const mockFindFirst = vi
+                .fn()
+                .mockResolvedValue({ id: '1', name: 'test', destination: { id: 'd1' } });
+
+            getDb.mockReturnValue({
+                query: {
+                    dummies: {
+                        findFirst: mockFindFirst
+                    }
+                }
+            });
+
+            const result = await modelWithTableName.findOneWithRelations(
+                { id: '1' },
+                { destination: true }
+            );
+
+            // buildWhereClause may return an SQL object for non-empty where (depends on mock table columns)
+            expect(mockFindFirst).toHaveBeenCalledWith(
+                expect.objectContaining({ with: { destination: true } })
+            );
+            expect(result).toEqual({ id: '1', name: 'test', destination: { id: 'd1' } });
+        });
+
+        it('should return null when findFirst returns undefined (no match)', async () => {
+            const mockFindFirst = vi.fn().mockResolvedValue(undefined);
+
+            getDb.mockReturnValue({
+                query: {
+                    dummies: {
+                        findFirst: mockFindFirst
+                    }
+                }
+            });
+
+            const result = await modelWithTableName.findOneWithRelations(
+                { id: 'nonexistent' },
+                { destination: true }
+            );
+
+            expect(result).toBeNull();
+        });
+
+        it('should log on success with hasRelations: true', async () => {
+            const mockFindFirst = vi.fn().mockResolvedValue({ id: '1' });
+
+            getDb.mockReturnValue({
+                query: {
+                    dummies: {
+                        findFirst: mockFindFirst
+                    }
+                }
+            });
+
+            await modelWithTableName.findOneWithRelations({ id: '1' }, { destination: true });
+
+            expect(logQuery).toHaveBeenCalledWith(
+                'dummy',
+                'findOneWithRelations',
+                expect.objectContaining({
+                    where: { id: '1' },
+                    relations: { destination: true }
+                }),
+                { found: true, hasRelations: true }
+            );
+        });
+
+        it('should log found: false when entity is not found', async () => {
+            const mockFindFirst = vi.fn().mockResolvedValue(undefined);
+
+            getDb.mockReturnValue({
+                query: {
+                    dummies: {
+                        findFirst: mockFindFirst
+                    }
+                }
+            });
+
+            await modelWithTableName.findOneWithRelations({ id: 'missing' }, { destination: true });
+
+            expect(logQuery).toHaveBeenCalledWith(
+                'dummy',
+                'findOneWithRelations',
+                expect.objectContaining({ where: { id: 'missing' } }),
+                { found: false, hasRelations: true }
+            );
+        });
+
+        it('should throw DbError when tableName is not defined', async () => {
+            logError.mockImplementation(() => {});
+
+            // DummyModel.getTableName() throws, which causes findOneWithRelations to throw DbError
+            await expect(
+                model.findOneWithRelations({ id: '1' }, { destination: true })
+            ).rejects.toThrow(DbError);
+
+            expect(logError).toHaveBeenCalledWith(
+                'dummy',
+                'findOneWithRelations',
+                expect.objectContaining({ where: { id: '1' }, relations: { destination: true } }),
+                expect.any(Error)
+            );
+        });
+
+        it('should throw DbError when query table is null', async () => {
+            logError.mockImplementation(() => {});
+
+            getDb.mockReturnValue({
+                query: { dummies: null }
+            });
+
+            await expect(
+                modelWithTableName.findOneWithRelations({ id: '1' }, { destination: true })
+            ).rejects.toThrow(DbError);
+        });
+
+        it('should throw DbError when findFirst method is missing from query table', async () => {
+            logError.mockImplementation(() => {});
+
+            getDb.mockReturnValue({
+                query: { dummies: {} }
+            });
+
+            await expect(
+                modelWithTableName.findOneWithRelations({ id: '1' }, { destination: true })
+            ).rejects.toThrow(DbError);
+        });
+
+        it('should throw DbError and log on database error', async () => {
+            logError.mockImplementation(() => {});
+            const mockFindFirst = vi
+                .fn()
+                .mockRejectedValue(new Error('Database connection failed'));
+
+            getDb.mockReturnValue({
+                query: { dummies: { findFirst: mockFindFirst } }
+            });
+
+            await expect(
+                modelWithTableName.findOneWithRelations({ id: '1' }, { destination: true })
+            ).rejects.toThrow(DbError);
+
+            expect(logError).toHaveBeenCalledWith(
+                'dummy',
+                'findOneWithRelations',
+                expect.objectContaining({ where: { id: '1' }, relations: { destination: true } }),
+                expect.any(Error)
+            );
+        });
+
+        it('should pass tx to getClient()', async () => {
+            const mockFindFirst = vi.fn().mockResolvedValue({ id: '1' });
+            const mockTx = {
+                query: { dummies: { findFirst: mockFindFirst } }
+            } as unknown as import('../../src/types.ts').DrizzleClient;
+
+            const getClientSpy = vi.spyOn(
+                modelWithTableName as unknown as { getClient(tx?: unknown): unknown },
+                'getClient'
+            );
+            getClientSpy.mockReturnValue(mockTx);
+
+            await modelWithTableName.findOneWithRelations(
+                { id: '1' },
+                { destination: true },
+                mockTx
+            );
+
+            expect(getClientSpy).toHaveBeenCalledWith(mockTx);
+        });
+
+        it('should handle nested relations via transformRelationsForDrizzle', async () => {
+            const mockFindFirst = vi.fn().mockResolvedValue({
+                id: '1',
+                sponsorship: { id: 's1', sponsor: { id: 'sp1' } }
+            });
+
+            getDb.mockReturnValue({
+                query: { dummies: { findFirst: mockFindFirst } }
+            });
+
+            const result = await modelWithTableName.findOneWithRelations(
+                { id: '1' },
+                { sponsorship: { sponsor: true } }
+            );
+
+            // Nested relation { sponsor: true } should be transformed to { with: { sponsor: true } }
+            // where may be an SQL object depending on the mock table structure — use objectContaining
+            expect(mockFindFirst).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    with: { sponsorship: { with: { sponsor: true } } }
+                })
+            );
+            expect(result).toEqual({
+                id: '1',
+                sponsorship: { id: 's1', sponsor: { id: 'sp1' } }
+            });
+        });
+
+        it('should validate relations parameter and throw DbError for invalid type', async () => {
+            logError.mockImplementation(() => {});
+
+            await expect(
+                // @ts-expect-error testing runtime validation with invalid type
+                modelWithTableName.findOneWithRelations({ id: '1' }, null)
+            ).rejects.toThrow(DbError);
         });
     });
 });
