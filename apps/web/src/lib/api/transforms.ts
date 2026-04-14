@@ -12,6 +12,7 @@
  */
 import type {
     AccommodationCardData,
+    AccommodationDetailData,
     BlogPostCardData,
     CardAmenityFeature,
     DestinationCardData,
@@ -23,6 +24,7 @@ import { extractFeaturedImageUrl, extractGalleryUrls } from '../media';
 // Re-export types from canonical source for backward compatibility
 export type {
     AccommodationCardData,
+    AccommodationDetailData,
     BlogPostCardData,
     CardAmenityFeature,
     CardLocation,
@@ -325,10 +327,129 @@ export function toTestimonialCardProps({
     };
 }
 
+// --- Accommodation Detail Page ---
+
+/**
+ * Transforms a raw API accommodation response (from getBySlug) into
+ * AccommodationDetailData for the detail page.
+ *
+ * IMPORTANT: Uses `price.price` (canonical PriceSchema field).
+ * Does NOT propagate the legacy `price.amount` fallback.
+ *
+ * @param item - Raw accommodation object from the API (getBySlug response)
+ * @returns Typed AccommodationDetailData for the detail page components
+ */
+export function toAccommodationDetailPageProps({
+    item
+}: { readonly item: Record<string, unknown> }): AccommodationDetailData {
+    const mediaObj = item.media as { images?: string[]; videos?: string[] } | undefined;
+    const locationObj = item.location as Record<string, unknown> | undefined;
+    const destinationObj = item.destination as Record<string, unknown> | undefined;
+    const priceObj = item.price as Record<string, unknown> | null | undefined;
+    const extraInfoObj = item.extraInfo as Record<string, unknown> | null | undefined;
+    const seoObj = item.seo as Record<string, unknown> | null | undefined;
+    const ownerObj = item.owner as Record<string, unknown> | null | undefined;
+    const amenitiesArr = item.amenities as readonly Record<string, unknown>[] | undefined;
+    const featuresArr = item.features as readonly Record<string, unknown>[] | undefined;
+    const faqsArr = item.faqs as readonly Record<string, unknown>[] | undefined;
+
+    return {
+        id: String(item.id || ''),
+        slug: String(item.slug || ''),
+        name: String(item.name || ''),
+        summary: String(item.summary || ''),
+        description: String(item.description || ''),
+        type: String(item.type || ''),
+        isFeatured: Boolean(item.isFeatured),
+        createdAt: item.createdAt ? String(item.createdAt) : new Date().toISOString(),
+        averageRating: Number(item.averageRating || 0),
+        reviewsCount: Number(item.reviewsCount || 0),
+        featuredImage: extractFeaturedImageUrl(item, '/images/placeholder-accommodation.svg'),
+        media: {
+            images: mediaObj?.images ?? extractGalleryUrls(item),
+            videos: mediaObj?.videos ?? []
+        },
+        location: {
+            lat: locationObj?.lat != null ? Number(locationObj.lat) : null,
+            lng: locationObj?.lng != null ? Number(locationObj.lng) : null
+        },
+        destination: {
+            id: String(destinationObj?.id || ''),
+            slug: String(destinationObj?.slug || ''),
+            name: String(destinationObj?.name || '')
+        },
+        // CANONICAL: price.price only — never price.amount
+        price: priceObj
+            ? {
+                  price: priceObj.price != null ? Number(priceObj.price) : null,
+                  currency: priceObj.currency ? String(priceObj.currency) : null,
+                  additionalFees:
+                      (priceObj.additionalFees as AccommodationDetailData['price'] extends {
+                          additionalFees: infer F;
+                      }
+                          ? F
+                          : never) ?? null,
+                  discounts:
+                      (priceObj.discounts as AccommodationDetailData['price'] extends {
+                          discounts: infer D;
+                      }
+                          ? D
+                          : never) ?? null
+              }
+            : null,
+        extraInfo: extraInfoObj
+            ? {
+                  capacity: extraInfoObj.capacity != null ? Number(extraInfoObj.capacity) : null,
+                  bedrooms: extraInfoObj.bedrooms != null ? Number(extraInfoObj.bedrooms) : null,
+                  beds: extraInfoObj.beds != null ? Number(extraInfoObj.beds) : null,
+                  bathrooms: extraInfoObj.bathrooms != null ? Number(extraInfoObj.bathrooms) : null,
+                  minNights: extraInfoObj.minNights != null ? Number(extraInfoObj.minNights) : null,
+                  maxNights: extraInfoObj.maxNights != null ? Number(extraInfoObj.maxNights) : null,
+                  smokingAllowed:
+                      extraInfoObj.smokingAllowed != null
+                          ? Boolean(extraInfoObj.smokingAllowed)
+                          : null
+              }
+            : null,
+        seo: seoObj
+            ? {
+                  title: seoObj.title ? String(seoObj.title) : null,
+                  description: seoObj.description ? String(seoObj.description) : null
+              }
+            : null,
+        owner: {
+            id: String(ownerObj?.id || ''),
+            name: String(ownerObj?.name || 'Unknown'),
+            image: ownerObj?.image ? String(ownerObj.image) : null,
+            createdAt: ownerObj?.createdAt ? String(ownerObj.createdAt) : new Date().toISOString()
+        },
+        amenities: (amenitiesArr ?? []).map((a) => ({
+            amenityId: String(a.amenityId || ''),
+            name: String(a.name || ''),
+            icon: a.icon ? String(a.icon) : null,
+            isOptional: Boolean(a.isOptional),
+            additionalCost: a.additionalCost != null ? Number(a.additionalCost) : null
+        })),
+        features: (featuresArr ?? []).map((f) => ({
+            featureId: String(f.featureId || ''),
+            name: String(f.name || ''),
+            icon: f.icon ? String(f.icon) : null,
+            hostReWriteName: f.hostReWriteName ? String(f.hostReWriteName) : null,
+            comments: f.comments ? String(f.comments) : null
+        })),
+        faqs: (faqsArr ?? []).map((faq) => ({
+            id: String(faq.id || ''),
+            question: String(faq.question || ''),
+            answer: String(faq.answer || ''),
+            category: faq.category ? String(faq.category) : null
+        }))
+    };
+}
+
 /**
  * Helper to get initials from a name.
  */
-function getInitials(name: string): string {
+export function getInitials(name: string): string {
     const parts = name.trim().split(/\s+/);
     if (parts.length === 1) return (parts[0]?.[0] ?? '').toUpperCase();
     return `${(parts[0]?.[0] ?? '').toUpperCase()}${(parts[parts.length - 1]?.[0] ?? '').toUpperCase()}`;

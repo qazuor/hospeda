@@ -361,3 +361,92 @@ export interface BlogPostCardData {
     /** Optional list of tag slugs associated with the post. */
     readonly tags?: readonly string[];
 }
+
+// ---------------------------------------------------------------------------
+// Accommodation detail page data
+// ---------------------------------------------------------------------------
+
+/** Amenity relation from accommodation join. */
+export interface DetailAmenity {
+    readonly amenityId: string;
+    readonly name: string;
+    readonly icon: string | null;
+    readonly isOptional: boolean;
+    readonly additionalCost: number | null;
+}
+
+/** Feature relation from accommodation join. */
+export interface DetailFeature {
+    readonly featureId: string;
+    readonly name: string;
+    readonly icon: string | null;
+    readonly hostReWriteName: string | null;
+    readonly comments: string | null;
+}
+
+/** FAQ item from accommodation join. */
+export interface DetailFaq {
+    readonly id: string;
+    readonly question: string;
+    readonly answer: string;
+    readonly category: string | null;
+}
+
+/**
+ * Typed data shape for the accommodation detail page.
+ * Produced by `toAccommodationDetailPageProps()` in transforms.ts.
+ */
+export interface AccommodationDetailData {
+    readonly id: string;
+    readonly slug: string;
+    readonly name: string;
+    readonly summary: string;
+    readonly description: string;
+    readonly type: string;
+    readonly isFeatured: boolean;
+    readonly createdAt: string;
+    readonly averageRating: number;
+    readonly reviewsCount: number;
+    readonly featuredImage: string;
+    readonly media: {
+        readonly images: readonly string[];
+        readonly videos: readonly string[];
+    };
+    readonly location: {
+        readonly lat: number | null;
+        readonly lng: number | null;
+    };
+    readonly destination: {
+        readonly id: string;
+        readonly slug: string;
+        readonly name: string;
+    };
+    readonly price: {
+        readonly price: number | null;
+        readonly currency: string | null;
+        readonly additionalFees: unknown;
+        readonly discounts: unknown;
+    } | null;
+    readonly extraInfo: {
+        readonly capacity: number | null;
+        readonly bedrooms: number | null;
+        readonly beds: number | null;
+        readonly bathrooms: number | null;
+        readonly minNights: number | null;
+        readonly maxNights: number | null;
+        readonly smokingAllowed: boolean | null;
+    } | null;
+    readonly seo: {
+        readonly title: string | null;
+        readonly description: string | null;
+    } | null;
+    readonly owner: {
+        readonly id: string;
+        readonly name: string;
+        readonly image: string | null;
+        readonly createdAt: string;
+    };
+    readonly amenities: readonly DetailAmenity[];
+    readonly features: readonly DetailFeature[];
+    readonly faqs: readonly DetailFaq[];
+}

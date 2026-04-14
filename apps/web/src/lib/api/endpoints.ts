@@ -17,6 +17,17 @@ import type {
 import { apiClient } from './client';
 import type { ApiResult, PaginatedResponse } from './types';
 
+/** Review item with user info (from GET /accommodations/:id/reviews). */
+interface AccommodationReviewPublicItem {
+    readonly id: string;
+    readonly title?: string;
+    readonly content?: string;
+    readonly averageRating?: number;
+    readonly rating?: Record<string, number>;
+    readonly user?: { readonly name: string | null; readonly image: string | null };
+    readonly createdAt?: string;
+}
+
 const BASE = '/api/v1/public';
 
 // --- Testimonials ---
@@ -59,6 +70,7 @@ export const accommodationsApi = {
         type?: string;
         types?: string;
         isFeatured?: boolean;
+        ownerId?: string;
         destinationId?: string;
         destinationIds?: string;
         includeAmenities?: boolean;
@@ -148,6 +160,36 @@ export const accommodationsApi = {
      */
     getSummary({ id }: { readonly id: string }): Promise<ApiResult<AccommodationSummary>> {
         return apiClient.get({ path: `${BASE}/accommodations/${id}/summary` });
+    },
+
+    /** Get similar accommodations (by type or destination). */
+    getSimilar({
+        id,
+        limit
+    }: {
+        readonly id: string;
+        readonly limit?: number;
+    }): Promise<ApiResult<AccommodationPublic[]>> {
+        return apiClient.get({
+            path: `${BASE}/accommodations/${id}/similar`,
+            params: limit != null ? { limit } : undefined
+        });
+    },
+
+    /** Get paginated reviews for an accommodation (with user info). */
+    getReviews({
+        id,
+        page,
+        pageSize
+    }: {
+        readonly id: string;
+        readonly page?: number;
+        readonly pageSize?: number;
+    }): Promise<ApiResult<PaginatedResponse<AccommodationReviewPublicItem>>> {
+        return apiClient.getList({
+            path: `${BASE}/accommodations/${id}/reviews`,
+            params: { page, pageSize }
+        });
     }
 };
 

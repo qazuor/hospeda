@@ -23,7 +23,7 @@ export const AUTH_SEGMENTS = ['auth'] as const;
  * Unlike PROTECTED_SEGMENTS, unauthenticated users are NOT redirected to login.
  * Used to pre-fill user info in forms (e.g. feedback).
  */
-export const SESSION_OPTIONAL_SEGMENTS = ['feedback'] as const;
+export const SESSION_OPTIONAL_SEGMENTS = ['feedback', 'alojamientos'] as const;
 
 /**
  * URL path prefixes that should bypass middleware entirely.

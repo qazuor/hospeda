@@ -709,3 +709,30 @@ export const tagsApi = {
         return apiClient.get({ path: `${BASE}/tags/by-slug/${slug}` });
     }
 };
+
+// --- Accommodation Contact (Protected) ---
+
+/** Contact info returned by the protected endpoint. */
+interface AccommodationContactResponse {
+    readonly email?: string;
+    readonly phone?: string;
+    readonly website?: string;
+}
+
+/** Protected accommodation API endpoints (require auth). */
+export const protectedAccommodationsApi = {
+    /**
+     * Get resolved contact info for an accommodation.
+     * Only available to authenticated users.
+     *
+     * @param params - Accommodation ID
+     * @returns Resolved email, phone, and/or website (fields omitted when not available)
+     */
+    getContactInfo({
+        id
+    }: {
+        readonly id: string;
+    }): Promise<ApiResult<AccommodationContactResponse>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/accommodations/${id}/contact` });
+    }
+};
