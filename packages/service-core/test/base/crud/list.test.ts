@@ -71,7 +71,7 @@ describe('BaseService: list', () => {
             mockActor,
             expect.objectContaining({ hookState: {} })
         );
-        expect(modelMock.findAll).toHaveBeenCalledWith({}, options, undefined);
+        expect(modelMock.findAll).toHaveBeenCalledWith({}, options, undefined, undefined);
         expect(afterListSpy).toHaveBeenCalledWith(
             mockPaginatedResult,
             mockActor,
@@ -180,6 +180,7 @@ describe('BaseService: list', () => {
         expect(localModelMock.findAll).toHaveBeenCalledWith(
             {},
             { page: 1, pageSize: 20, sortBy: undefined, sortOrder: undefined },
+            undefined,
             undefined
         );
     });

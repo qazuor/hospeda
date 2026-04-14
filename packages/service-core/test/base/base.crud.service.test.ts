@@ -117,6 +117,7 @@ describe('BaseCrudService - Relations Support', () => {
                 customRelations,
                 {},
                 { page: undefined, pageSize: undefined },
+                undefined,
                 undefined
             );
             expect(mockModel.findAll).not.toHaveBeenCalled();
@@ -135,6 +136,7 @@ describe('BaseCrudService - Relations Support', () => {
                 { category: true, tags: true },
                 {},
                 { page: undefined, pageSize: undefined },
+                undefined,
                 undefined
             );
             expect(mockModel.findAll).not.toHaveBeenCalled();
@@ -157,6 +159,7 @@ describe('BaseCrudService - Relations Support', () => {
                 customRelations,
                 {},
                 { page: undefined, pageSize: undefined },
+                undefined,
                 undefined
             );
         });
@@ -174,6 +177,7 @@ describe('BaseCrudService - Relations Support', () => {
                 { category: true, tags: true },
                 {},
                 { page: 2, pageSize: 5 },
+                undefined,
                 undefined
             );
         });
@@ -258,7 +262,13 @@ describe('BaseCrudService - Relations Support', () => {
             // Verify
             expect(result.data).toBeDefined();
             // Cuando getDefaultListRelations() retorna {}, aún llama findAllWithRelations
-            expect(mockModel.findAllWithRelations).toHaveBeenCalledWith({}, {}, {}, undefined);
+            expect(mockModel.findAllWithRelations).toHaveBeenCalledWith(
+                {},
+                {},
+                {},
+                undefined,
+                undefined
+            );
             expect(mockModel.findAll).not.toHaveBeenCalled();
         });
     });

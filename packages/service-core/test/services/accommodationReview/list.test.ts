@@ -116,6 +116,7 @@ describe('list', () => {
             { user: true, accommodation: true },
             {},
             { page: 1, pageSize: 10 },
+            undefined,
             undefined
         );
     });

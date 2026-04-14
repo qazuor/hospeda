@@ -152,6 +152,7 @@ describe('list', () => {
             { user: true, destination: true },
             {},
             { page: 1, pageSize: 10 },
+            undefined,
             undefined
         );
     });

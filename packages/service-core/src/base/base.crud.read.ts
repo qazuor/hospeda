@@ -96,7 +96,7 @@ export abstract class BaseCrudRead<
                 const typedWhere = where as any;
                 const entity = relations
                     ? await this.model.findOneWithRelations(typedWhere, relations, execCtx?.tx)
-                    : await this.model.findOne(typedWhere);
+                    : await this.model.findOne(typedWhere, execCtx?.tx);
 
                 if (!entity) {
                     throw new ServiceError(
@@ -242,7 +242,8 @@ export abstract class BaseCrudRead<
                               sortBy,
                               sortOrder
                           },
-                          additionalConditions
+                          additionalConditions,
+                          execCtx?.tx
                       )
                     : await this.model.findAll(
                           whereClause,
@@ -252,7 +253,8 @@ export abstract class BaseCrudRead<
                               sortBy,
                               sortOrder
                           },
-                          additionalConditions
+                          additionalConditions,
+                          execCtx?.tx
                       );
 
                 return this._afterList(result, validatedActor, execCtx);

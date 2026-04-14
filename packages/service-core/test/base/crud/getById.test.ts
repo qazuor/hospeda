@@ -51,7 +51,7 @@ describe('BaseService: getById', () => {
     it('should return an entity when found', async () => {
         asMock(modelMock.findOne).mockResolvedValue(mockEntity);
         const result = await service.getById(mockActor, MOCK_ENTITY_ID);
-        expect(asMock(modelMock.findOne)).toHaveBeenCalledWith({ id: MOCK_ENTITY_ID });
+        expect(asMock(modelMock.findOne)).toHaveBeenCalledWith({ id: MOCK_ENTITY_ID }, undefined);
         expect(result.data).toEqual(mockEntity);
         expect(result.error).toBeUndefined();
     });
@@ -151,9 +151,10 @@ describe('BaseService: getById', () => {
 
         // Assert
         expect(normalizer).toHaveBeenCalledWith('id', MOCK_ENTITY_ID, mockActor);
-        expect(asMock(localModelMock.findOne)).toHaveBeenCalledWith({
-            'id-normalized': MOCK_ENTITY_ID
-        });
+        expect(asMock(localModelMock.findOne)).toHaveBeenCalledWith(
+            { 'id-normalized': MOCK_ENTITY_ID },
+            undefined
+        );
     });
 });
 
@@ -213,7 +214,10 @@ describe('SPEC-066: getByField relation loading', () => {
         const result = await localService.getByField(mockActor, 'id', MOCK_ENTITY_ID);
 
         // Assert
-        expect(asMock(localModelMock.findOne)).toHaveBeenCalledWith({ id: MOCK_ENTITY_ID });
+        expect(asMock(localModelMock.findOne)).toHaveBeenCalledWith(
+            { id: MOCK_ENTITY_ID },
+            undefined
+        );
         expect(asMock(localModelMock.findOneWithRelations)).not.toHaveBeenCalled();
         expect(result.data).toEqual(mockEntity);
         expect(result.error).toBeUndefined();

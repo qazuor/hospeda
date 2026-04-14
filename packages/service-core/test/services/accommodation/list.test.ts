@@ -70,6 +70,7 @@ describe('AccommodationService.list', () => {
             { destination: true, owner: true },
             {},
             { page: 1, pageSize: 2 },
+            undefined,
             undefined
         );
     });
@@ -131,6 +132,7 @@ describe('AccommodationService.list', () => {
             { destination: true, owner: true },
             {},
             { page: 99, pageSize: 10 },
+            undefined,
             undefined
         );
     });

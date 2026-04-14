@@ -84,6 +84,7 @@ describe('AccommodationService - Relations Support', () => {
                 { destination: true, owner: true },
                 {},
                 { page: undefined, pageSize: undefined },
+                undefined,
                 undefined
             );
             expect(mockModel.findAll).not.toHaveBeenCalled();
@@ -106,6 +107,7 @@ describe('AccommodationService - Relations Support', () => {
                 customRelations,
                 {},
                 { page: undefined, pageSize: undefined },
+                undefined,
                 undefined
             );
         });
@@ -123,6 +125,7 @@ describe('AccommodationService - Relations Support', () => {
                 { destination: true, owner: true },
                 {},
                 { page: 2, pageSize: 20 },
+                undefined,
                 undefined
             );
         });

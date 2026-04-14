@@ -88,6 +88,7 @@ describe('PostService - Relations Support', () => {
                 },
                 {},
                 { page: undefined, pageSize: undefined },
+                undefined,
                 undefined
             );
             expect(mockModel.findAll).not.toHaveBeenCalled();
@@ -110,6 +111,7 @@ describe('PostService - Relations Support', () => {
                 customRelations,
                 {},
                 { page: undefined, pageSize: undefined },
+                undefined,
                 undefined
             );
         });

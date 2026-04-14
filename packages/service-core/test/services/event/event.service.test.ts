@@ -79,6 +79,7 @@ describe('EventService - Relations Support', () => {
                 { organizer: true, location: true },
                 {},
                 { page: undefined, pageSize: undefined },
+                undefined,
                 undefined
             );
             expect(mockModel.findAll).not.toHaveBeenCalled();
@@ -101,6 +102,7 @@ describe('EventService - Relations Support', () => {
                 customRelations,
                 {},
                 { page: undefined, pageSize: undefined },
+                undefined,
                 undefined
             );
         });
