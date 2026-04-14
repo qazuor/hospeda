@@ -36,7 +36,7 @@ describe('PostSponsorshipService.restore', () => {
         expect(result.data).toBeDefined();
         expect(result.data?.count).toBe(1);
         expect(result.error).toBeUndefined();
-        expect(modelMock.findById).toHaveBeenCalledWith(id);
+        expect(modelMock.findById).toHaveBeenCalledWith(id, undefined);
         expect(modelMock.restore).toHaveBeenCalled();
     });
 

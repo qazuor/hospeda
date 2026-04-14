@@ -65,7 +65,7 @@ describe('AccommodationService.update', () => {
         expect(result.data).toBeDefined();
         expect(result.data?.name).toBe('Updated Name');
         expect(result.error).toBeUndefined();
-        expect(model.findById).toHaveBeenCalledWith(id);
+        expect(model.findById).toHaveBeenCalledWith(id, undefined);
         expect(model.update).toHaveBeenCalled();
     });
 

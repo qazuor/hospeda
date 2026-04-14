@@ -48,7 +48,8 @@ describe('PostService.updateVisibility', () => {
         expect(result.data?.visibility).toBe(VisibilityEnum.PRIVATE);
         expect(modelMock.update as Mock).toHaveBeenCalledWith(
             { id: postId },
-            { visibility: VisibilityEnum.PRIVATE }
+            { visibility: VisibilityEnum.PRIVATE },
+            undefined
         );
     });
 

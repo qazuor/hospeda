@@ -1,6 +1,13 @@
 import { ServiceErrorCode } from '@repo/schemas';
 import type { ZodTypeAny, z } from 'zod';
-import type { Actor, ServiceConfig, ServiceContext, ServiceLogger, ServiceOutput } from '../types';
+import type {
+    Actor,
+    DrizzleClient,
+    ServiceConfig,
+    ServiceContext,
+    ServiceLogger,
+    ServiceOutput
+} from '../types';
 import { ServiceError } from '../types';
 import {
     logError,
@@ -142,11 +149,11 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
      * @param actor - Actor performing the action
      * @param entityName - Entity name for logs/errors
      * @param permissionCheck - Permission function (optional)
-     * @param _ctx - Service context for future transaction support (Phase 4)
+     * @param ctx - Service context. When provided with a transaction, findById uses it.
      */
     protected async _getAndValidateEntity<
         TEntity,
-        TModel extends { findById: (id: string) => Promise<TEntity | null> }
+        TModel extends { findById: (id: string, tx?: DrizzleClient) => Promise<TEntity | null> }
     >(
         model: TModel,
         id: string,
@@ -154,9 +161,9 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
         entityName: string,
         permissionCheck: (actor: Actor, entity: TEntity) => Promise<void> | void = async () =>
             Promise.resolve(),
-        _ctx?: ServiceContext
+        ctx?: ServiceContext
     ): Promise<TEntity> {
-        const entityOrNull = await model.findById(id);
+        const entityOrNull = await model.findById(id, ctx?.tx);
         // validateEntity throws if not exists, so entity is never null
         const entity = validateEntity(entityOrNull, entityName);
         await Promise.resolve(permissionCheck(actor, entity));

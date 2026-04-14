@@ -39,7 +39,7 @@ describe('AccommodationService.softDelete', () => {
         expect(result.data).toBeDefined();
         expect(result.data?.count).toBe(1);
         expect(result.error).toBeUndefined();
-        expect(model.findById).toHaveBeenCalledWith(id);
+        expect(model.findById).toHaveBeenCalledWith(id, undefined);
         expect(model.softDelete).toHaveBeenCalled();
     });
 

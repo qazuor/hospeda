@@ -57,7 +57,7 @@ describe('AccommodationService.hardDelete', () => {
         const result = await service.hardDelete(actor, entity.id);
         expect(result.data?.count).toBe(1);
         expect(result.error).toBeUndefined();
-        expect(model.findById).toHaveBeenCalledWith(entity.id);
+        expect(model.findById).toHaveBeenCalledWith(entity.id, undefined);
         expect(model.hardDelete).toHaveBeenCalledWith({ id: entity.id }, undefined);
     });
 

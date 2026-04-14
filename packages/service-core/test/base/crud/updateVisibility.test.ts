@@ -57,7 +57,8 @@ describe('BaseService: updateVisibility', () => {
         expect(result.data?.visibility).toBe(VisibilityEnum.PRIVATE);
         expect(asMock(modelMock.update)).toHaveBeenCalledWith(
             { id: MOCK_ENTITY_ID },
-            expect.objectContaining({ visibility: VisibilityEnum.PRIVATE })
+            expect.objectContaining({ visibility: VisibilityEnum.PRIVATE }),
+            undefined
         );
     });
 

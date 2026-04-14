@@ -138,7 +138,8 @@ export abstract class BaseCrudWrite<
                     updateId,
                     validActor,
                     this.entityName,
-                    this._canUpdate.bind(this)
+                    this._canUpdate.bind(this),
+                    ctx
                 );
 
                 const normalizedData = this.normalizers?.update
@@ -190,7 +191,7 @@ export abstract class BaseCrudWrite<
                 );
 
                 if (!updatedEntity) {
-                    const entityExists = await this.model.findById(updateId);
+                    const entityExists = await this.model.findById(updateId, ctx?.tx);
                     if (!entityExists) {
                         throw new ServiceError(
                             ServiceErrorCode.NOT_FOUND,
@@ -242,7 +243,8 @@ export abstract class BaseCrudWrite<
                     id,
                     validActor,
                     this.entityName,
-                    this._canSoftDelete.bind(this)
+                    this._canSoftDelete.bind(this),
+                    ctx
                 );
                 if ((entity as TEntity).deletedAt) {
                     return { count: 0 };
@@ -286,7 +288,8 @@ export abstract class BaseCrudWrite<
                     id,
                     validActor,
                     this.entityName,
-                    this._canHardDelete.bind(this)
+                    this._canHardDelete.bind(this),
+                    ctx
                 );
                 if ((entity as TEntity).deletedAt) {
                     return { count: 0 };
@@ -329,7 +332,8 @@ export abstract class BaseCrudWrite<
                     id,
                     validActor,
                     this.entityName,
-                    this._canRestore.bind(this)
+                    this._canRestore.bind(this),
+                    ctx
                 );
                 if (!(entity as TEntity).deletedAt) {
                     return { count: 0 };
@@ -339,8 +343,7 @@ export abstract class BaseCrudWrite<
                 try {
                     processedId = await this._beforeRestore(id, validActor, resolvedCtx);
                 } catch (err) {
-                    if (err instanceof ServiceError && err.code === ServiceErrorCode.INTERNAL_ERROR)
-                        throw err;
+                    if (err instanceof ServiceError) throw err;
                     throw new ServiceError(
                         ServiceErrorCode.INTERNAL_ERROR,
                         'Error in _beforeRestore hook',
@@ -354,8 +357,7 @@ export abstract class BaseCrudWrite<
                         ctx?.tx
                     );
                 } catch (err) {
-                    if (err instanceof ServiceError && err.code === ServiceErrorCode.INTERNAL_ERROR)
-                        throw err;
+                    if (err instanceof ServiceError) throw err;
                     throw new ServiceError(
                         ServiceErrorCode.INTERNAL_ERROR,
                         'Error in model.restore',
@@ -366,8 +368,7 @@ export abstract class BaseCrudWrite<
                 try {
                     await this._afterRestore(result, validActor, resolvedCtx);
                 } catch (err) {
-                    if (err instanceof ServiceError && err.code === ServiceErrorCode.INTERNAL_ERROR)
-                        throw err;
+                    if (err instanceof ServiceError) throw err;
                     throw new ServiceError(
                         ServiceErrorCode.INTERNAL_ERROR,
                         'Error in _afterRestore hook',
@@ -407,7 +408,8 @@ export abstract class BaseCrudWrite<
                     id,
                     validActor,
                     this.entityName,
-                    async () => {}
+                    async () => {},
+                    ctx
                 );
                 if (!entity) {
                     throw new ServiceError(
@@ -429,12 +431,7 @@ export abstract class BaseCrudWrite<
                         resolvedCtx
                     );
                 } catch (err) {
-                    if (
-                        err instanceof ServiceError &&
-                        err.code === ServiceErrorCode.INTERNAL_ERROR
-                    ) {
-                        throw err;
-                    }
+                    if (err instanceof ServiceError) throw err;
                     throw new ServiceError(
                         ServiceErrorCode.INTERNAL_ERROR,
                         'Error in _beforeUpdateVisibility hook',
@@ -444,9 +441,13 @@ export abstract class BaseCrudWrite<
 
                 let updatedEntity: TEntity | null;
                 try {
-                    updatedEntity = await this.model.update({ id }, {
-                        visibility: processedVisibility
-                    } as unknown as Partial<TEntity>);
+                    updatedEntity = await this.model.update(
+                        { id },
+                        {
+                            visibility: processedVisibility
+                        } as unknown as Partial<TEntity>,
+                        ctx?.tx
+                    );
                     if (!updatedEntity) {
                         throw new ServiceError(
                             ServiceErrorCode.INTERNAL_ERROR,
@@ -454,12 +455,7 @@ export abstract class BaseCrudWrite<
                         );
                     }
                 } catch (err) {
-                    if (
-                        err instanceof ServiceError &&
-                        err.code === ServiceErrorCode.INTERNAL_ERROR
-                    ) {
-                        throw err;
-                    }
+                    if (err instanceof ServiceError) throw err;
                     throw new ServiceError(
                         ServiceErrorCode.INTERNAL_ERROR,
                         'Error in model.update',
@@ -470,12 +466,7 @@ export abstract class BaseCrudWrite<
                 try {
                     await this._afterUpdateVisibility(updatedEntity, validActor, resolvedCtx);
                 } catch (err) {
-                    if (
-                        err instanceof ServiceError &&
-                        err.code === ServiceErrorCode.INTERNAL_ERROR
-                    ) {
-                        throw err;
-                    }
+                    if (err instanceof ServiceError) throw err;
                     throw new ServiceError(
                         ServiceErrorCode.INTERNAL_ERROR,
                         'Error in _afterUpdateVisibility hook',
@@ -513,7 +504,8 @@ export abstract class BaseCrudWrite<
                     validData.id,
                     actor,
                     this.entityName,
-                    this._canUpdate.bind(this)
+                    this._canUpdate.bind(this),
+                    ctx
                 );
                 if (!('isFeatured' in entity)) {
                     throw new Error('Entity does not have isFeatured property');

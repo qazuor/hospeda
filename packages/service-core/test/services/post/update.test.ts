@@ -43,7 +43,7 @@ describe('PostService.update', () => {
         const result = await service.update(admin, post.id, updateInput);
         assertions.expectSuccess(result);
         expect(result.data?.title).toBe('Updated Title');
-        expect(modelMock.findById).toHaveBeenCalledWith(post.id);
+        expect(modelMock.findById).toHaveBeenCalledWith(post.id, undefined);
         expect(modelMock.update).toHaveBeenCalled();
     });
 
@@ -58,7 +58,7 @@ describe('PostService.update', () => {
         });
         const result = await service.update(forbiddenActor, post.id, updateInput);
         assertions.expectForbiddenError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(post.id);
+        expect(modelMock.findById).toHaveBeenCalledWith(post.id, undefined);
         expect(modelMock.update).not.toHaveBeenCalled();
     });
 
