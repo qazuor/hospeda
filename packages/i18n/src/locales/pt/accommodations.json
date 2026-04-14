@@ -227,6 +227,92 @@
         "checkOut": "Check-out",
         "stars": "estrelas",
         "reviewsLabel": "avaliações",
-        "bookNow": "Reservar agora"
+        "bookNow": "Reservar agora",
+        "quickFacts": {
+            "capacity": "Capacidade",
+            "bedrooms": "Quartos",
+            "beds": "Camas",
+            "bathrooms": "Banheiros",
+            "minNights": "Mínimo de noites",
+            "maxNights": "Máximo de noites",
+            "guests": "{n} hóspedes",
+            "nights": "{n} noites"
+        },
+        "gallery": {
+            "viewAll": "Ver todas as fotos",
+            "viewFullscreen": "Ver foto {n} em tela cheia",
+            "backToAccommodation": "← Voltar ao alojamento",
+            "photosSubpage": "Fotos"
+        },
+        "pricing": {
+            "from": "A partir de",
+            "perNightLabel": "/noite",
+            "viewBreakdown": "Ver detalhamento",
+            "hideBreakdown": "Ocultar detalhamento",
+            "consult": "Consultar",
+            "included": "incluído",
+            "optional": "opcional",
+            "perNightFlag": "por noite",
+            "perGuestFlag": "por hóspede"
+        },
+        "reviewsDetail": {
+            "noReviews": "Ainda não há avaliações",
+            "viewAll": "Ver todas as {n} avaliações",
+            "categories": {
+                "cleanliness": "Limpeza",
+                "hospitality": "Hospitalidade",
+                "services": "Serviços",
+                "accuracy": "Precisão",
+                "communication": "Comunicação",
+                "location": "Localização"
+            },
+            "outOf": "de 5",
+            "modal": {
+                "title": "Avaliações",
+                "close": "Fechar",
+                "loadMore": "Carregar mais",
+                "error": "Não foi possível carregar as avaliações",
+                "retry": "Tentar novamente"
+            }
+        },
+        "owner": {
+            "memberSince": "Membro desde {date}",
+            "contactUnavailable": "Informações de contato não disponíveis",
+            "registerToContact": "Cadastre-se para contatar diretamente",
+            "contactEmail": "Enviar email",
+            "contactPhone": "Ligar",
+            "contactWebsite": "Visitar site",
+            "otherProperties": "Outros alojamentos de {name}"
+        },
+        "amenitiesDetail": {
+            "title": "Comodidades",
+            "viewAll": "Ver todas as {n} comodidades",
+            "collapse": "Ver menos",
+            "additionalCost": "(custo adicional)"
+        },
+        "features": {
+            "title": "Características",
+            "smokingAllowed": "Permitido fumar"
+        },
+        "faqsDetail": {
+            "title": "Perguntas frequentes",
+            "generalCategory": "Geral"
+        },
+        "locationDetail": {
+            "title": "Localização",
+            "mapPlaceholder": "Mapa em breve"
+        },
+        "related": {
+            "similar": "Alojamentos similares",
+            "byOwner": "Outros alojamentos de {name}",
+            "posts": "Publicações relacionadas",
+            "events": "Eventos em {destination}",
+            "prevSlide": "Slide anterior",
+            "nextSlide": "Próximo slide"
+        },
+        "badges": {
+            "new": "Novo",
+            "featured": "Destaque"
+        }
     }
 }

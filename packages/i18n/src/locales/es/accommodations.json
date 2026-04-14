@@ -1,4 +1,45 @@
 {
+    "amenityNames": {
+        "wifi": "WiFi",
+        "air_conditioning": "Aire acondicionado",
+        "heating": "Calefacción",
+        "full_kitchen": "Cocina completa",
+        "refrigerator_freezer": "Heladera con freezer",
+        "microwave": "Microondas",
+        "coffee_maker": "Cafetera",
+        "bed_linens": "Ropa de cama",
+        "towels": "Toallas",
+        "cable_tv": "TV por cable",
+        "bbq_grill": "Parrilla",
+        "parking": "Estacionamiento",
+        "washer": "Lavarropas",
+        "fireplace": "Hogar a leña",
+        "wood_stove": "Salamandra",
+        "private_garden": "Jardín privado",
+        "smoke_detector": "Detector de humo",
+        "first_aid_kit": "Botiquín de primeros auxilios",
+        "fire_extinguisher": "Matafuego",
+        "pool": "Pileta",
+        "hot_tub": "Jacuzzi",
+        "gym": "Gimnasio",
+        "laundry": "Lavandería",
+        "elevator": "Ascensor",
+        "breakfast": "Desayuno",
+        "restaurant": "Restaurante",
+        "bar": "Bar",
+        "spa": "Spa",
+        "covered_parking": "Estacionamiento cubierto",
+        "balcony": "Balcón",
+        "terrace": "Terraza",
+        "iron": "Plancha",
+        "hair_dryer": "Secador de pelo",
+        "safe": "Caja fuerte",
+        "fan": "Ventilador",
+        "blackout_curtains": "Cortinas blackout",
+        "baby_crib": "Cuna",
+        "wheelchair_accessible": "Accesible para silla de ruedas",
+        "pet_friendly": "Se aceptan mascotas"
+    },
     "title": "Alojamientos",
     "description": "Descubre alojamientos únicos y encuentra el lugar perfecto para tu próxima aventura.",
     "emptyTitle": "No hay alojamientos disponibles",
@@ -227,6 +268,92 @@
         "checkOut": "Check-out",
         "stars": "estrellas",
         "reviewsLabel": "reseñas",
-        "bookNow": "Reservar ahora"
+        "bookNow": "Reservar ahora",
+        "quickFacts": {
+            "capacity": "Capacidad",
+            "bedrooms": "Habitaciones",
+            "beds": "Camas",
+            "bathrooms": "Baños",
+            "minNights": "Mínimo de noches",
+            "maxNights": "Máximo de noches",
+            "guests": "{n} huéspedes",
+            "nights": "{n} noches"
+        },
+        "gallery": {
+            "viewAll": "Ver todas las fotos",
+            "viewFullscreen": "Ver foto {n} en pantalla completa",
+            "backToAccommodation": "← Volver al alojamiento",
+            "photosSubpage": "Fotos"
+        },
+        "pricing": {
+            "from": "Desde",
+            "perNightLabel": "/noche",
+            "viewBreakdown": "Ver desglose",
+            "hideBreakdown": "Ocultar desglose",
+            "consult": "Consultar",
+            "included": "incluido",
+            "optional": "opcional",
+            "perNightFlag": "por noche",
+            "perGuestFlag": "por huésped"
+        },
+        "reviewsDetail": {
+            "noReviews": "No hay opiniones todavía",
+            "viewAll": "Ver las {n} opiniones",
+            "categories": {
+                "cleanliness": "Limpieza",
+                "hospitality": "Hospitalidad",
+                "services": "Servicios",
+                "accuracy": "Precisión",
+                "communication": "Comunicación",
+                "location": "Ubicación"
+            },
+            "outOf": "de 5",
+            "modal": {
+                "title": "Opiniones",
+                "close": "Cerrar",
+                "loadMore": "Cargar más",
+                "error": "No se pudieron cargar las opiniones",
+                "retry": "Reintentar"
+            }
+        },
+        "owner": {
+            "memberSince": "Miembro desde {date}",
+            "contactUnavailable": "Información de contacto no disponible",
+            "registerToContact": "Para contactar directamente, registrate",
+            "contactEmail": "Enviar email",
+            "contactPhone": "Llamar",
+            "contactWebsite": "Visitar sitio web",
+            "otherProperties": "Otros alojamientos de {name}"
+        },
+        "amenitiesDetail": {
+            "title": "Comodidades",
+            "viewAll": "Ver todas las {n} comodidades",
+            "collapse": "Ver menos",
+            "additionalCost": "(costo adicional)"
+        },
+        "features": {
+            "title": "Características",
+            "smokingAllowed": "Se permite fumar"
+        },
+        "faqsDetail": {
+            "title": "Preguntas frecuentes",
+            "generalCategory": "General"
+        },
+        "locationDetail": {
+            "title": "Ubicación",
+            "mapPlaceholder": "Mapa próximamente"
+        },
+        "related": {
+            "similar": "Alojamientos similares",
+            "byOwner": "Otros alojamientos de {name}",
+            "posts": "Publicaciones relacionadas",
+            "events": "Eventos en {destination}",
+            "prevSlide": "Slide anterior",
+            "nextSlide": "Slide siguiente"
+        },
+        "badges": {
+            "new": "Nuevo",
+            "featured": "Destacado"
+        }
     }
 }

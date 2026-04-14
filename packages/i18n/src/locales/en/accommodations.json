@@ -227,6 +227,92 @@
         "checkOut": "Check-out",
         "stars": "stars",
         "reviewsLabel": "reviews",
-        "bookNow": "Book now"
+        "bookNow": "Book now",
+        "quickFacts": {
+            "capacity": "Capacity",
+            "bedrooms": "Bedrooms",
+            "beds": "Beds",
+            "bathrooms": "Bathrooms",
+            "minNights": "Minimum nights",
+            "maxNights": "Maximum nights",
+            "guests": "{n} guests",
+            "nights": "{n} nights"
+        },
+        "gallery": {
+            "viewAll": "View all photos",
+            "viewFullscreen": "View photo {n} fullscreen",
+            "backToAccommodation": "← Back to accommodation",
+            "photosSubpage": "Photos"
+        },
+        "pricing": {
+            "from": "From",
+            "perNightLabel": "/night",
+            "viewBreakdown": "View breakdown",
+            "hideBreakdown": "Hide breakdown",
+            "consult": "Inquire",
+            "included": "included",
+            "optional": "optional",
+            "perNightFlag": "per night",
+            "perGuestFlag": "per guest"
+        },
+        "reviewsDetail": {
+            "noReviews": "No reviews yet",
+            "viewAll": "View all {n} reviews",
+            "categories": {
+                "cleanliness": "Cleanliness",
+                "hospitality": "Hospitality",
+                "services": "Services",
+                "accuracy": "Accuracy",
+                "communication": "Communication",
+                "location": "Location"
+            },
+            "outOf": "out of 5",
+            "modal": {
+                "title": "Reviews",
+                "close": "Close",
+                "loadMore": "Load more",
+                "error": "Could not load reviews",
+                "retry": "Retry"
+            }
+        },
+        "owner": {
+            "memberSince": "Member since {date}",
+            "contactUnavailable": "Contact information not available",
+            "registerToContact": "Sign up to contact directly",
+            "contactEmail": "Send email",
+            "contactPhone": "Call",
+            "contactWebsite": "Visit website",
+            "otherProperties": "Other properties by {name}"
+        },
+        "amenitiesDetail": {
+            "title": "Amenities",
+            "viewAll": "View all {n} amenities",
+            "collapse": "View less",
+            "additionalCost": "(additional cost)"
+        },
+        "features": {
+            "title": "Features",
+            "smokingAllowed": "Smoking allowed"
+        },
+        "faqsDetail": {
+            "title": "Frequently asked questions",
+            "generalCategory": "General"
+        },
+        "locationDetail": {
+            "title": "Location",
+            "mapPlaceholder": "Map coming soon"
+        },
+        "related": {
+            "similar": "Similar accommodations",
+            "byOwner": "Other properties by {name}",
+            "posts": "Related posts",
+            "events": "Events in {destination}",
+            "prevSlide": "Previous slide",
+            "nextSlide": "Next slide"
+        },
+        "badges": {
+            "new": "New",
+            "featured": "Featured"
+        }
     }
 }
