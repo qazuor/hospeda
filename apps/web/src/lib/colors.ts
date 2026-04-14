@@ -107,6 +107,32 @@ export function getAccommodationTypeColor({ type }: { readonly type: string }): 
     }
 }
 
+/**
+ * Returns a human-readable display label for an accommodation type using i18n.
+ * Normalizes the API value (e.g. `"COUNTRY_HOUSE"`) to the i18n key format
+ * (e.g. `"country_house"`) automatically.
+ *
+ * @param params - Object containing the accommodation type string and a translation function.
+ * @returns Localized display label string.
+ *
+ * @example
+ * ```ts
+ * const { t } = createTranslations(locale);
+ * getAccommodationTypeLabel({ type: 'HOTEL', t }) // 'Hotel'
+ * getAccommodationTypeLabel({ type: 'COUNTRY_HOUSE', t }) // 'Casa de Campo'
+ * ```
+ */
+export function getAccommodationTypeLabel({
+    type,
+    t
+}: {
+    readonly type: string;
+    readonly t: (key: string, fallback?: string) => string;
+}): string {
+    const normalizedType = type.toLowerCase();
+    return t(`common.enums.accommodationType.${normalizedType}`, type);
+}
+
 // ---------------------------------------------------------------------------
 // Events
 // ---------------------------------------------------------------------------
@@ -283,6 +309,67 @@ const POST_CATEGORY_EMOJI: Readonly<Record<string, string>> = {
  */
 export function getPostCategoryEmoji({ category }: { readonly category: string }): string {
     return POST_CATEGORY_EMOJI[category] ?? '📰';
+}
+
+// ---------------------------------------------------------------------------
+// Badge status (featured, new, trending, promoted, past, cancelled)
+// ---------------------------------------------------------------------------
+
+/**
+ * Solid color scheme for high-contrast badges (overlays, image corners).
+ * Unlike the standard `scheme()` helper which produces translucent bg/border,
+ * this creates opaque backgrounds suitable for badges over images or dark areas.
+ */
+function solidScheme({
+    bgToken,
+    textToken
+}: {
+    readonly bgToken: string;
+    readonly textToken: string;
+}): ColorScheme {
+    const cssBg = resolveToken(bgToken);
+    const cssText = resolveToken(textToken);
+    return {
+        bg: `var(--${cssBg})`,
+        text: `var(--${cssText})`,
+        border: `var(--${cssBg})`
+    };
+}
+
+/**
+ * Returns the color scheme for a status badge (featured, new, trending, etc.).
+ * Centralizes all status badge colors so they can be changed in one place.
+ *
+ * @param params - Object containing the badge status string.
+ * @returns A ColorScheme with CSS values for bg, text, and border.
+ *
+ * @example
+ * ```ts
+ * getBadgeStatusColor({ status: 'featured' })
+ * // { bg: 'var(--brand-accent)', text: 'var(--primary-foreground)', border: 'var(--brand-accent)' }
+ * ```
+ */
+export function getBadgeStatusColor({ status }: { readonly status: string }): ColorScheme {
+    switch (status) {
+        case 'featured':
+            return solidScheme({ bgToken: 'accent', textToken: 'primary-foreground' });
+        case 'new':
+            return solidScheme({ bgToken: 'hospeda-forest', textToken: 'primary-foreground' });
+        case 'trending':
+            return solidScheme({ bgToken: 'accent', textToken: 'primary-foreground' });
+        case 'promoted':
+            return solidScheme({ bgToken: 'primary', textToken: 'primary-foreground' });
+        case 'past':
+            return {
+                bg: 'var(--muted)',
+                text: 'var(--core-muted-foreground)',
+                border: 'var(--muted)'
+            };
+        case 'cancelled':
+            return scheme({ token: 'destructive' });
+        default:
+            return solidScheme({ bgToken: 'accent', textToken: 'primary-foreground' });
+    }
 }
 
 // ---------------------------------------------------------------------------
