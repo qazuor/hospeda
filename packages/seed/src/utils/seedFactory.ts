@@ -1,4 +1,5 @@
 import type { Actor } from '@repo/service-core';
+import { processEntityImages } from './cloudinary-image-processor.js';
 import { errorHistory } from './errorHistory.js';
 import { STATUS_ICONS } from './icons.js';
 import { loadJsonFiles } from './loadJsonFile.js';
@@ -167,9 +168,24 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
                 }
 
                 // Normalize data (custom or default)
-                const normalizedData = config.normalizer
+                let normalizedData = config.normalizer
                     ? config.normalizer(item as Record<string, unknown>)
                     : defaultNormalizer(item as Record<string, unknown>);
+
+                // Process images: replace original URLs with Cloudinary URLs when configured
+                if (context.imageProvider && context.imageCache && context.imageCachePath) {
+                    const itemData = item as Record<string, unknown>;
+                    const entityId = (itemData.id as string | undefined) ?? `item-${index}`;
+                    normalizedData = (await processEntityImages({
+                        data: normalizedData as Record<string, unknown>,
+                        entityType: config.entityName.toLowerCase(),
+                        entityId,
+                        provider: context.imageProvider,
+                        cache: context.imageCache,
+                        cachePath: context.imageCachePath,
+                        env: context.imageEnv ?? 'development'
+                    })) as typeof normalizedData;
+                }
 
                 // Custom validation
                 if (config.validateBeforeCreate) {

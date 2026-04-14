@@ -8,13 +8,16 @@ const __dirname = path.dirname(__filename);
 
 // Per-app env strategy (SPEC-035): HOSPEDA_DATABASE_URL lives in apps/api/.env.local.
 // packages/seed has no env of its own; it borrows the API app's env file.
+// Cloudinary vars (HOSPEDA_CLOUDINARY_*) also live in this file.
 envConfig({
     path: path.resolve(__dirname, '../../../apps/api/.env.local')
 });
 
 import { configureLogger } from '@repo/logger';
+import { CloudinaryProvider } from '@repo/media';
 import { runExampleSeeds } from './example/index.js';
 import { runRequiredSeeds } from './required/index.js';
+import { DEFAULT_CACHE_PATH, readCache } from './utils/cloudinary-cache.js';
 import { closeSeedDb, initSeedDb } from './utils/db.js';
 import { resetDatabase } from './utils/dbReset';
 import { errorHistory } from './utils/errorHistory.js';
@@ -52,6 +55,7 @@ type SeedOptions = {
  * - Process timing
  * - Error handling and recovery
  * - Summary reporting
+ * - Optional Cloudinary image upload (when HOSPEDA_CLOUDINARY_* env vars are set)
  *
  * @param options - Configuration options for the seed process
  * @returns Promise that resolves when seeding is complete
@@ -84,11 +88,31 @@ export async function runSeed(options: SeedOptions): Promise<void> {
     // Initialize database
     initSeedDb();
 
+    // Initialise Cloudinary provider if env vars are present (opt-in)
+    const cloudName = process.env.HOSPEDA_CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.HOSPEDA_CLOUDINARY_API_KEY;
+    const apiSecret = process.env.HOSPEDA_CLOUDINARY_API_SECRET;
+    const nodeEnv = process.env.NODE_ENV ?? 'development';
+
+    let imageProvider: CloudinaryProvider | undefined;
+    if (cloudName && apiKey && apiSecret) {
+        imageProvider = new CloudinaryProvider({ cloudName, apiKey, apiSecret });
+        logger.info('[seed] Cloudinary configured — seed images will be uploaded.');
+    } else {
+        logger.info('[seed] Cloudinary env vars not configured -- images will use original URLs');
+    }
+
+    const imageCache = imageProvider ? readCache(DEFAULT_CACHE_PATH) : undefined;
+
     // Create seed context
     const seedContext = createSeedContext({
         continueOnError,
         resetDatabase: reset || false,
-        exclude
+        exclude,
+        imageProvider,
+        imageCache,
+        imageCachePath: imageProvider ? DEFAULT_CACHE_PATH : undefined,
+        imageEnv: nodeEnv
     });
 
     logger.info('🚀 Starting seed process...');
@@ -152,6 +176,14 @@ export async function runSeed(options: SeedOptions): Promise<void> {
             try {
                 const superAdminActor = await loadSuperAdminAndGetActor();
                 seedContext.actor = superAdminActor;
+                // Register super admin in idMapper so accommodations (and other entities)
+                // can reference "super-admin-user" as ownerId
+                seedContext.idMapper.setMapping(
+                    'users',
+                    'super-admin-user',
+                    superAdminActor.id,
+                    'Super Admin'
+                );
                 summaryTracker.trackProcessStep(
                     'Super Admin',
                     'success',

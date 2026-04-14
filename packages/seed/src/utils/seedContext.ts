@@ -1,4 +1,6 @@
+import type { ImageProvider } from '@repo/media';
 import type { Actor } from '@repo/service-core';
+import type { ImageCache } from './cloudinary-cache.js';
 import { IdMapper } from './idMapper.js';
 
 /**
@@ -40,6 +42,30 @@ export interface SeedContext {
      * Used for handling relationships between entities during seeding
      */
     idMapper: IdMapper;
+
+    /**
+     * Cloudinary image provider, or undefined when Cloudinary is not configured.
+     * When undefined, image uploads are skipped and original URLs are kept.
+     */
+    imageProvider?: ImageProvider;
+
+    /**
+     * In-memory Cloudinary cache, populated at seed startup.
+     * Only set when `imageProvider` is defined.
+     */
+    imageCache?: ImageCache;
+
+    /**
+     * Absolute path to the Cloudinary cache JSON file.
+     * Only set when `imageProvider` is defined.
+     */
+    imageCachePath?: string;
+
+    /**
+     * Environment label for Cloudinary folder paths, e.g. 'development'.
+     * Defaults to NODE_ENV.
+     */
+    imageEnv?: string;
 
     /**
      * Current entity being processed (for error tracking)
