@@ -196,6 +196,20 @@
             "status": "completed",
             "progress": "4/4",
             "path": "SPEC-068-list-execute-search-generics"
+        },
+        {
+            "specId": "SPEC-062",
+            "title": "Runtime Response Schema Enforcement",
+            "status": "pending",
+            "progress": "0/20",
+            "path": "SPEC-062-runtime-response-validation"
+        },
+        {
+            "specId": "SPEC-066",
+            "title": "getById Relation Loading Consistency",
+            "status": "pending",
+            "progress": "0/7",
+            "path": "SPEC-066-getbyid-relation-loading"
         }
     ],
     "standalone": {

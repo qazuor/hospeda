@@ -1,0 +1,211 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-066",
+    "title": "getById Relation Loading Consistency",
+    "created": "2026-04-14T04:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Implement findOneWithRelations() on BaseModel",
+            "description": "Add findOneWithRelations() method to BaseModel in packages/db/src/base/base.model.ts. Mirrors findAllWithRelations() but uses findFirst(), returns T | null, no pagination. Uses getClient(tx), transformRelationsForDrizzle(), logQuery/logError/DbError patterns.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": [],
+            "blocks": ["T-003", "T-005"],
+            "subtasks": [
+                {
+                    "title": "Add findOneWithRelations() method after findWithRelations()",
+                    "completed": false
+                },
+                {
+                    "title": "Validate relations, fallback to findOne() if none active",
+                    "completed": false
+                },
+                {
+                    "title": "Use getTableName() + db.query[tableName].findFirst() pattern",
+                    "completed": false
+                },
+                {
+                    "title": "Convert Drizzle undefined to null for Hospeda convention",
+                    "completed": false
+                },
+                { "title": "Add logQuery/logError/DbError error handling", "completed": false }
+            ],
+            "tags": ["database", "base-model"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T04:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add getDefaultGetByIdRelations() hook to BaseCrudPermissions",
+            "description": "Add protected non-abstract getDefaultGetByIdRelations() method to BaseCrudPermissions in packages/service-core/src/base/base.crud.permissions.ts. Default returns this.getDefaultListRelations(). Services MAY override.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-003", "T-006"],
+            "subtasks": [
+                {
+                    "title": "Add method near line 57 adjacent to getDefaultListRelations()",
+                    "completed": false
+                },
+                { "title": "Add JSDoc documenting override behavior", "completed": false }
+            ],
+            "tags": ["service-core", "base-service"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T04:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Modify getByField() to use findOneWithRelations when relations defined",
+            "description": "Update getByField() in packages/service-core/src/base/base.crud.read.ts (lines ~93-95). Check getDefaultGetByIdRelations(); if defined, call model.findOneWithRelations(); if undefined, call model.findOne() (current behavior).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Add relations = this.getDefaultGetByIdRelations() call",
+                    "completed": false
+                },
+                { "title": "Conditional: findOneWithRelations vs findOne", "completed": false },
+                { "title": "Thread ctx?.tx to model call", "completed": false }
+            ],
+            "tags": ["service-core", "base-service"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T04:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Update modelMockFactory with findOneWithRelations mock",
+            "description": "Add findOneWithRelations to StandardModelMock type, createModelMock(), MockBaseModel<T> class, and createBaseModelMock<T>() in packages/service-core/test/utils/modelMockFactory.ts.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-006"],
+            "subtasks": [
+                { "title": "Add to StandardModelMock type", "completed": false },
+                { "title": "Add vi.fn() to createModelMock()", "completed": false },
+                { "title": "Add mock to MockBaseModel<T> class", "completed": false }
+            ],
+            "tags": ["testing", "mock-factory"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T04:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Unit tests for findOneWithRelations() in db package",
+            "description": "Create packages/db/test/base/findOneWithRelations.test.ts. Test cases: entity found with relations, not found (null), nested relations, transaction support, empty relations fallback to findOne, error handling (DbError), invalid relations, relation transformation.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                { "title": "Create test/base/ directory and test file", "completed": false },
+                { "title": "Test: entity found with populated relations", "completed": false },
+                { "title": "Test: entity not found returns null", "completed": false },
+                { "title": "Test: nested relations work correctly", "completed": false },
+                { "title": "Test: tx parameter threading", "completed": false },
+                { "title": "Test: empty/false relations fallback to findOne", "completed": false },
+                { "title": "Test: error handling throws DbError", "completed": false }
+            ],
+            "tags": ["testing", "database"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T04:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Unit tests for getDefaultGetByIdRelations() and getByField() relation behavior",
+            "description": "Add tests to packages/service-core/test/base/crud/getById.test.ts. Test: default returns same as getDefaultListRelations, custom override, override to undefined, getByField calls findOneWithRelations when relations defined, getByField calls findOne when undefined, nested relations passthrough.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-002", "T-003", "T-004"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Test: default getDefaultGetByIdRelations delegates to list relations",
+                    "completed": false
+                },
+                {
+                    "title": "Test: custom override returns different relations",
+                    "completed": false
+                },
+                {
+                    "title": "Test: override to undefined disables relation loading",
+                    "completed": false
+                },
+                {
+                    "title": "Test: getByField calls findOneWithRelations when relations defined",
+                    "completed": false
+                },
+                {
+                    "title": "Test: getByField calls findOne when relations undefined",
+                    "completed": false
+                },
+                { "title": "Test: nested relations config forwarded correctly", "completed": false }
+            ],
+            "tags": ["testing", "service-core"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T04:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Run full quality gate — typecheck + lint + tests",
+            "description": "Run pnpm typecheck, pnpm lint, pnpm test. Verify zero regressions across all 10 affected services. Verify all new SPEC-066 tests pass.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-005", "T-006"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "pnpm typecheck passes", "completed": false },
+                { "title": "pnpm lint passes", "completed": false },
+                { "title": "pnpm test passes (all suites)", "completed": false }
+            ],
+            "tags": ["verification"],
+            "phase": "verification",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T04:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 7,
+        "pending": 7,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}
