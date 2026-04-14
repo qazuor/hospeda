@@ -41,7 +41,7 @@ describe('DestinationService.softDelete', () => {
         expect(result.data?.count).toBe(1);
         expect(result.error).toBeUndefined();
         expect(model.findById).toHaveBeenCalledWith(id);
-        expect(model.softDelete).toHaveBeenCalledWith({ id });
+        expect(model.softDelete).toHaveBeenCalledWith({ id }, undefined);
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {

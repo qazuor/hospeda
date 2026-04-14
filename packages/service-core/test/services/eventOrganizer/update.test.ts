@@ -31,7 +31,8 @@ describe('EventOrganizerService.update', () => {
         expect(result.data).toEqual(expect.objectContaining({ name: 'Updated Name' }));
         expect(modelMock.update).toHaveBeenCalledWith(
             { id: entity.id },
-            expect.objectContaining(patch)
+            expect.objectContaining(patch),
+            undefined
         );
     });
 

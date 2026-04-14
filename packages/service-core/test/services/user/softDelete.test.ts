@@ -52,7 +52,7 @@ describe('UserService.softDelete', () => {
         // Assert
         expectSuccess(result);
         expect(result.data?.count).toBe(1);
-        expect(asMock(userModelMock.softDelete)).toHaveBeenCalledWith({ id: inputId });
+        expect(asMock(userModelMock.softDelete)).toHaveBeenCalledWith({ id: inputId }, undefined);
     });
 
     it('should return FORBIDDEN if actor is not super admin', async () => {

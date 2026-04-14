@@ -52,7 +52,7 @@ describe('UserService.restore', () => {
         // Assert
         expectSuccess(result);
         expect(result.data?.count).toBe(1);
-        expect(asMock(userModelMock.restore)).toHaveBeenCalledWith({ id: inputId });
+        expect(asMock(userModelMock.restore)).toHaveBeenCalledWith({ id: inputId }, undefined);
     });
 
     it('should return FORBIDDEN if actor is not super admin', async () => {

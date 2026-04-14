@@ -52,7 +52,7 @@ describe('UserService.hardDelete', () => {
         // Assert
         expectSuccess(result);
         expect(result.data?.count).toBe(1);
-        expect(asMock(userModelMock.hardDelete)).toHaveBeenCalledWith({ id: inputId });
+        expect(asMock(userModelMock.hardDelete)).toHaveBeenCalledWith({ id: inputId }, undefined);
     });
 
     it('should return FORBIDDEN if actor is not super admin', async () => {

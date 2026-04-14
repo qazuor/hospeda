@@ -35,7 +35,7 @@ describe('PostService.restore', () => {
         const result = await service.restore(actorWithPerm, postId);
         expectSuccess(result);
         expect(result.data?.count).toBe(1);
-        expect(modelMock.restore as Mock).toHaveBeenCalledWith({ id: postId });
+        expect(modelMock.restore as Mock).toHaveBeenCalledWith({ id: postId }, undefined);
     });
 
     it('should return FORBIDDEN if actor cannot restore the post', async () => {

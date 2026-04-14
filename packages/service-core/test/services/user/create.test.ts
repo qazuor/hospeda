@@ -48,7 +48,8 @@ describe('UserService.create', () => {
         expectSuccess(result);
         expect(result.data?.id).toBe(createdUser.id);
         expect(asMock(userModelMock.create)).toHaveBeenCalledWith(
-            expect.objectContaining({ displayName: 'Test User' })
+            expect.objectContaining({ displayName: 'Test User' }),
+            undefined
         );
     });
 

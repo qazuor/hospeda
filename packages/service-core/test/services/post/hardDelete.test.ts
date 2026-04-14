@@ -35,7 +35,7 @@ describe('PostService.hardDelete', () => {
         const result = await service.hardDelete(actorWithPerm, postId);
         expectSuccess(result);
         expect(result.data?.count).toBe(1);
-        expect(modelMock.hardDelete as Mock).toHaveBeenCalledWith({ id: postId });
+        expect(modelMock.hardDelete as Mock).toHaveBeenCalledWith({ id: postId }, undefined);
     });
 
     it('should return FORBIDDEN if actor cannot hard delete the post', async () => {

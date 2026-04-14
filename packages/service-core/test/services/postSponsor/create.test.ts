@@ -41,7 +41,8 @@ describe('PostSponsorService.create', () => {
         expect(result.data?.logo).toEqual(created.logo);
         expect(result.error).toBeUndefined();
         expect(modelMock.create).toHaveBeenCalledWith(
-            expect.objectContaining({ name: validInput.name })
+            expect.objectContaining({ name: validInput.name }),
+            undefined
         );
     });
 

@@ -30,7 +30,8 @@ describe('EventOrganizerService.create', () => {
         const result = await service.create(actor, input);
         expect(result.data).toEqual(createdEntity);
         expect(modelMock.create).toHaveBeenCalledWith(
-            expect.objectContaining({ name: input.name })
+            expect.objectContaining({ name: input.name }),
+            undefined
         );
     });
 

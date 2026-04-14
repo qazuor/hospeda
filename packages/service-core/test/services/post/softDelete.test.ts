@@ -35,7 +35,7 @@ describe('PostService.softDelete', () => {
         const result = await service.softDelete(actorWithPerm, postId);
         expectSuccess(result);
         expect(result.data?.count).toBe(1);
-        expect(modelMock.softDelete as Mock).toHaveBeenCalledWith({ id: postId });
+        expect(modelMock.softDelete as Mock).toHaveBeenCalledWith({ id: postId }, undefined);
     });
 
     it('should return FORBIDDEN if actor cannot delete the post', async () => {
