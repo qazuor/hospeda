@@ -8,6 +8,8 @@ import {
 } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
 import { createLogger } from '@repo/logger';
+import type { ImageProvider } from '@repo/media';
+import { resolveEnvironment } from '@repo/media';
 import {
     type Accommodation,
     AccommodationAdminSearchSchema,
@@ -173,15 +175,28 @@ export class AccommodationService extends BaseCrudService<
     private readonly _destinationModel: DestinationModel;
 
     /**
+     * Optional Cloudinary media provider for asset cleanup on hard delete.
+     * When null, media cleanup is skipped (Cloudinary not configured).
+     */
+    private readonly mediaProvider: ImageProvider | null;
+
+    /**
      * Initializes a new instance of the AccommodationService.
      * @param ctx - The service context, containing the logger.
+     * @param model - Optional AccommodationModel instance (for testing/mocking).
+     * @param mediaProvider - Optional ImageProvider for Cloudinary cleanup on hard delete.
      */
-    constructor(ctx: ServiceConfig, model?: AccommodationModel) {
+    constructor(
+        ctx: ServiceConfig,
+        model?: AccommodationModel,
+        mediaProvider?: ImageProvider | null
+    ) {
         super(ctx, AccommodationService.ENTITY_NAME);
         this.model = model ?? new AccommodationModel();
         this.adminSearchSchema = AccommodationAdminSearchSchema;
         this.destinationService = new DestinationService(ctx);
         this._destinationModel = new DestinationModel();
+        this.mediaProvider = mediaProvider ?? null;
     }
 
     // --- Permissions Hooks ---
@@ -511,6 +526,7 @@ export class AccommodationService extends BaseCrudService<
                 slug: entity.slug,
                 type: entity.type
             };
+            ctx.hookState.deletedEntityId = id;
         }
         return id;
     }
@@ -539,6 +555,19 @@ export class AccommodationService extends BaseCrudService<
                 { error, entityType: 'accommodation' },
                 'Revalidation scheduling failed (non-blocking)'
             );
+        }
+        // Best-effort Cloudinary cleanup after confirmed hard delete
+        if (result.count > 0 && ctx.hookState?.deletedEntityId && this.mediaProvider) {
+            const env = resolveEnvironment();
+            const prefix = `hospeda/${env}/accommodations/${ctx.hookState.deletedEntityId}/`;
+            try {
+                await this.mediaProvider.deleteByPrefix({ prefix });
+            } catch (mediaError) {
+                AccommodationService.revalidationLogger.warn(
+                    { error: mediaError, prefix },
+                    '[media] Failed to clean up Cloudinary assets for accommodation'
+                );
+            }
         }
         return result;
     }

@@ -1,6 +1,8 @@
 import { AccommodationModel, DestinationModel } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
 import { createLogger } from '@repo/logger';
+import type { ImageProvider } from '@repo/media';
+import { resolveEnvironment } from '@repo/media';
 import type {
     AccommodationListItem,
     BreadcrumbItem,
@@ -121,7 +123,23 @@ export class DestinationService extends BaseCrudService<
     };
     private readonly accommodationModel: AccommodationModel = new AccommodationModel();
 
-    constructor(ctx: ServiceConfig, model?: DestinationModel) {
+    /**
+     * Optional Cloudinary media provider for asset cleanup on hard delete.
+     * When null, media cleanup is skipped (Cloudinary not configured).
+     */
+    private readonly mediaProvider: ImageProvider | null;
+
+    /**
+     * Initializes a new instance of the DestinationService.
+     * @param ctx - The service context, containing the logger.
+     * @param model - Optional DestinationModel instance (for testing/mocking).
+     * @param mediaProvider - Optional ImageProvider for Cloudinary cleanup on hard delete.
+     */
+    constructor(
+        ctx: ServiceConfig,
+        model?: DestinationModel,
+        mediaProvider?: ImageProvider | null
+    ) {
         super(ctx, DestinationService.ENTITY_NAME);
         this.logger = ctx.logger ?? serviceLogger;
         this.model = model ?? new DestinationModel();
@@ -130,6 +148,7 @@ export class DestinationService extends BaseCrudService<
          * (e.g. destinationType) map directly to table column names.
          */
         this.adminSearchSchema = DestinationAdminSearchSchema;
+        this.mediaProvider = mediaProvider ?? null;
     }
 
     // --- Permissions Hooks ---
@@ -791,6 +810,7 @@ export class DestinationService extends BaseCrudService<
         const entity = await this.model.findById(id);
         if (ctx.hookState) {
             ctx.hookState.deletedDestinationSlug = entity?.slug;
+            ctx.hookState.deletedEntityId = id;
         }
         return id;
     }
@@ -811,6 +831,19 @@ export class DestinationService extends BaseCrudService<
                 { error, entityType: 'destination' },
                 'Revalidation scheduling failed (non-blocking)'
             );
+        }
+        // Best-effort Cloudinary cleanup after confirmed hard delete
+        if (result.count > 0 && ctx.hookState?.deletedEntityId && this.mediaProvider) {
+            const env = resolveEnvironment();
+            const prefix = `hospeda/${env}/destinations/${ctx.hookState.deletedEntityId}/`;
+            try {
+                await this.mediaProvider.deleteByPrefix({ prefix });
+            } catch (mediaError) {
+                DestinationService.revalidationLogger.warn(
+                    { error: mediaError, prefix },
+                    '[media] Failed to clean up Cloudinary assets for destination'
+                );
+            }
         }
         return result;
     }
