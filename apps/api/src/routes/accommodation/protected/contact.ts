@@ -12,7 +12,6 @@ import { and, eq } from 'drizzle-orm';
 import { getActorFromContext, isGuestActor } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
 import { apiLogger } from '../../../utils/logger';
-import { ResponseFactory } from '../../../utils/response-factory';
 
 /**
  * Resolves the preferred email from a contactInfo JSONB object.
@@ -61,21 +60,26 @@ app.get('/:id/contact', async (c) => {
 
     // Auth check
     if (isGuestActor(actor)) {
-        return ResponseFactory.error(
-            c,
-            'Authentication required',
-            401,
-            ServiceErrorCode.UNAUTHORIZED
+        return c.json(
+            {
+                success: false,
+                error: { message: 'Authentication required', code: ServiceErrorCode.UNAUTHORIZED }
+            },
+            401
         );
     }
 
     const id = c.req.param('id');
     if (!id) {
-        return ResponseFactory.error(
-            c,
-            'Accommodation ID is required',
-            400,
-            ServiceErrorCode.VALIDATION_ERROR
+        return c.json(
+            {
+                success: false,
+                error: {
+                    message: 'Accommodation ID is required',
+                    code: ServiceErrorCode.VALIDATION_ERROR
+                }
+            },
+            400
         );
     }
 
@@ -95,12 +99,28 @@ app.get('/:id/contact', async (c) => {
         .limit(1);
 
     if (rows.length === 0) {
-        return ResponseFactory.error(c, 'Accommodation not found', 404, ServiceErrorCode.NOT_FOUND);
+        return c.json(
+            {
+                success: false,
+                error: { message: 'Accommodation not found', code: ServiceErrorCode.NOT_FOUND }
+            },
+            404
+        );
     }
 
-    const raw = rows[0].contactInfo as Record<string, unknown> | null;
+    const row = rows[0];
+    if (!row) {
+        return c.json(
+            {
+                success: false,
+                error: { message: 'Accommodation not found', code: ServiceErrorCode.NOT_FOUND }
+            },
+            404
+        );
+    }
+    const raw = row.contactInfo as Record<string, unknown> | null;
     if (!raw) {
-        return ResponseFactory.success(c, {});
+        return c.json({ success: true, data: {} }, 200);
     }
 
     const email = resolveEmail(raw);
@@ -112,14 +132,11 @@ app.get('/:id/contact', async (c) => {
     if (phone) result.phone = phone;
     if (website) result.website = website;
 
-    apiLogger.debug('Contact info resolved', {
-        accommodationId: id,
-        hasEmail: !!email,
-        hasPhone: !!phone,
-        hasWebsite: !!website
-    });
+    apiLogger.debug(
+        `Contact info resolved for ${id}: email=${!!email}, phone=${!!phone}, website=${!!website}`
+    );
 
-    return ResponseFactory.success(c, result);
+    return c.json({ success: true, data: result }, 200);
 });
 
 export { app as protectedGetContactRoute };
