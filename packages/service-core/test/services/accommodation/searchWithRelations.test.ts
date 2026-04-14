@@ -163,7 +163,7 @@ describe('AccommodationService.searchWithRelations', () => {
 
         await service.searchWithRelations(actor, params);
 
-        expect(mockNormalizer).toHaveBeenCalledWith(params);
+        expect(mockNormalizer).toHaveBeenCalledWith(params, actor);
         expect(model.searchWithRelations).toHaveBeenCalledWith({
             page: 1,
             pageSize: 10,
