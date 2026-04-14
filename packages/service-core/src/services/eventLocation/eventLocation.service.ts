@@ -209,7 +209,7 @@ export class EventLocationService extends BaseCrudService<
         actor: Actor,
         params: EventLocationSearchInput
     ): Promise<{ items: EventLocation[]; total: number }> {
-        this._canSearch(actor);
+        await this._canSearch(actor);
         const { page = 1, pageSize = 10, q, city, sortBy, sortOrder, ...otherFilters } = params;
 
         const where: Record<string, unknown> = { ...otherFilters };

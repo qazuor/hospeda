@@ -176,7 +176,7 @@ export class EventOrganizerService extends BaseCrudService<
         actor: Actor,
         params: EventOrganizerListInput
     ): Promise<{ items: EventOrganizer[]; total: number }> {
-        this._canList(actor);
+        await this._canList(actor);
         const { page = 1, pageSize = 10, q, name, sortBy, sortOrder, ...otherFilters } = params;
 
         const where: Record<string, unknown> = { ...otherFilters };
