@@ -1,7 +1,18 @@
-import { DestinationModel, DestinationReviewModel, destinationReviews, gte, lte } from '@repo/db';
+import {
+    DestinationModel,
+    DestinationReviewModel,
+    and,
+    destinationReviews,
+    eq,
+    getDb,
+    gte,
+    isNull,
+    lte
+} from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import {
+    type DestinationRatingInput,
     type DestinationReview,
     DestinationReviewAdminSearchSchema,
     type DestinationReviewCreateInput,
@@ -15,7 +26,7 @@ import {
     DestinationReviewsByUserSchema,
     type EntityFilters
 } from '@repo/schemas';
-import type { SQL } from 'drizzle-orm';
+import { type SQL, sql } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
@@ -28,7 +39,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { DestinationService } from '../destination/destination.service';
-import { calculateStatsFromReviews, computeReviewAverageRating } from './destinationReview.helpers';
+import { computeReviewAverageRating } from './destinationReview.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './destinationReview.normalizers';
 import {
     checkCanAdminList,
@@ -197,6 +208,7 @@ export class DestinationReviewService extends BaseCrudService<
 
     /**
      * Recalculates and updates the stats (reviewsCount, averageRating, rating) for the given destination.
+     * Uses a direct SQL aggregate query to avoid pagination limits that could truncate results.
      * @param destinationId - The ID of the destination whose stats need updating
      * @param tx - Optional transaction client for atomic multi-step operations
      */
@@ -204,14 +216,69 @@ export class DestinationReviewService extends BaseCrudService<
         destinationId: string,
         tx?: DrizzleClient
     ): Promise<void> {
-        // Get all active reviews for the destination
-        const reviews = await this.model
-            .findAll({ destinationId, deletedAt: null }, undefined)
-            .then((res) => res.items);
-        // Usar el helper para calcular los stats
-        const stats = calculateStatsFromReviews(reviews as DestinationReview[]);
-        // Update stats in Destination via DestinationService
-        await this.destinationService.updateStatsFromReview(destinationId, stats, tx);
+        const db = tx ?? getDb();
+        const table = destinationReviews;
+
+        const result = await db
+            .select({
+                reviewsCount: sql<number>`count(*)::int`,
+                avgLandscape: sql<number>`coalesce(avg((${table.rating}->>'landscape')::numeric), 0)::float`,
+                avgAttractions: sql<number>`coalesce(avg((${table.rating}->>'attractions')::numeric), 0)::float`,
+                avgAccessibility: sql<number>`coalesce(avg((${table.rating}->>'accessibility')::numeric), 0)::float`,
+                avgSafety: sql<number>`coalesce(avg((${table.rating}->>'safety')::numeric), 0)::float`,
+                avgCleanliness: sql<number>`coalesce(avg((${table.rating}->>'cleanliness')::numeric), 0)::float`,
+                avgHospitality: sql<number>`coalesce(avg((${table.rating}->>'hospitality')::numeric), 0)::float`,
+                avgCulturalOffer: sql<number>`coalesce(avg((${table.rating}->>'culturalOffer')::numeric), 0)::float`,
+                avgGastronomy: sql<number>`coalesce(avg((${table.rating}->>'gastronomy')::numeric), 0)::float`,
+                avgAffordability: sql<number>`coalesce(avg((${table.rating}->>'affordability')::numeric), 0)::float`,
+                avgNightlife: sql<number>`coalesce(avg((${table.rating}->>'nightlife')::numeric), 0)::float`,
+                avgInfrastructure: sql<number>`coalesce(avg((${table.rating}->>'infrastructure')::numeric), 0)::float`,
+                avgEnvironmentalCare: sql<number>`coalesce(avg((${table.rating}->>'environmentalCare')::numeric), 0)::float`,
+                avgWifiAvailability: sql<number>`coalesce(avg((${table.rating}->>'wifiAvailability')::numeric), 0)::float`,
+                avgShopping: sql<number>`coalesce(avg((${table.rating}->>'shopping')::numeric), 0)::float`,
+                avgBeaches: sql<number>`coalesce(avg((${table.rating}->>'beaches')::numeric), 0)::float`,
+                avgGreenSpaces: sql<number>`coalesce(avg((${table.rating}->>'greenSpaces')::numeric), 0)::float`,
+                avgLocalEvents: sql<number>`coalesce(avg((${table.rating}->>'localEvents')::numeric), 0)::float`,
+                avgWeatherSatisfaction: sql<number>`coalesce(avg((${table.rating}->>'weatherSatisfaction')::numeric), 0)::float`
+            })
+            .from(table)
+            .where(and(eq(table.destinationId, destinationId), isNull(table.deletedAt)));
+
+        const row = result[0];
+        const reviewsCount = row?.reviewsCount ?? 0;
+
+        const rating: DestinationRatingInput = {
+            landscape: row?.avgLandscape ?? 0,
+            attractions: row?.avgAttractions ?? 0,
+            accessibility: row?.avgAccessibility ?? 0,
+            safety: row?.avgSafety ?? 0,
+            cleanliness: row?.avgCleanliness ?? 0,
+            hospitality: row?.avgHospitality ?? 0,
+            culturalOffer: row?.avgCulturalOffer ?? 0,
+            gastronomy: row?.avgGastronomy ?? 0,
+            affordability: row?.avgAffordability ?? 0,
+            nightlife: row?.avgNightlife ?? 0,
+            infrastructure: row?.avgInfrastructure ?? 0,
+            environmentalCare: row?.avgEnvironmentalCare ?? 0,
+            wifiAvailability: row?.avgWifiAvailability ?? 0,
+            shopping: row?.avgShopping ?? 0,
+            beaches: row?.avgBeaches ?? 0,
+            greenSpaces: row?.avgGreenSpaces ?? 0,
+            localEvents: row?.avgLocalEvents ?? 0,
+            weatherSatisfaction: row?.avgWeatherSatisfaction ?? 0
+        };
+
+        const ratingValues = Object.values(rating);
+        const averageRating =
+            ratingValues.length > 0
+                ? ratingValues.reduce((a, b) => a + b, 0) / ratingValues.length
+                : 0;
+
+        await this.destinationService.updateStatsFromReview(
+            destinationId,
+            { reviewsCount, averageRating, rating },
+            tx
+        );
     }
 
     /**

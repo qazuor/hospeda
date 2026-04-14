@@ -1,4 +1,4 @@
-import { DestinationModel, DestinationReviewModel } from '@repo/db';
+import { DestinationReviewModel } from '@repo/db';
 import type {
     DestinationIdType,
     DestinationReview,
@@ -8,7 +8,6 @@ import type {
 } from '@repo/schemas';
 import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { DestinationService } from '../../../src/services/destination/destination.service';
 import { DestinationReviewService } from '../../../src/services/destinationReview/destinationReview.service';
 import type { ServiceConfig } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
@@ -22,20 +21,16 @@ import { createLoggerMock } from '../../utils/modelMockFactory';
 describe('create', () => {
     let service: DestinationReviewService;
     let reviewModel: DestinationReviewModel;
-    let destinationModel: DestinationModel;
     let logger: ReturnType<typeof createLoggerMock>;
     let ctx: ServiceConfig;
 
     beforeEach(() => {
         reviewModel = new DestinationReviewModel();
-        destinationModel = new DestinationModel();
         logger = createLoggerMock();
         ctx = { logger } as ServiceConfig;
         service = new DestinationReviewService(ctx);
         // @ts-expect-error: override for test
         service.model = reviewModel;
-        // @ts-expect-error: override for test
-        service.destinationService.model = destinationModel;
     });
 
     // Helper para construir el input correcto para crear un review
@@ -112,12 +107,15 @@ describe('create', () => {
         vi.spyOn(reviewModel, 'create').mockResolvedValue(createdReview);
         vi.spyOn(reviewModel, 'findAll').mockResolvedValue({ items: [createdReview], total: 1 });
         vi.spyOn(reviewModel, 'update').mockResolvedValue(createdReview);
-        // Use 'as unknown as { destinationService: ... }' to access the private property for testing
-        const updateStatsMock = vi
+        vi.spyOn(reviewModel, 'updateById').mockResolvedValue();
+        // Mock recalculateAndUpdateDestinationStats since it now uses raw SQL (getDb())
+        // which requires an initialized database connection
+        const recalcMock = vi
             .spyOn(
-                (service as unknown as { destinationService: DestinationService })
-                    .destinationService,
-                'updateStatsFromReview'
+                service as unknown as {
+                    recalculateAndUpdateDestinationStats: (...args: unknown[]) => Promise<void>;
+                },
+                'recalculateAndUpdateDestinationStats'
             )
             .mockResolvedValue();
 
@@ -127,20 +125,7 @@ describe('create', () => {
         // Assert
         expect(result.data).toBeDefined();
         expect(result.data?.id).toBe(createdReview.id);
-        expect(updateStatsMock).toHaveBeenCalledTimes(1);
-        // Check the exact values passed to updateStatsFromReview
-        const callArgs = updateStatsMock.mock.calls[0];
-        expect(callArgs).toBeDefined();
-        if (callArgs) {
-            expect(callArgs[0]).toBe(destinationId);
-            expect(callArgs[1]).toMatchObject({
-                reviewsCount: 1,
-                rating: reviewInput.rating
-            });
-            expect(callArgs[1].averageRating).toBeCloseTo(
-                Object.values(reviewInput.rating).reduce((a, b) => a + b, 0) / 18,
-                4
-            );
-        }
+        expect(recalcMock).toHaveBeenCalledTimes(1);
+        expect(recalcMock).toHaveBeenCalledWith(destinationId, undefined);
     });
 });

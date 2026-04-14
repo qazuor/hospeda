@@ -2,12 +2,17 @@ import {
     AccommodationModel,
     AccommodationReviewModel,
     accommodationReviews,
+    and,
+    eq,
+    getDb,
     gte,
+    isNull,
     lte
 } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import {
+    type AccommodationRatingInput,
     type AccommodationReview,
     AccommodationReviewAdminSearchSchema,
     type AccommodationReviewCreateInput,
@@ -27,7 +32,7 @@ import {
     type EntityFilters,
     ServiceErrorCode
 } from '@repo/schemas';
-import type { SQL } from 'drizzle-orm';
+import { type SQL, sql } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
@@ -41,7 +46,6 @@ import {
     type ServiceOutput
 } from '../../types';
 import { AccommodationService } from '../accommodation/accommodation.service';
-import { calculateStatsFromReviews } from './accommodationReview.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './accommodationReview.normalizers';
 import {
     checkCanAdminList,
@@ -214,21 +218,53 @@ export class AccommodationReviewService extends BaseCrudService<
 
     /**
      * Recalculates and updates the stats (reviewsCount, averageRating, rating) for the given accommodation.
+     * Uses a direct SQL aggregate query to avoid pagination limits that could truncate results.
      * @param accommodationId - The ID of the accommodation to update stats for
-     * @param _tx - Optional transaction client to propagate DB writes into an existing transaction
+     * @param tx - Optional transaction client to propagate DB writes into an existing transaction
      */
     private async recalculateAndUpdateAccommodationStats(
         accommodationId: string,
-        _tx?: DrizzleClient
+        tx?: DrizzleClient
     ): Promise<void> {
-        // Get all active reviews for the accommodation
-        const reviews = await this.model
-            .findAll({ accommodationId, deletedAt: null }, undefined)
-            .then((res) => res.items);
-        // Usar el helper para calcular los stats
-        const stats = calculateStatsFromReviews(reviews);
-        // Update stats in Accommodation via AccommodationService
-        await this.accommodationService.updateStatsFromReview(accommodationId, stats, _tx);
+        const db = tx ?? getDb();
+        const table = accommodationReviews;
+
+        const result = await db
+            .select({
+                reviewsCount: sql<number>`count(*)::int`,
+                avgCleanliness: sql<number>`coalesce(avg((${table.rating}->>'cleanliness')::numeric), 0)::float`,
+                avgHospitality: sql<number>`coalesce(avg((${table.rating}->>'hospitality')::numeric), 0)::float`,
+                avgServices: sql<number>`coalesce(avg((${table.rating}->>'services')::numeric), 0)::float`,
+                avgAccuracy: sql<number>`coalesce(avg((${table.rating}->>'accuracy')::numeric), 0)::float`,
+                avgCommunication: sql<number>`coalesce(avg((${table.rating}->>'communication')::numeric), 0)::float`,
+                avgLocation: sql<number>`coalesce(avg((${table.rating}->>'location')::numeric), 0)::float`
+            })
+            .from(table)
+            .where(and(eq(table.accommodationId, accommodationId), isNull(table.deletedAt)));
+
+        const row = result[0];
+        const reviewsCount = row?.reviewsCount ?? 0;
+
+        const rating: AccommodationRatingInput = {
+            cleanliness: row?.avgCleanliness ?? 0,
+            hospitality: row?.avgHospitality ?? 0,
+            services: row?.avgServices ?? 0,
+            accuracy: row?.avgAccuracy ?? 0,
+            communication: row?.avgCommunication ?? 0,
+            location: row?.avgLocation ?? 0
+        };
+
+        const ratingValues = Object.values(rating);
+        const averageRating =
+            ratingValues.length > 0
+                ? ratingValues.reduce((a, b) => a + b, 0) / ratingValues.length
+                : 0;
+
+        await this.accommodationService.updateStatsFromReview(
+            accommodationId,
+            { reviewsCount, averageRating, rating },
+            tx
+        );
     }
 
     /**
