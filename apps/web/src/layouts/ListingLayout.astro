@@ -10,6 +10,7 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
+import WaveHeader from '@/components/shared/WaveHeader.astro';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -49,23 +50,13 @@ const hasTopFilters = showFilters && filterPosition === 'top';
 	/>
 	<slot name="head-extra" slot="head" />
 
-	<!-- Page header area (breadcrumbs + title) -->
-	<div class="listing-header">
-		<div class="listing-header__container">
-			<slot name="breadcrumbs" />
-			<slot name="page-header" />
-		</div>
-	</div>
+	<!-- WaveHeader wraps everything so sticky bar has full-page-height parent -->
+	<WaveHeader paddingTop="3rem">
+		<slot name="breadcrumbs" slot="breadcrumbs" />
+		<slot name="page-header" slot="content" />
 
-	<!-- Decorative wave separator -->
-	<div class="listing-wave" aria-hidden="true">
-		<svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-			<path d="M0,64 C288,120 576,0 864,64 C1152,128 1440,32 1440,32 L1440,0 L0,0 Z" fill="var(--surface-warm, #fdf6f0)" />
-		</svg>
-	</div>
-
-	<!-- Main content area -->
-	<div class="listing-body">
+		<!-- Main content area (default slot of WaveHeader) -->
+		<div class="listing-body">
 		<div class="listing-body__container">
 			{/* Top filters (events use this) */}
 			{hasTopFilters && (
@@ -96,31 +87,10 @@ const hasTopFilters = showFilters && filterPosition === 'top';
 			</div>
 		</div>
 	</div>
+	</WaveHeader>
 </BaseLayout>
 
 <style>
-	.listing-header {
-		background-color: var(--surface-warm);
-		padding: 3rem 0 1.5rem;
-	}
-
-	.listing-header__container {
-		max-width: var(--container-max);
-		margin: 0 auto;
-		padding: 0 var(--space-container-x);
-	}
-
-	.listing-wave {
-		margin-top: -1px;
-		line-height: 0;
-	}
-
-	.listing-wave svg {
-		width: 100%;
-		height: 80px;
-		display: block;
-	}
-
 	.listing-body {
 		padding: var(--space-section-sm) 0;
 	}
@@ -147,10 +117,10 @@ const hasTopFilters = showFilters && filterPosition === 'top';
 		grid-template-columns: 250px 1fr;
 	}
 
-	/* Sidebar */
+	/* Sidebar: top offset accounts for navbar (~84px) + compact wave header (~96px) */
 	.listing-sidebar {
 		position: sticky;
-		top: 130px;
+		top: 185px;
 		align-self: start;
 	}
 
