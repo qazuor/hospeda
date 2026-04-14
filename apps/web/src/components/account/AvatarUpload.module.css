@@ -1,0 +1,156 @@
+/* AvatarUpload.module.css */
+/* Scoped styles for the AvatarUpload React island. */
+/* ALL values use CSS custom properties from global.css. */
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3, 12px);
+}
+
+/* ── Avatar circle ─────────────────────────────────────────────────────── */
+
+.avatarContainer {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--border, oklch(0.8 0 0));
+    background-color: var(--surface-warm, oklch(0.97 0.01 60));
+    flex-shrink: 0;
+}
+
+.avatarImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.avatarPlaceholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--primary, oklch(0.5 0.18 260));
+}
+
+.initials {
+    font-family: var(--font-heading);
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: white;
+    line-height: 1;
+    user-select: none;
+}
+
+/* ── Hover / loading overlay ───────────────────────────────────────────── */
+
+.overlay {
+    position: absolute;
+    inset: 0;
+    background-color: oklch(0 0 0 / 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity var(--duration-normal, 0.4s) ease;
+    border-radius: 50%;
+}
+
+.avatarContainer:hover .overlay,
+.overlayVisible {
+    opacity: 1;
+}
+
+/* ── Loading spinner ───────────────────────────────────────────────────── */
+
+.spinner {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 3px solid white;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ── Change button ─────────────────────────────────────────────────────── */
+
+.changeButton {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--primary, oklch(0.5 0.18 260));
+    background-color: transparent;
+    border: 1px solid var(--primary, oklch(0.5 0.18 260));
+    border-radius: var(--radius-button, 8px);
+    cursor: pointer;
+    transition: background-color var(--duration-normal, 0.4s) ease, color
+        var(--duration-normal, 0.4s) ease;
+    min-height: 40px;
+}
+
+.changeButton:hover:not(:disabled) {
+    background-color: var(--primary, oklch(0.5 0.18 260));
+    color: white;
+}
+
+.changeButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ── Hint text ─────────────────────────────────────────────────────────── */
+
+.hint {
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    color: var(--muted-foreground, oklch(0.55 0 0));
+    margin: 0;
+    text-align: center;
+}
+
+/* ── Hidden file input ─────────────────────────────────────────────────── */
+
+.fileInput {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* ── Feedback messages ─────────────────────────────────────────────────── */
+
+.errorMsg {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--destructive, oklch(0.55 0.22 25));
+    margin: 0;
+    text-align: center;
+    max-width: 260px;
+}
+
+.successMsg {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--success, oklch(0.55 0.18 145));
+    margin: 0;
+    text-align: center;
+    max-width: 260px;
+}

@@ -7,6 +7,7 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import { AvatarUpload } from '@/components/account/AvatarUpload.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -20,10 +21,24 @@ if (!user) {
 
 const { t } = createTranslations(locale);
 const title = t('account.pages.editProfile.title', 'Editar perfil');
+const apiUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="editar">
 	<h2 class="account-section__title">{title}</h2>
+
+	<section class="account-section__avatar">
+		<h3 class="account-section__subtitle">
+			{t('account.pages.editProfile.avatarSection', 'Foto de perfil')}
+		</h3>
+		<AvatarUpload
+			client:idle
+			currentImageUrl={user.image ?? null}
+			userName={user.name ?? undefined}
+			userId={user.id}
+			apiUrl={apiUrl}
+		/>
+	</section>
 
 	<!-- TODO: ProfileEditForm React island (client:load) -->
 	<div class="account-section__placeholder">
@@ -38,6 +53,20 @@ const title = t('account.pages.editProfile.title', 'Editar perfil');
 		font-size: clamp(1.5rem, 3vw, 2rem);
 		color: var(--foreground);
 		margin: 0 0 var(--space-6);
+	}
+	.account-section__subtitle {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: 1rem;
+		color: var(--muted-foreground);
+		margin: 0 0 var(--space-4);
+	}
+	.account-section__avatar {
+		background-color: var(--card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-card);
+		padding: var(--space-6);
+		margin-bottom: var(--space-6);
 	}
 	.account-section__placeholder {
 		background-color: var(--card);
