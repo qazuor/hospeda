@@ -11,4 +11,6 @@ export interface DestinationHookState extends Record<string, unknown> {
     deletedDestinationSlug?: string;
     /** Slug of the destination being restored .. set in _beforeRestore. */
     restoredDestinationSlug?: string;
+    /** ID of the entity being hard-deleted, used for Cloudinary media cleanup. */
+    deletedEntityId?: string;
 }

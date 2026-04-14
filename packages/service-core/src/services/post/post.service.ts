@@ -1,5 +1,7 @@
 import { PostModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
+import type { ImageProvider } from '@repo/media';
+import { resolveEnvironment } from '@repo/media';
 import type {
     GetPostByCategoryInput,
     GetPostByRelatedAccommodationInput,
@@ -95,15 +97,23 @@ export class PostService extends BaseCrudService<
     }
 
     /**
+     * Optional Cloudinary media provider for asset cleanup on hard delete.
+     * When null, media cleanup is skipped (Cloudinary not configured).
+     */
+    private readonly mediaProvider: ImageProvider | null;
+
+    /**
      * Initializes a new instance of the PostService.
      * @param ctx - The service context, containing the logger.
      * @param model - Optional PostModel instance (for testing/mocking).
+     * @param mediaProvider - Optional ImageProvider for Cloudinary cleanup on hard delete.
      */
-    constructor(ctx: ServiceConfig, model?: PostModel) {
+    constructor(ctx: ServiceConfig, model?: PostModel, mediaProvider?: ImageProvider | null) {
         super(ctx, PostService.ENTITY_NAME);
         this.model = model ?? new PostModel();
         /** Uses default _executeAdminSearch() - all filter fields map directly to table columns. */
         this.adminSearchSchema = PostAdminSearchSchema;
+        this.mediaProvider = mediaProvider ?? null;
     }
 
     /**
@@ -524,6 +534,7 @@ export class PostService extends BaseCrudService<
                 slug: entity.slug,
                 tagSlugs: entity.tags?.map((t) => t.slug)
             };
+            ctx.hookState.deletedEntityId = id;
         }
         return id;
     }
@@ -545,6 +556,19 @@ export class PostService extends BaseCrudService<
                 { error, entityType: 'post' },
                 'Revalidation scheduling failed (non-blocking)'
             );
+        }
+        // Best-effort Cloudinary cleanup after confirmed hard delete
+        if (result.count > 0 && ctx.hookState?.deletedEntityId && this.mediaProvider) {
+            const env = resolveEnvironment();
+            const prefix = `hospeda/${env}/posts/${ctx.hookState.deletedEntityId}/`;
+            try {
+                await this.mediaProvider.deleteByPrefix({ prefix });
+            } catch (mediaError) {
+                PostService.revalidationLogger.warn(
+                    { error: mediaError, prefix },
+                    '[media] Failed to clean up Cloudinary assets for post'
+                );
+            }
         }
         return result;
     }

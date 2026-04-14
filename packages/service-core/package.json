@@ -41,6 +41,7 @@
         "@repo/billing": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",
+        "@repo/media": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@repo/utils": "workspace:*",
         "drizzle-orm": "^0.44.7",

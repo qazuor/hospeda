@@ -1,4 +1,6 @@
 import { UserModel, safeIlike, users as userTable } from '@repo/db';
+import type { ImageProvider } from '@repo/media';
+import { resolveEnvironment } from '@repo/media';
 import type { EntityFilters, User } from '@repo/schemas';
 import {
     PermissionEnum,
@@ -45,6 +47,7 @@ import {
     normalizeViewInput
 } from './user.normalizers';
 import { canAssignRole, checkCanAdminList } from './user.permissions';
+import type { UserHookState } from './user.types';
 
 /** Entity-specific filter fields for user admin search. */
 type UserEntityFilters = EntityFilters<typeof UserAdminSearchSchema>;
@@ -96,11 +99,24 @@ export class UserService extends BaseCrudService<
         return ['displayName', 'firstName', 'lastName', 'email'];
     }
 
-    constructor(ctx: ServiceConfig, model?: UserModel) {
+    /**
+     * Optional Cloudinary media provider for avatar cleanup on hard delete.
+     * When null, media cleanup is skipped (Cloudinary not configured).
+     */
+    private readonly mediaProvider: ImageProvider | null;
+
+    /**
+     * Initializes a new instance of the UserService.
+     * @param ctx - The service context, containing the logger.
+     * @param model - Optional UserModel instance (for testing/mocking).
+     * @param mediaProvider - Optional ImageProvider for Cloudinary avatar cleanup on hard delete.
+     */
+    constructor(ctx: ServiceConfig, model?: UserModel, mediaProvider?: ImageProvider | null) {
         super(ctx, UserService.ENTITY_NAME);
         this.logger = ctx.logger ?? serviceLogger;
         this.model = model ?? new UserModel();
         this.adminSearchSchema = UserAdminSearchSchema;
+        this.mediaProvider = mediaProvider ?? null;
     }
 
     /**
@@ -435,6 +451,51 @@ export class UserService extends BaseCrudService<
             entityFilters: simpleFilters,
             extraConditions: additionalConditions.length > 0 ? additionalConditions : undefined
         });
+    }
+
+    /**
+     * Lifecycle hook: captures the user ID before hard delete for avatar cleanup.
+     * @param id - The ID of the user to hard-delete.
+     * @param _actor - The actor performing the action.
+     * @param ctx - Service execution context carrying transaction and hookState.
+     */
+    protected async _beforeHardDelete(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<UserHookState>
+    ): Promise<string> {
+        if (ctx.hookState) {
+            ctx.hookState.deletedEntityId = id;
+        }
+        return id;
+    }
+
+    /**
+     * Lifecycle hook: removes the user avatar from Cloudinary after a confirmed hard delete.
+     * Best-effort: errors are logged but never propagated.
+     * @param result - An object containing the count of affected rows.
+     * @param _actor - The actor performing the action.
+     * @param ctx - Service execution context carrying transaction and hookState.
+     */
+    protected async _afterHardDelete(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext<UserHookState>
+    ): Promise<{ count: number }> {
+        // Best-effort Cloudinary avatar cleanup after confirmed hard delete
+        if (result.count > 0 && ctx.hookState?.deletedEntityId && this.mediaProvider) {
+            const env = resolveEnvironment();
+            const publicId = `hospeda/${env}/avatars/${ctx.hookState.deletedEntityId}`;
+            try {
+                await this.mediaProvider.delete({ publicId });
+            } catch (mediaError) {
+                this.logger.warn(
+                    { error: mediaError, publicId },
+                    '[media] Failed to clean up Cloudinary avatar for user'
+                );
+            }
+        }
+        return result;
     }
 
     /**

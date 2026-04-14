@@ -9,4 +9,6 @@ export interface PostHookState extends Record<string, unknown> {
     deletedPost?: { slug: string; tagSlugs?: string[] };
     /** Post data captured before restore for post-restore side effects. */
     restoredPost?: { slug: string; tagSlugs?: string[] };
+    /** ID of the entity being hard-deleted, used for Cloudinary media cleanup. */
+    deletedEntityId?: string;
 }

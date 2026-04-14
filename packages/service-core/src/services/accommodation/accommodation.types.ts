@@ -7,4 +7,6 @@ export interface AccommodationHookState extends Record<string, unknown> {
     deletedEntity?: { destinationId?: string; slug: string; type?: string };
     /** Entity data captured before restore for post-restore side effects (revalidation). */
     restoredAccommodation?: { slug: string; destinationId?: string; type?: string };
+    /** ID of the entity being hard-deleted, used for Cloudinary media cleanup. */
+    deletedEntityId?: string;
 }

@@ -1,5 +1,7 @@
 import { EventModel, events as eventTable } from '@repo/db';
 import { createLogger } from '@repo/logger';
+import type { ImageProvider } from '@repo/media';
+import { resolveEnvironment } from '@repo/media';
 import type {
     Event,
     EventByAuthorInput,
@@ -93,10 +95,22 @@ export class EventService extends BaseCrudService<
         return ['name', 'description'];
     }
 
-    constructor(ctx: ServiceConfig & { model?: EventModel }) {
+    /**
+     * Optional Cloudinary media provider for asset cleanup on hard delete.
+     * When null, media cleanup is skipped (Cloudinary not configured).
+     */
+    private readonly mediaProvider: ImageProvider | null;
+
+    /**
+     * Initializes a new instance of the EventService.
+     * @param ctx - The service context, containing the logger and optional model.
+     * @param mediaProvider - Optional ImageProvider for Cloudinary cleanup on hard delete.
+     */
+    constructor(ctx: ServiceConfig & { model?: EventModel }, mediaProvider?: ImageProvider | null) {
         super(ctx, EventService.ENTITY_NAME);
         this.model = ctx.model ?? new EventModel();
         this.adminSearchSchema = EventAdminSearchSchema;
+        this.mediaProvider = mediaProvider ?? null;
     }
 
     /**
@@ -378,6 +392,7 @@ export class EventService extends BaseCrudService<
         const entity = await this.model.findById(id);
         if (entity && ctx.hookState) {
             ctx.hookState.deletedEvent = { slug: entity.slug, category: entity.category };
+            ctx.hookState.deletedEntityId = id;
         }
         return id;
     }
@@ -399,6 +414,19 @@ export class EventService extends BaseCrudService<
                 { error, entityType: 'event' },
                 'Revalidation scheduling failed (non-blocking)'
             );
+        }
+        // Best-effort Cloudinary cleanup after confirmed hard delete
+        if (result.count > 0 && ctx.hookState?.deletedEntityId && this.mediaProvider) {
+            const env = resolveEnvironment();
+            const prefix = `hospeda/${env}/events/${ctx.hookState.deletedEntityId}/`;
+            try {
+                await this.mediaProvider.deleteByPrefix({ prefix });
+            } catch (mediaError) {
+                EventService.revalidationLogger.warn(
+                    { error: mediaError, prefix },
+                    '[media] Failed to clean up Cloudinary assets for event'
+                );
+            }
         }
         return result;
     }
