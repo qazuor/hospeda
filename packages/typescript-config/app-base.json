@@ -25,7 +25,9 @@
             "@repo/notifications": ["../../packages/notifications/src/index.ts"],
             "@repo/notifications/*": ["../../packages/notifications/src/*"],
             "@repo/i18n": ["../../packages/i18n/src/index.ts"],
-            "@repo/i18n/*": ["../../packages/i18n/src/*"]
+            "@repo/i18n/*": ["../../packages/i18n/src/*"],
+            "@repo/media": ["../../packages/media/src/index.ts"],
+            "@repo/media/*": ["../../packages/media/src/*"]
         }
     },
     "include": ["src/**/*"],

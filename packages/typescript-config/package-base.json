@@ -21,7 +21,9 @@
             "@repo/feedback": ["../feedback/src/index.ts"],
             "@repo/feedback/*": ["../feedback/src/*"],
             "@repo/seed": ["../seed/src/index.ts"],
-            "@repo/seed/*": ["../seed/src/*"]
+            "@repo/seed/*": ["../seed/src/*"],
+            "@repo/media": ["../media/src/index.ts"],
+            "@repo/media/*": ["../media/src/*"]
         }
     },
     "include": ["src/**/*"],
