@@ -1,4 +1,15 @@
-import type { z } from 'zod';
+import { z } from 'zod';
+import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+import {
+    DestinationAdminSchema,
+    DestinationProtectedSchema,
+    DestinationPublicSchema
+} from '../destination/destination.access.schema.js';
+import {
+    UserAdminSchema,
+    UserProtectedSchema,
+    UserPublicSchema
+} from '../user/user.access.schema.js';
 import { DestinationReviewSchema } from './destinationReview.schema.js';
 
 /**
@@ -8,6 +19,8 @@ import { DestinationReviewSchema } from './destinationReview.schema.js';
  * Used for public review listing and detail pages.
  *
  * Picks specific fields from the full schema to ensure only public data is exposed.
+ * Extends with optional relation fields so that safeParse() does not strip relation
+ * data returned by the API when relations are eagerly loaded.
  */
 export const DestinationReviewPublicSchema = DestinationReviewSchema.pick({
     // Identification
@@ -42,6 +55,11 @@ export const DestinationReviewPublicSchema = DestinationReviewSchema.pick({
 
     // Timestamp (when the review was posted)
     createdAt: true
+}).extend({
+    /** Public user data joined from users table. No sensitive fields. */
+    user: UserPublicSchema.optional(),
+    /** Public destination data joined from destinations table. No sensitive fields. */
+    destination: DestinationPublicSchema.optional()
 });
 
 export type DestinationReviewPublic = z.infer<typeof DestinationReviewPublicSchema>;
@@ -82,6 +100,11 @@ export const DestinationReviewProtectedSchema = DestinationReviewSchema.pick({
 
     // Audit timestamps (for authenticated users)
     updatedAt: true
+}).extend({
+    /** Protected user data for authenticated context. */
+    user: UserProtectedSchema.optional(),
+    /** Protected destination data for authenticated context. */
+    destination: DestinationProtectedSchema.optional()
 });
 
 export type DestinationReviewProtected = z.infer<typeof DestinationReviewProtectedSchema>;
@@ -92,8 +115,20 @@ export type DestinationReviewProtected = z.infer<typeof DestinationReviewProtect
  * Contains ALL fields including sensitive admin-only data.
  * Used for admin dashboard, moderation, and management.
  *
- * This is essentially the full schema.
+ * Extends the full schema with relation fields and the preemptive lifecycleState
+ * field introduced in SPEC-063.
  */
-export const DestinationReviewAdminSchema = DestinationReviewSchema;
+export const DestinationReviewAdminSchema = DestinationReviewSchema.extend({
+    /** Full admin user data for admin dashboard and audit purposes. */
+    user: UserAdminSchema.optional(),
+    /** Full admin destination data for admin dashboard and audit purposes. */
+    destination: DestinationAdminSchema.optional(),
+    /**
+     * Lifecycle state for admin moderation workflow.
+     * Preemptively added here per SPEC-063 — will be a required field
+     * on the base schema once SPEC-063 is implemented.
+     */
+    lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()
+});
 
 export type DestinationReviewAdmin = z.infer<typeof DestinationReviewAdminSchema>;

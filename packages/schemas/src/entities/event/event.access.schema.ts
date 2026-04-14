@@ -1,4 +1,14 @@
 import type { z } from 'zod';
+import {
+    EventLocationAdminSchema,
+    EventLocationProtectedSchema,
+    EventLocationPublicSchema
+} from '../eventLocation/eventLocation.access.schema.js';
+import {
+    EventOrganizerAdminSchema,
+    EventOrganizerProtectedSchema,
+    EventOrganizerPublicSchema
+} from '../eventOrganizer/eventOrganizer.access.schema.js';
 import { EventSchema } from './event.schema.js';
 
 /**
@@ -40,6 +50,10 @@ export const EventPublicSchema = EventSchema.pick({
 
     // Tags (public)
     tags: true
+}).extend({
+    // Relation fields — optional so safeParse never strips hydrated data
+    organizer: EventOrganizerPublicSchema.optional(),
+    location: EventLocationPublicSchema.optional()
 });
 
 export type EventPublic = z.infer<typeof EventPublicSchema>;
@@ -82,6 +96,10 @@ export const EventProtectedSchema = EventSchema.pick({
     // Basic audit (created/updated dates)
     createdAt: true,
     updatedAt: true
+}).extend({
+    // Relation fields — optional so safeParse never strips hydrated data
+    organizer: EventOrganizerProtectedSchema.optional(),
+    location: EventLocationProtectedSchema.optional()
 });
 
 export type EventProtected = z.infer<typeof EventProtectedSchema>;
@@ -94,6 +112,10 @@ export type EventProtected = z.infer<typeof EventProtectedSchema>;
  *
  * This is essentially the full schema.
  */
-export const EventAdminSchema = EventSchema;
+export const EventAdminSchema = EventSchema.extend({
+    // Relation fields — optional so safeParse never strips hydrated data
+    organizer: EventOrganizerAdminSchema.optional(),
+    location: EventLocationAdminSchema.optional()
+});
 
 export type EventAdmin = z.infer<typeof EventAdminSchema>;

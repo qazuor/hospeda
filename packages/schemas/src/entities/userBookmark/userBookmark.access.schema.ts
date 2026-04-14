@@ -1,4 +1,9 @@
 import type { z } from 'zod';
+import {
+    UserAdminSchema,
+    UserProtectedSchema,
+    UserPublicSchema
+} from '../user/user.access.schema.js';
 import { UserBookmarkSchema } from './userBookmark.schema.js';
 
 // ============================================================================
@@ -25,6 +30,9 @@ export const UserBookmarkPublicSchema = UserBookmarkSchema.pick({
 
     // Optional display name chosen by the user
     name: true
+}).extend({
+    // Relation field — only populated when the query includes user data
+    user: UserPublicSchema.optional()
 });
 
 export type UserBookmarkPublic = z.infer<typeof UserBookmarkPublicSchema>;
@@ -54,6 +62,9 @@ export const UserBookmarkProtectedSchema = UserBookmarkSchema.pick({
     // Audit timestamps
     createdAt: true,
     updatedAt: true
+}).extend({
+    // Relation field — only populated when the query includes user data
+    user: UserProtectedSchema.optional()
 });
 
 export type UserBookmarkProtected = z.infer<typeof UserBookmarkProtectedSchema>;
@@ -66,6 +77,9 @@ export type UserBookmarkProtected = z.infer<typeof UserBookmarkProtectedSchema>;
  *
  * This is essentially the full schema.
  */
-export const UserBookmarkAdminSchema = UserBookmarkSchema;
+export const UserBookmarkAdminSchema = UserBookmarkSchema.extend({
+    // Relation field — only populated when the query includes user data
+    user: UserAdminSchema.optional()
+});
 
 export type UserBookmarkAdmin = z.infer<typeof UserBookmarkAdminSchema>;

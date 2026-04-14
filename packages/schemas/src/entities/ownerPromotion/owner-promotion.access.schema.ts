@@ -1,4 +1,15 @@
-import type { z } from 'zod';
+import { z } from 'zod';
+import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+import {
+    AccommodationAdminSchema,
+    AccommodationProtectedSchema,
+    AccommodationPublicSchema
+} from '../accommodation/accommodation.access.schema.js';
+import {
+    UserAdminSchema,
+    UserProtectedSchema,
+    UserPublicSchema
+} from '../user/user.access.schema.js';
 import { OwnerPromotionSchema } from './owner-promotion.schema.js';
 
 /**
@@ -33,6 +44,11 @@ export const OwnerPromotionPublicSchema = OwnerPromotionSchema.pick({
 
     // Status
     isActive: true
+}).extend({
+    /** Resolved owner data (public tier). Available when the API joins the user. */
+    owner: UserPublicSchema.optional(),
+    /** Resolved accommodation data (public tier). Available when the API joins the record. */
+    accommodation: AccommodationPublicSchema.optional()
 });
 
 export type OwnerPromotionPublic = z.infer<typeof OwnerPromotionPublicSchema>;
@@ -69,6 +85,11 @@ export const OwnerPromotionProtectedSchema = OwnerPromotionSchema.pick({
     // Audit (for owners)
     createdAt: true,
     updatedAt: true
+}).extend({
+    /** Resolved owner data (protected tier). Available when the API joins the user. */
+    owner: UserProtectedSchema.optional(),
+    /** Resolved accommodation data (protected tier). Available when the API joins the record. */
+    accommodation: AccommodationProtectedSchema.optional()
 });
 
 export type OwnerPromotionProtected = z.infer<typeof OwnerPromotionProtectedSchema>;
@@ -79,8 +100,19 @@ export type OwnerPromotionProtected = z.infer<typeof OwnerPromotionProtectedSche
  * Contains ALL fields including sensitive admin-only data.
  * Used for admin dashboard, moderation, and management.
  *
- * This is essentially the full schema.
+ * Extends the full schema with relation objects (admin tier) and the preemptive
+ * lifecycleState field that will be promoted to OwnerPromotionSchema in SPEC-063.
  */
-export const OwnerPromotionAdminSchema = OwnerPromotionSchema;
+export const OwnerPromotionAdminSchema = OwnerPromotionSchema.extend({
+    /** Resolved owner data (admin tier). Available when the API joins the user. */
+    owner: UserAdminSchema.optional(),
+    /** Resolved accommodation data (admin tier). Available when the API joins the record. */
+    accommodation: AccommodationAdminSchema.optional(),
+    /**
+     * Preemptive SPEC-063 field.
+     * Will be promoted to the base OwnerPromotionSchema once SPEC-063 is applied.
+     */
+    lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()
+});
 
 export type OwnerPromotionAdmin = z.infer<typeof OwnerPromotionAdminSchema>;

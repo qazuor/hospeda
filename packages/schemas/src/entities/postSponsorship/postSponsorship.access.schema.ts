@@ -1,4 +1,14 @@
 import type { z } from 'zod';
+import {
+    PostAdminSchema,
+    PostProtectedSchema,
+    PostPublicSchema
+} from '../post/post.access.schema.js';
+import {
+    UserAdminSchema,
+    UserProtectedSchema,
+    UserPublicSchema
+} from '../user/user.access.schema.js';
 import { PostSponsorshipSchema } from './postSponsorship.schema.js';
 
 // ============================================================================
@@ -27,6 +37,10 @@ export const PostSponsorshipPublicSchema = PostSponsorshipSchema.pick({
     // Validity window (safe to show publicly for display purposes)
     fromDate: true,
     toDate: true
+}).extend({
+    // Relation fields — optional to allow partial API responses
+    post: PostPublicSchema.optional(),
+    sponsor: UserPublicSchema.optional()
 });
 
 export type PostSponsorshipPublic = z.infer<typeof PostSponsorshipPublicSchema>;
@@ -60,6 +74,10 @@ export const PostSponsorshipProtectedSchema = PostSponsorshipSchema.pick({
     // Audit timestamps
     createdAt: true,
     updatedAt: true
+}).extend({
+    // Relation fields — optional to allow partial API responses
+    post: PostProtectedSchema.optional(),
+    sponsor: UserProtectedSchema.optional()
 });
 
 export type PostSponsorshipProtected = z.infer<typeof PostSponsorshipProtectedSchema>;
@@ -72,6 +90,10 @@ export type PostSponsorshipProtected = z.infer<typeof PostSponsorshipProtectedSc
  *
  * This is essentially the full schema.
  */
-export const PostSponsorshipAdminSchema = PostSponsorshipSchema;
+export const PostSponsorshipAdminSchema = PostSponsorshipSchema.extend({
+    // Relation fields — optional to allow partial API responses
+    post: PostAdminSchema.optional(),
+    sponsor: UserAdminSchema.optional()
+});
 
 export type PostSponsorshipAdmin = z.infer<typeof PostSponsorshipAdminSchema>;

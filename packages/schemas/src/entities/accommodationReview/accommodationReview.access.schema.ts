@@ -1,4 +1,14 @@
 import type { z } from 'zod';
+import {
+    AccommodationAdminSchema,
+    AccommodationProtectedSchema,
+    AccommodationPublicSchema
+} from '../accommodation/accommodation.access.schema.js';
+import {
+    UserAdminSchema,
+    UserProtectedSchema,
+    UserPublicSchema
+} from '../user/user.access.schema.js';
 import { AccommodationReviewSchema } from './accommodationReview.schema.js';
 
 /**
@@ -25,6 +35,11 @@ export const AccommodationReviewPublicSchema = AccommodationReviewSchema.pick({
 
     // Timestamp (when the review was posted)
     createdAt: true
+}).extend({
+    /** Reviewer user data (public tier). Populated when the relation is loaded. */
+    user: UserPublicSchema.optional(),
+    /** Parent accommodation data (public tier). Populated when the relation is loaded. */
+    accommodation: AccommodationPublicSchema.optional()
 });
 
 export type AccommodationReviewPublic = z.infer<typeof AccommodationReviewPublicSchema>;
@@ -51,6 +66,11 @@ export const AccommodationReviewProtectedSchema = AccommodationReviewSchema.pick
 
     // Audit timestamps (for authenticated users)
     updatedAt: true
+}).extend({
+    /** Reviewer user data (protected tier). Populated when the relation is loaded. */
+    user: UserProtectedSchema.optional(),
+    /** Parent accommodation data (protected tier). Populated when the relation is loaded. */
+    accommodation: AccommodationProtectedSchema.optional()
 });
 
 export type AccommodationReviewProtected = z.infer<typeof AccommodationReviewProtectedSchema>;
@@ -63,6 +83,11 @@ export type AccommodationReviewProtected = z.infer<typeof AccommodationReviewPro
  *
  * This is essentially the full schema.
  */
-export const AccommodationReviewAdminSchema = AccommodationReviewSchema;
+export const AccommodationReviewAdminSchema = AccommodationReviewSchema.extend({
+    /** Reviewer user data (admin tier). Populated when the relation is loaded. */
+    user: UserAdminSchema.optional(),
+    /** Parent accommodation data (admin tier). Populated when the relation is loaded. */
+    accommodation: AccommodationAdminSchema.optional()
+});
 
 export type AccommodationReviewAdmin = z.infer<typeof AccommodationReviewAdminSchema>;
