@@ -6,6 +6,7 @@
 import type { AccommodationDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { getAccommodationTypeLabel, getBadgeStatusColor } from '@/lib/colors';
 import RatingStars from '@/components/shared/RatingStars.astro';
 
 interface Props {
@@ -18,18 +19,30 @@ const { t } = createTranslations(lang as SupportedLocale);
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const isNew = (Date.now() - new Date(accommodation.createdAt).getTime()) < THIRTY_DAYS_MS;
+const typeLabel = getAccommodationTypeLabel({ type: accommodation.type, t });
+const featuredColors = getBadgeStatusColor({ status: 'featured' });
+const newColors = getBadgeStatusColor({ status: 'new' });
 ---
 
 <header class="detail-header">
   <div class="detail-header__badges">
-    <span class="detail-header__type-badge">{accommodation.type}</span>
+    <span
+      class="detail-header__type-badge"
+      style="background-color: var(--brand-secondary-foreground); color: var(--primary-foreground);"
+    >{typeLabel}</span>
     {accommodation.isFeatured && (
-      <span class="detail-header__featured-badge">
+      <span
+        class="detail-header__status-badge"
+        style={`background-color: ${featuredColors.bg}; color: ${featuredColors.text}; border-color: ${featuredColors.border};`}
+      >
         {t('accommodations.detail.badges.featured')}
       </span>
     )}
     {isNew && (
-      <span class="detail-header__new-badge">
+      <span
+        class="detail-header__status-badge"
+        style={`background-color: ${newColors.bg}; color: ${newColors.text}; border-color: ${newColors.border};`}
+      >
         {t('accommodations.detail.badges.new')}
       </span>
     )}
@@ -73,12 +86,11 @@ const isNew = (Date.now() - new Date(accommodation.createdAt).getTime()) < THIRT
     letter-spacing: 0.05em;
     padding: 4px 14px;
     border-radius: var(--radius-pill);
-    background-color: oklch(from var(--primary) l c h / 0.12);
-    color: var(--primary);
-    border: 1px solid oklch(from var(--primary) l c h / 0.25);
+    background-color: var(--brand-secondary-foreground);
+    color: var(--primary-foreground);
     transition: padding 0.3s ease, font-size 0.3s ease;
   }
-  .detail-header__featured-badge {
+  .detail-header__status-badge {
     font-family: var(--font-sans);
     font-size: 0.7rem;
     font-weight: 700;
@@ -86,20 +98,7 @@ const isNew = (Date.now() - new Date(accommodation.createdAt).getTime()) < THIRT
     letter-spacing: 0.04em;
     padding: 4px 14px;
     border-radius: var(--radius-pill);
-    background-color: var(--accent);
-    color: white;
-    transition: padding 0.3s ease, font-size 0.3s ease;
-  }
-  .detail-header__new-badge {
-    font-family: var(--font-sans);
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    padding: 4px 14px;
-    border-radius: var(--radius-pill);
-    background-color: oklch(0.45 0.15 145);
-    color: white;
+    border: 1px solid;
     transition: padding 0.3s ease, font-size 0.3s ease;
   }
   .detail-header__name {
@@ -156,8 +155,7 @@ const isNew = (Date.now() - new Date(accommodation.createdAt).getTime()) < THIRT
   }
 
   :global(.wave-header--compact) .detail-header__type-badge,
-  :global(.wave-header--compact) .detail-header__featured-badge,
-  :global(.wave-header--compact) .detail-header__new-badge {
+  :global(.wave-header--compact) .detail-header__status-badge {
     font-size: 0.6rem;
     padding: 2px 10px;
   }
@@ -187,8 +185,7 @@ const isNew = (Date.now() - new Date(accommodation.createdAt).getTime()) < THIRT
   @media (prefers-reduced-motion: reduce) {
     .detail-header,
     .detail-header__type-badge,
-    .detail-header__featured-badge,
-    .detail-header__new-badge,
+    .detail-header__status-badge,
     .detail-header__name,
     .detail-header__destination,
     .detail-header__rating {
