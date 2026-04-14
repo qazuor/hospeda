@@ -1,23 +1,38 @@
 ---
 /**
  * @file alojamientos/[slug].astro
- * @description Accommodation detail page with all sections, LodgingBusiness JSON-LD.
+ * @description Accommodation detail page. Orchestrates all detail components,
+ * related content carousels, and LodgingBusiness JSON-LD.
  * @route /{lang}/alojamientos/{slug}/
- * @rendering SSR + ISR 24h
+ * @rendering SSR (on-demand)
  */
 
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/Breadcrumbs.astro';
-import ErrorBanner from '@/components/shared/ErrorBanner.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
-import { accommodationsApi } from '@/lib/api/endpoints';
+import HeroGallery from '@/components/accommodation/HeroGallery.astro';
+import DetailHeader from '@/components/accommodation/DetailHeader.astro';
+import QuickFacts from '@/components/accommodation/QuickFacts.astro';
+import Description from '@/components/accommodation/Description.astro';
+import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
+import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
+import ReviewPreview from '@/components/accommodation/ReviewPreview.astro';
+import { ReviewsModal } from '@/components/accommodation/ReviewsModal.client';
+import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
+import LocationSection from '@/components/accommodation/LocationSection.astro';
+import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
+import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
+import OwnerCard from '@/components/accommodation/OwnerCard.astro';
+import { OwnerContact } from '@/components/accommodation/OwnerContact.client';
+import AccommodationCard from '@/components/shared/AccommodationCard.astro';
+import PostCardLight from '@/components/shared/PostCardLight.astro';
+import EventCard from '@/components/shared/EventCard.astro';
+import { accommodationsApi, postsApi, eventsApi } from '@/lib/api/endpoints';
+import { toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
-import { formatPrice } from '@/lib/format-utils';
-import { getAccommodationTypeColor } from '@/lib/colors';
-import { Image } from 'astro:assets';
-import { StarIcon, LocationIcon, FavoriteIcon } from '@repo/icons';
+
+export const prerender = false;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -25,281 +40,194 @@ const { slug } = Astro.params;
 
 if (!slug) return new Response(null, { status: 404 });
 
+// --- Primary fetch ---
 const result = await accommodationsApi.getBySlug({ slug });
+if (!result.ok || !result.data) return new Response(null, { status: 404 });
 
-if (!result.ok) return new Response(null, { status: 404 });
+const accommodation = toAccommodationDetailPageProps({
+    item: result.data as Record<string, unknown>
+});
 
-const acc = result.data as Record<string, unknown>;
-const name = String(acc.name || '');
-const description = String(acc.summary || acc.description || '');
-const accType = String(acc.type || acc.accommodationType || '');
-const price = acc.price as { price?: number; amount?: number; currency?: string } | undefined;
-const rating = Number(acc.averageRating || 0);
-const reviewCount = Number(acc.reviewsCount || acc.ratingCount || 0);
-const locationObj = acc.location as Record<string, unknown> | undefined;
-const destinationObj = acc.destination as Record<string, unknown> | undefined;
-const city = String(locationObj?.city || destinationObj?.name || '');
-const images = Array.isArray(acc.images) ? acc.images.map(String) : [];
-const featuredImage = String(acc.featuredImage || images[0] || '/assets/images/placeholder-accommodation.svg');
-const amenities = (Array.isArray(acc.amenities) ? acc.amenities : []) as ReadonlyArray<Record<string, unknown>>;
-const features = (Array.isArray(acc.features) ? acc.features : []) as ReadonlyArray<Record<string, unknown>>;
-const latitude = Number(acc.latitude || 0);
-const longitude = Number(acc.longitude || 0);
+// --- Parallel secondary fetches with graceful degradation ---
+const [similarResult, ownerPropsResult, postsResult, eventsResult, reviewsResult] =
+    await Promise.allSettled([
+        accommodationsApi.getSimilar({ id: accommodation.id, limit: 6 }),
+        accommodationsApi.list({ ownerId: accommodation.owner.id, pageSize: 4 }),
+        postsApi.list({ destinationId: accommodation.destination.id, pageSize: 4 }),
+        eventsApi.list({ destinationId: accommodation.destination.id, pageSize: 4 }),
+        accommodationsApi.getReviews({ id: accommodation.id, page: 1, pageSize: 3 })
+    ]);
 
-// LodgingBusiness JSON-LD with specific subtype
-const TYPE_TO_SCHEMA: Record<string, string> = {
-	HOTEL: 'Hotel', HOSTEL: 'Hostel', MOTEL: 'Motel', RESORT: 'Resort', CAMPING: 'Campground',
+/** Safely extract array from a settled API result. */
+function extractItems(settled: PromiseSettledResult<unknown>): Record<string, unknown>[] {
+    if (settled.status === 'rejected') return [];
+    const val = settled.value as { ok?: boolean; data?: unknown };
+    if (!val?.ok) return [];
+    const d = val.data;
+    if (Array.isArray(d)) return d as Record<string, unknown>[];
+    if (d && typeof d === 'object') {
+        const obj = d as Record<string, unknown>;
+        if (Array.isArray(obj.items)) return obj.items as Record<string, unknown>[];
+        if (Array.isArray(obj.data)) return obj.data as Record<string, unknown>[];
+    }
+    return [];
+}
+
+const similarCards = extractItems(similarResult).map((item) => toAccommodationCardProps({ item }));
+const ownerCards = extractItems(ownerPropsResult)
+    .filter((item) => String(item.id) !== accommodation.id)
+    .map((item) => toAccommodationCardProps({ item }));
+const topReviews = extractItems(reviewsResult);
+
+// Posts and events: pass raw items for lightweight cards
+const postItems = extractItems(postsResult);
+const eventItems = extractItems(eventsResult);
+
+// --- Auth ---
+const userId = Astro.locals.user?.id ?? null;
+
+// --- SEO ---
+const seoTitle = accommodation.seo?.title ?? `${accommodation.name} | Hospeda`;
+const seoDescription = accommodation.seo?.description ?? accommodation.summary;
+
+// --- JSON-LD (LodgingBusiness) ---
+const TYPE_MAP: Readonly<Record<string, string>> = {
+    HOTEL: 'Hotel', HOSTEL: 'Hostel', MOTEL: 'Motel', RESORT: 'Resort', CAMPING: 'Campground'
 };
-const schemaType = TYPE_TO_SCHEMA[accType] ?? 'LodgingBusiness';
+const schemaType = TYPE_MAP[accommodation.type.toUpperCase()] ?? 'LodgingBusiness';
 
-const formattedPrice = price?.amount || price?.price
-	? formatPrice({ amount: Number(price.amount ?? price.price), currency: price.currency ?? 'ARS', locale })
-	: null;
-
-const jsonLd = {
-	'@context': 'https://schema.org',
-	'@type': schemaType,
-	name,
-	description,
-	image: featuredImage,
-	url: `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`,
-	address: {
-		'@type': 'PostalAddress',
-		addressLocality: city,
-	},
-	...(latitude && longitude ? { geo: { '@type': 'GeoCoordinates', latitude, longitude } } : {}),
-	...(rating > 0 ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: rating, reviewCount } } : {}),
-	...(formattedPrice ? { priceRange: formattedPrice } : {}),
+const jsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': schemaType,
+    name: accommodation.name,
+    description: accommodation.summary,
+    image: accommodation.featuredImage,
+    url: Astro.url.href,
+    address: {
+        '@type': 'PostalAddress',
+        addressLocality: accommodation.destination.name,
+        addressCountry: 'AR'
+    },
+    ...(accommodation.location.lat != null && accommodation.location.lng != null
+        ? { geo: { '@type': 'GeoCoordinates', latitude: accommodation.location.lat, longitude: accommodation.location.lng } }
+        : {}),
+    ...(accommodation.averageRating > 0
+        ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: accommodation.averageRating, reviewCount: accommodation.reviewsCount, bestRating: 5, worstRating: 1 } }
+        : {}),
+    ...(accommodation.extraInfo?.bedrooms != null ? { numberOfRooms: accommodation.extraInfo.bedrooms } : {}),
+    ...(accommodation.amenities.length > 0
+        ? { amenityFeature: accommodation.amenities.map((a) => ({ '@type': 'LocationFeatureSpecification', name: a.name, value: true })) }
+        : {})
 };
-
-const typeColors = getAccommodationTypeColor(accType.toLowerCase());
 ---
 
 <DetailLayout
-	locale={locale}
-	title={name}
-	description={description}
-	showBreadcrumbs={true}
-	showSidebar={true}
+    locale={locale}
+    title={seoTitle}
+    description={seoDescription}
+    showBreadcrumbs={true}
+    showSidebar={true}
 >
-	<JsonLd slot="head-extra" data={jsonLd} />
+    <JsonLd slot="head-extra" data={jsonLd} />
 
-	<Breadcrumbs
-		slot="breadcrumbs"
-		locale={locale}
-		items={[
-			{ label: t('accommodations.title', 'Alojamientos'), path: 'alojamientos' },
-			{ label: name },
-		]}
-	/>
+    <Breadcrumbs
+        slot="breadcrumbs"
+        locale={locale}
+        items={[
+            { label: t('accommodations.title'), path: 'alojamientos' },
+            { label: accommodation.name }
+        ]}
+    />
 
-	<!-- Page header: title + meta in warm zone -->
-	<Fragment slot="page-header">
-		<h1 class="acc-detail__title">{name}</h1>
-		<div class="acc-detail__meta">
-			<span class="acc-detail__type-badge" style={`background-color: ${typeColors.bg}; color: ${typeColors.text};`}>
-				{t(`accommodations.types.${accType.toLowerCase()}`, accType)}
-			</span>
-			{rating > 0 && (
-				<span class="acc-detail__rating">
-					<StarIcon size={16} weight="fill" aria-hidden="true" />
-					{rating.toFixed(1)} ({reviewCount})
-				</span>
-			)}
-			{city && (
-				<span class="acc-detail__location">
-					<LocationIcon size={16} aria-hidden="true" />
-					{city}
-				</span>
-			)}
-		</div>
-	</Fragment>
+    <Fragment slot="page-header">
+        <DetailHeader accommodation={accommodation} lang={locale} />
+    </Fragment>
 
-	<!-- Main Content -->
-	<div class="acc-detail">
-		<!-- Hero image -->
-		<div class="acc-detail__hero">
-			{featuredImage && !featuredImage.includes('placeholder') ? (
-				<Image
-					src={featuredImage}
-					alt={name}
-					width={1200}
-					height={675}
-					format="webp"
-					loading="eager"
-					class="acc-detail__hero-img"
-				/>
-			) : (
-				<img
-					src={featuredImage}
-					alt={name}
-					loading="eager"
-					class="acc-detail__hero-img"
-					width="1200"
-					height="675"
-				/>
-			)}
-			<!-- TODO: ImageGallery component (T-021) -->
-		</div>
+    <!-- Main content -->
+    <div class="acc-detail">
+        <HeroGallery accommodation={accommodation} lang={locale} />
+        <QuickFacts extraInfo={accommodation.extraInfo} lang={locale} />
+        <Description summary={accommodation.summary} description={accommodation.description} />
 
-		<!-- Description (TipTap content) -->
-		<div class="acc-detail__description" set:html={String(acc.contentHtml || acc.description || description)} />
+        <FeaturesGrid features={accommodation.features} smokingAllowed={accommodation.extraInfo?.smokingAllowed ?? null} lang={locale} />
+        <AmenitiesGrid amenities={accommodation.amenities} lang={locale} />
 
-		<!-- Amenities grid -->
-		{amenities.length > 0 && (
-			<section class="acc-detail__section">
-				<h2 class="acc-detail__section-title">{t('accommodations.detail.amenities', 'Comodidades')}</h2>
-				<div class="acc-detail__amenities-grid">
-					{amenities.map((amenity) => (
-						<div class="acc-detail__amenity">
-							{String(amenity.name || amenity.amenityName || '')}
-						</div>
-					))}
-				</div>
-			</section>
-		)}
+        <ReviewPreview accommodation={accommodation} topReviews={topReviews} lang={locale}>
+            <ReviewsModal
+                client:visible
+                accommodationId={accommodation.id}
+                reviewsCount={accommodation.reviewsCount}
+                locale={locale}
+            />
+        </ReviewPreview>
 
-		<!-- Features list -->
-		{features.length > 0 && (
-			<section class="acc-detail__section">
-				<h2 class="acc-detail__section-title">{t('accommodations.detail.features', 'Características')}</h2>
-				<ul class="acc-detail__features-list">
-					{features.map((feature) => (
-						<li class="acc-detail__feature">
-							{String(feature.name || feature.featureName || '')}
-						</li>
-					))}
-				</ul>
-			</section>
-		)}
+        <FaqAccordion faqs={accommodation.faqs} lang={locale} />
+        <LocationSection destination={accommodation.destination} location={accommodation.location} lang={locale} />
+    </div>
 
-		<!-- Map -->
-		{latitude !== 0 && longitude !== 0 && (
-			<section class="acc-detail__section">
-				<h2 class="acc-detail__section-title">{t('accommodations.detail.location', 'Ubicación')}</h2>
-				<!-- TODO: MapView island (T-022) -->
-				<div class="acc-detail__map-placeholder">
-					<p>{t('accommodations.detail.mapPlaceholder', 'Mapa interactivo próximamente')}</p>
-				</div>
-			</section>
-		)}
+    <!-- Related content carousels (outside two-column grid, full width) -->
+    {similarCards.length > 0 && (
+        <RelatedCarousel title={t('accommodations.detail.related.similar')} ariaLabel={t('accommodations.detail.related.similar')} lang={locale}>
+            {similarCards.map((card) => <AccommodationCard data={card} locale={locale} />)}
+        </RelatedCarousel>
+    )}
 
-		<!-- Reviews -->
-		<section class="acc-detail__section">
-			<h2 class="acc-detail__section-title">{t('accommodations.detail.reviews', 'Reseñas')}</h2>
-			<!-- TODO: ReviewListIsland (T-023) with server:defer or client:visible -->
-			<div class="acc-detail__reviews-placeholder">
-				<p>{t('accommodations.detail.reviewsPlaceholder', 'Cargando reseñas...')}</p>
-			</div>
-		</section>
-	</div>
+    {ownerCards.length > 0 && (
+        <RelatedCarousel title={t('accommodations.detail.owner.otherProperties', undefined, { name: accommodation.owner.name })} ariaLabel={t('accommodations.detail.owner.otherProperties', undefined, { name: accommodation.owner.name })} lang={locale}>
+            {ownerCards.map((card) => <AccommodationCard data={card} locale={locale} />)}
+        </RelatedCarousel>
+    )}
 
-	<!-- Sidebar -->
-	<div slot="sidebar" class="acc-sidebar">
-		<!-- Pricing card -->
-		<div class="acc-sidebar__card">
-			{formattedPrice ? (
-				<div class="acc-sidebar__price">
-					<span class="acc-sidebar__price-label">{t('accommodations.detail.from', 'Desde')}</span>
-					<span class="acc-sidebar__price-amount">{formattedPrice}</span>
-					<span class="acc-sidebar__price-period">/{t('accommodations.detail.perNight', 'noche')}</span>
-				</div>
-			) : (
-				<p class="acc-sidebar__consult">{t('accommodations.detail.consultPrice', 'Consultar precio')}</p>
-			)}
-			<a href="#contacto" class="acc-sidebar__cta">
-				{t('accommodations.detail.cta', 'Consultar disponibilidad')}
-			</a>
-		</div>
+    {postItems.length > 0 && (
+        <RelatedCarousel title={t('accommodations.detail.related.posts')} ariaLabel={t('accommodations.detail.related.posts')} lang={locale}>
+            {postItems.map((item) => (
+                <PostCardLight
+                    id={String(item.id || '')}
+                    slug={String(item.slug || '')}
+                    title={String(item.title || '')}
+                    summary={String(item.summary || item.description || '')}
+                    featuredImage={item.featuredImage ? String(item.featuredImage) : null}
+                    destinationName={accommodation.destination.name}
+                    publishedAt={item.publishedAt ? String(item.publishedAt) : null}
+                    lang={locale}
+                />
+            ))}
+        </RelatedCarousel>
+    )}
 
-		<!-- Host info placeholder -->
-		<div class="acc-sidebar__card acc-sidebar__card--host">
-			<h3 class="acc-sidebar__card-title">{t('accommodations.detail.host', 'Propietario')}</h3>
-			<!-- TODO: Host info from API -->
-		</div>
-	</div>
+    {eventItems.length > 0 && (
+        <RelatedCarousel title={t('accommodations.detail.related.events', undefined, { destination: accommodation.destination.name })} ariaLabel={t('accommodations.detail.related.events', undefined, { destination: accommodation.destination.name })} lang={locale}>
+            {eventItems.map((item) => <EventCard data={toEventCardProps({ item })} locale={locale} />)}
+        </RelatedCarousel>
+    )}
+
+    <!-- Sidebar -->
+    <Fragment slot="sidebar">
+        <div class="acc-sidebar">
+            <PricingSidebar price={accommodation.price} lang={locale} />
+            <OwnerCard owner={accommodation.owner} accommodationId={accommodation.id} userId={userId} lang={locale}>
+                {userId && (
+                    <OwnerContact
+                        client:idle
+                        userId={userId}
+                        accommodationId={accommodation.id}
+                        locale={locale}
+                    />
+                )}
+            </OwnerCard>
+        </div>
+    </Fragment>
 </DetailLayout>
 
 <style>
-	.acc-detail__hero { margin-bottom: var(--space-6); border-radius: var(--radius-card); overflow: hidden; }
-	.acc-detail__hero-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
-
-	.acc-detail__meta {
-		display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
-		margin-bottom: var(--space-3);
-	}
-	.acc-detail__type-badge {
-		padding: 0.25rem 0.75rem; border-radius: var(--radius-pill);
-		font-family: var(--font-sans); font-size: var(--text-body-sm); font-weight: 600;
-	}
-	.acc-detail__rating, .acc-detail__location {
-		display: inline-flex; align-items: center; gap: 0.25rem;
-		font-family: var(--font-sans); font-size: var(--text-body-sm); color: var(--muted-foreground);
-	}
-	.acc-detail__rating { color: var(--brand-accent); }
-
-	.acc-detail__title {
-		font-family: var(--font-heading); font-weight: 700;
-		font-size: clamp(1.5rem, 3vw, 2.25rem); color: var(--foreground);
-		margin: 0 0 var(--space-6);
-	}
-
-	.acc-detail__description {
-		font-family: var(--font-sans); font-size: var(--text-body); color: var(--foreground);
-		line-height: 1.7; margin-bottom: var(--space-8);
-	}
-	.acc-detail__description :global(p) { margin-bottom: var(--space-4); }
-
-	.acc-detail__section { margin-bottom: var(--space-8); }
-	.acc-detail__section-title {
-		font-family: var(--font-heading); font-weight: 600;
-		font-size: var(--text-xl); color: var(--foreground);
-		margin: 0 0 var(--space-4);
-	}
-
-	.acc-detail__amenities-grid {
-		display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-		gap: var(--space-3);
-	}
-	.acc-detail__amenity {
-		padding: var(--space-3); background-color: var(--card);
-		border-radius: var(--radius-button); border: 1px solid var(--border);
-		font-family: var(--font-sans); font-size: var(--text-body-sm);
-	}
-
-	.acc-detail__features-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-2); }
-	.acc-detail__feature { padding-left: 1.5rem; position: relative; font-family: var(--font-sans); font-size: var(--text-body-sm); }
-	.acc-detail__feature::before { content: '✓'; position: absolute; left: 0; color: var(--brand-accent); }
-
-	.acc-detail__map-placeholder, .acc-detail__reviews-placeholder {
-		background-color: var(--card); border: 1px dashed var(--border);
-		border-radius: var(--radius-card); padding: var(--space-8);
-		text-align: center; color: var(--muted-foreground);
-	}
-
-	/* Sidebar */
-	.acc-sidebar__card {
-		background-color: var(--card); border-radius: var(--radius-card);
-		padding: var(--space-6); box-shadow: var(--shadow-card);
-		margin-bottom: var(--space-4);
-	}
-	.acc-sidebar__price { margin-bottom: var(--space-4); }
-	.acc-sidebar__price-label { font-family: var(--font-sans); font-size: var(--text-body-sm); color: var(--muted-foreground); display: block; }
-	.acc-sidebar__price-amount { font-family: var(--font-heading); font-weight: 700; font-size: var(--text-2xl); color: var(--brand-accent); }
-	.acc-sidebar__price-period { font-family: var(--font-sans); font-size: var(--text-body-sm); color: var(--muted-foreground); }
-	.acc-sidebar__consult { font-family: var(--font-sans); font-size: var(--text-body); color: var(--muted-foreground); margin: 0 0 var(--space-4); }
-
-	.acc-sidebar__cta {
-		display: block; text-align: center; width: 100%;
-		padding: 0.875rem; background-color: var(--brand-accent);
-		color: var(--accent-foreground, #fff); border-radius: var(--radius-button);
-		font-family: var(--font-sans); font-weight: 600; text-decoration: none;
-		transition: opacity var(--duration-fast) ease;
-	}
-	.acc-sidebar__cta:hover { opacity: 0.9; }
-
-	.acc-sidebar__card-title {
-		font-family: var(--font-heading); font-weight: 600;
-		font-size: var(--text-lg); color: var(--foreground); margin: 0;
-	}
+    .acc-detail {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-8, 32px);
+    }
+    .acc-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 16px);
+    }
 </style>

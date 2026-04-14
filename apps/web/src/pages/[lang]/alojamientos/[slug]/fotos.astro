@@ -1,0 +1,231 @@
+---
+/**
+ * @file alojamientos/[slug]/fotos.astro
+ * @description Full photo gallery sub-page with CSS columns masonry layout.
+ * All media items open via GLightbox.
+ * @route /{lang}/alojamientos/{slug}/fotos/
+ * @rendering SSR (on-demand)
+ */
+
+import DetailLayout from '@/layouts/DetailLayout.astro';
+import Breadcrumbs from '@/components/shared/Breadcrumbs.astro';
+import JsonLd from '@/components/seo/JsonLd.astro';
+import { accommodationsApi } from '@/lib/api/endpoints';
+import { toAccommodationDetailPageProps } from '@/lib/api/transforms';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+const { slug } = Astro.params;
+
+if (!slug) return new Response(null, { status: 404 });
+
+const result = await accommodationsApi.getBySlug({ slug });
+if (!result.ok || !result.data) return new Response(null, { status: 404 });
+
+const accommodation = toAccommodationDetailPageProps({
+    item: result.data as Record<string, unknown>
+});
+
+// Build gallery items: featured image first, then gallery images, then videos
+function extractYoutubeId(url: string): string | null {
+    const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    return m?.[1] ?? null;
+}
+
+interface GalleryItem {
+    type: 'image' | 'video';
+    src: string;
+    thumb: string;
+    thumbFallback?: string;
+    alt: string;
+}
+
+const galleryItems: GalleryItem[] = [];
+
+// Featured image first
+if (accommodation.featuredImage && !accommodation.featuredImage.includes('placeholder')) {
+    galleryItems.push({ type: 'image', src: accommodation.featuredImage, thumb: accommodation.featuredImage, alt: accommodation.name });
+}
+
+// Gallery images (skip duplicate of featured)
+for (const url of accommodation.media.images) {
+    if (url !== accommodation.featuredImage) {
+        galleryItems.push({ type: 'image', src: url, thumb: url, alt: `${accommodation.name}` });
+    }
+}
+
+// Videos
+for (const url of accommodation.media.videos) {
+    const ytId = extractYoutubeId(url);
+    galleryItems.push({
+        type: 'video',
+        src: url,
+        thumb: ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : accommodation.featuredImage,
+        thumbFallback: ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : undefined,
+        alt: `${accommodation.name} - video`
+    });
+}
+
+const seoTitle = `${t('accommodations.detail.gallery.photosSubpage')} - ${accommodation.name} | Hospeda`;
+const backUrl = `/${locale}/alojamientos/${slug}/`;
+
+const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ImageGallery',
+    name: `${t('accommodations.detail.gallery.photosSubpage')} - ${accommodation.name}`,
+    url: Astro.url.href,
+    image: galleryItems.filter((i) => i.type === 'image').map((i) => i.src)
+};
+---
+
+<DetailLayout
+    locale={locale}
+    title={seoTitle}
+    description={accommodation.summary}
+    showBreadcrumbs={true}
+    showSidebar={false}
+>
+    <JsonLd slot="head-extra" data={jsonLd} />
+
+    <Breadcrumbs
+        slot="breadcrumbs"
+        locale={locale}
+        items={[
+            { label: t('accommodations.title'), path: 'alojamientos' },
+            { label: accommodation.name, path: `alojamientos/${slug}` },
+            { label: t('accommodations.detail.gallery.photosSubpage') }
+        ]}
+    />
+
+    <Fragment slot="page-header">
+        <h1 class="fotos__title">{t('accommodations.detail.gallery.photosSubpage')} - {accommodation.name}</h1>
+    </Fragment>
+
+    <div class="fotos">
+        <div class="fotos__back-row">
+            <a href={backUrl} class="fotos__back">
+                {t('accommodations.detail.gallery.backToAccommodation')}
+            </a>
+        </div>
+
+        <div class="fotos__masonry">
+            {galleryItems.map((item, i) => (
+                <div class="fotos__item">
+                    <a
+                        href={item.src}
+                        data-glightbox
+                        data-gallery="accommodation-gallery"
+                        aria-label={t('accommodations.detail.gallery.viewFullscreen', { n: i + 1 })}
+                        class="fotos__link"
+                    >
+                        <img
+                            src={item.thumb}
+                            alt={item.alt}
+                            loading="lazy"
+                            decoding="async"
+                            class="fotos__img"
+                            onerror={item.thumbFallback ? `this.src='${item.thumbFallback}'` : undefined}
+                        />
+                        {item.type === 'video' && (
+                            <span class="fotos__play" aria-hidden="true">&#9654;</span>
+                        )}
+                    </a>
+                </div>
+            ))}
+        </div>
+
+        <div class="fotos__footer">
+            <a href={backUrl} class="fotos__back fotos__back--footer">
+                {t('accommodations.detail.gallery.backToAccommodation')}
+            </a>
+        </div>
+    </div>
+</DetailLayout>
+
+<style>
+    .fotos__title {
+        font-family: var(--font-heading);
+        font-size: clamp(1.3rem, 3vw, 2rem);
+        font-weight: 700;
+        color: var(--foreground);
+        margin: 0;
+    }
+    .fotos__back-row {
+        margin-bottom: var(--space-5, 20px);
+    }
+    .fotos__back {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--primary);
+        text-decoration: none;
+    }
+    .fotos__back:hover {
+        text-decoration: underline;
+    }
+    .fotos__masonry {
+        columns: 3;
+        column-gap: var(--space-card-gap, 30px);
+    }
+    @media (max-width: 1024px) {
+        .fotos__masonry { columns: 2; }
+    }
+    @media (max-width: 768px) {
+        .fotos__masonry { columns: 1; }
+    }
+    .fotos__item {
+        display: inline-block;
+        width: 100%;
+        break-inside: avoid;
+        margin-bottom: var(--space-card-gap, 30px);
+    }
+    .fotos__link {
+        display: block;
+        position: relative;
+        border-radius: var(--radius-card, 24px);
+        overflow: hidden;
+    }
+    .fotos__img {
+        width: 100%;
+        height: auto;
+        display: block;
+        transition: transform var(--duration-normal, 0.4s) ease;
+    }
+    .fotos__link:hover .fotos__img {
+        transform: scale(1.04);
+    }
+    .fotos__play {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: oklch(0 0 0 / 0.35);
+        color: white;
+        font-size: 2.5rem;
+        pointer-events: none;
+    }
+    .fotos__footer {
+        display: flex;
+        justify-content: center;
+        margin-top: var(--space-6, 24px);
+        padding-top: var(--space-6, 24px);
+        border-top: 1px solid var(--border, oklch(0.9 0 0));
+    }
+    .fotos__back--footer {
+        padding: var(--space-2, 8px) var(--space-5, 20px);
+        border: 1px solid var(--border, oklch(0.8 0 0));
+        border-radius: var(--radius-button, 8px);
+        transition: all var(--duration-normal, 0.4s) ease;
+    }
+    .fotos__back--footer:hover {
+        background-color: var(--primary);
+        color: white;
+        border-color: var(--primary);
+        text-decoration: none;
+    }
+</style>
