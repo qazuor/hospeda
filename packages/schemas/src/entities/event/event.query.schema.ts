@@ -50,6 +50,8 @@ export const EventFiltersSchema = z.object({
     // Location filters
     locationId: z.string().uuid().optional(),
     organizerId: z.string().uuid().optional(),
+    /** Filter by destination UUID (via event location). */
+    destinationId: z.string().uuid().optional(),
     city: z.string().optional(),
     state: z.string().optional(),
     country: z.string().optional(),
@@ -120,6 +122,8 @@ export const EventSearchSchema = BaseSearchSchema.extend({
     // Location filters
     locationId: z.string().uuid().optional(),
     organizerId: z.string().uuid().optional(),
+    /** Filter by destination UUID (via event location). */
+    destinationId: z.string().uuid().optional(),
     city: z.string().optional(),
     state: z.string().optional(),
     country: z.string().optional(),

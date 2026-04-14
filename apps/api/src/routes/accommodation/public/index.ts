@@ -11,8 +11,12 @@ import { getStatsRoute } from './getStats';
 import { getSummaryRoute } from './getSummary';
 import { getTopRatedByDestinationRoute } from './getTopRatedByDestination';
 import { publicListAccommodationsRoute } from './list';
+import { publicGetSimilarRoute } from './similar';
 
 const app = createRouter();
+
+// GET /:id/similar - Similar accommodations (registered before :id catch-all)
+app.route('/', publicGetSimilarRoute);
 
 // GET / - List accommodations
 app.route('/', publicListAccommodationsRoute);
