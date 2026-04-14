@@ -399,6 +399,11 @@ export { WebhookIcon } from './icons/system/WebhookIcon';
 export { XCircleIcon } from './icons/system/XCircleIcon';
 
 // Export booking icons
+// Accommodation icons
+export { BathroomsIcon } from './icons/accommodation/BathroomsIcon';
+export { BedroomsIcon } from './icons/accommodation/BedroomsIcon';
+export { SmokingAllowedIcon } from './icons/accommodation/SmokingAllowedIcon';
+
 export { AvailableBookingIcon } from './icons/booking/AvailableBookingIcon';
 export { AvailableIcon } from './icons/booking/AvailableIcon';
 export { CancelledBookingIcon } from './icons/booking/CancelledBookingIcon';
