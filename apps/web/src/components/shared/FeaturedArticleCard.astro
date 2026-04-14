@@ -21,7 +21,7 @@ import {
 } from '@/lib/article-card-utils';
 import { Image } from 'astro:assets';
 import Badge from '@/components/shared/Badge.astro';
-import { getPostCategoryColor, getPostCategoryLabel, getPostCategoryEmoji } from '@/lib/colors';
+import { getPostCategoryColor, getPostCategoryLabel, getPostCategoryEmoji, getBadgeStatusColor } from '@/lib/colors';
 
 interface Props {
     /** Full article card data. */
@@ -34,6 +34,8 @@ interface Props {
 
 const { data, locale, isTrending = false } = Astro.props;
 const { t } = createTranslations(locale);
+const trendingColors = getBadgeStatusColor({ status: 'trending' });
+const promotedColors = getBadgeStatusColor({ status: 'promoted' });
 
 const articleUrl = buildUrl({ locale, path: `/publicaciones/${data.slug}/` });
 const categoryColor = getPostCategoryColor({ category: data.category });
@@ -99,6 +101,7 @@ const mutedColorScheme = {
                 <span
                     class="featured-card__overlay-badge featured-card__overlay-badge--trending"
                     aria-label={t('articles.trending', 'Trending')}
+                    style={`background-color: ${trendingColors.bg}; color: ${trendingColors.text};`}
                 >
                     🔥 {t('articles.trending', 'Trending')}
                 </span>
@@ -107,6 +110,7 @@ const mutedColorScheme = {
                 <span
                     class="featured-card__overlay-badge featured-card__overlay-badge--promoted"
                     aria-label={t('articles.promoted', 'Destacado')}
+                    style={`background-color: ${promotedColors.bg}; color: ${promotedColors.text};`}
                 >
                     {t('articles.promoted', 'Destacado')}
                 </span>
@@ -308,15 +312,11 @@ const mutedColorScheme = {
     .featured-card__overlay-badge--trending {
         top: 0.75rem;
         right: 0.75rem;
-        background-color: var(--brand-accent);
-        color: oklch(1 0 0);
     }
 
     .featured-card__overlay-badge--promoted {
         top: 0.75rem;
         left: 0.75rem;
-        background-color: var(--brand-primary);
-        color: oklch(1 0 0);
     }
 
     /* Content */

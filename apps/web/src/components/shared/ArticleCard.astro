@@ -20,7 +20,7 @@ import {
     formatReadingTime,
 } from '@/lib/article-card-utils';
 import Badge from '@/components/shared/Badge.astro';
-import { getPostCategoryColor, getPostCategoryLabel, getPostCategoryEmoji } from '@/lib/colors';
+import { getPostCategoryColor, getPostCategoryLabel, getPostCategoryEmoji, getBadgeStatusColor } from '@/lib/colors';
 
 interface Props {
     /** Full article card data. */
@@ -33,6 +33,8 @@ interface Props {
 
 const { data, locale, isTrending = false } = Astro.props;
 const { t } = createTranslations(locale);
+const trendingColors = getBadgeStatusColor({ status: 'trending' });
+const promotedColors = getBadgeStatusColor({ status: 'promoted' });
 
 const articleUrl = buildUrl({ locale, path: `/publicaciones/${data.slug}/` });
 const categoryColor = getPostCategoryColor({ category: data.category });
@@ -93,12 +95,20 @@ const mutedColorScheme = {
             />
         )}
         {isTrending && (
-            <span class="article-card__overlay-badge article-card__overlay-badge--trending" aria-label={t('articles.trending', 'Trending')}>
+            <span
+                class="article-card__overlay-badge article-card__overlay-badge--trending"
+                aria-label={t('articles.trending', 'Trending')}
+                style={`background-color: ${trendingColors.bg}; color: ${trendingColors.text};`}
+            >
                 🔥 {t('articles.trending', 'Trending')}
             </span>
         )}
         {data.isPromoted && (
-            <span class="article-card__overlay-badge article-card__overlay-badge--promoted" aria-label={t('articles.promoted', 'Destacado')}>
+            <span
+                class="article-card__overlay-badge article-card__overlay-badge--promoted"
+                aria-label={t('articles.promoted', 'Destacado')}
+                style={`background-color: ${promotedColors.bg}; color: ${promotedColors.text};`}
+            >
                 {t('articles.promoted', 'Destacado')}
             </span>
         )}
@@ -264,15 +274,11 @@ const mutedColorScheme = {
     .article-card__overlay-badge--trending {
         top: 0.625rem;
         right: 0.625rem;
-        background-color: var(--brand-accent);
-        color: oklch(1 0 0);
     }
 
     .article-card__overlay-badge--promoted {
         top: 0.625rem;
         left: 0.625rem;
-        background-color: var(--brand-primary);
-        color: oklch(1 0 0);
     }
 
     /* Content */
