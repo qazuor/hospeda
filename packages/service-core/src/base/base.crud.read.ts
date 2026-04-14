@@ -91,8 +91,12 @@ export abstract class BaseCrudRead<
                 );
 
                 const where = { [processed.field]: processed.value };
-                // biome-ignore lint/suspicious/noExplicitAny: The computed property is not fully recognized by TypeScript
-                const entity = await this.model.findOne(where as any);
+                const relations = this.getDefaultGetByIdRelations();
+                // biome-ignore lint/suspicious/noExplicitAny: computed property key is not recognized by TypeScript
+                const typedWhere = where as any;
+                const entity = relations
+                    ? await this.model.findOneWithRelations(typedWhere, relations, execCtx?.tx)
+                    : await this.model.findOne(typedWhere);
 
                 if (!entity) {
                     throw new ServiceError(
@@ -452,7 +456,7 @@ export abstract class BaseCrudRead<
     protected async _executeAdminSearch(
         params: AdminSearchExecuteParams
     ): Promise<PaginatedListOutput<TEntity>> {
-        const { where, entityFilters, pagination, sort, search, extraConditions } = params;
+        const { where, entityFilters, pagination, sort, search, extraConditions, ctx } = params;
 
         const mergedWhere: Record<string, unknown> = { ...where, ...entityFilters };
 
@@ -478,7 +482,8 @@ export abstract class BaseCrudRead<
                     sortBy: sort.sortBy,
                     sortOrder: sort.sortOrder
                 },
-                conditionsToPass
+                conditionsToPass,
+                ctx?.tx
             );
         }
 
@@ -490,7 +495,8 @@ export abstract class BaseCrudRead<
                 sortBy: sort.sortBy,
                 sortOrder: sort.sortOrder
             },
-            conditionsToPass
+            conditionsToPass,
+            ctx?.tx
         );
     }
 

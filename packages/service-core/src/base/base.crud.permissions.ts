@@ -57,6 +57,21 @@ export abstract class BaseCrudPermissions<
     protected abstract getDefaultListRelations(): import('@repo/schemas').ListRelationsConfig;
 
     /**
+     * Default relations configuration for single-entity fetch operations
+     * (getById, getBySlug, getByName).
+     *
+     * Defaults to the same relations as list operations for consistency.
+     * Concrete services can override to specify different relations for
+     * single-entity fetches (e.g., more detail for a detail view, or
+     * undefined to disable relation loading for performance).
+     *
+     * @returns Relations configuration object or undefined for no relations
+     */
+    protected getDefaultGetByIdRelations(): import('@repo/schemas').ListRelationsConfig {
+        return this.getDefaultListRelations();
+    }
+
+    /**
      * Returns column names to search against when the `search` query param is provided.
      * @returns Array of column names to apply ILIKE search on
      */
