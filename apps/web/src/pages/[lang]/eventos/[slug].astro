@@ -14,7 +14,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { formatDate, formatPrice } from '@/lib/format-utils';
-import { getEventCategoryColor } from '@/lib/colors';
+import { getEventCategoryColor, getBadgeStatusColor } from '@/lib/colors';
 import { Image } from 'astro:assets';
 import { LocationIcon, CalendarDotsIcon } from '@repo/icons';
 
@@ -47,6 +47,8 @@ const organizerObj = event.organizer as Record<string, unknown> | undefined;
 // EventStatus mapping
 const eventStatus = isCancelled ? 'EventCancelled' : (isActive && !isCancelled) ? 'EventScheduled' : 'EventScheduled';
 const categoryColors = getEventCategoryColor({ category: category.toLowerCase() });
+const pastColors = getBadgeStatusColor({ status: 'past' });
+const cancelledColors = getBadgeStatusColor({ status: 'cancelled' });
 
 const jsonLd = {
 	'@context': 'https://schema.org',
@@ -104,8 +106,18 @@ const jsonLd = {
 					{locationName ? `${locationName}, ${locationCity}` : locationCity}
 				</span>
 			)}
-			{isPast && <span class="event-detail__past-badge">{t('events.detail.pastEvent', 'Evento pasado')}</span>}
-			{isCancelled && <span class="event-detail__cancelled-badge">{t('events.detail.cancelled', 'Cancelado')}</span>}
+			{isPast && (
+				<span
+					class="event-detail__status-badge"
+					style={`background-color: ${pastColors.bg}; color: ${pastColors.text};`}
+				>{t('events.detail.pastEvent', 'Evento pasado')}</span>
+			)}
+			{isCancelled && (
+				<span
+					class="event-detail__status-badge"
+					style={`background-color: ${cancelledColors.bg}; color: ${cancelledColors.text};`}
+				>{t('events.detail.cancelled', 'Cancelado')}</span>
+			)}
 		</div>
 	</Fragment>
 
@@ -171,13 +183,11 @@ const jsonLd = {
 <style>
 	.event-detail__hero { position: relative; margin-bottom: var(--space-6); border-radius: var(--radius-card); overflow: hidden; }
 	.event-detail__hero-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
-	.event-detail__past-badge, .event-detail__cancelled-badge {
+	.event-detail__status-badge {
 		position: absolute; top: var(--space-4); left: var(--space-4);
 		padding: 0.375rem 0.75rem; border-radius: var(--radius-pill);
 		font-family: var(--font-sans); font-size: var(--text-body-sm); font-weight: 600;
 	}
-	.event-detail__past-badge { background-color: var(--muted); color: var(--muted-foreground); }
-	.event-detail__cancelled-badge { background-color: oklch(from var(--destructive, #ef4444) l c h / 0.15); color: var(--destructive, #ef4444); }
 
 	.event-detail__meta { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-3); }
 	.event-detail__category { padding: 0.25rem 0.75rem; border-radius: var(--radius-pill); font-family: var(--font-sans); font-size: var(--text-body-sm); font-weight: 600; }

@@ -309,7 +309,7 @@ const badgeBgSolid = categoryColor.bg.replace('/ 0.15)', '/ 0.85)');
       <div
         class="event-card-featured__badge"
         aria-hidden="true"
-        style={`background-color: ${badgeBgSolid}; color: white;`}
+        style={`background-color: ${badgeBgSolid}; color: var(--primary-foreground);`}
       >
         <span class="event-card-featured__badge-icon">
           {categoryIconName === 'BallroomIcon' && <BallroomIcon size={14} weight="fill" aria-hidden="true" />}
@@ -513,7 +513,7 @@ const badgeBgSolid = categoryColor.bg.replace('/ 0.15)', '/ 0.85)');
     padding: 0.5rem 0.875rem;
     border-radius: 10px;
     z-index: 1;
-    color: white;
+    color: var(--primary-foreground);
     min-width: 72px;
     text-align: center;
   }
