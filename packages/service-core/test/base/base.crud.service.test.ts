@@ -21,6 +21,7 @@ class MockModel {
     restore = vi.fn();
     hardDelete = vi.fn();
     findWithRelations = vi.fn();
+    findOneWithRelations = vi.fn();
     raw = vi.fn();
     getTable = vi.fn();
 }

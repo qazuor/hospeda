@@ -9,10 +9,12 @@ import type { BaseModel } from '@repo/db';
  * - Database/internal errors
  * - Lifecycle hook error propagation
  * - Normalizer usage
+ * - SPEC-066: getByField relation loading via getDefaultGetByIdRelations()
  *
  * All test data, comments, and documentation are in English, following project guidelines.
  */
 import { ServiceErrorCode } from '@repo/schemas';
+import type { ListRelationsConfig } from '@repo/schemas';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ServiceError } from '../../../src/types';
@@ -152,5 +154,177 @@ describe('BaseService: getById', () => {
         expect(asMock(localModelMock.findOne)).toHaveBeenCalledWith({
             'id-normalized': MOCK_ENTITY_ID
         });
+    });
+});
+
+describe('SPEC-066: getByField relation loading', () => {
+    /**
+     * Test suite verifying that getByField() (and its wrappers getById, getBySlug, getByName)
+     * correctly delegates to model.findOneWithRelations() or model.findOne() based on what
+     * getDefaultGetByIdRelations() returns.
+     *
+     * SPEC-066 added:
+     * - `getDefaultGetByIdRelations()` on BaseCrudPermissions (defaults to getDefaultListRelations())
+     * - Modified getByField() to branch on the return value of getDefaultGetByIdRelations()
+     */
+
+    it('should call findOneWithRelations when getDefaultGetByIdRelations returns a config', async () => {
+        // Arrange
+        const relations: ListRelationsConfig = { destination: true };
+        class ServiceWithRelations extends TestService {
+            protected override getDefaultListRelations(): ListRelationsConfig {
+                return relations;
+            }
+        }
+        const localModelMock: BaseModel<TestEntity> = createBaseModelMock<TestEntity>();
+        asMock(localModelMock.findOneWithRelations).mockResolvedValue(mockEntity);
+        const localService = createServiceTestInstance(ServiceWithRelations, localModelMock);
+
+        // Act
+        const result = await localService.getByField(mockActor, 'id', MOCK_ENTITY_ID);
+
+        // Assert
+        expect(asMock(localModelMock.findOneWithRelations)).toHaveBeenCalledWith(
+            { id: MOCK_ENTITY_ID },
+            relations,
+            undefined
+        );
+        expect(asMock(localModelMock.findOne)).not.toHaveBeenCalled();
+        expect(result.data).toEqual(mockEntity);
+        expect(result.error).toBeUndefined();
+    });
+
+    it('should call findOne and NOT findOneWithRelations when getDefaultGetByIdRelations returns undefined', async () => {
+        // Arrange
+        class ServiceWithNoRelations extends TestService {
+            protected override getDefaultListRelations(): ListRelationsConfig {
+                return undefined;
+            }
+
+            protected override getDefaultGetByIdRelations(): ListRelationsConfig {
+                return undefined;
+            }
+        }
+        const localModelMock: BaseModel<TestEntity> = createBaseModelMock<TestEntity>();
+        asMock(localModelMock.findOne).mockResolvedValue(mockEntity);
+        const localService = createServiceTestInstance(ServiceWithNoRelations, localModelMock);
+
+        // Act
+        const result = await localService.getByField(mockActor, 'id', MOCK_ENTITY_ID);
+
+        // Assert
+        expect(asMock(localModelMock.findOne)).toHaveBeenCalledWith({ id: MOCK_ENTITY_ID });
+        expect(asMock(localModelMock.findOneWithRelations)).not.toHaveBeenCalled();
+        expect(result.data).toEqual(mockEntity);
+        expect(result.error).toBeUndefined();
+    });
+
+    it('should return the same config from getDefaultGetByIdRelations as getDefaultListRelations by default', () => {
+        // Arrange
+        const relations: ListRelationsConfig = { destination: true };
+        class ServiceWithListRelations extends TestService {
+            protected override getDefaultListRelations(): ListRelationsConfig {
+                return relations;
+            }
+        }
+        const localModelMock: BaseModel<TestEntity> = createBaseModelMock<TestEntity>();
+        const localService = createServiceTestInstance(ServiceWithListRelations, localModelMock);
+
+        // Act — access protected method via cast
+        const byId = (
+            localService as unknown as {
+                getDefaultGetByIdRelations: () => ListRelationsConfig;
+                getDefaultListRelations: () => ListRelationsConfig;
+            }
+        ).getDefaultGetByIdRelations();
+        const list = (
+            localService as unknown as {
+                getDefaultGetByIdRelations: () => ListRelationsConfig;
+                getDefaultListRelations: () => ListRelationsConfig;
+            }
+        ).getDefaultListRelations();
+
+        // Assert
+        expect(byId).toBe(list);
+        expect(byId).toEqual(relations);
+    });
+
+    it('should use the custom getDefaultGetByIdRelations override when provided', async () => {
+        // Arrange
+        const listRelations: ListRelationsConfig = { destination: true };
+        const byIdRelations: ListRelationsConfig = { author: true };
+        class ServiceWithCustomByIdRelations extends TestService {
+            protected override getDefaultListRelations(): ListRelationsConfig {
+                return listRelations;
+            }
+
+            protected override getDefaultGetByIdRelations(): ListRelationsConfig {
+                return byIdRelations;
+            }
+        }
+        const localModelMock: BaseModel<TestEntity> = createBaseModelMock<TestEntity>();
+        asMock(localModelMock.findOneWithRelations).mockResolvedValue(mockEntity);
+        const localService = createServiceTestInstance(
+            ServiceWithCustomByIdRelations,
+            localModelMock
+        );
+
+        // Act
+        await localService.getByField(mockActor, 'id', MOCK_ENTITY_ID);
+
+        // Assert — byIdRelations, NOT listRelations, must be forwarded
+        expect(asMock(localModelMock.findOneWithRelations)).toHaveBeenCalledWith(
+            { id: MOCK_ENTITY_ID },
+            byIdRelations,
+            undefined
+        );
+    });
+
+    it('should forward nested relation configs to findOneWithRelations', async () => {
+        // Arrange
+        const nestedRelations: ListRelationsConfig = { sponsorship: { sponsor: true } };
+        class ServiceWithNestedRelations extends TestService {
+            protected override getDefaultListRelations(): ListRelationsConfig {
+                return nestedRelations;
+            }
+        }
+        const localModelMock: BaseModel<TestEntity> = createBaseModelMock<TestEntity>();
+        asMock(localModelMock.findOneWithRelations).mockResolvedValue(mockEntity);
+        const localService = createServiceTestInstance(ServiceWithNestedRelations, localModelMock);
+
+        // Act
+        await localService.getByField(mockActor, 'id', MOCK_ENTITY_ID);
+
+        // Assert
+        expect(asMock(localModelMock.findOneWithRelations)).toHaveBeenCalledWith(
+            { id: MOCK_ENTITY_ID },
+            nestedRelations,
+            undefined
+        );
+    });
+
+    it('should trigger findOneWithRelations when called via getBySlug', async () => {
+        // Arrange
+        const relations: ListRelationsConfig = { destination: true };
+        class ServiceWithRelations extends TestService {
+            protected override getDefaultListRelations(): ListRelationsConfig {
+                return relations;
+            }
+        }
+        const localModelMock: BaseModel<TestEntity> = createBaseModelMock<TestEntity>();
+        asMock(localModelMock.findOneWithRelations).mockResolvedValue(mockEntity);
+        const localService = createServiceTestInstance(ServiceWithRelations, localModelMock);
+
+        // Act
+        const result = await localService.getBySlug(mockActor, 'test-slug');
+
+        // Assert
+        expect(asMock(localModelMock.findOneWithRelations)).toHaveBeenCalledWith(
+            { slug: 'test-slug' },
+            relations,
+            undefined
+        );
+        expect(asMock(localModelMock.findOne)).not.toHaveBeenCalled();
+        expect(result.data).toEqual(mockEntity);
     });
 });

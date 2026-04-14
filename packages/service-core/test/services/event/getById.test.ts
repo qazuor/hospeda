@@ -32,6 +32,7 @@ describe('EventService.getById', () => {
     it('should return a public event (success)', async () => {
         const publicEvent = createMockEvent({ id: eventId, visibility: VisibilityEnum.PUBLIC });
         (modelMock.findOne as Mock).mockResolvedValue(publicEvent);
+        (modelMock.findOneWithRelations as Mock).mockResolvedValue(publicEvent);
         const result = await service.getById(actor, eventId);
         expectSuccess(result);
         expect(result.data).toMatchObject(publicEvent);
@@ -40,6 +41,7 @@ describe('EventService.getById', () => {
     it('should return a private event if actor has EVENT_VIEW_PRIVATE', async () => {
         const privateEvent = createMockEvent({ id: eventId, visibility: VisibilityEnum.PRIVATE });
         (modelMock.findOne as Mock).mockResolvedValue(privateEvent);
+        (modelMock.findOneWithRelations as Mock).mockResolvedValue(privateEvent);
         const result = await service.getById(actorWithPrivate, eventId);
         expectSuccess(result);
         expect(result.data).toMatchObject(privateEvent);
@@ -48,18 +50,21 @@ describe('EventService.getById', () => {
     it('should return FORBIDDEN if actor lacks permission for private event', async () => {
         const privateEvent = createMockEvent({ id: eventId, visibility: VisibilityEnum.PRIVATE });
         (modelMock.findOne as Mock).mockResolvedValue(privateEvent);
+        (modelMock.findOneWithRelations as Mock).mockResolvedValue(privateEvent);
         const result = await service.getById(actor, eventId);
         expectForbiddenError(result);
     });
 
     it('should return NOT_FOUND if event does not exist', async () => {
         (modelMock.findOne as Mock).mockResolvedValue(null);
+        (modelMock.findOneWithRelations as Mock).mockResolvedValue(null);
         const result = await service.getById(actor, eventId);
         expectNotFoundError(result);
     });
 
     it('should return INTERNAL_ERROR if model.findOne throws', async () => {
         (modelMock.findOne as Mock).mockRejectedValue(new Error('DB error'));
+        (modelMock.findOneWithRelations as Mock).mockRejectedValue(new Error('DB error'));
         const result = await service.getById(actor, eventId);
         expectInternalError(result);
     });
@@ -67,6 +72,7 @@ describe('EventService.getById', () => {
     it('should return INTERNAL_ERROR if _afterGetByField throws', async () => {
         const publicEvent = createMockEvent({ id: eventId, visibility: VisibilityEnum.PUBLIC });
         (modelMock.findOne as Mock).mockResolvedValue(publicEvent);
+        (modelMock.findOneWithRelations as Mock).mockResolvedValue(publicEvent);
         vi.spyOn(
             service as unknown as { _afterGetByField: () => void },
             '_afterGetByField'

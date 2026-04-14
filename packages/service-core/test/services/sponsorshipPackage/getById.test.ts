@@ -18,7 +18,7 @@ describe('SponsorshipPackageService.getById', () => {
     const existing = { ...createMockSponsorshipPackage({ id }) };
 
     beforeEach(() => {
-        modelMock = createModelMock(['findOne']);
+        modelMock = createModelMock(['findOne', 'findOneWithRelations']);
         loggerMock = createLoggerMock();
         service = new SponsorshipPackageService({
             logger: loggerMock,
@@ -32,16 +32,26 @@ describe('SponsorshipPackageService.getById', () => {
         modelMock.findOne.mockImplementation((where: Record<string, unknown>) =>
             where && where.id === id ? existing : null
         );
+        modelMock.findOneWithRelations.mockImplementation((where: Record<string, unknown>) =>
+            where && where.id === id ? existing : null
+        );
         const result = await service.getById(actor, id);
         expect(result.data).toBeDefined();
         expect(result.data?.name).toEqual(existing.name);
         expect(result.error).toBeUndefined();
-        expect(modelMock.findOne).toHaveBeenCalledWith({ id });
+        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
+            { id },
+            expect.any(Object),
+            undefined
+        );
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {
         actor = createActor({ permissions: [] });
         modelMock.findOne.mockImplementation((where: Record<string, unknown>) =>
+            where && where.id === id ? existing : null
+        );
+        modelMock.findOneWithRelations.mockImplementation((where: Record<string, unknown>) =>
             where && where.id === id ? existing : null
         );
         const result = await service.getById(actor, id);
@@ -52,6 +62,7 @@ describe('SponsorshipPackageService.getById', () => {
 
     it('should return NOT_FOUND if entity does not exist', async () => {
         modelMock.findOne.mockResolvedValue(null);
+        modelMock.findOneWithRelations.mockResolvedValue(null);
         const result = await service.getById(actor, id);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
@@ -60,6 +71,7 @@ describe('SponsorshipPackageService.getById', () => {
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         modelMock.findOne.mockRejectedValue(new Error('DB error'));
+        modelMock.findOneWithRelations.mockRejectedValue(new Error('DB error'));
         const result = await service.getById(actor, id);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);

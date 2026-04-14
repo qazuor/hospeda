@@ -43,6 +43,9 @@ describe('PostService.getById', () => {
         (modelMock.findOne as Mock).mockImplementation((where) =>
             String(where.id) === String(post.id) ? post : null
         );
+        (modelMock.findOneWithRelations as Mock).mockImplementation((where) =>
+            String(where.id) === String(post.id) ? post : null
+        );
         const result = await service.getById(actor, post.id);
         assertions.expectSuccess(result);
         expect(result.data?.id).toBe(post.id);
@@ -57,18 +60,23 @@ describe('PostService.getById', () => {
         (modelMock.findOne as Mock).mockImplementation((where) =>
             String(where.id) === String(privatePost.id) ? privatePost : null
         );
+        (modelMock.findOneWithRelations as Mock).mockImplementation((where) =>
+            String(where.id) === String(privatePost.id) ? privatePost : null
+        );
         const result = await service.getById(forbiddenActor, privatePost.id);
         expectForbiddenError(result);
     });
 
     it('should return NOT_FOUND if post does not exist', async () => {
         (modelMock.findOne as Mock).mockResolvedValue(null);
+        (modelMock.findOneWithRelations as Mock).mockResolvedValue(null);
         const result = await service.getById(actor, getMockId('post'));
         expectNotFoundError(result);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(modelMock.findOne).mockRejectedValue(new Error('DB error'));
+        asMock(modelMock.findOneWithRelations).mockRejectedValue(new Error('DB error'));
         const result = await service.getById(actor, post.id);
         expectInternalError(result);
     });

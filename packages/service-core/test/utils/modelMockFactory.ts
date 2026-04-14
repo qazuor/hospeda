@@ -24,6 +24,7 @@ export type StandardModelMock = {
     findAll: Mock;
     findAllWithRelations: Mock;
     findWithRelations: Mock;
+    findOneWithRelations: Mock;
     getTableName: Mock;
     table: string;
     entityName: string;
@@ -55,6 +56,7 @@ export function createModelMock(methods: string[] = []): StandardModelMock {
         findAll: vi.fn(),
         findAllWithRelations: vi.fn(),
         findWithRelations: vi.fn(),
+        findOneWithRelations: vi.fn(),
         getTableName: vi.fn().mockReturnValue('mock_table'),
         table: 'mock_table',
         entityName: 'mock_entity',
@@ -157,6 +159,7 @@ export class MockBaseModel<T extends Record<string, unknown>> extends BaseModel<
     findAll = vi.fn();
     findAllWithRelations = vi.fn();
     findWithRelations = vi.fn();
+    findOneWithRelations = vi.fn();
     raw = vi.fn();
     getTable = vi.fn();
     protected override getClient = vi.fn();

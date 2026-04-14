@@ -57,6 +57,7 @@ describe('AccommodationService.getSummary', () => {
 
     it('should return summary for an accommodation', async () => {
         asMock(modelMock.findOne).mockResolvedValue(accommodation);
+        asMock(modelMock.findOneWithRelations).mockResolvedValue(accommodation);
         vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
         const result = await service.getSummary(actor, input);
         expectSuccess(result);
@@ -75,45 +76,69 @@ describe('AccommodationService.getSummary', () => {
                 reviewsCount: 0
             }
         });
-        expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id });
+        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
+            { id: accommodation.id },
+            expect.any(Object),
+            undefined
+        );
         expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodation);
     });
 
     it('should return NOT_FOUND if accommodation does not exist', async () => {
         asMock(modelMock.findOne).mockResolvedValue(null);
+        asMock(modelMock.findOneWithRelations).mockResolvedValue(null);
         const result = await service.getSummary(actor, input);
         expectNotFoundError(result);
-        expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id });
+        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
+            { id: accommodation.id },
+            expect.any(Object),
+            undefined
+        );
     });
 
     it('should return NOT_FOUND if accommodation has no location', async () => {
         const noLocation = { ...accommodation, location: undefined };
         asMock(modelMock.findOne).mockResolvedValue(noLocation);
+        asMock(modelMock.findOneWithRelations).mockResolvedValue(noLocation);
         vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
         const result = await service.getSummary(actor, input);
         // When no location, the method logs a warning and returns null in data
         expect(result.data).toEqual({ accommodation: null });
         expect(result.error).toBeUndefined();
-        expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id });
+        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
+            { id: accommodation.id },
+            expect.any(Object),
+            undefined
+        );
         expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, noLocation);
     });
 
     it('should return FORBIDDEN if actor cannot view', async () => {
         asMock(modelMock.findOne).mockResolvedValue(accommodation);
+        asMock(modelMock.findOneWithRelations).mockResolvedValue(accommodation);
         vi.spyOn(permissionHelpers, 'checkCanView').mockImplementation(() => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'forbidden');
         });
         const result = await service.getSummary(actor, input);
         expectForbiddenError(result);
         expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodation);
-        expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id });
+        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
+            { id: accommodation.id },
+            expect.any(Object),
+            undefined
+        );
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(modelMock.findOne).mockRejectedValue(new Error('DB error'));
+        asMock(modelMock.findOneWithRelations).mockRejectedValue(new Error('DB error'));
         const result = await service.getSummary(actor, input);
         expectInternalError(result);
-        expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id });
+        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
+            { id: accommodation.id },
+            expect.any(Object),
+            undefined
+        );
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {

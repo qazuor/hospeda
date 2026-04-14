@@ -14,7 +14,7 @@ describe('SponsorshipService.getById', () => {
     const id = getMockSponsorshipId('mock-id');
 
     beforeEach(() => {
-        modelMock = createModelMock(['findOne']);
+        modelMock = createModelMock(['findOne', 'findOneWithRelations']);
         loggerMock = createLoggerMock();
         service = new SponsorshipService({
             logger: loggerMock,
@@ -30,11 +30,18 @@ describe('SponsorshipService.getById', () => {
         modelMock.findOne.mockImplementation((where: Record<string, unknown>) =>
             where && where.id === id ? existing : null
         );
+        modelMock.findOneWithRelations.mockImplementation((where: Record<string, unknown>) =>
+            where && where.id === id ? existing : null
+        );
         const result = await service.getById(actor, id);
         expect(result.data).toBeDefined();
         expect(result.data?.slug).toEqual(existing.slug);
         expect(result.error).toBeUndefined();
-        expect(modelMock.findOne).toHaveBeenCalledWith({ id });
+        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
+            { id },
+            expect.any(Object),
+            undefined
+        );
     });
 
     it('should get a sponsorship by id when actor has VIEW_OWN and is the sponsor', async () => {
@@ -42,6 +49,9 @@ describe('SponsorshipService.getById', () => {
         const ownActor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_VIEW_OWN] });
         const existing = createMockSponsorship({ id, sponsorUserId: ownActor.id });
         modelMock.findOne.mockImplementation((where: Record<string, unknown>) =>
+            where && where.id === id ? existing : null
+        );
+        modelMock.findOneWithRelations.mockImplementation((where: Record<string, unknown>) =>
             where && where.id === id ? existing : null
         );
         const result = await service.getById(ownActor, id);
@@ -56,6 +66,9 @@ describe('SponsorshipService.getById', () => {
         modelMock.findOne.mockImplementation((where: Record<string, unknown>) =>
             where && where.id === id ? existing : null
         );
+        modelMock.findOneWithRelations.mockImplementation((where: Record<string, unknown>) =>
+            where && where.id === id ? existing : null
+        );
         const result = await service.getById(otherActor, id);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
@@ -68,6 +81,9 @@ describe('SponsorshipService.getById', () => {
         modelMock.findOne.mockImplementation((where: Record<string, unknown>) =>
             where && where.id === id ? existing : null
         );
+        modelMock.findOneWithRelations.mockImplementation((where: Record<string, unknown>) =>
+            where && where.id === id ? existing : null
+        );
         const result = await service.getById(actor, id);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
@@ -76,6 +92,7 @@ describe('SponsorshipService.getById', () => {
 
     it('should return NOT_FOUND if entity does not exist', async () => {
         modelMock.findOne.mockResolvedValue(null);
+        modelMock.findOneWithRelations.mockResolvedValue(null);
         const result = await service.getById(actor, id);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
@@ -84,6 +101,7 @@ describe('SponsorshipService.getById', () => {
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         modelMock.findOne.mockRejectedValue(new Error('DB error'));
+        modelMock.findOneWithRelations.mockRejectedValue(new Error('DB error'));
         const result = await service.getById(actor, id);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);

@@ -41,6 +41,7 @@ describe('PostService.getSummary', () => {
 
     it('should return summary for a post', async () => {
         asMock(modelMock.findOne).mockResolvedValue(post);
+        asMock(modelMock.findOneWithRelations).mockResolvedValue(post);
         const result = await service.getSummary(actor, input);
         assertions.expectSuccess(result);
         expect(result.data).toEqual({
@@ -56,31 +57,50 @@ describe('PostService.getSummary', () => {
             authorId: post.authorId,
             summary: post.summary
         });
-        expect(modelMock.findOne).toHaveBeenCalledWith({ id: post.id });
+        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
+            { id: post.id },
+            expect.any(Object),
+            undefined
+        );
     });
 
     it('should return NOT_FOUND if post does not exist', async () => {
         asMock(modelMock.findOne).mockResolvedValue(null);
+        asMock(modelMock.findOneWithRelations).mockResolvedValue(null);
         const result = await service.getSummary(actor, input);
         assertions.expectNotFoundError(result);
-        expect(modelMock.findOne).toHaveBeenCalledWith({ id: post.id });
+        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
+            { id: post.id },
+            expect.any(Object),
+            undefined
+        );
     });
 
     it('should return FORBIDDEN if actor cannot view', async () => {
         asMock(modelMock.findOne).mockResolvedValue(post);
+        asMock(modelMock.findOneWithRelations).mockResolvedValue(post);
         vi.spyOn(Object.getPrototypeOf(service), '_canView').mockImplementation(() => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'forbidden');
         });
         const result = await service.getSummary(actor, input);
         expectForbiddenError(result);
-        expect(modelMock.findOne).toHaveBeenCalledWith({ id: post.id });
+        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
+            { id: post.id },
+            expect.any(Object),
+            undefined
+        );
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(modelMock.findOne).mockRejectedValue(new Error('DB error'));
+        asMock(modelMock.findOneWithRelations).mockRejectedValue(new Error('DB error'));
         const result = await service.getSummary(actor, input);
         expectInternalError(result);
-        expect(modelMock.findOne).toHaveBeenCalledWith({ id: post.id });
+        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
+            { id: post.id },
+            expect.any(Object),
+            undefined
+        );
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
