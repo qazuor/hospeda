@@ -22,10 +22,10 @@ import {
     gte,
     isNotNull,
     isNull,
-    lte,
-    withTransaction
+    lte
 } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
+import { withServiceTransaction } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import {
@@ -224,36 +224,43 @@ export const retryDeadLetterRoute = createAdminRoute({
             // Both writes must succeed together: inserting the event without resolving the dead
             // letter entry would allow duplicate retries; resolving without inserting would
             // silently discard the retry request.
-            const newEvent = await withTransaction(async (tx) => {
-                const newEventResult = await tx
-                    .insert(billingWebhookEvents)
-                    .values({
-                        providerEventId: deadLetterEntry.providerEventId,
-                        provider: deadLetterEntry.provider,
-                        type: deadLetterEntry.type,
-                        status: 'pending',
-                        payload: deadLetterEntry.payload,
-                        attempts: 0,
-                        livemode: deadLetterEntry.livemode
-                    })
-                    .returning({
-                        id: billingWebhookEvents.id
-                    });
+            const newEvent = await withServiceTransaction(
+                async (ctx) => {
+                    // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+                    const tx = ctx.tx!;
 
-                const inserted = newEventResult[0];
-                if (!inserted) {
-                    throw new HTTPException(500, {
-                        message: 'Failed to create new webhook event'
-                    });
-                }
+                    const newEventResult = await tx
+                        .insert(billingWebhookEvents)
+                        .values({
+                            providerEventId: deadLetterEntry.providerEventId,
+                            provider: deadLetterEntry.provider,
+                            type: deadLetterEntry.type,
+                            status: 'pending',
+                            payload: deadLetterEntry.payload,
+                            attempts: 0,
+                            livemode: deadLetterEntry.livemode
+                        })
+                        .returning({
+                            id: billingWebhookEvents.id
+                        });
 
-                await tx
-                    .update(billingWebhookDeadLetter)
-                    .set({ resolvedAt: new Date() })
-                    .where(eq(billingWebhookDeadLetter.id, deadLetterId));
+                    const inserted = newEventResult[0];
+                    if (!inserted) {
+                        throw new HTTPException(500, {
+                            message: 'Failed to create new webhook event'
+                        });
+                    }
 
-                return inserted;
-            });
+                    await tx
+                        .update(billingWebhookDeadLetter)
+                        .set({ resolvedAt: new Date() })
+                        .where(eq(billingWebhookDeadLetter.id, deadLetterId));
+
+                    return inserted;
+                },
+                undefined,
+                { timeoutMs: 5000 }
+            );
 
             apiLogger.info(
                 {

@@ -17,6 +17,7 @@
 
 import { BillingIntervalEnum } from '@repo/schemas';
 import { PlanChangeRequestSchema, PlanChangeResponseSchema } from '@repo/schemas';
+import { withServiceTransaction } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { clearEntitlementCache } from '../../middlewares/entitlement';
@@ -222,16 +223,22 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         // 11. Recalculate addon limits for the new plan (Flow B — AC-3.8).
         //     This is the PRIMARY trigger. Runs after QZPay confirms the plan change.
         //     Failures are logged and non-blocking: the plan change already succeeded.
+        //
+        //     NOTE: billing.subscriptions.changePlan() (step 10) is an external API call
+        //     to QZPay and cannot be rolled back via SQL transaction. Only the local DB
+        //     operations (addon recalculation) are wrapped in withServiceTransaction so
+        //     partial local writes are atomically rolled back on failure.
         try {
-            const { getDb } = await import('@repo/db/client');
-            const db = getDb();
-
-            await handlePlanChangeAddonRecalculation({
-                customerId: billingCustomerId,
-                oldPlanId,
-                newPlanId,
-                billing,
-                db
+            await withServiceTransaction(async (ctx) => {
+                await handlePlanChangeAddonRecalculation({
+                    customerId: billingCustomerId,
+                    oldPlanId,
+                    newPlanId,
+                    billing,
+                    // ctx.tx is always defined inside withServiceTransaction
+                    // biome-ignore lint/style/noNonNullAssertion: tx is guaranteed by withServiceTransaction
+                    db: ctx.tx!
+                });
             });
         } catch (recalcError) {
             const recalcMessage =

@@ -7,8 +7,6 @@
  */
 export {
     applyPromoCode,
-    incrementPromoCodeUsage,
-    recordPromoCodeUsage,
     tryRedeemAtomically,
     type RecordUsageInput
 } from '@repo/service-core';

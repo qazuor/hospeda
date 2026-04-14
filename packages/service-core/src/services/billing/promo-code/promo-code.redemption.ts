@@ -134,6 +134,9 @@ export async function tryRedeemAtomically(promoCodeId: string): Promise<{
  * @param id - Promo code database ID
  * @returns Success or error
  *
+ * @internal Only callable from within the promo-code module via PromoCodeService wrappers.
+ * External consumers should use PromoCodeService.incrementUsage() instead.
+ *
  * @example
  * ```ts
  * await incrementPromoCodeUsage('550e8400-e29b-41d4-a716-446655440000');
@@ -176,6 +179,9 @@ export async function incrementPromoCodeUsage(id: string) {
  *
  * @param data - Usage record data (includes optional livemode flag)
  * @returns Created usage record or error
+ *
+ * @internal Only callable from within the promo-code module via PromoCodeService wrappers.
+ * External consumers should use PromoCodeService.recordUsage() instead.
  *
  * @example
  * ```ts

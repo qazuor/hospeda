@@ -22,6 +22,7 @@ import {
     PurchaseAddonSchema,
     UserAddonResponseSchema
 } from '@repo/schemas';
+import { withServiceTransaction } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getActorFromContext } from '../../middlewares/actor';
@@ -307,63 +308,66 @@ export const cancelAddonRoute = createProtectedRoute({
         // row internally. Consider extending the service to accept a pre-fetched purchase to
         // eliminate the redundant DB round-trip. Low priority until profiling confirms it matters.
 
-        // Verify addon ownership with a direct atomic query instead of fetching all user addons
-        const { getDb } = await import('@repo/db/client');
+        // Wrap ownership check + cancel in a single transaction so the ownership
+        // row cannot be modified between the SELECT and the cancel operation.
         const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
         const { and, eq, isNull } = await import('drizzle-orm');
-        const db = getDb();
 
-        const [ownedAddon] = await db
-            .select({ id: billingAddonPurchases.id })
-            .from(billingAddonPurchases)
-            .where(
-                and(
-                    eq(billingAddonPurchases.id, params.id as string),
-                    eq(billingAddonPurchases.customerId, billingCustomerId),
-                    eq(billingAddonPurchases.status, 'active'),
-                    isNull(billingAddonPurchases.deletedAt)
+        await withServiceTransaction(async (ctx) => {
+            // Verify addon ownership using the transaction client
+            // biome-ignore lint/style/noNonNullAssertion: tx is guaranteed by withServiceTransaction
+            const [ownedAddon] = await ctx
+                .tx!.select({ id: billingAddonPurchases.id })
+                .from(billingAddonPurchases)
+                .where(
+                    and(
+                        eq(billingAddonPurchases.id, params.id as string),
+                        eq(billingAddonPurchases.customerId, billingCustomerId),
+                        eq(billingAddonPurchases.status, 'active'),
+                        isNull(billingAddonPurchases.deletedAt)
+                    )
                 )
-            )
-            .limit(1);
+                .limit(1);
 
-        if (!ownedAddon) {
-            throw new HTTPException(404, {
-                message: 'Add-on not found or does not belong to your account.'
-            });
-        }
+            if (!ownedAddon) {
+                throw new HTTPException(404, {
+                    message: 'Add-on not found or does not belong to your account.'
+                });
+            }
 
-        apiLogger.info(
-            {
-                userId: actor.id,
+            apiLogger.info(
+                {
+                    userId: actor.id,
+                    customerId: billingCustomerId,
+                    addonId: params.id,
+                    reason: body.reason
+                },
+                'Canceling add-on'
+            );
+
+            const result = await service.cancelAddon({
                 customerId: billingCustomerId,
-                addonId: params.id,
-                reason: body.reason
-            },
-            'Canceling add-on'
-        );
-
-        const result = await service.cancelAddon({
-            customerId: billingCustomerId,
-            purchaseId: ownedAddon.id,
-            reason: body.reason as string | undefined,
-            userId: actor.id
-        });
-
-        if (!result.success) {
-            const statusMap: Record<string, number> = {
-                NOT_FOUND: 404,
-                VALIDATION_ERROR: 400,
-                PERMISSION_DENIED: 403,
-                NO_SUBSCRIPTION: 422,
-                NO_ACTIVE_SUBSCRIPTION: 422,
-                SERVICE_UNAVAILABLE: 503,
-                INTERNAL_ERROR: 500
-            };
-            const status = statusMap[result.error?.code ?? ''] ?? 500;
-            throw new HTTPException(status as 400 | 403 | 404 | 422 | 500 | 503, {
-                message: result.error?.message ?? 'Unknown error'
+                purchaseId: ownedAddon.id,
+                reason: body.reason as string | undefined,
+                userId: actor.id
             });
-        }
+
+            if (!result.success) {
+                const statusMap: Record<string, number> = {
+                    NOT_FOUND: 404,
+                    VALIDATION_ERROR: 400,
+                    PERMISSION_DENIED: 403,
+                    NO_SUBSCRIPTION: 422,
+                    NO_ACTIVE_SUBSCRIPTION: 422,
+                    SERVICE_UNAVAILABLE: 503,
+                    INTERNAL_ERROR: 500
+                };
+                const status = statusMap[result.error?.code ?? ''] ?? 500;
+                throw new HTTPException(status as 400 | 403 | 404 | 422 | 500 | 503, {
+                    message: result.error?.message ?? 'Unknown error'
+                });
+            }
+        });
 
         // Clear entitlement cache so the cancellation is reflected immediately
         clearEntitlementCache(billingCustomerId);

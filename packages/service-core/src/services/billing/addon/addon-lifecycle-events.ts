@@ -30,6 +30,9 @@ const lifecycleMetrics = {
     cacheHitRate: { hits: 0, misses: 0 }
 };
 
+/** Maximum number of entries kept in duration-tracking arrays to prevent unbounded memory growth. */
+const METRICS_BUFFER_CAP = 1000;
+
 /**
  * Returns a shallow snapshot of the current addon lifecycle metrics.
  *
@@ -316,6 +319,9 @@ export async function emitLifecycleEvent(event: AddonLifecycleEvent): Promise<vo
                 typeof metadata?.durationMs === 'number' ? metadata.durationMs : null;
             if (durationMs !== null) {
                 lifecycleMetrics.revocationDurationMs.push(durationMs);
+                if (lifecycleMetrics.revocationDurationMs.length > METRICS_BUFFER_CAP) {
+                    lifecycleMetrics.revocationDurationMs.shift();
+                }
             }
             lifecycleMetrics.revocationOutcomes.success += 1;
             break;
@@ -329,6 +335,9 @@ export async function emitLifecycleEvent(event: AddonLifecycleEvent): Promise<vo
                 typeof metadata?.durationMs === 'number' ? metadata.durationMs : null;
             if (durationMs !== null) {
                 lifecycleMetrics.recalculationDurationMs.push(durationMs);
+                if (lifecycleMetrics.recalculationDurationMs.length > METRICS_BUFFER_CAP) {
+                    lifecycleMetrics.recalculationDurationMs.shift();
+                }
             }
             break;
         }

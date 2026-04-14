@@ -3,8 +3,9 @@
  * Allows authenticated users to change their password.
  * Also clears the passwordChangeRequired flag if set.
  */
-import { UserModel, accounts, getDb, withTransaction } from '@repo/db';
+import { UserModel, accounts, getDb } from '@repo/db';
 import { ChangePasswordInputSchema, ChangePasswordResponseSchema } from '@repo/schemas';
+import { withServiceTransaction } from '@repo/service-core';
 import { compare, hash } from 'bcryptjs';
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
@@ -55,7 +56,10 @@ export const changePasswordRoute = createSimpleRoute({
         // 4 & 5. Atomically update accounts + clear passwordChangeRequired flag.
         // Both writes must succeed together: a partial update (password changed but
         // flag not cleared, or vice-versa) would leave the user in an inconsistent state.
-        await withTransaction(async (tx) => {
+        await withServiceTransaction(async (ctx) => {
+            // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+            const tx = ctx.tx!;
+
             // 4. Update password in accounts table
             await tx
                 .update(accounts)
