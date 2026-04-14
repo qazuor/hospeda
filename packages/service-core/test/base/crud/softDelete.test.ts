@@ -49,7 +49,10 @@ describe('BaseService: softDelete', () => {
         asMock(modelMock.softDelete).mockResolvedValue(1);
         const result = await service.softDelete(mockAdminActor, MOCK_ENTITY_ID);
         expect(result.data?.count).toBe(1);
-        expect(asMock(modelMock.softDelete)).toHaveBeenCalledWith({ id: MOCK_ENTITY_ID });
+        expect(asMock(modelMock.softDelete)).toHaveBeenCalledWith(
+            { id: MOCK_ENTITY_ID },
+            undefined
+        );
     });
 
     it('should return a count of 0 if no rows were affected', async () => {

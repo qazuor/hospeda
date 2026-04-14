@@ -495,15 +495,18 @@ export abstract class BaseCrudWrite<
      * avoiding unnecessary database writes.
      *
      * @param input - ServiceInput containing `id` and `isFeatured` flag.
+     * @param ctx - Optional service context. When provided with a transaction, the operation participates in the existing transaction.
      * @returns `ServiceOutput<{ updated: boolean }>` indicating whether the entity was updated.
      */
     public async setFeaturedStatus(
-        input: ServiceInput<{ id: string; isFeatured: boolean }>
+        input: ServiceInput<{ id: string; isFeatured: boolean }>,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ updated: boolean }>> {
         return this.runWithLoggingAndValidation({
             methodName: `setFeaturedStatus(id=${input.id}, isFeatured=${input.isFeatured})`,
             input,
             schema: z.object({ id: z.string(), isFeatured: z.boolean() }),
+            ctx,
             execute: async (validData, actor) => {
                 const entity = await this._getAndValidateEntity(
                     this.model,
@@ -517,9 +520,13 @@ export abstract class BaseCrudWrite<
                 }
                 const isFeatured = (entity as { isFeatured: boolean }).isFeatured;
                 if (isFeatured === validData.isFeatured) return { updated: false };
-                await this.model.update({ id: validData.id }, {
-                    isFeatured: validData.isFeatured
-                } as unknown as Partial<TEntity>);
+                await this.model.update(
+                    { id: validData.id },
+                    {
+                        isFeatured: validData.isFeatured
+                    } as unknown as Partial<TEntity>,
+                    ctx?.tx
+                );
                 return { updated: true };
             }
         });

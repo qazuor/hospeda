@@ -73,9 +73,21 @@ describe('BaseService: count', () => {
         expect(result.data).toEqual(mockCountResult);
         expect(result.error).toBeUndefined();
         expect(canCountSpy).toHaveBeenCalledWith(mockActor);
-        expect(beforeCountSpy).toHaveBeenCalledWith(params, mockActor);
-        expect(afterCountSpy).toHaveBeenCalledWith(mockCountResult, mockActor);
-        expect(executeCountSpy).toHaveBeenCalledWith(params, mockActor);
+        expect(beforeCountSpy).toHaveBeenCalledWith(
+            params,
+            mockActor,
+            expect.objectContaining({ hookState: {} })
+        );
+        expect(afterCountSpy).toHaveBeenCalledWith(
+            mockCountResult,
+            mockActor,
+            expect.objectContaining({ hookState: {} })
+        );
+        expect(executeCountSpy).toHaveBeenCalledWith(
+            params,
+            mockActor,
+            expect.objectContaining({ hookState: {} })
+        );
     });
 
     it('should return a FORBIDDEN error if actor lacks permission', async () => {

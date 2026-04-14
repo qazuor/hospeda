@@ -55,7 +55,7 @@ describe('BaseService: restore', () => {
         asMock(modelMock.restore).mockResolvedValue(1);
         const result = await service.restore(mockAdminActor, MOCK_ENTITY_ID);
         expect(result.data?.count).toBe(1);
-        expect(asMock(modelMock.restore)).toHaveBeenCalledWith({ id: MOCK_ENTITY_ID });
+        expect(asMock(modelMock.restore)).toHaveBeenCalledWith({ id: MOCK_ENTITY_ID }, undefined);
     });
 
     it('should return a "not found" error if the entity does not exist', async () => {

@@ -44,7 +44,7 @@ describe('BaseService: getBySlug / getByName', () => {
         await service.getByName(mockActor, name);
 
         // Assert
-        expect(getByFieldSpy).toHaveBeenCalledWith(mockActor, 'name', name);
+        expect(getByFieldSpy).toHaveBeenCalledWith(mockActor, 'name', name, undefined);
     });
 
     it('getBySlug should call getByField with "slug"', async () => {
@@ -57,6 +57,6 @@ describe('BaseService: getBySlug / getByName', () => {
         await service.getBySlug(mockActor, slug);
 
         // Assert
-        expect(getByFieldSpy).toHaveBeenCalledWith(mockActor, 'slug', slug);
+        expect(getByFieldSpy).toHaveBeenCalledWith(mockActor, 'slug', slug, undefined);
     });
 });

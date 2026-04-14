@@ -66,9 +66,17 @@ describe('BaseService: list', () => {
         expect(result.data).toEqual(mockPaginatedResult);
         expect(result.error).toBeUndefined();
         expect(canListSpy).toHaveBeenCalledWith(mockActor);
-        expect(beforeListSpy).toHaveBeenCalledWith(options, mockActor);
+        expect(beforeListSpy).toHaveBeenCalledWith(
+            options,
+            mockActor,
+            expect.objectContaining({ hookState: {} })
+        );
         expect(modelMock.findAll).toHaveBeenCalledWith({}, options, undefined);
-        expect(afterListSpy).toHaveBeenCalledWith(mockPaginatedResult, mockActor);
+        expect(afterListSpy).toHaveBeenCalledWith(
+            mockPaginatedResult,
+            mockActor,
+            expect.objectContaining({ hookState: {} })
+        );
     });
 
     it('should return a FORBIDDEN error if actor lacks permission', async () => {

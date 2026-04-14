@@ -55,7 +55,8 @@ describe('BaseService: create', () => {
         };
         const result = await service.create(mockAdminActor, dataWithExtra);
         expect(asMock(modelMock.create)).toHaveBeenCalledWith(
-            expect.not.objectContaining({ extraField: 'should be ignored' })
+            expect.not.objectContaining({ extraField: 'should be ignored' }),
+            undefined
         );
         expectSuccess(result);
         expect(result.data).toEqual(mockEntity);
@@ -123,12 +124,14 @@ describe('BaseService: create', () => {
             expect.objectContaining({
                 name: mockCreateData.name,
                 value: mockCreateData.value
-            })
+            }),
+            undefined
         );
         expect(asMock(modelMock.create)).toHaveBeenCalledWith(
             expect.not.objectContaining({
                 extraField: 'should be stripped'
-            })
+            }),
+            undefined
         );
     });
 
@@ -139,7 +142,11 @@ describe('BaseService: create', () => {
             '_afterCreate'
         );
         await service.create(mockAdminActor, mockCreateData);
-        expect(afterCreateSpy).toHaveBeenCalledWith(mockEntity, mockAdminActor);
+        expect(afterCreateSpy).toHaveBeenCalledWith(
+            mockEntity,
+            mockAdminActor,
+            expect.objectContaining({ hookState: {} })
+        );
     });
 
     it('should use the create normalizer if provided', async () => {
@@ -162,7 +169,8 @@ describe('BaseService: create', () => {
         // Assert
         expect(normalizer).toHaveBeenCalledWith(mockCreateData, mockAdminActor);
         expect(localModelMock.create).toHaveBeenCalledWith(
-            expect.objectContaining({ normalized: true })
+            expect.objectContaining({ normalized: true }),
+            undefined
         );
     });
 

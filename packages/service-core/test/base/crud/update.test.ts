@@ -108,7 +108,8 @@ describe('BaseService: update', () => {
         await service.update(mockAdminActor, MOCK_ENTITY_ID, {});
         expect(asMock(modelMock.update)).toHaveBeenCalledWith(
             { id: MOCK_ENTITY_ID },
-            expect.objectContaining({ updatedById: mockAdminActor.id })
+            expect.objectContaining({ updatedById: mockAdminActor.id }),
+            undefined
         );
     });
 
@@ -153,7 +154,8 @@ describe('BaseService: update', () => {
         expect(normalizer).toHaveBeenCalledWith(updateData, mockAdminActor);
         expect(asMock(localModelMock.update)).toHaveBeenCalledWith(
             { id: MOCK_ENTITY_ID },
-            expect.objectContaining({ normalized: true })
+            expect.objectContaining({ normalized: true }),
+            undefined
         );
     });
 });
