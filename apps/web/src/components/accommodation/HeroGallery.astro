@@ -7,6 +7,7 @@
 import type { AccommodationDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import GradientButton from '@/components/shared/GradientButton.astro';
 
 interface Props {
   readonly accommodation: AccommodationDetailData;
@@ -95,9 +96,12 @@ const viewFullscreenLabel = t('accommodations.detail.gallery.viewFullscreen', un
 
   {hasGallery && (
     <div class="hero-gallery__footer">
-      <a href={`/${lang}/alojamientos/${accommodation.slug}/fotos/`} class="hero-gallery__view-all">
-        {viewAllLabel}
-      </a>
+      <GradientButton
+        href={`/${lang}/alojamientos/${accommodation.slug}/fotos/`}
+        label={viewAllLabel}
+        variant="outline-primary"
+        size="sm"
+      />
     </div>
   )}
 </section>
@@ -165,21 +169,6 @@ const viewFullscreenLabel = t('accommodations.detail.gallery.viewFullscreen', un
     display: flex;
     justify-content: flex-end;
     margin-top: var(--space-3, 12px);
-  }
-  .hero-gallery__view-all {
-    font-family: var(--font-sans);
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--primary);
-    text-decoration: none;
-    padding: var(--space-2, 8px) var(--space-4, 16px);
-    border: 1px solid var(--border, oklch(0.8 0 0));
-    border-radius: var(--radius-pill);
-    transition: all var(--duration-normal, 0.4s) ease;
-  }
-  .hero-gallery__view-all:hover {
-    background-color: var(--primary);
-    color: white;
   }
   @media (max-width: 640px) {
     .hero-gallery__mosaic--with-thumbs {

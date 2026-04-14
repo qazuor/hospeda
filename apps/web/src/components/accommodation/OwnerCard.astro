@@ -7,6 +7,7 @@ import type { AccommodationOwnerData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getInitials } from '@/lib/api/transforms';
+import GradientButton from '@/components/shared/GradientButton.astro';
 
 interface Props {
   readonly owner: AccommodationOwnerData;
@@ -47,9 +48,15 @@ const memberDate = new Date(owner.createdAt).toLocaleDateString(
         <slot />
       </div>
     ) : (
-      <a href={`/${lang}/auth/signin`} class="owner-card__register-cta">
-        {t('accommodations.detail.owner.registerToContact')}
-      </a>
+      <div class="owner-card__register-cta-wrapper">
+        <GradientButton
+          href={`/${lang}/auth/signin`}
+          label={t('accommodations.detail.owner.registerToContact')}
+          variant="outline-primary"
+          size="sm"
+          class="owner-card__register-cta"
+        />
+      </div>
     )}
   </div>
 </div>
@@ -103,21 +110,11 @@ const memberDate = new Date(owner.createdAt).toLocaleDateString(
     font-size: 0.8rem;
     color: var(--muted-foreground);
   }
-  .owner-card__register-cta {
-    display: block;
-    text-align: center;
-    font-family: var(--font-sans);
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--primary);
-    text-decoration: none;
-    padding: var(--space-3, 12px);
-    border: 1px solid var(--border, oklch(0.8 0 0));
-    border-radius: var(--radius-button, 8px);
-    transition: all var(--duration-normal, 0.4s) ease;
+  .owner-card__register-cta-wrapper {
+    display: flex;
   }
-  .owner-card__register-cta:hover {
-    background-color: var(--primary);
-    color: white;
+  .owner-card__register-cta {
+    flex: 1;
+    justify-content: center;
   }
 </style>

@@ -6,6 +6,7 @@
 import type { AccommodationDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import GradientButton from '@/components/shared/GradientButton.astro';
 
 interface Props {
   readonly price: AccommodationDetailData['price'];
@@ -65,9 +66,12 @@ const hasDiscounts = discountEntries.length > 0;
     </div>
   ) : (
     <div class="pricing-sidebar__consult">
-      <a href="#contact" class="pricing-sidebar__cta">
-        {t('accommodations.detail.pricing.consult')}
-      </a>
+      <GradientButton
+        href="#contact"
+        label={t('accommodations.detail.pricing.consult')}
+        variant="accent"
+        size="md"
+      />
     </div>
   )}
 
@@ -122,19 +126,6 @@ const hasDiscounts = discountEntries.length > 0;
     text-align: center;
     padding: var(--space-4, 16px) 0;
   }
-  .pricing-sidebar__cta {
-    display: inline-block;
-    font-family: var(--font-sans);
-    font-weight: 600;
-    font-size: 1rem;
-    padding: var(--space-3, 12px) var(--space-6, 24px);
-    background-color: var(--accent);
-    color: white;
-    text-decoration: none;
-    border-radius: var(--radius-button, 8px);
-    transition: opacity var(--duration-normal, 0.4s) ease;
-  }
-  .pricing-sidebar__cta:hover { opacity: 0.9; }
   .pricing-sidebar__breakdown-toggle {
     font-family: var(--font-sans);
     font-size: 0.9rem;

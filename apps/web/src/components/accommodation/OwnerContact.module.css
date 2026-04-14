@@ -21,25 +21,3 @@
     gap: var(--space-2, 8px);
 }
 
-.button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2, 8px);
-    padding: var(--space-2, 8px) var(--space-4, 16px);
-    font-family: var(--font-sans);
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--primary);
-    text-decoration: none;
-    border: 1px solid var(--border, oklch(0.8 0 0));
-    border-radius: var(--radius-button, 8px);
-    transition: all 0.3s ease;
-    min-height: 44px;
-}
-
-.button:hover {
-    background-color: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}

@@ -83,7 +83,7 @@ const hasReviews = accommodation.reviewsCount > 0;
 
       {accommodation.reviewsCount > 3 && (
         <button
-          class="review-preview__view-all"
+          class="btn-gradient btn-gradient--outline review-preview__view-all"
           data-reviews-modal-trigger
           data-accommodation-id={accommodation.id}
           data-reviews-count={accommodation.reviewsCount}
@@ -185,21 +185,7 @@ const hasReviews = accommodation.reviewsCount > 0;
     overflow: hidden;
   }
   .review-preview__view-all {
-    display: inline-block;
     margin-top: var(--space-4, 16px);
-    font-family: var(--font-sans);
-    font-weight: 500;
-    font-size: 0.95rem;
-    color: var(--primary);
-    background: none;
-    border: 1px solid var(--primary);
-    border-radius: var(--radius-button, 8px);
-    padding: var(--space-2, 8px) var(--space-5, 20px);
-    cursor: pointer;
-    transition: all var(--duration-normal, 0.4s) ease;
-  }
-  .review-preview__view-all:hover {
-    background-color: var(--primary);
-    color: white;
+    padding: 10px 24px;
   }
 </style>

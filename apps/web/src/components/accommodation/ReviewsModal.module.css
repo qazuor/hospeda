@@ -154,40 +154,7 @@
     margin: 0 0 var(--space-3, 12px);
 }
 
-.retryBtn {
-    font-family: var(--font-sans);
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--primary);
-    background: none;
-    border: 1px solid var(--primary);
-    border-radius: var(--radius-button, 8px);
-    padding: var(--space-2, 8px) var(--space-4, 16px);
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.retryBtn:hover {
-    background-color: var(--primary);
-    color: white;
-}
-
-.loadMore {
+.loadMoreBtn {
     align-self: center;
-    font-family: var(--font-sans);
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--primary);
-    background: none;
-    border: 1px solid var(--border, oklch(0.8 0 0));
-    border-radius: var(--radius-pill);
-    padding: var(--space-2, 8px) var(--space-5, 20px);
-    cursor: pointer;
-    transition: all 0.3s ease;
 }
 
-.loadMore:hover {
-    background-color: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}

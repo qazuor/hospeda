@@ -1,12 +1,13 @@
-import { protectedAccommodationsApi } from '@/lib/api/endpoints-protected';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
+import { GradientButton } from '@/components/ui/GradientButton';
 /**
  * @file OwnerContact.client.tsx
  * @description Auth-aware React island for displaying accommodation contact info.
  * If userId is null, renders nothing (Astro wrapper shows register CTA).
  * If userId is set, fetches contact from protected endpoint and renders buttons.
  */
+import { protectedAccommodationsApi } from '@/lib/api/endpoints-protected';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import styles from './OwnerContact.module.css';
 
@@ -82,30 +83,30 @@ export function OwnerContact({ userId, accommodationId, locale }: OwnerContactPr
     return (
         <div className={styles.buttons}>
             {contact.email && (
-                <a
+                <GradientButton
                     href={`mailto:${contact.email}`}
-                    className={styles.button}
-                >
-                    {t('accommodations.detail.owner.contactEmail')}
-                </a>
+                    label={t('accommodations.detail.owner.contactEmail')}
+                    variant="outline-primary"
+                    size="sm"
+                />
             )}
             {contact.phone && (
-                <a
+                <GradientButton
                     href={`tel:${contact.phone}`}
-                    className={styles.button}
-                >
-                    {t('accommodations.detail.owner.contactPhone')}
-                </a>
+                    label={t('accommodations.detail.owner.contactPhone')}
+                    variant="outline-primary"
+                    size="sm"
+                />
             )}
             {contact.website && (
-                <a
+                <GradientButton
                     href={contact.website}
+                    label={t('accommodations.detail.owner.contactWebsite')}
+                    variant="outline-primary"
+                    size="sm"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={styles.button}
-                >
-                    {t('accommodations.detail.owner.contactWebsite')}
-                </a>
+                />
             )}
         </div>
     );

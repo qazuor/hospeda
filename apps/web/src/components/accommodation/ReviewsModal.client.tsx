@@ -1,12 +1,13 @@
-import { accommodationsApi } from '@/lib/api/endpoints';
-import { getInitials } from '@/lib/api/transforms';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
+import { GradientButton } from '@/components/ui/GradientButton';
 /**
  * @file ReviewsModal.client.tsx
  * @description Modal for browsing all paginated reviews.
  * Focus trap, Escape close, load more pagination.
  */
+import { accommodationsApi } from '@/lib/api/endpoints';
+import { getInitials } from '@/lib/api/transforms';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './ReviewsModal.module.css';
 
@@ -190,24 +191,25 @@ export function ReviewsModal({ accommodationId, reviewsCount, locale }: ReviewsM
                     {error && !loading && (
                         <div className={styles.error}>
                             <p>{t('accommodations.detail.reviewsDetail.modal.error')}</p>
-                            <button
-                                type="button"
-                                className={styles.retryBtn}
+                            <GradientButton
+                                as="button"
+                                label={t('accommodations.detail.reviewsDetail.modal.retry')}
+                                variant="outline-primary"
+                                size="sm"
                                 onClick={() => fetchReviews(page)}
-                            >
-                                {t('accommodations.detail.reviewsDetail.modal.retry')}
-                            </button>
+                            />
                         </div>
                     )}
 
                     {!loading && !error && hasMore && reviews.length > 0 && (
-                        <button
-                            type="button"
-                            className={styles.loadMore}
+                        <GradientButton
+                            as="button"
+                            label={t('accommodations.detail.reviewsDetail.modal.loadMore')}
+                            variant="outline-primary"
+                            size="sm"
+                            className={styles.loadMoreBtn}
                             onClick={() => setPage((p) => p + 1)}
-                        >
-                            {t('accommodations.detail.reviewsDetail.modal.loadMore')}
-                        </button>
+                        />
                     )}
                 </div>
             </dialog>
