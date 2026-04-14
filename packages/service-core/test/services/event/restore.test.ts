@@ -37,7 +37,7 @@ describe('EventService.restore', () => {
         const result = await service.restore(actorWithPerm, eventId);
         expectSuccess(result);
         expect(result.data?.count).toBe(1);
-        expect(modelMock.restore as Mock).toHaveBeenCalledWith({ id: eventId });
+        expect(modelMock.restore as Mock).toHaveBeenCalledWith({ id: eventId }, undefined);
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {

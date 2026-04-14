@@ -36,7 +36,7 @@ describe('EventService.hardDelete', () => {
         const result = await service.hardDelete(actorWithPerm, eventId);
         expectSuccess(result);
         expect(result.data?.count).toBe(1);
-        expect(modelMock.hardDelete as Mock).toHaveBeenCalledWith({ id: eventId });
+        expect(modelMock.hardDelete as Mock).toHaveBeenCalledWith({ id: eventId }, undefined);
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {

@@ -2,7 +2,7 @@
  * Per-request hook state for EventService lifecycle hooks.
  * Replaces mutable instance fields with request-scoped context.
  */
-export interface EventHookState {
+export interface EventHookState extends Record<string, unknown> {
     /** Entity data captured before soft-delete for post-delete side effects. */
     deletedEvent?: { slug: string; category?: string };
     /** Entity data captured before restore for post-restore side effects. */

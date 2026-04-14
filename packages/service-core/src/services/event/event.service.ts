@@ -55,6 +55,7 @@ import {
     checkCanUpdateEvent,
     checkCanViewEvent
 } from './event.permissions';
+import type { EventHookState } from './event.types';
 
 /** Entity-specific filter fields for event admin search. */
 type EventEntityFilters = EntityFilters<typeof EventAdminSearchSchema>;
@@ -300,17 +301,14 @@ export class EventService extends BaseCrudService<
         return entity;
     }
 
-    private _lastRestoredEvent: { slug: string; category?: string } | undefined;
-    private _lastDeletedEvent: { slug: string; category?: string } | undefined;
-
     protected async _beforeRestore(
         id: string,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<EventHookState>
     ): Promise<string> {
         const entity = await this.model.findById(id);
-        if (entity) {
-            this._lastRestoredEvent = {
+        if (entity && ctx.hookState) {
+            ctx.hookState.restoredEvent = {
                 slug: entity.slug,
                 category: entity.category
             };
@@ -321,10 +319,9 @@ export class EventService extends BaseCrudService<
     protected async _afterRestore(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<EventHookState>
     ): Promise<{ count: number }> {
-        const restored = this._lastRestoredEvent;
-        this._lastRestoredEvent = undefined;
+        const restored = ctx.hookState?.restoredEvent;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
@@ -343,11 +340,11 @@ export class EventService extends BaseCrudService<
     protected async _beforeSoftDelete(
         id: string,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<EventHookState>
     ): Promise<string> {
         const entity = await this.model.findById(id);
-        if (entity) {
-            this._lastDeletedEvent = { slug: entity.slug, category: entity.category };
+        if (entity && ctx.hookState) {
+            ctx.hookState.deletedEvent = { slug: entity.slug, category: entity.category };
         }
         return id;
     }
@@ -355,10 +352,9 @@ export class EventService extends BaseCrudService<
     protected async _afterSoftDelete(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<EventHookState>
     ): Promise<{ count: number }> {
-        const deleted = this._lastDeletedEvent;
-        this._lastDeletedEvent = undefined;
+        const deleted = ctx.hookState?.deletedEvent;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
@@ -377,11 +373,11 @@ export class EventService extends BaseCrudService<
     protected async _beforeHardDelete(
         id: string,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<EventHookState>
     ): Promise<string> {
         const entity = await this.model.findById(id);
-        if (entity) {
-            this._lastDeletedEvent = { slug: entity.slug, category: entity.category };
+        if (entity && ctx.hookState) {
+            ctx.hookState.deletedEvent = { slug: entity.slug, category: entity.category };
         }
         return id;
     }
@@ -389,10 +385,9 @@ export class EventService extends BaseCrudService<
     protected async _afterHardDelete(
         result: { count: number },
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<EventHookState>
     ): Promise<{ count: number }> {
-        const deleted = this._lastDeletedEvent;
-        this._lastDeletedEvent = undefined;
+        const deleted = ctx.hookState?.deletedEvent;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
