@@ -58,7 +58,7 @@ describe('AccommodationService.hardDelete', () => {
         expect(result.data?.count).toBe(1);
         expect(result.error).toBeUndefined();
         expect(model.findById).toHaveBeenCalledWith(entity.id);
-        expect(model.hardDelete).toHaveBeenCalledWith({ id: entity.id });
+        expect(model.hardDelete).toHaveBeenCalledWith({ id: entity.id }, undefined);
     });
 
     it('should return a "not found" error if the entity does not exist', async () => {

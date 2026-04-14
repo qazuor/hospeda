@@ -170,11 +170,7 @@ export class AccommodationService extends BaseCrudService<
     };
 
     private destinationService: DestinationService;
-    private _lastDeletedEntity: { destinationId?: string; slug: string; type?: string } | undefined;
     private readonly _destinationModel: DestinationModel;
-    private _lastRestoredAccommodation:
-        | { slug: string; destinationId?: string; type?: string }
-        | undefined;
 
     /**
      * Initializes a new instance of the AccommodationService.
@@ -343,10 +339,10 @@ export class AccommodationService extends BaseCrudService<
     protected async _afterCreate(
         entity: Accommodation,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<Accommodation> {
         if (entity.destinationId) {
-            await this.destinationService.updateAccommodationsCount(entity.destinationId);
+            await this.destinationService.updateAccommodationsCount(entity.destinationId, ctx.tx);
         }
         const destinationSlug = entity.destinationId
             ? await this._resolveDestinationSlug(entity.destinationId)
@@ -438,7 +434,7 @@ export class AccommodationService extends BaseCrudService<
     ): Promise<{ count: number }> {
         const restored = ctx.hookState?.restoredAccommodation;
         if (restored?.destinationId) {
-            await this.destinationService.updateAccommodationsCount(restored.destinationId);
+            await this.destinationService.updateAccommodationsCount(restored.destinationId, ctx.tx);
         }
         const destinationSlug = restored?.destinationId
             ? await this._resolveDestinationSlug(restored.destinationId)
@@ -482,7 +478,7 @@ export class AccommodationService extends BaseCrudService<
     ): Promise<CountResponse> {
         const deleted = ctx.hookState?.deletedEntity;
         if (deleted?.destinationId) {
-            await this.destinationService.updateAccommodationsCount(deleted.destinationId);
+            await this.destinationService.updateAccommodationsCount(deleted.destinationId, ctx.tx);
         }
         const destinationSlug = deleted?.destinationId
             ? await this._resolveDestinationSlug(deleted.destinationId)
@@ -526,7 +522,7 @@ export class AccommodationService extends BaseCrudService<
     ): Promise<CountResponse> {
         const deleted = ctx.hookState?.deletedEntity;
         if (deleted?.destinationId) {
-            await this.destinationService.updateAccommodationsCount(deleted.destinationId);
+            await this.destinationService.updateAccommodationsCount(deleted.destinationId, ctx.tx);
         }
         const destinationSlug = deleted?.destinationId
             ? await this._resolveDestinationSlug(deleted.destinationId)
