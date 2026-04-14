@@ -394,6 +394,52 @@ export const HOSPEDA_ENV_VARS = [
     },
 
     // -------------------------------------------------------------------------
+    // Cloudinary (Image Management)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_CLOUDINARY_CLOUD_NAME',
+        description: 'Cloudinary account cloud name for image storage and CDN delivery',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'hospeda',
+        apps: ['api'],
+        category: 'integrations'
+    },
+    {
+        name: 'HOSPEDA_CLOUDINARY_API_KEY',
+        description: 'Cloudinary API key for server-side image upload and management',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: '123456789012345',
+        apps: ['api'],
+        category: 'integrations'
+    },
+    {
+        name: 'HOSPEDA_CLOUDINARY_API_SECRET',
+        description: 'Cloudinary API secret for server-side authentication',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'your-cloudinary-api-secret',
+        apps: ['api'],
+        category: 'integrations'
+    },
+    {
+        name: 'HOSPEDA_MEDIA_MAX_FILE_SIZE_MB',
+        description:
+            'Maximum upload file size in megabytes (values above 4.5 require Vercel Pro plan)',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: '10',
+        exampleValue: '10',
+        apps: ['api'],
+        category: 'integrations'
+    },
+
+    // -------------------------------------------------------------------------
     // Monitoring
     // -------------------------------------------------------------------------
     {
