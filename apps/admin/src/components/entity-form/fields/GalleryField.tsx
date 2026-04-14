@@ -7,6 +7,7 @@ import { Button, Input, Label } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
+import { extractPublicId } from '@repo/media';
 
 import {
     AddIcon,
@@ -56,11 +57,28 @@ export interface GalleryFieldProps {
     className?: string;
     /** Upload handler - should return the uploaded image URL */
     onUpload?: (file: File) => Promise<string>;
+    /**
+     * Delete handler - called with the Cloudinary publicId before removing the image.
+     * Only called for Cloudinary URLs; non-Cloudinary images are silently removed.
+     * Upload errors are swallowed — the image is still removed from the UI.
+     */
+    onDelete?: (publicId: string) => Promise<void>;
+    /**
+     * Maximum file size in bytes. Defaults to 10 MB (10 * 1024 * 1024).
+     * This value is only used when typeConfig does not specify maxSize.
+     */
+    defaultMaxSize?: number;
 }
 
 /**
- * GalleryField component for multiple image upload and management
- * Handles GALLERY field type from FieldConfig
+ * GalleryField component for multiple image upload and management.
+ * Handles GALLERY field type from FieldConfig.
+ *
+ * - Supports HEIC, AVIF, JPEG, PNG, and WebP out of the box.
+ * - Shows per-image upload progress via an overlay spinner.
+ * - Displays upload/delete errors inline below the field.
+ * - Calls onDelete with the Cloudinary publicId before removing an image.
+ *   For non-Cloudinary URLs the image is removed without an API call.
  */
 export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps>(
     (
@@ -73,7 +91,9 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
             disabled = false,
             required = false,
             className,
-            onUpload
+            onUpload,
+            onDelete,
+            defaultMaxSize = 10 * 1024 * 1024 // 10 MB
         },
         _ref
     ) => {
@@ -96,11 +116,13 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
         const helperId = helper ? `${fieldId}-helper` : undefined;
 
         const maxImages = galleryConfig?.maxImages || 10;
-        const maxSize = galleryConfig?.maxSize || 5 * 1024 * 1024; // 5MB default
+        const maxSize = galleryConfig?.maxSize || defaultMaxSize;
         const allowedTypes = galleryConfig?.allowedTypes || [
             'image/jpeg',
             'image/png',
-            'image/webp'
+            'image/webp',
+            'image/heic',
+            'image/avif'
         ];
         const maxWidth = galleryConfig?.maxWidth;
         const maxHeight = galleryConfig?.maxHeight;
@@ -111,6 +133,9 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
 
         // State
         const [isUploading, setIsUploading] = React.useState(false);
+        const [uploadingIds, setUploadingIds] = React.useState<Set<string>>(new Set());
+        const [uploadError, setUploadError] = React.useState<string | null>(null);
+        const [deletingIds, setDeletingIds] = React.useState<Set<string>>(new Set());
         const [dragOver, setDragOver] = React.useState(false);
         const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
 
@@ -122,8 +147,8 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
             if (!files.length) return;
 
             const filesToProcess = Array.from(files).slice(0, maxImages - value.length);
-
             setIsUploading(true);
+            setUploadError(null);
 
             try {
                 const newImages: GalleryImage[] = [];
@@ -131,25 +156,55 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                 for (const file of filesToProcess) {
                     // Validate file type
                     if (!allowedTypes.includes(file.type)) {
-                        adminLogger.error('Invalid file type', file.name);
+                        adminLogger.error(`Invalid file type: ${file.name}`);
+                        setUploadError(
+                            `"${file.name}": invalid type. Allowed: ${allowedTypes.join(', ')}`
+                        );
                         continue;
                     }
 
                     // Validate file size
                     if (file.size > maxSize) {
-                        adminLogger.error('File too large', file.name);
+                        adminLogger.error(`File too large: ${file.name}`);
+                        setUploadError(
+                            `"${file.name}": file exceeds max size of ${formatFileSize(maxSize)}`
+                        );
                         continue;
                     }
 
+                    const tempId = generateId();
+                    setUploadingIds((prev) => new Set(prev).add(tempId));
+
                     let imageUrl: string;
 
-                    if (onUpload) {
-                        // Use custom upload handler
-                        imageUrl = await onUpload(file);
-                    } else {
-                        // Create local URL (for preview/development)
-                        imageUrl = URL.createObjectURL(file);
+                    try {
+                        if (onUpload) {
+                            // Use custom upload handler
+                            imageUrl = await onUpload(file);
+                        } else {
+                            // Create local URL (for preview/development)
+                            imageUrl = URL.createObjectURL(file);
+                        }
+                    } catch (uploadErr) {
+                        adminLogger.error(`Upload failed: ${file.name}`, uploadErr);
+                        setUploadError(
+                            uploadErr instanceof Error
+                                ? uploadErr.message
+                                : `Failed to upload "${file.name}"`
+                        );
+                        setUploadingIds((prev) => {
+                            const next = new Set(prev);
+                            next.delete(tempId);
+                            return next;
+                        });
+                        continue;
                     }
+
+                    setUploadingIds((prev) => {
+                        const next = new Set(prev);
+                        next.delete(tempId);
+                        return next;
+                    });
 
                     // Create gallery image
                     const galleryImage: GalleryImage = {
@@ -162,12 +217,12 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                     newImages.push(galleryImage);
                 }
 
-                onChange?.([...value, ...newImages]);
-            } catch (error) {
-                adminLogger.error('Upload failed', error);
-                // TODO: Show error toast
+                if (newImages.length > 0) {
+                    onChange?.([...value, ...newImages]);
+                }
             } finally {
                 setIsUploading(false);
+                setUploadingIds(new Set());
             }
         };
 
@@ -198,7 +253,33 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
             setDragOver(false);
         };
 
-        const handleRemoveImage = (imageId: string) => {
+        const handleRemoveImage = async (imageId: string, imageUrl: string) => {
+            setUploadError(null);
+
+            // Mark as deleting for visual feedback
+            setDeletingIds((prev) => new Set(prev).add(imageId));
+
+            try {
+                // Extract publicId — returns null for non-Cloudinary URLs
+                const publicId = extractPublicId(imageUrl);
+
+                if (publicId && onDelete) {
+                    try {
+                        await onDelete(publicId);
+                    } catch (deleteErr) {
+                        // Log but don't block UI removal — graceful degradation
+                        adminLogger.error('Failed to delete image from Cloudinary', deleteErr);
+                    }
+                }
+            } finally {
+                setDeletingIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(imageId);
+                    return next;
+                });
+            }
+
+            // Always remove from the array regardless of delete success
             const updatedImages = value.filter((img) => img.id !== imageId);
             // Reorder remaining images
             const reorderedImages = updatedImages.map((img, index) => ({
@@ -284,84 +365,104 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                     <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
                         {value
                             .sort((a, b) => a.order - b.order)
-                            .map((image, index) => (
-                                <div
-                                    key={image.id}
-                                    className={cn(
-                                        'group relative overflow-hidden rounded-lg border',
-                                        sortable && 'cursor-move'
-                                    )}
-                                    draggable={sortable && !disabled}
-                                    onDragStart={(e) => handleDragStart(e, index)}
-                                    onDragEnd={handleDragEnd}
-                                    onDragOver={(e) => handleDragOverItem(e, index)}
-                                >
-                                    {/* Image */}
-                                    <img
-                                        src={image.url}
-                                        alt={
-                                            image.alt ||
-                                            t('admin-entities.fields.gallery.imageAlt', {
-                                                index: String(index + 1)
-                                            })
-                                        }
-                                        className={cn(
-                                            'h-32 w-full object-cover',
-                                            maxWidth && `max-w-[${maxWidth}px]`,
-                                            maxHeight && `max-h-[${maxHeight}px]`
-                                        )}
-                                    />
+                            .map((image, index) => {
+                                const isThisUploading = uploadingIds.has(image.id);
+                                const isThisDeleting = deletingIds.has(image.id);
+                                const isThisBusy = isThisUploading || isThisDeleting;
 
-                                    {/* Overlay Controls */}
-                                    <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                                        {sortable && (
-                                            <div className="absolute top-2 left-2">
-                                                <GripVerticalIcon className="h-4 w-4 text-white" />
+                                return (
+                                    <div
+                                        key={image.id}
+                                        className={cn(
+                                            'group relative overflow-hidden rounded-lg border',
+                                            sortable && !isThisBusy && 'cursor-move',
+                                            isThisBusy && 'opacity-70'
+                                        )}
+                                        draggable={sortable && !disabled && !isThisBusy}
+                                        onDragStart={(e) => handleDragStart(e, index)}
+                                        onDragEnd={handleDragEnd}
+                                        onDragOver={(e) => handleDragOverItem(e, index)}
+                                    >
+                                        {/* Image */}
+                                        <img
+                                            src={image.url}
+                                            alt={
+                                                image.alt ||
+                                                t('admin-entities.fields.gallery.imageAlt', {
+                                                    index: String(index + 1)
+                                                })
+                                            }
+                                            className={cn(
+                                                'h-32 w-full object-cover',
+                                                maxWidth && `max-w-[${maxWidth}px]`,
+                                                maxHeight && `max-h-[${maxHeight}px]`
+                                            )}
+                                        />
+
+                                        {/* Per-image busy overlay */}
+                                        {isThisBusy && (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                                                <LoaderIcon className="h-6 w-6 animate-spin text-white" />
                                             </div>
                                         )}
 
-                                        {!disabled && (
-                                            <Button
-                                                type="button"
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() => handleRemoveImage(image.id)}
-                                                className="absolute top-2 right-2"
-                                            >
-                                                <DeleteIcon className="h-4 w-4" />
-                                            </Button>
-                                        )}
-                                    </div>
+                                        {/* Overlay Controls */}
+                                        {!isThisBusy && (
+                                            <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                                {sortable && (
+                                                    <div className="absolute top-2 left-2">
+                                                        <GripVerticalIcon className="h-4 w-4 text-white" />
+                                                    </div>
+                                                )}
 
-                                    {/* Image Metadata */}
-                                    <div className="space-y-1 p-2">
-                                        <Input
-                                            value={image.caption || ''}
-                                            onChange={(e) =>
-                                                handleUpdateImage(image.id, {
-                                                    caption: e.target.value
-                                                })
-                                            }
-                                            placeholder={t(
-                                                'admin-entities.fields.gallery.captionPlaceholder'
-                                            )}
-                                            disabled={disabled}
-                                            className="h-7 text-xs"
-                                        />
-                                        <Input
-                                            value={image.alt || ''}
-                                            onChange={(e) =>
-                                                handleUpdateImage(image.id, { alt: e.target.value })
-                                            }
-                                            placeholder={t(
-                                                'admin-entities.fields.gallery.altTextPlaceholder'
-                                            )}
-                                            disabled={disabled}
-                                            className="h-7 text-xs"
-                                        />
+                                                {!disabled && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            handleRemoveImage(image.id, image.url)
+                                                        }
+                                                        className="absolute top-2 right-2"
+                                                    >
+                                                        <DeleteIcon className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Image Metadata */}
+                                        <div className="space-y-1 p-2">
+                                            <Input
+                                                value={image.caption || ''}
+                                                onChange={(e) =>
+                                                    handleUpdateImage(image.id, {
+                                                        caption: e.target.value
+                                                    })
+                                                }
+                                                placeholder={t(
+                                                    'admin-entities.fields.gallery.captionPlaceholder'
+                                                )}
+                                                disabled={disabled || isThisBusy}
+                                                className="h-7 text-xs"
+                                            />
+                                            <Input
+                                                value={image.alt || ''}
+                                                onChange={(e) =>
+                                                    handleUpdateImage(image.id, {
+                                                        alt: e.target.value
+                                                    })
+                                                }
+                                                placeholder={t(
+                                                    'admin-entities.fields.gallery.altTextPlaceholder'
+                                                )}
+                                                disabled={disabled || isThisBusy}
+                                                className="h-7 text-xs"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                     </div>
                 )}
 
@@ -429,6 +530,16 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                     aria-describedby={cn(errorId, descriptionId, helperId).trim() || undefined}
                 />
 
+                {/* Upload/Delete Error Message */}
+                {uploadError && (
+                    <p
+                        role="alert"
+                        className="text-destructive text-sm"
+                    >
+                        {uploadError}
+                    </p>
+                )}
+
                 {/* Helper Text */}
                 {helper && !hasError && (
                     <p
@@ -439,7 +550,7 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                     </p>
                 )}
 
-                {/* Error Message */}
+                {/* Field-level Error Message */}
                 {hasError && errorMessage && (
                     <p
                         id={errorId}

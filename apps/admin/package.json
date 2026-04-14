@@ -45,6 +45,7 @@
         "@repo/i18n": "workspace:*",
         "@repo/icons": "workspace:*",
         "@repo/logger": "workspace:*",
+        "@repo/media": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@sentry/react": "^10.36.0",
         "@tailwindcss/vite": "4.1.12",

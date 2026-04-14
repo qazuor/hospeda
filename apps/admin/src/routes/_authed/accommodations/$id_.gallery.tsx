@@ -7,6 +7,7 @@
 import { PageTabs, accommodationTabs } from '@/components/layout/PageTabs';
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
 import { useTranslations } from '@/hooks/use-translations';
+import { getMediaUrl } from '@repo/media';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/accommodations/$id_/gallery')({
@@ -58,7 +59,7 @@ function AccommodationGalleryPage() {
                                 </h3>
                                 <div className="group relative overflow-hidden rounded-lg border">
                                     <img
-                                        src={featuredImage.url}
+                                        src={getMediaUrl(featuredImage.url, { preset: 'hero' })}
                                         alt={
                                             featuredImage.caption ||
                                             t('admin-pages.accommodations.gallery.featuredImageAlt')
@@ -104,7 +105,7 @@ function AccommodationGalleryPage() {
                                             className="group relative overflow-hidden rounded-lg border"
                                         >
                                             <img
-                                                src={image.url}
+                                                src={getMediaUrl(image.url, { preset: 'gallery' })}
                                                 alt={
                                                     image.caption ||
                                                     t(

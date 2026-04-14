@@ -1,4 +1,5 @@
 import { EntityFormSection, useEntityForm } from '@/components/entity-form';
+import type { FieldMediaHandlers } from '@/components/entity-form/EntityFormSection';
 import { SmartBreadcrumbs, SmartNavigation } from '@/components/entity-form/navigation';
 import { LazySectionWrapper } from '@/components/entity-form/sections/LazySectionWrapper';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
@@ -20,13 +21,35 @@ export interface EntityEditContentProps {
     renderSection?: (section: SectionConfig, index: number) => React.ReactNode;
     /** Additional CSS classes */
     className?: string;
+    /**
+     * Per-field media upload/delete handlers keyed by fieldId.
+     * Forwarded to EntityFormSection, which passes them to GalleryField and other media fields.
+     *
+     * @example
+     * ```tsx
+     * <EntityEditContent
+     *   entityType="accommodation"
+     *   fieldHandlers={{
+     *     images: {
+     *       onUpload: createUploadHandler({ ... }),
+     *       onDelete: (publicId) => deleteImage.mutateAsync({ publicId }),
+     *     },
+     *   }}
+     * />
+     * ```
+     */
+    fieldHandlers?: Record<string, FieldMediaHandlers>;
 }
 
 /**
  * Component for rendering entity content in edit mode
  * Renders sections using EntityFormSection components with form handling
  */
-export const EntityEditContent = ({ renderSection, className }: EntityEditContentProps) => {
+export const EntityEditContent = ({
+    renderSection,
+    className,
+    fieldHandlers
+}: EntityEditContentProps) => {
     const {
         values,
         errors,
@@ -181,6 +204,7 @@ export const EntityEditContent = ({ renderSection, className }: EntityEditConten
                                         disabled={isSaving}
                                         entityData={values}
                                         userPermissions={userPermissions}
+                                        fieldHandlers={fieldHandlers}
                                     />
                                 );
 

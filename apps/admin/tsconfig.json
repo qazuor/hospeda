@@ -48,7 +48,9 @@
             "@repo/icons": ["../../packages/icons/src/index.ts"],
             "@repo/icons/*": ["../../packages/icons/src/*"],
             "@repo/tailwind-config": ["../../packages/tailwind-config/src/index.ts"],
-            "@repo/tailwind-config/*": ["../../packages/tailwind-config/src/*"]
+            "@repo/tailwind-config/*": ["../../packages/tailwind-config/src/*"],
+            "@repo/media": ["../../packages/media/src/index.ts"],
+            "@repo/media/*": ["../../packages/media/src/*"]
         }
     }
 }

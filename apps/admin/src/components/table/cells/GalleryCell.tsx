@@ -1,4 +1,5 @@
 import { useTranslations } from '@/hooks/use-translations';
+import { getMediaUrl } from '@repo/media';
 import type { ReactNode } from 'react';
 
 type GalleryCellProps = {
@@ -76,7 +77,7 @@ export const GalleryCell = ({ value, maxImages = 3, size = 'sm' }: GalleryCellPr
                         className="relative"
                     >
                         <img
-                            src={url}
+                            src={getMediaUrl(url, { preset: 'thumbnail' })}
                             alt={`Gallery item ${index + 1}`}
                             className={getImageClasses(size)}
                             onError={(e) => {

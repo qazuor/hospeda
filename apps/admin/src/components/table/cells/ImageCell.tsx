@@ -1,4 +1,5 @@
 import { useTranslations } from '@/hooks/use-translations';
+import { getMediaUrl } from '@repo/media';
 import type { ReactNode } from 'react';
 
 type ImageCellProps = {
@@ -46,7 +47,7 @@ export const ImageCell = ({ value, size = 'md', fallbackText }: ImageCellProps):
     return (
         <div className="flex items-center">
             <img
-                src={imageUrl}
+                src={getMediaUrl(imageUrl, { preset: 'thumbnail' })}
                 alt={altText || 'Image'}
                 className={getSizeClasses(size, false)}
                 onError={(e) => {

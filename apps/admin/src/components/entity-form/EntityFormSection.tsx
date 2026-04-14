@@ -17,6 +17,17 @@ import {
 import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyField';
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { ImageValue } from '@/components/entity-form/fields/ImageField';
+
+/**
+ * Per-field upload/delete handlers for media fields (e.g., GalleryField).
+ * Keys are field IDs; values are the handler callbacks.
+ */
+export interface FieldMediaHandlers {
+    /** Called when a file is selected for upload. Should return the uploaded image URL. */
+    onUpload?: (file: File) => Promise<string>;
+    /** Called with the Cloudinary publicId before removing an image. */
+    onDelete?: (publicId: string) => Promise<void>;
+}
 import { GridLayout } from '@/components/entity-form/layouts';
 import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
@@ -49,6 +60,11 @@ export interface EntityFormSectionProps {
     currentUser?: unknown;
     /** Entity data for predicate evaluation */
     entityData?: Record<string, unknown>;
+    /**
+     * Per-field media handlers keyed by fieldId.
+     * Passed to GalleryField (and other media fields) for upload/delete wiring.
+     */
+    fieldHandlers?: Record<string, FieldMediaHandlers>;
 }
 
 /**
@@ -68,6 +84,7 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
             userPermissions = [],
             currentUser,
             entityData,
+            fieldHandlers,
             ...props
         },
         ref
@@ -233,13 +250,17 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                             />
                         );
 
-                    case FieldTypeEnum.GALLERY:
+                    case FieldTypeEnum.GALLERY: {
+                        const galleryHandlers = fieldHandlers?.[field.id];
                         return (
                             <GalleryField
                                 {...fieldProps}
                                 value={fieldValue as GalleryImage[]}
+                                onUpload={galleryHandlers?.onUpload}
+                                onDelete={galleryHandlers?.onDelete}
                             />
                         );
+                    }
 
                     case FieldTypeEnum.CHECKBOX:
                         return (

@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
 
 import { DownloadIcon, ExternalLinkIcon, ImageIcon } from '@repo/icons';
+import { getMediaUrl } from '@repo/media';
 import * as React from 'react';
 
 /**
@@ -143,7 +144,7 @@ export const ImageViewField = React.forwardRef<HTMLDivElement, ImageViewFieldPro
             return (
                 <div className="group relative">
                     <img
-                        src={value.url}
+                        src={getMediaUrl(value.url, { preset: 'hero' })}
                         alt={value.alt || 'Image'}
                         className={cn(
                             'rounded-lg border object-cover',

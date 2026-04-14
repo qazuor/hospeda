@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
 
 import { DownloadIcon, ExternalLinkIcon, ImageIcon, ZoomInIcon } from '@repo/icons';
+import { getMediaUrl } from '@repo/media';
 import * as React from 'react';
 
 /**
@@ -155,7 +156,7 @@ export const GalleryViewField = React.forwardRef<HTMLDivElement, GalleryViewFiel
                 className="group relative"
             >
                 <img
-                    src={image.url}
+                    src={getMediaUrl(image.url, { preset: 'gallery' })}
                     alt={
                         image.alt ||
                         `${t('admin-entities.viewFields.gallery.imageAlt')} ${index + 1}`
