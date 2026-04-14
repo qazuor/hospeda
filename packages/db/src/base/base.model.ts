@@ -555,6 +555,135 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
     }
 
     /**
+     * Finds a single entity with its relations populated using Drizzle's `findFirst()`.
+     *
+     * Unlike `findWithRelations()` (which is a stub overridden by subclasses), this method
+     * provides a GENERIC implementation backed by `db.query[tableName].findFirst()` and works
+     * for any model that defines `getTableName()` correctly and has Drizzle relations configured.
+     *
+     * Supports nested relations (e.g., `{ sponsorship: { sponsor: true } }`).
+     * When no active relations are detected (all values are `false` or empty objects), the method
+     * falls back to `findOne()` to avoid the overhead of the relational query API.
+     *
+     * @param where - Filter conditions used to locate the entity
+     * @param relations - Relations to include, e.g. `{ destination: true, owner: true }`
+     *   or nested `{ sponsorship: { sponsor: true } }`. `false` values are treated as absent.
+     * @param tx - Optional transaction client. When provided, all queries execute within this
+     *   transaction. When omitted, the global database connection is used.
+     * @returns Promise resolving to the entity with the requested relations populated,
+     *   or `null` if no matching entity is found.
+     *
+     * @throws {DbError} If the table name is not defined or the query execution fails.
+     *
+     * @example
+     * ```ts
+     * const accommodation = await model.findOneWithRelations(
+     *   { slug: 'hotel-paradise' },
+     *   { destination: true, owner: true, amenities: true }
+     * );
+     *
+     * // Nested relations
+     * const event = await model.findOneWithRelations(
+     *   { id: 'uuid-here' },
+     *   { sponsorship: { sponsor: true }, destination: true }
+     * );
+     * ```
+     */
+    async findOneWithRelations(
+        where: Record<string, unknown>,
+        relations: Record<string, boolean | Record<string, unknown>>,
+        tx?: DrizzleClient
+    ): Promise<T | null> {
+        const logContext = { where, relations };
+
+        try {
+            // Validate relations object first — warnUnknownRelationKeys would explode on null/non-object
+            if (!relations || typeof relations !== 'object') {
+                throw new Error('Relations must be a valid object');
+            }
+
+            warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
+
+            // Check if any relations are actually requested
+            const hasRelations = Object.values(relations).some((value) => {
+                if (typeof value === 'boolean') return value;
+                if (typeof value === 'object' && value !== null) {
+                    return Object.values(value).some(Boolean);
+                }
+                return false;
+            });
+
+            if (!hasRelations) {
+                // Fall back to regular findOne if no relations requested
+                logQuery(
+                    this.entityName,
+                    'findOneWithRelations',
+                    { ...logContext, inTransaction: !!tx },
+                    'Falling back to findOne - no relations requested'
+                );
+                return this.findOne(where, tx);
+            }
+
+            // Only acquire db client when relations are actually needed
+            const db = this.getClient(tx);
+
+            // Get table name for dynamic query
+            const tableName = this.getTableName();
+            if (!tableName) {
+                throw new Error(`Table name not defined for entity: ${this.entityName}`);
+            }
+
+            // Build WHERE clause using existing helper
+            const whereClause = buildWhereClause(where, this.table);
+
+            // Known limitation: db.query is cast to Record<string, unknown> because BaseModel
+            // is not generic over the table type. Query results are cast to T without type guards.
+            // Future fix: make BaseModel generic over table type for correct Drizzle inference.
+            const queryTable = (db.query as Record<string, unknown>)[tableName];
+            if (!queryTable || typeof queryTable !== 'object' || !('findFirst' in queryTable)) {
+                throw new Error(`Invalid table configuration for: ${tableName}`);
+            }
+
+            // Type assertion for the query method - verified above that findFirst exists
+            interface QueryableTable {
+                findFirst: (options: {
+                    where?: unknown;
+                    with?: Record<string, boolean | Record<string, unknown>>;
+                }) => Promise<unknown | undefined>;
+            }
+            const typedQueryTable = queryTable as QueryableTable;
+
+            const transformedRelations = transformRelationsForDrizzle(relations);
+
+            const result = await typedQueryTable.findFirst({
+                where: whereClause,
+                with: transformedRelations
+            });
+
+            // Drizzle's findFirst() returns undefined when no row matches.
+            // Hospeda convention: convert undefined to null.
+            const entity = (result as T) ?? null;
+
+            try {
+                logQuery(
+                    this.entityName,
+                    'findOneWithRelations',
+                    { ...logContext, inTransaction: !!tx },
+                    { found: entity !== null, hasRelations: true }
+                );
+            } catch {}
+
+            return entity;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'findOneWithRelations', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'findOneWithRelations', logContext, err.message);
+        }
+    }
+
+    /**
      * Finds all entities with specified relations populated.
      * Supports nested relations (e.g., { sponsorship: { sponsor: true } })
      *

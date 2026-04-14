@@ -163,6 +163,28 @@ export interface BaseModel<T extends Record<string, unknown>> {
     ): Promise<T | null>;
 
     /**
+     * Finds a single entity with its relations populated using Drizzle's `findFirst()`.
+     *
+     * Unlike `findWithRelations()` (a stub overridden by subclasses), this provides a GENERIC
+     * implementation backed by `db.query[tableName].findFirst()` that works for any model with
+     * Drizzle relations configured.
+     *
+     * Falls back to `findOne()` when no active relations are detected (all values are `false`).
+     *
+     * @param where - Filter conditions used to locate the entity
+     * @param relations - Relations to include (e.g. `{ destination: true }` or nested
+     *   `{ sponsorship: { sponsor: true } }`). `false` values are treated as absent.
+     * @param tx - Optional transaction client
+     * @returns Promise resolving to the entity with relations, or `null` if not found
+     * @throws {DbError} When the database operation fails
+     */
+    findOneWithRelations(
+        where: Record<string, unknown>,
+        relations: Record<string, boolean | Record<string, unknown>>,
+        tx?: DrizzleClient
+    ): Promise<T | null>;
+
+    /**
      * Execute a raw SQL query against the database.
      * Use sparingly -- prefer typed query methods when possible.
      * Callers must use Drizzle's `sql` tagged template literal for parameterized queries.
