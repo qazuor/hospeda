@@ -1,0 +1,634 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-078",
+    "title": "Cloudinary Image Management System",
+    "created": "2026-04-14T18:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Scaffold packages/media package with tsup, ESM+CJS, and workspace registration",
+            "description": "Create the `packages/media` package following the `packages/icons` template.\n\nFiles to create:\n- `packages/media/package.json` (name: `@repo/media`, type: module, tsup build, same scripts as icons)\n- `packages/media/tsconfig.json` (extend shared TS config)\n- `packages/media/src/index.ts` (barrel export file, initially empty)\n\nRegister in root `pnpm-workspace.yaml` if not auto-detected.\n\nDeps to add: `cloudinary` (^2.9.0), `image-size`, `nanoid`\nDevDeps: `tsup`, `vitest`, `typescript`\n\nVerify: `pnpm install` succeeds, `pnpm --filter @repo/media build` succeeds with empty barrel.\n\nTests: No tests needed for scaffolding — verified by successful build.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003", "T-004", "T-005", "T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Create package.json mirroring @repo/icons template",
+                    "completed": false
+                },
+                { "title": "Create tsconfig.json extending shared config", "completed": false },
+                { "title": "Create src/index.ts barrel export", "completed": false },
+                { "title": "Run pnpm install and verify build", "completed": false }
+            ],
+            "tags": ["setup", "package"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Implement resolveEnvironment() function with env detection logic",
+            "description": "Create `packages/media/src/utils/environment.ts`.\n\nImplement `resolveEnvironment()` as a pure function that returns `'dev' | 'test' | 'preview' | 'prod'` based on:\n- VERCEL_ENV=production -> prod\n- VERCEL_ENV=preview -> preview\n- NODE_ENV=test -> test\n- else -> dev\n\nExport from barrel.\n\nTests (`packages/media/src/utils/__tests__/environment.test.ts`):\n- Returns 'prod' when VERCEL_ENV=production\n- Returns 'preview' when VERCEL_ENV=preview\n- Returns 'test' when NODE_ENV=test and no VERCEL_ENV\n- Returns 'dev' when neither set\n- VERCEL_ENV takes precedence over NODE_ENV",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-010", "T-015", "T-024"],
+            "subtasks": [
+                { "title": "Implement resolveEnvironment() pure function", "completed": false },
+                { "title": "Export from barrel", "completed": false },
+                { "title": "Write unit tests for all env combinations", "completed": false }
+            ],
+            "tags": ["core", "utility"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Define MEDIA_PRESETS constant with all 7 named transform presets",
+            "description": "Create `packages/media/src/presets.ts`.\n\nDefine `MEDIA_PRESETS` as a `readonly` Record mapping preset keys to Cloudinary transform strings:\n- thumbnail: w_200,h_200,c_thumb,g_auto,q_auto,f_auto\n- card: w_400,h_300,c_fill,g_auto,q_auto,f_auto\n- hero: w_1200,h_600,c_fill,g_auto,q_auto,f_auto\n- gallery: w_800,q_auto,f_auto\n- avatar: w_150,h_150,c_thumb,g_face,q_auto,f_auto\n- full: q_auto,f_auto\n- og: w_1200,h_630,c_fill,q_auto,f_auto\n\nExport `MediaPreset` type (keyof typeof MEDIA_PRESETS).\n\nTests (`packages/media/src/__tests__/presets.test.ts`):\n- All 7 presets exist\n- Each preset value is a non-empty string\n- Object is frozen/readonly",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004"],
+            "subtasks": [
+                { "title": "Define MEDIA_PRESETS readonly constant", "completed": false },
+                { "title": "Export MediaPreset type", "completed": false },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["core", "types"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Implement getMediaUrl() pure string transformation function",
+            "description": "Create `packages/media/src/get-media-url.ts`.\n\nImplement `getMediaUrl(url: string | null | undefined, options?)` that:\n- Cloudinary URL (contains 'res.cloudinary.com'): inserts transform string from preset between /upload/ and version/path\n- Non-Cloudinary URL: returns unchanged\n- Nullish/empty: returns fallback placeholder URL\n\nOptions: { preset?, width?, height?, raw? }\n- preset: looks up MEDIA_PRESETS, throws TypeError for unknown\n- width/height: override preset values\n- raw: bypass presets, insert raw transform string\n\nMUST NOT import cloudinary SDK. Pure string ops only.\n\nTests (`packages/media/src/__tests__/get-media-url.test.ts`):\n- REQ-01.3-A: Cloudinary URL with preset 'card' inserts correct transforms\n- REQ-01.3-B: Non-Cloudinary URL passes through unchanged\n- REQ-01.3-C: null/undefined/empty returns fallback\n- REQ-01.3-D: Width override replaces preset width\n- REQ-01.3-E: Raw transform string bypasses presets\n- REQ-01.4-A: Unknown preset throws TypeError\n- URL with existing transforms gets new transforms inserted correctly\n- Multiple presets produce correct transform strings",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-021", "T-022"],
+            "subtasks": [
+                { "title": "Implement Cloudinary URL detection", "completed": false },
+                { "title": "Implement transform string insertion logic", "completed": false },
+                { "title": "Implement fallback for nullish/empty", "completed": false },
+                { "title": "Implement width/height overrides", "completed": false },
+                { "title": "Implement raw transform bypass", "completed": false },
+                { "title": "Write comprehensive unit tests", "completed": false }
+            ],
+            "tags": ["core", "url"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Implement extractPublicId() function for Cloudinary URL parsing",
+            "description": "Create `packages/media/src/extract-public-id.ts`.\n\nImplement `extractPublicId(url: string | null | undefined): string | null` following the algorithm in REQ-01.5:\n1. If URL doesn't contain res.cloudinary.com, return null\n2. Find /upload/ segment\n3. Split remaining path by /\n4. Skip transform segments (contain commas)\n5. Skip version segment (v followed by digits)\n6. Join remaining with /\n7. Remove file extension\n8. Return public ID\n\nTests (`packages/media/src/__tests__/extract-public-id.test.ts`):\n- REQ-01.5-A: Standard URL with version\n- REQ-01.5-B: URL with transforms and version\n- REQ-01.5-C: URL without version\n- REQ-01.5-D: Non-Cloudinary URL returns null\n- REQ-01.5-E: null/undefined/empty returns null\n- URL with multiple transform segments\n- URL with no extension",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-019", "T-020"],
+            "subtasks": [
+                { "title": "Implement URL parsing algorithm", "completed": false },
+                { "title": "Handle edge cases (no version, no extension)", "completed": false },
+                { "title": "Write unit tests for all scenarios", "completed": false }
+            ],
+            "tags": ["core", "url"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Implement validateMediaFile() for file size, MIME type, and dimension validation",
+            "description": "Create `packages/media/src/validate-media-file.ts`.\n\nImplement `validateMediaFile({ buffer, mimeType, context })` where context is 'entity' | 'avatar'.\n\nValidation rules:\n- Entity: max size configurable (HOSPEDA_MEDIA_MAX_FILE_SIZE_MB, default 10), MIME: jpeg/png/webp/heic/avif, max dims: 8000x8000\n- Avatar: max 5MB fixed, MIME: jpeg/png/webp, max dims: 4000x4000\n\nUse `image-size` package to read dimensions from buffer headers.\nHandle `image-size` parse failures as INVALID_IMAGE error (REQ-03.5-A).\n\nReturn typed result: `{ valid: true } | { valid: false, error: string, details: object }`\n\nError codes: FILE_TOO_LARGE, INVALID_FILE_TYPE, IMAGE_TOO_LARGE, INVALID_IMAGE\n\nTests (`packages/media/src/__tests__/validate-media-file.test.ts`):\n- REQ-03-A: File too large rejected\n- REQ-03-B: Disallowed MIME type rejected\n- REQ-03-C: Avatar size limit (5MB)\n- REQ-03-D: Valid file passes\n- REQ-03-F: Oversized dimensions rejected\n- REQ-03.5-A: Spoofed MIME type (image-size fails) rejected\n- Edge: exactly at size limit passes\n- Edge: exactly at dimension limit passes",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-010", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Implement size validation with configurable limit",
+                    "completed": false
+                },
+                { "title": "Implement MIME type validation per context", "completed": false },
+                { "title": "Implement dimension validation using image-size", "completed": false },
+                { "title": "Handle image-size parse failures", "completed": false },
+                {
+                    "title": "Write tests with real image buffers for all scenarios",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "validation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Define ImageProvider interface and implement CloudinaryProvider class",
+            "description": "Create `packages/media/src/provider/types.ts` and `packages/media/src/provider/cloudinary.provider.ts`.\n\nImageProvider interface methods:\n- upload({ file: Buffer, folder, publicId?, tags?, overwrite? }) -> { url, publicId, width, height }\n- delete({ publicId }) -> void\n- deleteByPrefix({ prefix }) -> void\n- buildUrl({ publicId, transforms? }) -> string\n\nCloudinaryProvider:\n- Constructor takes { cloudName, apiKey, apiSecret } (camelCase), maps to SDK snake_case\n- Throws ConfigurationError if any credential missing\n- upload() uses upload_stream() wrapped in Promise (see spec technical notes)\n- Maps SDK secure_url to url in return type\n- delete() calls cloudinary.uploader.destroy(), handles { result: 'not found' } without throwing\n- deleteByPrefix() calls cloudinary.api.delete_resources_by_prefix()\n\nExport generateGalleryId() wrapping nanoid(10).\n\nTests (`packages/media/src/provider/__tests__/cloudinary.provider.test.ts`):\n- Mock cloudinary SDK (vi.mock('cloudinary'))\n- REQ-01.1-A: upload returns correct shape\n- REQ-01.1-B: delete calls destroy\n- REQ-01.1-C: deleteByPrefix calls correct API\n- REQ-01.2-A: Initializes from credentials\n- REQ-01.2-B: Missing credentials throws ConfigurationError\n- Upload maps secure_url, discards url\n- Delete handles 'not found' without throwing\n- upload_stream wrapping works with buffer",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-010", "T-011", "T-012", "T-024"],
+            "subtasks": [
+                { "title": "Define ImageProvider interface", "completed": false },
+                {
+                    "title": "Implement upload() with upload_stream Promise wrapper",
+                    "completed": false
+                },
+                { "title": "Implement delete() with not-found handling", "completed": false },
+                { "title": "Implement deleteByPrefix()", "completed": false },
+                { "title": "Implement generateGalleryId() with nanoid", "completed": false },
+                { "title": "Write mocked unit tests for all methods", "completed": false }
+            ],
+            "tags": ["core", "provider"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Register 4 Cloudinary env vars in packages/config env registry",
+            "description": "Edit `packages/config/src/env-registry.hospeda.ts`.\n\nAdd 4 entries to HOSPEDA_ENV_VARS array:\n1. HOSPEDA_CLOUDINARY_CLOUD_NAME (string, not required, not secret, apps: ['api'], category: 'integrations')\n2. HOSPEDA_CLOUDINARY_API_KEY (string, not required, secret: true, apps: ['api'], category: 'integrations')\n3. HOSPEDA_CLOUDINARY_API_SECRET (string, not required, secret: true, apps: ['api'], category: 'integrations')\n4. HOSPEDA_MEDIA_MAX_FILE_SIZE_MB (string, not required, not secret, default: '10', apps: ['api'], category: 'integrations', comment about Vercel Pro plan for >4.5MB)\n\nFollow existing entry format exactly.\n\nUpdate `.env.example` files for `apps/api` with the new vars.\n\nTests: Existing env registry tests should still pass. No new tests needed — env vars are validated at runtime.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-010", "T-011"],
+            "subtasks": [
+                { "title": "Add 4 entries to HOSPEDA_ENV_VARS", "completed": false },
+                { "title": "Update apps/api/.env.example", "completed": false },
+                { "title": "Verify existing tests pass", "completed": false }
+            ],
+            "tags": ["setup", "config"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Add upload request Zod schemas to @repo/schemas",
+            "description": "Edit `packages/schemas/src/common/media.schema.ts` (or create a new file `packages/schemas/src/common/media-upload.schema.ts`).\n\nAdd schemas:\n- AdminUploadRequestSchema: { entityType: z.enum(['accommodation','destination','event','post']), entityId: z.string().uuid(), role: z.enum(['featured','gallery']) }\n- DeleteMediaQuerySchema: { publicId: z.string().min(1).refine(s => s.startsWith('hospeda/')) }\n- UploadResponseSchema: { url: z.string().url(), publicId: z.string(), width: z.number(), height: z.number() }\n\nExport inferred types.\n\nTests: Schema validation tests for valid/invalid inputs (UUID format, enum values, publicId prefix).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-010", "T-011", "T-012"],
+            "subtasks": [
+                { "title": "Create AdminUploadRequestSchema", "completed": false },
+                { "title": "Create DeleteMediaQuerySchema", "completed": false },
+                { "title": "Create UploadResponseSchema", "completed": false },
+                { "title": "Write schema validation tests", "completed": false }
+            ],
+            "tags": ["setup", "schemas"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Implement POST /api/v1/admin/media/upload endpoint",
+            "description": "Create `apps/api/src/routes/media/admin/upload.ts`.\n\nRoute: POST /api/v1/admin/media/upload (admin auth required)\n\nRequest: multipart/form-data with file, entityType, entityId, role\n\nFlow:\n1. Content-Length pre-check -> 413 if exceeds limit (REQ-03.4)\n2. Parse multipart via ctx.req.formData()\n3. Validate entityType/entityId/role via AdminUploadRequestSchema\n4. Validate entityId is UUID (path traversal protection REQ-04.1-H)\n5. Verify entity exists in DB via service lookup -> 404 if not found (REQ-04.1-G)\n6. Convert File to Buffer via file.arrayBuffer()\n7. Run validateMediaFile() -> 422 on failure\n8. Build folder path: hospeda/{env}/{entityType}/{entityId}/{role or gallery/nanoid}\n9. Call provider.upload() -> 502 on failure\n10. Validate Cloudinary response has secure_url, public_id -> 502 if missing (REQ-04.1-I)\n11. Return { url, publicId, width, height }\n\nCloudinary not configured -> 503 (REQ-06-B)\n\nMount route in admin route group.\n\nTests (`apps/api/src/routes/media/admin/__tests__/upload.test.ts`):\n- Mock CloudinaryProvider\n- REQ-04.1-A: Unauthenticated -> 401\n- REQ-04.1-B: Successful upload returns correct shape\n- REQ-04.1-C: Gallery generates nanoid suffix\n- REQ-04.1-D: Missing field -> 422\n- REQ-04.1-E: Cloudinary unreachable -> 502\n- REQ-04.1-G: Entity not found -> 404\n- REQ-04.1-H: Path traversal (non-UUID entityId) -> 422\n- REQ-04.1-I: Incomplete Cloudinary response -> 502\n- REQ-03-E: Content-Length too large -> 413\n- REQ-06-B: No Cloudinary config -> 503",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-002", "T-006", "T-007", "T-008", "T-009"],
+            "blocks": ["T-013", "T-019"],
+            "subtasks": [
+                { "title": "Create route file with admin auth middleware", "completed": false },
+                { "title": "Implement Content-Length pre-check", "completed": false },
+                { "title": "Implement multipart parsing and validation", "completed": false },
+                { "title": "Implement entity existence check via DB", "completed": false },
+                { "title": "Wire file validation and Cloudinary upload", "completed": false },
+                { "title": "Mount in admin route group", "completed": false },
+                { "title": "Write integration tests with mocked provider", "completed": false }
+            ],
+            "tags": ["integration", "api", "admin"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Implement POST /api/v1/protected/media/upload avatar endpoint",
+            "description": "Create `apps/api/src/routes/media/protected/upload.ts`.\n\nRoute: POST /api/v1/protected/media/upload (any authenticated user)\n\nRequest: multipart/form-data with file only\n\nFlow:\n1. Content-Length pre-check -> 413 (avatar max 5MB)\n2. Parse multipart\n3. Extract userId from session\n4. Convert File to Buffer\n5. Run validateMediaFile({ buffer, mimeType, context: 'avatar' }) -> 422 on failure\n6. Build folder: hospeda/{env}/avatars/{userId}\n7. Call provider.upload({ overwrite: true }) -> 502 on failure\n8. Return { url, publicId, width, height }\n\nCloudinary not configured -> 503\n\nMount in protected route group.\n\nTests (`apps/api/src/routes/media/protected/__tests__/upload.test.ts`):\n- Mock CloudinaryProvider\n- REQ-04.2-A: Authenticated upload succeeds with correct path\n- REQ-04.2-B: Unauthenticated -> 401\n- Avatar overwrite: true is passed to provider\n- Avatar size limit enforced (5MB)\n- Avatar MIME types enforced (no HEIC/AVIF)\n- 503 when Cloudinary not configured",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-007", "T-008", "T-009"],
+            "blocks": ["T-013", "T-023"],
+            "subtasks": [
+                { "title": "Create route with protected auth middleware", "completed": false },
+                { "title": "Implement avatar-specific validation and upload", "completed": false },
+                { "title": "Mount in protected route group", "completed": false },
+                { "title": "Write integration tests", "completed": false }
+            ],
+            "tags": ["integration", "api", "protected"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Implement DELETE /api/v1/admin/media endpoint",
+            "description": "Create `apps/api/src/routes/media/admin/delete.ts`.\n\nRoute: DELETE /api/v1/admin/media?publicId={urlEncoded} (admin auth required)\n\nFlow:\n1. Parse and validate publicId query param via DeleteMediaQuerySchema\n2. Validate publicId starts with 'hospeda/' (namespace protection)\n3. Call provider.delete({ publicId })\n4. Return { deleted: true, publicId } (HTTP 200)\n5. Treat Cloudinary 'not found' same as success (idempotent)\n\nCloudinary not configured -> 503\n\nMount alongside upload in admin route group.\n\nTests (`apps/api/src/routes/media/admin/__tests__/delete.test.ts`):\n- REQ-04.3-A: Successful delete\n- REQ-04.3-B: publicId outside namespace -> 422\n- REQ-04.3-C: Cloudinary not found -> still 200\n- REQ-04.3-D: Unauthenticated -> 401\n- REQ-04.3-E: Missing publicId -> 422\n- 503 when Cloudinary not configured",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-009"],
+            "blocks": ["T-013", "T-020"],
+            "subtasks": [
+                { "title": "Create route with query param validation", "completed": false },
+                { "title": "Implement namespace check and delete call", "completed": false },
+                { "title": "Mount in admin route group", "completed": false },
+                { "title": "Write integration tests", "completed": false }
+            ],
+            "tags": ["integration", "api", "admin"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Initialize CloudinaryProvider in API app and mount media routes",
+            "description": "Edit `apps/api/src/` to wire the CloudinaryProvider and media routes.\n\nCreate `apps/api/src/services/media.ts`:\n- Lazy singleton pattern for CloudinaryProvider\n- Read HOSPEDA_CLOUDINARY_* env vars\n- If vars missing, log warning and set provider to null\n- Export getMediaProvider() that returns provider or null\n\nMount media routes in the API app route tree:\n- Admin routes under /api/v1/admin/media\n- Protected routes under /api/v1/protected/media\n\nEnsure upload/delete routes check for provider availability and return 503 if null.\n\nTests: Verify route mounting via existing route registration patterns. Test lazy init with missing env vars returns null and logs warning.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-011", "T-012"],
+            "blocks": ["T-019", "T-020"],
+            "subtasks": [
+                {
+                    "title": "Create media service with lazy singleton provider",
+                    "completed": false
+                },
+                { "title": "Mount admin media routes", "completed": false },
+                { "title": "Mount protected media routes", "completed": false },
+                { "title": "Test graceful degradation without config", "completed": false }
+            ],
+            "tags": ["integration", "api", "wiring"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Create or verify PATCH /api/v1/protected/users/me endpoint for avatar persistence",
+            "description": "Check if `PATCH /api/v1/protected/users/me` exists. If not, create it.\n\nThe endpoint needs to accept `{ image: string }` to persist the avatar URL after upload (REQ-04.2-FLOW).\n\nSearch for existing user profile update endpoints in `apps/api/src/routes/`.\n\nIf creating:\n- Create `apps/api/src/routes/users/protected/me.ts`\n- Accept PATCH with body { image: z.string().url().optional() }\n- Update user record in DB\n- Return updated user (omit sensitive fields)\n- Protected auth required\n\nTests:\n- Authenticated PATCH updates image field\n- Unauthenticated -> 401\n- Invalid URL format -> 422",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-023"],
+            "subtasks": [
+                { "title": "Search for existing user profile update endpoint", "completed": false },
+                { "title": "Create endpoint if missing", "completed": false },
+                { "title": "Write tests for image field update", "completed": false }
+            ],
+            "tags": ["integration", "api", "user"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Implement seed image cache system (read/write/invalidation)",
+            "description": "Create `packages/seed/src/utils/cloudinary-cache.ts`.\n\nImplement:\n- `readCache(cachePath)`: Read .cloudinary-cache.json, handle corrupted JSON (REQ-07.2-E)\n- `writeCache(cachePath, cache)`: Atomic write (temp file + rename)\n- `isCacheHit({ cacheEntry, currentUrl, currentFileMtime })`: Compare originalUrl or fileModifiedAt\n- `updateCacheEntry(cache, publicId, { originalUrl, cloudinaryUrl, fileModifiedAt })`: Update single entry\n\nCache format per REQ-07.1.\n\nAdd `.cloudinary-cache.json` to `packages/seed/.gitignore`.\n\nTests (`packages/seed/src/utils/__tests__/cloudinary-cache.test.ts`):\n- REQ-07.2-A: Cache miss when no file exists\n- REQ-07.2-B: Cache hit when URL matches\n- REQ-07.2-C: Cache miss when URL changed\n- REQ-07.2-D: Cache miss when file mtime changed\n- REQ-07.2-E: Corrupted cache is handled gracefully\n- Atomic write creates temp file first",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                { "title": "Implement readCache with corruption handling", "completed": false },
+                { "title": "Implement writeCache with atomic write", "completed": false },
+                { "title": "Implement cache hit/miss logic", "completed": false },
+                { "title": "Add .gitignore entry", "completed": false },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["integration", "seed"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Implement seed image upload integration (fetch URL, upload to Cloudinary, update cache)",
+            "description": "Create `packages/seed/src/utils/cloudinary-upload.ts`.\n\nImplement `uploadSeedImage({ originalUrl, entityType, entityId, role, galleryIndex?, provider, cache, env })`:\n1. Build publicId: hospeda/{env}/seed/{entityType}/{entityId}/{role or gallery/index}\n2. Check cache: if hit, return cached cloudinaryUrl\n3. Fetch image from originalUrl (native fetch)\n4. Upload buffer to Cloudinary via provider.upload()\n5. Update cache with new entry\n6. Return cloudinaryUrl\n\nFor gallery images in seed, use deterministic suffix based on array position (not nanoid) for cache stability.\n\nHandle missing Cloudinary config gracefully (REQ-07.3): return original URL, log warning once.\n\nTests (`packages/seed/src/utils/__tests__/cloudinary-upload.test.ts`):\n- Cache hit returns cached URL without upload\n- Cache miss fetches and uploads\n- Missing Cloudinary config returns original URL\n- Gallery uses deterministic index-based suffix\n- Failed fetch logs warning and returns original URL",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                { "title": "Implement publicId building for seed paths", "completed": false },
+                { "title": "Implement URL fetch and upload flow", "completed": false },
+                { "title": "Integrate with cache system", "completed": false },
+                { "title": "Handle missing Cloudinary config gracefully", "completed": false },
+                { "title": "Write unit tests with mocked provider and fetch", "completed": false }
+            ],
+            "tags": ["integration", "seed"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Integrate seed image upload into existing seed runners and add --clean-images CLI flag",
+            "description": "Edit `packages/seed/src/cli.ts` and `packages/seed/src/index.ts`.\n\nCLI changes:\n- Add `--clean-images` flag parsing (follows existing args.includes pattern)\n- When --clean-images: call deleteByPrefix('hospeda/{env}/seed/') and delete cache file\n- REQ-07.4-B: If Cloudinary not configured, only delete local cache, warn\n\nSeed runner changes:\n- Add `cleanImages` and `uploadImages` options to SeedOptions type\n- In seed runners (runExampleSeeds, runRequiredSeeds), after loading each entity's seed data, call uploadSeedImage for each image URL\n- Replace original URLs in seed data with Cloudinary URLs before DB insert\n- REQ-07.3: If Cloudinary not configured, skip upload entirely, use original URLs\n\nTests:\n- --clean-images calls deleteByPrefix and deletes cache\n- --clean-images without Cloudinary only deletes local cache\n- Seed run replaces URLs with Cloudinary URLs\n- Seed run without Cloudinary uses original URLs",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-016"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                { "title": "Add --clean-images flag to CLI parser", "completed": false },
+                {
+                    "title": "Implement cleanup flow (deleteByPrefix + cache delete)",
+                    "completed": false
+                },
+                { "title": "Add uploadImages option to SeedOptions", "completed": false },
+                { "title": "Integrate image upload into seed runners", "completed": false },
+                { "title": "Write tests for CLI and seed integration", "completed": false }
+            ],
+            "tags": ["integration", "seed", "cli"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Create useMediaUpload hook for admin upload API calls",
+            "description": "Create `apps/admin/src/hooks/use-media-upload.ts`.\n\nImplement `useMediaUpload()` hook that returns:\n- `uploadEntityImage({ file, entityType, entityId, role })`: calls POST /api/v1/admin/media/upload with FormData, returns { url, publicId, width, height }\n- `uploadAvatar({ file })`: calls POST /api/v1/protected/media/upload\n- `deleteImage({ publicId })`: calls DELETE /api/v1/admin/media?publicId=...\n- `isUploading`: boolean state\n- `error`: error state\n- `progress`: upload progress (if feasible with fetch)\n\nUse existing TanStack Query mutation patterns from admin codebase.\n\nTests (`apps/admin/src/hooks/__tests__/use-media-upload.test.ts`):\n- uploadEntityImage sends correct FormData\n- uploadAvatar sends correct FormData\n- deleteImage sends correct query param\n- Error states are handled",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-019", "T-020"],
+            "subtasks": [
+                { "title": "Implement uploadEntityImage mutation", "completed": false },
+                { "title": "Implement deleteImage mutation", "completed": false },
+                { "title": "Implement loading/error states", "completed": false },
+                { "title": "Write hook tests", "completed": false }
+            ],
+            "tags": ["integration", "admin", "hooks"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Wire GalleryField onUpload to admin upload API and add featured image upload",
+            "description": "Edit `apps/admin/src/components/entity-form/fields/GalleryField.tsx` and entity form components.\n\nChanges to GalleryField:\n- Update size limit from 5MB to configurable value (default 10MB) per REQ-08.1\n- Add HEIC and AVIF to client-side allowed types\n- Wire `onUpload` prop to call useMediaUpload().uploadEntityImage()\n- Show upload progress indicator during upload\n- Display clear error messages on API errors\n\nFeatured image upload:\n- Ensure entity edit forms pass correct entityType/entityId/role to the upload hook\n- Featured image uses overwrite semantics (same publicId path)\n- On upload success, update form state with returned URL\n\nGallery add:\n- New gallery image calls upload with role='gallery'\n- Server generates nanoid, client stores returned publicId\n\nTests:\n- Component renders upload area\n- File selection triggers validation\n- Invalid file shows error message\n- onUpload callback receives correct parameters",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-005", "T-010", "T-013", "T-018"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                { "title": "Update size and MIME type limits in GalleryField", "completed": false },
+                { "title": "Wire onUpload to useMediaUpload hook", "completed": false },
+                { "title": "Add progress indicator and error display", "completed": false },
+                { "title": "Wire featured image upload in entity forms", "completed": false },
+                { "title": "Write component tests", "completed": false }
+            ],
+            "tags": ["integration", "admin", "ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Wire gallery image removal to delete API and add Cloudinary cleanup",
+            "description": "Edit `apps/admin/src/components/entity-form/fields/GalleryField.tsx`.\n\nWhen an admin removes a gallery image:\n1. Extract publicId from the image URL using extractPublicId() from @repo/media\n2. If publicId is not null (Cloudinary URL), call useMediaUpload().deleteImage({ publicId })\n3. Remove the image from gallery array in form state\n4. If publicId is null (non-Cloudinary URL), just remove from array (no API call)\n\nREQ-08.2-B: Gallery removal triggers delete endpoint.\nREQ-08.2-C: Featured image replacement uses overwrite (no separate delete needed).\n\nTests:\n- Removing Cloudinary gallery image calls delete API\n- Removing non-Cloudinary image skips delete API\n- Gallery reorder does not trigger deletes\n- Error from delete API is handled gracefully (image still removed from UI)",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-012", "T-013", "T-018"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                { "title": "Import extractPublicId from @repo/media", "completed": false },
+                { "title": "Wire remove action to delete API", "completed": false },
+                { "title": "Handle non-Cloudinary URLs (skip delete)", "completed": false },
+                { "title": "Write tests for remove-with-cleanup flow", "completed": false }
+            ],
+            "tags": ["integration", "admin", "ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Refactor apps/web/src/lib/media.ts to use getMediaUrl() from @repo/media",
+            "description": "Edit `apps/web/src/lib/media.ts`.\n\nCurrent exports:\n- extractFeaturedImageUrl(item, fallback): extracts URL with fallback chain\n- extractGalleryUrls(item): returns gallery URLs array\n\nMigration (REQ-10.1):\n1. Import getMediaUrl from @repo/media\n2. Update extractFeaturedImageUrl to accept optional preset param (default 'card')\n3. After extracting raw URL via existing fallback logic, pass through getMediaUrl(url, { preset })\n4. Update extractGalleryUrls to accept optional preset param (default 'gallery')\n5. Map each gallery URL through getMediaUrl(url, { preset })\n6. Remove any local URL transformation logic if present\n\nREQ-10.1-A: Non-Cloudinary URLs pass through unchanged, visual output identical.\n\nTests (`apps/web/src/lib/__tests__/media.test.ts`):\n- Unsplash URL returned unchanged through getMediaUrl passthrough\n- Cloudinary URL gets preset transforms applied\n- Fallback chain still works\n- null/undefined input returns placeholder",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                { "title": "Add @repo/media dependency to apps/web", "completed": false },
+                {
+                    "title": "Refactor extractFeaturedImageUrl with preset param",
+                    "completed": false
+                },
+                { "title": "Refactor extractGalleryUrls with preset param", "completed": false },
+                {
+                    "title": "Write tests verifying passthrough and transform behavior",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "web", "migration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Update admin image display to use getMediaUrl() with presets",
+            "description": "Audit and update admin components that display entity images.\n\nREQ-10.2: All <img> elements displaying entity images must use getMediaUrl().\n\nLocations to check:\n- `apps/admin/src/routes/_authed/accommodations/$id_.gallery.tsx`\n- Entity list views (thumbnail preset)\n- Entity detail views (appropriate preset)\n- Any component rendering media.featuredImage.url or gallery URLs\n\nFor each location:\n1. Import getMediaUrl from @repo/media\n2. Replace raw `src={url}` with `src={getMediaUrl(url, { preset: 'thumbnail' })}` (list) or appropriate preset (detail)\n\nTests: Visual regression is acceptable. Verify getMediaUrl is imported and used in updated components.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                { "title": "Add @repo/media dependency to apps/admin", "completed": false },
+                { "title": "Audit all <img> elements in admin components", "completed": false },
+                { "title": "Update list views to use thumbnail preset", "completed": false },
+                { "title": "Update detail views to use appropriate presets", "completed": false }
+            ],
+            "tags": ["integration", "admin", "migration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Implement web app avatar upload React island on account edit page",
+            "description": "Create `apps/web/src/components/account/AvatarUpload.tsx` (React island).\n\nREQ-09: Avatar upload on account edit page.\n\nComponent:\n- Renders current avatar (or placeholder)\n- 'Change avatar' button opens file picker\n- Client-side validation: JPEG/PNG/WebP only, max 5MB\n- Preview selected file via URL.createObjectURL()\n- On confirm: POST /api/v1/protected/media/upload with FormData\n- On success: call PATCH /api/v1/protected/users/me with { image: returnedUrl }\n- Update displayed avatar without full page reload\n\nPlace component on `apps/web/src/pages/[lang]/mi-cuenta/editar/index.astro` with `client:idle` directive.\n\nTests:\n- REQ-09-A: Valid file upload flow\n- REQ-09-B: Invalid file type shows error\n- File too large shows error\n- Component renders placeholder when no avatar",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-011", "T-014"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                { "title": "Create AvatarUpload React component", "completed": false },
+                {
+                    "title": "Implement file selection and client-side validation",
+                    "completed": false
+                },
+                { "title": "Implement upload flow with preview", "completed": false },
+                { "title": "Wire PATCH /users/me for URL persistence", "completed": false },
+                { "title": "Mount on account edit page as React island", "completed": false },
+                { "title": "Write component tests", "completed": false }
+            ],
+            "tags": ["integration", "web", "ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Add Cloudinary cleanup hooks to entity services (accommodation, destination, event, post)",
+            "description": "Edit entity service files to add hard delete image cleanup.\n\nREQ-12.3: Use _beforeHardDelete/_afterHardDelete lifecycle hooks.\n\nFor each service (accommodation, destination, event, post):\n1. Override `_beforeHardDelete(id, actor, ctx)`: store id and entityType in ctx.hookState\n2. Override `_afterHardDelete(result, actor, ctx)`: if result.count > 0, call provider.deleteByPrefix()\n3. Catch errors in afterHardDelete — log warning, do NOT re-throw (best-effort)\n\nFiles:\n- `packages/service-core/src/services/accommodation/accommodation.service.ts`\n- `packages/service-core/src/services/destination/destination.service.ts` (or wherever it is)\n- `packages/service-core/src/services/event/event.service.ts`\n- `packages/service-core/src/services/post/post.service.ts`\n\nFor user avatar cleanup: override in user service to call provider.delete() with single avatar publicId.\n\nREQ-12.2: Soft delete does NOT trigger cleanup.\n\nTests:\n- REQ-12-A: Hard delete calls deleteByPrefix with correct path\n- REQ-12-B: Soft delete does NOT call any Cloudinary method\n- REQ-12-C: Cloudinary failure does not block entity deletion\n- REQ-12-D: User hard delete calls delete (not deleteByPrefix)",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-002", "T-007"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                { "title": "Add hooks to AccommodationService", "completed": false },
+                { "title": "Add hooks to DestinationService", "completed": false },
+                { "title": "Add hooks to EventService", "completed": false },
+                { "title": "Add hooks to PostService", "completed": false },
+                { "title": "Add avatar cleanup hook to UserService", "completed": false },
+                { "title": "Write tests for each service's cleanup hooks", "completed": false }
+            ],
+            "tags": ["integration", "service-core", "cleanup"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "End-to-end verification: no direct cloudinary imports outside @repo/media",
+            "description": "Run a codebase-wide grep to verify acceptance criterion 15: 'No app or package other than packages/media imports from the cloudinary SDK.'\n\nChecks:\n1. grep for `from 'cloudinary'` or `require('cloudinary')` outside packages/media -> must find 0 results\n2. grep for `import.*cloudinary` outside packages/media -> must find 0 results\n3. Verify getMediaUrl is used (not raw URLs) in admin and web img tags\n4. Verify all upload/delete routes return correct response shapes\n5. Run full typecheck: `pnpm typecheck`\n6. Run full lint: `pnpm lint`\n7. Run all tests: `pnpm test`\n\nDocument any violations found and fix them.\n\nThis is a validation task — no new code, just verification.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-017", "T-019", "T-020", "T-021", "T-022", "T-023", "T-024"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Grep for cloudinary imports outside packages/media",
+                    "completed": false
+                },
+                { "title": "Verify getMediaUrl usage in admin/web", "completed": false },
+                { "title": "Run pnpm typecheck", "completed": false },
+                { "title": "Run pnpm lint", "completed": false },
+                { "title": "Run pnpm test", "completed": false },
+                { "title": "Fix any violations found", "completed": false }
+            ],
+            "tags": ["testing", "verification"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-14T18:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 25,
+        "pending": 25,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.9
+    }
+}

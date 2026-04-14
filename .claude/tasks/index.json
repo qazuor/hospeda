@@ -210,6 +210,13 @@
             "status": "pending",
             "progress": "0/7",
             "path": "SPEC-066-getbyid-relation-loading"
+        },
+        {
+            "specId": "SPEC-078",
+            "title": "Cloudinary Image Management System",
+            "status": "in-progress",
+            "progress": "25/25",
+            "path": "SPEC-078-cloudinary-image-management"
         }
     ],
     "standalone": {
