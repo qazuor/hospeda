@@ -1,0 +1,193 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    background-color: oklch(0 0 0 / 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: var(--space-4, 16px);
+}
+
+.modal {
+    background-color: var(--card, #fff);
+    border-radius: var(--radius-card, 24px);
+    max-width: 640px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    border: none;
+    box-shadow: 0 25px 50px oklch(0 0 0 / 0.25);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-5, 20px);
+    border-bottom: 1px solid var(--border, oklch(0.9 0 0));
+    flex-shrink: 0;
+}
+
+.title {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--foreground);
+    margin: 0;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.closeBtn:hover {
+    background-color: var(--surface-warm, oklch(0.95 0 0));
+}
+
+.body {
+    overflow-y: auto;
+    padding: var(--space-5, 20px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+}
+
+.reviewCard {
+    padding: var(--space-4, 16px);
+    border: 1px solid var(--border, oklch(0.9 0 0));
+    border-radius: var(--radius-button, 8px);
+}
+
+.reviewHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    margin-bottom: var(--space-2, 8px);
+}
+
+.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.avatarFallback {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.reviewMeta {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.reviewName {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--foreground);
+}
+
+.reviewDate {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+}
+
+.reviewRating {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--accent);
+}
+
+.reviewContent {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--foreground);
+    margin: 0;
+}
+
+.spinner {
+    text-align: center;
+    padding: var(--space-4, 16px);
+    color: var(--muted-foreground);
+    font-family: var(--font-sans);
+}
+
+.error {
+    text-align: center;
+    padding: var(--space-4, 16px);
+}
+
+.error p {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--muted-foreground);
+    margin: 0 0 var(--space-3, 12px);
+}
+
+.retryBtn {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--primary);
+    background: none;
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-button, 8px);
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.retryBtn:hover {
+    background-color: var(--primary);
+    color: white;
+}
+
+.loadMore {
+    align-self: center;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--primary);
+    background: none;
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-pill);
+    padding: var(--space-2, 8px) var(--space-5, 20px);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.loadMore:hover {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}

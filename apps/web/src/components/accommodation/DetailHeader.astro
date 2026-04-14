@@ -1,0 +1,128 @@
+---
+/**
+ * @file DetailHeader.astro
+ * @description Accommodation detail page header with name, badges, destination, and rating.
+ */
+import type { AccommodationDetailData } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import RatingStars from '@/components/shared/RatingStars.astro';
+
+interface Props {
+  readonly accommodation: AccommodationDetailData;
+  readonly lang: string;
+}
+
+const { accommodation, lang } = Astro.props;
+const { t } = createTranslations(lang as SupportedLocale);
+
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const isNew = (Date.now() - new Date(accommodation.createdAt).getTime()) < THIRTY_DAYS_MS;
+---
+
+<header class="detail-header">
+  <div class="detail-header__badges">
+    <span class="detail-header__type-badge">{accommodation.type}</span>
+    {accommodation.isFeatured && (
+      <span class="detail-header__featured-badge">
+        {t('accommodations.detail.badges.featured')}
+      </span>
+    )}
+    {isNew && (
+      <span class="detail-header__new-badge">
+        {t('accommodations.detail.badges.new')}
+      </span>
+    )}
+  </div>
+
+  <h1 class="detail-header__name">{accommodation.name}</h1>
+
+  <a href={`/${lang}/destinos/${accommodation.destination.slug}`} class="detail-header__destination">
+    {accommodation.destination.name}
+  </a>
+
+  {accommodation.averageRating > 0 && (
+    <div class="detail-header__rating">
+      <RatingStars rating={accommodation.averageRating} />
+      <span class="detail-header__reviews-count">
+        ({accommodation.reviewsCount} {t('accommodations.detail.reviewsLabel')})
+      </span>
+    </div>
+  )}
+</header>
+
+<style>
+  .detail-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+  }
+  .detail-header__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 8px);
+    align-items: center;
+  }
+  .detail-header__type-badge {
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px 14px;
+    border-radius: var(--radius-pill);
+    background-color: oklch(from var(--primary) l c h / 0.12);
+    color: var(--primary);
+    border: 1px solid oklch(from var(--primary) l c h / 0.25);
+  }
+  .detail-header__featured-badge {
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 4px 14px;
+    border-radius: var(--radius-pill);
+    background-color: var(--accent);
+    color: white;
+  }
+  .detail-header__new-badge {
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 4px 14px;
+    border-radius: var(--radius-pill);
+    background-color: oklch(0.45 0.15 145);
+    color: white;
+  }
+  .detail-header__name {
+    font-family: var(--font-heading);
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    font-weight: 700;
+    color: var(--foreground);
+    margin: 0;
+    line-height: 1.15;
+  }
+  .detail-header__destination {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--primary);
+    text-decoration: none;
+  }
+  .detail-header__destination:hover {
+    text-decoration: underline;
+  }
+  .detail-header__rating {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+  }
+  .detail-header__reviews-count {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--muted-foreground);
+  }
+</style>

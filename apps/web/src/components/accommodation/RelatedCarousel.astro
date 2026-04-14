@@ -1,0 +1,115 @@
+---
+/**
+ * @file RelatedCarousel.astro
+ * @description Horizontal scroll-snap carousel for related content cards.
+ * Desktop: arrow buttons. Mobile: native swipe. Hidden if no content.
+ */
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+  readonly title: string;
+  readonly ariaLabel: string;
+  readonly lang: string;
+}
+
+const { title, ariaLabel, lang } = Astro.props;
+const { t } = createTranslations(lang as SupportedLocale);
+const prevLabel = t('accommodations.detail.related.prevSlide');
+const nextLabel = t('accommodations.detail.related.nextSlide');
+---
+
+<section class="related-carousel" role="region" aria-label={ariaLabel}>
+  <div class="related-carousel__header">
+    <h3 class="related-carousel__title">{title}</h3>
+    <div class="related-carousel__arrows">
+      <button class="related-carousel__arrow related-carousel__arrow--prev" aria-label={prevLabel} data-dir="prev">
+        &#8249;
+      </button>
+      <button class="related-carousel__arrow related-carousel__arrow--next" aria-label={nextLabel} data-dir="next">
+        &#8250;
+      </button>
+    </div>
+  </div>
+  <div class="related-carousel__track">
+    <slot />
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll('.related-carousel').forEach((carousel) => {
+    const track = carousel.querySelector('.related-carousel__track');
+    if (!track) return;
+    carousel.querySelectorAll('.related-carousel__arrow').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const dir = (btn as HTMLElement).dataset.dir === 'prev' ? -1 : 1;
+        track.scrollBy({ left: dir * 320, behavior: 'smooth' });
+      });
+    });
+  });
+</script>
+
+<style>
+  .related-carousel {
+    margin-bottom: var(--space-6, 24px);
+  }
+  .related-carousel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4, 16px);
+  }
+  .related-carousel__title {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--foreground);
+    margin: 0;
+  }
+  .related-carousel__arrows {
+    display: flex;
+    gap: var(--space-2, 8px);
+  }
+  .related-carousel__arrow {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    background-color: var(--card);
+    color: var(--foreground);
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color var(--duration-normal, 0.4s) ease;
+  }
+  .related-carousel__arrow:hover {
+    background-color: var(--surface-warm);
+  }
+  .related-carousel__track {
+    display: flex;
+    gap: var(--space-card-gap, 30px);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: var(--space-2, 8px);
+  }
+  .related-carousel__track::-webkit-scrollbar {
+    display: none;
+  }
+  .related-carousel__track > :global(*) {
+    flex: 0 0 auto;
+    width: 300px;
+    scroll-snap-align: start;
+  }
+  @media (max-width: 768px) {
+    .related-carousel__arrows {
+      display: none;
+    }
+    .related-carousel__track > :global(*) {
+      width: 260px;
+    }
+  }
+</style>

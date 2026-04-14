@@ -1,0 +1,107 @@
+---
+/**
+ * @file FaqAccordion.astro
+ * @description Native details/summary FAQ accordion. Grouped by category.
+ * Hidden if no FAQs. Zero JavaScript.
+ */
+import type { AccommodationFaqItem } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+  readonly faqs: readonly AccommodationFaqItem[];
+  readonly lang: string;
+}
+
+const { faqs, lang } = Astro.props;
+const { t } = createTranslations(lang as SupportedLocale);
+
+if (faqs.length === 0) return;
+
+// Group by category. Null category → "General", placed last.
+const generalLabel = t('accommodations.detail.faqsDetail.generalCategory');
+const groups = new Map<string, AccommodationFaqItem[]>();
+
+for (const faq of faqs) {
+  const cat = faq.category ?? generalLabel;
+  const arr = groups.get(cat) ?? [];
+  arr.push(faq);
+  groups.set(cat, arr);
+}
+
+// Move "General" to the end
+const sortedGroups = [...groups.entries()].sort((a, b) => {
+  if (a[0] === generalLabel) return 1;
+  if (b[0] === generalLabel) return -1;
+  return a[0].localeCompare(b[0]);
+});
+---
+
+<section class="faq-section">
+  <h2 class="faq-section__title">{t('accommodations.detail.faqsDetail.title')}</h2>
+
+  {sortedGroups.map(([category, items]) => (
+    <div class="faq-group">
+      {sortedGroups.length > 1 && <h3 class="faq-group__heading">{category}</h3>}
+      {items.map((faq) => (
+        <details class="faq-item">
+          <summary class="faq-item__question">{faq.question}</summary>
+          <p class="faq-item__answer">{faq.answer}</p>
+        </details>
+      ))}
+    </div>
+  ))}
+</section>
+
+<style>
+  .faq-section__title {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--foreground);
+    margin-bottom: var(--space-4, 16px);
+  }
+  .faq-group__heading {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--foreground);
+    margin-top: var(--space-4, 16px);
+    margin-bottom: var(--space-2, 8px);
+  }
+  .faq-item {
+    border-bottom: 1px solid var(--border, oklch(0.8 0 0));
+    padding: var(--space-3, 12px) 0;
+  }
+  .faq-item__question {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 1rem;
+    color: var(--foreground);
+    cursor: pointer;
+    list-style: none;
+  }
+  .faq-item__question::-webkit-details-marker {
+    display: none;
+  }
+  .faq-item__question::before {
+    content: '+';
+    display: inline-block;
+    width: 1.5em;
+    font-weight: 700;
+    color: var(--accent);
+    transition: transform var(--duration-normal, 0.4s);
+  }
+  .faq-item[open] .faq-item__question::before {
+    content: '−';
+  }
+  .faq-item__answer {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--muted-foreground);
+    padding-left: 1.5em;
+    padding-top: var(--space-2, 8px);
+    margin: 0;
+  }
+</style>

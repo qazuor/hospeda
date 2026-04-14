@@ -1,0 +1,99 @@
+---
+/**
+ * @file LocationSection.astro
+ * @description Location section with destination link and map placeholder.
+ * Shows coordinates when available, destination link only when not.
+ */
+import type { AccommodationDetailData } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { LocationIcon } from '@repo/icons';
+
+interface Props {
+  readonly destination: AccommodationDetailData['destination'];
+  readonly location: AccommodationDetailData['location'];
+  readonly lang: string;
+}
+
+const { destination, location, lang } = Astro.props;
+const { t } = createTranslations(lang as SupportedLocale);
+
+const hasCoordinates = location.lat != null && location.lng != null;
+---
+
+<section class="location-section">
+  <h2 class="location-section__title">{t('accommodations.detail.locationDetail.title')}</h2>
+
+  <div class="location-section__destination">
+    <LocationIcon size="sm" weight="duotone" aria-hidden="true" />
+    <a href={`/${lang}/destinos/${destination.slug}`} class="location-section__link">
+      {destination.name}
+    </a>
+  </div>
+
+  {hasCoordinates && (
+    <div class="location-section__map-placeholder">
+      <div class="location-section__placeholder-content">
+        <LocationIcon size="xl" weight="duotone" aria-hidden="true" />
+        <p class="location-section__placeholder-text">
+          {t('accommodations.detail.locationDetail.mapPlaceholder')}
+        </p>
+        <p class="location-section__coords">
+          {Math.abs(location.lat!).toFixed(4)}° S, {Math.abs(location.lng!).toFixed(4)}° O
+        </p>
+      </div>
+    </div>
+  )}
+</section>
+
+<style>
+  .location-section__title {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--foreground);
+    margin-bottom: var(--space-4, 16px);
+  }
+  .location-section__destination {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    margin-bottom: var(--space-4, 16px);
+  }
+  .location-section__link {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .location-section__link:hover {
+    text-decoration: underline;
+  }
+  .location-section__map-placeholder {
+    background-color: var(--surface-warm);
+    border-radius: var(--radius-card, 24px);
+    padding: var(--space-8, 40px);
+    text-align: center;
+    border: 2px dashed var(--border, oklch(0.8 0 0));
+  }
+  .location-section__placeholder-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2, 8px);
+  }
+  .location-section__placeholder-text {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    color: var(--muted-foreground);
+    margin: 0;
+  }
+  .location-section__coords {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--muted-foreground);
+    margin: 0;
+    opacity: 0.7;
+  }
+</style>

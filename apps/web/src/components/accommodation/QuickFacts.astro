@@ -1,0 +1,112 @@
+---
+/**
+ * @file QuickFacts.astro
+ * @description Horizontal row of icon+value pills showing accommodation quick facts.
+ * Only renders pills for non-null fields. Hidden if extraInfo is null.
+ */
+import type { AccommodationDetailData } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { GuestsIcon, BedroomsIcon, BedLinensIcon, BathroomsIcon, MoonIcon } from '@repo/icons';
+
+interface Props {
+  readonly extraInfo: AccommodationDetailData['extraInfo'];
+  readonly lang: string;
+}
+
+const { extraInfo, lang } = Astro.props;
+const { t } = createTranslations(lang as SupportedLocale);
+
+if (!extraInfo) return;
+---
+
+<div class="quick-facts">
+  {extraInfo.capacity != null && (
+    <div class="quick-facts__pill">
+      <GuestsIcon size="sm" weight="duotone" aria-hidden="true" />
+      <div class="quick-facts__text">
+        <span class="quick-facts__value">{t('accommodations.detail.quickFacts.guests', undefined, { n: extraInfo.capacity })}</span>
+        <span class="quick-facts__label">{t('accommodations.detail.quickFacts.capacity')}</span>
+      </div>
+    </div>
+  )}
+  {extraInfo.bedrooms != null && (
+    <div class="quick-facts__pill">
+      <BedroomsIcon size="sm" weight="duotone" aria-hidden="true" />
+      <div class="quick-facts__text">
+        <span class="quick-facts__value">{extraInfo.bedrooms}</span>
+        <span class="quick-facts__label">{t('accommodations.detail.quickFacts.bedrooms')}</span>
+      </div>
+    </div>
+  )}
+  {extraInfo.beds != null && (
+    <div class="quick-facts__pill">
+      <BedLinensIcon size="sm" weight="duotone" aria-hidden="true" />
+      <div class="quick-facts__text">
+        <span class="quick-facts__value">{extraInfo.beds}</span>
+        <span class="quick-facts__label">{t('accommodations.detail.quickFacts.beds')}</span>
+      </div>
+    </div>
+  )}
+  {extraInfo.bathrooms != null && (
+    <div class="quick-facts__pill">
+      <BathroomsIcon size="sm" weight="duotone" aria-hidden="true" />
+      <div class="quick-facts__text">
+        <span class="quick-facts__value">{extraInfo.bathrooms}</span>
+        <span class="quick-facts__label">{t('accommodations.detail.quickFacts.bathrooms')}</span>
+      </div>
+    </div>
+  )}
+  {extraInfo.minNights != null && (
+    <div class="quick-facts__pill">
+      <MoonIcon size="sm" weight="duotone" aria-hidden="true" />
+      <div class="quick-facts__text">
+        <span class="quick-facts__value">{t('accommodations.detail.quickFacts.nights', undefined, { n: extraInfo.minNights })}</span>
+        <span class="quick-facts__label">{t('accommodations.detail.quickFacts.minNights')}</span>
+      </div>
+    </div>
+  )}
+  {extraInfo.maxNights != null && (
+    <div class="quick-facts__pill">
+      <MoonIcon size="sm" weight="duotone" aria-hidden="true" />
+      <div class="quick-facts__text">
+        <span class="quick-facts__value">{t('accommodations.detail.quickFacts.nights', undefined, { n: extraInfo.maxNights })}</span>
+        <span class="quick-facts__label">{t('accommodations.detail.quickFacts.maxNights')}</span>
+      </div>
+    </div>
+  )}
+</div>
+
+<style>
+  .quick-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 12px);
+    margin-block: var(--space-4, 16px);
+  }
+  .quick-facts__pill {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    background-color: var(--card);
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border, oklch(0.8 0 0));
+  }
+  .quick-facts__text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+  }
+  .quick-facts__value {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--foreground);
+  }
+  .quick-facts__label {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+</style>

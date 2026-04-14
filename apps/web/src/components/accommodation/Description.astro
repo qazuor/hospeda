@@ -1,0 +1,60 @@
+---
+/**
+ * @file Description.astro
+ * @description Accommodation summary + full description section.
+ * Summary is highlighted with warm background. Description rendered as HTML.
+ */
+
+interface Props {
+  readonly summary: string;
+  readonly description: string;
+}
+
+const { summary, description } = Astro.props;
+---
+
+{summary && (
+  <div class="description__summary">
+    <p>{summary}</p>
+  </div>
+)}
+
+{description && (
+  <div class="description__body" set:html={description} />
+)}
+
+<style>
+  .description__summary {
+    background-color: var(--surface-warm);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius-button, 8px);
+    padding: var(--space-4, 16px) var(--space-5, 20px);
+    margin-bottom: var(--space-5, 20px);
+  }
+  .description__summary p {
+    font-family: var(--font-sans);
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--foreground);
+    margin: 0;
+  }
+  .description__body {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--foreground);
+  }
+  .description__body :global(h2),
+  .description__body :global(h3) {
+    font-family: var(--font-heading);
+    margin-top: var(--space-5, 20px);
+  }
+  .description__body :global(p) {
+    margin-bottom: var(--space-3, 12px);
+  }
+  .description__body :global(ul),
+  .description__body :global(ol) {
+    padding-left: var(--space-5, 20px);
+    margin-bottom: var(--space-3, 12px);
+  }
+</style>

@@ -1,0 +1,150 @@
+---
+/**
+ * @file AmenitiesGrid.astro
+ * @description Amenities grid with icons, expandable overflow, and i18n names.
+ * First 8 visible, rest in expandable section. Hidden if empty.
+ */
+import type { AccommodationAmenityItem } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { resolveIcon } from '@repo/icons';
+
+interface Props {
+  readonly amenities: readonly AccommodationAmenityItem[];
+  readonly lang: string;
+}
+
+const { amenities, lang } = Astro.props;
+const { t } = createTranslations(lang as SupportedLocale);
+
+if (amenities.length === 0) return;
+
+const VISIBLE_COUNT = 8;
+
+/** Translate amenity name via i18n, falling back to humanized raw name. */
+function translateAmenity(name: string): string {
+  const key = `accommodations.amenityNames.${name}`;
+  const translated = t(key);
+  if (translated.startsWith('[MISSING:')) {
+    return name
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+  return translated;
+}
+
+/** Resolve icon component from icon name. Returns null if not found. */
+function getIcon(iconName: string | null) {
+  if (!iconName) return null;
+  return resolveIcon({ iconName });
+}
+
+const visible = amenities.slice(0, VISIBLE_COUNT);
+const overflow = amenities.slice(VISIBLE_COUNT);
+const hasOverflow = overflow.length > 0;
+const additionalCostLabel = t('accommodations.detail.amenitiesDetail.additionalCost');
+---
+
+<section class="amenities-section">
+  <h2 class="amenities-section__title">{t('accommodations.detail.amenitiesDetail.title')}</h2>
+
+  <div class="amenities-grid">
+    {visible.map((amenity) => {
+      const Icon = getIcon(amenity.icon);
+      const label = translateAmenity(amenity.name);
+      return (
+        <div class="amenity-item">
+          {Icon ? (
+            <Icon size="sm" weight="duotone" aria-hidden="true" />
+          ) : (
+            <span class="amenity-item__dot" aria-hidden="true">&#8226;</span>
+          )}
+          <span class="amenity-item__name">{label}</span>
+          {amenity.additionalCost != null && (
+            <span class="amenity-item__cost">{additionalCostLabel}</span>
+          )}
+        </div>
+      );
+    })}
+  </div>
+
+  {hasOverflow && (
+    <details class="amenities-section__more">
+      <summary class="amenities-section__toggle">
+        {t('accommodations.detail.amenitiesDetail.viewAll', undefined, { n: amenities.length })}
+      </summary>
+      <div class="amenities-grid">
+        {overflow.map((amenity) => {
+          const Icon = getIcon(amenity.icon);
+          const label = translateAmenity(amenity.name);
+          return (
+            <div class="amenity-item">
+              {Icon ? (
+                <Icon size="sm" weight="duotone" aria-hidden="true" />
+              ) : (
+                <span class="amenity-item__dot" aria-hidden="true">&#8226;</span>
+              )}
+              <span class="amenity-item__name">{label}</span>
+              {amenity.additionalCost != null && (
+                <span class="amenity-item__cost">{additionalCostLabel}</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </details>
+  )}
+</section>
+
+<style>
+  .amenities-section__title {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--foreground);
+    margin-bottom: var(--space-4, 16px);
+  }
+  .amenities-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3, 12px);
+  }
+  @media (min-width: 768px) {
+    .amenities-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (min-width: 1024px) {
+    .amenities-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  .amenity-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--foreground);
+  }
+  .amenity-item__dot {
+    color: var(--accent);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .amenity-item__cost {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+    font-style: italic;
+  }
+  .amenities-section__toggle {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: var(--primary);
+    cursor: pointer;
+    margin-top: var(--space-3, 12px);
+    list-style: none;
+  }
+  .amenities-section__toggle::-webkit-details-marker { display: none; }
+  .amenities-section__toggle:hover { text-decoration: underline; }
+  .amenities-section__more .amenities-grid {
+    margin-top: var(--space-3, 12px);
+  }
+</style>

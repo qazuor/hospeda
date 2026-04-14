@@ -1,0 +1,197 @@
+---
+/**
+ * @file HeroGallery.astro
+ * @description Hero mosaic gallery: 1 large featured + up to 3 thumbnails.
+ * GLightbox integration via data-glightbox + data-gallery attributes.
+ */
+import type { AccommodationDetailData } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+  readonly accommodation: AccommodationDetailData;
+  readonly lang: string;
+}
+
+const { accommodation, lang } = Astro.props;
+const { t } = createTranslations(lang as SupportedLocale);
+
+const featuredImage = accommodation.featuredImage || '/images/placeholder-accommodation.svg';
+
+function extractYoutubeId(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return m?.[1] ?? null;
+}
+
+interface GalleryItem {
+  type: 'image' | 'video';
+  src: string;
+  thumb: string;
+  thumbFallback?: string;
+}
+
+const thumbItems: GalleryItem[] = [];
+for (const url of accommodation.media.images.slice(0, 3)) {
+  thumbItems.push({ type: 'image', src: url, thumb: url });
+}
+for (const url of accommodation.media.videos.slice(0, Math.max(0, 3 - thumbItems.length))) {
+  const ytId = extractYoutubeId(url);
+  thumbItems.push({
+    type: 'video',
+    src: url,
+    thumb: ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : url,
+    thumbFallback: ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : undefined
+  });
+}
+
+const hasGallery = thumbItems.length > 0;
+const viewAllLabel = t('accommodations.detail.gallery.viewAll');
+const viewFullscreenLabel = t('accommodations.detail.gallery.viewFullscreen', undefined, { n: '' });
+---
+
+<section class="hero-gallery">
+  <div class={`hero-gallery__mosaic${hasGallery ? ' hero-gallery__mosaic--with-thumbs' : ''}`}>
+    <a
+      href={featuredImage}
+      class="hero-gallery__featured"
+      data-glightbox
+      data-gallery="accommodation-gallery"
+      aria-label={viewFullscreenLabel}
+    >
+      <img
+        src={featuredImage}
+        alt={accommodation.name}
+        class="hero-gallery__img"
+        loading="eager"
+        fetchpriority="high"
+      />
+    </a>
+
+    {hasGallery && (
+      <div class="hero-gallery__thumbs">
+        {thumbItems.map((item, i) => (
+          <a
+            href={item.src}
+            class="hero-gallery__thumb"
+            data-glightbox
+            data-gallery="accommodation-gallery"
+            aria-label={t('accommodations.detail.gallery.viewFullscreen', undefined, { n: i + 2 })}
+          >
+            <img
+              src={item.thumb}
+              alt={`${accommodation.name} - ${i + 2}`}
+              class="hero-gallery__thumb-img"
+              loading="lazy"
+              onerror={item.thumbFallback ? `this.src='${item.thumbFallback}'` : undefined}
+            />
+            {item.type === 'video' && (
+              <span class="hero-gallery__play" aria-hidden="true">&#9654;</span>
+            )}
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
+
+  {hasGallery && (
+    <div class="hero-gallery__footer">
+      <a href={`/${lang}/alojamientos/${accommodation.slug}/fotos/`} class="hero-gallery__view-all">
+        {viewAllLabel}
+      </a>
+    </div>
+  )}
+</section>
+
+<style>
+  .hero-gallery__mosaic {
+    display: grid;
+    grid-template-columns: 1fr;
+    border-radius: var(--radius-card, 24px);
+    overflow: hidden;
+    gap: 4px;
+    max-height: 480px;
+  }
+  .hero-gallery__mosaic--with-thumbs {
+    grid-template-columns: 2fr 1fr;
+  }
+  .hero-gallery__featured {
+    display: block;
+    overflow: hidden;
+    grid-row: 1 / -1;
+  }
+  .hero-gallery__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform var(--duration-normal, 0.4s) ease;
+  }
+  .hero-gallery__featured:hover .hero-gallery__img {
+    transform: scale(1.04);
+  }
+  .hero-gallery__thumbs {
+    display: grid;
+    grid-template-rows: repeat(3, 1fr);
+    gap: 4px;
+    grid-row: 1 / -1;
+  }
+  .hero-gallery__thumb {
+    display: block;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-gallery__thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform var(--duration-normal, 0.4s) ease;
+  }
+  .hero-gallery__thumb:hover .hero-gallery__thumb-img {
+    transform: scale(1.06);
+  }
+  .hero-gallery__play {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: oklch(0 0 0 / 0.35);
+    color: white;
+    font-size: 2rem;
+    pointer-events: none;
+  }
+  .hero-gallery__footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: var(--space-3, 12px);
+  }
+  .hero-gallery__view-all {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--primary);
+    text-decoration: none;
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-pill);
+    transition: all var(--duration-normal, 0.4s) ease;
+  }
+  .hero-gallery__view-all:hover {
+    background-color: var(--primary);
+    color: white;
+  }
+  @media (max-width: 640px) {
+    .hero-gallery__mosaic--with-thumbs {
+      grid-template-columns: 1fr;
+      max-height: none;
+    }
+    .hero-gallery__featured { grid-row: auto; }
+    .hero-gallery__thumbs {
+      grid-row: auto;
+      grid-template-rows: unset;
+      grid-template-columns: repeat(3, 1fr);
+      height: 100px;
+    }
+  }
+</style>

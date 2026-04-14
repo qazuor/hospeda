@@ -1,0 +1,171 @@
+---
+/**
+ * @file PricingSidebar.astro
+ * @description Pricing sidebar with price, fee breakdown, and "Consultar" fallback.
+ */
+import type { AccommodationDetailData } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+  readonly price: AccommodationDetailData['price'];
+  readonly lang: string;
+}
+
+const { price, lang } = Astro.props;
+const { t } = createTranslations(lang as SupportedLocale);
+
+const hasPrice = price?.price != null && price.price > 0;
+const currency = price?.currency ?? 'ARS';
+
+function formatPrice(amount: number): string {
+  return new Intl.NumberFormat(lang === 'pt' ? 'pt-BR' : lang === 'en' ? 'en-US' : 'es-AR', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount);
+}
+
+const fees = price?.additionalFees as Record<string, unknown> | null | undefined;
+const discounts = price?.discounts as Record<string, unknown> | null | undefined;
+
+// Pre-process fees in frontmatter to avoid `as` casts in template
+interface FeeEntry { readonly key: string; readonly amount: number }
+interface DiscountEntry { readonly key: string; readonly pct: number }
+
+const feeEntries: FeeEntry[] = [];
+if (fees) {
+  for (const [key, val] of Object.entries(fees)) {
+    if (!val || typeof val !== 'object') continue;
+    const feeObj = val as Record<string, unknown>;
+    const amount = feeObj.amount as number | undefined;
+    if (amount) feeEntries.push({ key, amount });
+  }
+}
+
+const discountEntries: DiscountEntry[] = [];
+if (discounts) {
+  for (const [key, val] of Object.entries(discounts)) {
+    if (!val) continue;
+    const pct = typeof val === 'number' ? val : (val as Record<string, unknown>)?.percentage;
+    if (typeof pct === 'number' && pct > 0) discountEntries.push({ key, pct });
+  }
+}
+
+const hasFees = feeEntries.length > 0;
+const hasDiscounts = discountEntries.length > 0;
+---
+
+<div class="pricing-sidebar">
+  {hasPrice ? (
+    <div class="pricing-sidebar__price-block">
+      <span class="pricing-sidebar__amount">{formatPrice(price!.price!)}</span>
+      <span class="pricing-sidebar__period">{t('accommodations.detail.pricing.perNightLabel')}</span>
+    </div>
+  ) : (
+    <div class="pricing-sidebar__consult">
+      <a href="#contact" class="pricing-sidebar__cta">
+        {t('accommodations.detail.pricing.consult')}
+      </a>
+    </div>
+  )}
+
+  {(hasFees || hasDiscounts) && (
+    <details class="pricing-sidebar__breakdown">
+      <summary class="pricing-sidebar__breakdown-toggle">
+        {t('accommodations.detail.pricing.viewBreakdown')}
+      </summary>
+      <div class="pricing-sidebar__breakdown-content">
+        {feeEntries.map(({ key, amount }) => (
+          <div class="pricing-sidebar__fee-row">
+            <span class="pricing-sidebar__fee-name">{key}</span>
+            <span class="pricing-sidebar__fee-amount">{formatPrice(amount)}</span>
+          </div>
+        ))}
+        {discountEntries.map(({ key, pct }) => (
+          <div class="pricing-sidebar__discount-row">
+            <span class="pricing-sidebar__discount-name">{key}</span>
+            <span class="pricing-sidebar__discount-value">-{pct}%</span>
+          </div>
+        ))}
+      </div>
+    </details>
+  )}
+</div>
+
+<style>
+  .pricing-sidebar {
+    background-color: var(--card);
+    border-radius: var(--radius-card, 24px);
+    padding: var(--space-5, 20px);
+    box-shadow: var(--shadow-card);
+  }
+  .pricing-sidebar__price-block {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 8px);
+    margin-bottom: var(--space-4, 16px);
+  }
+  .pricing-sidebar__amount {
+    font-family: var(--font-heading);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .pricing-sidebar__period {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--muted-foreground);
+  }
+  .pricing-sidebar__consult {
+    text-align: center;
+    padding: var(--space-4, 16px) 0;
+  }
+  .pricing-sidebar__cta {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1rem;
+    padding: var(--space-3, 12px) var(--space-6, 24px);
+    background-color: var(--accent);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--radius-button, 8px);
+    transition: opacity var(--duration-normal, 0.4s) ease;
+  }
+  .pricing-sidebar__cta:hover { opacity: 0.9; }
+  .pricing-sidebar__breakdown-toggle {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--primary);
+    cursor: pointer;
+    list-style: none;
+  }
+  .pricing-sidebar__breakdown-toggle::-webkit-details-marker { display: none; }
+  .pricing-sidebar__breakdown-toggle:hover { text-decoration: underline; }
+  .pricing-sidebar__breakdown-content {
+    padding-top: var(--space-3, 12px);
+  }
+  .pricing-sidebar__fee-row,
+  .pricing-sidebar__discount-row {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    padding: var(--space-1, 4px) 0;
+  }
+  .pricing-sidebar__fee-name,
+  .pricing-sidebar__discount-name {
+    color: var(--muted-foreground);
+  }
+  .pricing-sidebar__fee-amount {
+    color: var(--foreground);
+    font-weight: 500;
+  }
+  .pricing-sidebar__discount-value {
+    color: oklch(0.6 0.2 145);
+    font-weight: 500;
+  }
+</style>

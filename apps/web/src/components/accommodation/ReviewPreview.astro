@@ -1,0 +1,205 @@
+---
+/**
+ * @file ReviewPreview.astro
+ * @description Review preview section: RatingBreakdown + top 3 reviews + modal trigger.
+ * Empty state when reviewsCount === 0.
+ */
+import type { AccommodationDetailData } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { getInitials } from '@/lib/api/transforms';
+import RatingBreakdown from './RatingBreakdown.astro';
+
+interface ReviewItem {
+  readonly id: string;
+  readonly title?: string;
+  readonly content?: string;
+  readonly averageRating?: number;
+  readonly user?: { readonly name: string | null; readonly image: string | null };
+  readonly createdAt?: string;
+}
+
+interface Props {
+  readonly accommodation: AccommodationDetailData;
+  readonly topReviews: readonly ReviewItem[];
+  readonly lang: string;
+}
+
+const { accommodation, topReviews, lang } = Astro.props;
+const { t } = createTranslations(lang as SupportedLocale);
+
+const hasReviews = accommodation.reviewsCount > 0;
+---
+
+<section class="review-preview">
+  <h2 class="review-preview__title">{t('accommodations.detail.reviews')}</h2>
+
+  {!hasReviews ? (
+    <p class="review-preview__empty">{t('accommodations.detail.reviewsDetail.noReviews')}</p>
+  ) : (
+    <>
+      <RatingBreakdown
+        averageRating={accommodation.averageRating}
+        reviewsCount={accommodation.reviewsCount}
+        lang={lang}
+      />
+
+      {topReviews.length > 0 && (
+        <div class="review-preview__cards">
+          {topReviews.map((review) => {
+            const userName = review.user?.name ?? 'Anónimo';
+            const userImage = review.user?.image ?? null;
+            const initials = getInitials(userName);
+            const dateStr = review.createdAt
+              ? new Date(review.createdAt).toLocaleDateString(
+                  lang === 'pt' ? 'pt-BR' : lang === 'en' ? 'en-US' : 'es-AR',
+                  { year: 'numeric', month: 'short', day: 'numeric' }
+                )
+              : '';
+            return (
+              <article class="review-card">
+                <div class="review-card__header">
+                  {userImage ? (
+                    <img src={userImage} alt={userName} class="review-card__avatar" loading="lazy" />
+                  ) : (
+                    <div class="review-card__avatar-fallback" aria-hidden="true">{initials}</div>
+                  )}
+                  <div class="review-card__meta">
+                    <span class="review-card__name">{userName}</span>
+                    {dateStr && <time class="review-card__date">{dateStr}</time>}
+                  </div>
+                  {review.averageRating != null && (
+                    <span class="review-card__rating">&#9733; {review.averageRating.toFixed(1)}</span>
+                  )}
+                </div>
+                {review.content && (
+                  <p class="review-card__content">{review.content}</p>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      {accommodation.reviewsCount > 3 && (
+        <button
+          class="review-preview__view-all"
+          data-reviews-modal-trigger
+          data-accommodation-id={accommodation.id}
+          data-reviews-count={accommodation.reviewsCount}
+          type="button"
+        >
+          {t('accommodations.detail.reviewsDetail.viewAll', undefined, { n: accommodation.reviewsCount })}
+        </button>
+      )}
+    </>
+  )}
+
+  <slot />
+</section>
+
+<style>
+  .review-preview__title {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--foreground);
+    margin-bottom: var(--space-4, 16px);
+  }
+  .review-preview__empty {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--muted-foreground);
+    font-style: italic;
+  }
+  .review-preview__cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+    margin-top: var(--space-5, 20px);
+  }
+  .review-card {
+    background-color: var(--card);
+    border-radius: var(--radius-card, 24px);
+    padding: var(--space-4, 16px);
+    border: 1px solid var(--border, oklch(0.9 0 0));
+  }
+  .review-card__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    margin-bottom: var(--space-3, 12px);
+  }
+  .review-card__avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .review-card__avatar-fallback {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+  .review-card__meta {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  .review-card__name {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--foreground);
+  }
+  .review-card__date {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+  .review-card__rating {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--accent);
+  }
+  .review-card__content {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--foreground);
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .review-preview__view-all {
+    display: inline-block;
+    margin-top: var(--space-4, 16px);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: var(--primary);
+    background: none;
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-button, 8px);
+    padding: var(--space-2, 8px) var(--space-5, 20px);
+    cursor: pointer;
+    transition: all var(--duration-normal, 0.4s) ease;
+  }
+  .review-preview__view-all:hover {
+    background-color: var(--primary);
+    color: white;
+  }
+</style>

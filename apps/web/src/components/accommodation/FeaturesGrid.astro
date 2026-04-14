@@ -1,0 +1,113 @@
+---
+/**
+ * @file FeaturesGrid.astro
+ * @description Features grid with icons and optional smoking allowed synthetic item.
+ * Hidden if empty and no smoking.
+ */
+import type { AccommodationFeatureItem } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { SmokingAllowedIcon, resolveIcon } from '@repo/icons';
+
+interface Props {
+  readonly features: readonly AccommodationFeatureItem[];
+  readonly smokingAllowed: boolean | null;
+  readonly lang: string;
+}
+
+const { features, smokingAllowed, lang } = Astro.props;
+const { t } = createTranslations(lang as SupportedLocale);
+
+const hasSmoking = smokingAllowed === true;
+if (features.length === 0 && !hasSmoking) return;
+
+/** Resolve icon component from icon name. Returns null if not found. */
+function getIcon(iconName: string | null) {
+  if (!iconName) return null;
+  return resolveIcon({ iconName });
+}
+---
+
+<section class="features-section">
+  <h2 class="features-section__title">{t('accommodations.detail.features.title')}</h2>
+
+  <div class="features-grid">
+    {features.map((feature) => {
+      const Icon = getIcon(feature.icon);
+      const displayName = feature.hostReWriteName ?? feature.name;
+      return (
+        <div class="feature-item">
+          {Icon ? (
+            <Icon size="sm" weight="duotone" aria-hidden="true" />
+          ) : (
+            <span class="feature-item__dot" aria-hidden="true">&#8226;</span>
+          )}
+          <div class="feature-item__content">
+            <span class="feature-item__name">{displayName}</span>
+            {feature.comments && (
+              <span class="feature-item__comments">{feature.comments}</span>
+            )}
+          </div>
+        </div>
+      );
+    })}
+
+    {hasSmoking && (
+      <div class="feature-item">
+        <SmokingAllowedIcon size="sm" weight="duotone" aria-hidden="true" />
+        <div class="feature-item__content">
+          <span class="feature-item__name">
+            {t('accommodations.detail.features.smokingAllowed')}
+          </span>
+        </div>
+      </div>
+    )}
+  </div>
+</section>
+
+<style>
+  .features-section__title {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--foreground);
+    margin-bottom: var(--space-4, 16px);
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3, 12px);
+  }
+  @media (min-width: 768px) {
+    .features-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (min-width: 1024px) {
+    .features-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  .feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2, 8px);
+  }
+  .feature-item__dot {
+    color: var(--accent);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .feature-item__content {
+    display: flex;
+    flex-direction: column;
+  }
+  .feature-item__name {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--foreground);
+  }
+  .feature-item__comments {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+    margin-top: 2px;
+  }
+</style>

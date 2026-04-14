@@ -1,0 +1,128 @@
+---
+/**
+ * @file RatingBreakdown.astro
+ * @description Rating summary with average score, stars, and 6 category progress bars.
+ * Hidden if reviewsCount === 0.
+ */
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import RatingStars from '@/components/shared/RatingStars.astro';
+
+interface Props {
+  readonly averageRating: number;
+  readonly reviewsCount: number;
+  readonly ratingBreakdown?: Record<string, number>;
+  readonly lang: string;
+}
+
+const { averageRating, reviewsCount, ratingBreakdown, lang } = Astro.props;
+const { t } = createTranslations(lang as SupportedLocale);
+
+if (reviewsCount === 0) return;
+
+const categories = ['cleanliness', 'hospitality', 'services', 'accuracy', 'communication', 'location'] as const;
+---
+
+<div class="rating-breakdown">
+  <div class="rating-breakdown__summary">
+    <span class="rating-breakdown__score">{averageRating.toFixed(1)}</span>
+    <div class="rating-breakdown__stars">
+      <RatingStars rating={averageRating} />
+      <span class="rating-breakdown__count">
+        {reviewsCount} {t('accommodations.detail.reviewsLabel')}
+      </span>
+    </div>
+  </div>
+
+  {ratingBreakdown && (
+    <div class="rating-breakdown__bars">
+      {categories.map((cat) => {
+        const value = ratingBreakdown[cat] ?? 0;
+        const pct = (value / 5) * 100;
+        const label = t(`accommodations.detail.reviewsDetail.categories.${cat}`);
+        return (
+          <div class="rating-bar">
+            <span class="rating-bar__label">{label}</span>
+            <div
+              class="rating-bar__track"
+              role="meter"
+              aria-valuenow={value}
+              aria-valuemin={0}
+              aria-valuemax={5}
+              aria-label={`${label}: ${value.toFixed(1)} ${t('accommodations.detail.reviewsDetail.outOf')}`}
+            >
+              <div class="rating-bar__fill" style={`width: ${pct}%`} />
+            </div>
+            <span class="rating-bar__value">{value.toFixed(1)}</span>
+          </div>
+        );
+      })}
+    </div>
+  )}
+</div>
+
+<style>
+  .rating-breakdown__summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4, 16px);
+    margin-bottom: var(--space-5, 20px);
+  }
+  .rating-breakdown__score {
+    font-family: var(--font-heading);
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--foreground);
+    line-height: 1;
+  }
+  .rating-breakdown__stars {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 4px);
+  }
+  .rating-breakdown__count {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--muted-foreground);
+  }
+  .rating-breakdown__bars {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+  }
+  .rating-bar {
+    display: grid;
+    grid-template-columns: 140px 1fr 40px;
+    align-items: center;
+    gap: var(--space-3, 12px);
+  }
+  .rating-bar__label {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--foreground);
+  }
+  .rating-bar__track {
+    height: 8px;
+    background-color: var(--border, oklch(0.9 0 0));
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+  }
+  .rating-bar__fill {
+    height: 100%;
+    background-color: var(--accent);
+    border-radius: var(--radius-pill);
+    transition: width var(--duration-normal, 0.4s) ease;
+  }
+  .rating-bar__value {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--muted-foreground);
+    text-align: right;
+  }
+  @media (max-width: 640px) {
+    .rating-bar {
+      grid-template-columns: 100px 1fr 36px;
+    }
+  }
+</style>
