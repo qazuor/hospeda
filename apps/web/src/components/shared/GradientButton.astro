@@ -1,8 +1,9 @@
 ---
 /**
  * @file GradientButton.astro
- * @description CTA anchor button with gradient hover effect. Supports primary
- * and accent color variants, three size options, and an optional trailing icon.
+ * @description CTA button with gradient hover effect. Supports primary, accent,
+ * outline-primary and outline-accent variants, three size options, an optional
+ * trailing icon, and rendering as either an anchor or a button element.
  */
 
 import { ArrowRightIcon } from '@repo/icons';
@@ -10,14 +11,24 @@ import { ArrowRightIcon } from '@repo/icons';
 interface Props {
   /** Button label text. */
   readonly label: string;
-  /** Destination URL. The button always renders as an <a> element. */
-  readonly href: string;
   /**
-   * Color variant. 'primary' uses the brand blue; 'accent' uses the orange
-   * accent (default). Both share the .btn-gradient base class whose CSS is
-   * defined in components.css.
+   * Destination URL. Required when `as` is 'a' (default). Not used when
+   * `as` is 'button'.
    */
-  readonly variant?: 'primary' | 'accent';
+  readonly href?: string;
+  /**
+   * HTML element to render. 'a' renders an anchor (default); 'button' renders
+   * a <button type="button">.
+   */
+  readonly as?: 'a' | 'button';
+  /**
+   * Color variant.
+   * - 'primary': solid brand-blue fill.
+   * - 'accent': solid orange accent fill (default).
+   * - 'outline-primary': transparent with brand-primary border/text, fills on hover.
+   * - 'outline-accent': transparent with brand-accent border/text, fills on hover.
+   */
+  readonly variant?: 'primary' | 'accent' | 'outline-primary' | 'outline-accent';
   /** Size variant controlling padding. Defaults to 'md'. */
   readonly size?: 'sm' | 'md' | 'lg';
   /**
@@ -25,9 +36,19 @@ interface Props {
    * non-empty string (e.g. "true") to enable it.
    */
   readonly icon?: string;
+  /** Additional CSS classes to apply to the element. */
+  readonly class?: string;
 }
 
-const { label, href, variant = 'accent', size = 'md', icon } = Astro.props;
+const {
+  label,
+  href,
+  as: element = 'a',
+  variant = 'accent',
+  size = 'md',
+  icon,
+  class: extraClass,
+} = Astro.props;
 
 const paddingMap = {
   sm: '10px 24px',
@@ -37,24 +58,54 @@ const paddingMap = {
 
 const padding = paddingMap[size];
 
-const variantStyle =
+const isOutline = variant === 'outline-primary' || variant === 'outline-accent';
+
+const solidBackground =
   variant === 'primary'
     ? 'background: var(--brand-primary);'
-    : 'background: var(--brand-accent);';
+    : variant === 'accent'
+      ? 'background: var(--brand-accent);'
+      : '';
+
+const variantStyle = isOutline ? '' : solidBackground;
+
+const classes = [
+  'btn-gradient',
+  isOutline ? 'btn-gradient--outline' : '',
+  variant === 'outline-accent' ? 'btn-gradient--outline-accent' : '',
+  extraClass ?? '',
+]
+  .filter(Boolean)
+  .join(' ');
 ---
 
-<a
-  href={href}
-  class="btn-gradient"
-  style={`${variantStyle} padding: ${padding};`}
->
-  {label}
-  {icon && (
-    <span class="gradient-btn__icon" aria-hidden="true">
-      <ArrowRightIcon size={20} weight="bold" color="currentColor" />
-    </span>
-  )}
-</a>
+{element === 'a' ? (
+  <a
+    href={href}
+    class={classes}
+    style={`${variantStyle} padding: ${padding};`}
+  >
+    {label}
+    {icon && (
+      <span class="gradient-btn__icon" aria-hidden="true">
+        <ArrowRightIcon size={20} weight="bold" color="currentColor" />
+      </span>
+    )}
+  </a>
+) : (
+  <button
+    type="button"
+    class={classes}
+    style={`${variantStyle} padding: ${padding};`}
+  >
+    {label}
+    {icon && (
+      <span class="gradient-btn__icon" aria-hidden="true">
+        <ArrowRightIcon size={20} weight="bold" color="currentColor" />
+      </span>
+    )}
+  </button>
+)}
 
 <style>
   .gradient-btn__icon {
