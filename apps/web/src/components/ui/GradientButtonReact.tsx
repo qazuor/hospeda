@@ -1,5 +1,5 @@
 /**
- * @file GradientButton.tsx
+ * @file GradientButtonReact.tsx
  * @description React version of the GradientButton for use in React islands.
  * Uses the same .btn-gradient CSS classes from components.css as the Astro version.
  */

@@ -7,7 +7,7 @@
  * Shows a success state with a sign-in link after the password is updated.
  */
 
-import { GradientButton } from '@/components/ui/GradientButton';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { resetPassword } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';

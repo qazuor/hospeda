@@ -12,7 +12,7 @@
 
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { ReviewCard } from '@/components/shared/ReviewCard';
-import { IconButton } from '@/components/ui/IconButton';
+import { IconButton } from '@/components/ui/IconButtonReact';
 import type { ReviewCardData } from '@/data/types';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';

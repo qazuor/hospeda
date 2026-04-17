@@ -10,7 +10,7 @@
  * handler so its visual style stays in sync with the navbar's current state.
  */
 
-import { IconButton } from '@/components/ui/IconButton';
+import { IconButton } from '@/components/ui/IconButtonReact';
 import { cn } from '@/lib/cn';
 import { MoonIcon, SunIcon } from '@repo/icons';
 import type { JSX } from 'react';

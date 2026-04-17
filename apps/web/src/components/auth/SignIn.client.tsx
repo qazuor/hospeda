@@ -7,7 +7,7 @@
  * Shows a skeleton while hydrating to prevent layout shift.
  */
 
-import { GradientButton } from '@/components/ui/GradientButton';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { signIn } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';

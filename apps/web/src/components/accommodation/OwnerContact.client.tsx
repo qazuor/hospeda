@@ -1,4 +1,4 @@
-import { GradientButton } from '@/components/ui/GradientButton';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 /**
  * @file OwnerContact.client.tsx
  * @description Auth-aware React island for displaying accommodation contact info.

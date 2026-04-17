@@ -1,5 +1,5 @@
 /**
- * @file IconButton.tsx
+ * @file IconButtonReact.tsx
  * @description React version of IconButton for use in React islands.
  *
  * Uses the same `.btn-icon` CSS classes from `components.css` as the Astro
@@ -12,7 +12,7 @@
  *
  * @example Ghost circular md (default) — carousel navigation arrow
  * ```tsx
- * import { IconButton } from '@/components/ui/IconButton';
+ * import { IconButton } from '@/components/ui/IconButtonReact';
  * import { ChevronLeftIcon } from '@repo/icons';
  *
  * <IconButton ariaLabel="Anterior" onClick={scrollPrev} disabled={!canScrollPrev}>
@@ -22,7 +22,7 @@
  *
  * @example Solid square lg — theme toggle with explicit size
  * ```tsx
- * import { IconButton } from '@/components/ui/IconButton';
+ * import { IconButton } from '@/components/ui/IconButtonReact';
  * import { SunIcon } from '@repo/icons';
  *
  * <IconButton
@@ -38,7 +38,7 @@
  *
  * @example Outline circle sm — rendered as anchor link
  * ```tsx
- * import { IconButton } from '@/components/ui/IconButton';
+ * import { IconButton } from '@/components/ui/IconButtonReact';
  * import { SearchIcon } from '@repo/icons';
  *
  * <IconButton

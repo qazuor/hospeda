@@ -14,7 +14,7 @@
  * Tasks: T-074
  */
 
-import { IconButton } from '@/components/ui/IconButton';
+import { IconButton } from '@/components/ui/IconButtonReact';
 import { signOut } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';

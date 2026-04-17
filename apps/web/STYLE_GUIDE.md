@@ -683,7 +683,7 @@ import GradientButton from '@/components/shared/GradientButton.astro';
 ##### Form submit with loading state (React island, rounded shape)
 
 ```tsx
-import { GradientButton } from '@/components/ui/GradientButton';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 
 <GradientButton
   as="button"
@@ -698,7 +698,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 ##### Secondary outline action (React island)
 
 ```tsx
-import { GradientButton } from '@/components/ui/GradientButton';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 
 <GradientButton
   as="button"
@@ -724,7 +724,7 @@ import { SearchIcon } from '@repo/icons';
 ##### With a trailing icon (React island, `leadingIcon` / `trailingIcon` props)
 
 ```tsx
-import { GradientButton } from '@/components/ui/GradientButton';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { ArrowRightIcon } from '@repo/icons';
 
 <GradientButton
@@ -788,7 +788,7 @@ import { HamburgerIcon } from '@repo/icons';
 ##### Carousel arrow (React island)
 
 ```tsx
-import { IconButton } from '@/components/ui/IconButton';
+import { IconButton } from '@/components/ui/IconButtonReact';
 import { CaretRightIcon } from '@repo/icons';
 
 <IconButton
@@ -805,7 +805,7 @@ import { CaretRightIcon } from '@repo/icons';
 ##### Toggle button with `aria-pressed` (React island)
 
 ```tsx
-import { IconButton } from '@/components/ui/IconButton';
+import { IconButton } from '@/components/ui/IconButtonReact';
 import { SunIcon } from '@repo/icons';
 
 <IconButton
@@ -821,7 +821,7 @@ import { SunIcon } from '@repo/icons';
 
 ```tsx
 import { useRef } from 'react';
-import { IconButton } from '@/components/ui/IconButton';
+import { IconButton } from '@/components/ui/IconButtonReact';
 import { CloseIcon } from '@repo/icons';
 
 const closeButtonRef = useRef<HTMLButtonElement>(null);

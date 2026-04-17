@@ -1,4 +1,4 @@
-import { GradientButton } from '@/components/ui/GradientButton';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 /**
  * @file ReviewsModal.client.tsx
  * @description Modal for browsing all paginated reviews.

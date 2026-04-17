@@ -7,7 +7,7 @@
  * Validates password length client-side before submitting.
  */
 
-import { GradientButton } from '@/components/ui/GradientButton';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { signIn, signUp } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';

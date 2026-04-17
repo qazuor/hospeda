@@ -7,7 +7,7 @@
  * Shows a success state after submission instead of redirecting.
  */
 
-import { GradientButton } from '@/components/ui/GradientButton';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { forgetPassword } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
