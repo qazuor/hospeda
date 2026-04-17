@@ -1,6 +1,6 @@
-# Style Guide - Hospeda Web2
+# Style Guide - Hospeda Web
 
-Tourist accommodation platform for the Litoral Entrerriano region. This guide is the **single source of truth** for all visual decisions in `apps/web2`. Every value here maps to a CSS custom property or Tailwind token.. nothing is hardcoded.
+Tourist accommodation platform for the Litoral Entrerriano region. This guide is the **single source of truth** for all visual decisions in `apps/web`. Every value here maps to a CSS custom property.. nothing is hardcoded.
 
 Design reference: TravHub index3 template, adapted for Hospeda brand identity.
 
@@ -38,7 +38,7 @@ The design balances organic, nature-inspired shapes with clean modern typography
 
 ## 2. Token Architecture
 
-All tokens are CSS custom properties defined in `src/styles/global.css`. Tailwind maps them via `@theme inline`. Adding a new theme means adding a new `[data-theme="X"]` block with overridden values.
+All tokens are plain CSS custom properties defined in `src/styles/global.css` under the `:root` selector. This app does NOT use Tailwind.. tokens are consumed directly as `var(--token)` from three places: Astro `<style>` scoped blocks, React island CSS Modules (`*.module.css`), and the shared BEM-lite classes in `src/styles/components.css`. Adding a new theme means adding a new `[data-theme="X"]` block in `global.css` with overridden values; no build step, no framework integration.
 
 ### 2.1 Color Tokens
 
@@ -288,28 +288,64 @@ Caveat: 400,700
 
 ### 3.3 Type Patterns
 
-| Context | Font | Classes |
-|---------|------|---------|
-| Hero H1 | Geologica | `font-heading font-bold text-hero text-foreground` |
-| Hero tagline | Caveat | `font-decorative font-bold text-tagline text-accent` |
-| Section tagline | Caveat | `font-decorative font-bold text-tagline text-accent` |
-| Section H2 | Geologica | `font-heading font-medium text-h2 text-foreground` |
-| Section subtitle | Roboto | `font-sans text-body text-muted-foreground` |
-| Card title | Geologica | `font-heading font-semibold text-h3 text-foreground` |
-| Card meta | Roboto | `font-sans text-meta text-muted-foreground` |
-| Card price | Roboto | `font-sans text-body font-medium text-foreground` |
-| Button label | Roboto | `font-sans font-semibold text-button capitalize` |
-| Nav link | Roboto | `font-sans text-nav uppercase` |
-| Footer heading | Geologica | `font-heading font-semibold text-h4 text-surface-dark-foreground` |
-| Footer link | Roboto | `font-sans text-body-sm text-surface-dark-foreground/70` |
+Typography is applied directly in CSS (scoped `<style>` in Astro components, or `.module.css` for React islands) by combining `font-family`, `font-weight`, `font-size`, and `color` tokens. A few patterns are pre-packaged as BEM-lite classes in `components.css` (for example `.section-header__tagline`, `.section-header__title`, `.section-header__subtitle`). Reuse them when rendering section headers; otherwise apply tokens inline.
+
+| Context | Font token | Size token | Weight | Color token | Shared class (if any) |
+|---------|-----------|------------|--------|-------------|-----------------------|
+| Hero H1 | `var(--font-heading)` | `var(--text-hero)` | 700 | `var(--core-foreground)` | - |
+| Hero tagline | `var(--font-decorative)` | `var(--text-tagline)` | 700 | `var(--brand-accent)` | - |
+| Section tagline | `var(--font-decorative)` | `var(--text-tagline)` | 700 | `var(--brand-accent)` | `.section-header__tagline` |
+| Section H2 | `var(--font-heading)` | `var(--text-h2)` | 700 | `var(--core-foreground)` | `.section-header__title` |
+| Section subtitle | `var(--font-sans)` | `var(--text-body)` | 400 | `var(--core-muted-foreground)` | `.section-header__subtitle` |
+| Card title | `var(--font-heading)` | `var(--text-h3)` | 600 | `var(--core-foreground)` | - |
+| Card meta | `var(--font-sans)` | `var(--text-meta)` | 400 | `var(--core-muted-foreground)` | - |
+| Card price | `var(--font-sans)` | `var(--text-body)` | 500 | `var(--core-foreground)` | - |
+| Button label | `var(--font-sans)` | `var(--text-button)` | 600 | (variant dependent) | `.btn-gradient` |
+| Nav link | `var(--font-sans)` | `var(--text-nav)` | 400 | `var(--core-foreground)` | - |
+| Footer heading | `var(--font-heading)` | `var(--text-h4)` | 600 | `var(--surface-dark-foreground)` | - |
+| Footer link | `var(--font-sans)` | `var(--text-body-sm)` | 400 | `var(--footer-link)` | - |
+
+Example (card title in an Astro component's scoped `<style>`):
+
+```css
+.accommodation-card__title {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: var(--text-h3);
+  color: var(--core-foreground);
+}
+```
+
+Example (reusing a shared class in markup, no inline overrides needed):
+
+```astro
+<div class="section-header">
+  <p class="section-header__tagline">{tagline}</p>
+  <h2 class="section-header__title">{title}</h2>
+  <p class="section-header__subtitle">{subtitle}</p>
+</div>
+```
 
 ### 3.4 Text Rules
 
-- Use `text-balance` or `text-pretty` on all headings
-- Body text: `leading-relaxed` (1.625)
-- Max `65ch`-`75ch` per line for readability
-- Section subtitles: `max-w-xl mx-auto text-center`
-- Price display: always use `font-sans font-medium`, never bold
+- Headings use `text-wrap: balance;` for even line breaks (see `.section-header__title` in `components.css`).
+- Body text line-height is `1.5` to `1.6` (see `.about-us__body` with `line-height: 1.6` for a concrete example).
+- Measure cap: limit long prose blocks with `max-width: 36rem;` (matches `.section-header__subtitle`) or `max-width: 65ch;` for article-length copy.
+- Centered subtitles: set `margin-inline: auto;` together with `text-align: center;`. Left-aligned variants (`.section-header--left`) reset the inline margin to `0`.
+- Price display: use `font-family: var(--font-sans);` with `font-weight: 500;` (medium) — never `700` (bold).
+
+Example (section subtitle idiom copied from `components.css`):
+
+```css
+.section-header__subtitle {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  color: var(--core-muted-foreground);
+  max-width: 36rem;
+  margin-inline: auto;
+  margin-top: 1rem;
+}
+```
 
 ---
 
@@ -343,16 +379,56 @@ Caveat: 400,700
 
 ### 4.3 Grid Patterns
 
-| Content | Columns |
-|---------|---------|
-| Tour/accommodation cards | `grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-card` |
-| Destination cards | `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-card` |
-| Blog cards | `grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-card` |
-| Team/guide cards | `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-card` |
-| Gallery (masonry) | `grid-cols-2 lg:grid-cols-4 gap-4` with row-span variants |
-| Feature list | `grid-cols-1 gap-6` (stacked) or `grid-cols-1 md:grid-cols-2` |
-| Footer columns | `grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10` |
-| Stats | `grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6` |
+Two reusable grid classes live in `components.css`. Reuse them before hand-rolling a new grid.
+
+| Class | Mobile | ≥640px | ≥1024px | ≥1280px | Gap |
+|-------|--------|--------|---------|---------|-----|
+| `.grid-cards` | 1 col | 2 cols | 3 cols | 4 cols | `var(--space-card-gap)` (30px) |
+| `.grid-cards--3col` | 1 col | 2 cols | 3 cols | 3 cols | `var(--space-card-gap)` |
+
+Usage (real example from `FeaturedAccommodationsSection.astro`):
+
+```astro
+<div class="grid-cards--3col accommodations__grid">
+  {items.map((item, i) => (
+    <div data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+      <AccommodationCard data={item} locale={locale} />
+    </div>
+  ))}
+</div>
+```
+
+For any other layout (featured + secondary rows, 2-column split, stats block, footer columns), declare the grid directly in the component's scoped `<style>` using `display: grid;` + `grid-template-columns:` and project breakpoints. Copy the idiom from `LatestArticlesSection.astro`:
+
+```css
+.articles__secondary-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-card-gap);
+}
+@media (min-width: 640px) {
+  .articles__secondary-row--3col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .articles__secondary-row--3col {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+```
+
+Project breakpoints (used consistently across sections): `640px` (small/tablet portrait), `768px` (tablet), `1024px` (desktop), `1280px` (wide desktop). Mobile-first: base rules apply below `640px`, media queries progressively add columns.
+
+| Content | Recommended approach |
+|---------|----------------------|
+| Accommodation cards (3-col cap) | `.grid-cards--3col` |
+| Destination / team cards (4-col cap) | `.grid-cards` |
+| Blog cards | `.grid-cards--3col` or a custom `articles__secondary-row--Ncol` pattern for featured + secondary layouts |
+| Gallery (masonry) | Custom `grid-template-columns` with `grid-row: span N` modifiers |
+| Stats | Custom grid (see `StatsSection.astro`: 2 cols mobile, 3 cols `≥768px`) |
+| Footer columns | Custom grid declared in `Footer.astro` scoped style |
+| 2-column split (CTA + illustration) | Custom `grid-template-columns: minmax(0, 45%) minmax(0, 55%)` at `≥1024px` (see `CtaOwnersSection.astro`) |
 
 ### 4.4 Section Background Alternation
 
@@ -817,55 +893,57 @@ Subtle repeating patterns behind section content:
 
 ### 7.1 Scroll Reveal
 
-Elements animate into view when scrolling. Uses IntersectionObserver with `threshold: 0.1`.
+Elements animate into view when scrolling. Uses IntersectionObserver initialized in `BaseLayout.astro` via `initScrollReveal()` from `src/lib/scroll-reveal.ts`. CSS transitions live in `components.css` under the `[data-reveal]` attribute selectors.
 
-| Class | Effect | Duration |
-|-------|--------|----------|
-| `scroll-reveal` | Fade in + translate up (40px) | `var(--duration-reveal)` (1.5s) |
-| `scroll-reveal-left` | Fade in + translate from left (-60px) | `var(--duration-reveal)` |
-| `scroll-reveal-right` | Fade in + translate from right (60px) | `var(--duration-reveal)` |
-| `scroll-reveal-scale` | Fade in + scale from 0.9 | `var(--duration-reveal)` |
+| Attribute value | Initial transform | Effect on `.revealed` |
+|-----------------|-------------------|-----------------------|
+| `data-reveal="up"` | `translateY(40px)` | opacity 0→1 + translate to 0 |
+| `data-reveal="left"` | `translateX(-60px)` | opacity 0→1 + translate to 0 |
+| `data-reveal="right"` | `translateX(60px)` | opacity 0→1 + translate to 0 |
+| `data-reveal="scale"` | `scale(0.9)` | opacity 0→1 + scale to 1 |
+
+Duration and easing: `var(--duration-reveal)` with `var(--ease-bounce)`.
 
 #### Stagger Delays
 
-Repeated elements (cards, list items) use incremental delays:
+Repeated elements (cards, list items) use incremental `transition-delay` set via inline `style`:
 
 ```astro
 {items.map((item, index) => (
-  <div class="scroll-reveal" style={`animation-delay: ${index * 100}ms`}>
+  <div data-reveal="up" style={`transition-delay: ${index * 100}ms`}>
     <Card {...item} />
   </div>
 ))}
 ```
 
-Standard stagger increment: `100ms` per item. Max stagger: `700ms` (7 items visible).
+Standard stagger increment: `100ms` per item. Max stagger: `700ms` (7 visible items). All `[data-reveal]` rules are disabled under `prefers-reduced-motion: reduce` (already handled in `components.css`).
 
 ### 7.2 Hover Effects
 
 | Element | Effect | Timing |
 |---------|--------|--------|
-| Card images | `scale(1.1)` | `duration-normal ease-in-out` |
-| Card container | subtle `translateY(-4px)` + shadow increase | `duration-normal` |
-| Buttons | background fill via `::before` scale3d transform | `0.4s cubic-bezier(0.1, 0, 0.3, 1)` |
-| Links | `color: var(--accent)` + underline grow (`background-size: 100% 1px`) | `duration-normal` |
-| Destination cards | content slides up, description rotates in | `duration-normal ease-in-out` |
-| Social icons | `bg-accent text-accent-foreground` | `duration-normal` |
-| Nav links | `text-accent` | `duration-normal` |
+| Card images | `transform: scale(1.1)` | `var(--duration-normal)` `ease-in-out` |
+| Card container | shadow swap from `var(--shadow-card)` to `var(--shadow-card-hover)` | `var(--duration-normal)` ease |
+| GradientButton | gradient shift (`background-position`) + `translateY(-2px)` + shadow grow | `var(--duration-normal)` ease |
+| Links | `color: var(--brand-accent)` (underline grow via `background-size: 100% 1px` when used) | `var(--duration-normal)` |
+| Destination cards | content slides up, description rotates in | `var(--duration-normal)` `ease-in-out` |
+| Social icons | `background: var(--brand-accent); color: var(--accent-foreground);` | `var(--duration-normal)` |
+| Nav links | `color: var(--brand-accent)` | `var(--duration-normal)` |
 
 ### 7.3 Page Transitions (Astro View Transitions)
 
-Use Astro's View Transitions API for smooth page navigation:
+Use Astro's View Transitions API via `ClientRouter` (Astro 5 renamed the component from `ViewTransitions` to `ClientRouter`, kept under `astro:transitions`). It is declared once in `BaseLayout.astro`:
 
 ```astro
 ---
-import { ViewTransitions } from 'astro:transitions';
+import { ClientRouter } from 'astro:transitions';
 ---
 <head>
-  <ViewTransitions />
+  <ClientRouter />
 </head>
 
-<!-- Named transitions for morphing elements -->
-<img transition:name={`card-${slug}`} src={image} alt={name} />
+<!-- Named transitions for morphing elements across page navigations -->
+<img transition:name={`accommodation-${slug}`} src={image} alt={name} />
 ```
 
 ### 7.4 Reduced Motion
@@ -886,44 +964,83 @@ All animations are disabled when `prefers-reduced-motion: reduce`:
 
 ## 8. Section Template
 
-Standard pattern for building any new section:
+Standard pattern for building any new section. Uses the shared classes `.section`, `.section--warm`, `.section__container` (from `components.css`), the `SectionHeader` shared component, `.grid-cards--3col` for the default 3-up grid, and the `[data-reveal]` attribute system for scroll animations. All colors, spacing, fonts, and radii come from tokens.
 
 ```astro
-<section class="relative bg-[section-color] py-section overflow-hidden">
-  <!-- 1. Background shape/blob (optional) -->
-  <div class="absolute inset-0 z-shape pointer-events-none" aria-hidden="true">
-    <!-- SVG shape or gradient -->
+---
+import SectionHeader from '@/components/shared/SectionHeader.astro';
+import GradientButton from '@/components/shared/GradientButton.astro';
+import Card from '@/components/shared/Card.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+interface Props {
+  readonly locale: SupportedLocale;
+  readonly items: ReadonlyArray<{ readonly id: string }>;
+}
+
+const { locale, items } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+<section class="section section--warm my-section" aria-label={t('mySection.title')}>
+  <!-- 1. Decorative elements (2-4 max, hidden on mobile, non-interactive) -->
+  <div class="my-section__decorative" aria-hidden="true">
+    <img src="/images/decoratives/deco-compass.svg" alt="" loading="lazy" />
   </div>
 
-  <!-- 2. Decorative elements (2-4, hidden on mobile) -->
-  <div class="absolute top-8 left-8 hidden md:block opacity-40 pointer-events-none" aria-hidden="true">
-    <!-- Small SVG decorative -->
-  </div>
+  <!-- 2. Content. .section__container gives max-width + px-container + z-index -->
+  <div class="section__container">
+    <SectionHeader
+      tagline={t('mySection.tagline')}
+      title={t('mySection.title')}
+      subtitle={t('mySection.subtitle')}
+    />
 
-  <!-- 3. Content (always relative for z-index above decoratives) -->
-  <div class="relative z-content mx-auto max-w-container px-container">
-    <!-- Section header -->
-    <div class="text-center mb-section-header">
-      <span class="font-decorative font-bold text-tagline text-accent">Tagline</span>
-      <h2 class="font-heading font-medium text-h2 text-foreground text-balance mt-2">Section Title</h2>
-      <p class="font-sans text-body text-muted-foreground max-w-xl mx-auto mt-4">Description text</p>
-    </div>
-
-    <!-- Grid content with scroll-reveal -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-card">
+    <!-- 3. Grid with staggered scroll-reveal on each item -->
+    <div class="grid-cards--3col">
       {items.map((item, i) => (
-        <div class="scroll-reveal" style={`animation-delay: ${i * 100}ms`}>
-          <Card {...item} />
+        <div data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+          <Card data={item} locale={locale} />
         </div>
       ))}
     </div>
 
-    <!-- Optional CTA -->
-    <div class="mt-12 text-center scroll-reveal">
-      <a href="/path/" class="travhub-btn">See All</a>
+    <!-- 4. Optional CTA -->
+    <div class="my-section__cta" data-reveal="up">
+      <GradientButton
+        href={buildUrl({ locale, path: '/some-path/' })}
+        label={t('mySection.seeAll')}
+        variant="primary"
+        icon="true"
+      />
     </div>
   </div>
 </section>
+
+<style>
+  .my-section__decorative {
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    opacity: 0.4;
+    pointer-events: none;
+    /* Hide on mobile — decoratives rely on absolute positioning */
+    display: none;
+  }
+  @media (min-width: 768px) {
+    .my-section__decorative {
+      display: block;
+    }
+  }
+
+  .my-section__cta {
+    display: flex;
+    justify-content: center;
+    margin-top: 3rem;
+  }
+</style>
 ```
 
 ---
