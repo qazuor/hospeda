@@ -10,6 +10,7 @@
  */
 
 import { Image } from "astro:assets";
+import GradientButton from "@/components/shared/GradientButton.astro";
 import SocialLinks from "@/components/shared/SocialLinks.astro";
 import type { SupportedLocale } from "@/lib/i18n";
 import { createTranslations } from "@/lib/i18n";
@@ -113,9 +114,14 @@ const companyLinks = [
                             placeholder={t("footer.newsletterPlaceholder")}
                             aria-label={t("footer.newsletterPlaceholder")}
                         />
-                        <button type="button" class="footer__newsletter-btn">
-                            {t("footer.subscribe")}
-                        </button>
+                        <GradientButton
+                            as="button"
+                            label={t("footer.subscribe")}
+                            variant="accent"
+                            size="sm"
+                            class="footer__newsletter-btn"
+                        />
+
                     </div>
                 </div>
 
@@ -366,21 +372,8 @@ const companyLinks = [
 
     .footer__newsletter-btn {
         border-radius: var(--radius-pill, 9999px);
-        background: linear-gradient(135deg, var(--brand-secondary-foreground), var(--core-foreground));
-        color: var(--core-background);
-        border: none;
-        padding: 10px 24px;
-        font-family: var(--font-sans);
-        font-size: clamp(0.75rem, 1.5vw, 0.875rem);
-        font-weight: 500;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: opacity var(--duration-normal) ease;
         align-self: flex-start;
-    }
-
-    .footer__newsletter-btn:hover {
-        opacity: 0.85;
+        white-space: nowrap;
     }
 
     /* ========================================================
