@@ -1062,7 +1062,7 @@ A CSS grid with responsive column counts (no shared grid class):
 
 ### 5.8 Scroll-to-Top Button
 
-Implemented by `src/components/shared/ScrollToTop.astro`. This is a compound widget: a native `<button>` wraps two SVGs (a progress ring and an up-chevron icon). It is one of the documented exceptions in 5.3.8 — `IconButton` is NOT used because the outer button must also host the SVG progress ring that reacts to scroll percentage.
+Implemented by `src/components/shared/navigation/ScrollToTop.astro`. This is a compound widget: a native `<button>` wraps two SVGs (a progress ring and an up-chevron icon). It is one of the documented exceptions in 5.3.8 — `IconButton` is NOT used because the outer button must also host the SVG progress ring that reacts to scroll percentage.
 
 #### Structure
 

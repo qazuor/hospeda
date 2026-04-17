@@ -8,7 +8,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const src = readFileSync(
-    resolve(__dirname, '../../../src/components/shared/LanguageSwitcher.astro'),
+    resolve(__dirname, '../../../../src/components/shared/navigation/LanguageSwitcher.astro'),
     'utf8'
 );
 

@@ -24,11 +24,11 @@
  */
 
 import { getImage } from 'astro:assets';
-import { UserNav } from '../auth/UserNav.client';
+import { UserNav } from '../../auth/UserNav.client';
 import LanguageSwitcher from './LanguageSwitcher.astro';
-import { ThemeToggle } from '../ui/ThemeToggle.client';
-import { createT, type SupportedLocale } from '../../lib/i18n';
-import { buildUrl } from '../../lib/urls';
+import { ThemeToggle } from '../../ui/ThemeToggle.client';
+import { createT, type SupportedLocale } from '../../../lib/i18n';
+import { buildUrl } from '../../../lib/urls';
 
 interface Props {
     /** Current locale for localized links (e.g. 'es', 'en', 'pt'). Defaults to 'es'. */

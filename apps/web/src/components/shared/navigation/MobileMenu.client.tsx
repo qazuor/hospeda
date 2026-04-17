@@ -132,7 +132,7 @@ interface MobileMenuProps {
  * @example
  * ```astro
  * ---
- * import MobileMenu from '@/components/shared/MobileMenu.client';
+ * import MobileMenu from '@/components/shared/navigation/MobileMenu.client';
  * ---
  * <MobileMenu locale={locale} navItems={navItems} client:media="(max-width: 768px)" />
  * ```
