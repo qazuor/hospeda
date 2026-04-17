@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { OwnerPromotionSchema } from '../../../src/entities/ownerPromotion/index.js';
+import { LifecycleStatusEnum } from '../../../src/enums/lifecycle-state.enum.js';
 import { OwnerPromotionDiscountTypeEnum } from '../../../src/enums/owner-promotion-discount-type.enum.js';
 import {
     createFixedPromotion,
@@ -147,11 +148,12 @@ describe('OwnerPromotionSchema', () => {
             }
         });
 
-        it('should default isActive to true when not provided', () => {
+        it('should default lifecycleState to ACTIVE when not provided', () => {
             // Arrange
-            const { isActive: _omitted, ...data } = createMinimalOwnerPromotion() as ReturnType<
-                typeof createMinimalOwnerPromotion
-            > & { isActive?: boolean };
+            const { lifecycleState: _omitted, ...data } =
+                createMinimalOwnerPromotion() as ReturnType<typeof createMinimalOwnerPromotion> & {
+                    lifecycleState?: LifecycleStatusEnum;
+                };
 
             // Act
             const result = OwnerPromotionSchema.safeParse(data);
@@ -159,7 +161,41 @@ describe('OwnerPromotionSchema', () => {
             // Assert
             expect(result.success).toBe(true);
             if (result.success) {
-                expect(result.data.isActive).toBe(true);
+                expect(result.data.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+            }
+        });
+
+        it('should accept lifecycleState DRAFT', () => {
+            // Arrange
+            const data = {
+                ...createMinimalOwnerPromotion(),
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            };
+
+            // Act
+            const result = OwnerPromotionSchema.safeParse(data);
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.lifecycleState).toBe(LifecycleStatusEnum.DRAFT);
+            }
+        });
+
+        it('should accept lifecycleState ARCHIVED', () => {
+            // Arrange
+            const data = {
+                ...createMinimalOwnerPromotion(),
+                lifecycleState: LifecycleStatusEnum.ARCHIVED
+            };
+
+            // Act
+            const result = OwnerPromotionSchema.safeParse(data);
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.lifecycleState).toBe(LifecycleStatusEnum.ARCHIVED);
             }
         });
 
@@ -262,6 +298,17 @@ describe('OwnerPromotionSchema', () => {
         it('should reject invalid discountType enum value', () => {
             // Arrange
             const data = { ...createMinimalOwnerPromotion(), discountType: 'FLAT_RATE' };
+
+            // Act
+            const result = OwnerPromotionSchema.safeParse(data);
+
+            // Assert
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject invalid lifecycleState enum value', () => {
+            // Arrange
+            const data = { ...createMinimalOwnerPromotion(), lifecycleState: 'INVALID' };
 
             // Act
             const result = OwnerPromotionSchema.safeParse(data);
@@ -420,7 +467,8 @@ describe('OwnerPromotionSchema', () => {
                 expect(typeof result.data.title).toBe('string');
                 expect(typeof result.data.discountType).toBe('string');
                 expect(typeof result.data.discountValue).toBe('number');
-                expect(typeof result.data.isActive).toBe('boolean');
+                expect(typeof result.data.lifecycleState).toBe('string');
+                expect(Object.values(LifecycleStatusEnum)).toContain(result.data.lifecycleState);
                 expect(typeof result.data.currentRedemptions).toBe('number');
                 expect(result.data.validFrom).toBeInstanceOf(Date);
             }

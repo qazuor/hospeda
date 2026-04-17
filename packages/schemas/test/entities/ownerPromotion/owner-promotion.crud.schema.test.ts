@@ -9,6 +9,7 @@ import {
     OwnerPromotionUpdateInputSchema,
     OwnerPromotionUpdateOutputSchema
 } from '../../../src/entities/ownerPromotion/index.js';
+import { LifecycleStatusEnum } from '../../../src/enums/lifecycle-state.enum.js';
 import { OwnerPromotionDiscountTypeEnum } from '../../../src/enums/owner-promotion-discount-type.enum.js';
 import {
     createMinimalOwnerPromotion,
@@ -203,15 +204,26 @@ describe('OwnerPromotion CRUD Schemas', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should accept partial update with only isActive', () => {
+        it('should accept partial update with only lifecycleState', () => {
             // Arrange
-            const input = { isActive: false };
+            const input = { lifecycleState: LifecycleStatusEnum.ARCHIVED };
 
             // Act
             const result = OwnerPromotionUpdateInputSchema.safeParse(input);
 
             // Assert
             expect(result.success).toBe(true);
+        });
+
+        it('should reject legacy isActive field in update (strict mode, AC-002-02)', () => {
+            // Arrange — isActive is no longer part of the schema; strict() detects it as unknown
+            const input = { isActive: false };
+
+            // Act
+            const result = OwnerPromotionUpdateInputSchema.strict().safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(false);
         });
 
         it('should accept partial update with only discountValue', () => {
@@ -408,7 +420,10 @@ describe('OwnerPromotion CRUD Schemas', () => {
         it('should handle a realistic create → update → delete workflow', () => {
             // Arrange
             const createInput = createOwnerPromotionCreateInput();
-            const updateInput = { title: 'Updated Title', isActive: false };
+            const updateInput = {
+                title: 'Updated Title',
+                lifecycleState: LifecycleStatusEnum.ARCHIVED
+            };
             const deleteInput = { id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' };
 
             // Act & Assert
