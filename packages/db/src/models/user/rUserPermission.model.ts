@@ -10,6 +10,12 @@ export class RUserPermissionModel extends BaseModelImpl<UserPermissionAssignment
     protected table = userPermission;
     public entityName = 'userPermission';
 
+    /**
+     * `user` is a real FK-based Drizzle relation (schema defines `userPermissionRelations`).
+     * `permission` is an enum column with no FK, but the `findWithRelations` override handles
+     * it manually via `db.query.userPermission.findFirst({ with })`.
+     * Listed here to prevent `warnUnknownRelationKeys` false positives.
+     */
     protected override readonly validRelationKeys = ['user', 'permission'] as const;
 
     protected getTableName(): string {

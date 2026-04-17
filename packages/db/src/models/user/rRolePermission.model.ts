@@ -10,6 +10,12 @@ export class RRolePermissionModel extends BaseModelImpl<RolePermissionAssignment
     protected table = rolePermission;
     public entityName = 'rolePermission';
 
+    /**
+     * Both `role` and `permission` are enum columns (not FKs), so no Drizzle schema
+     * relations exist. These keys are handled manually by the `findWithRelations` override
+     * which uses `db.query.rolePermission.findFirst({ with })` directly.
+     * Listed here to prevent `warnUnknownRelationKeys` false positives.
+     */
     protected override readonly validRelationKeys = ['role', 'permission'] as const;
 
     protected getTableName(): string {

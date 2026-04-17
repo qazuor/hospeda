@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import { index, pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
 import { PermissionPgEnum } from '../enums.dbschema.ts';
 import { users } from './user.dbschema.ts';
@@ -19,3 +20,14 @@ export const userPermission = pgTable(
         permission_idx: index('user_permission_permission_idx').on(table.permission)
     })
 );
+
+/**
+ * Drizzle relations for the userPermission junction table.
+ * Only `user` is a real FK relation. `permission` is an enum column (no FK).
+ */
+export const userPermissionRelations = relations(userPermission, ({ one }) => ({
+    user: one(users, {
+        fields: [userPermission.userId],
+        references: [users.id]
+    })
+}));
