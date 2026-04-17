@@ -9,6 +9,7 @@
  */
 
 import { getDb } from '@repo/db';
+import type { QueryContext } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
 import { and, eq, gte, isNotNull, isNull, lte } from 'drizzle-orm';
 import { z } from 'zod';
@@ -159,19 +160,27 @@ export function parseEntitlementAdjustments(
  * Limited to {@link BATCH_SIZE} rows per call (GAP-043-015). The cron job runs
  * again on the next tick to continue processing remaining rows.
  *
+ * @param ctx - Optional query context. When `ctx.tx` is present, the query runs
+ *   inside that transaction; otherwise the default connection is used.
  * @returns Service result with a list of expired add-ons, or an error descriptor.
  *
  * @example
  * ```ts
+ * // Without transaction
  * const result = await findExpiredAddons();
+ *
+ * // Inside a transaction
+ * const result = await findExpiredAddons(ctx);
  * if (result.success) {
  *   for (const addon of result.data) { ... }
  * }
  * ```
  */
-export async function findExpiredAddons(): Promise<ServiceResult<ExpiredAddon[]>> {
+export async function findExpiredAddons(
+    ctx?: QueryContext
+): Promise<ServiceResult<ExpiredAddon[]>> {
     try {
-        const db = getDb();
+        const db = ctx?.tx ?? getDb();
         const now = new Date();
 
         const rawResults = await db
@@ -235,10 +244,13 @@ export async function findExpiredAddons(): Promise<ServiceResult<ExpiredAddon[]>
  * Limited to {@link BATCH_SIZE} rows per call (GAP-043-015).
  *
  * @param input - Configuration with `daysAhead` (validated by {@link daysAheadSchema}).
+ * @param ctx - Optional query context. When `ctx.tx` is present, the query runs
+ *   inside that transaction; otherwise the default connection is used.
  * @returns Service result with a list of expiring add-ons, or an error descriptor.
  */
 export async function findExpiringAddons(
-    input: FindExpiringAddonsInput
+    input: FindExpiringAddonsInput,
+    ctx?: QueryContext
 ): Promise<ServiceResult<ExpiringAddon[]>> {
     const validationResult = daysAheadSchema.safeParse(input.daysAhead);
 
@@ -248,7 +260,7 @@ export async function findExpiringAddons(
     }
 
     try {
-        const db = getDb();
+        const db = ctx?.tx ?? getDb();
         const now = new Date();
         const futureDate = new Date(now.getTime() + input.daysAhead * 24 * 60 * 60 * 1000);
 

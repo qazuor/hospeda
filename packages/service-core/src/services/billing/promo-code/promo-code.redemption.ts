@@ -19,6 +19,7 @@ import {
     sql,
     withTransaction
 } from '@repo/db';
+import type { QueryContext } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { getPromoCodeByCode } from './promo-code.crud.js';
 import type { PromoCode } from './promo-code.service.js';
@@ -131,7 +132,11 @@ export async function tryRedeemAtomically(promoCodeId: string): Promise<{
  * This method is exposed for cases where an external system has already validated
  * the code and only needs to record the increment.
  *
+ * When `ctx` is provided and `ctx.tx` is set, the operation participates in the
+ * caller's transaction boundary. Otherwise, it executes against the default connection.
+ *
  * @param id - Promo code database ID
+ * @param ctx - Optional query context carrying a transaction client
  * @returns Success or error
  *
  * @internal Only callable from within the promo-code module via PromoCodeService wrappers.
@@ -139,12 +144,16 @@ export async function tryRedeemAtomically(promoCodeId: string): Promise<{
  *
  * @example
  * ```ts
+ * // Without transaction
  * await incrementPromoCodeUsage('550e8400-e29b-41d4-a716-446655440000');
+ *
+ * // Enlisted in a caller-provided transaction
+ * await incrementPromoCodeUsage('550e8400-e29b-41d4-a716-446655440000', ctx);
  * ```
  */
-export async function incrementPromoCodeUsage(id: string) {
+export async function incrementPromoCodeUsage(id: string, ctx?: QueryContext) {
     try {
-        const db = getDb();
+        const db = ctx?.tx ?? getDb();
 
         const [updated] = await db
             .update(billingPromoCodes)
@@ -177,7 +186,11 @@ export async function incrementPromoCodeUsage(id: string) {
  * Creates a row in `billing_promo_code_usage` with the discount applied,
  * customer, and optional subscription reference.
  *
+ * When `ctx` is provided and `ctx.tx` is set, the insert participates in the
+ * caller's transaction boundary. Otherwise, it executes against the default connection.
+ *
  * @param data - Usage record data (includes optional livemode flag)
+ * @param ctx - Optional query context carrying a transaction client
  * @returns Created usage record or error
  *
  * @internal Only callable from within the promo-code module via PromoCodeService wrappers.
@@ -185,6 +198,7 @@ export async function incrementPromoCodeUsage(id: string) {
  *
  * @example
  * ```ts
+ * // Without transaction
  * await recordPromoCodeUsage({
  *   promoCodeId: 'abc',
  *   customerId: 'cust_123',
@@ -192,11 +206,14 @@ export async function incrementPromoCodeUsage(id: string) {
  *   currency: 'ARS',
  *   livemode: true,
  * });
+ *
+ * // Enlisted in a caller-provided transaction
+ * await recordPromoCodeUsage({ promoCodeId: 'abc', customerId: 'cust_123', discountAmount: 500, currency: 'ARS' }, ctx);
  * ```
  */
-export async function recordPromoCodeUsage(data: RecordUsageInput) {
+export async function recordPromoCodeUsage(data: RecordUsageInput, ctx?: QueryContext) {
     try {
-        const db = getDb();
+        const db = ctx?.tx ?? getDb();
 
         const result = await db
             .insert(billingPromoCodeUsage)

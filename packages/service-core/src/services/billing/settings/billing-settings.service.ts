@@ -16,6 +16,7 @@
  */
 
 import { billingAuditLogs, billingSettings, eq, getDb, withTransaction } from '@repo/db';
+import type { QueryContext } from '@repo/db';
 
 /**
  * Billing settings configuration
@@ -110,11 +111,13 @@ export class BillingSettingsService {
      * Reads from the `billing_settings` table (key='global').
      * Returns merged settings (custom + defaults for missing keys).
      *
+     * @param ctx - Optional query context. When `ctx.tx` is provided, the query
+     *   runs inside that transaction instead of using the default connection.
      * @returns Current billing settings
      */
-    async getSettings(): Promise<BillingSettings> {
+    async getSettings(ctx?: QueryContext): Promise<BillingSettings> {
         try {
-            const db = getDb();
+            const db = ctx?.tx ?? getDb();
 
             const [row] = await db
                 .select()
@@ -151,13 +154,17 @@ export class BillingSettingsService {
      *
      * @param patch - Partial settings to update
      * @param actorId - ID of user performing the update (optional)
+     * @param ctx - Optional query context. When `ctx.tx` is provided, the
+     *   internal `getSettings()` read uses that transaction so the entire
+     *   read-modify-write cycle participates in the same boundary.
      * @returns Updated billing settings
      */
     async updateSettings(
         patch: Partial<BillingSettings>,
-        actorId?: string
+        actorId?: string,
+        ctx?: QueryContext
     ): Promise<BillingSettings> {
-        const currentSettings = await this.getSettings();
+        const currentSettings = await this.getSettings(ctx);
 
         const updatedSettings: BillingSettings = {
             ...currentSettings,
@@ -208,9 +215,14 @@ export class BillingSettingsService {
      * Updates `billing_settings` with DEFAULT_SETTINGS and records an audit entry.
      *
      * @param actorId - ID of user performing the reset (optional)
+     * @param ctx - Optional query context. Reserved for API consistency with the
+     *   other methods. Because `resetSettings` always runs its own
+     *   `withTransaction`, the `ctx` parameter is accepted but not forwarded to
+     *   the internal transaction boundary.
      * @returns Default billing settings
      */
-    async resetSettings(actorId?: string): Promise<BillingSettings> {
+    async resetSettings(actorId?: string, ctx?: QueryContext): Promise<BillingSettings> {
+        void ctx; // accepted for API consistency; withTransaction manages its own boundary
         await withTransaction(async (tx) => {
             // Upsert defaults into billing_settings
             await tx

@@ -9,6 +9,7 @@ vi.mock('@repo/db', () => ({
 }));
 
 import * as dbModule from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import {
     BillingSettingsService,
     getBillingSettingsService,
@@ -213,6 +214,164 @@ describe('BillingSettingsService', () => {
             // Assert
             expect(result).toEqual(DEFAULT);
             expect(mockWithTransaction).toHaveBeenCalled();
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // ctx threading — QueryContext propagation
+    // ──────────────────────────────────────────────────────────────────────────
+
+    describe('ctx threading', () => {
+        describe('getSettings', () => {
+            it('should use ctx.tx instead of getDb() when ctx with tx is provided', async () => {
+                // Arrange
+                const mockTx = {
+                    select: vi.fn().mockReturnValue({
+                        from: vi.fn().mockReturnValue({
+                            where: vi.fn().mockReturnValue({
+                                limit: vi.fn().mockResolvedValue([])
+                            })
+                        })
+                    })
+                };
+                const ctx = { tx: mockTx as unknown as DrizzleClient };
+
+                // Act
+                const result = await service.getSettings(ctx);
+
+                // Assert — ctx.tx was used, not getDb()
+                expect(mockGetDb).not.toHaveBeenCalled();
+                expect(mockTx.select).toHaveBeenCalled();
+                expect(result).toEqual(DEFAULT);
+            });
+
+            it('should fall back to getDb() when ctx is undefined', async () => {
+                // Arrange
+                mockGetDb.mockReturnValue({
+                    select: vi.fn().mockReturnValue({
+                        from: vi.fn().mockReturnValue({
+                            where: vi.fn().mockReturnValue({
+                                limit: vi.fn().mockResolvedValue([])
+                            })
+                        })
+                    })
+                });
+
+                // Act
+                await service.getSettings(undefined);
+
+                // Assert
+                expect(mockGetDb).toHaveBeenCalled();
+            });
+
+            it('should fall back to getDb() when ctx has no tx property', async () => {
+                // Arrange
+                mockGetDb.mockReturnValue({
+                    select: vi.fn().mockReturnValue({
+                        from: vi.fn().mockReturnValue({
+                            where: vi.fn().mockReturnValue({
+                                limit: vi.fn().mockResolvedValue([])
+                            })
+                        })
+                    })
+                });
+
+                // Act
+                await service.getSettings({});
+
+                // Assert
+                expect(mockGetDb).toHaveBeenCalled();
+            });
+        });
+
+        describe('updateSettings', () => {
+            it('should propagate ctx to internal getSettings() call', async () => {
+                // Arrange — tx mock used for the getSettings read
+                const mockTx = {
+                    select: vi.fn().mockReturnValue({
+                        from: vi.fn().mockReturnValue({
+                            where: vi.fn().mockReturnValue({
+                                limit: vi.fn().mockResolvedValue([])
+                            })
+                        })
+                    }),
+                    insert: vi.fn().mockReturnValue({
+                        values: vi.fn().mockReturnValue({
+                            onConflictDoUpdate: vi.fn().mockResolvedValue([])
+                        })
+                    })
+                };
+                const ctx = { tx: mockTx as unknown as DrizzleClient };
+
+                mockWithTransaction.mockImplementation(
+                    async (fn: (tx: unknown) => Promise<unknown>) => fn(mockTx)
+                );
+
+                // Act
+                const result = await service.updateSettings({ taxRate: 10 }, undefined, ctx);
+
+                // Assert — getDb() was NOT called; ctx.tx drove the read
+                expect(mockGetDb).not.toHaveBeenCalled();
+                expect(mockTx.select).toHaveBeenCalled();
+                expect(result.taxRate).toBe(10);
+            });
+
+            it('should use getDb() for the read when no ctx is provided', async () => {
+                // Arrange
+                mockGetDb.mockReturnValue({
+                    select: vi.fn().mockReturnValue({
+                        from: vi.fn().mockReturnValue({
+                            where: vi.fn().mockReturnValue({
+                                limit: vi.fn().mockResolvedValue([])
+                            })
+                        })
+                    })
+                });
+                mockWithTransaction.mockImplementation(
+                    async (fn: (tx: unknown) => Promise<unknown>) => {
+                        const tx = {
+                            insert: vi.fn().mockReturnValue({
+                                values: vi.fn().mockReturnValue({
+                                    onConflictDoUpdate: vi.fn().mockResolvedValue([])
+                                })
+                            })
+                        };
+                        return fn(tx);
+                    }
+                );
+
+                // Act
+                await service.updateSettings({ taxRate: 5 });
+
+                // Assert
+                expect(mockGetDb).toHaveBeenCalled();
+            });
+        });
+
+        describe('resetSettings', () => {
+            it('should accept ctx parameter without error (backward-compat API)', async () => {
+                // Arrange
+                mockWithTransaction.mockImplementation(
+                    async (fn: (tx: unknown) => Promise<unknown>) => {
+                        const tx = {
+                            insert: vi.fn().mockReturnValue({
+                                values: vi.fn().mockReturnValue({
+                                    onConflictDoUpdate: vi.fn().mockResolvedValue([])
+                                })
+                            })
+                        };
+                        return fn(tx);
+                    }
+                );
+                const ctx = { tx: {} as unknown as DrizzleClient };
+
+                // Act — should not throw
+                const result = await service.resetSettings('admin-1', ctx);
+
+                // Assert — still returns defaults; transaction still runs
+                expect(result).toEqual(DEFAULT);
+                expect(mockWithTransaction).toHaveBeenCalled();
+            });
         });
     });
 

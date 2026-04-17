@@ -11,6 +11,7 @@
 import {
     type DrizzleClient,
     type QZPayBillingPromoCode,
+    type QueryContext,
     and,
     billingPromoCodes,
     count,
@@ -64,7 +65,10 @@ export function mapDbToPromoCode(dbPromoCode: QZPayBillingPromoCode): PromoCode 
  * @param input - Promo code creation data
  * @param options - Optional settings
  * @param options.livemode - Whether to create in live mode (default: false)
- * @param options.tx - Optional Drizzle transaction client
+ * @param options.tx - Optional Drizzle transaction client (legacy; prefer ctx)
+ * @param ctx - Optional query context carrying a transaction client. When
+ *   provided, `ctx.tx` takes precedence over `options.tx` so callers can
+ *   enlist this operation in a larger atomic transaction.
  * @returns Created PromoCode or error
  *
  * @example
@@ -74,14 +78,20 @@ export function mapDbToPromoCode(dbPromoCode: QZPayBillingPromoCode): PromoCode 
  *   discountType: 'percentage',
  *   discountValue: 10,
  * });
+ *
+ * // Inside a transaction:
+ * await withServiceTransaction(async (ctx) => {
+ *   await createPromoCode({ code: 'TX10', discountType: 'fixed', discountValue: 5 }, {}, ctx);
+ * });
  * ```
  */
 export async function createPromoCode(
     input: CreatePromoCodeInput,
-    options: { readonly livemode?: boolean; readonly tx?: DrizzleClient } = {}
+    options: { readonly livemode?: boolean; readonly tx?: DrizzleClient } = {},
+    ctx?: QueryContext
 ) {
     try {
-        const db = options.tx ?? getDb();
+        const db = ctx?.tx ?? options.tx ?? getDb();
         const code = input.code.toUpperCase();
 
         const config: Record<string, unknown> = {};
@@ -130,7 +140,9 @@ export async function createPromoCode(
  * Normalizes the code to uppercase before querying.
  *
  * @param code - Promo code string (case-insensitive)
- * @param tx - Optional Drizzle transaction client
+ * @param ctx - Optional query context carrying a transaction client. When
+ *   provided, `ctx.tx` is used so the query participates in the caller's
+ *   transaction. Omit for standalone queries.
  * @returns PromoCode or NOT_FOUND error
  *
  * @example
@@ -139,11 +151,16 @@ export async function createPromoCode(
  * if (result.success) {
  *   console.log(result.data.id);
  * }
+ *
+ * // Inside a transaction:
+ * await withServiceTransaction(async (ctx) => {
+ *   const result = await getPromoCodeByCode('save10', ctx);
+ * });
  * ```
  */
-export async function getPromoCodeByCode(code: string, tx?: DrizzleClient) {
+export async function getPromoCodeByCode(code: string, ctx?: QueryContext) {
     try {
-        const db = tx ?? getDb();
+        const db = ctx?.tx ?? getDb();
         const normalizedCode = code.toUpperCase();
 
         const [dbPromoCode] = await db
@@ -175,17 +192,24 @@ export async function getPromoCodeByCode(code: string, tx?: DrizzleClient) {
  * Get a promo code by its database ID.
  *
  * @param id - UUID of the promo code record
- * @param tx - Optional Drizzle transaction client
+ * @param ctx - Optional query context carrying a transaction client. When
+ *   provided, `ctx.tx` is used so the query participates in the caller's
+ *   transaction. Omit for standalone queries.
  * @returns PromoCode or NOT_FOUND error
  *
  * @example
  * ```ts
  * const result = await getPromoCodeById('550e8400-e29b-41d4-a716-446655440000');
+ *
+ * // Inside a transaction:
+ * await withServiceTransaction(async (ctx) => {
+ *   const result = await getPromoCodeById('550e8400-e29b-41d4-a716-446655440000', ctx);
+ * });
  * ```
  */
-export async function getPromoCodeById(id: string, tx?: DrizzleClient) {
+export async function getPromoCodeById(id: string, ctx?: QueryContext) {
     try {
-        const db = tx ?? getDb();
+        const db = ctx?.tx ?? getDb();
 
         const [promoCode] = await db
             .select()
@@ -220,17 +244,24 @@ export async function getPromoCodeById(id: string, tx?: DrizzleClient) {
  *
  * @param id - Promo code ID
  * @param input - Fields to update (all optional)
- * @param tx - Optional Drizzle transaction client
+ * @param ctx - Optional query context carrying a transaction client. When
+ *   provided, `ctx.tx` is used so the operation participates in the caller's
+ *   transaction. Omit for standalone operations.
  * @returns Updated PromoCode or error
  *
  * @example
  * ```ts
  * const result = await updatePromoCode('abc', { isActive: false });
+ *
+ * // Inside a transaction:
+ * await withServiceTransaction(async (ctx) => {
+ *   await updatePromoCode('abc', { isActive: false }, ctx);
+ * });
  * ```
  */
-export async function updatePromoCode(id: string, input: UpdatePromoCodeInput, tx?: DrizzleClient) {
+export async function updatePromoCode(id: string, input: UpdatePromoCodeInput, ctx?: QueryContext) {
     try {
-        const db = tx ?? getDb();
+        const db = ctx?.tx ?? getDb();
 
         const updateData: Partial<QZPayBillingPromoCode> = {};
 
@@ -294,17 +325,24 @@ export async function updatePromoCode(id: string, input: UpdatePromoCodeInput, t
  * Soft-delete a promo code by setting active = false.
  *
  * @param id - Promo code ID
- * @param tx - Optional Drizzle transaction client
+ * @param ctx - Optional query context carrying a transaction client. When
+ *   provided, `ctx.tx` is used so the operation participates in the caller's
+ *   transaction. Omit for standalone operations.
  * @returns Success or NOT_FOUND error
  *
  * @example
  * ```ts
  * await deletePromoCode('550e8400-e29b-41d4-a716-446655440000');
+ *
+ * // Inside a transaction:
+ * await withServiceTransaction(async (ctx) => {
+ *   await deletePromoCode('550e8400-e29b-41d4-a716-446655440000', ctx);
+ * });
  * ```
  */
-export async function deletePromoCode(id: string, tx?: DrizzleClient) {
+export async function deletePromoCode(id: string, ctx?: QueryContext) {
     try {
-        const db = tx ?? getDb();
+        const db = ctx?.tx ?? getDb();
 
         const [deletedPromoCode] = await db
             .update(billingPromoCodes)
@@ -338,7 +376,9 @@ export async function deletePromoCode(id: string, tx?: DrizzleClient) {
  * Results are ordered by createdAt descending.
  *
  * @param filters - Filter and pagination options
- * @param tx - Optional Drizzle transaction client
+ * @param ctx - Optional query context carrying a transaction client. When
+ *   provided, `ctx.tx` is used so the query participates in the caller's
+ *   transaction. Omit for standalone queries.
  * @returns Paginated list of promo codes with total count
  *
  * @example
@@ -347,11 +387,16 @@ export async function deletePromoCode(id: string, tx?: DrizzleClient) {
  * if (result.success) {
  *   console.log(result.data.items, result.data.pagination);
  * }
+ *
+ * // Inside a transaction:
+ * await withServiceTransaction(async (ctx) => {
+ *   const result = await listPromoCodes({ active: true }, ctx);
+ * });
  * ```
  */
-export async function listPromoCodes(filters: ListPromoCodesFilters = {}, tx?: DrizzleClient) {
+export async function listPromoCodes(filters: ListPromoCodesFilters = {}, ctx?: QueryContext) {
     try {
-        const db = tx ?? getDb();
+        const db = ctx?.tx ?? getDb();
         const { page = 1, pageSize = 20, active, expired, codeSearch } = filters;
 
         const conditions = [];

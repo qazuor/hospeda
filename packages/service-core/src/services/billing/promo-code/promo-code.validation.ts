@@ -15,6 +15,7 @@
  */
 
 import { billingPromoCodeUsage, eq, getDb } from '@repo/db';
+import type { QueryContext } from '@repo/db';
 import { getPromoCodeByCode } from './promo-code.crud.js';
 import type {
     PromoCode,
@@ -31,6 +32,8 @@ import type {
  *
  * @param code - Promo code string (case-insensitive)
  * @param context - Validation context (planId, userId, optional amount)
+ * @param ctx - Optional query context carrying a transaction client. When
+ *   provided, internal DB calls participate in the caller's transaction.
  * @returns Validation result with optional discount preview
  *
  * @example
@@ -46,10 +49,18 @@ import type {
  *   console.error(result.errorMessage);
  * }
  * ```
+ *
+ * @example With transaction context
+ * ```ts
+ * await withServiceTransaction(async (ctx) => {
+ *   const result = await validatePromoCode('SAVE10', { userId: 'u1' }, ctx);
+ * });
+ * ```
  */
 export async function validatePromoCode(
     code: string,
-    context: PromoCodeValidationContext
+    context: PromoCodeValidationContext,
+    ctx?: QueryContext
 ): Promise<PromoCodeValidationResult> {
     try {
         const normalizedCode = code.toUpperCase();
@@ -101,7 +112,7 @@ export async function validatePromoCode(
         }
 
         if (promoData.newCustomersOnly && context.userId) {
-            const hasExistingUsage = await checkUserHasPromoUsage({ userId: context.userId });
+            const hasExistingUsage = await checkUserHasPromoUsage({ userId: context.userId, ctx });
             if (hasExistingUsage) {
                 return {
                     valid: false,
@@ -147,12 +158,18 @@ export async function validatePromoCode(
  * Used to enforce the `newCustomersOnly` restriction by querying the
  * `billing_promo_code_usage` table for any previous redemptions.
  *
- * @param params - Object with userId to check
+ * @param params - Object with userId to check and optional query context
  * @returns true if the user has at least one promo code usage record
  */
-async function checkUserHasPromoUsage({ userId }: { readonly userId: string }): Promise<boolean> {
+async function checkUserHasPromoUsage({
+    userId,
+    ctx
+}: {
+    readonly userId: string;
+    readonly ctx?: QueryContext;
+}): Promise<boolean> {
     try {
-        const db = getDb();
+        const db = ctx?.tx ?? getDb();
         const [usage] = await db
             .select({ id: billingPromoCodeUsage.id })
             .from(billingPromoCodeUsage)

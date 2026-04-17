@@ -15,6 +15,7 @@
  */
 
 import { and, billingNotificationLog, getDb, isNotNull, isNull, sql } from '@repo/db';
+import type { QueryContext } from '@repo/db';
 import { lt } from 'drizzle-orm';
 
 /**
@@ -61,12 +62,16 @@ export class NotificationRetentionService {
      * - expired_at IS NULL (not already marked)
      *
      * @param retentionDays - Number of days to retain active records (default: 90)
+     * @param ctx - Optional query context for transaction support
      * @returns Count of records marked as expired
      */
-    async markExpired(retentionDays: number = DEFAULT_RETENTION_DAYS): Promise<number> {
+    async markExpired(
+        retentionDays: number = DEFAULT_RETENTION_DAYS,
+        ctx?: QueryContext
+    ): Promise<number> {
         validateDaysParam(retentionDays, 'retentionDays');
 
-        const db = getDb();
+        const db = ctx?.tx ?? getDb();
 
         const result = await db
             .update(billingNotificationLog)
@@ -94,12 +99,16 @@ export class NotificationRetentionService {
      * - expired_at < NOW() - grace_days
      *
      * @param graceDays - Number of days to keep expired records before deletion (default: 30)
+     * @param ctx - Optional query context for transaction support
      * @returns Count of records permanently deleted
      */
-    async purgeExpired(graceDays: number = DEFAULT_GRACE_DAYS): Promise<number> {
+    async purgeExpired(
+        graceDays: number = DEFAULT_GRACE_DAYS,
+        ctx?: QueryContext
+    ): Promise<number> {
         validateDaysParam(graceDays, 'graceDays');
 
-        const db = getDb();
+        const db = ctx?.tx ?? getDb();
 
         const result = await db
             .delete(billingNotificationLog)
@@ -127,17 +136,19 @@ export class NotificationRetentionService {
      *
      * @param retentionDays - Days to retain active records (default: 90)
      * @param graceDays - Days to keep expired records (default: 30)
+     * @param ctx - Optional query context for transaction support
      * @returns Summary with counts of marked and purged records
      */
     async runRetentionPolicy(
         retentionDays: number = DEFAULT_RETENTION_DAYS,
-        graceDays: number = DEFAULT_GRACE_DAYS
+        graceDays: number = DEFAULT_GRACE_DAYS,
+        ctx?: QueryContext
     ): Promise<RetentionSummary> {
         // Step 1: Mark expired
-        const markedExpired = await this.markExpired(retentionDays);
+        const markedExpired = await this.markExpired(retentionDays, ctx);
 
         // Step 2: Purge old expired records
-        const purged = await this.purgeExpired(graceDays);
+        const purged = await this.purgeExpired(graceDays, ctx);
 
         const summary: RetentionSummary = {
             markedExpired,

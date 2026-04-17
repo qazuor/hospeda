@@ -9,7 +9,7 @@
 
 import { getAddonBySlug } from '@repo/billing';
 import { getDb } from '@repo/db';
-import type { DrizzleClient } from '@repo/db';
+import type { QueryContext } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
 import { and, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
@@ -220,6 +220,8 @@ function parseMetadataAddons({
  *
  * @param billing - Billing client for customer/subscription lookups.
  * @param userId - The user's external ID.
+ * @param ctx - Optional query context. When `ctx.tx` is present all DB reads
+ *   participate in the caller's transaction.
  * @returns List of active user add-ons.
  *
  * @example
@@ -234,10 +236,12 @@ function parseMetadataAddons({
  */
 export async function queryUserAddons({
     billing,
-    userId
+    userId,
+    ctx
 }: {
     readonly billing: UserAddonBillingClient;
     readonly userId: string;
+    readonly ctx?: QueryContext;
 }): Promise<ServiceResult<UserAddon[]>> {
     const customer = await billing.customers.getByExternalId(userId);
 
@@ -245,7 +249,7 @@ export async function queryUserAddons({
         return { success: true, data: [] };
     }
 
-    const db = getDb();
+    const db = ctx?.tx ?? getDb();
 
     const addonPurchases = await db
         .select()
@@ -280,6 +284,7 @@ export async function queryUserAddons({
  * @param billing - Billing client for customer/subscription lookups.
  * @param userId - User ID to check.
  * @param addonSlug - Add-on slug to look for.
+ * @param ctx - Optional query context forwarded to {@link queryUserAddons}.
  * @returns True if the add-on is found with status 'active'.
  *
  * @example
@@ -293,13 +298,15 @@ export async function queryUserAddons({
 export async function queryAddonActive({
     billing,
     userId,
-    addonSlug
+    addonSlug,
+    ctx
 }: {
     readonly billing: UserAddonBillingClient;
     readonly userId: string;
     readonly addonSlug: string;
+    readonly ctx?: QueryContext;
 }): Promise<ServiceResult<boolean>> {
-    const result = await queryUserAddons({ billing, userId });
+    const result = await queryUserAddons({ billing, userId, ctx });
 
     if (!result.success) {
         return { success: false, error: result.error };
@@ -319,14 +326,18 @@ export async function queryAddonActive({
  * Does not include metadata-based addons.
  *
  * @param customerId - Billing customer UUID.
+ * @param ctx - Optional query context. When `ctx.tx` is present the query
+ *   participates in the caller's transaction.
  * @returns Array of active purchase records (id + addonSlug).
  */
 export async function queryActiveAddonPurchases({
-    customerId
+    customerId,
+    ctx
 }: {
     readonly customerId: string;
+    readonly ctx?: QueryContext;
 }): Promise<ReadonlyArray<{ readonly id: string; readonly addonSlug: string }>> {
-    const db = getDb();
+    const db = ctx?.tx ?? getDb();
 
     return db
         .select({
@@ -349,21 +360,22 @@ export async function queryActiveAddonPurchases({
  * This is the raw DB operation without any Sentry, logging, or notification
  * side effects. Use from the API layer which wraps with infra concerns.
  *
- * When `tx` is provided the update runs inside the caller's transaction.
+ * When `ctx.tx` is provided the update runs inside the caller's transaction.
  * When omitted the function acquires its own connection via `getDb()`.
  *
  * @param purchaseId - The purchase record UUID.
- * @param tx - Optional Drizzle transaction client.
+ * @param ctx - Optional query context. When `ctx.tx` is present the update
+ *   participates in the caller's transaction.
  * @returns Number of rows updated (0 or 1).
  */
 export async function cancelAddonPurchaseRecord({
     purchaseId,
-    tx
+    ctx
 }: {
     readonly purchaseId: string;
-    readonly tx?: DrizzleClient;
+    readonly ctx?: QueryContext;
 }): Promise<number> {
-    const db = tx ?? getDb();
+    const db = ctx?.tx ?? getDb();
 
     const updateResult = await db
         .update(billingAddonPurchases)

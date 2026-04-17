@@ -220,6 +220,47 @@ describe('promo-code.redemption', () => {
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe('INTERNAL_ERROR');
         });
+
+        it('should use ctx.tx instead of getDb when ctx is provided', async () => {
+            // Arrange
+            const txUpdate = vi.fn().mockReturnValue({
+                set: vi.fn().mockReturnValue({
+                    where: vi.fn().mockReturnValue({
+                        returning: vi.fn().mockResolvedValue([{ id: 'pc1', usedCount: 3 }])
+                    })
+                })
+            });
+            const mockTx = { update: txUpdate };
+
+            // Act
+            const result = await incrementPromoCodeUsage('pc1', { tx: mockTx as never });
+
+            // Assert
+            expect(result.success).toBe(true);
+            // getDb should NOT have been called — ctx.tx was used instead
+            expect(mockGetDb).not.toHaveBeenCalled();
+            expect(txUpdate).toHaveBeenCalled();
+        });
+
+        it('should fall back to getDb when ctx is provided but tx is undefined', async () => {
+            // Arrange
+            mockGetDb.mockReturnValue({
+                update: vi.fn().mockReturnValue({
+                    set: vi.fn().mockReturnValue({
+                        where: vi.fn().mockReturnValue({
+                            returning: vi.fn().mockResolvedValue([{ id: 'pc1', usedCount: 2 }])
+                        })
+                    })
+                })
+            });
+
+            // Act
+            const result = await incrementPromoCodeUsage('pc1', {});
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(mockGetDb).toHaveBeenCalledOnce();
+        });
     });
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -272,6 +313,62 @@ describe('promo-code.redemption', () => {
             // Assert
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe('INTERNAL_ERROR');
+        });
+
+        it('should use ctx.tx instead of getDb when ctx is provided', async () => {
+            // Arrange
+            const usageRecord = { id: 'u1', promoCodeId: 'pc1', customerId: 'cust1' };
+            const txInsert = vi.fn().mockReturnValue({
+                values: vi.fn().mockReturnValue({
+                    returning: vi.fn().mockResolvedValue([usageRecord])
+                })
+            });
+            const mockTx = { insert: txInsert };
+
+            // Act
+            const result = await recordPromoCodeUsage(
+                {
+                    promoCodeId: 'pc1',
+                    customerId: 'cust1',
+                    discountAmount: 500,
+                    currency: 'ARS'
+                },
+                { tx: mockTx as never }
+            );
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.data).toEqual(usageRecord);
+            // getDb should NOT have been called — ctx.tx was used instead
+            expect(mockGetDb).not.toHaveBeenCalled();
+            expect(txInsert).toHaveBeenCalled();
+        });
+
+        it('should fall back to getDb when ctx is provided but tx is undefined', async () => {
+            // Arrange
+            const usageRecord = { id: 'u1', promoCodeId: 'pc1', customerId: 'cust1' };
+            mockGetDb.mockReturnValue({
+                insert: vi.fn().mockReturnValue({
+                    values: vi.fn().mockReturnValue({
+                        returning: vi.fn().mockResolvedValue([usageRecord])
+                    })
+                })
+            });
+
+            // Act
+            const result = await recordPromoCodeUsage(
+                {
+                    promoCodeId: 'pc1',
+                    customerId: 'cust1',
+                    discountAmount: 500,
+                    currency: 'ARS'
+                },
+                {}
+            );
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(mockGetDb).toHaveBeenCalledOnce();
         });
     });
 
