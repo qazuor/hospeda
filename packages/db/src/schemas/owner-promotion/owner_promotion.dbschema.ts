@@ -1,7 +1,7 @@
 import { relations } from 'drizzle-orm';
-import { boolean, index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema.ts';
-import { OwnerPromotionDiscountTypePgEnum } from '../enums.dbschema.ts';
+import { LifecycleStatusPgEnum, OwnerPromotionDiscountTypePgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 
 export const ownerPromotions = pgTable(
@@ -24,7 +24,7 @@ export const ownerPromotions = pgTable(
         validUntil: timestamp('valid_until', { withTimezone: true }),
         maxRedemptions: integer('max_redemptions'),
         currentRedemptions: integer('current_redemptions').notNull().default(0),
-        isActive: boolean('is_active').notNull().default(true),
+        lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         // Audit fields
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -38,13 +38,14 @@ export const ownerPromotions = pgTable(
         ownerPromotions_accommodationId_idx: index('ownerPromotions_accommodationId_idx').on(
             table.accommodationId
         ),
-        ownerPromotions_isActive_idx: index('ownerPromotions_isActive_idx').on(table.isActive),
+        ownerPromotions_lifecycleState_idx: index('ownerPromotions_lifecycleState_idx').on(
+            table.lifecycleState
+        ),
         ownerPromotions_validFrom_idx: index('ownerPromotions_validFrom_idx').on(table.validFrom),
         ownerPromotions_deletedAt_idx: index('ownerPromotions_deletedAt_idx').on(table.deletedAt),
-        ownerPromotions_ownerId_isActive_idx: index('ownerPromotions_ownerId_isActive_idx').on(
-            table.ownerId,
-            table.isActive
-        )
+        ownerPromotions_ownerId_lifecycleState_idx: index(
+            'ownerPromotions_ownerId_lifecycleState_idx'
+        ).on(table.ownerId, table.lifecycleState)
     })
 );
 
