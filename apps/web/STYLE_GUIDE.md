@@ -434,20 +434,40 @@ Project breakpoints (used consistently across sections): `640px` (small/tablet p
 
 ### 4.4 Section Background Alternation
 
-Sections alternate between white (`--background`) and warm peach (`--surface-warm`):
+Sections alternate between the default (`var(--core-background)`) and peach warm (`var(--surface-warm)`) surfaces. Apply the shared classes from `components.css` directly on the `<section>` element — never write the background-color by hand.
+
+| Class | Background | Defined at |
+|-------|------------|-----------|
+| `.section` (no modifier) | `var(--core-background)` — default white/light | `components.css:33` |
+| `.section--warm` | `var(--surface-warm)` — peach tint | `components.css:38-40` |
+| `.section--dark` | `var(--surface-dark)`, sets `color: var(--surface-dark-foreground)` | `components.css:41-44` |
+
+Homepage alternation order (real components):
 
 ```
-Hero:           bg-background (with hero image)
-Destinations:   bg-background
-About/Features: bg-background
-Tours:          bg-surface-warm      <-- warm
-Gallery:        bg-background
-Best Features:  bg-surface-warm      <-- warm (with dark CTA panel)
-Team:           bg-background
-Testimonials:   bg-surface-warm      <-- warm
-Blog:           bg-background
-Footer:         bg-surface-dark
+Hero:                 custom bg (var(--brand-secondary) sky blue, see HeroSection.astro)
+Destinations:         linear-gradient from var(--core-background) through var(--surface-warm) (DestinationsSection.astro)
+About/Features:       .section (default background)
+Testimonials:         .section (var(--core-background), see TestimonialsSection.astro)
+Blog:                 .section (default background)
+CtaOwners banner:     custom panel with var(--brand-tertiary) rounded inset (CtaOwnersSection.astro)
+Footer:               var(--footer-bg) = var(--surface-dark)
 ```
+
+Usage in markup:
+
+```astro
+<!-- Default white background -->
+<section class="section my-section">…</section>
+
+<!-- Warm peach background -->
+<section class="section section--warm my-section">…</section>
+
+<!-- Dark background (footer, CTA) -->
+<section class="section section--dark my-section">…</section>
+```
+
+Rule: never place two sections with the same background class back-to-back. `.section--dark` is reserved for terminal sections (footer wave CTA panels); do not use it mid-page without design approval.
 
 ---
 
@@ -455,83 +475,157 @@ Footer:         bg-surface-dark
 
 ### 5.1 Section Header
 
-Every content section has a consistent header pattern:
+Every content section uses the shared `SectionHeader` Astro component (`src/components/shared/SectionHeader.astro`). Do not reproduce its markup inline.
 
+```astro
+---
+import SectionHeader from '@/components/shared/SectionHeader.astro';
+---
+
+<SectionHeader
+  tagline={t('mySection.tagline')}
+  title={t('mySection.title')}
+  subtitle={t('mySection.subtitle')}
+/>
 ```
-tagline:    font-decorative font-bold text-tagline text-accent mb-2
-title:      font-heading font-medium text-h2 text-foreground mb-4
-subtitle:   font-sans text-body text-muted-foreground max-w-xl mx-auto
-container:  text-center mb-section-header
-```
+
+#### Props
+
+| Prop | Type | Default | Notes |
+|------|------|---------|-------|
+| `tagline` | `string` | required | Rendered in Caveat handwritten font |
+| `title` | `string` | required | Main section title |
+| `subtitle` | `string?` | `undefined` | Optional supporting text |
+| `alignment` | `'center' \| 'left'` | `'center'` | Text alignment |
+| `variant` | `'light' \| 'dark'` | `'light'` | Use `'dark'` on dark surfaces |
+| `actionLabel` | `string?` | `undefined` | Pill action link (requires `alignment='left'`) |
+| `actionHref` | `string?` | `undefined` | URL for the action link |
+
+#### BEM classes applied
+
+The component applies these shared classes from `components.css:65-103`:
+
+| Class | Font | Size token | Color token | CSS line |
+|-------|------|-----------|------------|---------|
+| `.section-header` | — | — | — | `components.css:65` |
+| `.section-header__tagline` | `var(--font-decorative)` | `var(--text-tagline)` | `var(--brand-accent)`, weight 700 | `components.css:72-77` |
+| `.section-header__title` | `var(--font-heading)` | `var(--text-h2)` | `var(--core-foreground)`, weight 700 | `components.css:79-86` |
+| `.section-header__subtitle` | `var(--font-sans)` | `var(--text-body)` | `var(--core-muted-foreground)`, max-width 36rem | `components.css:87-94` |
+
+Modifier classes applied automatically by props:
+
+- `.section-header--left` — resets `text-align` and `margin-inline` for subtitle
+- `.section-header--dark` — overrides title to `white` and subtitle to `oklch(1 0 0 / 0.7)` for dark backgrounds
+- `.section-header--with-action` — flex row with text block left and pill action link right
+
+The wrapper `.section-header` sets `margin-bottom: var(--space-section-header-mb)` (50px) automatically. Do not add extra margin-bottom to the component's parent.
 
 ### 5.2 Cards
 
-#### Tour/Accommodation Card
+The shared base classes in `components.css:105-130` apply to all cards. Specialized card components extend these with their own scoped `<style>` blocks or CSS Modules.
 
-The signature card style with organic border-radius:
+#### Shared base classes (`components.css:105-130`)
 
-```
-outer:      bg-transparent (no outer background)
-image:      rounded-organic overflow-hidden h-[552px] (responsive)
-image img:  object-cover transition duration-normal ease-in-out
-            hover: scale-110
-content:    bg-card rounded-organic-sm p-card-content
-            contains: title, meta (location, price), rating, duration
-title:      font-heading font-semibold text-h3 text-foreground
-meta:       font-sans text-meta text-muted-foreground
-price:      font-sans text-body font-medium
-            "From" prefix in text-muted-foreground, amount in text-accent
-rating:     star icons in text-[--rating-star] (gold/yellow)
-```
+| Class | Property | Value |
+|-------|----------|-------|
+| `.card` | `background-color` | `var(--core-card)` |
+| `.card` | `border-radius` | `var(--radius-card)` (24px) |
+| `.card` | `box-shadow` | `var(--shadow-card)` |
+| `.card:hover` | `box-shadow` | `var(--shadow-card-hover)` |
+| `.card__image` | `border-radius` | `var(--radius-organic)` (0px 100px) |
+| `.card__image` | `overflow` | `hidden` |
+| `.card__image img` | `transition` | `transform var(--duration-normal) ease-in-out` |
+| `.card:hover .card__image img` | `transform` | `scale(1.1)` |
+| `.card__content` | `padding` | `var(--space-card-content)` (27px 30px 26px) |
+
+Not all card implementations use all three shared classes — each card component uses BEM-lite scoped classes suited to its design. The table above describes the canonical shared base; component-specific overrides take precedence.
+
+#### Accommodation Card
+
+Component: `src/components/shared/AccommodationCard.astro`
+
+This card does not use the generic `.card` class directly. It uses a self-contained BEM structure under `.acc-card`:
+
+| Class | Property | Value |
+|-------|----------|-------|
+| `.acc-card` | `background-color` | `var(--core-card)` |
+| `.acc-card` | `border` | `1px solid var(--border)` |
+| `.acc-card` | `border-radius` | `var(--radius-md)` (12px, uniform) |
+| `.acc-card` | `box-shadow` | `var(--shadow-card)` |
+| `.acc-card:hover` | `box-shadow` | `var(--shadow-card-hover)` |
+| `.acc-card__image-area` | `height` | `clamp(160px, 30vw, 220px)` |
+| `.acc-card__image-area` | `border-radius` | `var(--radius-md) var(--radius-md) 0 0` (top rounded) |
+| `.acc-card__img` | `transition` | `transform 200ms ease-out` |
+| `.acc-card:hover .acc-card__img` | `transform` | `scale(1.08)` |
+| `.acc-card__name` | `font-family` | `var(--font-heading)` |
+| `.acc-card__name` | `font-weight` | `700` |
+| `.acc-card__name` | `color` | `var(--core-foreground)` |
+| `.acc-card__description` | `font-family` | `var(--font-sans)` |
+| `.acc-card__description` | `color` | `var(--core-muted-foreground)` |
+| `.acc-card__price-value` | `font-family` | `var(--font-heading)` |
+| `.acc-card__price-value` | `color` | `var(--brand-accent)` |
+| `.acc-card__price-label` | `color` | `var(--core-muted-foreground)` |
+| `.acc-card__star--filled` | `color` | `var(--rating-star)` |
+| `.acc-card__location-bar` | `background-color` | `var(--surface-warm)` |
+
+The card includes a wave SVG separator between image and content area (`fill: var(--core-card)`), a diagonal status corner badge (`:before` triangle using CSS custom property `--corner-bg`), and a featured badge pill (`border-radius: 9999px`). The CTA pill uses a gradient built from `var(--brand-secondary)` and `var(--core-background)`.
 
 #### Destination Card
 
-Tall image card with overlay content:
+Component: `src/components/sections/DestinationsSection.astro` delegates to `DestinationsIsland.client.tsx`.
 
-```
-outer:      rounded-organic overflow-hidden h-[434px]
-image:      object-cover w-full h-full
-            hover: scale-110 transition duration-normal ease-in-out
-overlay:    absolute bottom content with title + link
-            hover: content slides up to center, description rotates in
-title:      font-heading font-semibold text-card text-lg
-link btn:   rounded-pill bg-accent text-accent-foreground
-```
+The destination section uses a linear-gradient background from `var(--core-background)` through `var(--surface-warm)` and back. Inside the React island, each destination card is an image-only card with overlay content that slides up on hover. Tokens consumed:
 
-#### Blog Card
+- Outer container: `border-radius: var(--radius-organic)` (asymmetric 0px 100px)
+- Image: `object-fit: cover`, `transition: transform var(--duration-normal) ease-in-out`, hover `scale(1.1)`
+- Overlay title: `font-family: var(--font-heading)`, color on `var(--core-card)` surface
+- Link pill: `border-radius: var(--radius-pill)`, `background-color: var(--brand-accent)`, `color: var(--accent-foreground)`
 
-```
-outer:      bg-surface-warm rounded-card overflow-visible p-4
-thumbnail:  rounded-organic-alt overflow-hidden h-[277px]
-            hover: scale-110 on image
-content:    p-[34px_0_15px] (below image, no bg)
-meta:       author avatar + name + date
-title:      font-heading font-medium text-h3
-read more:  text-accent with arrow, hover: text-foreground
-badge:      rounded-pill bg-accent text-accent-foreground text-caption
-```
+#### Article/Blog Card
 
-#### Team/Guide Card
+Component: `src/components/shared/ArticleCard.astro`
 
-```
-image:      rounded-organic overflow-hidden
-            hover: scale-110 on image
-content:    text-center mt-4
-name:       font-heading font-semibold text-h4
-role:       font-sans text-meta text-muted-foreground
-social:     rounded-pill bg-accent/15 icons, hover: bg-accent text-accent-foreground
-```
+| Class | Property | Value |
+|-------|----------|-------|
+| `.article-card` | `border-radius` | `var(--radius-card)` (24px) |
+| `.article-card` | `background-color` | `var(--core-card)` |
+| `.article-card` | `box-shadow` | `var(--shadow-card)` |
+| `.article-card:hover` | `box-shadow` | `var(--shadow-card-hover)` |
+| `.article-card:hover` | `transform` | `translateY(-4px)` |
+| `.article-card__image-wrapper` | `aspect-ratio` | `16 / 9` |
+| `.article-card__img` | `transition` | `transform var(--duration-normal) ease` |
+| `.article-card:hover .article-card__img` | `transform` | `scale(1.04)` |
+| `.article-card__title` | `font-family` | `var(--font-heading)` |
+| `.article-card__title` | `color` | `var(--core-foreground)` |
+| `.article-card:hover .article-card__title` | `color` | `var(--brand-primary)` |
+| `.article-card__excerpt` | `font-family` | `var(--font-sans)` |
+| `.article-card__excerpt` | `color` | `var(--core-muted-foreground)` |
+| `.article-card__cta` | `color` | `var(--brand-primary)` |
+| `.article-card__accent-bar` | `height` | `4px`, color from `getPostCategoryColor()` |
+
+Category color is resolved by `getPostCategoryColor({ category })` in `src/lib/colors.ts` and applied via inline `style` on the accent bar. Badge components use the same color scheme. The image container does NOT use `var(--radius-organic)` — article cards keep a rectangular image area (`border-radius: 0`) within the rounded outer card.
+
+The featured variant is `src/components/shared/FeaturedArticleCard.astro` and uses the same token set at larger scale.
 
 #### Testimonial Card
 
-```
-layout:     side-by-side (image left, content right) on surface-warm
-image:      large, organic shape with blob decoration
-quote:      quote icon in text-accent/20
-text:       font-sans text-body text-muted-foreground italic
-author:     font-heading font-semibold + role in text-meta
-rating box: floating card with rating score + stars + review count
-```
+Component: `src/components/sections/TestimonialsCarousel.client.tsx` + `TestimonialsCarousel.module.css`
+
+The testimonial carousel is a React island (`client:visible`). Each slide card uses CSS Modules:
+
+| Module class | Property | Value |
+|-------------|----------|-------|
+| `.slideCard` | `background-color` | `var(--core-card)` |
+| `.slideCard` | `border-radius` | `var(--radius-card)` (24px) |
+| `.slideCard` | `box-shadow` | `var(--shadow-card)` |
+| `.slideCard:hover` | `box-shadow` | `var(--shadow-card-hover)` |
+| `.slideCard` | `padding` | `1.5rem 1.25rem 1.25rem` (mobile), `1.75rem 1.5rem 1.5rem` (≥768px) |
+| `.mainSlide` (inactive) | `opacity` | `0.35`, `transform: scale(0.95)`, `filter: blur(2px)` |
+| `.mainSlideActive` | `opacity` | `1`, `transform: scale(1)`, `filter: blur(0)` |
+| `.dot` | `background-color` | `var(--brand-secondary-foreground)`, `opacity: 0.35` |
+| `.dotActive` | `background-color` | `var(--brand-accent)`, `opacity: 1`, stretched to `1.5rem` width |
+
+The carousel uses a peek layout: mobile slides are `flex: 0 0 88%`, desktop (≥768px) `flex: 0 0 38%`. Navigation uses `IconButton` arrows and pill-shaped dot indicators. There is no full-page side-by-side layout with a blob — the section is a standard `.section` (white background, see `TestimonialsSection.astro`) wrapping the carousel island.
 
 ### 5.3 Buttons
 
@@ -1009,15 +1103,56 @@ Under `prefers-reduced-motion: reduce` the ring animation is disabled (no `strok
 
 ### 6.1 Background Shapes (Blobs)
 
-Large SVG or CSS shapes positioned behind section content:
+Background blobs are absolutely-positioned decorative elements placed inside a `.section` (which already applies `overflow: clip`). They sit at `z-index: -1` below `.section__container` (which is at `var(--z-content)`). All values must use CSS custom properties.
 
+#### Real example: HeroSection blob
+
+`HeroSection.astro` uses two blob layers on the hero image area:
+
+```astro
+<!-- Accent blob element behind the hero image -->
+<div class="hero__blob-bg" aria-hidden="true"></div>
+
+<style>
+  .hero__blob-bg {
+    position: absolute;
+    inset: -10% -5%;
+    background-color: var(--surface-warm);
+    opacity: 0.55;
+    border-radius: var(--radius-organic);
+    z-index: -1;
+    pointer-events: none;
+  }
+</style>
 ```
-position:   absolute, z-shape
-hero shape: large peach-tinted organic blob behind hero image
-            bg-surface-warm, custom clip-path or SVG
-section:    subtle SVG patterns (dashed lines, dots, compasses)
-            opacity-30 to opacity-50, pointer-events-none, aria-hidden
+
+The hero image itself is clipped to an irregular blob path using an inline SVG `<clipPath>` with `clipPathUnits="objectBoundingBox"` (see `.hero-blob-mask` in `components.css:641-651`). The mask is applied via the CSS `mask` property pointing to an inline SVG data URI.
+
+#### CSS blob pattern (any section)
+
+```css
+.my-section__blob {
+  position: absolute;
+  top: -80px;
+  right: -120px;
+  width: clamp(300px, 40vw, 600px);
+  aspect-ratio: 1;
+  background-color: var(--surface-warm);
+  opacity: 0.3;           /* range: 0.3–0.5 */
+  border-radius: var(--radius-organic);
+  z-index: -1;
+  pointer-events: none;
+}
 ```
+
+#### Rules
+
+- Always `aria-hidden="true"` on the blob element
+- Always `pointer-events: none`
+- `opacity` range: `0.3` to `0.5` (never higher — blobs are background noise, not foreground elements)
+- `z-index: -1` so content in `.section__container` (at `var(--z-content)`) always renders on top
+- Background color via `var(--surface-warm)` or `var(--brand-secondary)` — never hardcoded
+- The `.section` wrapper applies `overflow: clip`, so blobs that extend beyond the section edge are naturally clipped without extra effort
 
 ### 6.2 Decorative SVGs
 
@@ -1032,11 +1167,49 @@ Small illustrative elements scattered across sections:
 
 Rules:
 
-- `hidden md:block` (hide on mobile)
-- `pointer-events-none aria-hidden="true"`
-- `opacity-30` to `opacity-50`
+- Hidden on mobile by default, shown at `min-width: 768px` via scoped media query (see example below)
+- Always `pointer-events: none` and `aria-hidden="true"`
+- `opacity` range: `0.3` to `0.5` (set directly in the scoped `<style>`, not inline)
 - 2-4 per section maximum
 - Never overlap interactive content
+- Always use CSS custom properties for color (e.g. `fill="var(--brand-accent)"` on SVG path)
+
+#### Pattern for hiding on mobile
+
+Since decoratives use absolute positioning, they must be hidden on mobile with a scoped `display` toggle, not a Tailwind responsive class. The canonical idiom (from `Section Template` in section 8 and `CtaOwnersSection.astro`):
+
+```astro
+<div class="my-section__deco" aria-hidden="true">
+  <img src="/images/decoratives/deco-compass.svg" alt="" loading="lazy" />
+</div>
+
+<style>
+  .my-section__deco {
+    position: absolute;
+    top: 2rem;
+    right: 3rem;
+    opacity: 0.4;
+    pointer-events: none;
+    display: none;          /* hidden on mobile */
+  }
+
+  @media (min-width: 768px) {
+    .my-section__deco {
+      display: block;
+    }
+  }
+</style>
+```
+
+#### Real examples in codebase
+
+| Component | Decorative type |
+|-----------|----------------|
+| `HeroSection.astro` | Floating icon circles (beach, hotel) with deco SVG arrows; hidden on mobile via `display: none` / `@media (min-width: 768px)` |
+| `AboutUsSection.astro` | Three chained airplane path SVGs (`misc-ap-1.png`), `aria-hidden="true"`, `loading="lazy"` |
+| `CtaOwnersSection.astro` | Left media column with person image hidden below `768px` via `display: none` → `display: flex` |
+
+SVG fill colors always reference tokens: `fill="var(--brand-accent)"`, `stroke="var(--brand-primary)"`. Never use hardcoded hex values inside decorative SVGs.
 
 ### 6.3 Background Patterns
 
