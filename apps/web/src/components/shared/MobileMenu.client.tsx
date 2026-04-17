@@ -14,6 +14,7 @@
  * Tasks: T-074
  */
 
+import { IconButton } from '@/components/ui/IconButton';
 import { signOut } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -288,12 +289,12 @@ export function MobileMenu({
                     />
                     <span className={styles.logoText}>Hospeda</span>
                 </a>
-                <button
+                <IconButton
                     ref={closeButtonRef}
-                    type="button"
+                    ariaLabel={t('nav.closeMenu', 'Close navigation menu')}
+                    variant="ghost"
+                    size="md"
                     onClick={handleClose}
-                    aria-label={t('nav.closeMenu', 'Close navigation menu')}
-                    className={styles.closeButton}
                     tabIndex={isOpen ? 0 : -1}
                 >
                     <CloseIcon
@@ -301,7 +302,7 @@ export function MobileMenu({
                         weight="regular"
                         aria-hidden="true"
                     />
-                </button>
+                </IconButton>
             </div>
 
             {/* Navigation links */}
@@ -467,12 +468,14 @@ export function MobileMenu({
                         </a>
                     );
                 })}
-                <button
-                    type="button"
+                <IconButton
+                    variant="outline"
+                    size="sm"
+                    ariaLabel={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                    aria={{ pressed: isDark }}
                     onClick={handleThemeToggle}
                     tabIndex={isOpen ? 0 : -1}
-                    aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-                    className={styles.themeToggle}
+                    className={styles.themeTogglePlacement}
                 >
                     {isDark ? (
                         <MoonIcon
@@ -487,7 +490,7 @@ export function MobileMenu({
                             aria-hidden="true"
                         />
                     )}
-                </button>
+                </IconButton>
             </div>
 
             {/* Bottom search link */}
