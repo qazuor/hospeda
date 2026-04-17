@@ -14,6 +14,20 @@ import type { ServiceContext } from '../types';
  * @param baseCtx - Optional base context to merge into the transaction ctx
  * @param options - Optional configuration (timeoutMs defaults to 30_000)
  *
+ * @remarks
+ * **Always-new-boundary behavior**: When `withServiceTransaction` is called
+ * inside another active transaction, it does NOT join the outer transaction
+ * via savepoints. Instead, it creates a new, independent transaction boundary.
+ * This is intentional: it simplifies reasoning about rollback scope and avoids
+ * the complexity of nested savepoint management. If you need true nested
+ * atomicity, refactor the outer operation to include the inner work in a single
+ * top-level transaction.
+ *
+ * Inside the callback, `ctx.tx` is always defined (non-null) because
+ * `withTransaction` guarantees a transaction client before invoking the
+ * callback. This is why callers that access `ctx.tx` directly use the
+ * non-null assertion `ctx.tx!` with a `biome-ignore` comment.
+ *
  * @example
  * ```ts
  * const result = await withServiceTransaction(async (ctx) => {
