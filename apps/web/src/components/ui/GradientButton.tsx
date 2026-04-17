@@ -6,7 +6,7 @@
 
 import type { ReactNode } from 'react';
 
-interface GradientButtonProps {
+export interface GradientButtonProps {
     readonly label: string;
     readonly as?: 'a' | 'button';
     readonly href?: string;
@@ -21,6 +21,19 @@ interface GradientButtonProps {
     readonly trailingIcon?: ReactNode;
     readonly disabled?: boolean;
     readonly type?: 'button' | 'submit' | 'reset';
+    /**
+     * Arbitrary `aria-*` attributes as a plain record.
+     * Keys are used without the `aria-` prefix; it is added automatically.
+     * Boolean values are explicitly stringified to `'true'` or `'false'`
+     * for consistency with the Astro version (even though JSX accepts booleans
+     * for aria-* natively).
+     *
+     * **Collision rule**: if `'label'` is included here it is silently dropped —
+     * the button label is visible text rendered via the `label` prop.
+     *
+     * @example { busy: isLoading }
+     */
+    readonly aria?: Record<string, string | boolean>;
 }
 
 export function GradientButton({
@@ -37,7 +50,8 @@ export function GradientButton({
     leadingIcon,
     trailingIcon,
     disabled,
-    type = 'button'
+    type = 'button',
+    aria
 }: GradientButtonProps) {
     const classes = [
         'btn-gradient',
@@ -48,6 +62,15 @@ export function GradientButton({
     ]
         .filter(Boolean)
         .join(' ');
+
+    // Build aria-* spread. The 'label' key is dropped — label prop renders visible text.
+    const ariaAttrs: Record<string, string> = {};
+    if (aria) {
+        for (const [key, value] of Object.entries(aria)) {
+            if (key === 'label') continue;
+            ariaAttrs[`aria-${key}`] = String(value);
+        }
+    }
 
     const content = (
         <>
@@ -78,6 +101,7 @@ export function GradientButton({
                 className={classes}
                 onClick={onClick}
                 disabled={disabled}
+                {...ariaAttrs}
             >
                 {content}
             </button>
@@ -90,6 +114,7 @@ export function GradientButton({
             className={classes}
             target={target}
             rel={rel}
+            {...ariaAttrs}
         >
             {content}
         </a>

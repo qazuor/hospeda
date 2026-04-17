@@ -11,7 +11,7 @@
  * - shape: pill | rounded (default pill — use 'rounded' for form submits / pricing cards)
  * - icon: pass "true" to render a trailing ArrowRightIcon
  * - as: 'a' | 'button'
- * - href, type, name, id, data, class
+ * - href, type, name, id, data, aria, class
  *
  * Slots:
  * - leading: rendered before the label (e.g. icon)
@@ -33,6 +33,18 @@ interface Props {
   readonly type?: 'button' | 'submit' | 'reset';
   readonly name?: string;
   readonly data?: Record<string, string | number>;
+  /**
+   * Arbitrary `aria-*` attributes as a plain record.
+   * Keys are used without the `aria-` prefix; it is added automatically.
+   * Boolean values are stringified to `'true'` or `'false'` because HTML
+   * ARIA boolean attributes are enumerated strings, not real booleans.
+   *
+   * **Collision rule**: if `'label'` is included here it is silently dropped —
+   * the button label is visible text rendered via the `label` prop.
+   *
+   * @example { busy: isLoading }
+   */
+  readonly aria?: Record<string, string | boolean>;
 }
 
 const {
@@ -48,6 +60,7 @@ const {
   type = 'button',
   name,
   data,
+  aria,
 } = Astro.props;
 
 const classes = [
@@ -67,12 +80,21 @@ if (data) {
   }
 }
 
+// Build aria-* attrs. The 'label' key is dropped — label prop renders visible text.
+const ariaAttrs: Record<string, string> = {};
+if (aria) {
+  for (const [key, value] of Object.entries(aria)) {
+    if (key === 'label') continue;
+    ariaAttrs[`aria-${key}`] = String(value);
+  }
+}
+
 const hasLeadingSlot = Astro.slots.has('leading');
 const hasTrailingSlot = Astro.slots.has('trailing');
 ---
 
 {element === 'a' ? (
-  <a href={href} id={id} class={classes} {...dataAttrs}>
+  <a href={href} id={id} class={classes} {...dataAttrs} {...ariaAttrs}>
     {hasLeadingSlot && (
       <span class="gradient-btn__icon gradient-btn__icon--leading" aria-hidden="true">
         <slot name="leading" />
@@ -96,6 +118,7 @@ const hasTrailingSlot = Astro.slots.has('trailing');
     id={id}
     class={classes}
     {...dataAttrs}
+    {...ariaAttrs}
   >
     {hasLeadingSlot && (
       <span class="gradient-btn__icon gradient-btn__icon--leading" aria-hidden="true">
