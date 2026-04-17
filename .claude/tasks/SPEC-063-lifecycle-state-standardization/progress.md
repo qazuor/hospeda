@@ -258,11 +258,31 @@ Admin UI scope analysis revealed that original T-016, T-017, T-018 referenced **
 - `test/entities/ownerPromotion/owner-promotion.admin-search.schema.test.ts` L178, L181, L277 → fixed in T-020
 - `test/entities/admin-search/group-c.admin-search.schema.test.ts` L109, L147 → fixed in T-020
 
+#### T-020 — OwnerPromotion admin-search + group tests migration (2026-04-17T20:40)
+- **Files:**
+  - `packages/schemas/test/entities/ownerPromotion/owner-promotion.admin-search.schema.test.ts`
+  - `packages/schemas/test/entities/admin-search/group-c.admin-search.schema.test.ts`
+- **Key context:** Post-T-009, `OwnerPromotionAdminSearchSchema` has NO `lifecycleState` nor `isActive` field of its own. The lifecycle filter is handled via the inherited `status` field from `AdminSearchBaseSchema` (`z.enum(['all', 'DRAFT', 'ACTIVE', 'ARCHIVED']).default('all')`), which `adminList()` maps to `lifecycleState`.
+- `admin-search.schema.test.ts`:
+  - Deleted `should validate isActive as boolean` (field no longer exists — Zod silently ignored it, test asserted nothing meaningful).
+  - Deleted `should validate isActive as string "true"/"false" (query param coercion)` (L169-183 — root of TS2339 at L178/L181).
+  - Added new describe block `Lifecycle Status Filter (via base status field)` with 5 tests: default "all", accept DRAFT/ACTIVE/ARCHIVED, reject invalid.
+  - Combined Filters test: removed `isActive: true` input + L277 assertion (TS2339); added `expect(result.data.status).toBe('ACTIVE')` assertion instead.
+- `group-c.admin-search.schema.test.ts`:
+  - `should accept promotion-specific filters`: removed `isActive: true` input + L109 assertion.
+  - `should coerce string boolean for isActive` → replaced with `should accept status enum values (DRAFT, ACTIVE, ARCHIVED) via base schema` parametrized test.
+- Quality gate: **biome pass**, **typecheck `@repo/schemas` 100% CLEAN (milestone — no SPEC-063 errors remaining)**, **tests 118/118 pass** (4 files: schema 37 + crud 36 + admin-search 25 + group-c 20).
+- Scope expansion absorbed: status enum coverage added at schema layer per user approval (option 1 breakdown), consistent with T-019 pattern.
+
+### packages/schemas milestone
+
+After T-020, `packages/schemas` typecheck is **100% clean** for SPEC-063. All OwnerPromotion-related schema surface + tests are migrated. Remaining SPEC-063 work is in `apps/api` (tests + cron), `packages/db` (model tests T-023), and `packages/service-core` (integration tests).
+
 ### Next up
 
-Commit boundary for T-019 (2 test files + bookkeeping). Then:
+Commit boundary for T-020 (2 test files + bookkeeping). Then:
 
-**Phase 2 testing batch continuation:** T-020 (admin-search tests — closes the remaining 5 `packages/schemas` typecheck errors), T-021 (integration: admin list AC-001-01), T-022 (integration: public default ACTIVE AC-005-01), T-023 (model findActive tests), T-024 (usage-tracking + limit-enforcement tests).
+**Phase 2 testing batch continuation:** T-021 (integration: admin list AC-001-01), T-022 (integration: public default ACTIVE AC-005-01), T-023 (model findActive tests), T-024 (usage-tracking + limit-enforcement tests).
 
 **Phase 2 cron:** T-025, T-026.
 

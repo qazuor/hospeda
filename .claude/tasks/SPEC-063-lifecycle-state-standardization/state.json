@@ -709,28 +709,33 @@
         {
             "id": "T-020",
             "title": "Update OwnerPromotion admin-search + group tests",
+            "_note": "Post-T-009: OwnerPromotionAdminSearchSchema has no lifecycleState field of its own; filter enters via base schema's status field (enum: all/DRAFT/ACTIVE/ARCHIVED) mapped to lifecycleState by adminList(). Tests delete isActive refs and add status enum coverage. User-approved scope expansion per option 1. packages/schemas typecheck now 100% clean for SPEC-063.",
             "description": "Update `packages/schemas/test/entities/ownerPromotion/owner-promotion.admin-search.schema.test.ts`: replace `isActive` boolean filter tests with `lifecycleState` enum filter tests. Also update `packages/schemas/test/entities/admin-search/group-c.admin-search.schema.test.ts`: update `OwnerPromotionAdminSearchSchema` test expectations.\n\nFiles: `packages/schemas/test/entities/ownerPromotion/owner-promotion.admin-search.schema.test.ts`, `packages/schemas/test/entities/admin-search/group-c.admin-search.schema.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009", "T-010"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Replace isActive filter tests in admin-search.schema.test.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update group-c.admin-search.schema.test.ts expectations",
-                    "completed": false
+                    "completed": true
+                },
+                {
+                    "title": "Add status enum coverage (all/DRAFT/ACTIVE/ARCHIVED + reject invalid)",
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "testing", "phase-2", "ownerPromotion"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-17T20:20:00.000Z",
+                "completed": "2026-04-17T20:40:00.000Z"
             }
         },
         {
@@ -1774,9 +1779,9 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 44,
+        "pending": 43,
         "inProgress": 0,
-        "completed": 19,
+        "completed": 20,
         "blocked": 0,
         "averageComplexity": 2.0,
         "_replanLog": [
