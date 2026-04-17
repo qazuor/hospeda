@@ -8,6 +8,7 @@
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import GradientButton from '@/components/shared/GradientButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -99,9 +100,15 @@ const touristPlans = [
 								<li class="pricing-card__feature">✓ {f}</li>
 							))}
 						</ul>
-						<a href={buildUrl({ locale, path: 'auth/signup' })} class:list={['pricing-card__btn', { 'pricing-card__btn--primary': plan.highlighted }]}>
-							{t('pricing.cta', 'Empezar')}
-						</a>
+						<div class="pricing-card__btn-wrapper">
+							<GradientButton
+								href={buildUrl({ locale, path: 'auth/signup' })}
+								label={t('pricing.cta', 'Empezar')}
+								variant={plan.highlighted ? 'accent' : 'outline-accent'}
+								shape="rounded"
+								class="pricing-card__btn"
+							/>
+						</div>
 					</div>
 				))}
 			</div>
@@ -218,32 +225,13 @@ const touristPlans = [
 		color: var(--foreground);
 	}
 
+	.pricing-card__btn-wrapper {
+		display: flex;
+		justify-content: center;
+	}
+
 	.pricing-card__btn {
-		display: block;
-		text-align: center;
-		padding: 0.75rem;
-		border-radius: var(--radius-button);
-		font-family: var(--font-sans);
-		font-weight: 600;
-		text-decoration: none;
-		border: 1px solid var(--border);
-		color: var(--foreground);
-		background-color: var(--background);
-		transition: all var(--duration-fast) ease;
-	}
-
-	.pricing-card__btn:hover {
-		background-color: var(--muted);
-	}
-
-	.pricing-card__btn--primary {
-		background-color: var(--brand-accent);
-		color: var(--accent-foreground, #fff);
-		border-color: var(--brand-accent);
-	}
-
-	.pricing-card__btn--primary:hover {
-		opacity: 0.9;
+		width: 100%;
 	}
 
 	@media (max-width: 768px) {
