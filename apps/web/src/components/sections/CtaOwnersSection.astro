@@ -9,6 +9,7 @@
 
 import { Image } from 'astro:assets';
 import feature31 from '@/assets/images/resources/feature-3-1.png';
+import GradientButton from '@/components/shared/GradientButton.astro';
 import { ctaFeatures } from "@/data/homepage-features";
 import type { SupportedLocale } from "@/lib/i18n";
 import { createTranslations } from "@/lib/i18n";
@@ -60,12 +61,14 @@ const iconMap: Record<string, typeof SparkleIcon> = {
                         {t("home.ownerCta.title", "Publicá tu alojamiento")}
                     </h2>
 
-                    <a
-                        href={buildUrl({ locale, path: "/suscriptores/propietarios/" })}
-                        class="best-features-banner__cta-pill"
-                    >
-                        {t("home.ownerCta.ctaButton", "Publicá tu alojamiento →")}
-                    </a>
+                    <div class="best-features-banner__cta-wrapper">
+                        <GradientButton
+                            href={buildUrl({ locale, path: "/suscriptores/propietarios/" })}
+                            label={t("home.ownerCta.ctaButton", "Publicá tu alojamiento")}
+                            variant="primary"
+                            icon="true"
+                        />
+                    </div>
                 </div>
 
                 <ul class="best-features-banner__list">
@@ -238,30 +241,9 @@ const iconMap: Record<string, typeof SparkleIcon> = {
         margin: 0;
     }
 
-    /* Small pill CTA button with thin border */
-    .best-features-banner__cta-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
+    /* CTA wrapper */
+    .best-features-banner__cta-wrapper {
         margin-top: 0.75rem;
-        padding: 8px 18px;
-        border-radius: var(--radius-pill);
-        border: 1px solid var(--core-foreground);
-        color: var(--core-foreground);
-        font-family: var(--font-sans);
-        font-size: 0.75rem;
-        font-weight: 500;
-        text-decoration: none;
-        white-space: nowrap;
-        align-self: flex-start;
-        transition:
-            background-color var(--duration-normal) ease,
-            color var(--duration-normal) ease;
-    }
-
-    .best-features-banner__cta-pill:hover {
-        background-color: var(--core-foreground);
-        color: var(--brand-tertiary);
     }
 
     /* ─── Feature list ───────────────────────────────────────────────── */

@@ -10,6 +10,7 @@ import { getImage } from 'astro:assets';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import GradientButton from '@/components/shared/GradientButton.astro';
 import SectionHeader from '@/components/shared/SectionHeader.astro';
 import FeaturedArticleCard from '@/components/shared/FeaturedArticleCard.astro';
 import ArticleCard from '@/components/shared/ArticleCard.astro';
@@ -99,9 +100,12 @@ const isSparse = posts.length < 2;
 
         <!-- CTA button -->
         <div class="posts__cta">
-            <a href={buildUrl({ locale, path: 'publicaciones' })} class="posts__cta-btn">
-                {t('home.latestPosts.viewAll', 'Ver todos los artículos →')}
-            </a>
+            <GradientButton
+                href={buildUrl({ locale, path: 'publicaciones' })}
+                label={t('home.latestPosts.viewAll', 'Ver todos los artículos')}
+                variant="primary"
+                icon="true"
+            />
         </div>
 
     </div>
@@ -160,33 +164,5 @@ const isSparse = posts.length < 2;
         display: flex;
         justify-content: center;
         margin-top: 3rem;
-    }
-
-    .posts__cta-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 12px 28px;
-        border-radius: var(--radius-pill);
-        background-color: var(--brand-secondary-foreground);
-        color: var(--core-background);
-        font-family: var(--font-sans);
-        font-size: 0.875rem;
-        font-weight: 500;
-        text-decoration: none;
-        transition:
-            background-color var(--duration-normal) ease,
-            transform var(--duration-normal) ease;
-    }
-
-    .posts__cta-btn:hover {
-        background-color: var(--brand-primary);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px oklch(from var(--brand-primary) l c h / 0.25);
-    }
-
-    .posts__cta-btn:focus-visible {
-        outline: 2px solid var(--brand-primary);
-        outline-offset: 2px;
     }
 </style>

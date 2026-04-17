@@ -13,6 +13,7 @@ import heroPlayaRaw from '@/assets/images/hero/hero-playa.jpg';
 import heroBlobAccent from '@/assets/images/shapes/hero-blob-accent.png';
 import { HeroImageRotator } from '@/components/sections/HeroImageRotator.client';
 import { SearchBar } from '@/components/sections/SearchBar.client';
+import GradientButton from '@/components/shared/GradientButton.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -176,12 +177,13 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
 
 			<!-- Secondary CTA -->
 			<div class="hero__cta-wrapper">
-				<a class="hero__secondary-cta" href={buildUrl({ locale, path: '/destinos/' })}>
-					{t('home.hero.secondaryCta', '¿No sabés qué buscar? Explorá los destinos')}
-					<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-						<path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-					</svg>
-				</a>
+				<GradientButton
+					href={buildUrl({ locale, path: '/destinos/' })}
+					label={t('home.hero.secondaryCta', '¿No sabés qué buscar? Explorá los destinos')}
+					variant="outline-primary"
+					size="sm"
+					icon="true"
+				/>
 			</div>
 		</div>
 	</div>
@@ -354,42 +356,6 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
 		top: 11px;
 	}
 
-	/* Secondary CTA */
-	.hero__secondary-cta {
-		display: inline-flex;
-		align-items: center;
-		gap: 8px;
-		font-size: 12px;
-		font-weight: 500;
-		font-family: var(--font-sans);
-		color: var(--core-muted-foreground);
-		text-decoration: none;
-		background: linear-gradient(
-			135deg,
-			oklch(from var(--core-card) l c h / 0.9) 0%,
-			oklch(from var(--brand-secondary) l c h / 0.6) 100%
-		);
-		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
-		border: 1px solid oklch(from var(--brand-primary) l c h / 0.15);
-		border-radius: 9999px;
-		padding: 8px 20px;
-		transition:
-			background var(--duration-fast) ease,
-			color var(--duration-fast) ease,
-			border-color var(--duration-fast) ease,
-			box-shadow var(--duration-fast) ease;
-		align-self: flex-start;
-		box-shadow: 0 2px 8px oklch(from var(--core-foreground) l c h / 0.06);
-	}
-
-	.hero__secondary-cta:hover {
-		background: var(--core-card);
-		color: var(--brand-primary);
-		border-color: oklch(from var(--brand-primary) l c h / 0.4);
-		box-shadow: 0 4px 12px oklch(from var(--brand-primary) l c h / 0.12);
-	}
-
 	/* Right column: blob image */
 	.hero__visual {
 		position: relative;
@@ -543,7 +509,7 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
 		.hero__description { max-width: min(600px, 100%); }
 		.social-proof { align-items: center; margin-left: 0; }
 		.social-proof__deco-arrow { display: none; }
-		.hero__secondary-cta { align-self: center; }
+		.hero__cta-wrapper { justify-content: center; }
 		.hero__visual { width: 100%; max-width: 500px; height: 500px; margin: 0 auto; max-height: 280px; overflow: hidden; }
 		.hero__blob-accent { left: auto; right: -20px; }
 	}
