@@ -139,7 +139,13 @@
     padding: 4px 12px;
 }
 
-/* === Buttons === */
+/* =======================================================================
+   GRADIENT BUTTON — unified CTA component
+   Variants: accent (orange), primary (blue), outline-accent, outline-primary
+   Sizes: sm, md (default), lg
+   Shapes: pill (default), rounded (8px corners for form submits)
+   ======================================================================= */
+
 .btn-gradient {
     position: relative;
     display: inline-flex;
@@ -147,51 +153,180 @@
     justify-content: center;
     font-family: var(--font-sans);
     font-weight: 600;
-    color: var(--accent-foreground);
+    text-decoration: none;
     overflow: hidden;
-    background: var(--brand-accent);
-    border-radius: var(--radius-button);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-pill);
     font-size: var(--text-button);
-    padding: 14px 32px;
-    transition: all var(--duration-slow) ease;
+    padding: 12px 28px;
+    transition:
+        transform var(--duration-normal) ease,
+        box-shadow var(--duration-normal) ease,
+        background-position var(--duration-normal) ease,
+        color var(--duration-normal) ease,
+        border-color var(--duration-normal) ease;
+    cursor: pointer;
+    white-space: nowrap;
+    background-size: 180% 180%;
+    background-position: 0% 50%;
 }
-.btn-gradient::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: oklch(from var(--brand-accent) calc(l * 1.1) c h);
-    border-radius: var(--radius-button);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.4s cubic-bezier(0.1, 0, 0.3, 1);
-    z-index: -1;
+
+.btn-gradient:hover {
+    text-decoration: none;
+    transform: translateY(-2px);
+    background-position: 100% 50%;
 }
-.btn-gradient:hover::before {
-    transform: scaleX(1);
+
+.btn-gradient:active {
+    transform: translateY(0);
 }
+
 .btn-gradient:focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
 }
 
-/* Outline variant — transparent background with border, fills on hover */
-.btn-gradient--outline {
-    background: transparent;
-    border: 1.5px solid var(--brand-primary);
-    color: var(--brand-primary);
+/* === Solid fill variants (real gradients) === */
+.btn-gradient--accent {
+    color: var(--accent-foreground, #fff);
+    background-image: linear-gradient(
+        135deg,
+        oklch(from var(--brand-accent) calc(l * 1.12) c h) 0%,
+        var(--brand-accent) 50%,
+        oklch(from var(--brand-accent) calc(l * 0.82) c h) 100%
+    );
+    box-shadow: 0 4px 14px oklch(from var(--brand-accent) l c h / 0.32);
 }
-.btn-gradient--outline::before {
-    background: var(--brand-primary);
+.btn-gradient--accent:hover {
+    box-shadow: 0 6px 20px oklch(from var(--brand-accent) l c h / 0.45);
 }
-.btn-gradient--outline:hover {
-    color: var(--accent-foreground);
+
+.btn-gradient--primary {
+    color: var(--primary-foreground, #fff);
+    background-image: linear-gradient(
+        135deg,
+        oklch(from var(--brand-primary) calc(l * 1.15) c h) 0%,
+        var(--brand-primary) 50%,
+        oklch(from var(--brand-primary) calc(l * 0.8) c h) 100%
+    );
+    box-shadow: 0 4px 14px oklch(from var(--brand-primary) l c h / 0.32);
 }
+.btn-gradient--primary:hover {
+    box-shadow: 0 6px 20px oklch(from var(--brand-primary) l c h / 0.45);
+}
+
+/* === Outline variants — transparent, fills with gradient on hover === */
+.btn-gradient--outline-primary,
 .btn-gradient--outline-accent {
-    border-color: var(--brand-accent);
-    color: var(--brand-accent);
+    background: transparent;
+    box-shadow: none;
 }
+
+.btn-gradient--outline-primary {
+    color: var(--brand-primary);
+    border-color: var(--brand-primary);
+}
+
+.btn-gradient--outline-accent {
+    color: var(--brand-accent);
+    border-color: var(--brand-accent);
+}
+
+.btn-gradient--outline-primary::before,
 .btn-gradient--outline-accent::before {
-    background: var(--brand-accent);
+    content: "";
+    position: absolute;
+    inset: -1.5px;
+    border-radius: inherit;
+    opacity: 0;
+    transition: opacity var(--duration-normal) ease;
+    z-index: 0;
+}
+
+.btn-gradient--outline-primary::before {
+    background-image: linear-gradient(
+        135deg,
+        oklch(from var(--brand-primary) calc(l * 1.15) c h) 0%,
+        var(--brand-primary) 50%,
+        oklch(from var(--brand-primary) calc(l * 0.8) c h) 100%
+    );
+}
+
+.btn-gradient--outline-accent::before {
+    background-image: linear-gradient(
+        135deg,
+        oklch(from var(--brand-accent) calc(l * 1.12) c h) 0%,
+        var(--brand-accent) 50%,
+        oklch(from var(--brand-accent) calc(l * 0.82) c h) 100%
+    );
+}
+
+.btn-gradient--outline-primary:hover,
+.btn-gradient--outline-accent:hover {
+    color: #fff;
+    box-shadow: 0 4px 14px oklch(from currentColor l c h / 0);
+}
+
+.btn-gradient--outline-primary:hover {
+    border-color: transparent;
+    box-shadow: 0 4px 14px oklch(from var(--brand-primary) l c h / 0.32);
+}
+
+.btn-gradient--outline-accent:hover {
+    border-color: transparent;
+    box-shadow: 0 4px 14px oklch(from var(--brand-accent) l c h / 0.32);
+}
+
+.btn-gradient--outline-primary:hover::before,
+.btn-gradient--outline-accent:hover::before {
+    opacity: 1;
+}
+
+/* === Shapes === */
+.btn-gradient--shape-rounded {
+    border-radius: var(--radius-button);
+}
+
+/* === Sizes === */
+.btn-gradient--sm {
+    padding: 8px 20px;
+    font-size: 0.8125rem;
+}
+.btn-gradient--md {
+    padding: 12px 28px;
+    font-size: var(--text-button);
+}
+.btn-gradient--lg {
+    padding: 16px 36px;
+    font-size: 1rem;
+}
+
+/* === Disabled === */
+.btn-gradient:disabled,
+.btn-gradient[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* === Icon slots (shared by Astro + React GradientButton) === */
+.btn-gradient .gradient-btn__icon {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+}
+.btn-gradient .gradient-btn__icon--leading {
+    margin-right: 0.5rem;
+}
+.btn-gradient .gradient-btn__icon--trailing {
+    margin-left: 0.5rem;
+}
+.btn-gradient .gradient-btn__label {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
 }
 
 /* === Search Bar === */

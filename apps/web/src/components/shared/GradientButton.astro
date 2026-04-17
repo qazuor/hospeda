@@ -1,43 +1,38 @@
 ---
 /**
  * @file GradientButton.astro
- * @description CTA button with gradient hover effect. Supports primary, accent,
- * outline-primary and outline-accent variants, three size options, an optional
- * trailing icon, and rendering as either an anchor or a button element.
+ * @description Unified CTA component with real linear-gradient backgrounds,
+ * pill shape (default), outline variants that fill on hover, and three sizes.
+ *
+ * Props:
+ * - label: required text
+ * - variant: accent | primary | outline-accent | outline-primary
+ * - size: sm | md | lg (default md)
+ * - shape: pill | rounded (default pill — use 'rounded' for form submits / pricing cards)
+ * - icon: pass "true" to render a trailing ArrowRightIcon
+ * - as: 'a' | 'button'
+ * - href, type, name, id, data, class
+ *
+ * Slots:
+ * - leading: rendered before the label (e.g. icon)
+ * - trailing: rendered after the label (alternative to `icon` prop)
  */
 
 import { ArrowRightIcon } from '@repo/icons';
 
 interface Props {
-  /** Button label text. */
   readonly label: string;
-  /**
-   * Destination URL. Required when `as` is 'a' (default). Not used when
-   * `as` is 'button'.
-   */
   readonly href?: string;
-  /**
-   * HTML element to render. 'a' renders an anchor (default); 'button' renders
-   * a <button type="button">.
-   */
   readonly as?: 'a' | 'button';
-  /**
-   * Color variant.
-   * - 'primary': solid brand-blue fill.
-   * - 'accent': solid orange accent fill (default).
-   * - 'outline-primary': transparent with brand-primary border/text, fills on hover.
-   * - 'outline-accent': transparent with brand-accent border/text, fills on hover.
-   */
   readonly variant?: 'primary' | 'accent' | 'outline-primary' | 'outline-accent';
-  /** Size variant controlling padding. Defaults to 'md'. */
   readonly size?: 'sm' | 'md' | 'lg';
-  /**
-   * When truthy an ArrowRightIcon is rendered after the label. Pass any
-   * non-empty string (e.g. "true") to enable it.
-   */
+  readonly shape?: 'pill' | 'rounded';
   readonly icon?: string;
-  /** Additional CSS classes to apply to the element. */
   readonly class?: string;
+  readonly id?: string;
+  readonly type?: 'button' | 'submit' | 'reset';
+  readonly name?: string;
+  readonly data?: Record<string, string | number>;
 }
 
 const {
@@ -46,71 +41,76 @@ const {
   as: element = 'a',
   variant = 'accent',
   size = 'md',
+  shape = 'pill',
   icon,
   class: extraClass,
+  id,
+  type = 'button',
+  name,
+  data,
 } = Astro.props;
-
-const paddingMap = {
-  sm: '10px 24px',
-  md: '14px 32px',
-  lg: '18px 40px',
-} as const;
-
-const padding = paddingMap[size];
-
-const isOutline = variant === 'outline-primary' || variant === 'outline-accent';
-
-const solidBackground =
-  variant === 'primary'
-    ? 'background: var(--brand-primary);'
-    : variant === 'accent'
-      ? 'background: var(--brand-accent);'
-      : '';
-
-const variantStyle = isOutline ? '' : solidBackground;
 
 const classes = [
   'btn-gradient',
-  isOutline ? 'btn-gradient--outline' : '',
-  variant === 'outline-accent' ? 'btn-gradient--outline-accent' : '',
+  `btn-gradient--${variant}`,
+  `btn-gradient--${size}`,
+  shape === 'rounded' ? 'btn-gradient--shape-rounded' : '',
   extraClass ?? '',
 ]
   .filter(Boolean)
   .join(' ');
+
+const dataAttrs: Record<string, string | number> = {};
+if (data) {
+  for (const [key, value] of Object.entries(data)) {
+    dataAttrs[`data-${key}`] = value;
+  }
+}
+
+const hasLeadingSlot = Astro.slots.has('leading');
+const hasTrailingSlot = Astro.slots.has('trailing');
 ---
 
 {element === 'a' ? (
-  <a
-    href={href}
-    class={classes}
-    style={`${variantStyle} padding: ${padding};`}
-  >
-    {label}
-    {icon && (
-      <span class="gradient-btn__icon" aria-hidden="true">
-        <ArrowRightIcon size={20} weight="bold" color="currentColor" />
+  <a href={href} id={id} class={classes} {...dataAttrs}>
+    {hasLeadingSlot && (
+      <span class="gradient-btn__icon gradient-btn__icon--leading" aria-hidden="true">
+        <slot name="leading" />
+      </span>
+    )}
+    <span class="gradient-btn__label">{label}</span>
+    {hasTrailingSlot ? (
+      <span class="gradient-btn__icon gradient-btn__icon--trailing" aria-hidden="true">
+        <slot name="trailing" />
+      </span>
+    ) : icon && (
+      <span class="gradient-btn__icon gradient-btn__icon--trailing" aria-hidden="true">
+        <ArrowRightIcon size={18} weight="bold" color="currentColor" />
       </span>
     )}
   </a>
 ) : (
   <button
-    type="button"
+    type={type}
+    name={name}
+    id={id}
     class={classes}
-    style={`${variantStyle} padding: ${padding};`}
+    {...dataAttrs}
   >
-    {label}
-    {icon && (
-      <span class="gradient-btn__icon" aria-hidden="true">
-        <ArrowRightIcon size={20} weight="bold" color="currentColor" />
+    {hasLeadingSlot && (
+      <span class="gradient-btn__icon gradient-btn__icon--leading" aria-hidden="true">
+        <slot name="leading" />
+      </span>
+    )}
+    <span class="gradient-btn__label">{label}</span>
+    {hasTrailingSlot ? (
+      <span class="gradient-btn__icon gradient-btn__icon--trailing" aria-hidden="true">
+        <slot name="trailing" />
+      </span>
+    ) : icon && (
+      <span class="gradient-btn__icon gradient-btn__icon--trailing" aria-hidden="true">
+        <ArrowRightIcon size={18} weight="bold" color="currentColor" />
       </span>
     )}
   </button>
 )}
-
-<style>
-  .gradient-btn__icon {
-    margin-left: 0.5rem;
-    display: inline-flex;
-    align-items: center;
-  }
-</style>

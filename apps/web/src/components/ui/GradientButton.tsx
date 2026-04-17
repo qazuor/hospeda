@@ -4,38 +4,24 @@
  * Uses the same .btn-gradient CSS classes from components.css as the Astro version.
  */
 
-interface GradientButtonProps {
-    /** Button label text. */
-    readonly label: string;
-    /** HTML element: 'a' (default) or 'button'. */
-    readonly as?: 'a' | 'button';
-    /** Destination URL. Required when `as` is 'a'. */
-    readonly href?: string;
-    /**
-     * Color variant.
-     * - 'primary': solid brand-blue fill.
-     * - 'accent': solid orange accent fill (default).
-     * - 'outline-primary': transparent with brand-primary border/text, fills on hover.
-     * - 'outline-accent': transparent with brand-accent border/text, fills on hover.
-     */
-    readonly variant?: 'primary' | 'accent' | 'outline-primary' | 'outline-accent';
-    /** Size variant controlling padding. Defaults to 'md'. */
-    readonly size?: 'sm' | 'md' | 'lg';
-    /** Additional CSS class names. */
-    readonly className?: string;
-    /** Optional click handler (only for button element). */
-    readonly onClick?: () => void;
-    /** Open link in new tab. */
-    readonly target?: string;
-    /** Rel attribute for links. */
-    readonly rel?: string;
-}
+import type { ReactNode } from 'react';
 
-const PADDING_MAP = {
-    sm: '10px 24px',
-    md: '14px 32px',
-    lg: '18px 40px'
-} as const;
+interface GradientButtonProps {
+    readonly label: string;
+    readonly as?: 'a' | 'button';
+    readonly href?: string;
+    readonly variant?: 'primary' | 'accent' | 'outline-primary' | 'outline-accent';
+    readonly size?: 'sm' | 'md' | 'lg';
+    readonly shape?: 'pill' | 'rounded';
+    readonly className?: string;
+    readonly onClick?: () => void;
+    readonly target?: string;
+    readonly rel?: string;
+    readonly leadingIcon?: ReactNode;
+    readonly trailingIcon?: ReactNode;
+    readonly disabled?: boolean;
+    readonly type?: 'button' | 'submit' | 'reset';
+}
 
 export function GradientButton({
     label,
@@ -43,43 +29,57 @@ export function GradientButton({
     href,
     variant = 'accent',
     size = 'md',
+    shape = 'pill',
     className,
     onClick,
     target,
-    rel
+    rel,
+    leadingIcon,
+    trailingIcon,
+    disabled,
+    type = 'button'
 }: GradientButtonProps) {
-    const isOutline = variant === 'outline-primary' || variant === 'outline-accent';
-
-    const solidBackground =
-        variant === 'primary'
-            ? 'var(--brand-primary)'
-            : variant === 'accent'
-              ? 'var(--brand-accent)'
-              : undefined;
-
     const classes = [
         'btn-gradient',
-        isOutline ? 'btn-gradient--outline' : '',
-        variant === 'outline-accent' ? 'btn-gradient--outline-accent' : '',
+        `btn-gradient--${variant}`,
+        `btn-gradient--${size}`,
+        shape === 'rounded' ? 'btn-gradient--shape-rounded' : '',
         className ?? ''
     ]
         .filter(Boolean)
         .join(' ');
 
-    const style = {
-        padding: PADDING_MAP[size],
-        ...(solidBackground ? { background: solidBackground } : {})
-    };
+    const content = (
+        <>
+            {leadingIcon && (
+                <span
+                    className="gradient-btn__icon gradient-btn__icon--leading"
+                    aria-hidden="true"
+                >
+                    {leadingIcon}
+                </span>
+            )}
+            <span className="gradient-btn__label">{label}</span>
+            {trailingIcon && (
+                <span
+                    className="gradient-btn__icon gradient-btn__icon--trailing"
+                    aria-hidden="true"
+                >
+                    {trailingIcon}
+                </span>
+            )}
+        </>
+    );
 
     if (Element === 'button') {
         return (
             <button
-                type="button"
+                type={type}
                 className={classes}
-                style={style}
                 onClick={onClick}
+                disabled={disabled}
             >
-                {label}
+                {content}
             </button>
         );
     }
@@ -88,11 +88,10 @@ export function GradientButton({
         <a
             href={href}
             className={classes}
-            style={style}
             target={target}
             rel={rel}
         >
-            {label}
+            {content}
         </a>
     );
 }
