@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 5/58 tasks (8.6%)
+## Progress: 9/58 tasks (15.5%)
 
-**Last updated:** 2026-04-17T17:35:00Z
-**Status:** in-progress (Phase 2 — OwnerPromotion schemas in progress)
+**Last updated:** 2026-04-17T17:40:00Z
+**Status:** in-progress (Phase 2 — OwnerPromotion apps/api consumers migrated)
 
 **Average Complexity:** 2.1/2.5 (ceiling)
 **Critical Path:** T-003 -> T-007 -> T-010 -> T-013 -> T-016 -> T-018 -> T-027 -> T-028 -> T-030 -> T-034 -> T-035 -> T-038 -> T-039 -> T-040 -> T-042 -> T-058 (16 steps)
@@ -60,11 +60,15 @@
 
 ### Model + Service
 
-- [ ] **T-011** (complexity: 2) — Update OwnerPromotion model findActive methods to use lifecycleState
+- [x] **T-011** (complexity: 2) — Update OwnerPromotion model findActive methods to use lifecycleState
+  - COMPLETED 2026-04-17 · lint: pass · typecheck: `packages/db` fully clean
   - Blocked by: T-003, T-007 · Blocks: T-012, T-014, T-015, T-023
 
-- [ ] **T-012** (complexity: 2.5) — Update OwnerPromotion service: inject lifecycleState=ACTIVE default
+- [x] **T-012** (complexity: 2.5) — Update OwnerPromotion service: inject lifecycleState=ACTIVE default
+  - COMPLETED 2026-04-17 · lint: pass · typecheck: service-core clean for SPEC-063 (unrelated SPEC-066 preexisting error in getById.test.ts)
   - AC-005-01: public endpoints only return ACTIVE records
+  - Scope creep absorbed: also migrated `test/factories/ownerPromotionFactory.ts` (2 `isActive` refs); no other task covered it
+  - Gap flagged: `_executeCount` NOT updated — to revisit with T-022
   - Blocked by: T-011 · Blocks: T-013, T-022, T-025
 
 ### API Routes + Integration
@@ -72,10 +76,14 @@
 - [ ] **T-013** (complexity: 2) — Update admin OwnerPromotion API routes
   - Blocked by: T-008, T-009, T-010, T-012 · Blocks: T-016, T-021
 
-- [ ] **T-014** (complexity: 1.5) — Update usage-tracking service MAX_ACTIVE_PROMOTIONS query
+- [x] **T-014** (complexity: 1.5) — Update usage-tracking service MAX_ACTIVE_PROMOTIONS query
+  - COMPLETED 2026-04-17 · lint: pass · typecheck: no new SPEC-063 errors
   - Blocked by: T-011 · Blocks: T-024
 
-- [ ] **T-015** (complexity: 1.5) — Update limit-enforcement middleware promotion count query
+- [x] **T-015** (complexity: 1.5) — Update limit-enforcement middleware promotion count query
+  - COMPLETED 2026-04-17 · lint: pass · typecheck: no new SPEC-063 errors
+  - Scope creep absorbed: also migrated `apps/api/test/schema-validation/owner-promotion-getById-schema.test.ts` mock
+  - Gap flagged: 5 pre-existing audit-field missings in the schema-validation mock (pre-session bug, not SPEC-063 scope)
   - Blocked by: T-011 · Blocks: T-024
 
 ### Admin Frontend

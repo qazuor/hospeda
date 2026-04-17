@@ -95,6 +95,64 @@ Changes are in working directory, NOT committed. Current commit boundary: T-003,
 
 Additionally, `packages/db` and `apps/api` will have typecheck errors (documented previously) fixed in T-011 / T-014 / T-015.
 
+#### T-011 — OwnerPromotion model findActive methods
+- **File:** `packages/db/src/models/owner-promotion/ownerPromotion.model.ts`
+- `findActiveByAccommodationId` (line ~103): replaced `eq(ownerPromotions.isActive, true)` with `eq(ownerPromotions.lifecycleState, 'ACTIVE')`
+- `findActiveByOwnerId` (line ~147): same change
+- Grep `isActive` on file: 0 matches (clean)
+- Lint: pass (`pnpm biome check ...` — 1 file, no fixes)
+- Typecheck: **`packages/db` fully clean** — no errors emitted by `pnpm typecheck`. Better than forecast: DB typecheck does not depend on `apps/api`, so the remaining `usage-tracking.service.ts` + `limit-enforcement.ts` errors only surface when typechecking `apps/api` (T-014/T-015 scope).
+- Decision: used string literal `'ACTIVE'` (matches existing Drizzle enum usage in codebase), approved by user.
+
+#### T-012 — OwnerPromotion service default lifecycleState injection (AC-005-01)
+- **Files:**
+  - `packages/service-core/src/services/owner-promotion/ownerPromotion.service.ts`
+  - `packages/service-core/test/factories/ownerPromotionFactory.ts` *(absorbed into T-012 scope — see note)*
+- Service: imported `LifecycleStatusEnum` value; in `_executeSearch`, inject `filterParams.lifecycleState = LifecycleStatusEnum.ACTIVE` when caller did not provide one. Added 3-line comment explaining AC-005-01 and the admin-path exception.
+- Factory: replaced 2 `isActive: true` occurrences (OwnerPromotion mock + OwnerPromotionCreateInput mock) with `lifecycleState: LifecycleStatusEnum.ACTIVE`; added `LifecycleStatusEnum` to value import.
+- Verified: admin path uses default `_executeAdminSearch` (no override), so only public/protected list() is affected.
+- Lint: pass · Typecheck: `packages/service-core` clean for SPEC-063. Remaining error in `test/base/crud/getById.test.ts:379` (DrizzleClient | undefined / unknown) is preexisting from SPEC-066 and unrelated.
+- Decision: used enum import `LifecycleStatusEnum.ACTIVE` in service layer (matches http.schema.ts pattern from T-010). Confirmed by user.
+- Scope note: `_executeCount` NOT updated — out of AC-005-01 literal scope. Flagged as gap to revisit with T-022 (public endpoint test).
+- Scope creep note: factory fix was absorbed into T-012 because (a) it was blocking the whole service-core suite typecheck, (b) no other existing task covered this specific file (T-019/T-020 cover `packages/schemas/test/...`), (c) it preserves the commit boundary "packages/db + apps/api + service-core typecheck clean". Subtask added to state.json to track it. Approved by user.
+
+#### T-014 — usage-tracking service MAX_ACTIVE_PROMOTIONS query
+- **File:** `apps/api/src/services/usage-tracking.service.ts`
+- Added `LifecycleStatusEnum` to the existing `@repo/schemas` import.
+- Line 407 `MAX_ACTIVE_PROMOTIONS` case: `isActive: true` → `lifecycleState: LifecycleStatusEnum.ACTIVE`. The `as never` cast (pre-existing, SPEC-059 generic workaround) preserved.
+- Grep `isActive`: 0 matches.
+- Lint: pass.
+
+#### T-015 — limit-enforcement middleware promotion count query
+- **Files:**
+  - `apps/api/src/middlewares/limit-enforcement.ts`
+  - `apps/api/test/schema-validation/owner-promotion-getById-schema.test.ts` *(absorbed scope)*
+- Middleware: new import `{ LifecycleStatusEnum } from '@repo/schemas'`; line 318 `isActive: true` → `lifecycleState: LifecycleStatusEnum.ACTIVE`.
+- Schema validation test: removed `isActive: true` from mock, added `lifecycleState: LifecycleStatusEnum.ACTIVE`. Rationale: test mock was already typecheck-fail PRE-session due to 6 missing fields from pre-existing `OwnerPromotion` type (commits `387295bf` + `03321786` mergeados antes de esta sesión); adding `lifecycleState` + removing `isActive` restores SPEC-063 alignment. The remaining 5 missing audit fields (`ownerId, currentRedemptions, createdAt, updatedAt, createdById, updatedById`) are **pre-existing test infra bug**, flagged below, NOT SPEC-063 scope.
+- Grep `isActive`: 0 matches in middleware.
+- Lint: pass. `apps/api` typecheck: no SPEC-063-related errors remain (only pre-existing unrelated failures: `accommodation|event|post-getById-schema.test.ts`, `admin-list-routes.test.ts`, `auth/status.ts`, `getBySlug.ts`, `similar.ts`).
+
+### SPEC-063 commit boundary #2 complete
+
+Files changed in this boundary (stage individually):
+1. `packages/db/src/models/owner-promotion/ownerPromotion.model.ts` (T-011)
+2. `packages/service-core/src/services/owner-promotion/ownerPromotion.service.ts` (T-012)
+3. `packages/service-core/test/factories/ownerPromotionFactory.ts` (T-012 scope creep)
+4. `apps/api/src/services/usage-tracking.service.ts` (T-014)
+5. `apps/api/src/middlewares/limit-enforcement.ts` (T-015)
+6. `apps/api/test/schema-validation/owner-promotion-getById-schema.test.ts` (T-015 scope creep)
+
+Typecheck posture after this boundary:
+- `packages/db`: 100% clean
+- `packages/service-core`: clean for SPEC-063 (pre-existing SPEC-066 error in `getById.test.ts:379`)
+- `apps/api`: clean for SPEC-063 (pre-existing unrelated failures in 7 files, none touched by SPEC-063)
+
+### Outstanding gaps / deuda flaggeada
+
+- **apps/api schema-validation mocks** (accommodation/event/post/owner-promotion getById tests): pre-existing 5+ missing audit fields per mock. Pre-session, not SPEC-063 regression. Consider dedicated task.
+- **OwnerPromotionService `_executeCount`**: not updated to inject `lifecycleState=ACTIVE`. Literal AC-005-01 scope is only `_executeSearch`. Revisit with T-022.
+- **`getById.test.ts:379` DrizzleClient typing**: pre-existing SPEC-066 residue, unrelated.
+
 ### Next up
 
-T-011 (model findActive methods) -> T-012 (service default injection) -> T-014 (usage-tracking) -> T-015 (limit-enforcement). These leave `packages/db` + `apps/api` typecheck-clean.
+T-013 (admin OwnerPromotion API routes), T-016-T-018 (admin frontend), T-019-T-024 (tests). State bookkeeping continues.

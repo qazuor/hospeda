@@ -285,54 +285,59 @@
             "id": "T-011",
             "title": "Update OwnerPromotion model findActive methods to use lifecycleState",
             "description": "Update `packages/db/src/models/owner-promotion/ownerPromotion.model.ts`: (1) change `findActiveByAccommodationId` (line 85): replace `eq(ownerPromotions.isActive, true)` with `eq(ownerPromotions.lifecycleState, 'ACTIVE')`, (2) change `findActiveByOwnerId` (line 127): same change. Ensure no other `isActive` references remain in the model.\n\nFiles: `packages/db/src/models/owner-promotion/ownerPromotion.model.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003", "T-007"],
             "blocks": ["T-012", "T-014", "T-015", "T-023"],
             "subtasks": [
-                { "title": "Update findActiveByAccommodationId query", "completed": false },
-                { "title": "Update findActiveByOwnerId query", "completed": false },
+                { "title": "Update findActiveByAccommodationId query", "completed": true },
+                { "title": "Update findActiveByOwnerId query", "completed": true },
                 {
                     "title": "Grep model file for any remaining isActive references",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "model", "phase-2", "ownerPromotion"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-17T17:00:00.000Z",
+                "completed": "2026-04-17T17:05:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Update OwnerPromotion service: inject lifecycleState=ACTIVE default in _executeSearch",
+            "_note": "Also fixed packages/service-core/test/factories/ownerPromotionFactory.ts (2 isActive -> lifecycleState occurrences); not covered by any other task, necessary to keep service-core typecheck unblocked.",
             "description": "Update `packages/service-core/src/services/owner-promotion/ownerPromotion.service.ts`: (1) remove any `isActive`-specific filter logic in filter normalization, (2) in `_executeSearch()` (around line 114-117), ADD default filter injection: `if (!filterParams.lifecycleState) { filterParams.lifecycleState = 'ACTIVE'; }` before calling `model.findAll()`. This ensures AC-005-01 compliance (public endpoints only return ACTIVE records). Admin path uses `adminList()` which has its own status filter, so this injection only affects public/protected `list()` calls.\n\nFiles: `packages/service-core/src/services/owner-promotion/ownerPromotion.service.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-011"],
             "blocks": ["T-013", "T-022", "T-025"],
             "subtasks": [
-                { "title": "Remove isActive filter logic", "completed": false },
+                { "title": "Remove isActive filter logic", "completed": true },
                 {
                     "title": "Add lifecycleState=ACTIVE default injection in _executeSearch",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add comment explaining the behavior change (AC-005-01)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Verify admin path unaffected (uses adminList)", "completed": false }
+                { "title": "Verify admin path unaffected (uses adminList)", "completed": true },
+                {
+                    "title": "Fix ownerPromotionFactory.ts isActive references (absorbed scope)",
+                    "completed": true
+                }
             ],
             "tags": ["service", "phase-2", "ownerPromotion"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-17T17:10:00.000Z",
+                "completed": "2026-04-17T17:25:00.000Z"
             }
         },
         {
@@ -364,51 +369,56 @@
             "id": "T-014",
             "title": "Update usage-tracking service MAX_ACTIVE_PROMOTIONS query",
             "description": "Update `apps/api/src/services/usage-tracking.service.ts` line 406: replace `isActive: true` with `lifecycleState: 'ACTIVE'` in the `MAX_ACTIVE_PROMOTIONS` count query for `OwnerPromotionService.count()`.\n\nFiles: `apps/api/src/services/usage-tracking.service.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-011"],
             "blocks": ["T-024"],
             "subtasks": [
                 {
                     "title": "Locate MAX_ACTIVE_PROMOTIONS count query (line 406)",
-                    "completed": false
+                    "completed": true
                 },
                 {
-                    "title": "Replace isActive: true with lifecycleState: 'ACTIVE'",
-                    "completed": false
+                    "title": "Replace isActive: true with lifecycleState: LifecycleStatusEnum.ACTIVE",
+                    "completed": true
                 }
             ],
             "tags": ["api", "service", "phase-2", "ownerPromotion"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-17T17:30:00.000Z",
+                "completed": "2026-04-17T17:35:00.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "Update limit-enforcement middleware promotion count query",
+            "_note": "Also migrated apps/api/test/schema-validation/owner-promotion-getById-schema.test.ts isActive -> lifecycleState (absorbed scope; no task covered it). Remaining 5 missing audit fields in that mock are pre-existing bug, NOT SPEC-063 scope.",
             "description": "Update `apps/api/src/middlewares/limit-enforcement.ts` line 318: replace `isActive: true` with `lifecycleState: 'ACTIVE'` in the promotion count query used for `OwnerPromotionService.count()`.\n\nFiles: `apps/api/src/middlewares/limit-enforcement.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-011"],
             "blocks": ["T-024"],
             "subtasks": [
-                { "title": "Locate promotion count query (line 318)", "completed": false },
+                { "title": "Locate promotion count query (line 318)", "completed": true },
                 {
-                    "title": "Replace isActive: true with lifecycleState: 'ACTIVE'",
-                    "completed": false
+                    "title": "Replace isActive: true with lifecycleState: LifecycleStatusEnum.ACTIVE",
+                    "completed": true
+                },
+                {
+                    "title": "Migrate apps/api/test/schema-validation/owner-promotion-getById-schema.test.ts (absorbed scope)",
+                    "completed": true
                 }
             ],
             "tags": ["api", "middleware", "phase-2", "ownerPromotion"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-17T17:30:00.000Z",
+                "completed": "2026-04-17T17:40:00.000Z"
             }
         },
         {
@@ -1585,9 +1595,9 @@
     ],
     "summary": {
         "total": 58,
-        "pending": 56,
+        "pending": 49,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.0
     }
