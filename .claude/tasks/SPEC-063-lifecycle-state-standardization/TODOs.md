@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 10/63 tasks (15.9%)
+## Progress: 18/63 tasks (28.6%)
 
-**Last updated:** 2026-04-17T17:55:00Z
-**Status:** in-progress (Phase 2 — admin UI replan completed; 7 granular sub-tasks spawned from T-016/T-018 after scope analysis)
+**Last updated:** 2026-04-17T18:35:00Z
+**Status:** in-progress (Phase 2 — admin UI migration complete; apps/admin typecheck clean for SPEC-063)
 
 **Average Complexity:** 2.1/2.5 (ceiling)
 **Critical Path:** T-003 -> T-007 -> T-010 -> T-013 -> T-016 -> T-018 -> T-027 -> T-028 -> T-030 -> T-034 -> T-035 -> T-038 -> T-039 -> T-040 -> T-042 -> T-058 (16 steps)
@@ -92,46 +92,38 @@
 
 > **REPLAN 2026-04-17T17:55**: T-016 and T-018 split into granular sub-tasks after admin UI scope analysis revealed that the original tasks referenced dead code files and did not cover the live route, types, or dialog components. T-017 retained but scope refined (toggle -> rename+payload). See `progress.md` for details.
 
-- [ ] **T-016a** (complexity: 1.5) — Migrate OwnerPromotion local types (isActive -> lifecycleState)
-  - File: `apps/admin/src/features/owner-promotions/types.ts`
-  - Source of truth for admin feature types
-  - Blocked by: T-013 · Blocks: T-016b, T-016d, T-017, T-018a, T-018b
+- [x] **T-016a** (complexity: 1.5) — Migrate OwnerPromotion local types
+  - COMPLETED 2026-04-17 · lint: pass · typecheck: pass for SPEC-063
+  - Scope absorbed: also migrated `OwnerPromotionFilters.status` -> `lifecycleState`
 
-- [ ] **T-016b** (complexity: 2) — Migrate OwnerPromotion column definition in admin route
-  - File: `apps/admin/src/routes/_authed/billing/owner-promotions.tsx` (lines 137-141, 191)
-  - 2-variant boolean badge -> 3-variant lifecycle badge
-  - Blocked by: T-016a · Blocks: none
+- [x] **T-016b** (complexity: 2) — Migrate OwnerPromotion column definition in admin route
+  - COMPLETED 2026-04-17 · 3-variant badge (ACTIVE→success, DRAFT→secondary, ARCHIVED→outline)
 
-- [ ] **T-016c** (complexity: 1.5) — Delete OwnerPromotion dead code (4 files + index.ts cleanup)
-  - Delete: `columns.tsx`, `config/*.ts` (2 files), `schemas/owner-promotions.schemas.ts`
-  - Update: `features/owner-promotions/index.ts` (remove `./columns` re-export)
-  - Dead verified via exhaustive grep (no external consumers)
-  - Blocked by: none · Blocks: none (runs in parallel)
+- [x] **T-016c** (complexity: 1.5) — Delete OwnerPromotion dead code (4 files + index.ts cleanup)
+  - COMPLETED 2026-04-17 · 4 files deleted + empty dirs + re-export removed
 
-- [ ] **T-016d** (complexity: 1.5) — Migrate OwnerPromotion test fixtures (isActive -> lifecycleState)
-  - File: `apps/admin/test/fixtures/owner-promotion.fixture.ts` (lines 24, 47, 63)
-  - Blocked by: T-016a · Blocks: none
+- [x] **T-016d** (complexity: 1.5) — Migrate OwnerPromotion test fixtures
+  - COMPLETED 2026-04-17 · 3 refs migrated (isActive:true→ACTIVE, isActive:false→ARCHIVED)
 
-- [ ] **T-017** (complexity: 2.5) — Rename togglePromotionActive -> updatePromotionLifecycle
-  - File: `apps/admin/src/features/owner-promotions/hooks.ts`
-  - Toggle (binary) no longer applies with 3 enum states; rename + payload change
-  - Includes: verify backend PATCH endpoint accepts lifecycleState
-  - Blocked by: T-016a, T-013 · Blocks: T-018c
+- [x] **T-017** (complexity: 2.5) — Rename togglePromotionActive -> updatePromotionLifecycle
+  - COMPLETED 2026-04-17 · payload `{ isActive }` → `{ lifecycleState }`; hook renamed to `useUpdatePromotionLifecycleMutation`
+  - Backend: verified via T-010 (HTTP schema accepts lifecycleState in PATCH)
 
-- [ ] **T-018a** (complexity: 2) — Migrate OwnerPromotion admin filter state + dropdown
-  - File: `apps/admin/src/routes/_authed/billing/owner-promotions.tsx` (lines 36, 255-259)
-  - Filter: `isActive?: string` (2 options) -> `lifecycleState?: LifecycleStatusEnum` (all + 3 options)
-  - Blocked by: T-016a, T-013 · Blocks: T-018c
+- [x] **T-018a** (complexity: 2) — Migrate OwnerPromotion admin filter state + dropdown
+  - COMPLETED 2026-04-17 · filter state typed as `LifecycleStatusEnum`; dropdown has 4 options (all, DRAFT, ACTIVE, ARCHIVED)
 
-- [ ] **T-018b** (complexity: 2) — Migrate OwnerPromotion dialog components (detail + form)
-  - Files: `PromotionDetailDialog.tsx` (lines 62-63) + `PromotionFormDialog.tsx` (line 54)
-  - Badge in detail + form field in create/edit
-  - Blocked by: T-016a · Blocks: none
+- [x] **T-018b** (complexity: 2) — Migrate OwnerPromotion dialog components
+  - COMPLETED 2026-04-17 · DetailDialog badge (3-variant) + FormDialog initial value + added native select field
 
-- [ ] **T-018c** (complexity: 2.5) — Migrate OwnerPromotion action handler (toggle -> inline select)
-  - File: `apps/admin/src/routes/_authed/billing/owner-promotions.tsx` (line 56)
-  - UX: replace toggle Button with inline `<Select>` (Shadcn) — user-approved default
-  - Blocked by: T-017, T-018a · Blocks: T-027
+- [x] **T-018c** (complexity: 2.5) — Migrate OwnerPromotion action handler
+  - COMPLETED 2026-04-17 · inline `<select>` (native, consistent with existing filter/discountType selects); aria-label added
+
+### i18n (partial)
+
+- [ ] **T-027** (complexity: 1.5) — i18n locale keys for OwnerPromotion lifecycle
+  - **PARTIAL** (absorbed in T-018 block): added `statusDraft`, `statusArchived`, `actions.changeLifecycle`, `form.lifecycleStateLabel` to 3 locales + regenerated types
+  - **Remaining scope:** remove legacy `actionActivate`/`actionDeactivate` keys, rename `statuses.inactive`→`statuses.draft`, remove now-unused `statusInactive`
+  - Blocked by: T-018c · Blocks: T-028
 
 ### Tests
 
@@ -163,9 +155,6 @@
   - Blocked by: T-025 · Blocks: none
 
 ### i18n
-
-- [ ] **T-027** (complexity: 1.5) — Update i18n locale files for OwnerPromotion lifecycle (es/en/pt)
-  - Blocked by: T-018 · Blocks: T-028
 
 ## Phase 4 — DestinationReview (new column)
 

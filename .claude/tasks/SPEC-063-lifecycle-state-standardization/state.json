@@ -430,28 +430,33 @@
             "title": "Migrate OwnerPromotion local types (isActive -> lifecycleState)",
             "_replanNote": "Spawned from original T-016 (2026-04-17T17:55 replan). Source of truth for admin feature types.",
             "description": "Update `apps/admin/src/features/owner-promotions/types.ts`: rename `isActive: boolean` to `lifecycleState: LifecycleStatusEnum` in both `OwnerPromotion` type (line 19) and `CreateOwnerPromotionInput` type (line 42). Import `LifecycleStatusEnum` from `@repo/schemas`.\n\nFiles: `apps/admin/src/features/owner-promotions/types.ts`",
-            "status": "pending",
+            "_scopeNote": "Also migrated OwnerPromotionFilters interface (line 25, status?: 'active' | 'inactive' -> lifecycleState?: LifecycleStatusEnum) to keep the feature types coherent. Was not in literal task description but is part of types.ts source-of-truth scope.",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-013"],
             "blocks": ["T-016b", "T-016d", "T-017", "T-018a", "T-018b"],
             "subtasks": [
-                { "title": "Import LifecycleStatusEnum from @repo/schemas", "completed": false },
+                { "title": "Import LifecycleStatusEnum from @repo/schemas", "completed": true },
                 {
                     "title": "Replace isActive in OwnerPromotion type (line 19)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace isActive in CreateOwnerPromotionInput type (line 42)",
-                    "completed": false
+                    "completed": true
+                },
+                {
+                    "title": "Replace status in OwnerPromotionFilters (absorbed scope)",
+                    "completed": true
                 }
             ],
             "tags": ["admin", "frontend", "types", "phase-2", "ownerPromotion"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T18:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-17T18:10:00.000Z",
+                "completed": "2026-04-17T18:15:00.000Z"
             }
         },
         {
@@ -459,31 +464,31 @@
             "title": "Migrate OwnerPromotion column definition in admin route",
             "_replanNote": "Spawned from original T-016 (2026-04-17T17:55 replan). Column is in the LIVE route file (not in the dead config/ chain).",
             "description": "Update `apps/admin/src/routes/_authed/billing/owner-promotions.tsx` lines 137-141 and 191: replace the `isActive` boolean badge column with a lifecycle badge column (DRAFT grey, ACTIVE green, ARCHIVED amber). Update `accessorKey` from 'isActive' to 'lifecycleState'.\n\nFiles: `apps/admin/src/routes/_authed/billing/owner-promotions.tsx`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-016a"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Replace column accessorKey isActive -> lifecycleState",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace 2-variant badge with 3-variant badge (DRAFT/ACTIVE/ARCHIVED)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update cell render at line 191 to use lifecycleState",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "frontend", "columns", "phase-2", "ownerPromotion"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T18:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-17T18:15:00.000Z",
+                "completed": "2026-04-17T18:20:00.000Z"
             }
         },
         {
@@ -491,24 +496,24 @@
             "title": "Delete OwnerPromotion dead code (columns.tsx, config/*, schemas/*)",
             "_replanNote": "Added in 2026-04-17T17:55 replan. 4 files verified to have no external consumers via exhaustive grep on apps/admin.",
             "description": "Delete 4 dead code files verified to have no external consumers: `apps/admin/src/features/owner-promotions/columns.tsx`, `apps/admin/src/features/owner-promotions/config/owner-promotions.columns.ts`, `apps/admin/src/features/owner-promotions/config/owner-promotions.config.ts`, `apps/admin/src/features/owner-promotions/schemas/owner-promotions.schemas.ts`. Update `apps/admin/src/features/owner-promotions/index.ts` to remove `export * from './columns';` re-export.\n\nFiles: (4 deletions) + `apps/admin/src/features/owner-promotions/index.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Delete columns.tsx", "completed": false },
-                { "title": "Delete config/owner-promotions.columns.ts", "completed": false },
-                { "title": "Delete config/owner-promotions.config.ts", "completed": false },
-                { "title": "Delete schemas/owner-promotions.schemas.ts", "completed": false },
-                { "title": "Update index.ts to remove ./columns re-export", "completed": false }
+                { "title": "Delete columns.tsx", "completed": true },
+                { "title": "Delete config/owner-promotions.columns.ts", "completed": true },
+                { "title": "Delete config/owner-promotions.config.ts", "completed": true },
+                { "title": "Delete schemas/owner-promotions.schemas.ts", "completed": true },
+                { "title": "Update index.ts to remove ./columns re-export", "completed": true }
             ],
             "tags": ["admin", "frontend", "cleanup", "phase-2", "ownerPromotion"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T18:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-17T18:05:00.000Z",
+                "completed": "2026-04-17T18:08:00.000Z"
             }
         },
         {
@@ -516,24 +521,24 @@
             "title": "Migrate OwnerPromotion test fixtures (isActive -> lifecycleState)",
             "_replanNote": "Added in 2026-04-17T17:55 replan. Not in original scope; required once types.ts changes (T-016a).",
             "description": "Update `apps/admin/test/fixtures/owner-promotion.fixture.ts` lines 24, 47, 63: replace `isActive: true/false` with `lifecycleState: LifecycleStatusEnum.ACTIVE/DRAFT/ARCHIVED` depending on the intent of each fixture variant.\n\nFiles: `apps/admin/test/fixtures/owner-promotion.fixture.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-016a"],
             "blocks": [],
             "subtasks": [
-                { "title": "Import LifecycleStatusEnum", "completed": false },
+                { "title": "Import LifecycleStatusEnum", "completed": true },
                 {
-                    "title": "Replace 3 isActive fixture refs with appropriate lifecycleState values",
-                    "completed": false
+                    "title": "Replace 3 isActive fixture refs with appropriate lifecycleState values (isActive:true -> ACTIVE, isActive:false -> ARCHIVED)",
+                    "completed": true
                 }
             ],
             "tags": ["admin", "testing", "fixtures", "phase-2", "ownerPromotion"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T18:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-17T18:20:00.000Z",
+                "completed": "2026-04-17T18:22:00.000Z"
             }
         },
         {
@@ -541,36 +546,37 @@
             "title": "Rename OwnerPromotion mutation: togglePromotionActive -> updatePromotionLifecycle",
             "_replanNote": "Reused in 2026-04-17T17:55 replan. Scope refined: toggle (binary) no longer applies with 3 enum states; rename + payload change required.",
             "description": "Update `apps/admin/src/features/owner-promotions/hooks.ts`: (1) rename `togglePromotionActive(id, isActive)` (line 88) to `updatePromotionLifecycle(id, lifecycleState)` with payload `{ lifecycleState: LifecycleStatusEnum }` (line 92). (2) Rename `useTogglePromotionActiveMutation` hook to `useUpdatePromotionLifecycleMutation` (line ~170). Update PATCH endpoint if backend expects different payload (verify before/during execution).\n\nFiles: `apps/admin/src/features/owner-promotions/hooks.ts`",
-            "status": "pending",
+            "_executionNote": "Backend verification done via T-010 (HTTP schema accepts { lifecycleState }). Admin PATCH endpoint uses OwnerPromotionUpdateHttpSchema which includes lifecycleState after T-010.",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-016a", "T-013"],
             "blocks": ["T-018c"],
             "subtasks": [
                 {
                     "title": "Rename togglePromotionActive -> updatePromotionLifecycle",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Change payload from { isActive } to { lifecycleState }",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Rename hook useTogglePromotionActiveMutation -> useUpdatePromotionLifecycleMutation",
-                    "completed": false
+                    "completed": true
                 },
                 {
-                    "title": "Verify backend PATCH endpoint accepts lifecycleState",
-                    "completed": false
+                    "title": "Verify backend PATCH endpoint accepts lifecycleState (confirmed via T-010)",
+                    "completed": true
                 },
-                { "title": "Update queryKey if needed", "completed": false }
+                { "title": "Update queryKey if needed (no change needed)", "completed": true }
             ],
             "tags": ["admin", "frontend", "hooks", "phase-2", "ownerPromotion"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-17T18:18:00.000Z",
+                "completed": "2026-04-17T18:25:00.000Z"
             }
         },
         {
@@ -578,29 +584,29 @@
             "title": "Migrate OwnerPromotion admin filter state + dropdown",
             "_replanNote": "Spawned from original T-018 (2026-04-17T17:55 replan). Filter UI lives in route file, not in dead config/. Exposes all 3 enum values per user UX decision.",
             "description": "Update `apps/admin/src/routes/_authed/billing/owner-promotions.tsx` lines 36 (filter state), 255 (value binding) and 259 (change handler): change filter type from `isActive?: string` (2 options) to `lifecycleState?: LifecycleStatusEnum` (3 enum values + 'all'). Update dropdown to 4 options: 'all', 'DRAFT', 'ACTIVE', 'ARCHIVED'.\n\nFiles: `apps/admin/src/routes/_authed/billing/owner-promotions.tsx`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-016a", "T-013"],
             "blocks": ["T-018c"],
             "subtasks": [
                 {
                     "title": "Change filter state type isActive?: string -> lifecycleState?: LifecycleStatusEnum",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Update dropdown select value binding", "completed": false },
-                { "title": "Add 4 dropdown options (all + 3 enum values)", "completed": false },
+                { "title": "Update dropdown select value binding", "completed": true },
+                { "title": "Add 4 dropdown options (all + 3 enum values)", "completed": true },
                 {
-                    "title": "Ensure query passes lifecycleState filter to backend",
-                    "completed": false
+                    "title": "Ensure query passes lifecycleState filter to backend (via spread in useOwnerPromotionsQuery)",
+                    "completed": true
                 }
             ],
             "tags": ["admin", "frontend", "filter", "phase-2", "ownerPromotion"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T18:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-17T18:25:00.000Z",
+                "completed": "2026-04-17T18:28:00.000Z"
             }
         },
         {
@@ -608,31 +614,31 @@
             "title": "Migrate OwnerPromotion dialog components (detail + form)",
             "_replanNote": "Spawned from original T-018 (2026-04-17T17:55 replan). Dialog components are LIVE, referenced from route.",
             "description": "Update `apps/admin/src/features/owner-promotions/components/PromotionDetailDialog.tsx` lines 62-63: replace isActive badge with lifecycleState badge. Update `apps/admin/src/features/owner-promotions/components/PromotionFormDialog.tsx` line 54: replace `isActive: promotion?.isActive ?? true` initial form value with `lifecycleState: promotion?.lifecycleState ?? LifecycleStatusEnum.ACTIVE`. Add select field for lifecycleState in form.\n\nFiles: `apps/admin/src/features/owner-promotions/components/PromotionDetailDialog.tsx`, `apps/admin/src/features/owner-promotions/components/PromotionFormDialog.tsx`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-016a"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "DetailDialog: replace isActive badge with 3-variant lifecycle badge",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "FormDialog: replace isActive form field initial value",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "FormDialog: add lifecycleState select field (DRAFT/ACTIVE/ARCHIVED)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "frontend", "components", "phase-2", "ownerPromotion"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T18:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-17T18:28:00.000Z",
+                "completed": "2026-04-17T18:32:00.000Z"
             }
         },
         {
@@ -640,29 +646,30 @@
             "title": "Migrate OwnerPromotion action handler (toggle -> lifecycle select)",
             "_replanNote": "Spawned from original T-018 (2026-04-17T17:55 replan). UX decision: inline Select in row (user-approved default).",
             "description": "Update `apps/admin/src/routes/_authed/billing/owner-promotions.tsx` line 56: the current onClick `toggleActiveMutation.mutate({ id, isActive: !promotion.isActive })` cannot simply toggle with 3 states. Replace the toggle Button with an inline `<Select>` (Shadcn Select component) in the row's actions, bound to `useUpdatePromotionLifecycleMutation` (from T-017). Options: DRAFT, ACTIVE, ARCHIVED. Default approved UX: inline select on each row (not cycle, not modal).\n\nFiles: `apps/admin/src/routes/_authed/billing/owner-promotions.tsx`",
-            "status": "pending",
+            "_executionNote": "Used native <select> (matching the existing discountType and filter dropdowns in the same file) instead of Shadcn Select — consistency > novelty. aria-label uses t('admin-billing.ownerPromotions.actions.changeLifecycle').",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-017", "T-018a"],
             "blocks": ["T-027"],
             "subtasks": [
-                { "title": "Remove toggle Button element in row actions", "completed": false },
-                { "title": "Add inline Select with 3 lifecycle options", "completed": false },
+                { "title": "Remove toggle Button element in row actions", "completed": true },
+                { "title": "Add inline Select with 3 lifecycle options", "completed": true },
                 {
                     "title": "Bind onChange to useUpdatePromotionLifecycleMutation",
-                    "completed": false
+                    "completed": true
                 },
                 {
-                    "title": "Verify accessibility (aria-label, keyboard navigation)",
-                    "completed": false
+                    "title": "Verify accessibility (aria-label added)",
+                    "completed": true
                 }
             ],
             "tags": ["admin", "frontend", "actions", "UX", "phase-2", "ownerPromotion"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T18:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-17T18:25:00.000Z",
+                "completed": "2026-04-17T18:30:00.000Z"
             }
         },
         {
@@ -891,6 +898,7 @@
         {
             "id": "T-027",
             "title": "Update i18n locale files for OwnerPromotion lifecycle",
+            "_partialProgress": "Minimal keys for T-018a/b/c were added to es/en/pt admin-billing.json (statusDraft, statusArchived, actions.changeLifecycle, form.lifecycleStateLabel) + packages/i18n types regenerated. Remaining work: remove legacy keys actionActivate/actionDeactivate, rename statuses.inactive -> statuses.draft. Task kept pending until full cleanup.",
             "description": "Update locale files in `packages/i18n/src/locales/*`: (1) remove `admin-billing.ownerPromotions.actionActivate` and `admin-billing.ownerPromotions.actionDeactivate`, (2) add `admin-billing.ownerPromotions.actionSetDraft`, `actionSetActive`, `actionSetArchived`, (3) rename `statuses.inactive` to `statuses.draft`, add `statuses.archived`, keep `statuses.active`. Apply to all 3 locales (es, en, pt). Update any usages in components to use new keys.\n\nFiles: `packages/i18n/src/locales/es/admin-billing.json`, `en/admin-billing.json`, `pt/admin-billing.json`, affected components",
             "status": "pending",
             "complexity": 1.5,
@@ -1761,9 +1769,9 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 53,
+        "pending": 45,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 2.0,
         "_replanLog": [

@@ -183,6 +183,63 @@ Admin UI scope analysis revealed that original T-016, T-017, T-018 referenced **
 - **Action button** (toggle) replaced by inline `<Select>` in row actions (default UX approved; alternatives `cycle` and `modal` rejected).
 - **Dead code**: delete all 4 files (user confirmed `delete if 100% sure; we are`).
 
+### Admin UI block (2026-04-17T18:35 — 8 tasks + T-027 partial)
+
+#### T-016a — types.ts migration
+- Imported `LifecycleStatusEnum` from `@repo/schemas`
+- Migrated `OwnerPromotion.isActive` + `CreateOwnerPromotionInput.isActive` + `OwnerPromotionFilters.status` (absorbed scope) to `lifecycleState`
+
+#### T-016b — column in route
+- `accessorKey: 'isActive'` → `'lifecycleState'`
+- 2-variant badge → 3-variant (ACTIVE→success, DRAFT→secondary, ARCHIVED→outline)
+
+#### T-016c — dead code delete
+- Removed 4 files (`columns.tsx`, `config/*.ts` x2, `schemas/owner-promotions.schemas.ts`) + 2 empty dirs (`config/`, `schemas/`) + `./columns` re-export in `index.ts`
+
+#### T-016d — test fixtures
+- 3 fixture refs migrated: `isActive:true` → `LifecycleStatusEnum.ACTIVE`; `isActive:false` → `LifecycleStatusEnum.ARCHIVED`
+
+#### T-017 — hooks.ts rename
+- `togglePromotionActive(id, isActive)` → `updatePromotionLifecycle(id, lifecycleState)`
+- `useTogglePromotionActiveMutation` → `useUpdatePromotionLifecycleMutation`
+- Payload: `{ isActive }` → `{ lifecycleState }`
+- Backend compat verified via T-010 (HTTP schema accepts lifecycleState in PATCH)
+
+#### T-018a — filter state + dropdown
+- Filter state type: `isActive?: string` → `lifecycleState?: LifecycleStatusEnum`
+- Dropdown 4 options: 'all', DRAFT, ACTIVE, ARCHIVED (user-approved UX: expose all 3 enum values)
+
+#### T-018b — dialog components
+- DetailDialog: 3-variant lifecycle badge
+- FormDialog: initial value + added native `<select>` for lifecycleState
+
+#### T-018c — action handler
+- Toggle Button replaced with inline native `<select>` (consistency with existing discountType/filter selects)
+- Bound to `useUpdatePromotionLifecycleMutation` via `handleLifecycleChange`
+- Added `aria-label` for accessibility
+- UX approved: inline select on row (not cycle, not modal)
+
+#### T-027 — i18n (PARTIAL, absorbed in this block)
+- Added 4 keys to es/en/pt `admin-billing.json`: `statusDraft`, `statusArchived`, `actions.changeLifecycle`, `form.lifecycleStateLabel`
+- Regenerated `packages/i18n/src/types.ts` via `pnpm --filter @repo/i18n run generate-types` (also ran biome format)
+- **Remaining T-027 scope:** remove legacy `actionActivate`/`actionDeactivate`, rename `statuses.inactive`→`statuses.draft`, remove `statusInactive` now that UI doesn't reference it
+- Task kept status: pending (partial progress flagged in state.json `_partialProgress`)
+
+### Quality gate for this block
+
+- Biome: pass (11 files verified)
+- Typecheck admin: clean for SPEC-063. Pre-existing unrelated errors in:
+  - `src/components/entity-list/api/createEntityApi.ts:121` (SPEC-066 or previous)
+  - `src/routes/_authed/me/accommodations/index.tsx:28` (AccommodationListFilters pageSize)
+
 ### Next up
 
-T-016a (types.ts; source of truth for feature — unblocks most of the replan chain) -> parallel batch: T-016b, T-016d, T-017, T-018a, T-018b -> T-018c. T-016c (dead code cleanup) can run any time (independent). State bookkeeping continues.
+Commit boundary for the admin UI block (8 tasks completed + T-027 partial + bookkeeping). Then:
+
+**Phase 2 testing batch:** T-019 (schema tests), T-020 (admin-search tests), T-021 (integration: admin list AC-001-01), T-022 (integration: public default ACTIVE AC-005-01), T-023 (model findActive tests), T-024 (usage-tracking + limit-enforcement tests).
+
+**Phase 2 cron:** T-025, T-026.
+
+**Phase 2 i18n closing:** T-027 remaining scope.
+
+Then Phase 4 (DestinationReview), Phase 3 (Sponsorship), cleanup (T-058).
