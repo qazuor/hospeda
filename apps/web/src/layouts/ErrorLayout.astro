@@ -110,12 +110,6 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).hr
 			.err500-message { font-family: var(--font-sans); font-size: 1.125rem; color: var(--foreground); line-height: 1.6; margin: 0.75rem 0 0; max-width: 40ch; }
 			.err500-subtitle { font-family: var(--font-sans); font-size: 1rem; color: var(--muted-foreground); line-height: 1.6; margin: 0.25rem 0 0; max-width: 44ch; }
 			.err500-actions { display: flex; align-items: center; gap: 0.75rem; margin-top: 1.5rem; flex-wrap: wrap; justify-content: center; }
-			.err500-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: var(--radius-button, 8px); font-family: var(--font-sans); font-size: 1rem; font-weight: 500; text-decoration: none; cursor: pointer; white-space: nowrap; border: none; transition: opacity 0.3s ease, transform 0.15s ease, background-color 0.3s ease; }
-			.err500-btn--primary { background-color: var(--primary); color: var(--primary-foreground, #fff); }
-			.err500-btn--primary:hover { opacity: 0.9; transform: translateY(-1px); }
-			.err500-btn--primary:active { transform: translateY(0); }
-			.err500-btn--secondary { background-color: transparent; border: 1px solid var(--border); color: var(--muted-foreground); }
-			.err500-btn--secondary:hover { background-color: var(--muted); color: var(--foreground); border-color: var(--foreground); }
 			.err500-home-link { display: inline-block; font-family: var(--font-sans); font-size: 0.875rem; color: var(--muted-foreground); text-decoration: none; margin-top: 1rem; transition: color 0.2s ease; }
 			.err500-home-link:hover { color: var(--primary); text-decoration: underline; }
 			.err500-dev { width: 100%; max-width: 480px; margin-top: 2rem; text-align: left; }
@@ -141,7 +135,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).hr
 
 			@media (max-width: 480px) {
 				.err500-actions { flex-direction: column; width: 100%; }
-				.err500-btn { width: 100%; justify-content: center; }
+				.err500-actions .btn-gradient { width: 100%; }
 				.error-page__actions { flex-direction: column; }
 				.error-page__btn { width: 100%; justify-content: center; }
 			}

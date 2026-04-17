@@ -8,6 +8,7 @@
 export const prerender = false;
 
 import ErrorLayout from '@/layouts/ErrorLayout.astro';
+import GradientButton from '@/components/shared/GradientButton.astro';
 import { SearchIcon, ChatIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -54,14 +55,12 @@ const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 	<p class="err500-message">{t('error.404.message')}</p>
 
 	<div class="err500-actions">
-		<a href={searchUrl} class="err500-btn err500-btn--primary">
-			<SearchIcon size={18} />
-			Buscar
-		</a>
-		<a href={feedbackWithParams} class="err500-btn err500-btn--secondary">
-			<ChatIcon size={18} />
-			Reportar enlace roto
-		</a>
+		<GradientButton href={searchUrl} label="Buscar" variant="primary" shape="rounded">
+			<SearchIcon slot="leading" size={18} />
+		</GradientButton>
+		<GradientButton href={feedbackWithParams} label="Reportar enlace roto" variant="outline-primary" shape="rounded">
+			<ChatIcon slot="leading" size={18} />
+		</GradientButton>
 	</div>
 
 	<a href={homeUrl} class="err500-home-link">

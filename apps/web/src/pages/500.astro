@@ -8,6 +8,7 @@
 export const prerender = false;
 
 import ErrorLayout from '@/layouts/ErrorLayout.astro';
+import GradientButton from '@/components/shared/GradientButton.astro';
 import { RefreshIcon, ChatIcon } from '@repo/icons';
 import { isDevelopment } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -54,14 +55,12 @@ const showDevDetails = isDevelopment();
 	<p class="err500-message">{t('error.500.message')}</p>
 
 	<div class="err500-actions">
-		<button type="button" class="err500-btn err500-btn--primary" id="retry-btn">
-			<RefreshIcon size={18} />
-			{t('error.500.retry')}
-		</button>
-		<a href={feedbackWithParams} class="err500-btn err500-btn--secondary">
-			<ChatIcon size={18} />
-			Reportar problema
-		</a>
+		<GradientButton as="button" id="retry-btn" label={t('error.500.retry')} variant="primary" shape="rounded">
+			<RefreshIcon slot="leading" size={18} />
+		</GradientButton>
+		<GradientButton href={feedbackWithParams} label="Reportar problema" variant="outline-primary" shape="rounded">
+			<ChatIcon slot="leading" size={18} />
+		</GradientButton>
 	</div>
 
 	<a href={homeUrl} class="err500-home-link">
