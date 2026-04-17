@@ -1,5 +1,4 @@
 import { AccommodationModel, DestinationModel } from '@repo/db';
-import type { DrizzleClient } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media';
 import { resolveEnvironment } from '@repo/media';
@@ -275,9 +274,13 @@ export class DestinationService extends BaseCrudService<
      * Batch-loads attractions for a set of destination IDs.
      * Returns a map of destinationId to array of { id, name } attraction objects.
      * @param destIds - Array of destination UUIDs
+     * @param ctx - Optional service context. When provided with a transaction, the query runs within it.
      * @returns Map of destinationId to attraction array
      */
-    async getAttractionsMap(destIds: readonly string[]): Promise<
+    async getAttractionsMap(
+        destIds: readonly string[],
+        ctx?: ServiceContext
+    ): Promise<
         ReadonlyMap<
             string,
             ReadonlyArray<{
@@ -288,18 +291,20 @@ export class DestinationService extends BaseCrudService<
             }>
         >
     > {
-        return this.model.getAttractionsMap(destIds);
+        return this.model.getAttractionsMap(destIds, ctx?.tx);
     }
 
     /**
      * Searches for destinations with attractions mapped to string arrays for list display.
      * @param actor - The actor performing the search
      * @param params - Search parameters (filters, pagination, etc.)
+     * @param ctx - Optional service context. When provided with a transaction, model queries run within it.
      * @returns A paginated list of destinations with attractions as string arrays
      */
     async searchForList(
         actor: Actor,
-        params: DestinationSearchInput
+        params: DestinationSearchInput,
+        ctx?: ServiceContext
     ): Promise<DestinationSearchForListOutput> {
         // Check permissions
         await this._canSearch(actor);
@@ -322,10 +327,7 @@ export class DestinationService extends BaseCrudService<
         if (isFeatured !== undefined) where.isFeatured = isFeatured;
 
         // Use the model method that includes attractions
-        const result = await this.model.findAll(where, {
-            page,
-            pageSize
-        });
+        const result = await this.model.findAll(where, { page, pageSize }, undefined, ctx?.tx);
 
         // Map the result to the expected format
         const mappedItems = result.items.map((destination) => ({
@@ -349,21 +351,24 @@ export class DestinationService extends BaseCrudService<
      * Returns all accommodations for a given destination.
      * @param actor - The actor performing the action
      * @param params - ServiceInput containing actor and input object with destinationId
+     * @param ctx - Optional service context. When provided with a transaction, model queries run within it.
      * @returns ServiceOutput with accommodations array or error
      */
     public async getAccommodations(
         actor: Actor,
-        params: GetDestinationAccommodationsInput
+        params: GetDestinationAccommodationsInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ accommodations: AccommodationListItem[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getAccommodations',
             input: { ...params, actor },
             schema: GetDestinationAccommodationsInputSchema,
-            execute: async (validated, actor) => {
+            ctx,
+            execute: async (validated, actor, resolvedCtx) => {
                 // Support both legacy { destinationId } and new { id }
                 // biome-ignore lint/suspicious/noExplicitAny: bridging schema evolution
                 const destinationId = (validated as any).destinationId ?? (validated as any).id;
-                const destination = await this.model.findById(destinationId);
+                const destination = await this.model.findById(destinationId, resolvedCtx.tx);
                 if (!destination) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
@@ -371,9 +376,12 @@ export class DestinationService extends BaseCrudService<
                     );
                 }
                 checkCanViewDestination(actor, destination);
-                const { items } = await this.accommodationModel.findAll({
-                    destinationId
-                });
+                const { items } = await this.accommodationModel.findAll(
+                    { destinationId },
+                    undefined,
+                    undefined,
+                    resolvedCtx.tx
+                );
                 return { accommodations: items };
             }
         });
@@ -383,19 +391,22 @@ export class DestinationService extends BaseCrudService<
      * Returns aggregated stats for a destination (accommodations count, reviews count, average rating, etc.)
      * @param actor - The actor performing the action
      * @param params - ServiceInput containing actor and input object with destinationId
+     * @param ctx - Optional service context. When provided with a transaction, model queries run within it.
      * @returns ServiceOutput with stats or error
      */
     public async getStats(
         actor: Actor,
-        params: GetDestinationStatsInput
+        params: GetDestinationStatsInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ stats: DestinationStats }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getStats',
             input: { ...params, actor },
             schema: GetDestinationStatsInputSchema,
-            execute: async (validated, actor) => {
+            ctx,
+            execute: async (validated, actor, resolvedCtx) => {
                 const { destinationId } = validated;
-                const destination = await this.model.findById(destinationId);
+                const destination = await this.model.findById(destinationId, resolvedCtx.tx);
                 if (!destination) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
@@ -421,19 +432,22 @@ export class DestinationService extends BaseCrudService<
      * This method provides a lightweight DTO for use in lists or cards, excluding sensitive or detailed information.
      * @param actor - The actor performing the action
      * @param params - ServiceInput containing actor and input object with destinationId
+     * @param ctx - Optional service context. When provided with a transaction, model queries run within it.
      * @returns ServiceOutput with summary or error
      */
     public async getSummary(
         actor: Actor,
-        params: GetDestinationSummaryInput
+        params: GetDestinationSummaryInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ summary: DestinationSummaryType }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getSummary',
             input: { ...params, actor },
             schema: GetDestinationSummaryInputSchema,
-            execute: async (validated, actor) => {
+            ctx,
+            execute: async (validated, actor, resolvedCtx) => {
                 const { destinationId } = validated;
-                const destination = await this.model.findById(destinationId);
+                const destination = await this.model.findById(destinationId, resolvedCtx.tx);
                 if (!destination) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
@@ -885,7 +899,7 @@ export class DestinationService extends BaseCrudService<
      * Internal system operation called from review services during cascading updates.
      * @param destinationId - The ID of the destination to update
      * @param stats - Object with reviewsCount, averageRating, and rating
-     * @param tx - Optional transaction client for atomic multi-step operations
+     * @param ctx - Optional service context. When provided with a transaction, the update runs within it.
      * @internal
      */
     public async updateStatsFromReview(
@@ -895,7 +909,7 @@ export class DestinationService extends BaseCrudService<
             averageRating: number;
             rating: DestinationRatingInput | undefined;
         },
-        tx?: DrizzleClient
+        ctx?: ServiceContext
     ): Promise<void> {
         await this.model.updateById(
             destinationId,
@@ -904,7 +918,7 @@ export class DestinationService extends BaseCrudService<
                 averageRating: stats.averageRating,
                 rating: stats.rating as DestinationRatingInput | undefined
             },
-            tx
+            ctx?.tx
         );
     }
 
@@ -912,18 +926,22 @@ export class DestinationService extends BaseCrudService<
      * Updates accommodationsCount for a destination by counting active accommodations.
      * Internal system operation called from accommodation services during cascading updates.
      * @param destinationId - The ID of the destination to update
-     * @param tx - Optional transaction client for atomic multi-step operations
+     * @param ctx - Optional service context. When provided with a transaction, the update runs within it.
      * @internal
      */
     public async updateAccommodationsCount(
         destinationId: string,
-        tx?: DrizzleClient
+        ctx?: ServiceContext
     ): Promise<void> {
         const accommodationCount = await this.accommodationModel.count({
             destinationId,
             deletedAt: null
         });
-        await this.model.updateById(destinationId, { accommodationsCount: accommodationCount }, tx);
+        await this.model.updateById(
+            destinationId,
+            { accommodationsCount: accommodationCount },
+            ctx?.tx
+        );
     }
 
     // ========================================================================
@@ -936,17 +954,25 @@ export class DestinationService extends BaseCrudService<
 
     /**
      * Gets direct children of a destination.
+     * @param actor - The actor performing the action
+     * @param params - Input containing destinationId
+     * @param ctx - Optional service context. When provided with a transaction, the query runs within it.
      */
     public async getChildren(
         actor: Actor,
-        params: GetDestinationChildrenInput
+        params: GetDestinationChildrenInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ children: Destination[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getChildren',
             input: { actor, ...params },
             schema: GetDestinationChildrenInputSchema,
-            execute: async (validData) => {
-                const children = await this.model.findChildren(validData.destinationId);
+            ctx,
+            execute: async (validData, _actor, resolvedCtx) => {
+                const children = await this.model.findChildren(
+                    validData.destinationId,
+                    resolvedCtx.tx
+                );
                 return { children };
             }
         });
@@ -954,20 +980,29 @@ export class DestinationService extends BaseCrudService<
 
     /**
      * Gets all descendants of a destination with optional depth and type filters.
+     * @param actor - The actor performing the action
+     * @param params - Input containing destinationId and optional filters
+     * @param ctx - Optional service context. When provided with a transaction, the query runs within it.
      */
     public async getDescendants(
         actor: Actor,
-        params: GetDestinationDescendantsInput
+        params: GetDestinationDescendantsInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ descendants: Destination[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getDescendants',
             input: { actor, ...params },
             schema: GetDestinationDescendantsInputSchema,
-            execute: async (validData) => {
-                const descendants = await this.model.findDescendants(validData.destinationId, {
-                    maxDepth: validData.maxDepth,
-                    destinationType: validData.destinationType
-                });
+            ctx,
+            execute: async (validData, _actor, resolvedCtx) => {
+                const descendants = await this.model.findDescendants(
+                    validData.destinationId,
+                    {
+                        maxDepth: validData.maxDepth,
+                        destinationType: validData.destinationType
+                    },
+                    resolvedCtx.tx
+                );
                 return { descendants };
             }
         });
@@ -975,17 +1010,25 @@ export class DestinationService extends BaseCrudService<
 
     /**
      * Gets all ancestors of a destination ordered from root to parent.
+     * @param actor - The actor performing the action
+     * @param params - Input containing destinationId
+     * @param ctx - Optional service context. When provided with a transaction, the query runs within it.
      */
     public async getAncestors(
         actor: Actor,
-        params: GetDestinationAncestorsInput
+        params: GetDestinationAncestorsInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ ancestors: Destination[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getAncestors',
             input: { actor, ...params },
             schema: GetDestinationAncestorsInputSchema,
-            execute: async (validData) => {
-                const ancestors = await this.model.findAncestors(validData.destinationId);
+            ctx,
+            execute: async (validData, _actor, resolvedCtx) => {
+                const ancestors = await this.model.findAncestors(
+                    validData.destinationId,
+                    resolvedCtx.tx
+                );
                 return { ancestors };
             }
         });
@@ -994,17 +1037,25 @@ export class DestinationService extends BaseCrudService<
     /**
      * Gets breadcrumb navigation data for a destination.
      * Returns minimal items ordered from root to current destination.
+     * @param actor - The actor performing the action
+     * @param params - Input containing destinationId
+     * @param ctx - Optional service context. When provided with a transaction, model queries run within it.
      */
     public async getBreadcrumb(
         actor: Actor,
-        params: GetDestinationBreadcrumbInput
+        params: GetDestinationBreadcrumbInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ breadcrumb: BreadcrumbItem[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getBreadcrumb',
             input: { actor, ...params },
             schema: GetDestinationBreadcrumbInputSchema,
-            execute: async (validData) => {
-                const destination = await this.model.findOne({ id: validData.destinationId });
+            ctx,
+            execute: async (validData, _actor, resolvedCtx) => {
+                const destination = await this.model.findOne(
+                    { id: validData.destinationId },
+                    resolvedCtx.tx
+                );
                 if (!destination) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
@@ -1012,7 +1063,10 @@ export class DestinationService extends BaseCrudService<
                     );
                 }
 
-                const ancestors = await this.model.findAncestors(validData.destinationId);
+                const ancestors = await this.model.findAncestors(
+                    validData.destinationId,
+                    resolvedCtx.tx
+                );
                 const breadcrumb: BreadcrumbItem[] = [
                     ...ancestors.map((a) => ({
                         id: a.id,
@@ -1038,17 +1092,22 @@ export class DestinationService extends BaseCrudService<
 
     /**
      * Finds a destination by its materialized path.
+     * @param actor - The actor performing the action
+     * @param params - Input containing the materialized path
+     * @param ctx - Optional service context. When provided with a transaction, the query runs within it.
      */
     public async getByPath(
         actor: Actor,
-        params: GetDestinationByPathInput
+        params: GetDestinationByPathInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<Destination>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByPath',
             input: { actor, ...params },
             schema: GetDestinationByPathInputSchema,
-            execute: async (validData) => {
-                const destination = await this.model.findByPath(validData.path);
+            ctx,
+            execute: async (validData, _actor, resolvedCtx) => {
+                const destination = await this.model.findByPath(validData.path, resolvedCtx.tx);
                 if (!destination) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,

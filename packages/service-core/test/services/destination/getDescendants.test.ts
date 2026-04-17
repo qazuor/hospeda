@@ -64,10 +64,11 @@ describe('DestinationService.getDescendants', () => {
         // Assert
         expectSuccess(result);
         expect(result.data?.descendants).toHaveLength(2);
-        expect(asMock(modelMock.findDescendants)).toHaveBeenCalledWith(parentId, {
-            maxDepth: undefined,
-            destinationType: undefined
-        });
+        expect(asMock(modelMock.findDescendants)).toHaveBeenCalledWith(
+            parentId,
+            { maxDepth: undefined, destinationType: undefined },
+            undefined
+        );
     });
 
     it('should pass maxDepth filter to model', async () => {
@@ -91,10 +92,11 @@ describe('DestinationService.getDescendants', () => {
 
         // Assert
         expectSuccess(result);
-        expect(asMock(modelMock.findDescendants)).toHaveBeenCalledWith(parentId, {
-            maxDepth: 1,
-            destinationType: undefined
-        });
+        expect(asMock(modelMock.findDescendants)).toHaveBeenCalledWith(
+            parentId,
+            { maxDepth: 1, destinationType: undefined },
+            undefined
+        );
     });
 
     it('should pass destinationType filter to model', async () => {
@@ -118,10 +120,11 @@ describe('DestinationService.getDescendants', () => {
 
         // Assert
         expectSuccess(result);
-        expect(asMock(modelMock.findDescendants)).toHaveBeenCalledWith(parentId, {
-            maxDepth: undefined,
-            destinationType: DestinationTypeEnum.CITY
-        });
+        expect(asMock(modelMock.findDescendants)).toHaveBeenCalledWith(
+            parentId,
+            { maxDepth: undefined, destinationType: DestinationTypeEnum.CITY },
+            undefined
+        );
     });
 
     it('should return empty array when no descendants exist', async () => {

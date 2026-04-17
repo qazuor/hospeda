@@ -82,7 +82,7 @@ describe('DestinationService.getAncestors', () => {
         expect(result.data?.ancestors[0]?.name).toBe('Argentina');
         expect(result.data?.ancestors[1]?.name).toBe('Litoral');
         expect(result.data?.ancestors[2]?.name).toBe('Entre Rios');
-        expect(asMock(modelMock.findAncestors)).toHaveBeenCalledWith(cityId);
+        expect(asMock(modelMock.findAncestors)).toHaveBeenCalledWith(cityId, undefined);
     });
 
     it('should return empty array for root-level destination', async () => {

@@ -56,7 +56,7 @@ describe('DestinationService.getByPath', () => {
         // Assert
         expectSuccess(result);
         expect(result.data?.name).toBe('Concepcion del Uruguay');
-        expect(asMock(modelMock.findByPath)).toHaveBeenCalledWith(params.path);
+        expect(asMock(modelMock.findByPath)).toHaveBeenCalledWith(params.path, undefined);
     });
 
     it('should return a root-level destination by path', async () => {

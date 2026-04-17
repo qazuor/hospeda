@@ -68,7 +68,7 @@ describe('DestinationService.getChildren', () => {
         expect(result.data?.children).toHaveLength(2);
         expect(result.data?.children[0]?.name).toBe('Child City 1');
         expect(result.data?.children[1]?.name).toBe('Child City 2');
-        expect(asMock(modelMock.findChildren)).toHaveBeenCalledWith(parentId);
+        expect(asMock(modelMock.findChildren)).toHaveBeenCalledWith(parentId, undefined);
     });
 
     it('should return empty array when destination has no children', async () => {

@@ -277,7 +277,7 @@ export class DestinationReviewService extends BaseCrudService<
         await this.destinationService.updateStatsFromReview(
             destinationId,
             { reviewsCount, averageRating, rating },
-            tx
+            tx ? { tx } : undefined
         );
     }
 
@@ -512,24 +512,32 @@ export class DestinationReviewService extends BaseCrudService<
      * Validates permissions via _canList and returns only non-deleted reviews.
      * @param actor - The actor performing the action
      * @param input - Object containing userId and optional pagination/filter params
+     * @param ctx - Optional service context. When provided with a transaction, model queries run within it.
      * @returns Paginated list of reviews by user with pagination metadata
      */
     public async listByUser(
         actor: Actor,
-        input: DestinationReviewsByUserInput
+        input: DestinationReviewsByUserInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<DestinationReviewListResponse>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listByUser',
             input: { ...input, actor },
             schema: DestinationReviewsByUserSchema,
-            execute: async (validated, validatedActor) => {
+            ctx,
+            execute: async (validated, validatedActor, resolvedCtx) => {
                 await this._canList(validatedActor);
                 const { userId, page, pageSize, destinationId } = validated;
                 const filters: Record<string, unknown> = { userId, deletedAt: null };
                 if (destinationId) {
                     filters.destinationId = destinationId;
                 }
-                const result = await this.model.findAll(filters, { page, pageSize });
+                const result = await this.model.findAll(
+                    filters,
+                    { page, pageSize },
+                    undefined,
+                    resolvedCtx.tx
+                );
 
                 const currentPage = page || 1;
                 const currentPageSize = pageSize || 10;
@@ -555,17 +563,20 @@ export class DestinationReviewService extends BaseCrudService<
      * Validates permissions via _canList and returns reviews with user data.
      * @param actor - The actor performing the action
      * @param input - Object containing optional pagination and filters
+     * @param ctx - Optional service context. When provided with a transaction, model queries run within it.
      * @returns Paginated list of reviews with user information
      */
     public async listWithUser(
         actor: Actor,
-        input: DestinationReviewSearchInput = { page: 1, pageSize: 10 }
+        input: DestinationReviewSearchInput = { page: 1, pageSize: 10 },
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<DestinationReviewListWithUserOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listWithUser',
             input: { actor, ...input },
             schema: DestinationReviewSearchInputSchema,
-            execute: async (validData, validatedActor) => {
+            ctx,
+            execute: async (validData, validatedActor, resolvedCtx) => {
                 await this._canList(validatedActor);
                 const { page, pageSize, ...filterParams } = validData;
 
@@ -575,7 +586,11 @@ export class DestinationReviewService extends BaseCrudService<
                     ...filterParams
                 };
 
-                const result = await this.model.findAllWithUser(defaultFilters, { page, pageSize });
+                const result = await this.model.findAllWithUser(
+                    defaultFilters,
+                    { page, pageSize },
+                    resolvedCtx.tx
+                );
                 const currentPage = page || 1;
                 const currentPageSize = pageSize || 10;
                 const totalPages = Math.ceil(result.total / currentPageSize);
