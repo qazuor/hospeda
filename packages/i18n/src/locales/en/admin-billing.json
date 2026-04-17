@@ -753,10 +753,13 @@
         },
         "statusActive": "Active",
         "statusInactive": "Inactive",
+        "statusDraft": "Draft",
+        "statusArchived": "Archived",
         "actions": {
             "view": "View",
             "deactivate": "Deactivate",
             "activate": "Activate",
+            "changeLifecycle": "Change status",
             "edit": "Edit",
             "delete": "Delete"
         },
@@ -795,6 +798,7 @@
             "valueLabel": "Value *",
             "validFromLabel": "Valid from *",
             "validUntilLabel": "Valid until *",
+            "lifecycleStateLabel": "Status *",
             "cancelButton": "Cancel",
             "createSubmit": "Create",
             "editSubmit": "Save"

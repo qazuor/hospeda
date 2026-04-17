@@ -12,12 +12,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
     useDeleteOwnerPromotionMutation,
     useOwnerPromotionsQuery,
-    useTogglePromotionActiveMutation
+    useUpdatePromotionLifecycleMutation
 } from '@/features/owner-promotions/hooks';
 import type { OwnerPromotion } from '@/features/owner-promotions/types';
 import { useTranslations } from '@/hooks/use-translations';
 import { EntitlementGate, LimitGate } from '@qazuor/qzpay-react';
 import { AddIcon } from '@repo/icons';
+import { LifecycleStatusEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
@@ -33,7 +34,7 @@ function BillingOwnerPromotionsPage() {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
     const [filters, setFilters] = useState<{
-        isActive?: string;
+        lifecycleState?: LifecycleStatusEnum;
         discountType?: string;
     }>({});
     const [selectedPromotion, setSelectedPromotion] = useState<OwnerPromotion | null>(null);
@@ -47,13 +48,16 @@ function BillingOwnerPromotionsPage() {
         ...filters
     });
 
-    const toggleActiveMutation = useTogglePromotionActiveMutation();
+    const updateLifecycleMutation = useUpdatePromotionLifecycleMutation();
     const deleteMutation = useDeleteOwnerPromotionMutation();
 
-    const handleToggleActive = (promotion: OwnerPromotion) => {
-        toggleActiveMutation.mutate({
+    const handleLifecycleChange = (
+        promotion: OwnerPromotion,
+        lifecycleState: LifecycleStatusEnum
+    ) => {
+        updateLifecycleMutation.mutate({
             id: promotion.id,
-            isActive: !promotion.isActive
+            lifecycleState
         });
     };
 
@@ -134,13 +138,23 @@ function BillingOwnerPromotionsPage() {
         {
             id: 'status',
             header: t('admin-billing.ownerPromotions.columns.status'),
-            accessorKey: 'isActive',
+            accessorKey: 'lifecycleState',
             enableSorting: true,
             cell: ({ row }) => (
-                <Badge variant={row.isActive ? 'success' : 'secondary'}>
-                    {row.isActive
+                <Badge
+                    variant={
+                        row.lifecycleState === 'ACTIVE'
+                            ? 'success'
+                            : row.lifecycleState === 'DRAFT'
+                              ? 'secondary'
+                              : 'outline'
+                    }
+                >
+                    {row.lifecycleState === 'ACTIVE'
                         ? t('admin-billing.ownerPromotions.statusActive')
-                        : t('admin-billing.ownerPromotions.statusInactive')}
+                        : row.lifecycleState === 'DRAFT'
+                          ? t('admin-billing.ownerPromotions.statusDraft')
+                          : t('admin-billing.ownerPromotions.statusArchived')}
                 </Badge>
             )
         },
@@ -182,16 +196,25 @@ function BillingOwnerPromotionsPage() {
                     >
                         {t('admin-billing.ownerPromotions.actions.view')}
                     </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleToggleActive(row)}
-                        disabled={toggleActiveMutation.isPending}
+                    <select
+                        aria-label={t('admin-billing.ownerPromotions.actions.changeLifecycle')}
+                        className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                        value={row.lifecycleState}
+                        onChange={(e) =>
+                            handleLifecycleChange(row, e.target.value as LifecycleStatusEnum)
+                        }
+                        disabled={updateLifecycleMutation.isPending}
                     >
-                        {row.isActive
-                            ? t('admin-billing.ownerPromotions.actions.deactivate')
-                            : t('admin-billing.ownerPromotions.actions.activate')}
-                    </Button>
+                        <option value={LifecycleStatusEnum.DRAFT}>
+                            {t('admin-billing.ownerPromotions.statusDraft')}
+                        </option>
+                        <option value={LifecycleStatusEnum.ACTIVE}>
+                            {t('admin-billing.ownerPromotions.statusActive')}
+                        </option>
+                        <option value={LifecycleStatusEnum.ARCHIVED}>
+                            {t('admin-billing.ownerPromotions.statusArchived')}
+                        </option>
+                    </select>
                     <Button
                         variant="outline"
                         size="sm"
@@ -252,22 +275,28 @@ function BillingOwnerPromotionsPage() {
                     <div className="flex gap-2">
                         <select
                             className="rounded-md border px-3 py-2 text-sm"
-                            value={filters.isActive ?? 'all'}
+                            value={filters.lifecycleState ?? 'all'}
                             onChange={(e) =>
                                 setFilters((prev) => ({
                                     ...prev,
-                                    isActive: e.target.value === 'all' ? undefined : e.target.value
+                                    lifecycleState:
+                                        e.target.value === 'all'
+                                            ? undefined
+                                            : (e.target.value as LifecycleStatusEnum)
                                 }))
                             }
                         >
                             <option value="all">
                                 {t('admin-billing.ownerPromotions.filters.allStatuses')}
                             </option>
-                            <option value="true">
-                                {t('admin-billing.ownerPromotions.filters.active')}
+                            <option value={LifecycleStatusEnum.DRAFT}>
+                                {t('admin-billing.ownerPromotions.statusDraft')}
                             </option>
-                            <option value="false">
-                                {t('admin-billing.ownerPromotions.filters.inactive')}
+                            <option value={LifecycleStatusEnum.ACTIVE}>
+                                {t('admin-billing.ownerPromotions.statusActive')}
+                            </option>
+                            <option value={LifecycleStatusEnum.ARCHIVED}>
+                                {t('admin-billing.ownerPromotions.statusArchived')}
                             </option>
                         </select>
 

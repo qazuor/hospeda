@@ -4,6 +4,7 @@
  * Mock data for owner promotion entities used in admin integration tests.
  * Shapes derived from OwnerPromotion in apps/admin/src/features/owner-promotions/types.ts
  */
+import { LifecycleStatusEnum } from '@repo/schemas';
 import { mockPaginatedResponse } from '../mocks/handlers';
 
 /** Single valid owner promotion */
@@ -21,7 +22,7 @@ export const mockOwnerPromotion = {
     validUntil: '2025-03-31T23:59:59.000Z',
     maxRedemptions: 50,
     currentRedemptions: 8,
-    isActive: true,
+    lifecycleState: LifecycleStatusEnum.ACTIVE,
     createdAt: '2024-11-15T00:00:00.000Z',
     updatedAt: '2024-11-15T00:00:00.000Z'
 } as const;
@@ -44,7 +45,7 @@ export const mockOwnerPromotionList = [
         validUntil: '2024-12-31T23:59:59.000Z',
         maxRedemptions: null,
         currentRedemptions: 23,
-        isActive: true
+        lifecycleState: LifecycleStatusEnum.ACTIVE
     },
     {
         ...mockOwnerPromotion,
@@ -60,7 +61,7 @@ export const mockOwnerPromotionList = [
         validUntil: '2024-08-31T23:59:59.000Z',
         maxRedemptions: 20,
         currentRedemptions: 20,
-        isActive: false
+        lifecycleState: LifecycleStatusEnum.ARCHIVED
     }
 ] as const;
 

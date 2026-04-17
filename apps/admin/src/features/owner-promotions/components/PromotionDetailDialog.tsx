@@ -59,10 +59,20 @@ export function PromotionDetailDialog({
                                 <span className="text-muted-foreground">
                                     {t('admin-billing.ownerPromotions.detail.statusLabel')}
                                 </span>
-                                <Badge variant={promotion.isActive ? 'success' : 'secondary'}>
-                                    {promotion.isActive
+                                <Badge
+                                    variant={
+                                        promotion.lifecycleState === 'ACTIVE'
+                                            ? 'success'
+                                            : promotion.lifecycleState === 'DRAFT'
+                                              ? 'secondary'
+                                              : 'outline'
+                                    }
+                                >
+                                    {promotion.lifecycleState === 'ACTIVE'
                                         ? t('admin-billing.ownerPromotions.statusActive')
-                                        : t('admin-billing.ownerPromotions.statusInactive')}
+                                        : promotion.lifecycleState === 'DRAFT'
+                                          ? t('admin-billing.ownerPromotions.statusDraft')
+                                          : t('admin-billing.ownerPromotions.statusArchived')}
                                 </Badge>
                             </div>
                             <div className="flex justify-between">

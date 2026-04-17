@@ -21,6 +21,7 @@ import {
 } from '@/features/owner-promotions/hooks';
 import type { CreateOwnerPromotionInput, OwnerPromotion } from '@/features/owner-promotions/types';
 import { useTranslations } from '@/hooks/use-translations';
+import { LifecycleStatusEnum } from '@repo/schemas';
 import { useState } from 'react';
 
 interface PromotionFormDialogProps {
@@ -51,7 +52,7 @@ export function PromotionFormDialog({
         validFrom: promotion?.validFrom || '',
         validUntil: promotion?.validUntil || '',
         maxRedemptions: promotion?.maxRedemptions || undefined,
-        isActive: promotion?.isActive ?? true
+        lifecycleState: promotion?.lifecycleState ?? LifecycleStatusEnum.ACTIVE
     });
 
     const createMutation = useCreateOwnerPromotionMutation();
@@ -232,6 +233,33 @@ export function PromotionFormDialog({
                                     required
                                 />
                             </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="lifecycleState">
+                                {t('admin-billing.ownerPromotions.form.lifecycleStateLabel')}
+                            </Label>
+                            <select
+                                id="lifecycleState"
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                value={formData.lifecycleState}
+                                onChange={(e) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        lifecycleState: e.target.value as LifecycleStatusEnum
+                                    }))
+                                }
+                            >
+                                <option value={LifecycleStatusEnum.DRAFT}>
+                                    {t('admin-billing.ownerPromotions.statusDraft')}
+                                </option>
+                                <option value={LifecycleStatusEnum.ACTIVE}>
+                                    {t('admin-billing.ownerPromotions.statusActive')}
+                                </option>
+                                <option value={LifecycleStatusEnum.ARCHIVED}>
+                                    {t('admin-billing.ownerPromotions.statusArchived')}
+                                </option>
+                            </select>
                         </div>
                     </div>
 

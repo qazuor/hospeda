@@ -1,4 +1,5 @@
 import { fetchApi } from '@/lib/api/client';
+import type { LifecycleStatusEnum } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreateOwnerPromotionInput, UpdateOwnerPromotionInput } from './types';
 
@@ -83,13 +84,13 @@ async function deleteOwnerPromotion(id: string) {
 }
 
 /**
- * Toggle owner promotion active status
+ * Update owner promotion lifecycle state (DRAFT/ACTIVE/ARCHIVED).
  */
-async function togglePromotionActive(id: string, isActive: boolean) {
+async function updatePromotionLifecycle(id: string, lifecycleState: LifecycleStatusEnum) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
         path: `/api/v1/admin/owner-promotions/${id}`,
         method: 'PATCH',
-        body: { isActive }
+        body: { lifecycleState }
     });
     return result.data.data;
 }
@@ -163,14 +164,14 @@ export const useDeleteOwnerPromotionMutation = () => {
 };
 
 /**
- * Hook to toggle promotion active status
+ * Hook to update promotion lifecycle state.
  */
-export const useTogglePromotionActiveMutation = () => {
+export const useUpdatePromotionLifecycleMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
-            togglePromotionActive(id, isActive),
+        mutationFn: ({ id, lifecycleState }: { id: string; lifecycleState: LifecycleStatusEnum }) =>
+            updatePromotionLifecycle(id, lifecycleState),
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ownerPromotionQueryKeys.lists() });
             queryClient.invalidateQueries({

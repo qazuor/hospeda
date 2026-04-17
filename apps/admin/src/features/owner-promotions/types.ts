@@ -2,6 +2,8 @@
  * Owner Promotion Types
  */
 
+import type { LifecycleStatusEnum } from '@repo/schemas';
+
 export interface OwnerPromotion {
     id: string;
     slug: string;
@@ -16,13 +18,13 @@ export interface OwnerPromotion {
     validUntil: string;
     maxRedemptions: number | null;
     currentRedemptions: number;
-    isActive: boolean;
+    lifecycleState: LifecycleStatusEnum;
     createdAt: string;
     updatedAt: string;
 }
 
 export interface OwnerPromotionFilters {
-    status?: 'active' | 'inactive';
+    lifecycleState?: LifecycleStatusEnum;
     discountType?: string;
     page?: number;
     limit?: number;
@@ -39,7 +41,7 @@ export interface CreateOwnerPromotionInput {
     validFrom: string;
     validUntil: string;
     maxRedemptions?: number;
-    isActive: boolean;
+    lifecycleState: LifecycleStatusEnum;
 }
 
 export interface UpdateOwnerPromotionInput extends Partial<CreateOwnerPromotionInput> {

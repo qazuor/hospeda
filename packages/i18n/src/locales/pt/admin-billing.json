@@ -753,6 +753,8 @@
         },
         "statusActive": "Ativo",
         "statusInactive": "Inativo",
+        "statusDraft": "Rascunho",
+        "statusArchived": "Arquivado",
         "discountTypeLabels": {
             "percentage": "Percentual",
             "fixedAmount": "Valor fixo",
@@ -769,6 +771,7 @@
             "view": "Ver",
             "deactivate": "Desativar",
             "activate": "Ativar",
+            "changeLifecycle": "Alterar status",
             "edit": "Editar",
             "delete": "Excluir"
         },
@@ -795,6 +798,7 @@
             "valueLabel": "Valor *",
             "validFromLabel": "Válido a partir de *",
             "validUntilLabel": "Válido até *",
+            "lifecycleStateLabel": "Status *",
             "cancelButton": "Cancelar",
             "createSubmit": "Criar",
             "editSubmit": "Salvar"
