@@ -293,16 +293,16 @@ export class UserService extends BaseCrudService<
             input: { ...params, actor },
             schema: UserAssignRoleInputSchema,
             ctx,
-            execute: async ({ userId, role }, actor) => {
+            execute: async ({ userId, role }, actor, execCtx) => {
                 canAssignRole(actor);
-                const user = await this.model.findById(userId);
+                const user = await this.model.findById(userId, execCtx?.tx);
                 if (!user) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
                 }
                 if (user.role === role) {
                     return { user };
                 }
-                const updated = await this.model.update({ id: userId }, { role });
+                const updated = await this.model.update({ id: userId }, { role }, execCtx?.tx);
                 if (!updated) {
                     throw new ServiceError(
                         ServiceErrorCode.INTERNAL_ERROR,
@@ -332,9 +332,9 @@ export class UserService extends BaseCrudService<
             input: { ...params, actor },
             schema: UserAddPermissionInputSchema,
             ctx,
-            execute: async ({ userId, permission }, actor) => {
+            execute: async ({ userId, permission }, actor, execCtx) => {
                 await this._canManagePermissions(actor);
-                const user = await this.model.findById(userId);
+                const user = await this.model.findById(userId, execCtx?.tx);
                 if (!user) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
                 }
@@ -343,7 +343,8 @@ export class UserService extends BaseCrudService<
                 }
                 const updated = await this.model.update(
                     { id: userId },
-                    { permissions: [...user.permissions, permission] }
+                    { permissions: [...user.permissions, permission] },
+                    execCtx?.tx
                 );
                 if (!updated) {
                     throw new ServiceError(
@@ -374,9 +375,9 @@ export class UserService extends BaseCrudService<
             input: { ...params, actor },
             schema: UserRemovePermissionInputSchema,
             ctx,
-            execute: async ({ userId, permission }, actor) => {
+            execute: async ({ userId, permission }, actor, execCtx) => {
                 await this._canManagePermissions(actor);
-                const user = await this.model.findById(userId);
+                const user = await this.model.findById(userId, execCtx?.tx);
                 if (!user) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
                 }
@@ -385,7 +386,8 @@ export class UserService extends BaseCrudService<
                 }
                 const updated = await this.model.update(
                     { id: userId },
-                    { permissions: user.permissions.filter((p) => p !== permission) }
+                    { permissions: user.permissions.filter((p) => p !== permission) },
+                    execCtx?.tx
                 );
                 if (!updated) {
                     throw new ServiceError(
@@ -416,13 +418,17 @@ export class UserService extends BaseCrudService<
             input: { ...params, actor },
             schema: UserSetPermissionsInputSchema,
             ctx,
-            execute: async ({ userId, permissions }, actor) => {
+            execute: async ({ userId, permissions }, actor, execCtx) => {
                 await this._canManagePermissions(actor);
-                const user = await this.model.findById(userId);
+                const user = await this.model.findById(userId, execCtx?.tx);
                 if (!user) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
                 }
-                const updated = await this.model.update({ id: userId }, { permissions });
+                const updated = await this.model.update(
+                    { id: userId },
+                    { permissions },
+                    execCtx?.tx
+                );
                 if (!updated) {
                     throw new ServiceError(
                         ServiceErrorCode.INTERNAL_ERROR,

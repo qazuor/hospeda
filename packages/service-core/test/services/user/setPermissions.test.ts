@@ -61,11 +61,13 @@ describe('UserService.setPermissions', () => {
             PermissionEnum.USER_DELETE
         ]);
         expect(result.data?.user.id).toBe(userId);
-        expect(asMock(userModelMock.findById)).toHaveBeenCalledWith(userId);
-        expect(asMock(userModelMock.update)).toHaveBeenCalledWith(
-            { id: userId },
-            { permissions: [PermissionEnum.USER_CREATE, PermissionEnum.USER_DELETE] }
-        );
+        expect(asMock(userModelMock.findById)).toHaveBeenCalledTimes(1);
+        expect(asMock(userModelMock.findById).mock.lastCall?.[0]).toBe(userId);
+        expect(asMock(userModelMock.update)).toHaveBeenCalledTimes(1);
+        expect(asMock(userModelMock.update).mock.lastCall?.[0]).toEqual({ id: userId });
+        expect(asMock(userModelMock.update).mock.lastCall?.[1]).toEqual({
+            permissions: [PermissionEnum.USER_CREATE, PermissionEnum.USER_DELETE]
+        });
     });
 
     it('should return NOT_FOUND if user does not exist', async () => {

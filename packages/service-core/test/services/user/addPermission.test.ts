@@ -58,11 +58,13 @@ describe('UserService.addPermission', () => {
         expectSuccess(result);
         expect(result.data?.user.permissions).toContain(PermissionEnum.USER_CREATE);
         expect(result.data?.user.id).toBe(userId);
-        expect(asMock(userModelMock.findById)).toHaveBeenCalledWith(userId);
-        expect(asMock(userModelMock.update)).toHaveBeenCalledWith(
-            { id: userId },
-            { permissions: [PermissionEnum.USER_CREATE] }
-        );
+        expect(asMock(userModelMock.findById)).toHaveBeenCalledTimes(1);
+        expect(asMock(userModelMock.findById).mock.lastCall?.[0]).toBe(userId);
+        expect(asMock(userModelMock.update)).toHaveBeenCalledTimes(1);
+        expect(asMock(userModelMock.update).mock.lastCall?.[0]).toEqual({ id: userId });
+        expect(asMock(userModelMock.update).mock.lastCall?.[1]).toEqual({
+            permissions: [PermissionEnum.USER_CREATE]
+        });
     });
 
     it('should not duplicate permission if already present', async () => {

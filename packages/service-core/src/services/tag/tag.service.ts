@@ -351,28 +351,34 @@ export class TagService extends BaseCrudRelatedService<
             input: { actor, ...params },
             schema: TagAddToEntityInputSchema.strict(),
             ctx,
-            execute: async (validated) => {
+            execute: async (validated, _actor, execCtx) => {
                 await this._canUpdate(actor, { id: validated.tagId } as Tag);
-                const tag = await this.model.findById(validated.tagId);
+                const tag = await this.model.findById(validated.tagId, execCtx?.tx);
                 if (!tag) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Tag not found');
                 }
-                const existing = await this.relatedModel.findOne({
-                    tagId: validated.tagId,
-                    entityId: validated.entityId,
-                    entityType: validated.entityType as EntityTypeEnum
-                });
+                const existing = await this.relatedModel.findOne(
+                    {
+                        tagId: validated.tagId,
+                        entityId: validated.entityId,
+                        entityType: validated.entityType as EntityTypeEnum
+                    },
+                    execCtx?.tx
+                );
                 if (existing) {
                     throw new ServiceError(
                         ServiceErrorCode.VALIDATION_ERROR,
                         'Tag already associated with entity'
                     );
                 }
-                await this.relatedModel.create({
-                    tagId: validated.tagId,
-                    entityId: validated.entityId,
-                    entityType: validated.entityType as EntityTypeEnum
-                });
+                await this.relatedModel.create(
+                    {
+                        tagId: validated.tagId,
+                        entityId: validated.entityId,
+                        entityType: validated.entityType as EntityTypeEnum
+                    },
+                    execCtx?.tx
+                );
                 return { success: true };
             }
         });
@@ -396,24 +402,30 @@ export class TagService extends BaseCrudRelatedService<
             input: { actor, ...params },
             schema: TagRemoveFromEntityInputSchema.strict(),
             ctx,
-            execute: async (validated) => {
+            execute: async (validated, _actor, execCtx) => {
                 await this._canUpdate(actor, { id: validated.tagId } as Tag);
-                const existing = await this.relatedModel.findOne({
-                    tagId: validated.tagId,
-                    entityId: validated.entityId,
-                    entityType: validated.entityType as EntityTypeEnum
-                });
+                const existing = await this.relatedModel.findOne(
+                    {
+                        tagId: validated.tagId,
+                        entityId: validated.entityId,
+                        entityType: validated.entityType as EntityTypeEnum
+                    },
+                    execCtx?.tx
+                );
                 if (!existing) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'Tag-entity relation not found'
                     );
                 }
-                await this.relatedModel.hardDelete({
-                    tagId: validated.tagId,
-                    entityId: validated.entityId,
-                    entityType: validated.entityType as EntityTypeEnum
-                });
+                await this.relatedModel.hardDelete(
+                    {
+                        tagId: validated.tagId,
+                        entityId: validated.entityId,
+                        entityType: validated.entityType as EntityTypeEnum
+                    },
+                    execCtx?.tx
+                );
                 return { success: true };
             }
         });
