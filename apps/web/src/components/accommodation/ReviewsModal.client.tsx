@@ -48,8 +48,8 @@ export function ReviewsModal({ accommodationId, reviewsCount, locale }: ReviewsM
                     pageSize: 10
                 });
                 if (result.ok && result.data) {
-                    const items = (result.data as { items?: ReviewItem[] }).items ?? [];
-                    setReviews((prev) => (pageNum === 1 ? items : [...prev, ...items]));
+                    const items = (result.data as { items?: readonly ReviewItem[] }).items ?? [];
+                    setReviews((prev) => (pageNum === 1 ? [...items] : [...prev, ...items]));
                     const pagination = (result.data as { pagination?: { total?: number } })
                         .pagination;
                     setHasMore(pageNum * 10 < (pagination?.total ?? reviewsCount));
@@ -207,6 +207,7 @@ export function ReviewsModal({ accommodationId, reviewsCount, locale }: ReviewsM
                             label={t('accommodations.detail.reviewsDetail.modal.loadMore')}
                             variant="outline-primary"
                             size="sm"
+                            shape="rounded"
                             className={styles.loadMoreBtn}
                             onClick={() => setPage((p) => p + 1)}
                         />

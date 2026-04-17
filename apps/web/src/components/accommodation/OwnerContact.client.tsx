@@ -88,6 +88,7 @@ export function OwnerContact({ userId, accommodationId, locale }: OwnerContactPr
                     label={t('accommodations.detail.owner.contactEmail')}
                     variant="outline-primary"
                     size="sm"
+                    shape="rounded"
                 />
             )}
             {contact.phone && (
@@ -96,6 +97,7 @@ export function OwnerContact({ userId, accommodationId, locale }: OwnerContactPr
                     label={t('accommodations.detail.owner.contactPhone')}
                     variant="outline-primary"
                     size="sm"
+                    shape="rounded"
                 />
             )}
             {contact.website && (
@@ -104,6 +106,7 @@ export function OwnerContact({ userId, accommodationId, locale }: OwnerContactPr
                     label={t('accommodations.detail.owner.contactWebsite')}
                     variant="outline-primary"
                     size="sm"
+                    shape="rounded"
                     target="_blank"
                     rel="noopener noreferrer"
                 />

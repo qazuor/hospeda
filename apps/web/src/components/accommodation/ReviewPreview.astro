@@ -5,6 +5,7 @@
  * Empty state when reviewsCount === 0.
  */
 import type { AccommodationDetailData } from '@/data/types';
+import GradientButton from '@/components/shared/GradientButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getInitials } from '@/lib/api/transforms';
@@ -82,15 +83,19 @@ const hasReviews = accommodation.reviewsCount > 0;
       )}
 
       {accommodation.reviewsCount > 3 && (
-        <button
-          class="btn-gradient btn-gradient--outline review-preview__view-all"
-          data-reviews-modal-trigger
-          data-accommodation-id={accommodation.id}
-          data-reviews-count={accommodation.reviewsCount}
-          type="button"
-        >
-          {t('accommodations.detail.reviewsDetail.viewAll', undefined, { n: accommodation.reviewsCount })}
-        </button>
+        <GradientButton
+          as="button"
+          label={t('accommodations.detail.reviewsDetail.viewAll', undefined, { n: accommodation.reviewsCount })}
+          variant="outline-primary"
+          size="sm"
+          shape="rounded"
+          class="review-preview__view-all"
+          data={{
+            'reviews-modal-trigger': '',
+            'accommodation-id': accommodation.id,
+            'reviews-count': accommodation.reviewsCount,
+          }}
+        />
       )}
     </>
   )}
