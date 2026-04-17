@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 18/63 tasks (28.6%)
+## Progress: 19/63 tasks (30.2%)
 
-**Last updated:** 2026-04-17T18:35:00Z
-**Status:** in-progress (Phase 2 — admin UI migration complete; apps/admin typecheck clean for SPEC-063)
+**Last updated:** 2026-04-17T20:10:00Z
+**Status:** in-progress (Phase 2 — admin UI + T-019 schema tests complete; packages/schemas typecheck clean except T-020 scope)
 
 **Average Complexity:** 2.1/2.5 (ceiling)
 **Critical Path (post-replan):** T-003 -> T-007 -> T-010 -> T-013 -> T-016a -> T-017 -> T-018a -> T-018c -> T-027 -> T-028 -> T-030 -> T-034 -> T-035 -> T-038 -> T-039 -> T-040 -> T-042 -> T-058 (18 steps)
@@ -127,7 +127,10 @@
 
 ### Tests
 
-- [ ] **T-019** (complexity: 2) — Update OwnerPromotion schema + CRUD tests
+- [x] **T-019** (complexity: 2) — Update OwnerPromotion schema + CRUD tests
+  - COMPLETED 2026-04-17 · lint: pass · typecheck: pass (2 T-019 files clean; 5 remaining errors are T-020 scope) · tests: 73/73 pass
+  - AC-002-01 coverage added at schema layer (accept DRAFT/ARCHIVED, default ACTIVE, reject invalid enum)
+  - AC-002-02 enforced via `.strict()` on UpdateInputSchema
   - Blocked by: T-007, T-008 · Blocks: none
 
 - [ ] **T-020** (complexity: 2) — Update OwnerPromotion admin-search + group tests

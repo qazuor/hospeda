@@ -675,30 +675,35 @@
         {
             "id": "T-019",
             "title": "Update OwnerPromotion schema + CRUD tests (isActive → lifecycleState)",
+            "_note": "AC-002-01 coverage added at schema layer (accept DRAFT/ARCHIVED, default ACTIVE, reject invalid enum). AC-002-02 enforced via strict() mode on UpdateInputSchema. User-approved scope expansion over subtasks 1-4 literal.",
             "description": "Update `packages/schemas/test/entities/ownerPromotion/owner-promotion.schema.test.ts` and `owner-promotion.crud.schema.test.ts`: replace all `isActive` test cases with `lifecycleState` tests. Add tests for: default ACTIVE on creation, accepts DRAFT/ACTIVE/ARCHIVED, rejects isActive field (validation error per AC-002-02).\n\nFiles: `packages/schemas/test/entities/ownerPromotion/owner-promotion.schema.test.ts`, `packages/schemas/test/entities/ownerPromotion/owner-promotion.crud.schema.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007", "T-008"],
             "blocks": [],
             "subtasks": [
-                { "title": "Replace isActive tests in schema.test.ts", "completed": false },
-                { "title": "Replace isActive tests in crud.schema.test.ts", "completed": false },
+                { "title": "Replace isActive tests in schema.test.ts", "completed": true },
+                { "title": "Replace isActive tests in crud.schema.test.ts", "completed": true },
                 {
                     "title": "Add test: isActive field in update rejected with validation error",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add test: lifecycleState defaults to ACTIVE on creation",
-                    "completed": false
+                    "completed": true
+                },
+                {
+                    "title": "Add AC-002-01 coverage: accept DRAFT/ARCHIVED + reject invalid enum",
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "testing", "phase-2", "ownerPromotion"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-17T19:00:00.000Z",
+                "completed": "2026-04-17T20:10:00.000Z"
             }
         },
         {
@@ -1769,9 +1774,9 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 45,
+        "pending": 44,
         "inProgress": 0,
-        "completed": 18,
+        "completed": 19,
         "blocked": 0,
         "averageComplexity": 2.0,
         "_replanLog": [

@@ -232,11 +232,37 @@ Admin UI scope analysis revealed that original T-016, T-017, T-018 referenced **
   - `src/components/entity-list/api/createEntityApi.ts:121` (SPEC-066 or previous)
   - `src/routes/_authed/me/accommodations/index.tsx:28` (AccommodationListFilters pageSize)
 
+### Phase 2 testing batch — T-019 complete (2026-04-17T20:10)
+
+#### T-019 — OwnerPromotion schema + CRUD tests migration
+- **Files:**
+  - `packages/schemas/test/entities/ownerPromotion/owner-promotion.schema.test.ts`
+  - `packages/schemas/test/entities/ownerPromotion/owner-promotion.crud.schema.test.ts`
+- Imported `LifecycleStatusEnum` value in both test files
+- `schema.test.ts`:
+  - Replaced `should default isActive to true` → `should default lifecycleState to ACTIVE when not provided`
+  - Added `should accept lifecycleState DRAFT` (AC-002-01)
+  - Added `should accept lifecycleState ARCHIVED` (AC-002-01)
+  - Added `should reject invalid lifecycleState enum value` (AC-002-01)
+  - Type Inference test L423: `typeof isActive === 'boolean'` → `typeof lifecycleState === 'string'` + enum membership assertion
+- `crud.schema.test.ts`:
+  - Replaced `should accept partial update with only isActive` → `should accept partial update with only lifecycleState` (uses `LifecycleStatusEnum.ARCHIVED`)
+  - Added `should reject legacy isActive field in update (strict mode, AC-002-02)` using `UpdateInputSchema.strict()`
+  - Integration workflow (L411): `updateInput.isActive=false` → `updateInput.lifecycleState=ARCHIVED`
+- Rationale for `.strict()` on AC-002-02: Zod ignores unknown keys by default; without `.strict()` `{ isActive: false }` would pass silently, violating the subtask contract "rejected with validation error". Pattern already used in same file (lines 95/107/118 for auto-generated fields).
+- Quality gate: **biome pass**, **typecheck pass** (both T-019 files clean — remaining errors are T-020 scope as forecasted), **tests 73/73 pass** (37 schema + 36 crud).
+- Scope expansion: absorbed AC-002-01 coverage at schema layer per user approval (option 1 breakdown).
+
+### Outstanding typecheck errors (unchanged, T-020 scope)
+
+- `test/entities/ownerPromotion/owner-promotion.admin-search.schema.test.ts` L178, L181, L277 → fixed in T-020
+- `test/entities/admin-search/group-c.admin-search.schema.test.ts` L109, L147 → fixed in T-020
+
 ### Next up
 
-Commit boundary for the admin UI block (8 tasks completed + T-027 partial + bookkeeping). Then:
+Commit boundary for T-019 (2 test files + bookkeeping). Then:
 
-**Phase 2 testing batch:** T-019 (schema tests), T-020 (admin-search tests), T-021 (integration: admin list AC-001-01), T-022 (integration: public default ACTIVE AC-005-01), T-023 (model findActive tests), T-024 (usage-tracking + limit-enforcement tests).
+**Phase 2 testing batch continuation:** T-020 (admin-search tests — closes the remaining 5 `packages/schemas` typecheck errors), T-021 (integration: admin list AC-001-01), T-022 (integration: public default ACTIVE AC-005-01), T-023 (model findActive tests), T-024 (usage-tracking + limit-enforcement tests).
 
 **Phase 2 cron:** T-025, T-026.
 
