@@ -11,6 +11,8 @@ import {
     createBooleanQueryParam,
     createDateQueryParam
 } from '../../api/http/base-http.schema.js';
+import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { OwnerPromotionDiscountTypeEnumSchema } from '../../enums/owner-promotion-discount-type.schema.js';
 
 /**
@@ -25,8 +27,10 @@ export const OwnerPromotionSearchHttpSchema = BaseHttpSearchSchema.extend({
     // Type filters
     discountType: OwnerPromotionDiscountTypeEnumSchema.optional(),
 
-    // Status filters with HTTP coercion
-    isActive: createBooleanQueryParam('Filter active promotions'),
+    // Lifecycle state filter (service defaults to ACTIVE when omitted per AC-005-01)
+    lifecycleState: LifecycleStatusEnumSchema.optional().describe(
+        'Filter by lifecycle state (DRAFT, ACTIVE, ARCHIVED)'
+    ),
 
     // Date range filters for validFrom with coercion
     validFromAfter: createDateQueryParam('Filter promotions valid from after this date'),
@@ -74,7 +78,7 @@ export const OwnerPromotionCreateHttpSchema = z.object({
     validFrom: z.coerce.date(),
     validUntil: z.coerce.date().optional(),
     maxRedemptions: z.coerce.number().int().min(1).optional(),
-    isActive: z.coerce.boolean().default(true)
+    lifecycleState: LifecycleStatusEnumSchema.default(LifecycleStatusEnum.ACTIVE)
 });
 
 export type OwnerPromotionCreateHttp = z.infer<typeof OwnerPromotionCreateHttpSchema>;
@@ -119,8 +123,8 @@ export const httpToDomainOwnerPromotionSearch = (
         // Type filters
         discountType: httpParams.discountType,
 
-        // Status filters
-        isActive: httpParams.isActive,
+        // Lifecycle state filter (pass through — enum string, no coercion)
+        lifecycleState: httpParams.lifecycleState,
 
         // Date range filters
         validFromAfter: httpParams.validFromAfter,
@@ -166,7 +170,7 @@ export const httpToDomainOwnerPromotionCreate = (
         validFrom: httpData.validFrom,
         validUntil: httpData.validUntil ?? null,
         maxRedemptions: httpData.maxRedemptions ?? null,
-        isActive: httpData.isActive
+        lifecycleState: httpData.lifecycleState
     };
 };
 
@@ -191,7 +195,7 @@ export const httpToDomainOwnerPromotionUpdate = (
     if (httpData.validUntil !== undefined) result.validUntil = httpData.validUntil ?? null;
     if (httpData.maxRedemptions !== undefined)
         result.maxRedemptions = httpData.maxRedemptions ?? null;
-    if (httpData.isActive !== undefined) result.isActive = httpData.isActive;
+    if (httpData.lifecycleState !== undefined) result.lifecycleState = httpData.lifecycleState;
 
     return result;
 };

@@ -5,6 +5,8 @@ import {
     OwnerPromotionIdSchema,
     UserIdSchema
 } from '../../common/id.schema.js';
+import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
+import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { OwnerPromotionDiscountTypeEnumSchema } from '../../enums/owner-promotion-discount-type.schema.js';
 
 /**
@@ -13,6 +15,7 @@ import { OwnerPromotionDiscountTypeEnumSchema } from '../../enums/owner-promotio
 export const OwnerPromotionSchema = z.object({
     id: OwnerPromotionIdSchema,
     ...BaseAuditFields,
+    ...BaseLifecycleFields,
 
     slug: z
         .string({
@@ -73,9 +76,7 @@ export const OwnerPromotionSchema = z.object({
         .number()
         .int({ message: 'zodError.ownerPromotion.currentRedemptions.int' })
         .min(0, { message: 'zodError.ownerPromotion.currentRedemptions.min' })
-        .default(0),
-
-    isActive: z.boolean().default(true)
+        .default(0)
 });
 export type OwnerPromotion = z.infer<typeof OwnerPromotionSchema>;
 
@@ -114,7 +115,7 @@ export const OwnerPromotionSearchSchema = z.object({
     ownerId: UserIdSchema.optional(),
     accommodationId: AccommodationIdSchema.optional(),
     discountType: OwnerPromotionDiscountTypeEnumSchema.optional(),
-    isActive: z.boolean().optional(),
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20)
 });

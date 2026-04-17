@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
+import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { OwnerPromotionDiscountTypeEnumSchema } from '../../enums/owner-promotion-discount-type.schema.js';
 import { OwnerPromotionSchema } from './owner-promotion.schema.js';
 
@@ -28,7 +29,7 @@ export const OwnerPromotionFiltersSchema = z.object({
     discountType: OwnerPromotionDiscountTypeEnumSchema.optional(),
 
     // Status filters
-    isActive: z.boolean().optional(),
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
 
     // Date range filters for validFrom
     validFromAfter: z.date().optional(),
@@ -82,7 +83,7 @@ export const OwnerPromotionQuerySchema = BaseSearchSchema.extend({
     discountType: OwnerPromotionDiscountTypeEnumSchema.optional(),
 
     // Status filters
-    isActive: z.boolean().optional(),
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
 
     // Date range filters for validFrom
     validFromAfter: z.date().optional(),
@@ -128,7 +129,7 @@ export const OwnerPromotionListItemSchema = OwnerPromotionSchema.pick({
     title: true,
     discountType: true,
     discountValue: true,
-    isActive: true,
+    lifecycleState: true,
     validFrom: true,
     validUntil: true,
     currentRedemptions: true,
@@ -175,7 +176,7 @@ export const OwnerPromotionSummarySchema = OwnerPromotionSchema.pick({
     title: true,
     discountType: true,
     discountValue: true,
-    isActive: true,
+    lifecycleState: true,
     validFrom: true,
     validUntil: true
 });

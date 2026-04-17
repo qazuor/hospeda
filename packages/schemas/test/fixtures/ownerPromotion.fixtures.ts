@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { LifecycleStatusEnum } from '../../src/enums/lifecycle-state.enum.js';
 import { OwnerPromotionDiscountTypeEnum } from '../../src/enums/owner-promotion-discount-type.enum.js';
 import { createBaseAuditFields, createBaseIdFields } from './common.fixtures.js';
 
@@ -47,7 +48,11 @@ const createOwnerPromotionEntityFields = () => {
             probability: 0.6
         }),
         currentRedemptions: faker.number.int({ min: 0, max: 50 }),
-        isActive: faker.datatype.boolean()
+        lifecycleState: faker.helpers.arrayElement([
+            LifecycleStatusEnum.DRAFT,
+            LifecycleStatusEnum.ACTIVE,
+            LifecycleStatusEnum.ARCHIVED
+        ])
     };
 };
 
@@ -77,7 +82,7 @@ export const createMinimalOwnerPromotion = () => ({
     discountValue: 20,
     validFrom: new Date('2024-06-01'),
     currentRedemptions: 0,
-    isActive: true
+    lifecycleState: LifecycleStatusEnum.ACTIVE
 });
 
 /**
@@ -109,7 +114,7 @@ export const createOwnerPromotionCreateInput = () => {
         maxRedemptions: faker.helpers.maybe(() => faker.number.int({ min: 1, max: 500 }), {
             probability: 0.5
         }),
-        isActive: true
+        lifecycleState: LifecycleStatusEnum.ACTIVE
     };
 };
 
@@ -119,7 +124,11 @@ export const createOwnerPromotionCreateInput = () => {
 export const createOwnerPromotionUpdateInput = () => ({
     title: faker.lorem.words({ min: 3, max: 6 }).slice(0, 100),
     description: faker.lorem.paragraph().slice(0, 500),
-    isActive: faker.datatype.boolean(),
+    lifecycleState: faker.helpers.arrayElement([
+        LifecycleStatusEnum.DRAFT,
+        LifecycleStatusEnum.ACTIVE,
+        LifecycleStatusEnum.ARCHIVED
+    ]),
     discountValue: faker.number.float({ min: 1, max: 50, fractionDigits: 2 })
 });
 

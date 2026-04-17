@@ -1,5 +1,4 @@
-import { z } from 'zod';
-import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+import type { z } from 'zod';
 import {
     AccommodationAdminSchema,
     AccommodationProtectedSchema,
@@ -40,10 +39,7 @@ export const OwnerPromotionPublicSchema = OwnerPromotionSchema.pick({
 
     // Validity period (public)
     validFrom: true,
-    validUntil: true,
-
-    // Status
-    isActive: true
+    validUntil: true
 }).extend({
     /** Resolved owner data (public tier). Available when the API joins the user. */
     owner: UserPublicSchema.optional(),
@@ -73,7 +69,6 @@ export const OwnerPromotionProtectedSchema = OwnerPromotionSchema.pick({
     minNights: true,
     validFrom: true,
     validUntil: true,
-    isActive: true,
 
     // Ownership
     ownerId: true,
@@ -100,19 +95,14 @@ export type OwnerPromotionProtected = z.infer<typeof OwnerPromotionProtectedSche
  * Contains ALL fields including sensitive admin-only data.
  * Used for admin dashboard, moderation, and management.
  *
- * Extends the full schema with relation objects (admin tier) and the preemptive
- * lifecycleState field that will be promoted to OwnerPromotionSchema in SPEC-063.
+ * Extends the full schema with relation objects (admin tier). The `lifecycleState`
+ * field is already included via the base schema's `BaseLifecycleFields` spread.
  */
 export const OwnerPromotionAdminSchema = OwnerPromotionSchema.extend({
     /** Resolved owner data (admin tier). Available when the API joins the user. */
     owner: UserAdminSchema.optional(),
     /** Resolved accommodation data (admin tier). Available when the API joins the record. */
-    accommodation: AccommodationAdminSchema.optional(),
-    /**
-     * Preemptive SPEC-063 field.
-     * Will be promoted to the base OwnerPromotionSchema once SPEC-063 is applied.
-     */
-    lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()
+    accommodation: AccommodationAdminSchema.optional()
 });
 
 export type OwnerPromotionAdmin = z.infer<typeof OwnerPromotionAdminSchema>;
