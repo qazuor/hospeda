@@ -101,12 +101,10 @@ describe('Group C Admin Search Schemas', () => {
         it('should accept promotion-specific filters', () => {
             const result = OwnerPromotionAdminSearchSchema.parse({
                 accommodationId: '550e8400-e29b-41d4-a716-446655440000',
-                ownerId: '550e8400-e29b-41d4-a716-446655440001',
-                isActive: true
+                ownerId: '550e8400-e29b-41d4-a716-446655440001'
             });
             expect(result.accommodationId).toBe('550e8400-e29b-41d4-a716-446655440000');
             expect(result.ownerId).toBe('550e8400-e29b-41d4-a716-446655440001');
-            expect(result.isActive).toBe(true);
         });
 
         it('should accept percentage discount type', () => {
@@ -142,9 +140,11 @@ describe('Group C Admin Search Schemas', () => {
             );
         });
 
-        it('should coerce string boolean for isActive', () => {
-            const result = OwnerPromotionAdminSearchSchema.parse({ isActive: 'true' });
-            expect(result.isActive).toBe(true);
+        it('should accept status enum values (DRAFT, ACTIVE, ARCHIVED) via base schema', () => {
+            for (const status of ['DRAFT', 'ACTIVE', 'ARCHIVED'] as const) {
+                const result = OwnerPromotionAdminSearchSchema.parse({ status });
+                expect(result.status).toBe(status);
+            }
         });
     });
 });

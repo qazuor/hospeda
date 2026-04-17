@@ -155,31 +155,63 @@ describe('OwnerPromotionAdminSearchSchema', () => {
             // Assert
             expect(result.success).toBe(false);
         });
+    });
 
-        it('should validate isActive as boolean', () => {
-            // Arrange
-            const inputTrue = { isActive: true };
-            const inputFalse = { isActive: false };
+    describe('Lifecycle Status Filter (via base status field)', () => {
+        // status is inherited from AdminSearchBaseSchema as an enum:
+        // ['all', 'DRAFT', 'ACTIVE', 'ARCHIVED'] with default 'all'.
+        // adminList() maps non-'all' values to lifecycleState filter.
 
-            // Act & Assert
-            expect(OwnerPromotionAdminSearchSchema.safeParse(inputTrue).success).toBe(true);
-            expect(OwnerPromotionAdminSearchSchema.safeParse(inputFalse).success).toBe(true);
-        });
-
-        it('should validate isActive as string "true"/"false" (query param coercion)', () => {
+        it('should default status to "all" when not provided', () => {
             // Arrange & Act
-            const resultTrue = OwnerPromotionAdminSearchSchema.safeParse({ isActive: 'true' });
-            const resultFalse = OwnerPromotionAdminSearchSchema.safeParse({ isActive: 'false' });
+            const result = OwnerPromotionAdminSearchSchema.safeParse({});
 
             // Assert
-            expect(resultTrue.success).toBe(true);
-            expect(resultFalse.success).toBe(true);
-            if (resultTrue.success) {
-                expect(resultTrue.data.isActive).toBe(true);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.status).toBe('all');
             }
-            if (resultFalse.success) {
-                expect(resultFalse.data.isActive).toBe(false);
+        });
+
+        it('should accept status "DRAFT"', () => {
+            // Arrange & Act
+            const result = OwnerPromotionAdminSearchSchema.safeParse({ status: 'DRAFT' });
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.status).toBe('DRAFT');
             }
+        });
+
+        it('should accept status "ACTIVE"', () => {
+            // Arrange & Act
+            const result = OwnerPromotionAdminSearchSchema.safeParse({ status: 'ACTIVE' });
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.status).toBe('ACTIVE');
+            }
+        });
+
+        it('should accept status "ARCHIVED"', () => {
+            // Arrange & Act
+            const result = OwnerPromotionAdminSearchSchema.safeParse({ status: 'ARCHIVED' });
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.status).toBe('ARCHIVED');
+            }
+        });
+
+        it('should reject invalid status value', () => {
+            // Arrange & Act
+            const result = OwnerPromotionAdminSearchSchema.safeParse({ status: 'INVALID' });
+
+            // Assert
+            expect(result.success).toBe(false);
         });
     });
 
@@ -261,8 +293,7 @@ describe('OwnerPromotionAdminSearchSchema', () => {
                 includeDeleted: false,
                 ownerId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
                 accommodationId: 'e47ac10b-58cc-4372-a567-0e02b2c3d479',
-                discountType: OwnerPromotionDiscountTypeEnum.PERCENTAGE,
-                isActive: true
+                discountType: OwnerPromotionDiscountTypeEnum.PERCENTAGE
             };
 
             // Act
@@ -273,8 +304,8 @@ describe('OwnerPromotionAdminSearchSchema', () => {
             if (result.success) {
                 expect(result.data.page).toBe(2);
                 expect(result.data.pageSize).toBe(25);
+                expect(result.data.status).toBe('ACTIVE');
                 expect(result.data.discountType).toBe(OwnerPromotionDiscountTypeEnum.PERCENTAGE);
-                expect(result.data.isActive).toBe(true);
             }
         });
 
