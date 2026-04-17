@@ -7,7 +7,7 @@
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import styles from '../FilterSidebar.module.css';
+import styles from './FilterGroupContent.module.css';
 import { DualRangeFilter } from './DualRangeFilter';
 import { IconChipsFilter } from './IconChipsFilter';
 import { SelectSearchFilter } from './SelectSearchFilter';

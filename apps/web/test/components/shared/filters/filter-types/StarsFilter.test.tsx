@@ -5,8 +5,8 @@
  * maxStars config, and aria-label attributes.
  */
 
-import { StarsFilter } from '@/components/shared/filter-types/StarsFilter';
-import type { StarsFilterConfig } from '@/components/shared/filter-types/StarsFilter';
+import { StarsFilter } from '@/components/shared/filters/filter-types/StarsFilter';
+import type { StarsFilterConfig } from '@/components/shared/filters/filter-types/StarsFilter';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -17,7 +17,7 @@ vi.mock('@/lib/i18n', () => ({
     })
 }));
 
-vi.mock('@/components/shared/FilterSidebar.module.css', () => ({
+vi.mock('@/components/shared/filters/FilterSidebar.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
 
@@ -158,7 +158,7 @@ describe('StarsFilter', () => {
             const src = readFileSync(
                 resolve(
                     __dirname,
-                    '../../../../src/components/shared/filter-types/StarsFilter.tsx'
+                    '../../../../../src/components/shared/filters/filter-types/StarsFilter.tsx'
                 ),
                 'utf8'
             );

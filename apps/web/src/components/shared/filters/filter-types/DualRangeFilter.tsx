@@ -7,7 +7,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import styles from '../FilterSidebar.module.css';
+import styles from './DualRangeFilter.module.css';
 
 /** Configuration for a dual-range filter group. */
 export interface DualRangeFilterConfig {

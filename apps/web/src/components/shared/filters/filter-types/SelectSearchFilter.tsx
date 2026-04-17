@@ -7,7 +7,7 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { useState } from 'react';
-import styles from '../FilterSidebar.module.css';
+import styles from './SelectSearchFilter.module.css';
 
 /** Configuration for a select-search filter group. */
 export interface SelectSearchFilterConfig {

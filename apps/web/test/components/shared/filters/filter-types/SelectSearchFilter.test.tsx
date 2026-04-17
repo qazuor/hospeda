@@ -5,8 +5,8 @@
  * chip display/removal, and "show more / show less" pagination.
  */
 
-import { SelectSearchFilter } from '@/components/shared/filter-types/SelectSearchFilter';
-import type { SelectSearchFilterConfig } from '@/components/shared/filter-types/SelectSearchFilter';
+import { SelectSearchFilter } from '@/components/shared/filters/filter-types/SelectSearchFilter';
+import type { SelectSearchFilterConfig } from '@/components/shared/filters/filter-types/SelectSearchFilter';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -17,7 +17,7 @@ vi.mock('@/lib/i18n', () => ({
     })
 }));
 
-vi.mock('@/components/shared/FilterSidebar.module.css', () => ({
+vi.mock('@/components/shared/filters/FilterSidebar.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
 

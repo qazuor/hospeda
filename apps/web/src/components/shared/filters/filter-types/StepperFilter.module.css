@@ -1,0 +1,61 @@
+/* StepperFilter.module.css
+ * Numeric stepper (− value +) used inside FilterSidebar groups.
+ * Uses CSS custom properties from global.css — never hardcode values.
+ */
+
+.stepperRow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0.25rem 0;
+}
+
+.stepperBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex-shrink: 0;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: none;
+    font-size: 1.125rem;
+    line-height: 1;
+    color: var(--foreground);
+    cursor: pointer;
+    transition: color var(--duration-fast) ease, border-color var(--duration-fast) ease,
+        background-color var(--duration-fast) ease;
+}
+
+.stepperBtn:hover:not(:disabled) {
+    border-color: var(--brand-accent);
+    color: var(--brand-accent);
+    background-color: oklch(from var(--brand-accent) l c h / 0.06);
+}
+
+.stepperBtn:active:not(:disabled) {
+    background-color: oklch(from var(--brand-accent) l c h / 0.12);
+}
+
+.stepperBtnDisabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.stepperValue {
+    min-width: 2.5rem;
+    text-align: center;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--foreground);
+    font-variant-numeric: tabular-nums;
+}
+
+.stepperSuffix {
+    font-weight: 400;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+}

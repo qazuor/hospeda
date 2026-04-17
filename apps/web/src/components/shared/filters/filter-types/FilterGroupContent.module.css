@@ -1,0 +1,134 @@
+/* FilterGroupContent.module.css
+ * Inline filter controls rendered by FilterGroupContent for the built-in
+ * group types (search, checkbox, radio, range). Filter types implemented
+ * as separate components ship their own .module.css next to the TSX file.
+ * Uses CSS custom properties from global.css — never hardcode values.
+ */
+
+.searchInput {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button);
+    background-color: var(--background);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--foreground);
+    transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+
+.searchInput::placeholder {
+    color: var(--muted-foreground);
+}
+
+.searchInput:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.1);
+    outline: none;
+}
+
+/* Checkbox group (chip-styled toggles) */
+.chipGroup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+.filterChip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.375rem 0.75rem;
+    background-color: oklch(from var(--foreground) l c h / 0.04);
+    color: var(--muted-foreground);
+    border: 1px solid oklch(from var(--border) l c h / 0.6);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease, border-color var(--duration-fast) ease,
+        color var(--duration-fast) ease;
+    user-select: none;
+}
+
+.filterChip:hover {
+    background-color: oklch(from var(--brand-primary) l c h / 0.06);
+    border-color: oklch(from var(--brand-primary) l c h / 0.2);
+    color: var(--brand-primary);
+}
+
+.filterChipActive {
+    background-color: oklch(from var(--brand-primary) l c h / 0.1);
+    color: var(--brand-primary);
+    border-color: oklch(from var(--brand-primary) l c h / 0.25);
+    font-weight: 600;
+}
+
+.filterChipActive:hover {
+    background-color: oklch(from var(--brand-primary) l c h / 0.15);
+    border-color: oklch(from var(--brand-primary) l c h / 0.35);
+}
+
+/* Radio group */
+.radioLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--foreground);
+    cursor: pointer;
+    padding: 0.3125rem 0;
+    border-radius: 0.25rem;
+    transition: color var(--duration-fast) ease;
+}
+
+.radioLabel:hover {
+    color: var(--brand-primary);
+}
+
+.radio {
+    width: 1.0625rem;
+    height: 1.0625rem;
+    accent-color: var(--brand-accent);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* Legacy numeric range (two number inputs with a separator). */
+.rangeInputs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.rangeInput {
+    flex: 1;
+    min-width: 0;
+    padding: 0.5rem 0.625rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button);
+    background-color: var(--background);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--foreground);
+    transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+
+.rangeInput:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.1);
+    outline: none;
+}
+
+.rangeInput::-webkit-inner-spin-button,
+.rangeInput::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.rangeSeparator {
+    color: var(--muted-foreground);
+    flex-shrink: 0;
+    font-size: 0.75rem;
+}

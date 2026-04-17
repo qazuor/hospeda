@@ -10,7 +10,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { resolveIcon } from '@repo/icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import styles from '../FilterSidebar.module.css';
+import styles from './IconChipsFilter.module.css';
 import type { IconChipsFilterConfig } from './filter.types';
 
 /** Props for the IconChipsFilter component. */

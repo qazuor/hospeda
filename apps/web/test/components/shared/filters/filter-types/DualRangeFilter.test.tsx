@@ -5,8 +5,8 @@
  * label formatting, and onMinChange/onMaxChange callbacks.
  */
 
-import { DualRangeFilter } from '@/components/shared/filter-types/DualRangeFilter';
-import type { DualRangeFilterConfig } from '@/components/shared/filter-types/DualRangeFilter';
+import { DualRangeFilter } from '@/components/shared/filters/filter-types/DualRangeFilter';
+import type { DualRangeFilterConfig } from '@/components/shared/filters/filter-types/DualRangeFilter';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -17,7 +17,7 @@ vi.mock('@/lib/i18n', () => ({
     })
 }));
 
-vi.mock('@/components/shared/FilterSidebar.module.css', () => ({
+vi.mock('@/components/shared/filters/FilterSidebar.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
 

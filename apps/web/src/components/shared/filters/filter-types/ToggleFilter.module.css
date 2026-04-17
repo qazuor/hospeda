@@ -1,0 +1,65 @@
+/* ToggleFilter.module.css
+ * Checkbox-as-switch control used inside FilterSidebar groups.
+ * Uses CSS custom properties from global.css — never hardcode values.
+ */
+
+.toggleLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--foreground);
+    cursor: pointer;
+    padding: 0.25rem 0;
+}
+
+.toggleInput {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+.toggleTrack {
+    position: relative;
+    display: inline-block;
+    width: 2.75rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+    background-color: oklch(from var(--border) l c h / 0.8);
+    border-radius: var(--radius-pill);
+    transition: background-color var(--duration-fast) ease;
+}
+
+.toggleInput:checked ~ * .toggleTrack,
+.toggleLabel:has(.toggleInput:checked) .toggleTrack {
+    background-color: var(--brand-accent);
+}
+
+.toggleThumb {
+    position: absolute;
+    top: 0.1875rem;
+    left: 0.1875rem;
+    width: 1.125rem;
+    height: 1.125rem;
+    background: white;
+    border-radius: var(--radius-pill);
+    transition: transform var(--duration-fast) ease;
+    box-shadow: 0 1px 3px oklch(0 0 0 / 0.15);
+}
+
+.toggleLabel:has(.toggleInput:checked) .toggleThumb {
+    transform: translateX(1.25rem);
+}
+
+/* Focus ring for toggle */
+.toggleLabel:has(.toggleInput:focus-visible) .toggleTrack {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}

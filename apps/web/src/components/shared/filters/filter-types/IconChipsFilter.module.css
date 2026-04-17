@@ -1,0 +1,200 @@
+/* IconChipsFilter.module.css
+ * Icon chip selector with "Ver más" dialog, used inside FilterSidebar groups.
+ * Uses CSS custom properties from global.css — never hardcode values.
+ */
+
+.iconChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.625rem;
+    background-color: oklch(from var(--foreground) l c h / 0.04);
+    color: var(--muted-foreground);
+    border: 1px solid oklch(from var(--border) l c h / 0.6);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease, border-color var(--duration-fast) ease,
+        color var(--duration-fast) ease;
+    user-select: none;
+}
+
+.iconChip:hover {
+    background-color: oklch(from var(--brand-primary) l c h / 0.06);
+    border-color: oklch(from var(--brand-primary) l c h / 0.2);
+    color: var(--brand-primary);
+}
+
+.iconChipActive {
+    background-color: oklch(from var(--brand-primary) l c h / 0.1);
+    color: var(--brand-primary);
+    border-color: oklch(from var(--brand-primary) l c h / 0.25);
+    font-weight: 600;
+}
+
+.iconChipActive:hover {
+    background-color: oklch(from var(--brand-primary) l c h / 0.15);
+    border-color: oklch(from var(--brand-primary) l c h / 0.35);
+}
+
+.iconChipIcon {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Wrapper that lays out the visible chips (and the "Ver más" trigger). */
+.chipGroup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+/* "Ver más" trigger */
+.showMoreBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.375rem 0.625rem;
+    background: none;
+    border: 1px dashed oklch(from var(--border) l c h / 0.6);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--brand-primary);
+    cursor: pointer;
+    transition: border-color var(--duration-fast) ease, background-color var(--duration-fast) ease;
+}
+
+.showMoreBtn:hover {
+    background-color: oklch(from var(--brand-primary) l c h / 0.04);
+    border-color: oklch(from var(--brand-primary) l c h / 0.3);
+}
+
+/* Search input rendered inside the dialog header. */
+.searchInput {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button);
+    background-color: var(--background);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--foreground);
+    transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+
+.searchInput::placeholder {
+    color: var(--muted-foreground);
+}
+
+.searchInput:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.1);
+    outline: none;
+}
+
+/* Icon chips dialog — hidden by default, visible when open */
+.iconChipsDialog {
+    display: none;
+}
+
+.iconChipsDialog[open] {
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: oklch(0 0 0 / 0.45);
+    border: none;
+    padding: 1rem;
+    max-width: 100%;
+    max-height: 100%;
+    width: 100%;
+    height: 100%;
+}
+
+.iconChipsDialog::backdrop {
+    display: none;
+}
+
+.iconChipsDialogPanel {
+    background-color: var(--card);
+    border-radius: 1rem;
+    box-shadow: 0 4px 24px oklch(0 0 0 / 0.15);
+    max-width: 480px;
+    width: 100%;
+    max-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.iconChipsDialogHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid oklch(from var(--border) l c h / 0.5);
+    flex-shrink: 0;
+}
+
+.iconChipsDialogTitle {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--foreground);
+    margin: 0;
+}
+
+.iconChipsDialogClose {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: none;
+    font-size: 1.125rem;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    transition: color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+    flex-shrink: 0;
+}
+
+.iconChipsDialogClose:hover {
+    color: var(--foreground);
+    border-color: var(--foreground);
+}
+
+.iconChipsDialogSearch {
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid oklch(from var(--border) l c h / 0.3);
+    flex-shrink: 0;
+}
+
+.iconChipsDialogBody {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.75rem 1.25rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.iconChipsDialogCategory {
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.25rem 0;
+    margin: 0;
+}

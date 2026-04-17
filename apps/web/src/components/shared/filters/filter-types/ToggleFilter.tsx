@@ -4,7 +4,7 @@
  */
 
 import type { SupportedLocale } from '@/lib/i18n';
-import styles from '../FilterSidebar.module.css';
+import styles from './ToggleFilter.module.css';
 
 /** Configuration for a toggle filter group. */
 export interface ToggleFilterConfig {

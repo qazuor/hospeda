@@ -1,0 +1,81 @@
+/* StarsFilter.module.css
+ * Star-rating selector used inside FilterSidebar groups.
+ * Uses CSS custom properties from global.css — never hardcode values.
+ */
+
+.starsFieldset {
+    border: none;
+    padding: 0.25rem 0;
+    margin: 0;
+}
+
+.starsRow {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.starBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    font-size: 1.375rem;
+    line-height: 1;
+    cursor: pointer;
+    color: oklch(from var(--border) l c h / 0.8);
+    border-radius: 0.375rem;
+    transition: color var(--duration-fast) ease, transform var(--duration-fast) ease,
+        background-color var(--duration-fast) ease;
+    user-select: none;
+}
+
+.starBtn:hover,
+.starBtn:focus-within {
+    color: var(--brand-accent);
+    transform: scale(1.1);
+    background-color: oklch(from var(--brand-accent) l c h / 0.06);
+}
+
+.starBtnFilled {
+    color: var(--brand-accent);
+}
+
+/* Visually-hidden helper for the legend and the hidden radio inputs. */
+.visuallyHidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Optional "include items without a rating" checkbox shown below the row. */
+.includeNullLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    padding: 0.25rem 0 0;
+    transition: color var(--duration-fast) ease;
+}
+
+.includeNullLabel:hover {
+    color: var(--foreground);
+}
+
+.includeNullCheckbox {
+    width: 0.875rem;
+    height: 0.875rem;
+    accent-color: var(--brand-accent);
+    cursor: pointer;
+    flex-shrink: 0;
+}

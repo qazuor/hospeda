@@ -7,7 +7,7 @@
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import styles from '../FilterSidebar.module.css';
+import styles from './StarsFilter.module.css';
 
 /** Configuration for a stars filter group. */
 export interface StarsFilterConfig {

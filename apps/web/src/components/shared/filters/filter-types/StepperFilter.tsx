@@ -6,7 +6,7 @@
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import styles from '../FilterSidebar.module.css';
+import styles from './StepperFilter.module.css';
 
 /** Configuration for a stepper filter group. */
 export interface StepperFilterConfig {
