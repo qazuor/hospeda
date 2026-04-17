@@ -158,6 +158,24 @@ vi.mock('../../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
 
+// Mock @repo/service-core so withServiceTransaction delegates to the test's
+// db.transaction() mock — this preserves all existing assertions that check
+// db.transaction was called and inspect the trx object.
+// NOTE: importOriginal is avoided here because this test file has a partial
+// @repo/schemas mock that would break real service-core module loading.
+// getDb is imported lazily inside the mock factory to avoid circular issues.
+vi.mock('@repo/service-core', async () => {
+    return {
+        withServiceTransaction: vi.fn(async (cb: (ctx: unknown) => Promise<unknown>) => {
+            const { getDb } = await import('@repo/db');
+            const db = getDb() as {
+                transaction: (fn: (tx: unknown) => Promise<unknown>) => Promise<unknown>;
+            };
+            return db.transaction(async (tx: unknown) => cb({ tx, hookState: {} }));
+        })
+    };
+});
+
 import { getDb } from '@repo/db';
 // ---------------------------------------------------------------------------
 // Imports (after all mocks)

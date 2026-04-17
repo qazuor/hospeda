@@ -28,6 +28,23 @@ vi.mock('../../src/middlewares/entitlement.js', () => ({
     clearEntitlementCache: vi.fn()
 }));
 
+// Mock withServiceTransaction so it delegates to db.transaction(), preserving
+// the existing test assertions that verify dbMock.transaction was called and
+// that dbMock.tx receives the Drizzle operations.
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    const { getDb } = await import('@repo/db');
+    return {
+        ...actual,
+        withServiceTransaction: vi.fn(async (cb: (ctx: unknown) => Promise<unknown>) => {
+            const db = getDb() as {
+                transaction: (fn: (tx: unknown) => Promise<unknown>) => Promise<unknown>;
+            };
+            return db.transaction(async (tx: unknown) => cb({ tx, hookState: {} }));
+        })
+    };
+});
+
 // Hoisted stubs for addon lifecycle services so tests can control their behavior.
 const { mockHandleCancellationAddons, mockHandlePlanChangeRecalculation } = vi.hoisted(() => ({
     mockHandleCancellationAddons: vi.fn().mockResolvedValue(undefined),
