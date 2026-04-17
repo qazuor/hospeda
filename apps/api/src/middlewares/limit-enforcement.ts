@@ -19,6 +19,7 @@
  */
 
 import { LimitKey } from '@repo/billing';
+import { LifecycleStatusEnum } from '@repo/schemas';
 import {
     AccommodationService,
     OwnerPromotionService,
@@ -315,7 +316,7 @@ export function enforcePromotionLimit(): AppMiddleware {
             // the concrete schema type. The filter shape matches OwnerPromotionSearchSchema.
             const promotionService = new OwnerPromotionService({ logger: apiLogger });
             const countResult = await promotionService.count(actor, {
-                isActive: true,
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
                 ownerId: actor.id
             } as never);
 

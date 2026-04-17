@@ -100,7 +100,7 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
                 .where(
                     and(
                         eq(ownerPromotions.accommodationId, accommodationId),
-                        eq(ownerPromotions.isActive, true),
+                        eq(ownerPromotions.lifecycleState, 'ACTIVE'),
                         lte(ownerPromotions.validFrom, now),
                         gte(ownerPromotions.validUntil, now)
                     )
@@ -144,7 +144,7 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
                 .where(
                     and(
                         eq(ownerPromotions.ownerId, ownerId),
-                        eq(ownerPromotions.isActive, true),
+                        eq(ownerPromotions.lifecycleState, 'ACTIVE'),
                         lte(ownerPromotions.validFrom, now),
                         gte(ownerPromotions.validUntil, now)
                     )

@@ -19,7 +19,7 @@ import { LIMIT_METADATA, LimitKey } from '@repo/billing';
 import { getDb } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
-import { ServiceErrorCode } from '@repo/schemas';
+import { LifecycleStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import {
     AccommodationService,
     type LimitUsage,
@@ -404,7 +404,7 @@ export class UsageTrackingService {
                 case LimitKey.MAX_ACTIVE_PROMOTIONS: {
                     const promotionService = new OwnerPromotionService({ logger: apiLogger });
                     const result = await promotionService.count(actor, {
-                        isActive: true,
+                        lifecycleState: LifecycleStatusEnum.ACTIVE,
                         ownerId: userId
                     } as never);
                     return result.data?.count || 0;

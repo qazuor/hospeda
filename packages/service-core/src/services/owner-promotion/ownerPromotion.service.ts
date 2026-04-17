@@ -5,6 +5,7 @@ import type {
     OwnerPromotionSearchInput
 } from '@repo/schemas';
 import {
+    LifecycleStatusEnum,
     OwnerPromotionAdminSearchSchema,
     OwnerPromotionCreateInputSchema,
     OwnerPromotionSearchSchema,
@@ -125,6 +126,12 @@ export class OwnerPromotionService extends BaseCrudService<
         _ctx: ServiceContext
     ) {
         const { page = 1, limit = 20, ...filterParams } = params;
+        // AC-005-01: default to ACTIVE lifecycle so DRAFT and ARCHIVED
+        // promotions stay hidden from public/protected callers. Admin path
+        // (adminList -> _executeAdminSearch) is unaffected.
+        if (filterParams.lifecycleState === undefined) {
+            filterParams.lifecycleState = LifecycleStatusEnum.ACTIVE;
+        }
         return this.model.findAll(filterParams, { page, pageSize: limit });
     }
 
