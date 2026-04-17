@@ -10,6 +10,7 @@
  * handler so its visual style stays in sync with the navbar's current state.
  */
 
+import { IconButton } from '@/components/ui/IconButton';
 import { cn } from '@/lib/cn';
 import { MoonIcon, SunIcon } from '@repo/icons';
 import type { JSX } from 'react';
@@ -96,14 +97,13 @@ export function ThemeToggle({
     };
 
     return (
-        <button
-            type="button"
+        <IconButton
+            variant="ghost"
+            size="sm"
+            ariaLabel={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            aria={{ pressed: isDark }}
             onClick={handleToggle}
-            aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-            className={cn(
-                styles.toggle,
-                activeVariant === 'hero' ? styles.toggleHero : styles.toggleScrolled
-            )}
+            className={cn(activeVariant === 'hero' ? styles.toggleHero : styles.toggleScrolled)}
         >
             {isDark ? (
                 <MoonIcon
@@ -118,6 +118,6 @@ export function ThemeToggle({
                     aria-hidden="true"
                 />
             )}
-        </button>
+        </IconButton>
     );
 }
