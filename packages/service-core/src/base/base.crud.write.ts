@@ -40,6 +40,25 @@ export abstract class BaseCrudWrite<
     TSearchSchema extends ZodObject
 > extends BaseCrudRead<TEntity, TModel, TCreateSchema, TUpdateSchema, TSearchSchema> {
     /**
+     * Re-fetches an entity with write-response relations if `getDefaultWriteResponseRelations()`
+     * returns a config. Otherwise returns the entity as-is.
+     */
+    private async _refetchWithWriteRelations(
+        entity: TEntity,
+        execCtx?: ServiceContext
+    ): Promise<TEntity> {
+        const writeRelations = this.getDefaultWriteResponseRelations();
+        if (!writeRelations) return entity;
+        const entityId = (entity as Record<string, unknown>).id as string;
+        const refetched = await this.model.findOneWithRelations(
+            { id: entityId },
+            writeRelations,
+            execCtx?.tx
+        );
+        return (refetched as TEntity) ?? entity;
+    }
+
+    /**
      * Creates a new entity following a full lifecycle pipeline.
      *
      * Lifecycle steps:
@@ -96,7 +115,8 @@ export abstract class BaseCrudWrite<
                         `Failed to create ${this.entityName}. The operation returned no result.`
                     );
                 }
-                return this._afterCreate(entity, validatedActor, execCtx);
+                const afterEntity = await this._afterCreate(entity, validatedActor, execCtx);
+                return this._refetchWithWriteRelations(afterEntity, execCtx);
             }
         });
     }
@@ -204,7 +224,8 @@ export abstract class BaseCrudWrite<
                     );
                 }
 
-                return this._afterUpdate(updatedEntity, validActor, execCtx);
+                const afterEntity = await this._afterUpdate(updatedEntity, validActor, execCtx);
+                return this._refetchWithWriteRelations(afterEntity, execCtx);
             }
         });
     }
@@ -467,7 +488,7 @@ export abstract class BaseCrudWrite<
                     );
                 }
 
-                return updatedEntity;
+                return this._refetchWithWriteRelations(updatedEntity, execCtx);
             }
         });
     }
