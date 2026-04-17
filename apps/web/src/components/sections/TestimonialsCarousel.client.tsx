@@ -12,6 +12,7 @@
 
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { ReviewCard } from '@/components/shared/ReviewCard';
+import { IconButton } from '@/components/ui/IconButton';
 import type { ReviewCardData } from '@/data/types';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -152,19 +153,20 @@ function TestimonialsCarouselInner({
             {/* Carousel viewport with arrows */}
             <div className={styles.carouselArea}>
                 {/* Prev arrow */}
-                <button
-                    type="button"
-                    className={cn(styles.arrow, styles.arrowPrev)}
+                <IconButton
+                    ariaLabel={t('review.carousel.previous', 'Previous testimonial')}
+                    variant="outline"
+                    size="sm"
                     onClick={scrollPrev}
                     disabled={!canScrollPrev}
-                    aria-label={t('review.carousel.previous', 'Previous testimonial')}
+                    className={cn(styles.arrow, styles.arrowPrev)}
                 >
                     <ChevronLeftIcon
                         size={20}
                         weight="bold"
                         aria-hidden="true"
                     />
-                </button>
+                </IconButton>
 
                 {/* Main carousel */}
                 <div
@@ -205,19 +207,20 @@ function TestimonialsCarouselInner({
                 </div>
 
                 {/* Next arrow */}
-                <button
-                    type="button"
-                    className={cn(styles.arrow, styles.arrowNext)}
+                <IconButton
+                    ariaLabel={t('review.carousel.next', 'Next testimonial')}
+                    variant="outline"
+                    size="sm"
                     onClick={scrollNext}
                     disabled={!canScrollNext}
-                    aria-label={t('review.carousel.next', 'Next testimonial')}
+                    className={cn(styles.arrow, styles.arrowNext)}
                 >
                     <ChevronRightIcon
                         size={20}
                         weight="bold"
                         aria-hidden="true"
                     />
-                </button>
+                </IconButton>
             </div>
 
             {/* Pill-dot navigation — 1 dot per scroll snap group */}

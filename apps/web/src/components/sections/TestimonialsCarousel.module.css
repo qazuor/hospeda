@@ -33,32 +33,6 @@
     top: 50%;
     transform: translateY(-50%);
     z-index: 3;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: var(--radius-pill);
-    border: none;
-    background-color: var(--core-card);
-    box-shadow: var(--shadow-card);
-    color: var(--core-foreground);
-    cursor: pointer;
-    transition: box-shadow var(--duration-normal) ease, opacity var(--duration-normal) ease;
-}
-
-.arrow:hover {
-    box-shadow: var(--shadow-card-hover);
-}
-
-.arrow:disabled {
-    opacity: 0.3;
-    cursor: default;
-}
-
-.arrow:focus-visible {
-    outline: 2px solid var(--brand-accent);
-    outline-offset: 2px;
 }
 
 .arrowPrev {
