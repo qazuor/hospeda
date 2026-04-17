@@ -44,70 +44,100 @@ All tokens are CSS custom properties defined in `src/styles/global.css`. Tailwin
 
 #### Semantic Colors (Light Mode)
 
-| Token | Value | Tailwind | Usage |
-|-------|-------|----------|-------|
-| `--background` | `oklch(0.985 0.002 210)` | `bg-background` | Page backgrounds |
-| `--foreground` | `oklch(0.20 0.02 220)` | `text-foreground` | Primary text |
-| `--card` | `oklch(1 0 0)` | `bg-card` | Card backgrounds |
-| `--card-foreground` | `oklch(0.20 0.02 220)` | `text-card-foreground` | Text on cards |
-| `--popover` | `oklch(1 0 0)` | `bg-popover` | Dropdown/popover surfaces |
-| `--popover-foreground` | `oklch(0.20 0.02 220)` | `text-popover-foreground` | Text in popovers |
-| `--primary` | `oklch(0.55 0.12 220)` | `bg-primary` | Primary brand (blue) |
-| `--primary-foreground` | `oklch(0.99 0 0)` | `text-primary-foreground` | Text on primary |
-| `--secondary` | `oklch(0.92 0.03 155)` | `bg-secondary` | Secondary surfaces (green tint) |
-| `--secondary-foreground` | `oklch(0.25 0.06 155)` | `text-secondary-foreground` | Text on secondary |
-| `--accent` | `oklch(0.65 0.17 45)` | `bg-accent` | CTA, highlights (sunset orange) |
-| `--accent-foreground` | `oklch(0.99 0 0)` | `text-accent-foreground` | Text on accent |
-| `--muted` | `oklch(0.95 0.01 210)` | `bg-muted` | Subtle backgrounds |
-| `--muted-foreground` | `oklch(0.50 0.02 220)` | `text-muted-foreground` | Secondary text |
-| `--destructive` | `oklch(0.577 0.245 27.325)` | `bg-destructive` | Error states |
-| `--destructive-foreground` | `oklch(0.98 0 0)` | `text-destructive-foreground` | Text on destructive |
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--core-background` | `oklch(0.985 0.002 210)` | Page backgrounds |
+| `--core-foreground` | `oklch(0.2 0.02 220)` | Primary text |
+| `--core-card` | `oklch(1 0 0)` | Card backgrounds |
+| `--card-foreground` | `oklch(0.2 0.02 220)` | Text on cards |
+| `--popover` | `oklch(1 0 0)` | Dropdown/popover surfaces |
+| `--popover-foreground` | `oklch(0.2 0.02 220)` | Text in popovers |
+| `--brand-primary` | `oklch(0.63 0.19 259)` | Primary brand (blue) |
+| `--primary-foreground` | `oklch(0.99 0 0)` | Text on primary |
+| `--brand-secondary` | `oklch(0.96 0.02 236)` | Secondary surfaces |
+| `--brand-secondary-foreground` | `oklch(0.26 0.06 255)` | Text on secondary |
+| `--brand-tertiary` | `oklch(0.92 0.03 155)` | Tertiary surfaces (green tint) |
+| `--brand-accent` | `oklch(0.7 0.18 55)` | CTA, highlights (sunset orange) |
+| `--accent-foreground` | `oklch(0.99 0 0)` | Text on accent |
+| `--rating-star` | `oklch(0.82 0.19 95)` | Rating stars (gold/yellow) |
+| `--muted` | `oklch(0.95 0.01 210)` | Subtle backgrounds |
+| `--core-muted-foreground` | `oklch(0.45 0.03 261)` | Secondary text |
+| `--destructive` | `oklch(0.577 0.245 27.325)` | Error states |
+| `--destructive-foreground` | `oklch(0.98 0 0)` | Text on destructive |
 
 #### Interactive/UI Colors
 
-| Token | Value | Tailwind | Usage |
-|-------|-------|----------|-------|
-| `--border` | `oklch(0.90 0.02 210)` | `border-border` | Dividers, input borders |
-| `--input` | `oklch(0.90 0.02 210)` | `bg-input` | Form input borders |
-| `--ring` | `oklch(0.55 0.12 220)` | `ring-ring` | Focus ring |
-| `--overlay` | `oklch(0.20 0.02 220 / 0.5)` | `bg-overlay` | Modal/dialog overlays |
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--border` | `oklch(0.9 0.02 210)` | Dividers, input borders |
+| `--input` | `oklch(0.9 0.02 210)` | Form input borders |
+| `--ring` | `oklch(0.63 0.19 259)` | Focus ring |
+| `--overlay` | `oklch(0.2 0.02 220 / 0.5)` | Modal/dialog overlays |
 
 #### Feedback Colors
 
-| Token | Value | Tailwind | Usage |
-|-------|-------|----------|-------|
-| `--success` | `oklch(0.58 0.15 150)` | `bg-success` | Success states |
-| `--success-foreground` | `oklch(0.99 0 0)` | `text-success-foreground` | Text on success |
-| `--warning` | `oklch(0.75 0.18 85)` | `bg-warning` | Warning states |
-| `--warning-foreground` | `oklch(0.2 0.02 85)` | `text-warning-foreground` | Text on warning |
-| `--info` | `oklch(0.55 0.12 220)` | `bg-info` | Info states |
-| `--info-foreground` | `oklch(0.99 0 0)` | `text-info-foreground` | Text on info |
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--success` | `oklch(0.58 0.15 150)` | Success states |
+| `--success-foreground` | `oklch(0.99 0 0)` | Text on success |
+| `--warning` | `oklch(0.75 0.18 85)` | Warning states |
+| `--warning-foreground` | `oklch(0.2 0.02 85)` | Text on warning |
+| `--info` | `oklch(0.63 0.19 259)` | Info states |
+| `--info-foreground` | `oklch(0.99 0 0)` | Text on info |
 
 #### Section/Surface Colors
 
-| Token | Value | Tailwind | Usage |
-|-------|-------|----------|-------|
-| `--surface-warm` | `oklch(0.95 0.03 50)` | `bg-surface-warm` | Peach-tinted sections (tours, features, testimonials) |
-| `--surface-warm-foreground` | `oklch(0.35 0.03 50)` | `text-surface-warm-foreground` | Text on warm surfaces |
-| `--surface-dark` | `oklch(0.15 0.02 160)` | `bg-surface-dark` | Dark sections (features CTA, footer) |
-| `--surface-dark-foreground` | `oklch(0.92 0.01 210)` | `text-surface-dark-foreground` | Text on dark surfaces |
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--surface-warm` | `oklch(0.95 0.03 250)` | Peach-tinted sections (tours, features, testimonials) |
+| `--surface-warm-foreground` | `oklch(0.35 0.03 250)` | Text on warm surfaces |
+| `--surface-dark` | `oklch(0.15 0.02 160)` | Dark sections (features CTA, footer) |
+| `--surface-dark-foreground` | `oklch(0.92 0.01 210)` | Text on dark surfaces |
+
+#### Footer Surface Colors
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--footer-bg` | `var(--surface-dark)` | Footer main background |
+| `--footer-fg` | `var(--surface-dark-foreground)` | Footer primary text |
+| `--footer-fg-muted` | `oklch(0.74 0.02 240)` | Footer secondary text |
+| `--footer-link` | `oklch(from var(--surface-dark-foreground) l c h / 0.7)` | Footer link color |
+| `--footer-link-hover` | `var(--surface-dark-foreground)` | Footer link hover color |
+| `--footer-border` | `oklch(from var(--surface-dark-foreground) l c h / 0.15)` | Footer dividers |
+| `--footer-newsletter-bg` | `white` | Newsletter panel background |
+| `--footer-newsletter-fg` | `var(--core-muted-foreground)` | Newsletter panel text |
+| `--footer-newsletter-border` | `transparent` | Newsletter panel border |
 
 #### Brand Colors (Hospeda-specific)
 
-| Token | Value | Tailwind | Usage |
-|-------|-------|----------|-------|
-| `--hospeda-sky` | `oklch(0.80 0.08 220)` | `bg-hospeda-sky` | Sky, light water |
-| `--hospeda-sky-light` | `oklch(0.88 0.06 220)` | `bg-hospeda-sky-light` | Very light sky |
-| `--hospeda-river` | `oklch(0.55 0.12 220)` | `text-hospeda-river` | River, water |
-| `--hospeda-forest` | `oklch(0.50 0.14 155)` | `text-hospeda-forest` | Vegetation, nature |
-| `--hospeda-sand` | `oklch(0.93 0.03 85)` | `bg-hospeda-sand` | Beaches, sand |
-| `--hospeda-sunset` | `oklch(0.70 0.18 55)` | `text-hospeda-sunset` | Sunsets, warm accents |
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--hospeda-sky` | `oklch(0.8 0.08 259)` | Sky, light water |
+| `--hospeda-sky-light` | `oklch(0.88 0.06 259)` | Very light sky |
+| `--hospeda-river` | `oklch(0.63 0.19 259)` | River, water |
+| `--hospeda-forest` | `oklch(0.5 0.14 155)` | Vegetation, nature |
+| `--hospeda-sand` | `oklch(0.93 0.03 85)` | Beaches, sand |
+
+#### Social Proof Avatar Gradients
+
+Linear-gradient stops used for stacked avatar placeholders in social proof blocks (hero, testimonials).
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--avatar-1-from` | `oklch(0.25 0.08 255)` | Avatar 1 gradient start |
+| `--avatar-1-to` | `oklch(0.36 0.12 255)` | Avatar 1 gradient end |
+| `--avatar-2-from` | `oklch(0.65 0.15 75)` | Avatar 2 gradient start |
+| `--avatar-2-to` | `oklch(0.78 0.17 80)` | Avatar 2 gradient end |
+| `--avatar-3-from` | `oklch(0.5 0.1 195)` | Avatar 3 gradient start |
+| `--avatar-3-to` | `oklch(0.65 0.13 195)` | Avatar 3 gradient end |
+| `--avatar-4-from` | `oklch(0.42 0.12 155)` | Avatar 4 gradient start |
+| `--avatar-4-to` | `oklch(0.62 0.16 155)` | Avatar 4 gradient end |
 
 #### Chart Colors
 
 | Token | Value |
 |-------|-------|
-| `--chart-1` | `oklch(0.55 0.12 220)` |
+| `--chart-1` | `oklch(0.63 0.19 259)` |
 | `--chart-2` | `oklch(0.6 0.14 155)` |
 | `--chart-3` | `oklch(0.7 0.18 55)` |
 | `--chart-4` | `oklch(0.75 0.1 190)` |
@@ -119,14 +149,29 @@ All semantic tokens are overridden. Brand colors adjust for contrast on dark bac
 
 | Token | Dark Value |
 |-------|-----------|
-| `--background` | `oklch(0.14 0.02 220)` |
-| `--foreground` | `oklch(0.92 0.01 210)` |
-| `--card` | `oklch(0.19 0.02 220)` |
-| `--primary` | `oklch(0.65 0.14 220)` |
-| `--accent` | `oklch(0.72 0.19 55)` |
-| `--surface-warm` | `oklch(0.20 0.03 50)` |
-| `--surface-dark` | `oklch(0.10 0.02 160)` |
+| `--core-background` | `oklch(0.14 0.02 220)` |
+| `--core-foreground` | `oklch(0.92 0.01 210)` |
+| `--core-card` | `oklch(0.19 0.02 220)` |
+| `--card-foreground` | `oklch(0.92 0.01 210)` |
+| `--brand-primary` | `oklch(0.68 0.17 259)` |
+| `--brand-secondary` | `oklch(0.25 0.05 255)` |
+| `--brand-tertiary` | `oklch(0.28 0.05 155)` |
+| `--brand-accent` | `oklch(0.72 0.19 55)` |
+| `--rating-star` | `oklch(0.85 0.19 95)` |
+| `--core-muted-foreground` | `oklch(0.6 0.03 261)` |
+| `--surface-warm` | `oklch(0.2 0.03 50)` |
+| `--surface-dark` | `oklch(0.1 0.02 160)` |
 | `--border` | `oklch(0.28 0.02 220)` |
+| `--ring` | `oklch(0.68 0.17 259)` |
+| `--footer-bg` | `oklch(0.12 0.02 220)` |
+| `--footer-fg` | `oklch(0.85 0.01 210)` |
+| `--footer-fg-muted` | `oklch(0.6 0.02 240)` |
+| `--footer-newsletter-bg` | `oklch(0.18 0.025 220)` |
+| `--footer-newsletter-fg` | `oklch(0.8 0.01 210)` |
+| `--footer-newsletter-border` | `oklch(0.3 0.02 220)` |
+| `--footer-link` | `oklch(0.65 0.01 210)` |
+| `--footer-link-hover` | `oklch(0.9 0.01 210)` |
+| `--footer-border` | `oklch(from var(--brand-accent) l c h / 0.2)` |
 
 Dark mode activates via `data-theme="dark"` on `<html>` (NOT `.dark` class). FOUC is prevented by an inline `<script>` in the HTML `<head>` that reads `localStorage` before first paint.
 
@@ -173,43 +218,36 @@ Blog card outer:        border-radius: 24px;        (uniform, wraps the inner or
 
 ### 2.4 Shadow Tokens
 
-| Token | Value | Tailwind | Usage |
-|-------|-------|----------|-------|
-| `--shadow-none` | `none` | `shadow-none` | No shadow (most cards in reference design) |
-| `--shadow-sm` | `0 1px 3px oklch(from var(--foreground) l c h / 0.06)` | `shadow-sm` | Subtle elevation |
-| `--shadow-card` | `0 4px 12px -2px oklch(from var(--foreground) l c h / 0.08)` | `shadow-card` | Default card shadow |
-| `--shadow-card-hover` | `0 12px 24px -4px oklch(from var(--foreground) l c h / 0.12)` | `shadow-card-hover` | Hovered card shadow |
-| `--shadow-search` | `0 4px 60px oklch(from var(--foreground) l c h / 0.10)` | `shadow-search` | Search form shadow |
-| `--shadow-nav` | `0 2px 4px oklch(from var(--foreground) l c h / 0.15)` | `shadow-nav` | Sticky navbar shadow |
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--shadow-card` | `0 4px 12px -2px oklch(from var(--core-foreground) l c h / 0.08)` | Default card shadow |
+| `--shadow-card-hover` | `0 12px 24px -4px oklch(from var(--core-foreground) l c h / 0.12)` | Hovered card shadow |
+| `--shadow-search` | `0 4px 60px oklch(from var(--core-foreground) l c h / 0.1)` | Search form shadow |
+| `--shadow-nav` | `0 2px 4px oklch(from var(--core-foreground) l c h / 0.15)` | Sticky navbar shadow |
 
-All shadows use `oklch(from var(--foreground) ...)` so they automatically adapt to dark mode.
+All shadows use `oklch(from var(--core-foreground) ...)` so they automatically adapt to dark mode. For "no shadow", use the CSS keyword `none` directly.. there is no token for it.
 
 ### 2.5 Transition Tokens
 
-| Token | Value | Tailwind | Usage |
-|-------|-------|----------|-------|
-| `--duration-fast` | `0.2s` | `duration-fast` | Micro-interactions (focus, active) |
-| `--duration-normal` | `0.4s` | `duration-normal` | Most hover effects, color changes |
-| `--duration-slow` | `0.5s` | `duration-slow` | Buttons, complex transitions |
-| `--duration-reveal` | `1.5s` | `duration-reveal` | Scroll reveal animations |
-| `--ease-default` | `ease` | _(default)_ | Standard easing |
-| `--ease-out` | `ease-out` | `ease-out` | Enter animations |
-| `--ease-in-out` | `ease-in-out` | `ease-in-out` | Image scale, destination cards |
-| `--ease-bounce` | `cubic-bezier(0.1, 0, 0.3, 1)` | `ease-bounce` | Button background fill effect |
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--duration-fast` | `0.2s` | Micro-interactions (focus, active) |
+| `--duration-normal` | `0.4s` | Most hover effects, color changes |
+| `--duration-slow` | `0.5s` | Buttons, complex transitions |
+| `--duration-reveal` | `1s` | Scroll reveal animations |
+| `--ease-bounce` | `cubic-bezier(0.1, 0, 0.3, 1)` | Button background fill effect, image scale, destination cards |
+
+Only one easing token is defined. For standard ease curves (`ease`, `ease-out`, `ease-in-out`), use the CSS keywords directly.. they do not need a custom property.
 
 ### 2.6 Z-Index Tokens
 
-| Token | Value | Tailwind | Usage |
-|-------|-------|----------|-------|
-| `--z-behind` | `-1` | `z-behind` | Decorative shapes behind content |
-| `--z-base` | `0` | `z-base` | Default stacking |
-| `--z-content` | `10` | `z-content` | Content above decoratives |
-| `--z-shape` | `5` | `z-shape` | Decorative shapes/blobs |
-| `--z-nav` | `50` | `z-nav` | Fixed navbar |
-| `--z-mobile-menu` | `40` | `z-mobile-menu` | Mobile menu overlay |
-| `--z-overlay` | `50` | `z-overlay` | Modal overlays |
-| `--z-toast` | `100` | `z-toast` | Toast notifications |
-| `--z-scroll-top` | `99` | `z-scroll-top` | Scroll-to-top button |
+Only three z-index layers are defined as tokens. Use raw `z-index` numbers (e.g. `z-index: -1`, `z-index: 5`) for one-off decorative stacking within a section; reserve tokens for app-wide layers.
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--z-content` | `10` | Content wrappers stacked above decoratives |
+| `--z-nav` | `50` | Fixed navbar and equivalent overlays |
+| `--z-modal` | `100` | Modal dialogs, toasts, scroll-to-top, anything on top |
 
 ---
 
@@ -237,16 +275,16 @@ Caveat: 400,700
 |-------|------|-------------|--------|-------|
 | `--text-hero` | `clamp(3rem, 2rem + 5vw, 5.75rem)` | `1.07` | `700` | Hero main heading |
 | `--text-display` | `clamp(2rem, 1.5rem + 3vw, 3rem)` | `1.2` | `600` | Feature section headings |
-| `--text-h2` | `clamp(1.5rem, 1.25rem + 1.5vw, 2.5rem)` | `1.17` | `500-600` | Section titles |
-| `--text-h3` | `1.5rem` | `1.33` | `600` | Card titles, sub-section headers |
-| `--text-h4` | `1.25rem` | `1.4` | `600` | Smaller headings |
+| `--text-h2` | `clamp(1.75rem, 1.5rem + 1.75vw, 2.75rem)` | `1.17` | `500-600` | Section titles |
+| `--text-h3` | `clamp(1.25rem, 1rem + 0.75vw, 1.625rem)` | `1.33` | `600` | Card titles, sub-section headers |
+| `--text-h4` | `clamp(0.9375rem, 0.875rem + 0.25vw, 1.125rem)` | `1.4` | `600` | Smaller headings |
 | `--text-body` | `1rem` | `1.5` | `400` | Body text, paragraphs |
 | `--text-body-sm` | `0.875rem` | `1.5` | `400` | Smaller body text |
-| `--text-meta` | `0.875rem` | `1.5` | `400-500` | Meta info, dates, categories |
+| `--text-meta` | `0.8125rem` | `1.5` | `400-500` | Meta info, dates, categories |
 | `--text-caption` | `0.75rem` | `1.4` | `400` | Captions, fine print |
-| `--text-tagline` | `1.875rem` | `1` | `700` | Section taglines (Caveat font) |
-| `--text-nav` | `1rem` | `1` | `400` | Navigation links |
-| `--text-button` | `1.125rem` | `1` | `600` | Button labels |
+| `--text-tagline` | `clamp(1.125rem, 1rem + 0.625vw, 1.5rem)` | `1` | `700` | Section taglines (Caveat font) |
+| `--text-nav` | `0.875rem` | `1` | `400` | Navigation links |
+| `--text-button` | `1rem` | `1` | `600` | Button labels |
 
 ### 3.3 Type Patterns
 
@@ -913,22 +951,21 @@ When adapting code from the old web app or external templates, replace hardcoded
 
 | Old (hardcoded) | New (semantic token) |
 |-----------------|---------------------|
-| `#EB662B`, `rgb(235,102,43)` | `var(--accent)` / `bg-accent` |
-| `#292929`, `rgb(41,41,41)` | `var(--foreground)` / `text-foreground` |
-| `#555555`, `rgb(85,85,85)` | `var(--muted-foreground)` / `text-muted-foreground` |
-| `#FFEDE5`, `rgb(255,237,229)` | `var(--surface-warm)` / `bg-surface-warm` |
-| `#F0F0F0` | `var(--muted)` / `bg-muted` |
-| `#021713`, `rgb(2,23,19)` | `var(--surface-dark)` / `bg-surface-dark` |
+| `#EB662B`, `rgb(235,102,43)` | `var(--brand-accent)` |
+| `#292929`, `rgb(41,41,41)` | `var(--core-foreground)` |
+| `#555555`, `rgb(85,85,85)` | `var(--core-muted-foreground)` |
+| `#FFEDE5`, `rgb(255,237,229)` | `var(--surface-warm)` |
+| `#F0F0F0` | `var(--muted)` |
+| `#021713`, `rgb(2,23,19)` | `var(--surface-dark)` |
 | `#F5B715`, gold/yellow | `var(--rating-star)` |
-| `#e5e3e0` | `var(--border)` / `border-border` |
-| `white`, `#fff` | `var(--card)` / `bg-card` |
-| `bg-white` | `bg-card` or `bg-background` |
-| `bg-gray-50`, `bg-gray-100` | `bg-muted` |
-| `text-gray-900`, `text-black` | `text-foreground` |
-| `text-gray-500`, `text-gray-600` | `text-muted-foreground` |
-| `bg-blue-600` | `bg-primary` |
-| `bg-orange-500` | `bg-accent` |
-| `border-gray-200` | `border-border` |
+| `#e5e3e0` | `var(--border)` |
+| `white`, `#fff` | `var(--core-card)` |
+| Gray backgrounds (`#f9fafb`, `#f3f4f6`) | `var(--muted)` |
+| Black/near-black text | `var(--core-foreground)` |
+| Gray text (`#6b7280`, `#4b5563`) | `var(--core-muted-foreground)` |
+| Blue brand colors (`#2563eb`) | `var(--brand-primary)` |
+| Orange brand colors (`#f97316`) | `var(--brand-accent)` |
+| Light gray borders (`#e5e7eb`) | `var(--border)` |
 
 ---
 
