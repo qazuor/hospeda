@@ -1,0 +1,1594 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-063",
+    "title": "Lifecycle State Standardization",
+    "created": "2026-04-17T16:15:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Write AccommodationReview schema + access verification tests",
+            "description": "Write verification tests in `packages/schemas/test/entities/accommodationReview/accommodationReview.schema.test.ts` that assert: (1) `lifecycleState` field exists in `AccommodationReviewSchema` via `BaseLifecycleFields`, (2) field accepts DRAFT/ACTIVE/ARCHIVED, (3) defaults to ACTIVE on parse. Additionally in `accommodationReview.access.schema.test.ts` assert: (4) `AccommodationReviewPublicSchema` strips `lifecycleState`, (5) `AccommodationReviewProtectedSchema` strips `lifecycleState`, (6) `AccommodationReviewAdminSchema` preserves `lifecycleState`. These tests verify existing behavior (no code changes).\n\nFiles: `packages/schemas/test/entities/accommodationReview/accommodationReview.schema.test.ts`, `packages/schemas/test/entities/accommodationReview/accommodationReview.access.schema.test.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add lifecycleState presence test in base schema", "completed": false },
+                { "title": "Add DRAFT/ACTIVE/ARCHIVED enum acceptance test", "completed": false },
+                { "title": "Add ACTIVE default test on parse", "completed": false },
+                {
+                    "title": "Add access schema boundary tests (public/protected strip, admin keeps)",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "testing", "phase-1", "accommodationReview"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Write AccommodationReview CRUD + admin-search verification tests",
+            "description": "Write tests that verify: (1) `CreateAccommodationReviewInputSchema` accepts `lifecycleState` with default ACTIVE, (2) `UpdateAccommodationReviewInputSchema` accepts `lifecycleState`, (3) admin list endpoint filter `status=DRAFT|ACTIVE|ARCHIVED` correctly maps to `lifecycleState` column via base `adminList()`. These verify existing behavior.\n\nFiles: `packages/schemas/test/entities/accommodationReview/accommodationReview.crud.schema.test.ts`, `packages/service-core/test/services/accommodationReview/accommodationReview.service.test.ts` (adminList test)",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add CRUD create schema default ACTIVE test", "completed": false },
+                {
+                    "title": "Add CRUD update schema accepts lifecycleState test",
+                    "completed": false
+                },
+                {
+                    "title": "Add admin-search status filter maps to lifecycleState test",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "service", "testing", "phase-1", "accommodationReview"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Update OwnerPromotion Drizzle DB schema: remove isActive, add lifecycleState",
+            "description": "Update `packages/db/src/schemas/owner-promotion/owner_promotion.dbschema.ts`: (1) remove `isActive: boolean('is_active').notNull().default(true)` column, (2) add `lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE')`, (3) drop indexes `ownerPromotions_isActive_idx` and `ownerPromotions_ownerId_isActive_idx`, (4) add `ownerPromotions_lifecycleState_idx` (on lifecycleState) and `ownerPromotions_ownerId_lifecycleState_idx` (composite on ownerId, lifecycleState). Import `LifecycleStatusPgEnum` if not already imported.\n\nFiles: `packages/db/src/schemas/owner-promotion/owner_promotion.dbschema.ts`\n\nCOMPLETION NOTE: typecheck deferred to cascading tasks (T-007/T-011/T-014/T-015) — removing isActive column breaks consumer references until those tasks update them.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-007", "T-011"],
+            "subtasks": [
+                { "title": "Import LifecycleStatusPgEnum", "completed": true },
+                { "title": "Remove isActive column definition", "completed": true },
+                {
+                    "title": "Add lifecycleState column with NOT NULL DEFAULT ACTIVE",
+                    "completed": true
+                },
+                { "title": "Drop isActive indexes", "completed": true },
+                {
+                    "title": "Add lifecycleState indexes (single + composite with ownerId)",
+                    "completed": true
+                }
+            ],
+            "tags": ["db", "schema", "phase-2", "ownerPromotion"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": "2026-04-17T16:25:00.000Z",
+                "completed": "2026-04-17T16:35:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Generate OwnerPromotion up migration (add column, data migration, drop is_active)",
+            "description": "Run `pnpm db:generate` from the db package to generate the Drizzle migration. Then manually edit the generated SQL file to ensure the sequence: (1) ADD COLUMN lifecycle_state with NOT NULL DEFAULT 'ACTIVE' and PG enum type, (2) UPDATE owner_promotions SET lifecycle_state = CASE WHEN is_active THEN 'ACTIVE' ELSE 'ARCHIVED' END, (3) DROP COLUMN is_active, (4) index changes. Place migration in `packages/db/migrations/`. Document the data migration step in a comment in the SQL file.\n\nFiles: new SQL migration file under `packages/db/migrations/`",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-005", "T-006"],
+            "subtasks": [
+                { "title": "Run pnpm db:generate", "completed": false },
+                {
+                    "title": "Edit generated SQL to add data migration between ADD and DROP",
+                    "completed": false
+                },
+                { "title": "Verify indexes are correctly changed in SQL", "completed": false },
+                { "title": "Add comment documenting data migration rationale", "completed": false }
+            ],
+            "tags": ["db", "migration", "phase-2", "ownerPromotion"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Write OwnerPromotion down/rollback migration",
+            "description": "Write a manual rollback migration SQL file that: (1) ADD COLUMN is_active boolean NOT NULL DEFAULT true, (2) UPDATE owner_promotions SET is_active = CASE WHEN lifecycle_state = 'ACTIVE' THEN true ELSE false END (DRAFT and ARCHIVED both map to false), (3) DROP COLUMN lifecycle_state, (4) restore original indexes. Follow the `manual/` migration pattern documented in `packages/db/docs/triggers-manifest.md`.\n\nFiles: new SQL rollback file under `packages/db/migrations/manual/`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                { "title": "Write ADD COLUMN is_active with default true", "completed": false },
+                {
+                    "title": "Write UPDATE mapping ACTIVE→true, DRAFT/ARCHIVED→false",
+                    "completed": false
+                },
+                {
+                    "title": "Write DROP COLUMN lifecycle_state and restore indexes",
+                    "completed": false
+                },
+                { "title": "Follow manual/ migration file naming convention", "completed": false }
+            ],
+            "tags": ["db", "migration", "rollback", "phase-2", "ownerPromotion"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Write OwnerPromotion pre/post-migration data integrity tests",
+            "description": "Write integration tests that verify migration correctness: (1) pre-migration: count null values in is_active (should be 0), (2) post-migration: lifecycle_state has only 'ACTIVE' and 'ARCHIVED' values, counts match pre-migration true/false counts, (3) post-rollback: is_active values match the expected CASE mapping from lifecycle_state. Use the project's DB test infrastructure.\n\nFiles: `packages/db/test/migrations/owner-promotion-lifecycle.migration.test.ts`",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Set up migration test fixtures (seed records with is_active values)",
+                    "completed": false
+                },
+                { "title": "Assert pre-migration null_count = 0", "completed": false },
+                {
+                    "title": "Assert post-migration enum distribution matches pre-migration",
+                    "completed": false
+                },
+                { "title": "Assert rollback restores is_active correctly", "completed": false }
+            ],
+            "tags": ["db", "testing", "migration", "phase-2", "ownerPromotion"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Update OwnerPromotion Zod base schema + fixtures",
+            "description": "Update `packages/schemas/src/entities/ownerPromotion/owner-promotion.schema.ts`: (1) remove `isActive: z.boolean().default(true)` from the schema, (2) add `...BaseLifecycleFields` spread (import from `@repo/schemas` base). Also update `packages/schemas/test/fixtures/ownerPromotion.fixtures.ts`: replace all `isActive: true|false` with `lifecycleState: 'ACTIVE'|'ARCHIVED'`.\n\nBONUS: Also renamed `isActive: z.boolean().optional()` to `lifecycleState: LifecycleStatusEnumSchema.optional()` in the legacy `OwnerPromotionSearchSchema` that lives in the same file, to keep file coherent.\n\nFiles: `packages/schemas/src/entities/ownerPromotion/owner-promotion.schema.ts`, `packages/schemas/test/fixtures/ownerPromotion.fixtures.ts`\n\nCOMPLETION NOTE: typecheck deferred — consumers (access, http, query schemas + tests) still reference isActive, fixed in T-008/T-009/T-010/T-019/T-020.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-008", "T-009", "T-010", "T-011", "T-019"],
+            "subtasks": [
+                { "title": "Import BaseLifecycleFields", "completed": true },
+                { "title": "Remove isActive field from schema", "completed": true },
+                { "title": "Add BaseLifecycleFields spread", "completed": true },
+                { "title": "Update fixtures to use lifecycleState", "completed": true }
+            ],
+            "tags": ["schemas", "fixtures", "phase-2", "ownerPromotion"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": "2026-04-17T16:40:00.000Z",
+                "completed": "2026-04-17T16:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Update OwnerPromotion access + CRUD schemas",
+            "description": "Update `packages/schemas/src/entities/ownerPromotion/owner-promotion.access.schema.ts`: remove `isActive` from Public and Protected tier picks. Admin tier already has `lifecycleState` preemptively (SPEC-062 Phase 0, T-007); remove the preemptive wrapper comment since the field is now in the base schema. Update `packages/schemas/src/entities/ownerPromotion/owner-promotion.crud.schema.ts`: remove any `isActive` references, ensure lifecycleState flows through via BaseLifecycleFields (create omits audit fields but includes lifecycleState).\n\nFiles: `packages/schemas/src/entities/ownerPromotion/owner-promotion.access.schema.ts`, `packages/schemas/src/entities/ownerPromotion/owner-promotion.crud.schema.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-013", "T-019"],
+            "subtasks": [
+                { "title": "Remove isActive from Public tier pick", "completed": true },
+                { "title": "Remove isActive from Protected tier pick", "completed": true },
+                {
+                    "title": "Clean up preemptive lifecycleState wrapper in Admin (now in base)",
+                    "completed": true
+                },
+                { "title": "Update CRUD schemas to remove isActive references", "completed": true }
+            ],
+            "tags": ["schemas", "phase-2", "ownerPromotion"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": "2026-04-17T17:00:00.000Z",
+                "completed": "2026-04-17T17:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Update OwnerPromotion query + admin-search schemas",
+            "description": "Update `packages/schemas/src/entities/ownerPromotion/owner-promotion.query.schema.ts`: replace `isActive: z.boolean().optional()` filter with `lifecycleState: LifecycleStatusEnumSchema.optional()`. Update `packages/schemas/src/entities/ownerPromotion/owner-promotion.admin-search.schema.ts`: remove `isActive: queryBooleanParam()` filter (the base `status` from `AdminSearchBaseSchema` now works directly for lifecycleState).\n\nFiles: `packages/schemas/src/entities/ownerPromotion/owner-promotion.query.schema.ts`, `packages/schemas/src/entities/ownerPromotion/owner-promotion.admin-search.schema.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-013", "T-020"],
+            "subtasks": [
+                { "title": "Import LifecycleStatusEnumSchema in query schema", "completed": true },
+                {
+                    "title": "Replace isActive filter with lifecycleState in query schema",
+                    "completed": true
+                },
+                {
+                    "title": "Remove isActive queryBooleanParam in admin-search schema",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "phase-2", "ownerPromotion"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": "2026-04-17T17:10:00.000Z",
+                "completed": "2026-04-17T17:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Update OwnerPromotion HTTP schema + conversion function",
+            "description": "Update `packages/schemas/src/entities/ownerPromotion/owner-promotion.http.schema.ts`: (1) in search schemas replace `isActive: z.coerce.boolean().default(true)` with `lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()`, (2) in create schemas replace with `lifecycleState: z.nativeEnum(LifecycleStatusEnum).default('ACTIVE')`, (3) update `httpToDomainOwnerPromotionSearch()` conversion function: remove isActive mapping, add lifecycleState passthrough (no conversion needed, already enum string). Unrelated fields (validFromAfter, validUntilAfter, discountMin, etc.) remain unchanged.\n\nFiles: `packages/schemas/src/entities/ownerPromotion/owner-promotion.http.schema.ts`",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-013", "T-020"],
+            "subtasks": [
+                { "title": "Replace isActive in search HTTP schemas", "completed": true },
+                {
+                    "title": "Replace isActive in create HTTP schemas with default ACTIVE",
+                    "completed": true
+                },
+                {
+                    "title": "Update httpToDomainOwnerPromotionSearch() conversion function",
+                    "completed": true
+                },
+                {
+                    "title": "Verify unrelated params (validFromAfter, etc.) unchanged",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "http", "phase-2", "ownerPromotion"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": "2026-04-17T17:20:00.000Z",
+                "completed": "2026-04-17T17:35:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Update OwnerPromotion model findActive methods to use lifecycleState",
+            "description": "Update `packages/db/src/models/owner-promotion/ownerPromotion.model.ts`: (1) change `findActiveByAccommodationId` (line 85): replace `eq(ownerPromotions.isActive, true)` with `eq(ownerPromotions.lifecycleState, 'ACTIVE')`, (2) change `findActiveByOwnerId` (line 127): same change. Ensure no other `isActive` references remain in the model.\n\nFiles: `packages/db/src/models/owner-promotion/ownerPromotion.model.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-007"],
+            "blocks": ["T-012", "T-014", "T-015", "T-023"],
+            "subtasks": [
+                { "title": "Update findActiveByAccommodationId query", "completed": false },
+                { "title": "Update findActiveByOwnerId query", "completed": false },
+                {
+                    "title": "Grep model file for any remaining isActive references",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "model", "phase-2", "ownerPromotion"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Update OwnerPromotion service: inject lifecycleState=ACTIVE default in _executeSearch",
+            "description": "Update `packages/service-core/src/services/owner-promotion/ownerPromotion.service.ts`: (1) remove any `isActive`-specific filter logic in filter normalization, (2) in `_executeSearch()` (around line 114-117), ADD default filter injection: `if (!filterParams.lifecycleState) { filterParams.lifecycleState = 'ACTIVE'; }` before calling `model.findAll()`. This ensures AC-005-01 compliance (public endpoints only return ACTIVE records). Admin path uses `adminList()` which has its own status filter, so this injection only affects public/protected `list()` calls.\n\nFiles: `packages/service-core/src/services/owner-promotion/ownerPromotion.service.ts`",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-013", "T-022", "T-025"],
+            "subtasks": [
+                { "title": "Remove isActive filter logic", "completed": false },
+                {
+                    "title": "Add lifecycleState=ACTIVE default injection in _executeSearch",
+                    "completed": false
+                },
+                {
+                    "title": "Add comment explaining the behavior change (AC-005-01)",
+                    "completed": false
+                },
+                { "title": "Verify admin path unaffected (uses adminList)", "completed": false }
+            ],
+            "tags": ["service", "phase-2", "ownerPromotion"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Update admin OwnerPromotion API routes",
+            "description": "Update admin routes under `apps/api/src/routes/admin/owner-promotion/`: remove `isActive` references in route handlers and response schemas. The lifecycleState filter is handled by the base adminList(). Verify request/response schemas use updated Zod schemas from T-008.\n\nFiles: `apps/api/src/routes/admin/owner-promotion/*`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-008", "T-009", "T-010", "T-012"],
+            "blocks": ["T-016", "T-021"],
+            "subtasks": [
+                { "title": "Grep admin owner-promotion routes for isActive", "completed": false },
+                { "title": "Replace with lifecycleState where applicable", "completed": false },
+                {
+                    "title": "Verify request/response schemas use updated Zod schemas",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "routes", "phase-2", "ownerPromotion"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Update usage-tracking service MAX_ACTIVE_PROMOTIONS query",
+            "description": "Update `apps/api/src/services/usage-tracking.service.ts` line 406: replace `isActive: true` with `lifecycleState: 'ACTIVE'` in the `MAX_ACTIVE_PROMOTIONS` count query for `OwnerPromotionService.count()`.\n\nFiles: `apps/api/src/services/usage-tracking.service.ts`",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                {
+                    "title": "Locate MAX_ACTIVE_PROMOTIONS count query (line 406)",
+                    "completed": false
+                },
+                {
+                    "title": "Replace isActive: true with lifecycleState: 'ACTIVE'",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "service", "phase-2", "ownerPromotion"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Update limit-enforcement middleware promotion count query",
+            "description": "Update `apps/api/src/middlewares/limit-enforcement.ts` line 318: replace `isActive: true` with `lifecycleState: 'ACTIVE'` in the promotion count query used for `OwnerPromotionService.count()`.\n\nFiles: `apps/api/src/middlewares/limit-enforcement.ts`",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                { "title": "Locate promotion count query (line 318)", "completed": false },
+                {
+                    "title": "Replace isActive: true with lifecycleState: 'ACTIVE'",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "middleware", "phase-2", "ownerPromotion"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Update OwnerPromotion admin frontend columns config",
+            "description": "Update `apps/admin/src/features/owner-promotions/config/owner-promotions.columns.ts` (lines 144-167): replace `isActive` boolean toggle widget with the shared lifecycle status badge/select following the existing convention (ACTIVE=green, DRAFT=grey, ARCHIVED=amber). Remove any conditional rendering based on `isActive`.\n\nFiles: `apps/admin/src/features/owner-promotions/config/owner-promotions.columns.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                { "title": "Remove isActive column widget definition", "completed": false },
+                {
+                    "title": "Add lifecycleState column with badge widget (green/grey/amber)",
+                    "completed": false
+                },
+                { "title": "Verify column key matches new field name", "completed": false }
+            ],
+            "tags": ["admin", "frontend", "phase-2", "ownerPromotion"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Update OwnerPromotion admin hooks: replace togglePromotionActive with lifecycle mutation",
+            "description": "Update `apps/admin/src/features/owner-promotions/hooks.ts`: (1) remove the `togglePromotionActive()` hook/mutation, (2) add a new `updatePromotionLifecycleState(id, state)` mutation that sends PATCH with `{ lifecycleState: state }`. Update any detail view component using the toggle to use the new mutation with a select (DRAFT/ACTIVE/ARCHIVED).\n\nFiles: `apps/admin/src/features/owner-promotions/hooks.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                { "title": "Remove togglePromotionActive function", "completed": false },
+                {
+                    "title": "Add updatePromotionLifecycleState mutation with PATCH body",
+                    "completed": false
+                },
+                { "title": "Update consuming components to use new mutation", "completed": false }
+            ],
+            "tags": ["admin", "frontend", "hooks", "phase-2", "ownerPromotion"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Update OwnerPromotion admin entity config and admin-search",
+            "description": "Update `apps/admin/src/features/owner-promotions/config/owner-promotions.config.ts`: update entity config for lifecycle state (filter definitions, default sort, etc.). Also update `apps/admin/src/features/owner-promotions/config/owner-promotions.admin-search.schema.ts` if it exists: remove `isActive` filter. Add `lifecycleState` filter using the shared lifecycle filter config pattern.\n\nFiles: `apps/admin/src/features/owner-promotions/config/owner-promotions.config.ts`, `apps/admin/src/features/owner-promotions/config/owner-promotions.admin-search.schema.ts` (if exists)",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-016", "T-017"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                { "title": "Update entity config for lifecycle state", "completed": false },
+                {
+                    "title": "Remove isActive filter from admin-search schema (if exists)",
+                    "completed": false
+                },
+                {
+                    "title": "Add lifecycleState filter with shared lifecycle config",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "frontend", "config", "phase-2", "ownerPromotion"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Update OwnerPromotion schema + CRUD tests (isActive → lifecycleState)",
+            "description": "Update `packages/schemas/test/entities/ownerPromotion/owner-promotion.schema.test.ts` and `owner-promotion.crud.schema.test.ts`: replace all `isActive` test cases with `lifecycleState` tests. Add tests for: default ACTIVE on creation, accepts DRAFT/ACTIVE/ARCHIVED, rejects isActive field (validation error per AC-002-02).\n\nFiles: `packages/schemas/test/entities/ownerPromotion/owner-promotion.schema.test.ts`, `packages/schemas/test/entities/ownerPromotion/owner-promotion.crud.schema.test.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-008"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Replace isActive tests in schema.test.ts", "completed": false },
+                { "title": "Replace isActive tests in crud.schema.test.ts", "completed": false },
+                {
+                    "title": "Add test: isActive field in update rejected with validation error",
+                    "completed": false
+                },
+                {
+                    "title": "Add test: lifecycleState defaults to ACTIVE on creation",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "testing", "phase-2", "ownerPromotion"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Update OwnerPromotion admin-search + group tests",
+            "description": "Update `packages/schemas/test/entities/ownerPromotion/owner-promotion.admin-search.schema.test.ts`: replace `isActive` boolean filter tests with `lifecycleState` enum filter tests. Also update `packages/schemas/test/entities/admin-search/group-c.admin-search.schema.test.ts`: update `OwnerPromotionAdminSearchSchema` test expectations.\n\nFiles: `packages/schemas/test/entities/ownerPromotion/owner-promotion.admin-search.schema.test.ts`, `packages/schemas/test/entities/admin-search/group-c.admin-search.schema.test.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Replace isActive filter tests in admin-search.schema.test.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Update group-c.admin-search.schema.test.ts expectations",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "testing", "phase-2", "ownerPromotion"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Write OwnerPromotion admin list integration test for lifecycleState filter",
+            "description": "Write integration test that filters OwnerPromotion admin list by `lifecycleState` (DRAFT, ACTIVE, ARCHIVED) via the admin API and asserts only matching records are returned. Covers AC-001-01. Use existing integration test infrastructure.\n\nFiles: `apps/api/test/integration/owner-promotion/admin-list.test.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Seed test data with 3 promotions (one per lifecycle state)",
+                    "completed": false
+                },
+                { "title": "Test filter by DRAFT returns only draft records", "completed": false },
+                {
+                    "title": "Test filter by ACTIVE returns only active records",
+                    "completed": false
+                },
+                {
+                    "title": "Test filter by ARCHIVED returns only archived records",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "testing", "integration", "phase-2", "ownerPromotion"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Write OwnerPromotion public endpoint default ACTIVE filter test",
+            "description": "Write integration test that verifies public OwnerPromotion endpoints only return `lifecycleState = 'ACTIVE'` records when no filter is specified. Assert DRAFT and ARCHIVED records are NOT returned. Also assert `lifecycleState` field is NOT present in response body (admin-only). Covers AC-005-01.\n\nFiles: `apps/api/test/integration/owner-promotion/public-endpoint.test.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Seed data with ACTIVE, DRAFT, ARCHIVED promotions",
+                    "completed": false
+                },
+                { "title": "Call public list endpoint without filter", "completed": false },
+                { "title": "Assert only ACTIVE records returned", "completed": false },
+                { "title": "Assert lifecycleState field absent from response", "completed": false }
+            ],
+            "tags": ["api", "testing", "integration", "phase-2", "ownerPromotion"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Update OwnerPromotion model tests for findActive methods",
+            "description": "Update tests in `packages/db/test/models/owner-promotion/ownerPromotion.model.test.ts` for `findActiveByAccommodationId` and `findActiveByOwnerId`: verify they return records with `lifecycleState = 'ACTIVE'` (not `isActive = true`), and exclude DRAFT/ARCHIVED records.\n\nFiles: `packages/db/test/models/owner-promotion/ownerPromotion.model.test.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Update findActiveByAccommodationId test fixtures", "completed": false },
+                { "title": "Update findActiveByOwnerId test fixtures", "completed": false },
+                {
+                    "title": "Assert only ACTIVE records returned (exclude DRAFT, ARCHIVED)",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "testing", "model", "phase-2", "ownerPromotion"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Write usage-tracking + limit-enforcement tests for OwnerPromotion",
+            "description": "Write unit tests that verify: (1) `usage-tracking.service.ts` MAX_ACTIVE_PROMOTIONS counts promotions with `lifecycleState: 'ACTIVE'` (not `isActive: true`), (2) `limit-enforcement.ts` counts promotions the same way. Mock the service count method and verify it receives the correct filter.\n\nFiles: `apps/api/test/services/usage-tracking.service.test.ts` (add test), `apps/api/test/middlewares/limit-enforcement.test.ts` (add test)",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-014", "T-015"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add usage-tracking MAX_ACTIVE_PROMOTIONS test", "completed": false },
+                { "title": "Add limit-enforcement promotion count test", "completed": false },
+                { "title": "Assert filter contains lifecycleState: 'ACTIVE'", "completed": false }
+            ],
+            "tags": ["api", "testing", "phase-2", "ownerPromotion"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Create archive-expired-promotions cron job handler",
+            "description": "Create `apps/api/src/cron/jobs/archive-expired-promotions.job.ts` following the `CronJobDefinition` pattern (reference `addon-expiry.job.ts`). Implement: (1) query `SELECT id FROM owner_promotions WHERE lifecycle_state = 'ACTIVE' AND valid_until IS NOT NULL AND valid_until < NOW() AND deleted_at IS NULL LIMIT 100`, (2) UPDATE SET lifecycle_state = 'ARCHIVED', updated_at = NOW(), updated_by_id = NULL, (3) use pg_try_advisory_lock(43010), (4) support dry-run via ctx.dryRun, (5) log via @repo/logger with context `{ source: 'cron:archive-expired-promotions', count: N }`, (6) error reporting to Sentry. Timeout 60_000ms, schedule `'0 * * * *'`, name `'archive-expired-promotions'`.\n\nFiles: `apps/api/src/cron/jobs/archive-expired-promotions.job.ts`",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                {
+                    "title": "Create handler file with CronJobDefinition skeleton",
+                    "completed": false
+                },
+                {
+                    "title": "Implement query with ACTIVE + valid_until expired + not deleted",
+                    "completed": false
+                },
+                { "title": "Implement batch update to ARCHIVED", "completed": false },
+                { "title": "Add pg_try_advisory_lock(43010)", "completed": false },
+                { "title": "Add dry-run support via ctx.dryRun", "completed": false },
+                { "title": "Add structured logging and Sentry error reporting", "completed": false }
+            ],
+            "tags": ["api", "cron", "phase-2", "ownerPromotion"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Register cron job + advisory lock docs + tests",
+            "description": "(1) Register `archive-expired-promotions` in `apps/api/src/cron/registry.ts` job array. (2) Create/update `packages/db/docs/advisory-locks.md` documenting lock ID `43010` for archive-expired-promotions (also document `43001` for addon-expiry if not already present). (3) Write tests in `apps/api/test/cron/jobs/archive-expired-promotions.job.test.ts`: dry-run returns count without modification, actual run archives expired records, advisory lock prevents overlapping runs, empty batch handled correctly.\n\nFiles: `apps/api/src/cron/registry.ts`, `packages/db/docs/advisory-locks.md`, `apps/api/test/cron/jobs/archive-expired-promotions.job.test.ts`",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-025"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Register job in cron registry", "completed": false },
+                {
+                    "title": "Create or update advisory-locks.md with lock IDs 43001, 43010",
+                    "completed": false
+                },
+                {
+                    "title": "Write dry-run test (returns count, no modification)",
+                    "completed": false
+                },
+                { "title": "Write actual run test (archives expired records)", "completed": false },
+                { "title": "Write advisory lock test (prevents overlap)", "completed": false },
+                { "title": "Write empty batch test", "completed": false }
+            ],
+            "tags": ["api", "cron", "testing", "docs", "phase-2", "ownerPromotion"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Update i18n locale files for OwnerPromotion lifecycle",
+            "description": "Update locale files in `packages/i18n/src/locales/*`: (1) remove `admin-billing.ownerPromotions.actionActivate` and `admin-billing.ownerPromotions.actionDeactivate`, (2) add `admin-billing.ownerPromotions.actionSetDraft`, `actionSetActive`, `actionSetArchived`, (3) rename `statuses.inactive` to `statuses.draft`, add `statuses.archived`, keep `statuses.active`. Apply to all 3 locales (es, en, pt). Update any usages in components to use new keys.\n\nFiles: `packages/i18n/src/locales/es/admin-billing.json`, `en/admin-billing.json`, `pt/admin-billing.json`, affected components",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Remove actionActivate/actionDeactivate keys", "completed": false },
+                {
+                    "title": "Add actionSetDraft/actionSetActive/actionSetArchived keys (es)",
+                    "completed": false
+                },
+                { "title": "Add keys to en and pt locale files", "completed": false },
+                {
+                    "title": "Rename statuses.inactive to statuses.draft, add statuses.archived",
+                    "completed": false
+                },
+                { "title": "Update components using removed keys", "completed": false }
+            ],
+            "tags": ["i18n", "phase-2", "ownerPromotion"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Update DestinationReview Drizzle DB schema: add lifecycleState column",
+            "description": "Update `packages/db/src/schemas/destination/destination_review.dbschema.ts`: add `lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE')` column. Add index `destinationReviews_lifecycleState_idx` on the new column. Import LifecycleStatusPgEnum if not already.\n\nFiles: `packages/db/src/schemas/destination/destination_review.dbschema.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-027"],
+            "blocks": ["T-029", "T-030", "T-032"],
+            "subtasks": [
+                { "title": "Import LifecycleStatusPgEnum", "completed": false },
+                {
+                    "title": "Add lifecycleState column with NOT NULL DEFAULT ACTIVE",
+                    "completed": false
+                },
+                { "title": "Add destinationReviews_lifecycleState_idx index", "completed": false }
+            ],
+            "tags": ["db", "schema", "phase-4", "destinationReview"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Generate DestinationReview up + down migrations",
+            "description": "Run `pnpm db:generate` to generate up migration (ADD COLUMN lifecycle_state with NOT NULL DEFAULT 'ACTIVE'). Write manual down migration (DROP COLUMN lifecycle_state) under `packages/db/migrations/manual/`.\n\nFiles: new SQL migration files under `packages/db/migrations/` and `packages/db/migrations/manual/`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-028"],
+            "blocks": ["T-031"],
+            "subtasks": [
+                { "title": "Run pnpm db:generate for up migration", "completed": false },
+                { "title": "Verify up migration SQL is correct", "completed": false },
+                { "title": "Write down migration (DROP COLUMN)", "completed": false }
+            ],
+            "tags": ["db", "migration", "phase-4", "destinationReview"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Update DestinationReview Zod base schema + CRUD + fixtures",
+            "description": "Update `packages/schemas/src/entities/destinationReview/destinationReview.schema.ts`: import and spread `BaseLifecycleFields`. Keep `isPublished` and `isVerified` as-is. Update `destinationReview.crud.schema.ts`: ensure lifecycleState flows through create/update. Update `packages/schemas/test/fixtures/destinationReview.fixtures.ts`: add lifecycleState to fixtures.\n\nFiles: `packages/schemas/src/entities/destinationReview/destinationReview.schema.ts`, `packages/schemas/src/entities/destinationReview/destinationReview.crud.schema.ts`, `packages/schemas/test/fixtures/destinationReview.fixtures.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-028"],
+            "blocks": ["T-033", "T-034"],
+            "subtasks": [
+                {
+                    "title": "Import and spread BaseLifecycleFields in base schema",
+                    "completed": false
+                },
+                { "title": "Verify isPublished and isVerified unchanged", "completed": false },
+                {
+                    "title": "Update CRUD schemas (lifecycleState flows through)",
+                    "completed": false
+                },
+                { "title": "Update fixtures with lifecycleState", "completed": false }
+            ],
+            "tags": ["schemas", "fixtures", "phase-4", "destinationReview"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Write DestinationReview post-migration verification test",
+            "description": "Write migration test that verifies: (1) all existing DestinationReview rows have `lifecycle_state = 'ACTIVE'` after migration, (2) rollback drops the column cleanly, (3) new column has correct NOT NULL constraint. Use project's DB test infrastructure.\n\nFiles: `packages/db/test/migrations/destination-review-lifecycle.migration.test.ts`",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Seed DestinationReview records before migration", "completed": false },
+                { "title": "Assert post-migration all rows have ACTIVE", "completed": false },
+                { "title": "Assert rollback drops column cleanly", "completed": false }
+            ],
+            "tags": ["db", "testing", "migration", "phase-4", "destinationReview"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Update DestinationReview access schema: add lifecycleState to admin ONLY",
+            "description": "Update `packages/schemas/src/entities/destinationReview/destinationReview.access.schema.ts`: verify Admin tier includes `lifecycleState` (already added preemptively in SPEC-062 Phase 0 T-004), clean up the preemptive wrapper comment since the field is now in the base schema. Ensure Public and Protected tiers do NOT include `lifecycleState`.\n\nFiles: `packages/schemas/src/entities/destinationReview/destinationReview.access.schema.ts`",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-030"],
+            "blocks": ["T-035", "T-037"],
+            "subtasks": [
+                {
+                    "title": "Clean up preemptive lifecycleState wrapper in Admin tier",
+                    "completed": false
+                },
+                { "title": "Verify Public tier excludes lifecycleState", "completed": false },
+                { "title": "Verify Protected tier excludes lifecycleState", "completed": false }
+            ],
+            "tags": ["schemas", "access", "phase-4", "destinationReview"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Update DestinationReview query + HTTP schemas",
+            "description": "Update `packages/schemas/src/entities/destinationReview/destinationReview.query.schema.ts`: add `lifecycleState: LifecycleStatusEnumSchema.optional()` filter. Update `destinationReview.http.schema.ts`: add `lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()` in search schemas and default ACTIVE in create schemas. Update conversion functions to pass through lifecycleState.\n\nFiles: `packages/schemas/src/entities/destinationReview/destinationReview.query.schema.ts`, `packages/schemas/src/entities/destinationReview/destinationReview.http.schema.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-030"],
+            "blocks": ["T-035"],
+            "subtasks": [
+                { "title": "Add lifecycleState filter to query schema", "completed": false },
+                { "title": "Add lifecycleState to HTTP search schemas", "completed": false },
+                {
+                    "title": "Add lifecycleState default ACTIVE to HTTP create schemas",
+                    "completed": false
+                },
+                { "title": "Update HTTP conversion functions", "completed": false }
+            ],
+            "tags": ["schemas", "http", "phase-4", "destinationReview"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Remove DestinationReview admin-search workaround",
+            "description": "Update `packages/schemas/src/entities/destinationReview/destinationReview.admin-search.schema.ts`: remove the `z.unknown().transform(() => 'all')` workaround (lines 68-71). The base `status` from `AdminSearchBaseSchema` now maps correctly to `lifecycleState` since the DB column exists. Also update `packages/service-core/src/services/destinationReview/destinationReview.service.ts` if it has related workaround logic.\n\nFiles: `packages/schemas/src/entities/destinationReview/destinationReview.admin-search.schema.ts`, `packages/service-core/src/services/destinationReview/destinationReview.service.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-030"],
+            "blocks": ["T-035", "T-038"],
+            "subtasks": [
+                {
+                    "title": "Remove z.unknown().transform workaround in admin-search schema",
+                    "completed": false
+                },
+                {
+                    "title": "Check service for corresponding workaround, remove if present",
+                    "completed": false
+                },
+                {
+                    "title": "Verify base adminList() status filter works via lifecycleState",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "service", "phase-4", "destinationReview"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Update admin DestinationReview API routes",
+            "description": "Update admin routes under `apps/api/src/routes/admin/destination-review/`: ensure admin response includes `lifecycleState`. Verify request/response schemas reference updated Zod schemas. Verify public/protected routes continue to NOT expose lifecycleState.\n\nFiles: `apps/api/src/routes/admin/destination-review/*`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-032", "T-033", "T-034"],
+            "blocks": ["T-036", "T-038"],
+            "subtasks": [
+                {
+                    "title": "Verify admin response schemas include lifecycleState",
+                    "completed": false
+                },
+                {
+                    "title": "Verify public/protected routes exclude lifecycleState",
+                    "completed": false
+                },
+                { "title": "Grep for any stale field references", "completed": false }
+            ],
+            "tags": ["api", "routes", "phase-4", "destinationReview"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Add DestinationReview admin frontend lifecycle filter",
+            "description": "Add lifecycle status filter to DestinationReview admin list. Update the feature's config/columns files in `apps/admin/src/features/destination-reviews/` (or equivalent path) to include a lifecycle filter using the shared lifecycle filter config pattern. Preserve existing `isPublished` and `isVerified` filters as separate controls (per AC-001-04).\n\nFiles: `apps/admin/src/features/destination-reviews/config/*`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-035"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Locate DestinationReview admin feature config", "completed": false },
+                {
+                    "title": "Add lifecycleState filter using shared lifecycle config",
+                    "completed": false
+                },
+                {
+                    "title": "Verify isPublished and isVerified filters preserved",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "frontend", "phase-4", "destinationReview"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Write DestinationReview schema + access boundary tests",
+            "description": "Write tests in `packages/schemas/test/entities/destinationReview/` that verify: (1) `lifecycleState` field exists in `DestinationReviewSchema` via `BaseLifecycleFields`, accepts DRAFT/ACTIVE/ARCHIVED, defaults to ACTIVE, (2) `DestinationReviewPublicSchema` strips lifecycleState, `DestinationReviewProtectedSchema` strips lifecycleState, `DestinationReviewAdminSchema` preserves lifecycleState, (3) `isPublished` and `isVerified` still exist and are unchanged.\n\nFiles: `packages/schemas/test/entities/destinationReview/destinationReview.schema.test.ts`, `destinationReview.access.schema.test.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-032"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add lifecycleState presence tests in base schema", "completed": false },
+                {
+                    "title": "Add access boundary tests (public/protected strip, admin keeps)",
+                    "completed": false
+                },
+                { "title": "Assert isPublished and isVerified unchanged", "completed": false }
+            ],
+            "tags": ["schemas", "testing", "phase-4", "destinationReview"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Write DestinationReview admin-search + integration tests",
+            "description": "Write tests that verify: (1) admin-search status filter maps to lifecycleState (workaround removed), filters by DRAFT/ACTIVE/ARCHIVED work correctly, (2) integration test of admin list endpoint filtering by lifecycleState. Covers AC-001-04.\n\nFiles: `packages/schemas/test/entities/destinationReview/destinationReview.admin-search.schema.test.ts`, `apps/api/test/integration/destination-review/admin-list.test.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-034", "T-035"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add admin-search schema test for status → lifecycleState mapping",
+                    "completed": false
+                },
+                {
+                    "title": "Write integration test for admin filter by DRAFT/ACTIVE/ARCHIVED",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "api", "testing", "integration", "phase-4", "destinationReview"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Update Sponsorship Drizzle DB schema: add lifecycleState + rename status",
+            "description": "Update `packages/db/src/schemas/sponsorship/sponsorship.dbschema.ts`: (1) add `lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE')`, (2) rename `status` column to `sponsorshipStatus` (keep `SponsorshipStatusPgEnum` type), (3) drop `sponsorships_status_idx`, add `sponsorships_sponsorshipStatus_idx` (on sponsorshipStatus) and `sponsorships_lifecycleState_idx` (on lifecycleState).\n\nFiles: `packages/db/src/schemas/sponsorship/sponsorship.dbschema.ts`",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-038"],
+            "blocks": ["T-040", "T-043", "T-047"],
+            "subtasks": [
+                {
+                    "title": "Add lifecycleState column with NOT NULL DEFAULT ACTIVE",
+                    "completed": false
+                },
+                {
+                    "title": "Rename status to sponsorshipStatus (keep SponsorshipStatusPgEnum)",
+                    "completed": false
+                },
+                { "title": "Drop sponsorships_status_idx", "completed": false },
+                { "title": "Add sponsorships_sponsorshipStatus_idx", "completed": false },
+                { "title": "Add sponsorships_lifecycleState_idx", "completed": false }
+            ],
+            "tags": ["db", "schema", "phase-3", "sponsorship"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Generate Sponsorship up migration (add-copy-drop for status rename)",
+            "description": "Run `pnpm db:generate` to generate the Drizzle migration for Sponsorship changes. Manually edit to ensure the sequence: (1) ADD COLUMN lifecycle_state with NOT NULL DEFAULT 'ACTIVE', (2) ADD COLUMN sponsorship_status with SponsorshipStatusPgEnum, (3) UPDATE sponsorships SET sponsorship_status = status, (4) DROP COLUMN status, (5) index changes. The PG enum type `SponsorshipStatusPgEnum` remains unchanged — only the column name changes.\n\nFiles: new SQL migration file under `packages/db/migrations/`",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-039"],
+            "blocks": ["T-041", "T-042"],
+            "subtasks": [
+                { "title": "Run pnpm db:generate", "completed": false },
+                {
+                    "title": "Edit SQL to ensure ADD/COPY/DROP sequence for status rename",
+                    "completed": false
+                },
+                {
+                    "title": "Verify PG enum type preserved (only column name changes)",
+                    "completed": false
+                },
+                { "title": "Verify index changes", "completed": false }
+            ],
+            "tags": ["db", "migration", "phase-3", "sponsorship"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Write Sponsorship down/rollback migration",
+            "description": "Write manual rollback migration: (1) ADD COLUMN status with SponsorshipStatusPgEnum, (2) UPDATE sponsorships SET status = sponsorship_status, (3) DROP COLUMN sponsorship_status, (4) DROP COLUMN lifecycle_state, (5) restore sponsorships_status_idx. Follow `manual/` migration pattern.\n\nFiles: new SQL rollback file under `packages/db/migrations/manual/`",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-040"],
+            "blocks": ["T-042"],
+            "subtasks": [
+                { "title": "ADD COLUMN status with SponsorshipStatusPgEnum", "completed": false },
+                { "title": "UPDATE copy from sponsorship_status to status", "completed": false },
+                {
+                    "title": "DROP COLUMN sponsorship_status and lifecycle_state",
+                    "completed": false
+                },
+                { "title": "Restore sponsorships_status_idx", "completed": false }
+            ],
+            "tags": ["db", "migration", "rollback", "phase-3", "sponsorship"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Write Sponsorship pre/post-migration data integrity tests",
+            "description": "Write migration tests: (1) pre-migration: assert all status values are valid enum members (pending/active/expired/cancelled), (2) post-migration: sponsorship_status values preserved (identical to pre-migration status values), lifecycle_state = 'ACTIVE' for all rows, (3) post-rollback: status values restored, sponsorship_status and lifecycle_state dropped.\n\nFiles: `packages/db/test/migrations/sponsorship-lifecycle.migration.test.ts`",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-040", "T-041"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Seed Sponsorship records with varied status values",
+                    "completed": false
+                },
+                { "title": "Assert pre-migration status distribution valid", "completed": false },
+                {
+                    "title": "Assert post-migration sponsorship_status values identical",
+                    "completed": false
+                },
+                { "title": "Assert post-migration lifecycle_state all ACTIVE", "completed": false },
+                { "title": "Assert rollback restores status column correctly", "completed": false }
+            ],
+            "tags": ["db", "testing", "migration", "phase-3", "sponsorship"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Update Sponsorship Zod base schema + fixtures",
+            "description": "Update `packages/schemas/src/entities/sponsorship/sponsorship.schema.ts`: (1) rename `status: SponsorshipStatusEnumSchema` to `sponsorshipStatus: SponsorshipStatusEnumSchema`, (2) add `...BaseLifecycleFields` spread. Update `packages/schemas/test/fixtures/sponsorship.fixtures.ts`: rename `status` to `sponsorshipStatus` everywhere, add `lifecycleState: 'ACTIVE'` to fixtures.\n\nFiles: `packages/schemas/src/entities/sponsorship/sponsorship.schema.ts`, `packages/schemas/test/fixtures/sponsorship.fixtures.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-039"],
+            "blocks": ["T-044", "T-045", "T-046", "T-047", "T-048", "T-054"],
+            "subtasks": [
+                { "title": "Import BaseLifecycleFields", "completed": false },
+                { "title": "Rename status to sponsorshipStatus", "completed": false },
+                { "title": "Add BaseLifecycleFields spread", "completed": false },
+                { "title": "Update fixtures (rename + add lifecycleState)", "completed": false }
+            ],
+            "tags": ["schemas", "fixtures", "phase-3", "sponsorship"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-044",
+            "title": "Update Sponsorship access + CRUD schemas",
+            "description": "Update `packages/schemas/src/entities/sponsorship/sponsorship.access.schema.ts`: replace all `status` picks with `sponsorshipStatus` in Public/Protected/Admin tiers. Admin tier already has `lifecycleState` preemptively (SPEC-062 T-008); clean up wrapper comment since it's now in base. Verify Public/Protected include `sponsorshipStatus` but NOT `lifecycleState`. Update `sponsorship.crud.schema.ts`: rename `status` to `sponsorshipStatus`.\n\nFiles: `packages/schemas/src/entities/sponsorship/sponsorship.access.schema.ts`, `packages/schemas/src/entities/sponsorship/sponsorship.crud.schema.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-043"],
+            "blocks": ["T-051", "T-054"],
+            "subtasks": [
+                {
+                    "title": "Replace status with sponsorshipStatus in Public/Protected picks",
+                    "completed": false
+                },
+                {
+                    "title": "Clean up preemptive lifecycleState wrapper in Admin tier",
+                    "completed": false
+                },
+                { "title": "Verify Public/Protected exclude lifecycleState", "completed": false },
+                {
+                    "title": "Rename status to sponsorshipStatus in CRUD schemas",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "access", "phase-3", "sponsorship"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-045",
+            "title": "Update Sponsorship query + admin-search schemas",
+            "description": "Update `packages/schemas/src/entities/sponsorship/sponsorship.query.schema.ts`: rename `status` filter to `sponsorshipStatus`, add `lifecycleState: LifecycleStatusEnumSchema.optional()` filter. Update `sponsorship.admin-search.schema.ts`: `sponsorshipStatus` already exists at line 24 — remove any comment about collision since the DB column now matches the schema field name. Base `status` from `AdminSearchBaseSchema` now maps to `lifecycleState`.\n\nFiles: `packages/schemas/src/entities/sponsorship/sponsorship.query.schema.ts`, `packages/schemas/src/entities/sponsorship/sponsorship.admin-search.schema.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-043"],
+            "blocks": ["T-051"],
+            "subtasks": [
+                {
+                    "title": "Rename status filter to sponsorshipStatus in query schema",
+                    "completed": false
+                },
+                { "title": "Add lifecycleState filter in query schema", "completed": false },
+                { "title": "Remove collision comment in admin-search schema", "completed": false }
+            ],
+            "tags": ["schemas", "phase-3", "sponsorship"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-046",
+            "title": "Update Sponsorship HTTP schema + conversion functions",
+            "description": "Update `packages/schemas/src/entities/sponsorship/sponsorship.http.schema.ts`: rename `status` to `sponsorshipStatus` in search and create schemas, update conversion functions. Also add `lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()` to search schemas and `lifecycleState: z.nativeEnum(LifecycleStatusEnum).default('ACTIVE')` to create schemas.\n\nFiles: `packages/schemas/src/entities/sponsorship/sponsorship.http.schema.ts`",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-043"],
+            "blocks": ["T-051"],
+            "subtasks": [
+                {
+                    "title": "Rename status to sponsorshipStatus in search/create schemas",
+                    "completed": false
+                },
+                { "title": "Add lifecycleState to search/create schemas", "completed": false },
+                { "title": "Update HTTP→domain conversion functions", "completed": false },
+                { "title": "Verify unrelated fields unchanged", "completed": false }
+            ],
+            "tags": ["schemas", "http", "phase-3", "sponsorship"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-047",
+            "title": "Update Sponsorship model: rename findByStatus + update findActiveByTarget",
+            "description": "Update `packages/db/src/models/sponsorship/sponsorship.model.ts`: (1) rename `findByStatus(status)` to `findBySponsorshipStatus(sponsorshipStatus)`, update internal query from `eq(sponsorships.status, status)` to `eq(sponsorships.sponsorshipStatus, sponsorshipStatus)`. (2) Update `findActiveByTarget()` to use BOTH conditions: `and(eq(sponsorships.sponsorshipStatus, 'active'), eq(sponsorships.lifecycleState, 'ACTIVE'))`. Per AC-003-02, archived sponsorships must NOT be returned even if domain status is still 'active'.\n\nFiles: `packages/db/src/models/sponsorship/sponsorship.model.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-039", "T-043"],
+            "blocks": ["T-048", "T-055"],
+            "subtasks": [
+                { "title": "Rename findByStatus to findBySponsorshipStatus", "completed": false },
+                { "title": "Update findBySponsorshipStatus internal query", "completed": false },
+                {
+                    "title": "Update findActiveByTarget to filter by BOTH fields",
+                    "completed": false
+                },
+                { "title": "Grep model for any remaining status references", "completed": false }
+            ],
+            "tags": ["db", "model", "phase-3", "sponsorship"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-048",
+            "title": "Update Sponsorship service: remove _executeAdminSearch override",
+            "description": "Update `packages/service-core/src/services/sponsorship/sponsorship.service.ts`: remove the `_executeAdminSearch` override (lines 168-184) that remaps `sponsorshipStatus -> status`. No longer needed after DB column rename — the base `adminList()` handles `lifecycleState` filtering directly.\n\nFiles: `packages/service-core/src/services/sponsorship/sponsorship.service.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-047"],
+            "blocks": ["T-051", "T-056"],
+            "subtasks": [
+                {
+                    "title": "Locate _executeAdminSearch override (lines 168-184)",
+                    "completed": false
+                },
+                { "title": "Remove override method", "completed": false },
+                {
+                    "title": "Verify base adminList() handles filtering correctly",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "phase-3", "sponsorship"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-049",
+            "title": "Update Sponsorship service _executeSearch with lifecycleState=ACTIVE default",
+            "description": "Update `packages/service-core/src/services/sponsorship/sponsorship.service.ts` `_executeSearch()` method: inject `lifecycleState = 'ACTIVE'` default into filterParams when not specified by caller. This ensures AC-005-01 compliance (public endpoints only return ACTIVE records). Admin path unaffected (uses adminList()).\n\nFiles: `packages/service-core/src/services/sponsorship/sponsorship.service.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-048"],
+            "blocks": ["T-051"],
+            "subtasks": [
+                { "title": "Locate _executeSearch method", "completed": false },
+                { "title": "Add lifecycleState=ACTIVE default injection", "completed": false },
+                { "title": "Add comment explaining AC-005-01 behavior", "completed": false }
+            ],
+            "tags": ["service", "phase-3", "sponsorship"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-050",
+            "title": "Update admin Sponsorship API routes",
+            "description": "Update admin routes under `apps/api/src/routes/admin/sponsorship/`: rename `status` references to `sponsorshipStatus` in handlers and response schemas. Ensure admin response includes both `lifecycleState` and `sponsorshipStatus`.\n\nFiles: `apps/api/src/routes/admin/sponsorship/*`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-044", "T-045", "T-046", "T-048"],
+            "blocks": ["T-052", "T-053", "T-055"],
+            "subtasks": [
+                {
+                    "title": "Grep admin sponsorship routes for status references",
+                    "completed": false
+                },
+                { "title": "Rename status → sponsorshipStatus in handlers", "completed": false },
+                {
+                    "title": "Rename status → sponsorshipStatus in response schemas",
+                    "completed": false
+                },
+                { "title": "Verify lifecycleState included in admin response", "completed": false }
+            ],
+            "tags": ["api", "routes", "phase-3", "sponsorship"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-051",
+            "title": "Update public/protected Sponsorship API routes",
+            "description": "Update public/protected routes for Sponsorship: rename `status` references to `sponsorshipStatus` in handlers and response schemas. Verify public/protected responses do NOT include `lifecycleState` (admin-only).\n\nFiles: `apps/api/src/routes/public/sponsorship/*`, `apps/api/src/routes/protected/sponsorship/*`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-044", "T-045", "T-046", "T-049"],
+            "blocks": ["T-056"],
+            "subtasks": [
+                {
+                    "title": "Grep public/protected sponsorship routes for status",
+                    "completed": false
+                },
+                { "title": "Rename status → sponsorshipStatus", "completed": false },
+                { "title": "Verify lifecycleState NOT in response", "completed": false }
+            ],
+            "tags": ["api", "routes", "phase-3", "sponsorship"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-052",
+            "title": "Update admin Sponsorship frontend (routes + types)",
+            "description": "Update `apps/admin/src/routes/_authed/billing/sponsorships.tsx` and `apps/admin/src/routes/_authed/sponsor/sponsorships.tsx`: rename `status` references to `sponsorshipStatus`. Update `apps/admin/src/features/sponsorships/types.ts`: update type definitions for renamed field.\n\nFiles: `apps/admin/src/routes/_authed/billing/sponsorships.tsx`, `apps/admin/src/routes/_authed/sponsor/sponsorships.tsx`, `apps/admin/src/features/sponsorships/types.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-050"],
+            "blocks": ["T-053", "T-055"],
+            "subtasks": [
+                {
+                    "title": "Rename status → sponsorshipStatus in billing route",
+                    "completed": false
+                },
+                {
+                    "title": "Verify sponsor route already uses sponsorshipStatus",
+                    "completed": false
+                },
+                { "title": "Update types.ts for renamed field", "completed": false }
+            ],
+            "tags": ["admin", "frontend", "phase-3", "sponsorship"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-053",
+            "title": "Update Sponsorship useSponsorshipQueries hook",
+            "description": "Update `apps/admin/src/features/sponsorships/hooks/useSponsorshipQueries.ts`: (1) line 96: change `body: { status }` to `body: { sponsorshipStatus }` in `updateSponsorshipStatus()`, (2) line 170: change mutation type `{ id: string; status: string }` to `{ id: string; sponsorshipStatus: string }`.\n\nFiles: `apps/admin/src/features/sponsorships/hooks/useSponsorshipQueries.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-050", "T-052"],
+            "blocks": ["T-055"],
+            "subtasks": [
+                { "title": "Update updateSponsorshipStatus body field name", "completed": false },
+                { "title": "Update mutation type signature", "completed": false }
+            ],
+            "tags": ["admin", "frontend", "hooks", "phase-3", "sponsorship"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-054",
+            "title": "Update SponsorshipsTab + add lifecycle filter to Sponsorship list",
+            "description": "Update `apps/admin/src/features/sponsorships/components/SponsorshipsTab.tsx`: rename `status` references to `sponsorshipStatus`. Also add a separate `lifecycleState` filter control to the Sponsorship list (independent of `sponsorshipStatus` filter per AC-001-02). Use the shared lifecycle filter config pattern.\n\nFiles: `apps/admin/src/features/sponsorships/components/SponsorshipsTab.tsx`, related filter config files",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-052", "T-053"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Rename status → sponsorshipStatus in SponsorshipsTab",
+                    "completed": false
+                },
+                { "title": "Add lifecycleState filter control", "completed": false },
+                { "title": "Verify filters operate independently", "completed": false }
+            ],
+            "tags": ["admin", "frontend", "phase-3", "sponsorship"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-055",
+            "title": "Write Sponsorship schema + access tests",
+            "description": "Write tests: (1) `sponsorship.schema.test.ts`: `status` field no longer exists, `sponsorshipStatus` exists with SponsorshipStatusEnum type, `lifecycleState` exists with LifecycleStatusEnum type with default ACTIVE, (2) CRUD tests: update accepts both fields independently, update rejects `status` field with validation error (AC-003-03), (3) access boundary tests: Public/Protected include sponsorshipStatus but NOT lifecycleState, Admin includes both.\n\nFiles: `packages/schemas/test/entities/sponsorship/sponsorship.schema.test.ts`, `sponsorship.access.schema.test.ts`, `sponsorship.crud.schema.test.ts`",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-043", "T-044"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Assert status field removed", "completed": false },
+                {
+                    "title": "Assert sponsorshipStatus + lifecycleState present with correct types",
+                    "completed": false
+                },
+                {
+                    "title": "CRUD: update rejects status with validation error",
+                    "completed": false
+                },
+                {
+                    "title": "Access boundary: Public/Protected keep sponsorshipStatus, exclude lifecycleState",
+                    "completed": false
+                },
+                { "title": "Access boundary: Admin includes both fields", "completed": false }
+            ],
+            "tags": ["schemas", "testing", "phase-3", "sponsorship"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-056",
+            "title": "Write Sponsorship integration test: lifecycleState + sponsorshipStatus independence",
+            "description": "Write integration test covering AC-001-02 and AC-003-02: (1) admin can filter by lifecycleState alone, (2) admin can filter by sponsorshipStatus alone, (3) both filters operate independently, (4) archiving a sponsorship (lifecycleState = ARCHIVED) does NOT change sponsorshipStatus (e.g., stays 'expired').\n\nFiles: `apps/api/test/integration/sponsorship/admin-filters.test.ts`",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-050"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Seed Sponsorship records with varied lifecycleState and sponsorshipStatus",
+                    "completed": false
+                },
+                { "title": "Test lifecycleState filter independence", "completed": false },
+                { "title": "Test sponsorshipStatus filter independence", "completed": false },
+                { "title": "Test archival does not change sponsorshipStatus", "completed": false }
+            ],
+            "tags": ["api", "testing", "integration", "phase-3", "sponsorship"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-057",
+            "title": "Write Sponsorship model + hook tests",
+            "description": "Write tests: (1) `findActiveByTarget` test: filters by BOTH `sponsorshipStatus = 'active'` AND `lifecycleState = 'ACTIVE'`; an archived sponsorship with active domain status is NOT returned. (2) `useSponsorshipQueries` hook test: verify `updateSponsorshipStatus()` sends `{ sponsorshipStatus }` (not `{ status }`) in PATCH body.\n\nFiles: `packages/db/test/models/sponsorship/sponsorship.model.test.ts` (update findActiveByTarget test), `apps/admin/src/features/sponsorships/hooks/useSponsorshipQueries.test.ts` (new)",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-047", "T-053"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Update findActiveByTarget test with combined filter assertion",
+                    "completed": false
+                },
+                {
+                    "title": "Write hook test for updateSponsorshipStatus PATCH body",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "admin", "testing", "phase-3", "sponsorship"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-058",
+            "title": "Cross-cutting public endpoint + regression tests + final verification",
+            "description": "(1) Write cross-cutting public endpoint tests verifying all 4 entities (OwnerPromotion, Sponsorship, AccommodationReview, DestinationReview) return only ACTIVE records on public endpoints and lifecycleState field is absent from public/protected response bodies. (2) Run existing PostSponsor and Tag tests to confirm no regressions. (3) Run full `pnpm typecheck && pnpm test`, fix any regressions (update test assertions for stripped fields). (4) Update SPEC-063 metadata status from `draft` to `completed` in spec frontmatter.\n\nFiles: `apps/api/test/integration/cross-cutting/lifecycle-public-endpoints.test.ts`, spec.md frontmatter",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": [
+                "T-001",
+                "T-002",
+                "T-022",
+                "T-027",
+                "T-036",
+                "T-038",
+                "T-054",
+                "T-056",
+                "T-057"
+            ],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write cross-cutting public endpoint test for all 4 entities",
+                    "completed": false
+                },
+                { "title": "Verify PostSponsor tests pass (regression)", "completed": false },
+                { "title": "Verify Tag tests pass (regression)", "completed": false },
+                { "title": "Run pnpm typecheck", "completed": false },
+                { "title": "Run pnpm test and fix regressions", "completed": false },
+                {
+                    "title": "Update SPEC-063 status to completed in spec.md frontmatter",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "verification", "cleanup", "cross-cutting"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-17T16:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 58,
+        "pending": 56,
+        "inProgress": 0,
+        "completed": 2,
+        "blocked": 0,
+        "averageComplexity": 2.0
+    }
+}

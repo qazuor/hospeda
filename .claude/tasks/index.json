@@ -212,6 +212,13 @@
             "path": "SPEC-066-getbyid-relation-loading"
         },
         {
+            "specId": "SPEC-063",
+            "title": "Lifecycle State Standardization",
+            "status": "in-progress",
+            "progress": "5/58",
+            "path": "SPEC-063-lifecycle-state-standardization"
+        },
+        {
             "specId": "SPEC-078",
             "title": "Cloudinary Image Management System",
             "status": "in-progress",
