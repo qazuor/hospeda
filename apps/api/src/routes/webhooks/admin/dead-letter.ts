@@ -58,6 +58,10 @@ export const listDeadLetterQueueRoute = createAdminRoute({
     requestQuery: ListDeadLetterQueueQuerySchema.shape,
     responseSchema: DeadLetterQueueListResponseSchema,
     handler: async (_c, _params, _body, query) => {
+        // getDb() is used directly here because this handler performs two read-only SELECTs
+        // (count + paginated list) with no writes. No BillingWebhookDeadLetter model or
+        // service exists in @repo/db or @repo/service-core, so getDb() is acceptable for
+        // this read-only admin listing use case.
         const db = getDb();
 
         try {
@@ -188,6 +192,10 @@ export const retryDeadLetterRoute = createAdminRoute({
     requestParams: deadLetterIdParamSchema.shape,
     responseSchema: DeadLetterRetryResponseSchema,
     handler: async (_c, params) => {
+        // getDb() is used here for the pre-transaction read guard (SELECT only) to avoid
+        // holding a DB connection during validation logic. The subsequent multi-write
+        // (insert + update) is wrapped in withServiceTransaction below. No
+        // BillingWebhookDeadLetter model or service exists to abstract this SELECT.
         const db = getDb();
         const deadLetterId = params.id as string;
 

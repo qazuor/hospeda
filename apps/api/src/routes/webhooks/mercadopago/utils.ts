@@ -75,6 +75,10 @@ export async function markWebhookEventProcessed(webhookEventId: string): Promise
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         try {
+            // getDb() is used directly: this is a single-row status UPDATE with an
+            // explicit retry loop. No BillingWebhookEventService exists in @repo/service-core
+            // to abstract this operation. withServiceTransaction is not needed because only
+            // one table is written per call.
             const db = getDb();
 
             await db
@@ -144,6 +148,9 @@ export async function markEventProcessedByProviderId({
     readonly providerEventId: string;
 }): Promise<void> {
     try {
+        // getDb() is used directly: single-row UPDATE by providerEventId with no
+        // multi-table atomicity requirement. No BillingWebhookEventService exists
+        // in @repo/service-core to abstract this operation.
         const db = getDb();
 
         await db
@@ -193,6 +200,9 @@ export async function markEventFailedByProviderId({
     readonly errorMessage: string;
 }): Promise<void> {
     try {
+        // getDb() is used directly: single-row UPDATE by providerEventId with no
+        // multi-table atomicity requirement. No BillingWebhookEventService exists
+        // in @repo/service-core to abstract this operation.
         const db = getDb();
 
         await db

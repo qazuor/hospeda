@@ -60,6 +60,13 @@ export const handleWebhookEvent: QZPayWebhookHandler = async (c, event) => {
     );
 
     try {
+        // getDb() is used directly here because no BillingWebhookEventService or model
+        // exists in @repo/db / @repo/service-core to abstract INSERT + SELECT on
+        // billing_webhook_events. The optimistic-insert idempotency pattern requires
+        // fine-grained control over the insert/select retry loop that a generic service
+        // could not easily expose. withServiceTransaction is not used because the insert
+        // and fallback SELECT are logically a single idempotency unit, not a multi-table
+        // atomic write.
         const db = getDb();
         const providerEventId = String(event.id);
         const requestId = String(c.get('requestId') || event.id);

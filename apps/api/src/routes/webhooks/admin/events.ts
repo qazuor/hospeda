@@ -33,6 +33,10 @@ export const listWebhookEventsRoute = createAdminRoute({
     requestQuery: ListWebhookEventsQuerySchema.shape,
     responseSchema: WebhookEventsListResponseSchema,
     handler: async (_c, _params, _body, query) => {
+        // getDb() is used directly here because this handler performs two read-only SELECTs
+        // (count + paginated list) with no writes. No BillingWebhookEventService or
+        // BillingWebhookEvent model exists in @repo/db or @repo/service-core to abstract
+        // these queries, so getDb() is acceptable for this read-only admin listing use case.
         const db = getDb();
 
         try {

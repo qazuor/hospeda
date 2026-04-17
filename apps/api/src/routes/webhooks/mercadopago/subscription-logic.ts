@@ -14,6 +14,7 @@ import { extractMPSubscriptionEventData } from '@qazuor/qzpay-mercadopago';
 import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
+import { withServiceTransaction } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { and, eq, isNull } from 'drizzle-orm';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
@@ -276,7 +277,10 @@ export async function processSubscriptionUpdated({
         return { success: true, statusChanged: false };
     }
 
-    // Step 5: Query local subscription via direct Drizzle query
+    // Step 5: Query local subscription via direct Drizzle query.
+    // getDb() is used here for the initial SELECT and for subsequent single-table
+    // UPDATEs (planId-only, paymentFailureCount). The multi-table atomic write
+    // (status update + audit log insert) uses withServiceTransaction below (Step 7).
     const db = getDb();
     const [localSubscription] = await db
         .select()
@@ -400,7 +404,9 @@ export async function processSubscriptionUpdated({
         return { success: true, statusChanged: false };
     }
 
-    // Step 7: Update billing_subscriptions and insert audit log in a single transaction
+    // Step 7: Update billing_subscriptions and insert audit log in a single transaction.
+    // withServiceTransaction is used here instead of db.transaction() to follow the
+    // project-wide pattern for atomic multi-write operations (SPEC-059 T-059G-032-C).
     const updateData: Record<string, unknown> = {
         status: mappedStatus,
         updatedAt: new Date()
@@ -421,7 +427,10 @@ export async function processSubscriptionUpdated({
         updateData.cancelAtPeriodEnd = false;
     }
 
-    await db.transaction(async (tx) => {
+    await withServiceTransaction(async (ctx) => {
+        // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+        const tx = ctx.tx!;
+
         await tx
             .update(billingSubscriptions)
             .set(updateData)
