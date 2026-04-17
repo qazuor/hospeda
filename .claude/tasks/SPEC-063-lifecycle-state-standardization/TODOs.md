@@ -6,7 +6,7 @@
 **Status:** in-progress (Phase 2 — admin UI migration complete; apps/admin typecheck clean for SPEC-063)
 
 **Average Complexity:** 2.1/2.5 (ceiling)
-**Critical Path:** T-003 -> T-007 -> T-010 -> T-013 -> T-016 -> T-018 -> T-027 -> T-028 -> T-030 -> T-034 -> T-035 -> T-038 -> T-039 -> T-040 -> T-042 -> T-058 (16 steps)
+**Critical Path (post-replan):** T-003 -> T-007 -> T-010 -> T-013 -> T-016a -> T-017 -> T-018a -> T-018c -> T-027 -> T-028 -> T-030 -> T-034 -> T-035 -> T-038 -> T-039 -> T-040 -> T-042 -> T-058 (18 steps)
 **Parallel Tracks:** 3 identified (Phase 1 tests, Phase 2 migration, Phase 2 schemas after T-003)
 
 ---
