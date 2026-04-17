@@ -309,19 +309,15 @@ export interface EventCardData {
 }
 
 /**
- * Props for the BlogPostCard component.
+ * Props for the ArticleCard component.
  *
- * Produced by `toPostCardProps()` in `transforms.ts` and consumed
- * by `BlogPostCard.astro`. Used in the homepage blog section and
+ * Produced by `toArticleCardProps()` in `transforms.ts` and consumed
+ * by `ArticleCard.astro`. Used in the homepage blog section and
  * the full posts listing page.
- *
- * Note: `authorAvatar` is an addition over the base `transforms.ts` shape.
- * It is included here for mock data richness and will be added to the
- * web2 transform function when the author API endpoint returns avatar URLs.
  *
  * @example
  * ```ts
- * const card: BlogPostCardData = {
+ * const card: ArticleCardData = {
  *   slug: 'mejores-cabanas-entre-rios',
  *   title: 'Las 10 mejores cabañas de Entre Ríos',
  *   summary: 'Descubrí los rincones más hermosos del litoral.',
@@ -334,7 +330,7 @@ export interface EventCardData {
  * };
  * ```
  */
-export interface BlogPostCardData {
+export interface ArticleCardData {
     /** URL-safe slug used to build the post detail page path. */
     readonly slug: string;
     /** Display title of the blog post. */
@@ -351,10 +347,7 @@ export interface BlogPostCardData {
     readonly readingTimeMinutes: number;
     /** Display name of the post author. */
     readonly authorName: string;
-    /**
-     * Optional URL for the author's avatar image.
-     * Not present in the base `transforms.ts` shape — added for web2 mock richness.
-     */
+    /** Optional URL for the author's avatar image. */
     readonly authorAvatar?: string;
     /** Whether this post appears in featured/promoted slots. */
     readonly isFeatured: boolean;

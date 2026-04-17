@@ -14,8 +14,8 @@ import GradientButton from '@/components/shared/GradientButton.astro';
 import SectionHeader from '@/components/shared/SectionHeader.astro';
 import FeaturedArticleCard from '@/components/shared/FeaturedArticleCard.astro';
 import ArticleCard from '@/components/shared/ArticleCard.astro';
-import { postsApi, toPostCardProps } from '@/lib/api';
-import type { BlogPostCardData } from '@/lib/api/transforms';
+import { postsApi, toArticleCardProps } from '@/lib/api';
+import type { ArticleCardData } from '@/lib/api/transforms';
 import { webLogger } from '@/lib/logger';
 
 interface Props {
@@ -27,11 +27,11 @@ const { locale } = Astro.props;
 const { t } = createTranslations(locale);
 
 // Fetch 4 posts: 1 featured + 3 secondary
-let posts: BlogPostCardData[] = [];
+let posts: ArticleCardData[] = [];
 try {
     const result = await postsApi.list({ sortBy: 'publishedAt', sortOrder: 'desc', pageSize: 4 });
     if (result.ok) {
-        const rawPosts = result.data.items.map((raw) => toPostCardProps({ item: raw as Record<string, unknown> }));
+        const rawPosts = result.data.items.map((raw) => toArticleCardProps({ item: raw as Record<string, unknown> }));
         posts = await Promise.all(
             rawPosts.map(async (post) => {
                 const raw = post.authorAvatar;

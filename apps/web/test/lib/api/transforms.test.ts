@@ -6,9 +6,9 @@
 import { describe, expect, it } from 'vitest';
 import {
     toAccommodationCardProps,
+    toArticleCardProps,
     toDestinationCardProps,
     toEventCardProps,
-    toPostCardProps,
     toTestimonialCardProps
 } from '../../../src/lib/api/transforms';
 
@@ -124,7 +124,7 @@ describe('toEventCardProps', () => {
     });
 });
 
-describe('toPostCardProps', () => {
+describe('toArticleCardProps', () => {
     it('should transform blog post data', () => {
         const item = {
             slug: 'best-beaches',
@@ -136,7 +136,7 @@ describe('toPostCardProps', () => {
             isFeatured: false
         };
 
-        const result = toPostCardProps({ item });
+        const result = toArticleCardProps({ item });
 
         expect(result.slug).toBe('best-beaches');
         expect(result.title).toBe('Best Beaches');
@@ -144,7 +144,7 @@ describe('toPostCardProps', () => {
     });
 
     it('should handle missing author', () => {
-        const result = toPostCardProps({ item: {} });
+        const result = toArticleCardProps({ item: {} });
         expect(result.authorName).toBe('');
     });
 });

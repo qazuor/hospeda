@@ -1,6 +1,6 @@
 ---
 /**
- * @file PostCardLight.astro
+ * @file RelatedPostCard.astro
  * @description Lightweight post card for use in related content carousels.
  * Zero client-side JS. Pure Astro.
  */
@@ -27,30 +27,30 @@ const formattedDate = publishedAt
   : null;
 ---
 
-<article class="post-card-light">
-  <a href={`/${lang}/publicaciones/${slug}`} class="post-card-light__link">
-    <div class="post-card-light__image-wrapper">
+<article class="related-post-card">
+  <a href={`/${lang}/publicaciones/${slug}`} class="related-post-card__link">
+    <div class="related-post-card__image-wrapper">
       {featuredImage ? (
         <img
           src={featuredImage}
           alt={title}
-          class="post-card-light__img"
+          class="related-post-card__img"
           loading="lazy"
           decoding="async"
         />
       ) : (
-        <div class="post-card-light__placeholder" aria-hidden="true" />
+        <div class="related-post-card__placeholder" aria-hidden="true" />
       )}
     </div>
-    <div class="post-card-light__content">
-      <h4 class="post-card-light__title">{title}</h4>
-      <p class="post-card-light__summary">{summary}</p>
-      <div class="post-card-light__meta">
+    <div class="related-post-card__content">
+      <h4 class="related-post-card__title">{title}</h4>
+      <p class="related-post-card__summary">{summary}</p>
+      <div class="related-post-card__meta">
         {destinationName && (
-          <span class="post-card-light__chip">{destinationName}</span>
+          <span class="related-post-card__chip">{destinationName}</span>
         )}
         {formattedDate && (
-          <time class="post-card-light__date" datetime={publishedAt!}>
+          <time class="related-post-card__date" datetime={publishedAt!}>
             {formattedDate}
           </time>
         )}
@@ -60,44 +60,44 @@ const formattedDate = publishedAt
 </article>
 
 <style>
-  .post-card-light {
+  .related-post-card {
     background-color: var(--card);
     border-radius: var(--radius-card, 24px);
     box-shadow: var(--shadow-card);
     overflow: hidden;
     transition: box-shadow var(--duration-normal, 0.4s) ease;
   }
-  .post-card-light:hover {
+  .related-post-card:hover {
     box-shadow: var(--shadow-card-hover);
   }
-  .post-card-light__link {
+  .related-post-card__link {
     text-decoration: none;
     color: inherit;
     display: block;
   }
-  .post-card-light__image-wrapper {
+  .related-post-card__image-wrapper {
     aspect-ratio: 16 / 9;
     overflow: hidden;
     border-radius: var(--radius-organic-sm, 0px 75px);
   }
-  .post-card-light__img {
+  .related-post-card__img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     transition: transform var(--duration-normal, 0.4s) ease;
   }
-  .post-card-light:hover .post-card-light__img {
+  .related-post-card:hover .related-post-card__img {
     transform: scale(1.05);
   }
-  .post-card-light__placeholder {
+  .related-post-card__placeholder {
     width: 100%;
     height: 100%;
     background: linear-gradient(135deg, var(--surface-warm) 0%, var(--card) 100%);
   }
-  .post-card-light__content {
+  .related-post-card__content {
     padding: var(--space-4, 16px);
   }
-  .post-card-light__title {
+  .related-post-card__title {
     font-family: var(--font-heading);
     font-size: 1rem;
     font-weight: 600;
@@ -105,7 +105,7 @@ const formattedDate = publishedAt
     margin: 0 0 var(--space-2, 8px);
     line-height: 1.3;
   }
-  .post-card-light__summary {
+  .related-post-card__summary {
     font-family: var(--font-sans);
     font-size: 0.85rem;
     line-height: 1.5;
@@ -116,13 +116,13 @@ const formattedDate = publishedAt
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  .post-card-light__meta {
+  .related-post-card__meta {
     display: flex;
     align-items: center;
     gap: var(--space-2, 8px);
     margin-top: var(--space-3, 12px);
   }
-  .post-card-light__chip {
+  .related-post-card__chip {
     font-family: var(--font-sans);
     font-size: 0.75rem;
     background-color: var(--surface-warm);
@@ -131,7 +131,7 @@ const formattedDate = publishedAt
     border-radius: var(--radius-pill);
     font-weight: 500;
   }
-  .post-card-light__date {
+  .related-post-card__date {
     font-family: var(--font-sans);
     font-size: 0.75rem;
     color: var(--muted-foreground);

@@ -13,7 +13,7 @@ import EmptyState from '@/components/shared/EmptyState.astro';
 import ErrorBanner from '@/components/shared/ErrorBanner.astro';
 import Pagination from '@/components/shared/Pagination.astro';
 import { postsApi, tagsApi } from '@/lib/api/endpoints';
-import { toPostCardProps } from '@/lib/api/transforms';
+import { toArticleCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -36,7 +36,7 @@ const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.total : 0;
 const totalPages = result.ok ? Math.ceil(total / 9) : 0;
-const cards = items.map((item) => toPostCardProps({ item: item as unknown as Record<string, unknown> }));
+const cards = items.map((item) => toArticleCardProps({ item: item as unknown as Record<string, unknown> }));
 const baseUrl = buildUrl({ locale, path: `publicaciones/etiqueta/${tagSlug}` });
 ---
 

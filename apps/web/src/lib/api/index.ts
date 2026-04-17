@@ -53,9 +53,9 @@ export type {
 export {
     toAccommodationCardProps,
     toAccommodationDetailedProps,
+    toArticleCardProps,
     toDestinationCardProps,
     toEventCardProps,
-    toPostCardProps,
     toTestimonialCardProps
 } from './transforms';
 
@@ -64,7 +64,7 @@ export {
 export type {
     AccommodationCardData,
     AccommodationDetailedCardData,
-    BlogPostCardData,
+    ArticleCardData,
     CardAmenityFeature,
     CardLocation,
     CardPrice,

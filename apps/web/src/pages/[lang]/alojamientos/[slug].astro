@@ -25,7 +25,7 @@ import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
 import OwnerCard from '@/components/accommodation/OwnerCard.astro';
 import { OwnerContact } from '@/components/accommodation/OwnerContact.client';
 import AccommodationCard from '@/components/shared/AccommodationCard.astro';
-import PostCardLight from '@/components/shared/PostCardLight.astro';
+import RelatedPostCard from '@/components/shared/RelatedPostCard.astro';
 import EventCard from '@/components/shared/EventCard.astro';
 import { accommodationsApi, postsApi, eventsApi } from '@/lib/api/endpoints';
 import { toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
@@ -181,7 +181,7 @@ const jsonLd: Record<string, unknown> = {
     {postItems.length > 0 && (
         <RelatedCarousel title={t('accommodations.detail.related.posts')} ariaLabel={t('accommodations.detail.related.posts')} lang={locale}>
             {postItems.map((item) => (
-                <PostCardLight
+                <RelatedPostCard
                     id={String(item.id || '')}
                     slug={String(item.slug || '')}
                     title={String(item.title || '')}

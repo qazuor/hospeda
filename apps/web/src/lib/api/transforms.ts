@@ -13,7 +13,7 @@
 import type {
     AccommodationCardData,
     AccommodationDetailData,
-    BlogPostCardData,
+    ArticleCardData,
     CardAmenityFeature,
     DestinationCardData,
     EventCardData,
@@ -25,7 +25,7 @@ import { extractFeaturedImageUrl, extractGalleryUrls } from '../media';
 export type {
     AccommodationCardData,
     AccommodationDetailData,
-    BlogPostCardData,
+    ArticleCardData,
     CardAmenityFeature,
     CardLocation,
     CardPrice,
@@ -259,14 +259,14 @@ export function toEventCardProps({
 }
 
 /**
- * Transforms a raw API post item to BlogPostCard props.
+ * Transforms a raw API post item to ArticleCard props.
  *
  * @param item - Raw post object from the API
- * @returns Typed BlogPostCardData for the card component
+ * @returns Typed ArticleCardData for the card component
  */
-export function toPostCardProps({
+export function toArticleCardProps({
     item
-}: { readonly item: Record<string, unknown> }): BlogPostCardData {
+}: { readonly item: Record<string, unknown> }): ArticleCardData {
     const authorObj = item.author as Record<string, unknown> | undefined;
     const authorName = String(
         item.authorName ||
