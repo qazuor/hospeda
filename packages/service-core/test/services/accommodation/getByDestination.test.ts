@@ -80,7 +80,9 @@ describe('AccommodationService.getByDestination', () => {
         });
         expect(modelMock.findAll).toHaveBeenCalledWith(
             { destinationId },
-            { page: 1, pageSize: 10 }
+            { page: 1, pageSize: 10 },
+            undefined,
+            undefined
         );
         expect(permissionHelpers.checkCanList).toHaveBeenCalledWith(actor);
     });
@@ -109,7 +111,9 @@ describe('AccommodationService.getByDestination', () => {
         expectInternalError(result);
         expect(modelMock.findAll).toHaveBeenCalledWith(
             { destinationId },
-            { page: 1, pageSize: 10 }
+            { page: 1, pageSize: 10 },
+            undefined,
+            undefined
         );
     });
 

@@ -85,7 +85,8 @@ describe('AccommodationService.getFaqs', () => {
         expect(result.data?.faqs).toEqual(faqs);
         expect(modelMock.findWithRelations).toHaveBeenCalledWith(
             { id: accommodation.id as string },
-            { faqs: true }
+            { faqs: true },
+            undefined
         );
         expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodationWithFaqs);
     });
@@ -96,7 +97,8 @@ describe('AccommodationService.getFaqs', () => {
         expectNotFoundError(result);
         expect(modelMock.findWithRelations).toHaveBeenCalledWith(
             { id: accommodation.id as string },
-            { faqs: true }
+            { faqs: true },
+            undefined
         );
     });
 

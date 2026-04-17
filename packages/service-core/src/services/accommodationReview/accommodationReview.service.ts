@@ -263,7 +263,7 @@ export class AccommodationReviewService extends BaseCrudService<
         await this.accommodationService.updateStatsFromReview(
             accommodationId,
             { reviewsCount, averageRating, rating },
-            tx
+            tx ? { tx } : undefined
         );
     }
 
@@ -495,11 +495,13 @@ export class AccommodationReviewService extends BaseCrudService<
      * Validates permissions via _canList and returns only non-deleted reviews.
      * @param actor - The actor performing the action
      * @param input - Object containing accommodationId and optional pagination
+     * @param ctx - Optional service context for transaction propagation
      * @returns Paginated list of reviews for the accommodation wrapped in consistent format
      */
     public async listByAccommodation(
         actor: Actor,
-        input: AccommodationReviewListByAccommodationParams
+        input: AccommodationReviewListByAccommodationParams,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationReviewListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listByAccommodation',
@@ -510,7 +512,9 @@ export class AccommodationReviewService extends BaseCrudService<
                 const { accommodationId, page, pageSize } = validated;
                 const result = await this.model.findAll(
                     { accommodationId, deletedAt: null },
-                    { page, pageSize }
+                    { page, pageSize },
+                    undefined,
+                    ctx?.tx
                 );
 
                 // Wrap the result in consistent format with total for pagination
@@ -526,11 +530,13 @@ export class AccommodationReviewService extends BaseCrudService<
      * Validates permissions via _canList and returns only non-deleted reviews.
      * @param actor - The actor performing the action
      * @param input - Object containing userId and optional pagination/filter params
+     * @param ctx - Optional service context for transaction propagation
      * @returns Paginated list of reviews by user wrapped in consistent format
      */
     public async listByUser(
         actor: Actor,
-        input: AccommodationReviewsByUserInput
+        input: AccommodationReviewsByUserInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationReviewListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listByUser',
@@ -543,7 +549,12 @@ export class AccommodationReviewService extends BaseCrudService<
                 if (accommodationId) {
                     filters.accommodationId = accommodationId;
                 }
-                const result = await this.model.findAll(filters, { page, pageSize });
+                const result = await this.model.findAll(
+                    filters,
+                    { page, pageSize },
+                    undefined,
+                    ctx?.tx
+                );
 
                 const accommodationReviews = Array.isArray(result.items) ? result.items : [];
 
@@ -557,11 +568,13 @@ export class AccommodationReviewService extends BaseCrudService<
      * Validates permissions via _canList and returns reviews with user data.
      * @param actor - The actor performing the action
      * @param input - Object containing optional pagination and filters
+     * @param ctx - Optional service context for transaction propagation
      * @returns Paginated list of reviews with user information wrapped in consistent format
      */
     public async listWithUser(
         actor: Actor,
-        input: AccommodationReviewListWithUserParams = { page: 1, pageSize: 10 }
+        input: AccommodationReviewListWithUserParams = { page: 1, pageSize: 10 },
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationReviewWithUserListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listWithUser',
@@ -577,7 +590,11 @@ export class AccommodationReviewService extends BaseCrudService<
                     ...filterParams
                 };
 
-                const result = await this.model.findAllWithUser(defaultFilters, { page, pageSize });
+                const result = await this.model.findAllWithUser(
+                    defaultFilters,
+                    { page, pageSize },
+                    ctx?.tx
+                );
 
                 // Wrap the result in consistent format
                 const accommodationReviews = Array.isArray(result.items) ? result.items : [];

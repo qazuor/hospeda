@@ -101,10 +101,13 @@ describe('AccommodationService.getAllIAData', () => {
         const result = await service.getAllIAData(input, actor);
         expectSuccess(result);
         expect(result.data?.iaData).toEqual(iaData);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
-        expect(iaDataModelMock.findAll).toHaveBeenCalledWith({
-            accommodationId: accommodation.id as any
-        });
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
+        expect(iaDataModelMock.findAll).toHaveBeenCalledWith(
+            { accommodationId: accommodation.id as any },
+            undefined,
+            undefined,
+            undefined
+        );
         expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodation);
     });
 
@@ -115,17 +118,20 @@ describe('AccommodationService.getAllIAData', () => {
         const result = await service.getAllIAData(input, actor);
         expectSuccess(result);
         expect(result.data?.iaData).toEqual([]);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
-        expect(iaDataModelMock.findAll).toHaveBeenCalledWith({
-            accommodationId: accommodation.id as any
-        });
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
+        expect(iaDataModelMock.findAll).toHaveBeenCalledWith(
+            { accommodationId: accommodation.id as any },
+            undefined,
+            undefined,
+            undefined
+        );
     });
 
     it('should return NOT_FOUND if accommodation does not exist', async () => {
         modelMock.findById.mockResolvedValue(null);
         const result = await service.getAllIAData(input, actor);
         expectNotFoundError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
     });
 
     it('should return FORBIDDEN if actor cannot view', async () => {
@@ -144,9 +150,12 @@ describe('AccommodationService.getAllIAData', () => {
         vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
         const result = await service.getAllIAData(input, actor);
         expectInternalError(result);
-        expect(iaDataModelMock.findAll).toHaveBeenCalledWith({
-            accommodationId: accommodation.id as any
-        });
+        expect(iaDataModelMock.findAll).toHaveBeenCalledWith(
+            { accommodationId: accommodation.id as any },
+            undefined,
+            undefined,
+            undefined
+        );
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {

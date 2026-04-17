@@ -88,7 +88,7 @@ describe('AccommodationService.addFaq', () => {
             answer: input.faq.answer,
             accommodationId: accommodation.id as any
         });
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
         expect(faqModelMock.create).toHaveBeenCalled();
         expect(permissionHelpers.checkCanUpdate).toHaveBeenCalledWith(actor, accommodation);
     });
@@ -97,7 +97,7 @@ describe('AccommodationService.addFaq', () => {
         modelMock.findById.mockResolvedValue(null);
         const result = await service.addFaq(actor, input);
         expectNotFoundError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
     });
 
     it('should return FORBIDDEN if actor cannot update', async () => {

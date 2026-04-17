@@ -96,7 +96,7 @@ describe('AccommodationService.addIAData', () => {
             category: input.iaData.category,
             accommodationId: accommodation.id as any
         });
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
         expect(iaDataModelMock.create).toHaveBeenCalled();
         expect(permissionHelpers.checkCanUpdate).toHaveBeenCalledWith(actor, accommodation);
     });
@@ -105,7 +105,7 @@ describe('AccommodationService.addIAData', () => {
         modelMock.findById.mockResolvedValue(null);
         const result = await service.addIAData(input, actor);
         expectNotFoundError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
     });
 
     it('should return FORBIDDEN if actor cannot update', async () => {

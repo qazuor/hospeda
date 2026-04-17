@@ -96,16 +96,19 @@ describe('AccommodationService.removeIAData', () => {
         const result = await service.removeIAData(input, actor);
         expectSuccess(result);
         expect(result.data).toEqual({ success: true });
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
-        expect(iaDataModelMock.findById).toHaveBeenCalledWith(iaData.id as any);
-        expect(iaDataModelMock.hardDelete).toHaveBeenCalledWith({ id: iaData.id as any });
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
+        expect(iaDataModelMock.findById).toHaveBeenCalledWith(iaData.id as any, undefined);
+        expect(iaDataModelMock.hardDelete).toHaveBeenCalledWith(
+            { id: iaData.id as any },
+            undefined
+        );
     });
 
     it('should return NOT_FOUND if accommodation does not exist', async () => {
         modelMock.findById.mockResolvedValue(null);
         const result = await service.removeIAData(input, actor);
         expectNotFoundError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
     });
 
     it('should return NOT_FOUND if AI data does not exist', async () => {
@@ -114,7 +117,7 @@ describe('AccommodationService.removeIAData', () => {
         vi.spyOn(Object.getPrototypeOf(service), '_canUpdate').mockImplementation(() => {});
         const result = await service.removeIAData(input, actor);
         expectNotFoundError(result);
-        expect(iaDataModelMock.findById).toHaveBeenCalledWith(iaData.id as any);
+        expect(iaDataModelMock.findById).toHaveBeenCalledWith(iaData.id as any, undefined);
     });
 
     it('should return NOT_FOUND if AI data belongs to different accommodation', async () => {
@@ -126,7 +129,7 @@ describe('AccommodationService.removeIAData', () => {
         vi.spyOn(Object.getPrototypeOf(service), '_canUpdate').mockImplementation(() => {});
         const result = await service.removeIAData(input, actor);
         expectNotFoundError(result);
-        expect(iaDataModelMock.findById).toHaveBeenCalledWith(iaData.id as any);
+        expect(iaDataModelMock.findById).toHaveBeenCalledWith(iaData.id as any, undefined);
     });
 
     it('should return FORBIDDEN if actor cannot update', async () => {
@@ -150,7 +153,10 @@ describe('AccommodationService.removeIAData', () => {
         vi.spyOn(Object.getPrototypeOf(service), '_canUpdate').mockImplementation(() => {});
         const result = await service.removeIAData(input, actor);
         expectInternalError(result);
-        expect(iaDataModelMock.hardDelete).toHaveBeenCalledWith({ id: iaData.id as any });
+        expect(iaDataModelMock.hardDelete).toHaveBeenCalledWith(
+            { id: iaData.id as any },
+            undefined
+        );
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {

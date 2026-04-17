@@ -6,7 +6,6 @@ import {
     accommodations,
     sql
 } from '@repo/db';
-import type { DrizzleClient } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media';
 import { resolveEnvironment } from '@repo/media';
@@ -357,7 +356,7 @@ export class AccommodationService extends BaseCrudService<
         ctx: ServiceContext
     ): Promise<Accommodation> {
         if (entity.destinationId) {
-            await this.destinationService.updateAccommodationsCount(entity.destinationId, ctx.tx);
+            await this.destinationService.updateAccommodationsCount(entity.destinationId, ctx);
         }
         const destinationSlug = entity.destinationId
             ? await this._resolveDestinationSlug(entity.destinationId)
@@ -449,7 +448,7 @@ export class AccommodationService extends BaseCrudService<
     ): Promise<{ count: number }> {
         const restored = ctx.hookState?.restoredAccommodation;
         if (restored?.destinationId) {
-            await this.destinationService.updateAccommodationsCount(restored.destinationId, ctx.tx);
+            await this.destinationService.updateAccommodationsCount(restored.destinationId, ctx);
         }
         const destinationSlug = restored?.destinationId
             ? await this._resolveDestinationSlug(restored.destinationId)
@@ -493,7 +492,7 @@ export class AccommodationService extends BaseCrudService<
     ): Promise<CountResponse> {
         const deleted = ctx.hookState?.deletedEntity;
         if (deleted?.destinationId) {
-            await this.destinationService.updateAccommodationsCount(deleted.destinationId, ctx.tx);
+            await this.destinationService.updateAccommodationsCount(deleted.destinationId, ctx);
         }
         const destinationSlug = deleted?.destinationId
             ? await this._resolveDestinationSlug(deleted.destinationId)
@@ -538,7 +537,7 @@ export class AccommodationService extends BaseCrudService<
     ): Promise<CountResponse> {
         const deleted = ctx.hookState?.deletedEntity;
         if (deleted?.destinationId) {
-            await this.destinationService.updateAccommodationsCount(deleted.destinationId, ctx.tx);
+            await this.destinationService.updateAccommodationsCount(deleted.destinationId, ctx);
         }
         const destinationSlug = deleted?.destinationId
             ? await this._resolveDestinationSlug(deleted.destinationId)
@@ -631,11 +630,13 @@ export class AccommodationService extends BaseCrudService<
      *
      * @param actor - The actor performing the action
      * @param params - Search parameters including filters and pagination
+     * @param _ctx - Optional service context (reserved for future transaction propagation)
      * @returns Accommodations with related destination and owner data
      */
     public async searchWithRelations(
         actor: Actor,
-        params: AccommodationSearchInput
+        params: AccommodationSearchInput,
+        _ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationSearchResult>> {
         return this.runWithLoggingAndValidation({
             methodName: 'searchWithRelations',
@@ -717,11 +718,13 @@ export class AccommodationService extends BaseCrudService<
      * The output is a compact summary tailored for cards/lists and includes joined amenities/features only when related.
      * @param actor - The actor performing the action
      * @param params - Input with optional pageSize, destinationId, type and onlyFeatured
+     * @param ctx - Optional service context for transaction propagation
      * @returns List of summarized accommodations ordered by rating
      */
     public async getTopRated(
         actor: Actor,
-        params: AccommodationTopRatedParams
+        params: AccommodationTopRatedParams,
+        _ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getTopRated',
@@ -757,11 +760,13 @@ export class AccommodationService extends BaseCrudService<
      * Gets a summary for a specific accommodation.
      * @param actor - The actor performing the action
      * @param data - The input object containing id or slug
+     * @param ctx - Optional service context for transaction propagation
      * @returns The accommodation summary wrapped in an object
      */
     public async getSummary(
         actor: Actor,
-        data: AccommodationSummaryParams
+        data: AccommodationSummaryParams,
+        _ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationSummaryWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getSummary',
@@ -808,11 +813,13 @@ export class AccommodationService extends BaseCrudService<
      * Gets aggregated statistics for a single accommodation
      * @param actor - The actor performing the action
      * @param data - The input object containing accommodation id or slug
+     * @param ctx - Optional service context for transaction propagation
      * @returns The accommodation statistics wrapped in a stats object
      */
     public async getStats(
         actor: Actor,
-        data: IdOrSlugParams
+        data: IdOrSlugParams,
+        _ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationStatsWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getStats',
@@ -861,11 +868,13 @@ export class AccommodationService extends BaseCrudService<
      * Gets accommodations by destination.
      * @param actor - The actor performing the action
      * @param data - The input object containing destinationId
+     * @param ctx - Optional service context for transaction propagation
      * @returns The list of accommodations wrapped in accommodations array
      */
     public async getByDestination(
         actor: Actor,
-        data: AccommodationByDestinationParams
+        data: AccommodationByDestinationParams,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByDestination',
@@ -880,7 +889,9 @@ export class AccommodationService extends BaseCrudService<
                     {
                         page: validated.page,
                         pageSize: validated.pageSize
-                    }
+                    },
+                    undefined,
+                    ctx?.tx
                 );
 
                 const accommodations = Array.isArray(result.items)
@@ -899,11 +910,13 @@ export class AccommodationService extends BaseCrudService<
      * Gets top-rated accommodations by destination.
      * @param actor - The actor performing the action
      * @param data - The input object containing destinationId (required)
+     * @param ctx - Optional service context for transaction propagation
      * @returns The list of top-rated accommodations for the destination
      */
     public async getTopRatedByDestination(
         actor: Actor,
-        data: AccommodationTopRatedParams
+        data: AccommodationTopRatedParams,
+        _ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getTopRatedByDestination',
@@ -945,18 +958,20 @@ export class AccommodationService extends BaseCrudService<
      * Adds a FAQ to an accommodation.
      * @param actor - The actor performing the action
      * @param data - The input object containing accommodationId and faq
+     * @param ctx - Optional service context for transaction propagation
      * @returns The created FAQ
      */
     public async addFaq(
         actor: Actor,
-        data: AccommodationFaqAddInput
+        data: AccommodationFaqAddInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationFaqSingleOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addFaq',
             input: { ...data, actor },
             schema: AccommodationFaqAddInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId);
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
@@ -966,7 +981,7 @@ export class AccommodationService extends BaseCrudService<
                     ...validated.faq,
                     accommodationId: validated.accommodationId as AccommodationIdType
                 };
-                const createdFaq = await faqModel.create(faqToCreate);
+                const createdFaq = await faqModel.create(faqToCreate, ctx?.tx);
                 return { faq: createdFaq };
             }
         });
@@ -976,31 +991,33 @@ export class AccommodationService extends BaseCrudService<
      * Removes a FAQ from an accommodation.
      * @param actor - The actor performing the action
      * @param data - The input object containing accommodationId and faqId
+     * @param ctx - Optional service context for transaction propagation
      * @returns Success boolean
      */
     public async removeFaq(
         actor: Actor,
-        data: AccommodationFaqRemoveInput
+        data: AccommodationFaqRemoveInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<Success>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeFaq',
             input: { ...data, actor },
             schema: AccommodationFaqRemoveInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId);
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
                 await this._canUpdate(actor, accommodation);
                 const faqModel = new AccommodationFaqModel();
-                const faq = await faqModel.findById(validated.faqId);
+                const faq = await faqModel.findById(validated.faqId, ctx?.tx);
                 if (!faq || faq.accommodationId !== validated.accommodationId) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'FAQ not found for this accommodation'
                     );
                 }
-                await faqModel.hardDelete({ id: validated.faqId });
+                await faqModel.hardDelete({ id: validated.faqId }, ctx?.tx);
                 return { success: true };
             }
         });
@@ -1010,24 +1027,26 @@ export class AccommodationService extends BaseCrudService<
      * Updates a FAQ for an accommodation.
      * @param actor - The actor performing the action
      * @param data - The input object containing accommodationId, faqId, and faq
+     * @param ctx - Optional service context for transaction propagation
      * @returns The updated FAQ
      */
     public async updateFaq(
         actor: Actor,
-        data: AccommodationFaqUpdateInput
+        data: AccommodationFaqUpdateInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationFaqSingleOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'updateFaq',
             input: { ...data, actor },
             schema: AccommodationFaqUpdateInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId);
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
                 await this._canUpdate(actor, accommodation);
                 const faqModel = new AccommodationFaqModel();
-                const faq = await faqModel.findById(validated.faqId);
+                const faq = await faqModel.findById(validated.faqId, ctx?.tx);
                 if (!faq || faq.accommodationId !== validated.accommodationId) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
@@ -1039,7 +1058,8 @@ export class AccommodationService extends BaseCrudService<
                     {
                         ...validated.faq,
                         accommodationId: validated.accommodationId as AccommodationIdType
-                    }
+                    },
+                    ctx?.tx
                 );
                 if (!updatedFaq) {
                     throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Failed to update FAQ');
@@ -1054,11 +1074,13 @@ export class AccommodationService extends BaseCrudService<
      * Optimized to use a single query with relations.
      * @param actor - The actor performing the action
      * @param data - The input object containing accommodationId
+     * @param ctx - Optional service context for transaction propagation
      * @returns The list of FAQs
      */
     public async getFaqs(
         actor: Actor,
-        data: AccommodationFaqListInput
+        data: AccommodationFaqListInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationFaqListOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getFaqs',
@@ -1068,7 +1090,8 @@ export class AccommodationService extends BaseCrudService<
                 // Single query to load accommodation with FAQs
                 const accommodation = await this.model.findWithRelations(
                     { id: validated.accommodationId },
-                    { faqs: true }
+                    { faqs: true },
+                    ctx?.tx
                 );
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
@@ -1085,18 +1108,20 @@ export class AccommodationService extends BaseCrudService<
      * Adds IA data to an accommodation.
      * @param input - Input object for adding IA data.
      * @param actor - The actor performing the action.
+     * @param ctx - Optional service context for transaction propagation
      * @returns Output object with the created IA data
      */
     public async addIAData(
         input: AccommodationIaDataAddInput,
-        actor: Actor
+        actor: Actor,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationIaDataSingleOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addIAData',
             input: { actor: actor, ...input },
             schema: AccommodationIaDataAddInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId);
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
@@ -1106,7 +1131,7 @@ export class AccommodationService extends BaseCrudService<
                     ...validated.iaData,
                     accommodationId: validated.accommodationId as AccommodationIdType
                 };
-                const createdIaData = await iaDataModel.create(iaDataToCreate);
+                const createdIaData = await iaDataModel.create(iaDataToCreate, ctx?.tx);
                 return { iaData: createdIaData };
             }
         });
@@ -1116,31 +1141,33 @@ export class AccommodationService extends BaseCrudService<
      * Removes IA data from an accommodation.
      * @param input - Input object for removing IA data.
      * @param actor - The actor performing the action.
+     * @param ctx - Optional service context for transaction propagation
      * @returns Output object with success status
      */
     public async removeIAData(
         input: AccommodationIaDataRemoveInput,
-        actor: Actor
+        actor: Actor,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<Success>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeIAData',
             input: { actor: actor, ...input },
             schema: AccommodationIaDataRemoveInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId);
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
                 await this._canUpdate(actor, accommodation);
                 const iaDataModel = new AccommodationIaDataModel();
-                const iaData = await iaDataModel.findById(validated.iaDataId);
+                const iaData = await iaDataModel.findById(validated.iaDataId, ctx?.tx);
                 if (!iaData || iaData.accommodationId !== validated.accommodationId) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'IA data not found for this accommodation'
                     );
                 }
-                await iaDataModel.hardDelete({ id: validated.iaDataId });
+                await iaDataModel.hardDelete({ id: validated.iaDataId }, ctx?.tx);
                 return { success: true };
             }
         });
@@ -1150,24 +1177,26 @@ export class AccommodationService extends BaseCrudService<
      * Updates IA data for an accommodation.
      * @param input - Input object for updating IA data.
      * @param actor - The actor performing the action.
+     * @param ctx - Optional service context for transaction propagation
      * @returns Output object with the updated IA data
      */
     public async updateIAData(
         input: AccommodationIaDataUpdateInput,
-        actor: Actor
+        actor: Actor,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationIaDataSingleOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'updateIAData',
             input: { actor: actor, ...input },
             schema: AccommodationIaDataUpdateInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId);
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
                 await this._canUpdate(actor, accommodation);
                 const iaDataModel = new AccommodationIaDataModel();
-                const iaData = await iaDataModel.findById(validated.iaDataId);
+                const iaData = await iaDataModel.findById(validated.iaDataId, ctx?.tx);
                 if (!iaData || iaData.accommodationId !== validated.accommodationId) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
@@ -1179,7 +1208,8 @@ export class AccommodationService extends BaseCrudService<
                     {
                         ...validated.iaData,
                         accommodationId: validated.accommodationId as AccommodationIdType
-                    }
+                    },
+                    ctx?.tx
                 );
                 if (!updatedIaData) {
                     throw new ServiceError(
@@ -1196,26 +1226,31 @@ export class AccommodationService extends BaseCrudService<
      * Gets all IA data for an accommodation.
      * @param input - Input object for getting all IA data.
      * @param actor - The actor performing the action.
+     * @param ctx - Optional service context for transaction propagation
      * @returns Output object with the list of IA data
      */
     public async getAllIAData(
         input: AccommodationIaDataListInput,
-        actor: Actor
+        actor: Actor,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationIaDataListOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getAllIAData',
             input: { actor: actor, ...input },
             schema: AccommodationIaDataListInputSchema,
             execute: async (validated, actor) => {
-                const accommodation = await this.model.findById(validated.accommodationId);
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
                 await this._canView(actor, accommodation);
                 const iaDataModel = new AccommodationIaDataModel();
-                const { items: iaData } = await iaDataModel.findAll({
-                    accommodationId: validated.accommodationId
-                });
+                const { items: iaData } = await iaDataModel.findAll(
+                    { accommodationId: validated.accommodationId },
+                    undefined,
+                    undefined,
+                    ctx?.tx
+                );
                 return { iaData };
             }
         });
@@ -1225,11 +1260,13 @@ export class AccommodationService extends BaseCrudService<
      * Gets accommodations by owner.
      * @param input - Input object for owner query.
      * @param actor - The actor performing the action.
+     * @param ctx - Optional service context for transaction propagation
      * @returns List of accommodations owned by the specified user
      */
     public async getByOwner(
         input: WithOwnerIdParams,
-        actor: Actor
+        actor: Actor,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByOwner',
@@ -1238,9 +1275,12 @@ export class AccommodationService extends BaseCrudService<
             execute: async (validated, actor) => {
                 await this._canList(actor);
 
-                const result = await this.model.findAll({
-                    ownerId: validated.ownerId
-                });
+                const result = await this.model.findAll(
+                    { ownerId: validated.ownerId },
+                    undefined,
+                    undefined,
+                    ctx?.tx
+                );
 
                 const accommodations = Array.isArray(result.items)
                     ? result.items.map(
@@ -1258,12 +1298,13 @@ export class AccommodationService extends BaseCrudService<
      * Updates the stats (reviewsCount, averageRating, rating) for the accommodation from a review service.
      * @param accommodationId - The ID of the accommodation to update
      * @param stats - The computed review stats to persist
-     * @param tx - Optional transaction client to propagate DB writes into an existing transaction
+     * @param ctx - Optional service context for transaction propagation
+     * @internal
      */
     async updateStatsFromReview(
         accommodationId: string,
         stats: { reviewsCount: number; averageRating: number; rating: AccommodationRatingInput },
-        tx?: DrizzleClient
+        ctx?: ServiceContext
     ): Promise<void> {
         await this.model.updateById(
             accommodationId,
@@ -1272,7 +1313,7 @@ export class AccommodationService extends BaseCrudService<
                 averageRating: stats.averageRating,
                 rating: stats.rating
             },
-            tx
+            ctx?.tx
         );
     }
 }

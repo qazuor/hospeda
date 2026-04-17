@@ -112,14 +112,15 @@ describe('AccommodationService.updateIAData', () => {
             category: input.iaData.category,
             accommodationId: accommodation.id as any
         });
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
-        expect(iaDataModelMock.findById).toHaveBeenCalledWith(iaData.id as any);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
+        expect(iaDataModelMock.findById).toHaveBeenCalledWith(iaData.id as any, undefined);
         expect(iaDataModelMock.update).toHaveBeenCalledWith(
             { id: iaData.id as any },
             {
                 ...input.iaData,
                 accommodationId: accommodation.id as any
-            }
+            },
+            undefined
         );
         expect(permissionHelpers.checkCanUpdate).toHaveBeenCalledWith(actor, accommodation);
     });
@@ -128,7 +129,7 @@ describe('AccommodationService.updateIAData', () => {
         modelMock.findById.mockResolvedValue(null);
         const result = await service.updateIAData(input, actor);
         expectNotFoundError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
     });
 
     it('should return NOT_FOUND if AI data does not exist', async () => {
@@ -137,7 +138,7 @@ describe('AccommodationService.updateIAData', () => {
         vi.spyOn(permissionHelpers, 'checkCanUpdate').mockReturnValue();
         const result = await service.updateIAData(input, actor);
         expectNotFoundError(result);
-        expect(iaDataModelMock.findById).toHaveBeenCalledWith(iaData.id as any);
+        expect(iaDataModelMock.findById).toHaveBeenCalledWith(iaData.id as any, undefined);
     });
 
     it('should return NOT_FOUND if AI data belongs to different accommodation', async () => {
@@ -149,7 +150,7 @@ describe('AccommodationService.updateIAData', () => {
         vi.spyOn(permissionHelpers, 'checkCanUpdate').mockReturnValue();
         const result = await service.updateIAData(input, actor);
         expectNotFoundError(result);
-        expect(iaDataModelMock.findById).toHaveBeenCalledWith(iaData.id as any);
+        expect(iaDataModelMock.findById).toHaveBeenCalledWith(iaData.id as any, undefined);
     });
 
     it('should return FORBIDDEN if actor cannot update', async () => {

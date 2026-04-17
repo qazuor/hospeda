@@ -83,16 +83,16 @@ describe('AccommodationService.removeFaq', () => {
         const result = await service.removeFaq(actor, input);
         expectSuccess(result);
         expect(result.data).toEqual({ success: true });
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
-        expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id as any);
-        expect(faqModelMock.hardDelete).toHaveBeenCalledWith({ id: faq.id as any });
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
+        expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id as any, undefined);
+        expect(faqModelMock.hardDelete).toHaveBeenCalledWith({ id: faq.id as any }, undefined);
     });
 
     it('should return NOT_FOUND if accommodation does not exist', async () => {
         modelMock.findById.mockResolvedValue(null);
         const result = await service.removeFaq(actor, input);
         expectNotFoundError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
     });
 
     it('should return NOT_FOUND if FAQ does not exist', async () => {
@@ -101,8 +101,8 @@ describe('AccommodationService.removeFaq', () => {
         vi.spyOn(Object.getPrototypeOf(service), '_canUpdate').mockImplementation(() => {});
         const result = await service.removeFaq(actor, input);
         expectNotFoundError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
-        expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id as any);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
+        expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id as any, undefined);
     });
 
     it('should return NOT_FOUND if FAQ does not belong to accommodation', async () => {
@@ -114,8 +114,8 @@ describe('AccommodationService.removeFaq', () => {
         vi.spyOn(Object.getPrototypeOf(service), '_canUpdate').mockImplementation(() => {});
         const result = await service.removeFaq(actor, input);
         expectNotFoundError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
-        expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id as any);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
+        expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id as any, undefined);
     });
 
     it('should return FORBIDDEN if actor cannot update', async () => {
@@ -126,7 +126,7 @@ describe('AccommodationService.removeFaq', () => {
         });
         const result = await service.removeFaq(actor, input);
         expectForbiddenError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
     });
 
     it('should return INTERNAL_ERROR if FAQ model throws', async () => {
@@ -135,8 +135,8 @@ describe('AccommodationService.removeFaq', () => {
         vi.spyOn(Object.getPrototypeOf(service), '_canUpdate').mockImplementation(() => {});
         const result = await service.removeFaq(actor, input);
         expectInternalError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
-        expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id as any);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
+        expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id as any, undefined);
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
