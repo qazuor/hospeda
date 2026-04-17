@@ -6,6 +6,8 @@ export class UserBookmarkModel extends BaseModelImpl<UserBookmark> {
     protected table = userBookmarks;
     public entityName = 'userBookmarks';
 
+    protected override readonly validRelationKeys = ['user'] as const;
+
     protected getTableName(): string {
         return 'userBookmarks';
     }

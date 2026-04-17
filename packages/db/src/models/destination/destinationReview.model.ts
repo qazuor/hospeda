@@ -18,6 +18,8 @@ export class DestinationReviewModel extends BaseModelImpl<DestinationReview> {
     protected table = destinationReviews;
     public entityName = 'destinationReviews';
 
+    protected override readonly validRelationKeys = ['destination', 'user'] as const;
+
     protected getTableName(): string {
         return 'destinationReviews';
     }

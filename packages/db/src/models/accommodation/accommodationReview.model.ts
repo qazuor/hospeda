@@ -22,6 +22,8 @@ export class AccommodationReviewModel extends BaseModelImpl<AccommodationReview>
     protected table = accommodationReviews;
     public entityName = 'accommodationReviews';
 
+    protected override readonly validRelationKeys = ['accommodation', 'user'] as const;
+
     protected getTableName(): string {
         return 'accommodationReviews';
     }

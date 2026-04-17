@@ -29,6 +29,8 @@ export class DestinationModel extends BaseModelImpl<Destination> {
     public entityName = 'destinations';
 
     protected override readonly validRelationKeys = [
+        'parent',
+        'children',
         'accommodations',
         'reviews',
         'tags',

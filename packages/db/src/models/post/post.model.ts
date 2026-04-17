@@ -8,6 +8,18 @@ export class PostModel extends BaseModelImpl<Post> {
     protected table = posts;
     public entityName = 'posts';
 
+    protected override readonly validRelationKeys = [
+        'author',
+        'createdBy',
+        'updatedBy',
+        'deletedBy',
+        'relatedAccommodation',
+        'relatedDestination',
+        'relatedEvent',
+        'sponsorship',
+        'tags'
+    ] as const;
+
     protected getTableName(): string {
         return 'posts';
     }
