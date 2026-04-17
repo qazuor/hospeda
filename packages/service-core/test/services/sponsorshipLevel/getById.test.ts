@@ -37,6 +37,7 @@ describe('SponsorshipLevelService.getById', () => {
         expect(result.data?.name).toEqual(existing.name);
         expect(result.error).toBeUndefined();
         expect(modelMock.findOne).toHaveBeenCalledWith({ id }, undefined);
+        expect(modelMock.findOneWithRelations).not.toHaveBeenCalled();
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {

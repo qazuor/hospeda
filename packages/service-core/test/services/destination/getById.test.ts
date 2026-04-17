@@ -38,6 +38,8 @@ describe('DestinationService.getById', () => {
         expect(result.data).toBeDefined();
         expect(result.data?.id).toBe(entity.id);
         expect(result.error).toBeUndefined();
+        expect(model.findOne).toHaveBeenCalledWith({ id: entity.id }, undefined);
+        expect(model.findOneWithRelations).not.toHaveBeenCalled();
     });
 
     it('should return a "not found" error if the entity does not exist', async () => {

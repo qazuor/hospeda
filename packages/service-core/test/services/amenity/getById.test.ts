@@ -27,6 +27,8 @@ describe('AmenityService.getById', () => {
         const result = await service.getById(actor, amenity.id);
         expectSuccess(result);
         expect(result.data).toEqual(amenity);
+        expect(amenityModelMock.findOne).toHaveBeenCalledWith({ id: amenity.id }, undefined);
+        expect(amenityModelMock.findOneWithRelations).not.toHaveBeenCalled();
     });
 
     it('should return NOT_FOUND error if amenity does not exist', async () => {

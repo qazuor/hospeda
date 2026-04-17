@@ -42,6 +42,8 @@ describe('AttractionService.getById', () => {
         expectSuccess(result);
         expect(result.data).toBeDefined();
         expect(result.data?.id).toBe(attraction.id);
+        expect(attractionModelMock.findOne).toHaveBeenCalledWith({ id: attraction.id }, undefined);
+        expect(attractionModelMock.findOneWithRelations).not.toHaveBeenCalled();
     });
 
     it('should return NOT_FOUND error if attraction does not exist', async () => {

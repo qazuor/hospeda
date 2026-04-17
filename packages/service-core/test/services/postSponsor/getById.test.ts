@@ -34,6 +34,7 @@ describe('PostSponsorService.getById', () => {
         expect(result.data?.logo).toEqual(existing.logo);
         expect(result.error).toBeUndefined();
         expect(modelMock.findOne).toHaveBeenCalledWith({ id }, undefined);
+        expect(modelMock.findOneWithRelations).not.toHaveBeenCalled();
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {

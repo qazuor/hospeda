@@ -51,6 +51,8 @@ describe('UserService.getById', () => {
         // Assert
         expectSuccess(result);
         expect(result.data?.id).toBe(inputId);
+        expect(userModelMock.findOne).toHaveBeenCalledWith({ id: inputId }, undefined);
+        expect(userModelMock.findOneWithRelations).not.toHaveBeenCalled();
     });
 
     it('should return a user by id (success, self)', async () => {

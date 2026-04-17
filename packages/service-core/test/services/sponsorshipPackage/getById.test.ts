@@ -29,9 +29,6 @@ describe('SponsorshipPackageService.getById', () => {
     });
 
     it('should get a sponsorship package by id when permissions are valid', async () => {
-        modelMock.findOne.mockImplementation((where: Record<string, unknown>) =>
-            where && where.id === id ? existing : null
-        );
         modelMock.findOneWithRelations.mockImplementation((where: Record<string, unknown>) =>
             where && where.id === id ? existing : null
         );
@@ -41,16 +38,14 @@ describe('SponsorshipPackageService.getById', () => {
         expect(result.error).toBeUndefined();
         expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
             { id },
-            expect.any(Object),
+            { eventLevel: true },
             undefined
         );
+        expect(modelMock.findOne).not.toHaveBeenCalled();
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {
         actor = createActor({ permissions: [] });
-        modelMock.findOne.mockImplementation((where: Record<string, unknown>) =>
-            where && where.id === id ? existing : null
-        );
         modelMock.findOneWithRelations.mockImplementation((where: Record<string, unknown>) =>
             where && where.id === id ? existing : null
         );
@@ -61,7 +56,6 @@ describe('SponsorshipPackageService.getById', () => {
     });
 
     it('should return NOT_FOUND if entity does not exist', async () => {
-        modelMock.findOne.mockResolvedValue(null);
         modelMock.findOneWithRelations.mockResolvedValue(null);
         const result = await service.getById(actor, id);
         expect(result.error).toBeDefined();
@@ -70,7 +64,6 @@ describe('SponsorshipPackageService.getById', () => {
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        modelMock.findOne.mockRejectedValue(new Error('DB error'));
         modelMock.findOneWithRelations.mockRejectedValue(new Error('DB error'));
         const result = await service.getById(actor, id);
         expect(result.error).toBeDefined();

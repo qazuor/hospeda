@@ -27,9 +27,6 @@ describe('SponsorshipService.getById', () => {
 
     it('should get a sponsorship by id when actor has VIEW_ANY permission', async () => {
         const existing = createMockSponsorship({ id });
-        modelMock.findOne.mockImplementation((where: Record<string, unknown>) =>
-            where && where.id === id ? existing : null
-        );
         modelMock.findOneWithRelations.mockImplementation((where: Record<string, unknown>) =>
             where && where.id === id ? existing : null
         );
@@ -39,18 +36,16 @@ describe('SponsorshipService.getById', () => {
         expect(result.error).toBeUndefined();
         expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
             { id },
-            expect.any(Object),
+            { sponsorUser: true, level: true, package: true },
             undefined
         );
+        expect(modelMock.findOne).not.toHaveBeenCalled();
     });
 
     it('should get a sponsorship by id when actor has VIEW_OWN and is the sponsor', async () => {
         // Actor is the sponsor of this sponsorship
         const ownActor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_VIEW_OWN] });
         const existing = createMockSponsorship({ id, sponsorUserId: ownActor.id });
-        modelMock.findOne.mockImplementation((where: Record<string, unknown>) =>
-            where && where.id === id ? existing : null
-        );
         modelMock.findOneWithRelations.mockImplementation((where: Record<string, unknown>) =>
             where && where.id === id ? existing : null
         );
@@ -63,9 +58,6 @@ describe('SponsorshipService.getById', () => {
         // Actor has OWN permission but the sponsorship belongs to a different user
         const otherActor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_VIEW_OWN] });
         const existing = createMockSponsorship({ id, sponsorUserId: 'different-user-id' });
-        modelMock.findOne.mockImplementation((where: Record<string, unknown>) =>
-            where && where.id === id ? existing : null
-        );
         modelMock.findOneWithRelations.mockImplementation((where: Record<string, unknown>) =>
             where && where.id === id ? existing : null
         );
@@ -78,9 +70,6 @@ describe('SponsorshipService.getById', () => {
     it('should return FORBIDDEN if actor lacks all view permissions', async () => {
         actor = createActor({ permissions: [] });
         const existing = createMockSponsorship({ id });
-        modelMock.findOne.mockImplementation((where: Record<string, unknown>) =>
-            where && where.id === id ? existing : null
-        );
         modelMock.findOneWithRelations.mockImplementation((where: Record<string, unknown>) =>
             where && where.id === id ? existing : null
         );
@@ -91,7 +80,6 @@ describe('SponsorshipService.getById', () => {
     });
 
     it('should return NOT_FOUND if entity does not exist', async () => {
-        modelMock.findOne.mockResolvedValue(null);
         modelMock.findOneWithRelations.mockResolvedValue(null);
         const result = await service.getById(actor, id);
         expect(result.error).toBeDefined();
@@ -100,7 +88,6 @@ describe('SponsorshipService.getById', () => {
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        modelMock.findOne.mockRejectedValue(new Error('DB error'));
         modelMock.findOneWithRelations.mockRejectedValue(new Error('DB error'));
         const result = await service.getById(actor, id);
         expect(result.error).toBeDefined();

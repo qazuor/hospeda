@@ -28,6 +28,8 @@ describe('TagService.getById', () => {
         const result = await service.getById(actor, tag.id);
         expectSuccess(result);
         expect(result.data).toEqual(tag);
+        expect(tagModelMock.findOne).toHaveBeenCalledWith({ id: tag.id }, undefined);
+        expect(tagModelMock.findOneWithRelations).not.toHaveBeenCalled();
     });
 
     it('should return NOT_FOUND error if tag does not exist', async () => {

@@ -40,15 +40,24 @@ describe('PostService.getById', () => {
     });
 
     it('should return the post if it exists and actor has permission', async () => {
-        (modelMock.findOne as Mock).mockImplementation((where) =>
-            String(where.id) === String(post.id) ? post : null
-        );
         (modelMock.findOneWithRelations as Mock).mockImplementation((where) =>
             String(where.id) === String(post.id) ? post : null
         );
         const result = await service.getById(actor, post.id);
         assertions.expectSuccess(result);
         expect(result.data?.id).toBe(post.id);
+        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
+            { id: post.id },
+            {
+                author: true,
+                relatedAccommodation: true,
+                relatedDestination: true,
+                relatedEvent: true,
+                sponsorship: { sponsor: true }
+            },
+            undefined
+        );
+        expect(modelMock.findOne).not.toHaveBeenCalled();
     });
 
     it('should return FORBIDDEN if actor cannot view the post', async () => {
@@ -57,9 +66,6 @@ describe('PostService.getById', () => {
             visibility: VisibilityEnum.PRIVATE,
             authorId: getMockId('user') as UserIdType
         });
-        (modelMock.findOne as Mock).mockImplementation((where) =>
-            String(where.id) === String(privatePost.id) ? privatePost : null
-        );
         (modelMock.findOneWithRelations as Mock).mockImplementation((where) =>
             String(where.id) === String(privatePost.id) ? privatePost : null
         );
@@ -68,14 +74,12 @@ describe('PostService.getById', () => {
     });
 
     it('should return NOT_FOUND if post does not exist', async () => {
-        (modelMock.findOne as Mock).mockResolvedValue(null);
         (modelMock.findOneWithRelations as Mock).mockResolvedValue(null);
         const result = await service.getById(actor, getMockId('post'));
         expectNotFoundError(result);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        asMock(modelMock.findOne).mockRejectedValue(new Error('DB error'));
         asMock(modelMock.findOneWithRelations).mockRejectedValue(new Error('DB error'));
         const result = await service.getById(actor, post.id);
         expectInternalError(result);

@@ -26,6 +26,8 @@ describe('EventLocationService.getById', () => {
         const result = await service.getById(actor, entity.id);
         expectSuccess(result);
         expect(result.data).toEqual(entity);
+        expect(model.findOne).toHaveBeenCalledWith({ id: entity.id }, undefined);
+        expect(model.findOneWithRelations).not.toHaveBeenCalled();
     });
 
     it('should return NOT_FOUND error if event location does not exist', async () => {

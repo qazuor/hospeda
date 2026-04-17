@@ -26,6 +26,8 @@ describe('EventOrganizerService.getById', () => {
         asMock(modelMock.findOne).mockResolvedValue(entity);
         const result = await service.getById(actor, entity.id);
         expect(result.data).toEqual(entity);
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: entity.id }, undefined);
+        expect(modelMock.findOneWithRelations).not.toHaveBeenCalled();
     });
 
     it('returns error if not found', async () => {

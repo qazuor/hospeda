@@ -43,17 +43,29 @@ describe('AccommodationService.getById', () => {
     });
 
     it('should return an accommodation by id', async () => {
-        (model.findOne as Mock).mockResolvedValue(entity);
         (model.findOneWithRelations as Mock).mockResolvedValue(entity);
         vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
         const result = await service.getById(actor, entity.id);
         expect(result.data).toBeDefined();
         expect(result.data?.id).toBe(entity.id);
         expect(result.error).toBeUndefined();
+        expect(model.findOneWithRelations).toHaveBeenCalledWith(
+            { id: entity.id },
+            {
+                destination: true,
+                owner: true,
+                amenities: true,
+                features: true,
+                reviews: true,
+                faqs: true,
+                tags: true
+            },
+            undefined
+        );
+        expect(model.findOne).not.toHaveBeenCalled();
     });
 
     it('should return a "not found" error if the entity does not exist', async () => {
-        (model.findOne as Mock).mockResolvedValue(null);
         (model.findOneWithRelations as Mock).mockResolvedValue(null);
         vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
         const result = await service.getById(actor, entity.id);
@@ -62,7 +74,6 @@ describe('AccommodationService.getById', () => {
     });
 
     it('should return forbidden error if actor lacks permission', async () => {
-        (model.findOne as Mock).mockResolvedValue(entity);
         (model.findOneWithRelations as Mock).mockResolvedValue(entity);
         vi.spyOn(permissionHelpers, 'checkCanView').mockImplementation(() => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'forbidden');
@@ -73,7 +84,6 @@ describe('AccommodationService.getById', () => {
     });
 
     it('should handle errors from the _beforeGetByField lifecycle hook', async () => {
-        (model.findOne as Mock).mockResolvedValue(entity);
         (model.findOneWithRelations as Mock).mockResolvedValue(entity);
         vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
         const hookError = new Error('Error in beforeGetByField hook');
@@ -87,7 +97,6 @@ describe('AccommodationService.getById', () => {
     });
 
     it('should handle errors from the _afterGetByField lifecycle hook', async () => {
-        (model.findOne as Mock).mockResolvedValue(entity);
         (model.findOneWithRelations as Mock).mockResolvedValue(entity);
         vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
         const hookError = new Error('Error in afterGetByField hook');
@@ -101,7 +110,6 @@ describe('AccommodationService.getById', () => {
     });
 
     it('should return an internal error if model throws', async () => {
-        (model.findOne as Mock).mockRejectedValue(new Error('DB error'));
         (model.findOneWithRelations as Mock).mockRejectedValue(new Error('DB error'));
         vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
         const result = await service.getById(actor, entity.id);

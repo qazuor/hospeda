@@ -29,6 +29,8 @@ describe('FeatureService.getById', () => {
         const result = await service.getById(actor, feature.id);
         expectSuccess(result);
         expect(result.data).toEqual(feature);
+        expect(featureModelMock.findOne).toHaveBeenCalledWith({ id: feature.id }, undefined);
+        expect(featureModelMock.findOneWithRelations).not.toHaveBeenCalled();
     });
 
     it('should return NOT_FOUND error if feature does not exist', async () => {
