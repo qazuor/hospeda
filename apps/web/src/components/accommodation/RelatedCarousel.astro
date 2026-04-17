@@ -4,6 +4,8 @@
  * @description Horizontal scroll-snap carousel for related content cards.
  * Desktop: arrow buttons. Mobile: native swipe. Hidden if no content.
  */
+import { ChevronLeftIcon, ChevronRightIcon } from '@repo/icons';
+import IconButton from '@/components/shared/IconButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
@@ -23,12 +25,24 @@ const nextLabel = t('accommodations.detail.related.nextSlide');
   <div class="related-carousel__header">
     <h3 class="related-carousel__title">{title}</h3>
     <div class="related-carousel__arrows">
-      <button class="related-carousel__arrow related-carousel__arrow--prev" aria-label={prevLabel} data-dir="prev">
-        &#8249;
-      </button>
-      <button class="related-carousel__arrow related-carousel__arrow--next" aria-label={nextLabel} data-dir="next">
-        &#8250;
-      </button>
+      <IconButton
+        ariaLabel={prevLabel}
+        variant="outline"
+        size="sm"
+        class="related-carousel__arrow related-carousel__arrow--prev"
+        data={{ dir: "prev" }}
+      >
+        <ChevronLeftIcon size={18} weight="regular" aria-hidden="true" />
+      </IconButton>
+      <IconButton
+        ariaLabel={nextLabel}
+        variant="outline"
+        size="sm"
+        class="related-carousel__arrow related-carousel__arrow--next"
+        data={{ dir: "next" }}
+      >
+        <ChevronRightIcon size={18} weight="regular" aria-hidden="true" />
+      </IconButton>
     </div>
   </div>
   <div class="related-carousel__track">
@@ -70,23 +84,7 @@ const nextLabel = t('accommodations.detail.related.nextSlide');
     display: flex;
     gap: var(--space-2, 8px);
   }
-  .related-carousel__arrow {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 1px solid var(--border, oklch(0.8 0 0));
-    background-color: var(--card);
-    color: var(--foreground);
-    font-size: 1.2rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color var(--duration-normal, 0.4s) ease;
-  }
-  .related-carousel__arrow:hover {
-    background-color: var(--surface-warm);
-  }
+  /* .related-carousel__arrow aesthetics handled by .btn-icon--outline from components.css */
   .related-carousel__track {
     display: flex;
     gap: var(--space-card-gap, 30px);
