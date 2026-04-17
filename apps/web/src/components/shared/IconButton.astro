@@ -1,0 +1,190 @@
+---
+/**
+ * @file IconButton.astro
+ * @description Accessible icon-only button for the Hospeda web app.
+ *
+ * Uses the same `.btn-icon` CSS classes from `components.css` as the React
+ * version (`IconButton.tsx`), following the same duality pattern as GradientButton.
+ *
+ * The `ariaLabel` prop is **required** because the button has no visible text;
+ * without it screen readers have nothing to announce.
+ *
+ * Renders either a `<button>` or an `<a>` element depending on the `as` prop.
+ *
+ * @example Ghost circular md (default) — hamburger menu trigger
+ * ```astro
+ * ---
+ * import IconButton from '@/components/shared/IconButton.astro';
+ * import { HamburgerIcon } from '@repo/icons';
+ * ---
+ * <IconButton ariaLabel="Abrir menú de navegación">
+ *   <HamburgerIcon size={24} aria-hidden="true" />
+ * </IconButton>
+ * ```
+ *
+ * @example Outline square lg — used as a link
+ * ```astro
+ * ---
+ * import IconButton from '@/components/shared/IconButton.astro';
+ * import { SearchIcon } from '@repo/icons';
+ * ---
+ * <IconButton as="a" href="/es/busqueda/" ariaLabel="Buscar alojamientos" variant="outline" size="lg" shape="square">
+ *   <SearchIcon size={24} aria-hidden="true" />
+ * </IconButton>
+ * ```
+ *
+ * @example Solid circle sm — scroll-to-top floating button
+ * ```astro
+ * ---
+ * import IconButton from '@/components/shared/IconButton.astro';
+ * import { ChevronUpIcon } from '@repo/icons';
+ * ---
+ * <IconButton ariaLabel="Volver al inicio" variant="solid" size="sm" class="my-custom-class">
+ *   <ChevronUpIcon size={18} aria-hidden="true" />
+ * </IconButton>
+ * ```
+ */
+
+interface Props {
+    /**
+     * Accessible label for the button. Required — the button has no visible text.
+     * This value becomes the `aria-label` attribute.
+     */
+    readonly ariaLabel: string;
+    /**
+     * Rendered HTML element.
+     * @default 'button'
+     */
+    readonly as?: 'a' | 'button';
+    /**
+     * Destination URL. Only meaningful when `as === 'a'`.
+     */
+    readonly href?: string;
+    /**
+     * Visual style variant.
+     * - `ghost`: transparent background, subtle hover fill (default)
+     * - `solid`: filled with brand color, elevated shadow
+     * - `outline`: visible border, fills on hover
+     * @default 'ghost'
+     */
+    readonly variant?: 'ghost' | 'solid' | 'outline';
+    /**
+     * Size of the button (width & height). Icon size inside should be set
+     * proportionally by the consumer.
+     * - `xs`: 28px container (use icon size 16)
+     * - `sm`: 32px container (use icon size 18)
+     * - `md`: 40px container (use icon size 20) — default
+     * - `lg`: 48px container (use icon size 24)
+     * @default 'md'
+     */
+    readonly size?: 'xs' | 'sm' | 'md' | 'lg';
+    /**
+     * Border radius shape.
+     * - `circle`: fully rounded pill (default)
+     * - `square`: 8px corner radius (matches `--radius-button`)
+     * @default 'circle'
+     */
+    readonly shape?: 'circle' | 'square';
+    /**
+     * Button type attribute. Only applies when `as === 'button'`.
+     * @default 'button'
+     */
+    readonly type?: 'button' | 'submit' | 'reset';
+    /**
+     * Additional CSS classes to merge onto the root element.
+     */
+    readonly class?: string;
+    /**
+     * HTML `id` attribute.
+     */
+    readonly id?: string;
+    /**
+     * HTML `name` attribute (only meaningful for `<button>`).
+     */
+    readonly name?: string;
+    /**
+     * Arbitrary `data-*` attributes as a plain record.
+     * Keys are used without the `data-` prefix; it is added automatically.
+     * @example { action: 'prev', index: 0 }
+     */
+    readonly data?: Record<string, string | number>;
+    /**
+     * Arbitrary `aria-*` attributes as a plain record.
+     * Keys are used without the `aria-` prefix; it is added automatically.
+     * Boolean values are stringified to `'true'` or `'false'` because HTML
+     * ARIA boolean attributes are enumerated strings, not real booleans.
+     *
+     * **Collision rule**: if `'label'` is included here it is silently dropped —
+     * the dedicated `ariaLabel` prop always wins.
+     *
+     * @example { expanded: false, controls: 'mobile-menu', pressed: true }
+     */
+    readonly aria?: Record<string, string | boolean>;
+}
+
+const {
+    ariaLabel,
+    as: element = 'button',
+    href,
+    variant = 'ghost',
+    size = 'md',
+    shape = 'circle',
+    type = 'button',
+    class: extraClass,
+    id,
+    name,
+    data,
+    aria,
+} = Astro.props;
+
+const classes = [
+    'btn-icon',
+    `btn-icon--${variant}`,
+    `btn-icon--${size}`,
+    shape === 'square' ? 'btn-icon--shape-square' : '',
+    extraClass ?? '',
+]
+    .filter(Boolean)
+    .join(' ');
+
+const dataAttrs: Record<string, string | number> = {};
+if (data) {
+    for (const [key, value] of Object.entries(data)) {
+        dataAttrs[`data-${key}`] = value;
+    }
+}
+
+// Build aria-* attrs. The 'label' key is dropped — ariaLabel prop always wins.
+const ariaAttrs: Record<string, string> = {};
+if (aria) {
+    for (const [key, value] of Object.entries(aria)) {
+        if (key === 'label') continue;
+        ariaAttrs[`aria-${key}`] = String(value);
+    }
+}
+---
+
+{element === 'a' ? (
+    <a
+        href={href}
+        id={id}
+        class={classes}
+        aria-label={ariaLabel}
+        {...dataAttrs}
+        {...ariaAttrs}
+    >
+        <slot />
+    </a>
+) : (
+    <button
+        type={type}
+        name={name}
+        id={id}
+        class={classes}
+        aria-label={ariaLabel}
+        {...dataAttrs}
+        {...ariaAttrs}
+    >
+        <slot />
+    </button>
+)}

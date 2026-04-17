@@ -329,6 +329,98 @@
     align-items: center;
 }
 
+/* =======================================================================
+   ICON BUTTON — accessible icon-only interactive element
+   Variants: ghost (default), solid, outline
+   Sizes: xs (28px), sm (32px), md (40px, default), lg (48px)
+   Shapes: circle (default, border-radius: 9999px), square (8px corners)
+   Used by: IconButton.astro + IconButton.tsx (React island)
+   ======================================================================= */
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    border-radius: var(--radius-pill);
+    transition: all var(--duration-normal, 0.4s) ease;
+    text-decoration: none;
+}
+
+/* --- Shape modifier --- */
+.btn-icon--shape-square {
+    border-radius: var(--radius-button);
+}
+
+/* --- Sizes (icon size recommendation in comment) --- */
+.btn-icon--xs {
+    /* icon size: 16px */
+    width: 28px;
+    height: 28px;
+}
+.btn-icon--sm {
+    /* icon size: 18px */
+    width: 32px;
+    height: 32px;
+}
+.btn-icon--md {
+    /* icon size: 20px */
+    width: 40px;
+    height: 40px;
+}
+.btn-icon--lg {
+    /* icon size: 24px */
+    width: 48px;
+    height: 48px;
+}
+
+/* --- Variant: ghost (transparent, subtle hover fill) --- */
+.btn-icon--ghost {
+    background: transparent;
+    color: var(--core-foreground);
+}
+.btn-icon--ghost:hover {
+    background-color: var(--muted);
+}
+
+/* --- Variant: solid (filled with brand color, elevated) --- */
+.btn-icon--solid {
+    background-color: var(--brand-accent);
+    color: var(--accent-foreground);
+    box-shadow: 0 2px 8px oklch(from var(--brand-accent) l c h / 0.28);
+}
+.btn-icon--solid:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px oklch(from var(--brand-accent) l c h / 0.42);
+}
+.btn-icon--solid:active {
+    transform: translateY(0);
+}
+
+/* --- Variant: outline (visible border, fills on hover) --- */
+.btn-icon--outline {
+    background-color: var(--core-card);
+    border: 1px solid var(--border);
+    color: var(--core-foreground);
+}
+.btn-icon--outline:hover {
+    background-color: var(--surface-warm);
+}
+
+/* --- States (shared across variants) --- */
+.btn-icon:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+.btn-icon:disabled,
+.btn-icon[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 /* === Search Bar === */
 .search-bar {
     background-color: var(--core-card);
