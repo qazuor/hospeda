@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 9/58 tasks (15.5%)
+## Progress: 10/63 tasks (15.9%)
 
-**Last updated:** 2026-04-17T17:40:00Z
-**Status:** in-progress (Phase 2 — OwnerPromotion apps/api consumers migrated)
+**Last updated:** 2026-04-17T17:55:00Z
+**Status:** in-progress (Phase 2 — admin UI replan completed; 7 granular sub-tasks spawned from T-016/T-018 after scope analysis)
 
 **Average Complexity:** 2.1/2.5 (ceiling)
 **Critical Path:** T-003 -> T-007 -> T-010 -> T-013 -> T-016 -> T-018 -> T-027 -> T-028 -> T-030 -> T-034 -> T-035 -> T-038 -> T-039 -> T-040 -> T-042 -> T-058 (16 steps)
@@ -73,7 +73,9 @@
 
 ### API Routes + Integration
 
-- [ ] **T-013** (complexity: 2) — Update admin OwnerPromotion API routes
+- [x] **T-013** (complexity: 2) — Update admin OwnerPromotion API routes
+  - COMPLETED 2026-04-17 · verification-only task, 0 code changes
+  - Routes live under `apps/api/src/routes/owner-promotion/admin/` (not `/admin/owner-promotion/` as description suggested); 0 `isActive` refs; consume already-updated Zod schemas (T-008/T-009/T-010)
   - Blocked by: T-008, T-009, T-010, T-012 · Blocks: T-016, T-021
 
 - [x] **T-014** (complexity: 1.5) — Update usage-tracking service MAX_ACTIVE_PROMOTIONS query
@@ -88,15 +90,48 @@
 
 ### Admin Frontend
 
-- [ ] **T-016** (complexity: 2) — Update OwnerPromotion admin frontend columns config
-  - Boolean toggle -> lifecycle badge (green/grey/amber)
-  - Blocked by: T-013 · Blocks: T-018
+> **REPLAN 2026-04-17T17:55**: T-016 and T-018 split into granular sub-tasks after admin UI scope analysis revealed that the original tasks referenced dead code files and did not cover the live route, types, or dialog components. T-017 retained but scope refined (toggle -> rename+payload). See `progress.md` for details.
 
-- [ ] **T-017** (complexity: 2) — Update OwnerPromotion admin hooks: replace togglePromotionActive
-  - Blocked by: T-013 · Blocks: T-018
+- [ ] **T-016a** (complexity: 1.5) — Migrate OwnerPromotion local types (isActive -> lifecycleState)
+  - File: `apps/admin/src/features/owner-promotions/types.ts`
+  - Source of truth for admin feature types
+  - Blocked by: T-013 · Blocks: T-016b, T-016d, T-017, T-018a, T-018b
 
-- [ ] **T-018** (complexity: 2) — Update OwnerPromotion admin entity config + admin-search
-  - Blocked by: T-016, T-017 · Blocks: T-027
+- [ ] **T-016b** (complexity: 2) — Migrate OwnerPromotion column definition in admin route
+  - File: `apps/admin/src/routes/_authed/billing/owner-promotions.tsx` (lines 137-141, 191)
+  - 2-variant boolean badge -> 3-variant lifecycle badge
+  - Blocked by: T-016a · Blocks: none
+
+- [ ] **T-016c** (complexity: 1.5) — Delete OwnerPromotion dead code (4 files + index.ts cleanup)
+  - Delete: `columns.tsx`, `config/*.ts` (2 files), `schemas/owner-promotions.schemas.ts`
+  - Update: `features/owner-promotions/index.ts` (remove `./columns` re-export)
+  - Dead verified via exhaustive grep (no external consumers)
+  - Blocked by: none · Blocks: none (runs in parallel)
+
+- [ ] **T-016d** (complexity: 1.5) — Migrate OwnerPromotion test fixtures (isActive -> lifecycleState)
+  - File: `apps/admin/test/fixtures/owner-promotion.fixture.ts` (lines 24, 47, 63)
+  - Blocked by: T-016a · Blocks: none
+
+- [ ] **T-017** (complexity: 2.5) — Rename togglePromotionActive -> updatePromotionLifecycle
+  - File: `apps/admin/src/features/owner-promotions/hooks.ts`
+  - Toggle (binary) no longer applies with 3 enum states; rename + payload change
+  - Includes: verify backend PATCH endpoint accepts lifecycleState
+  - Blocked by: T-016a, T-013 · Blocks: T-018c
+
+- [ ] **T-018a** (complexity: 2) — Migrate OwnerPromotion admin filter state + dropdown
+  - File: `apps/admin/src/routes/_authed/billing/owner-promotions.tsx` (lines 36, 255-259)
+  - Filter: `isActive?: string` (2 options) -> `lifecycleState?: LifecycleStatusEnum` (all + 3 options)
+  - Blocked by: T-016a, T-013 · Blocks: T-018c
+
+- [ ] **T-018b** (complexity: 2) — Migrate OwnerPromotion dialog components (detail + form)
+  - Files: `PromotionDetailDialog.tsx` (lines 62-63) + `PromotionFormDialog.tsx` (line 54)
+  - Badge in detail + form field in create/edit
+  - Blocked by: T-016a · Blocks: none
+
+- [ ] **T-018c** (complexity: 2.5) — Migrate OwnerPromotion action handler (toggle -> inline select)
+  - File: `apps/admin/src/routes/_authed/billing/owner-promotions.tsx` (line 56)
+  - UX: replace toggle Button with inline `<Select>` (Shadcn) — user-approved default
+  - Blocked by: T-017, T-018a · Blocks: T-027
 
 ### Tests
 

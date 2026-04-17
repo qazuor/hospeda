@@ -153,6 +153,36 @@ Typecheck posture after this boundary:
 - **OwnerPromotionService `_executeCount`**: not updated to inject `lifecycleState=ACTIVE`. Literal AC-005-01 scope is only `_executeSearch`. Revisit with T-022.
 - **`getById.test.ts:379` DrizzleClient typing**: pre-existing SPEC-066 residue, unrelated.
 
+#### T-013 — admin OwnerPromotion API routes (verification only)
+- **Files:** none (verification task)
+- Route location: `apps/api/src/routes/owner-promotion/admin/` (not `/admin/owner-promotion/` as description suggested). Grep `isActive` in admin/public/protected tiers: 0 matches.
+- Routes consume `OwnerPromotionAdminSearchSchema` + `OwnerPromotionAdminSchema` already migrated by T-008/T-009/T-010.
+- `adminList()` inherits `status -> lifecycleState` mapping from `AdminSearchBaseSchema` (T-009 removed the `queryBooleanParam` override). No code changes needed.
+
+### Replan 2026-04-17T17:55
+
+Admin UI scope analysis revealed that original T-016, T-017, T-018 referenced **dead code files** (`config/*.ts`, `schemas/*.schemas.ts`, `columns.tsx` top-level) and did not cover the **LIVE** route, types, or dialog components. Scope-correcting replan:
+
+**Files in scope post-replan** (live UI):
+- `features/owner-promotions/types.ts` (source of truth for feature) -> **T-016a**
+- `routes/_authed/billing/owner-promotions.tsx` (route with table, filter, actions) -> **T-016b, T-018a, T-018c**
+- `features/owner-promotions/hooks.ts` (togglePromotionActive mutation) -> **T-017 (reused + scope refined)**
+- `features/owner-promotions/components/PromotionDetailDialog.tsx` + `PromotionFormDialog.tsx` -> **T-018b**
+- `test/fixtures/owner-promotion.fixture.ts` (test infra) -> **T-016d**
+
+**Dead code cleanup** (verified no external consumers via exhaustive grep):
+- `features/owner-promotions/columns.tsx`, `config/owner-promotions.columns.ts`, `config/owner-promotions.config.ts`, `schemas/owner-promotions.schemas.ts` + `index.ts` re-export -> **T-016c**
+
+**Tasks removed:** T-016 (original), T-018 (original).
+**Tasks reused with refined scope:** T-017.
+**Tasks added:** T-016a, T-016b, T-016c, T-016d, T-018a, T-018b, T-018c (7 new).
+**Net task count change:** 58 -> 63 (+5).
+
+**UX decisions captured at replan:**
+- **Filter dropdown** exposes all 3 enum values + 'all' (4 options total).
+- **Action button** (toggle) replaced by inline `<Select>` in row actions (default UX approved; alternatives `cycle` and `modal` rejected).
+- **Dead code**: delete all 4 files (user confirmed `delete if 100% sure; we are`).
+
 ### Next up
 
-T-013 (admin OwnerPromotion API routes), T-016-T-018 (admin frontend), T-019-T-024 (tests). State bookkeeping continues.
+T-016a (types.ts; source of truth for feature — unblocks most of the replan chain) -> parallel batch: T-016b, T-016d, T-017, T-018a, T-018b -> T-018c. T-016c (dead code cleanup) can run any time (independent). State bookkeeping continues.
