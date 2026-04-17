@@ -17,6 +17,9 @@
  * - AC-4.3: Notification dispatch + Sentry.captureMessage when usage > newMaxValue
  * - AC-4.4: billing.limits.check() throws — warn log, skip key, continue
  *
+ * IT-5: Dedup blocks second call within window
+ * IT-5b: Dedup survives server restart (DB-backed dedup)
+ *
  * Additional coverage:
  * - Direction detection: upgrade / downgrade / lateral
  * - New plan not found in config — error + Sentry + all recalculations failed
@@ -31,7 +34,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { NotificationType } from '@repo/notifications';
-import { ADDON_RECALC_SOURCE_ID } from '@repo/service-core';
+import { ADDON_RECALC_SOURCE_ID, BILLING_EVENT_TYPES } from '@repo/service-core';
 import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     type PlanChangeRecalculationResult,
@@ -42,6 +45,9 @@ import { createMockBilling, createMockCustomer } from '../helpers/mock-factories
 // ─── Hoisted mock factories ──────────────────────────────────────────────────
 //
 // Must be hoisted so they are available when vi.mock factory functions run.
+// mockTxInsertValues: records values passed to ctx.tx.insert().values() inside the transaction.
+// mockTxWhere: controls the result of chained .where() / .limit() inside the transaction.
+// mockDbWhere: controls the purchase query (uses a separate mock chain in setupDbWithPurchases).
 
 const {
     mockDbWhere,
@@ -49,7 +55,11 @@ const {
     mockDbSelect,
     mockBillingAddonPurchasesSchema,
     mockSendNotification,
-    mockCaptureSentryMessage
+    mockCaptureSentryMessage,
+    mockTxInsertValues,
+    mockTxWhere: _mockTxWhere,
+    mockTxLimit,
+    mockTxInnerJoin
 } = vi.hoisted(() => {
     const mockDbWhere = vi.fn().mockResolvedValue([]);
     const mockDbFrom = vi.fn(() => ({ where: mockDbWhere }));
@@ -64,13 +74,26 @@ const {
     const mockSendNotification = vi.fn().mockResolvedValue(undefined);
     const mockCaptureSentryMessage = vi.fn().mockReturnValue('');
 
+    // Tracks values() calls inside the transaction (for dedup INSERT verification)
+    const mockTxInsertValues = vi.fn().mockResolvedValue(undefined);
+
+    // Controls results of .where()/.limit() calls inside ctx.tx query chains.
+    // By default returns [] — no recent dedup event found (allow execution).
+    const mockTxWhere = vi.fn().mockResolvedValue([]);
+    const mockTxLimit = vi.fn().mockResolvedValue([]);
+    const mockTxInnerJoin = vi.fn();
+
     return {
         mockDbWhere,
         mockDbFrom,
         mockDbSelect,
         mockBillingAddonPurchasesSchema,
         mockSendNotification,
-        mockCaptureSentryMessage
+        mockCaptureSentryMessage,
+        mockTxInsertValues,
+        mockTxWhere,
+        mockTxLimit,
+        mockTxInnerJoin
     };
 });
 
@@ -117,6 +140,78 @@ vi.mock('drizzle-orm', async (importOriginal) => {
     return { ...actual };
 });
 
+// Override @repo/service-core to provide a controlled withServiceTransaction.
+//
+// The global setup.ts mock passes through the real module (importOriginal), which means
+// withServiceTransaction calls the real withTransaction from @repo/db. That real function
+// calls getDb().transaction(), but getDb() is mocked and transaction() is a bare vi.fn()
+// that never invokes its callback — causing all tests that reach withServiceTransaction to
+// fail with "No withTransaction export" or return undefined.
+//
+// This file-level override replaces withServiceTransaction with a lightweight implementation
+// that builds a controlled ctx.tx stub. The stub is designed so:
+//
+//   - Queries that terminate in .where() (no .limit()) resolve via mockDbWhere.
+//     This covers the addon purchases query (Step 1), which existing tests configure
+//     via setupDbWithPurchases(purchases) → mockDbWhere.mockResolvedValue(purchases).
+//
+//   - Queries that add .limit() after .where() resolve via mockTxLimit.
+//     This covers the DB-dedup check (Step 0d) and the subscription lookup (Step 9c).
+//     IT-5 / IT-5b configure mockTxLimit to simulate a found dedup event.
+//
+//   - Queries with .innerJoin() route through mockTxWhere for the chained .where().
+//     The Step 0d query uses .innerJoin(); its .where().limit() maps to mockTxLimit.
+//
+//   - INSERT calls are tracked via mockTxInsertValues.
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    return {
+        ...actual,
+        withServiceTransaction: vi.fn(
+            async (
+                cb: (ctx: { tx: unknown; hookState: Record<string, unknown> }) => Promise<unknown>
+            ) => {
+                const txStub = {
+                    // Advisory lock (pg_advisory_xact_lock) — always a no-op in tests
+                    execute: vi.fn().mockResolvedValue(undefined),
+                    // Fluent select chain.
+                    // .where() returns a Promise (for the purchases await path) that
+                    // also exposes .limit() (for dedup check and subscription lookup).
+                    // This lets:
+                    //   await tx.select().from().where(...)           → mockDbWhere result
+                    //   await tx.select().from().where(...).limit(n)  → mockTxLimit result
+                    //   await tx.select().from().innerJoin().where(...).limit(n) → mockTxLimit result
+                    select: vi.fn(() => ({
+                        from: vi.fn(() => ({
+                            innerJoin: vi.fn((..._args: unknown[]) => {
+                                mockTxInnerJoin(..._args);
+                                // After innerJoin, .where().limit() is the only path used
+                                return {
+                                    where: vi.fn(() => ({ limit: mockTxLimit }))
+                                };
+                            }),
+                            where: vi.fn((_condition: unknown) => {
+                                // Return a Promise augmented with .limit() so both
+                                // code paths work:
+                                //   await tx.select().from().where(...)       — purchases query
+                                //   await tx.select().from().where(...).limit(n) — dedup / sub lookup
+                                const p = mockDbWhere() as Promise<unknown> & {
+                                    limit: typeof mockTxLimit;
+                                };
+                                p.limit = mockTxLimit;
+                                return p;
+                            })
+                        }))
+                    })),
+                    // insert().values() — dedup event INSERT (Step 9c)
+                    insert: vi.fn(() => ({ values: mockTxInsertValues }))
+                };
+                return cb({ tx: txStub, hookState: {} });
+            }
+        )
+    };
+});
+
 // ─── Dedup guard bypass ────────────────────────────────────────────────────────
 //
 // addon-plan-change.service keeps a process-local `recentRecalculations` Map that
@@ -132,6 +227,15 @@ const DEDUP_BYPASS_OFFSET_MS = 10 * 60 * 1000; // 10 minutes — safely above th
 beforeEach(() => {
     dateNowOffset += DEDUP_BYPASS_OFFSET_MS;
     vi.spyOn(Date, 'now').mockReturnValue(Date.now() + dateNowOffset);
+
+    // Reset all tx-level mocks to safe defaults before each test.
+    // vi.clearAllMocks() (called in per-describe beforeEach) resets call history
+    // but also clears mockResolvedValue implementations set via vi.hoisted().
+    // Re-applying the defaults here ensures the dedup check (mockTxLimit) and
+    // the INSERT tracker (mockTxInsertValues) have known behaviour every test.
+    mockTxLimit.mockResolvedValue([]);
+    mockTxInsertValues.mockResolvedValue(undefined);
+    mockDbWhere.mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -1322,5 +1426,303 @@ describe('handlePlanChangeAddonRecalculation — new plan not found in config', 
         expect(result.customerId).toBe(CUSTOMER_ID);
         expect(result.oldPlanId).toBe(OLD_PLAN_SLUG);
         expect(result.newPlanId).toBe(unknownPlan);
+    });
+});
+
+// ─── IT-5: Dedup blocks second call within window ─────────────────────────────
+//
+// After a successful recalculation, a second call within the DEDUP_WINDOW_MS for
+// the same customer must be suppressed. Two layers enforce this:
+//
+//   1. In-memory Map (fast path): checked before opening a transaction.
+//   2. DB-backed dedup (authoritative): ADDON_RECALC_COMPLETED event written
+//      inside the transaction at the end of a successful recalculation (Step 9c).
+//
+// IT-5 verifies the in-memory fast-path blocks the second call immediately.
+// IT-5b verifies that after a simulated server restart (Map cleared), the DB-backed
+// dedup query (Step 0d) still blocks the second call.
+
+describe('IT-5: dedup guard — in-memory Map blocks second call within window', () => {
+    let billing: QZPayBilling;
+
+    // Use a distinct customer ID to avoid state pollution from other describe blocks
+    const DEDUP_CUSTOMER_ID = 'cus_test_it5_dedup';
+
+    beforeEach(async () => {
+        vi.clearAllMocks();
+        mockDbWhere.mockResolvedValue([]);
+        mockTxLimit.mockResolvedValue([]);
+        mockTxInsertValues.mockResolvedValue(undefined);
+        mockSendNotification.mockResolvedValue(undefined);
+        mockCaptureSentryMessage.mockReturnValue('');
+
+        const { getPlanBySlug, getAddonBySlug } = await import('@repo/billing');
+        (getPlanBySlug as unknown as MockInstance).mockImplementation((slug: string) => {
+            if (slug === OLD_PLAN_SLUG) return mockOldPlan;
+            if (slug === NEW_PLAN_SLUG) return mockNewPlan;
+            return null;
+        });
+        (getAddonBySlug as unknown as MockInstance).mockImplementation((slug: string) => {
+            if (slug === 'extra-accommodations-5') return mockAddonDef;
+            return null;
+        });
+
+        billing = createMockBilling();
+        (billing.limits.set as unknown as MockInstance).mockResolvedValue(undefined);
+        (billing.limits.check as unknown as MockInstance).mockResolvedValue({ currentValue: 0 });
+        (billing.customers.get as unknown as MockInstance).mockResolvedValue(
+            createMockCustomer({ id: DEDUP_CUSTOMER_ID })
+        );
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('IT-5: should skip second call within 5-minute window via in-memory Map', async () => {
+        // Arrange — one active purchase so the first call actually runs recalculations
+        const db = setupDbWithPurchases([{ ...activePurchaseRow, customerId: DEDUP_CUSTOMER_ID }]);
+
+        // Pin Date.now() to a fixed value for this test so the dedup window is stable.
+        // We do NOT advance it between calls (simulating "same moment").
+        const fixedNow = 1_000_000_000_000;
+        vi.spyOn(Date, 'now').mockReturnValue(fixedNow);
+
+        // Act — first call: should succeed and run the recalculation
+        const firstResult = await handlePlanChangeAddonRecalculation({
+            customerId: DEDUP_CUSTOMER_ID,
+            oldPlanId: OLD_PLAN_SLUG,
+            newPlanId: NEW_PLAN_SLUG,
+            billing,
+            db: db as never
+        });
+
+        // Assert first call ran recalculations
+        expect(firstResult.recalculations).toHaveLength(1);
+        expect(firstResult.recalculations[0]?.outcome).toBe('success');
+
+        // Act — second call with same customer within the same time window
+        const secondResult = await handlePlanChangeAddonRecalculation({
+            customerId: DEDUP_CUSTOMER_ID,
+            oldPlanId: OLD_PLAN_SLUG,
+            newPlanId: NEW_PLAN_SLUG,
+            billing,
+            db: db as never
+        });
+
+        // Assert second call was suppressed (in-memory dedup fast-path)
+        expect(secondResult.recalculations).toHaveLength(0);
+        expect(secondResult.direction).toBe('lateral');
+
+        // The in-memory Map suppression happens BEFORE entering withServiceTransaction,
+        // so billing.limits.set is called exactly once (only from the first call).
+        expect(billing.limits.set).toHaveBeenCalledOnce();
+    });
+
+    it('IT-5: should allow second call after dedup window expires', async () => {
+        // Arrange
+        const db = setupDbWithPurchases([{ ...activePurchaseRow, customerId: DEDUP_CUSTOMER_ID }]);
+
+        const baseTime = 2_000_000_000_000;
+
+        // First call at baseTime
+        vi.spyOn(Date, 'now').mockReturnValue(baseTime);
+        await handlePlanChangeAddonRecalculation({
+            customerId: DEDUP_CUSTOMER_ID,
+            oldPlanId: OLD_PLAN_SLUG,
+            newPlanId: NEW_PLAN_SLUG,
+            billing,
+            db: db as never
+        });
+
+        // Advance time by 6 minutes — past the 5-minute dedup window
+        vi.spyOn(Date, 'now').mockReturnValue(baseTime + 6 * 60 * 1000);
+
+        // Act — second call after window expired
+        const secondResult = await handlePlanChangeAddonRecalculation({
+            customerId: DEDUP_CUSTOMER_ID,
+            oldPlanId: OLD_PLAN_SLUG,
+            newPlanId: NEW_PLAN_SLUG,
+            billing,
+            db: db as never
+        });
+
+        // Assert — second call ran (dedup window expired)
+        expect(secondResult.recalculations).toHaveLength(1);
+        expect(secondResult.recalculations[0]?.outcome).toBe('success');
+        expect(billing.limits.set).toHaveBeenCalledTimes(2);
+    });
+
+    it('IT-5: should write ADDON_RECALC_COMPLETED event to DB after successful recalculation', async () => {
+        // Arrange — one purchase, one active subscription found
+        const mockSubscriptionId = 'sub_test_dedup_write';
+        // mockTxLimit returns subscription on first call (Step 9c), [] on others
+        mockTxLimit
+            .mockResolvedValueOnce([]) // Step 0d: dedup check — no prior event
+            .mockResolvedValueOnce([{ id: mockSubscriptionId }]); // Step 9c: subscription found
+
+        const db = setupDbWithPurchases([{ ...activePurchaseRow, customerId: DEDUP_CUSTOMER_ID }]);
+
+        const fixedNow = 3_000_000_000_000;
+        vi.spyOn(Date, 'now').mockReturnValue(fixedNow);
+
+        // Act
+        const result = await handlePlanChangeAddonRecalculation({
+            customerId: DEDUP_CUSTOMER_ID,
+            oldPlanId: OLD_PLAN_SLUG,
+            newPlanId: NEW_PLAN_SLUG,
+            billing,
+            db: db as never
+        });
+
+        // Assert — recalculation succeeded
+        expect(result.recalculations[0]?.outcome).toBe('success');
+
+        // Assert — INSERT was called with correct dedup event fields
+        expect(mockTxInsertValues).toHaveBeenCalledOnce();
+        expect(mockTxInsertValues).toHaveBeenCalledWith(
+            expect.objectContaining({
+                subscriptionId: mockSubscriptionId,
+                eventType: BILLING_EVENT_TYPES.ADDON_RECALC_COMPLETED,
+                triggerSource: 'addon-plan-change',
+                metadata: expect.objectContaining({
+                    oldPlanId: OLD_PLAN_SLUG,
+                    newPlanId: NEW_PLAN_SLUG,
+                    customerId: DEDUP_CUSTOMER_ID
+                })
+            })
+        );
+    });
+
+    it('IT-5: should NOT write dedup event when no active subscription is found', async () => {
+        // Arrange — no subscription found (mockTxLimit always returns [])
+        mockTxLimit.mockResolvedValue([]);
+
+        const db = setupDbWithPurchases([{ ...activePurchaseRow, customerId: DEDUP_CUSTOMER_ID }]);
+
+        const fixedNow = 4_000_000_000_000;
+        vi.spyOn(Date, 'now').mockReturnValue(fixedNow);
+
+        // Act
+        const result = await handlePlanChangeAddonRecalculation({
+            customerId: DEDUP_CUSTOMER_ID,
+            oldPlanId: OLD_PLAN_SLUG,
+            newPlanId: NEW_PLAN_SLUG,
+            billing,
+            db: db as never
+        });
+
+        // Assert — recalculation succeeded despite missing subscription
+        expect(result.recalculations[0]?.outcome).toBe('success');
+
+        // Assert — INSERT not called (no subscriptionId to reference)
+        expect(mockTxInsertValues).not.toHaveBeenCalled();
+    });
+});
+
+// ─── IT-5b: Dedup survives server restart (DB-backed) ─────────────────────────
+//
+// The in-memory Map is cleared on server restart. The DB-backed dedup (Step 0d)
+// must still block a second call if the ADDON_RECALC_COMPLETED event was written.
+
+describe('IT-5b: dedup guard — DB-backed dedup survives in-memory Map clear', () => {
+    let billing: QZPayBilling;
+
+    const RESTART_CUSTOMER_ID = 'cus_test_it5b_restart';
+
+    beforeEach(async () => {
+        vi.clearAllMocks();
+        mockDbWhere.mockResolvedValue([]);
+        mockTxLimit.mockResolvedValue([]);
+        mockTxInsertValues.mockResolvedValue(undefined);
+        mockSendNotification.mockResolvedValue(undefined);
+        mockCaptureSentryMessage.mockReturnValue('');
+
+        const { getPlanBySlug, getAddonBySlug } = await import('@repo/billing');
+        (getPlanBySlug as unknown as MockInstance).mockImplementation((slug: string) => {
+            if (slug === OLD_PLAN_SLUG) return mockOldPlan;
+            if (slug === NEW_PLAN_SLUG) return mockNewPlan;
+            return null;
+        });
+        (getAddonBySlug as unknown as MockInstance).mockImplementation((slug: string) => {
+            if (slug === 'extra-accommodations-5') return mockAddonDef;
+            return null;
+        });
+
+        billing = createMockBilling();
+        (billing.limits.set as unknown as MockInstance).mockResolvedValue(undefined);
+        (billing.limits.check as unknown as MockInstance).mockResolvedValue({ currentValue: 0 });
+        (billing.customers.get as unknown as MockInstance).mockResolvedValue(
+            createMockCustomer({ id: RESTART_CUSTOMER_ID })
+        );
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('IT-5b: should block second call via DB dedup when in-memory Map is cleared (simulated restart)', async () => {
+        // Arrange — simulate a prior successful recalculation that wrote the DB event.
+        // The in-memory Map is empty (simulating server restart after the first call).
+        // The DB dedup check (Step 0d) finds the ADDON_RECALC_COMPLETED event.
+        //
+        // mockTxLimit: the FIRST call (Step 0d dedup check) returns the event,
+        // causing the function to return early with direction=lateral.
+        mockTxLimit.mockResolvedValue([{ id: 'event_from_previous_process' }]);
+
+        const db = setupDbWithPurchases([
+            { ...activePurchaseRow, customerId: RESTART_CUSTOMER_ID }
+        ]);
+
+        const fixedNow = 5_000_000_000_000;
+        vi.spyOn(Date, 'now').mockReturnValue(fixedNow);
+
+        // Act — the in-memory Map has no entry (simulating a fresh process after restart)
+        const result = await handlePlanChangeAddonRecalculation({
+            customerId: RESTART_CUSTOMER_ID,
+            oldPlanId: OLD_PLAN_SLUG,
+            newPlanId: NEW_PLAN_SLUG,
+            billing,
+            db: db as never
+        });
+
+        // Assert — DB dedup blocked the call
+        expect(result.recalculations).toHaveLength(0);
+        expect(result.direction).toBe('lateral');
+
+        // Assert — billing.limits.set was NOT called (recalculation was skipped)
+        expect(billing.limits.set).not.toHaveBeenCalled();
+
+        // Assert — the DB dedup INSERT was NOT called (execution stopped before Step 9c)
+        expect(mockTxInsertValues).not.toHaveBeenCalled();
+    });
+
+    it('IT-5b: should run recalculation when DB dedup event is outside the 5-minute window', async () => {
+        // Arrange — DB dedup check returns empty (no recent event within window)
+        // simulating a prior event that has aged out.
+        mockTxLimit
+            .mockResolvedValueOnce([]) // Step 0d: no recent dedup event
+            .mockResolvedValueOnce([{ id: 'sub_test_it5b_aged' }]); // Step 9c: subscription found
+
+        const db = setupDbWithPurchases([
+            { ...activePurchaseRow, customerId: RESTART_CUSTOMER_ID }
+        ]);
+
+        const fixedNow = 6_000_000_000_000;
+        vi.spyOn(Date, 'now').mockReturnValue(fixedNow);
+
+        // Act
+        const result = await handlePlanChangeAddonRecalculation({
+            customerId: RESTART_CUSTOMER_ID,
+            oldPlanId: OLD_PLAN_SLUG,
+            newPlanId: NEW_PLAN_SLUG,
+            billing,
+            db: db as never
+        });
+
+        // Assert — recalculation ran normally
+        expect(result.recalculations).toHaveLength(1);
+        expect(result.recalculations[0]?.outcome).toBe('success');
+        expect(billing.limits.set).toHaveBeenCalledOnce();
     });
 });

@@ -69,6 +69,30 @@ export function createDbMock() {
             transaction: vi.fn()
         })),
         initializeDb: vi.fn(),
+        /**
+         * Simulates withTransaction by executing the callback with a stub tx client.
+         * The stub tx client supports the same chained query builder methods as getDb().
+         * This allows withServiceTransaction (which calls withTransaction internally)
+         * to work in unit tests without a real database connection.
+         */
+        withTransaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => {
+            const txStub = {
+                select: vi.fn().mockReturnThis(),
+                from: vi.fn().mockReturnThis(),
+                where: vi.fn().mockResolvedValue([]),
+                innerJoin: vi.fn().mockReturnThis(),
+                limit: vi.fn().mockResolvedValue([]),
+                orderBy: vi.fn().mockReturnThis(),
+                execute: vi.fn().mockResolvedValue(undefined),
+                insert: vi.fn().mockReturnThis(),
+                values: vi.fn().mockResolvedValue(undefined),
+                returning: vi.fn().mockResolvedValue([]),
+                update: vi.fn().mockReturnThis(),
+                set: vi.fn().mockReturnThis(),
+                delete: vi.fn().mockReturnThis()
+            };
+            return callback(txStub);
+        }),
 
         // Re-export drizzle-orm operators (commonly used)
         sql: vi.fn(),
@@ -279,6 +303,7 @@ export function createDbMock() {
         billingSubscriptionEvents: {
             id: 'id',
             subscriptionId: 'subscription_id',
+            eventType: 'event_type',
             previousStatus: 'previous_status',
             newStatus: 'new_status',
             triggerSource: 'trigger_source',
