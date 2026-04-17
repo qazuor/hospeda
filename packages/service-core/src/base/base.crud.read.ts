@@ -105,8 +105,7 @@ export abstract class BaseCrudRead<
 
                 const where = { [processed.field]: processed.value };
                 const relations = this.getDefaultGetByIdRelations();
-                // biome-ignore lint/suspicious/noExplicitAny: computed property key is not recognized by TypeScript
-                const typedWhere = where as any;
+                const typedWhere = where as Record<string, unknown>;
                 const entity = relations
                     ? await this.model.findOneWithRelations(typedWhere, relations, execCtx?.tx)
                     : await this.model.findOne(typedWhere, execCtx?.tx);
