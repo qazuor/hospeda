@@ -10,6 +10,7 @@ import { BuildingIcon, HamburgerIcon, SearchIcon } from "@repo/icons";
 import MobileMenuIsland from "@/components/shared/MobileMenuIsland.astro";
 import AuthSection from '@/components/shared/AuthSection.astro';
 import GradientButton from '@/components/shared/GradientButton.astro';
+import IconButton from '@/components/shared/IconButton.astro';
 import { createTranslations } from "@/lib/i18n";
 import type { SupportedLocale } from "@/lib/i18n";
 import { buildUrl } from "@/lib/urls";
@@ -89,25 +90,28 @@ const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pa
         </nav>
 
         <!-- HAMBURGER (Mobile) -->
-        <button
-            data-mobile-toggle
+        <IconButton
+            ariaLabel={t("nav.openMenu", "Open navigation menu")}
+            variant="ghost"
+            size="md"
             class="header__hamburger"
-            aria-label={t("nav.openMenu", "Open navigation menu")}
-            aria-expanded="false"
-            type="button"
+            data={{ "mobile-toggle": "" }}
+            aria={{ expanded: false }}
         >
             <HamburgerIcon size={24} aria-hidden="true" />
-        </button>
+        </IconButton>
 
         <!-- USER AREA (search + owner CTA + auth state via Server Island) -->
         <div class="header__right">
-            <a
+            <IconButton
+                as="a"
                 href={buildUrl({ locale, path: "busqueda" })}
-                class="header__search-link"
-                aria-label={t("nav.search", "Buscar")}
+                ariaLabel={t("nav.search", "Buscar")}
+                variant="ghost"
+                size="md"
             >
                 <SearchIcon size={20} weight="regular" aria-hidden="true" />
-            </a>
+            </IconButton>
             <GradientButton
                 href={buildUrl({ locale, path: "/suscriptores/" })}
                 label={t("nav.ownerCta")}
@@ -279,24 +283,6 @@ const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pa
         }
     }
 
-    /* CTA button — owner listing link */
-    .header__search-link {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        color: var(--core-foreground);
-        text-decoration: none;
-        transition: background-color var(--duration-fast) ease;
-        flex-shrink: 0;
-    }
-
-    .header__search-link:hover {
-        background-color: var(--muted);
-    }
-
     .header__cta {
         display: none !important;
         font-size: var(--text-nav);
@@ -325,27 +311,14 @@ const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pa
         50% { opacity: 0.5; }
     }
 
-    /* Hamburger (mobile) */
+    /* Hamburger (mobile) — display-only rules; aesthetics handled by .btn-icon */
     .header__hamburger {
         display: none;
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 8px;
-        border-radius: 4px;
-        color: var(--core-foreground);
-    }
-
-    .header__hamburger:focus-visible {
-        outline: 2px solid var(--brand-primary);
-        outline-offset: 2px;
     }
 
     @media (max-width: 1024px) {
         .header__hamburger {
             display: flex;
-            align-items: center;
-            justify-content: center;
         }
     }
 
