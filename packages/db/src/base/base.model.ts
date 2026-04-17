@@ -5,7 +5,7 @@ import { getDb } from '../client.ts';
 import type { BaseModel, DrizzleClient } from '../types.ts';
 import { buildOrderByClause, buildWhereClause } from '../utils/drizzle-helpers.ts';
 import { DbError } from '../utils/error.ts';
-import { logError, logQuery } from '../utils/logger.ts';
+import { dbLogger, logError, logQuery } from '../utils/logger.ts';
 import { warnUnknownRelationKeys } from '../utils/relations-validator.ts';
 
 /**
@@ -28,7 +28,11 @@ function transformRelationsForDrizzle(
 ): Record<string, boolean | { with: Record<string, unknown> }> {
     const MAX_DEPTH = 5;
     if (depth >= MAX_DEPTH) {
-        return relations as Record<string, boolean | { with: Record<string, unknown> }>;
+        dbLogger.warn(
+            { depth, MAX_DEPTH },
+            'transformRelationsForDrizzle: MAX_DEPTH reached, truncating nested relations'
+        );
+        return {};
     }
 
     const transformed: Record<string, boolean | { with: Record<string, unknown> }> = {};

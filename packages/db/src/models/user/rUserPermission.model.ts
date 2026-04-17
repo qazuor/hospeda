@@ -13,7 +13,7 @@ export class RUserPermissionModel extends BaseModelImpl<UserPermissionAssignment
     protected override readonly validRelationKeys = ['user', 'permission'] as const;
 
     protected getTableName(): string {
-        return 'rUserPermissions';
+        return 'userPermission';
     }
 
     /**

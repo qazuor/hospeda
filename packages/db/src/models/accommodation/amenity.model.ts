@@ -10,7 +10,7 @@ export class AmenityModel extends BaseModelImpl<Amenity> {
     protected table = amenities;
     public entityName = 'amenities';
 
-    protected override readonly validRelationKeys = ['accommodations'] as const;
+    protected override readonly validRelationKeys = ['accommodationAmenities'] as const;
 
     protected getTableName(): string {
         return 'amenities';
