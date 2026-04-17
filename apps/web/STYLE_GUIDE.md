@@ -419,37 +419,236 @@ rating box: floating card with rating score + stars + review count
 
 ### 5.3 Buttons
 
-#### Primary Button (`.travhub-btn` equivalent)
+Two canonical button components cover every interactive affordance in the app:
 
+- **`GradientButton`** (`shared/GradientButton.astro`, `ui/GradientButton.tsx`).. visible-label CTAs and form submits. Gradient fill, pill shape by default, outline variants that fill on hover.
+- **`IconButton`** (`shared/IconButton.astro`, `ui/IconButton.tsx`).. icon-only interactive elements (hamburger, carousel arrows, toggles, drawer close). `ariaLabel` is mandatory because there is no visible text.
+
+Both components share CSS via `components.css` and have paired Astro + React implementations. **Do NOT hand-roll `<button>` elements for standard UI.** Inline `<button>` is only acceptable for compound widgets whose styling is tightly coupled to their structure (see 5.3.5).
+
+#### 5.3.1 GradientButton — variants
+
+| Variant | Background | Hover effect | Recommended usage |
+|---------|------------|--------------|-------------------|
+| `accent` (default) | Linear gradient built from `var(--brand-accent)` (sunset orange), box-shadow `0 4px 14px accent/0.32` | Shadow expands to `0 6px 20px accent/0.45`, gradient shifts, `translateY(-2px)` | Primary CTAs, form submits, main hero action |
+| `primary` | Linear gradient built from `var(--brand-primary)` (river blue), box-shadow `0 4px 14px primary/0.32` | Shadow expands to `0 6px 20px primary/0.45`, gradient shifts, lift | Navigation CTAs and secondary primary actions when orange would clash |
+| `outline-primary` | Transparent with 1.5px blue border, blue text | `::before` gradient fades in, text becomes white, shadow appears | Secondary actions paired with a solid primary button |
+| `outline-accent` | Transparent with 1.5px orange border, orange text | `::before` orange gradient fades in, text becomes white, shadow appears | Secondary actions on light/peach backgrounds next to an accent CTA |
+
+All gradients are built on the fly with `oklch(from var(--brand-*) calc(l * X) c h)`, so dark mode adjusts automatically.
+
+#### 5.3.2 GradientButton — sizes
+
+| Size | Padding | Font size | Usage |
+|------|---------|-----------|-------|
+| `sm` | `8px 20px` | `0.8125rem` | Compact toolbars, filter chips, inline actions |
+| `md` (default) | `12px 28px` | `var(--text-button)` | Standard CTAs everywhere |
+| `lg` | `16px 36px` | `1rem` | Hero CTAs, pricing plan buttons, empty-state primary actions |
+
+#### 5.3.3 GradientButton — shapes
+
+| Shape | Radius | Usage |
+|-------|--------|-------|
+| `pill` (default) | `var(--radius-pill)` (9999px) | Marketing surfaces, CTAs, navigation |
+| `rounded` | `var(--radius-button)` (8px) | Form submits next to inputs, pricing cards, anything aligned with a rectangular field |
+
+Shared base styles: `font-family: var(--font-sans)`, `font-weight: 600`, border `1.5px solid transparent`, focus ring via `outline: 2px solid var(--ring)` with `2px` offset. Disabled state: `opacity: 0.5; cursor: not-allowed; pointer-events: none` (also triggered by `aria-disabled="true"`).
+
+#### 5.3.4 GradientButton — usage examples
+
+##### Navigation CTA (Astro, anchor)
+
+```astro
+---
+import GradientButton from '@/components/shared/GradientButton.astro';
+---
+<GradientButton
+  as="a"
+  href={buildUrl(locale, 'alojamientos')}
+  label={t('home.hero.ctaExplore')}
+  variant="accent"
+/>
 ```
-base:       font-sans font-semibold text-button capitalize
-            bg-accent text-accent-foreground
-            rounded-button px-6 py-2.5
-            transition duration-slow
-            position: relative overflow-hidden
-hover:      animated background fill effect (::before scale transform)
-            cubic-bezier(0.1, 0, 0.3, 1) 0.4s
+
+##### Form submit with loading state (React island, rounded shape)
+
+```tsx
+import { GradientButton } from '@/components/ui/GradientButton';
+
+<GradientButton
+  as="button"
+  type="submit"
+  shape="rounded"
+  label={isLoading ? t('common.loading') : t('search.submit')}
+  disabled={isLoading}
+  aria={{ busy: isLoading }}
+/>
 ```
 
-#### Button Variants
+##### Secondary outline action (React island)
 
-| Variant | Classes |
-|---------|---------|
-| `default` | `bg-accent text-accent-foreground hover:bg-accent/90` |
-| `primary` | `bg-primary text-primary-foreground hover:bg-primary/90` |
-| `outline` | `border-2 border-accent text-accent hover:bg-accent hover:text-accent-foreground` |
-| `ghost` | `text-foreground hover:bg-muted` |
-| `dark` | `bg-surface-dark text-surface-dark-foreground hover:bg-surface-dark/90` |
-| `link` | `text-accent underline-offset-4 hover:underline` |
+```tsx
+import { GradientButton } from '@/components/ui/GradientButton';
 
-#### Button Sizes
+<GradientButton
+  as="button"
+  variant="outline-accent"
+  size="sm"
+  label={t('common.cancel')}
+  onClick={handleCancel}
+/>
+```
 
-| Size | Classes |
-|------|---------|
-| `sm` | `h-8 px-4 text-sm` |
-| `default` | `h-10 px-6 text-button` |
-| `lg` | `h-12 px-8 text-button` |
-| `icon` | `size-10` |
+##### With a leading icon (Astro, named slot)
+
+```astro
+---
+import GradientButton from '@/components/shared/GradientButton.astro';
+import { SearchIcon } from '@repo/icons';
+---
+<GradientButton label={t('search.button')} variant="accent">
+  <SearchIcon slot="leading" size={18} weight="bold" aria-hidden="true" />
+</GradientButton>
+```
+
+##### With a trailing icon (React island, `leadingIcon` / `trailingIcon` props)
+
+```tsx
+import { GradientButton } from '@/components/ui/GradientButton';
+import { ArrowRightIcon } from '@repo/icons';
+
+<GradientButton
+  as="a"
+  href={buildUrl(locale, 'alojamientos')}
+  label={t('home.cta.seeAll')}
+  trailingIcon={<ArrowRightIcon size={18} weight="bold" aria-hidden="true" />}
+/>
+```
+
+> **ARIA tip**.. use the `aria` prop as a flat record (`aria={{ busy: true, expanded: false }}`). The component prefixes each key with `aria-` and stringifies booleans. The `label` key inside `aria` is silently dropped.. the visible text comes from the `label` prop.
+
+#### 5.3.5 IconButton
+
+Icon-only interactive element. Used across the header (hamburger, user nav, theme toggle), carousels (prev/next arrows), drawers (close), toggles, and scroll-to-top overlays.
+
+**Hard rule**.. every `IconButton` MUST receive an `ariaLabel`. Without visible text, screen readers have nothing to announce.
+
+##### Variants
+
+| Variant | Visual treatment |
+|---------|------------------|
+| `ghost` (default) | Transparent background, subtle hover fill |
+| `solid` | Filled with brand color, elevated shadow |
+| `outline` | Visible border, fills with brand color on hover |
+
+##### Sizes
+
+| Size | Container | Recommended icon size |
+|------|-----------|-----------------------|
+| `xs` | `28px` | `16` |
+| `sm` | `32px` | `18` |
+| `md` (default) | `40px` | `20` |
+| `lg` | `48px` | `24` |
+
+##### Shapes
+
+| Shape | Radius | Usage |
+|-------|--------|-------|
+| `circle` (default) | `var(--radius-pill)` | Toggles, navigation arrows, social buttons, anything round in the reference design |
+| `square` | `var(--radius-button)` (8px) | Toolbar actions aligned with rectangular fields |
+
+#### 5.3.6 IconButton — usage examples
+
+##### Hamburger menu (Astro)
+
+```astro
+---
+import IconButton from '@/components/shared/IconButton.astro';
+import { HamburgerIcon } from '@repo/icons';
+---
+<IconButton
+  ariaLabel={t('nav.openMenu')}
+  aria={{ expanded: false, controls: 'mobile-menu' }}
+  data={{ action: 'toggle-menu' }}
+>
+  <HamburgerIcon size={24} aria-hidden="true" />
+</IconButton>
+```
+
+##### Carousel arrow (React island)
+
+```tsx
+import { IconButton } from '@/components/ui/IconButton';
+import { CaretRightIcon } from '@repo/icons';
+
+<IconButton
+  ariaLabel={t('carousel.next')}
+  variant="outline"
+  size="sm"
+  onClick={scrollNext}
+  disabled={!canScrollNext}
+>
+  <CaretRightIcon size={18} weight="bold" aria-hidden="true" />
+</IconButton>
+```
+
+##### Toggle button with `aria-pressed` (React island)
+
+```tsx
+import { IconButton } from '@/components/ui/IconButton';
+import { SunIcon } from '@repo/icons';
+
+<IconButton
+  ariaLabel={isDark ? t('theme.switchToLight') : t('theme.switchToDark')}
+  aria={{ pressed: isDark }}
+  onClick={toggleTheme}
+>
+  <SunIcon size={20} weight="regular" aria-hidden="true" />
+</IconButton>
+```
+
+##### Close button inside a drawer with focus management (React island)
+
+```tsx
+import { useRef } from 'react';
+import { IconButton } from '@/components/ui/IconButton';
+import { CloseIcon } from '@repo/icons';
+
+const closeButtonRef = useRef<HTMLButtonElement>(null);
+// focus on open via useEffect…
+
+<IconButton
+  ref={closeButtonRef}
+  ariaLabel={t('common.close')}
+  variant="ghost"
+  tabIndex={isOpen ? 0 : -1}
+  onClick={handleClose}
+>
+  <CloseIcon size={20} aria-hidden="true" />
+</IconButton>
+```
+
+> **CSS note**.. `.btn-icon` variants are consumed by the component but the styles are centralized in `components.css`. If a new variant/size/shape is introduced in the component, update the CSS alongside it in the same PR.. never let the component reference a class that does not exist.
+
+#### 5.3.7 Decision tree — which component do I use?
+
+1. **Does the control have visible text?** → Yes: `GradientButton`. No: `IconButton`.
+2. **Is it a link (navigates to another route)?** → `as="a"` + `href`. If it triggers an action in-place: `as="button"`.
+3. **Is it a form submit?** → `GradientButton as="button" type="submit"`. Pair with `shape="rounded"` when it sits inline with form fields.
+4. **Is it a visual on/off toggle?** → Use `aria={{ pressed: boolean }}` so assistive tech reports state.
+5. **Does it expand/collapse a region (drawer, menu, accordion)?** → Use `aria={{ expanded: boolean, controls: 'target-id' }}`.
+6. **Do you need a ref, programmatic focus, or dynamic `tabIndex`?** → `IconButton` forwards `ref` and supports `tabIndex` directly; use the React version.
+
+#### 5.3.8 Legitimate exceptions
+
+Native `<button>` is acceptable only in compound UI where styling is tightly coupled to internal structure and the general components would not compose cleanly:
+
+- `ScrollToTop` (progress ring wraps an SVG circle around the icon)
+- `SearchBar` internals (field-bound submit button sized to match the field row)
+- `FilterSidebar` chip toggles (multi-state pills with counters inside)
+- OAuth provider buttons with third-party branding requirements
+
+In every other case, prefer `GradientButton` / `IconButton`.
 
 ### 5.4 Badges
 
