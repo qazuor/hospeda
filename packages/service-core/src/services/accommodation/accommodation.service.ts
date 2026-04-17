@@ -148,6 +148,23 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
+     * Returns relations for detail views (getById, getBySlug, getByName).
+     * Loads more relations than list view for richer detail pages.
+     * @see getDefaultListRelations — lighter relations for list operations
+     */
+    protected override getDefaultGetByIdRelations() {
+        return {
+            destination: true,
+            owner: true,
+            amenities: true,
+            features: true,
+            reviews: true,
+            faqs: true,
+            tags: true
+        };
+    }
+
+    /**
      * Returns the columns to search against when the `search` query param is provided.
      * Accommodations are searched by name and description.
      */
@@ -430,7 +447,7 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<string> {
-        const entity = await this.model.findById(id);
+        const entity = await this.model.findById(id, ctx?.tx);
         if (entity && ctx.hookState) {
             ctx.hookState.restoredAccommodation = {
                 slug: entity.slug,
@@ -474,7 +491,7 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<string> {
-        const entity = await this.model.findById(id);
+        const entity = await this.model.findById(id, ctx?.tx);
         if (entity && ctx.hookState) {
             ctx.hookState.deletedEntity = {
                 destinationId: entity.destinationId,
@@ -518,7 +535,7 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<string> {
-        const entity = await this.model.findById(id);
+        const entity = await this.model.findById(id, ctx?.tx);
         if (entity && ctx.hookState) {
             ctx.hookState.deletedEntity = {
                 destinationId: entity.destinationId,

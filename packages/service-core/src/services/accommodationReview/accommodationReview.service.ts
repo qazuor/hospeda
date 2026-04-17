@@ -296,26 +296,26 @@ export class AccommodationReviewService extends BaseCrudService<
      * (cleanliness, hospitality, services, accuracy, communication, location)
      * and persists it to the review's averageRating column.
      * @param entity - The accommodation review entity
-     * @param _tx - Optional transaction client to propagate DB writes into an existing transaction
+     * @param tx - Optional transaction client to propagate DB writes into an existing transaction
      */
     private async computeAndStoreReviewAverage(
         entity: AccommodationReview,
-        _tx?: DrizzleClient
+        tx?: DrizzleClient
     ): Promise<void> {
         const rating = entity.rating as Record<string, number>;
         const values = Object.values(rating).filter((v) => typeof v === 'number');
         const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
         const roundedAvg = Math.round(avg * 100) / 100;
-        await this.model.updateById(entity.id, { averageRating: roundedAvg }, _tx);
+        await this.model.updateById(entity.id, { averageRating: roundedAvg }, tx);
     }
 
     protected async _afterCreate(
         entity: AccommodationReview,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<AccommodationReview> {
-        await this.computeAndStoreReviewAverage(entity, _ctx.tx);
-        await this.recalculateAndUpdateAccommodationStats(entity.accommodationId, _ctx.tx);
+        await this.computeAndStoreReviewAverage(entity, ctx?.tx);
+        await this.recalculateAndUpdateAccommodationStats(entity.accommodationId, ctx?.tx);
         const accommodationSlug = await this._resolveAccommodationSlug(entity.accommodationId);
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -334,10 +334,10 @@ export class AccommodationReviewService extends BaseCrudService<
     protected async _afterUpdate(
         entity: AccommodationReview,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<AccommodationReview> {
-        await this.computeAndStoreReviewAverage(entity, _ctx.tx);
-        await this.recalculateAndUpdateAccommodationStats(entity.accommodationId, _ctx.tx);
+        await this.computeAndStoreReviewAverage(entity, ctx?.tx);
+        await this.recalculateAndUpdateAccommodationStats(entity.accommodationId, ctx?.tx);
         const accommodationSlug = await this._resolveAccommodationSlug(entity.accommodationId);
         try {
             getRevalidationService()?.scheduleRevalidation({

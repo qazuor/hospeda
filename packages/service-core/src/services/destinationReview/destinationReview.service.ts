@@ -289,7 +289,7 @@ export class DestinationReviewService extends BaseCrudService<
     protected async _afterCreate(
         entity: DestinationReview,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<DestinationReview> {
         // Compute per-review average from JSONB rating dimensions and persist it
         const reviewAvg = computeReviewAverageRating(entity.rating as Record<string, unknown>);
@@ -298,10 +298,10 @@ export class DestinationReviewService extends BaseCrudService<
             {
                 averageRating: reviewAvg
             },
-            _ctx.tx
+            ctx?.tx
         );
 
-        await this.recalculateAndUpdateDestinationStats(entity.destinationId, _ctx.tx);
+        await this.recalculateAndUpdateDestinationStats(entity.destinationId, ctx?.tx);
         const destinationSlug = await this._resolveDestinationSlug(entity.destinationId);
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -325,7 +325,7 @@ export class DestinationReviewService extends BaseCrudService<
     protected async _afterUpdate(
         entity: DestinationReview,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<DestinationReview> {
         // Recompute per-review average from JSONB rating dimensions and persist it
         const reviewAvg = computeReviewAverageRating(entity.rating as Record<string, unknown>);
@@ -334,11 +334,11 @@ export class DestinationReviewService extends BaseCrudService<
             {
                 averageRating: reviewAvg
             },
-            _ctx.tx
+            ctx?.tx
         );
 
         // Recalculate parent destination stats after rating change
-        await this.recalculateAndUpdateDestinationStats(entity.destinationId, _ctx.tx);
+        await this.recalculateAndUpdateDestinationStats(entity.destinationId, ctx?.tx);
 
         const destinationSlug = await this._resolveDestinationSlug(entity.destinationId);
         try {
