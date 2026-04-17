@@ -7,6 +7,7 @@
  * Validates password length client-side before submitting.
  */
 
+import { GradientButton } from '@/components/ui/GradientButton';
 import { signIn, signUp } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -196,16 +197,21 @@ export function SignUp({ locale, redirectTo, showOAuth = true }: SignUpProps) {
                 </span>
             </div>
 
-            <button
+            <GradientButton
+                as="button"
                 type="submit"
-                className={styles.submitButton}
+                variant="accent"
+                size="md"
+                shape="rounded"
+                label={
+                    isLoading
+                        ? t('auth.signUp.loading', 'Creando cuenta...')
+                        : t('auth.signUp.submit', 'Crear cuenta')
+                }
                 disabled={isLoading}
-                aria-busy={isLoading}
-            >
-                {isLoading
-                    ? t('auth.signUp.loading', 'Creando cuenta...')
-                    : t('auth.signUp.submit', 'Crear cuenta')}
-            </button>
+                aria={{ busy: isLoading }}
+                className={styles.submitButton}
+            />
 
             {showOAuth && (
                 <>

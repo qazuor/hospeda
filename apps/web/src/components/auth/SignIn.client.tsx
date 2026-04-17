@@ -7,6 +7,7 @@
  * Shows a skeleton while hydrating to prevent layout shift.
  */
 
+import { GradientButton } from '@/components/ui/GradientButton';
 import { signIn } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -157,16 +158,21 @@ export function SignIn({ locale, redirectTo, showOAuth = true }: SignInProps) {
                 />
             </div>
 
-            <button
+            <GradientButton
+                as="button"
                 type="submit"
-                className={styles.submitButton}
+                variant="accent"
+                size="md"
+                shape="rounded"
+                label={
+                    isLoading
+                        ? t('auth.signIn.loading', 'Ingresando...')
+                        : t('auth.signIn.submit', 'Iniciar Sesión')
+                }
                 disabled={isLoading}
-                aria-busy={isLoading}
-            >
-                {isLoading
-                    ? t('auth.signIn.loading', 'Ingresando...')
-                    : t('auth.signIn.submit', 'Iniciar Sesión')}
-            </button>
+                aria={{ busy: isLoading }}
+                className={styles.submitButton}
+            />
 
             {showOAuth && (
                 <>

@@ -7,6 +7,7 @@
  * Shows a success state after submission instead of redirecting.
  */
 
+import { GradientButton } from '@/components/ui/GradientButton';
 import { forgetPassword } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -156,16 +157,21 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
                 />
             </div>
 
-            <button
+            <GradientButton
+                as="button"
                 type="submit"
-                className={styles.submitButton}
+                variant="accent"
+                size="md"
+                shape="rounded"
+                label={
+                    isLoading
+                        ? t('auth.forgotPassword.loading', 'Enviando...')
+                        : t('auth.forgotPassword.submit', 'Enviar enlace de recuperación')
+                }
                 disabled={isLoading}
-                aria-busy={isLoading}
-            >
-                {isLoading
-                    ? t('auth.forgotPassword.loading', 'Enviando...')
-                    : t('auth.forgotPassword.submit', 'Enviar enlace de recuperación')}
-            </button>
+                aria={{ busy: isLoading }}
+                className={styles.submitButton}
+            />
 
             <div className={styles.footer}>
                 <a
