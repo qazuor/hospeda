@@ -72,6 +72,21 @@ export abstract class BaseCrudPermissions<
     }
 
     /**
+     * Default relations configuration for write operation responses (create, update, updateVisibility).
+     *
+     * When this returns a non-undefined config, write operations will re-fetch the entity
+     * with relations after the write completes, so the response shape matches getById/list.
+     *
+     * Defaults to `undefined` (flat entity returned, no re-fetch). Concrete services can
+     * override to return the same config as `getDefaultGetByIdRelations()` or a lighter set.
+     *
+     * @returns Relations configuration object or undefined for flat response (default)
+     */
+    protected getDefaultWriteResponseRelations(): import('@repo/schemas').ListRelationsConfig {
+        return undefined;
+    }
+
+    /**
      * Returns column names to search against when the `search` query param is provided.
      * @returns Array of column names to apply ILIKE search on
      */
@@ -106,8 +121,13 @@ export abstract class BaseCrudPermissions<
      * Checks if the actor has permission to update a given entity.
      * Should throw a `ServiceError` with `FORBIDDEN` code if permission is denied.
      *
+     * @remarks The `entity` parameter is always a FLAT entity (no relations populated).
+     *   Write operations fetch the entity via `model.findById()`, which does not load relations.
+     *   This differs from `_canView` (read path), where the entity includes relations loaded
+     *   via `getDefaultGetByIdRelations()`. Do NOT access relation properties on `entity` here.
+     *
      * @param actor - The user or system performing the action.
-     * @param entity - The entity that is about to be updated.
+     * @param entity - The flat entity that is about to be updated (no relations).
      * @throws {ServiceError} If the permission check fails.
      */
     protected abstract _canUpdate(actor: Actor, entity: TEntity): Promise<void> | void;
@@ -116,8 +136,11 @@ export abstract class BaseCrudPermissions<
      * Checks if the actor has permission to soft-delete an entity.
      * Should throw a `ServiceError` with `FORBIDDEN` code if permission is denied.
      *
+     * @remarks The `entity` parameter is always a FLAT entity (no relations populated).
+     *   See `_canUpdate` remarks for the rationale.
+     *
      * @param actor - The user or system performing the action.
-     * @param entity - The entity that is about to be soft-deleted.
+     * @param entity - The flat entity that is about to be soft-deleted (no relations).
      * @throws {ServiceError} If the permission check fails.
      */
     protected abstract _canSoftDelete(actor: Actor, entity: TEntity): Promise<void> | void;
@@ -126,8 +149,11 @@ export abstract class BaseCrudPermissions<
      * Checks if the actor has permission to permanently delete an entity.
      * Should throw a `ServiceError` with `FORBIDDEN` code if permission is denied.
      *
+     * @remarks The `entity` parameter is always a FLAT entity (no relations populated).
+     *   See `_canUpdate` remarks for the rationale.
+     *
      * @param actor - The user or system performing the action.
-     * @param entity - The entity that is about to be hard-deleted.
+     * @param entity - The flat entity that is about to be hard-deleted (no relations).
      * @throws {ServiceError} If the permission check fails.
      */
     protected abstract _canHardDelete(actor: Actor, entity: TEntity): Promise<void> | void;
@@ -136,8 +162,11 @@ export abstract class BaseCrudPermissions<
      * Checks if the actor has permission to restore a soft-deleted entity.
      * Should throw a `ServiceError` with `FORBIDDEN` code if permission is denied.
      *
+     * @remarks The `entity` parameter is always a FLAT entity (no relations populated).
+     *   See `_canUpdate` remarks for the rationale.
+     *
      * @param actor - The user or system performing the action.
-     * @param entity - The entity that is about to be restored.
+     * @param entity - The flat entity that is about to be restored (no relations).
      * @throws {ServiceError} If the permission check fails.
      */
     protected abstract _canRestore(actor: Actor, entity: TEntity): Promise<void> | void;

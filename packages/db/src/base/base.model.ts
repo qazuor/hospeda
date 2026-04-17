@@ -504,6 +504,13 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      * It only performs a simple `select().from().where().limit(1)` without any joins.
      * Subclasses MUST override this method to actually load relations.
      *
+     * @see {@link findOneWithRelations} for the generic, service-configured single-entity
+     *   relation loader (SPEC-066). Unlike this stub, `findOneWithRelations` uses Drizzle's
+     *   relational query API (`db.query[table].findFirst`) and accepts dynamic relation configs
+     *   from `getDefaultGetByIdRelations()`.
+     * @see {@link findAllWithRelations} for the paginated list equivalent that loads relations
+     *   via `getDefaultListRelations()`.
+     *
      * @param where - The filter object
      * @param relations - The relations to include (ignored in base implementation)
      * @param tx - Optional transaction client
@@ -568,6 +575,16 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      * Supports nested relations (e.g., `{ sponsorship: { sponsor: true } }`).
      * When no active relations are detected (all values are `false` or empty objects), the method
      * falls back to `findOne()` to avoid the overhead of the relational query API.
+     *
+     * Note on soft-deleted related entities: Drizzle's `findFirst({ with })` loads related
+     * records regardless of their `deletedAt` status. No filtering is applied to relations.
+     * This is intentional.. soft-deleted related entities may represent valid historical context
+     * (e.g., "this accommodation was managed by [deleted user]"). Services that need to filter
+     * soft-deleted relations should do so in `_afterGetByField` post-processing hooks.
+     *
+     * @see {@link findWithRelations} for the per-model stub with hardcoded relations.
+     *   That method is overridden by 16 subclasses and uses manual relation translation.
+     * @see {@link findAllWithRelations} for the paginated list equivalent.
      *
      * @param where - Filter conditions used to locate the entity
      * @param relations - Relations to include, e.g. `{ destination: true, owner: true }`
@@ -695,6 +712,13 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      * - If no pagination options are provided, defaults to page=1, pageSize=DEFAULT_PAGE_SIZE
      * - pageSize is capped at MAX_PAGE_SIZE (200) to prevent memory issues
      *
+     * Note on soft-deleted related entities: like `findOneWithRelations`, this method loads
+     * related records regardless of their `deletedAt` status. See `findOneWithRelations` JSDoc
+     * for the design rationale.
+     *
+     * @see {@link findWithRelations} for the per-model stub with hardcoded relations.
+     * @see {@link findOneWithRelations} for the single-entity equivalent used by `getById`.
+     *
      * @param relations Relations to include (e.g., { destination: true, sponsorship: { sponsor: true } })
      * @param where Filter conditions
      * @param options Pagination and other options
@@ -724,6 +748,8 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             if (!relations || typeof relations !== 'object') {
                 throw new Error('Relations must be a valid object');
             }
+
+            warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
 
             // Check if any relations are actually requested
             const hasRelations = Object.values(relations).some((value) => {

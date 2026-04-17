@@ -98,6 +98,15 @@ export class DestinationService extends BaseCrudService<
     protected readonly updateSchema = DestinationUpdateInputSchema;
     protected readonly searchSchema = DestinationSearchSchema;
 
+    /**
+     * Returns undefined intentionally: destinations have a recursive self-referencing
+     * hierarchy (parent/children) that is not suitable for automatic eager-loading.
+     *
+     * Hierarchy data should be loaded via dedicated methods instead:
+     * - `getAncestors()` for the root-to-parent chain
+     * - `getBreadcrumb()` for navigation UI
+     * - `getChildren()` / `getDescendants()` for subtree traversal
+     */
     protected getDefaultListRelations() {
         return undefined;
     }

@@ -124,12 +124,17 @@ export abstract class BaseCrudHooks<
     }
 
     /**
-     * Lifecycle hook executed after an entity has been fetched.
+     * Lifecycle hook executed after an entity has been fetched by `getByField`.
      *
-     * @param entity - The fetched entity, or null if not found.
+     * Override this method to perform post-processing on the entity, such as filtering
+     * soft-deleted related entities or transforming relation data. The entity received
+     * here includes any relations loaded via `getDefaultGetByIdRelations()` at runtime,
+     * even though the TypeScript type is the flat `TEntity`.
+     *
+     * @param entity - The fetched entity with relations populated at runtime (typed as flat TEntity).
      * @param _actor - The user or system performing the action.
      * @param _ctx - Service execution context carrying transaction and hookState.
-     * @returns The fetched entity or null.
+     * @returns The post-processed entity or null.
      */
     protected async _afterGetByField(
         entity: TEntity | null,

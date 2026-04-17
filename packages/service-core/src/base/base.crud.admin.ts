@@ -37,6 +37,11 @@ export abstract class BaseCrudAdmin<
      *
      * Only users with update permission can access this method.
      *
+     * @remarks This method intentionally bypasses SPEC-066 relation loading. It fetches the
+     *   entity via `model.findById()` (flat, no relations) because admin info is metadata about
+     *   the entity itself, not a full entity representation. The permission hook
+     *   `_canAdminGetInfo` receives a flat entity accordingly.
+     *
      * @param input - ServiceInput containing the entity `id`.
      * @returns `ServiceOutput<{ adminInfo: unknown }>` with the admin metadata.
      */
@@ -68,6 +73,10 @@ export abstract class BaseCrudAdmin<
      * Sets the admin info for an entity by ID.
      *
      * Only users with update permission can set admin metadata.
+     *
+     * @remarks Like `getAdminInfo`, this method bypasses SPEC-066 relation loading.
+     *   The entity is fetched flat via `model.findById()` and the permission hook
+     *   `_canAdminSetInfo` receives a flat entity. See `getAdminInfo` remarks.
      *
      * @param input - ServiceInput containing `id` and `adminInfo` payload.
      * @returns `ServiceOutput<{ adminInfo: AdminInfoType }>` with the stored metadata.
