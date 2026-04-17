@@ -7,7 +7,11 @@ type BillingSubscriptionEvent = typeof billingSubscriptionEvents.$inferSelect;
 /**
  * Model for managing billing subscription events in the database.
  * Extends BaseModel to provide CRUD operations for subscription event entities.
- * Records every subscription status change with its source and context.
+ *
+ * Supports two kinds of rows:
+ * - State-transition events: previousStatus + newStatus are set, eventType is null.
+ * - Operational events: eventType is set (e.g. 'ADDON_RECALC_COMPLETED'),
+ *   previousStatus and newStatus may be null.
  */
 export class BillingSubscriptionEventModel extends BaseModelImpl<BillingSubscriptionEvent> {
     protected table = billingSubscriptionEvents;
