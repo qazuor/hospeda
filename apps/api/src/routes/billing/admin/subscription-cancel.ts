@@ -23,6 +23,7 @@
 
 import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import { PermissionEnum, SubscriptionStatusEnum } from '@repo/schemas';
+import { withServiceTransaction } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { Context } from 'hono';
@@ -325,11 +326,18 @@ export const cancelSubscriptionHandler = async (
 
     // ── Phase 2: DB transaction + QZPay cancel ────────────────────────────────
 
-    // Wrap only local DB writes in the transaction.
+    // Wrap only local DB writes in withServiceTransaction.
     // QZPay calls happen OUTSIDE to avoid holding the connection open during network I/O.
+    // No service encapsulates "cancel subscription + addons atomically", so the raw
+    // transaction writes (status updates + event insert) are performed here directly
+    // using ctx.tx from withServiceTransaction.
     let alreadyCancelledConcurrently = false;
 
-    await db.transaction(async (trx) => {
+    await withServiceTransaction(async (ctx) => {
+        // ctx.tx is always defined inside withServiceTransaction
+        // biome-ignore lint/style/noNonNullAssertion: tx is guaranteed by withServiceTransaction
+        const trx = ctx.tx!;
+
         // Race-condition guard: another process (e.g. webhook) may have already cancelled.
         const freshRows = await trx
             .select({ status: billingSubscriptions.status })

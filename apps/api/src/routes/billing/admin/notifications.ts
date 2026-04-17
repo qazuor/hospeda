@@ -32,6 +32,11 @@ export const listNotificationLogsHandler = async (
     _body: unknown,
     query?: Record<string, unknown>
 ) => {
+    // NotificationRetentionService in @repo/service-core handles only retention
+    // policy (mark-expired + purge). No service provides paginated read access
+    // to billing_notification_log for admin listing. This is a read-only admin
+    // diagnostic endpoint with no write operations or business logic, so direct
+    // DB access is appropriate here.
     const db = getDb();
 
     try {

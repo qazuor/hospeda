@@ -39,6 +39,10 @@ export const listSubscriptionEventsHandler = async (
     _body: Record<string, unknown>,
     query?: Record<string, unknown>
 ) => {
+    // No BillingSubscriptionEventService exists in @repo/service-core that provides
+    // paginated read access to the billing_subscription_events table. This is a
+    // read-only admin diagnostic endpoint with no write operations or business logic,
+    // so direct DB access is appropriate here.
     const db = getDb();
 
     const { id: subscriptionId } = params as { id: string };
