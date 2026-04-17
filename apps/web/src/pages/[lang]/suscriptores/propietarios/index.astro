@@ -8,6 +8,7 @@
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import GradientButton from '@/components/shared/GradientButton.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -74,9 +75,12 @@ const faqJsonLd = {
 				<p class="owners-hero__desc">
 					{t('owners.hero.desc', 'Hospeda conecta tu propiedad con viajeros que buscan experiencias auténticas en el litoral entrerriano. Sin comisiones ocultas, con herramientas simples y soporte dedicado.')}
 				</p>
-				<a href={buildUrl({ locale, path: 'auth/signup' })} class="owners-hero__btn">
-					{t('owners.hero.cta', 'Empezar ahora')} →
-				</a>
+				<GradientButton
+					href={buildUrl({ locale, path: 'auth/signup' })}
+					label={t('owners.hero.cta', 'Empezar ahora')}
+					variant="primary"
+					icon="true"
+				/>
 			</div>
 			<div class="owners-hero__image" data-reveal="scale" aria-hidden="true">
 				<div class="owners-hero__image-placeholder"></div>
@@ -146,9 +150,12 @@ const faqJsonLd = {
 			<p class="owners-cta__desc">
 				{t('owners.cta.desc', 'Unite a los cientos de propietarios que ya confían en Hospeda para mostrar sus alojamientos al mundo.')}
 			</p>
-			<a href={buildUrl({ locale, path: 'auth/signup' })} class="owners-cta__btn">
-				{t('owners.cta.button', 'Empezar ahora')} →
-			</a>
+			<GradientButton
+				href={buildUrl({ locale, path: 'auth/signup' })}
+				label={t('owners.cta.button', 'Empezar ahora')}
+				variant="accent"
+				icon="true"
+			/>
 		</div>
 	</section>
 </MarketingLayout>
@@ -189,22 +196,6 @@ const faqJsonLd = {
 		line-height: 1.6;
 		margin: 0 0 var(--space-6);
 	}
-
-	.owners-hero__btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.875rem 2rem;
-		background-color: var(--surface-dark);
-		color: #fff;
-		border-radius: var(--radius-pill);
-		font-family: var(--font-sans);
-		font-weight: 600;
-		text-decoration: none;
-		transition: opacity var(--duration-normal) ease;
-	}
-
-	.owners-hero__btn:hover { opacity: 0.85; }
 
 	.owners-hero__image-placeholder {
 		width: 100%;
@@ -369,25 +360,6 @@ const faqJsonLd = {
 		max-width: 55ch;
 		margin: 0 auto var(--space-6);
 		line-height: 1.6;
-	}
-
-	.owners-cta__btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.875rem 2rem;
-		background-color: var(--brand-accent);
-		color: var(--accent-foreground, #fff);
-		border-radius: var(--radius-pill);
-		font-family: var(--font-sans);
-		font-weight: 600;
-		text-decoration: none;
-		transition: opacity var(--duration-normal) ease, transform var(--duration-normal) ease;
-	}
-
-	.owners-cta__btn:hover {
-		opacity: 0.9;
-		transform: translateY(-2px);
 	}
 
 	/* Responsive */

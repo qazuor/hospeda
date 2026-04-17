@@ -7,6 +7,7 @@
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import GradientButton from '@/components/shared/GradientButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -63,9 +64,11 @@ const ownerBenefits = [
 				))}
 			</div>
 			<div class="benefits-section__cta" data-reveal="up">
-				<a href={buildUrl({ locale, path: 'alojamientos' })} class="benefits-btn">
-					{t('benefits.tourist.cta', 'Explorar alojamientos')}
-				</a>
+				<GradientButton
+					href={buildUrl({ locale, path: 'alojamientos' })}
+					label={t('benefits.tourist.cta', 'Explorar alojamientos')}
+					variant="primary"
+				/>
 			</div>
 		</div>
 	</section>
@@ -89,9 +92,11 @@ const ownerBenefits = [
 				))}
 			</div>
 			<div class="benefits-section__cta" data-reveal="up">
-				<a href={buildUrl({ locale, path: 'suscriptores/propietarios' })} class="benefits-btn benefits-btn--accent">
-					{t('benefits.owner.cta', 'Publicá tu alojamiento')}
-				</a>
+				<GradientButton
+					href={buildUrl({ locale, path: 'suscriptores/propietarios' })}
+					label={t('benefits.owner.cta', 'Publicá tu alojamiento')}
+					variant="accent"
+				/>
 			</div>
 		</div>
 	</section>
@@ -159,26 +164,4 @@ const ownerBenefits = [
 		margin-top: var(--space-8);
 	}
 
-	.benefits-btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.875rem 2rem;
-		background-color: var(--brand-primary);
-		color: #fff;
-		border-radius: var(--radius-pill);
-		font-family: var(--font-sans);
-		font-weight: 600;
-		text-decoration: none;
-		transition: opacity var(--duration-normal) ease, transform var(--duration-normal) ease;
-	}
-
-	.benefits-btn--accent {
-		background-color: var(--brand-accent);
-	}
-
-	.benefits-btn:hover {
-		opacity: 0.9;
-		transform: translateY(-2px);
-	}
 </style>

@@ -7,6 +7,7 @@
  */
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import GradientButton from '@/components/shared/GradientButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -86,9 +87,12 @@ const { t } = createTranslations(locale);
 		<div class="about-cta__container" data-reveal="up">
 			<p class="about-cta__tagline">{t('about.cta.tagline', '¿Listo para explorar?')}</p>
 			<h2 class="about-cta__title">{t('about.cta.title', 'Descubrí el Litoral')}</h2>
-			<a href={buildUrl({ locale, path: 'alojamientos' })} class="about-cta__btn">
-				{t('about.cta.button', 'Ver alojamientos')}
-			</a>
+			<GradientButton
+				href={buildUrl({ locale, path: 'alojamientos' })}
+				label={t('about.cta.button', 'Ver alojamientos')}
+				variant="accent"
+				icon="true"
+			/>
 		</div>
 	</section>
 </DefaultLayout>
@@ -169,25 +173,6 @@ const { t } = createTranslations(locale);
 		color: var(--muted-foreground);
 		line-height: 1.6;
 		margin: 0;
-	}
-
-	.about-cta__btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.875rem 2rem;
-		background-color: var(--brand-accent);
-		color: var(--accent-foreground, #fff);
-		border-radius: var(--radius-pill);
-		font-family: var(--font-sans);
-		font-weight: 600;
-		text-decoration: none;
-		transition: opacity var(--duration-normal) ease, transform var(--duration-normal) ease;
-	}
-
-	.about-cta__btn:hover {
-		opacity: 0.9;
-		transform: translateY(-2px);
 	}
 
 	@media (max-width: 768px) {

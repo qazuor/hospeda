@@ -7,6 +7,7 @@
  */
 // TODO: Use GET /api/v1/public/search?q={query} when endpoint is created (T-017)
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import GradientButton from '@/components/shared/GradientButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -23,7 +24,14 @@ const q = Astro.url.searchParams.get('q') ?? '';
 
 			<form class="search-page__form" action={buildUrl({ locale, path: 'busqueda' })} method="get">
 				<input type="text" name="q" value={q} placeholder={t('search.placeholder', 'Buscar alojamientos, destinos, eventos...')} class="search-page__input" autofocus />
-				<button type="submit" class="search-page__btn">{t('search.submit', 'Buscar')}</button>
+				<GradientButton
+					as="button"
+					type="submit"
+					label={t('search.submit', 'Buscar')}
+					variant="accent"
+					shape="rounded"
+					class="search-page__btn"
+				/>
 			</form>
 
 			{!q && (
@@ -55,7 +63,6 @@ const q = Astro.url.searchParams.get('q') ?? '';
 	.search-page__title { font-family: var(--font-heading); font-weight: 700; font-size: clamp(1.75rem, 4vw, 2.5rem); color: var(--foreground); margin: 0 0 var(--space-6); text-align: center; }
 	.search-page__form { display: flex; gap: var(--space-3); max-width: 600px; margin: 0 auto var(--space-8); }
 	.search-page__input { flex: 1; padding: 0.875rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-button); font-family: var(--font-sans); font-size: var(--text-body); background-color: var(--background); color: var(--foreground); }
-	.search-page__btn { padding: 0.875rem 1.5rem; background-color: var(--brand-accent); color: var(--accent-foreground, #fff); border: none; border-radius: var(--radius-button); font-family: var(--font-sans); font-weight: 600; cursor: pointer; }
 	.search-page__suggestions { text-align: center; }
 	.search-page__subtitle { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); color: var(--foreground); margin: 0 0 var(--space-4); }
 	.search-page__tags { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; }
