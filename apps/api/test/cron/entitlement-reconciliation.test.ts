@@ -39,6 +39,20 @@ vi.mock('@repo/db', () => ({
         update: mockDbUpdate,
         execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
     })),
+    /**
+     * Default passthrough: executes the callback with a tx stub that simulates
+     * pg_try_advisory_xact_lock(43001) returning acquired=true.
+     * The tx stub uses the shared mockDbSelect/mockDbUpdate so tests that
+     * configure those mocks via setupDbForReconciliationPhase still work.
+     */
+    withTransaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => {
+        const txStub = {
+            select: mockDbSelect,
+            update: mockDbUpdate,
+            execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+        };
+        return callback(txStub);
+    }),
     billingNotificationLog: {
         id: 'id',
         type: 'type',
@@ -230,9 +244,23 @@ function setupDbForReconciliationPhase(rows: ReturnType<typeof buildPendingPurch
 // Tests
 // ---------------------------------------------------------------------------
 
+import { withTransaction } from '@repo/db';
+
 describe('addon-expiry cron — entitlement reconciliation phase (T-039)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+
+        // Restore withTransaction default after clearAllMocks() resets it.
+        // The tx stub uses the shared mockDbSelect/mockDbUpdate so tests that
+        // configure those mocks via setupDbForReconciliationPhase still work.
+        vi.mocked(withTransaction).mockImplementation(async (callback) => {
+            const txStub = {
+                select: mockDbSelect,
+                update: mockDbUpdate,
+                execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+            };
+            return callback(txStub as never);
+        });
     });
 
     describe('when entitlementRemovalPending purchases exist', () => {

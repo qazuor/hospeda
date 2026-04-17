@@ -47,6 +47,21 @@ vi.mock('@repo/db', () => ({
         // Required for the PostgreSQL advisory lock check at the start of the handler
         execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
     })),
+    /**
+     * Default passthrough: executes the callback with a tx stub that simulates
+     * pg_try_advisory_xact_lock(43001) returning acquired=true.
+     *
+     * Tests that need to override lock behavior (e.g. IT-4: lock not acquired)
+     * can replace this via vi.mocked(withTransaction).mockImplementationOnce(...).
+     */
+    withTransaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => {
+        const txStub = {
+            select: mockDbSelect,
+            update: mockDbUpdate,
+            execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+        };
+        return callback(txStub);
+    }),
     billingNotificationLog: {
         id: 'id',
         type: 'type',
@@ -136,7 +151,7 @@ vi.mock('../../src/middlewares/entitlement', () => ({
 }));
 
 import { getAddonBySlug } from '@repo/billing';
-import { getDb } from '@repo/db';
+import { getDb, withTransaction } from '@repo/db';
 import * as Sentry from '@sentry/node';
 import { getQZPayBilling } from '../../src/middlewares/billing';
 import { clearEntitlementCache } from '../../src/middlewares/entitlement';
@@ -175,6 +190,19 @@ describe('Add-on Expiry Cron Job', () => {
             update: mockDbUpdate,
             execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
         } as never);
+
+        // Restore withTransaction default: execute the callback with a tx stub that
+        // simulates pg_try_advisory_xact_lock(43001) returning acquired=true.
+        // clearAllMocks() resets this, so the shared select/update chains must be
+        // re-attached here just like getDb is re-attached above.
+        vi.mocked(withTransaction).mockImplementation(async (callback) => {
+            const txStub = {
+                select: mockDbSelect,
+                update: mockDbUpdate,
+                execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+            };
+            return callback(txStub as never);
+        });
 
         // Set up default DB chain for wasNotificationSent: returns empty (no prior notification)
         mockDbLimit.mockResolvedValue([]);
@@ -1010,13 +1038,15 @@ describe('Add-on Expiry Cron Job', () => {
                 };
             });
 
+            const dbInstance = {
+                select,
+                update,
+                // Required for the PostgreSQL advisory lock at handler start/finally
+                execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+            };
+
             return {
-                db: {
-                    select,
-                    update,
-                    // Required for the PostgreSQL advisory lock at handler start/finally
-                    execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
-                },
+                db: dbInstance,
                 spies: {
                     retryWhere,
                     retryInnerJoin,
@@ -1043,8 +1073,11 @@ describe('Add-on Expiry Cron Job', () => {
             };
 
             const { db } = buildMockDb([purchase]);
-            const { getDb } = await import('@repo/db');
+            const { getDb, withTransaction } = await import('@repo/db');
             vi.mocked(getDb).mockReturnValue(db as never);
+            vi.mocked(withTransaction).mockImplementation(async (callback) =>
+                callback(db as never)
+            );
 
             vi.mocked(getAddonBySlug).mockReturnValue({ slug: 'visibility-boost-7d' } as never);
             vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValue({
@@ -1084,8 +1117,11 @@ describe('Add-on Expiry Cron Job', () => {
             };
 
             const { db } = buildMockDb([purchase]);
-            const { getDb } = await import('@repo/db');
+            const { getDb, withTransaction } = await import('@repo/db');
             vi.mocked(getDb).mockReturnValue(db as never);
+            vi.mocked(withTransaction).mockImplementation(async (callback) =>
+                callback(db as never)
+            );
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -1132,12 +1168,16 @@ describe('Add-on Expiry Cron Job', () => {
                 };
             });
 
-            const { getDb } = await import('@repo/db');
-            vi.mocked(getDb).mockReturnValue({
+            const dbStub = {
                 select: selectSpy,
                 update: updateSpy,
                 execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
-            } as never);
+            };
+            const { getDb, withTransaction } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue(dbStub as never);
+            vi.mocked(withTransaction).mockImplementation(async (callback) =>
+                callback(dbStub as never)
+            );
 
             vi.mocked(getAddonBySlug).mockReturnValue(undefined);
             vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValue({
@@ -1203,12 +1243,16 @@ describe('Add-on Expiry Cron Job', () => {
                 };
             });
 
-            const { getDb } = await import('@repo/db');
-            vi.mocked(getDb).mockReturnValue({
+            const dbStub2 = {
                 select: selectSpy,
                 update: updateSpy,
                 execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
-            } as never);
+            };
+            const { getDb, withTransaction } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue(dbStub2 as never);
+            vi.mocked(withTransaction).mockImplementation(async (callback) =>
+                callback(dbStub2 as never)
+            );
 
             vi.mocked(getAddonBySlug).mockReturnValue(undefined);
             vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValue({
@@ -1276,12 +1320,16 @@ describe('Add-on Expiry Cron Job', () => {
                 };
             });
 
-            const { getDb } = await import('@repo/db');
-            vi.mocked(getDb).mockReturnValue({
+            const dbStub3 = {
                 select: selectSpy,
                 update: updateSpy,
                 execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
-            } as never);
+            };
+            const { getDb, withTransaction } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue(dbStub3 as never);
+            vi.mocked(withTransaction).mockImplementation(async (callback) =>
+                callback(dbStub3 as never)
+            );
 
             vi.mocked(getAddonBySlug).mockReturnValue({ slug: 'test' } as never);
             vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValue({
@@ -1309,8 +1357,11 @@ describe('Add-on Expiry Cron Job', () => {
             vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
 
             const { db } = buildMockDb([]); // empty result
-            const { getDb } = await import('@repo/db');
+            const { getDb, withTransaction } = await import('@repo/db');
             vi.mocked(getDb).mockReturnValue(db as never);
+            vi.mocked(withTransaction).mockImplementation(async (callback) =>
+                callback(db as never)
+            );
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -1368,12 +1419,16 @@ describe('Add-on Expiry Cron Job', () => {
                 };
             });
 
-            const { getDb } = await import('@repo/db');
-            vi.mocked(getDb).mockReturnValue({
+            const dbStub4 = {
                 select: selectSpy,
                 update: updateSpy,
                 execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
-            } as never);
+            };
+            const { getDb, withTransaction } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue(dbStub4 as never);
+            vi.mocked(withTransaction).mockImplementation(async (callback) =>
+                callback(dbStub4 as never)
+            );
 
             vi.mocked(getAddonBySlug).mockReturnValue({ slug: 'visibility-boost-7d' } as never);
             vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValue({
@@ -1427,12 +1482,16 @@ describe('Add-on Expiry Cron Job', () => {
                 };
             });
 
-            const { getDb } = await import('@repo/db');
-            vi.mocked(getDb).mockReturnValue({
+            const dbStub5 = {
                 select: selectSpy,
                 update: updateSpy,
                 execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
-            } as never);
+            };
+            const { getDb, withTransaction } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue(dbStub5 as never);
+            vi.mocked(withTransaction).mockImplementation(async (callback) =>
+                callback(dbStub5 as never)
+            );
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -1589,12 +1648,16 @@ describe('Add-on Expiry Cron Job', () => {
                 return { from: isRetryQuery ? retryFrom : notifFrom };
             });
 
-            const { getDb } = await import('@repo/db');
-            vi.mocked(getDb).mockReturnValue({
+            const dbStub6 = {
                 select: selectMock,
                 update: vi.fn(),
                 execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
-            } as never);
+            };
+            const { getDb, withTransaction } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue(dbStub6 as never);
+            vi.mocked(withTransaction).mockImplementation(async (callback) =>
+                callback(dbStub6 as never)
+            );
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -1837,6 +1900,99 @@ describe('Add-on Expiry Cron Job', () => {
             // Assert
             expect(cancelMock).not.toHaveBeenCalled();
             expect(result.details?.splitStateReconciled).toBe(0);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // IT-4: Concurrent lock behavior (SPEC-064, T-028)
+    // -------------------------------------------------------------------------
+
+    describe('IT-4: Concurrent cron executions — advisory lock serialization', () => {
+        /**
+         * Creates a tx stub whose execute() returns the provided lock acquisition result.
+         *
+         * @param acquired - Whether pg_try_advisory_xact_lock should report success
+         */
+        function buildTxWithLock(acquired: boolean) {
+            return {
+                select: mockDbSelect,
+                update: mockDbUpdate,
+                execute: vi.fn().mockResolvedValue({ rows: [{ acquired }] })
+            };
+        }
+
+        it('should proceed with cron work when pg_try_advisory_xact_lock(43001) returns acquired=true', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
+                processExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: { processed: 2, failed: 0, errors: [] }
+                }),
+                findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
+            };
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+
+            // Ensure the tx stub reports the lock as acquired (default, but explicit here)
+            vi.mocked(withTransaction).mockImplementationOnce(async (callback) =>
+                callback(buildTxWithLock(true) as never)
+            );
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — job ran normally: processExpiredAddons was called
+            expect(result.success).toBe(true);
+            expect(mockService.processExpiredAddons).toHaveBeenCalledOnce();
+            // skipped flag must NOT be present when the lock was acquired
+            expect(result.details?.skipped).toBeUndefined();
+        });
+
+        it('should return skipped result immediately when pg_try_advisory_xact_lock(43001) returns acquired=false', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const mockService = {
+                findExpiredAddons: vi.fn(),
+                processExpiredAddons: vi.fn(),
+                findExpiringAddons: vi.fn()
+            };
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+
+            // Simulate a concurrent run holding the lock: acquired=false
+            vi.mocked(withTransaction).mockImplementationOnce(async (callback) =>
+                callback(buildTxWithLock(false) as never)
+            );
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — handler skips immediately without performing any cron work
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(0);
+            expect(result.errors).toBe(0);
+            expect(result.details?.skipped).toBe(true);
+            expect(result.details?.reason).toBe('lock_not_acquired');
+
+            // No service calls should have been made
+            expect(mockService.processExpiredAddons).not.toHaveBeenCalled();
+            expect(mockService.findExpiredAddons).not.toHaveBeenCalled();
+            expect(mockService.findExpiringAddons).not.toHaveBeenCalled();
+        });
+
+        it('should report skipped in the message when lock is not acquired', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            vi.mocked(withTransaction).mockImplementationOnce(async (callback) =>
+                callback(buildTxWithLock(false) as never)
+            );
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — message communicates that the run was skipped due to the lock
+            expect(result.message).toContain('Skipped');
+            expect(result.message).toContain('lock');
         });
     });
 });
