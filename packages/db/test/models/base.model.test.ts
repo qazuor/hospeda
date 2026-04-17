@@ -1229,5 +1229,50 @@ describe('BaseModel', () => {
                 modelWithTableName.findOneWithRelations({ id: '1' }, null)
             ).rejects.toThrow(DbError);
         });
+
+        it('should call warnUnknownRelationKeys and log warning for unknown relation key (GAP-029)', async () => {
+            // Arrange - model with defined validRelationKeys
+            class ModelWithValidKeys extends DummyModel {
+                protected override readonly validRelationKeys = ['destination'] as const;
+
+                protected getTableName(): string {
+                    return 'dummies';
+                }
+            }
+            const modelWithKeys = new ModelWithValidKeys();
+            const { dbLogger: mockedLogger } = logger as unknown as {
+                dbLogger: { warn: ReturnType<typeof vi.fn> };
+            };
+            mockedLogger.warn.mockClear();
+
+            // findFirst mock
+            getDb.mockReturnValue({
+                query: {
+                    dummies: {
+                        findFirst: vi.fn().mockResolvedValue({ id: '1', name: 'test' })
+                    }
+                }
+            });
+
+            // Act
+            await modelWithKeys.findOneWithRelations({ id: '1' }, { unknownRelation: true });
+
+            // Assert - warnUnknownRelationKeys should have logged a warning
+            expect(mockedLogger.warn).toHaveBeenCalledWith(
+                expect.objectContaining({ unknownKey: 'unknownRelation' }),
+                expect.stringContaining('unknown relation key')
+            );
+        });
+
+        it('should throw DbError when undefined is passed as relations parameter (GAP-030)', async () => {
+            // Arrange
+            logError.mockImplementation(() => {});
+
+            // Act & Assert - undefined is not a valid object, should throw
+            await expect(
+                // @ts-expect-error testing runtime validation with undefined
+                modelWithTableName.findOneWithRelations({ id: '1' }, undefined)
+            ).rejects.toThrow(DbError);
+        });
     });
 });
