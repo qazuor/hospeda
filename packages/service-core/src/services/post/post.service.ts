@@ -983,22 +983,18 @@ export class PostService extends BaseCrudService<
             input: { actor, ...data },
             schema: GetPostSummaryInputSchema,
             ctx,
-            execute: async (validatedData, validatedActor) => {
+            execute: async (validatedData, validatedActor, execCtx) => {
                 const { id, slug } = validatedData;
                 const field = id ? 'id' : 'slug';
                 const value = id ?? slug;
-                const entityResult = await this.getByField(validatedActor, field, value as string);
-                if (entityResult.error) {
-                    throw new ServiceError(
-                        entityResult.error.code,
-                        entityResult.error.message,
-                        entityResult.error.details
-                    );
-                }
-                if (!entityResult.data) {
+                // Use model.findOne() directly to avoid loading 5 relations
+                // (author, relatedAccommodation, relatedDestination, relatedEvent, sponsorship.sponsor)
+                // that getSummary immediately discards.
+                const post = await this.model.findOne({ [field]: value as string }, execCtx?.tx);
+                if (!post) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Post not found');
                 }
-                const post = entityResult.data;
+                await this._canView(validatedActor, post as Post);
                 const summary: PostSummary = {
                     id: post.id,
                     slug: post.slug,
@@ -1034,22 +1030,17 @@ export class PostService extends BaseCrudService<
             input: { actor, ...data },
             schema: GetPostStatsInputSchema,
             ctx,
-            execute: async (validatedData, validatedActor) => {
+            execute: async (validatedData, validatedActor, execCtx) => {
                 const { id, slug } = validatedData;
                 const field = id ? 'id' : 'slug';
                 const value = id ?? slug;
-                const entityResult = await this.getByField(validatedActor, field, value as string);
-                if (entityResult.error) {
-                    throw new ServiceError(
-                        entityResult.error.code,
-                        entityResult.error.message,
-                        entityResult.error.details
-                    );
-                }
-                if (!entityResult.data) {
+                // Use model.findOne() directly to avoid loading 5 relations
+                // that getStats immediately discards (only uses flat fields).
+                const post = await this.model.findOne({ [field]: value as string }, execCtx?.tx);
+                if (!post) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Post not found');
                 }
-                const post = entityResult.data;
+                await this._canView(validatedActor, post as Post);
                 const stats: PostEngagementStats = {
                     likes: post.likes ?? 0,
                     comments: post.comments ?? 0,

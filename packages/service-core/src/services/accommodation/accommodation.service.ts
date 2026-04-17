@@ -789,21 +789,16 @@ export class AccommodationService extends BaseCrudService<
             methodName: 'getSummary',
             input: { ...data, actor },
             schema: AccommodationSummaryParamsSchema,
-            execute: async (validated, actor) => {
+            execute: async (validated, actor, execCtx) => {
                 const { id } = validated;
-                const entityResult = await this.getByField(actor, 'id', id);
-                if (entityResult.error) {
-                    throw new ServiceError(
-                        entityResult.error.code,
-                        entityResult.error.message,
-                        entityResult.error.details
-                    );
-                }
-                if (!entityResult.data) {
+                // Use model.findOne() directly to avoid loading 7 detail relations
+                // (destination, owner, amenities, features, reviews, faqs, tags)
+                // that getSummary immediately discards.
+                const entity = await this.model.findOne({ id }, execCtx?.tx);
+                if (!entity) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
-                const entity = entityResult.data;
-                await this._canView(actor, entity);
+                await this._canView(actor, entity as Accommodation);
                 if (!entity.location) {
                     this.logger.warn(`Accommodation ${entity.id} has no location for summary.`);
                     return { accommodation: null };
@@ -842,36 +837,31 @@ export class AccommodationService extends BaseCrudService<
             methodName: 'getStats',
             input: { ...data, actor },
             schema: IdOrSlugParamsSchema,
-            execute: async (validatedParams, validatedActor) => {
+            execute: async (validatedParams, validatedActor, execCtx) => {
                 // Use utility to determine if it's ID or slug
                 const { field } = parseIdOrSlug(validatedParams.idOrSlug);
 
-                // Get accommodation using the appropriate base method
-                const result = await this.getByField(
-                    validatedActor,
-                    field,
-                    validatedParams.idOrSlug
+                // Use model.findOne() directly to avoid loading 7 detail relations
+                // that getStats immediately discards (only uses flat fields).
+                const entity = await this.model.findOne(
+                    { [field]: validatedParams.idOrSlug },
+                    execCtx?.tx
                 );
 
-                if (result.error) {
-                    throw new ServiceError(
-                        result.error.code as ServiceErrorCode,
-                        result.error.message
-                    );
-                }
-
-                if (!result.data) {
+                if (!entity) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
+
+                await this._canView(validatedActor, entity as Accommodation);
 
                 // Create the stats object following AccommodationStatsSchema format
                 const stats: AccommodationStats = {
                     total: 1, // Single accommodation
-                    totalFeatured: result.data.isFeatured ? 1 : 0,
-                    averagePrice: result.data.price?.price,
-                    averageRating: result.data.averageRating ?? 0,
+                    totalFeatured: entity.isFeatured ? 1 : 0,
+                    averagePrice: entity.price?.price,
+                    averageRating: entity.averageRating ?? 0,
                     totalByType: {
-                        [result.data.type]: 1
+                        [entity.type]: 1
                     }
                 };
 
