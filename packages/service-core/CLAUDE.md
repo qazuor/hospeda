@@ -850,6 +850,109 @@ export class AccommodationService extends BaseCrudService<...> {
 - `@repo/logger` - Logging
 - `@repo/utils` - Utility functions
 
+## Transaction Support (SPEC-059)
+
+This package provides first-class transaction support via `withServiceTransaction` and a `ctx.tx` propagation contract that flows through every base and custom service method.
+
+### Passing `ctx` to service methods
+
+Every base CRUD method accepts an optional trailing `ctx?: ServiceContext`:
+
+- Read: `getById`, `list`, `search`, `count`, `getByField`, `adminSearch`
+- Write: `create`, `update`, `softDelete`, `hardDelete`, `restore`, `updateVisibility`, `setFeaturedStatus`
+- Admin: `getAdminInfo`, `setAdminInfo`
+
+Custom service methods follow the same convention — `ctx?` is always the LAST parameter so existing callers keep working.
+
+```ts
+// Without transaction
+await accommodationService.create(input, actor);
+
+// Enlisted in a caller-provided transaction
+await accommodationService.create(input, actor, ctx);
+```
+
+When a method receives `ctx`, it threads `ctx?.tx` to every underlying model call (`model.create`, `model.findById`, `model.update`, etc), so the database work participates in the caller's boundary.
+
+### `withServiceTransaction`
+
+```ts
+import { withServiceTransaction } from '@repo/service-core';
+
+await withServiceTransaction(async (ctx) => {
+    await accommodationService.update({ id, data }, actor, ctx);
+    await reviewService.listByAccommodation({ accommodationId: id }, actor, ctx);
+}, undefined, { timeoutMs: 5000 });
+```
+
+- `ctx.tx` is **always defined** inside the callback. Callers that need the raw Drizzle transaction use `ctx.tx!` with a `// biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction` comment.
+- The `timeoutMs` option is applied as a `SET LOCAL statement_timeout` pragma at the start of the transaction. Default: `30000` ms.
+- External API calls (QZPay, MercadoPago, third-party HTTP) MUST stay OUTSIDE the callback — they are not rollback-able. The established pattern is: external call first, then `withServiceTransaction` to persist the results.
+
+**Nested behavior**: calling `withServiceTransaction` inside another `withServiceTransaction` creates a NEW, independent boundary (no savepoint join). Rolling back the inner call does not roll back the outer one, and vice versa. If you need true nested atomicity, refactor to a single top-level transaction that performs all the work.
+
+### `hookState` pattern for inter-hook communication
+
+Services that need to pass state between `_before*` and `_after*` hooks must use `ctx.hookState` (a `Record<string, unknown>` scoped to a single service invocation), NOT private instance fields. Instance fields are shared across concurrent requests on the same service instance — they are not concurrency-safe.
+
+Each service defines a typed hook-state interface extending `Record<string, unknown>`:
+
+```ts
+// event.types.ts
+export interface EventHookState extends Record<string, unknown> {
+    lastRestoredEvent?: Event;
+    lastDeletedEvent?: Event;
+}
+```
+
+Hooks typed as `ServiceContext<EventHookState>` get typed access:
+
+```ts
+protected async _beforeRestore(
+    input: { id: string },
+    actor: Actor,
+    ctx: ServiceContext<EventHookState>
+): Promise<void> {
+    const current = await this.model.findById(input.id, ctx?.tx);
+    ctx.hookState.lastRestoredEvent = current ?? undefined;
+}
+
+protected async _afterRestore(
+    _input: { id: string },
+    _actor: Actor,
+    ctx: ServiceContext<EventHookState>
+): Promise<void> {
+    const restored = ctx.hookState.lastRestoredEvent;
+    if (restored) { /* emit event, update counters, etc. */ }
+}
+```
+
+When `ctx` is provided without `hookState`, the base runner initializes it as `{}`, so hooks that read a key they didn't set just see `undefined` — no crash.
+
+### `_executeAdminSearch` `ctx` forwarding
+
+`BaseCrudRead._executeAdminSearch` destructures `ctx` from its `params` argument and forwards `ctx?.tx` to the underlying `model.findAllWithRelations` / `model.findAll` calls. If you override `_executeAdminSearch` in a concrete service, you must do the same:
+
+```ts
+protected async _executeAdminSearch(params: {
+    where: ...;
+    pagination: ...;
+    ctx?: ServiceContext;
+}) {
+    const { where, pagination, ctx } = params;
+    return this.model.findAll(where, pagination, undefined, ctx?.tx);
+}
+```
+
+See `packages/service-core/src/base/base.crud.read.ts` for the reference implementation.
+
+### Known limitations
+
+- **No savepoints**: nested `withServiceTransaction` does not issue `SAVEPOINT` statements; it opens an independent boundary. Work around this by flattening to a single top-level transaction.
+- **External API rollback is impossible**: if a remote API succeeds and a subsequent local write fails, the remote side is not reversed by the local rollback. Sequence external calls before the transaction and compensate explicitly if needed.
+- **Raw `DrizzleClient` parameters are deprecated**: legacy internal methods that accept a bare `DrizzleClient` have been migrated to `ctx?: ServiceContext`. New code should not introduce `DrizzleClient` parameters; use `ctx` instead.
+- **Driver coupling**: `withServiceTransaction` delegates to `@repo/db`'s `withTransaction`. Swapping drivers requires revisiting this layer.
+
 ## Notes
 
 - Services are stateless - create new instances per request
