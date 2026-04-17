@@ -203,11 +203,13 @@ export class EventLocationService extends BaseCrudService<
      * Searches for event locations for list display.
      * @param actor - The actor performing the action
      * @param params - The search parameters
+     * @param ctx - Optional service context (transaction, hook state)
      * @returns Event locations list
      */
     public async searchForList(
         actor: Actor,
-        params: EventLocationSearchInput
+        params: EventLocationSearchInput,
+        ctx?: ServiceContext
     ): Promise<{ items: EventLocation[]; total: number }> {
         await this._canSearch(actor);
         const { page = 1, pageSize = 10, q, city, sortBy, sortOrder, ...otherFilters } = params;
@@ -231,7 +233,8 @@ export class EventLocationService extends BaseCrudService<
         const result = await this.model.findAll(
             where,
             { page, pageSize, sortBy, sortOrder },
-            additionalConditions
+            additionalConditions,
+            ctx?.tx
         );
         return {
             items: result.items,
@@ -246,12 +249,14 @@ export class EventLocationService extends BaseCrudService<
      * @param actor - The actor performing the action
      * @param city - The city name to filter by
      * @param options - Pagination options (optional)
+     * @param ctx - Optional service context (transaction, hook state)
      * @returns ServiceOutput with paginated list of event locations
      */
     public async findByCity(
         actor: Actor,
         city: string,
-        options?: { page?: number; pageSize?: number }
+        options?: { page?: number; pageSize?: number },
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<PaginatedListOutput<EventLocation>>> {
         // Check permissions
         await this._canList(actor);
@@ -260,7 +265,12 @@ export class EventLocationService extends BaseCrudService<
             const { page = 1, pageSize = 20 } = options || {};
 
             // Query locations by city
-            const result = await this.model.findAll({ city }, { page, pageSize });
+            const result = await this.model.findAll(
+                { city },
+                { page, pageSize },
+                undefined,
+                ctx?.tx
+            );
 
             return {
                 data: result
@@ -283,12 +293,14 @@ export class EventLocationService extends BaseCrudService<
      * @param actor - The actor performing the action
      * @param country - The country name to filter by
      * @param options - Pagination options (optional)
+     * @param ctx - Optional service context (transaction, hook state)
      * @returns ServiceOutput with paginated list of event locations
      */
     public async findByCountry(
         actor: Actor,
         country: string,
-        options?: { page?: number; pageSize?: number }
+        options?: { page?: number; pageSize?: number },
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<PaginatedListOutput<EventLocation>>> {
         // Check permissions
         await this._canList(actor);
@@ -297,7 +309,12 @@ export class EventLocationService extends BaseCrudService<
             const { page = 1, pageSize = 20 } = options || {};
 
             // Query locations by country
-            const result = await this.model.findAll({ country }, { page, pageSize });
+            const result = await this.model.findAll(
+                { country },
+                { page, pageSize },
+                undefined,
+                ctx?.tx
+            );
 
             return {
                 data: result
@@ -319,11 +336,13 @@ export class EventLocationService extends BaseCrudService<
      *
      * @param actor - The actor performing the action
      * @param id - The event location ID
+     * @param ctx - Optional service context (transaction, hook state)
      * @returns ServiceOutput with location statistics
      */
     public async getStats(
         actor: Actor,
-        id: string
+        id: string,
+        ctx?: ServiceContext
     ): Promise<
         ServiceOutput<{
             stats: {
@@ -341,7 +360,7 @@ export class EventLocationService extends BaseCrudService<
 
         try {
             // Find the location
-            const location = await this.model.findById(id);
+            const location = await this.model.findById(id, ctx?.tx);
 
             if (!location) {
                 throw new ServiceError(
@@ -352,7 +371,10 @@ export class EventLocationService extends BaseCrudService<
 
             // Count events associated with this location
             const eventModel = new EventModel();
-            const totalEvents = await eventModel.count({ locationId: id, deletedAt: null });
+            const totalEvents = await eventModel.count(
+                { locationId: id, deletedAt: null },
+                { tx: ctx?.tx }
+            );
 
             // Build stats object
             const stats = {

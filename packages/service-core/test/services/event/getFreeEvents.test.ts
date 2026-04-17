@@ -41,7 +41,9 @@ describe('EventService.getFreeEvents', () => {
         expect(data.items).toHaveLength(2);
         expect(modelMock.findAll).toHaveBeenCalledWith(
             { pricing: undefined },
-            { page: 1, pageSize: 10 }
+            { page: 1, pageSize: 10 },
+            undefined,
+            undefined
         );
     });
 
@@ -58,7 +60,9 @@ describe('EventService.getFreeEvents', () => {
         expect(data.items).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith(
             { pricing: undefined, visibility: VisibilityEnum.PUBLIC },
-            { page: 1, pageSize: 10 }
+            { page: 1, pageSize: 10 },
+            undefined,
+            undefined
         );
     });
 

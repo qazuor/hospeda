@@ -60,7 +60,9 @@ describe('EventService.getUpcoming', () => {
                     $lte: expect.any(Date)
                 })
             }),
-            { page: 1, pageSize: 10 }
+            { page: 1, pageSize: 10 },
+            undefined,
+            undefined
         );
     });
 
@@ -93,7 +95,9 @@ describe('EventService.getUpcoming', () => {
                 }),
                 visibility: VisibilityEnum.PUBLIC
             }),
-            { page: 1, pageSize: 10 }
+            { page: 1, pageSize: 10 },
+            undefined,
+            undefined
         );
     });
 
@@ -125,7 +129,9 @@ describe('EventService.getUpcoming', () => {
                 }),
                 visibility: VisibilityEnum.PUBLIC
             }),
-            { page: 1, pageSize: 10 }
+            { page: 1, pageSize: 10 },
+            undefined,
+            undefined
         );
     });
 

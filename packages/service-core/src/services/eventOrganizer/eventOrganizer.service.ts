@@ -170,11 +170,13 @@ export class EventOrganizerService extends BaseCrudService<
      * Searches for event organizers for list display.
      * @param actor - The actor performing the action
      * @param params - The list parameters
+     * @param ctx - Optional service context (transaction, hook state)
      * @returns Event organizers list
      */
     public async searchForList(
         actor: Actor,
-        params: EventOrganizerListInput
+        params: EventOrganizerListInput,
+        ctx?: ServiceContext
     ): Promise<{ items: EventOrganizer[]; total: number }> {
         await this._canList(actor);
         const { page = 1, pageSize = 10, q, name, sortBy, sortOrder, ...otherFilters } = params;
@@ -192,7 +194,8 @@ export class EventOrganizerService extends BaseCrudService<
         const result = await this.model.findAll(
             where,
             { page, pageSize, sortBy, sortOrder },
-            additionalConditions
+            additionalConditions,
+            ctx?.tx
         );
         return {
             items: result.items,
@@ -205,12 +208,17 @@ export class EventOrganizerService extends BaseCrudService<
      * Note: Returns 0 until EventModel supports counting by organizerId.
      * @param actor - The actor performing the action
      * @param id - The event organizer ID
+     * @param ctx - Optional service context (transaction, hook state)
      * @returns Count of events for this organizer
      */
-    public async getEventCount(actor: Actor, id: string): Promise<{ count: number }> {
+    public async getEventCount(
+        actor: Actor,
+        id: string,
+        ctx?: ServiceContext
+    ): Promise<{ count: number }> {
         await this._canView(actor, { id } as EventOrganizer);
 
-        const organizer = await this.model.findById(id);
+        const organizer = await this.model.findById(id, ctx?.tx);
         if (!organizer) {
             throw new ServiceError(
                 ServiceErrorCode.NOT_FOUND,
@@ -230,11 +238,13 @@ export class EventOrganizerService extends BaseCrudService<
      * Note: Returns zeroed stats until EventModel supports aggregations by organizerId.
      * @param actor - The actor performing the action
      * @param id - The event organizer ID
+     * @param ctx - Optional service context (transaction, hook state)
      * @returns Statistics for this organizer
      */
     public async getStats(
         actor: Actor,
-        id: string
+        id: string,
+        ctx?: ServiceContext
     ): Promise<{
         totalEvents: number;
         activeEvents: number;
@@ -243,7 +253,7 @@ export class EventOrganizerService extends BaseCrudService<
     }> {
         await this._canView(actor, { id } as EventOrganizer);
 
-        const organizer = await this.model.findById(id);
+        const organizer = await this.model.findById(id, ctx?.tx);
         if (!organizer) {
             throw new ServiceError(
                 ServiceErrorCode.NOT_FOUND,

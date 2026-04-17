@@ -51,7 +51,12 @@ describe('EventService.getByLocation', () => {
         const { data } = result;
         if (!data) throw new Error('Expected data to be defined after expectSuccess');
         expect(data.items).toHaveLength(2);
-        expect(modelMock.findAll).toHaveBeenCalledWith({ locationId }, { page: 1, pageSize: 10 });
+        expect(modelMock.findAll).toHaveBeenCalledWith(
+            { locationId },
+            { page: 1, pageSize: 10 },
+            undefined,
+            undefined
+        );
     });
 
     it('should return only public events if actor lacks EVENT_SOFT_DELETE_VIEW', async () => {
@@ -71,7 +76,9 @@ describe('EventService.getByLocation', () => {
         expect(data.items).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith(
             { locationId, visibility: VisibilityEnum.PUBLIC },
-            { page: 1, pageSize: 10 }
+            { page: 1, pageSize: 10 },
+            undefined,
+            undefined
         );
     });
 

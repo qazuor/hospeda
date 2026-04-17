@@ -510,18 +510,21 @@ export class EventService extends BaseCrudService<
      * - Uses homogeneous validation and pagination logic.
      * @param actor - Authenticated actor
      * @param input - Search parameters (authorId, page, pageSize)
+     * @param ctx - Optional service context (transaction, hook state)
      * @returns Paginated list of events
      * @throws ServiceError (FORBIDDEN) if actor is undefined
      */
     public async getByAuthor(
         actor: Actor,
-        input: EventByAuthorInput
+        input: EventByAuthorInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<PaginatedListOutput<Event>>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByAuthor',
             input: { ...input, actor },
             schema: EventByAuthorInputSchema,
-            execute: async (validatedInput, validatedActor) => {
+            ctx,
+            execute: async (validatedInput, validatedActor, resolvedCtx) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
                 }
@@ -532,7 +535,12 @@ export class EventService extends BaseCrudService<
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
-                    return await this.model.findAll(filters, { page, pageSize });
+                    return await this.model.findAll(
+                        filters,
+                        { page, pageSize },
+                        undefined,
+                        resolvedCtx.tx
+                    );
                 } catch (err) {
                     throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, (err as Error).message);
                 }
@@ -547,18 +555,21 @@ export class EventService extends BaseCrudService<
      * - Uses homogeneous validation and pagination logic.
      * @param actor - Authenticated actor
      * @param input - Search parameters (locationId, page, pageSize)
+     * @param ctx - Optional service context (transaction, hook state)
      * @returns Paginated list of events
      * @throws ServiceError (UNAUTHORIZED) if actor is undefined
      */
     public async getByLocation(
         actor: Actor,
-        input: EventByLocationInput
+        input: EventByLocationInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<PaginatedListOutput<Event>>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByLocation',
             input: { ...input, actor },
             schema: EventByLocationInputSchema,
-            execute: async (validatedInput, validatedActor) => {
+            ctx,
+            execute: async (validatedInput, validatedActor, resolvedCtx) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
                 }
@@ -569,7 +580,12 @@ export class EventService extends BaseCrudService<
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
-                    return await this.model.findAll(filters, { page, pageSize });
+                    return await this.model.findAll(
+                        filters,
+                        { page, pageSize },
+                        undefined,
+                        resolvedCtx.tx
+                    );
                 } catch (err) {
                     throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, (err as Error).message);
                 }
@@ -584,18 +600,21 @@ export class EventService extends BaseCrudService<
      * - Uses homogeneous validation and pagination logic.
      * @param actor - Authenticated actor
      * @param input - Search parameters (organizerId, page, pageSize)
+     * @param ctx - Optional service context (transaction, hook state)
      * @returns Paginated list of events
      * @throws ServiceError (UNAUTHORIZED) if actor is undefined
      */
     public async getByOrganizer(
         actor: Actor,
-        input: EventByOrganizerInput
+        input: EventByOrganizerInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<PaginatedListOutput<Event>>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByOrganizer',
             input: { ...input, actor },
             schema: EventByOrganizerInputSchema,
-            execute: async (validatedInput, validatedActor) => {
+            ctx,
+            execute: async (validatedInput, validatedActor, resolvedCtx) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
                 }
@@ -608,7 +627,12 @@ export class EventService extends BaseCrudService<
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
-                    return await this.model.findAll(filters, { page, pageSize });
+                    return await this.model.findAll(
+                        filters,
+                        { page, pageSize },
+                        undefined,
+                        resolvedCtx.tx
+                    );
                 } catch (err) {
                     throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, (err as Error).message);
                 }
@@ -623,18 +647,21 @@ export class EventService extends BaseCrudService<
      * - Uses homogeneous validation and pagination logic.
      * @param actor - Authenticated actor
      * @param input - Search parameters (fromDate, toDate, page, pageSize)
+     * @param ctx - Optional service context (transaction, hook state)
      * @returns Paginated list of events
      * @throws ServiceError (UNAUTHORIZED) if actor is undefined
      */
     public async getUpcoming(
         actor: Actor,
-        input: EventUpcomingInput
+        input: EventUpcomingInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<PaginatedListOutput<Event>>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getUpcoming',
             input: { ...input, actor },
             schema: EventUpcomingInputSchema,
-            execute: async (validatedInput, validatedActor) => {
+            ctx,
+            execute: async (validatedInput, validatedActor, resolvedCtx) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
                 }
@@ -671,7 +698,12 @@ export class EventService extends BaseCrudService<
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
-                    return await this.model.findAll(filters, { page, pageSize });
+                    return await this.model.findAll(
+                        filters,
+                        { page, pageSize },
+                        undefined,
+                        resolvedCtx.tx
+                    );
                 } catch (err) {
                     throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, (err as Error).message);
                 }
@@ -686,25 +718,28 @@ export class EventService extends BaseCrudService<
      * - Uses homogeneous validation and error handling.
      * @param actor - Authenticated actor
      * @param input - Event id
+     * @param ctx - Optional service context (transaction, hook state)
      * @returns Event summary DTO
      * @throws ServiceError (UNAUTHORIZED) if actor is undefined
      * @throws ServiceError (NOT_FOUND) if event does not exist
      */
     public async getSummary(
         actor: Actor,
-        input: EventSummaryInput
+        input: EventSummaryInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<EventSummaryOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getSummary',
             input: { ...input, actor },
             schema: EventSummaryInputSchema,
-            execute: async (validatedInput, validatedActor) => {
+            ctx,
+            execute: async (validatedInput, validatedActor, resolvedCtx) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
                 }
                 let event: Event | null;
                 try {
-                    event = await this.model.findById(validatedInput.eventId);
+                    event = await this.model.findById(validatedInput.eventId, resolvedCtx.tx);
                 } catch (err) {
                     throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, (err as Error).message);
                 }
@@ -736,18 +771,21 @@ export class EventService extends BaseCrudService<
      * - Uses homogeneous validation and pagination logic.
      * @param actor - Authenticated actor
      * @param input - Search parameters (category, page, pageSize)
+     * @param ctx - Optional service context (transaction, hook state)
      * @returns Paginated list of events
      * @throws ServiceError (UNAUTHORIZED) if actor is undefined
      */
     public async getByCategory(
         actor: Actor,
-        input: EventByCategoryInput
+        input: EventByCategoryInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<PaginatedListOutput<Event>>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByCategory',
             input: { ...input, actor },
             schema: EventByCategoryInputSchema,
-            execute: async (validatedInput, validatedActor) => {
+            ctx,
+            execute: async (validatedInput, validatedActor, resolvedCtx) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
                 }
@@ -758,7 +796,12 @@ export class EventService extends BaseCrudService<
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
-                    return await this.model.findAll(filters, { page, pageSize });
+                    return await this.model.findAll(
+                        filters,
+                        { page, pageSize },
+                        undefined,
+                        resolvedCtx.tx
+                    );
                 } catch (err) {
                     throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, (err as Error).message);
                 }
@@ -773,18 +816,21 @@ export class EventService extends BaseCrudService<
      * - Uses homogeneous validation and pagination logic.
      * @param actor - Authenticated actor
      * @param input - Pagination parameters (page, pageSize)
+     * @param ctx - Optional service context (transaction, hook state)
      * @returns Paginated list of free events
      * @throws ServiceError (UNAUTHORIZED) if actor is undefined
      */
     public async getFreeEvents(
         actor: Actor,
-        input: EventFreeInput = { page: 1, pageSize: 20 }
+        input: EventFreeInput = { page: 1, pageSize: 20 },
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<PaginatedListOutput<Event>>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getFreeEvents',
             input: { ...input, actor },
             schema: EventFreeInputSchema,
-            execute: async (validatedInput, validatedActor) => {
+            ctx,
+            execute: async (validatedInput, validatedActor, resolvedCtx) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
                 }
@@ -795,7 +841,12 @@ export class EventService extends BaseCrudService<
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
-                    return await this.model.findAll(filters, { page, pageSize });
+                    return await this.model.findAll(
+                        filters,
+                        { page, pageSize },
+                        undefined,
+                        resolvedCtx.tx
+                    );
                 } catch (err) {
                     throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, (err as Error).message);
                 }
