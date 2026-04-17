@@ -671,7 +671,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const src = readFileSync(
-  resolve(__dirname, '../../../src/components/shared/SectionHeader.astro'),
+  resolve(__dirname, '../../../src/components/shared/layout/SectionHeader.astro'),
   'utf8'
 );
 

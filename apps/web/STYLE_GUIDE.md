@@ -475,11 +475,11 @@ Rule: never place two sections with the same background class back-to-back. `.se
 
 ### 5.1 Section Header
 
-Every content section uses the shared `SectionHeader` Astro component (`src/components/shared/SectionHeader.astro`). Do not reproduce its markup inline.
+Every content section uses the shared `SectionHeader` Astro component (`src/components/shared/layout/SectionHeader.astro`). Do not reproduce its markup inline.
 
 ```astro
 ---
-import SectionHeader from '@/components/shared/SectionHeader.astro';
+import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 ---
 
 <SectionHeader
@@ -1316,7 +1316,7 @@ Standard pattern for building any new section. Uses the shared classes `.section
 
 ```astro
 ---
-import SectionHeader from '@/components/shared/SectionHeader.astro';
+import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import Card from '@/components/shared/Card.astro';
 import type { SupportedLocale } from '@/lib/i18n';
