@@ -7,7 +7,7 @@ import {
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
-import type { Actor, ServiceConfig, ServiceOutput } from '../../types/index.js';
+import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
 import {
     checkCanUpdateExchangeRateConfig,
@@ -66,13 +66,15 @@ export class ExchangeRateConfigService extends BaseService {
      */
     public async getConfig(input: {
         actor: Actor;
+        ctx?: ServiceContext;
     }): Promise<ServiceOutput<ExchangeRateConfig>> {
-        const { actor } = input;
+        const { actor, ctx } = input;
 
         return this.runWithLoggingAndValidation({
             methodName: 'getConfig',
             input: { actor },
             schema: ExchangeRateConfigUpdateInputSchema.pick({}), // Empty validation
+            ctx,
             execute: async () => {
                 checkCanViewExchangeRate(actor);
 
@@ -112,13 +114,15 @@ export class ExchangeRateConfigService extends BaseService {
     public async updateConfig(input: {
         actor: Actor;
         data: ExchangeRateConfigUpdateInput;
+        ctx?: ServiceContext;
     }): Promise<ServiceOutput<ExchangeRateConfig>> {
-        const { actor, data } = input;
+        const { actor, data, ctx } = input;
 
         return this.runWithLoggingAndValidation({
             methodName: 'updateConfig',
             input: { actor, data },
             schema: UpdateConfigInputSchema,
+            ctx,
             execute: async (validatedInput: { data: ExchangeRateConfigUpdateInput }) => {
                 const validatedData = validatedInput.data;
                 checkCanUpdateExchangeRateConfig(actor);

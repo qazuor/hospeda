@@ -222,6 +222,7 @@ export class FeatureService extends BaseCrudRelatedService<
      * Uses a single batch COUNT query instead of N+1 individual queries.
      * @param actor - The actor performing the action
      * @param params - The search parameters with optional filters
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns Features with accommodation counts
      */
     public async searchForList(
@@ -229,7 +230,8 @@ export class FeatureService extends BaseCrudRelatedService<
         params: {
             filters?: { name?: string; slug?: string; isFeatured?: boolean; isBuiltin?: boolean };
             pagination?: { page?: number; pageSize?: number };
-        } = {}
+        } = {},
+        _ctx?: ServiceContext
     ): Promise<{
         items: Array<Feature & { accommodationCount?: number }>;
         total: number;
@@ -269,15 +271,20 @@ export class FeatureService extends BaseCrudRelatedService<
 
     /**
      * Adds a feature to an accommodation, ensuring validation, permissions, and uniqueness.
+     * @param actor - The actor performing the action
+     * @param params - The params required to add the feature to the accommodation
+     * @param ctx - Optional service context carrying transaction and hookState.
      */
     public async addFeatureToAccommodation(
         actor: Actor,
-        params: z.infer<typeof AddFeatureToAccommodationInputSchema>
+        params: z.infer<typeof AddFeatureToAccommodationInputSchema>,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ relation: AccommodationFeature }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addFeatureToAccommodation',
             input: { actor, ...params },
             schema: AddFeatureToAccommodationInputSchema,
+            ctx,
             execute: async (validatedParams, actor) => {
                 await this._canAddFeatureToAccommodation(actor);
                 const { accommodationId, featureId, comments } = validatedParams;
@@ -317,15 +324,20 @@ export class FeatureService extends BaseCrudRelatedService<
 
     /**
      * Removes a feature from an accommodation.
+     * @param actor - The actor performing the action
+     * @param params - The params required to remove the feature from the accommodation
+     * @param ctx - Optional service context carrying transaction and hookState.
      */
     public async removeFeatureFromAccommodation(
         actor: Actor,
-        params: z.infer<typeof RemoveFeatureFromAccommodationInputSchema>
+        params: z.infer<typeof RemoveFeatureFromAccommodationInputSchema>,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ relation: AccommodationFeature }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeFeatureFromAccommodation',
             input: { actor, ...params },
             schema: RemoveFeatureFromAccommodationInputSchema,
+            ctx,
             execute: async (validatedParams, actor) => {
                 await this._canRemoveFeatureFromAccommodation(actor);
                 const { accommodationId, featureId } = validatedParams;
@@ -363,15 +375,20 @@ export class FeatureService extends BaseCrudRelatedService<
 
     /**
      * Retrieves all features for a given accommodation.
+     * @param actor - The actor performing the action
+     * @param params - The params containing the accommodation ID
+     * @param ctx - Optional service context carrying transaction and hookState.
      */
     public async getFeaturesForAccommodation(
         actor: Actor,
-        params: z.infer<typeof GetFeaturesForAccommodationSchema>
+        params: z.infer<typeof GetFeaturesForAccommodationSchema>,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ features: Feature[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getFeaturesForAccommodation',
             input: { actor, ...params },
             schema: GetFeaturesForAccommodationSchema,
+            ctx,
             execute: async (validatedParams, actor) => {
                 await this._canList(actor);
                 const { accommodationId } = validatedParams;
@@ -395,15 +412,20 @@ export class FeatureService extends BaseCrudRelatedService<
 
     /**
      * Retrieves all accommodations that have a specific feature.
+     * @param actor - The actor performing the action
+     * @param params - The params containing the feature ID
+     * @param ctx - Optional service context carrying transaction and hookState.
      */
     public async getAccommodationsByFeature(
         actor: Actor,
-        params: z.infer<typeof GetAccommodationsByFeatureSchema>
+        params: z.infer<typeof GetAccommodationsByFeatureSchema>,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ accommodations: Accommodation[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getAccommodationsByFeature',
             input: { actor, ...params },
             schema: GetAccommodationsByFeatureSchema,
+            ctx,
             execute: async (validatedParams, actor) => {
                 await this._canList(actor);
                 const { featureId } = validatedParams;

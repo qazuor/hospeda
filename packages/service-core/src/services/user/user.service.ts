@@ -279,17 +279,20 @@ export class UserService extends BaseCrudService<
      * Assigns a role to a user. Only super admin can assign roles.
      * @param actor - The actor performing the action
      * @param params - The input object containing userId and role
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns The updated user object
      * @throws ServiceError (FORBIDDEN, NOT_FOUND, INTERNAL)
      */
     public async assignRole(
         actor: Actor,
-        params: UserAssignRoleInput
+        params: UserAssignRoleInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<UserRolePermissionOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'assignRole',
             input: { ...params, actor },
             schema: UserAssignRoleInputSchema,
+            ctx,
             execute: async ({ userId, role }, actor) => {
                 canAssignRole(actor);
                 const user = await this.model.findById(userId);
@@ -315,17 +318,20 @@ export class UserService extends BaseCrudService<
      * Adds a permission to a user. Only super admin.
      * @param actor - The actor performing the action
      * @param params - The input object containing userId and permission
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns The updated user object
      * @throws ServiceError (FORBIDDEN, NOT_FOUND, INTERNAL)
      */
     public async addPermission(
         actor: Actor,
-        params: UserAddPermissionInput
+        params: UserAddPermissionInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<UserRolePermissionOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addPermission',
             input: { ...params, actor },
             schema: UserAddPermissionInputSchema,
+            ctx,
             execute: async ({ userId, permission }, actor) => {
                 await this._canManagePermissions(actor);
                 const user = await this.model.findById(userId);
@@ -354,17 +360,20 @@ export class UserService extends BaseCrudService<
      * Removes a permission from a user. Only super admin.
      * @param actor - The actor performing the action
      * @param params - The input object containing userId and permission
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns The updated user object
      * @throws ServiceError (FORBIDDEN, NOT_FOUND, INTERNAL)
      */
     public async removePermission(
         actor: Actor,
-        params: UserRemovePermissionInput
+        params: UserRemovePermissionInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<UserRolePermissionOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removePermission',
             input: { ...params, actor },
             schema: UserRemovePermissionInputSchema,
+            ctx,
             execute: async ({ userId, permission }, actor) => {
                 await this._canManagePermissions(actor);
                 const user = await this.model.findById(userId);
@@ -393,17 +402,20 @@ export class UserService extends BaseCrudService<
      * Sets the permissions array for a user. Only super admin.
      * @param actor - The actor performing the action
      * @param params - The input object containing userId and permissions
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns The updated user object
      * @throws ServiceError (FORBIDDEN, NOT_FOUND, INTERNAL)
      */
     public async setPermissions(
         actor: Actor,
-        params: UserSetPermissionsInput
+        params: UserSetPermissionsInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<UserRolePermissionOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'setPermissions',
             input: { ...params, actor },
             schema: UserSetPermissionsInputSchema,
+            ctx,
             execute: async ({ userId, permissions }, actor) => {
                 await this._canManagePermissions(actor);
                 const user = await this.model.findById(userId);
@@ -557,16 +569,19 @@ export class UserService extends BaseCrudService<
      * correlated subqueries instead of N+1 individual queries.
      * @param actor - The actor performing the action
      * @param params - The search parameters
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns Users with counts
      */
     public async searchForList(
         actor: Actor,
-        params: UserSearch
+        params: UserSearch,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<UserSearchResult>> {
         return this.runWithLoggingAndValidation({
             methodName: 'searchForList',
             input: { ...params, actor },
             schema: UserSearchSchema,
+            ctx,
             execute: async (validated, validatedActor) => {
                 await this._canSearch(validatedActor);
                 const { page, pageSize } = validated;

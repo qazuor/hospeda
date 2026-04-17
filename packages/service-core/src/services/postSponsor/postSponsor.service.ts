@@ -165,16 +165,19 @@ export class PostSponsorService extends BaseCrudService<
      * Searches for sponsors for list display.
      * @param actor - The actor performing the action
      * @param params - The search parameters
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns Sponsors list
      */
     public async searchForList(
         actor: Actor,
-        params: PostSponsorSearchInput
+        params: PostSponsorSearchInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<PostSponsorListOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'searchForList',
             input: { actor, ...params },
             schema: z.record(z.string(), z.unknown()),
+            ctx,
             execute: async (_validatedParams, validatedActor) => {
                 await this._canSearch(validatedActor);
                 const { name, type, q, page = 1, pageSize = 10, sortBy, sortOrder } = params;

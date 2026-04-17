@@ -310,16 +310,19 @@ export class TagService extends BaseCrudRelatedService<
      * Returns the most popular tags (by usage count).
      * @param actor - The actor performing the action.
      * @param params - Optional limit for the number of tags.
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns ServiceOutput with an array of TagType.
      */
     public async getPopularTags(
         actor: Actor,
-        params: TagGetPopularInput
+        params: TagGetPopularInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<TagGetPopularOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getPopularTags',
             input: { actor, ...params },
             schema: TagGetPopularInputSchema,
+            ctx,
             execute: async (validated) => {
                 await this._canList(actor);
                 const results = await this.relatedModel.findPopularTags({
@@ -335,16 +338,19 @@ export class TagService extends BaseCrudRelatedService<
      * Adds a tag to an entity (polymorphic).
      * @param actor - The actor performing the action.
      * @param params - tagId, entityId, entityType.
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns ServiceOutput<TagAddToEntityOutput>
      */
     public async addTagToEntity(
         actor: Actor,
-        params: TagAddToEntityInput
+        params: TagAddToEntityInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<TagAddToEntityOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addTagToEntity',
             input: { actor, ...params },
             schema: TagAddToEntityInputSchema.strict(),
+            ctx,
             execute: async (validated) => {
                 await this._canUpdate(actor, { id: validated.tagId } as Tag);
                 const tag = await this.model.findById(validated.tagId);
@@ -377,16 +383,19 @@ export class TagService extends BaseCrudRelatedService<
      * Requires TAG_UPDATE permission.
      * @param actor - The actor performing the action.
      * @param params - tagId, entityId, entityType.
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns ServiceOutput<TagRemoveFromEntityOutput>
      */
     public async removeTagFromEntity(
         actor: Actor,
-        params: TagRemoveFromEntityInput
+        params: TagRemoveFromEntityInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<TagAddToEntityOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeTagFromEntity',
             input: { actor, ...params },
             schema: TagRemoveFromEntityInputSchema.strict(),
+            ctx,
             execute: async (validated) => {
                 await this._canUpdate(actor, { id: validated.tagId } as Tag);
                 const existing = await this.relatedModel.findOne({
@@ -415,16 +424,19 @@ export class TagService extends BaseCrudRelatedService<
      * Requires TAG_UPDATE permission.
      * @param actor - The actor performing the action.
      * @param params - entityId, entityType.
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns ServiceOutput<TagGetForEntityOutput>
      */
     public async getTagsForEntity(
         actor: Actor,
-        params: TagGetForEntityInput
+        params: TagGetForEntityInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<TagGetForEntityOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getTagsForEntity',
             input: { actor, ...params },
             schema: TagGetForEntityInputSchema.strict(),
+            ctx,
             execute: async (validated) => {
                 await this._canUpdate(actor, {} as Tag);
                 const relations = await this.relatedModel.findAllWithTags(
@@ -446,16 +458,19 @@ export class TagService extends BaseCrudRelatedService<
      *
      * @param actor - The actor performing the action.
      * @param params - tagId (required) and entityType (optional).
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns ServiceOutput with an array of { entityId, entityType }.
      */
     public async getEntitiesByTag(
         actor: Actor,
-        params: TagGetEntitiesByTagInput
+        params: TagGetEntitiesByTagInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<TagGetEntitiesByTagOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getEntitiesByTag',
             input: { actor, ...params },
             schema: TagGetEntitiesByTagInputSchema.strict(),
+            ctx,
             execute: async (validated) => {
                 await this._canUpdate(actor, { id: validated.tagId } as Tag);
                 const tag = await this.model.findById(validated.tagId);

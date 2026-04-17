@@ -258,17 +258,20 @@ export class AmenityService extends BaseCrudRelatedService<
      * Retrieves all accommodations that have a specific amenity.
      * @param actor - The actor performing the action
      * @param params - The params containing the amenity ID
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns A ServiceOutput object containing an array of accommodations with the specified amenity, or an error if the amenity does not exist or the actor lacks permission.
      * @throws {ServiceError} If the actor lacks permission or the amenity does not exist.
      */
     public async getAccommodationsByAmenity(
         actor: Actor,
-        params: AmenityGetAccommodationsInput
+        params: AmenityGetAccommodationsInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<AmenityAccommodationListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getAccommodationsByAmenity',
             input: { ...params, actor },
             schema: AmenityGetAccommodationsInputSchema,
+            ctx,
             execute: async (validatedParams, actor) => {
                 checkCanGetAccommodationsByAmenity(actor);
                 const { amenityId } = validatedParams;
@@ -318,17 +321,20 @@ export class AmenityService extends BaseCrudRelatedService<
      * Retrieves all amenities for a given accommodation.
      * @param actor - The actor performing the action
      * @param params - The params containing the accommodation ID
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns A ServiceOutput object containing an array of amenities for the specified accommodation, or an error if the actor lacks permission.
      * @throws {ServiceError} If the actor lacks permission.
      */
     public async getAmenitiesForAccommodation(
         actor: Actor,
-        params: AmenityGetForAccommodationInput
+        params: AmenityGetForAccommodationInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<AmenityListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getAmenitiesForAccommodation',
             input: { ...params, actor },
             schema: AmenityGetForAccommodationInputSchema,
+            ctx,
             execute: async (validatedParams, actor) => {
                 checkCanGetAmenitiesForAccommodation(actor);
                 const { accommodationId } = validatedParams;
@@ -353,17 +359,20 @@ export class AmenityService extends BaseCrudRelatedService<
      * Adds an amenity to an accommodation, ensuring validation, permissions, and uniqueness.
      * @param actor - The actor performing the action
      * @param params - The params required to add the amenity to the accommodation
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns A ServiceOutput object containing the created relation if successful, or an error if the operation fails.
      * @throws {ServiceError} If the actor lacks permission, the amenity or accommodation does not exist, or the relation already exists.
      */
     public async addAmenityToAccommodation(
         actor: Actor,
-        params: AmenityAddToAccommodationInput
+        params: AmenityAddToAccommodationInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ relation: AccommodationAmenityRelation }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addAmenityToAccommodation',
             input: { ...params, actor },
             schema: AmenityAddToAccommodationInputSchema,
+            ctx,
             execute: async (validatedParams, actor) => {
                 await this._canAddAmenityToAccommodation(actor);
                 const {
@@ -411,17 +420,20 @@ export class AmenityService extends BaseCrudRelatedService<
      * Removes an amenity from an accommodation.
      * @param actor - The actor performing the action
      * @param params - The params required to remove the amenity from the accommodation
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns A ServiceOutput object containing the deleted relation if successful, or an error if the operation fails.
      * @throws {ServiceError} If the actor lacks permission, the amenity or relation does not exist, or the deletion fails.
      */
     public async removeAmenityFromAccommodation(
         actor: Actor,
-        params: AmenityRemoveFromAccommodationInput
+        params: AmenityRemoveFromAccommodationInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ relation: AccommodationAmenityRelation }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeAmenityFromAccommodation',
             input: { ...params, actor },
             schema: AmenityRemoveFromAccommodationInputSchema,
+            ctx,
             execute: async (validatedParams, actor) => {
                 await this._canRemoveAmenityFromAccommodation(actor);
                 const { accommodationId, amenityId } = validatedParams;
@@ -478,11 +490,13 @@ export class AmenityService extends BaseCrudRelatedService<
      * Uses a single batch COUNT query instead of N+1 individual queries.
      * @param actor - The actor performing the action
      * @param params - The search parameters
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns Amenities with accommodation counts
      */
     public async searchForList(
         actor: Actor,
-        params: AmenitySearchInput
+        params: AmenitySearchInput,
+        _ctx?: ServiceContext
     ): Promise<AmenitySearchForListOutput> {
         await this._canSearch(actor);
         const { page = 1, pageSize = 10, ...filterParams } = params;

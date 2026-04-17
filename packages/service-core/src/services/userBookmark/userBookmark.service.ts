@@ -147,6 +147,9 @@ export class UserBookmarkService extends BaseCrudService<
     /**
      * Find an existing bookmark by userId, entityId, and entityType.
      * Returns the bookmark if found, null otherwise.
+     * @param actor - The actor performing the action
+     * @param params - The params containing userId, entityId, and entityType
+     * @param ctx - Optional service context carrying transaction and hookState.
      */
     public async findExistingBookmark(
         actor: Actor,
@@ -154,12 +157,14 @@ export class UserBookmarkService extends BaseCrudService<
             readonly userId: string;
             readonly entityId: string;
             readonly entityType: string;
-        }
+        },
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<UserBookmark | null>> {
         return this.runWithLoggingAndValidation({
             methodName: 'findExistingBookmark',
             input: { ...params, actor },
             schema: UserBookmarkService.FindExistingBookmarkSchema,
+            ctx,
             execute: async (validated) => {
                 if (actor.id !== validated.userId && !this._hasViewAnyPermission(actor)) {
                     throw new ServiceError(
@@ -181,15 +186,20 @@ export class UserBookmarkService extends BaseCrudService<
     /**
      * Lists all bookmarks for a given user.
      * Accessible by the owner or any actor with USER_BOOKMARK_VIEW_ANY permission.
+     * @param actor - The actor performing the action
+     * @param params - The search parameters
+     * @param ctx - Optional service context carrying transaction and hookState.
      */
     public async listBookmarksByUser(
         actor: Actor,
-        params: UserBookmarkSearchInput
+        params: UserBookmarkSearchInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ bookmarks: UserBookmark[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listBookmarksByUser',
             input: { ...params, actor },
             schema: UserBookmarkSearchSchema,
+            ctx,
             execute: async (validated) => {
                 if (actor.id !== validated.userId && !this._hasViewAnyPermission(actor)) {
                     throw new ServiceError(
@@ -211,15 +221,20 @@ export class UserBookmarkService extends BaseCrudService<
      * Lists bookmarks for a given entity.
      * If the actor has USER_BOOKMARK_VIEW_ANY permission, returns all bookmarks.
      * Otherwise, returns only the actor's own bookmarks for that entity.
+     * @param actor - The actor performing the action
+     * @param params - The params containing entityId and entityType
+     * @param ctx - Optional service context carrying transaction and hookState.
      */
     public async listBookmarksByEntity(
         actor: Actor,
-        params: UserBookmarkListByEntityInput
+        params: UserBookmarkListByEntityInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ bookmarks: UserBookmark[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listBookmarksByEntity',
             input: { ...params, actor },
             schema: UserBookmarkListByEntityInputSchema,
+            ctx,
             execute: async (validated) => {
                 await this._canList(actor);
                 const { page, pageSize } = validated;
@@ -240,15 +255,20 @@ export class UserBookmarkService extends BaseCrudService<
 
     /**
      * Counts how many users have bookmarked a given entity.
+     * @param actor - The actor performing the action
+     * @param params - The params containing entityId and entityType
+     * @param ctx - Optional service context carrying transaction and hookState.
      */
     public async countBookmarksForEntity(
         actor: Actor,
-        params: UserBookmarkCountByEntityInput
+        params: UserBookmarkCountByEntityInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ count: number }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'countBookmarksForEntity',
             input: { ...params, actor },
             schema: UserBookmarkCountByEntityInputSchema,
+            ctx,
             execute: async (validated) => {
                 await this._canCount(actor);
                 const count = await this.model.count({
@@ -264,15 +284,20 @@ export class UserBookmarkService extends BaseCrudService<
     /**
      * Counts how many bookmarks a user has.
      * Accessible by the owner or any actor with USER_BOOKMARK_VIEW_ANY permission.
+     * @param actor - The actor performing the action
+     * @param params - The params containing the userId
+     * @param ctx - Optional service context carrying transaction and hookState.
      */
     public async countBookmarksForUser(
         actor: Actor,
-        params: UserBookmarkCountByUserInput
+        params: UserBookmarkCountByUserInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ count: number }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'countBookmarksForUser',
             input: { ...params, actor },
             schema: UserBookmarkCountByUserInputSchema,
+            ctx,
             execute: async (validated) => {
                 if (actor.id !== validated.userId && !this._hasViewAnyPermission(actor)) {
                     throw new ServiceError(

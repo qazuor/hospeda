@@ -201,6 +201,7 @@ export class ExchangeRateService extends BaseCrudService<
      * Delegates to model's findLatestRate which orders by fetchedAt DESC.
      * @param actor - The actor performing the action.
      * @param params - Currency pair and rate type parameters.
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns ServiceOutput with the latest ExchangeRate or null.
      */
     public async getLatestRate(
@@ -209,12 +210,14 @@ export class ExchangeRateService extends BaseCrudService<
             fromCurrency: PriceCurrencyEnum;
             toCurrency: PriceCurrencyEnum;
             rateType?: ExchangeRateTypeEnum;
-        }
+        },
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<ExchangeRate | null>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getLatestRate',
             input: { actor, ...params },
             schema: ExchangeRateSearchInputSchema.partial(),
+            ctx,
             execute: async () => {
                 checkCanViewExchangeRate(actor);
 
@@ -231,13 +234,18 @@ export class ExchangeRateService extends BaseCrudService<
      * Gets all latest exchange rates (one per currency pair/rate type combination).
      * Delegates to model's findLatestRates which deduplicates by combination.
      * @param actor - The actor performing the action.
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns ServiceOutput with an array of latest ExchangeRates.
      */
-    public async getLatestRates(actor: Actor): Promise<ServiceOutput<ExchangeRate[]>> {
+    public async getLatestRates(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<ExchangeRate[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getLatestRates',
             input: { actor },
             schema: ExchangeRateSearchInputSchema.partial(),
+            ctx,
             execute: async () => {
                 checkCanListExchangeRate(actor);
 
@@ -251,16 +259,19 @@ export class ExchangeRateService extends BaseCrudService<
      * Sets source to MANUAL, isManualOverride to true, and calculates inverseRate.
      * @param actor - The actor performing the action.
      * @param data - Exchange rate creation data.
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns ServiceOutput with the created ExchangeRate.
      */
     public async createManualOverride(
         actor: Actor,
-        data: ExchangeRateCreateInput
+        data: ExchangeRateCreateInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<ExchangeRate>> {
         return this.runWithLoggingAndValidation({
             methodName: 'createManualOverride',
             input: { actor, ...data },
             schema: ExchangeRateCreateInputSchema,
+            ctx,
             execute: async (validated) => {
                 checkCanCreateExchangeRate(actor);
 
@@ -296,16 +307,19 @@ export class ExchangeRateService extends BaseCrudService<
      * Verifies that the rate is indeed a manual override before deleting.
      * @param actor - The actor performing the action.
      * @param params - ID of the exchange rate to remove.
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns ServiceOutput with void on success.
      */
     public async removeManualOverride(
         actor: Actor,
-        params: { id: string }
+        params: { id: string },
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<void>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeManualOverride',
             input: { actor, ...params },
             schema: z.object({ id: z.string().uuid() }),
+            ctx,
             execute: async (validated) => {
                 checkCanDeleteExchangeRate(actor);
 

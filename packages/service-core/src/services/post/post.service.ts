@@ -600,13 +600,19 @@ export class PostService extends BaseCrudService<
      * Gets news posts, optionally filtered by date and visibility.
      * @param actor - The user or system performing the action.
      * @param params - Optional filters for news posts.
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns List of news posts
      */
-    public async getNews(actor: Actor, params: GetPostNewsInput): Promise<ServiceOutput<Post[]>> {
+    public async getNews(
+        actor: Actor,
+        params: GetPostNewsInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Post[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getNews',
             input: { ...params, actor },
             schema: GetPostNewsInputSchema.strict(),
+            ctx,
             execute: async (validated: GetPostNewsInput, actor) => {
                 await this._canList(actor);
                 const where: Record<string, unknown> = { isNews: true };
@@ -633,16 +639,19 @@ export class PostService extends BaseCrudService<
      * Gets featured posts.
      * @param actor - The user or system performing the action.
      * @param params - Optional filters for featured posts.
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns List of featured posts
      */
     public async getFeatured(
         actor: Actor,
-        params: GetPostFeaturedInput
+        params: GetPostFeaturedInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<Post[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getFeatured',
             input: { ...params, actor },
             schema: GetPostFeaturedInputSchema.strict(),
+            ctx,
             execute: async (validated: GetPostFeaturedInput, actor) => {
                 await this._canList(actor);
                 const where: Record<string, unknown> = { isFeatured: true };
@@ -669,16 +678,19 @@ export class PostService extends BaseCrudService<
      * Gets posts by category.
      * @param actor - The user or system performing the action.
      * @param params - The category and optional filters.
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns List of posts in the given category
      */
     public async getByCategory(
         actor: Actor,
-        params: GetPostByCategoryInput
+        params: GetPostByCategoryInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<Post[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByCategory',
             input: { ...params, actor },
             schema: GetPostByCategoryInputSchema.strict(),
+            ctx,
             execute: async (validated: GetPostByCategoryInput, actor) => {
                 await this._canList(actor);
                 const where: Record<string, unknown> = { category: validated.category };
@@ -710,16 +722,19 @@ export class PostService extends BaseCrudService<
      * Gets posts related to an accommodation.
      * @param actor - The user or system performing the action.
      * @param params - The accommodationId and optional filters.
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns List of posts related to the accommodation
      */
     public async getByRelatedAccommodation(
         actor: Actor,
-        params: GetPostByRelatedAccommodationInput
+        params: GetPostByRelatedAccommodationInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<Post[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByRelatedAccommodation',
             input: { ...params, actor },
             schema: GetPostByRelatedAccommodationInputSchema.strict(),
+            ctx,
             execute: async (validated: GetPostByRelatedAccommodationInput, actor) => {
                 await this._canList(actor);
                 const where: Record<string, unknown> = {
@@ -748,16 +763,19 @@ export class PostService extends BaseCrudService<
      * Gets posts related to a destination.
      * @param actor - The user or system performing the action.
      * @param params - The destinationId and optional filters.
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns List of posts related to the destination
      */
     public async getByRelatedDestination(
         actor: Actor,
-        params: GetPostByRelatedDestinationInput
+        params: GetPostByRelatedDestinationInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<Post[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByRelatedDestination',
             input: { ...params, actor },
             schema: GetPostByRelatedDestinationInputSchema.strict(),
+            ctx,
             execute: async (validated: GetPostByRelatedDestinationInput, actor) => {
                 await this._canList(actor);
                 const where: Record<string, unknown> = {
@@ -786,16 +804,19 @@ export class PostService extends BaseCrudService<
      * Gets posts related to an event.
      * @param actor - The user or system performing the action.
      * @param params - The eventId and optional filters.
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns List of posts related to the event
      */
     public async getByRelatedEvent(
         actor: Actor,
-        params: GetPostByRelatedEventInput
+        params: GetPostByRelatedEventInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<Post[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByRelatedEvent',
             input: { ...params, actor },
             schema: GetPostByRelatedEventInputSchema.strict(),
+            ctx,
             execute: async (validated: GetPostByRelatedEventInput, actor) => {
                 await this._canList(actor);
                 const where: Record<string, unknown> = { relatedEventId: validated.eventId };
@@ -822,16 +843,19 @@ export class PostService extends BaseCrudService<
      * Likes a post for a user.
      * @param actor - The user or system performing the action
      * @param params - The input params with postId
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns Result of the operation
      */
     public async like(
         actor: Actor,
-        params: { postId: string }
+        params: { postId: string },
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ success: boolean }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'like',
             input: { ...params, actor },
             schema: LikePostInputSchema,
+            ctx,
             execute: async (validated, actor) => {
                 await this._canLike(actor);
                 const post = await this.model.findOne({ id: validated.postId });
@@ -848,16 +872,19 @@ export class PostService extends BaseCrudService<
      * Unlikes a post for a user.
      * @param actor - The user or system performing the action
      * @param params - The input params with postId
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns Result of the operation
      */
     public async unlike(
         actor: Actor,
-        params: { postId: string }
+        params: { postId: string },
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ success: boolean }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'unlike',
             input: { ...params, actor },
             schema: LikePostInputSchema,
+            ctx,
             execute: async (validated, actor) => {
                 await this._canLike(actor);
                 const post = await this.model.findOne({ id: validated.postId });
@@ -874,16 +901,19 @@ export class PostService extends BaseCrudService<
      * Adds a comment to a post. (Stub)
      * @param actor - The user or system performing the action
      * @param params - The post ID and comment
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns NOT_IMPLEMENTED error
      */
     public async addComment(
         actor: Actor,
-        params: { postId: string; comment: string }
+        params: { postId: string; comment: string },
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ success: boolean }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addComment',
             input: { ...params, actor },
             schema: z.object({ postId: z.string(), comment: z.string() }).strict(),
+            ctx,
             execute: async (_validated: unknown, actor: Actor): Promise<{ success: boolean }> => {
                 await this._canComment(actor);
                 throw new ServiceError(
@@ -898,16 +928,19 @@ export class PostService extends BaseCrudService<
      * Removes a comment from a post. (Stub)
      * @param actor - The user or system performing the action
      * @param params - The post ID and comment ID
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns NOT_IMPLEMENTED error
      */
     public async removeComment(
         actor: Actor,
-        params: { postId: string; commentId: string }
+        params: { postId: string; commentId: string },
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ success: boolean }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeComment',
             input: { ...params, actor },
             schema: z.object({ postId: z.string(), commentId: z.string() }).strict(),
+            ctx,
             execute: async (_validated: unknown, actor: Actor): Promise<{ success: boolean }> => {
                 await this._canComment(actor);
                 throw new ServiceError(
@@ -922,11 +955,13 @@ export class PostService extends BaseCrudService<
      * Increments the share count of a post.
      * @param actor - The user or system performing the action.
      * @param postId - The post ID.
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns Success or error.
      */
     public async incrementShare(
         _actor: Actor,
-        _postId: string
+        _postId: string,
+        _ctx?: ServiceContext
     ): Promise<ServiceOutput<{ success: boolean }>> {
         return { data: { success: false } };
     }
@@ -935,16 +970,19 @@ export class PostService extends BaseCrudService<
      * Returns a summarized, public-facing version of a post (for cards/lists).
      * @param actor - The user or system performing the action.
      * @param data - Object with id or slug.
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns ServiceOutput<PostSummary | null>
      */
     public async getSummary(
         actor: Actor,
-        data: GetPostSummaryInput
+        data: GetPostSummaryInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<PostSummary | null>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getSummary',
             input: { actor, ...data },
             schema: GetPostSummaryInputSchema,
+            ctx,
             execute: async (validatedData, validatedActor) => {
                 const { id, slug } = validatedData;
                 const field = id ? 'id' : 'slug';
@@ -983,16 +1021,19 @@ export class PostService extends BaseCrudService<
      * Returns stats for a post (likes, comments, shares).
      * @param actor - The user or system performing the action.
      * @param data - Object with id or slug.
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns ServiceOutput<PostEngagementStats | null>
      */
     public async getStats(
         actor: Actor,
-        data: GetPostStatsInput
+        data: GetPostStatsInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<PostEngagementStats | null>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getStats',
             input: { actor, ...data },
             schema: GetPostStatsInputSchema,
+            ctx,
             execute: async (validatedData, validatedActor) => {
                 const { id, slug } = validatedData;
                 const field = id ? 'id' : 'slug';

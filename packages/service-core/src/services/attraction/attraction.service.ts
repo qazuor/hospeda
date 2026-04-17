@@ -210,15 +210,20 @@ export class AttractionService extends BaseCrudRelatedService<
     /**
      * Adds an attraction to a destination, ensuring validation, permissions, and uniqueness.
      * Optimized to run existence checks in parallel.
+     * @param actor - The actor performing the action
+     * @param params - The params required to add the attraction to the destination
+     * @param ctx - Optional service context carrying transaction and hookState.
      */
     public async addAttractionToDestination(
         actor: Actor,
-        params: AttractionAddToDestinationInput
+        params: AttractionAddToDestinationInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ relation: DestinationAttractionRelation }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addAttractionToDestination',
             input: { ...params, actor },
             schema: AttractionAddToDestinationInputSchema,
+            ctx,
             execute: async (validatedParams, actor) => {
                 await this._canAddAttractionToDestination(actor);
                 const { destinationId, attractionId } = validatedParams;
@@ -274,15 +279,20 @@ export class AttractionService extends BaseCrudRelatedService<
 
     /**
      * Removes an attraction from a destination.
+     * @param actor - The actor performing the action
+     * @param params - The params required to remove the attraction from the destination
+     * @param ctx - Optional service context carrying transaction and hookState.
      */
     public async removeAttractionFromDestination(
         actor: Actor,
-        params: AttractionRemoveFromDestinationInput
+        params: AttractionRemoveFromDestinationInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ relation: DestinationAttractionRelation }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeAttractionFromDestination',
             input: { ...params, actor },
             schema: AttractionRemoveFromDestinationInputSchema,
+            ctx,
             execute: async (validatedParams, actor) => {
                 await this._canRemoveAttractionFromDestination(actor);
                 const { destinationId, attractionId } = validatedParams;
@@ -342,15 +352,20 @@ export class AttractionService extends BaseCrudRelatedService<
     /**
      * Lists all attractions for a destination.
      * Optimized to use a single JOIN query instead of 2 sequential queries.
+     * @param actor - The actor performing the action
+     * @param params - The params containing the destination ID
+     * @param ctx - Optional service context carrying transaction and hookState.
      */
     public async getAttractionsForDestination(
         actor: Actor,
-        params: AttractionsByDestinationInput
+        params: AttractionsByDestinationInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ attractions: Attraction[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getAttractionsForDestination',
             input: { ...params, actor },
             schema: AttractionsByDestinationInputSchema,
+            ctx,
             execute: async (validatedParams, actor) => {
                 await this._canList(actor);
                 const { destinationId } = validatedParams;
@@ -391,15 +406,20 @@ export class AttractionService extends BaseCrudRelatedService<
     /**
      * Lists all destinations for a given attraction.
      * Optimized to use parallel queries instead of 2 sequential queries.
+     * @param actor - The actor performing the action
+     * @param params - The params containing the attraction ID
+     * @param ctx - Optional service context carrying transaction and hookState.
      */
     public async getDestinationsByAttraction(
         actor: Actor,
-        params: DestinationsByAttractionInput
+        params: DestinationsByAttractionInput,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ destinations: Destination[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getDestinationsByAttraction',
             input: { ...params, actor },
             schema: DestinationsByAttractionInputSchema,
+            ctx,
             execute: async (validatedParams, actor) => {
                 await this._canList(actor);
                 const { attractionId } = validatedParams;
@@ -473,11 +493,13 @@ export class AttractionService extends BaseCrudRelatedService<
      * Optimized to fetch all counts in a single query using aggregation.
      * @param actor - The actor performing the action
      * @param params - The search parameters
+     * @param ctx - Optional service context carrying transaction and hookState.
      * @returns Attractions with destination counts in standardized pagination format
      */
     public async searchForList(
         actor: Actor,
-        params: AttractionSearchInput
+        params: AttractionSearchInput,
+        _ctx?: ServiceContext
     ): Promise<AttractionListWithCountsResponse> {
         await this._canSearch(actor);
         const { name, slug, isFeatured, isBuiltin, destinationId } = params;
