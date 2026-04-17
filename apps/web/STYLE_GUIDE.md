@@ -631,8 +631,8 @@ The carousel uses a peek layout: mobile slides are `flex: 0 0 88%`, desktop (≥
 
 Two canonical button components cover every interactive affordance in the app:
 
-- **`GradientButton`** (`shared/GradientButton.astro`, `ui/GradientButton.tsx`).. visible-label CTAs and form submits. Gradient fill, pill shape by default, outline variants that fill on hover.
-- **`IconButton`** (`shared/IconButton.astro`, `ui/IconButton.tsx`).. icon-only interactive elements (hamburger, carousel arrows, toggles, drawer close). `ariaLabel` is mandatory because there is no visible text.
+- **`GradientButton`** (`shared/ui/GradientButton.astro`, `ui/GradientButton.tsx`).. visible-label CTAs and form submits. Gradient fill, pill shape by default, outline variants that fill on hover.
+- **`IconButton`** (`shared/ui/IconButton.astro`, `ui/IconButton.tsx`).. icon-only interactive elements (hamburger, carousel arrows, toggles, drawer close). `ariaLabel` is mandatory because there is no visible text.
 
 Both components share CSS via `components.css` and have paired Astro + React implementations. **Do NOT hand-roll `<button>` elements for standard UI.** Inline `<button>` is only acceptable for compound widgets whose styling is tightly coupled to their structure (see 5.3.5).
 
@@ -670,7 +670,7 @@ Shared base styles: `font-family: var(--font-sans)`, `font-weight: 600`, border 
 
 ```astro
 ---
-import GradientButton from '@/components/shared/GradientButton.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
 ---
 <GradientButton
   as="a"
@@ -713,7 +713,7 @@ import { GradientButton } from '@/components/ui/GradientButtonReact';
 
 ```astro
 ---
-import GradientButton from '@/components/shared/GradientButton.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { SearchIcon } from '@repo/icons';
 ---
 <GradientButton label={t('search.button')} variant="accent">
@@ -773,7 +773,7 @@ Icon-only interactive element. Used across the header (hamburger, user nav, them
 
 ```astro
 ---
-import IconButton from '@/components/shared/IconButton.astro';
+import IconButton from '@/components/shared/ui/IconButton.astro';
 import { HamburgerIcon } from '@repo/icons';
 ---
 <IconButton
@@ -862,7 +862,7 @@ In every other case, prefer `GradientButton` / `IconButton`.
 
 ### 5.4 Badges
 
-Badges are rendered by `src/components/shared/Badge.astro`. The component ships two pieces:
+Badges are rendered by `src/components/shared/ui/Badge.astro`. The component ships two pieces:
 
 1. A shared base class `.badge` defined in `components.css` (pill shape via `var(--radius-pill)`, `font-size: var(--text-caption)`, `padding: 4px 12px`, `font-weight: 500`, min-height `44px` for touch targets).
 2. An inline `style` attribute that paints the surface, text, and border using tokenized color values. The color palette for each entity type is resolved by helpers in `src/lib/colors.ts` and returned as a `ColorScheme` (`{ bg, text, border }`). Every value references a design token — nothing is hardcoded.
@@ -899,7 +899,7 @@ Per-entity colors applied via inline `style`. Base class `.badge` provides layou
 
 ```astro
 ---
-import Badge from '@/components/shared/Badge.astro';
+import Badge from '@/components/shared/ui/Badge.astro';
 import { getAccommodationTypeColor } from '@/lib/colors';
 
 const colorScheme = getAccommodationTypeColor({ type: 'hotel' });
@@ -1317,7 +1317,7 @@ Standard pattern for building any new section. Uses the shared classes `.section
 ```astro
 ---
 import SectionHeader from '@/components/shared/SectionHeader.astro';
-import GradientButton from '@/components/shared/GradientButton.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import Card from '@/components/shared/Card.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';

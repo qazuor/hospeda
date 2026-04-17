@@ -10,7 +10,7 @@
  * - Mobile: Only the carousel column (map is hidden via CSS)
  */
 
-import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
+import { ErrorBoundary } from '@/components/shared/ui/ErrorBoundary';
 import type { DestinationCardData } from '@/data/types';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';

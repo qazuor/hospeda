@@ -10,8 +10,8 @@
  * - Autoplay pauses on hover and focus-within for accessibility
  */
 
-import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { ReviewCard } from '@/components/shared/cards/ReviewCard';
+import { ErrorBoundary } from '@/components/shared/ui/ErrorBoundary';
 import { IconButton } from '@/components/ui/IconButtonReact';
 import type { ReviewCardData } from '@/data/types';
 import { cn } from '@/lib/cn';

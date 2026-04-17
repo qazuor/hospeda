@@ -5,7 +5,7 @@
  * panels. Replaces the static SearchBar.astro stub with full interactivity.
  */
 
-import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
+import { ErrorBoundary } from '@/components/shared/ui/ErrorBoundary';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DayPicker, getDefaultClassNames } from 'react-day-picker';
 import type { DateRange } from 'react-day-picker';

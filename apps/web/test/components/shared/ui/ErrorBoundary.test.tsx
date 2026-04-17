@@ -9,7 +9,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const src = readFileSync(
-    resolve(__dirname, '../../../src/components/shared/ErrorBoundary.tsx'),
+    resolve(__dirname, '../../../../src/components/shared/ui/ErrorBoundary.tsx'),
     'utf8'
 );
 

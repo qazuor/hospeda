@@ -16,7 +16,7 @@ const src = readFileSync(
 describe('EventCard.astro', () => {
     describe('imports', () => {
         it('should import Badge component', () => {
-            expect(src).toContain("import Badge from '../Badge.astro'");
+            expect(src).toContain("import Badge from '../ui/Badge.astro'");
         });
 
         it('should import CalendarDotsIcon and LocationIcon from @repo/icons', () => {
