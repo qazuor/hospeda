@@ -616,6 +616,10 @@
                 "invalid": "[EN] La fecha de creación no es válida",
                 "invalidType": "[EN] La fecha de creación debe ser una fecha válida"
             },
+            "eventType": {
+                "invalidType": "Event type must be a string",
+                "max": "Event type must not exceed 100 characters"
+            },
             "id": {
                 "invalidType": "[EN] ID tiene un tipo de dato inválido",
                 "uuid": "[EN] ID debe ser un UUID válido"

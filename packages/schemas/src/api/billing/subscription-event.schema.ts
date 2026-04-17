@@ -3,6 +3,10 @@ import { z } from 'zod';
 /**
  * Schema for a single subscription event in API responses.
  * Represents a recorded transition or action on a subscription lifecycle.
+ *
+ * Two event patterns are supported:
+ * - State transition events: always provide previousStatus/newStatus, eventType is null
+ * - Operational events: provide eventType, previousStatus/newStatus may be null
  */
 export const SubscriptionEventSchema = z.object({
     /** Unique identifier of the event record */
@@ -17,18 +21,37 @@ export const SubscriptionEventSchema = z.object({
             message: 'zodError.billing.subscriptionEvent.subscriptionId.invalidType'
         })
         .uuid({ message: 'zodError.billing.subscriptionEvent.subscriptionId.uuid' }),
-    /** Subscription status before the event occurred */
+    /**
+     * Operational event type label (e.g. 'payment.retry', 'invoice.generated').
+     * Null for state transition events; provided for operational events.
+     */
+    eventType: z
+        .string({ message: 'zodError.billing.subscriptionEvent.eventType.invalidType' })
+        .max(100, { message: 'zodError.billing.subscriptionEvent.eventType.max' })
+        .nullable()
+        .optional(),
+    /**
+     * Subscription status before the event occurred.
+     * Null for operational events that do not represent a status transition.
+     */
     previousStatus: z
         .string({
             message: 'zodError.billing.subscriptionEvent.previousStatus.invalidType'
         })
-        .max(50, { message: 'zodError.billing.subscriptionEvent.previousStatus.max' }),
-    /** Subscription status after the event occurred */
+        .max(50, { message: 'zodError.billing.subscriptionEvent.previousStatus.max' })
+        .nullable()
+        .optional(),
+    /**
+     * Subscription status after the event occurred.
+     * Null for operational events that do not represent a status transition.
+     */
     newStatus: z
         .string({
             message: 'zodError.billing.subscriptionEvent.newStatus.invalidType'
         })
-        .max(50, { message: 'zodError.billing.subscriptionEvent.newStatus.max' }),
+        .max(50, { message: 'zodError.billing.subscriptionEvent.newStatus.max' })
+        .nullable()
+        .optional(),
     /** Source that triggered the event (e.g. 'user', 'system', 'webhook') */
     triggerSource: z
         .string({
