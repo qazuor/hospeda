@@ -65,18 +65,17 @@ export abstract class BaseCrudWrite<
             input: { actor, ...data },
             schema: this.createSchema,
             ctx,
-            execute: async (validatedData, validatedActor) => {
+            execute: async (validatedData, validatedActor, execCtx) => {
                 await this._canCreate(validatedActor, validatedData);
 
                 const normalizedData =
                     (await this.normalizers?.create?.(validatedData, validatedActor)) ??
                     validatedData;
 
-                const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
                 const processedData = await this._beforeCreate(
                     normalizedData,
                     validatedActor,
-                    resolvedCtx
+                    execCtx
                 );
 
                 const finalData = { ...normalizedData, ...processedData };
@@ -89,7 +88,7 @@ export abstract class BaseCrudWrite<
 
                 const entity = await this.model.create(
                     payload as unknown as Partial<TEntity>,
-                    ctx?.tx
+                    execCtx?.tx
                 );
                 if (!entity) {
                     throw new ServiceError(
@@ -97,7 +96,7 @@ export abstract class BaseCrudWrite<
                         `Failed to create ${this.entityName}. The operation returned no result.`
                     );
                 }
-                return this._afterCreate(entity, validatedActor, resolvedCtx);
+                return this._afterCreate(entity, validatedActor, execCtx);
             }
         });
     }
@@ -131,7 +130,7 @@ export abstract class BaseCrudWrite<
             input: { actor, ...data },
             schema: this.updateSchema,
             ctx,
-            execute: async (validData, validActor) => {
+            execute: async (validData, validActor, execCtx) => {
                 const updateId = id;
                 await this._getAndValidateEntity(
                     this.model,
@@ -139,19 +138,14 @@ export abstract class BaseCrudWrite<
                     validActor,
                     this.entityName,
                     this._canUpdate.bind(this),
-                    ctx
+                    execCtx
                 );
 
                 const normalizedData = this.normalizers?.update
                     ? await this.normalizers.update(validData, validActor)
                     : validData;
 
-                const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
-                const processedData = await this._beforeUpdate(
-                    normalizedData,
-                    validActor,
-                    resolvedCtx
-                );
+                const processedData = await this._beforeUpdate(normalizedData, validActor, execCtx);
 
                 const payload = {
                     ...normalizedData,
@@ -187,11 +181,11 @@ export abstract class BaseCrudWrite<
                 const updatedEntity = await this.model.update(
                     where as Record<string, unknown>,
                     finalPayload,
-                    ctx?.tx
+                    execCtx?.tx
                 );
 
                 if (!updatedEntity) {
-                    const entityExists = await this.model.findById(updateId, ctx?.tx);
+                    const entityExists = await this.model.findById(updateId, execCtx?.tx);
                     if (!entityExists) {
                         throw new ServiceError(
                             ServiceErrorCode.NOT_FOUND,
@@ -210,7 +204,7 @@ export abstract class BaseCrudWrite<
                     );
                 }
 
-                return this._afterUpdate(updatedEntity, validActor, resolvedCtx);
+                return this._afterUpdate(updatedEntity, validActor, execCtx);
             }
         });
     }
@@ -237,25 +231,27 @@ export abstract class BaseCrudWrite<
             input: { actor },
             schema: z.object({}),
             ctx,
-            execute: async (_, validActor) => {
+            execute: async (_, validActor, execCtx) => {
                 const entity = await this._getAndValidateEntity(
                     this.model,
                     id,
                     validActor,
                     this.entityName,
                     this._canSoftDelete.bind(this),
-                    ctx
+                    execCtx
                 );
                 if ((entity as TEntity).deletedAt) {
                     return { count: 0 };
                 }
-                const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
-                const processedId = await this._beforeSoftDelete(id, validActor, resolvedCtx);
+                const processedId = await this._beforeSoftDelete(id, validActor, execCtx);
                 const where = { id: processedId };
                 const result = {
-                    count: await this.model.softDelete(where as Record<string, unknown>, ctx?.tx)
+                    count: await this.model.softDelete(
+                        where as Record<string, unknown>,
+                        execCtx?.tx
+                    )
                 };
-                return this._afterSoftDelete(result, validActor, resolvedCtx);
+                return this._afterSoftDelete(result, validActor, execCtx);
             }
         });
     }
@@ -282,24 +278,23 @@ export abstract class BaseCrudWrite<
             input: { actor },
             schema: z.object({}),
             ctx,
-            execute: async (_, validActor) => {
+            execute: async (_, validActor, execCtx) => {
                 const entity = await this._getAndValidateEntity(
                     this.model,
                     id,
                     validActor,
                     this.entityName,
                     this._canHardDelete.bind(this),
-                    ctx
+                    execCtx
                 );
                 if ((entity as TEntity).deletedAt) {
                     return { count: 0 };
                 }
-                const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
-                const processedId = await this._beforeHardDelete(id, validActor, resolvedCtx);
+                const processedId = await this._beforeHardDelete(id, validActor, execCtx);
                 const where = { id: processedId };
                 // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
-                const result = { count: await this.model.hardDelete(where as any, ctx?.tx) };
-                return this._afterHardDelete(result, validActor, resolvedCtx);
+                const result = { count: await this.model.hardDelete(where as any, execCtx?.tx) };
+                return this._afterHardDelete(result, validActor, execCtx);
             }
         });
     }
@@ -326,22 +321,21 @@ export abstract class BaseCrudWrite<
             input: { actor },
             schema: z.object({}),
             ctx,
-            execute: async (_, validActor) => {
+            execute: async (_, validActor, execCtx) => {
                 const entity = await this._getAndValidateEntity(
                     this.model,
                     id,
                     validActor,
                     this.entityName,
                     this._canRestore.bind(this),
-                    ctx
+                    execCtx
                 );
                 if (!(entity as TEntity).deletedAt) {
                     return { count: 0 };
                 }
-                const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
                 let processedId: string;
                 try {
-                    processedId = await this._beforeRestore(id, validActor, resolvedCtx);
+                    processedId = await this._beforeRestore(id, validActor, execCtx);
                 } catch (err) {
                     if (err instanceof ServiceError) throw err;
                     throw new ServiceError(
@@ -354,7 +348,7 @@ export abstract class BaseCrudWrite<
                 try {
                     count = await this.model.restore(
                         { id: processedId } as Record<string, unknown>,
-                        ctx?.tx
+                        execCtx?.tx
                     );
                 } catch (err) {
                     if (err instanceof ServiceError) throw err;
@@ -366,7 +360,7 @@ export abstract class BaseCrudWrite<
                 }
                 const result = { count };
                 try {
-                    await this._afterRestore(result, validActor, resolvedCtx);
+                    await this._afterRestore(result, validActor, execCtx);
                 } catch (err) {
                     if (err instanceof ServiceError) throw err;
                     throw new ServiceError(
@@ -402,14 +396,14 @@ export abstract class BaseCrudWrite<
             input: { actor, visibility },
             schema: z.object({ visibility: z.nativeEnum(VisibilityEnum) }),
             ctx,
-            execute: async (validData, validActor) => {
+            execute: async (validData, validActor, execCtx) => {
                 const entity = await this._getAndValidateEntity<TEntity, typeof this.model>(
                     this.model,
                     id,
                     validActor,
                     this.entityName,
                     async () => {},
-                    ctx
+                    execCtx
                 );
                 if (!entity) {
                     throw new ServiceError(
@@ -421,14 +415,13 @@ export abstract class BaseCrudWrite<
 
                 await this._canUpdateVisibility(validActor, entity, validData.visibility);
 
-                const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
                 let processedVisibility: VisibilityEnum;
                 try {
                     processedVisibility = await this._beforeUpdateVisibility(
                         entity,
                         validData.visibility,
                         validActor,
-                        resolvedCtx
+                        execCtx
                     );
                 } catch (err) {
                     if (err instanceof ServiceError) throw err;
@@ -446,7 +439,7 @@ export abstract class BaseCrudWrite<
                         {
                             visibility: processedVisibility
                         } as unknown as Partial<TEntity>,
-                        ctx?.tx
+                        execCtx?.tx
                     );
                     if (!updatedEntity) {
                         throw new ServiceError(
@@ -464,7 +457,7 @@ export abstract class BaseCrudWrite<
                 }
 
                 try {
-                    await this._afterUpdateVisibility(updatedEntity, validActor, resolvedCtx);
+                    await this._afterUpdateVisibility(updatedEntity, validActor, execCtx);
                 } catch (err) {
                     if (err instanceof ServiceError) throw err;
                     throw new ServiceError(
