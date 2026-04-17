@@ -177,33 +177,35 @@ Dark mode activates via `data-theme="dark"` on `<html>` (NOT `.dark` class). FOU
 
 ### 2.2 Spacing Tokens
 
-| Token | Value | Tailwind | Usage |
-|-------|-------|----------|-------|
-| `--space-section` | `120px` | `py-section` | Standard section vertical padding |
-| `--space-section-sm` | `80px` | `py-section-sm` | Compact section padding |
-| `--space-section-lg` | `160px` | `py-section-lg` | Hero/extra-tall sections |
-| `--space-container-x` | `15px` | _(via container)_ | Container horizontal padding |
-| `--space-card-content` | `27px 30px 26px` | _(via component)_ | Card content area padding |
-| `--space-card-gap` | `30px` | `gap-card` | Gap between cards in grid |
-| `--space-section-header-mb` | `50px` | `mb-section-header` | Margin below section headers |
+Each token has an optional shared utility class in `components.css` that applies it to `padding-block`, `gap`, etc. Apply tokens directly via `var(--space-*)` in scoped styles when the shared class does not fit.
+
+| Token | Value | Shared class | Usage |
+|-------|-------|--------------|-------|
+| `--space-section` | `120px` | `.py-section` | Standard section vertical padding |
+| `--space-section-sm` | `80px` | `.py-section-sm` | Compact section padding |
+| `--space-section-lg` | `160px` | `.py-section-lg` | Hero/extra-tall sections |
+| `--space-container-x` | `15px` | _(applied inside `.section__container`)_ | Container horizontal padding |
+| `--space-card-content` | `27px 30px 26px` | _(applied inside `.card__content`)_ | Card content area padding |
+| `--space-card-gap` | `30px` | `.gap-card` | Gap between cards in grid |
+| `--space-section-header-mb` | `50px` | `.mb-section-header` | Margin below section headers |
 
 ### 2.3 Border Radius Tokens
 
-The design uses **asymmetric organic radius** as a signature visual element. Instead of uniform `rounded-xl`, shapes have one or two rounded corners.
+The design uses **asymmetric organic radius** as a signature visual element. Instead of a uniform radius on all four corners, shapes have one or two rounded corners.
 
-| Token | Value | Tailwind | Usage |
-|-------|-------|----------|-------|
-| `--radius` | `0.75rem` | `rounded-lg` | Default small radius (buttons, inputs) |
-| `--radius-sm` | `calc(var(--radius) - 4px)` | `rounded-sm` | Tight radius |
-| `--radius-md` | `calc(var(--radius) - 2px)` | `rounded-md` | Medium radius |
-| `--radius-lg` | `var(--radius)` | `rounded-lg` | Standard radius |
-| `--radius-xl` | `calc(var(--radius) + 4px)` | `rounded-xl` | Large radius |
-| `--radius-organic` | `0px 100px` | `rounded-organic` | Signature asymmetric shape (cards, images) |
-| `--radius-organic-sm` | `0px 75px` | `rounded-organic-sm` | Smaller organic radius (card content) |
-| `--radius-organic-alt` | `100px 0px` | `rounded-organic-alt` | Reversed organic shape (blog thumbnails) |
-| `--radius-card` | `24px` | `rounded-card` | Card outer container |
-| `--radius-pill` | `9999px` | `rounded-pill` | Pills, tags, full-round |
-| `--radius-button` | `8px` | `rounded-button` | Buttons |
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--radius` | `0.75rem` | Default small radius (buttons, inputs) |
+| `--radius-sm` | `calc(var(--radius) - 4px)` | Tight radius |
+| `--radius-md` | `calc(var(--radius) - 2px)` | Medium radius |
+| `--radius-lg` | `var(--radius)` | Standard radius |
+| `--radius-xl` | `calc(var(--radius) + 4px)` | Large radius |
+| `--radius-organic` | `0px 100px` | Signature asymmetric shape (cards, images) |
+| `--radius-organic-sm` | `0px 75px` | Smaller organic radius (card content) |
+| `--radius-organic-alt` | `100px 0px` | Reversed organic shape (blog thumbnails) |
+| `--radius-card` | `24px` | Card outer container |
+| `--radius-pill` | `9999px` | Pills, tags, full-round |
+| `--radius-button` | `8px` | Buttons |
 
 #### Organic Radius Patterns
 
@@ -766,81 +768,240 @@ In every other case, prefer `GradientButton` / `IconButton`.
 
 ### 5.4 Badges
 
-| Variant | Classes |
-|---------|---------|
-| Default | `rounded-pill px-3 py-1 text-caption font-medium bg-accent text-accent-foreground` |
-| Outline | `rounded-pill px-3 py-1 text-caption font-medium border border-border text-muted-foreground` |
-| Featured | `rounded-pill px-3 py-1 text-caption font-semibold bg-accent text-accent-foreground` |
-| Category | `rounded-pill px-3 py-1 text-caption font-semibold uppercase tracking-wide` |
-| Glass | `rounded-pill px-3 py-1 text-caption font-medium bg-card/90 text-foreground backdrop-blur-sm` |
-| Rating | `rounded-pill px-2 py-1 bg-accent text-accent-foreground text-caption font-bold` |
+Badges are rendered by `src/components/shared/Badge.astro`. The component ships two pieces:
+
+1. A shared base class `.badge` defined in `components.css` (pill shape via `var(--radius-pill)`, `font-size: var(--text-caption)`, `padding: 4px 12px`, `font-weight: 500`, min-height `44px` for touch targets).
+2. An inline `style` attribute that paints the surface, text, and border using tokenized color values. The color palette for each entity type is resolved by helpers in `src/lib/colors.ts` and returned as a `ColorScheme` (`{ bg, text, border }`). Every value references a design token — nothing is hardcoded.
+
+#### Props
+
+| Prop | Type | Notes |
+|------|------|-------|
+| `label` | `string` | Text rendered inside the badge. |
+| `href` | `string?` | When provided, the badge renders as `<a>`; otherwise `<span>`. |
+| `colorScheme` | `BadgeColorScheme` | `{ bg, text, border }` — each value is a CSS expression (e.g. `oklch(from var(--brand-accent) l c h / 0.15)`, `var(--brand-accent)`). |
+| `size` | `'sm' \| 'md'` | `sm` uses `2px 8px` padding, `md` (default) uses `4px 12px`. |
+| `variant` | `'default' \| 'filled-dark'` | `default` applies `colorScheme` inline; `filled-dark` uses the `.badge--filled-dark` class (solid dark surface, uppercase label, `colorScheme` ignored). |
+
+#### ColorScheme recipe
+
+Every scheme follows the same formula (see `scheme()` in `src/lib/colors.ts`):
+
+```ts
+{
+  bg:     `oklch(from var(--<token>) l c h / 0.15)`, // 15% tint of the token
+  text:   `var(--<token>)`,                          // solid token color for text
+  border: `oklch(from var(--<token>) l c h / 0.30)`  // 30% tint for the 1px border
+}
+```
+
+Resolved tokens are always semantic: `--brand-accent`, `--brand-primary`, `--brand-secondary`, `--hospeda-forest`, `--hospeda-river`, `--hospeda-sand`, `--hospeda-sky`, `--core-muted-foreground`, etc. Helpers like `getAccommodationTypeColor`, `getPostCategoryColor`, `getEventCategoryColor`, and `getTagColor` live in `src/lib/colors.ts`.
+
+#### Variants
+
+##### `default`
+
+Per-entity colors applied via inline `style`. Base class `.badge` provides layout and typography.
+
+```astro
+---
+import Badge from '@/components/shared/Badge.astro';
+import { getAccommodationTypeColor } from '@/lib/colors';
+
+const colorScheme = getAccommodationTypeColor({ type: 'hotel' });
+---
+<Badge label="Hotel" colorScheme={colorScheme} />
+```
+
+##### `filled-dark`
+
+Uniform dark pill. Background is `var(--core-foreground)`, text is `var(--core-background)`, label is uppercased, letter-spacing `0.03em`. Used on the homepage filter row when all badges must look identical regardless of type. The `colorScheme` prop is ignored; only padding is taken from `size`.
+
+```astro
+<Badge label="Cabañas" variant="filled-dark" />
+```
+
+#### Focus state
+
+`.badge:focus-visible` draws a 2px outline using `var(--brand-primary)` with 2px offset (applies when rendered as `<a>`).
 
 ### 5.5 Form Inputs
 
-```
-base:       w-full bg-background border border-border rounded-button
-            px-4 py-2.5 text-body text-foreground
-            placeholder: text-muted-foreground
-            focus: ring-2 ring-ring border-ring outline-none
-            transition duration-normal
+There is no generic `Input` component in the app. Every form styles its own fields in either a scoped `<style>` block (Astro) or a co-located CSS Module (`.module.css`, React islands), always consuming the same set of tokens. The canonical recipe below is copied from `src/components/auth/SignIn.module.css` and should be the starting point for any new input.
+
+#### Canonical input recipe
+
+| Property | Value | Token |
+|----------|-------|-------|
+| `width` | `100%` | — |
+| `padding` | `0.625rem 0.875rem` | — |
+| `border` | `1px solid` | `var(--border)` |
+| `border-radius` | `var(--radius-button)` (8px) | `--radius-button` |
+| `font-family` | `var(--font-sans)` | `--font-sans` |
+| `font-size` | `var(--text-body)` | `--text-body` |
+| `color` | `var(--core-foreground)` | `--core-foreground` |
+| `background-color` | `var(--core-card)` | `--core-card` |
+| `transition` | `border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease` | `--duration-fast` |
+
+Placeholder color: `var(--core-muted-foreground)`. Disabled state: `opacity: 0.6; cursor: not-allowed`.
+
+#### Focus ring
+
+Focus uses `--brand-primary` both as the border color and as a translucent outer ring (no `outline`):
+
+```css
+.input:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.15);
+}
 ```
 
-#### Search Form (Hero)
+For labels above inputs use `font-size: var(--text-body-sm); font-weight: 500; color: var(--core-foreground); margin-bottom: 0.375rem;` (see `.label` in `src/components/auth/SignIn.module.css`).
 
-```
-container:  bg-card rounded-[15px] shadow-search p-4
-            flex items-center gap-4
-fields:     border-0 bg-transparent
-submit btn: bg-accent text-accent-foreground rounded-button px-6
-```
+Reference implementations:
+
+- React islands: `src/components/auth/SignIn.client.tsx` + `src/components/auth/SignIn.module.css` (`.field`, `.label`, `.input`).
+- Astro scoped styles: `src/layouts/Footer.astro` (`.footer__newsletter-input` — pill-shaped 12px radius variant for the newsletter panel, focus via `border-color: var(--footer-newsletter-fg)`).
+
+#### Hero search bar
+
+The homepage search bar is a compound widget, not a set of standalone inputs. See `src/components/sections/SearchBar.astro` (visual Astro shell) and `src/components/sections/SearchBar.client.tsx` + `SearchBar.module.css` (interactive island). It is structured as a horizontal row of icon + label + value columns separated by vertical dividers, wrapped in a single rounded container, with a trailing submit rendered as `GradientButton` (`variant="accent"`, `shape="rounded"`). Do NOT copy its styles for generic forms — the fields inside are buttons that open dropdowns, not text inputs.
 
 ### 5.6 Navbar
 
-| State | Background | Text | Shadow |
-|-------|------------|------|--------|
-| Initial (top) | `bg-transparent` | `text-foreground` | none |
-| Scrolled | `bg-card/95 backdrop-blur-md` | `text-foreground` | `shadow-nav` |
+Implemented by `src/layouts/Header.astro`. Two class layers cooperate:
 
+1. `.navbar` / `.navbar--scrolled` in `components.css` — shared sticky positioning, z-index, and scrolled-state surface.
+2. `.header` / `.header--hero` and `.header__*` scoped BEM-lite classes inside `Header.astro` — layout, logo, nav links, hamburger, and user area.
+
+A vanilla script inside `Header.astro` toggles the `.navbar--scrolled` class on the `<header>` element when `window.scrollY > 10`, and re-runs on every `astro:page-load` event (Astro View Transitions).
+
+#### Shared base (`components.css`)
+
+```css
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-nav);
+  max-height: 80px;
+  transition: background-color 300ms ease, backdrop-filter 300ms ease, box-shadow 300ms ease;
+}
+.navbar--scrolled {
+  background-color: oklch(from var(--core-card) l c h / 0.95);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 3px oklch(0 0 0 / 0.1);
+}
 ```
-position:   fixed top-0 left-0 right-0 z-nav
-container:  max-w-container mx-auto px-container
-height:     h-[100px] (fixed)
-transition: duration-slow for background/shadow changes
-logo:       font-heading font-bold text-2xl
-nav links:  font-sans text-nav uppercase tracking-wide
-            hover: text-accent
-CTA button: rounded-button bg-accent text-accent-foreground px-6 h-10
-mobile:     hamburger menu, full-screen overlay bg-card z-mobile-menu
-```
+
+#### States
+
+| State | Background | Text color | Shadow |
+|-------|------------|------------|--------|
+| Default (non-hero pages) | `oklch(from var(--core-card) l c h / 0.85)` + `blur(8px)` | `var(--core-foreground)` | `0 1px 2px` |
+| Hero page, at top (`.header--hero`) | `transparent` (no blur) | `var(--core-foreground)` | none |
+| Scrolled (`.navbar--scrolled`) | `oklch(from var(--core-card) l c h / 0.95)` + `blur(8px)` | `var(--core-foreground)` | `0 1px 3px` |
+
+#### Layout
+
+`.header__inner` is a flex row (`display: flex; align-items: center; justify-content: space-between;`) capped at `max-width: 1440px` with responsive inline padding `clamp(1rem, 5vw, 3rem)`. It contains, in order: logo (`.header__logo`), desktop nav (`.header__nav`, visible at `min-width: 1025px`), mobile hamburger (`.header__hamburger`, visible at `max-width: 1024px`), and a right-hand user area (`.header__right`).
+
+#### Nav links
+
+`.header__nav-link` uses `font-family: var(--font-sans)`, `font-weight: 600`, `font-size: 13px`. Hover and active states switch color to `var(--brand-primary)`. The active link draws a 2px underline (`::after`) in `var(--brand-primary)`. Links are separated by thin vertical dividers (`.header__nav-divider`, `1px × 30px`, `background-color: var(--border)`).
+
+#### Right area
+
+The desktop user area composes three existing components instead of hand-rolled buttons:
+
+- `IconButton` with `SearchIcon` for the search entry point.
+- `GradientButton` (`variant="accent"`, `size="sm"`) for the owner CTA (`.header__cta`, visible at `min-width: 1200px`).
+- `AuthSection` (a `server:defer` island) for login / user menu, with a skeleton fallback (`.header__auth-skeleton`) that mirrors the pill shape of the auth button via `var(--radius-pill)`.
+
+On mobile the right area is hidden and a `MobileMenuIsland` (separate component) renders a full-screen overlay menu.
 
 ### 5.7 Footer
 
-```
-background: bg-surface-dark
-newsletter: bg-surface-warm rounded-card p-8 (overlaps footer top)
-            input: rounded-pill bg-card
-            submit: rounded-button bg-accent text-accent-foreground
-body:       py-section
-columns:    grid lg:grid-cols-5 gap-10
-headings:   font-heading font-semibold text-h4 text-surface-dark-foreground mb-6
-links:      text-surface-dark-foreground/70 hover:text-accent
-            with >> chevron prefix
-social:     rounded-pill bg-accent/15 size-[43px] icons
-            hover: bg-accent text-accent-foreground
-bottom bar: border-t border-surface-dark-foreground/10
-            text-surface-dark-foreground/60 text-meta
-```
+Implemented by `src/layouts/Footer.astro`. All colors come from the dedicated footer tokens introduced in section 2.1 (`--footer-bg`, `--footer-fg`, `--footer-fg-muted`, `--footer-link`, `--footer-link-hover`, `--footer-border`, `--footer-newsletter-bg`, `--footer-newsletter-fg`, `--footer-newsletter-border`). No shared `.footer` class exists in `components.css`; structure is scoped to the component.
+
+#### Structure
+
+1. `.footer__wave` — absolute-positioned SVG that overlaps the previous section. The wave path is filled with `var(--footer-bg)` so the seam is invisible.
+2. `.footer__top` — a 96px top padding block with a shared `.footer__container` (`max-width: var(--container-max)`, `padding-inline: var(--space-container-x)`). Contains the left block and the right block.
+3. `.footer__bottom` — a 1px `border-top: 1px solid var(--footer-border)` rule with contact info on the left and copyright on the right (column on mobile, row at `min-width: 768px`).
+
+#### Left block (`.footer__left`)
+
+- `.footer__logo` — horizontal icon + wordmark. Wordmark uses `font-family: var(--font-decorative)`, `font-size: 48px`, `color: var(--footer-fg)`.
+- `.footer__description` — short tagline in `var(--font-sans)`, `color: var(--footer-fg-muted)`, max-width 205px.
+- `SocialLinks` component (`variant="light"`) for social icons.
+
+#### Right block (`.footer__right`)
+
+##### Newsletter card (`.footer__newsletter`)
+
+| Property | Value |
+|----------|-------|
+| `background-color` | `var(--footer-newsletter-bg)` |
+| `border` | `1px solid var(--footer-newsletter-border)` |
+| `border-radius` | `24px` |
+| `padding` | `16px 12px` (mobile), `16px 24px` at `min-width: 1024px` |
+
+The title uses `var(--font-heading)` at `24px/700` with `color: var(--footer-newsletter-fg)`. Description and input labels fall back to the same muted foreground. The email input (`.footer__newsletter-input`) follows the form-input recipe from 5.5 but uses a 12px radius and focuses to `border-color: var(--footer-newsletter-fg)`. The submit uses `GradientButton` (`variant="accent"`, `size="sm"`) with an extra `.footer__newsletter-btn` rule forcing `border-radius: var(--radius-pill)`.
+
+##### Navigation grid (`.footer__nav`)
+
+A CSS grid with responsive column counts (no shared grid class):
+
+| Breakpoint | Columns |
+|------------|---------|
+| Mobile | `repeat(2, 1fr)` |
+| `min-width: 768px` | `repeat(3, 1fr)` |
+| `min-width: 1024px` | `repeat(4, 1fr)` |
+
+- `.footer__nav-heading` — `var(--font-heading)`, `color: var(--footer-link)`, responsive size `clamp(1rem, 2vw, 1.25rem)`.
+- `.footer__nav-link` — `var(--font-sans)`, `color: var(--footer-fg-muted)`, hover → `color: var(--footer-fg)`, transition `color var(--duration-normal) ease`.
+
+#### Bottom bar
+
+`.footer__bottom-contact` and `.footer__bottom-copy` use `var(--text-body-sm)` in `var(--footer-fg-muted)`. Separator is `border-top: 1px solid var(--footer-border)`.
 
 ### 5.8 Scroll-to-Top Button
 
+Implemented by `src/components/shared/ScrollToTop.astro`. This is a compound widget: a native `<button>` wraps two SVGs (a progress ring and an up-chevron icon). It is one of the documented exceptions in 5.3.8 — `IconButton` is NOT used because the outer button must also host the SVG progress ring that reacts to scroll percentage.
+
+#### Structure
+
+```astro
+<button id="scroll-to-top" class="scroll-to-top">
+  <svg class="scroll-to-top__ring-svg"> <!-- track + progress circles, r=18, stroke 2 --> </svg>
+  <svg class="scroll-to-top__arrow">    <!-- up-chevron polyline --> </svg>
+</button>
 ```
-position:   fixed bottom-6 right-6 z-scroll-top
-size:       size-12
-style:      rounded-pill border-2 border-accent text-accent
-            hover: bg-accent text-accent-foreground
-            transition duration-fast
-show/hide:  opacity + translateY transition on scroll threshold
-```
+
+The track circle (`.scroll-to-top__track`) uses `stroke: var(--core-muted-foreground)` at 20% opacity; the progress circle (`.scroll-to-top__progress`) uses `stroke: var(--brand-primary)` and animates `stroke-dashoffset` in sync with scroll percentage via an inline script + `requestAnimationFrame`.
+
+#### Base style
+
+| Property | Value |
+|----------|-------|
+| `position` | `fixed` |
+| `bottom` / `right` | `1.5rem` (desktop), `4rem` / `1rem` (mobile) |
+| `z-index` | `50` |
+| `width` / `height` | `48px` (desktop), `40px` (mobile) |
+| `border-radius` | `9999px` (full round) |
+| `background-color` | `var(--core-card)` |
+| `box-shadow` | `var(--shadow-card)` |
+| Hover | `background-color: var(--brand-primary)`, arrow turns white |
+| Focus | `outline: 2px solid var(--brand-primary)` with 2px offset |
+
+#### Show / hide
+
+Initial state is `opacity: 0; pointer-events: none`. The inline script adds the `.scroll-to-top--visible` modifier (flips opacity to 1 and re-enables pointer events) when `window.scrollY > 300`. Transition is `opacity var(--duration-normal) ease`.
+
+#### Reduced motion
+
+Under `prefers-reduced-motion: reduce` the ring animation is disabled (no `stroke-dashoffset` updates) and all transitions on the button, progress ring, and arrow are set to `none`; the show/hide threshold still works.
 
 ---
 
@@ -879,12 +1040,26 @@ Rules:
 
 ### 6.3 Background Patterns
 
-Subtle repeating patterns behind section content:
+Subtle repeating patterns sit behind section content. Declare them in the parent section's scoped `<style>` so they stay inside the `.section` clipping context and never accept pointer events. Expected layer: `z-index: -1` (below the `.section__container`, which lives on `var(--z-content)`).
 
-```html
-<div class="absolute inset-0 pointer-events-none opacity-30"
-     style="background-image: url('/images/patterns/...'); background-size: 60px; background-repeat: repeat;">
-</div>
+```astro
+<section class="section">
+  <div class="my-section__pattern" aria-hidden="true"></div>
+  <div class="section__container">…</div>
+</section>
+
+<style>
+  .my-section__pattern {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.3;
+    pointer-events: none;
+    background-image: url('/images/patterns/pattern-dots.svg');
+    background-size: 60px;
+    background-repeat: repeat;
+  }
+</style>
 ```
 
 ---
@@ -1047,18 +1222,18 @@ const { t } = createTranslations(locale);
 
 ## 9. New Section Checklist
 
-- [ ] Choose background: `bg-background` or `bg-surface-warm` (alternate with adjacent)
-- [ ] Use standard section padding: `py-section`
-- [ ] Add `overflow-hidden` to clip decoratives
-- [ ] Include section header (tagline + title + subtitle)
-- [ ] Apply `scroll-reveal` on content blocks with stagger delays
-- [ ] Add 2-4 decorative SVGs (`hidden md:block`, `opacity-40`, `pointer-events-none`, `aria-hidden`)
-- [ ] Content wrapper has `relative z-content` for stacking above decoratives
-- [ ] Verify text contrast on chosen background
-- [ ] Add background shape/blob if section design calls for it
-- [ ] Test dark mode: all tokens should switch automatically
-- [ ] Test reduced-motion: animations should be disabled
-- [ ] Test responsive: content reflows, decoratives hidden on mobile
+- [ ] Choose background: `.section` (default, `var(--core-background)`) or `.section--warm` (peach, `var(--surface-warm)`), alternating with adjacent sections
+- [ ] Section padding comes from `.section` itself (120px via `--space-section`). Use `.py-section-sm` or `.py-section-lg` only when a section needs a different rhythm
+- [ ] `.section` already applies `overflow: clip` so decoratives are safely contained
+- [ ] Include `SectionHeader` (tagline + title + subtitle) — it applies `.section-header` from `components.css`
+- [ ] Wrap repeated items in `<div data-reveal="up" style={\`transition-delay: ${i * 100}ms\`}>` for staggered scroll reveal (max stagger 700ms)
+- [ ] Add 2-4 decorative SVGs with `aria-hidden="true"`, `pointer-events: none`, and `opacity: 0.4`. Hide below 768px via scoped media query (`display: none;` base → `display: block;` at `min-width: 768px`)
+- [ ] Place content inside `.section__container` — it already applies `position: relative`, `max-width: var(--container-max)`, `padding-inline: var(--space-container-x)`, and `z-index: var(--z-content)`
+- [ ] Verify text contrast on the chosen background
+- [ ] Add background shape/blob if the section design calls for it (z-index `-1`, inside the section's clipping context)
+- [ ] Test dark mode: all tokens switch via `data-theme="dark"` on `<html>`
+- [ ] Test reduced-motion: `[data-reveal]` rules are already neutralized under `prefers-reduced-motion: reduce` in `components.css`
+- [ ] Test responsive: content reflows, decoratives hide on mobile
 
 ---
 
@@ -1098,11 +1273,12 @@ To add a new theme (e.g., high-contrast, seasonal):
 
 ```css
 [data-theme="high-contrast"] {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0 0 0);
-  --primary: oklch(0.45 0.15 220);
-  --accent: oklch(0.55 0.22 45);
-  /* ... override all color tokens ... */
+  --core-background: oklch(1 0 0);
+  --core-foreground: oklch(0 0 0);
+  --brand-primary: oklch(0.45 0.15 220);
+  --brand-accent: oklch(0.55 0.22 45);
+  /* ... override all semantic color tokens: --core-card, --core-muted-foreground,
+     --surface-warm, --surface-dark, --border, --ring, footer tokens, etc. ... */
 }
 ```
 
