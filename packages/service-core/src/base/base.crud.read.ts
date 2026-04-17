@@ -52,6 +52,19 @@ export abstract class BaseCrudRead<
      * 4. **Permissions**: Calls `_canView` hook if an entity is found.
      * 5. **afterGetByField Hook**: Allows post-processing of the fetched entity.
      *
+     * ## Relation Type Note
+     *
+     * The return type is `ServiceOutput<TEntity | null>` where `TEntity` is the flat database
+     * entity type. At runtime, when relations are loaded via `getDefaultGetByIdRelations()`, the
+     * returned object WILL contain relation objects (e.g., `destination`, `amenities`), but these
+     * are not reflected in `TEntity`.
+     *
+     * This is by design: the service layer is relation-agnostic at the type level. Type safety
+     * for relation fields is enforced at the API boundary, where routes validate responses against
+     * access schemas from `@repo/schemas` (e.g., `AccommodationPublicSchema`,
+     * `PostProtectedSchema`). Consumers needing typed access to relation fields should use
+     * `z.infer<typeof AccessSchema>` from the appropriate access schema.
+     *
      * @note Returns a NOT_FOUND ServiceError if the entity is not found.
      *
      * @param actor - The user or system performing the action.
@@ -166,6 +179,19 @@ export abstract class BaseCrudRead<
      * 3. **beforeList Hook**: Allows pre-processing of list options.
      * 4. **Database Operation**: Executes `findAllWithRelations` or `findAll`.
      * 5. **afterList Hook**: Allows post-processing of the result set.
+     *
+     * ## Relation Type Note
+     *
+     * The return type is `ServiceOutput<PaginatedListOutput<TEntity>>` where `TEntity` is the
+     * flat database entity type. At runtime, when relations are loaded via
+     * `getDefaultListRelations()`, each item in the result WILL contain relation objects (e.g.,
+     * `destination`, `author`), but these are not reflected in `TEntity`.
+     *
+     * This is by design: the service layer is relation-agnostic at the type level. Type safety
+     * for relation fields is enforced at the API boundary, where routes validate responses against
+     * access schemas from `@repo/schemas` (e.g., `AccommodationPublicSchema`,
+     * `PostProtectedSchema`). Consumers needing typed access to relation fields should use
+     * `z.infer<typeof AccessSchema>` from the appropriate access schema.
      *
      * @param actor - The user or system performing the action.
      * @param options - Pagination, search, relations, filtering, and sorting options.

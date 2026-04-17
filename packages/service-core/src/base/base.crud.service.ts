@@ -73,6 +73,26 @@ import { BaseCrudAdmin } from './base.crud.admin';
  * @template TUpdateSchema - The Zod schema for validating entity update input.
  * @template TSearchSchema - The Zod schema for validating entity search input.
  *
+ * ## Relation Type Strategy
+ *
+ * Service methods return `ServiceOutput<TEntity>` where `TEntity` is the flat database entity
+ * type. When relations are loaded (via `getDefaultListRelations()` or
+ * `getDefaultGetByIdRelations()`), relation objects are present at runtime but not reflected
+ * in `TEntity`.
+ *
+ * Type safety for relations is enforced at the API boundary:
+ * - API routes validate responses against access schemas from `@repo/schemas`
+ * - Access schemas (e.g., `AccommodationPublicSchema`, `PostProtectedSchema`) include optional
+ *   relation fields with the correct nested shape for each access tier (public/protected/admin)
+ * - Consumers needing typed relation access should use `z.infer<typeof AccessSchema>`
+ *
+ * This approach avoids splitting `TEntity` into separate flat and relational generics (which
+ * would require changes across 27+ services and 6 base classes) while still providing full
+ * type safety where it matters most: at the API response boundary.
+ *
+ * @see getDefaultListRelations - Configure which relations to load for list operations
+ * @see getDefaultGetByIdRelations - Configure which relations to load for getById operations
+ *
  * @example
  * ```ts
  * export class AccommodationService extends BaseCrudService<
