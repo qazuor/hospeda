@@ -85,6 +85,12 @@ export const userStatsRoute = createProtectedRoute({
         let plan: { name: string; status: string } | null = null;
 
         try {
+            /**
+             * @remarks getDb() is used directly here because billing entities
+             * (billingCustomers, billingSubscriptions) are managed by the external
+             * qzpay-hono library and have no corresponding service in @repo/service-core.
+             * This read is intentionally non-fatal and isolated in a try/catch.
+             */
             const db = getDb();
 
             /** Find the billing customer record by user's external ID */

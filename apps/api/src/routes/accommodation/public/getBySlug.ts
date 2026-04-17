@@ -22,7 +22,12 @@ import { createPublicRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
-/** Fetches safe public owner data. Never exposes contactInfo, email, or phone. */
+/**
+ * Fetches safe public owner data. Never exposes contactInfo, email, or phone.
+ * @remarks Uses getDb() directly because UserService._canView() requires the actor
+ * to be the same user or have USER_READ_ALL permission, which is incompatible with
+ * anonymous public access. Only a narrow set of non-sensitive fields is selected.
+ */
 async function fetchOwner(ownerId: string) {
     const db = getDb();
     const rows = await db
@@ -45,7 +50,12 @@ async function fetchOwner(ownerId: string) {
     return { id: row.id, name, image: row.image, createdAt: row.createdAt.toISOString() };
 }
 
-/** Fetches amenities with junction data for an accommodation. */
+/**
+ * Fetches amenities with junction data for an accommodation.
+ * @remarks Uses getDb() directly because AmenityService.getAmenitiesForAccommodation()
+ * does not return junction-table fields (isOptional, additionalCost) required by the
+ * public detail response shape. No service method covers this join projection.
+ */
 async function fetchAmenities(accommodationId: string) {
     const db = getDb();
     const rows = await db
@@ -72,7 +82,12 @@ async function fetchAmenities(accommodationId: string) {
     }));
 }
 
-/** Fetches features with junction data for an accommodation. */
+/**
+ * Fetches features with junction data for an accommodation.
+ * @remarks Uses getDb() directly because FeatureService.getFeaturesForAccommodation()
+ * does not return junction-table fields (hostReWriteName, comments) required by the
+ * public detail response shape. No service method covers this join projection.
+ */
 async function fetchFeatures(accommodationId: string) {
     const db = getDb();
     const rows = await db
@@ -96,7 +111,12 @@ async function fetchFeatures(accommodationId: string) {
     }));
 }
 
-/** Fetches active FAQs (lifecycleState=ACTIVE, not soft-deleted). */
+/**
+ * Fetches active FAQs (lifecycleState=ACTIVE, not soft-deleted).
+ * @remarks Uses getDb() directly because AccommodationService.getFaqs() loads all
+ * FAQs via findWithRelations without filtering by lifecycleState=ACTIVE, which would
+ * expose draft or archived FAQs to public consumers.
+ */
 async function fetchFaqs(accommodationId: string) {
     const db = getDb();
     const rows = await db

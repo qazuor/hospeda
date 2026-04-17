@@ -6,12 +6,13 @@
  * Uses manual Hono route (not createProtectedRoute) to avoid the ownership
  * middleware that other protected accommodation routes apply via app.use().
  */
-import { accommodations, getDb } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
-import { and, eq } from 'drizzle-orm';
+import { AccommodationService } from '@repo/service-core';
 import { getActorFromContext, isGuestActor } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
 import { apiLogger } from '../../../utils/logger';
+
+const accommodationService = new AccommodationService({ logger: apiLogger });
 
 /**
  * Resolves the preferred email from a contactInfo JSONB object.
@@ -83,22 +84,26 @@ app.get('/:id/contact', async (c) => {
         );
     }
 
-    const db = getDb();
-    const rows = await db
-        .select({
-            contactInfo: accommodations.contactInfo
-        })
-        .from(accommodations)
-        .where(
-            and(
-                eq(accommodations.id, id),
-                eq(accommodations.lifecycleState, 'ACTIVE'),
-                eq(accommodations.visibility, 'PUBLIC')
-            )
-        )
-        .limit(1);
+    const result = await accommodationService.getById(actor, id);
 
-    if (rows.length === 0) {
+    if (result.error) {
+        return c.json(
+            {
+                success: false,
+                error: { message: result.error.message, code: result.error.code }
+            },
+            result.error.code === ServiceErrorCode.NOT_FOUND ? 404 : 400
+        );
+    }
+
+    const accommodation = result.data;
+
+    // Guard: only expose contact info for active public accommodations
+    if (
+        !accommodation ||
+        accommodation.lifecycleState !== 'ACTIVE' ||
+        accommodation.visibility !== 'PUBLIC'
+    ) {
         return c.json(
             {
                 success: false,
@@ -108,17 +113,7 @@ app.get('/:id/contact', async (c) => {
         );
     }
 
-    const row = rows[0];
-    if (!row) {
-        return c.json(
-            {
-                success: false,
-                error: { message: 'Accommodation not found', code: ServiceErrorCode.NOT_FOUND }
-            },
-            404
-        );
-    }
-    const raw = row.contactInfo as Record<string, unknown> | null;
+    const raw = accommodation.contactInfo as Record<string, unknown> | null;
     if (!raw) {
         return c.json({ success: true, data: {} }, 200);
     }
@@ -127,16 +122,16 @@ app.get('/:id/contact', async (c) => {
     const phone = resolvePhone(raw);
     const website = raw.website as string | undefined;
 
-    const result: Record<string, string> = {};
-    if (email) result.email = email;
-    if (phone) result.phone = phone;
-    if (website) result.website = website;
+    const contact: Record<string, string> = {};
+    if (email) contact.email = email;
+    if (phone) contact.phone = phone;
+    if (website) contact.website = website;
 
     apiLogger.debug(
         `Contact info resolved for ${id}: email=${!!email}, phone=${!!phone}, website=${!!website}`
     );
 
-    return c.json({ success: true, data: result }, 200);
+    return c.json({ success: true, data: contact }, 200);
 });
 
 export { app as protectedGetContactRoute };

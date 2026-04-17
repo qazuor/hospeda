@@ -64,6 +64,13 @@ export const publicListAccommodationReviewsRoute = createPublicListRoute({
 
         const userMap = new Map<string, PublicUserInfo>();
         if (userIds.length > 0) {
+            /**
+             * @remarks getDb() is used directly here to batch-fetch a narrow set of
+             * non-sensitive user fields (displayName, firstName, lastName, image) for
+             * multiple user IDs in a single query. UserService._canView() enforces that
+             * only the user themselves or actors with USER_READ_ALL can retrieve a user
+             * record, making it incompatible with this public batch enrichment pattern.
+             */
             const db = getDb();
             const userRows = await db
                 .select({

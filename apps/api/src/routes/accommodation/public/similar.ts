@@ -36,6 +36,14 @@ export const publicGetSimilarRoute = createPublicRoute({
         const id = params.id as string;
         const limit = Math.min(Number(query?.limit) || 6, 12);
 
+        /**
+         * @remarks getDb() is used directly here because no service method exposes
+         * the two-step similarity pattern: (1) fetch the source accommodation's type
+         * and destinationId, then (2) query with OR(same-type, same-destination) plus
+         * exclusion of the source record. AccommodationService.search() would require
+         * two separate calls and does not support the OR condition between type and
+         * destinationId simultaneously.
+         */
         const db = getDb();
 
         // Fetch current accommodation to get type and destinationId
