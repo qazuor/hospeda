@@ -23,7 +23,7 @@
 
 import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import { PermissionEnum, SubscriptionStatusEnum } from '@repo/schemas';
-import { withServiceTransaction } from '@repo/service-core';
+import { BILLING_EVENT_TYPES, withServiceTransaction } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { Context } from 'hono';
@@ -322,6 +322,27 @@ export const cancelSubscriptionHandler = async (
     apiLogger.info(
         { subscriptionId: id, customerId, revokedCount: succeededRevocations.length },
         'Admin cancel Phase 1: all addon revocations succeeded — proceeding to Phase 2'
+    );
+
+    // ── Compensating event: record revoked addon IDs BEFORE Phase 2 transaction ─
+    //
+    // This INSERT is intentionally OUTSIDE any transaction. If Phase 2 fails or
+    // rolls back, this record persists and enables recovery of the QZPay state
+    // (Phase 1 revocations that already happened cannot be rolled back locally).
+    await db.insert(billingSubscriptionEvents).values({
+        subscriptionId: id,
+        eventType: BILLING_EVENT_TYPES.ADDON_REVOCATIONS_PENDING,
+        triggerSource: 'admin-cancel-compensating',
+        metadata: {
+            revokedAddonPurchaseIds: succeededRevocations.map((r) => r.purchaseId),
+            failedAddonPurchaseIds: failedRevocations.map((r) => r.purchaseId),
+            timestamp: new Date().toISOString()
+        }
+    });
+
+    apiLogger.debug(
+        { subscriptionId: id, revokedCount: succeededRevocations.length },
+        'Admin cancel: compensating event inserted — Phase 1 revocation IDs recorded before Phase 2'
     );
 
     // ── Phase 2: DB transaction + QZPay cancel ────────────────────────────────

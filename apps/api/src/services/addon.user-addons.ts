@@ -143,10 +143,15 @@ export async function cancelUserAddon(
         const addonSlug = purchase.addonSlug;
         const addonDef = getAddonBySlug(addonSlug);
 
-        // Atomically cancel the purchase and recalculate limits in a single transaction.
+        // SPEC-064 OP-5: recalculateAddonLimitsForCustomer makes external QZPay HTTP calls
+        // (billing.subscriptions.getByCustomerId, billing.limits.set/removeBySource).
+        // These must run OUTSIDE the DB transaction to avoid holding a Postgres connection
+        // during external HTTP latency. The purchase status UPDATE is in the transaction;
+        // the QZPay recalculation happens post-commit.
         if (addonDef?.affectsLimitKey != null) {
             const limitKey = addonDef.affectsLimitKey;
 
+            // Phase 1: DB-only — cancel the purchase record atomically, then commit.
             try {
                 await db.transaction(async (tx) => {
                     const updateResult = await tx
@@ -187,44 +192,6 @@ export async function cancelUserAddon(
                             'Canceled billing_addon_purchase record'
                         );
                     }
-
-                    const recalcResult = await recalculateAddonLimitsForCustomer({
-                        customerId: input.customerId,
-                        limitKey,
-                        billing,
-                        db: tx as typeof db
-                    });
-
-                    if (recalcResult.outcome === 'failed') {
-                        const recalcError = new Error(
-                            `Limit recalculation failed after addon cancellation: ${recalcResult.reason}`
-                        );
-
-                        Sentry.captureException(recalcError, {
-                            extra: {
-                                customerId: input.customerId,
-                                addonSlug,
-                                purchaseId: input.purchaseId,
-                                limitKey,
-                                reason: recalcResult.reason
-                            }
-                        });
-
-                        throw recalcError;
-                    }
-
-                    apiLogger.info(
-                        {
-                            customerId: input.customerId,
-                            addonSlug,
-                            purchaseId: input.purchaseId,
-                            limitKey,
-                            outcome: recalcResult.outcome,
-                            newMaxValue: recalcResult.newMaxValue,
-                            addonCount: recalcResult.addonCount
-                        },
-                        'Addon limit recalculated after cancellation'
-                    );
                 });
             } catch (txError) {
                 const errorMessage = txError instanceof Error ? txError.message : String(txError);
@@ -237,17 +204,68 @@ export async function cancelUserAddon(
                         purchaseId: input.purchaseId,
                         limitKey
                     },
-                    'Transaction rolled back: addon cancellation aborted due to limit recalculation failure'
+                    'Transaction rolled back: addon cancellation DB update failed'
                 );
 
                 return {
                     success: false,
                     error: {
-                        code: 'LIMIT_RECALCULATION_FAILED',
-                        message:
-                            'Add-on cancellation was rolled back because limit recalculation failed. Please try again.'
+                        code: 'INTERNAL_ERROR',
+                        message: 'Failed to update addon purchase status'
                     }
                 };
+            }
+
+            // Phase 2: Post-commit — run external QZPay calls outside the transaction.
+            // If this fails, the DB cancel is already committed. The QZPay webhook safety
+            // net provides eventual consistency; we report to Sentry but do not fail the
+            // overall cancellation from the user's perspective.
+            const recalcResult = await recalculateAddonLimitsForCustomer({
+                customerId: input.customerId,
+                limitKey,
+                billing,
+                db
+            });
+
+            if (recalcResult.outcome === 'failed') {
+                Sentry.captureException(
+                    new Error(
+                        `Limit recalculation failed after addon cancellation: ${recalcResult.reason}`
+                    ),
+                    {
+                        extra: {
+                            customerId: input.customerId,
+                            addonSlug,
+                            purchaseId: input.purchaseId,
+                            limitKey,
+                            reason: recalcResult.reason
+                        }
+                    }
+                );
+
+                apiLogger.warn(
+                    {
+                        customerId: input.customerId,
+                        addonSlug,
+                        purchaseId: input.purchaseId,
+                        limitKey,
+                        reason: recalcResult.reason
+                    },
+                    'QZPay limit recalculation failed post-commit; DB cancel already applied — webhook will reconcile'
+                );
+            } else {
+                apiLogger.info(
+                    {
+                        customerId: input.customerId,
+                        addonSlug,
+                        purchaseId: input.purchaseId,
+                        limitKey,
+                        outcome: recalcResult.outcome,
+                        newMaxValue: recalcResult.newMaxValue,
+                        addonCount: recalcResult.addonCount
+                    },
+                    'Addon limit recalculated after cancellation'
+                );
             }
         } else {
             // No limit recalculation needed — use service-core helper for the DB update.
@@ -447,7 +465,7 @@ export async function revokeAllAddonsForCustomer(
 
         for (const purchase of activePurchases) {
             try {
-                await cancelAddonPurchaseRecord({ purchaseId: purchase.id, tx });
+                await cancelAddonPurchaseRecord({ purchaseId: purchase.id, ctx: { tx } });
                 count++;
 
                 apiLogger.info(

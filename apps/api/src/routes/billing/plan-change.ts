@@ -15,9 +15,10 @@
  * @module routes/billing/plan-change
  */
 
+import { billingSubscriptionEvents, getDb } from '@repo/db';
 import { BillingIntervalEnum } from '@repo/schemas';
 import { PlanChangeRequestSchema, PlanChangeResponseSchema } from '@repo/schemas';
-import { withServiceTransaction } from '@repo/service-core';
+import { BILLING_EVENT_TYPES, withServiceTransaction } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { clearEntitlementCache } from '../../middlewares/entitlement';
@@ -228,6 +229,12 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         //     to QZPay and cannot be rolled back via SQL transaction. Only the local DB
         //     operations (addon recalculation) are wrapped in withServiceTransaction so
         //     partial local writes are atomically rolled back on failure.
+        //
+        // SPEC-064 OP-2: If local transaction fails after QZPay plan change succeeds,
+        // we log a PLAN_CHANGE_LOCAL_FAILED compensating event. The webhook safety net
+        // in subscription-logic.ts provides eventual consistency — when QZPay sends
+        // subsequent webhooks, the handlers reconcile local DB state with QZPay state.
+        const subscriptionId = result.subscription.id;
         try {
             await withServiceTransaction(async (ctx) => {
                 await handlePlanChangeAddonRecalculation({
@@ -244,14 +251,33 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             const recalcMessage =
                 recalcError instanceof Error ? recalcError.message : String(recalcError);
 
+            // Log compensating event OUTSIDE the (now rolled-back) transaction.
+            // This insert uses the top-level db connection so it persists even though
+            // the local transaction failed.
+            const db = getDb();
+            await db.insert(billingSubscriptionEvents).values({
+                subscriptionId,
+                eventType: BILLING_EVENT_TYPES.PLAN_CHANGE_LOCAL_FAILED,
+                triggerSource: 'plan-change-compensating',
+                metadata: {
+                    oldPlanId,
+                    newPlanId,
+                    error: recalcMessage,
+                    timestamp: new Date().toISOString()
+                }
+            });
+
+            // Don't re-throw — the QZPay plan change already succeeded.
+            // The webhook safety net provides eventual consistency.
             apiLogger.error(
                 {
                     customerId: billingCustomerId,
+                    subscriptionId,
                     oldPlanId,
                     newPlanId,
                     error: recalcMessage
                 },
-                'Addon limit recalculation failed after plan change, will be caught by webhook safety net'
+                'Plan change local transaction failed, compensating event logged'
             );
         }
 
