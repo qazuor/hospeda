@@ -111,7 +111,7 @@ export const prerender = true;
 ```astro
 ---
 // GOOD: static Astro component.. zero JavaScript shipped
-import AccommodationCard from '@/components/shared/AccommodationCard.astro';
+import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 
 // GOOD: interactive island.. hydrates only when visible
 import FilterSidebar from '@/components/accommodation/FilterSidebar.client';

@@ -542,7 +542,7 @@ Not all card implementations use all three shared classes — each card componen
 
 #### Accommodation Card
 
-Component: `src/components/shared/AccommodationCard.astro`
+Component: `src/components/shared/cards/AccommodationCard.astro`
 
 This card does not use the generic `.card` class directly. It uses a self-contained BEM structure under `.acc-card`:
 
@@ -583,7 +583,7 @@ The destination section uses a linear-gradient background from `var(--core-backg
 
 #### Article/Blog Card
 
-Component: `src/components/shared/ArticleCard.astro`
+Component: `src/components/shared/cards/ArticleCard.astro`
 
 | Class | Property | Value |
 |-------|----------|-------|
@@ -605,7 +605,7 @@ Component: `src/components/shared/ArticleCard.astro`
 
 Category color is resolved by `getPostCategoryColor({ category })` in `src/lib/colors.ts` and applied via inline `style` on the accent bar. Badge components use the same color scheme. The image container does NOT use `var(--radius-organic)` — article cards keep a rectangular image area (`border-radius: 0`) within the rounded outer card.
 
-The featured variant is `src/components/shared/FeaturedArticleCard.astro` and uses the same token set at larger scale.
+The featured variant is `src/components/shared/cards/FeaturedArticleCard.astro` and uses the same token set at larger scale.
 
 #### Testimonial Card
 
