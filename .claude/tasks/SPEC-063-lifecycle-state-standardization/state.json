@@ -1483,24 +1483,24 @@
         {
             "id": "T-043",
             "title": "Update Sponsorship Zod base schema + fixtures",
-            "description": "Update `packages/schemas/src/entities/sponsorship/sponsorship.schema.ts`: (1) rename `status: SponsorshipStatusEnumSchema` to `sponsorshipStatus: SponsorshipStatusEnumSchema`, (2) add `...BaseLifecycleFields` spread. Update `packages/schemas/test/fixtures/sponsorship.fixtures.ts`: rename `status` to `sponsorshipStatus` everywhere, add `lifecycleState: 'ACTIVE'` to fixtures.\n\nFiles: `packages/schemas/src/entities/sponsorship/sponsorship.schema.ts`, `packages/schemas/test/fixtures/sponsorship.fixtures.ts`",
-            "status": "pending",
+            "description": "Update `packages/schemas/src/entities/sponsorship/sponsorship.schema.ts`: (1) rename `status: SponsorshipStatusEnumSchema` to `sponsorshipStatus: SponsorshipStatusEnumSchema`, (2) add `...BaseLifecycleFields` spread. Update `packages/schemas/test/fixtures/sponsorship.fixtures.ts`: rename `status` to `sponsorshipStatus` everywhere, add `lifecycleState: 'ACTIVE'` to fixtures.\n\nFiles: `packages/schemas/src/entities/sponsorship/sponsorship.schema.ts`, `packages/schemas/test/fixtures/sponsorship.fixtures.ts`\n\nCOMPLETION NOTE: BONUS (same pattern as T-007 OwnerPromotion) — also renamed `status: SponsorshipStatusEnumSchema.optional()` to `sponsorshipStatus: SponsorshipStatusEnumSchema.optional()` in legacy `SponsorshipSearchSchema` living in same file to keep file coherent. Typecheck deferred — consumers (access, http, query, admin-search, tests) still reference .status until T-044/T-045/T-046 + test tasks.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-039"],
             "blocks": ["T-044", "T-045", "T-046", "T-047", "T-048", "T-054"],
             "subtasks": [
-                { "title": "Import BaseLifecycleFields", "completed": false },
-                { "title": "Rename status to sponsorshipStatus", "completed": false },
-                { "title": "Add BaseLifecycleFields spread", "completed": false },
-                { "title": "Update fixtures (rename + add lifecycleState)", "completed": false }
+                { "title": "Import BaseLifecycleFields", "completed": true },
+                { "title": "Rename status to sponsorshipStatus", "completed": true },
+                { "title": "Add BaseLifecycleFields spread", "completed": true },
+                { "title": "Update fixtures (rename + add lifecycleState)", "completed": true }
             ],
             "tags": ["schemas", "fixtures", "phase-3", "sponsorship"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": null, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T18:35:00.000Z",
+                "completed": "2026-04-18T18:38:00.000Z"
             }
         },
         {
@@ -1913,9 +1913,9 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 18,
+        "pending": 17,
         "inProgress": 0,
-        "completed": 38,
+        "completed": 39,
         "deferred": 7,
         "blocked": 0,
         "averageComplexity": 2.0,

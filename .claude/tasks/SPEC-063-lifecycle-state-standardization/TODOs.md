@@ -1,8 +1,8 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 38/63 completed + 7 deferred — effective 38/56
+## Progress: 39/63 completed + 7 deferred — effective 39/56
 
-**Last updated:** 2026-04-18T18:22:00Z
+**Last updated:** 2026-04-18T18:38:00Z
 **Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). See progress.md + state.json `_pushOnlyMigrationPolicy`. Effective Phase 3 scope drops from 19 to 13 tasks.
 
 ### Push-only migration policy (summary)
@@ -301,8 +301,10 @@
 
 ### Zod Schemas
 
-- [ ] **T-043** (complexity: 2) — Update Sponsorship Zod base schema + fixtures
-  - status -> sponsorshipStatus, add BaseLifecycleFields
+- [x] **T-043** (complexity: 2) — Update Sponsorship Zod base schema + fixtures
+  - COMPLETED 2026-04-18 · lint: pass · typecheck: deferred (cascade to T-044/T-045/T-046 + test tasks)
+  - status -> sponsorshipStatus, add BaseLifecycleFields (via spread)
+  - BONUS: also renamed `status` to `sponsorshipStatus` in legacy `SponsorshipSearchSchema` (same pattern as T-007 OwnerPromotion)
   - Blocked by: T-039 · Blocks: T-044, T-045, T-046, T-047, T-048, T-054, T-055
 
 - [ ] **T-044** (complexity: 2) — Update Sponsorship access + CRUD schemas

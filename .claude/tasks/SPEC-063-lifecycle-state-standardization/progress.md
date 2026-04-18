@@ -1,5 +1,28 @@
 # SPEC-063 — Implementation Progress Log
 
+## Session summary (as of 2026-04-18T18:38)
+
+- **Progress:** 39/63 completed + 7 deferred. Effective scope **39/56**.
+- **Phase 3 pace:** T-039 + T-043 landed in sequence. Phase 3 now 11/13 remaining. Next candidates: T-047 (model) and T-044/T-045/T-046 (zod access/query/http) — all unblocked.
+
+### T-043 completed 2026-04-18T18:38
+
+- **Files:**
+  - `packages/schemas/src/entities/sponsorship/sponsorship.schema.ts`
+  - `packages/schemas/test/fixtures/sponsorship.fixtures.ts`
+- **sponsorship.schema.ts:**
+  - Import: added `BaseLifecycleFields` from `../../common/lifecycle.schema.js`.
+  - Main `SponsorshipSchema`: added `...BaseLifecycleFields` spread (after `...BaseAuditFields`). Renamed `status: SponsorshipStatusEnumSchema.default(SponsorshipStatusEnum.PENDING)` to `sponsorshipStatus: SponsorshipStatusEnumSchema.default(SponsorshipStatusEnum.PENDING)`. Default and enum type preserved.
+  - BONUS: legacy `SponsorshipSearchSchema` inside same file also renamed `status: SponsorshipStatusEnumSchema.optional()` to `sponsorshipStatus: ...` (same pattern as T-007 OwnerPromotion — keeps file coherent).
+- **sponsorship.fixtures.ts:**
+  - Import: added `LifecycleStatusEnum` from `../../src/enums/lifecycle-state.enum.js` (pattern mirrors OwnerPromotion fixtures).
+  - 4 rename sites `status:` → `sponsorshipStatus:` (entity, minimal, create-input, update-input).
+  - 3 explicit `lifecycleState` fields added: entity (DRAFT/ACTIVE/ARCHIVED random), minimal (`LifecycleStatusEnum.ACTIVE`), create-input (`LifecycleStatusEnum.ACTIVE`), update-input (probability-gated random).
+- **Lint:** pass. **Typecheck:** deferred (cascade — consumers in `access.schema.ts`, `query.schema.ts`, `http.schema.ts`, `admin-search.schema.ts`, admin UI tsx, model findBy*, and tests still reference `.status`). Fixed by T-044/T-045/T-046/T-047 + test tasks.
+- Commit boundary: 1 feat(schemas) + 1 chore(tasks).
+
+---
+
 ## Session summary (as of 2026-04-18T18:22)
 
 - **Progress:** 38/63 completed + 7 deferred (T-004, T-005, T-006, T-036, T-040, T-041, T-042). Effective scope **38/56** (push-only policy drops 7 migration-ceremony tasks from denominator).
