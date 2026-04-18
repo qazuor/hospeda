@@ -1,3 +1,4 @@
+import { LifecycleStatusEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { OwnerPromotionModel } from '../../src/models/owner-promotion/ownerPromotion.model';
@@ -232,7 +233,13 @@ describe('OwnerPromotionModel', () => {
 
     describe('findActiveByAccommodationId', () => {
         it('should return active promotions for accommodation', async () => {
-            const mockResult = [{ id: '1', accommodationId: 'a1', isActive: true }];
+            const mockResult = [
+                {
+                    id: '1',
+                    accommodationId: 'a1',
+                    lifecycleState: LifecycleStatusEnum.ACTIVE
+                }
+            ];
             const db = {
                 select: vi.fn().mockReturnValue({
                     from: vi.fn().mockReturnValue({
@@ -264,7 +271,9 @@ describe('OwnerPromotionModel', () => {
 
     describe('findActiveByOwnerId', () => {
         it('should return active promotions for owner', async () => {
-            const mockResult = [{ id: '1', ownerId: 'o1', isActive: true }];
+            const mockResult = [
+                { id: '1', ownerId: 'o1', lifecycleState: LifecycleStatusEnum.ACTIVE }
+            ];
             const db = {
                 select: vi.fn().mockReturnValue({
                     from: vi.fn().mockReturnValue({
