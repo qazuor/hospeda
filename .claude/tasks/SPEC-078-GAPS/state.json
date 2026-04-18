@@ -1,0 +1,1282 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-078-GAPS",
+    "title": "Cloudinary Image Management — Gaps Remediation",
+    "created": "2026-04-18T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Register media routes and verify env vars in apps/api",
+            "description": "Gaps: GAP-078-001, GAP-078-003, GAP-078-025.\n(already done in commits f0d9d2fc, 9ec6a723 — see already-done.md)\n\nPhase 0 blockers:\n- GAP-078-001: Register /api/v1/admin/media and /api/v1/protected/media in apps/api/src/routes/index.ts\n- GAP-078-003: Add @repo/media workspace:* to apps/api/package.json\n- GAP-078-025: Add 4 Cloudinary env vars to ApiEnvSchema Zod in apps/api/src/utils/env.ts\n\nAcceptance: routes mounted, pnpm typecheck passes, startup fails fast with missing vars.",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [],
+            "tags": ["backend", "setup", "routes", "env"],
+            "phase": "phase-0",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": "2026-04-17T00:00:00.000Z",
+                "completed": "2026-04-17T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Fix mediaProvider injection in _afterHardDelete handlers",
+            "description": "Gap: GAP-078-002.\n(already done in commit 3747b982 — see already-done.md)\n\nInject mediaProvider via getMediaProvider() per-request in all 5 hardDelete.ts handlers:\n- apps/api/src/routes/accommodation/admin/hardDelete.ts\n- apps/api/src/routes/destination/admin/hardDelete.ts\n- apps/api/src/routes/event/admin/hardDelete.ts\n- apps/api/src/routes/post/admin/hardDelete.ts\n- apps/api/src/routes/user/admin/hardDelete.ts\n\nAcceptance: pnpm test passes; mock provider receives deleteByPrefix call after entity hardDelete.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "subtasks": [],
+            "tags": ["backend", "services", "media"],
+            "phase": "phase-0",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": "2026-04-17T00:00:00.000Z",
+                "completed": "2026-04-17T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add MEDIA_UPLOAD / MEDIA_DELETE permissions and entity-validation helper",
+            "description": "Gaps: GAP-078-053, GAP-078-164.\n(already done in commit e40c32f3 — see already-done.md)\n\n- Add MEDIA_UPLOAD and MEDIA_DELETE to PermissionEnum in @repo/schemas\n- Upload/delete routes use requiredPermissions\n- Helper apps/api/src/routes/media/admin/permissions.ts validates entity-specific perms\n- rolePermissions seed grants both to SUPER_ADMIN, ADMIN, EDITOR, HOST\n- Mounting bug fixed (upload sub-app scoped to /upload path)\n- 14+ test cases in permission-gate.test.ts\n\nAcceptance: 403 without MEDIA_UPLOAD; 403 with MEDIA_UPLOAD but no entity perm; 200 with both.",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-005", "T-006", "T-007", "T-008", "T-009", "T-010", "T-011"],
+            "subtasks": [],
+            "tags": ["backend", "security", "permissions"],
+            "phase": "phase-1a",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": "2026-04-17T00:00:00.000Z",
+                "completed": "2026-04-17T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Reconstruct missing manual migrations 0016-0020",
+            "description": "Gaps: GAP-078-188, GAP-078-189, GAP-078-187.\n\nAudit apply-postgres-extras.sh, triggers-manifest.md, ADR-017, git log to reconstruct:\n- packages/db/src/migrations/manual/0016_search_index_view.sql (materialized view)\n- packages/db/src/migrations/manual/0017_set_updated_at_trigger.sql\n- packages/db/src/migrations/manual/0018_delete_entity_bookmarks_trigger.sql\n- packages/db/src/migrations/manual/0019_chk_limit_adjustments_type.sql\n- packages/db/src/migrations/manual/0020_gallery_max_constraint.sql\n\nAlso fix orphan 0002_kind_wolfpack entry (GAP-078-189): remove from _journal.json if no matching SQL.\nAlso add UNIQUE INDEX search_index_entity_key (GAP-078-187): register in apply-postgres-extras.sh.\n\nAcceptance: pnpm db:fresh on clean clone completes without error; apply-postgres-extras.sh is idempotent; _journal.json references only entries with corresponding SQL files.\n\nExecution plan:\n1. Audit sub-step (read-only): produce .claude/specs/SPEC-078-GAPS/fase1b-migration-audit.md with SQL object mapping + prototypes.\n2. Implementation sub-step: write migration files per audit.\n3. Verification sub-step: pnpm db:fresh-dev on clean clone + apply-postgres-extras.sh.",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-012", "T-013", "T-014", "T-015", "T-016"],
+            "subtasks": [
+                {
+                    "title": "Audit: produce fase1b-migration-audit.md with SQL mapping + prototypes",
+                    "completed": true
+                },
+                {
+                    "title": "Implementation: write manual SQL files 0001-0010 (renumbered clean sequence)",
+                    "completed": true
+                },
+                {
+                    "title": "Rewrite apply-postgres-extras.sh as generic orchestrator (iterates manual/*.sql)",
+                    "completed": true
+                },
+                {
+                    "title": "Delete Drizzle-generated artifacts (src/migrations/0000-0004.sql + meta/)",
+                    "completed": true
+                },
+                {
+                    "title": "Add db:apply-extras wrapper; chain from db:reset, db:fresh, db:fresh-dev",
+                    "completed": true
+                },
+                {
+                    "title": "Teach script to auto-load apps/api/.env.local when URL not in env",
+                    "completed": true
+                },
+                {
+                    "title": "Update ADR-017, triggers-manifest.md, packages/db/CLAUDE.md",
+                    "completed": true
+                },
+                {
+                    "title": "Verification: pnpm db:fresh-dev end-to-end + 3 constraints + MV + 43 triggers",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "migrations"],
+            "phase": "phase-1b",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": "2026-04-18T00:00:00.000Z",
+                "completed": "2026-04-18T13:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Security: env-prefix validation on DELETE and path-traversal refine",
+            "description": "Gaps: GAP-078-035, GAP-078-034, GAP-078-173.\n\nFile: apps/api/src/routes/media/admin/delete.ts\n- GAP-078-035: DELETE validates env prefix via resolveEnvironment(); return HTTP 403 if publicId does not start with hospeda/{currentEnv}/\n- GAP-078-034+173: Add .refine(s => !s.includes('..') && !decodeURIComponent(s).includes('..')) to DeleteMediaQuerySchema in @repo/schemas\n\nAcceptance: DELETE with publicId=hospeda/prod/x in non-prod returns 403; DELETE ?publicId=hospeda/dev/../prod/x returns 422.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "security"],
+            "phase": "phase-1c",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Security: magic-bytes validation, decompression-bomb guard, and pixel-count reject",
+            "description": "Gaps: GAP-078-103, GAP-078-104, GAP-078-105.\n\nFile: packages/media/src/validate-media-file.ts\n- GAP-078-103+104: Add dep file-type; validateMediaFile validates magic-bytes match declared MIME; reject pixel count > 2e8 with DECOMPRESSION_BOMB error code\n- GAP-078-105: Upload options: invalidate: true, exif: false, faces: false (passed through validateMediaFile call)\n\nAcceptance: JPEG with PNG magic-bytes rejected 422; PNG 15001x15001 rejected 422 DECOMPRESSION_BOMB; valid JPEG with matching magic-bytes passes.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "security", "media"],
+            "phase": "phase-1c",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Security: Cloudinary provider hardening — cloudName regex, stream error, folder assertion",
+            "description": "Gaps: GAP-078-057, GAP-078-027, GAP-078-112.\n\nFile: packages/media/src/cloudinary.provider.ts\n- GAP-078-057: Validate config.cloudName regex /^[a-z0-9_-]+$/ in provider constructor; throw at construction if invalid\n- GAP-078-027: Add stream.on('error', reject) in uploadBuffer() so stream errors surface as rejected promises\n- GAP-078-112: Provider upload() asserts options.folder?.startsWith('hospeda/') at start; throws InvalidFolderError if not\n\nAcceptance: new CloudinaryProvider({ cloudName: 'my cloud!' }) throws at construction; stream error causes promise reject (not silent hang); upload without 'hospeda/' folder throws InvalidFolderError.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "security", "media"],
+            "phase": "phase-1c",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Security: actor-UUID validation and session re-verify before provider call",
+            "description": "Gaps: GAP-078-058, GAP-078-175, GAP-078-114.\n\nFile: apps/api/src/routes/media/admin/upload.ts\n- GAP-078-058+175: z.string().uuid().safeParse(actor.id) before using as publicId component; sanitized 500 if fails\n- GAP-078-114: Re-verify session (actor.id matches current session) right before provider call; abort with 401 if stale\n\nAcceptance: non-UUID actor.id does not reach Cloudinary; stale session detected and returns 401; valid UUID proceeds normally.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "security"],
+            "phase": "phase-1c",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Security: getMediaUrl SSRF guards, extractPublicId hostname fix, and prod-cleanup env var",
+            "description": "Gaps: GAP-078-109, GAP-078-182, GAP-078-117, GAP-078-234, GAP-078-113.\n\nFiles: packages/media/src/get-media-url.ts, packages/media/src/extract-public-id.ts, packages/seed/src/cli.ts, apps/api/vercel.json\n- GAP-078-109: extractPublicId uses new URL(url).hostname === 'res.cloudinary.com' instead of .includes() to prevent subdomain spoofing\n- GAP-078-182: getMediaUrl option raw allowlists transform tokens (w_,h_,c_,q_,f_,g_,ar_,dpr_,e_); reject unknown tokens\n- GAP-078-117+234: HOSPEDA_ALLOW_PROD_CLEANUP=true required for --clean-images in prod; exit 1 if missing\n- GAP-078-113: apps/api/vercel.json per-route maxBodySize: \"12mb\" for upload routes\n\nAcceptance: extractPublicId('https://evil.res.cloudinary.com.attacker.com/...') returns null; getMediaUrl with unknown token throws; seed --clean-images in prod without var exits code 1.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "security", "media"],
+            "phase": "phase-1c",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Schema alignment: MediaSchema.featuredImage optional, ImageSchema publicId and attribution",
+            "description": "Gaps: GAP-078-185, GAP-078-163, GAP-078-196, GAP-078-116.\n\nFile: packages/schemas/src/common/media.schema.ts\n- GAP-078-185+163: MediaSchema.featuredImage -> .optional()\n- GAP-078-196: ImageSchema adds publicId: z.string().min(1).optional()\n- GAP-078-116: ImageSchema adds attribution?: { photographer?, sourceUrl?, license? }\n\nAcceptance: MediaSchema.parse({}) succeeds; ImageSchema.parse({ url: '...', publicId: 'hospeda/dev/x' }) succeeds; ImageSchema.parse({ url: '...', attribution: { photographer: 'Jane' } }) succeeds.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-019", "T-020"],
+            "subtasks": [],
+            "tags": ["schemas", "types"],
+            "phase": "phase-2a",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Schema compat policy: additive-only documentation and historic shape fixtures",
+            "description": "Gaps: GAP-078-122, GAP-078-201.\n\nFiles: packages/schemas/CLAUDE.md, packages/schemas/test/common/media.schema.compat.test.ts\n- GAP-078-122+201: Document additive-only policy in packages/schemas/CLAUDE.md; create media.schema.compat.test.ts with historic shape fixtures; fixture { url, moderationState } passes ImageSchema.safeParse\n\nAcceptance: packages/schemas/CLAUDE.md states additive-only policy; compat test file exists; fixture { url, moderationState } passes; pnpm test passes.",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["schemas", "docs", "testing"],
+            "phase": "phase-2a",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "DB nullability alignment: DROP NOT NULL on posts/destinations media + $type fix + media shape CHECK",
+            "description": "Gaps: GAP-078-184, GAP-078-180, GAP-078-080, GAP-078-075.\n\nFiles: packages/db/src/schemas/*.dbschema.ts, packages/db/src/migrations/manual/*.sql\n- GAP-078-184+180+080: Migration ALTER TABLE posts/destinations ALTER COLUMN media DROP NOT NULL; change $type<Media>() to $type<Media | null>() in all 4 entities; update derived types in @repo/schemas\n- GAP-078-075: Migration ADD CONSTRAINT chk_{entity}_media_shape CHECK (media IS NULL OR jsonb_typeof(media) = 'object') on accommodations/destinations/events/posts/post_sponsor; BaseCrudService._beforeCreate/_beforeUpdate run MediaSchema.safeParse when entity has media column\n\nAcceptance: Insert post without media succeeds; TypeScript Drizzle type reflects Media | null; media = 'string'::jsonb fails with CHECK violation.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-018"],
+            "subtasks": [],
+            "tags": ["database", "migrations", "types"],
+            "phase": "phase-2b",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "DB gallery max CHECK constraint migration",
+            "description": "Gap: GAP-078-195.\n\nFile: packages/db/src/migrations/manual/\n- Migration: ALTER TABLE {accommodations,destinations,events,posts} ADD CONSTRAINT chk_gallery_max_items CHECK (media IS NULL OR media->'gallery' IS NULL OR jsonb_array_length(media->'gallery') <= 50)\n\nAcceptance: Insert with gallery.length = 51 fails with CHECK violation; insert with 50 succeeds.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-004"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["database", "migrations"],
+            "phase": "phase-2b",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Add users.image satellite columns migration and update UserService.updateAvatar",
+            "description": "Gaps: GAP-078-081, GAP-078-197.\n\nFiles: packages/db/src/migrations/manual/, packages/service-core/src/services/user.service.ts\n- Migration: add nullable columns users.image_public_id text, users.image_moderation_state enum, users.image_caption text\n- UserService.updateAvatar() sets all 3 on upload\n- _afterHardDelete reads image_public_id directly (fallback to extractPublicId for legacy rows)\n- Optional backfill script\n\nAcceptance: UserService.updateAvatar() test asserts all 3 columns updated; hardDelete test uses column directly without URL parsing.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-004"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["database", "migrations", "services"],
+            "phase": "phase-2c",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "BaseModel JSONB merge semantics with transaction FOR UPDATE",
+            "description": "Gaps: GAP-078-186, GAP-078-198.\n\nFile: packages/db/src/base/base.model.ts\n- GAP-078-186: BaseModel.update() uses sql`${table.media} || ${JSON.stringify(patch.media)}::jsonb` when entity declares mergeableJsonbColumns = ['media']\n- GAP-078-198: Wrap JSONB merge path in SELECT ... FOR UPDATE transaction when entity has mergeableJsonbColumns\n\nAcceptance: PATCH with { gallery: [] } on entity with existing featuredImage preserves featuredImage in DB; concurrent PATCH writers both values present in final state.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-004", "T-012"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["database", "services"],
+            "phase": "phase-2d",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Extend delete_entity_bookmarks trigger for soft-delete",
+            "description": "Gap: GAP-078-192.\n\nFile: packages/db/src/migrations/manual/ + packages/db/scripts/apply-postgres-extras.sh\n- Extend trigger delete_entity_bookmarks to also fire AFTER UPDATE when OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL\n\nAcceptance: soft-delete accommodation -> bookmarks for that entity are removed from DB.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-004"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["database", "migrations"],
+            "phase": "phase-2e",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Restructure @repo/media subpath exports bundle architecture",
+            "description": "Gaps: GAP-078-126, GAP-078-162, GAP-078-183, GAP-078-172, GAP-078-177.\n\nFiles: packages/media/package.json, packages/media/tsup.config.ts, packages/media/src/server/index.ts, packages/media/src/test-utils/index.ts, packages/media/src/index.ts\n- Root index.ts: browser-safe only (getMediaUrl, MEDIA_PRESETS, extractPublicId, generateGalleryId, types)\n- src/server/index.ts: server-only (CloudinaryProvider, uploadBuffer, validateMediaFile, resolveEnvironment)\n- src/test-utils/index.ts: InMemoryImageProvider\n- package.json exports field with 3 subpath entries\n- tsup.config.ts with 3 entries + external: ['cloudinary', 'image-size']\n- Biome rule prevents admin/web from importing @repo/media/server\n- Vite/Astro optimizeDeps.exclude: ['cloudinary', 'image-size']\n\nAcceptance: import CloudinaryProvider from '@repo/media' fails TypeScript; from '@repo/media/server' succeeds; pnpm build:api completes without Cloudinary SDK in browser chunk.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-018", "T-021", "T-022", "T-023", "T-024", "T-025", "T-026", "T-027"],
+            "subtasks": [],
+            "tags": ["backend", "package", "bundle"],
+            "phase": "phase-3a",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Add InMemoryImageProvider and extractAllMediaPublicIds to @repo/media",
+            "description": "Gaps: GAP-078-102, GAP-078-082, GAP-078-229.\n\nFiles: packages/media/src/test-utils/mock-provider.ts, packages/media/src/server/extract-all-public-ids.ts, apps/api/src/services/media.ts\n- GAP-078-102: InMemoryImageProvider implementing ImageProvider; exported via @repo/media/test-utils\n- GAP-078-082: extractAllMediaPublicIds(entity, opts?) traversing media.featuredImage, gallery[], videos[]\n- GAP-078-229: getMediaProvider() auto-uses InMemoryImageProvider in dev when Cloudinary creds missing\n\nAcceptance: InMemoryImageProvider.upload() stores in-memory and returns valid URL; entity with featuredImage + 3 gallery items returns 4 publicIds; in dev without creds returns InMemoryImageProvider.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-036", "T-037"],
+            "subtasks": [],
+            "tags": ["backend", "testing", "media"],
+            "phase": "phase-3b",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Add resetMediaProviderForTesting export and test-utils subpath",
+            "description": "Gaps: GAP-078-059, GAP-078-168.\n\nFiles: apps/api/src/services/media.ts, packages/media/src/test-utils/index.ts\n- GAP-078-059+168: Export resetMediaProviderForTesting() from apps/api/src/services/media.ts guarded by NODE_ENV === 'test'; ensure it is also re-exported from @repo/media/test-utils subpath\n\nAcceptance: resetMediaProviderForTesting() undefined in production build; importable from @repo/media/test-utils in test environment; calling it resets the provider singleton.",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": ["T-017", "T-010"],
+            "blocks": ["T-036", "T-037"],
+            "subtasks": [],
+            "tags": ["backend", "testing", "media"],
+            "phase": "phase-3b",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Create packages/media JSDoc and interface cleanup documentation",
+            "description": "Gaps: GAP-078-028, GAP-078-174, GAP-078-032, GAP-078-161.\n\nFiles: packages/media/src/cloudinary.provider.ts, packages/media/src/types.ts, .claude/specs/SPEC-078-cloudinary-image-management/spec.md\n- GAP-078-028+174: JSDoc on CloudinaryProvider constructor: 'For internal use; access only via getMediaProvider(). SDK v2 uses global config state — multi-instance per process is unsupported.'\n- GAP-078-032: Remove buildUrl from ImageProvider interface; getMediaUrl() covers it; amend SPEC-078 v1.5 -> v1.6\n- GAP-078-161: Close as duplicate of GAP-078-032; note in spec\n\nAcceptance: JSDoc visible in IDE hover; ImageProvider interface does not declare buildUrl; spec.md version updated to v1.6.",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["docs", "media"],
+            "phase": "phase-3c",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Create packages/media README.md and CLAUDE.md",
+            "description": "Gap: GAP-078-047.\n\nFiles: packages/media/README.md, packages/media/CLAUDE.md\n- GAP-078-047: Create packages/media/README.md (quickstart, exports table, presets table) + CLAUDE.md (patterns, race condition note, subpath import rules)\n\nAcceptance: Both files exist with substantive content; README includes exports table and presets table; CLAUDE.md documents the race condition note.",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["docs"],
+            "phase": "phase-3c",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Seed strategy refactor: seedSource required/example, processor counters, and resolveEnvironment",
+            "description": "Gaps: GAP-078-036, GAP-078-116, GAP-078-007, GAP-078-037, GAP-078-039.\n\nFiles: packages/seed/src/seedFactory.ts, packages/seed/src/cli.ts, packages/seed/src/cloudinary-image-processor.ts, packages/config/src/env-registry.hospeda.ts\n- GAP-078-036+116: seedFactory.ts passes seedSource: 'required' | 'example'; processor early-returns for example; counter { uploaded, cached, failures, skippedExample } reported\n- GAP-078-007: Replace process.env.NODE_ENV ?? 'development' with resolveEnvironment() in cli.ts:76, index.ts:95, seedFactory.ts:186\n- GAP-078-037: role: 'gallery/${index}' instead of role: String(index)\n- GAP-078-039: apps: ['api', 'seed'] in 4 Cloudinary entries of env-registry.hospeda.ts\n\nAcceptance: pnpm db:seed with example sources completes without Cloudinary creds; gallery item at index 2 has role: 'gallery/2'; pnpm env:check validates Cloudinary vars for both api and seed apps.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-023"],
+            "subtasks": [],
+            "tags": ["seed", "backend"],
+            "phase": "phase-4a",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Seed strategy: avatars path, moderation default, and spec amendment",
+            "description": "Gaps: GAP-078-008, GAP-078-063, GAP-078-019.\n\nFiles: packages/seed/src/cloudinary-image-processor.ts, .claude/specs/SPEC-078-cloudinary-image-management/spec.md\n- GAP-078-008: Avatars seed path: hospeda/{env}/seed/avatars/{userId}.{ext} with entityType: 'avatars' override\n- GAP-078-063: Seed processor injects moderationState: 'APPROVED' default if missing\n- GAP-078-019: Amend SPEC-078 v1.5 -> v1.6 REQ-02: seed gallery uses array index; runtime admin uses nanoid\n\nAcceptance: Seeded avatar publicId contains 'avatars/{userId}'; processed entity always has moderationState; spec.md REQ-02 updated.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-022"],
+            "blocks": ["T-024"],
+            "subtasks": [],
+            "tags": ["seed", "backend"],
+            "phase": "phase-4a",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Seed strategy: sponsor/organizer logo handling, MediaBlock videos, and MediaSchema validation",
+            "description": "Gaps: GAP-078-077, GAP-078-083, GAP-078-084.\n\nFiles: packages/seed/src/cloudinary-image-processor.ts, packages/seed/src/types.ts\n- GAP-078-077: Processor handles postSponsor.logo (object {url}) and eventOrganizer.logo (string); paths postSponsor/{id}/logo and eventOrganizer/{id}/logo\n- GAP-078-083: MediaBlock interface adds videos?: unknown[] pass-through\n- GAP-078-084: MediaSchema.parse(processed.media) in seedFactory.ts after processEntityImages; fail loudly with Zod error if malformed\n\nAcceptance: Seed completes without error for sponsor + event fixtures; MediaSchema.parse throws on malformed media; MediaBlock type accepts videos field.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-023"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["seed", "backend"],
+            "phase": "phase-4a",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Seed data: moderation state bulk-fix in destination JSONs and CLAUDE.md doc",
+            "description": "Gap: GAP-078-076.\n\nFiles: packages/seed/data/destinations/*.json, packages/seed/CLAUDE.md\n- GAP-078-076: Bulk-replace 'moderationState': 'PENDING' -> 'APPROVED' in 26 destination JSONs; add 1-2 REJECTED fixtures; document in packages/seed/CLAUDE.md\n\nAcceptance: grep -r '\"PENDING\"' packages/seed/data/destinations returns 0; REJECTED fixtures exist; packages/seed/CLAUDE.md documents moderation state conventions.",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": ["T-023"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["seed", "data"],
+            "phase": "phase-4a",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Seed hardening: SSRF allowlist and --reset / --clean-images flag integration",
+            "description": "Gaps: GAP-078-030, GAP-078-006, GAP-078-078.\n\nFiles: packages/seed/src/\n- GAP-078-030: Allowlist ['images.unsplash.com','images.pexels.com','res.cloudinary.com'] + isAllowedSeedUrl() in seed fetch; skip + log if URL not in allowlist\n- GAP-078-006+078: --reset implies --clean-images for hospeda/{env}/seed/ prefix automatically; flags not mutually exclusive\n\nAcceptance: Seed with URL from unlisted host logs warning and skips; pnpm db:seed --reset calls deleteByPrefix for seed prefix.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-022"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["seed", "security"],
+            "phase": "phase-4b",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Seed hardening: cache flush, --validate-cache, cache schema Zod validation, and .gitignore",
+            "description": "Gaps: GAP-078-033, GAP-078-079, GAP-078-120, GAP-078-074.\n\nFiles: packages/seed/src/, root .gitignore\n- GAP-078-033: Cache writes accumulate in memory during Promise.all; single flush at end\n- GAP-078-079: Optional --validate-cache flag: HEAD each cached URL; remove stale entries\n- GAP-078-120: Validate cache file shape with Zod on read; truncate orphan entries; add version field\n- GAP-078-074: Add **/.cloudinary-cache.json to root .gitignore\n\nAcceptance: Cache file not written until all uploads complete; --validate-cache removes entries returning non-200 HEAD; git status does not show cache file.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-022"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["seed", "security"],
+            "phase": "phase-4b",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Seed hardening: admin max-size constant replacing hardcoded magic numbers",
+            "description": "Gap: GAP-078-010.\n\nFile: apps/admin/src/lib/constants.ts\n- Add DEFAULT_MEDIA_MAX_SIZE_BYTES = 10 * 1024 * 1024 constant\n- Replace 6 hardcoded occurrences of 5242880 in apps/admin/src with the constant\n\nAcceptance: grep -r '5242880' apps/admin/src returns 0 results; constant used in all 6 locations.",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "admin"],
+            "phase": "phase-4b",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "API response contract: route factory status 200, ResponseFactory wrap, UploadResponseSchema, and moderationState",
+            "description": "Gaps: GAP-078-026, GAP-078-029, GAP-078-159, GAP-078-178, GAP-078-062, GAP-078-149.\n\nFiles: apps/api/src/routes/media/admin/upload.ts, packages/schemas/src/api/media/*.ts, apps/api/src/lib/route-factory.ts\n- GAP-078-026+029+159+178: Add successStatusCode?: number to route factory interface; upload routes pass successStatusCode: 200; maintain ResponseFactory wrap {success, data, metadata}; UploadResponseSchema updated to wrapped shape; all success paths use factory\n- GAP-078-062: Upload response adds moderationState: 'APPROVED'; UploadResponseSchema updated\n- GAP-078-149: UploadResponseSchema.parse(response) at runtime in upload handler before returning\n\nAcceptance: POST /admin/media/upload returns HTTP 200; response is { success: true, data: { moderationState: 'APPROVED' }, metadata: {} }; runtime schema parse catches malformed response.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-010", "T-017"],
+            "blocks": ["T-030", "T-031", "T-032", "T-033"],
+            "subtasks": [],
+            "tags": ["backend", "api"],
+            "phase": "phase-5a",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "API response contract: DELETE wasPresent flag and tags/overwrite forwarding",
+            "description": "Gaps: GAP-078-154, GAP-078-155.\n\nFiles: apps/api/src/routes/media/admin/delete.ts, packages/schemas/src/api/media/delete.schema.ts\n- GAP-078-154: DELETE response adds wasPresent: boolean based on Cloudinary result === 'ok' vs 'not found'\n- GAP-078-155: Forward tags and overwrite from upload route to provider\n\nAcceptance: DELETE on existing asset returns { wasPresent: true }; DELETE on missing asset returns { wasPresent: false }; upload with tags array calls provider with tags forwarded.",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "api"],
+            "phase": "phase-5a",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Request schema refinements: discriminatedUnion role and ENTITY_FOLDER_MAP",
+            "description": "Gaps: GAP-078-153, GAP-078-055.\n\nFiles: packages/schemas/src/api/media/upload.schema.ts, apps/api/src/routes/media/admin/upload.ts\n- GAP-078-153: Refactor AdminUploadRequestSchema to z.discriminatedUnion('role', [...]) with branches featured and gallery; ProtectedUploadRequestSchema has implicit role avatar\n- GAP-078-055: ENTITY_FOLDER_MAP explicit: { accommodation: 'accommodations', destination: 'destinations', event: 'events', post: 'posts' }\n\nAcceptance: parse({ role: 'featured', entityType: 'user' }) fails with clear error; ENTITY_FOLDER_MAP exhaustive over all entity types; TypeScript error for unknown role.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-029"],
+            "blocks": ["T-037"],
+            "subtasks": [],
+            "tags": ["backend", "schemas", "api"],
+            "phase": "phase-5b",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Request schema refinements: empty file reject and env-configurable max size",
+            "description": "Gaps: GAP-078-148, GAP-078-106.\n\nFiles: apps/api/src/routes/media/admin/upload.ts, apps/api/src/utils/env.ts\n- GAP-078-148: Reject file.size === 0 with 422 EMPTY_FILE before multipart validation\n- GAP-078-106: HOSPEDA_MEDIA_MAX_FILE_SIZE_MB: z.coerce.number().positive().default(10) in ApiEnvSchema\n\nAcceptance: POST with empty file returns 422 EMPTY_FILE; HOSPEDA_MEDIA_MAX_FILE_SIZE_MB=abc at startup causes Zod error; max size enforced at runtime.",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "schemas", "api"],
+            "phase": "phase-5b",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Defensive route hardening: rate limit, Content-Length margin, and gallery cap",
+            "description": "Gaps: GAP-078-068, GAP-078-021, GAP-078-071.\n\nFiles: apps/api/src/routes/media/admin/upload.ts, apps/api/src/routes/media/protected/upload.ts\n- GAP-078-068: Interim rate limit { requests: 10, windowMs: 60000 } on upload routes; TODO comment linking to SPEC-079\n- GAP-078-021: Content-Length pre-check uses maxBytes + 1024 margin\n- GAP-078-071: Server hard cap 50 gallery items; reject 422 GALLERY_LIMIT_EXCEEDED; TODO comment for billing entitlements\n\nAcceptance: 11th upload in 60s returns 429; entity gallery at 50 returns 422 GALLERY_LIMIT_EXCEEDED; Content-Length within margin is not pre-rejected.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "api", "security"],
+            "phase": "phase-5c",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Defensive route hardening: OpenAPI multipart schema, lazy services, and CORS doc",
+            "description": "Gaps: GAP-078-072, GAP-078-060, GAP-078-150.\n\nFiles: apps/api/src/routes/media/admin/upload.ts, apps/api/src/routes/media/protected/upload.ts, apps/api/docs/route-architecture.md\n- GAP-078-072: OpenAPI requestBody multipart schema for upload routes via createAdminRoute factory\n- GAP-078-060: Lazy services instantiation inside handler (not module-level)\n- GAP-078-150: Document CORS contract for media routes in apps/api/docs/route-architecture.md\n\nAcceptance: OpenAPI spec includes multipart requestBody for upload; no module-level const service = new XService() in route files; CORS section exists in route-architecture.md.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "api", "docs"],
+            "phase": "phase-5c",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Add p-retry resilience to provider delete/deleteByPrefix",
+            "description": "Gaps: GAP-078-087, GAP-078-054.\n\nFiles: packages/media/src/cloudinary.provider.ts\n- GAP-078-087: Add dep p-retry; delete() and deleteByPrefix() wrapped with pRetry({ retries: 3, factor: 3, minTimeout: 1000 }); retry on 429/5xx only; upload() has no retry; JSDoc on upload() noting 'no retry by design'\n- GAP-078-054: delete_resources_by_prefix() passes { invalidate: true }\n\nAcceptance: delete mock rejects once with 429 then resolves; pRetry callback invoked twice total; upload mock rejects -> no retry, promise rejects immediately.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "resilience", "media"],
+            "phase": "phase-5d",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Add i18n error keys for media error codes",
+            "description": "Gap: GAP-078-139.\n\nFiles: packages/i18n/locales/es.json, packages/i18n/locales/en.json, packages/i18n/locales/pt.json, apps/api/src/routes/media/ error handlers\n- Error codes map to i18n keys api.media.errors.{code} via @repo/i18n\n- Response includes code for client\n- Keys: api.media.errors.EMPTY_FILE, .GALLERY_LIMIT_EXCEEDED, .CLOUDINARY_NOT_CONFIGURED\n\nAcceptance: Keys exist in es/en/pt locale files; response body includes code string.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "i18n"],
+            "phase": "phase-5e",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Amend SPEC-078 v1.6: /users/me convention documentation fix",
+            "description": "Gap: GAP-078-009.\n\nFile: .claude/specs/SPEC-078-cloudinary-image-management/spec.md\n- Amend SPEC-078 v1.5 -> v1.6 REQ-04.2-FLOW: AvatarUpload uses PATCH /api/v1/protected/users/${userId} with ownership check; note future /me pattern requires dedicated SPEC\n\nAcceptance: SPEC-078 spec.md updated; no code change.",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["docs"],
+            "phase": "phase-5f",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Admin UI: wire upload/delete for destinations, events, posts entity edit pages",
+            "description": "Gaps: GAP-078-004, GAP-078-005, GAP-078-018.\n\nFiles: apps/admin/src/routes/_authed/destinations/$id_.edit.tsx, apps/admin/src/routes/_authed/events/$id_.edit.tsx, apps/admin/src/routes/_authed/posts/$id_.edit.tsx\n- Replicate wiring from accommodations/$id_.edit.tsx in all 3 entity edit pages\n- Handlers: images + featuredImage/mainImage via uploadEntityImage.mutateAsync\n- Integration test: upload + assert entity media.featuredImage.url updated\n\nAcceptance: Upload image button functional in all 3 entity edit pages; integration test passes.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-017", "T-029"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "admin"],
+            "phase": "phase-6a",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Delete accommodations gallery tab and add TanStack Router redirect",
+            "description": "Gap: GAP-078-073.\n\nFiles: apps/admin/src/routes/_authed/accommodations/$id_.gallery.tsx, apps/admin/src/routes/_authed/accommodations/\n- Delete apps/admin/src/routes/_authed/accommodations/$id_.gallery.tsx\n- Add TanStack Router redirect /accommodations/:id/gallery -> /accommodations/:id/edit#gallery-section\n\nAcceptance: File deleted; navigation to /gallery redirects; no 404 in admin.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-017", "T-029"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "admin"],
+            "phase": "phase-6a",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Admin hooks type safety: use-media-upload with MediaEntityType/MediaRole and schema validation",
+            "description": "Gap: GAP-078-052.\n\nFile: apps/admin/src/hooks/use-media-upload.ts\n- Admin hook use-media-upload uses MediaEntityType/MediaRole from @repo/schemas\n- Validates with AdminUploadRequestSchema.parse() before FormData construction\n\nAcceptance: TypeScript error if entityType: 'unknown' passed to hook; Zod parse throws before network call if payload invalid.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-031"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "admin", "schemas"],
+            "phase": "phase-6b",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Migrate raw <img> to getMediaUrl() in admin components: profile, SEO, header, GalleryField",
+            "description": "Gaps: GAP-078-015, GAP-078-016, GAP-078-042, GAP-078-043, GAP-078-137.\n\nFiles: apps/admin/src/routes/_authed/me/profile.tsx, apps/admin/src/routes/_authed/posts/$id_.seo.tsx, apps/admin/src/integrations/clerk/header-user.tsx, apps/admin/src/components/entity-form/fields/GalleryField.tsx, apps/admin/src/routes/_authed/accommodations/$id_.gallery.tsx\n- GAP-078-015: profile.tsx:124 -> preset avatar\n- GAP-078-016: $id_.seo.tsx:201 -> preset og\n- GAP-078-042: header-user.tsx:86 -> preset avatar + width={32} height={32} loading=\"eager\" decoding=\"async\"\n- GAP-078-043+137: GalleryField.tsx:387 + $id_.gallery.tsx:61 -> preset thumbnail + loading=\"lazy\"\n\nAcceptance: No raw <img src={cloudinaryUrl} in listed admin files; presets applied correctly per component type.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-047"],
+            "subtasks": [],
+            "tags": ["frontend", "admin", "media"],
+            "phase": "phase-6c",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Migrate getMediaUrl() API extensions: fallback override, regex anchor, delivery-type detection",
+            "description": "Gaps: GAP-078-061, GAP-078-069, GAP-078-166, GAP-078-211, GAP-078-218, GAP-078-179.\n\nFile: packages/media/src/get-media-url.ts\n- GAP-078-061: extractFeaturedImageUrl returns getMediaUrl(fallback, { preset }) instead of raw fallback\n- GAP-078-069: getMediaUrl accepts options.fallback?: string per-call override\n- GAP-078-166+211+218: Regex anchor in getMediaUrl.replace() to prevent double-transform; 2 regression tests\n- GAP-078-179: getMediaUrl detects /fetch/, /private/ delivery types and skips .replace('/upload/')\n\nAcceptance: double-transform regression tests pass; getMediaUrl with /fetch/ URL returns unmodified; fallback option applied per-call.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "media"],
+            "phase": "phase-6c",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Add Biome noRestrictedSyntax rule and CI script for bare <img> Cloudinary URL detection",
+            "description": "Gap: GAP-078-099.\n\nFiles: biome.json or packages/biome-config/biome.json, scripts/check-cloudinary-img.sh or similar\n- Biome noRestrictedSyntax rule + custom script flagging bare <img src={ with Cloudinary URL heuristic\n\nAcceptance: CI step runs script; PR with bare <img src={cloudinaryUrl} is blocked.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["tooling", "ci"],
+            "phase": "phase-6c",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-044",
+            "title": "Admin accessibility: GalleryField dnd-kit drag-and-drop refactor",
+            "description": "Gaps: GAP-078-048, GAP-078-144.\n\nFile: apps/admin/src/components/entity-form/fields/GalleryField.tsx\n- GAP-078-048+144: Add deps @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities; refactor GalleryField with DndContext sensors + SortableContext; each item uses useSortable\n\nAcceptance: Keyboard test: Tab + Space + ArrowDown + Space reorders item; drag-and-drop reorders gallery array; pnpm typecheck passes.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-017", "T-038"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "admin", "a11y"],
+            "phase": "phase-6d",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-045",
+            "title": "Admin accessibility: ImageField error state, delete confirmation dialog, reduced-motion, and aria-describedby",
+            "description": "Gaps: GAP-078-046, GAP-078-138, GAP-078-141, GAP-078-142, GAP-078-143.\n\nFiles: apps/admin/src/components/entity-form/fields/ImageField.tsx, apps/web/src/components/account/AvatarUpload.client.tsx, AvatarUpload.module.css\n- GAP-078-046+138: Replicate GalleryField error pattern in ImageField: uploadError local state + <p role=\"alert\">\n- GAP-078-141: Shadcn AlertDialog before delete in GalleryField + confirmation in AvatarUpload\n- GAP-078-142: @media (prefers-reduced-motion: reduce) in AvatarUpload.module.css spinner + GalleryField overlay\n- GAP-078-143: AvatarUpload button has aria-describedby=\"avatar-hint\" pointing to constraints <p>\n\nAcceptance: Failed upload renders <p role=\"alert\">; delete shows AlertDialog before proceeding; reduced-motion media query present in CSS.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-017", "T-038"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "admin", "a11y"],
+            "phase": "phase-6d",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-046",
+            "title": "Admin UX: HEIC/AVIF accept, p-limit parallel upload, and progress indicator",
+            "description": "Gaps: GAP-078-152, GAP-078-127, GAP-078-140.\n\nFiles: apps/admin/src/components/entity-form/fields/GalleryField.tsx, apps/admin/src/components/account/AvatarUpload.client.tsx\n- GAP-078-152: Client MIME allowlist accepts HEIC/HEIF/AVIF; show placeholder 'Preview no disponible' for those formats\n- GAP-078-127: Refactor GalleryField from for...of await to Promise.all with p-limit cap=4\n- GAP-078-140: Upload shows rich indeterminate progress: 'Subiendo X MB...', animated bar, estimated time; role=\"status\" aria-live=\"polite\"\n\nAcceptance: HEIC file accepted; 6 files upload with max 4 concurrent; progress indicator visible with aria-live.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-017", "T-038"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "admin"],
+            "phase": "phase-6d",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-047",
+            "title": "Admin UX: shadcn Avatar component refactor and validateMediaFile maxFileSizeMb prop",
+            "description": "Gaps: GAP-078-145, GAP-078-176.\n\nFiles: apps/admin/src/integrations/clerk/header-user.tsx, apps/admin/src/routes/_authed/me/profile.tsx, packages/media/src/validate-media-file.ts\n- GAP-078-145: Refactor header-user.tsx + profile.tsx using shadcn <Avatar> + <AvatarImage> + <AvatarFallback> with initials\n- GAP-078-176: validateMediaFile respects maxFileSizeMb prop in avatar branch\n\nAcceptance: Both files use shadcn Avatar; avatar > maxFileSizeMb returns size error; initials fallback renders when image not available.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-017", "T-038"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "admin"],
+            "phase": "phase-6d",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-048",
+            "title": "Web media migration: transforms.ts and Astro component raw img replacements",
+            "description": "Gaps: GAP-078-017, GAP-078-041, GAP-078-044, GAP-078-045, GAP-078-136.\n\nFiles: apps/web/src/lib/api/transforms.ts, apps/web/src/components/accommodation/OwnerCard.astro, apps/web/src/components/accommodation/ReviewPreview.astro, apps/web/src/components/account/AvatarUpload.client.tsx, apps/web/src/pages/[lang]/destinos/atraccion/[slug]/index.astro, apps/web/src/pages/[lang]/publicaciones/[slug].astro\n- GAP-078-017: OwnerCard.astro + ReviewPreview.astro via transforms.ts -> preset avatar\n- GAP-078-041: AvatarUpload.client.tsx:178 -> preset avatar\n- GAP-078-044: atraccion/[slug]/index.astro:50 -> preset hero\n- GAP-078-045: publicaciones/[slug].astro:137 -> preset avatar\n- GAP-078-136: transforms.ts:368 preserves caption and description in HeroGallery output\n\nAcceptance: No raw <img src={cloudinaryUrl} in listed web files; transforms output includes caption; presets applied per component.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "web", "media"],
+            "phase": "phase-6e",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-049",
+            "title": "Web media migration: i18n avatar keys, moderationState cleanup, avatar-utils, and race condition doc",
+            "description": "Gaps: GAP-078-040, GAP-078-064, GAP-078-070, GAP-078-118, GAP-078-145 (web part), GAP-078-194.\n\nFiles: packages/i18n/locales/, apps/web/src/lib/avatar-utils.ts, apps/web/src/lib/api/transforms.ts, packages/media/CLAUDE.md\n- GAP-078-040: i18n keys account.avatar.errors.*, account.avatar.actions.*, account.avatar.hint in es/en/pt\n- GAP-078-064: Remove moderationState reading from web helpers\n- GAP-078-070+118: Document avatar upload race condition in @repo/media/CLAUDE.md\n- GAP-078-145 web part: Extract initials/fallback logic to apps/web/src/lib/avatar-utils.ts\n- GAP-078-194: processEntityImages logs warn if media present but featuredImage absent\n\nAcceptance: All 3 locales have avatar keys; grep -r 'moderationState' apps/web/src/lib returns 0; avatar-utils.ts exists; race condition note in CLAUDE.md.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "web", "i18n"],
+            "phase": "phase-6e",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-050",
+            "title": "CSP updates: web img-src Cloudinary, admin CSP explicit allowlist, Astro remotePatterns",
+            "description": "Gaps: GAP-078-065, GAP-078-228, GAP-078-066, GAP-078-125, GAP-078-227.\n\nFiles: apps/web/src/middleware-helpers.ts, apps/admin/ CSP config, apps/web/astro.config.mjs\n- GAP-078-065+228: Web CSP img-src: add https://res.cloudinary.com in middleware-helpers.ts:354 (both Report-Only and enforced); add test asserting header\n- GAP-078-066: Admin CSP: replace https: blanket script-src with explicit list including https://res.cloudinary.com, https://*.mlstatic.com; test asserts no https: blanket\n- GAP-078-125+227: astro.config.mjs adds { protocol: 'https', hostname: 'res.cloudinary.com' } to image.remotePatterns\n\nAcceptance: HTTP response header Content-Security-Policy contains img-src ... https://res.cloudinary.com; Astro <Image src=\"https://res.cloudinary.com/...\"> renders without config error.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-041"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "security", "csp"],
+            "phase": "phase-6f",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-051",
+            "title": "Vercel config: upload route maxDuration per-route and preview env Cloudinary warning",
+            "description": "Gaps: GAP-078-222, GAP-078-223, GAP-078-134.\n\nFiles: apps/api/vercel.json, apps/api/src/services/media.ts\n- GAP-078-222+223: apps/api/vercel.json per-route functions config with maxDuration: 60 and regions: [\"iad1\"] for both upload routes\n- GAP-078-134: Log warn at startup if Cloudinary vars missing AND VERCEL_ENV === 'preview'\n\nAcceptance: vercel.json contains function entries with maxDuration: 60; startup log warn emitted in preview when creds absent.",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": ["T-003", "T-029"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "infra"],
+            "phase": "phase-7a",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-052",
+            "title": "Vercel observability: /health/media endpoint and orphan cleanup cron",
+            "description": "Gaps: GAP-078-232, GAP-078-231.\n\nFiles: apps/api/src/routes/health/, apps/api/src/cron/\n- GAP-078-232: Endpoint GET /api/v1/public/health/media calls Cloudinary GET /resources/image with creds; returns 200/503\n- GAP-078-231: Weekly cron orphan cleanup for hospeda/preview/* and hospeda/test/* prefix\n\nAcceptance: GET /health/media with valid creds returns 200; GET /health/media with invalid creds returns 503; cron job registered targeting weekly schedule.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-003", "T-029"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "infra", "observability"],
+            "phase": "phase-7a",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-053",
+            "title": "Turbo globalEnv: add Cloudinary vars and VERCEL_ENV cache keys",
+            "description": "Gaps: GAP-078-220, GAP-078-221, GAP-078-233.\n\nFile: turbo.json\n- globalEnv adds: HOSPEDA_CLOUDINARY_CLOUD_NAME, HOSPEDA_CLOUDINARY_API_KEY, HOSPEDA_CLOUDINARY_API_SECRET, HOSPEDA_MEDIA_MAX_FILE_SIZE_MB, VERCEL_ENV\n- Per-package outputs for @repo/media\n\nAcceptance: turbo.json contains all 5 vars in globalEnv; changing a Cloudinary var invalidates Turbo cache.",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["tooling", "infra"],
+            "phase": "phase-7b",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-054",
+            "title": "CI/CD: Cloudinary isolation script and CI jobs",
+            "description": "Gaps: GAP-078-038, GAP-078-225, GAP-078-224.\n\nFiles: scripts/check-cloudinary-isolation.sh, .github/workflows/ci.yml\n- GAP-078-038: scripts/check-cloudinary-isolation.sh: rg exit non-zero if cloudinary imported outside packages/media\n- GAP-078-225: CI job check-cloudinary-isolation runs the script\n- GAP-078-224: CI .github/workflows/ci.yml adds HOSPEDA_CLOUDINARY_* secrets to integration test step\n\nAcceptance: Script exits 0 with no violations; CI job invokes script; integration test step has Cloudinary secrets.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-017", "T-029"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["tooling", "ci"],
+            "phase": "phase-7c",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-055",
+            "title": "CI/CD: Renovate pin, pnpm env:check pre-deploy, dpr_auto presets, and Cache-Control header",
+            "description": "Gaps: GAP-078-226, GAP-078-230, GAP-078-133, GAP-078-135.\n\nFiles: renovate.json, packages/media/src/presets.ts, apps/api/src/routes/media/\n- GAP-078-226: renovate.json pin rule: cloudinary minor-only, no major auto-bump\n- GAP-078-230: CI step pnpm env:check before deploy to preview/production\n- GAP-078-133: Add dpr_auto to each preset in packages/media/src/presets.ts\n- GAP-078-135: Cache-Control: no-store header on POST /media/* responses\n\nAcceptance: pnpm env:check in deploy job; every preset includes dpr_auto; POST /media/* response has Cache-Control: no-store.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-017", "T-029"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["tooling", "ci", "infra"],
+            "phase": "phase-7c",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-056",
+            "title": "Observability: structured logs, Sentry capture, and metrics counters",
+            "description": "Gaps: GAP-078-050, GAP-078-128, GAP-078-129, GAP-078-014, GAP-078-056.\n\nFiles: apps/api/src/routes/media/admin/upload.ts, apps/api/src/services/media.ts, apps/api/src/services/accommodation.service.ts\n- GAP-078-050+128+129: Structured info log per upload success; Sentry.captureException on Cloudinary SDK errors; counters media_upload_total{result=success/failure}, media_delete_total{result}\n- GAP-078-014: Replace console.warn with apiLogger.warn in apps/api/src/services/media.ts:33; move init log to startup\n- GAP-078-056: AccommodationService._afterHardDelete: replace revalidationLogger.warn with this.logger.warn\n\nAcceptance: grep 'console.warn' apps/api/src/services/media.ts returns 0; Sentry mock receives exception on provider error; counter increments.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "observability"],
+            "phase": "phase-8",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-057",
+            "title": "Observability: create Cloudinary incidents runbook",
+            "description": "Gap: GAP-078-158.\n\nFile: docs/runbooks/cloudinary-incidents.md\n- GAP-078-158: Create docs/runbooks/cloudinary-incidents.md with 9 sections covering: detection, escalation, rollback, env rotation, orphan cleanup, preview purge, billing alerts, monitoring queries, post-incident checklist\n\nAcceptance: Runbook exists with all 9 sections; linked from main docs/index.md.",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["docs", "observability"],
+            "phase": "phase-8",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-058",
+            "title": "Schema tests: ImageSchema, VideoSchema, MediaSchema, BaseMediaFields coverage",
+            "description": "Gap: GAP-078-101.\n\nFile: packages/schemas/test/common/media.schema.test.ts\n- GAP-078-101: Create media.schema.test.ts covering ImageSchema, VideoSchema, MediaSchema, BaseMediaFields including optional featuredImage, publicId, attribution shapes\n\nAcceptance: Test file exists; all 4 schemas covered with valid and invalid fixtures; pnpm test passes.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-010"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "schemas"],
+            "phase": "phase-9a",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-059",
+            "title": "Unit tests: extractPublicId and validate-media-file edge cases",
+            "description": "Gaps: GAP-078-013, GAP-078-088, GAP-078-206, GAP-078-207, GAP-078-090, GAP-078-213, GAP-078-212.\n\nFiles: packages/media/test/extract-public-id.test.ts, packages/media/test/validate-media-file.test.ts\n- GAP-078-013: Coverage edge cases for extract-public-id and validate-media-file\n- GAP-078-088+206+207: extractPublicId edge cases: video URLs, fetch delivery type, query strings, folder with '.', /upload/ appearing twice, fragment\n- GAP-078-090: Boundary 10MB test with PNG padded (deterministic byte count)\n- GAP-078-213: 0-byte file test with exact assertion (.toBe not .toContain)\n- GAP-078-212: getMediaUrl with HTTP (non-HTTPS) URL\n\nAcceptance: branch coverage >= 90% for extract-public-id and validate-media-file; all edge cases pass.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-018", "T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "media"],
+            "phase": "phase-9b",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-060",
+            "title": "Unit tests: MEDIA_PRESETS frozen check, environment.test.ts, and coverage thresholds",
+            "description": "Gaps: GAP-078-089, GAP-078-091, GAP-078-202, GAP-078-203, GAP-078-098, GAP-078-204, GAP-078-205, GAP-078-214.\n\nFiles: packages/media/test/presets.test.ts, packages/media/test/environment.test.ts, packages/media/vitest.config.ts\n- GAP-078-089: Object.isFrozen(MEDIA_PRESETS) + regex format check for all preset transform strings\n- GAP-078-091+202+203: environment.test.ts uses vi.stubEnv + vi.unstubAllEnvs in afterEach; delete process.env.NODE_ENV + restore test\n- GAP-078-204: validateMediaFile IMAGE_TOO_LARGE branch (pixel count > 2e8)\n- GAP-078-205: Fix HEIC/AVIF test: use real binary fixtures instead of PNG with MIME spoof\n- GAP-078-214: generateGalleryId with seeded fake random for determinism\n- GAP-078-098: packages/media/vitest.config.ts adds coverage.thresholds.perFile: true with 90/85/90/90\n\nAcceptance: MEDIA_PRESETS is frozen; environment tests restore env properly; perFile coverage thresholds configured.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-018", "T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "media"],
+            "phase": "phase-9b",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-061",
+            "title": "Unit tests: @repo/media contract test and misc edge cases",
+            "description": "Gaps: GAP-078-100.\n\nFile: packages/media/test/cloudinary.contract.test.ts\n- GAP-078-100: Contract test: import real cloudinary and assert v2.uploader.upload_stream exists; v2.api.delete_resources_by_prefix exists; ensures SDK shape not broken by upgrade\n\nAcceptance: Contract test passes with current installed SDK; test fails if SDK removes methods; CI runs this test.",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": ["T-018", "T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "media"],
+            "phase": "phase-9b",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-062",
+            "title": "Unit tests: CloudinaryProvider upload edge cases and mock patterns",
+            "description": "Gaps: GAP-078-085, GAP-078-210, GAP-078-215, GAP-078-217, GAP-078-219.\n\nFile: packages/media/test/cloudinary.provider.test.ts\n- GAP-078-085: Upload with data-URI and remote URL as input\n- GAP-078-210: Mock upload_stream with setImmediate(callback, null, result) for realistic async\n- GAP-078-215: Constructor multi-instance config behavior documented and tested\n- GAP-078-217: Upload passes resource_type: 'image' to SDK\n- GAP-078-219: Upload with tags: [] empty array\n\nAcceptance: All test cases pass; setImmediate pattern used in mock; resource_type assertion present.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-018", "T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "media"],
+            "phase": "phase-9b",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-063",
+            "title": "Unit tests: CloudinaryProvider delete paths, multi-instance, and avatar boundary",
+            "description": "Gaps: GAP-078-086, GAP-078-031, GAP-078-208, GAP-078-209, GAP-078-216.\n\nFile: packages/media/test/cloudinary.provider.test.ts\n- GAP-078-086: deleteByPrefix asserts Admin API path (not Uploader)\n- GAP-078-031: Test with 2 CloudinaryProvider instances with different creds; assert global config behavior (last-init-wins documented)\n- GAP-078-208+209: CloudinaryProvider.delete() error paths + deleteByPrefix partial-delete response handling\n- GAP-078-216: Avatar boundary 5MB off-by-one\n\nAcceptance: deleteByPrefix uses Admin API; 2-instance behavior documented and verified; partial-delete handled gracefully; 5MB boundary tested at exact byte boundary.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-018", "T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "media"],
+            "phase": "phase-9b",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-064",
+            "title": "Seed tests: cloudinary-upload and cloudinary-image-processor test files",
+            "description": "Gap: GAP-078-020.\n\nFiles: packages/seed/test/cloudinary-upload.test.ts, packages/seed/test/cloudinary-image-processor.test.ts\n- Both test files covering upload strategy logic, seedSource branching, counter reporting\n\nAcceptance: Both test files exist; cover upload strategy logic, seedSource branching, counter reporting.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-022", "T-024"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "seed"],
+            "phase": "phase-9c",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-065",
+            "title": "Service-core tests: hardDelete cleanup and hookstate propagation",
+            "description": "Gaps: GAP-078-094, GAP-078-095.\n\nFiles: packages/service-core/test/ (5 service test files)\n- GAP-078-094: Tests for hardDelete cleanup: 5 services x mock InMemoryImageProvider -> assert deleteByPrefix called with correct prefix + error swallowed\n- GAP-078-095: hookstate.test.ts per service: deletedEntityId propagation via ctx.hookState\n\nAcceptance: Test per service: mock InMemoryImageProvider; hardDelete entity; assert deleteByPrefix('hospeda/dev/{entityType}/{entityId}/') called; ctx.hookState.deletedEntityId equals entity ID.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-018", "T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "services"],
+            "phase": "phase-9d",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-066",
+            "title": "API integration tests: admin upload/delete and protected upload scenarios",
+            "description": "Gaps: GAP-078-092, GAP-078-024, GAP-078-093.\n\nFiles: apps/api/test/integration/media/admin-upload.test.ts, apps/api/test/integration/media/admin-delete.test.ts, apps/api/test/integration/media/protected-upload.test.ts\n- GAP-078-092+024: admin-upload.test.ts (9 scenarios REQ-04.1) + admin-delete.test.ts (5 REQ-04.3) + protected-upload.test.ts (2 REQ-04.2); mock getMediaProvider() with InMemoryImageProvider\n- GAP-078-093: Test HTTP 503 CLOUDINARY_NOT_CONFIGURED by unsetting Cloudinary env vars\n\nAcceptance: All 16 integration test scenarios pass; each test file has named scenarios matching spec REQ numbers; unset env vars -> POST returns 503 CLOUDINARY_NOT_CONFIGURED.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-018", "T-019", "T-029"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "api", "integration"],
+            "phase": "phase-9e",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-067",
+            "title": "UI component tests: GalleryField, ImageField, use-media-upload, AvatarUpload",
+            "description": "Gap: GAP-078-097.\n\nFiles: apps/admin/test/components/GalleryField.test.tsx, apps/admin/test/components/ImageField.test.tsx, apps/admin/test/hooks/use-media-upload.test.ts, apps/web/test/components/AvatarUpload.test.tsx\n- @testing-library/react tests for GalleryField, ImageField, use-media-upload, AvatarUpload.client\n- Cover success, 413, 422, 503 scenarios\n- AvatarUpload test verifies PATCH called after upload to /api/v1/protected/users/:id\n\nAcceptance: All 4 component test files exist; success + 3 error scenarios covered; AvatarUpload test asserts PATCH called after upload.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-040", "T-044", "T-045"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "frontend"],
+            "phase": "phase-9f",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-068",
+            "title": "Reconcile state.json and TODOs.md with actual post-remediation state",
+            "description": "Gap: GAP-078-022.\n\nFiles: .claude/tasks/SPEC-078-GAPS/state.json, .claude/tasks/SPEC-078-GAPS/TODOs.md\n- Reconcile state.json / TODOs.md vs actual post-remediation state\n- All completed tasks marked completed; no stale entries\n\nAcceptance: state.json reflects all completed tasks; TODOs.md has no stale entries.",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": [
+                "T-058",
+                "T-059",
+                "T-060",
+                "T-061",
+                "T-062",
+                "T-063",
+                "T-064",
+                "T-065",
+                "T-066",
+                "T-067"
+            ],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["docs", "reconciliation"],
+            "phase": "phase-9g",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 68,
+        "completed": 4,
+        "pending": 64,
+        "inProgress": 0
+    }
+}
