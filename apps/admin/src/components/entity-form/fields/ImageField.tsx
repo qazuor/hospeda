@@ -5,6 +5,7 @@ import type {
 } from '@/components/entity-form/types/field-config.types';
 import { Button, Input, Label } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
+import { DEFAULT_MEDIA_MAX_SIZE_BYTES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
 
@@ -86,7 +87,7 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
         const descriptionId = description ? `${fieldId}-description` : undefined;
         const helperId = helper ? `${fieldId}-helper` : undefined;
 
-        const maxSize = imageConfig?.maxSize || 5 * 1024 * 1024; // 5MB default
+        const maxSize = imageConfig?.maxSize || DEFAULT_MEDIA_MAX_SIZE_BYTES;
         const allowedTypes = imageConfig?.allowedTypes || ['image/jpeg', 'image/png', 'image/webp'];
         const maxWidth = imageConfig?.maxWidth;
         const maxHeight = imageConfig?.maxHeight;

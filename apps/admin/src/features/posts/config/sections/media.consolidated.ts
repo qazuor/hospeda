@@ -1,5 +1,6 @@
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
+import { DEFAULT_MEDIA_MAX_SIZE_BYTES } from '@/lib/constants';
 import { PermissionEnum } from '@repo/schemas';
 
 /**
@@ -30,7 +31,7 @@ export const createMediaConsolidatedSection = (): ConsolidatedSectionConfig => (
             typeConfig: {
                 type: 'IMAGE',
                 allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
-                maxSize: 5 * 1024 * 1024 // 5MB
+                maxSize: DEFAULT_MEDIA_MAX_SIZE_BYTES
             }
         },
         {

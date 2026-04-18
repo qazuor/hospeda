@@ -5,6 +5,7 @@ import type {
 } from '@/components/entity-form/types/field-config.types';
 import { Button, Input, Label } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
+import { DEFAULT_GALLERY_FALLBACK_MAX_SIZE_BYTES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
 import { extractPublicId } from '@repo/media';
@@ -93,7 +94,7 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
             className,
             onUpload,
             onDelete,
-            defaultMaxSize = 10 * 1024 * 1024 // 10 MB
+            defaultMaxSize = DEFAULT_GALLERY_FALLBACK_MAX_SIZE_BYTES
         },
         _ref
     ) => {
