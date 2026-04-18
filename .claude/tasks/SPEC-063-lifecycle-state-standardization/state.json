@@ -894,31 +894,37 @@
             "id": "T-025",
             "title": "Create archive-expired-promotions cron job handler",
             "description": "Create `apps/api/src/cron/jobs/archive-expired-promotions.job.ts` following the `CronJobDefinition` pattern (reference `addon-expiry.job.ts`). Implement: (1) query `SELECT id FROM owner_promotions WHERE lifecycle_state = 'ACTIVE' AND valid_until IS NOT NULL AND valid_until < NOW() AND deleted_at IS NULL LIMIT 100`, (2) UPDATE SET lifecycle_state = 'ARCHIVED', updated_at = NOW(), updated_by_id = NULL, (3) use pg_try_advisory_lock(43010), (4) support dry-run via ctx.dryRun, (5) log via @repo/logger with context `{ source: 'cron:archive-expired-promotions', count: N }`, (6) error reporting to Sentry. Timeout 60_000ms, schedule `'0 * * * *'`, name `'archive-expired-promotions'`.\n\nFiles: `apps/api/src/cron/jobs/archive-expired-promotions.job.ts`",
-            "status": "pending",
+            "_specDeviation": "Spec says `pg_try_advisory_lock(43010)` (session-level). Used `pg_try_advisory_xact_lock(43010)` (transaction-level) per `packages/db/docs/advisory-locks.md` rule #1: 'All advisory locks MUST be transaction-level (_xact_ variants). Session-level locks are forbidden due to Neon connection pooling.' Lock ID 43010 was already pre-registered in advisory-locks.md as xact variant for this job (SPEC-063 row). Consistent with addon-expiry.job.ts template. User-approved.",
+            "_implementationNote": "(1) Used `withTransaction` from @repo/db (wraps errors in DbError) instead of direct `db.transaction()` for consistency with addon-expiry template. (2) Discriminated union `CronTransactionResult` distinguishes lock-skip from real execution. (3) Verified `owner_promotions.updated_by_id` is NULL-able (schema line 33, no .notNull()), so explicit `updatedById: null` is safe. (4) Used `ctx.logger` (scoped) inside tx + `apiLogger` (module-scoped) for the lock-skip warn outside tx — matches addon-expiry pattern exactly. (5) `inArray` imported from `drizzle-orm` directly (not re-exported from @repo/db). Handler is NOT yet registered in registry — registration deferred to T-026.",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-012"],
             "blocks": ["T-026"],
             "subtasks": [
                 {
                     "title": "Create handler file with CronJobDefinition skeleton",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement query with ACTIVE + valid_until expired + not deleted",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Implement batch update to ARCHIVED", "completed": false },
-                { "title": "Add pg_try_advisory_lock(43010)", "completed": false },
-                { "title": "Add dry-run support via ctx.dryRun", "completed": false },
-                { "title": "Add structured logging and Sentry error reporting", "completed": false }
+                { "title": "Implement batch update to ARCHIVED", "completed": true },
+                {
+                    "title": "Add pg_try_advisory_lock(43010)",
+                    "completed": true,
+                    "_note": "Used pg_try_advisory_xact_lock (transaction-level) per advisory-locks.md rule. See _specDeviation."
+                },
+                { "title": "Add dry-run support via ctx.dryRun", "completed": true },
+                { "title": "Add structured logging and Sentry error reporting", "completed": true }
             ],
             "tags": ["api", "cron", "phase-2", "ownerPromotion"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T14:10:00.000Z",
+                "completed": "2026-04-18T14:35:00.000Z"
             }
         },
         {
@@ -1840,12 +1846,12 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 38,
+        "pending": 37,
         "inProgress": 0,
-        "completed": 25,
+        "completed": 26,
         "blocked": 0,
         "averageComplexity": 2.0,
-        "_summaryDriftNote": "Counters corrected 2026-04-18 during T-022 bookkeeping. Prior value (completed=22) had drift from Session 2 (T-019, T-020, T-021, T-023, T-024, T-027 completions not reflected in summary). Ground truth derived from grep of 'status: completed' across tasks array = 25 post-T-022.",
+        "_summaryDriftNote": "Counters corrected 2026-04-18 during T-022 bookkeeping. Prior value (completed=22) had drift from Session 2 (T-019, T-020, T-021, T-023, T-024, T-027 completions not reflected in summary). Ground truth derived from grep of 'status: completed' across tasks array. Updated post-T-025 (2026-04-18 session 3 continuation) = 26.",
         "_replanLog": [
             {
                 "date": "2026-04-17T17:55:00.000Z",

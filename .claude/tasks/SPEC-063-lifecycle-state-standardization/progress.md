@@ -1,13 +1,29 @@
 # SPEC-063 — Implementation Progress Log
 
-## Session summary (as of 2026-04-18T03:05)
+## Session summary (as of 2026-04-18T14:35)
 
-- **Progress:** 25/63 tasks (39.7%)
-- **Status:** in-progress — Phase 2 unit tests + admin UI + DB + schemas + i18n + T-021 + T-022 integration complete
-- **Milestone:** AC-005-01 verified end-to-end via service unit tests (force-override) + integration test (pipeline + response strip). Public OwnerPromotion endpoint now secure against DRAFT/ARCHIVED leakage via query-param manipulation.
-- **Remaining:** Phase 2 cron (T-025, T-026), Phase 4 DestinationReview, Phase 3 Sponsorship, cleanup T-058
-- **Critical path:** T-028 → T-030 → T-034 → T-035 → T-038 → T-039 → T-040 → T-042 → T-058
+- **Progress:** 26/63 tasks (41.3%)
+- **Status:** in-progress — Phase 2 cron handler (T-025) landed; registry/docs/tests (T-026) pending.
+- **Milestone:** AC-007-01 handler implemented. OwnerPromotion auto-archival logic complete and commitable in isolation; activation requires T-026 registry wiring + tests.
+- **Remaining:** T-026 (register + lock docs + tests), Phase 4 DestinationReview, Phase 3 Sponsorship, cleanup T-058
+- **Critical path:** T-026 → T-028 → T-030 → T-034 → T-035 → T-038 → T-039 → T-040 → T-042 → T-058
 - **Follow-up SPECs spawned:** SPEC-087 (public endpoint response schema strip — systemic factory fix)
+
+### Session 3 tasks completed (2026-04-18 T-025)
+
+| Task | Complexity | Files | Quality gate |
+|------|-----------|-------|--------------|
+| T-025 | 2.5 | `apps/api/src/cron/jobs/archive-expired-promotions.job.ts` (new, 205 lines) | biome/tc pass; tests deferred to T-026 |
+
+#### T-025 details
+- Handler follows `addon-expiry.job.ts` template exactly (`withTransaction` + discriminated union for skip vs execution).
+- **Spec deviation flagged**: spec text said `pg_try_advisory_lock(43010)` (session-level) but `packages/db/docs/advisory-locks.md` rule #1 forbids session locks under Neon/PgBouncer. Used `pg_try_advisory_xact_lock(43010)` (transaction-level); 43010 was already pre-registered in that doc as xact-variant for this job. User-approved.
+- **DB schema verified**: `owner_promotions.updated_by_id` is nullable (no `.notNull()` at line 33), so explicit `updatedById: null` is safe. Consistent with spec AC-007-01 "system-initiated action".
+- **Imports**: `inArray` pulled directly from `drizzle-orm` (not re-exported from `@repo/db`, matching destination.model.ts pattern). Everything else from `@repo/db`.
+- **Logger**: `ctx.logger` inside transaction callback; `apiLogger` (module-scoped `@repo/logger`) for the lock-skip warn outside tx — mirrors addon-expiry split.
+- **Sentry**: `Sentry.captureException(error, { tags: { cronJob, phase: 'top-level' } })` in catch, same tag shape as other cron jobs.
+- **Handler NOT yet registered** in `cron/registry.ts`. T-026 handles registration + advisory-locks.md Owner File update + tests.
+- Commit: `48cd293c` (feat(api) boundary). Bookkeeping commit follows.
 
 ### Session 3 tasks completed (2026-04-18 T-022)
 

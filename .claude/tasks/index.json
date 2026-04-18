@@ -215,7 +215,7 @@
             "specId": "SPEC-063",
             "title": "Lifecycle State Standardization",
             "status": "in-progress",
-            "progress": "5/58",
+            "progress": "26/63",
             "path": "SPEC-063-lifecycle-state-standardization"
         },
         {
@@ -224,6 +224,13 @@
             "status": "in-progress",
             "progress": "25/25",
             "path": "SPEC-078-cloudinary-image-management"
+        },
+        {
+            "specId": "SPEC-064",
+            "title": "Billing Transaction Safety — Advisory Locks and Atomic Operations",
+            "status": "pending",
+            "progress": "0/35",
+            "path": "SPEC-064-billing-transaction-safety"
         }
     ],
     "standalone": {

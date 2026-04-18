@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 25/63 tasks (39.7%)
+## Progress: 26/63 tasks (41.3%)
 
-**Last updated:** 2026-04-18T03:05:00Z
-**Status:** in-progress (Phase 2 unit tests + admin UI + DB + schemas + i18n + T-021 + T-022 complete; cron T-025/T-026 remaining)
+**Last updated:** 2026-04-18T14:35:00Z
+**Status:** in-progress (Phase 2 unit tests + admin UI + DB + schemas + i18n + T-021 + T-022 + T-025 handler complete; T-026 registry/docs/tests remaining)
 
 ### Follow-up SPECs spawned
 
@@ -11,7 +11,7 @@
 
 ### Next up (in priority order)
 
-1. **T-025 + T-026** (complexity 2.5 each) — archive-expired-promotions cron handler + advisory lock 43010 + tests.
+1. **T-026** (complexity 2.5) — register `archive-expired-promotions` in cron registry + update advisory-locks.md Owner File + write handler tests (dry-run, production, advisory-lock skip, empty batch, Sentry on failure, updatedAt correctness).
 
 Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057), cleanup T-058.
 
@@ -180,8 +180,13 @@ Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057
 
 ### Cron Job (US-007)
 
-- [ ] **T-025** (complexity: 2.5) — Create archive-expired-promotions cron job handler
-  - Advisory lock 43010, hourly schedule, batch 100
+- [x] **T-025** (complexity: 2.5) — Create archive-expired-promotions cron job handler
+  - COMPLETED 2026-04-18 · lint: pass · typecheck: pass (no new errors in apps/api) · tests: deferred to T-026
+  - Handler file: `apps/api/src/cron/jobs/archive-expired-promotions.job.ts` (205 lines)
+  - Advisory lock: `pg_try_advisory_xact_lock(43010)` (transaction-level per advisory-locks.md rule; spec-deviation flagged in state.json `_specDeviation`)
+  - Uses `withTransaction` + discriminated union (addon-expiry template)
+  - `updatedById: null` safe: column is nullable (verified against `owner_promotions.dbschema.ts:33`)
+  - Handler NOT yet registered in cron registry — T-026 scope
   - Blocked by: T-012 · Blocks: T-026
 
 - [ ] **T-026** (complexity: 2.5) — Register cron job + advisory lock docs + tests
