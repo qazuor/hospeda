@@ -1292,28 +1292,31 @@
             "id": "T-038",
             "title": "Write DestinationReview admin-search + integration tests",
             "description": "Write tests that verify: (1) admin-search status filter maps to lifecycleState (workaround removed), filters by DRAFT/ACTIVE/ARCHIVED work correctly, (2) integration test of admin list endpoint filtering by lifecycleState. Covers AC-001-04.\n\nFiles: `packages/schemas/test/entities/destinationReview/destinationReview.admin-search.schema.test.ts`, `apps/api/test/integration/destination-review/admin-list.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-034", "T-035"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add admin-search schema test for status → lifecycleState mapping",
-                    "completed": false
+                    "completed": true,
+                    "_note": "29 tests total: 5 lifecycle-specific (default 'all', accept DRAFT/ACTIVE/ARCHIVED, reject invalid) + scope bonus of 24 covering pagination, UUID filters, rating boundaries, base admin filters, and combined scenarios."
                 },
                 {
                     "title": "Write integration test for admin filter by DRAFT/ACTIVE/ARCHIVED",
-                    "completed": false
+                    "completed": true,
+                    "_note": "5 tests using module-level mock of DestinationReviewService. Verifies query.status reaches service with correct enum + invalid rejected with 400/422 before handler + default 'all'."
                 }
             ],
             "tags": ["schemas", "api", "testing", "integration", "phase-4", "destinationReview"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-04-18T16:00:00.000Z",
+                "completed": "2026-04-18T16:55:00.000Z"
+            },
+            "_routerCollisionGotcha": "Hono evaluates middleware for all sibling routes registered at `/` on the same path resolution. Because adminDestinationRoutes mounts /reviews alongside list/create/batch/getById/etc. also at `/`, a GET to /admin/destinations/reviews/ triggers auth checks from multiple siblings. Mock actor required DESTINATION_VIEW_ALL + DESTINATION_CREATE + other peer perms to pass — not just DESTINATION_REVIEW_VIEW. Trailing slash on URL also required (base = '/api/v1/admin/destinations/reviews/') to match the sub-router root. Document in test comment for future integration-test authors touching any destinations sub-router."
         },
         {
             "id": "T-039",
@@ -1870,9 +1873,9 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 29,
+        "pending": 28,
         "inProgress": 0,
-        "completed": 34,
+        "completed": 35,
         "blocked": 0,
         "averageComplexity": 2.0,
         "_summaryDriftNote": "Counters corrected 2026-04-18 during T-022 bookkeeping. Prior value (completed=22) had drift from Session 2 (T-019, T-020, T-021, T-023, T-024, T-027 completions not reflected in summary). Ground truth derived from grep of 'status: completed' across tasks array. Verified post-T-037 session end = 34.",

@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 34/63 tasks (54.0%)
+## Progress: 35/63 tasks (55.6%)
 
-**Last updated:** 2026-04-18T15:45:00Z
-**Status:** in-progress (Phase 2 complete + Phase 4 schema layer + routes-verification + schema tests complete). Next: T-029 migrations (requires DB running), T-036 admin UI filter, T-038 integration test.
+**Last updated:** 2026-04-18T16:55:00Z
+**Status:** in-progress (Phase 2 complete + Phase 4 schema layer + routes-verification + schema tests + admin-search tests + integration tests complete). Next: T-036 admin UI filter (no DB), then T-029 migrations + T-031 post-migration (both require DB running).
 
 ### Follow-up SPECs spawned
 
@@ -11,15 +11,14 @@
 
 ### Next up (in priority order)
 
-1. **T-029** (complexity 2) — Generate DestinationReview up + down migrations. **Requires `pnpm db:generate` with running Postgres**; may need user handoff.
-2. **T-038** (complexity 2) — Admin-search schema test + integration test (AC-001-04).
-3. **T-036** (complexity 2) — Admin UI lifecycle filter for DestinationReview list.
-4. **T-031** (complexity 1.5) — Post-migration verification test (blocked on T-029).
+1. **T-036** (complexity 2) — Admin UI lifecycle filter for DestinationReview list in apps/admin. No DB required; follows Phase 2 T-018a pattern.
+2. **T-029** (complexity 2) — Generate DestinationReview up + down migrations. **Requires `pnpm db:generate` with running Postgres**; may need user handoff.
+3. **T-031** (complexity 1.5) — Post-migration verification test (blocked on T-029).
 
-Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057), cleanup T-058.
+Then Phase 3 (Sponsorship T-039..T-057), cleanup T-058.
 
 **Average Complexity:** 2.1/2.5 (ceiling)
-**Critical Path (post-T-027):** T-028 -> T-030 -> T-034 -> T-035 -> T-038 -> T-039 -> T-040 -> T-042 -> T-058 (9 steps remaining)
+**Critical Path (post-T-038):** T-039 -> T-040 -> T-042 -> T-058 (4 steps remaining)
 **Parallel Tracks:** 3 identified (Phase 1 tests, Phase 2 migration, Phase 2 schemas after T-003)
 
 ---

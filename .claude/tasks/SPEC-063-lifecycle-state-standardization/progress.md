@@ -1,12 +1,25 @@
 # SPEC-063 — Implementation Progress Log
 
-## Session summary (as of 2026-04-18T15:45)
+## Session summary (as of 2026-04-18T16:55)
 
-- **Progress:** 34/63 tasks (54.0%).
-- **Status:** Phase 2 OwnerPromotion complete end-to-end. Phase 4 DestinationReview schema + routes-verification + schema tests complete.
-- **Remaining:** Phase 4 finish (T-029 migrations, T-036 admin UI, T-038 integration), Phase 3 Sponsorship, cleanup T-058
-- **Critical path:** T-038 → T-039 → T-040 → T-042 → T-058 (5 steps remaining)
+- **Progress:** 35/63 tasks (55.6%).
+- **Status:** Phase 2 OwnerPromotion complete end-to-end. Phase 4 DestinationReview schema + routes-verification + schema tests + admin-search tests + integration tests complete. Remaining Phase 4: T-029 migrations (requires DB), T-031 post-migration test (blocked on T-029), T-036 admin UI filter.
+- **Remaining:** Phase 4 finish (T-029 migrations, T-031 post-migration, T-036 admin UI), Phase 3 Sponsorship, cleanup T-058
+- **Critical path:** T-039 → T-040 → T-042 → T-058 (4 steps remaining)
 - **Follow-up SPECs spawned:** SPEC-087 (public endpoint response schema strip — systemic factory fix)
+
+### Session 3 T-038 (2026-04-18)
+
+| Task | Complexity | Files | Quality gate |
+|------|-----------|-------|--------------|
+| T-038 | 2 | `packages/schemas/test/entities/destinationReview/destinationReview.admin-search.schema.test.ts` (new, 29 tests) · `apps/api/test/integration/destination-review/admin-list.test.ts` (new, 5 tests) | biome/tc/tests pass (29/29 + 5/5) |
+
+#### T-038 details
+- **Schema test (29 cases)**: 5 lifecycle-specific (spec scope) + 24 scope bonus — pagination (page/pageSize coerce + boundary rejects), destination-specific filters (destinationId/userId UUID validation, minRating/maxRating 1-5 inclusive with decimal support), base admin filters (search, sort, includeDeleted, createdAfter/Before), combined filters. Mirrors the T-020 schema test structure exactly.
+- **Integration test (5 cases)**: module-level `vi.mock('@repo/service-core')` capturing `adminList` args. Verifies `?status=DRAFT|ACTIVE|ARCHIVED` → 200 + correct query, `?status=INVALID_STATE` → 400/422 without reaching handler, no status → default 'all'. Mirrors T-021 pattern.
+- **Router-collision gotcha flagged in test comment** + `_routerCollisionGotcha` in state.json: Hono evaluates middleware for every sibling route registered at `/` on the same resolved path. `adminDestinationRoutes` mounts `/reviews` alongside list/create/batch/getById/update/patch/delete/hardDelete/restore/children/descendants/ancestors, all at root. A GET to `/admin/destinations/reviews/` triggers `requiredPermissions` checks from multiple siblings (destination.create, destination.viewAll, destinationReview.view). Mock actor needs the full destination admin permission set, not just `DESTINATION_REVIEW_VIEW`. **Trailing slash also required** on the request URL (`/api/v1/admin/destinations/reviews/`) so the sub-router root `/` resolves. Document for future integration-test authors touching any destinations sub-router.
+- **AC-001-04 note**: spec wording says "isPublished and isVerified boolean flags remain accessible as separate filters". `destination_reviews` table has **no `isVerified` column** (confirmed in the admin-search schema comment block) — only `isPublished`. No test was added for `isVerified` because the field does not exist at any layer. Flagged as scope deviation but not a blocker (AC still satisfied for existing `isPublished` via separate unchanged filter surface).
+- Commit: `e6dc9eb9` (feat+test). Bookkeeping follows.
 
 ### Session 3 Phase 4 tests + routes block (2026-04-18 T-035, T-037)
 
