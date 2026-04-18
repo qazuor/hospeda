@@ -752,13 +752,10 @@
             "specialPrice": "Precio especial"
         },
         "statusActive": "Activo",
-        "statusInactive": "Inactivo",
         "statusDraft": "Borrador",
         "statusArchived": "Archivado",
         "actions": {
             "view": "Ver",
-            "deactivate": "Desactivar",
-            "activate": "Activar",
             "changeLifecycle": "Cambiar estado",
             "edit": "Editar",
             "delete": "Eliminar"
@@ -769,16 +766,8 @@
             "freeNight": "Noche gratis",
             "specialPrice": "Precio especial"
         },
-        "statusActiveLabel": "Activo",
-        "statusInactiveLabel": "Inactivo",
-        "actionActivate": "Activar",
-        "actionDeactivate": "Desactivar",
-        "actionEdit": "Editar",
-        "actionDelete": "Eliminar",
         "filters": {
             "allStatuses": "Todos los estados",
-            "active": "Activo",
-            "inactive": "Inactivo",
             "allTypes": "Todos los tipos"
         },
         "entitlementGate": "Crear promociones está disponible en planes Pro y Premium",
