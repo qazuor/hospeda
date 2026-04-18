@@ -6,6 +6,7 @@
 #   - Materialized view: search_index (migrations 0016-0018)
 #   - Triggers: set_updated_at, delete_entity_bookmarks (migrations 0019-0020)
 #   - CHECK constraints on billing_addon_purchases (migrations 0025-0026)
+#   - CHECK constraint on billing_subscription_events.event_type
 #
 # This script is IDEMPOTENT. Every statement uses IF NOT EXISTS or
 # CREATE OR REPLACE, so it is safe to run multiple times.
@@ -101,7 +102,7 @@ echo ""
 # Step 1: Materialized view — search_index
 # Migration: manual/0016_create_search_index.sql
 # ------------------------------------------------------------
-echo "[1/7] Materialized view: search_index"
+echo "[1/8] Materialized view: search_index"
 run_file \
   "search_index materialized view (0016)" \
   "${MANUAL_DIR}/0016_create_search_index.sql"
@@ -111,7 +112,7 @@ echo ""
 # Step 2: GIN index on search_index.tsv
 # Migration: manual/0017_create_search_index_gin.sql
 # ------------------------------------------------------------
-echo "[2/7] GIN index: idx_search_index_tsv"
+echo "[2/8] GIN index: idx_search_index_tsv"
 run_file \
   "GIN index on search_index.tsv (0017)" \
   "${MANUAL_DIR}/0017_create_search_index_gin.sql"
@@ -123,7 +124,7 @@ echo ""
 # Note: Only the CREATE OR REPLACE FUNCTION statement is applied.
 # The optional pg_cron schedule (commented out in the file) is skipped.
 # ------------------------------------------------------------
-echo "[3/7] Function: refresh_search_index()"
+echo "[3/8] Function: refresh_search_index()"
 run_file \
   "refresh_search_index function (0018)" \
   "${MANUAL_DIR}/0018_refresh_search_index_function.sql"
@@ -137,7 +138,7 @@ echo ""
 # public schema that have an updated_at column AT THE TIME IT RUNS.
 # Re-run this script if new tables are added later.
 # ------------------------------------------------------------
-echo "[4/7] Trigger function + triggers: set_updated_at"
+echo "[4/8] Trigger function + triggers: set_updated_at"
 echo "  NOTE: Trigger will be attached to all tables with updated_at column"
 
 # The DO block in 0019 uses EXECUTE format() which will fail with
@@ -198,7 +199,7 @@ echo ""
 # This file uses DROP TRIGGER IF EXISTS + CREATE TRIGGER, so it is
 # already idempotent. Run it directly.
 # ------------------------------------------------------------
-echo "[5/7] Trigger function + triggers: delete_entity_bookmarks"
+echo "[5/8] Trigger function + triggers: delete_entity_bookmarks"
 run_file \
   "delete_entity_bookmarks trigger (0020)" \
   "${MANUAL_DIR}/0020_add_delete_entity_bookmarks_trigger.sql"
@@ -211,7 +212,7 @@ echo ""
 # ALTER TABLE ADD CONSTRAINT fails if the constraint already exists.
 # Wrap in a DO block to make it idempotent.
 # ------------------------------------------------------------
-echo "[6/7] CHECK constraint: billing_addon_purchases_status_check"
+echo "[6/8] CHECK constraint: billing_addon_purchases_status_check"
 run_sql \
   "status CHECK constraint (0025)" \
   "DO \$\$
@@ -233,7 +234,7 @@ echo ""
 # Step 7: CHECK constraints — billing_addon_purchases JSONB columns
 # Migration: 0026_addon_purchases_jsonb_check.sql
 # ------------------------------------------------------------
-echo "[7/7] CHECK constraints: chk_limit_adjustments_type + chk_entitlement_adjustments_type"
+echo "[7/8] CHECK constraints: chk_limit_adjustments_type + chk_entitlement_adjustments_type"
 run_sql \
   "limit_adjustments JSONB CHECK constraint (0026)" \
   "DO \$\$
@@ -266,6 +267,43 @@ run_sql \
    END;
    \$\$;"
 
+echo ""
+
+# ------------------------------------------------------------
+# Step 8: Unique index on billing_notification_log idempotency key
+# Uses JSONB extraction (metadata->>'idempotencyKey') which Drizzle
+# cannot declare natively.
+# ------------------------------------------------------------
+echo "[8/8] Unique index: idx_notification_log_idempotency_key"
+run_sql \
+  "billing_notification_log idempotency key unique index" \
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_notification_log_idempotency_key
+   ON billing_notification_log ((metadata->>'idempotencyKey'))
+   WHERE metadata->>'idempotencyKey' IS NOT NULL;"
+echo ""
+
+# ------------------------------------------------------------
+# Step 9: CHECK constraint — billing_subscription_events.event_type length
+# Ensures operational event_type values do not exceed the varchar(100) limit
+# and prevents empty strings being stored as event types.
+# Uses the same idempotent DO-block pattern as steps 6 and 7.
+# ------------------------------------------------------------
+echo "[9/9] CHECK constraint: billing_subscription_events_event_type_check"
+run_sql \
+  "event_type CHECK constraint on billing_subscription_events" \
+  "DO \$\$
+   BEGIN
+     IF NOT EXISTS (
+       SELECT 1 FROM pg_constraint
+       WHERE conname = 'billing_subscription_events_event_type_check'
+         AND conrelid = 'billing_subscription_events'::regclass
+     ) THEN
+       ALTER TABLE billing_subscription_events
+         ADD CONSTRAINT billing_subscription_events_event_type_check
+         CHECK (event_type IS NULL OR (char_length(event_type) > 0 AND char_length(event_type) <= 100));
+     END IF;
+   END;
+   \$\$;"
 echo ""
 
 # ---------------------------------------------------------------------------

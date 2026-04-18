@@ -17,13 +17,13 @@
  */
 
 import { getAddonBySlug } from '@repo/billing';
+import type { DrizzleClient } from '@repo/db';
 import {
     and,
     billingAddonPurchases,
     billingNotificationLog,
     billingSubscriptions,
     eq,
-    getDb,
     isNull,
     withTransaction
 } from '@repo/db';
@@ -69,18 +69,23 @@ function generateIdempotencyKey(
  * one addon from suppressing legitimate notifications for a different addon belonging
  * to the same customer.
  *
+ * Accepts an optional `tx` parameter so the idempotency check runs within the same
+ * transaction that holds the advisory lock, ensuring consistent reads.
+ *
  * @param type - Notification type
  * @param customerId - Billing customer ID
  * @param addonSlug - Add-on slug (included in idempotency key)
+ * @param tx - Optional transaction client. When provided, runs within that transaction.
  * @returns Whether notification was already sent today for this specific addon
  */
 async function wasNotificationSent(
     type: NotificationType,
     customerId: string,
-    addonSlug: string
+    addonSlug: string,
+    tx: DrizzleClient
 ): Promise<boolean> {
     try {
-        const db = getDb();
+        const db = tx;
         const idempotencyKey = generateIdempotencyKey(type, customerId, addonSlug);
 
         const existing = await db
@@ -272,7 +277,8 @@ export const addonExpiryJob: CronJobDefinition = {
                                         await wasNotificationSent(
                                             NotificationType.ADDON_EXPIRED,
                                             expiredAddon.customerId,
-                                            expiredAddon.addonSlug
+                                            expiredAddon.addonSlug,
+                                            tx
                                         )
                                     ) {
                                         logger.debug(
@@ -397,7 +403,8 @@ export const addonExpiryJob: CronJobDefinition = {
                                     await wasNotificationSent(
                                         NotificationType.ADDON_EXPIRATION_WARNING,
                                         expiringAddon.customerId,
-                                        expiringAddon.addonSlug
+                                        expiringAddon.addonSlug,
+                                        tx
                                     )
                                 ) {
                                     logger.debug('Skipping duplicate notification (3 days)', {
@@ -514,7 +521,8 @@ export const addonExpiryJob: CronJobDefinition = {
                                     await wasNotificationSent(
                                         NotificationType.ADDON_EXPIRATION_WARNING,
                                         expiringAddon.customerId,
-                                        expiringAddon.addonSlug
+                                        expiringAddon.addonSlug,
+                                        tx
                                     )
                                 ) {
                                     logger.debug('Skipping duplicate notification (1 day)', {

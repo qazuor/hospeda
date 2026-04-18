@@ -26,7 +26,8 @@ import {
     getDb,
     isNull,
     lt,
-    sql
+    sql,
+    withTransaction
 } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
 import { getQZPayBilling } from '../../middlewares/billing.js';
@@ -328,6 +329,22 @@ async function incrementAttempts(
 }
 
 /**
+ * Discriminated union returned by the withTransaction callback in the cron handler.
+ * Allows the outer handler to distinguish lock-skip from real execution results.
+ */
+type CronTransactionResult =
+    | { readonly skipped: true }
+    | {
+          readonly skipped: false;
+          readonly success: boolean;
+          readonly message: string;
+          readonly processed: number;
+          readonly errors: number;
+          readonly durationMs: number;
+          readonly details?: Record<string, unknown>;
+      };
+
+/**
  * Webhook retry cron job definition
  *
  * Schedule: Hourly at the top of each hour
@@ -343,177 +360,200 @@ export const webhookRetryJob: CronJobDefinition = {
     handler: async (ctx) => {
         const { logger, startedAt, dryRun } = ctx;
 
-        // ── Concurrency guard (GAP-009) ───────────────────────────────────────
-        // Prevent concurrent execution across multiple API instances.
-        const lockKey = 1001;
-        const db = getDb();
-        const lockResult = await db.execute(
-            sql`SELECT pg_try_advisory_lock(${lockKey}) AS acquired`
-        );
-        if (!lockResult.rows[0]?.acquired) {
-            logger.warn('Could not acquire advisory lock — skipping run', { lockKey });
-            return {
-                success: true,
-                message: 'Skipped — another instance is already running',
-                processed: 0,
-                errors: 0,
-                durationMs: 0
-            };
-        }
-
-        logger.info('Starting webhook retry job', {
-            dryRun,
-            startedAt: startedAt.toISOString()
-        });
-
         let processed = 0;
         let errors = 0;
         let resolved = 0;
         let permanentlyFailed = 0;
 
         try {
-            // Query unresolved events from dead letter queue
-            // Unresolved = resolved_at IS NULL
-            const unresolvedEvents = await db
-                .select()
-                .from(billingWebhookDeadLetter)
-                .where(
-                    and(
-                        isNull(billingWebhookDeadLetter.resolvedAt),
-                        lt(billingWebhookDeadLetter.attempts, MAX_RETRY_ATTEMPTS)
-                    )
-                )
-                .limit(BATCH_SIZE);
+            // Prevent overlapping cron executions via PostgreSQL advisory lock (GAP-009).
+            // Lock key 1001 is reserved for this job. Uses pg_try_advisory_xact_lock
+            // (transaction-level) instead of pg_try_advisory_lock (session-level) for
+            // compatibility with Neon's transaction pooling (PgBouncer). Transaction-level
+            // locks auto-release on commit/rollback — no manual unlock needed.
+            const cronResult = await withTransaction<CronTransactionResult>(async (tx) => {
+                const lockResult = await tx.execute(
+                    sql`SELECT pg_try_advisory_xact_lock(1001) AS acquired`
+                );
+                if (!lockResult.rows[0]?.acquired) {
+                    return { skipped: true };
+                }
 
-            if (unresolvedEvents.length === 0) {
-                logger.info('No unresolved webhook events found in dead letter queue');
+                logger.info('Starting webhook retry job', {
+                    dryRun,
+                    startedAt: startedAt.toISOString()
+                });
+
+                // Query unresolved events from dead letter queue
+                // Unresolved = resolved_at IS NULL
+                const unresolvedEvents = await tx
+                    .select()
+                    .from(billingWebhookDeadLetter)
+                    .where(
+                        and(
+                            isNull(billingWebhookDeadLetter.resolvedAt),
+                            lt(billingWebhookDeadLetter.attempts, MAX_RETRY_ATTEMPTS)
+                        )
+                    )
+                    .limit(BATCH_SIZE);
+
+                if (unresolvedEvents.length === 0) {
+                    logger.info('No unresolved webhook events found in dead letter queue');
+                    return {
+                        skipped: false,
+                        success: true,
+                        message: 'No unresolved webhook events to retry',
+                        processed: 0,
+                        errors: 0,
+                        durationMs: Date.now() - startedAt.getTime()
+                    };
+                }
+
+                logger.info('Found unresolved webhook events to retry', {
+                    count: unresolvedEvents.length,
+                    batchSize: BATCH_SIZE
+                });
+
+                if (dryRun) {
+                    // Dry run mode - count events that would be retried
+                    logger.info('Running in dry-run mode');
+
+                    for (const event of unresolvedEvents) {
+                        logger.debug('Would retry webhook event', {
+                            eventId: event.id,
+                            providerEventId: event.providerEventId,
+                            provider: event.provider,
+                            type: event.type,
+                            attempts: event.attempts
+                        });
+                    }
+
+                    return {
+                        skipped: false,
+                        success: true,
+                        message: `Dry run - Would retry ${unresolvedEvents.length} webhook events`,
+                        processed: unresolvedEvents.length,
+                        errors: 0,
+                        durationMs: Date.now() - startedAt.getTime(),
+                        details: {
+                            dryRun: true,
+                            totalEvents: unresolvedEvents.length
+                        }
+                    };
+                }
+
+                // Production mode - actually retry the events
+                logger.info('Running in production mode - retrying webhook events');
+
+                // Process each event individually
+                // Don't let one failure stop processing others
+                for (const event of unresolvedEvents) {
+                    try {
+                        processed++;
+
+                        // Attempt to retry the webhook
+                        const success = await retryWebhookEvent({
+                            id: event.id,
+                            providerEventId: event.providerEventId,
+                            provider: event.provider,
+                            type: event.type,
+                            payload: event.payload,
+                            attempts: event.attempts
+                        });
+
+                        if (success) {
+                            // Mark as resolved
+                            await markAsResolved(tx, event.id);
+                            resolved++;
+                        } else {
+                            // Increment attempts
+                            await incrementAttempts(tx, event.id, event.attempts);
+                            errors++;
+
+                            // Check if permanently failed
+                            if (event.attempts + 1 >= MAX_RETRY_ATTEMPTS) {
+                                permanentlyFailed++;
+                            }
+                        }
+                    } catch (error) {
+                        // Error handling for individual event processing
+                        errors++;
+
+                        const errorMessage = error instanceof Error ? error.message : String(error);
+
+                        logger.error('Error processing webhook event retry', {
+                            eventId: event.id,
+                            providerEventId: event.providerEventId,
+                            error: errorMessage,
+                            stack: error instanceof Error ? error.stack : undefined
+                        });
+
+                        // Still increment attempts even if processing threw an error
+                        try {
+                            await incrementAttempts(tx, event.id, event.attempts);
+
+                            if (event.attempts + 1 >= MAX_RETRY_ATTEMPTS) {
+                                permanentlyFailed++;
+                            }
+                        } catch (updateError) {
+                            logger.error('Failed to update webhook event attempts after error', {
+                                eventId: event.id,
+                                error:
+                                    updateError instanceof Error
+                                        ? updateError.message
+                                        : String(updateError)
+                            });
+                        }
+                    }
+                }
+
+                const durationMs = Date.now() - startedAt.getTime();
+
+                logger.info('Webhook retry job completed', {
+                    processed,
+                    resolved,
+                    errors,
+                    permanentlyFailed,
+                    durationMs
+                });
+
+                return {
+                    skipped: false,
+                    success: true,
+                    message: `Processed ${processed} webhook events: ${resolved} resolved, ${errors} failed, ${permanentlyFailed} permanently failed`,
+                    processed,
+                    errors,
+                    durationMs,
+                    details: {
+                        resolved,
+                        permanentlyFailed,
+                        remaining: unresolvedEvents.length - processed
+                    }
+                };
+                // End of withTransaction callback — lock auto-releases on commit
+            });
+
+            // Handle lock-not-acquired case from inside the transaction
+            if (cronResult.skipped) {
+                logger.warn(
+                    'webhook-retry cron: skipping — previous run still holds advisory lock'
+                );
                 return {
                     success: true,
-                    message: 'No unresolved webhook events to retry',
+                    message: 'Skipped — another instance is already running',
                     processed: 0,
                     errors: 0,
                     durationMs: Date.now() - startedAt.getTime()
                 };
             }
 
-            logger.info('Found unresolved webhook events to retry', {
-                count: unresolvedEvents.length,
-                batchSize: BATCH_SIZE
-            });
-
-            if (dryRun) {
-                // Dry run mode - count events that would be retried
-                logger.info('Running in dry-run mode');
-
-                for (const event of unresolvedEvents) {
-                    logger.debug('Would retry webhook event', {
-                        eventId: event.id,
-                        providerEventId: event.providerEventId,
-                        provider: event.provider,
-                        type: event.type,
-                        attempts: event.attempts
-                    });
-                }
-
-                return {
-                    success: true,
-                    message: `Dry run - Would retry ${unresolvedEvents.length} webhook events`,
-                    processed: unresolvedEvents.length,
-                    errors: 0,
-                    durationMs: Date.now() - startedAt.getTime(),
-                    details: {
-                        dryRun: true,
-                        totalEvents: unresolvedEvents.length
-                    }
-                };
-            }
-
-            // Production mode - actually retry the events
-            logger.info('Running in production mode - retrying webhook events');
-
-            // Process each event individually
-            // Don't let one failure stop processing others
-            for (const event of unresolvedEvents) {
-                try {
-                    processed++;
-
-                    // Attempt to retry the webhook
-                    const success = await retryWebhookEvent({
-                        id: event.id,
-                        providerEventId: event.providerEventId,
-                        provider: event.provider,
-                        type: event.type,
-                        payload: event.payload,
-                        attempts: event.attempts
-                    });
-
-                    if (success) {
-                        // Mark as resolved
-                        await markAsResolved(db, event.id);
-                        resolved++;
-                    } else {
-                        // Increment attempts
-                        await incrementAttempts(db, event.id, event.attempts);
-                        errors++;
-
-                        // Check if permanently failed
-                        if (event.attempts + 1 >= MAX_RETRY_ATTEMPTS) {
-                            permanentlyFailed++;
-                        }
-                    }
-                } catch (error) {
-                    // Error handling for individual event processing
-                    errors++;
-
-                    const errorMessage = error instanceof Error ? error.message : String(error);
-
-                    logger.error('Error processing webhook event retry', {
-                        eventId: event.id,
-                        providerEventId: event.providerEventId,
-                        error: errorMessage,
-                        stack: error instanceof Error ? error.stack : undefined
-                    });
-
-                    // Still increment attempts even if processing threw an error
-                    try {
-                        await incrementAttempts(db, event.id, event.attempts);
-
-                        if (event.attempts + 1 >= MAX_RETRY_ATTEMPTS) {
-                            permanentlyFailed++;
-                        }
-                    } catch (updateError) {
-                        logger.error('Failed to update webhook event attempts after error', {
-                            eventId: event.id,
-                            error:
-                                updateError instanceof Error
-                                    ? updateError.message
-                                    : String(updateError)
-                        });
-                    }
-                }
-            }
-
-            const durationMs = Date.now() - startedAt.getTime();
-
-            logger.info('Webhook retry job completed', {
-                processed,
-                resolved,
-                errors,
-                permanentlyFailed,
-                durationMs
-            });
-
             return {
-                success: true,
-                message: `Processed ${processed} webhook events: ${resolved} resolved, ${errors} failed, ${permanentlyFailed} permanently failed`,
-                processed,
-                errors,
-                durationMs,
-                details: {
-                    resolved,
-                    permanentlyFailed,
-                    remaining: unresolvedEvents.length - processed
-                }
+                success: cronResult.success,
+                message: cronResult.message,
+                processed: cronResult.processed,
+                errors: cronResult.errors,
+                durationMs: cronResult.durationMs,
+                ...(cronResult.details ? { details: cronResult.details } : {})
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -539,5 +579,7 @@ export const webhookRetryJob: CronJobDefinition = {
                 }
             };
         }
+        // Note: no finally block needed — pg_try_advisory_xact_lock auto-releases on
+        // transaction commit/rollback. The lock was scoped to the withTransaction call above.
     }
 };

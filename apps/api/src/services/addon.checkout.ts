@@ -445,9 +445,8 @@ export async function confirmAddonPurchase(
                 ? new Date(now.getTime() + addon.durationDays * 24 * 60 * 60 * 1000)
                 : null;
 
-        const { getDb } = await import('@repo/db/client');
+        const { withTransaction } = await import('@repo/db/client');
         const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
-        const db = input.tx ?? getDb();
 
         // Re-verify the subscription is still active immediately before the DB
         // insert. The initial check at the top of this function happened earlier
@@ -469,11 +468,38 @@ export async function confirmAddonPurchase(
             };
         }
 
-        // Wrap DB operations in a transaction to ensure atomicity
+        // Wrap DB operations in a transaction to ensure atomicity.
+        // When input.tx is provided (caller already holds a transaction), reuse it
+        // directly via withTransaction's existingTx passthrough to avoid nesting.
         let purchaseId: string;
 
+        const { sql: drizzleSql } = await import('drizzle-orm');
+
         try {
-            const [insertedPurchase] = await db.transaction(async (tx) => {
+            const [insertedPurchase] = await withTransaction(async (tx) => {
+                // ── SELECT FOR UPDATE: check for existing active purchase ───────
+                // Locks any matching row so a concurrent confirmAddonPurchase for
+                // the same customer+addon cannot insert a duplicate between this
+                // read and the INSERT below (TOCTOU prevention).
+                const existing = await tx.execute<{ id: string }>(
+                    drizzleSql`SELECT id
+                               FROM   billing_addon_purchases
+                               WHERE  customer_id = ${input.customerId}
+                                 AND  addon_slug  = ${input.addonSlug}
+                                 AND  status      = 'active'
+                                 AND  deleted_at  IS NULL
+                               LIMIT  1
+                               FOR UPDATE`
+                );
+
+                if (existing.rows.length > 0) {
+                    // Throw a sentinel so the outer catch can return the right error
+                    // without logging it as an unexpected failure.
+                    const err = new Error('ADDON_ALREADY_ACTIVE') as Error & { sentinel: true };
+                    err.sentinel = true;
+                    throw err;
+                }
+
                 return tx
                     .insert(billingAddonPurchases)
                     .values({
@@ -489,7 +515,7 @@ export async function confirmAddonPurchase(
                         metadata: input.metadata || {}
                     })
                     .returning({ id: billingAddonPurchases.id });
-            });
+            }, input.tx);
 
             if (!insertedPurchase) {
                 return {
@@ -503,6 +529,21 @@ export async function confirmAddonPurchase(
 
             purchaseId = insertedPurchase.id;
         } catch (insertError) {
+            // Sentinel thrown by the FOR UPDATE check above
+            if (
+                insertError instanceof Error &&
+                'sentinel' in insertError &&
+                (insertError as Error & { sentinel: boolean }).sentinel
+            ) {
+                return {
+                    success: false,
+                    error: {
+                        code: 'ADDON_ALREADY_ACTIVE',
+                        message: 'Addon already active for this customer'
+                    }
+                };
+            }
+
             // Postgres unique constraint violation (partial index: active addon per customer)
             if (
                 insertError instanceof Error &&
@@ -570,16 +611,15 @@ export async function confirmAddonPurchase(
             typeof input.metadata?.discountAmount === 'number' ? input.metadata.discountAmount : 0;
 
         if (confirmedPromoCodeId && confirmedPromoCode) {
-            try {
-                const promoService = new PromoCodeService();
-                await promoService.incrementUsage(confirmedPromoCodeId);
-                await promoService.recordUsage({
-                    promoCodeId: confirmedPromoCodeId,
-                    customerId: input.customerId,
-                    discountAmount: confirmedDiscountAmount,
-                    currency: 'ARS'
-                });
+            const promoService = new PromoCodeService();
+            const redeemResult = await promoService.redeemAndRecord({
+                promoCodeId: confirmedPromoCodeId,
+                customerId: input.customerId,
+                discountAmount: confirmedDiscountAmount,
+                currency: 'ARS'
+            });
 
+            if (redeemResult.success) {
                 apiLogger.info(
                     {
                         promoCodeId: confirmedPromoCodeId,
@@ -589,13 +629,13 @@ export async function confirmAddonPurchase(
                     },
                     'Promo code usage recorded after payment confirmation'
                 );
-            } catch (promoError) {
+            } else {
                 // Non-fatal: log and continue — purchase is already committed
                 apiLogger.warn(
                     {
                         promoCodeId: confirmedPromoCodeId,
                         promoCode: confirmedPromoCode,
-                        error: promoError instanceof Error ? promoError.message : String(promoError)
+                        error: redeemResult.error.message
                     },
                     'Failed to record promo code usage after payment confirmation'
                 );

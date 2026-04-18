@@ -9,11 +9,12 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getAddonBySlug } from '@repo/billing';
-import { type DrizzleClient, withTransaction } from '@repo/db';
+import { type DrizzleClient, billingSubscriptions, getDb, withTransaction } from '@repo/db';
+import { billingAddonPurchases, billingSubscriptionEvents } from '@repo/db/schemas';
 import { NotificationType } from '@repo/notifications';
 import {
+    BILLING_EVENT_TYPES,
     cancelAddonPurchaseRecord,
-    queryActiveAddonPurchases,
     queryAddonActive,
     queryUserAddons
 } from '@repo/service-core';
@@ -25,6 +26,7 @@ import type {
     UserAddon
 } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
 import type { AddonEntitlementService } from './addon-entitlement.service';
@@ -91,7 +93,7 @@ export async function cancelUserAddon(
     input: CancelAddonInput & { tx?: DrizzleClient }
 ): Promise<ServiceResult<void>> {
     try {
-        const { getDb } = await import('@repo/db/client');
+        const { getDb, withTransaction } = await import('@repo/db/client');
         const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
         const { and, eq, isNull } = await import('drizzle-orm');
         const db = input.tx ?? getDb();
@@ -152,8 +154,10 @@ export async function cancelUserAddon(
             const limitKey = addonDef.affectsLimitKey;
 
             // Phase 1: DB-only — cancel the purchase record atomically, then commit.
+            // When input.tx is provided (caller already holds a transaction), reuse it
+            // directly via withTransaction's existingTx passthrough to avoid nesting.
             try {
-                await db.transaction(async (tx) => {
+                await withTransaction(async (tx) => {
                     const updateResult = await tx
                         .update(billingAddonPurchases)
                         .set({
@@ -192,7 +196,7 @@ export async function cancelUserAddon(
                             'Canceled billing_addon_purchase record'
                         );
                     }
-                });
+                }, input.tx);
             } catch (txError) {
                 const errorMessage = txError instanceof Error ? txError.message : String(txError);
 
@@ -439,9 +443,12 @@ export async function checkAddonActive(
 /**
  * Revokes ALL active addon purchases for a customer.
  *
- * Uses queryActiveAddonPurchases and cancelAddonPurchaseRecord from
- * @repo/service-core for DB operations. Adds Sentry reporting and
- * structured logging as infra concerns.
+ * The SELECT query for active purchases and all cancellation UPDATEs execute
+ * inside a single transaction. The SELECT uses `FOR UPDATE` to lock the rows
+ * at query time, eliminating the TOCTOU race condition where another process
+ * could modify the same rows between the read and the write.
+ *
+ * Adds Sentry reporting and structured logging as infra concerns.
  *
  * @param input - Customer ID whose addons should be revoked
  * @returns Count of successfully revoked purchases and IDs of any failures
@@ -451,16 +458,30 @@ export async function revokeAllAddonsForCustomer(
 ): Promise<RevokeAllAddonsResult> {
     const { customerId } = input;
 
-    const activePurchases = await queryActiveAddonPurchases({ customerId });
-
-    apiLogger.info(
-        { customerId, activePurchaseCount: activePurchases.length },
-        'Revoking all active addon purchases for customer'
-    );
-
     const failedIds: string[] = [];
 
     const revokedCount = await withTransaction(async (tx) => {
+        // SELECT FOR UPDATE: lock matching rows for the duration of this
+        // transaction so no concurrent process can modify them between the
+        // read and the subsequent UPDATE statements.
+        const lockedRows = await tx.execute<{ id: string; addonSlug: string }>(
+            sql`SELECT id, addon_slug AS "addonSlug"
+                FROM ${billingAddonPurchases}
+                WHERE ${and(
+                    eq(billingAddonPurchases.customerId, customerId),
+                    eq(billingAddonPurchases.status, 'active'),
+                    isNull(billingAddonPurchases.deletedAt)
+                )}
+                FOR UPDATE`
+        );
+
+        const activePurchases = lockedRows.rows ?? [];
+
+        apiLogger.info(
+            { customerId, activePurchaseCount: activePurchases.length },
+            'Revoking all active addon purchases for customer'
+        );
+
         let count = 0;
 
         for (const purchase of activePurchases) {
@@ -504,6 +525,89 @@ export async function revokeAllAddonsForCustomer(
         { customerId, revokedCount, failedCount: failedIds.length },
         'Bulk addon revocation for customer completed'
     );
+
+    // T-046 / T-047: when at least one revocation failed (partial failure), record
+    // the incomplete state for reconciliation.
+    if (failedIds.length > 0) {
+        const db = getDb();
+
+        try {
+            // Find the customer's most recent active/trialing subscription so we can
+            // anchor the compensating event to a subscription row. If no subscription
+            // is found, we skip the event insert (nothing to anchor to).
+            const [activeSub] = await db
+                .select({ id: billingSubscriptions.id })
+                .from(billingSubscriptions)
+                .where(
+                    and(
+                        eq(billingSubscriptions.customerId, customerId),
+                        isNull(billingSubscriptions.deletedAt)
+                    )
+                )
+                .limit(1);
+
+            if (activeSub) {
+                // T-046: set addonCancellationIncomplete flag in subscription metadata
+                // so reconciliation crons can identify partially-revoked customers.
+                await db
+                    .update(billingSubscriptions)
+                    .set({
+                        metadata: sql`COALESCE(${billingSubscriptions.metadata}, '{}'::jsonb) || '{"addonCancellationIncomplete": true}'::jsonb`,
+                        updatedAt: new Date()
+                    })
+                    .where(eq(billingSubscriptions.id, activeSub.id));
+
+                // T-047: insert a compensating event so the audit trail captures the
+                // failed revocations and automated recovery jobs can act on them.
+                await db.insert(billingSubscriptionEvents).values({
+                    subscriptionId: activeSub.id,
+                    eventType: BILLING_EVENT_TYPES.ADDON_REVOCATIONS_PENDING,
+                    triggerSource: 'revoke-all-customer-partial-failure',
+                    metadata: {
+                        failedAddonPurchaseIds: failedIds,
+                        revokedCount,
+                        timestamp: new Date().toISOString()
+                    }
+                });
+
+                apiLogger.warn(
+                    {
+                        customerId,
+                        subscriptionId: activeSub.id,
+                        failedIds,
+                        revokedCount
+                    },
+                    'Partial addon revocation failure: compensating event inserted and addonCancellationIncomplete flag set'
+                );
+            } else {
+                apiLogger.warn(
+                    { customerId, failedIds },
+                    'Partial addon revocation failure: no active subscription found to anchor compensating event'
+                );
+            }
+        } catch (compensatingError) {
+            // Non-blocking: the revocations already happened (or failed). Log but do not throw.
+            Sentry.captureException(compensatingError, {
+                tags: {
+                    subsystem: 'billing-addon-lifecycle',
+                    action: 'revoke-all-partial-compensating-event'
+                },
+                extra: { customerId, failedIds, revokedCount }
+            });
+
+            apiLogger.error(
+                {
+                    customerId,
+                    failedIds,
+                    error:
+                        compensatingError instanceof Error
+                            ? compensatingError.message
+                            : String(compensatingError)
+                },
+                'Failed to insert compensating event after partial addon revocation'
+            );
+        }
+    }
 
     return { revokedCount, failedIds };
 }

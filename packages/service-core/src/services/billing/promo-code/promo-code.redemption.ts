@@ -14,6 +14,7 @@ import {
     type QZPayBillingPromoCode,
     billingPromoCodeUsage,
     billingPromoCodes,
+    count,
     eq,
     getDb,
     sql,
@@ -36,8 +37,8 @@ export interface RecordUsageInput {
     subscriptionId?: string;
     /** Discount applied in cents */
     discountAmount: number;
-    /** ISO 4217 currency code */
-    currency: string;
+    /** ISO 4217 currency code (defaults to 'ARS' for the Argentine market) */
+    currency?: string;
     /** Whether in live mode (default: false) */
     livemode?: boolean;
 }
@@ -222,7 +223,7 @@ export async function recordPromoCodeUsage(data: RecordUsageInput, ctx?: QueryCo
                 customerId: data.customerId,
                 subscriptionId: data.subscriptionId ?? null,
                 discountAmount: data.discountAmount,
-                currency: data.currency,
+                currency: data.currency ?? 'ARS',
                 livemode: data.livemode ?? false
             })
             .returning();
@@ -246,16 +247,248 @@ export async function recordPromoCodeUsage(data: RecordUsageInput, ctx?: QueryCo
 }
 
 /**
+ * Input for the atomic redeem-and-record helper.
+ */
+export interface RedeemAndRecordInput {
+    /** Promo code database ID */
+    promoCodeId: string;
+    /** Billing customer ID */
+    customerId: string;
+    /** Optional subscription ID to associate with this redemption */
+    subscriptionId?: string;
+    /** Discount applied in cents */
+    discountAmount: number;
+    /** ISO 4217 currency code (defaults to 'ARS' for the Argentine market) */
+    currency?: string;
+    /** Whether in live mode (default: false) */
+    livemode?: boolean;
+    /** Optional outer transaction client — when provided, operations enlist in it */
+    tx?: QueryContext['tx'];
+}
+
+/**
+ * Result of the atomic redeem-and-record operation.
+ */
+export interface RedeemAndRecordResult {
+    /** Updated promo code row with the incremented usage count */
+    promoCode: QZPayBillingPromoCode;
+    /** Newly created usage record */
+    usageRecord: { id: string };
+}
+
+/**
+ * Atomically increment a promo code's usage count and record the usage event
+ * in a single database transaction.
+ *
+ * This helper is the safe, concurrency-proof replacement for calling
+ * {@link incrementPromoCodeUsage} and {@link recordPromoCodeUsage} separately.
+ * It eliminates the race window between the two writes by:
+ *
+ * 1. Acquiring a row-level lock via `SELECT ... FOR UPDATE` on the promo code.
+ * 2. Re-validating all usage limits inside the lock (global `maxUses` and
+ *    per-customer `maxPerCustomer`) so that two concurrent requests both reading
+ *    the same counter before either write cannot both succeed.
+ * 3. Incrementing `usedCount` with an atomic SQL expression.
+ * 4. Inserting a row into `billing_promo_code_usage` in the same transaction.
+ *
+ * If the caller already holds a transaction (passes `input.tx`), all operations
+ * participate in that boundary. Otherwise a new transaction is opened.
+ *
+ * @param input - Redeem-and-record parameters (see {@link RedeemAndRecordInput})
+ * @returns `{ success: true, data }` with the updated promo code and usage record,
+ *   or `{ success: false, error }` with a typed error code.
+ *
+ * @example
+ * ```ts
+ * // Standalone — opens its own transaction
+ * const result = await redeemAndRecordUsage({
+ *   promoCodeId: '550e8400-e29b-41d4-a716-446655440000',
+ *   customerId: 'cust_abc',
+ *   discountAmount: 500,
+ *   currency: 'ARS',
+ *   livemode: true,
+ * });
+ * if (!result.success) {
+ *   console.error(result.error.code, result.error.message);
+ * }
+ * ```
+ *
+ * @example
+ * ```ts
+ * // Enlisted in a caller-provided transaction
+ * await withTransaction(async (tx) => {
+ *   const result = await redeemAndRecordUsage({
+ *     promoCodeId: 'abc',
+ *     customerId: 'cust_xyz',
+ *     discountAmount: 1000,
+ *     currency: 'ARS',
+ *     tx,
+ *   });
+ * });
+ * ```
+ *
+ */
+export async function redeemAndRecordUsage(
+    input: RedeemAndRecordInput
+): Promise<
+    | { success: true; data: RedeemAndRecordResult }
+    | { success: false; error: { code: string; message: string } }
+> {
+    const {
+        promoCodeId,
+        customerId,
+        subscriptionId,
+        discountAmount,
+        currency = 'ARS',
+        livemode = false,
+        tx: outerTx
+    } = input;
+
+    const runInTransaction = async (
+        tx: NonNullable<QueryContext['tx']>
+    ): Promise<
+        | { success: true; data: RedeemAndRecordResult }
+        | { success: false; error: { code: string; message: string } }
+    > => {
+        // Step 1: Acquire a row-level lock to prevent concurrent over-redemption.
+        const lockResult = await tx.execute<QZPayBillingPromoCode>(
+            sql`SELECT * FROM ${billingPromoCodes}
+                WHERE id = ${promoCodeId}
+                FOR UPDATE`
+        );
+        const lockedCode = lockResult.rows?.[0];
+
+        if (!lockedCode) {
+            return {
+                success: false,
+                error: {
+                    code: ServiceErrorCode.NOT_FOUND,
+                    message: 'Promo code not found'
+                }
+            };
+        }
+
+        // Step 2: Validate global usage limit inside the lock.
+        const currentUsed = lockedCode.usedCount ?? 0;
+        const maxUses = lockedCode.maxUses;
+
+        if (maxUses !== null && maxUses !== undefined && currentUsed >= maxUses) {
+            return {
+                success: false,
+                error: {
+                    code: 'PROMO_CODE_MAX_USES',
+                    message: 'This promo code has reached its maximum number of uses'
+                }
+            };
+        }
+
+        // Step 3: Validate per-customer usage limit (maxPerCustomer) inside the lock.
+        const maxPerCustomer = lockedCode.maxPerCustomer;
+
+        if (maxPerCustomer !== null && maxPerCustomer !== undefined && maxPerCustomer > 0) {
+            const [usageRow] = await tx
+                .select({ total: count() })
+                .from(billingPromoCodeUsage)
+                .where(
+                    sql`${billingPromoCodeUsage.promoCodeId} = ${promoCodeId}
+                        AND ${billingPromoCodeUsage.customerId} = ${customerId}`
+                );
+
+            const customerUseCount = usageRow?.total ?? 0;
+
+            if (customerUseCount >= maxPerCustomer) {
+                return {
+                    success: false,
+                    error: {
+                        code: 'PROMO_CODE_MAX_USES_PER_CUSTOMER',
+                        message: 'You have already used this promo code the maximum number of times'
+                    }
+                };
+            }
+        }
+
+        // Step 4: Increment the global usage counter atomically.
+        const [updatedCode] = await tx
+            .update(billingPromoCodes)
+            .set({ usedCount: sql`${billingPromoCodes.usedCount} + 1` })
+            .where(eq(billingPromoCodes.id, promoCodeId))
+            .returning();
+
+        if (!updatedCode) {
+            return {
+                success: false,
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: 'Failed to increment promo code usage count'
+                }
+            };
+        }
+
+        // Step 5: Insert the usage record in the same transaction boundary.
+        const [usageRecord] = await tx
+            .insert(billingPromoCodeUsage)
+            .values({
+                promoCodeId,
+                customerId,
+                subscriptionId: subscriptionId ?? null,
+                discountAmount,
+                currency,
+                livemode
+            })
+            .returning({ id: billingPromoCodeUsage.id });
+
+        if (!usageRecord) {
+            return {
+                success: false,
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: 'Failed to record promo code usage'
+                }
+            };
+        }
+
+        return {
+            success: true,
+            data: {
+                promoCode: updatedCode,
+                usageRecord
+            }
+        };
+    };
+
+    try {
+        if (outerTx) {
+            return await runInTransaction(outerTx);
+        }
+
+        return await withTransaction(runInTransaction);
+    } catch (_error) {
+        return {
+            success: false,
+            error: {
+                code: ServiceErrorCode.INTERNAL_ERROR,
+                message: 'Failed to redeem and record promo code usage'
+            }
+        };
+    }
+}
+
+/**
  * Apply a promo code to a checkout session.
  *
  * Validates the code is active and not expired, calculates the discount,
  * then atomically redeems it and records the usage event.
+ *
+ * When `ctx` is provided and `ctx.tx` is set, the initial DB read participates
+ * in the caller's transaction boundary. The internal atomic redeem still opens
+ * its own transaction (or enlists in `ctx.tx` if present).
  *
  * @param code - Promo code string (case-insensitive)
  * @param customerId - Billing customer ID (used in usage record)
  * @param amount - Optional original amount in cents to calculate discount against
  * @param options - Optional settings
  * @param options.livemode - Whether in live mode (default: false)
+ * @param ctx - Optional query context carrying a transaction client
  * @returns Discount calculation result or error
  *
  * @example
@@ -270,12 +503,13 @@ export async function applyPromoCode(
     code: string,
     customerId: string,
     amount?: number,
-    options: { readonly livemode?: boolean } = {}
+    options: { readonly livemode?: boolean } = {},
+    ctx?: QueryContext
 ) {
     const normalizedCode = code.toUpperCase();
 
     try {
-        const result = await getPromoCodeByCode(normalizedCode);
+        const result = await getPromoCodeByCode(normalizedCode, ctx);
 
         if (!result.success || !result.data) {
             return {
@@ -307,11 +541,14 @@ export async function applyPromoCode(
         }
 
         let discountAmount = 0;
+        let roundingDelta = 0;
         const effectiveAmount = amount || 0;
 
         if (effectiveAmount > 0) {
             if (promoCode.type === 'percentage') {
-                discountAmount = Math.round((effectiveAmount * promoCode.value) / 100);
+                const rawDiscount = (effectiveAmount * promoCode.value) / 100;
+                discountAmount = Math.floor(rawDiscount);
+                roundingDelta = rawDiscount - discountAmount;
             } else {
                 discountAmount = Math.min(promoCode.value, effectiveAmount);
             }
@@ -402,7 +639,8 @@ export async function applyPromoCode(
                 value: promoCode.value,
                 discountAmount,
                 finalAmount,
-                originalAmount: effectiveAmount
+                originalAmount: effectiveAmount,
+                ...(roundingDelta > 0 && { roundingDelta })
             }
         };
     } catch (error) {

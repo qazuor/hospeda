@@ -12,6 +12,7 @@
  * @module services/billing/promo-code
  */
 
+import type { QueryContext } from '@repo/db';
 import {
     createPromoCode,
     deletePromoCode,
@@ -24,9 +25,10 @@ import {
     applyPromoCode,
     incrementPromoCodeUsage,
     recordPromoCodeUsage,
+    redeemAndRecordUsage,
     tryRedeemAtomically
 } from './promo-code.redemption.js';
-import type { RecordUsageInput } from './promo-code.redemption.js';
+import type { RecordUsageInput, RedeemAndRecordInput } from './promo-code.redemption.js';
 import { validatePromoCode } from './promo-code.validation.js';
 
 // ---------------------------------------------------------------------------
@@ -159,61 +161,76 @@ export class PromoCodeService {
      * @param input - Promo code creation data
      * @param options - Optional settings
      * @param options.livemode - Whether to create in live mode (default: false)
+     * @param ctx - Optional query context carrying a transaction client
      * @returns Created promo code or error
      */
-    async create(input: CreatePromoCodeInput, options: { readonly livemode?: boolean } = {}) {
-        return createPromoCode(input, options);
+    async create(
+        input: CreatePromoCodeInput,
+        options: { readonly livemode?: boolean } = {},
+        ctx?: QueryContext
+    ) {
+        return createPromoCode(input, options, ctx);
     }
 
     /**
      * Get promo code by its code string.
      *
      * @param code - Promo code string (case-insensitive)
+     * @param ctx - Optional query context carrying a transaction client
      * @returns Promo code or NOT_FOUND error
      */
-    async getByCode(code: string) {
-        return getPromoCodeByCode(code);
+    async getByCode(code: string, ctx?: QueryContext) {
+        return getPromoCodeByCode(code, ctx);
     }
 
     /**
      * Get promo code by database ID.
      *
      * @param id - Promo code UUID
+     * @param ctx - Optional query context carrying a transaction client
      * @returns Promo code or NOT_FOUND error
      */
-    async getById(id: string) {
-        return getPromoCodeById(id);
+    async getById(id: string, ctx?: QueryContext) {
+        return getPromoCodeById(id, ctx);
     }
 
     /**
      * Update mutable fields of a promo code.
      *
      * @param id - Promo code UUID
-     * @param input - Fields to update
+     * @param input - Fields to update (optionally includes actorId for audit log)
+     * @param ctx - Optional query context carrying a transaction client
      * @returns Updated promo code or error
      */
-    async update(id: string, input: UpdatePromoCodeInput) {
-        return updatePromoCode(id, input);
+    async update(
+        id: string,
+        input: UpdatePromoCodeInput & { readonly actorId?: string },
+        ctx?: QueryContext
+    ) {
+        return updatePromoCode(id, input, ctx);
     }
 
     /**
      * Soft-delete a promo code (sets active = false).
      *
      * @param id - Promo code UUID
+     * @param ctx - Optional query context carrying a transaction client
+     * @param actorId - Optional actor performing the deletion (for audit log)
      * @returns Success or NOT_FOUND error
      */
-    async delete(id: string) {
-        return deletePromoCode(id);
+    async delete(id: string, ctx?: QueryContext, actorId?: string) {
+        return deletePromoCode(id, ctx, actorId);
     }
 
     /**
      * List promo codes with optional filters and pagination.
      *
      * @param filters - Filter and pagination options
+     * @param ctx - Optional query context carrying a transaction client
      * @returns Paginated list of promo codes
      */
-    async list(filters: ListPromoCodesFilters = {}) {
-        return listPromoCodes(filters);
+    async list(filters: ListPromoCodesFilters = {}, ctx?: QueryContext) {
+        return listPromoCodes(filters, ctx);
     }
 
     /**
@@ -221,13 +238,15 @@ export class PromoCodeService {
      *
      * @param code - Promo code string
      * @param context - Validation context (planId, userId, amount)
+     * @param ctx - Optional query context carrying a transaction client
      * @returns Validation result with optional discount preview
      */
     async validate(
         code: string,
-        context: PromoCodeValidationContext
+        context: PromoCodeValidationContext,
+        ctx?: QueryContext
     ): Promise<PromoCodeValidationResult> {
-        return validatePromoCode(code, context);
+        return validatePromoCode(code, context, ctx);
     }
 
     /**
@@ -240,25 +259,28 @@ export class PromoCodeService {
      * @param amount - Optional original amount in cents
      * @param options - Optional settings
      * @param options.livemode - Whether in live mode (default: false)
+     * @param ctx - Optional query context carrying a transaction client
      * @returns Discount calculation result or error
      */
     async apply(
         code: string,
         customerId: string,
         amount?: number,
-        options: { readonly livemode?: boolean } = {}
+        options: { readonly livemode?: boolean } = {},
+        ctx?: QueryContext
     ) {
-        return applyPromoCode(code, customerId, amount, options);
+        return applyPromoCode(code, customerId, amount, options, ctx);
     }
 
     /**
      * Increment usage count atomically.
      *
      * @param id - Promo code UUID
+     * @param ctx - Optional query context carrying a transaction client
      * @returns Success or error
      */
-    async incrementUsage(id: string) {
-        return incrementPromoCodeUsage(id);
+    async incrementUsage(id: string, ctx?: QueryContext) {
+        return incrementPromoCodeUsage(id, ctx);
     }
 
     /**
@@ -275,9 +297,25 @@ export class PromoCodeService {
      * Record a promo code usage event in the audit table.
      *
      * @param data - Usage record data
+     * @param ctx - Optional query context carrying a transaction client
      * @returns Created usage record or error
      */
-    async recordUsage(data: RecordUsageInput) {
-        return recordPromoCodeUsage(data);
+    async recordUsage(data: RecordUsageInput, ctx?: QueryContext) {
+        return recordPromoCodeUsage(data, ctx);
+    }
+
+    /**
+     * Atomically increment usage count and record the usage event in a single
+     * database transaction.
+     *
+     * This is the safe replacement for calling `incrementUsage` and `recordUsage`
+     * separately. Uses `SELECT FOR UPDATE` to prevent concurrent over-redemption
+     * and validates `maxUses` and `maxPerCustomer` limits inside the lock.
+     *
+     * @param input - Redeem-and-record parameters
+     * @returns Updated promo code and created usage record, or error
+     */
+    async redeemAndRecord(input: RedeemAndRecordInput) {
+        return redeemAndRecordUsage(input);
     }
 }

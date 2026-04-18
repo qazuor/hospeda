@@ -16,7 +16,7 @@
  */
 
 import { billingAuditLogs, billingSettings, eq, getDb, withTransaction } from '@repo/db';
-import type { QueryContext } from '@repo/db';
+import type { DrizzleClient, QueryContext } from '@repo/db';
 
 /**
  * Billing settings configuration
@@ -152,11 +152,15 @@ export class BillingSettingsService {
      * Merges with current settings, validates, upserts into `billing_settings`,
      * and records an audit trail in `billing_audit_logs`.
      *
+     * When `ctx.tx` is provided the entire read-modify-write cycle runs inside
+     * the caller's transaction boundary. Otherwise a new transaction is opened
+     * internally to keep the upsert and audit log atomic.
+     *
      * @param patch - Partial settings to update
      * @param actorId - ID of user performing the update (optional)
-     * @param ctx - Optional query context. When `ctx.tx` is provided, the
-     *   internal `getSettings()` read uses that transaction so the entire
-     *   read-modify-write cycle participates in the same boundary.
+     * @param ctx - Optional query context. When `ctx.tx` is provided, all DB
+     *   operations use that transaction so the call participates in the caller's
+     *   atomic boundary.
      * @returns Updated billing settings
      */
     async updateSettings(
@@ -173,9 +177,9 @@ export class BillingSettingsService {
 
         this.validateSettings(updatedSettings);
 
-        await withTransaction(async (tx) => {
+        const doUpdate = async (db: DrizzleClient): Promise<void> => {
             // Upsert into billing_settings (primary storage)
-            await tx
+            await db
                 .insert(billingSettings)
                 .values({
                     key: SETTINGS_KEY,
@@ -193,7 +197,7 @@ export class BillingSettingsService {
                 });
 
             // Record in audit log for trail (not as primary storage)
-            await tx.insert(billingAuditLogs).values({
+            await db.insert(billingAuditLogs).values({
                 action: 'billing_settings_update',
                 entityType: 'settings',
                 entityId: 'global',
@@ -205,7 +209,9 @@ export class BillingSettingsService {
                 ipAddress: null,
                 userAgent: null
             });
-        });
+        };
+
+        await withTransaction(doUpdate, ctx?.tx);
 
         return updatedSettings;
     }
@@ -214,18 +220,19 @@ export class BillingSettingsService {
      * Reset billing settings to defaults.
      * Updates `billing_settings` with DEFAULT_SETTINGS and records an audit entry.
      *
+     * When `ctx.tx` is provided the reset participates in the caller's
+     * transaction boundary. Otherwise a new transaction is opened internally.
+     *
      * @param actorId - ID of user performing the reset (optional)
-     * @param ctx - Optional query context. Reserved for API consistency with the
-     *   other methods. Because `resetSettings` always runs its own
-     *   `withTransaction`, the `ctx` parameter is accepted but not forwarded to
-     *   the internal transaction boundary.
+     * @param ctx - Optional query context. When `ctx.tx` is provided, all DB
+     *   operations use that transaction so the call participates in the caller's
+     *   atomic boundary.
      * @returns Default billing settings
      */
     async resetSettings(actorId?: string, ctx?: QueryContext): Promise<BillingSettings> {
-        void ctx; // accepted for API consistency; withTransaction manages its own boundary
-        await withTransaction(async (tx) => {
+        await withTransaction(async (db: DrizzleClient) => {
             // Upsert defaults into billing_settings
-            await tx
+            await db
                 .insert(billingSettings)
                 .values({
                     key: SETTINGS_KEY,
@@ -243,7 +250,7 @@ export class BillingSettingsService {
                 });
 
             // Record in audit log
-            await tx.insert(billingAuditLogs).values({
+            await db.insert(billingAuditLogs).values({
                 action: 'billing_settings_reset',
                 entityType: 'settings',
                 entityId: 'global',
@@ -255,7 +262,7 @@ export class BillingSettingsService {
                 ipAddress: null,
                 userAgent: null
             });
-        });
+        }, ctx?.tx);
 
         return DEFAULT_SETTINGS;
     }

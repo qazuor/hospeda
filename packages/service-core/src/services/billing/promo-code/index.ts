@@ -5,5 +5,8 @@ export * from './promo-code.validation.js';
 export {
     applyPromoCode,
     tryRedeemAtomically,
-    type RecordUsageInput
+    redeemAndRecordUsage,
+    type RecordUsageInput,
+    type RedeemAndRecordInput,
+    type RedeemAndRecordResult
 } from './promo-code.redemption.js';
