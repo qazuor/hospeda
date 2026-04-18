@@ -1,13 +1,32 @@
 # SPEC-063 — Implementation Progress Log
 
-## Session summary (as of 2026-04-18T15:05)
+## Session summary (as of 2026-04-18T15:35)
 
-- **Progress:** 27/63 tasks (42.9%)
-- **Status:** in-progress — Phase 2 complete for OwnerPromotion. AC-007-01 end-to-end (handler + registry + tests).
-- **Milestone:** Auto-archive cron fully wired. All 8 unit tests pass. Advisory lock 43010 docs updated with concrete Owner File. OwnerPromotion phase closed.
-- **Remaining:** Phase 4 DestinationReview, Phase 3 Sponsorship, cleanup T-058
-- **Critical path:** T-028 → T-030 → T-034 → T-035 → T-038 → T-039 → T-040 → T-042 → T-058 (9 steps remaining)
+- **Progress:** 32/63 tasks (50.8%) — over half done.
+- **Status:** Phase 2 OwnerPromotion complete end-to-end. Phase 4 DestinationReview schema layer complete (T-028 DB + T-030 base + T-032 access + T-033 query/HTTP + T-034 admin-search workaround removed).
+- **Remaining:** Phase 4 middle layer (T-029 migrations, T-035 admin routes, T-037/T-038 tests), Phase 3 Sponsorship, cleanup T-058
+- **Critical path:** T-035 → T-038 → T-039 → T-040 → T-042 → T-058 (6 steps remaining)
 - **Follow-up SPECs spawned:** SPEC-087 (public endpoint response schema strip — systemic factory fix)
+
+### Session 3 Phase 4 schema block (2026-04-18 T-028, T-030, T-032, T-033, T-034)
+
+| Task | Complexity | Files | Quality gate |
+|------|-----------|-------|--------------|
+| T-028 | 2 | `destination_review.dbschema.ts` (add column + index) | lint pass; typecheck deferred |
+| T-030 | 2 | `destinationReview.schema.ts` (spread BaseLifecycleFields) + `destinationReview.http.schema.ts` (create conversion default ACTIVE — absorbed from T-033 scope) | lint/tc pass |
+| T-032 | 1.5 | `destinationReview.access.schema.ts` (drop preemptive .extend) | lint/tc pass |
+| T-033 | 2 | `destinationReview.query.schema.ts` + `destinationReview.http.schema.ts` (filter + search + conversion passthrough) | lint/tc pass |
+| T-034 | 2 | `destinationReview.admin-search.schema.ts` (drop z.unknown().transform workaround) | lint/tc pass |
+
+#### Phase 4 schema layer notes
+- **Add-only pattern** (vs OwnerPromotion delete-and-replace): simpler migrations, no cascade errors during intermediate states.
+- **Tier boundary enforced** via `.pick()` in Public/Protected and base-flow-through in Admin. `lifecycleState` does NOT appear in `DestinationReviewPublicSchema` or `DestinationReviewProtectedSchema`.
+- **Admin-search workaround removal**: the prior `z.unknown().transform(() => 'all')` override in `destinationReview.admin-search.schema.ts` existed because the DB had no `lifecycleState` column. Now that T-028 added it, the inherited `AdminSearchBaseSchema.status` field maps naturally.
+- **Security deferred to T-035**: public endpoints accept `lifecycleState` in query but the service layer must force ACTIVE (same pattern as Phase 2 T-022). JSDoc warnings added on both filter fields to prevent regressions before T-035 lands.
+- **No dedicated fixtures file** exists for DestinationReview — inline test mocks in existing test files will surface via typecheck on test runs (deferred to T-037).
+- Commits: `1634d80f` (T-028) · `91e0bc7e` (T-030) · `427e6ba5` (T-032+T-034) · `f0148eb3` (T-033).
+
+### Session 3 tasks completed (2026-04-18 T-026)
 
 ### Session 3 tasks completed (2026-04-18 T-026)
 

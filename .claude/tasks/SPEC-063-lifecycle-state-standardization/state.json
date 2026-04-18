@@ -1012,25 +1012,25 @@
             "id": "T-028",
             "title": "Update DestinationReview Drizzle DB schema: add lifecycleState column",
             "description": "Update `packages/db/src/schemas/destination/destination_review.dbschema.ts`: add `lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE')` column. Add index `destinationReviews_lifecycleState_idx` on the new column. Import LifecycleStatusPgEnum if not already.\n\nFiles: `packages/db/src/schemas/destination/destination_review.dbschema.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-027"],
             "blocks": ["T-029", "T-030", "T-032"],
             "subtasks": [
-                { "title": "Import LifecycleStatusPgEnum", "completed": false },
+                { "title": "Import LifecycleStatusPgEnum", "completed": true },
                 {
                     "title": "Add lifecycleState column with NOT NULL DEFAULT ACTIVE",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Add destinationReviews_lifecycleState_idx index", "completed": false }
+                { "title": "Add destinationReviews_lifecycleState_idx index", "completed": true }
             ],
             "tags": ["db", "schema", "phase-4", "destinationReview"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": "deferred", "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T15:15:00.000Z",
+                "completed": "2026-04-18T15:18:00.000Z"
             }
         },
         {
@@ -1059,29 +1059,35 @@
             "id": "T-030",
             "title": "Update DestinationReview Zod base schema + CRUD + fixtures",
             "description": "Update `packages/schemas/src/entities/destinationReview/destinationReview.schema.ts`: import and spread `BaseLifecycleFields`. Keep `isPublished` and `isVerified` as-is. Update `destinationReview.crud.schema.ts`: ensure lifecycleState flows through create/update. Update `packages/schemas/test/fixtures/destinationReview.fixtures.ts`: add lifecycleState to fixtures.\n\nFiles: `packages/schemas/src/entities/destinationReview/destinationReview.schema.ts`, `packages/schemas/src/entities/destinationReview/destinationReview.crud.schema.ts`, `packages/schemas/test/fixtures/destinationReview.fixtures.ts`",
-            "status": "pending",
+            "_scopeAbsorbed": "http.schema.ts httpToDomainDestinationReviewCreate conversion needed LifecycleStatusEnum.ACTIVE default (same pattern as isVerified/isPublished) to keep typecheck clean. Literal T-033 scope but tightly coupled. CRUD schemas needed no changes — lifecycleState flows automatically via .omit/.partial. No dedicated fixtures file exists in the project — inline test mocks cascade via typecheck when hit (T-037).",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-028"],
             "blocks": ["T-033", "T-034"],
             "subtasks": [
                 {
                     "title": "Import and spread BaseLifecycleFields in base schema",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Verify isPublished and isVerified unchanged", "completed": false },
+                { "title": "Verify isPublished and isVerified unchanged", "completed": true },
                 {
                     "title": "Update CRUD schemas (lifecycleState flows through)",
-                    "completed": false
+                    "completed": true,
+                    "_note": "No code change needed — .omit/.partial inherits automatically"
                 },
-                { "title": "Update fixtures with lifecycleState", "completed": false }
+                {
+                    "title": "Update fixtures with lifecycleState",
+                    "completed": true,
+                    "_note": "No dedicated fixtures file exists; inline test mocks deferred to T-037"
+                }
             ],
             "tags": ["schemas", "fixtures", "phase-4", "destinationReview"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T15:20:00.000Z",
+                "completed": "2026-04-18T15:25:00.000Z"
             }
         },
         {
@@ -1110,82 +1116,88 @@
             "id": "T-032",
             "title": "Update DestinationReview access schema: add lifecycleState to admin ONLY",
             "description": "Update `packages/schemas/src/entities/destinationReview/destinationReview.access.schema.ts`: verify Admin tier includes `lifecycleState` (already added preemptively in SPEC-062 Phase 0 T-004), clean up the preemptive wrapper comment since the field is now in the base schema. Ensure Public and Protected tiers do NOT include `lifecycleState`.\n\nFiles: `packages/schemas/src/entities/destinationReview/destinationReview.access.schema.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-030"],
             "blocks": ["T-035", "T-037"],
             "subtasks": [
                 {
                     "title": "Clean up preemptive lifecycleState wrapper in Admin tier",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Verify Public tier excludes lifecycleState", "completed": false },
-                { "title": "Verify Protected tier excludes lifecycleState", "completed": false }
+                { "title": "Verify Public tier excludes lifecycleState", "completed": true },
+                { "title": "Verify Protected tier excludes lifecycleState", "completed": true }
             ],
             "tags": ["schemas", "access", "phase-4", "destinationReview"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T15:25:00.000Z",
+                "completed": "2026-04-18T15:28:00.000Z"
             }
         },
         {
             "id": "T-033",
             "title": "Update DestinationReview query + HTTP schemas",
             "description": "Update `packages/schemas/src/entities/destinationReview/destinationReview.query.schema.ts`: add `lifecycleState: LifecycleStatusEnumSchema.optional()` filter. Update `destinationReview.http.schema.ts`: add `lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()` in search schemas and default ACTIVE in create schemas. Update conversion functions to pass through lifecycleState.\n\nFiles: `packages/schemas/src/entities/destinationReview/destinationReview.query.schema.ts`, `packages/schemas/src/entities/destinationReview/destinationReview.http.schema.ts`",
-            "status": "pending",
+            "_securityNote": "Public endpoints MUST force lifecycleState=ACTIVE at the service layer regardless of filter input (same pattern as Phase 2 T-022). Force-override lands with T-035. JSDoc warning added on both filter fields for future maintainers.",
+            "_scopePrecedence": "HTTP create conversion default ACTIVE was absorbed into T-030 commit boundary (tightly coupled with base schema change to keep typecheck clean).",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-030"],
             "blocks": ["T-035"],
             "subtasks": [
-                { "title": "Add lifecycleState filter to query schema", "completed": false },
-                { "title": "Add lifecycleState to HTTP search schemas", "completed": false },
+                { "title": "Add lifecycleState filter to query schema", "completed": true },
+                { "title": "Add lifecycleState to HTTP search schemas", "completed": true },
                 {
                     "title": "Add lifecycleState default ACTIVE to HTTP create schemas",
-                    "completed": false
+                    "completed": true,
+                    "_note": "Absorbed into T-030"
                 },
-                { "title": "Update HTTP conversion functions", "completed": false }
+                { "title": "Update HTTP conversion functions", "completed": true }
             ],
             "tags": ["schemas", "http", "phase-4", "destinationReview"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T15:28:00.000Z",
+                "completed": "2026-04-18T15:32:00.000Z"
             }
         },
         {
             "id": "T-034",
             "title": "Remove DestinationReview admin-search workaround",
             "description": "Update `packages/schemas/src/entities/destinationReview/destinationReview.admin-search.schema.ts`: remove the `z.unknown().transform(() => 'all')` workaround (lines 68-71). The base `status` from `AdminSearchBaseSchema` now maps correctly to `lifecycleState` since the DB column exists. Also update `packages/service-core/src/services/destinationReview/destinationReview.service.ts` if it has related workaround logic.\n\nFiles: `packages/schemas/src/entities/destinationReview/destinationReview.admin-search.schema.ts`, `packages/service-core/src/services/destinationReview/destinationReview.service.ts`",
-            "status": "pending",
+            "_serviceCheckNote": "Service-side workaround not present — the schema override alone was sufficient under the old setup because adminList() received 'all' from the schema and naturally passed through unfiltered. Removal of the schema override restores the default AdminSearchBaseSchema.status -> lifecycleState mapping inherited by adminList(). Service verification deferred to T-035 integration.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-030"],
             "blocks": ["T-035", "T-038"],
             "subtasks": [
                 {
                     "title": "Remove z.unknown().transform workaround in admin-search schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Check service for corresponding workaround, remove if present",
-                    "completed": false
+                    "completed": true,
+                    "_note": "No corresponding service workaround found"
                 },
                 {
                     "title": "Verify base adminList() status filter works via lifecycleState",
-                    "completed": false
+                    "completed": true,
+                    "_note": "Structural verification via typecheck; runtime verification deferred to T-035/T-038 integration"
                 }
             ],
             "tags": ["schemas", "service", "phase-4", "destinationReview"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T15:26:00.000Z",
+                "completed": "2026-04-18T15:30:00.000Z"
             }
         },
         {
@@ -1851,9 +1863,9 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 36,
+        "pending": 31,
         "inProgress": 0,
-        "completed": 27,
+        "completed": 32,
         "blocked": 0,
         "averageComplexity": 2.0,
         "_summaryDriftNote": "Counters corrected 2026-04-18 during T-022 bookkeeping. Prior value (completed=22) had drift from Session 2 (T-019, T-020, T-021, T-023, T-024, T-027 completions not reflected in summary). Ground truth derived from grep of 'status: completed' across tasks array. Updated post-T-026 (Phase 2 cron pair complete) = 27.",

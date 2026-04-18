@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 27/63 tasks (42.9%)
+## Progress: 32/63 tasks (50.8%)
 
-**Last updated:** 2026-04-18T15:05:00Z
-**Status:** in-progress (Phase 2 OwnerPromotion complete end-to-end including cron T-025/T-026; Phase 4 DestinationReview next)
+**Last updated:** 2026-04-18T15:35:00Z
+**Status:** in-progress (Phase 2 complete + Phase 4 schema layer complete: T-028 DB, T-030 base/CRUD, T-032 access admin-only, T-033 query/HTTP, T-034 admin-search workaround removed). Next: T-029 migrations, T-031 migration tests, T-035 admin routes, T-037/T-038 tests.
 
 ### Follow-up SPECs spawned
 
@@ -11,8 +11,11 @@
 
 ### Next up (in priority order)
 
-1. **T-028** (complexity 2) — Update DestinationReview Drizzle DB schema: add lifecycleState column. First task of Phase 4 (critical path start).
-2. After T-028: T-030 (Zod base schema), T-029 (migrations), T-032 (access schema lifecycleState admin-only — critical tier boundary), T-033 (query/HTTP schemas), T-034 (remove admin-search workaround).
+1. **T-029** (complexity 2) — Generate DestinationReview up + down migrations (DB is ready).
+2. **T-035** (complexity 2) — Update admin DestinationReview API routes (all schema deps satisfied).
+3. **T-031** (complexity 1.5) — Post-migration verification test (depends on T-029).
+4. **T-037** (complexity 2) — Schema + access boundary tests (depends on T-032 — now unblocked).
+5. **T-038** (complexity 2) — Admin-search integration test + AC-001-04 (depends on T-034, T-035).
 
 Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057), cleanup T-058.
 
@@ -204,25 +207,39 @@ Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057
 
 ### Database + Schemas
 
-- [ ] **T-028** (complexity: 2) — Update DestinationReview Drizzle DB schema: add lifecycleState column
+- [x] **T-028** (complexity: 2) — Update DestinationReview Drizzle DB schema: add lifecycleState column
+  - COMPLETED 2026-04-18 · lint: pass · typecheck: deferred (cascade)
+  - Added `lifecycleState` column + `destinationReviews_lifecycleState_idx` index
   - Blocked by: T-027 · Blocks: T-029, T-030, T-032
 
 - [ ] **T-029** (complexity: 2) — Generate DestinationReview up + down migrations
   - Blocked by: T-028 · Blocks: T-031
 
-- [ ] **T-030** (complexity: 2) — Update DestinationReview Zod base schema + CRUD + fixtures
+- [x] **T-030** (complexity: 2) — Update DestinationReview Zod base schema + CRUD + fixtures
+  - COMPLETED 2026-04-18 · lint: pass · typecheck: pass
+  - Scope absorbed: http.schema.ts create conversion (LifecycleStatusEnum.ACTIVE default) to keep typecheck clean
+  - CRUD no-op (flows via omit/partial). No dedicated fixtures file.
   - Blocked by: T-028 · Blocks: T-033, T-034
 
 - [ ] **T-031** (complexity: 1.5) — Write DestinationReview post-migration verification test
   - Blocked by: T-029 · Blocks: none
 
-- [ ] **T-032** (complexity: 1.5) — Update DestinationReview access schema (lifecycleState admin ONLY)
+- [x] **T-032** (complexity: 1.5) — Update DestinationReview access schema (lifecycleState admin ONLY)
+  - COMPLETED 2026-04-18 · lint: pass · typecheck: pass
+  - Removed preemptive .extend override; base flows into Admin; Public/Protected exclude via .pick()
   - Blocked by: T-030 · Blocks: T-035, T-037
 
-- [ ] **T-033** (complexity: 2) — Update DestinationReview query + HTTP schemas
+- [x] **T-033** (complexity: 2) — Update DestinationReview query + HTTP schemas
+  - COMPLETED 2026-04-18 · lint: pass · typecheck: pass
+  - Added lifecycleState filter to Filters + Search + HTTP search schemas; conversion passthrough
+  - Create default ACTIVE was absorbed into T-030 boundary
+  - Security: JSDoc warns that service must force ACTIVE for public endpoints (T-035)
   - Blocked by: T-030 · Blocks: T-035
 
-- [ ] **T-034** (complexity: 2) — Remove DestinationReview admin-search workaround
+- [x] **T-034** (complexity: 2) — Remove DestinationReview admin-search workaround
+  - COMPLETED 2026-04-18 · lint: pass · typecheck: pass
+  - Removed z.unknown().transform override; AdminSearchBaseSchema.status now maps to lifecycleState
+  - No service-side workaround present; runtime verification deferred to T-035/T-038
   - Blocked by: T-030 · Blocks: T-035, T-038
 
 ### Integration
