@@ -153,14 +153,16 @@ export class AccommodationService extends BaseCrudService<
      * @see getDefaultListRelations — lighter relations for list operations
      */
     protected override getDefaultGetByIdRelations() {
+        // NOTE: `tags` relation omitted — Drizzle can't infer r_entity_tag (polymorphic
+        // entityId+entityType, no direct FK). Pending dedicated SPEC for a polymorphic
+        // helper; load tags separately when needed.
         return {
             destination: true,
             owner: true,
             amenities: true,
             features: true,
             reviews: true,
-            faqs: true,
-            tags: true
+            faqs: true
         };
     }
 
