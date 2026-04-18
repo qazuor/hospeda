@@ -54,7 +54,9 @@ describe('Media routes registration (smoke)', () => {
             permissions: [
                 ...createMockAdminActor().permissions,
                 PermissionEnum.ACCESS_PANEL_ADMIN,
-                PermissionEnum.ACCESS_API_ADMIN
+                PermissionEnum.ACCESS_API_ADMIN,
+                PermissionEnum.MEDIA_UPLOAD,
+                PermissionEnum.MEDIA_DELETE
             ]
         });
 

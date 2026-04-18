@@ -12,7 +12,9 @@ import { adminUploadMediaRoute } from './upload';
 const app = createRouter();
 
 // POST /upload - Upload entity image
-app.route('/', adminUploadMediaRoute);
+// Mounted under /upload so the upload sub-app middleware (which requires
+// MEDIA_UPLOAD) is scoped to this path only and does not leak into DELETE /.
+app.route('/upload', adminUploadMediaRoute);
 
 // DELETE / - Delete media asset by publicId query param
 app.route('/', adminDeleteMediaRoute);

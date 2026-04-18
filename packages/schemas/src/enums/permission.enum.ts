@@ -51,7 +51,8 @@ export enum PermissionCategoryEnum {
     OWNER_PROMOTION = 'OWNER_PROMOTION',
     FEATURED_ACCOMMODATION = 'FEATURED_ACCOMMODATION',
     SYSTEM = 'SYSTEM',
-    ACCESS = 'ACCESS'
+    ACCESS = 'ACCESS',
+    MEDIA = 'MEDIA'
 }
 
 // PermissionEnum defines all possible built-in permissions for the Hospeda platform.
@@ -726,5 +727,9 @@ export enum PermissionEnum {
     REVALIDATION_TRIGGER = 'revalidation.trigger', // Allows triggering on-demand revalidation of cached pages.
     REVALIDATION_CONFIG_VIEW = 'revalidation.config.view', // Allows viewing revalidation configuration per entity type.
     REVALIDATION_CONFIG_EDIT = 'revalidation.config.edit', // Allows editing revalidation configuration (intervals, debounce, enabled).
-    REVALIDATION_LOG_VIEW = 'revalidation.log.view' // Allows viewing the revalidation audit log.
+    REVALIDATION_LOG_VIEW = 'revalidation.log.view', // Allows viewing the revalidation audit log.
+
+    // MEDIA: Cross-entity media management permissions (Cloudinary-backed uploads/deletes)
+    MEDIA_UPLOAD = 'media.upload', // Allows uploading media files via /admin/media/upload or /protected/media/upload. Entity-specific permission is enforced by the handler based on request body (target + role).
+    MEDIA_DELETE = 'media.delete' // Allows deleting media files via /admin/media. Entity-specific permission is enforced by the handler based on publicId path.
 }

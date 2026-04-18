@@ -233,7 +233,11 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.REVALIDATION_TRIGGER,
         PermissionEnum.REVALIDATION_CONFIG_VIEW,
         PermissionEnum.REVALIDATION_CONFIG_EDIT,
-        PermissionEnum.REVALIDATION_LOG_VIEW
+        PermissionEnum.REVALIDATION_LOG_VIEW,
+
+        // MEDIA: Cross-entity media management
+        PermissionEnum.MEDIA_UPLOAD,
+        PermissionEnum.MEDIA_DELETE
     ],
 
     [RoleEnum.ADMIN]: [
@@ -435,7 +439,11 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.REVALIDATION_TRIGGER,
         PermissionEnum.REVALIDATION_CONFIG_VIEW,
         PermissionEnum.REVALIDATION_CONFIG_EDIT,
-        PermissionEnum.REVALIDATION_LOG_VIEW
+        PermissionEnum.REVALIDATION_LOG_VIEW,
+
+        // MEDIA: Cross-entity media management
+        PermissionEnum.MEDIA_UPLOAD,
+        PermissionEnum.MEDIA_DELETE
     ],
 
     [RoleEnum.CLIENT_MANAGER]: [
@@ -529,7 +537,11 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // TAG: All permissions
         PermissionEnum.TAG_CREATE,
         PermissionEnum.TAG_UPDATE,
-        PermissionEnum.TAG_DELETE
+        PermissionEnum.TAG_DELETE,
+
+        // MEDIA: Cross-entity media management
+        PermissionEnum.MEDIA_UPLOAD,
+        PermissionEnum.MEDIA_DELETE
     ],
 
     [RoleEnum.HOST]: [
@@ -601,7 +613,11 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // ACCESS: Basic access
         PermissionEnum.DASHBOARD_BASE_VIEW,
         PermissionEnum.ACCESS_PANEL_ADMIN,
-        PermissionEnum.ACCESS_API_PUBLIC
+        PermissionEnum.ACCESS_API_PUBLIC,
+
+        // MEDIA: Cross-entity media management (HOST uploads images to own accommodations)
+        PermissionEnum.MEDIA_UPLOAD,
+        PermissionEnum.MEDIA_DELETE
     ],
 
     [RoleEnum.USER]: [

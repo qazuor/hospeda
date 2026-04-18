@@ -13,7 +13,7 @@ import { generateGalleryId, resolveEnvironment, validateMediaFile } from '@repo/
  * Validates file size, MIME type, and image dimensions before uploading
  * to Cloudinary. Returns the resulting URL, publicId, width, and height.
  */
-import { AdminUploadRequestSchema, UploadResponseSchema } from '@repo/schemas';
+import { AdminUploadRequestSchema, PermissionEnum, UploadResponseSchema } from '@repo/schemas';
 import {
     AccommodationService,
     DestinationService,
@@ -26,6 +26,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env.js';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
+import { type MediaEntityType, validateEntityMediaPermission } from './permissions';
 
 /** Service instances for entity existence validation. */
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -49,12 +50,13 @@ const entityServices: Record<
  */
 export const adminUploadMediaRoute = createAdminRoute({
     method: 'post',
-    path: '/upload',
+    path: '/',
     summary: 'Upload entity image',
     description:
         'Uploads an image (featured or gallery) for a content entity (accommodation, destination, event, post). ' +
         'Accepts multipart/form-data. Returns the Cloudinary URL and asset metadata.',
     tags: ['Media'],
+    requiredPermissions: [PermissionEnum.MEDIA_UPLOAD],
     responseSchema: UploadResponseSchema,
     handler: async (
         ctx: Context,
@@ -164,6 +166,29 @@ export const adminUploadMediaRoute = createAdminRoute({
                     }
                 },
                 404
+            );
+        }
+
+        // ── 3c. Validate entity-specific permission (defense in depth) ───────
+        const permissionCheck = validateEntityMediaPermission({
+            actor,
+            entityType: entityType as MediaEntityType,
+            entity: entityResult.data as { ownerId?: string | null }
+        });
+
+        if (!permissionCheck.allowed) {
+            return ctx.json(
+                {
+                    success: false,
+                    error: {
+                        code: 'FORBIDDEN',
+                        message:
+                            permissionCheck.reason === 'NOT_ENTITY_OWNER'
+                                ? 'You do not own this entity'
+                                : `Insufficient permissions to modify ${entityType} media`
+                    }
+                },
+                403
             );
         }
 
