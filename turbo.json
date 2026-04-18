@@ -6,6 +6,7 @@
         "NODE_ENV",
         "CI",
         "VERCEL_GIT_COMMIT_SHA",
+        "VERCEL_ENV",
         "HOSPEDA_API_URL",
         "HOSPEDA_SITE_URL",
         "HOSPEDA_ADMIN_URL",
@@ -25,7 +26,11 @@
         "PUBLIC_SENTRY_DSN",
         "PUBLIC_SENTRY_RELEASE",
         "HOSPEDA_REDIS_URL",
-        "HOSPEDA_CRON_SECRET"
+        "HOSPEDA_CRON_SECRET",
+        "HOSPEDA_CLOUDINARY_CLOUD_NAME",
+        "HOSPEDA_CLOUDINARY_API_KEY",
+        "HOSPEDA_CLOUDINARY_API_SECRET",
+        "HOSPEDA_MEDIA_MAX_FILE_SIZE_MB"
     ],
     "tasks": {
         "build": {
