@@ -533,6 +533,28 @@ export const AdminSearchBaseSchema = z.object({
 
 Entity-specific admin search schemas extend this with additional filters (e.g., `destinationType`, `type`, `category`).
 
+## Schema Compatibility Policy (additive-only)
+
+Published schemas evolve by addition only: **never rename, never remove, never tighten**. A field that has shipped is part of the public contract — stored JSONB, cached responses, and queued messages all depend on it parsing.
+
+**Safe (additive):**
+
+- Add a new `.optional()` field.
+- Widen an enum (add a variant).
+- Relax a validation rule (`.min(10)` → `.min(3)`).
+- Flip an existing field from required to `.optional()`.
+
+**Breaking (forbidden without migration):**
+
+- Rename a field.
+- Remove a field.
+- Tighten a rule (required → more required, `.string()` → `.string().url()`).
+- Change a field's type.
+
+Breaking changes require the three-phase migration path: additive → backfill → removal. Historic shape fixtures under `test/fixtures/historic/` MUST continue to `safeParse` against current schemas — `.compat.test.ts` files enforce this mechanically.
+
+Full details, review checklist, and migration recipe: [docs/guides/schema-compat-policy.md](./docs/guides/schema-compat-policy.md).
+
 ## Best Practices
 
 1. **One schema per file** - keep schemas focused and modular
@@ -544,7 +566,7 @@ Entity-specific admin search schemas extend this with additional filters (e.g., 
 7. **Test all schemas** - ensure validations work as expected
 8. **Document complex refinements** - use JSDoc
 9. **Keep schemas DRY** - use composition (extend, merge, pick)
-10. **Version schemas carefully** - breaking changes affect whole system
+10. **Evolve additively** - see the [Schema Compatibility Policy](./docs/guides/schema-compat-policy.md); historic fixtures live in `test/fixtures/historic/`
 
 ## Key Dependencies
 

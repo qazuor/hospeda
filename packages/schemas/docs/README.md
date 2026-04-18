@@ -787,7 +787,16 @@ When adding or modifying schemas:
 3. Add comprehensive tests
 4. Document with JSDoc comments
 5. Update this documentation
-6. Consider backward compatibility
+6. Follow the [Schema Compatibility Policy](./guides/schema-compat-policy.md) — evolve additively, never rename / remove / tighten shipped fields
+
+## Guides
+
+- [Creating Schemas](./guides/creating-schemas.md)
+- [Schema Composition](./guides/composition.md)
+- [Validation Patterns](./guides/validation-patterns.md)
+- [Enums](./guides/enums.md)
+- [Testing](./guides/testing.md)
+- [Schema Compatibility Policy](./guides/schema-compat-policy.md) — additive-only policy and historic shape fixtures
 
 ## Need Help?
 
