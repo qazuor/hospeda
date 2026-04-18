@@ -1,10 +1,11 @@
 # SPEC-078-GAPS: Cloudinary Image Management — Gaps Remediation
 
-## Progress: 4/68 tasks (6%)
+## Progress: 8/68 tasks (12%)
 
 **Average Complexity**: 1.7 / 2.5 (max)
 **Completed from prior work**: 3 tasks (Phase 0 + Phase 1A) — see already-done.md
-**Completed this session**: 1 task (T-004 — Phase 1B migrations reconstruction)
+**Completed 2026-04-18 (previous session)**: 1 task (T-004 — Phase 1B migrations reconstruction)
+**Completed 2026-04-18 (current session)**: 4 warmup tasks (T-011, T-028, T-037, T-053)
 **Splits applied**: 20 parent tasks split into 45 child tasks (68 total vs 47 original)
 
 ---
@@ -78,10 +79,11 @@
   - Blocked by: T-004
   - Blocks: T-019, T-020 (seed), T-029 (API)
 
-- [ ] **T-011** (complexity: 1.0) — Schema compat policy: additive-only documentation and historic shape fixtures
+- [x] **T-011** (complexity: 1.0) — Schema compat policy: additive-only documentation and historic shape fixtures
   - Gaps: GAP-078-122, GAP-078-201
   - Blocked by: T-003
   - Blocks: none
+  - Outcome: packages/schemas/docs/guides/schema-compat-policy.md guide + test/fixtures/historic/{README.md,media.historic.ts}; CLAUDE.md + docs/README.md cross-linked
 
 ---
 
@@ -199,10 +201,11 @@
   - Blocked by: T-022
   - Blocks: none
 
-- [ ] **T-028** (complexity: 1.0) — Seed hardening: admin max-size constant replacing hardcoded magic numbers
+- [x] **T-028** (complexity: 1.0) — Seed hardening: admin max-size constant replacing hardcoded magic numbers
   - Gap: GAP-078-010
   - Blocked by: T-003
   - Blocks: none
+  - Outcome: apps/admin/src/lib/constants.ts with DEFAULT_MEDIA_MAX_SIZE_BYTES (5 MiB) + DEFAULT_GALLERY_FALLBACK_MAX_SIZE_BYTES (10 MiB); 7 hardcoded occurrences replaced across entity-form fields + section configs
 
 ---
 
@@ -268,10 +271,11 @@
 
 ### Phase 5F — Spec amendment: /users/me convention
 
-- [ ] **T-037** (complexity: 1.0) — Amend SPEC-078 v1.6: /users/me convention documentation fix
+- [x] **T-037** (complexity: 1.0) — Amend SPEC-078 v1.6: /users/me convention documentation fix
   - Gap: GAP-078-009
   - Blocked by: none
   - Blocks: none
+  - Outcome: SPEC-078-cloudinary-image-management/spec.md v1.6: REQ-04.2-FLOW uses PATCH /api/v1/protected/users/${userId} + ownership check; /me adoption deferred to dedicated SPEC
 
 ---
 
@@ -380,10 +384,11 @@
 
 ### Phase 7B — Turbo config
 
-- [ ] **T-053** (complexity: 1.0) — Turbo globalEnv: add Cloudinary vars and VERCEL_ENV cache keys
+- [x] **T-053** (complexity: 1.0) — Turbo globalEnv: add Cloudinary vars and VERCEL_ENV cache keys
   - Gaps: GAP-078-220, GAP-078-221, GAP-078-233
   - Blocked by: T-003
   - Blocks: none
+  - Outcome: turbo.json globalEnv adds HOSPEDA_CLOUDINARY_{CLOUD_NAME,API_KEY,API_SECRET}, HOSPEDA_MEDIA_MAX_FILE_SIZE_MB, VERCEL_ENV
 
 ---
 
@@ -558,3 +563,4 @@ Critical path: T-001 -> T-003 -> T-017 -> T-029 -> T-031 -> T-040 -> T-067 -> T-
 ## Session Log
 
 - **2026-04-18 (session close)**: T-004 merged in 6 atomic commits (`50b80475` → `a11ae6df` on main). Fixed hidden `db:fresh-dev` bug (apply-postgres-extras never chained). Renumbered manual SQL to clean 0001-0010 sequence. Rewrote orchestrator as generic iterator. Removed 4 unused Drizzle-generated migration files (preserved `0005_awesome_wild_child.sql` — SPEC-063 in progress). Full end-to-end validation passed (3571 seeded rows, 3 CHECKs + MV + 43 triggers).
+- **2026-04-18 (warmup sweep)**: 4 warmup tasks landed in 4 atomic commits on main (`f713d682` T-037, `a365aec8` T-053, `31fe19e8` T-028, `88f713e2` T-011). All complexity 1.0, delegated to parallel sub-agents. Zero file overlap across tasks. Agents reported truthfully (verified via git status diff). Progress now 8/68. Next available (all unblocked): T-005..T-009 Phase 1C security (parallel), T-010 schema alignment, T-017 bundle refactor (critical path), T-012..T-016 DB Phase 2B+.

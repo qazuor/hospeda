@@ -221,18 +221,18 @@
             "id": "T-011",
             "title": "Schema compat policy: additive-only documentation and historic shape fixtures",
             "description": "Gaps: GAP-078-122, GAP-078-201.\n\nFiles: packages/schemas/CLAUDE.md, packages/schemas/test/common/media.schema.compat.test.ts\n- GAP-078-122+201: Document additive-only policy in packages/schemas/CLAUDE.md; create media.schema.compat.test.ts with historic shape fixtures; fixture { url, moderationState } passes ImageSchema.safeParse\n\nAcceptance: packages/schemas/CLAUDE.md states additive-only policy; compat test file exists; fixture { url, moderationState } passes; pnpm test passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.0,
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [],
             "tags": ["schemas", "docs", "testing"],
             "phase": "phase-2a",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T17:20:00.000Z",
+                "completed": "2026-04-18T17:30:00.000Z"
             }
         },
         {
@@ -526,19 +526,19 @@
         {
             "id": "T-028",
             "title": "Seed hardening: admin max-size constant replacing hardcoded magic numbers",
-            "description": "Gap: GAP-078-010.\n\nFile: apps/admin/src/lib/constants.ts\n- Add DEFAULT_MEDIA_MAX_SIZE_BYTES = 10 * 1024 * 1024 constant\n- Replace 6 hardcoded occurrences of 5242880 in apps/admin/src with the constant\n\nAcceptance: grep -r '5242880' apps/admin/src returns 0 results; constant used in all 6 locations.",
-            "status": "pending",
+            "description": "Gap: GAP-078-010.\n\nFile: apps/admin/src/lib/constants.ts\n- Add DEFAULT_MEDIA_MAX_SIZE_BYTES = 5 * 1024 * 1024 constant (5 MiB, matches the 5242880 literal the spec referenced as '10 MiB' by mistake)\n- Add DEFAULT_GALLERY_FALLBACK_MAX_SIZE_BYTES = 10 * 1024 * 1024 for GalleryField fallback\n- Replace 7 hardcoded occurrences across apps/admin/src with the constants\n\nAcceptance: no bare 5242880 or 5 * 1024 * 1024 literals remain in apps/admin/src production code (docstring @example in commonRules.ts intentionally kept).",
+            "status": "completed",
             "complexity": 1.0,
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [],
             "tags": ["frontend", "admin"],
             "phase": "phase-4b",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T17:20:00.000Z",
+                "completed": "2026-04-18T17:30:00.000Z"
             }
         },
         {
@@ -689,18 +689,18 @@
             "id": "T-037",
             "title": "Amend SPEC-078 v1.6: /users/me convention documentation fix",
             "description": "Gap: GAP-078-009.\n\nFile: .claude/specs/SPEC-078-cloudinary-image-management/spec.md\n- Amend SPEC-078 v1.5 -> v1.6 REQ-04.2-FLOW: AvatarUpload uses PATCH /api/v1/protected/users/${userId} with ownership check; note future /me pattern requires dedicated SPEC\n\nAcceptance: SPEC-078 spec.md updated; no code change.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.0,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [],
             "tags": ["docs"],
             "phase": "phase-5f",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T17:20:00.000Z",
+                "completed": "2026-04-18T17:30:00.000Z"
             }
         },
         {
@@ -977,18 +977,18 @@
             "id": "T-053",
             "title": "Turbo globalEnv: add Cloudinary vars and VERCEL_ENV cache keys",
             "description": "Gaps: GAP-078-220, GAP-078-221, GAP-078-233.\n\nFile: turbo.json\n- globalEnv adds: HOSPEDA_CLOUDINARY_CLOUD_NAME, HOSPEDA_CLOUDINARY_API_KEY, HOSPEDA_CLOUDINARY_API_SECRET, HOSPEDA_MEDIA_MAX_FILE_SIZE_MB, VERCEL_ENV\n- Per-package outputs for @repo/media\n\nAcceptance: turbo.json contains all 5 vars in globalEnv; changing a Cloudinary var invalidates Turbo cache.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.0,
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [],
             "tags": ["tooling", "infra"],
             "phase": "phase-7b",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T17:20:00.000Z",
+                "completed": "2026-04-18T17:30:00.000Z"
             }
         },
         {
@@ -1275,8 +1275,8 @@
     ],
     "summary": {
         "total": 68,
-        "completed": 4,
-        "pending": 64,
+        "completed": 8,
+        "pending": 60,
         "inProgress": 0
     }
 }
