@@ -1,2 +1,0 @@
-ALTER TABLE "destination_reviews" ADD COLUMN "lifecycle_state" "lifecycle_status_enum" DEFAULT 'ACTIVE' NOT NULL;--> statement-breakpoint
-CREATE INDEX "destinationReviews_lifecycleState_idx" ON "destination_reviews" USING btree ("lifecycle_state");
