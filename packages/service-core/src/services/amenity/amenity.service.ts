@@ -481,7 +481,17 @@ export class AmenityService extends BaseCrudRelatedService<
         _actor: Actor,
         _ctx: ServiceContext
     ) {
-        const { page = 1, pageSize = 10, ...filterParams } = params;
+        const {
+            page = 1,
+            pageSize = 10,
+            sortBy: _sortBy,
+            sortOrder: _sortOrder,
+            q: _q,
+            searchInDescription: _searchInDescription,
+            fuzzySearch: _fuzzySearch,
+            groupByCategory: _groupByCategory,
+            ...filterParams
+        } = params;
         return this.model.findAll(filterParams, { page, pageSize });
     }
 
@@ -499,7 +509,17 @@ export class AmenityService extends BaseCrudRelatedService<
         _ctx?: ServiceContext
     ): Promise<AmenitySearchForListOutput> {
         await this._canSearch(actor);
-        const { page = 1, pageSize = 10, ...filterParams } = params;
+        const {
+            page = 1,
+            pageSize = 10,
+            sortBy: _sortBy,
+            sortOrder: _sortOrder,
+            q: _q,
+            searchInDescription: _searchInDescription,
+            fuzzySearch: _fuzzySearch,
+            groupByCategory: _groupByCategory,
+            ...filterParams
+        } = params;
 
         const result = await this.model.findAll(filterParams, { page, pageSize });
 
@@ -533,7 +553,17 @@ export class AmenityService extends BaseCrudRelatedService<
      * @returns An object containing the count of amenities.
      */
     protected async _executeCount(params: AmenitySearchInput, _actor: Actor, _ctx: ServiceContext) {
-        const { ...filterParams } = params;
+        const {
+            page: _page,
+            pageSize: _pageSize,
+            sortBy: _sortBy,
+            sortOrder: _sortOrder,
+            q: _q,
+            searchInDescription: _searchInDescription,
+            fuzzySearch: _fuzzySearch,
+            groupByCategory: _groupByCategory,
+            ...filterParams
+        } = params;
         const count = await this.model.count(filterParams);
         return { count };
     }
