@@ -1,5 +1,39 @@
 # SPEC-063 — Implementation Progress Log
 
+## Session summary (as of 2026-04-17T21:15)
+
+- **Progress:** 22/63 tasks (34.9%)
+- **Status:** in-progress — Phase 2 unit tests + admin UI + DB + schemas complete
+- **Milestone:** `packages/schemas` typecheck **100% CLEAN** for SPEC-063 (post-T-020)
+- **Remaining:** Phase 2 integration (T-021, T-022), Phase 2 cron (T-025, T-026), Phase 2 i18n closing (T-027), Phase 4 DestinationReview, Phase 3 Sponsorship, cleanup T-058
+- **Critical path:** T-027 → T-028 → T-030 → T-034 → T-035 → T-038 → T-039 → T-040 → T-042 → T-058
+
+### Session 2 tasks completed (2026-04-17 T-019 → T-024)
+
+| Task | Complexity | Files | Quality gate |
+|------|-----------|-------|--------------|
+| T-019 | 2 | schemas OwnerPromotion schema.test + crud.schema.test | biome/tc/tests pass (73/73) |
+| T-020 | 2 | schemas OwnerPromotion admin-search.test + group-c.test | biome/tc/tests pass (118/118); schemas tc 100% clean |
+| T-023 | 2 | db ownerPromotion.model.test | biome/tc/tests pass (19/19) |
+| T-024 | 2 | api limit-enforcement.test (scope creep absorbed from T-015) | biome/tc/tests pass (23/23 — 2 were failing) |
+
+### Session 2 decisions (user-approved)
+
+1. **T-019 + T-020 option 1**: expand coverage at schema layer (not minimal delete-only). Added AC-002-01 + AC-002-02 + status enum tests.
+2. **T-019 strict() for AC-002-02**: `OwnerPromotionUpdateInputSchema.strict()` is required to actively reject `isActive` field (Zod otherwise silently ignores unknown keys). Precedent: same file L95/L107/L118.
+3. **T-023 option 1 pragmatic**: migrate mock data shape only; SQL-level DRAFT/ARCHIVED exclusion delegated to T-022 integration (mock-based tests cannot verify SQL filter without fragile introspection). Precedent: `post_sponsorship.model.test.ts:77`.
+4. **T-024 option B**: fix limit-enforcement (2 failing tests from T-015 scope-creep); usage-tracking MAX_ACTIVE_PROMOTIONS test deferred to T-022 integration (getCurrentUsage is globally spy-mocked; adding service.count spy requires module mock restructure). Coverage by equivalence: service and middleware call `OwnerPromotionService.count` with identical filter shape.
+
+### Open gaps / deuda vigente
+
+- **T-022 integration** now cumulative dependency — closes SQL exclusion for T-023, usage-tracking coverage for T-024, AND AC-005-01 literal scope. Consider absorbing `_executeCount` default injection revisit at the same time.
+- **apps/api schema-validation mocks** (accommodation/event/post/owner-promotion getById tests): pre-session 5 missing audit fields per mock. Pre-existing, not SPEC-063 regression.
+- **`getById.test.ts:379` DrizzleClient typing**: pre-existing SPEC-066 residue.
+- **T-027 remaining**: remove `actionActivate`/`actionDeactivate`, rename `statuses.inactive`→`statuses.draft`, remove `statusInactive`. Partial progress in state.json `_partialProgress`.
+- **apps/admin pre-existing unrelated typecheck errors**: `createEntityApi.ts:121`, `me/accommodations/index.tsx:28`.
+
+---
+
 ## Session 1 (2026-04-17)
 
 ### Pre-work
