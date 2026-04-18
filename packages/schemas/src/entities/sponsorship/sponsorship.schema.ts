@@ -6,6 +6,7 @@ import {
     SponsorshipPackageIdSchema,
     UserIdSchema
 } from '../../common/id.schema.js';
+import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { SponsorshipStatusEnum } from '../../enums/sponsorship-status.enum.js';
 import { SponsorshipStatusEnumSchema } from '../../enums/sponsorship-status.schema.js';
 import { SponsorshipTargetTypeEnumSchema } from '../../enums/sponsorship-target-type.schema.js';
@@ -44,6 +45,7 @@ export type SponsorshipAnalytics = z.infer<typeof SponsorshipAnalyticsSchema>;
 export const SponsorshipSchema = z.object({
     id: SponsorshipIdSchema,
     ...BaseAuditFields,
+    ...BaseLifecycleFields,
 
     slug: z
         .string({
@@ -62,7 +64,7 @@ export const SponsorshipSchema = z.object({
 
     levelId: SponsorshipLevelIdSchema,
     packageId: SponsorshipPackageIdSchema.nullable().optional(),
-    status: SponsorshipStatusEnumSchema.default(SponsorshipStatusEnum.PENDING),
+    sponsorshipStatus: SponsorshipStatusEnumSchema.default(SponsorshipStatusEnum.PENDING),
 
     startsAt: z.coerce.date({
         message: 'zodError.sponsorship.startsAt.required'
@@ -130,7 +132,7 @@ export const SponsorshipSearchSchema = z.object({
     sponsorUserId: UserIdSchema.optional(),
     targetType: SponsorshipTargetTypeEnumSchema.optional(),
     targetId: z.string().uuid().optional(),
-    status: SponsorshipStatusEnumSchema.optional(),
+    sponsorshipStatus: SponsorshipStatusEnumSchema.optional(),
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20)
 });

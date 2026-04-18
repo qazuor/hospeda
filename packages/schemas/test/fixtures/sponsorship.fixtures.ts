@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
 import type { SponsorshipStatusEnum, SponsorshipTargetTypeEnum } from '../../src/enums/index.js';
+import { LifecycleStatusEnum } from '../../src/enums/lifecycle-state.enum.js';
 import { createBaseAuditFields, createBaseIdFields } from './common.fixtures.js';
 
 /**
@@ -37,7 +38,12 @@ const createSponsorshipEntityFields = () => ({
     targetId: faker.string.uuid(),
     levelId: faker.string.uuid(),
     packageId: faker.helpers.maybe(() => faker.string.uuid(), { probability: 0.5 }),
-    status: faker.helpers.arrayElement(VALID_STATUS_VALUES),
+    sponsorshipStatus: faker.helpers.arrayElement(VALID_STATUS_VALUES),
+    lifecycleState: faker.helpers.arrayElement([
+        LifecycleStatusEnum.DRAFT,
+        LifecycleStatusEnum.ACTIVE,
+        LifecycleStatusEnum.ARCHIVED
+    ]),
     startsAt: faker.date.past(),
     endsAt: faker.helpers.maybe(() => faker.date.future(), { probability: 0.6 }),
     paymentId: faker.helpers.maybe(() => faker.string.alphanumeric(20), { probability: 0.7 }),
@@ -75,7 +81,8 @@ export const createMinimalSponsorship = () => ({
     targetType: 'event' as SponsorshipTargetTypeEnum,
     targetId: faker.string.uuid(),
     levelId: faker.string.uuid(),
-    status: 'pending' as SponsorshipStatusEnum,
+    sponsorshipStatus: 'pending' as SponsorshipStatusEnum,
+    lifecycleState: LifecycleStatusEnum.ACTIVE,
     startsAt: faker.date.past(),
     analytics: {
         impressions: 0,
@@ -93,7 +100,8 @@ export const createSponsorshipCreateInput = () => ({
     targetId: faker.string.uuid(),
     levelId: faker.string.uuid(),
     packageId: faker.helpers.maybe(() => faker.string.uuid(), { probability: 0.4 }),
-    status: faker.helpers.arrayElement(VALID_STATUS_VALUES),
+    sponsorshipStatus: faker.helpers.arrayElement(VALID_STATUS_VALUES),
+    lifecycleState: LifecycleStatusEnum.ACTIVE,
     startsAt: faker.date.past(),
     endsAt: faker.helpers.maybe(() => faker.date.future(), { probability: 0.5 }),
     paymentId: faker.helpers.maybe(() => faker.string.alphanumeric(20), { probability: 0.6 }),
@@ -111,9 +119,18 @@ export const createSponsorshipCreateInput = () => ({
  * Create valid input for sponsorship update (all fields optional, partial)
  */
 export const createSponsorshipUpdateInput = () => ({
-    status: faker.helpers.maybe(() => faker.helpers.arrayElement(VALID_STATUS_VALUES), {
+    sponsorshipStatus: faker.helpers.maybe(() => faker.helpers.arrayElement(VALID_STATUS_VALUES), {
         probability: 0.5
     }),
+    lifecycleState: faker.helpers.maybe(
+        () =>
+            faker.helpers.arrayElement([
+                LifecycleStatusEnum.DRAFT,
+                LifecycleStatusEnum.ACTIVE,
+                LifecycleStatusEnum.ARCHIVED
+            ]),
+        { probability: 0.4 }
+    ),
     endsAt: faker.helpers.maybe(() => faker.date.future(), { probability: 0.4 }),
     logoUrl: faker.helpers.maybe(() => faker.image.url(), { probability: 0.4 }),
     linkUrl: faker.helpers.maybe(() => faker.internet.url(), { probability: 0.4 }),
