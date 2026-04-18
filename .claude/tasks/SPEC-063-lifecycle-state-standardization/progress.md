@@ -1,14 +1,14 @@
 # SPEC-063 — Implementation Progress Log
 
-## Session summary (as of 2026-04-17T21:15)
+## Session summary (as of 2026-04-17T21:40)
 
-- **Progress:** 22/63 tasks (34.9%)
-- **Status:** in-progress — Phase 2 unit tests + admin UI + DB + schemas complete
-- **Milestone:** `packages/schemas` typecheck **100% CLEAN** for SPEC-063 (post-T-020)
-- **Remaining:** Phase 2 integration (T-021, T-022), Phase 2 cron (T-025, T-026), Phase 2 i18n closing (T-027), Phase 4 DestinationReview, Phase 3 Sponsorship, cleanup T-058
-- **Critical path:** T-027 → T-028 → T-030 → T-034 → T-035 → T-038 → T-039 → T-040 → T-042 → T-058
+- **Progress:** 23/63 tasks (36.5%)
+- **Status:** in-progress — Phase 2 unit tests + admin UI + DB + schemas + i18n closing complete
+- **Milestone:** `ownerPromotions` i18n namespace **100% clean** post-T-027 (no legacy debt)
+- **Remaining:** Phase 2 integration (T-021, T-022), Phase 2 cron (T-025, T-026), Phase 4 DestinationReview, Phase 3 Sponsorship, cleanup T-058
+- **Critical path:** T-028 → T-030 → T-034 → T-035 → T-038 → T-039 → T-040 → T-042 → T-058
 
-### Session 2 tasks completed (2026-04-17 T-019 → T-024)
+### Session 2 tasks completed (2026-04-17 T-019 → T-027)
 
 | Task | Complexity | Files | Quality gate |
 |------|-----------|-------|--------------|
@@ -16,6 +16,7 @@
 | T-020 | 2 | schemas OwnerPromotion admin-search.test + group-c.test | biome/tc/tests pass (118/118); schemas tc 100% clean |
 | T-023 | 2 | db ownerPromotion.model.test | biome/tc/tests pass (19/19) |
 | T-024 | 2 | api limit-enforcement.test (scope creep absorbed from T-015) | biome/tc/tests pass (23/23 — 2 were failing) |
+| T-027 | 1.5 | i18n admin-billing.json x3 + types.ts regen (expanded sweep of 11 orphans) | biome/tc/tests pass (admin-billing 1044/1044; 6 pre-existing failures in other namespaces) |
 
 ### Session 2 decisions (user-approved)
 
@@ -29,8 +30,8 @@
 - **T-022 integration** now cumulative dependency — closes SQL exclusion for T-023, usage-tracking coverage for T-024, AND AC-005-01 literal scope. Consider absorbing `_executeCount` default injection revisit at the same time.
 - **apps/api schema-validation mocks** (accommodation/event/post/owner-promotion getById tests): pre-session 5 missing audit fields per mock. Pre-existing, not SPEC-063 regression.
 - **`getById.test.ts:379` DrizzleClient typing**: pre-existing SPEC-066 residue.
-- **T-027 remaining**: remove `actionActivate`/`actionDeactivate`, rename `statuses.inactive`→`statuses.draft`, remove `statusInactive`. Partial progress in state.json `_partialProgress`.
 - **apps/admin pre-existing unrelated typecheck errors**: `createEntityApi.ts:121`, `me/accommodations/index.tsx:28`.
+- **i18n pre-existing unrelated test failures** (6 total, 3 namespaces x 2 locales): `accommodations`, `footer`, `home` EN+PT have ES→EN/PT translation gaps. Confirmed pre-session via git stash comparison, NOT SPEC-063 regression.
 
 ---
 
@@ -330,14 +331,38 @@ After T-020, `packages/schemas` typecheck is **100% clean** for SPEC-063. All Ow
 - Subtask 1 kept as `completed: false` with `_note` + `_partialProgress` flag in state.json.
 - Quality gate: **biome pass**, **typecheck clean on touched file** (no new errors introduced), **tests 23/23 pass** (previously 21/23).
 
+#### T-027 — i18n OwnerPromotion lifecycle cleanup (2026-04-17T21:40)
+- **Files:**
+  - `packages/i18n/src/locales/es/admin-billing.json`
+  - `packages/i18n/src/locales/en/admin-billing.json`
+  - `packages/i18n/src/locales/pt/admin-billing.json`
+  - `packages/i18n/src/types.ts` (auto-regenerated)
+- **Scope (expanded per user-approved option 2):** originally 4 legacy keys (`statusInactive`, `statusInactiveLabel`, `actionActivate`, `actionDeactivate`); expanded to 11 after grep confirmed zero consumers in `apps/admin` for 7 additional orphans. Final removed set (inside `ownerPromotions` namespace only, in all 3 locales):
+  1. `statusInactive`
+  2. `statusInactiveLabel`
+  3. `statusActiveLabel` (dupe of flat `statusActive`)
+  4. `actionActivate`
+  5. `actionDeactivate`
+  6. `actionEdit` (dupe of `actions.edit`)
+  7. `actionDelete` (dupe of `actions.delete`)
+  8. `actions.activate` (inside `actions` object)
+  9. `actions.deactivate`
+  10. `filters.active`
+  11. `filters.inactive`
+- **Verification:** grep `ownerPromotions.(statusInactive|...|filters.inactive)` across entire monorepo returned 0 matches post-cleanup (types.ts, specs, and state.json references remain as expected — types.ts regenerated; spec.md is historical; state.json tracks the work).
+- **Obsolete subtasks documented:** the state.json subtask `Add actionSetDraft/actionSetActive/actionSetArchived keys` was marked `_obsoleteReason` because T-018c resolved action UX via native `<select>` with existing `statusDraft/Active/Archived` option labels + `actions.changeLifecycle` as aria-label. No `set*` keys are needed.
+- **Semantic clarification:** spec wording `statuses.inactive → statuses.draft` was imprecise; the actual legacy shape was flat `statusInactive` (now removed); `statusDraft`/`statusArchived` were added in the Session 1 T-018 block. Closure of the T-027 requirement is semantically complete.
+- **Out of scope (NOT touched):** `actionActivate`/`actionDeactivate`/`statusInactive` occurrences in `plans`, `addons`, `promoCodes` namespaces — those entities have live consumers in `apps/admin` (grep confirmed) and are not part of SPEC-063 migration.
+- Quality gate: **biome pass** (1 file auto-formatted post-edits), **typecheck `@repo/i18n` clean**, **typecheck `admin` only pre-existing unrelated errors** (`createEntityApi.ts:121`, `me/accommodations/index.tsx:28`), **tests: admin-billing 1044/1044 pass**; 6 pre-existing failures in unrelated namespaces (`accommodations`, `footer`, `home` EN+PT) confirmed via git stash comparison.
+
+### ownerPromotions i18n namespace milestone
+
+Post-T-027, the `admin-billing.ownerPromotions` namespace contains **zero legacy debt**. All status labels and action labels are fully migrated to the lifecycle state model. Consumers: `routes/_authed/billing/owner-promotions.tsx`, `features/owner-promotions/components/PromotionDetailDialog.tsx`, `PromotionFormDialog.tsx` all use the new keys exclusively.
+
 ### Next up
 
-Commit boundary for T-024 (1 test file + bookkeeping). Then:
+Commit boundary for T-027 (3 i18n JSON files + types.ts + bookkeeping). Then:
 
-**Phase 2 remaining:** T-021 (integration: admin list AC-001-01), T-022 (integration: public default ACTIVE AC-005-01 + closes T-023 SQL-exclusion verification + closes T-024 usage-tracking partial), T-025/T-026 (cron job), T-027 (i18n cleanup).
+**Phase 2 remaining:** T-021 (integration: admin list AC-001-01), T-022 (integration: public default ACTIVE AC-005-01 + closes T-023 SQL-exclusion verification + closes T-024 usage-tracking partial), T-025/T-026 (cron job).
 
-**Phase 2 cron:** T-025, T-026.
-
-**Phase 2 i18n closing:** T-027 remaining scope.
-
-Then Phase 4 (DestinationReview), Phase 3 (Sponsorship), cleanup (T-058).
+Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057), cleanup (T-058).

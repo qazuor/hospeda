@@ -1,21 +1,20 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 22/63 tasks (34.9%)
+## Progress: 23/63 tasks (36.5%)
 
-**Last updated:** 2026-04-17T21:15:00Z
-**Status:** in-progress (Phase 2 unit tests + admin UI + DB + schemas complete; integration T-021/T-022 + cron T-025/T-026 + i18n closing T-027 remaining)
+**Last updated:** 2026-04-17T21:40:00Z
+**Status:** in-progress (Phase 2 unit tests + admin UI + DB + schemas + i18n closing complete; integration T-021/T-022 + cron T-025/T-026 remaining)
 
 ### Next up (in priority order)
 
-1. **T-027** (complexity 1.5, partial) — i18n cleanup: remove legacy `actionActivate`/`actionDeactivate`, rename `statuses.inactive`→`statuses.draft`, remove `statusInactive`. **Recommended start** — smallest + closes Phase 2 i18n.
-2. **T-021** (complexity 2) — admin list integration test (AC-001-01). Requires integration test infra.
-3. **T-022** (complexity 2) — public endpoint integration test (AC-005-01). **Cumulative deps**: closes T-023 SQL-exclusion + T-024 usage-tracking equivalence + revisit `_executeCount` gap.
-4. **T-025 + T-026** (complexity 2.5 each) — archive-expired-promotions cron handler + advisory lock 43010 + tests.
+1. **T-021** (complexity 2) — admin list integration test (AC-001-01). Requires integration test infra. **Recommended start** — unblocks nothing Phase-2-critical but closes Phase 2 verification.
+2. **T-022** (complexity 2) — public endpoint integration test (AC-005-01). **Cumulative deps**: closes T-023 SQL-exclusion + T-024 usage-tracking equivalence + revisit `_executeCount` gap.
+3. **T-025 + T-026** (complexity 2.5 each) — archive-expired-promotions cron handler + advisory lock 43010 + tests.
 
 Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057), cleanup T-058.
 
 **Average Complexity:** 2.1/2.5 (ceiling)
-**Critical Path (post-replan):** T-003 -> T-007 -> T-010 -> T-013 -> T-016a -> T-017 -> T-018a -> T-018c -> T-027 -> T-028 -> T-030 -> T-034 -> T-035 -> T-038 -> T-039 -> T-040 -> T-042 -> T-058 (18 steps)
+**Critical Path (post-T-027):** T-028 -> T-030 -> T-034 -> T-035 -> T-038 -> T-039 -> T-040 -> T-042 -> T-058 (9 steps remaining)
 **Parallel Tracks:** 3 identified (Phase 1 tests, Phase 2 migration, Phase 2 schemas after T-003)
 
 ---
@@ -129,9 +128,11 @@ Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057
 
 ### i18n (partial)
 
-- [ ] **T-027** (complexity: 1.5) — i18n locale keys for OwnerPromotion lifecycle
-  - **PARTIAL** (absorbed in T-018 block): added `statusDraft`, `statusArchived`, `actions.changeLifecycle`, `form.lifecycleStateLabel` to 3 locales + regenerated types
-  - **Remaining scope:** remove legacy `actionActivate`/`actionDeactivate` keys, rename `statuses.inactive`→`statuses.draft`, remove now-unused `statusInactive`
+- [x] **T-027** (complexity: 1.5) — i18n locale keys for OwnerPromotion lifecycle
+  - COMPLETED 2026-04-17 · lint: pass · typecheck: pass · tests: admin-billing 1044/1044 pass
+  - Session 1 (T-018 block): added `statusDraft`, `statusArchived`, `actions.changeLifecycle`, `form.lifecycleStateLabel` to 3 locales + regenerated types
+  - Session 2 (this commit): **expanded sweep** (user-approved option 2) — removed 11 orphans inside `ownerPromotions`: `statusInactive`, `statusInactiveLabel`, `statusActiveLabel`, `actionActivate`, `actionDeactivate`, `actionEdit`, `actionDelete`, `actions.activate`, `actions.deactivate`, `filters.active`, `filters.inactive`. Grep confirmed zero consumers for all 11 in apps/admin.
+  - Subtask "Add actionSet*" marked obsolete — T-018c resolved UX via native `<select>` without needing new keys
   - Blocked by: T-018c · Blocks: T-028
 
 ### Tests

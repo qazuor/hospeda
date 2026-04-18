@@ -920,32 +920,46 @@
         {
             "id": "T-027",
             "title": "Update i18n locale files for OwnerPromotion lifecycle",
-            "_partialProgress": "Minimal keys for T-018a/b/c were added to es/en/pt admin-billing.json (statusDraft, statusArchived, actions.changeLifecycle, form.lifecycleStateLabel) + packages/i18n types regenerated. Remaining work: remove legacy keys actionActivate/actionDeactivate, rename statuses.inactive -> statuses.draft. Task kept pending until full cleanup.",
             "description": "Update locale files in `packages/i18n/src/locales/*`: (1) remove `admin-billing.ownerPromotions.actionActivate` and `admin-billing.ownerPromotions.actionDeactivate`, (2) add `admin-billing.ownerPromotions.actionSetDraft`, `actionSetActive`, `actionSetArchived`, (3) rename `statuses.inactive` to `statuses.draft`, add `statuses.archived`, keep `statuses.active`. Apply to all 3 locales (es, en, pt). Update any usages in components to use new keys.\n\nFiles: `packages/i18n/src/locales/es/admin-billing.json`, `en/admin-billing.json`, `pt/admin-billing.json`, affected components",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-018c"],
             "blocks": [],
+            "_scopeNote": "Session 1 (T-018 block) absorbed additive keys (statusDraft/statusArchived/actions.changeLifecycle/form.lifecycleStateLabel in es+en+pt + types regeneration). Session 2 (this commit) absorbed expanded cleanup sweep of 11 orphaned keys inside ownerPromotions namespace (user-approved option 2): statusInactive, statusInactiveLabel, statusActiveLabel, actionActivate, actionDeactivate, actionEdit, actionDelete, actions.activate, actions.deactivate, filters.active, filters.inactive. Grep confirmed 0 consumers in apps/admin for all 11 keys. Rationale for expansion: same file/entity/commit boundary; completes ownerPromotions namespace with zero residual legacy debt. Subtasks 2 and 3 (Add actionSetDraft/actionSetActive/actionSetArchived) became obsolete after T-018c resolved UX with native <select> using existing statusDraft/Active/Archived + actions.changeLifecycle aria-label.",
             "subtasks": [
-                { "title": "Remove actionActivate/actionDeactivate keys", "completed": false },
+                {
+                    "title": "Remove actionActivate/actionDeactivate keys",
+                    "completed": true,
+                    "_note": "Expanded to full legacy sweep — 11 orphans removed (see _scopeNote)"
+                },
                 {
                     "title": "Add actionSetDraft/actionSetActive/actionSetArchived keys (es)",
-                    "completed": false
+                    "completed": false,
+                    "_obsoleteReason": "T-018c resolved action UX via native <select> with existing statusDraft/Active/Archived option labels + actions.changeLifecycle as aria-label. No set* keys needed."
                 },
-                { "title": "Add keys to en and pt locale files", "completed": false },
+                {
+                    "title": "Add keys to en and pt locale files",
+                    "completed": true,
+                    "_note": "Covered in Session 1 T-018 block (statusDraft/statusArchived/actions.changeLifecycle/form.lifecycleStateLabel added to es+en+pt)"
+                },
                 {
                     "title": "Rename statuses.inactive to statuses.draft, add statuses.archived",
-                    "completed": false
+                    "completed": true,
+                    "_note": "Semantic equivalent — the object path `statuses.inactive` did not exist; actual legacy shape was flat `statusInactive` (now removed). statusDraft/statusArchived added in Session 1."
                 },
-                { "title": "Update components using removed keys", "completed": false }
+                {
+                    "title": "Update components using removed keys",
+                    "completed": true,
+                    "_note": "0 component updates required — grep confirmed all 11 removed keys had zero consumers in apps/admin (legacy orphans post-T-017/T-018a..c refactor)"
+                }
             ],
             "tags": ["i18n", "phase-2", "ownerPromotion"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-17T21:20:00.000Z",
+                "completed": "2026-04-17T21:40:00.000Z"
             }
         },
         {
