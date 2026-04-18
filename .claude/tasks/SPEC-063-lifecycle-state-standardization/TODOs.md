@@ -1,9 +1,16 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 37/63 completed + 1 deferred (T-036) — effective 37/62
+## Progress: 37/63 completed + 7 deferred — effective 37/56
 
-**Last updated:** 2026-04-18T17:40:00Z
-**Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end. Remaining: Phase 3 Sponsorship (19 tasks) + cleanup T-058 + latent Phase 1 AccommodationReview verification (T-001, T-002) + Phase 2 OwnerPromotion migration trio (T-004, T-005, T-006 — open question re: push-only direction).
+**Last updated:** 2026-04-18T17:55:00Z
+**Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). See progress.md + state.json `_pushOnlyMigrationPolicy`. Effective Phase 3 scope drops from 19 to 13 tasks.
+
+### Push-only migration policy (summary)
+
+- Hospeda has no production DB. Workflow is `drizzle-kit push`, not `drizzle-kit migrate`.
+- Numbered migration files, rollback SQL, and data-integrity migration tests have zero deliverable value in this model.
+- Schema correctness is covered by unit/integration tests per entity; a T-031-style introspection test is the optional reinforcement when needed.
+- Follow-up cleanup: T-029 output files (`src/migrations/0005_awesome_wild_child.sql` + `manual/0005_awesome_wild_child_down.sql`) scheduled for deletion to resolve naming collision and drop the dead artifact.
 
 ### Follow-up SPECs spawned
 
@@ -11,9 +18,9 @@
 
 ### Next up (in priority order)
 
-1. **T-039..T-057** — Phase 3 Sponsorship (19 tasks: DB, schemas, model/service, API, frontend, tests). Starts with T-039 (DB schema + dual field rename/add) — highest impact, no blockers.
-2. **T-001, T-002** (complexity 2 each) — Phase 1 AccommodationReview verification tests. Independent of Phase 3; can run in parallel.
-3. **T-004, T-005, T-006** — Phase 2 OwnerPromotion migration trio. Open question: still worth generating numbered migrations given the repo's push-only direction? Flag for user decision when we get near these.
+1. **Follow-up cleanup (not a formal task):** delete the two T-029 output SQL files + amend state.json/progress.md to record the cleanup done. Small, non-blocking. Could bundle with the next feature commit.
+2. **T-039..T-057** — Phase 3 Sponsorship (13 non-migration tasks: T-039 schema, T-043..T-049 zod/model/service, T-050..T-054 API/frontend, T-055..T-057 tests). Starts with T-039 (DB schema + dual field rename/add) — highest impact, no blockers.
+3. **T-001, T-002** (complexity 2 each) — Phase 1 AccommodationReview verification tests. Independent of Phase 3; can run in parallel.
 4. **T-058** (complexity 2.5) — cleanup / cross-cutting verification. T-036 removed from blockedBy; `_deferredDependencies` note tracks the deferral for final-report mention.
 
 **Average Complexity:** 2.1/2.5 (ceiling)
@@ -40,14 +47,15 @@
   - COMPLETED 2026-04-17 · lint: pass · typecheck: deferred (cascade)
   - Blocked by: none · Blocks: T-004, T-007, T-011
 
-- [ ] **T-004** (complexity: 2.5) — Generate OwnerPromotion up migration with data migration
+- [~] **T-004** (complexity: 2.5) — Generate OwnerPromotion up migration with data migration — **DEFERRED 2026-04-18 (push-only policy)**
   - Blocked by: T-003 · Blocks: T-005, T-006
 
-- [ ] **T-005** (complexity: 2) — Write OwnerPromotion down/rollback migration
+- [~] **T-005** (complexity: 2) — Write OwnerPromotion down/rollback migration — **DEFERRED 2026-04-18 (push-only policy)**
   - Blocked by: T-004 · Blocks: T-006
 
-- [ ] **T-006** (complexity: 2.5) — Write OwnerPromotion migration data integrity tests
+- [~] **T-006** (complexity: 2.5) — Write OwnerPromotion migration data integrity tests — **DEFERRED 2026-04-18 (push-only policy)**
   - Blocked by: T-005 · Blocks: none
+  - Schema correctness already covered by T-019 + T-020 + T-023 + T-021 + T-022.
 
 ### Zod Schemas
 
@@ -213,6 +221,7 @@
   - COMPLETED 2026-04-18 · up: `packages/db/src/migrations/0005_awesome_wild_child.sql` (auto-generated, diff-clean: 2 statements) · down: `packages/db/src/migrations/manual/0005_awesome_wild_child_down.sql` (idempotent)
   - Path correction: real migrations path is `packages/db/src/migrations/` (not `packages/db/migrations/` as task text said).
   - Orphan flagged: `0003_shiny_spitfire.sql` is untracked from prior session; not SPEC-063 scope.
+  - **Outputs scheduled for deletion** per push-only policy (2026-04-18) — see state.json `_followUpObsolete` on T-029 + summary `_pushOnlyMigrationPolicy.followUpCleanups`. Task stays completed (work literally was done); files are dead artifacts.
   - Blocked by: T-028 · Blocks: T-031
 
 - [x] **T-030** (complexity: 2) — Update DestinationReview Zod base schema + CRUD + fixtures
@@ -277,14 +286,16 @@
 - [ ] **T-039** (complexity: 2.5) — Update Sponsorship Drizzle DB schema: add lifecycleState + rename status
   - Blocked by: T-038 · Blocks: T-040, T-043, T-047
 
-- [ ] **T-040** (complexity: 2.5) — Generate Sponsorship up migration (add-copy-drop pattern)
+- [~] **T-040** (complexity: 2.5) — Generate Sponsorship up migration (add-copy-drop pattern) — **DEFERRED 2026-04-18 (push-only policy)**
   - Blocked by: T-039 · Blocks: T-041, T-042
+  - Schema rename + new column will land via `drizzle-kit push` directly when T-039 commits.
 
-- [ ] **T-041** (complexity: 2.5) — Write Sponsorship down/rollback migration
+- [~] **T-041** (complexity: 2.5) — Write Sponsorship down/rollback migration — **DEFERRED 2026-04-18 (push-only policy)**
   - Blocked by: T-040 · Blocks: T-042
 
-- [ ] **T-042** (complexity: 2.5) — Write Sponsorship migration data integrity tests
+- [~] **T-042** (complexity: 2.5) — Write Sponsorship migration data integrity tests — **DEFERRED 2026-04-18 (push-only policy)**
   - Blocked by: T-040, T-041 · Blocks: none
+  - Schema correctness will be covered by T-055 + T-056 + T-057 when Phase 3 lands.
 
 ### Zod Schemas
 

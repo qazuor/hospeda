@@ -1,12 +1,25 @@
 # SPEC-063 — Implementation Progress Log
 
-## Session summary (as of 2026-04-18T17:40)
+## Session summary (as of 2026-04-18T17:55)
 
-- **Progress:** 37/63 completed + 1 deferred (T-036). Effective scope 37/62.
-- **Status:** **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end. Phase 4 schema + routes-verification + schema tests + admin-search tests + integration tests + migrations (T-029) + post-migration introspection test (T-031) all done.
-- **Remaining:** Phase 3 Sponsorship (19 tasks T-039..T-057), cleanup T-058. Also latent: Phase 1 AccommodationReview verification tests (T-001, T-002) and Phase 2 OwnerPromotion migration trio T-004/T-005/T-006 — open question re: push-only direction.
-- **Critical path:** T-039 → Phase 3 end-to-end → T-058.
+- **Progress:** 37/63 completed + 7 deferred (T-004, T-005, T-006, T-036, T-040, T-041, T-042). Effective scope **37/56** (push-only policy drops 7 migration-ceremony tasks from denominator).
+- **Status:** **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred T-004/T-005/T-006 migration ceremony). Remaining Phase 3 scope is now 13 tasks instead of 19.
+- **Remaining:** Phase 3 Sponsorship (13 tasks: T-039 schema + T-043..T-049 zod/model/service + T-050..T-054 API/frontend + T-055..T-057 tests — all non-migration), cleanup T-058. Also latent: Phase 1 AccommodationReview verification tests (T-001, T-002, independent).
+- **Critical path:** T-039 → Phase 3 end-to-end (schema → service → API → frontend → tests) → T-058.
 - **Follow-up SPECs spawned:** SPEC-087 (public endpoint response schema strip — systemic factory fix).
+
+### Push-only migration policy decision 2026-04-18T17:55
+
+- **Decision (user-approved):** defer all numbered-migration and data-migration tasks under SPEC-063. Affects 6 tasks: T-004, T-005, T-006 (Phase 2 OwnerPromotion migration trio) and T-040, T-041, T-042 (Phase 3 Sponsorship migration trio).
+- **Rationale:** Hospeda is in early development with no production database. The dev workflow is `drizzle-kit push` (alias `pnpm db:push`), which syncs the TS schema directly against the dev DB without emitting or applying numbered migration files. The user is in parallel refactoring `packages/db` to remove legacy `src/migrations/0000-0004_*.sql` and reorganize `manual/*.sql` into a clean 0001-0010 sequence that contains only triggers/materialized views/CHECK constraints (the things Drizzle cannot declare in TS). Under that model, data migrations (ADD/COPY/DROP SQL, up/down pairs, pre/post data integrity tests) have zero deliverable value — there is no prod DB to migrate and no rollback scenario to support.
+- **Implications captured in `state.json` summary `_pushOnlyMigrationPolicy` block:**
+  - Numbered migration files are transient artifacts at best. Not worth writing, testing, or maintaining.
+  - `manual/*_down.sql` rollback files have no runtime consumer (the apply script skips them, and there is no prod).
+  - Data-migration tasks lose their premise under push: `db:push` rewrites the schema in place — there is no `before` state with user data to preserve.
+  - Schema introspection tests (T-031 pattern) remain valuable: they verify TS schema ↔ live DB agreement, which is the invariant push-only still needs.
+- **T-029 follow-up:** status stays `completed` (the task literally asked to generate migrations, which we did), but the two output files are scheduled for deletion in a follow-up cleanup (`packages/db/src/migrations/0005_awesome_wild_child.sql` up + `packages/db/src/migrations/manual/0005_awesome_wild_child_down.sql` down). Resolves the naming collision with `manual/0005_set_updated_at_trigger.sql` (from the user's concurrent refactor). Tracked in `state.json` `_followUpObsolete` on T-029 and `_pushOnlyMigrationPolicy.followUpCleanups` on the summary.
+- **Dependency graph impact:** none of the 6 deferred tasks block T-058 (the cleanup task). T-004 blocks T-005 + T-006; T-040 blocks T-041 + T-042 — the chains are self-contained within the deferred set. Phase 3's effective task count drops from 19 to 13.
+- **Schema correctness coverage not lost:** OwnerPromotion is covered by T-019/T-020 (schema tests) + T-023 (model tests) + T-021/T-022 (integration tests). Sponsorship will be covered analogously by T-055 + T-056 + T-057 when Phase 3 lands. A T-031-style introspection test is optional per entity and only if schema drift becomes a concern.
 
 ### T-031 completed 2026-04-18T17:40
 

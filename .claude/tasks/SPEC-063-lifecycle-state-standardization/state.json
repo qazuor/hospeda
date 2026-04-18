@@ -92,7 +92,7 @@
             "id": "T-004",
             "title": "Generate OwnerPromotion up migration (add column, data migration, drop is_active)",
             "description": "Run `pnpm db:generate` from the db package to generate the Drizzle migration. Then manually edit the generated SQL file to ensure the sequence: (1) ADD COLUMN lifecycle_state with NOT NULL DEFAULT 'ACTIVE' and PG enum type, (2) UPDATE owner_promotions SET lifecycle_state = CASE WHEN is_active THEN 'ACTIVE' ELSE 'ARCHIVED' END, (3) DROP COLUMN is_active, (4) index changes. Place migration in `packages/db/migrations/`. Document the data migration step in a comment in the SQL file.\n\nFiles: new SQL migration file under `packages/db/migrations/`",
-            "status": "pending",
+            "status": "deferred",
             "complexity": 2.5,
             "blockedBy": ["T-003"],
             "blocks": ["T-005", "T-006"],
@@ -105,20 +105,22 @@
                 { "title": "Verify indexes are correctly changed in SQL", "completed": false },
                 { "title": "Add comment documenting data migration rationale", "completed": false }
             ],
-            "tags": ["db", "migration", "phase-2", "ownerPromotion"],
+            "tags": ["db", "migration", "phase-2", "ownerPromotion", "deferred"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "n/a", "typecheck": "n/a", "tests": "n/a" },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
                 "started": null,
-                "completed": null
-            }
+                "completed": null,
+                "deferred": "2026-04-18T17:55:00.000Z"
+            },
+            "_scopeDeviation": "Deferred under push-only migration policy. See summary._pushOnlyMigrationPolicy for the full rationale. Short version: the OwnerPromotion schema change is already applied to the dev DB via drizzle-kit push (T-003 committed 2026-04-17); there is no prod DB to migrate and no rollback scenario to support. The numbered migration file this task would produce has zero deliverable value under push-only."
         },
         {
             "id": "T-005",
             "title": "Write OwnerPromotion down/rollback migration",
             "description": "Write a manual rollback migration SQL file that: (1) ADD COLUMN is_active boolean NOT NULL DEFAULT true, (2) UPDATE owner_promotions SET is_active = CASE WHEN lifecycle_state = 'ACTIVE' THEN true ELSE false END (DRAFT and ARCHIVED both map to false), (3) DROP COLUMN lifecycle_state, (4) restore original indexes. Follow the `manual/` migration pattern documented in `packages/db/docs/triggers-manifest.md`.\n\nFiles: new SQL rollback file under `packages/db/migrations/manual/`",
-            "status": "pending",
+            "status": "deferred",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": ["T-006"],
@@ -134,20 +136,22 @@
                 },
                 { "title": "Follow manual/ migration file naming convention", "completed": false }
             ],
-            "tags": ["db", "migration", "rollback", "phase-2", "ownerPromotion"],
+            "tags": ["db", "migration", "rollback", "phase-2", "ownerPromotion", "deferred"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "n/a", "typecheck": "n/a", "tests": "n/a" },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
                 "started": null,
-                "completed": null
-            }
+                "completed": null,
+                "deferred": "2026-04-18T17:55:00.000Z"
+            },
+            "_scopeDeviation": "Deferred under push-only migration policy. See summary._pushOnlyMigrationPolicy. Rollback SQL has no runtime consumer under push-only: the apply script skips *_down.sql files and there is no prod DB to roll back."
         },
         {
             "id": "T-006",
             "title": "Write OwnerPromotion pre/post-migration data integrity tests",
             "description": "Write integration tests that verify migration correctness: (1) pre-migration: count null values in is_active (should be 0), (2) post-migration: lifecycle_state has only 'ACTIVE' and 'ARCHIVED' values, counts match pre-migration true/false counts, (3) post-rollback: is_active values match the expected CASE mapping from lifecycle_state. Use the project's DB test infrastructure.\n\nFiles: `packages/db/test/migrations/owner-promotion-lifecycle.migration.test.ts`",
-            "status": "pending",
+            "status": "deferred",
             "complexity": 2.5,
             "blockedBy": ["T-005"],
             "blocks": [],
@@ -163,14 +167,16 @@
                 },
                 { "title": "Assert rollback restores is_active correctly", "completed": false }
             ],
-            "tags": ["db", "testing", "migration", "phase-2", "ownerPromotion"],
+            "tags": ["db", "testing", "migration", "phase-2", "ownerPromotion", "deferred"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "n/a", "typecheck": "n/a", "tests": "n/a" },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
                 "started": null,
-                "completed": null
-            }
+                "completed": null,
+                "deferred": "2026-04-18T17:55:00.000Z"
+            },
+            "_scopeDeviation": "Deferred under push-only migration policy. See summary._pushOnlyMigrationPolicy. Pre/post/rollback data-integrity assertions have no premise under push: drizzle-kit push does not execute a discrete migration step with a reversible boundary — it rewrites the schema in place. Schema correctness for OwnerPromotion is already covered by T-019/T-020 (schema tests) and T-023 (model tests); introspection (T-031 pattern, optional) would be the analogue if needed."
         },
         {
             "id": "T-007",
@@ -1067,7 +1073,8 @@
                 "completed": "2026-04-18T17:25:00.000Z"
             },
             "_pathCorrection": "Task description said `packages/db/migrations/` but actual path is `packages/db/src/migrations/`. Files placed under the real path. Drizzle config `out: './src/migrations'` confirms this.",
-            "_orphanMigrationObservation": "0003_shiny_spitfire.sql is untracked orphan from an earlier session (Apr 17 18:02 mtime). Journal references it (idx 3) but file was never committed; 0004_nice_molecule_man.sql was generated and committed after it. meta/ directory is .gitignored (pattern `**/migrations/meta/`), so only SQL files surface in git. Not a SPEC-063 regression. Left untouched. Possibly worth dedicated cleanup task but out of scope here."
+            "_orphanMigrationObservation": "0003_shiny_spitfire.sql is untracked orphan from an earlier session (Apr 17 18:02 mtime). Journal references it (idx 3) but file was never committed; 0004_nice_molecule_man.sql was generated and committed after it. meta/ directory is .gitignored (pattern `**/migrations/meta/`), so only SQL files surface in git. Not a SPEC-063 regression. Left untouched. Possibly worth dedicated cleanup task but out of scope here.",
+            "_followUpObsolete": "2026-04-18 policy decision (see summary._pushOnlyMigrationPolicy): both T-029 output files are scheduled for deletion. They have zero runtime consumer under push-only — the column was already applied via drizzle-kit push (T-028), and the *_down.sql is skipped by the apply script. Deletion tracked in summary._pushOnlyMigrationPolicy.followUpCleanups. T-029 itself stays status=completed (the task literally said `generate migrations`, which we did); the policy decision simply makes the output irrelevant."
         },
         {
             "id": "T-030",
@@ -1386,7 +1393,7 @@
             "id": "T-040",
             "title": "Generate Sponsorship up migration (add-copy-drop for status rename)",
             "description": "Run `pnpm db:generate` to generate the Drizzle migration for Sponsorship changes. Manually edit to ensure the sequence: (1) ADD COLUMN lifecycle_state with NOT NULL DEFAULT 'ACTIVE', (2) ADD COLUMN sponsorship_status with SponsorshipStatusPgEnum, (3) UPDATE sponsorships SET sponsorship_status = status, (4) DROP COLUMN status, (5) index changes. The PG enum type `SponsorshipStatusPgEnum` remains unchanged — only the column name changes.\n\nFiles: new SQL migration file under `packages/db/migrations/`",
-            "status": "pending",
+            "status": "deferred",
             "complexity": 2.5,
             "blockedBy": ["T-039"],
             "blocks": ["T-041", "T-042"],
@@ -1402,20 +1409,22 @@
                 },
                 { "title": "Verify index changes", "completed": false }
             ],
-            "tags": ["db", "migration", "phase-3", "sponsorship"],
+            "tags": ["db", "migration", "phase-3", "sponsorship", "deferred"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "n/a", "typecheck": "n/a", "tests": "n/a" },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
                 "started": null,
-                "completed": null
-            }
+                "completed": null,
+                "deferred": "2026-04-18T17:55:00.000Z"
+            },
+            "_scopeDeviation": "Deferred under push-only migration policy. See summary._pushOnlyMigrationPolicy. When T-039 lands, the Sponsorship schema rename (status -> sponsorshipStatus) + new lifecycleState column will be applied via drizzle-kit push directly. No ADD/COPY/DROP sequence needed at the SQL layer — drizzle-kit push handles the column rename diff itself against an empty/dev DB."
         },
         {
             "id": "T-041",
             "title": "Write Sponsorship down/rollback migration",
             "description": "Write manual rollback migration: (1) ADD COLUMN status with SponsorshipStatusPgEnum, (2) UPDATE sponsorships SET status = sponsorship_status, (3) DROP COLUMN sponsorship_status, (4) DROP COLUMN lifecycle_state, (5) restore sponsorships_status_idx. Follow `manual/` migration pattern.\n\nFiles: new SQL rollback file under `packages/db/migrations/manual/`",
-            "status": "pending",
+            "status": "deferred",
             "complexity": 2.5,
             "blockedBy": ["T-040"],
             "blocks": ["T-042"],
@@ -1428,20 +1437,22 @@
                 },
                 { "title": "Restore sponsorships_status_idx", "completed": false }
             ],
-            "tags": ["db", "migration", "rollback", "phase-3", "sponsorship"],
+            "tags": ["db", "migration", "rollback", "phase-3", "sponsorship", "deferred"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "n/a", "typecheck": "n/a", "tests": "n/a" },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
                 "started": null,
-                "completed": null
-            }
+                "completed": null,
+                "deferred": "2026-04-18T17:55:00.000Z"
+            },
+            "_scopeDeviation": "Deferred under push-only migration policy. See summary._pushOnlyMigrationPolicy. Rollback SQL has no runtime consumer under push-only."
         },
         {
             "id": "T-042",
             "title": "Write Sponsorship pre/post-migration data integrity tests",
             "description": "Write migration tests: (1) pre-migration: assert all status values are valid enum members (pending/active/expired/cancelled), (2) post-migration: sponsorship_status values preserved (identical to pre-migration status values), lifecycle_state = 'ACTIVE' for all rows, (3) post-rollback: status values restored, sponsorship_status and lifecycle_state dropped.\n\nFiles: `packages/db/test/migrations/sponsorship-lifecycle.migration.test.ts`",
-            "status": "pending",
+            "status": "deferred",
             "complexity": 2.5,
             "blockedBy": ["T-040", "T-041"],
             "blocks": [],
@@ -1458,14 +1469,16 @@
                 { "title": "Assert post-migration lifecycle_state all ACTIVE", "completed": false },
                 { "title": "Assert rollback restores status column correctly", "completed": false }
             ],
-            "tags": ["db", "testing", "migration", "phase-3", "sponsorship"],
+            "tags": ["db", "testing", "migration", "phase-3", "sponsorship", "deferred"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "n/a", "typecheck": "n/a", "tests": "n/a" },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
                 "started": null,
-                "completed": null
-            }
+                "completed": null,
+                "deferred": "2026-04-18T17:55:00.000Z"
+            },
+            "_scopeDeviation": "Deferred under push-only migration policy. See summary._pushOnlyMigrationPolicy. Pre/post/rollback assertions have no premise under push — schema correctness for Sponsorship will be covered by T-055 (schema + access tests) and T-056 (integration tests); a T-031-style introspection test is optional if needed."
         },
         {
             "id": "T-043",
@@ -1900,13 +1913,39 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 25,
+        "pending": 19,
         "inProgress": 0,
         "completed": 37,
-        "deferred": 1,
+        "deferred": 7,
         "blocked": 0,
         "averageComplexity": 2.0,
-        "_summaryDriftNote": "Counters corrected 2026-04-18 during T-022 bookkeeping. Prior value (completed=22) had drift from Session 2 (T-019, T-020, T-021, T-023, T-024, T-027 completions not reflected in summary). Ground truth derived from grep of 'status: completed' across tasks array. Verified post-T-037 session end = 34. T-036 deferred 2026-04-18 (no admin UI exists; AC-001-04 covered at API layer). T-029 completed 2026-04-18 (migration 0005_awesome_wild_child.sql + down manual variant).",
+        "_summaryDriftNote": "Counters corrected 2026-04-18 during T-022 bookkeeping. Prior value (completed=22) had drift from Session 2 (T-019, T-020, T-021, T-023, T-024, T-027 completions not reflected in summary). Ground truth derived from grep of 'status: completed' across tasks array. Verified post-T-037 session end = 34. T-036 deferred 2026-04-18 (no admin UI exists; AC-001-04 covered at API layer). T-029 completed 2026-04-18 (migration 0005_awesome_wild_child.sql + down manual variant — scheduled for deletion per _pushOnlyMigrationPolicy). T-031 completed 2026-04-18 (schema introspection test, 5/5 pass). Policy decision 2026-04-18: T-004, T-005, T-006, T-040, T-041, T-042 deferred under push-only migration policy (see _pushOnlyMigrationPolicy).",
+        "_pushOnlyMigrationPolicy": {
+            "decidedAt": "2026-04-18",
+            "decidedBy": "user-approved",
+            "scope": "Applies to all SPEC-063 tasks that generate numbered drizzle-kit migration files, write rollback SQL, or test migration correctness against a deployed DB.",
+            "context": "Hospeda is in early development with no production database. The repo workflow is `drizzle-kit push` (alias: `pnpm db:push`), which syncs the TS schema directly against the dev DB without emitting or applying numbered migration files. The user is in parallel refactoring the db package to remove the legacy 0000-0004 numbered migrations and reorganize `manual/*.sql` into a clean 0001-0010 sequence (triggers, materialized views, CHECK constraints only). In that model, data migrations (ADD/COPY/DROP, up/down pairs, data integrity tests) have zero deliverable value — there is no prod DB to migrate and no rollback scenario to support.",
+            "implications": [
+                "Numbered migration files (src/migrations/NNNN_*.sql) are transient artifacts at best. Not worth writing, testing, or maintaining.",
+                "manual/*_down.sql rollback files are also unnecessary — the apply script already skips them, and there is no prod to roll back.",
+                "Data-migration tasks (write UPDATE statements mapping old column to new, test pre/post row-count preservation) lose their premise under push: there is no `before` state to preserve because db:push recreates the schema against an empty or dev-only DB.",
+                "Schema introspection tests (T-031 pattern) remain valuable: they verify that the TS schema and the live DB agree, which is the one invariant push-only still needs."
+            ],
+            "tasksDeferred": [
+                "T-004 (generate OwnerPromotion up migration)",
+                "T-005 (OwnerPromotion down/rollback migration)",
+                "T-006 (OwnerPromotion migration data integrity tests)",
+                "T-040 (generate Sponsorship up migration)",
+                "T-041 (Sponsorship down/rollback migration)",
+                "T-042 (Sponsorship migration data integrity tests)"
+            ],
+            "followUpCleanups": [
+                "Delete packages/db/src/migrations/0005_awesome_wild_child.sql (T-029 up output)",
+                "Delete packages/db/src/migrations/manual/0005_awesome_wild_child_down.sql (T-029 down output)",
+                "Resolves the naming collision with manual/0005_set_updated_at_trigger.sql (untracked, from user's concurrent refactor)"
+            ],
+            "dependencyGraphImpact": "None of the 6 deferred tasks block T-058 (cleanup/verification). T-004 blocks T-005 + T-006; T-040 blocks T-041 + T-042 — the dependency chains are self-contained within the deferred set. Effective scope drops from 63 to 56 tasks."
+        },
         "_replanLog": [
             {
                 "date": "2026-04-17T17:55:00.000Z",
