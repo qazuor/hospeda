@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 21/63 tasks (33.3%)
+## Progress: 22/63 tasks (34.9%)
 
-**Last updated:** 2026-04-17T20:55:00Z
-**Status:** in-progress (Phase 2 — schema tests + model tests complete; packages/schemas + packages/db typecheck clean for SPEC-063)
+**Last updated:** 2026-04-17T21:12:00Z
+**Status:** in-progress (Phase 2 — Phase 2 unit tests batch complete; integration T-021/T-022 + cron T-025/T-026 remaining)
 
 **Average Complexity:** 2.1/2.5 (ceiling)
 **Critical Path (post-replan):** T-003 -> T-007 -> T-010 -> T-013 -> T-016a -> T-017 -> T-018a -> T-018c -> T-027 -> T-028 -> T-030 -> T-034 -> T-035 -> T-038 -> T-039 -> T-040 -> T-042 -> T-058 (18 steps)
@@ -150,7 +150,10 @@
   - Mock data shape migrated (isActive:true → lifecycleState:ACTIVE); SQL-exclusion verification delegated to T-022 integration
   - Blocked by: T-011 · Blocks: none
 
-- [ ] **T-024** (complexity: 2) — Write usage-tracking + limit-enforcement tests
+- [x] **T-024** (complexity: 2) — Write usage-tracking + limit-enforcement tests
+  - COMPLETED 2026-04-17 · lint: pass · typecheck: clean · tests: 23/23 pass (2 fixed, were failing at session start)
+  - Scope creep absorbed from T-015: fixed L329 + L398 isActive assertions broken since T-015 middleware migration
+  - usage-tracking.service.test.ts subtask deferred to T-022 integration (user-approved option B — coverage by equivalence with limit-enforcement)
   - Blocked by: T-014, T-015 · Blocks: none
 
 ### Cron Job (US-007)

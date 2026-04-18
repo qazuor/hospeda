@@ -286,11 +286,21 @@ After T-020, `packages/schemas` typecheck is **100% clean** for SPEC-063. All Ow
 - **Scope decision:** Tests are mock-based (`vi.mock(getDb)`; `.where()` mock returns results directly). SQL-level exclusion verification ("DRAFT/ARCHIVED excluded") is **delegated to T-022 integration test** — impossible to verify in mock-based tests without fragile SQL object inspection. Pattern aligned with `post_sponsorship.model.test.ts` precedent (mock data shape only, no SQL capture).
 - Quality gate: **biome pass**, **typecheck `@repo/db` clean**, **tests 19/19 pass**.
 
+#### T-024 — limit-enforcement test assertions migration (2026-04-17T21:12)
+- **File:** `apps/api/test/middlewares/limit-enforcement.test.ts` (1 file touched).
+- **Scope creep absorbed from T-015:** 2 tests were **FAILING** at session start. T-015 migrated the middleware (`isActive: true` → `lifecycleState: LifecycleStatusEnum.ACTIVE`) but left the test assertions pinned to the old filter shape. Confirmed failure: `AssertionError: expected { lifecycleState: 'ACTIVE', ... } to match object { isActive: true, ... }` on both L329 and L398.
+- Changes:
+  - Import: added `LifecycleStatusEnum` from `@repo/schemas`.
+  - L329 + L398 (`toMatchObject`): `{ isActive: true, ownerId: 'user-123' }` → `{ lifecycleState: LifecycleStatusEnum.ACTIVE, ownerId: 'user-123' }`.
+- **Scope decision (user-approved option B):** `usage-tracking.service.test.ts` coverage deferred — the file's `getCurrentUsage` is globally spy-mocked in `beforeEach`, preventing unit-test coverage of `_computeUsageForLimit(MAX_ACTIVE_PROMOTIONS)` without restructuring module mocks. Coverage delegated to T-022 integration test (by equivalence: service and middleware call `OwnerPromotionService.count` with identical filter shape).
+- Subtask 1 kept as `completed: false` with `_note` + `_partialProgress` flag in state.json.
+- Quality gate: **biome pass**, **typecheck clean on touched file** (no new errors introduced), **tests 23/23 pass** (previously 21/23).
+
 ### Next up
 
-Commit boundary for T-023 (1 test file + bookkeeping). Then:
+Commit boundary for T-024 (1 test file + bookkeeping). Then:
 
-**Phase 2 testing batch continuation:** T-021 (integration: admin list AC-001-01), T-022 (integration: public default ACTIVE AC-005-01 + closes T-023 SQL-exclusion verification), T-024 (usage-tracking + limit-enforcement tests).
+**Phase 2 remaining:** T-021 (integration: admin list AC-001-01), T-022 (integration: public default ACTIVE AC-005-01 + closes T-023 SQL-exclusion verification + closes T-024 usage-tracking partial), T-025/T-026 (cron job), T-027 (i18n cleanup).
 
 **Phase 2 cron:** T-025, T-026.
 
