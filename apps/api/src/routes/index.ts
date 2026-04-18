@@ -63,6 +63,8 @@ import { adminExchangeRateRoutes } from './exchange-rates/admin/index.js';
 import { publicExchangeRateRoutes } from './exchange-rates/public/index.js';
 import { publicFeedbackRoutes } from './feedback';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
+import { adminMediaRoutes } from './media/admin';
+import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
 import { reportRoutes } from './reports';
 import { revalidationRouter } from './revalidation';
@@ -190,6 +192,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/owner-promotions', protectedOwnerPromotionRoutes);
         app.route('/api/v1/protected/sponsorships', protectedSponsorshipRoutes);
 
+        // Media (avatar uploads for authenticated users)
+        app.route('/api/v1/protected/media', protectedMediaRoutes);
+
         apiLogger.debug('✅ Protected routes registered successfully');
 
         // ═══════════════════════════════════════════════════════════════════════
@@ -235,6 +240,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // ISR revalidation management (admin only)
         app.route('/api/v1/admin/revalidation', revalidationRouter);
+
+        // Media (entity image uploads + asset deletion)
+        app.route('/api/v1/admin/media', adminMediaRoutes);
 
         apiLogger.debug('✅ Admin routes registered successfully');
 
