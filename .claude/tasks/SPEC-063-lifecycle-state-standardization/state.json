@@ -1875,7 +1875,7 @@
         "completed": 34,
         "blocked": 0,
         "averageComplexity": 2.0,
-        "_summaryDriftNote": "Counters corrected 2026-04-18 during T-022 bookkeeping. Prior value (completed=22) had drift from Session 2 (T-019, T-020, T-021, T-023, T-024, T-027 completions not reflected in summary). Ground truth derived from grep of 'status: completed' across tasks array. Updated post-T-026 (Phase 2 cron pair complete) = 27.",
+        "_summaryDriftNote": "Counters corrected 2026-04-18 during T-022 bookkeeping. Prior value (completed=22) had drift from Session 2 (T-019, T-020, T-021, T-023, T-024, T-027 completions not reflected in summary). Ground truth derived from grep of 'status: completed' across tasks array. Verified post-T-037 session end = 34.",
         "_replanLog": [
             {
                 "date": "2026-04-17T17:55:00.000Z",
