@@ -539,15 +539,22 @@ Merge points:
 
 ## Suggested Start
 
-Phase 0 and 1A already complete (T-001, T-002, T-003).
+Phases 0, 1A, and 1B complete (T-001, T-002, T-003, T-004).
 
-Next immediate tasks (parallel):
-1. **T-004** (critical path) — DB archaeology for missing migrations.
-2. **T-017** (critical path) — Bundle architecture refactor.
-3. **T-005/T-006/T-007/T-008/T-009** (parallel, independent) — Security hardening Phase 1C.
-4. **T-011** (trivial) — Schema compat policy doc.
-5. **T-028** (trivial) — Admin constants cleanup.
-6. **T-053** (trivial) — turbo.json env vars.
-7. **T-037** (trivial) — SPEC-078 spec amendment.
+Next immediate tasks (any subset can run in parallel — all share only T-003 as predecessor):
+
+1. **T-017** (critical path) — Bundle architecture refactor (@repo/media subpath exports). Unlocks Phase 4, 5, 6, 7, and most of Phase 9.
+2. **T-005/T-006/T-007/T-008/T-009** (Phase 1C, fully parallel) — Security hardening. Independent of T-004. Small-to-medium complexity (1.5–2.0 each).
+3. **T-010** (schema alignment for MediaSchema) — required before the seed/API work; 1.5.
+4. **T-011** (schema compat doc) — trivial, 1.0.
+5. **T-028** (admin constants cleanup) — trivial, 1.5.
+6. **T-053** (turbo.json env vars) — trivial, 1.0.
+7. **T-037** (SPEC-078 spec amendment) — trivial, 1.0, no code.
+
+Next unlocked after T-004 (this session): **T-012, T-013, T-014, T-015, T-016** (DB Phase 2B and beyond).
 
 Critical path: T-001 -> T-003 -> T-017 -> T-029 -> T-031 -> T-040 -> T-067 -> T-068 (8 steps)
+
+## Session Log
+
+- **2026-04-18 (session close)**: T-004 merged in 6 atomic commits (`50b80475` → `a11ae6df` on main). Fixed hidden `db:fresh-dev` bug (apply-postgres-extras never chained). Renumbered manual SQL to clean 0001-0010 sequence. Rewrote orchestrator as generic iterator. Removed 4 unused Drizzle-generated migration files (preserved `0005_awesome_wild_child.sql` — SPEC-063 in progress). Full end-to-end validation passed (3571 seeded rows, 3 CHECKs + MV + 43 triggers).
