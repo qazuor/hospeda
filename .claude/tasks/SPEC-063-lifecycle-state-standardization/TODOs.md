@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 20/63 tasks (31.7%)
+## Progress: 21/63 tasks (33.3%)
 
-**Last updated:** 2026-04-17T20:40:00Z
-**Status:** in-progress (Phase 2 — admin UI + schema tests complete; **packages/schemas typecheck 100% CLEAN for SPEC-063**)
+**Last updated:** 2026-04-17T20:55:00Z
+**Status:** in-progress (Phase 2 — schema tests + model tests complete; packages/schemas + packages/db typecheck clean for SPEC-063)
 
 **Average Complexity:** 2.1/2.5 (ceiling)
 **Critical Path (post-replan):** T-003 -> T-007 -> T-010 -> T-013 -> T-016a -> T-017 -> T-018a -> T-018c -> T-027 -> T-028 -> T-030 -> T-034 -> T-035 -> T-038 -> T-039 -> T-040 -> T-042 -> T-058 (18 steps)
@@ -144,7 +144,10 @@
 - [ ] **T-022** (complexity: 2) — Write OwnerPromotion public endpoint default ACTIVE test (AC-005-01)
   - Blocked by: T-012 · Blocks: T-058
 
-- [ ] **T-023** (complexity: 2) — Update OwnerPromotion model tests for findActive methods
+- [x] **T-023** (complexity: 2) — Update OwnerPromotion model tests for findActive methods
+  - COMPLETED 2026-04-17 · lint: pass · typecheck: pass · tests: 19/19 pass
+  - Path corrected: real file at `packages/db/test/models/ownerPromotion.model.test.ts` (no subdir)
+  - Mock data shape migrated (isActive:true → lifecycleState:ACTIVE); SQL-exclusion verification delegated to T-022 integration
   - Blocked by: T-011 · Blocks: none
 
 - [ ] **T-024** (complexity: 2) — Write usage-tracking + limit-enforcement tests

@@ -278,11 +278,19 @@ Admin UI scope analysis revealed that original T-016, T-017, T-018 referenced **
 
 After T-020, `packages/schemas` typecheck is **100% clean** for SPEC-063. All OwnerPromotion-related schema surface + tests are migrated. Remaining SPEC-063 work is in `apps/api` (tests + cron), `packages/db` (model tests T-023), and `packages/service-core` (integration tests).
 
+#### T-023 — OwnerPromotion model test fixtures migration (2026-04-17T20:55)
+- **File:** `packages/db/test/models/ownerPromotion.model.test.ts` (path corrected — no subdir).
+- Imported `LifecycleStatusEnum` from `@repo/schemas`.
+- `findActiveByAccommodationId > should return active promotions`: mock result `isActive: true` → `lifecycleState: LifecycleStatusEnum.ACTIVE`.
+- `findActiveByOwnerId > should return active promotions`: mock result `isActive: true` → `lifecycleState: LifecycleStatusEnum.ACTIVE`.
+- **Scope decision:** Tests are mock-based (`vi.mock(getDb)`; `.where()` mock returns results directly). SQL-level exclusion verification ("DRAFT/ARCHIVED excluded") is **delegated to T-022 integration test** — impossible to verify in mock-based tests without fragile SQL object inspection. Pattern aligned with `post_sponsorship.model.test.ts` precedent (mock data shape only, no SQL capture).
+- Quality gate: **biome pass**, **typecheck `@repo/db` clean**, **tests 19/19 pass**.
+
 ### Next up
 
-Commit boundary for T-020 (2 test files + bookkeeping). Then:
+Commit boundary for T-023 (1 test file + bookkeeping). Then:
 
-**Phase 2 testing batch continuation:** T-021 (integration: admin list AC-001-01), T-022 (integration: public default ACTIVE AC-005-01), T-023 (model findActive tests), T-024 (usage-tracking + limit-enforcement tests).
+**Phase 2 testing batch continuation:** T-021 (integration: admin list AC-001-01), T-022 (integration: public default ACTIVE AC-005-01 + closes T-023 SQL-exclusion verification), T-024 (usage-tracking + limit-enforcement tests).
 
 **Phase 2 cron:** T-025, T-026.
 
