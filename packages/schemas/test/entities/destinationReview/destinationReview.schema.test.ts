@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import {
+    DestinationReviewAdminSchema,
+    DestinationReviewProtectedSchema,
+    DestinationReviewPublicSchema
+} from '../../../src/entities/destinationReview/destinationReview.access.schema';
 import { DestinationReviewSchema } from '../../../src/entities/destinationReview/destinationReview.schema';
+import { LifecycleStatusEnum } from '../../../src/enums/lifecycle-state.enum';
 
 describe('DestinationReview Schemas', () => {
     const validReviewData = {
@@ -30,6 +36,7 @@ describe('DestinationReview Schemas', () => {
             weatherSatisfaction: 4
         },
         averageRating: 4.0,
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: '123e4567-e89b-12d3-a456-426614174003',
@@ -188,6 +195,89 @@ describe('DestinationReview Schemas', () => {
 
             expect(resultWithoutUserId.success).toBe(false);
             expect(resultWithoutDestinationId.success).toBe(false);
+        });
+    });
+
+    describe('lifecycleState (SPEC-063)', () => {
+        it('should accept all three LifecycleStatusEnum values', () => {
+            for (const state of [
+                LifecycleStatusEnum.DRAFT,
+                LifecycleStatusEnum.ACTIVE,
+                LifecycleStatusEnum.ARCHIVED
+            ]) {
+                const result = DestinationReviewSchema.safeParse({
+                    ...validReviewData,
+                    lifecycleState: state
+                });
+                expect(result.success).toBe(true);
+            }
+        });
+
+        it('should default to ACTIVE when lifecycleState is omitted', () => {
+            const { lifecycleState, ...withoutLifecycle } = validReviewData;
+            const result = DestinationReviewSchema.safeParse(withoutLifecycle);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+            }
+        });
+
+        it('should reject invalid lifecycleState values', () => {
+            const result = DestinationReviewSchema.safeParse({
+                ...validReviewData,
+                lifecycleState: 'INVALID_STATE'
+            });
+            expect(result.success).toBe(false);
+        });
+    });
+
+    describe('Tier access boundary (AC-005 admin-only lifecycleState)', () => {
+        it('DestinationReviewPublicSchema should NOT expose lifecycleState', () => {
+            const result = DestinationReviewPublicSchema.safeParse({
+                ...validReviewData,
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect('lifecycleState' in result.data).toBe(false);
+            }
+        });
+
+        it('DestinationReviewProtectedSchema should NOT expose lifecycleState', () => {
+            const result = DestinationReviewProtectedSchema.safeParse({
+                ...validReviewData,
+                lifecycleState: LifecycleStatusEnum.ARCHIVED
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect('lifecycleState' in result.data).toBe(false);
+            }
+        });
+
+        it('DestinationReviewAdminSchema should preserve lifecycleState', () => {
+            const result = DestinationReviewAdminSchema.safeParse({
+                ...validReviewData,
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.lifecycleState).toBe(LifecycleStatusEnum.DRAFT);
+            }
+        });
+    });
+
+    describe('Unrelated status fields remain unchanged', () => {
+        it('should still accept isPublished and isVerified booleans', () => {
+            const result = DestinationReviewSchema.safeParse({
+                ...validReviewData,
+                isPublished: true,
+                isVerified: true
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.isPublished).toBe(true);
+                expect(result.data.isVerified).toBe(true);
+            }
         });
     });
 });
