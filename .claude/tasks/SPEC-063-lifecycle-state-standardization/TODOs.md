@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 35/63 completed + 1 deferred (T-036) — effective 35/62
+## Progress: 36/63 completed + 1 deferred (T-036) — effective 36/62
 
-**Last updated:** 2026-04-18T17:10:00Z
-**Status:** in-progress (Phase 2 complete + Phase 4 schema layer + routes-verification + schema tests + admin-search tests + integration tests complete). **T-036 deferred 2026-04-18** (no admin UI exists for DestinationReview; AC-001-04 covered at API layer via T-035 + T-038 — see progress.md and state.json T-036._scopeDeviation). Next: T-029 migrations + T-031 post-migration (both require DB running).
+**Last updated:** 2026-04-18T17:25:00Z
+**Status:** in-progress (Phase 2 complete + Phase 4 schema layer + routes-verification + schema tests + admin-search tests + integration tests + migrations complete). **T-036 deferred 2026-04-18** (no admin UI exists for DestinationReview; AC-001-04 covered at API layer). **T-029 completed 2026-04-18** (0005_awesome_wild_child.sql + manual down variant). Next: T-031 post-migration verification.
 
 ### Follow-up SPECs spawned
 
@@ -11,10 +11,9 @@
 
 ### Next up (in priority order)
 
-1. **T-029** (complexity 2) — Generate DestinationReview up + down migrations. **Requires `pnpm db:generate` with running Postgres**; may need user handoff.
-2. **T-031** (complexity 1.5) — Post-migration verification test (blocked on T-029).
-3. **T-039..T-057** — Phase 3 Sponsorship (19 tasks: DB, schemas, model/service, API, frontend, tests).
-4. **T-058** (complexity 2.5) — cleanup / cross-cutting verification. T-036 removed from blockedBy; `_deferredDependencies` note tracks the deferral for final-report mention.
+1. **T-031** (complexity 1.5) — Post-migration verification test. Unblocked.
+2. **T-039..T-057** — Phase 3 Sponsorship (19 tasks: DB, schemas, model/service, API, frontend, tests).
+3. **T-058** (complexity 2.5) — cleanup / cross-cutting verification. T-036 removed from blockedBy; `_deferredDependencies` note tracks the deferral for final-report mention.
 
 **Average Complexity:** 2.1/2.5 (ceiling)
 **Critical Path (post-T-038):** T-039 -> T-040 -> T-042 -> T-058 (4 steps remaining)
@@ -209,7 +208,10 @@
   - Added `lifecycleState` column + `destinationReviews_lifecycleState_idx` index
   - Blocked by: T-027 · Blocks: T-029, T-030, T-032
 
-- [ ] **T-029** (complexity: 2) — Generate DestinationReview up + down migrations
+- [x] **T-029** (complexity: 2) — Generate DestinationReview up + down migrations
+  - COMPLETED 2026-04-18 · up: `packages/db/src/migrations/0005_awesome_wild_child.sql` (auto-generated, diff-clean: 2 statements) · down: `packages/db/src/migrations/manual/0005_awesome_wild_child_down.sql` (idempotent)
+  - Path correction: real migrations path is `packages/db/src/migrations/` (not `packages/db/migrations/` as task text said).
+  - Orphan flagged: `0003_shiny_spitfire.sql` is untracked from prior session; not SPEC-063 scope.
   - Blocked by: T-028 · Blocks: T-031
 
 - [x] **T-030** (complexity: 2) — Update DestinationReview Zod base schema + CRUD + fixtures

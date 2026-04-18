@@ -1037,23 +1037,37 @@
             "id": "T-029",
             "title": "Generate DestinationReview up + down migrations",
             "description": "Run `pnpm db:generate` to generate up migration (ADD COLUMN lifecycle_state with NOT NULL DEFAULT 'ACTIVE'). Write manual down migration (DROP COLUMN lifecycle_state) under `packages/db/migrations/manual/`.\n\nFiles: new SQL migration files under `packages/db/migrations/` and `packages/db/migrations/manual/`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-028"],
             "blocks": ["T-031"],
             "subtasks": [
-                { "title": "Run pnpm db:generate for up migration", "completed": false },
-                { "title": "Verify up migration SQL is correct", "completed": false },
-                { "title": "Write down migration (DROP COLUMN)", "completed": false }
+                {
+                    "title": "Run pnpm db:generate for up migration",
+                    "completed": true,
+                    "_note": "Generated 0005_awesome_wild_child.sql (idx 5 in meta/_journal.json). Diff-clean: only the 2 expected statements."
+                },
+                {
+                    "title": "Verify up migration SQL is correct",
+                    "completed": true,
+                    "_note": "2 statements: (1) ALTER TABLE destination_reviews ADD COLUMN lifecycle_state lifecycle_status_enum DEFAULT 'ACTIVE' NOT NULL, (2) CREATE INDEX destinationReviews_lifecycleState_idx ON destination_reviews (lifecycle_state). Matches T-028 dbschema exactly."
+                },
+                {
+                    "title": "Write down migration (DROP COLUMN)",
+                    "completed": true,
+                    "_note": "Created packages/db/src/migrations/manual/0005_awesome_wild_child_down.sql. DROP INDEX IF EXISTS + ALTER TABLE DROP COLUMN IF EXISTS (idempotent)."
+                }
             ],
             "tags": ["db", "migration", "phase-4", "destinationReview"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "n/a", "typecheck": "n/a", "tests": "n/a" },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-04-18T17:20:00.000Z",
+                "completed": "2026-04-18T17:25:00.000Z"
+            },
+            "_pathCorrection": "Task description said `packages/db/migrations/` but actual path is `packages/db/src/migrations/`. Files placed under the real path. Drizzle config `out: './src/migrations'` confirms this.",
+            "_orphanMigrationObservation": "0003_shiny_spitfire.sql is untracked orphan from an earlier session (Apr 17 18:02 mtime). Journal references it (idx 3) but file was never committed; 0004_nice_molecule_man.sql was generated and committed after it. meta/ directory is .gitignored (pattern `**/migrations/meta/`), so only SQL files surface in git. Not a SPEC-063 regression. Left untouched. Possibly worth dedicated cleanup task but out of scope here."
         },
         {
             "id": "T-030",
@@ -1873,13 +1887,13 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 27,
+        "pending": 26,
         "inProgress": 0,
-        "completed": 35,
+        "completed": 36,
         "deferred": 1,
         "blocked": 0,
         "averageComplexity": 2.0,
-        "_summaryDriftNote": "Counters corrected 2026-04-18 during T-022 bookkeeping. Prior value (completed=22) had drift from Session 2 (T-019, T-020, T-021, T-023, T-024, T-027 completions not reflected in summary). Ground truth derived from grep of 'status: completed' across tasks array. Verified post-T-037 session end = 34. T-036 deferred 2026-04-18 (no admin UI exists; AC-001-04 covered at API layer).",
+        "_summaryDriftNote": "Counters corrected 2026-04-18 during T-022 bookkeeping. Prior value (completed=22) had drift from Session 2 (T-019, T-020, T-021, T-023, T-024, T-027 completions not reflected in summary). Ground truth derived from grep of 'status: completed' across tasks array. Verified post-T-037 session end = 34. T-036 deferred 2026-04-18 (no admin UI exists; AC-001-04 covered at API layer). T-029 completed 2026-04-18 (migration 0005_awesome_wild_child.sql + down manual variant).",
         "_replanLog": [
             {
                 "date": "2026-04-17T17:55:00.000Z",
