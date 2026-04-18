@@ -1,6 +1,7 @@
 import type { DestinationRatingInput } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { index, jsonb, numeric, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { destinations } from './destination.dbschema.ts';
 
@@ -21,6 +22,7 @@ export const destinationReviews = pgTable(
         averageRating: numeric('average_rating', { precision: 3, scale: 2, mode: 'number' })
             .notNull()
             .default(0),
+        lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
         createdById: uuid('created_by_id').references(() => users.id, { onDelete: 'set null' }),
@@ -32,7 +34,10 @@ export const destinationReviews = pgTable(
         destination_reviews_destinationId_idx: index('destination_reviews_destinationId_idx').on(
             table.destinationId
         ),
-        destination_reviews_userId_idx: index('destination_reviews_userId_idx').on(table.userId)
+        destination_reviews_userId_idx: index('destination_reviews_userId_idx').on(table.userId),
+        destinationReviews_lifecycleState_idx: index('destinationReviews_lifecycleState_idx').on(
+            table.lifecycleState
+        )
     })
 );
 
