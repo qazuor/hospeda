@@ -144,7 +144,17 @@ export const billingAddonPurchases = pgTable(
         ),
         addonPurchases_subscription_active_idx: index('idx_addon_purchases_subscription_active')
             .on(table.subscriptionId)
-            .where(sql`status = 'active' AND deleted_at IS NULL`)
+            .where(sql`status = 'active' AND deleted_at IS NULL`),
+        addonPurchases_entitlement_removal_pending_idx: index(
+            'idx_addon_purchases_entitlement_removal_pending'
+        )
+            .on(table.customerId, table.status)
+            .where(sql`entitlement_removal_pending = true`),
+        addonPurchases_needs_entitlement_sync_idx: index(
+            'idx_addon_purchases_needs_entitlement_sync'
+        )
+            .on(table.customerId, table.status)
+            .where(sql`needs_entitlement_sync = true`)
     })
 );
 

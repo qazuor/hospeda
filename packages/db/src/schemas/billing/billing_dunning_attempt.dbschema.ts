@@ -25,9 +25,9 @@ export const billingDunningAttempts = pgTable(
     'billing_dunning_attempts',
     {
         id: uuid('id').primaryKey().defaultRandom(),
-        subscriptionId: uuid('subscription_id')
-            .notNull()
-            .references(() => billingSubscriptions.id, { onDelete: 'set null' }),
+        subscriptionId: uuid('subscription_id').references(() => billingSubscriptions.id, {
+            onDelete: 'set null'
+        }),
         customerId: uuid('customer_id')
             .notNull()
             .references(() => billingCustomers.id, { onDelete: 'restrict' }),
@@ -53,7 +53,9 @@ export const billingDunningAttempts = pgTable(
         dunningAttempts_result_idx: index('dunningAttempts_result_idx').on(table.result),
         dunningAttempts_subscription_attempt_idx: uniqueIndex(
             'dunningAttempts_subscription_attempt_idx'
-        ).on(table.subscriptionId, table.attemptNumber),
+        )
+            .on(table.subscriptionId, table.attemptNumber)
+            .where(sql`subscription_id IS NOT NULL`),
         dunningAttempts_customer_result_idx: index('dunningAttempts_customer_result_idx').on(
             table.customerId,
             table.result
