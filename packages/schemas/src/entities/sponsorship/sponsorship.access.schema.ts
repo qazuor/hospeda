@@ -1,5 +1,4 @@
-import { z } from 'zod';
-import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+import type { z } from 'zod';
 import {
     UserAdminSchema,
     UserProtectedSchema,
@@ -30,7 +29,7 @@ export const SponsorshipPublicSchema = SponsorshipSchema.pick({
     targetId: true,
 
     // Status and validity
-    status: true,
+    sponsorshipStatus: true,
     startsAt: true,
     endsAt: true,
 
@@ -68,7 +67,7 @@ export const SponsorshipProtectedSchema = SponsorshipSchema.pick({
     slug: true,
     targetType: true,
     targetId: true,
-    status: true,
+    sponsorshipStatus: true,
     startsAt: true,
     endsAt: true,
     logoUrl: true,
@@ -109,8 +108,8 @@ export type SponsorshipProtected = z.infer<typeof SponsorshipProtectedSchema>;
  * Contains ALL fields including sensitive admin-only data.
  * Used for admin dashboard, moderation, and management.
  *
- * Extends the full schema with resolved relations and the preemptive
- * `lifecycleState` field that will be promoted to the base schema in SPEC-063.
+ * Extends the full schema with resolved relations. `lifecycleState` flows from
+ * the base `SponsorshipSchema` (promoted via `BaseLifecycleFields` in SPEC-063).
  *
  * Relation fields are optional to allow rich responses without stripping joined data.
  */
@@ -120,12 +119,7 @@ export const SponsorshipAdminSchema = SponsorshipSchema.extend({
     /** Resolved sponsorship level (base schema, no tier restriction). */
     level: SponsorshipLevelSchema.optional(),
     /** Resolved sponsorship package (base schema, no tier restriction). */
-    package: SponsorshipPackageSchema.optional(),
-    /**
-     * Preemptive SPEC-063 field: lifecycle state for workflow management.
-     * Admin-only until the field is added to the base Sponsorship entity.
-     */
-    lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()
+    package: SponsorshipPackageSchema.optional()
 });
 
 export type SponsorshipAdmin = z.infer<typeof SponsorshipAdminSchema>;
