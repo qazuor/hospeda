@@ -23,11 +23,9 @@ import {
 import type { Context } from 'hono';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
+import { env } from '../../../utils/env.js';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
-
-/** Default maximum file size in MB when HOSPEDA_MEDIA_MAX_FILE_SIZE_MB is unset. */
-const DEFAULT_MAX_MB = 10;
 
 /** Service instances for entity existence validation. */
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -79,7 +77,7 @@ export const adminUploadMediaRoute = createAdminRoute({
         }
 
         // ── 1. Content-Length pre-check (anti-DoS) ────────────────────────────
-        const maxMb = Number(process.env.HOSPEDA_MEDIA_MAX_FILE_SIZE_MB ?? DEFAULT_MAX_MB);
+        const maxMb = env.HOSPEDA_MEDIA_MAX_FILE_SIZE_MB;
         const maxBytes = maxMb * 1024 * 1024;
         const contentLength = Number(ctx.req.header('content-length') ?? 0);
 

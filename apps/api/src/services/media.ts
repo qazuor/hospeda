@@ -7,6 +7,7 @@
  */
 import { CloudinaryProvider } from '@repo/media';
 import type { ImageProvider } from '@repo/media';
+import { env } from '../utils/env.js';
 
 let provider: ImageProvider | null = null;
 let initialized = false;
@@ -16,16 +17,16 @@ let initialized = false;
  * credentials are absent from the environment.
  *
  * Reads HOSPEDA_CLOUDINARY_CLOUD_NAME, HOSPEDA_CLOUDINARY_API_KEY, and
- * HOSPEDA_CLOUDINARY_API_SECRET from process.env.
+ * HOSPEDA_CLOUDINARY_API_SECRET via the validated `env` object.
  *
  * @returns {ImageProvider | null} Configured provider or null if unconfigured
  */
 export function getMediaProvider(): ImageProvider | null {
     if (!initialized) {
         initialized = true;
-        const cloudName = process.env.HOSPEDA_CLOUDINARY_CLOUD_NAME;
-        const apiKey = process.env.HOSPEDA_CLOUDINARY_API_KEY;
-        const apiSecret = process.env.HOSPEDA_CLOUDINARY_API_SECRET;
+        const cloudName = env.HOSPEDA_CLOUDINARY_CLOUD_NAME;
+        const apiKey = env.HOSPEDA_CLOUDINARY_API_KEY;
+        const apiSecret = env.HOSPEDA_CLOUDINARY_API_SECRET;
 
         if (cloudName && apiKey && apiSecret) {
             provider = new CloudinaryProvider({ cloudName, apiKey, apiSecret });

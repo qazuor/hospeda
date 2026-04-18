@@ -301,6 +301,16 @@ const ApiEnvSchema = z
         HOSPEDA_SENTRY_RELEASE: z.string().optional(),
         HOSPEDA_SENTRY_PROJECT: z.string().optional(),
 
+        // Media / Cloudinary
+        /** Cloudinary cloud name (cloud_name in Cloudinary dashboard) */
+        HOSPEDA_CLOUDINARY_CLOUD_NAME: z.string().optional(),
+        /** Cloudinary API key */
+        HOSPEDA_CLOUDINARY_API_KEY: z.string().optional(),
+        /** Cloudinary API secret */
+        HOSPEDA_CLOUDINARY_API_SECRET: z.string().optional(),
+        /** Maximum upload file size in MB for media endpoints (default: 10) */
+        HOSPEDA_MEDIA_MAX_FILE_SIZE_MB: z.coerce.number().positive().default(10),
+
         // Account lockout (brute-force protection)
         /** Max failed login attempts before temporary lockout (default: 5) */
         HOSPEDA_AUTH_LOCKOUT_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
