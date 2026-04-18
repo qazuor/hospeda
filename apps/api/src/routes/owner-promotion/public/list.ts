@@ -41,8 +41,16 @@ export const publicListOwnerPromotionsRoute = createPublicListRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
+        // AC-005-01: strip admin-only fields (lifecycleState, ownerId,
+        // currentRedemptions, audit fields) via OwnerPromotionPublicSchema
+        // before the response leaves the public tier. The route factory only
+        // uses responseSchema for OpenAPI docs, not runtime validation, so
+        // the strip must happen here. Tracked systemically in SPEC-087.
+        const rawItems = result.data?.items ?? [];
+        const items = rawItems.map((item) => OwnerPromotionPublicSchema.parse(item));
+
         return {
-            items: result.data?.items || [],
+            items,
             pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
         };
     },
