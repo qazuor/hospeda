@@ -6,7 +6,7 @@
  */
 
 import { LimitKey } from '@repo/billing';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { AccommodationService, type Actor, OwnerPromotionService } from '@repo/service-core';
 import { Hono } from 'hono';
 import type { Context, Next } from 'hono';
@@ -326,7 +326,10 @@ describe('Limit Enforcement Middleware', () => {
             // Check that count was called with correct filter for active promotions
             const callArgs = mockCount.mock.calls[0];
             if (callArgs) {
-                expect(callArgs[1]).toMatchObject({ isActive: true, ownerId: 'user-123' });
+                expect(callArgs[1]).toMatchObject({
+                    lifecycleState: LifecycleStatusEnum.ACTIVE,
+                    ownerId: 'user-123'
+                });
             }
         });
 
@@ -395,7 +398,10 @@ describe('Limit Enforcement Middleware', () => {
             // Check that count was called with correct filter for active promotions
             const callArgs = mockCount.mock.calls[0];
             if (callArgs) {
-                expect(callArgs[1]).toMatchObject({ isActive: true, ownerId: 'user-123' });
+                expect(callArgs[1]).toMatchObject({
+                    lifecycleState: LifecycleStatusEnum.ACTIVE,
+                    ownerId: 'user-123'
+                });
             }
         });
     });
