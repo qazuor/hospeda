@@ -6,6 +6,7 @@ import {
 } from '../../api/http/base-http.schema.js';
 import { createAverageRatingField } from '../../common/helpers.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
+import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { DestinationReviewSchema } from './destinationReview.schema.js';
 
@@ -52,6 +53,12 @@ export const DestinationReviewFiltersSchema = z.object({
     isVerified: z.boolean().optional(),
     isPublished: z.boolean().optional(),
     isFlagged: z.boolean().optional(),
+    /**
+     * Lifecycle state filter (SPEC-063). Public endpoints MUST force
+     * lifecycleState=ACTIVE at the service layer regardless of this value
+     * to prevent DRAFT/ARCHIVED leakage.
+     */
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
 
     // Response filters
     hasOwnerResponse: z.boolean().optional(),
@@ -117,6 +124,12 @@ export const DestinationReviewSearchSchema = BaseSearchSchema.extend({
     isVerified: z.boolean().optional(),
     isPublished: z.boolean().optional(),
     isFlagged: z.boolean().optional(),
+    /**
+     * Lifecycle state filter (SPEC-063). Public endpoints MUST force
+     * lifecycleState=ACTIVE at the service layer regardless of this value
+     * to prevent DRAFT/ARCHIVED leakage.
+     */
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
 
     // Response filters
     hasOwnerResponse: z.boolean().optional(),

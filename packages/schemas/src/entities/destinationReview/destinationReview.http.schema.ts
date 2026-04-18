@@ -46,6 +46,9 @@ export const DestinationReviewSearchHttpSchema = BaseHttpSearchSchema.extend({
     responseAfter: z.coerce.date().optional(),
     responseBefore: z.coerce.date().optional(),
 
+    // Lifecycle state (SPEC-063) — public endpoints force ACTIVE at the service layer
+    lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional(),
+
     // Helpful/voting filters with HTTP coercion
     minHelpfulVotes: z.coerce.number().int().min(0).optional(),
     minTotalVotes: z.coerce.number().int().min(0).optional(),
@@ -160,6 +163,9 @@ export const httpToDomainDestinationReviewSearch = (
         isVerified: httpParams.isVerified,
         isPublished: httpParams.isPublished,
         isFlagged: httpParams.isFlagged,
+
+        // Lifecycle state (SPEC-063)
+        lifecycleState: httpParams.lifecycleState,
 
         // Response filters
         hasOwnerResponse: httpParams.hasOwnerResponse,
