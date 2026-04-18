@@ -580,7 +580,14 @@ export class PostService extends BaseCrudService<
      * @returns A paginated list of posts matching the criteria.
      */
     protected async _executeSearch(params: PostListInput, _actor: Actor, _ctx: ServiceContext) {
-        const { page = 1, pageSize = 10, ...filterParams } = params;
+        const {
+            page = 1,
+            pageSize = 10,
+            sortBy: _sortBy,
+            sortOrder: _sortOrder,
+            q: _q,
+            ...filterParams
+        } = params;
         return this.model.findAll(filterParams, { page, pageSize });
     }
 
@@ -591,7 +598,14 @@ export class PostService extends BaseCrudService<
      * @returns An object containing the total count of posts matching the criteria.
      */
     protected async _executeCount(params: PostListInput, _actor: Actor, _ctx: ServiceContext) {
-        const { ...filterParams } = params;
+        const {
+            page: _page,
+            pageSize: _pageSize,
+            sortBy: _sortBy,
+            sortOrder: _sortOrder,
+            q: _q,
+            ...filterParams
+        } = params;
         const count = await this.model.count(filterParams);
         return { count };
     }

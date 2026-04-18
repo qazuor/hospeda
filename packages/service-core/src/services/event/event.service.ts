@@ -486,7 +486,15 @@ export class EventService extends BaseCrudService<
     protected async _executeSearch(params: EventSearchInput, _actor: Actor, _ctx: ServiceContext) {
         // NOTE: destinationId is stripped — event_locations has no destinationId FK.
         // Until the DB schema is extended, this filter cannot be applied.
-        const { page = 1, pageSize = 10, destinationId: _destinationId, ...filterParams } = params;
+        const {
+            page = 1,
+            pageSize = 10,
+            sortBy: _sortBy,
+            sortOrder: _sortOrder,
+            q: _q,
+            destinationId: _destinationId,
+            ...filterParams
+        } = params;
         return this.model.findAll(filterParams, { page, pageSize });
     }
 
@@ -498,7 +506,15 @@ export class EventService extends BaseCrudService<
      */
     protected async _executeCount(params: EventSearchInput, _actor: Actor, _ctx: ServiceContext) {
         // NOTE: destinationId stripped for same reason as _executeSearch.
-        const { destinationId: _destinationId, ...filterParams } = params;
+        const {
+            page: _page,
+            pageSize: _pageSize,
+            sortBy: _sortBy,
+            sortOrder: _sortOrder,
+            q: _q,
+            destinationId: _destinationId,
+            ...filterParams
+        } = params;
         const count = await this.model.count(filterParams);
         return { count };
     }

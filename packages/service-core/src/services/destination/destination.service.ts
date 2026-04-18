@@ -204,6 +204,84 @@ export class DestinationService extends BaseCrudService<
     }
     // --- Abstract methods required by BaseService ---
     /**
+     * Strips DestinationSearchInput fields that are declared in the schema but not
+     * yet implemented in this service, logging a warning for any that were provided.
+     * Returns only the subset of params usable by the DB layer.
+     */
+    private extractImplementedFilters(params: DestinationSearchInput): {
+        page: number;
+        pageSize: number;
+        country?: string;
+        state?: string;
+        city?: string;
+        isFeatured?: boolean;
+        ancestorId?: string;
+        parentDestinationId?: string;
+        destinationType?: DestinationSearchInput['destinationType'];
+        level?: number;
+    } {
+        const {
+            page = 1,
+            pageSize = 10,
+            sortBy: _sortBy,
+            sortOrder: _sortOrder,
+            country,
+            state,
+            city,
+            isFeatured,
+            ancestorId,
+            parentDestinationId,
+            destinationType,
+            level,
+            // Unimplemented filters — warn and drop.
+            q,
+            latitude,
+            longitude,
+            radius,
+            minAccommodations,
+            maxAccommodations,
+            minRating,
+            tags,
+            hasAttractions,
+            climate,
+            bestSeason
+        } = params;
+
+        const unimplemented: Record<string, unknown> = {};
+        if (q !== undefined) unimplemented.q = q;
+        if (latitude !== undefined) unimplemented.latitude = latitude;
+        if (longitude !== undefined) unimplemented.longitude = longitude;
+        if (radius !== undefined) unimplemented.radius = radius;
+        if (minAccommodations !== undefined) unimplemented.minAccommodations = minAccommodations;
+        if (maxAccommodations !== undefined) unimplemented.maxAccommodations = maxAccommodations;
+        if (minRating !== undefined) unimplemented.minRating = minRating;
+        if (tags !== undefined) unimplemented.tags = tags;
+        if (hasAttractions !== undefined) unimplemented.hasAttractions = hasAttractions;
+        if (climate !== undefined) unimplemented.climate = climate;
+        if (bestSeason !== undefined) unimplemented.bestSeason = bestSeason;
+
+        if (Object.keys(unimplemented).length > 0) {
+            this.logger.warn(
+                { unimplemented },
+                '[destination.search] Received filters that are declared in DestinationSearchSchema but not implemented in the service; they will be ignored.'
+            );
+        }
+
+        return {
+            page,
+            pageSize,
+            country,
+            state,
+            city,
+            isFeatured,
+            ancestorId,
+            parentDestinationId,
+            destinationType,
+            level
+        };
+    }
+
+    /**
      * Executes a paginated search for destinations using provided filters and pagination options.
      * @param params - Validated search parameters (filters, pagination, etc.)
      * @param _actor - The actor performing the search (not used here)
@@ -215,42 +293,43 @@ export class DestinationService extends BaseCrudService<
         _ctx: ServiceContext
     ) {
         const {
-            page = 1,
-            pageSize = 10,
-            sortBy,
-            sortOrder,
+            page,
+            pageSize,
             country,
             state,
             city,
             isFeatured,
             ancestorId,
-            ...otherFilters
-        } = params;
-        // Build where clause from flat filters
-        // Note: parentDestinationId, destinationType, level pass through otherFilters
-        // and are handled by buildWhereClause as direct column matches
-        const where: Record<string, unknown> = { ...otherFilters };
+            parentDestinationId,
+            destinationType,
+            level
+        } = this.extractImplementedFilters(params);
+
+        // Build where clause from the subset of filters that map to real columns.
+        // Note: country/state/city are not direct columns (stored in location jsonb)
+        // but are kept here for backwards compatibility; buildWhereClause will
+        // warn-and-skip them.
+        const where: Record<string, unknown> = {};
         if (country) where.country = country;
         if (state) where.state = state;
         if (city) where.city = city;
         if (isFeatured !== undefined) where.isFeatured = isFeatured;
+        if (parentDestinationId) where.parentDestinationId = parentDestinationId;
+        if (destinationType) where.destinationType = destinationType;
+        if (level !== undefined) where.level = level;
 
         // Special handling for ancestorId (requires LIKE query on pathIds)
         if (ancestorId) {
             const descendants = await this.model.findDescendants(ancestorId, {
-                destinationType: where.destinationType as
-                    | import('@repo/schemas').DestinationType
-                    | undefined
+                destinationType
             });
             // Apply remaining equality filters manually
             let filtered = descendants;
-            if (where.parentDestinationId) {
-                filtered = filtered.filter(
-                    (d) => d.parentDestinationId === where.parentDestinationId
-                );
+            if (parentDestinationId) {
+                filtered = filtered.filter((d) => d.parentDestinationId === parentDestinationId);
             }
-            if (where.level !== undefined) {
-                filtered = filtered.filter((d) => d.level === where.level);
+            if (level !== undefined) {
+                filtered = filtered.filter((d) => d.level === level);
             }
             // Manual pagination
             const total = filtered.length;
@@ -272,8 +351,19 @@ export class DestinationService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ) {
-        const { page, pageSize, sortBy, sortOrder, ...filterParams } = params;
-        const count = await this.model.count(filterParams);
+        const { country, state, city, isFeatured, parentDestinationId, destinationType, level } =
+            this.extractImplementedFilters(params);
+
+        const where: Record<string, unknown> = {};
+        if (country) where.country = country;
+        if (state) where.state = state;
+        if (city) where.city = city;
+        if (isFeatured !== undefined) where.isFeatured = isFeatured;
+        if (parentDestinationId) where.parentDestinationId = parentDestinationId;
+        if (destinationType) where.destinationType = destinationType;
+        if (level !== undefined) where.level = level;
+
+        const count = await this.model.count(where);
         return { count };
     }
 
