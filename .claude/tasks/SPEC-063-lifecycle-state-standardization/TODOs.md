@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 32/63 tasks (50.8%)
+## Progress: 34/63 tasks (54.0%)
 
-**Last updated:** 2026-04-18T15:35:00Z
-**Status:** in-progress (Phase 2 complete + Phase 4 schema layer complete: T-028 DB, T-030 base/CRUD, T-032 access admin-only, T-033 query/HTTP, T-034 admin-search workaround removed). Next: T-029 migrations, T-031 migration tests, T-035 admin routes, T-037/T-038 tests.
+**Last updated:** 2026-04-18T15:45:00Z
+**Status:** in-progress (Phase 2 complete + Phase 4 schema layer + routes-verification + schema tests complete). Next: T-029 migrations (requires DB running), T-036 admin UI filter, T-038 integration test.
 
 ### Follow-up SPECs spawned
 
@@ -11,11 +11,10 @@
 
 ### Next up (in priority order)
 
-1. **T-029** (complexity 2) — Generate DestinationReview up + down migrations (DB is ready).
-2. **T-035** (complexity 2) — Update admin DestinationReview API routes (all schema deps satisfied).
-3. **T-031** (complexity 1.5) — Post-migration verification test (depends on T-029).
-4. **T-037** (complexity 2) — Schema + access boundary tests (depends on T-032 — now unblocked).
-5. **T-038** (complexity 2) — Admin-search integration test + AC-001-04 (depends on T-034, T-035).
+1. **T-029** (complexity 2) — Generate DestinationReview up + down migrations. **Requires `pnpm db:generate` with running Postgres**; may need user handoff.
+2. **T-038** (complexity 2) — Admin-search schema test + integration test (AC-001-04).
+3. **T-036** (complexity 2) — Admin UI lifecycle filter for DestinationReview list.
+4. **T-031** (complexity 1.5) — Post-migration verification test (blocked on T-029).
 
 Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057), cleanup T-058.
 
@@ -244,7 +243,10 @@ Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057
 
 ### Integration
 
-- [ ] **T-035** (complexity: 2) — Update admin DestinationReview API routes
+- [x] **T-035** (complexity: 2) — Update admin DestinationReview API routes
+  - COMPLETED 2026-04-18 · verification task, 0 code changes
+  - Routes live at `apps/api/src/routes/destination/reviews/` (not `admin/destination-review/` as spec suggested)
+  - Grep for isActive/lifecycleState across all tiers: 0 matches. Routes inherit updated schemas from T-032.
   - Blocked by: T-032, T-033, T-034 · Blocks: T-036, T-038
 
 - [ ] **T-036** (complexity: 2) — Add DestinationReview admin frontend lifecycle filter
@@ -252,7 +254,10 @@ Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057
 
 ### Tests
 
-- [ ] **T-037** (complexity: 2) — Write DestinationReview schema + access boundary tests
+- [x] **T-037** (complexity: 2) — Write DestinationReview schema + access boundary tests
+  - COMPLETED 2026-04-18 · lint: pass · typecheck: pass · tests: 21/21
+  - 8 new tests added to existing destinationReview.schema.test.ts (no new access.schema.test.ts file needed)
+  - Coverage: lifecycleState enum values + default ACTIVE + invalid rejection + public/protected strip + admin preserve + isPublished/isVerified regression guard
   - Blocked by: T-032 · Blocks: none
 
 - [ ] **T-038** (complexity: 2) — Write DestinationReview admin-search + integration tests (AC-001-04)

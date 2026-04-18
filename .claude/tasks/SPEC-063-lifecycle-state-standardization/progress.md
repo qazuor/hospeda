@@ -1,12 +1,21 @@
 # SPEC-063 — Implementation Progress Log
 
-## Session summary (as of 2026-04-18T15:35)
+## Session summary (as of 2026-04-18T15:45)
 
-- **Progress:** 32/63 tasks (50.8%) — over half done.
-- **Status:** Phase 2 OwnerPromotion complete end-to-end. Phase 4 DestinationReview schema layer complete (T-028 DB + T-030 base + T-032 access + T-033 query/HTTP + T-034 admin-search workaround removed).
-- **Remaining:** Phase 4 middle layer (T-029 migrations, T-035 admin routes, T-037/T-038 tests), Phase 3 Sponsorship, cleanup T-058
-- **Critical path:** T-035 → T-038 → T-039 → T-040 → T-042 → T-058 (6 steps remaining)
+- **Progress:** 34/63 tasks (54.0%).
+- **Status:** Phase 2 OwnerPromotion complete end-to-end. Phase 4 DestinationReview schema + routes-verification + schema tests complete.
+- **Remaining:** Phase 4 finish (T-029 migrations, T-036 admin UI, T-038 integration), Phase 3 Sponsorship, cleanup T-058
+- **Critical path:** T-038 → T-039 → T-040 → T-042 → T-058 (5 steps remaining)
 - **Follow-up SPECs spawned:** SPEC-087 (public endpoint response schema strip — systemic factory fix)
+
+### Session 3 Phase 4 tests + routes block (2026-04-18 T-035, T-037)
+
+| Task | Complexity | Files | Quality gate |
+|------|-----------|-------|--------------|
+| T-035 | 2 | none (verification, 0 code changes) | grep clean; routes at `destination/reviews/` inherit updated schemas |
+| T-037 | 2 | `packages/schemas/test/entities/destinationReview/destinationReview.schema.test.ts` (+8 tests) | lint/tc pass; 21/21 tests |
+
+Commits: `8ad042db` (T-037 tests). T-035 had no code commit (verification-only).
 
 ### Session 3 Phase 4 schema block (2026-04-18 T-028, T-030, T-032, T-033, T-034)
 

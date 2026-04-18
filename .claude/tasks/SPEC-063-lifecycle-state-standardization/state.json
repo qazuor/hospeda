@@ -1204,28 +1204,34 @@
             "id": "T-035",
             "title": "Update admin DestinationReview API routes",
             "description": "Update admin routes under `apps/api/src/routes/admin/destination-review/`: ensure admin response includes `lifecycleState`. Verify request/response schemas reference updated Zod schemas. Verify public/protected routes continue to NOT expose lifecycleState.\n\nFiles: `apps/api/src/routes/admin/destination-review/*`",
-            "status": "pending",
+            "_pathCorrection": "Routes live under `apps/api/src/routes/destination/reviews/` (not `admin/destination-review/` as the spec description suggested).",
+            "_note": "Verification task — 0 code changes needed. Grep across destination/reviews/{admin,public,protected}/ shows 0 refs to isActive or lifecycleState. Routes consume DestinationReviewAdminSchema/Public/Protected from access.schema.ts which were updated in T-032, so lifecycleState flows into admin responses automatically and is stripped from public/protected via .pick(). Service force-override for public lifecycleState still TODO (tracked separately).",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-032", "T-033", "T-034"],
             "blocks": ["T-036", "T-038"],
             "subtasks": [
                 {
                     "title": "Verify admin response schemas include lifecycleState",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify public/protected routes exclude lifecycleState",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Grep for any stale field references", "completed": false }
+                {
+                    "title": "Grep for any stale field references",
+                    "completed": true,
+                    "_note": "0 matches for isActive/lifecycleState across routes"
+                }
             ],
             "tags": ["api", "routes", "phase-4", "destinationReview"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "n/a", "typecheck": "n/a", "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T15:35:00.000Z",
+                "completed": "2026-04-18T15:37:00.000Z"
             }
         },
         {
@@ -1260,25 +1266,26 @@
             "id": "T-037",
             "title": "Write DestinationReview schema + access boundary tests",
             "description": "Write tests in `packages/schemas/test/entities/destinationReview/` that verify: (1) `lifecycleState` field exists in `DestinationReviewSchema` via `BaseLifecycleFields`, accepts DRAFT/ACTIVE/ARCHIVED, defaults to ACTIVE, (2) `DestinationReviewPublicSchema` strips lifecycleState, `DestinationReviewProtectedSchema` strips lifecycleState, `DestinationReviewAdminSchema` preserves lifecycleState, (3) `isPublished` and `isVerified` still exist and are unchanged.\n\nFiles: `packages/schemas/test/entities/destinationReview/destinationReview.schema.test.ts`, `destinationReview.access.schema.test.ts`",
-            "status": "pending",
+            "_note": "8 new tests added to existing destinationReview.schema.test.ts (no new access.schema.test.ts file — access boundary tests fit naturally in schema.test.ts). 21/21 pass.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-032"],
             "blocks": [],
             "subtasks": [
-                { "title": "Add lifecycleState presence tests in base schema", "completed": false },
+                { "title": "Add lifecycleState presence tests in base schema", "completed": true },
                 {
                     "title": "Add access boundary tests (public/protected strip, admin keeps)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Assert isPublished and isVerified unchanged", "completed": false }
+                { "title": "Assert isPublished and isVerified unchanged", "completed": true }
             ],
             "tags": ["schemas", "testing", "phase-4", "destinationReview"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T15:38:00.000Z",
+                "completed": "2026-04-18T15:45:00.000Z"
             }
         },
         {
@@ -1863,9 +1870,9 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 31,
+        "pending": 29,
         "inProgress": 0,
-        "completed": 32,
+        "completed": 34,
         "blocked": 0,
         "averageComplexity": 2.0,
         "_summaryDriftNote": "Counters corrected 2026-04-18 during T-022 bookkeeping. Prior value (completed=22) had drift from Session 2 (T-019, T-020, T-021, T-023, T-024, T-027 completions not reflected in summary). Ground truth derived from grep of 'status: completed' across tasks array. Updated post-T-026 (Phase 2 cron pair complete) = 27.",
