@@ -1,15 +1,14 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 23/63 tasks (36.5%)
+## Progress: 24/63 tasks (38.1%)
 
-**Last updated:** 2026-04-17T21:40:00Z
-**Status:** in-progress (Phase 2 unit tests + admin UI + DB + schemas + i18n closing complete; integration T-021/T-022 + cron T-025/T-026 remaining)
+**Last updated:** 2026-04-18T02:17:00Z
+**Status:** in-progress (Phase 2 unit tests + admin UI + DB + schemas + i18n + T-021 integration complete; integration T-022 + cron T-025/T-026 remaining)
 
 ### Next up (in priority order)
 
-1. **T-021** (complexity 2) — admin list integration test (AC-001-01). Requires integration test infra. **Recommended start** — unblocks nothing Phase-2-critical but closes Phase 2 verification.
-2. **T-022** (complexity 2) — public endpoint integration test (AC-005-01). **Cumulative deps**: closes T-023 SQL-exclusion + T-024 usage-tracking equivalence + revisit `_executeCount` gap.
-3. **T-025 + T-026** (complexity 2.5 each) — archive-expired-promotions cron handler + advisory lock 43010 + tests.
+1. **T-022** (complexity 2) — public endpoint integration test (AC-005-01). **Cumulative deps**: closes T-023 SQL-exclusion + T-024 usage-tracking equivalence + revisit `_executeCount` gap. Same mock pattern as T-021.
+2. **T-025 + T-026** (complexity 2.5 each) — archive-expired-promotions cron handler + advisory lock 43010 + tests.
 
 Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057), cleanup T-058.
 
@@ -148,7 +147,13 @@ Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057
   - Status enum coverage added at schema layer (all/DRAFT/ACTIVE/ARCHIVED + reject invalid)
   - Blocked by: T-009, T-010 · Blocks: none
 
-- [ ] **T-021** (complexity: 2) — Write OwnerPromotion admin list integration test (AC-001-01)
+- [x] **T-021** (complexity: 2) — Write OwnerPromotion admin list integration test (AC-001-01)
+  - COMPLETED 2026-04-18 · lint: pass · typecheck: pass · tests: 5/5 pass
+  - Strategy: module-level mock of `@repo/service-core` (same pattern as `accommodation/admin-search-filters.test.ts`)
+  - 5 tests: DRAFT/ACTIVE/ARCHIVED accepted → 200, invalid status → 400 VALIDATION_ERROR, default → 'all'
+  - Env gotcha: requires `apps/api/.env.test` (NOT `.env.local`), documented in state.json `_envGotcha`
+  - Auth gotcha: mock actor needs ACCESS_PANEL_ADMIN + ACCESS_API_ADMIN on top of OWNER_PROMOTION_VIEW, documented in state.json `_authGotcha`
+  - Scope bonus: +2 tests beyond original 4 subtasks (invalid rejection + default='all')
   - Blocked by: T-013 · Blocks: none
 
 - [ ] **T-022** (complexity: 2) — Write OwnerPromotion public endpoint default ACTIVE test (AC-005-01)

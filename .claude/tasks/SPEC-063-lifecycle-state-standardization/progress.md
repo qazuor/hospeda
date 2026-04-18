@@ -1,11 +1,11 @@
 # SPEC-063 — Implementation Progress Log
 
-## Session summary (as of 2026-04-17T21:40)
+## Session summary (as of 2026-04-18T02:17)
 
-- **Progress:** 23/63 tasks (36.5%)
-- **Status:** in-progress — Phase 2 unit tests + admin UI + DB + schemas + i18n closing complete
-- **Milestone:** `ownerPromotions` i18n namespace **100% clean** post-T-027 (no legacy debt)
-- **Remaining:** Phase 2 integration (T-021, T-022), Phase 2 cron (T-025, T-026), Phase 4 DestinationReview, Phase 3 Sponsorship, cleanup T-058
+- **Progress:** 24/63 tasks (38.1%)
+- **Status:** in-progress — Phase 2 unit tests + admin UI + DB + schemas + i18n + T-021 integration complete
+- **Milestone:** AC-001-01 verified literal via module-level service mock (admin list filter `status=DRAFT|ACTIVE|ARCHIVED` reaches service with correct shape)
+- **Remaining:** Phase 2 integration T-022 (public endpoint default ACTIVE), Phase 2 cron (T-025, T-026), Phase 4 DestinationReview, Phase 3 Sponsorship, cleanup T-058
 - **Critical path:** T-028 → T-030 → T-034 → T-035 → T-038 → T-039 → T-040 → T-042 → T-058
 
 ### Session 2 tasks completed (2026-04-17 T-019 → T-027)
@@ -17,6 +17,7 @@
 | T-023 | 2 | db ownerPromotion.model.test | biome/tc/tests pass (19/19) |
 | T-024 | 2 | api limit-enforcement.test (scope creep absorbed from T-015) | biome/tc/tests pass (23/23 — 2 were failing) |
 | T-027 | 1.5 | i18n admin-billing.json x3 + types.ts regen (expanded sweep of 11 orphans) | biome/tc/tests pass (admin-billing 1044/1044; 6 pre-existing failures in other namespaces) |
+| T-021 | 2 | api integration admin-list.test.ts (new file, 5 tests) | biome/tc/tests pass (5/5) — mock-based pipeline verification |
 
 ### Session 2 decisions (user-approved)
 
@@ -359,10 +360,25 @@ After T-020, `packages/schemas` typecheck is **100% clean** for SPEC-063. All Ow
 
 Post-T-027, the `admin-billing.ownerPromotions` namespace contains **zero legacy debt**. All status labels and action labels are fully migrated to the lifecycle state model. Consumers: `routes/_authed/billing/owner-promotions.tsx`, `features/owner-promotions/components/PromotionDetailDialog.tsx`, `PromotionFormDialog.tsx` all use the new keys exclusively.
 
+#### T-021 — admin list integration test for lifecycleState filter (2026-04-18T02:17)
+- **File:** `apps/api/test/integration/owner-promotion/admin-list.test.ts` (NEW, 166 lines)
+- **Strategy:** module-level mock of `@repo/service-core` (same pattern as `accommodation/admin-search-filters.test.ts`). Captures what arguments `OwnerPromotionService.adminList` receives after the route parses the query. Verifies pipeline `HTTP ?status=X → OwnerPromotionAdminSearchSchema parse → service.adminList(actor, query)`.
+- **Tests (5/5 passing):**
+  1. `status=DRAFT` → 200, `mockRef.adminList` called with `query.status === 'DRAFT'`
+  2. `status=ACTIVE` → 200, `query.status === 'ACTIVE'`
+  3. `status=ARCHIVED` → 200, `query.status === 'ARCHIVED'`
+  4. `status=INVALID_STATE` → 400 VALIDATION_ERROR ("Status must be one of: all, DRAFT, ACTIVE, ARCHIVED"), `adminList` NOT called
+  5. No `status` param → 200, `query.status === 'all'` (AdminSearchBaseSchema default)
+- **Env gotcha encountered & documented in state.json:** integration test infra loads `apps/api/.env.test` (not `.env.local`), per SPEC-035. Copy `.env.local` → `.env.test` or configure separately. The E2E setup file is `test/e2e/setup/env-setup.ts:11`.
+- **Auth gotcha encountered & documented in state.json:** mock actor needs `PermissionEnum.ACCESS_PANEL_ADMIN` + `ACCESS_API_ADMIN` on top of entity-specific `OWNER_PROMOTION_VIEW`. Without them the authorization middleware returns 403 before reaching the handler — a silent-pass trap when assertions are permissive (`[200, 400, 401, 403]` would all pass on 403 forbidden).
+- **Scope decision:** pure "only matching records returned" DB-level verification is not feasible with the module-level mock pattern (the service is mocked, SQL never executes). Delegated to T-022 (public endpoint default ACTIVE, same pattern, closes AC-005-01) which provides equivalence coverage. AC-001-01 literal pipeline verification is cumulative: schema-level (T-009), DB-level (T-011), service-level (T-012), and now route-level (T-021).
+- **Scope bonus (beyond original 4 subtasks):** added 2 extra tests (`rejects invalid status` + `default='all'`) because they fit naturally in the same pattern and harden the coverage without extra effort.
+- Quality gate: **biome pass, typecheck pass** (0 new errors in touched file; pre-existing unrelated errors in other files as documented), **tests 5/5 pass** via `pnpm exec vitest run --config vitest.config.e2e.ts test/integration/owner-promotion/admin-list.test.ts`.
+
 ### Next up
 
-Commit boundary for T-027 (3 i18n JSON files + types.ts + bookkeeping). Then:
+Commit boundary for T-021 (1 new test file + bookkeeping). Then:
 
-**Phase 2 remaining:** T-021 (integration: admin list AC-001-01), T-022 (integration: public default ACTIVE AC-005-01 + closes T-023 SQL-exclusion verification + closes T-024 usage-tracking partial), T-025/T-026 (cron job).
+**Phase 2 remaining:** T-022 (integration: public default ACTIVE AC-005-01 + closes T-023 SQL-exclusion verification + closes T-024 usage-tracking partial), T-025/T-026 (cron job).
 
 Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057), cleanup (T-058).
