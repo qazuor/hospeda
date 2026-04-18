@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 26/63 tasks (41.3%)
+## Progress: 27/63 tasks (42.9%)
 
-**Last updated:** 2026-04-18T14:35:00Z
-**Status:** in-progress (Phase 2 unit tests + admin UI + DB + schemas + i18n + T-021 + T-022 + T-025 handler complete; T-026 registry/docs/tests remaining)
+**Last updated:** 2026-04-18T15:05:00Z
+**Status:** in-progress (Phase 2 OwnerPromotion complete end-to-end including cron T-025/T-026; Phase 4 DestinationReview next)
 
 ### Follow-up SPECs spawned
 
@@ -11,7 +11,8 @@
 
 ### Next up (in priority order)
 
-1. **T-026** (complexity 2.5) — register `archive-expired-promotions` in cron registry + update advisory-locks.md Owner File + write handler tests (dry-run, production, advisory-lock skip, empty batch, Sentry on failure, updatedAt correctness).
+1. **T-028** (complexity 2) — Update DestinationReview Drizzle DB schema: add lifecycleState column. First task of Phase 4 (critical path start).
+2. After T-028: T-030 (Zod base schema), T-029 (migrations), T-032 (access schema lifecycleState admin-only — critical tier boundary), T-033 (query/HTTP schemas), T-034 (remove admin-search workaround).
 
 Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057), cleanup T-058.
 
@@ -189,7 +190,12 @@ Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057
   - Handler NOT yet registered in cron registry — T-026 scope
   - Blocked by: T-012 · Blocks: T-026
 
-- [ ] **T-026** (complexity: 2.5) — Register cron job + advisory lock docs + tests
+- [x] **T-026** (complexity: 2.5) — Register cron job + advisory lock docs + tests
+  - COMPLETED 2026-04-18 · lint: pass · typecheck: pass · tests: 8/8 pass
+  - Registered `archiveExpiredPromotionsJob` in `apps/api/src/cron/jobs/index.ts` barrel + `apps/api/src/cron/registry.ts` array (appended to end)
+  - `packages/db/docs/advisory-locks.md` row 43010 Owner File updated to concrete handler path (row 43001 already concrete from SPEC-064)
+  - Test file: `apps/api/test/cron/archive-expired-promotions.test.ts` (flat path, NOT `test/cron/jobs/`). 8 tests (6 core + 2 scope-bonus: job metadata + updatedAt freshness). Top-level error test also verifies Sentry.captureException tags.
+  - Mocking: chainable vi.fn() stubs + withTransaction passthrough with tx stub acquired=true; tests override via `mockImplementationOnce` with `as never` cast for lock-not-acquired path. Pattern mirrors addon-expiry.test.ts.
   - Blocked by: T-025 · Blocks: none
 
 ### i18n

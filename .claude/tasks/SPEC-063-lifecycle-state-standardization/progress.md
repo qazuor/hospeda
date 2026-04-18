@@ -1,13 +1,37 @@
 # SPEC-063 — Implementation Progress Log
 
-## Session summary (as of 2026-04-18T14:35)
+## Session summary (as of 2026-04-18T15:05)
 
-- **Progress:** 26/63 tasks (41.3%)
-- **Status:** in-progress — Phase 2 cron handler (T-025) landed; registry/docs/tests (T-026) pending.
-- **Milestone:** AC-007-01 handler implemented. OwnerPromotion auto-archival logic complete and commitable in isolation; activation requires T-026 registry wiring + tests.
-- **Remaining:** T-026 (register + lock docs + tests), Phase 4 DestinationReview, Phase 3 Sponsorship, cleanup T-058
-- **Critical path:** T-026 → T-028 → T-030 → T-034 → T-035 → T-038 → T-039 → T-040 → T-042 → T-058
+- **Progress:** 27/63 tasks (42.9%)
+- **Status:** in-progress — Phase 2 complete for OwnerPromotion. AC-007-01 end-to-end (handler + registry + tests).
+- **Milestone:** Auto-archive cron fully wired. All 8 unit tests pass. Advisory lock 43010 docs updated with concrete Owner File. OwnerPromotion phase closed.
+- **Remaining:** Phase 4 DestinationReview, Phase 3 Sponsorship, cleanup T-058
+- **Critical path:** T-028 → T-030 → T-034 → T-035 → T-038 → T-039 → T-040 → T-042 → T-058 (9 steps remaining)
 - **Follow-up SPECs spawned:** SPEC-087 (public endpoint response schema strip — systemic factory fix)
+
+### Session 3 tasks completed (2026-04-18 T-026)
+
+| Task | Complexity | Files | Quality gate |
+|------|-----------|-------|--------------|
+| T-026 | 2.5 | `apps/api/src/cron/jobs/index.ts` (barrel) + `apps/api/src/cron/registry.ts` + `packages/db/docs/advisory-locks.md` + `apps/api/test/cron/archive-expired-promotions.test.ts` (new, 8 tests) | biome/tc/tests pass (8/8) |
+
+#### T-026 details
+- Registered `archiveExpiredPromotionsJob` at the end of both the barrel export and the `cronJobs` array (matches addition-order convention used by prior registrations).
+- **Advisory-locks doc correction**: the 43010 row was pre-registered with placeholder Owner File "OwnerPromotion archive cron". Replaced with concrete path `apps/api/src/cron/jobs/archive-expired-promotions.job.ts`. Row 43001 already had concrete path from SPEC-064 — no update needed.
+- **Test path correction**: spec suggested `test/cron/jobs/*`. Actual convention is flat `test/cron/*.test.ts` (matches every other cron test). Created at `apps/api/test/cron/archive-expired-promotions.test.ts`.
+- **Mocking strategy**: chainable vi.fn() stubs + `withTransaction` default-passthrough with tx stub (acquired=true). Tests needing lock-not-acquired path use `vi.mocked(withTransaction).mockImplementationOnce(...)`. `drizzle-orm` NOT mocked — real `inArray(...)` output is opaque to the where() stub. Pattern mirrors addon-expiry.test.ts exactly.
+- **Test coverage** (8 cases, 2 beyond spec's 4 subtasks):
+  1. Job definition metadata (scope bonus)
+  2. Dry run reports count without UPDATE
+  3. Production run archives + returns processed count
+  4. Production run passes correct mutation payload (lifecycleState='ARCHIVED', updatedById=null, updatedAt=Date)
+  5. updatedAt freshness: within `[startedAt, Date.now()]` (scope bonus — guards regressions if timestamp gets dropped or switched to sql`NOW()` without mock update)
+  6. Empty batch returns processed=0 without UPDATE
+  7. Advisory lock not acquired returns skipped result + `apiLogger.warn` called
+  8. Top-level error captured in Sentry with correct tags (`cronJob`, `phase: 'top-level'`) + success=false
+- **TypeScript gotcha**: `vi.mocked(withTransaction).mockImplementationOnce(...)` required `as never` cast because `withTransaction<T>` generic doesn't narrow from the callback signature. Addon-expiry.test.ts avoids this by never overriding the implementation — only arranging mock resolved values.
+- **Biome cwd quirk**: `pnpm biome check <relative-path>` from repo root sometimes returns "0 files processed" but absolute path works. Unrelated to SPEC-063.
+- Commits: `1ea49bf9` (feat+tests+docs). Bookkeeping follows.
 
 ### Session 3 tasks completed (2026-04-18 T-025)
 

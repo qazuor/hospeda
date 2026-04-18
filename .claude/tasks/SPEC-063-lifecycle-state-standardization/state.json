@@ -931,31 +931,36 @@
             "id": "T-026",
             "title": "Register cron job + advisory lock docs + tests",
             "description": "(1) Register `archive-expired-promotions` in `apps/api/src/cron/registry.ts` job array. (2) Create/update `packages/db/docs/advisory-locks.md` documenting lock ID `43010` for archive-expired-promotions (also document `43001` for addon-expiry if not already present). (3) Write tests in `apps/api/test/cron/jobs/archive-expired-promotions.job.test.ts`: dry-run returns count without modification, actual run archives expired records, advisory lock prevents overlapping runs, empty batch handled correctly.\n\nFiles: `apps/api/src/cron/registry.ts`, `packages/db/docs/advisory-locks.md`, `apps/api/test/cron/jobs/archive-expired-promotions.job.test.ts`",
-            "status": "pending",
+            "_pathCorrection": "Test file lives at `apps/api/test/cron/archive-expired-promotions.test.ts` (flat directory, no /jobs/ subdir). Matches the pattern of every other cron test in the repo (trial-expiry.test.ts, addon-expiry.test.ts, etc.). The spec-suggested path `test/cron/jobs/*` was inaccurate.",
+            "_docsNote": "Lock 43001 was already present in advisory-locks.md (populated when addon-expiry job landed as part of SPEC-064). Only 43010 row required update: changed the placeholder 'OwnerPromotion archive cron' in the Owner File column to the concrete path `apps/api/src/cron/jobs/archive-expired-promotions.job.ts`.",
+            "_scopeBonus": "Added 2 tests beyond the 4 subtasks: job-definition metadata + updatedAt timestamp freshness (guards against regressions where timestamp is dropped or swapped to sql`NOW()` without updating the mock). Also added Sentry capture verification as part of the top-level error test. Total: 8 tests, all passing.",
+            "_mockingStrategy": "Chainable vi.fn() stubs for tx.select().from().where().limit() and tx.update().set().where(). `withTransaction` mocked with a default passthrough that injects a tx stub with acquired=true; individual tests override via vi.mocked(withTransaction).mockImplementationOnce(...) when they need a lock-not-acquired path. `drizzle-orm` NOT mocked (inArray's real SQL output is opaque to the where() mock). Pattern mirrors addon-expiry.test.ts exactly.",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-025"],
             "blocks": [],
             "subtasks": [
-                { "title": "Register job in cron registry", "completed": false },
+                { "title": "Register job in cron registry", "completed": true },
                 {
                     "title": "Create or update advisory-locks.md with lock IDs 43001, 43010",
-                    "completed": false
+                    "completed": true,
+                    "_note": "43001 already present from SPEC-064. Only 43010 Owner File column updated with concrete handler path."
                 },
                 {
                     "title": "Write dry-run test (returns count, no modification)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Write actual run test (archives expired records)", "completed": false },
-                { "title": "Write advisory lock test (prevents overlap)", "completed": false },
-                { "title": "Write empty batch test", "completed": false }
+                { "title": "Write actual run test (archives expired records)", "completed": true },
+                { "title": "Write advisory lock test (prevents overlap)", "completed": true },
+                { "title": "Write empty batch test", "completed": true }
             ],
             "tags": ["api", "cron", "testing", "docs", "phase-2", "ownerPromotion"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T14:40:00.000Z",
+                "completed": "2026-04-18T15:05:00.000Z"
             }
         },
         {
@@ -1846,12 +1851,12 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 37,
+        "pending": 36,
         "inProgress": 0,
-        "completed": 26,
+        "completed": 27,
         "blocked": 0,
         "averageComplexity": 2.0,
-        "_summaryDriftNote": "Counters corrected 2026-04-18 during T-022 bookkeeping. Prior value (completed=22) had drift from Session 2 (T-019, T-020, T-021, T-023, T-024, T-027 completions not reflected in summary). Ground truth derived from grep of 'status: completed' across tasks array. Updated post-T-025 (2026-04-18 session 3 continuation) = 26.",
+        "_summaryDriftNote": "Counters corrected 2026-04-18 during T-022 bookkeeping. Prior value (completed=22) had drift from Session 2 (T-019, T-020, T-021, T-023, T-024, T-027 completions not reflected in summary). Ground truth derived from grep of 'status: completed' across tasks array. Updated post-T-026 (Phase 2 cron pair complete) = 27.",
         "_replanLog": [
             {
                 "date": "2026-04-17T17:55:00.000Z",
