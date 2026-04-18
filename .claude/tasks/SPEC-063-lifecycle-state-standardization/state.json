@@ -1108,23 +1108,36 @@
             "id": "T-031",
             "title": "Write DestinationReview post-migration verification test",
             "description": "Write migration test that verifies: (1) all existing DestinationReview rows have `lifecycle_state = 'ACTIVE'` after migration, (2) rollback drops the column cleanly, (3) new column has correct NOT NULL constraint. Use project's DB test infrastructure.\n\nFiles: `packages/db/test/migrations/destination-review-lifecycle.migration.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-029"],
             "blocks": [],
             "subtasks": [
-                { "title": "Seed DestinationReview records before migration", "completed": false },
-                { "title": "Assert post-migration all rows have ACTIVE", "completed": false },
-                { "title": "Assert rollback drops column cleanly", "completed": false }
+                {
+                    "title": "Seed DestinationReview records before migration",
+                    "completed": false,
+                    "_obsoleteReason": "Skipped: the schema is already pushed against the live dev DB (T-028). Option 1 (user-approved) uses introspection against current DB state, not a seed/apply/verify cycle. Invariant `all rows lifecycle_state = ACTIVE` is still asserted as a counter query in the test."
+                },
+                {
+                    "title": "Assert post-migration all rows have ACTIVE",
+                    "completed": true,
+                    "_note": "Covered by test 5 (COUNT(*) filter lifecycle_state='ACTIVE' equals total)."
+                },
+                {
+                    "title": "Assert rollback drops column cleanly",
+                    "completed": false,
+                    "_scopeDeferral": "Introspection test does not exercise the rollback SQL. Repo is transitioning to drizzle-kit push only (per packages/db/CLAUDE.md); coupling the test to the numbered-migration rollback would tie it to a file the team plans to remove. The down script is hand-verified (DROP INDEX IF EXISTS + DROP COLUMN IF EXISTS, idempotent). User-approved option 1."
+                }
             ],
             "tags": ["db", "testing", "migration", "phase-4", "destinationReview"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "5/5" },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-04-18T17:30:00.000Z",
+                "completed": "2026-04-18T17:35:00.000Z"
+            },
+            "_scopeDeviation": "Option 1 schema introspection test, NOT literal seed/apply/rollback integration test. File placed at `packages/db/test/schemas/destination-review-lifecycle.schema.test.ts` (not the path suggested by the task description `test/migrations/` — that subdir does not exist and `test/schemas/` is the conventional home for table-shape tests). Coverage: column existence + UDT + NOT NULL + default ACTIVE + index existence + btree method + existing-rows invariant. Pattern mirrors `enum-consistency.test.ts` (real DB via pg Pool, env via apps/api per-app config)."
         },
         {
             "id": "T-032",
@@ -1887,9 +1900,9 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 26,
+        "pending": 25,
         "inProgress": 0,
-        "completed": 36,
+        "completed": 37,
         "deferred": 1,
         "blocked": 0,
         "averageComplexity": 2.0,

@@ -1,12 +1,28 @@
 # SPEC-063 — Implementation Progress Log
 
-## Session summary (as of 2026-04-18T17:25)
+## Session summary (as of 2026-04-18T17:40)
 
-- **Progress:** 36/63 completed + 1 deferred (T-036). Effective scope 36/62.
-- **Status:** Phase 2 OwnerPromotion complete end-to-end. Phase 4 DestinationReview schema + routes-verification + schema tests + admin-search tests + integration tests + migrations (T-029) complete. **T-036 deferred** (no admin UI exists — AC-001-04 covered at API layer via T-035 + T-038). Remaining Phase 4: T-031 post-migration (unblocked now).
-- **Remaining:** Phase 4 finish (T-031 post-migration only), Phase 3 Sponsorship (19 tasks), cleanup T-058.
-- **Critical path:** T-031 → Phase 3 (T-039..T-057) → T-058.
+- **Progress:** 37/63 completed + 1 deferred (T-036). Effective scope 37/62.
+- **Status:** **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end. Phase 4 schema + routes-verification + schema tests + admin-search tests + integration tests + migrations (T-029) + post-migration introspection test (T-031) all done.
+- **Remaining:** Phase 3 Sponsorship (19 tasks T-039..T-057), cleanup T-058. Also latent: Phase 1 AccommodationReview verification tests (T-001, T-002) and Phase 2 OwnerPromotion migration trio T-004/T-005/T-006 — open question re: push-only direction.
+- **Critical path:** T-039 → Phase 3 end-to-end → T-058.
 - **Follow-up SPECs spawned:** SPEC-087 (public endpoint response schema strip — systemic factory fix).
+
+### T-031 completed 2026-04-18T17:40
+
+- **File:** `packages/db/test/schemas/destination-review-lifecycle.schema.test.ts` (new, 5 tests, 120 lines). Committed `2b171d5e`.
+- **Strategy:** Option 1 schema introspection test (user-approved). NOT a seed/apply/rollback integration test — the repo uses `drizzle-kit push` (not `migrate`), and `packages/db/CLAUDE.md` notes numbered migrations are being phased out. An introspection test survives that refactor and still asserts every AC that talks about post-migration state.
+- **Coverage (5 tests, all passing):**
+  1. Column exists with UDT `lifecycle_status_enum` (via `information_schema.columns`).
+  2. `is_nullable = 'NO'` (AC "correct NOT NULL constraint").
+  3. Default resolves to `'ACTIVE'` (regex + contains to stay resilient to cast/whitespace variants).
+  4. `destinationReviews_lifecycleState_idx` exists in `pg_indexes`, references `lifecycle_state`, uses btree.
+  5. Count of rows with `lifecycle_state = 'ACTIVE'` equals total row count (AC "all existing rows have ACTIVE"). Trivially holds on empty table.
+- **Pattern mirrored:** `enum-consistency.test.ts` — real DB via `pg Pool`, env loaded from per-app api config, `beforeAll` init + `afterAll` `pool.end()`.
+- **Path correction:** task description said `packages/db/test/migrations/` but that subdir does not exist; `packages/db/test/schemas/` is the conventional home for table-shape tests. Placed there.
+- **Rollback scope deferred** (subtask 3 in state.json): the `manual/0005_*_down.sql` rollback script is hand-verified but not exercised by this test. Rationale captured in state.json `_scopeDeferral` — coupling the test to the numbered-migration rollback would mean rewriting it once the team phases numbered migrations out.
+- **Quality gate:** biome clean · typecheck clean · 5/5 tests pass (75ms run).
+- **Broader refactor observed during commit:** user is in parallel removing numbered migrations (0000-0004 deleted in working tree) and renumbering `manual/*.sql` to a clean 0001-0010 sequence. Naming collision exists in `manual/`: my `0005_awesome_wild_child_down.sql` (committed in T-029) sits alongside `0005_set_updated_at_trigger.sql` (untracked, from refactor). Both resolve fine functionally (`_down.sql` suffix is skipped by the apply script per CLAUDE.md), but the prefix collision is visually ambiguous. Flagged for user review — possible rename or delete altogether once SPEC-063 lands in main, since the 0005 up migration itself is transient under push-only direction.
 
 ### T-029 completed 2026-04-18T17:25
 

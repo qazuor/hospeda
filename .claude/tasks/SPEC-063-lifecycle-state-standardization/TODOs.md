@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 36/63 completed + 1 deferred (T-036) — effective 36/62
+## Progress: 37/63 completed + 1 deferred (T-036) — effective 37/62
 
-**Last updated:** 2026-04-18T17:25:00Z
-**Status:** in-progress (Phase 2 complete + Phase 4 schema layer + routes-verification + schema tests + admin-search tests + integration tests + migrations complete). **T-036 deferred 2026-04-18** (no admin UI exists for DestinationReview; AC-001-04 covered at API layer). **T-029 completed 2026-04-18** (0005_awesome_wild_child.sql + manual down variant). Next: T-031 post-migration verification.
+**Last updated:** 2026-04-18T17:40:00Z
+**Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end. Remaining: Phase 3 Sponsorship (19 tasks) + cleanup T-058 + latent Phase 1 AccommodationReview verification (T-001, T-002) + Phase 2 OwnerPromotion migration trio (T-004, T-005, T-006 — open question re: push-only direction).
 
 ### Follow-up SPECs spawned
 
@@ -11,9 +11,10 @@
 
 ### Next up (in priority order)
 
-1. **T-031** (complexity 1.5) — Post-migration verification test. Unblocked.
-2. **T-039..T-057** — Phase 3 Sponsorship (19 tasks: DB, schemas, model/service, API, frontend, tests).
-3. **T-058** (complexity 2.5) — cleanup / cross-cutting verification. T-036 removed from blockedBy; `_deferredDependencies` note tracks the deferral for final-report mention.
+1. **T-039..T-057** — Phase 3 Sponsorship (19 tasks: DB, schemas, model/service, API, frontend, tests). Starts with T-039 (DB schema + dual field rename/add) — highest impact, no blockers.
+2. **T-001, T-002** (complexity 2 each) — Phase 1 AccommodationReview verification tests. Independent of Phase 3; can run in parallel.
+3. **T-004, T-005, T-006** — Phase 2 OwnerPromotion migration trio. Open question: still worth generating numbered migrations given the repo's push-only direction? Flag for user decision when we get near these.
+4. **T-058** (complexity 2.5) — cleanup / cross-cutting verification. T-036 removed from blockedBy; `_deferredDependencies` note tracks the deferral for final-report mention.
 
 **Average Complexity:** 2.1/2.5 (ceiling)
 **Critical Path (post-T-038):** T-039 -> T-040 -> T-042 -> T-058 (4 steps remaining)
@@ -220,7 +221,11 @@
   - CRUD no-op (flows via omit/partial). No dedicated fixtures file.
   - Blocked by: T-028 · Blocks: T-033, T-034
 
-- [ ] **T-031** (complexity: 1.5) — Write DestinationReview post-migration verification test
+- [x] **T-031** (complexity: 1.5) — Write DestinationReview post-migration verification test
+  - COMPLETED 2026-04-18 · biome pass · typecheck pass · tests 5/5 pass (75ms)
+  - Option 1 schema introspection test at `packages/db/test/schemas/destination-review-lifecycle.schema.test.ts` (column UDT + NOT NULL + default ACTIVE + index + existing-rows invariant)
+  - Path correction: `test/migrations/` does not exist; placed under `test/schemas/` (conventional)
+  - Rollback subtask deferred (repo moves away from numbered migrations per CLAUDE.md — coupling to rollback SQL not worth it)
   - Blocked by: T-029 · Blocks: none
 
 - [x] **T-032** (complexity: 1.5) — Update DestinationReview access schema (lifecycleState admin ONLY)
