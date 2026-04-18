@@ -22,15 +22,18 @@ import type { DrizzleClient } from '@repo/db';
 import { NotificationType, type TrialEventPayload } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
+    BILLING_EVENT_TYPES,
     type ReactivateFromTrialInput,
     type ReactivateSubscriptionInput,
     type ReactivateSubscriptionResult,
     type StartTrialInput,
     type TrialEndingSubscription,
     type TrialStatus,
-    calculateTrialDaysRemaining
+    calculateTrialDaysRemaining,
+    withServiceTransaction
 } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
+import { and, eq, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
@@ -45,10 +48,17 @@ export type {
 };
 
 /**
- * In-memory flag to prevent concurrent blockExpiredTrials runs.
- * Only one run should execute at a time to avoid double-cancelling subscriptions.
+ * Advisory lock key for `blockExpiredTrials` batch job.
+ *
+ * pg_try_advisory_xact_lock is a session-level, non-blocking advisory lock.
+ * Only one DB connection can hold this lock at a time, preventing concurrent
+ * blockExpiredTrials runs across multiple API replicas.
+ *
+ * The value 1004 was chosen as a project-wide unique lock constant for this
+ * specific job (SPEC-064 T-040). Document any new lock keys here to avoid
+ * collisions.
  */
-let blockExpiredTrialsRunning = false;
+const BLOCK_EXPIRED_TRIALS_LOCK_KEY = 1004;
 
 /**
  * Result of a reconciliation run for a single customer.
@@ -60,13 +70,6 @@ export interface ReconcileResult {
     cancelledIds: readonly string[];
     /** ID of the subscription that was kept as the primary active one */
     keptId: string | null;
-}
-
-/**
- * Reset the concurrent-run guard. Intended for testing only.
- */
-export function resetBlockExpiredTrialsGuard(): void {
-    blockExpiredTrialsRunning = false;
 }
 
 /**
@@ -294,10 +297,18 @@ export class TrialService {
 
     /**
      * Block expired trials (batch operation)
-     * Finds all expired trials and updates their status
-     * This is typically called by a cron job
+     * Finds all expired trials and updates their status.
+     * This is typically called by a cron job.
      *
-     * @returns Number of trials blocked
+     * Concurrency safety:
+     * - Uses `pg_try_advisory_xact_lock(1004)` inside a transaction to prevent
+     *   concurrent runs across multiple API replicas. If the lock cannot be
+     *   acquired, the invocation skips silently.
+     * - Per-subscription idempotency: before processing each subscription a
+     *   `TRIAL_BLOCKED` event is checked in `billing_subscription_events`. If
+     *   already present the subscription is skipped (dedup guard, SPEC-064 T-041).
+     *
+     * @returns Number of trials blocked in this run
      */
     async blockExpiredTrials(): Promise<number> {
         if (!this.billing) {
@@ -305,13 +316,33 @@ export class TrialService {
             return 0;
         }
 
-        // Guard against concurrent execution
-        if (blockExpiredTrialsRunning) {
-            apiLogger.warn('blockExpiredTrials is already running, skipping concurrent invocation');
+        // Attempt to acquire the process-level advisory lock inside a transaction.
+        // pg_try_advisory_xact_lock returns TRUE if the lock was acquired, FALSE otherwise.
+        // The lock is automatically released when the transaction ends.
+        let lockAcquired = false;
+
+        try {
+            await withServiceTransaction(async (ctx) => {
+                // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+                const lockResult = await ctx.tx!.execute<{ pg_try_advisory_xact_lock: boolean }>(
+                    sql`SELECT pg_try_advisory_xact_lock(${BLOCK_EXPIRED_TRIALS_LOCK_KEY})`
+                );
+                lockAcquired = lockResult.rows[0]?.pg_try_advisory_xact_lock === true;
+            });
+        } catch (lockErr) {
+            apiLogger.error(
+                { error: lockErr instanceof Error ? lockErr.message : String(lockErr) },
+                'blockExpiredTrials: failed to acquire advisory lock — skipping run'
+            );
             return 0;
         }
 
-        blockExpiredTrialsRunning = true;
+        if (!lockAcquired) {
+            apiLogger.warn(
+                'blockExpiredTrials is already running (advisory lock held by another process), skipping concurrent invocation'
+            );
+            return 0;
+        }
 
         try {
             apiLogger.info('Starting expired trial blocking batch job');
@@ -327,6 +358,7 @@ export class TrialService {
             }
 
             const now = new Date();
+            const db = getDb();
             let blockedCount = 0;
 
             // Check each trial subscription
@@ -341,6 +373,31 @@ export class TrialService {
                 // Check if expired
                 if (now > trialEnd) {
                     try {
+                        // ── T-041: DB-backed dedup guard ──────────────────────────────────
+                        // Before processing, check if a TRIAL_BLOCKED event already exists
+                        // for this subscription. If so, skip (idempotent run protection).
+                        const existingBlock = await db
+                            .select({ id: billingSubscriptionEvents.id })
+                            .from(billingSubscriptionEvents)
+                            .where(
+                                and(
+                                    eq(billingSubscriptionEvents.subscriptionId, subscription.id),
+                                    eq(
+                                        billingSubscriptionEvents.eventType,
+                                        BILLING_EVENT_TYPES.TRIAL_BLOCKED
+                                    )
+                                )
+                            )
+                            .limit(1);
+
+                        if (existingBlock.length > 0) {
+                            apiLogger.debug(
+                                { subscriptionId: subscription.id },
+                                'blockExpiredTrials: TRIAL_BLOCKED event already exists, skipping (idempotent)'
+                            );
+                            continue;
+                        }
+
                         // Get customer details for notification
                         const customer = await this.billing.customers.get(subscription.customerId);
                         const plan = await this.billing.plans.get(subscription.planId);
@@ -373,6 +430,21 @@ export class TrialService {
 
                         // Update subscription to cancel (QZPay doesn't support 'expired' status)
                         await this.billing.subscriptions.cancel(subscription.id);
+
+                        // ── T-041: Insert TRIAL_BLOCKED dedup event after successful cancel ─
+                        // This must be written after the QZPay cancel call so we only mark
+                        // a subscription as processed once it has actually been cancelled.
+                        // Follows the operational-event row convention: eventType is set,
+                        // previousStatus/newStatus are omitted (null).
+                        await db.insert(billingSubscriptionEvents).values({
+                            subscriptionId: subscription.id,
+                            eventType: BILLING_EVENT_TYPES.TRIAL_BLOCKED,
+                            triggerSource: 'block-expired-trials-cron',
+                            metadata: {
+                                trialEnd: trialEnd.toISOString(),
+                                blockedAt: new Date().toISOString()
+                            }
+                        });
 
                         // Clear entitlement cache to reflect trial expiry immediately
                         clearEntitlementCache(subscription.customerId);
@@ -437,8 +509,6 @@ export class TrialService {
             );
 
             return 0;
-        } finally {
-            blockExpiredTrialsRunning = false;
         }
     }
 
@@ -586,10 +656,37 @@ export class TrialService {
                     }
                 });
             } catch (auditError) {
+                // T-048: capture audit failure to Sentry and insert a compensating event
+                // so reconciliation jobs can detect and recover from the missing audit row.
+                Sentry.captureException(auditError, {
+                    tags: { module: 'trial-service', operation: 'reactivateFromTrial' },
+                    extra: { subscriptionId: newSubscription.id, customerId, planId }
+                });
+
                 apiLogger.error(
                     { error: auditError, subscriptionId: newSubscription.id },
                     'Failed to insert reactivation event (non-blocking)'
                 );
+
+                try {
+                    const fallbackDb = tx ?? getDb();
+                    await fallbackDb.insert(billingSubscriptionEvents).values({
+                        subscriptionId: newSubscription.id,
+                        eventType: BILLING_EVENT_TYPES.REACTIVATION_AUDIT_FAILED,
+                        triggerSource: 'trial-reactivation-audit-fallback',
+                        metadata: {
+                            error:
+                                auditError instanceof Error
+                                    ? auditError.message
+                                    : String(auditError),
+                            customerId,
+                            planId,
+                            timestamp: new Date().toISOString()
+                        }
+                    });
+                } catch {
+                    // Truly non-blocking: Sentry already captured the original failure.
+                }
             }
 
             // Cancel existing trial subscriptions only after new subscription is created
@@ -752,10 +849,43 @@ export class TrialService {
                     }
                 });
             } catch (auditError) {
+                // T-048: capture audit failure to Sentry and insert a compensating event
+                // so reconciliation jobs can detect and recover from the missing audit row.
+                Sentry.captureException(auditError, {
+                    tags: { module: 'trial-service', operation: 'reactivateSubscription' },
+                    extra: {
+                        subscriptionId: newSubscription.id,
+                        customerId,
+                        planId,
+                        previousPlanId
+                    }
+                });
+
                 apiLogger.error(
                     { error: auditError, subscriptionId: newSubscription.id },
                     'Failed to insert reactivation event (non-blocking)'
                 );
+
+                try {
+                    const fallbackDb = tx ?? getDb();
+                    await fallbackDb.insert(billingSubscriptionEvents).values({
+                        subscriptionId: newSubscription.id,
+                        eventType: BILLING_EVENT_TYPES.REACTIVATION_AUDIT_FAILED,
+                        triggerSource: 'subscription-reactivation-audit-fallback',
+                        metadata: {
+                            error:
+                                auditError instanceof Error
+                                    ? auditError.message
+                                    : String(auditError),
+                            customerId,
+                            planId,
+                            previousPlanId,
+                            timestamp: new Date().toISOString()
+                        }
+                    });
+                } catch {
+                    // Truly non-blocking: Sentry already captured the original failure.
+                }
             }
 
             // Cancel all existing canceled subscriptions (idempotent cleanup)

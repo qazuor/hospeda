@@ -17,6 +17,7 @@
 import { and, billingNotificationLog, getDb, isNotNull, isNull, sql } from '@repo/db';
 import type { QueryContext } from '@repo/db';
 import { lt } from 'drizzle-orm';
+import { withServiceTransaction } from '../../../utils/transaction.js';
 
 /**
  * Default retention policy configuration
@@ -128,11 +129,17 @@ export class NotificationRetentionService {
     }
 
     /**
-     * Run complete retention policy (mark + purge)
+     * Run complete retention policy (mark + purge) atomically.
      *
-     * Executes both steps of the retention policy:
+     * Executes both steps of the retention policy inside a single transaction
+     * so that the mark and purge operations are atomic: either both succeed or
+     * neither is committed.
+     *
      * 1. Mark old records as expired
      * 2. Purge long-expired records
+     *
+     * When the caller provides `ctx` with an existing transaction, the steps
+     * enlist in that transaction. Otherwise a new transaction is opened here.
      *
      * @param retentionDays - Days to retain active records (default: 90)
      * @param graceDays - Days to keep expired records (default: 30)
@@ -144,17 +151,18 @@ export class NotificationRetentionService {
         graceDays: number = DEFAULT_GRACE_DAYS,
         ctx?: QueryContext
     ): Promise<RetentionSummary> {
-        // Step 1: Mark expired
-        const markedExpired = await this.markExpired(retentionDays, ctx);
+        if (ctx?.tx) {
+            // Enlist in the caller's existing transaction
+            const markedExpired = await this.markExpired(retentionDays, ctx);
+            const purged = await this.purgeExpired(graceDays, ctx);
+            return { markedExpired, purged };
+        }
 
-        // Step 2: Purge old expired records
-        const purged = await this.purgeExpired(graceDays, ctx);
-
-        const summary: RetentionSummary = {
-            markedExpired,
-            purged
-        };
-
-        return summary;
+        // Open a new transaction so mark + purge are committed atomically
+        return withServiceTransaction(async (txCtx) => {
+            const markedExpired = await this.markExpired(retentionDays, txCtx);
+            const purged = await this.purgeExpired(graceDays, txCtx);
+            return { markedExpired, purged };
+        });
     }
 }

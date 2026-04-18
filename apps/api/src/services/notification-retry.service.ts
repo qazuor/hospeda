@@ -105,7 +105,8 @@ export async function processDbNotificationRetries(
             cooldownThreshold.getMinutes() - RETRY_CONFIG.RETRY_COOLDOWN_MINUTES
         );
 
-        // Query failed notifications within window, respecting cooldown
+        // Query failed notifications within window, respecting cooldown.
+        // Exclude records already in 'processing' state (picked up by another concurrent worker).
         const failedNotifications = await db
             .select({
                 id: billingNotificationLog.id,
@@ -188,6 +189,32 @@ export async function processDbNotificationRetries(
                 continue;
             }
 
+            // Mark as 'processing' before attempting the send.
+            // This prevents concurrent workers from picking up the same record
+            // between the SELECT above and the actual send below.
+            // Use a conditional UPDATE (only transition from 'failed') so that
+            // if another worker already claimed the record, we skip it.
+            const claimResult = await db
+                .update(billingNotificationLog)
+                .set({ status: 'processing' })
+                .where(
+                    and(
+                        eq(billingNotificationLog.id, notification.id),
+                        eq(billingNotificationLog.status, 'failed')
+                    )
+                );
+
+            const claimedRows = (claimResult as { rowCount?: number }).rowCount ?? 0;
+
+            if (claimedRows === 0) {
+                // Another worker already claimed or updated this record — skip.
+                apiLogger.debug(
+                    { type: notification.type, id: notification.id },
+                    'Notification already claimed by another worker, skipping'
+                );
+                continue;
+            }
+
             // Reconstruct notification payload from metadata
             const payload = reconstructPayload(notification);
 
@@ -204,8 +231,8 @@ export async function processDbNotificationRetries(
                 // Attempt to send notification
                 await sendNotification(payload);
 
-                // Update status to sent — increment retryCount atomically inside SQL
-                // to avoid TOCTOU race when multiple workers process the same record
+                // Transition from 'processing' to 'sent' on success.
+                // Increment retryCount atomically inside SQL to avoid TOCTOU races.
                 await db
                     .update(billingNotificationLog)
                     .set({
@@ -218,7 +245,12 @@ export async function processDbNotificationRetries(
                             (COALESCE((${billingNotificationLog.metadata}->>'retryCount')::int, 0) + 1)::text::jsonb
                         )`
                     })
-                    .where(eq(billingNotificationLog.id, notification.id));
+                    .where(
+                        and(
+                            eq(billingNotificationLog.id, notification.id),
+                            eq(billingNotificationLog.status, 'processing')
+                        )
+                    );
 
                 stats.succeeded++;
 
@@ -231,10 +263,12 @@ export async function processDbNotificationRetries(
                     'Notification retry succeeded'
                 );
             } catch (error) {
-                // Increment retryCount atomically inside SQL to avoid TOCTOU race
+                // Transition from 'processing' back to 'failed' on error.
+                // Increment retryCount atomically inside SQL to avoid TOCTOU races.
                 await db
                     .update(billingNotificationLog)
                     .set({
+                        status: 'failed',
                         metadata: sql`jsonb_set(
                             ${billingNotificationLog.metadata},
                             '{retryCount}',
@@ -242,7 +276,12 @@ export async function processDbNotificationRetries(
                         )`,
                         errorMessage: error instanceof Error ? error.message : 'Unknown retry error'
                     })
-                    .where(eq(billingNotificationLog.id, notification.id));
+                    .where(
+                        and(
+                            eq(billingNotificationLog.id, notification.id),
+                            eq(billingNotificationLog.status, 'processing')
+                        )
+                    );
 
                 stats.failed++;
 

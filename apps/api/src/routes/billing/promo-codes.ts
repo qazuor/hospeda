@@ -293,6 +293,8 @@ export const deletePromoCodeRoute = createAdminRoute({
  * Validate promo code (authenticated)
  *
  * POST /api/v1/protected/billing/promo-codes/validate
+ *
+ * Rate limited: 5 requests per minute per IP to prevent brute-force code enumeration.
  */
 export const validatePromoCodeRoute = createProtectedRoute({
     method: 'post',
@@ -302,6 +304,9 @@ export const validatePromoCodeRoute = createProtectedRoute({
     tags: ['Billing - Promo Codes'],
     requestBody: ValidatePromoCodeSchema,
     responseSchema: ValidationResultSchema,
+    options: {
+        customRateLimit: { requests: 5, windowMs: 60_000 }
+    },
     handler: async (c, _params, body) => {
         const service = new PromoCodeService();
         const actor = getActorFromContext(c);

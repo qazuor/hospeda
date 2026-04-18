@@ -13,6 +13,7 @@ import {
     type QZPayBillingPromoCode,
     type QueryContext,
     and,
+    billingAuditLogs,
     billingPromoCodes,
     count,
     desc,
@@ -22,7 +23,8 @@ import {
     lte,
     or,
     safeIlike,
-    sql
+    sql,
+    withTransaction
 } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import type {
@@ -87,11 +89,14 @@ export function mapDbToPromoCode(dbPromoCode: QZPayBillingPromoCode): PromoCode 
  */
 export async function createPromoCode(
     input: CreatePromoCodeInput,
-    options: { readonly livemode?: boolean; readonly tx?: DrizzleClient } = {},
+    options: {
+        readonly livemode?: boolean;
+        readonly tx?: DrizzleClient;
+        readonly actorId?: string;
+    } = {},
     ctx?: QueryContext
 ) {
     try {
-        const db = ctx?.tx ?? options.tx ?? getDb();
         const code = input.code.toUpperCase();
 
         const config: Record<string, unknown> = {};
@@ -102,28 +107,58 @@ export async function createPromoCode(
             config.minAmount = input.minAmount;
         }
 
-        const result = await db
-            .insert(billingPromoCodes)
-            .values({
-                code,
-                type: input.discountType,
-                value: input.discountValue,
-                config: Object.keys(config).length > 0 ? config : null,
-                maxUses: input.maxUses ?? null,
-                usedCount: 0,
-                validPlans: input.planRestrictions ?? null,
-                newCustomersOnly: input.firstPurchaseOnly ?? false,
-                active: input.isActive ?? true,
-                expiresAt: input.expiryDate ?? null,
-                livemode: options.livemode ?? false
-            })
-            .returning();
+        const livemode = options.livemode ?? false;
+        const actorId = options.actorId ?? null;
 
-        const promoCode = result[0];
+        const doCreate = async (db: DrizzleClient) => {
+            const result = await db
+                .insert(billingPromoCodes)
+                .values({
+                    code,
+                    type: input.discountType,
+                    value: input.discountValue,
+                    config: Object.keys(config).length > 0 ? config : null,
+                    maxUses: input.maxUses ?? null,
+                    usedCount: 0,
+                    validPlans: input.planRestrictions ?? null,
+                    newCustomersOnly: input.firstPurchaseOnly ?? false,
+                    active: input.isActive ?? true,
+                    expiresAt: input.expiryDate ?? null,
+                    livemode
+                })
+                .returning();
 
-        if (!promoCode) {
-            throw new Error('Failed to create promo code');
-        }
+            const promoCode = result[0];
+
+            if (!promoCode) {
+                throw new Error('Failed to create promo code');
+            }
+
+            await db.insert(billingAuditLogs).values({
+                action: 'promo_code_created',
+                entityType: 'promo_code',
+                entityId: promoCode.id,
+                actorId,
+                actorType: actorId ? 'admin' : 'system',
+                changes: {
+                    code,
+                    discountType: input.discountType,
+                    discountValue: input.discountValue
+                } as unknown,
+                previousValues: null,
+                livemode,
+                ipAddress: null,
+                userAgent: null
+            });
+
+            return promoCode;
+        };
+
+        // Enlist in caller's transaction if available; otherwise open a new one
+        // to keep the promo code INSERT and the audit log INSERT atomic.
+        const promoCode = ctx?.tx
+            ? await doCreate(ctx.tx)
+            : await withTransaction(doCreate, options.tx);
 
         return { success: true, data: mapDbToPromoCode(promoCode) };
     } catch (_error) {
@@ -259,60 +294,83 @@ export async function getPromoCodeById(id: string, ctx?: QueryContext) {
  * });
  * ```
  */
-export async function updatePromoCode(id: string, input: UpdatePromoCodeInput, ctx?: QueryContext) {
+export async function updatePromoCode(
+    id: string,
+    input: UpdatePromoCodeInput & { readonly actorId?: string },
+    ctx?: QueryContext
+) {
     try {
-        const db = ctx?.tx ?? getDb();
+        const actorId = input.actorId ?? null;
 
-        const updateData: Partial<QZPayBillingPromoCode> = {};
+        const doUpdate = async (db: DrizzleClient) => {
+            const updateData: Partial<QZPayBillingPromoCode> = {};
+            let previousValues: Partial<QZPayBillingPromoCode> | null = null;
 
-        if (input.description !== undefined) {
-            const [existing] = await db
-                .select()
-                .from(billingPromoCodes)
+            if (input.description !== undefined) {
+                const [existing] = await db
+                    .select()
+                    .from(billingPromoCodes)
+                    .where(eq(billingPromoCodes.id, id))
+                    .limit(1);
+
+                if (!existing) {
+                    return {
+                        success: false as const,
+                        error: { code: ServiceErrorCode.NOT_FOUND, message: 'Promo code not found' }
+                    };
+                }
+
+                previousValues = existing;
+                const config = (existing.config as Record<string, unknown>) ?? {};
+                config.description = input.description;
+                updateData.config = config;
+            }
+
+            if (input.expiryDate !== undefined) {
+                updateData.expiresAt = input.expiryDate;
+            }
+
+            if (input.maxUses !== undefined) {
+                updateData.maxUses = input.maxUses;
+            }
+
+            if (input.isActive !== undefined) {
+                updateData.active = input.isActive;
+            }
+
+            const [updatedPromoCode] = await db
+                .update(billingPromoCodes)
+                .set(updateData)
                 .where(eq(billingPromoCodes.id, id))
-                .limit(1);
+                .returning();
 
-            if (!existing) {
+            if (!updatedPromoCode) {
                 return {
-                    success: false,
+                    success: false as const,
                     error: { code: ServiceErrorCode.NOT_FOUND, message: 'Promo code not found' }
                 };
             }
 
-            const config = (existing.config as Record<string, unknown>) ?? {};
-            config.description = input.description;
-            updateData.config = config;
-        }
+            await db.insert(billingAuditLogs).values({
+                action: 'promo_code_updated',
+                entityType: 'promo_code',
+                entityId: id,
+                actorId,
+                actorType: actorId ? 'admin' : 'system',
+                changes: updateData as unknown,
+                previousValues: previousValues as unknown,
+                livemode: updatedPromoCode.livemode ?? false,
+                ipAddress: null,
+                userAgent: null
+            });
 
-        if (input.expiryDate !== undefined) {
-            updateData.expiresAt = input.expiryDate;
-        }
+            return { success: true as const, data: mapDbToPromoCode(updatedPromoCode) };
+        };
 
-        if (input.maxUses !== undefined) {
-            updateData.maxUses = input.maxUses;
-        }
-
-        if (input.isActive !== undefined) {
-            updateData.active = input.isActive;
-        }
-
-        const [updatedPromoCode] = await db
-            .update(billingPromoCodes)
-            .set(updateData)
-            .where(eq(billingPromoCodes.id, id))
-            .returning();
-
-        if (!updatedPromoCode) {
-            return {
-                success: false,
-                error: { code: ServiceErrorCode.NOT_FOUND, message: 'Promo code not found' }
-            };
-        }
-
-        return { success: true, data: mapDbToPromoCode(updatedPromoCode) };
+        return ctx?.tx ? await doUpdate(ctx.tx) : await withTransaction(doUpdate);
     } catch (_error) {
         return {
-            success: false,
+            success: false as const,
             error: {
                 code: ServiceErrorCode.INTERNAL_ERROR,
                 message: 'Failed to update promo code'
@@ -340,27 +398,44 @@ export async function updatePromoCode(id: string, input: UpdatePromoCodeInput, c
  * });
  * ```
  */
-export async function deletePromoCode(id: string, ctx?: QueryContext) {
+export async function deletePromoCode(id: string, ctx?: QueryContext, actorId?: string) {
     try {
-        const db = ctx?.tx ?? getDb();
+        const resolvedActorId = actorId ?? null;
 
-        const [deletedPromoCode] = await db
-            .update(billingPromoCodes)
-            .set({ active: false })
-            .where(eq(billingPromoCodes.id, id))
-            .returning();
+        const doDelete = async (db: DrizzleClient) => {
+            const [deletedPromoCode] = await db
+                .update(billingPromoCodes)
+                .set({ active: false })
+                .where(eq(billingPromoCodes.id, id))
+                .returning();
 
-        if (!deletedPromoCode) {
-            return {
-                success: false,
-                error: { code: ServiceErrorCode.NOT_FOUND, message: 'Promo code not found' }
-            };
-        }
+            if (!deletedPromoCode) {
+                return {
+                    success: false as const,
+                    error: { code: ServiceErrorCode.NOT_FOUND, message: 'Promo code not found' }
+                };
+            }
 
-        return { success: true, data: undefined };
+            await db.insert(billingAuditLogs).values({
+                action: 'promo_code_deleted',
+                entityType: 'promo_code',
+                entityId: id,
+                actorId: resolvedActorId,
+                actorType: resolvedActorId ? 'admin' : 'system',
+                changes: { active: false } as unknown,
+                previousValues: { active: true } as unknown,
+                livemode: deletedPromoCode.livemode ?? false,
+                ipAddress: null,
+                userAgent: null
+            });
+
+            return { success: true as const, data: undefined };
+        };
+
+        return ctx?.tx ? await doDelete(ctx.tx) : await withTransaction(doDelete);
     } catch (_error) {
         return {
-            success: false,
+            success: false as const,
             error: {
                 code: ServiceErrorCode.INTERNAL_ERROR,
                 message: 'Failed to delete promo code'

@@ -1,8 +1,10 @@
+import { createPerRouteRateLimitMiddleware } from '../../../middlewares/rate-limit';
 /**
  * Admin billing routes
  * Routes that require admin-level access for billing operations.
  *
  * All routes are mounted under /api/v1/admin/billing.
+ * Rate limited to 50 requests per minute per IP for the entire admin billing category.
  */
 import { createRouter } from '../../../utils/create-app';
 import { notificationsRouter } from '../notifications';
@@ -21,6 +23,9 @@ import { subscriptionEventsRoute } from './subscription-events';
 import { getAdminCustomerUsageSummaryRoute } from './usage';
 
 const app = createRouter();
+
+// Apply rate limit of 50 req/min per IP for all admin billing routes.
+app.use('*', createPerRouteRateLimitMiddleware({ requests: 50, windowMs: 60_000 }));
 
 // GET /usage/:customerId - Get customer usage summary
 app.route('/usage', getAdminCustomerUsageSummaryRoute);

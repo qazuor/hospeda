@@ -10,6 +10,8 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { billingAddonPurchases, billingSubscriptions, withTransaction } from '@repo/db';
+import { and, eq, isNull } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
 
 /**
@@ -288,6 +290,61 @@ export class BillingCustomerSyncService {
 
             // Soft delete (QZPay handles soft deletion internally)
             await this.billing.customers.delete(existingCustomer.id);
+
+            // Cascade soft-delete to local billing tables atomically.
+            // T-044: soft-delete all addon purchases for this customer.
+            // T-045: clear entitlementRemovalPending on those purchases —
+            //   the subscription is being deleted, so there is nothing left
+            //   to remove entitlements from; the pending flag is now stale.
+            const now = new Date();
+
+            try {
+                await withTransaction(async (tx) => {
+                    // T-045: clear entitlementRemovalPending before soft-deleting so
+                    // the reconciliation cron does not attempt entitlement removal on
+                    // a customer that no longer exists.
+                    await tx
+                        .update(billingAddonPurchases)
+                        .set({ entitlementRemovalPending: false, updatedAt: now })
+                        .where(
+                            and(
+                                eq(billingAddonPurchases.customerId, existingCustomer.id),
+                                isNull(billingAddonPurchases.deletedAt)
+                            )
+                        );
+
+                    // T-044: soft-delete all non-deleted addon purchases for this customer.
+                    await tx
+                        .update(billingAddonPurchases)
+                        .set({ deletedAt: now, updatedAt: now })
+                        .where(
+                            and(
+                                eq(billingAddonPurchases.customerId, existingCustomer.id),
+                                isNull(billingAddonPurchases.deletedAt)
+                            )
+                        );
+
+                    // T-044: soft-delete all non-deleted subscriptions for this customer.
+                    await tx
+                        .update(billingSubscriptions)
+                        .set({ deletedAt: now, updatedAt: now })
+                        .where(
+                            and(
+                                eq(billingSubscriptions.customerId, existingCustomer.id),
+                                isNull(billingSubscriptions.deletedAt)
+                            )
+                        );
+                });
+            } catch (cascadeError) {
+                const cascadeMsg =
+                    cascadeError instanceof Error ? cascadeError.message : String(cascadeError);
+                // Log the error but do not re-throw — the QZPay customer soft-delete already
+                // succeeded. The reconciliation cron will handle any stale local records.
+                apiLogger.error(
+                    { userId, customerId: existingCustomer.id, error: cascadeMsg },
+                    'Cascade soft-delete of local billing records failed after customer deletion'
+                );
+            }
 
             // Remove from cache
             this.cache.delete(userId);

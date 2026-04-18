@@ -360,11 +360,14 @@ export const cancelSubscriptionHandler = async (
         const trx = ctx.tx!;
 
         // Race-condition guard: another process (e.g. webhook) may have already cancelled.
+        // FOR UPDATE acquires a row-level lock so a concurrent writer must wait,
+        // preventing TOCTOU between the status check and the subsequent UPDATE.
         const freshRows = await trx
             .select({ status: billingSubscriptions.status })
             .from(billingSubscriptions)
             .where(eq(billingSubscriptions.id, id))
-            .limit(1);
+            .limit(1)
+            .for('update');
 
         const freshStatus = freshRows[0]?.status;
 
