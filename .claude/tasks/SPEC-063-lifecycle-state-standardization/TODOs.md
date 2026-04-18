@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 35/63 tasks (55.6%)
+## Progress: 35/63 completed + 1 deferred (T-036) — effective 35/62
 
-**Last updated:** 2026-04-18T16:55:00Z
-**Status:** in-progress (Phase 2 complete + Phase 4 schema layer + routes-verification + schema tests + admin-search tests + integration tests complete). Next: T-036 admin UI filter (no DB), then T-029 migrations + T-031 post-migration (both require DB running).
+**Last updated:** 2026-04-18T17:10:00Z
+**Status:** in-progress (Phase 2 complete + Phase 4 schema layer + routes-verification + schema tests + admin-search tests + integration tests complete). **T-036 deferred 2026-04-18** (no admin UI exists for DestinationReview; AC-001-04 covered at API layer via T-035 + T-038 — see progress.md and state.json T-036._scopeDeviation). Next: T-029 migrations + T-031 post-migration (both require DB running).
 
 ### Follow-up SPECs spawned
 
@@ -11,11 +11,10 @@
 
 ### Next up (in priority order)
 
-1. **T-036** (complexity 2) — Admin UI lifecycle filter for DestinationReview list in apps/admin. No DB required; follows Phase 2 T-018a pattern.
-2. **T-029** (complexity 2) — Generate DestinationReview up + down migrations. **Requires `pnpm db:generate` with running Postgres**; may need user handoff.
-3. **T-031** (complexity 1.5) — Post-migration verification test (blocked on T-029).
-
-Then Phase 3 (Sponsorship T-039..T-057), cleanup T-058.
+1. **T-029** (complexity 2) — Generate DestinationReview up + down migrations. **Requires `pnpm db:generate` with running Postgres**; may need user handoff.
+2. **T-031** (complexity 1.5) — Post-migration verification test (blocked on T-029).
+3. **T-039..T-057** — Phase 3 Sponsorship (19 tasks: DB, schemas, model/service, API, frontend, tests).
+4. **T-058** (complexity 2.5) — cleanup / cross-cutting verification. T-036 removed from blockedBy; `_deferredDependencies` note tracks the deferral for final-report mention.
 
 **Average Complexity:** 2.1/2.5 (ceiling)
 **Critical Path (post-T-038):** T-039 -> T-040 -> T-042 -> T-058 (4 steps remaining)
@@ -248,8 +247,10 @@ Then Phase 3 (Sponsorship T-039..T-057), cleanup T-058.
   - Grep for isActive/lifecycleState across all tiers: 0 matches. Routes inherit updated schemas from T-032.
   - Blocked by: T-032, T-033, T-034 · Blocks: T-036, T-038
 
-- [ ] **T-036** (complexity: 2) — Add DestinationReview admin frontend lifecycle filter
-  - Blocked by: T-035 · Blocks: T-058
+- [~] **T-036** (complexity: 2) — Add DestinationReview admin frontend lifecycle filter — **DEFERRED 2026-04-18**
+  - Reason: no DestinationReview admin UI exists to filter. AC-001-04 covered at API layer via T-032/T-033/T-034 (schema) + T-035 (routes) + T-038 (integration tests). See progress.md and state.json `T-036._scopeDeviation`.
+  - Future SPEC for destination-reviews admin CRUD UI will inherit working backend; filter dropdown follows T-018a OwnerPromotion pattern (trivial).
+  - Blocked by: T-035 · Blocks: (was T-058 — removed from blockedBy; `_deferredDependencies` entry tracks deferral)
 
 ### Tests
 
@@ -337,7 +338,9 @@ Then Phase 3 (Sponsorship T-039..T-057), cleanup T-058.
 
 - [ ] **T-058** (complexity: 2.5) — Cross-cutting public endpoint + regression tests + final verification
   - All 4 entities: only ACTIVE in public, lifecycleState absent. Regressions: PostSponsor, Tag.
-  - Blocked by: T-001, T-002, T-022, T-027, T-036, T-038, T-054, T-056, T-057 · Blocks: none
+  - Final report must mention T-036 deferral (admin UI does not exist).
+  - Blocked by: T-001, T-002, T-022, T-027, T-038, T-054, T-056, T-057 · Blocks: none
+  - _Deferred dep:_ T-036 (see state.json `T-058._deferredDependencies`)
 
 ---
 

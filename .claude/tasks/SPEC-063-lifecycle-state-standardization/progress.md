@@ -1,12 +1,25 @@
 # SPEC-063 — Implementation Progress Log
 
-## Session summary (as of 2026-04-18T16:55)
+## Session summary (as of 2026-04-18T17:10)
 
-- **Progress:** 35/63 tasks (55.6%).
-- **Status:** Phase 2 OwnerPromotion complete end-to-end. Phase 4 DestinationReview schema + routes-verification + schema tests + admin-search tests + integration tests complete. Remaining Phase 4: T-029 migrations (requires DB), T-031 post-migration test (blocked on T-029), T-036 admin UI filter.
-- **Remaining:** Phase 4 finish (T-029 migrations, T-031 post-migration, T-036 admin UI), Phase 3 Sponsorship, cleanup T-058
-- **Critical path:** T-039 → T-040 → T-042 → T-058 (4 steps remaining)
-- **Follow-up SPECs spawned:** SPEC-087 (public endpoint response schema strip — systemic factory fix)
+- **Progress:** 35/63 completed + 1 deferred (T-036). Effective scope 35/62.
+- **Status:** Phase 2 OwnerPromotion complete end-to-end. Phase 4 DestinationReview schema + routes-verification + schema tests + admin-search tests + integration tests complete. **T-036 deferred** (no admin UI exists — AC-001-04 covered at API layer via T-035 + T-038). Remaining Phase 4: T-029 migrations (requires DB), T-031 post-migration (blocked on T-029).
+- **Remaining:** Phase 4 finish (T-029 migrations, T-031 post-migration), Phase 3 Sponsorship (19 tasks), cleanup T-058.
+- **Critical path:** T-029 → T-031 → Phase 3 (T-039..T-057) → T-058.
+- **Follow-up SPECs spawned:** SPEC-087 (public endpoint response schema strip — systemic factory fix).
+
+### T-036 deferred 2026-04-18T17:10
+
+- **Task:** Add DestinationReview admin frontend lifecycle filter (complexity 2).
+- **Reason:** DestinationReview admin UI does NOT exist. Exhaustive grep: 0 files under `apps/admin/src/features/destination-reviews/`, 0 dedicated routes, 0 references to `destinationReview|DestinationReview` anywhere in `apps/admin/src`. The only existing reviews admin surface is `apps/admin/src/routes/_authed/accommodations/$id_.reviews.tsx` — a summary-only sub-tab (rating distribution visualization) with no list/filter UI. Original task assumed an existing feature folder; reality is the UI does not exist.
+- **Decision (user-approved option 2):** Mark deferred rather than create full admin CRUD feature (scope creep ~complexity 5-6 vs 2 ceiling). Creating a new standalone destination-reviews admin page would require: feature folder (types/hooks/components/config), route file, columns, filter UI, dialogs, API wiring, i18n sweep, nav entry — well beyond a single task.
+- **AC-001-04 coverage alternative:** Already satisfied end-to-end at non-UI layers:
+  - T-032/T-033/T-034: schema layer accepts `status` enum filter (all/DRAFT/ACTIVE/ARCHIVED).
+  - T-035: admin routes inherit filter pipeline via `AdminSearchBaseSchema.status → lifecycleState` mapping in `adminList()`.
+  - T-038: integration tests verify DRAFT/ACTIVE/ARCHIVED accepted → 200, INVALID_STATE → 400, default='all'.
+  - When a future SPEC builds DestinationReview admin CRUD UI, adding the lifecycle filter dropdown is trivial (T-018a OwnerPromotion pattern) and inherits the already-working backend plumbing.
+- **T-058 impact:** removed from `blockedBy` list; `_deferredDependencies` entry added referencing `T-036._scopeDeviation`. T-058 cleanup report should note the deferral but not block.
+- No code changes. Bookkeeping-only: `state.json` T-036 status → `deferred` + `_scopeDeviation` block; T-058 `blockedBy` updated + `_deferredDependencies` added; summary counters adjusted (`pending: 28 → 27`, new `deferred: 1`).
 
 ### Session 3 T-038 (2026-04-18)
 

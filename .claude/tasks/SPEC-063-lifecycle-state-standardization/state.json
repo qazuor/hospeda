@@ -1238,7 +1238,7 @@
             "id": "T-036",
             "title": "Add DestinationReview admin frontend lifecycle filter",
             "description": "Add lifecycle status filter to DestinationReview admin list. Update the feature's config/columns files in `apps/admin/src/features/destination-reviews/` (or equivalent path) to include a lifecycle filter using the shared lifecycle filter config pattern. Preserve existing `isPublished` and `isVerified` filters as separate controls (per AC-001-04).\n\nFiles: `apps/admin/src/features/destination-reviews/config/*`",
-            "status": "pending",
+            "status": "deferred",
             "complexity": 2,
             "blockedBy": ["T-035"],
             "blocks": [],
@@ -1253,13 +1253,20 @@
                     "completed": false
                 }
             ],
-            "tags": ["admin", "frontend", "phase-4", "destinationReview"],
+            "tags": ["admin", "frontend", "phase-4", "destinationReview", "deferred"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "n/a", "typecheck": "n/a", "tests": "n/a" },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T17:10:00.000Z",
+                "completed": null,
+                "deferred": "2026-04-18T17:10:00.000Z"
+            },
+            "_scopeDeviation": {
+                "reason": "No DestinationReview admin UI exists to add a filter to. Exhaustive grep: 0 files under apps/admin/src/features/destination-reviews/, 0 route files, 0 references to destinationReview/DestinationReview anywhere in apps/admin/src. The only existing reviews admin surface is apps/admin/src/routes/_authed/accommodations/$id_.reviews.tsx which is a summary-only sub-tab (rating distribution) with no list/filter UI. Original task assumed an existing feature folder; reality is the UI does not exist.",
+                "coverageAlternative": "AC-001-04 (admin filters by lifecycleState) is satisfied end-to-end at non-UI layers: T-032/T-033/T-034 (schema layer accepts status enum filter), T-035 (admin routes inherit filter pipeline via AdminSearchBaseSchema.status -> lifecycleState mapping), T-038 (integration tests verify DRAFT/ACTIVE/ARCHIVED accepted, INVALID rejected with 400, default='all'). When a future SPEC builds the DestinationReview admin CRUD UI, the filter surface will inherit the working backend plumbing — adding the UI dropdown will be a trivial follow-up following T-018a OwnerPromotion pattern.",
+                "userApproved": "2026-04-18 (option 2 — mark deferred, delegate to future SPEC)",
+                "followUpFlagged": "T-058 cross-cutting cleanup should reference this deferral in the final verification step; not a blocker for SPEC-063 completion."
             }
         },
         {
@@ -1835,17 +1842,10 @@
             "description": "(1) Write cross-cutting public endpoint tests verifying all 4 entities (OwnerPromotion, Sponsorship, AccommodationReview, DestinationReview) return only ACTIVE records on public endpoints and lifecycleState field is absent from public/protected response bodies. (2) Run existing PostSponsor and Tag tests to confirm no regressions. (3) Run full `pnpm typecheck && pnpm test`, fix any regressions (update test assertions for stripped fields). (4) Update SPEC-063 metadata status from `draft` to `completed` in spec frontmatter.\n\nFiles: `apps/api/test/integration/cross-cutting/lifecycle-public-endpoints.test.ts`, spec.md frontmatter",
             "status": "pending",
             "complexity": 2.5,
-            "blockedBy": [
-                "T-001",
-                "T-002",
-                "T-022",
-                "T-027",
-                "T-036",
-                "T-038",
-                "T-054",
-                "T-056",
-                "T-057"
-            ],
+            "blockedBy": ["T-001", "T-002", "T-022", "T-027", "T-038", "T-054", "T-056", "T-057"],
+            "_deferredDependencies": {
+                "T-036": "Deferred (admin UI does not exist). AC-001-04 coverage delegated to API layer tests (T-035 + T-038). T-058 final verification should note the deferral in cleanup report but not block on UI work. See T-036._scopeDeviation."
+            },
             "blocks": [],
             "subtasks": [
                 {
@@ -1873,12 +1873,13 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 28,
+        "pending": 27,
         "inProgress": 0,
         "completed": 35,
+        "deferred": 1,
         "blocked": 0,
         "averageComplexity": 2.0,
-        "_summaryDriftNote": "Counters corrected 2026-04-18 during T-022 bookkeeping. Prior value (completed=22) had drift from Session 2 (T-019, T-020, T-021, T-023, T-024, T-027 completions not reflected in summary). Ground truth derived from grep of 'status: completed' across tasks array. Verified post-T-037 session end = 34.",
+        "_summaryDriftNote": "Counters corrected 2026-04-18 during T-022 bookkeeping. Prior value (completed=22) had drift from Session 2 (T-019, T-020, T-021, T-023, T-024, T-027 completions not reflected in summary). Ground truth derived from grep of 'status: completed' across tasks array. Verified post-T-037 session end = 34. T-036 deferred 2026-04-18 (no admin UI exists; AC-001-04 covered at API layer).",
         "_replanLog": [
             {
                 "date": "2026-04-17T17:55:00.000Z",
