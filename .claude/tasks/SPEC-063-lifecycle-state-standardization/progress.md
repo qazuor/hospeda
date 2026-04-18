@@ -1,5 +1,23 @@
 # SPEC-063 — Implementation Progress Log
 
+## Session summary (as of 2026-04-18T18:45)
+
+- **Progress:** 40/63 completed + 7 deferred. Effective scope **40/56**.
+- **Phase 3 pace:** T-039 + T-043 + T-044 landed in sequence. Phase 3 now 10/13 remaining. Next candidates: T-045 (query+admin-search), T-046 (http), T-047 (model) — all unblocked and independent.
+
+### T-044 completed 2026-04-18T18:45
+
+- **File:** `packages/schemas/src/entities/sponsorship/sponsorship.access.schema.ts`
+  - Public pick (line 33): `status: true` → `sponsorshipStatus: true`. Tier still excludes `lifecycleState`.
+  - Protected pick (line 71): `status: true` → `sponsorshipStatus: true`. Tier still excludes `lifecycleState`.
+  - Admin tier: dropped preemptive `lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()` override + cleaned up the "Preemptive SPEC-063 field" comment. Base `SponsorshipSchema` now provides `lifecycleState` via `BaseLifecycleFields` (T-043), so `SponsorshipAdminSchema.extend` inherits it naturally. Removed now-unused `LifecycleStatusEnum` import.
+  - Converted `import { z } from 'zod'` → `import type { z } from 'zod'` (z only used in `z.infer<...>` after dropping `z.nativeEnum`). Same pattern as T-008 OwnerPromotion.
+- **File:** `packages/schemas/src/entities/sponsorship/sponsorship.crud.schema.ts` — no edits. Re-exports base schemas which were already renamed via T-043; no direct `status` references. Verification-only.
+- **Lint:** pass. **Typecheck `@repo/schemas`:** access schema 100% clean. Remaining errors (all expected, cascade): `http.schema.ts` L167/L192 → T-046 scope; `query.schema.ts` L131/L177 → T-045 scope; `sponsorship.schema.test.ts` L119 → test task scope.
+- Commit boundary: 1 feat(schemas) + 1 chore(tasks).
+
+---
+
 ## Session summary (as of 2026-04-18T18:38)
 
 - **Progress:** 39/63 completed + 7 deferred. Effective scope **39/56**.

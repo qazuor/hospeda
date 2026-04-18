@@ -1506,33 +1506,33 @@
         {
             "id": "T-044",
             "title": "Update Sponsorship access + CRUD schemas",
-            "description": "Update `packages/schemas/src/entities/sponsorship/sponsorship.access.schema.ts`: replace all `status` picks with `sponsorshipStatus` in Public/Protected/Admin tiers. Admin tier already has `lifecycleState` preemptively (SPEC-062 T-008); clean up wrapper comment since it's now in base. Verify Public/Protected include `sponsorshipStatus` but NOT `lifecycleState`. Update `sponsorship.crud.schema.ts`: rename `status` to `sponsorshipStatus`.\n\nFiles: `packages/schemas/src/entities/sponsorship/sponsorship.access.schema.ts`, `packages/schemas/src/entities/sponsorship/sponsorship.crud.schema.ts`",
-            "status": "pending",
+            "description": "Update `packages/schemas/src/entities/sponsorship/sponsorship.access.schema.ts`: replace all `status` picks with `sponsorshipStatus` in Public/Protected/Admin tiers. Admin tier already has `lifecycleState` preemptively (SPEC-062 T-008); clean up wrapper comment since it's now in base. Verify Public/Protected include `sponsorshipStatus` but NOT `lifecycleState`. Update `sponsorship.crud.schema.ts`: rename `status` to `sponsorshipStatus`.\n\nFiles: `packages/schemas/src/entities/sponsorship/sponsorship.access.schema.ts`, `packages/schemas/src/entities/sponsorship/sponsorship.crud.schema.ts`\n\nCOMPLETION NOTE: access.schema.ts — Public/Protected picks renamed status→sponsorshipStatus (lifecycleState not picked, tier boundary preserved). Admin tier: removed preemptive `lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()` override (base SponsorshipSchema now provides it via BaseLifecycleFields, so SponsorshipAdminSchema.extend inherits it naturally). Removed LifecycleStatusEnum import + converted z import to type-only (z only used in z.infer). crud.schema.ts: no-op — re-exports base schemas which already renamed via T-043. Typecheck: access clean; remaining errors are T-045 (query.schema.ts L131/L177) and T-046 (http.schema.ts L167/L192) scope.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-043"],
             "blocks": ["T-051", "T-054"],
             "subtasks": [
                 {
                     "title": "Replace status with sponsorshipStatus in Public/Protected picks",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Clean up preemptive lifecycleState wrapper in Admin tier",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Verify Public/Protected exclude lifecycleState", "completed": false },
+                { "title": "Verify Public/Protected exclude lifecycleState", "completed": true },
                 {
                     "title": "Rename status to sponsorshipStatus in CRUD schemas",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "access", "phase-3", "sponsorship"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T18:42:00.000Z",
+                "completed": "2026-04-18T18:45:00.000Z"
             }
         },
         {
@@ -1913,9 +1913,9 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 17,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 39,
+        "completed": 40,
         "deferred": 7,
         "blocked": 0,
         "averageComplexity": 2.0,
