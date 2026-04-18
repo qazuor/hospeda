@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-064",
+    "title": "Billing Transaction Safety — Advisory Locks and Atomic Operations",
+    "complexity": "high",
+    "type": "bugfix",
+    "tags": ["billing", "transactions", "advisory-locks", "safety", "database"],
+    "status": "draft",
+    "priority": "P1",
+    "risk": "HIGH",
+    "created": "2026-04-01",
+    "updated": "2026-04-04"
+}
