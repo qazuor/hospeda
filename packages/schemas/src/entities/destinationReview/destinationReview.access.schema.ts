@@ -1,5 +1,4 @@
-import { z } from 'zod';
-import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+import type { z } from 'zod';
 import {
     DestinationAdminSchema,
     DestinationProtectedSchema,
@@ -115,20 +114,15 @@ export type DestinationReviewProtected = z.infer<typeof DestinationReviewProtect
  * Contains ALL fields including sensitive admin-only data.
  * Used for admin dashboard, moderation, and management.
  *
- * Extends the full schema with relation fields and the preemptive lifecycleState
- * field introduced in SPEC-063.
+ * `lifecycleState` flows through from the base schema (added in SPEC-063) and
+ * is intentionally excluded from Public/Protected via `.pick()`. Admin is the
+ * only tier that exposes it.
  */
 export const DestinationReviewAdminSchema = DestinationReviewSchema.extend({
     /** Full admin user data for admin dashboard and audit purposes. */
     user: UserAdminSchema.optional(),
     /** Full admin destination data for admin dashboard and audit purposes. */
-    destination: DestinationAdminSchema.optional(),
-    /**
-     * Lifecycle state for admin moderation workflow.
-     * Preemptively added here per SPEC-063 — will be a required field
-     * on the base schema once SPEC-063 is implemented.
-     */
-    lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()
+    destination: DestinationAdminSchema.optional()
 });
 
 export type DestinationReviewAdmin = z.infer<typeof DestinationReviewAdminSchema>;
