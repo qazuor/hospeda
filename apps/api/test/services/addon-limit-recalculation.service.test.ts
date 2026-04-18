@@ -24,15 +24,12 @@ import { createMockBilling } from '../helpers/mock-factories';
 //
 // Must be hoisted so they are available when vi.mock factory functions run.
 
-const {
-    mockDbWhere,
-    mockDbFrom: _mockDbFrom,
-    mockDbSelect,
-    mockBillingAddonPurchasesSchema
-} = vi.hoisted(() => {
-    const mockDbWhere = vi.fn().mockResolvedValue([]);
-    const mockDbFrom = vi.fn(() => ({ where: mockDbWhere }));
-    const mockDbSelect = vi.fn(() => ({ from: mockDbFrom }));
+const { mockTxExecute, mockWithTransaction, mockBillingAddonPurchasesSchema } = vi.hoisted(() => {
+    const mockTxExecute = vi.fn().mockResolvedValue({ rows: [] });
+    const tx = { execute: mockTxExecute };
+    const mockWithTransaction = vi.fn(async <T>(callback: (tx: typeof tx) => Promise<T>) => {
+        return callback(tx);
+    });
 
     const mockBillingAddonPurchasesSchema = {
         customerId: 'customerId',
@@ -41,9 +38,8 @@ const {
     };
 
     return {
-        mockDbWhere,
-        mockDbFrom,
-        mockDbSelect,
+        mockTxExecute,
+        mockWithTransaction,
         mockBillingAddonPurchasesSchema
     };
 });
@@ -57,6 +53,15 @@ vi.mock('../../src/utils/logger', () => ({
         warn: vi.fn(),
         error: vi.fn()
     }
+}));
+
+vi.mock('@repo/db', () => ({
+    withTransaction: mockWithTransaction,
+    sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+        strings,
+        values,
+        type: 'sql'
+    }))
 }));
 
 vi.mock('@repo/db/schemas/billing', () => ({
@@ -170,12 +175,14 @@ const activePurchaseRow = {
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
 /**
- * Configures the DB mock chain to return the given purchases array,
- * and returns a db-like object to pass to the function under test.
+ * Configures the transaction mock to return the given purchases array
+ * when tx.execute() is called, and returns a db-like object to pass to
+ * the function under test (the db parameter is now ignored by the source
+ * but still required by the interface for backward compatibility).
  */
-function setupDbWithPurchases(purchases: unknown[]): { select: typeof mockDbSelect } {
-    mockDbWhere.mockResolvedValue(purchases);
-    return { select: mockDbSelect };
+function setupDbWithPurchases(purchases: unknown[]): Record<string, unknown> {
+    mockTxExecute.mockResolvedValue({ rows: purchases });
+    return {};
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────

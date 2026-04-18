@@ -18,7 +18,8 @@ const { _mockDb, mockGetDb } = vi.hoisted(() => {
         update: vi.fn().mockReturnThis(),
         delete: vi.fn().mockReturnThis(),
         set: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue(mockResult)
+        where: vi.fn().mockResolvedValue(mockResult),
+        execute: vi.fn().mockResolvedValue({ rows: [] })
     };
 
     return {
@@ -30,6 +31,10 @@ const { _mockDb, mockGetDb } = vi.hoisted(() => {
 // Mock @repo/db
 vi.mock('@repo/db', () => ({
     getDb: mockGetDb,
+    // SPEC-064: withTransaction is used by service-core services for atomic operations
+    withTransaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) =>
+        callback(mockGetDb())
+    ),
     billingNotificationLog: {
         createdAt: 'createdAt',
         expiredAt: 'expiredAt'
@@ -53,7 +58,20 @@ vi.mock('@repo/db', () => ({
 }));
 
 vi.mock('drizzle-orm', () => ({
-    lt: vi.fn((a: unknown, b: unknown) => ({ lt: [a, b] }))
+    lt: vi.fn((a: unknown, b: unknown) => ({ lt: [a, b] })),
+    sql: Object.assign(
+        (strings: TemplateStringsArray, ...values: unknown[]) => ({
+            strings,
+            values,
+            type: 'parameterized'
+        }),
+        {
+            raw: vi.fn((value: string) => ({
+                value,
+                type: 'raw_unsafe'
+            }))
+        }
+    )
 }));
 
 vi.mock('../../src/utils/logger', () => ({

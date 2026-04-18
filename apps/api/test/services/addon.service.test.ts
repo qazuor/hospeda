@@ -39,59 +39,82 @@ vi.mock('../../../../packages/service-core/src/services/billing/addon/addon-user
 
 // Use vi.hoisted to define mock database utilities available before vi.mock runs
 // Only destructure the top-level values we need to pass to vi.mock
-const { mockDbSelect, mockDbUpdate, mockDbInsert, mockDbTransaction, mockBillingAddonPurchases } =
-    vi.hoisted(() => {
-        // Select chain: select() -> from() -> where()
-        const mockDbWhere = vi.fn().mockResolvedValue([]);
-        const mockDbFrom = vi.fn(() => ({ where: mockDbWhere }));
-        const mockDbSelect = vi.fn(() => ({ from: mockDbFrom }));
-        // Update chain: update() -> set() -> where()
-        const mockDbUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
-        const mockDbUpdateSet = vi.fn(() => ({ where: mockDbUpdateWhere }));
-        const mockDbUpdate = vi.fn(() => ({ set: mockDbUpdateSet }));
-        // Insert chain for confirmPurchase: insert() -> values() -> returning()
-        // Default returns a known purchaseId so confirmPurchase tests pass without extra setup
-        const mockDbInsertReturning = vi.fn().mockResolvedValue([{ id: 'mock_purchase_id_001' }]);
-        const mockDbInsertValues = vi.fn(() => ({ returning: mockDbInsertReturning }));
-        const mockDbInsert = vi.fn(() => ({ values: mockDbInsertValues }));
-        // Transaction update chain (same shape as mockDbUpdate for cancel operations)
-        const mockTxUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
-        const mockTxUpdateSet = vi.fn(() => ({ where: mockTxUpdateWhere }));
-        const mockTxUpdate = vi.fn(() => ({ set: mockTxUpdateSet }));
-        // Transaction wrapper: executes the callback with a tx that has insert and update chains
-        const mockDbTransaction = vi.fn(
-            async (
-                callback: (tx: {
-                    insert: typeof mockDbInsert;
-                    update: typeof mockTxUpdate;
-                }) => Promise<unknown>
-            ) => {
-                return callback({ insert: mockDbInsert, update: mockTxUpdate });
-            }
-        );
-        return {
-            mockDbSelect,
-            mockDbUpdate,
-            mockDbInsert,
-            mockDbTransaction,
-            mockBillingAddonPurchases: {
-                id: 'id',
-                customerId: 'customerId',
-                status: 'status',
-                addonSlug: 'addonSlug',
-                subscriptionId: 'subscriptionId',
-                purchasedAt: 'purchasedAt',
-                expiresAt: 'expiresAt',
-                paymentId: 'paymentId',
-                limitAdjustments: 'limitAdjustments',
-                entitlementAdjustments: 'entitlementAdjustments',
-                metadata: 'metadata',
-                canceledAt: 'canceled_at',
-                deletedAt: 'deleted_at',
-                updatedAt: 'updatedAt'
-            }
-        };
-    });
+const {
+    mockDbSelect,
+    mockDbUpdate,
+    mockDbInsert,
+    mockDbTransaction,
+    mockWithTransaction,
+    mockBillingAddonPurchases
+} = vi.hoisted(() => {
+    // Select chain: select() -> from() -> where()
+    const mockDbWhere = vi.fn().mockResolvedValue([]);
+    const mockDbFrom = vi.fn(() => ({ where: mockDbWhere }));
+    const mockDbSelect = vi.fn(() => ({ from: mockDbFrom }));
+    // Update chain: update() -> set() -> where()
+    const mockDbUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
+    const mockDbUpdateSet = vi.fn(() => ({ where: mockDbUpdateWhere }));
+    const mockDbUpdate = vi.fn(() => ({ set: mockDbUpdateSet }));
+    // Insert chain for confirmPurchase: insert() -> values() -> returning()
+    // Default returns a known purchaseId so confirmPurchase tests pass without extra setup
+    const mockDbInsertReturning = vi.fn().mockResolvedValue([{ id: 'mock_purchase_id_001' }]);
+    const mockDbInsertValues = vi.fn(() => ({ returning: mockDbInsertReturning }));
+    const mockDbInsert = vi.fn(() => ({ values: mockDbInsertValues }));
+    // Transaction update chain (same shape as mockDbUpdate for cancel operations)
+    const mockTxUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
+    const mockTxUpdateSet = vi.fn(() => ({ where: mockTxUpdateWhere }));
+    const mockTxUpdate = vi.fn(() => ({ set: mockTxUpdateSet }));
+    // Transaction wrapper: executes the callback with a tx that has insert and update chains
+    const mockDbTransaction = vi.fn(
+        async (
+            callback: (tx: {
+                insert: typeof mockDbInsert;
+                update: typeof mockTxUpdate;
+            }) => Promise<unknown>
+        ) => {
+            return callback({ insert: mockDbInsert, update: mockTxUpdate });
+        }
+    );
+    // SPEC-064: withTransaction replaces db.transaction() for atomic operations in cancelUserAddon.
+    const mockWithTransaction = vi.fn(
+        async (
+            callback: (tx: {
+                insert: typeof mockDbInsert;
+                update: typeof mockTxUpdate;
+            }) => Promise<unknown>,
+            existingTx?: unknown
+        ) => {
+            if (existingTx)
+                return callback(
+                    existingTx as { insert: typeof mockDbInsert; update: typeof mockTxUpdate }
+                );
+            return mockDbTransaction(callback);
+        }
+    );
+    return {
+        mockDbSelect,
+        mockDbUpdate,
+        mockDbInsert,
+        mockDbTransaction,
+        mockWithTransaction,
+        mockBillingAddonPurchases: {
+            id: 'id',
+            customerId: 'customerId',
+            status: 'status',
+            addonSlug: 'addonSlug',
+            subscriptionId: 'subscriptionId',
+            purchasedAt: 'purchasedAt',
+            expiresAt: 'expiresAt',
+            paymentId: 'paymentId',
+            limitAdjustments: 'limitAdjustments',
+            entitlementAdjustments: 'entitlementAdjustments',
+            metadata: 'metadata',
+            canceledAt: 'canceled_at',
+            deletedAt: 'deleted_at',
+            updatedAt: 'updatedAt'
+        }
+    };
+});
 
 // Mock @repo/db/client
 vi.mock('@repo/db/client', () => ({
@@ -100,7 +123,35 @@ vi.mock('@repo/db/client', () => ({
         update: mockDbUpdate,
         insert: mockDbInsert,
         transaction: mockDbTransaction
-    }))
+    })),
+    // SPEC-064: withTransaction wraps atomic operations outside the calling transaction
+    withTransaction: mockWithTransaction
+}));
+
+// Mock @repo/db (static import in addon.user-addons.ts) to prevent real DB connection
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/db')>();
+    return {
+        ...actual,
+        getDb: vi.fn(() => ({ select: mockDbSelect, update: mockDbUpdate, insert: mockDbInsert })),
+        withTransaction: vi.fn(async (cb: (tx: unknown) => Promise<unknown>) =>
+            cb({ select: mockDbSelect, update: mockDbUpdate, insert: mockDbInsert })
+        ),
+        billingSubscriptions: { id: 'id', customerId: 'customer_id', deletedAt: 'deleted_at' }
+    };
+});
+
+vi.mock('@repo/notifications', () => ({
+    NotificationType: { ADDON_CANCELLATION: 'ADDON_CANCELLATION' }
+}));
+
+vi.mock('../../src/utils/notification-helper', () => ({
+    sendNotification: vi.fn().mockResolvedValue(undefined)
+}));
+
+vi.mock('@sentry/node', () => ({
+    captureException: vi.fn(),
+    captureMessage: vi.fn()
 }));
 
 // Mock @repo/db/schemas/billing
@@ -300,6 +351,23 @@ describe('AddonService', () => {
                 }) => Promise<unknown>
             ) => {
                 return callback({ insert: mockDbInsert, update: txUpdate });
+            }
+        );
+
+        // Restore mockWithTransaction (SPEC-064) after clearAllMocks wipes it.
+        mockWithTransaction.mockImplementation(
+            async (
+                callback: (tx: {
+                    insert: typeof mockDbInsert;
+                    update: typeof txUpdate;
+                }) => Promise<unknown>,
+                existingTx?: unknown
+            ) => {
+                if (existingTx)
+                    return callback(
+                        existingTx as { insert: typeof mockDbInsert; update: typeof txUpdate }
+                    );
+                return mockDbTransaction(callback);
             }
         );
     });
@@ -928,7 +996,9 @@ describe('AddonService', () => {
 
         beforeEach(() => {
             // Re-establish the transaction mock after vi.clearAllMocks() resets it.
-            // The transaction must call its callback with a tx that supports insert()->values()->returning().
+            // The transaction must call its callback with a tx that supports:
+            //   - insert()->values()->returning() for the purchase record insert
+            //   - execute() for the SELECT FOR UPDATE dedup check (SPEC-064)
             mockDbTransaction.mockImplementation((async (
                 callback: (tx: Record<string, unknown>) => Promise<unknown>
             ) => {
@@ -937,7 +1007,10 @@ describe('AddonService', () => {
                     .mockResolvedValue([{ id: 'mock_purchase_id_001' }]);
                 const mockInsertValues = vi.fn(() => ({ returning: mockInsertReturning }));
                 const mockInsert = vi.fn(() => ({ values: mockInsertValues }));
-                return callback({ insert: mockInsert });
+                // SPEC-064: tx.execute() is used for SELECT FOR UPDATE dedup check.
+                // Return empty rows to indicate no existing active purchase (allow insert).
+                const mockTxExecute = vi.fn().mockResolvedValue({ rows: [] });
+                return callback({ insert: mockInsert, execute: mockTxExecute });
             }) as unknown as Parameters<typeof mockDbTransaction.mockImplementation>[0]);
         });
 

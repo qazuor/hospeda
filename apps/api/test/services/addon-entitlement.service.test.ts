@@ -224,6 +224,19 @@ describe('AddonEntitlementService', () => {
             ]);
             vi.mocked(mockBilling.subscriptions.update).mockResolvedValue(mockSubscription);
 
+            // Mock getDb to return this purchase as the only active addon purchase.
+            // The source sums all active purchases for the same limitKey:
+            // basePlanLimit(5) + totalIncrement(20) = 25
+            vi.mocked(getDb).mockReturnValue({
+                select: vi.fn().mockReturnThis(),
+                from: vi.fn().mockReturnThis(),
+                where: vi
+                    .fn()
+                    .mockResolvedValue([
+                        { addonSlug: 'extra-photos-20', id: 'purchase_photos', status: 'active' }
+                    ])
+            } as unknown as ReturnType<typeof getDb>);
+
             const result = await service.applyAddonEntitlements({
                 customerId: 'cust_123',
                 addonSlug: 'extra-photos-20',
@@ -232,7 +245,7 @@ describe('AddonEntitlementService', () => {
 
             expect(result.success).toBe(true);
 
-            // Verify limits.set was called: basePlanLimit(5) + addon.limitIncrease(20) = 25
+            // Verify limits.set was called: basePlanLimit(5) + totalIncrement(20) = 25
             expect(mockBilling.limits.set).toHaveBeenCalledTimes(1);
             expect(mockBilling.limits.set).toHaveBeenCalledWith({
                 customerId: 'cust_123',
@@ -260,6 +273,22 @@ describe('AddonEntitlementService', () => {
             ]);
             vi.mocked(mockBilling.subscriptions.update).mockResolvedValue(mockSubscription);
 
+            // Mock getDb to return this purchase as the only active addon purchase.
+            // basePlanLimit(3) + totalIncrement(5) = 8
+            vi.mocked(getDb).mockReturnValue({
+                select: vi.fn().mockReturnThis(),
+                from: vi.fn().mockReturnThis(),
+                where: vi
+                    .fn()
+                    .mockResolvedValue([
+                        {
+                            addonSlug: 'extra-accommodations-5',
+                            id: 'purchase_acc',
+                            status: 'active'
+                        }
+                    ])
+            } as unknown as ReturnType<typeof getDb>);
+
             const result = await service.applyAddonEntitlements({
                 customerId: 'cust_123',
                 addonSlug: 'extra-accommodations-5',
@@ -268,7 +297,7 @@ describe('AddonEntitlementService', () => {
 
             expect(result.success).toBe(true);
 
-            // basePlanLimit(3) + limitIncrease(5) = 8
+            // basePlanLimit(3) + totalIncrement(5) = 8
             expect(mockBilling.limits.set).toHaveBeenCalledWith(
                 expect.objectContaining({
                     limitKey: LimitKey.MAX_ACCOMMODATIONS,
@@ -608,16 +637,15 @@ describe('AddonEntitlementService', () => {
         // =========================================================================
         // GAP-038-07: Overlapping limit key — second addon on the same limitKey
         // =========================================================================
-        it('should compute maxValue from base plan limit (not current customer limit) when two addons share the same limitKey', async () => {
-            // The service reads the base plan limit from canonical ALL_PLANS config and adds
-            // the addon's limitIncrease. It does NOT read the current customer limit.
-            // Therefore, a second addon purchase for the same limitKey overwrites the previous
-            // customer-level value with basePlanLimit + addon.limitIncrease (not an accumulation).
+        it('should compute maxValue by summing all active addon increments for the same limitKey', async () => {
+            // The service queries ALL active addon purchases and sums their limitIncrease values
+            // for the same limitKey. This prevents "limit stomping" where each addon would
+            // independently overwrite the others.
             //
             // owner-basico has MAX_PHOTOS_PER_ACCOMMODATION = 5.
             // extra-photos-20 has limitIncrease = 20.
-            // First call:  limits.set({ maxValue: 5 + 20 = 25 })
-            // Second call: limits.set({ maxValue: 5 + 20 = 25 })  (reads plan base again, not 25)
+            // First call:  DB returns [purchase_1] → totalIncrement=20 → limits.set({ maxValue: 25 })
+            // Second call: DB returns [purchase_1, purchase_2] → totalIncrement=40 → limits.set({ maxValue: 45 })
 
             // Arrange
             const mockSubscription = createMockSubscriptionWithHelpers({
@@ -632,12 +660,33 @@ describe('AddonEntitlementService', () => {
             ]);
             vi.mocked(mockBilling.subscriptions.update).mockResolvedValue(mockSubscription);
 
+            // First call: DB has 1 active purchase
+            vi.mocked(getDb).mockReturnValueOnce({
+                select: vi.fn().mockReturnThis(),
+                from: vi.fn().mockReturnThis(),
+                where: vi
+                    .fn()
+                    .mockResolvedValue([
+                        { addonSlug: 'extra-photos-20', id: 'purchase_overlap_1', status: 'active' }
+                    ])
+            } as unknown as ReturnType<typeof getDb>);
+
             // Act — first addon purchase affecting MAX_PHOTOS_PER_ACCOMMODATION
             const firstResult = await service.applyAddonEntitlements({
                 customerId: 'cust_overlap',
                 addonSlug: 'extra-photos-20',
                 purchaseId: 'purchase_overlap_1'
             });
+
+            // Second call: DB has 2 active purchases (both addons now active)
+            vi.mocked(getDb).mockReturnValueOnce({
+                select: vi.fn().mockReturnThis(),
+                from: vi.fn().mockReturnThis(),
+                where: vi.fn().mockResolvedValue([
+                    { addonSlug: 'extra-photos-20', id: 'purchase_overlap_1', status: 'active' },
+                    { addonSlug: 'extra-photos-20', id: 'purchase_overlap_2', status: 'active' }
+                ])
+            } as unknown as ReturnType<typeof getDb>);
 
             // Act — second addon purchase affecting the same limitKey
             const secondResult = await service.applyAddonEntitlements({
@@ -653,8 +702,8 @@ describe('AddonEntitlementService', () => {
             // Assert — limits.set was called twice
             expect(mockBilling.limits.set).toHaveBeenCalledTimes(2);
 
-            // Assert — both calls use basePlanLimit(5) + limitIncrease(20) = 25
-            // The second call does NOT compound on top of the first call's value
+            // Assert — first call: basePlanLimit(5) + totalIncrement(20) = 25
+            // Assert — second call: basePlanLimit(5) + totalIncrement(40) = 45 (both purchases summed)
             const [firstCall, secondCall] = vi.mocked(mockBilling.limits.set).mock.calls;
 
             expect(firstCall![0]).toMatchObject({
@@ -668,7 +717,7 @@ describe('AddonEntitlementService', () => {
             expect(secondCall![0]).toMatchObject({
                 customerId: 'cust_overlap',
                 limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                maxValue: 25,
+                maxValue: 45,
                 source: 'addon',
                 sourceId: 'purchase_overlap_2'
             });

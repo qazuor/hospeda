@@ -150,7 +150,15 @@ vi.mock('@repo/service-core', async () => {
                 transaction: (fn: (tx: unknown) => Promise<unknown>) => Promise<unknown>;
             };
             return db.transaction(async (tx: unknown) => cb({ tx, hookState: {} }));
-        })
+        }),
+        BILLING_EVENT_TYPES: {
+            ADDON_REVOCATIONS_PENDING: 'addon_revocations_pending',
+            SUBSCRIPTION_CANCELLED: 'subscription_cancelled',
+            SUBSCRIPTION_CREATED: 'subscription_created',
+            SUBSCRIPTION_UPDATED: 'subscription_updated',
+            PAYMENT_FAILED: 'payment_failed',
+            PAYMENT_SUCCEEDED: 'payment_succeeded'
+        }
     };
 });
 
@@ -261,9 +269,11 @@ function buildAdminDbMock(
             select: vi.fn().mockReturnValue({
                 from: vi.fn().mockReturnValue({
                     where: vi.fn().mockReturnValue({
-                        limit: vi
-                            .fn()
-                            .mockResolvedValue([{ status: transactionSubscriptionStatus }])
+                        limit: vi.fn().mockReturnValue({
+                            for: vi
+                                .fn()
+                                .mockResolvedValue([{ status: transactionSubscriptionStatus }])
+                        })
                     })
                 })
             }),
@@ -277,7 +287,11 @@ function buildAdminDbMock(
 
     const transaction = vi.fn(transactionImpl);
 
-    return { select: selectDispatch, update, transaction, _trxUpdate: trxUpdate };
+    const insert = vi.fn().mockReturnValue({
+        values: vi.fn().mockResolvedValue(undefined)
+    });
+
+    return { select: selectDispatch, update, insert, transaction, _trxUpdate: trxUpdate };
 }
 
 /**
@@ -675,7 +689,9 @@ describe('Concurrent webhook + admin cancellation (GAP-043-04)', () => {
                     select: vi.fn().mockReturnValue({
                         from: vi.fn().mockReturnValue({
                             where: vi.fn().mockReturnValue({
-                                limit: vi.fn().mockResolvedValue([{ status: 'active' }])
+                                limit: vi.fn().mockReturnValue({
+                                    for: vi.fn().mockResolvedValue([{ status: 'active' }])
+                                })
                             })
                         })
                     }),
@@ -713,6 +729,9 @@ describe('Concurrent webhook + admin cancellation (GAP-043-04)', () => {
                 select: selectDispatch,
                 update: vi.fn().mockReturnValue({
                     set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) })
+                }),
+                insert: vi.fn().mockReturnValue({
+                    values: vi.fn().mockResolvedValue(undefined)
                 }),
                 execute: vi.fn().mockResolvedValue(undefined),
                 transaction: vi.fn(customTransactionImpl)

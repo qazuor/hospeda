@@ -26,10 +26,16 @@ const {
     mockGetQZPayBilling,
     mockCreateSubscriptionLifecycle,
     mockDbInsert,
-    mockLoadBillingSettings
+    mockLoadBillingSettings,
+    mockWithTransaction,
+    _mockTx
 } = vi.hoisted(() => {
     const mockValues = vi.fn().mockResolvedValue(undefined);
     const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
+    const tx = {
+        execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+    };
+    const withTx = vi.fn(async <T>(callback: (tx: typeof tx) => Promise<T>) => callback(tx));
     return {
         mockGetQZPayBilling: vi.fn(),
         mockCreateSubscriptionLifecycle: vi.fn(),
@@ -41,7 +47,9 @@ const {
             trialExpiryReminderDays: 3,
             sendTrialExpiryReminder: true,
             sendPaymentFailedNotification: true
-        })
+        }),
+        mockWithTransaction: withTx,
+        _mockTx: tx
     };
 });
 
@@ -66,12 +74,14 @@ vi.mock('../../src/utils/logger', () => ({
 
 // Minimal @repo/db mock: only for the onEvent audit insert callback.
 // The dunning job's onEvent handler writes directly to billingDunningAttempts.
-// sql is required for pg_try_advisory_lock (concurrency guard added in GAP-035).
+// sql is required for pg_try_advisory_xact_lock (concurrency guard added in GAP-035).
+// withTransaction is required because the job now wraps all work in a transaction.
 vi.mock('@repo/db', () => ({
     getDb: vi.fn().mockReturnValue({
         insert: mockDbInsert,
         execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
     }),
+    withTransaction: mockWithTransaction,
     billingDunningAttempts: { _: 'billingDunningAttempts' },
     sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
         __sql: true,

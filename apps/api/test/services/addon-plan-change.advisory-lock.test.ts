@@ -418,8 +418,8 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
                 db: db as never
             });
 
-            // Assert — withServiceTransaction was called once
-            expect(mockWithServiceTransaction).toHaveBeenCalledOnce();
+            // Assert — withServiceTransaction was called twice: Phase 1 (read+lock) + Phase 3 (dedup write)
+            expect(mockWithServiceTransaction).toHaveBeenCalledTimes(2);
 
             // Assert — advisory_lock must come before limits_set
             const advisoryLockIdx = callOrder.indexOf('advisory_lock');
@@ -741,8 +741,9 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
                 db: db as never
             });
 
-            // Verify first call went through the transaction (map was seeded)
-            expect(mockWithServiceTransaction).toHaveBeenCalledOnce();
+            // Verify first call went through the transaction (map was seeded).
+            // Phase 1 (read + advisory lock) + Phase 3 (dedup event write) = 2 calls.
+            expect(mockWithServiceTransaction).toHaveBeenCalledTimes(2);
             mockWithServiceTransaction.mockClear();
 
             // Act — second call for same customer with Date.now() still frozen
@@ -761,34 +762,49 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
         });
     });
 
-    // ── billing.limits.set is invoked inside the transaction scope ────────────
+    // ── billing.limits.set is invoked OUTSIDE the transaction scope ──────────
+    //
+    // SPEC-064 design: QZPay calls (billing.limits.set) happen in Phase 2,
+    // which runs AFTER the Phase 1 transaction has already committed. This keeps
+    // the DB transaction short and avoids holding row-level locks during slow
+    // external HTTP round-trips. If QZPay is slow or fails, the DB has already
+    // released its locks. The dedup event is written in a separate Phase 3
+    // transaction that records the outcome AFTER QZPay completes.
 
-    describe('billing.limits.set is invoked within the transaction callback', () => {
-        it('should call billing.limits.set inside the withServiceTransaction callback body', async () => {
-            // Arrange — flag is set to true only when limits.set is called from
-            // within the callback scope (before the callback returns).
-            let limitsSetCalledInsideCallback = false;
-            let callbackReturnedAlready = false;
+    describe('billing.limits.set is invoked OUTSIDE the withServiceTransaction callback (Phase 2)', () => {
+        it('should call billing.limits.set AFTER the Phase 1 withServiceTransaction callback returns', async () => {
+            // Arrange — flag is set to true when limits.set is called from
+            // OUTSIDE the Phase 1 callback (the correct, intended behavior).
+            let phase1CallbackReturned = false;
+            let limitsSetCalledAfterPhase1 = false;
 
+            // Track Phase 1 completion — first call to withServiceTransaction is Phase 1
+            let phase1Done = false;
             mockWithServiceTransaction.mockImplementation(
                 async (cb: (ctx: unknown) => Promise<unknown>) => {
-                    const originalImpl = (
-                        billing.limits.set as unknown as MockInstance
-                    ).getMockImplementation();
+                    if (!phase1Done) {
+                        // Phase 1: data read phase
+                        const tx = buildFullTxMock({ purchaseRows: [activePurchaseRow] });
+                        const result = await cb({ tx, hookState: {} });
+                        phase1CallbackReturned = true;
+                        phase1Done = true;
+                        return result;
+                    }
+                    // Phase 3: dedup event write phase
+                    const tx = buildFullTxMock({ purchaseRows: [] });
+                    return cb({ tx, hookState: {} });
+                }
+            );
 
-                    (billing.limits.set as unknown as MockInstance).mockImplementation(
-                        async (...args: unknown[]) => {
-                            if (!callbackReturnedAlready) {
-                                limitsSetCalledInsideCallback = true;
-                            }
-                            return originalImpl ? originalImpl(...args) : undefined;
-                        }
-                    );
-
-                    const tx = buildFullTxMock({ purchaseRows: [activePurchaseRow] });
-                    const result = await cb({ tx, hookState: {} });
-                    callbackReturnedAlready = true;
-                    return result;
+            const originalLimitsSetImpl = (
+                billing.limits.set as unknown as MockInstance
+            ).getMockImplementation();
+            (billing.limits.set as unknown as MockInstance).mockImplementation(
+                async (...args: unknown[]) => {
+                    if (phase1CallbackReturned) {
+                        limitsSetCalledAfterPhase1 = true;
+                    }
+                    return originalLimitsSetImpl ? originalLimitsSetImpl(...args) : undefined;
                 }
             );
 
@@ -803,35 +819,22 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
                 db: db as never
             });
 
-            // Assert
-            expect(limitsSetCalledInsideCallback).toBe(true);
+            // Assert — limits.set was called AFTER Phase 1 callback returned
+            expect(limitsSetCalledAfterPhase1).toBe(true);
             expect(billing.limits.set).toHaveBeenCalledOnce();
         });
 
-        it('should NOT call billing.limits.set outside the withServiceTransaction callback', async () => {
-            // Arrange — track whether limits.set was called before callback enters or after it exits
-            let insideCallback = false;
-            let setCalledOutsideCallback = false;
-
+        it('should call withServiceTransaction twice: Phase 1 (read+lock) and Phase 3 (dedup write)', async () => {
+            // Arrange
+            mockWithServiceTransaction.mockClear();
+            let phase1Done = false;
             mockWithServiceTransaction.mockImplementation(
                 async (cb: (ctx: unknown) => Promise<unknown>) => {
-                    insideCallback = true;
-                    const originalImpl = (
-                        billing.limits.set as unknown as MockInstance
-                    ).getMockImplementation();
-                    (billing.limits.set as unknown as MockInstance).mockImplementation(
-                        async (...args: unknown[]) => {
-                            if (!insideCallback) {
-                                setCalledOutsideCallback = true;
-                            }
-                            return originalImpl ? originalImpl(...args) : undefined;
-                        }
-                    );
-
-                    const tx = buildFullTxMock({ purchaseRows: [activePurchaseRow] });
-                    const result = await cb({ tx, hookState: {} });
-                    insideCallback = false;
-                    return result;
+                    const tx = buildFullTxMock({
+                        purchaseRows: phase1Done ? [] : [activePurchaseRow]
+                    });
+                    phase1Done = true;
+                    return cb({ tx, hookState: {} });
                 }
             );
 
@@ -846,8 +849,8 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
                 db: db as never
             });
 
-            // Assert — limits.set was never called outside the callback
-            expect(setCalledOutsideCallback).toBe(false);
+            // Assert — Phase 1 (read) + Phase 3 (dedup event write) = 2 calls
+            expect(mockWithServiceTransaction).toHaveBeenCalledTimes(2);
         });
     });
 

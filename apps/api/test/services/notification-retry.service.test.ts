@@ -54,7 +54,9 @@ vi.mock('@repo/db', () => ({
                     return {
                         where: (...wArgs: unknown[]) => {
                             mockUpdateWhere(...wArgs);
-                            return Promise.resolve();
+                            // Return rowCount:1 so the claim guard in processDbNotificationRetries
+                            // considers the row successfully claimed by this worker.
+                            return Promise.resolve({ rowCount: 1 });
                         }
                     };
                 }

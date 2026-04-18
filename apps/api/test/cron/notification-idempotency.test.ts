@@ -15,12 +15,36 @@ import {
 } from '../../src/cron/jobs/notification-schedule.job';
 import type { CronJobContext } from '../../src/cron/types';
 
-// Mock @repo/db — required for pg_try_advisory_lock concurrency guard (GAP-034)
+// withTransaction mock must be hoisted so it is available inside vi.mock() factory.
+const { mockDbWithTransactionIdempotency } = vi.hoisted(() => {
+    const tx = {
+        execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
+        update: vi.fn().mockReturnThis(),
+        set: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue(undefined)
+    };
+    const withTx = vi.fn(async <T>(callback: (tx: typeof tx) => Promise<T>) => callback(tx));
+    return { mockDbWithTransactionIdempotency: withTx };
+});
+
+// Mock @repo/db — required for pg_try_advisory_xact_lock concurrency guard (GAP-034).
+// withTransaction is required because the job now wraps all work in a transaction.
 vi.mock('@repo/db', () => ({
     getDb: vi.fn().mockReturnValue({
-        execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+        execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
+        update: vi.fn().mockReturnThis(),
+        set: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue(undefined)
     }),
-    billingNotificationLog: { customerId: 'customer_id', type: 'type', sentAt: 'sent_at' },
+    withTransaction: mockDbWithTransactionIdempotency,
+    billingNotificationLog: {
+        customerId: 'customer_id',
+        type: 'type',
+        sentAt: 'sent_at',
+        id: 'id',
+        status: 'status',
+        errorMessage: 'error_message'
+    },
     eq: vi.fn((_col: unknown, _val: unknown) => ({ __eq: true })),
     sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
         __sql: true,

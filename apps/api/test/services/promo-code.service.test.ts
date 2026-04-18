@@ -66,6 +66,7 @@ vi.mock('@repo/db', () => ({
         expiresAt: 'expiresAt',
         config: 'config',
         maxUses: 'maxUses',
+        maxPerCustomer: 'maxPerCustomer',
         usedCount: 'usedCount',
         createdAt: 'createdAt',
         validPlans: 'validPlans',
@@ -79,6 +80,26 @@ vi.mock('@repo/db', () => ({
         subscriptionId: 'subscriptionId',
         discountAmount: 'discountAmount',
         currency: 'currency',
+        livemode: 'livemode'
+    },
+    billingAuditLogs: {
+        id: 'id',
+        action: 'action',
+        entityType: 'entityType',
+        entityId: 'entityId',
+        actorId: 'actorId',
+        actorType: 'actorType',
+        changes: 'changes',
+        previousValues: 'previousValues',
+        livemode: 'livemode',
+        ipAddress: 'ipAddress',
+        userAgent: 'userAgent'
+    },
+    billingSubscriptions: {
+        id: 'id',
+        customerId: 'customerId',
+        planId: 'planId',
+        status: 'status',
         livemode: 'livemode'
     },
     and: vi.fn((...args) => args),
@@ -594,11 +615,16 @@ describe('PromoCodeService', () => {
                 newCustomersOnly: true
             };
 
-            // First call: getPromoCodeByCode → returns the code
-            // Second call: checkUserHasPromoUsage → returns a usage record
+            // Call order:
+            // 1. getPromoCodeByCode → limit(1) returns code
+            // 2. checkUserRedemptionLimitExceeded → limit(1) returns row with no maxPerCustomer
+            //    → maxPerCustomer = undefined → returns false (no per-user limit)
+            // 3. checkUserHasExistingPlanSubscription → limit(1) returns existing subscription row
+            //    → hasExistingSubscription = true → invalid
             mockDb.limit
                 .mockResolvedValueOnce([newCustomerCode]) // getPromoCodeByCode
-                .mockResolvedValueOnce([{ id: 'usage_1' }]); // checkUserHasPromoUsage
+                .mockResolvedValueOnce([{ maxPerCustomer: null }]) // checkUserRedemptionLimitExceeded
+                .mockResolvedValueOnce([{ id: 'sub_1' }]); // checkUserHasExistingPlanSubscription
 
             // Act
             const result = await service.validate('WELCOME20', {
@@ -618,11 +644,16 @@ describe('PromoCodeService', () => {
                 newCustomersOnly: true
             };
 
-            // First call: getPromoCodeByCode → returns the code
-            // Second call: checkUserHasPromoUsage → returns empty (no usage)
+            // Call order:
+            // 1. getPromoCodeByCode → limit(1) returns code
+            // 2. checkUserRedemptionLimitExceeded → limit(1) returns row with no maxPerCustomer
+            //    → returns false (no per-user limit)
+            // 3. checkUserHasExistingPlanSubscription → limit(1) returns empty
+            //    → hasExistingSubscription = false → valid
             mockDb.limit
                 .mockResolvedValueOnce([newCustomerCode]) // getPromoCodeByCode
-                .mockResolvedValueOnce([]); // checkUserHasPromoUsage
+                .mockResolvedValueOnce([{ maxPerCustomer: null }]) // checkUserRedemptionLimitExceeded
+                .mockResolvedValueOnce([]); // checkUserHasExistingPlanSubscription (no subscription)
 
             // Act
             const result = await service.validate('WELCOME20', {

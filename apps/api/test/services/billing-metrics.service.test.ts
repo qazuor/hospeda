@@ -813,10 +813,21 @@ describe('BillingMetricsService', () => {
 
         it('should not cache failed results', async () => {
             // Arrange - service with long TTL
+            // Note: getOverviewMetrics uses Promise.all with 7 concurrent execute() calls.
+            // All 7 slots run simultaneously, so we must provide failure values for every
+            // slot in the first (failing) call before setting up the success values.
             const cachedService = new BillingMetricsService({ cacheTtlMs: 60_000 });
             mockExecute
+                // First call: all 7 execute() calls fail (Promise.all rejects on first failure,
+                // but the remaining slots still consume their Once values from the queue)
                 .mockRejectedValueOnce(new Error('DB down'))
-                // Second call succeeds
+                .mockRejectedValueOnce(new Error('DB down'))
+                .mockRejectedValueOnce(new Error('DB down'))
+                .mockRejectedValueOnce(new Error('DB down'))
+                .mockRejectedValueOnce(new Error('DB down'))
+                .mockRejectedValueOnce(new Error('DB down'))
+                .mockRejectedValueOnce(new Error('DB down'))
+                // Second call succeeds (7 values, one per execute() slot)
                 .mockResolvedValueOnce({ rows: [{ count: '10' }] })
                 .mockResolvedValueOnce({ rows: [{ count: '3' }] })
                 .mockResolvedValueOnce({ rows: [{ mrr_total: '8000' }] })

@@ -295,7 +295,9 @@ function buildDbMock(
             select: vi.fn().mockReturnValue({
                 from: vi.fn().mockReturnValue({
                     where: vi.fn().mockReturnValue({
-                        limit: vi.fn().mockResolvedValue([{ status: 'active' }])
+                        limit: vi.fn().mockReturnValue({
+                            for: vi.fn().mockResolvedValue([{ status: 'active' }])
+                        })
                     })
                 })
             }),
@@ -694,7 +696,9 @@ describe('cancelSubscriptionHandler', () => {
                     select: vi.fn().mockReturnValue({
                         from: vi.fn().mockReturnValue({
                             where: vi.fn().mockReturnValue({
-                                limit: vi.fn().mockResolvedValue([{ status: 'cancelled' }])
+                                limit: vi.fn().mockReturnValue({
+                                    for: vi.fn().mockResolvedValue([{ status: 'cancelled' }])
+                                })
                             })
                         })
                     }),

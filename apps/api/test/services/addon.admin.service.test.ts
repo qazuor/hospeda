@@ -77,7 +77,12 @@ vi.mock('drizzle-orm', () => ({
     eq: vi.fn((col: unknown, val: unknown) => ({ type: 'eq', col, val })),
     isNull: vi.fn((col: unknown) => ({ type: 'isNull', col })),
     desc: vi.fn((col: unknown) => ({ type: 'desc', col })),
-    count: vi.fn(() => ({ type: 'count' }))
+    count: vi.fn(() => ({ type: 'count' })),
+    sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+        type: 'sql',
+        strings,
+        values
+    }))
 }));
 
 vi.mock('@repo/billing', () => ({
@@ -213,9 +218,13 @@ describe('AdminAddonService.activateAddon', () => {
         mockGetAddonBySlug.mockReturnValue(undefined);
 
         // Default: withTransaction executes the callback immediately with a mock tx
+        // The tx must provide both execute() (for SELECT FOR UPDATE) and update()
+        // (for the transactional status UPDATE). execute() returns empty rows by
+        // default; individual tests override this to return specific purchase rows.
         mockWithTransaction.mockImplementation(
             async (callback: (tx: DrizzleClient) => Promise<unknown>) => {
                 const fakeTx = {
+                    execute: vi.fn().mockResolvedValue({ rows: [] }),
                     update: vi.fn(() => ({
                         set: vi.fn(() => ({ where: vi.fn().mockResolvedValue({ rowCount: 1 }) }))
                     }))
@@ -264,11 +273,21 @@ describe('AdminAddonService.activateAddon', () => {
 
     describe('when the purchase is already active', () => {
         it('should return INVALID_STATUS error', async () => {
-            // Arrange
+            // Arrange — the SELECT FOR UPDATE (inside withTransaction) returns an active purchase
             const purchase = createMockPurchase({ status: 'active' });
-            const chain = buildMockDbChain([purchase]);
-            chain.limit.mockResolvedValue([purchase]);
-            mockGetDb.mockReturnValue(chain as unknown as ReturnType<typeof getDb>);
+            mockWithTransaction.mockImplementation(
+                async (callback: (tx: DrizzleClient) => Promise<unknown>) => {
+                    const fakeTx = {
+                        execute: vi.fn().mockResolvedValue({ rows: [purchase] }),
+                        update: vi.fn(() => ({
+                            set: vi.fn(() => ({
+                                where: vi.fn().mockResolvedValue({ rowCount: 1 })
+                            }))
+                        }))
+                    } as unknown as DrizzleClient;
+                    return callback(fakeTx);
+                }
+            );
 
             // Act
             const result = await service.activateAddon({ purchaseId });
@@ -284,11 +303,21 @@ describe('AdminAddonService.activateAddon', () => {
 
     describe('when the purchase has a non-activatable status', () => {
         it('should return INVALID_STATUS error for pending status', async () => {
-            // Arrange
+            // Arrange — the SELECT FOR UPDATE (inside withTransaction) returns a pending purchase
             const purchase = createMockPurchase({ status: 'pending' });
-            const chain = buildMockDbChain([purchase]);
-            chain.limit.mockResolvedValue([purchase]);
-            mockGetDb.mockReturnValue(chain as unknown as ReturnType<typeof getDb>);
+            mockWithTransaction.mockImplementation(
+                async (callback: (tx: DrizzleClient) => Promise<unknown>) => {
+                    const fakeTx = {
+                        execute: vi.fn().mockResolvedValue({ rows: [purchase] }),
+                        update: vi.fn(() => ({
+                            set: vi.fn(() => ({
+                                where: vi.fn().mockResolvedValue({ rowCount: 1 })
+                            }))
+                        }))
+                    } as unknown as DrizzleClient;
+                    return callback(fakeTx);
+                }
+            );
 
             // Act
             const result = await service.activateAddon({ purchaseId });
@@ -308,50 +337,50 @@ describe('AdminAddonService.activateAddon', () => {
 
     describe('DB transaction wrapping', () => {
         it('should call withTransaction for the DB update', async () => {
-            // Arrange
+            // Arrange — source uses tx.execute(SELECT FOR UPDATE) inside withTransaction,
+            // then tx.update(...).set(...).where(...) for the status change.
             const purchase = createMockPurchase({ status: 'expired' });
-
-            // First call (purchase lookup) resolves purchase; second call (getAddonPurchaseById)
-            // also needs to resolve a full row. We track calls to distinguish them.
-            let selectCallCount = 0;
             const fullRow = {
                 ...purchase,
+                status: 'active',
                 customerEmail: 'owner@example.com',
                 customerName: 'Owner Name'
             };
 
-            const mockUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
-            const mockUpdateSet = vi.fn(() => ({ where: mockUpdateWhere }));
-            const mockUpdate = vi.fn(() => ({ set: mockUpdateSet }));
-            const mockLimit = vi.fn(() => {
-                selectCallCount++;
-                // First call = purchase lookup; subsequent = getAddonPurchaseById join query
-                return Promise.resolve(selectCallCount === 1 ? [purchase] : [fullRow]);
-            });
+            // Override withTransaction to simulate execute returning the locked purchase
+            mockWithTransaction.mockImplementation(
+                async (callback: (tx: DrizzleClient) => Promise<unknown>) => {
+                    const fakeTx = {
+                        execute: vi.fn().mockResolvedValue({ rows: [purchase] }),
+                        update: vi.fn(() => ({
+                            set: vi.fn(() => ({
+                                where: vi.fn().mockResolvedValue({ rowCount: 1 })
+                            }))
+                        }))
+                    } as unknown as DrizzleClient;
+                    return callback(fakeTx);
+                }
+            );
+
+            // getAddonPurchaseById uses getDb().select() after the transaction completes
+            const mockLimit = vi.fn().mockResolvedValue([fullRow]);
             const mockWhere = vi.fn(() => ({ limit: mockLimit }));
             const mockInnerJoin = vi.fn(() => ({ where: mockWhere }));
             const mockFrom = vi.fn(() => ({ where: mockWhere, innerJoin: mockInnerJoin }));
             const mockSelect = vi.fn(() => ({ from: mockFrom }));
-
-            const fakeDb = {
-                select: mockSelect,
-                update: mockUpdate
-            };
-
+            const fakeDb = { select: mockSelect, update: vi.fn() };
             mockGetDb.mockReturnValue(fakeDb as unknown as ReturnType<typeof getDb>);
 
             // Act
             await service.activateAddon({ purchaseId });
 
-            // Assert: withTransaction was invoked (wraps the UPDATE)
+            // Assert: withTransaction was invoked (wraps the SELECT FOR UPDATE + UPDATE)
             expect(mockWithTransaction).toHaveBeenCalledOnce();
         });
 
         it('should pass the outer tx to withTransaction when provided', async () => {
-            // Arrange
+            // Arrange — when input.tx is provided, it is passed as the second arg to withTransaction.
             const purchase = createMockPurchase({ status: 'canceled' });
-
-            let selectCallCount = 0;
             const fullRow = {
                 ...purchase,
                 status: 'active',
@@ -359,20 +388,31 @@ describe('AdminAddonService.activateAddon', () => {
                 customerName: null
             };
 
-            const mockLimit = vi.fn(() => {
-                selectCallCount++;
-                return Promise.resolve(selectCallCount === 1 ? [purchase] : [fullRow]);
-            });
+            // Override withTransaction to simulate the SELECT FOR UPDATE
+            mockWithTransaction.mockImplementation(
+                async (callback: (tx: DrizzleClient) => Promise<unknown>) => {
+                    const fakeTx = {
+                        execute: vi.fn().mockResolvedValue({ rows: [purchase] }),
+                        update: vi.fn(() => ({
+                            set: vi.fn(() => ({
+                                where: vi.fn().mockResolvedValue({ rowCount: 1 })
+                            }))
+                        }))
+                    } as unknown as DrizzleClient;
+                    return callback(fakeTx);
+                }
+            );
+
+            // getAddonPurchaseById uses getDb().select() after the transaction
+            const mockLimit = vi.fn().mockResolvedValue([fullRow]);
             const mockWhere = vi.fn(() => ({ limit: mockLimit }));
             const mockInnerJoin = vi.fn(() => ({ where: mockWhere }));
             const mockFrom = vi.fn(() => ({ where: mockWhere, innerJoin: mockInnerJoin }));
             const mockSelect = vi.fn(() => ({ from: mockFrom }));
-            const mockUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
-            const mockUpdateSet = vi.fn(() => ({ where: mockUpdateWhere }));
-            const mockUpdate = vi.fn(() => ({ set: mockUpdateSet }));
+            const mockUpdate = vi.fn(() => ({
+                set: vi.fn(() => ({ where: vi.fn().mockResolvedValue({ rowCount: 1 }) }))
+            }));
 
-            // outerTx must have the same DB methods because the service uses `input.tx ?? getDb()`
-            // for the initial purchase read — it doesn't fall back to getDb when tx is provided.
             const outerTx = {
                 select: mockSelect,
                 update: mockUpdate
@@ -394,10 +434,9 @@ describe('AdminAddonService.activateAddon', () => {
 
     describe('when QZPay entitlement grant fails', () => {
         it('should set needsEntitlementSync=true on the purchase record (best-effort UPDATE)', async () => {
-            // Arrange
+            // Arrange — tx.execute() returns the locked purchase; tx.update() handles the
+            // transactional status update. After the tx, getDb().update() handles the flag SET.
             const purchase = createMockPurchase({ status: 'expired' });
-
-            let selectCallCount = 0;
             const fullRow = {
                 ...purchase,
                 status: 'active',
@@ -405,26 +444,32 @@ describe('AdminAddonService.activateAddon', () => {
                 customerName: null
             };
 
-            // Track UPDATE calls so we can assert the flag-setting update
+            // Override withTransaction to use execute for the SELECT FOR UPDATE
+            mockWithTransaction.mockImplementation(
+                async (callback: (tx: DrizzleClient) => Promise<unknown>) => {
+                    const fakeTx = {
+                        execute: vi.fn().mockResolvedValue({ rows: [purchase] }),
+                        update: vi.fn(() => ({
+                            set: vi.fn(() => ({
+                                where: vi.fn().mockResolvedValue({ rowCount: 1 })
+                            }))
+                        }))
+                    } as unknown as DrizzleClient;
+                    return callback(fakeTx);
+                }
+            );
+
+            // Track UPDATE calls from getDb() — both the flag UPDATE and getAddonPurchaseById select
             const updateCalls: Array<{ set: Record<string, unknown> }> = [];
-            const makeUpdateChain = (setPayload?: Record<string, unknown>) => {
-                const mockUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
+            const mockUpdate = vi.fn(() => {
                 const mockUpdateSet = vi.fn((payload: Record<string, unknown>) => {
-                    if (setPayload !== undefined) {
-                        Object.assign(setPayload, payload);
-                    }
                     updateCalls.push({ set: payload });
-                    return { where: mockUpdateWhere };
+                    return { where: vi.fn().mockResolvedValue({ rowCount: 1 }) };
                 });
-                return vi.fn(() => ({ set: mockUpdateSet }));
-            };
-
-            const mockUpdate = makeUpdateChain();
-
-            const mockLimit = vi.fn(() => {
-                selectCallCount++;
-                return Promise.resolve(selectCallCount === 1 ? [purchase] : [fullRow]);
+                return { set: mockUpdateSet };
             });
+
+            const mockLimit = vi.fn().mockResolvedValue([fullRow]);
             const mockWhere = vi.fn(() => ({ limit: mockLimit }));
             const mockInnerJoin = vi.fn(() => ({ where: mockWhere }));
             const mockFrom = vi.fn(() => ({ where: mockWhere, innerJoin: mockInnerJoin }));
@@ -441,16 +486,14 @@ describe('AdminAddonService.activateAddon', () => {
             // Act
             await service.activateAddon({ purchaseId });
 
-            // Assert: the second UPDATE call sets needsEntitlementSync=true
+            // Assert: a getDb() UPDATE call sets needsEntitlementSync=true
             const flagUpdate = updateCalls.find((call) => call.set.needsEntitlementSync === true);
             expect(flagUpdate).toBeDefined();
         });
 
         it('should still return a successful result even if QZPay throws', async () => {
-            // Arrange
+            // Arrange — execute returns purchase; after QZPay fails we still return success
             const purchase = createMockPurchase({ status: 'expired' });
-
-            let selectCallCount = 0;
             const fullRow = {
                 ...purchase,
                 status: 'active',
@@ -458,14 +501,25 @@ describe('AdminAddonService.activateAddon', () => {
                 customerName: null
             };
 
+            mockWithTransaction.mockImplementation(
+                async (callback: (tx: DrizzleClient) => Promise<unknown>) => {
+                    const fakeTx = {
+                        execute: vi.fn().mockResolvedValue({ rows: [purchase] }),
+                        update: vi.fn(() => ({
+                            set: vi.fn(() => ({
+                                where: vi.fn().mockResolvedValue({ rowCount: 1 })
+                            }))
+                        }))
+                    } as unknown as DrizzleClient;
+                    return callback(fakeTx);
+                }
+            );
+
             const mockUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
             const mockUpdateSet = vi.fn(() => ({ where: mockUpdateWhere }));
             const mockUpdate = vi.fn(() => ({ set: mockUpdateSet }));
 
-            const mockLimit = vi.fn(() => {
-                selectCallCount++;
-                return Promise.resolve(selectCallCount === 1 ? [purchase] : [fullRow]);
-            });
+            const mockLimit = vi.fn().mockResolvedValue([fullRow]);
             const mockWhere = vi.fn(() => ({ limit: mockLimit }));
             const mockInnerJoin = vi.fn(() => ({ where: mockWhere }));
             const mockFrom = vi.fn(() => ({ where: mockWhere, innerJoin: mockInnerJoin }));
@@ -487,10 +541,8 @@ describe('AdminAddonService.activateAddon', () => {
         });
 
         it('should not propagate errors from the needsEntitlementSync flag UPDATE', async () => {
-            // Arrange
+            // Arrange — flag-setting UPDATE throws; must not propagate
             const purchase = createMockPurchase({ status: 'expired' });
-
-            let selectCallCount = 0;
             const fullRow = {
                 ...purchase,
                 status: 'active',
@@ -498,13 +550,26 @@ describe('AdminAddonService.activateAddon', () => {
                 customerName: null
             };
 
-            // The flag-setting UPDATE itself throws
+            mockWithTransaction.mockImplementation(
+                async (callback: (tx: DrizzleClient) => Promise<unknown>) => {
+                    const fakeTx = {
+                        execute: vi.fn().mockResolvedValue({ rows: [purchase] }),
+                        update: vi.fn(() => ({
+                            set: vi.fn(() => ({
+                                where: vi.fn().mockResolvedValue({ rowCount: 1 })
+                            }))
+                        }))
+                    } as unknown as DrizzleClient;
+                    return callback(fakeTx);
+                }
+            );
+
+            // The flag-setting UPDATE from getDb() throws
             let updateCallCount = 0;
             const mockUpdate = vi.fn(() => {
                 updateCallCount++;
                 const mockUpdateWhere = vi.fn().mockImplementation(() => {
-                    // Second UPDATE (flag set) throws
-                    if (updateCallCount >= 2) {
+                    if (updateCallCount >= 1) {
                         return Promise.reject(new Error('Flag update failed'));
                     }
                     return Promise.resolve({ rowCount: 1 });
@@ -512,10 +577,7 @@ describe('AdminAddonService.activateAddon', () => {
                 return { set: vi.fn(() => ({ where: mockUpdateWhere })) };
             });
 
-            const mockLimit = vi.fn(() => {
-                selectCallCount++;
-                return Promise.resolve(selectCallCount === 1 ? [purchase] : [fullRow]);
-            });
+            const mockLimit = vi.fn().mockResolvedValue([fullRow]);
             const mockWhere = vi.fn(() => ({ limit: mockLimit }));
             const mockInnerJoin = vi.fn(() => ({ where: mockWhere }));
             const mockFrom = vi.fn(() => ({ where: mockWhere, innerJoin: mockInnerJoin }));
@@ -540,10 +602,9 @@ describe('AdminAddonService.activateAddon', () => {
 
     describe('when QZPay entitlement grant succeeds', () => {
         it('should include needsEntitlementSync=false in the transaction UPDATE', async () => {
-            // Arrange
+            // Arrange — the source performs SELECT FOR UPDATE via tx.execute(), then
+            // updates status via tx.update().set(). We capture what gets passed to .set().
             const purchase = createMockPurchase({ status: 'expired' });
-
-            let selectCallCount = 0;
             const fullRow = {
                 ...purchase,
                 status: 'active',
@@ -554,10 +615,11 @@ describe('AdminAddonService.activateAddon', () => {
             // Capture what gets passed to .set() inside the transaction
             const captured = { setPayload: null as { needsEntitlementSync?: boolean } | null };
 
-            // Override withTransaction to capture the tx.update().set() call
+            // Override withTransaction to provide execute (SELECT FOR UPDATE) and capture UPDATE SET
             mockWithTransaction.mockImplementation(
                 async (callback: (tx: DrizzleClient) => Promise<unknown>) => {
                     const fakeTx = {
+                        execute: vi.fn().mockResolvedValue({ rows: [purchase] }),
                         update: vi.fn(() => ({
                             set: vi.fn((payload: Record<string, unknown>) => {
                                 captured.setPayload = payload as { needsEntitlementSync?: boolean };
@@ -569,20 +631,14 @@ describe('AdminAddonService.activateAddon', () => {
                 }
             );
 
-            const mockUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
-            const mockUpdateSet = vi.fn(() => ({ where: mockUpdateWhere }));
-            const mockUpdate = vi.fn(() => ({ set: mockUpdateSet }));
-
-            const mockLimit = vi.fn(() => {
-                selectCallCount++;
-                return Promise.resolve(selectCallCount === 1 ? [purchase] : [fullRow]);
-            });
+            // getAddonPurchaseById uses getDb().select() after the transaction
+            const mockLimit = vi.fn().mockResolvedValue([fullRow]);
             const mockWhere = vi.fn(() => ({ limit: mockLimit }));
             const mockInnerJoin = vi.fn(() => ({ where: mockWhere }));
             const mockFrom = vi.fn(() => ({ where: mockWhere, innerJoin: mockInnerJoin }));
             const mockSelect = vi.fn(() => ({ from: mockFrom }));
 
-            const fakeDb = { select: mockSelect, update: mockUpdate };
+            const fakeDb = { select: mockSelect, update: vi.fn() };
             mockGetDb.mockReturnValue(fakeDb as unknown as ReturnType<typeof getDb>);
 
             // QZPay succeeds

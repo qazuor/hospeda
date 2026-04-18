@@ -20,6 +20,19 @@ vi.mock('@repo/billing', () => ({
     getAddonBySlug: vi.fn()
 }));
 
+// Mock @repo/db (static import at top of addon.user-addons.ts) to prevent real DB connection
+// attempts when the module is first loaded. cancelUserAddon uses @repo/db/client via dynamic
+// import, so the actual mock for that function lives in the @repo/db/client mock below.
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/db')>();
+    return {
+        ...actual,
+        getDb: vi.fn(() => ({})),
+        withTransaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback({})),
+        billingSubscriptions: { id: 'id', customerId: 'customer_id', deletedAt: 'deleted_at' }
+    };
+});
+
 vi.mock('@repo/db/schemas/billing', () => ({
     billingAddonPurchases: {
         id: 'id',
@@ -64,6 +77,14 @@ vi.mock('@repo/config', async (importOriginal) => {
     return { ...actual };
 });
 
+vi.mock('@repo/notifications', () => ({
+    NotificationType: { ADDON_CANCELLATION: 'ADDON_CANCELLATION' }
+}));
+
+vi.mock('../../src/utils/notification-helper', () => ({
+    sendNotification: vi.fn().mockResolvedValue(undefined)
+}));
+
 // Mock service-core addon-user-addons module for cancelAddonPurchaseRecord.
 // After migration, the non-limit cancel path delegates to this function.
 const { mockCancelAddonPurchaseRecord } = vi.hoisted(() => ({
@@ -77,41 +98,66 @@ vi.mock('../../../../packages/service-core/src/services/billing/addon/addon-user
     cancelAddonPurchaseRecord: mockCancelAddonPurchaseRecord
 }));
 
+// Mock @repo/service-core to prevent real module initialization (DB connection attempts).
+// Only BILLING_EVENT_TYPES and cancelAddonPurchaseRecord are used in addon.user-addons.ts static imports.
+vi.mock('@repo/service-core', () => ({
+    BILLING_EVENT_TYPES: {
+        ADDON_REVOCATIONS_PENDING: 'addon_revocations_pending'
+    },
+    cancelAddonPurchaseRecord: mockCancelAddonPurchaseRecord,
+    queryUserAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
+    queryAddonActive: vi.fn().mockResolvedValue({ success: true, data: false })
+}));
+
 // ─── Hoisted DB mock ──────────────────────────────────────────────────────────
 
-const { mockTxUpdate, mockDbSelect, mockDbUpdate, mockDbTransaction } = vi.hoisted(() => {
-    // Transaction-internal update chain
-    const mockTxUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
-    const mockTxUpdateSet = vi.fn(() => ({ where: mockTxUpdateWhere }));
-    const mockTxUpdate = vi.fn(() => ({ set: mockTxUpdateSet }));
+const { mockTxUpdate, mockDbSelect, mockDbUpdate, mockDbTransaction, mockWithTransaction } =
+    vi.hoisted(() => {
+        // Transaction-internal update chain
+        const mockTxUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
+        const mockTxUpdateSet = vi.fn(() => ({ where: mockTxUpdateWhere }));
+        const mockTxUpdate = vi.fn(() => ({ set: mockTxUpdateSet }));
 
-    // Outer select chain: select() -> from() -> where() -> limit()
-    const mockDbLimit = vi.fn().mockResolvedValue([]);
-    const mockDbWhere = vi.fn(() => ({ limit: mockDbLimit }));
-    const mockDbFrom = vi.fn(() => ({ where: mockDbWhere }));
-    const mockDbSelect = vi.fn(() => ({ from: mockDbFrom }));
+        // Outer select chain: select() -> from() -> where() -> limit()
+        const mockDbLimit = vi.fn().mockResolvedValue([]);
+        const mockDbWhere = vi.fn(() => ({ limit: mockDbLimit }));
+        const mockDbFrom = vi.fn(() => ({ where: mockDbWhere }));
+        const mockDbSelect = vi.fn(() => ({ from: mockDbFrom }));
 
-    // Outer update chain (used when no limit recalc needed)
-    const mockDbUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
-    const mockDbUpdateSet = vi.fn(() => ({ where: mockDbUpdateWhere }));
-    const mockDbUpdate = vi.fn(() => ({ set: mockDbUpdateSet }));
+        // Outer update chain (used when no limit recalc needed)
+        const mockDbUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
+        const mockDbUpdateSet = vi.fn(() => ({ where: mockDbUpdateWhere }));
+        const mockDbUpdate = vi.fn(() => ({ set: mockDbUpdateSet }));
 
-    // Transaction: executes callback with tx that has an update method
-    const mockDbTransaction = vi.fn(
-        async (callback: (tx: { update: typeof mockTxUpdate }) => Promise<unknown>) => {
-            return callback({ update: mockTxUpdate });
-        }
-    );
+        // Transaction: executes callback with tx that has an update method
+        const mockDbTransaction = vi.fn(
+            async (callback: (tx: { update: typeof mockTxUpdate }) => Promise<unknown>) => {
+                return callback({ update: mockTxUpdate });
+            }
+        );
 
-    return { mockTxUpdate, mockDbSelect, mockDbUpdate, mockDbTransaction };
-});
+        // withTransaction: SPEC-064 replacement for db.transaction() — executes callback
+        // in a transaction or passes through an existing tx.
+        const mockWithTransaction = vi.fn(
+            async (
+                callback: (tx: { update: typeof mockTxUpdate }) => Promise<unknown>,
+                existingTx?: unknown
+            ) => {
+                if (existingTx) return callback(existingTx as { update: typeof mockTxUpdate });
+                return mockDbTransaction(callback);
+            }
+        );
+
+        return { mockTxUpdate, mockDbSelect, mockDbUpdate, mockDbTransaction, mockWithTransaction };
+    });
 
 vi.mock('@repo/db/client', () => ({
     getDb: vi.fn(() => ({
         select: mockDbSelect,
         update: mockDbUpdate,
         transaction: mockDbTransaction
-    }))
+    })),
+    withTransaction: mockWithTransaction
 }));
 
 // ─── Constants & fixtures ─────────────────────────────────────────────────────
@@ -217,6 +263,17 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
                 return callback({ update: mockTxUpdate });
             }
         );
+
+        // Restore withTransaction: wraps the callback in mockDbTransaction or passes through existingTx.
+        mockWithTransaction.mockImplementation(
+            async (
+                callback: (tx: { update: typeof mockTxUpdate }) => Promise<unknown>,
+                existingTx?: unknown
+            ) => {
+                if (existingTx) return callback(existingTx as { update: typeof mockTxUpdate });
+                return mockDbTransaction(callback);
+            }
+        );
     });
 
     afterEach(() => {
@@ -224,10 +281,11 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
     });
 
     // =========================================================================
-    // T-029-1: recalc fails → purchase is NOT marked as canceled (rollback)
+    // T-029-1: recalc fails → SPEC-064 post-commit behavior: cancel SUCCEEDS,
+    //          Sentry reports the failure, DB update is committed (not rolled back)
     // =========================================================================
-    describe('T-029-1: recalc fails → transaction rolled back, purchase stays active', () => {
-        it('should return LIMIT_RECALCULATION_FAILED and not persist canceled status when recalc fails', async () => {
+    describe('T-029-1: recalc fails → cancel committed (SPEC-064 post-commit behavior)', () => {
+        it('should return success even when recalc fails (SPEC-064: recalc is post-commit)', async () => {
             // Arrange
             const { getAddonBySlug } = await import('@repo/billing');
             (getAddonBySlug as unknown as MockInstance).mockReturnValue(limitAddonDef);
@@ -244,13 +302,6 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
                 addonCount: 0
             });
 
-            // Transaction rollback simulation: when callback throws, transaction re-throws
-            mockDbTransaction.mockImplementation(
-                async (callback: (tx: { update: typeof mockTxUpdate }) => Promise<unknown>) => {
-                    return await callback({ update: mockTxUpdate });
-                }
-            );
-
             mockSelectReturningPurchase(activeLimitAddonPurchase);
 
             // Act
@@ -261,13 +312,13 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
                 cancelInput
             );
 
-            // Assert: service returns failure
-            expect(result.success).toBe(false);
-            expect(result.error?.code).toBe('LIMIT_RECALCULATION_FAILED');
-            expect(result.error?.message).toContain('rolled back');
+            // Assert: SPEC-064 changed behavior — recalc failure does NOT fail the cancel.
+            // The DB update already committed in Phase 1; QZPay recalc is post-commit.
+            // The webhook safety net provides eventual consistency.
+            expect(result.success).toBe(true);
         });
 
-        it('should NOT persist status=canceled in the DB when recalc fails (rollback verification)', async () => {
+        it('should persist status=canceled in DB even when recalc fails (commit-then-recalc)', async () => {
             // Arrange
             const { getAddonBySlug } = await import('@repo/billing');
             (getAddonBySlug as unknown as MockInstance).mockReturnValue(limitAddonDef);
@@ -284,7 +335,7 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
                 addonCount: 0
             });
 
-            // Simulate transaction rollback: callback throws, tx.update was called but is undone
+            // Track that tx.update was called (the cancel was committed)
             let txUpdateWasCalled = false;
             const captureUpdate = vi.fn(() => {
                 txUpdateWasCalled = true;
@@ -309,11 +360,10 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
                 cancelInput
             );
 
-            // Assert: result is failure and outer db.update was NOT called (only tx.update inside
-            // the rolled-back transaction was called, but that is discarded by the rollback)
-            expect(result.success).toBe(false);
-            expect(txUpdateWasCalled).toBe(true); // update was attempted inside transaction
-            expect(mockDbUpdate).not.toHaveBeenCalled(); // outer direct update was NOT used
+            // Assert: tx.update WAS called (cancel committed) AND result is success
+            expect(result.success).toBe(true);
+            expect(txUpdateWasCalled).toBe(true); // DB cancel was committed
+            expect(mockDbUpdate).not.toHaveBeenCalled(); // outer direct update NOT used (tx path)
         });
     });
 

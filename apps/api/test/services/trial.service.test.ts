@@ -11,6 +11,87 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// ---------------------------------------------------------------------------
+// Module mocks (hoisted — must appear before any imports that depend on them)
+// ---------------------------------------------------------------------------
+
+// withServiceTransaction mock: acquires the advisory lock and executes the callback.
+// The trial service uses withServiceTransaction to acquire pg_try_advisory_xact_lock.
+const { mockWithServiceTransaction, mockDbForTrial } = vi.hoisted(() => {
+    const tx = {
+        execute: vi.fn().mockResolvedValue({
+            rows: [{ pg_try_advisory_xact_lock: true }]
+        })
+    };
+    const withSvcTx = vi.fn(async <T>(callback: (ctx: { tx: typeof tx }) => Promise<T>) =>
+        callback({ tx })
+    );
+    const dbMock = {
+        select: vi.fn().mockReturnThis(),
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([]),
+        insert: vi.fn().mockReturnThis(),
+        values: vi.fn().mockResolvedValue(undefined)
+    };
+    return { mockWithServiceTransaction: withSvcTx, mockDbForTrial: dbMock };
+});
+
+// Mock @repo/service-core to intercept withServiceTransaction
+vi.mock('@repo/service-core', async () => {
+    const actual = await vi.importActual('@repo/service-core');
+    return { ...actual, withServiceTransaction: mockWithServiceTransaction };
+});
+
+// Mock @repo/db for getDb() used in blockExpiredTrials select/insert calls
+vi.mock('@repo/db', async () => {
+    const actual = await vi.importActual('@repo/db');
+    return {
+        ...actual,
+        getDb: vi.fn(() => mockDbForTrial),
+        billingSubscriptionEvents: {
+            id: 'id',
+            subscriptionId: 'subscriptionId',
+            eventType: 'eventType'
+        }
+    };
+});
+
+// Mock drizzle-orm helpers used inside the service (and, eq, sql)
+vi.mock('drizzle-orm', async () => {
+    const actual = await vi.importActual('drizzle-orm');
+    return {
+        ...actual,
+        and: (...args: unknown[]) => ({ type: 'and', args }),
+        eq: (a: unknown, b: unknown) => ({ type: 'eq', a, b }),
+        sql: Object.assign(
+            (strings: TemplateStringsArray, ..._values: unknown[]) => ({ type: 'sql', strings }),
+            { raw: (s: string) => ({ type: 'sql_raw', value: s }) }
+        )
+    };
+});
+
+// Mock Sentry (used in blockExpiredTrials for error capture)
+vi.mock('@sentry/node', () => ({
+    captureException: vi.fn()
+}));
+
+// Mock clearEntitlementCache (called after blocking)
+vi.mock('../../src/middlewares/entitlement', () => ({
+    clearEntitlementCache: vi.fn()
+}));
+
+// Mock apiLogger
+vi.mock('../../src/utils/logger', () => ({
+    apiLogger: {
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn()
+    }
+}));
+
 import { TrialService } from '../../src/services/trial.service';
 
 // Mock QZPay billing

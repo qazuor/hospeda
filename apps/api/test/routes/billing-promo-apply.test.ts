@@ -578,7 +578,8 @@ describe('Promo Code Apply Functionality', () => {
                 expect(result.data.code).toBe('UPPERCASE');
             }
             // Verify the CRUD service was called with the uppercase code
-            expect(mockGetPromoCodeByCode).toHaveBeenCalledWith('UPPERCASE');
+            // (second arg is optional ctx which may be undefined)
+            expect(mockGetPromoCodeByCode).toHaveBeenCalledWith('UPPERCASE', undefined);
         });
     });
 

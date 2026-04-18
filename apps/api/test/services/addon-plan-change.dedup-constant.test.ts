@@ -308,6 +308,8 @@ describe('DEDUP_WINDOW_MS behavioral constant (SPEC-064)', () => {
         const baseTs = 1_000_000_000_000;
 
         // First call — seeds the in-memory map at baseTs
+        // The source calls withServiceTransaction twice per successful invocation:
+        //   Phase 1 (read + advisory lock) and Phase 3 (dedup event write).
         vi.spyOn(Date, 'now').mockReturnValue(baseTs);
         await handlePlanChangeAddonRecalculation({
             customerId,
@@ -316,7 +318,7 @@ describe('DEDUP_WINDOW_MS behavioral constant (SPEC-064)', () => {
             billing,
             db: db as never
         });
-        expect(mockWithServiceTransaction).toHaveBeenCalledOnce();
+        expect(mockWithServiceTransaction).toHaveBeenCalledTimes(2);
         mockWithServiceTransaction.mockClear();
 
         // Second call — still inside the window (1 ms before expiry)
@@ -349,6 +351,8 @@ describe('DEDUP_WINDOW_MS behavioral constant (SPEC-064)', () => {
         const baseTs = 2_000_000_000_000;
 
         // First call — seeds the in-memory map at baseTs
+        // The source calls withServiceTransaction twice per successful invocation:
+        //   Phase 1 (read + advisory lock) and Phase 3 (dedup event write).
         vi.spyOn(Date, 'now').mockReturnValue(baseTs);
         await handlePlanChangeAddonRecalculation({
             customerId,
@@ -357,7 +361,7 @@ describe('DEDUP_WINDOW_MS behavioral constant (SPEC-064)', () => {
             billing,
             db: db as never
         });
-        expect(mockWithServiceTransaction).toHaveBeenCalledOnce();
+        expect(mockWithServiceTransaction).toHaveBeenCalledTimes(2);
         mockWithServiceTransaction.mockClear();
 
         // Second call — just past the expiry boundary (1 ms after)
@@ -370,8 +374,10 @@ describe('DEDUP_WINDOW_MS behavioral constant (SPEC-064)', () => {
             db: db as never
         });
 
-        // Assert — dedup guard did NOT fire; transaction was opened for the second call
-        expect(mockWithServiceTransaction).toHaveBeenCalledOnce();
+        // Assert — dedup guard did NOT fire; transactions were opened for the second call
+        // The source calls withServiceTransaction twice per successful invocation:
+        //   Phase 1 (read + advisory lock) and Phase 3 (dedup event write).
+        expect(mockWithServiceTransaction).toHaveBeenCalledTimes(2);
         // At least one recalculation attempted (purchase row was returned)
         expect(result.recalculations.length).toBeGreaterThanOrEqual(0);
     });

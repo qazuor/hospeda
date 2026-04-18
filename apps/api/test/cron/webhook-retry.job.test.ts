@@ -15,15 +15,29 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // Module mocks (must be declared before any imports that use them)
 // ---------------------------------------------------------------------------
 
+// withTransaction mock: calls the callback with the same db object returned by getDb.
+// This mirrors the actual behavior where tx is the Drizzle transaction client.
+// Must be defined before vi.mock so it is accessible via vi.hoisted pattern.
+const { mockGetDb, mockWithTransactionWebhook } = vi.hoisted(() => {
+    const getDbFn = vi.fn();
+    // withTransaction passes the db returned by getDb as the tx to the callback.
+    // This allows tests that configure getDb to also drive the tx queries.
+    const withTx = vi.fn(async <T>(callback: (tx: ReturnType<typeof getDbFn>) => Promise<T>) =>
+        callback(getDbFn())
+    );
+    return { mockGetDb: getDbFn, mockWithTransactionWebhook: withTx };
+});
+
 vi.mock('@repo/db', () => ({
-    getDb: vi.fn(),
+    getDb: mockGetDb,
+    withTransaction: mockWithTransactionWebhook,
     billingWebhookEvents: { providerEventId: 'providerEventId', status: 'status' },
     billingWebhookDeadLetter: { id: 'id', resolvedAt: 'resolvedAt', attempts: 'attempts' },
     eq: vi.fn((_col: unknown, _val: unknown) => ({ __eq: true })),
     isNull: vi.fn((_col: unknown) => ({ __isNull: true })),
     and: vi.fn((...conditions: unknown[]) => ({ __and: true, conditions })),
     lt: vi.fn((_col: unknown, _val: unknown) => ({ __lt: true })),
-    // sql is required for pg_try_advisory_lock (concurrency guard added in GAP-009)
+    // sql is required for pg_try_advisory_xact_lock (concurrency guard added in GAP-009)
     sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
         __sql: true,
         strings,

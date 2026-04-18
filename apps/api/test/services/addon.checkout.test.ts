@@ -27,6 +27,7 @@ import { confirmAddonPurchase } from '../../src/services/addon.checkout';
  */
 const {
     mockDbTransaction,
+    mockWithTransaction,
     mockDbInsertReturning,
     mockDbInsertValues,
     mockBillingAddonPurchasesTable
@@ -36,10 +37,36 @@ const {
     const mockDbInsertValues = vi.fn(() => ({ returning: mockDbInsertReturning }));
     const mockDbInsert = vi.fn(() => ({ values: mockDbInsertValues }));
 
-    // transaction() wraps insert; callback receives tx which mirrors db
+    // SPEC-064: tx.execute() is used for SELECT FOR UPDATE dedup check inside the transaction.
+    // Return empty rows to indicate no existing active purchase (allow insert).
+    const mockTxExecute = vi.fn().mockResolvedValue({ rows: [] });
+
+    // transaction() wraps insert; callback receives tx with insert + execute (SPEC-064)
     const mockDbTransaction = vi.fn(
-        async (callback: (tx: { insert: typeof mockDbInsert }) => Promise<unknown>) => {
-            return callback({ insert: mockDbInsert });
+        async (
+            callback: (tx: {
+                insert: typeof mockDbInsert;
+                execute: typeof mockTxExecute;
+            }) => Promise<unknown>
+        ) => {
+            return callback({ insert: mockDbInsert, execute: mockTxExecute });
+        }
+    );
+
+    // SPEC-064: withTransaction replaces db.transaction() for atomic operations.
+    const mockWithTransaction = vi.fn(
+        async (
+            callback: (tx: {
+                insert: typeof mockDbInsert;
+                execute: typeof mockTxExecute;
+            }) => Promise<unknown>,
+            existingTx?: unknown
+        ) => {
+            if (existingTx)
+                return callback(
+                    existingTx as { insert: typeof mockDbInsert; execute: typeof mockTxExecute }
+                );
+            return mockDbTransaction(callback);
         }
     );
 
@@ -60,6 +87,7 @@ const {
 
     return {
         mockDbTransaction,
+        mockWithTransaction,
         mockDbInsertReturning,
         mockDbInsertValues,
         mockBillingAddonPurchasesTable
@@ -70,7 +98,9 @@ const {
 vi.mock('@repo/db/client', () => ({
     getDb: vi.fn(() => ({
         transaction: mockDbTransaction
-    }))
+    })),
+    // SPEC-064: withTransaction wraps the DB insert in an atomic transaction
+    withTransaction: mockWithTransaction
 }));
 
 // Mock @repo/db/schemas/billing - dynamic import used inside confirmAddonPurchase
@@ -191,11 +221,40 @@ describe('confirmAddonPurchase', () => {
 
         // Reset default: successful insert returning a known purchaseId
         mockDbInsertReturning.mockResolvedValue([{ id: 'purchase_uuid_abc' }]);
+
+        // Restore mockDbTransaction after clearAllMocks.
+        // SPEC-064: tx must have both insert() and execute() (for SELECT FOR UPDATE dedup check).
         mockDbTransaction.mockImplementation(
-            async (callback: (tx: { insert: ReturnType<typeof vi.fn> }) => Promise<unknown>) => {
+            async (
+                callback: (tx: {
+                    insert: ReturnType<typeof vi.fn>;
+                    execute: ReturnType<typeof vi.fn>;
+                }) => Promise<unknown>
+            ) => {
                 const mockInsert = vi.fn(() => ({ values: mockDbInsertValues }));
+                const mockExecute = vi.fn().mockResolvedValue({ rows: [] }); // no duplicate → allow insert
                 mockDbInsertValues.mockReturnValue({ returning: mockDbInsertReturning });
-                return callback({ insert: mockInsert });
+                return callback({ insert: mockInsert, execute: mockExecute });
+            }
+        );
+
+        // Restore mockWithTransaction (SPEC-064) after clearAllMocks.
+        mockWithTransaction.mockImplementation(
+            async (
+                callback: (tx: {
+                    insert: ReturnType<typeof vi.fn>;
+                    execute: ReturnType<typeof vi.fn>;
+                }) => Promise<unknown>,
+                existingTx?: unknown
+            ) => {
+                if (existingTx)
+                    return callback(
+                        existingTx as {
+                            insert: ReturnType<typeof vi.fn>;
+                            execute: ReturnType<typeof vi.fn>;
+                        }
+                    );
+                return mockDbTransaction(callback);
             }
         );
     });

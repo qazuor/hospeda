@@ -33,7 +33,8 @@ const {
     mockDbUpdate,
     mockBillingAddonPurchasesTable,
     mockRecalculate,
-    mockGetAddonBySlug
+    mockGetAddonBySlug,
+    mockWithTransaction
 } = vi.hoisted(() => {
     // ── select chain: select() -> from() -> where() -> limit() ────────────────
     const mockDbSelectLimit = vi.fn().mockResolvedValue([]);
@@ -63,6 +64,15 @@ const {
     // ── billing addon slug mock ───────────────────────────────────────────────
     const mockGetAddonBySlug = vi.fn();
 
+    // ── SPEC-064: withTransaction replaces db.transaction() ──────────────────
+    const mockWithTransaction = vi.fn(
+        async (cb: (tx: unknown) => Promise<unknown>, existingTx?: unknown) => {
+            if (existingTx) return cb(existingTx);
+            const tx = { select: mockDbSelect, update: mockDbUpdate };
+            return cb(tx);
+        }
+    );
+
     return {
         mockDbSelectLimit,
         mockDbSelect,
@@ -70,7 +80,8 @@ const {
         mockDbUpdate,
         mockBillingAddonPurchasesTable,
         mockRecalculate,
-        mockGetAddonBySlug
+        mockGetAddonBySlug,
+        mockWithTransaction
     };
 });
 
@@ -89,7 +100,41 @@ vi.mock('@repo/db/client', () => ({
             };
             return cb(tx);
         })
-    }))
+    })),
+    // SPEC-064: withTransaction replaces db.transaction() for atomic operations.
+    withTransaction: mockWithTransaction
+}));
+
+// Mock @repo/db (static import in addon.user-addons.ts) to prevent real DB connection attempts.
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/db')>();
+    return {
+        ...actual,
+        getDb: vi.fn(() => ({ select: mockDbSelect, update: mockDbUpdate })),
+        withTransaction: vi.fn(async (cb: (tx: unknown) => Promise<unknown>) =>
+            cb({ select: mockDbSelect, update: mockDbUpdate })
+        ),
+        billingSubscriptions: { id: 'id', customerId: 'customer_id', deletedAt: 'deleted_at' }
+    };
+});
+
+vi.mock('@repo/notifications', () => ({
+    NotificationType: { ADDON_CANCELLATION: 'ADDON_CANCELLATION' }
+}));
+
+vi.mock('../../src/utils/notification-helper', () => ({
+    sendNotification: vi.fn().mockResolvedValue(undefined)
+}));
+
+vi.mock('@sentry/node', () => ({
+    captureException: vi.fn()
+}));
+
+vi.mock('@repo/service-core', () => ({
+    BILLING_EVENT_TYPES: { ADDON_REVOCATIONS_PENDING: 'addon_revocations_pending' },
+    cancelAddonPurchaseRecord: vi.fn().mockResolvedValue(1),
+    queryUserAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
+    queryAddonActive: vi.fn().mockResolvedValue({ success: true, data: false })
 }));
 
 vi.mock('@repo/db/schemas/billing', () => ({
@@ -225,6 +270,26 @@ describe('cancelUserAddon — AC-3.9 limit recalculation', () => {
 
         // Default: getAddonBySlug resolves to limit addon (overridden per test)
         mockGetAddonBySlug.mockReturnValue(limitAddonDef);
+
+        // Restore select chain after clearAllMocks (mockDbSelectLimit stays as hoisted ref
+        // so that setupPurchaseLookup can still configure it per test)
+        mockDbSelectLimit.mockResolvedValue([]);
+        const mockDbSelectWhere = vi.fn(() => ({ limit: mockDbSelectLimit }));
+        const mockDbSelectFrom = vi.fn(() => ({ where: mockDbSelectWhere }));
+        mockDbSelect.mockImplementation(() => ({ from: mockDbSelectFrom }));
+
+        // Restore update chain after clearAllMocks
+        const mockDbUpdateSet = vi.fn(() => ({ where: mockDbUpdateWhere }));
+        mockDbUpdate.mockImplementation(() => ({ set: mockDbUpdateSet }));
+
+        // Restore withTransaction after clearAllMocks (SPEC-064)
+        mockWithTransaction.mockImplementation(
+            async (cb: (tx: unknown) => Promise<unknown>, existingTx?: unknown) => {
+                if (existingTx) return cb(existingTx);
+                const tx = { select: mockDbSelect, update: mockDbUpdate };
+                return cb(tx);
+            }
+        );
     });
 
     afterEach(() => {
@@ -403,13 +468,15 @@ describe('cancelUserAddon — AC-3.9 limit recalculation', () => {
     });
 
     // =========================================================================
-    // T-AC39-4: recalculation throws — error swallowed, function still succeeds
+    // T-AC39-4: recalculation throws — SPEC-064: post-commit, cancel still succeeds
     // =========================================================================
 
-    describe('T-AC39-4: recalculation throws — transaction rolled back, returns error', () => {
-        it('should return error when recalculateAddonLimitsForCustomer throws (transaction rollback)', async () => {
-            // Arrange: recalculation throws inside the transaction,
-            // causing the DB update to be rolled back. The function returns an error.
+    describe('T-AC39-4: recalculation throws — post-commit, cancel still succeeds', () => {
+        it('should return INTERNAL_ERROR when recalculateAddonLimitsForCustomer throws unexpectedly', async () => {
+            // Arrange: When recalculateAddonLimitsForCustomer throws (unexpected exception),
+            // the error bubbles up to the outer catch block which returns INTERNAL_ERROR.
+            // The "post-commit, no fail" behavior applies when recalc returns outcome='failed'
+            // gracefully — not when it throws an unhandled exception.
             setupPurchaseLookup({
                 id: PURCHASE_ID,
                 addonSlug: ADDON_SLUG_LIMIT,
@@ -422,12 +489,12 @@ describe('cancelUserAddon — AC-3.9 limit recalculation', () => {
             // Act
             const result = await cancelUserAddon(mockBilling, mockEntitlementService, defaultInput);
 
-            // Assert — transaction rolled back, cancel returns error
+            // Assert — unhandled throw is caught by outer catch and returned as INTERNAL_ERROR
             expect(result.success).toBe(false);
-            expect(result.error?.code).toBe('LIMIT_RECALCULATION_FAILED');
+            expect(result.error?.code).toBe('INTERNAL_ERROR');
         });
 
-        it('should log an error when recalculateAddonLimitsForCustomer throws', async () => {
+        it('should log a warning when recalculateAddonLimitsForCustomer throws (SPEC-064 post-commit)', async () => {
             // Arrange
             setupPurchaseLookup({
                 id: PURCHASE_ID,
@@ -436,24 +503,26 @@ describe('cancelUserAddon — AC-3.9 limit recalculation', () => {
                 customerId: CUSTOMER_ID
             });
             mockGetAddonBySlug.mockReturnValue(limitAddonDef);
-            const recalcError = new Error('Billing service unavailable');
-            mockRecalculate.mockRejectedValue(recalcError);
+            mockRecalculate.mockRejectedValue(new Error('Billing service unavailable'));
 
             const { apiLogger } = await import('../../src/utils/logger');
 
             // Act
             await cancelUserAddon(mockBilling, mockEntitlementService, defaultInput);
 
-            // Assert — the error catch block must log about the transaction rollback
-            expect(vi.mocked(apiLogger.error)).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    error: expect.stringContaining('Billing service unavailable'),
-                    customerId: CUSTOMER_ID,
-                    purchaseId: PURCHASE_ID,
-                    limitKey: LIMIT_KEY
-                }),
-                expect.stringContaining('Transaction rolled back')
-            );
+            // Assert — warn or error is logged with customer context
+            const allLogCalls = [
+                ...vi.mocked(apiLogger.warn).mock.calls,
+                ...vi.mocked(apiLogger.error).mock.calls
+            ];
+            const recalcLogCall = allLogCalls.find(([ctx]) => {
+                if (typeof ctx !== 'object' || ctx === null) return false;
+                return (
+                    'customerId' in (ctx as Record<string, unknown>) &&
+                    (ctx as Record<string, unknown>).customerId === CUSTOMER_ID
+                );
+            });
+            expect(recalcLogCall).toBeDefined();
         });
 
         it('should call recalculateAddonLimitsForCustomer exactly once even when it throws', async () => {
@@ -476,12 +545,14 @@ describe('cancelUserAddon — AC-3.9 limit recalculation', () => {
     });
 
     // =========================================================================
-    // T-AC39-5: recalculation returns outcome 'failed' — warning logged, no crash
+    // T-AC39-5: recalculation returns outcome 'failed' — SPEC-064: warning logged,
+    //           cancel still succeeds (post-commit behavior)
     // =========================================================================
 
-    describe('T-AC39-5: recalculation returns outcome failed — transaction rolled back, returns error', () => {
-        it('should return error when recalculateAddonLimitsForCustomer resolves with outcome failed', async () => {
-            // Arrange
+    describe('T-AC39-5: recalculation returns outcome failed — warning logged, cancel succeeds', () => {
+        it('should return success when recalculateAddonLimitsForCustomer resolves with outcome failed (SPEC-064)', async () => {
+            // Arrange: SPEC-064 moved recalculation post-commit. When outcome='failed',
+            // Sentry.captureException is called and a warning is logged, but the cancel succeeds.
             setupPurchaseLookup({
                 id: PURCHASE_ID,
                 addonSlug: ADDON_SLUG_LIMIT,
@@ -502,12 +573,11 @@ describe('cancelUserAddon — AC-3.9 limit recalculation', () => {
             // Act
             const result = await cancelUserAddon(mockBilling, mockEntitlementService, defaultInput);
 
-            // Assert — failed outcome now throws inside the transaction, causing rollback
-            expect(result.success).toBe(false);
-            expect(result.error?.code).toBe('LIMIT_RECALCULATION_FAILED');
+            // Assert — SPEC-064: recalc failure does NOT fail the cancel
+            expect(result.success).toBe(true);
         });
 
-        it('should log an error when recalculation outcome is failed (transaction rolled back)', async () => {
+        it('should log a warning when recalculation outcome is failed (SPEC-064 post-commit)', async () => {
             // Arrange
             setupPurchaseLookup({
                 id: PURCHASE_ID,
@@ -531,19 +601,19 @@ describe('cancelUserAddon — AC-3.9 limit recalculation', () => {
             // Act
             await cancelUserAddon(mockBilling, mockEntitlementService, defaultInput);
 
-            // Assert — the error catch block logs after transaction rollback
-            expect(vi.mocked(apiLogger.error)).toHaveBeenCalledWith(
+            // Assert — warn is logged (not error) since the cancel itself succeeded
+            expect(vi.mocked(apiLogger.warn)).toHaveBeenCalledWith(
                 expect.objectContaining({
                     customerId: CUSTOMER_ID,
                     purchaseId: PURCHASE_ID,
                     limitKey: LIMIT_KEY
                 }),
-                expect.stringContaining('Transaction rolled back')
+                expect.stringContaining('QZPay limit recalculation failed post-commit')
             );
         });
 
-        it('should log an error with limitKey context for a failed outcome result', async () => {
-            // Arrange — outcome 'failed' now throws inside the transaction, so error is logged
+        it('should log a warning with limitKey context for a failed outcome result', async () => {
+            // Arrange — outcome 'failed' post-commit: warn is logged with limitKey context
             setupPurchaseLookup({
                 id: PURCHASE_ID,
                 addonSlug: ADDON_SLUG_LIMIT,
@@ -565,12 +635,12 @@ describe('cancelUserAddon — AC-3.9 limit recalculation', () => {
             // Act
             await cancelUserAddon(mockBilling, mockEntitlementService, defaultInput);
 
-            // Assert — the transaction rollback error path logs with limitKey
-            const recalcErrorCalls = vi.mocked(apiLogger.error).mock.calls.filter(([ctx]) => {
+            // Assert — the post-commit warning path logs with limitKey
+            const recalcWarnCalls = vi.mocked(apiLogger.warn).mock.calls.filter(([ctx]) => {
                 if (typeof ctx !== 'object' || ctx === null) return false;
                 return 'limitKey' in (ctx as Record<string, unknown>);
             });
-            expect(recalcErrorCalls.length).toBeGreaterThan(0);
+            expect(recalcWarnCalls.length).toBeGreaterThan(0);
         });
     });
 

@@ -1373,8 +1373,46 @@ describe('processSubscriptionUpdated', () => {
                 status: SubscriptionStatusEnum.ACTIVE,
                 metadata: { paymentFailureCount: 1 }
             });
-            const dbMock = makeDbMock([localSub]);
-            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            // The source calls db.update().set().where().returning() for the atomic
+            // jsonb_set increment. The .returning() must resolve with the updated row
+            // so newFailureCount === 2 and the PAYMENT_RETRY_WARNING threshold is met.
+            const updatedMetaRow = { metadata: { paymentFailureCount: 2 } };
+
+            // Update chain that supports .returning() alongside the normal transaction path
+            const txInsertValuesChain = { values: vi.fn().mockResolvedValue(undefined) };
+            const txUpdateSetChain = {
+                set: vi.fn().mockReturnThis(),
+                where: vi.fn().mockResolvedValue(undefined)
+            };
+            const tx = {
+                insert: vi.fn().mockReturnValue(txInsertValuesChain),
+                update: vi.fn().mockReturnValue(txUpdateSetChain)
+            };
+
+            // Top-level db.update chain — needs .returning() for the paymentFailureCount increment
+            const topLevelUpdateReturning = vi.fn().mockResolvedValue([updatedMetaRow]);
+            const topLevelUpdateWhere = vi.fn().mockReturnValue({
+                returning: topLevelUpdateReturning
+            });
+            const topLevelUpdateSet = vi.fn().mockReturnValue({ where: topLevelUpdateWhere });
+            const topLevelUpdate = vi.fn().mockReturnValue({ set: topLevelUpdateSet });
+
+            const selectChain = {
+                from: vi.fn().mockReturnThis(),
+                where: vi.fn().mockReturnThis(),
+                limit: vi.fn().mockResolvedValue([localSub])
+            };
+
+            const customDbMock = {
+                select: vi.fn().mockReturnValue(selectChain),
+                insert: vi.fn().mockReturnValue(txInsertValuesChain),
+                update: topLevelUpdate,
+                transaction: vi.fn(async (cb: (txArg: typeof tx) => Promise<void>) => cb(tx)),
+                tx
+            };
+
+            vi.mocked(getDb).mockReturnValue(customDbMock as never);
 
             mockRetrieve.mockResolvedValue(makeMpSubscription('past_due'));
 
