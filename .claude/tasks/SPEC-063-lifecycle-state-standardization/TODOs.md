@@ -1,14 +1,17 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 24/63 tasks (38.1%)
+## Progress: 25/63 tasks (39.7%)
 
-**Last updated:** 2026-04-18T02:17:00Z
-**Status:** in-progress (Phase 2 unit tests + admin UI + DB + schemas + i18n + T-021 integration complete; integration T-022 + cron T-025/T-026 remaining)
+**Last updated:** 2026-04-18T03:05:00Z
+**Status:** in-progress (Phase 2 unit tests + admin UI + DB + schemas + i18n + T-021 + T-022 complete; cron T-025/T-026 remaining)
+
+### Follow-up SPECs spawned
+
+- **SPEC-087** (draft) — public endpoint response schema strip (systemic factory fix). Discovered during T-022. Until SPEC-087 lands, SPEC-063 phase 3/4 public routes (T-035 DestinationReview, T-051 Sponsorship) use per-handler strip as established by T-022.
 
 ### Next up (in priority order)
 
-1. **T-022** (complexity 2) — public endpoint integration test (AC-005-01). **Cumulative deps**: closes T-023 SQL-exclusion + T-024 usage-tracking equivalence + revisit `_executeCount` gap. Same mock pattern as T-021.
-2. **T-025 + T-026** (complexity 2.5 each) — archive-expired-promotions cron handler + advisory lock 43010 + tests.
+1. **T-025 + T-026** (complexity 2.5 each) — archive-expired-promotions cron handler + advisory lock 43010 + tests.
 
 Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057), cleanup T-058.
 
@@ -156,7 +159,11 @@ Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057
   - Scope bonus: +2 tests beyond original 4 subtasks (invalid rejection + default='all')
   - Blocked by: T-013 · Blocks: none
 
-- [ ] **T-022** (complexity: 2) — Write OwnerPromotion public endpoint default ACTIVE test (AC-005-01)
+- [x] **T-022** (complexity: 2, effective ~2.5 with scope absorb) — Write OwnerPromotion public endpoint default ACTIVE test (AC-005-01)
+  - COMPLETED 2026-04-18 · lint: pass · typecheck: pass · tests: 5/5 service unit + 5/5 integration
+  - Strategy: service-level force-override (not just default) + service unit tests + integration pipeline mock + per-handler response strip
+  - Scope absorbed: (1) security hardening `_executeSearch` force-override, (2) `_executeCount` force-override for pagination consistency, (3) service unit test file creation (new)
+  - Systemic gap flagged: route factory does not runtime-parse responseSchema → per-handler strip in public/list.ts. Tracked in SPEC-087.
   - Blocked by: T-012 · Blocks: T-058
 
 - [x] **T-023** (complexity: 2) — Update OwnerPromotion model tests for findActive methods

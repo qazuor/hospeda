@@ -1,12 +1,19 @@
 # SPEC-063 — Implementation Progress Log
 
-## Session summary (as of 2026-04-18T02:17)
+## Session summary (as of 2026-04-18T03:05)
 
-- **Progress:** 24/63 tasks (38.1%)
-- **Status:** in-progress — Phase 2 unit tests + admin UI + DB + schemas + i18n + T-021 integration complete
-- **Milestone:** AC-001-01 verified literal via module-level service mock (admin list filter `status=DRAFT|ACTIVE|ARCHIVED` reaches service with correct shape)
-- **Remaining:** Phase 2 integration T-022 (public endpoint default ACTIVE), Phase 2 cron (T-025, T-026), Phase 4 DestinationReview, Phase 3 Sponsorship, cleanup T-058
+- **Progress:** 25/63 tasks (39.7%)
+- **Status:** in-progress — Phase 2 unit tests + admin UI + DB + schemas + i18n + T-021 + T-022 integration complete
+- **Milestone:** AC-005-01 verified end-to-end via service unit tests (force-override) + integration test (pipeline + response strip). Public OwnerPromotion endpoint now secure against DRAFT/ARCHIVED leakage via query-param manipulation.
+- **Remaining:** Phase 2 cron (T-025, T-026), Phase 4 DestinationReview, Phase 3 Sponsorship, cleanup T-058
 - **Critical path:** T-028 → T-030 → T-034 → T-035 → T-038 → T-039 → T-040 → T-042 → T-058
+- **Follow-up SPECs spawned:** SPEC-087 (public endpoint response schema strip — systemic factory fix)
+
+### Session 3 tasks completed (2026-04-18 T-022)
+
+| Task | Complexity | Files | Quality gate |
+|------|-----------|-------|--------------|
+| T-022 | 2.5 (absorbed scope) | service OwnerPromotion _executeSearch/_executeCount force-override + service unit tests (5) + api integration (5) + public/list.ts strip | biome/tc/tests pass (5/5 service unit + 5/5 integration) |
 
 ### Session 2 tasks completed (2026-04-17 T-019 → T-027)
 
@@ -380,5 +387,40 @@ Post-T-027, the `admin-billing.ownerPromotions` namespace contains **zero legacy
 Commit boundary for T-021 (1 new test file + bookkeeping). Then:
 
 **Phase 2 remaining:** T-022 (integration: public default ACTIVE AC-005-01 + closes T-023 SQL-exclusion verification + closes T-024 usage-tracking partial), T-025/T-026 (cron job).
+
+Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057), cleanup (T-058).
+
+#### T-022 — public endpoint AC-005-01 strict enforcement (2026-04-18T03:05)
+
+- **Files:**
+  - `packages/service-core/src/services/owner-promotion/ownerPromotion.service.ts` (force-override in `_executeSearch` + `_executeCount`)
+  - `packages/service-core/test/services/owner-promotion/ownerPromotion.service.test.ts` (NEW, 5 unit tests)
+  - `apps/api/test/integration/owner-promotion/public-endpoint.test.ts` (NEW, 5 integration tests)
+  - `apps/api/src/routes/owner-promotion/public/list.ts` (per-handler response strip via `OwnerPromotionPublicSchema.parse`)
+- **Scope expansion (user-approved 2026-04-18):**
+  1. **Pregunta 1 opt2** — security fix absorbed: `_executeSearch` now FORCE-OVERRIDES caller-supplied lifecycleState to ACTIVE (was previously default-inject when undefined). Same behavior applied to `_executeCount` for pagination `total` consistency. Closes gap where a caller could pass `?lifecycleState=DRAFT` and bypass AC-005-01.
+  2. **Pregunta 2 opt1** — service unit tests added: created new test file `ownerPromotion.service.test.ts` with 5 tests covering `_executeSearch` (forces when omitted, overrides DRAFT, overrides ARCHIVED) and `_executeCount` (forces when omitted, overrides DRAFT). Closes the "no unit test coverage for _executeSearch default injection" gap flagged in T-012.
+  3. **Pregunta 3 absorbed** — `_executeCount` now force-overrides lifecycleState to ACTIVE. Closes the T-012 `_executeCount NOT updated` gap. Pagination `total` now consistent with `_executeSearch` filtered items.
+- **Systemic gap discovered and flagged:** integration test 5 (response strip) initially failed because `createPublicListRoute` only uses `responseSchema` for OpenAPI docs, not for runtime strip. Fix applied locally in `public/list.ts` handler via `OwnerPromotionPublicSchema.parse(item)` on each item. Systemic factory fix tracked in **SPEC-087 (draft)**.
+- **Quality gate:**
+  - Biome: pass (4 files)
+  - Typecheck: service-core clean for SPEC-063 (pre-existing SPEC-066 error only); apps/api clean for SPEC-063 (pre-existing unrelated)
+  - Service unit tests: 5/5 pass in 9ms
+  - Integration tests: 5/5 pass
+- **Scope bonus:** 5 integration tests (spec asked for 4 subtasks) + 5 service unit tests (spec did not ask; added via Pregunta 2). Total +6 tests beyond nominal scope. Complexity effective ≈ 2.5 (ceiling), absorbed per decision 5 pattern.
+- **Env gotcha reconfirmed:** integration test infra loads `apps/api/.env.test` (not `.env.local`). User ran `cp apps/api/.env.local apps/api/.env.test` before running tests (documented pre-SPEC-035).
+- **Headers gotcha discovered:** public endpoints still go through request-validation middleware. Without `content-type` + `user-agent` headers, middleware short-circuits with 400 MISSING_REQUIRED_HEADER before reaching the route. `publicHeaders` constant added to integration test to handle this. Likely applies to other public integration tests in future tasks.
+
+### SPEC-087 spawn
+
+During T-022, the response-strip test failure revealed that NO public or protected endpoint in `apps/api/src/routes` currently runtime-parses its declared `responseSchema` — route factory uses it only for OpenAPI docs. Grep of `apps/api/src/routes` for any form of `*PublicSchema.parse|.safeParse` returns zero matches. Latent gap across all entities.
+
+Rather than absorb a systemic factory refactor into T-022, a new formal spec was drafted: **SPEC-087 Public Endpoint Response Schema Strip** (`.claude/specs/SPEC-087-public-response-schema-strip/spec.md`). It proposes 4 options (factory-level enforcement, opt-in flag, utility helper, documentation-only) and recommends factory-level enforcement (Option A) behind a feature flag for safe migration.
+
+Until SPEC-087 lands, SPEC-063 phase 3/4 public routes (DestinationReview T-035, Sponsorship T-051) will use the same per-handler strip pattern established in T-022 (`EntityPublicSchema.parse(item)` on each item). Once SPEC-087 Option A is merged, those per-handler strips become redundant and can be removed (tracked by SPEC-087 AC-087-04).
+
+### Next up (post-T-022)
+
+**Phase 2 remaining:** T-025 + T-026 (complexity 2.5 each) — `archive-expired-promotions` cron handler + advisory lock 43010 + tests.
 
 Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057), cleanup (T-058).

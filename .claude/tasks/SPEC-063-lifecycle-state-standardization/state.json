@@ -310,6 +310,7 @@
             "id": "T-012",
             "title": "Update OwnerPromotion service: inject lifecycleState=ACTIVE default in _executeSearch",
             "_note": "Also fixed packages/service-core/test/factories/ownerPromotionFactory.ts (2 isActive -> lifecycleState occurrences); not covered by any other task, necessary to keep service-core typecheck unblocked.",
+            "_followUp": "2026-04-18 T-022 evolved this behavior from 'default-inject when undefined' to 'force-override always' in both _executeSearch and _executeCount. Rationale: schema-permissive lifecycleState param allowed DRAFT/ARCHIVED to leak to public endpoint via query manipulation. See T-022 _securityNote and SPEC-087 for systemic follow-up.",
             "description": "Update `packages/service-core/src/services/owner-promotion/ownerPromotion.service.ts`: (1) remove any `isActive`-specific filter logic in filter normalization, (2) in `_executeSearch()` (around line 114-117), ADD default filter injection: `if (!filterParams.lifecycleState) { filterParams.lifecycleState = 'ACTIVE'; }` before calling `model.findAll()`. This ensures AC-005-01 compliance (public endpoints only return ACTIVE records). Admin path uses `adminList()` which has its own status filter, so this injection only affects public/protected `list()` calls.\n\nFiles: `packages/service-core/src/services/owner-promotion/ownerPromotion.service.ts`",
             "status": "completed",
             "complexity": 2.5,
@@ -784,27 +785,50 @@
         {
             "id": "T-022",
             "title": "Write OwnerPromotion public endpoint default ACTIVE filter test",
+            "_scopeNote": "Scope expanded per user-approved decisions 2026-04-18: (Pregunta 1 opt2) absorb security fix = `_executeSearch` force-overrides caller-supplied lifecycleState to ACTIVE (was default-inject only); (Pregunta 2 opt1) add service unit tests for _executeSearch/_executeCount override; (Pregunta 3 absorbed) fix `_executeCount` to force ACTIVE for pagination total consistency. Original T-012 gap of `_executeCount not updated` closed here.",
+            "_securityNote": "`_executeSearch` now FORCE-OVERRIDES any caller-supplied lifecycleState to ACTIVE (previously only default-injected when undefined). This prevents DRAFT/ARCHIVED leakage via query-param manipulation on public endpoint. Admin path uses `_executeAdminSearch` separately and is unaffected.",
+            "_systemicGap": "Route factory `createPublicListRoute` uses responseSchema only for OpenAPI docs, not runtime strip. Per-handler strip applied in `apps/api/src/routes/owner-promotion/public/list.ts` as contained fix. Systemic fix tracked in SPEC-087 (draft).",
+            "_followUpRefs": ["SPEC-087"],
             "description": "Write integration test that verifies public OwnerPromotion endpoints only return `lifecycleState = 'ACTIVE'` records when no filter is specified. Assert DRAFT and ARCHIVED records are NOT returned. Also assert `lifecycleState` field is NOT present in response body (admin-only). Covers AC-005-01.\n\nFiles: `apps/api/test/integration/owner-promotion/public-endpoint.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Seed data with ACTIVE, DRAFT, ARCHIVED promotions",
-                    "completed": false
+                    "completed": true,
+                    "_note": "Reformulated mock-based per decision 10 pattern. Instead of seeding DB, service-layer unit tests verify the override behavior directly, and integration tests verify the pipeline (HTTP -> schema -> service.search call-signature)."
                 },
-                { "title": "Call public list endpoint without filter", "completed": false },
-                { "title": "Assert only ACTIVE records returned", "completed": false },
-                { "title": "Assert lifecycleState field absent from response", "completed": false }
+                { "title": "Call public list endpoint without filter", "completed": true },
+                {
+                    "title": "Assert only ACTIVE records returned",
+                    "completed": true,
+                    "_note": "Verified by equivalence via service unit tests (packages/service-core/test/services/owner-promotion/ownerPromotion.service.test.ts) that assert _executeSearch and _executeCount force-override lifecycleState to ACTIVE regardless of caller input. Integration test confirms request pipeline reaches the service; service tests confirm the filter shape."
+                },
+                {
+                    "title": "Assert lifecycleState field absent from response",
+                    "completed": true,
+                    "_note": "Required per-handler strip in apps/api/src/routes/owner-promotion/public/list.ts because route factory does not runtime-parse responseSchema. Mock returns items WITH lifecycleState and integration test asserts JSON response does NOT contain the field. Systemic factory fix tracked in SPEC-087."
+                },
+                {
+                    "title": "Add service unit tests for _executeSearch force-override",
+                    "completed": true,
+                    "_note": "Added in scope expansion (Pregunta 2 opt1). 3 tests: forces ACTIVE when omitted, overrides DRAFT to ACTIVE (security), overrides ARCHIVED to ACTIVE."
+                },
+                {
+                    "title": "Add service unit tests for _executeCount force-override",
+                    "completed": true,
+                    "_note": "Added in scope expansion (Pregunta 3). 2 tests: forces ACTIVE when omitted, overrides DRAFT to ACTIVE (consistency with _executeSearch)."
+                }
             ],
-            "tags": ["api", "testing", "integration", "phase-2", "ownerPromotion"],
+            "tags": ["api", "testing", "integration", "phase-2", "ownerPromotion", "security"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-17T23:45:00.000Z",
+                "completed": "2026-04-18T03:05:00.000Z"
             }
         },
         {
@@ -1816,11 +1840,12 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 41,
+        "pending": 38,
         "inProgress": 0,
-        "completed": 22,
+        "completed": 25,
         "blocked": 0,
         "averageComplexity": 2.0,
+        "_summaryDriftNote": "Counters corrected 2026-04-18 during T-022 bookkeeping. Prior value (completed=22) had drift from Session 2 (T-019, T-020, T-021, T-023, T-024, T-027 completions not reflected in summary). Ground truth derived from grep of 'status: completed' across tasks array = 25 post-T-022.",
         "_replanLog": [
             {
                 "date": "2026-04-17T17:55:00.000Z",
