@@ -2,13 +2,13 @@
 
 ## Status
 
-Accepted
+Accepted (revised 2026-04-18)
 
 ## Context
 
 The Hospeda platform uses Drizzle ORM as its database abstraction layer (see ADR-004). Drizzle's
 schema declaration system covers the vast majority of PostgreSQL features: tables, columns, indexes,
-foreign keys, enums, and partial indexes. However, three categories of PostgreSQL features cannot be
+foreign keys, enums, and partial indexes. However, four categories of PostgreSQL features cannot be
 expressed in Drizzle schema files and are therefore **invisible to `drizzle-kit push` and
 `drizzle-kit generate`**:
 
@@ -17,8 +17,10 @@ expressed in Drizzle schema files and are therefore **invisible to `drizzle-kit 
    `CREATE OR REPLACE FUNCTION ... RETURNS TRIGGER`.
 3. **Expression-based CHECK constraints using database functions** — While Drizzle 0.30+ added a
    `.check()` builder for simple column constraints, constraints that call PostgreSQL functions
-   (e.g., `jsonb_typeof()`) cannot be expressed through the Drizzle schema DSL and are dropped
-   silently when Drizzle regenerates a table.
+   (e.g., `jsonb_typeof()`, `char_length()`) cannot be expressed through the Drizzle schema DSL and
+   are dropped silently when Drizzle regenerates a table.
+4. **Functional and JSONB-extraction indexes** — Unique partial indexes over JSONB-extracted values
+   (`metadata->>'idempotencyKey'`) cannot be declared through Drizzle.
 
 This creates a correctness gap: a developer who runs `drizzle-kit push` or generates a fresh
 database from schemas alone will have a structurally incomplete database that is missing critical
@@ -26,13 +28,23 @@ runtime behavior.
 
 ## Decision
 
-We manage all three feature categories exclusively through **manual SQL migration files** stored in
-`packages/db/src/migrations/manual/` (for triggers and materialized views) and
-`packages/db/src/migrations/` (for constraint migrations numbered in sequence).
+We manage all four feature categories exclusively through **manual SQL migration files** stored in
+a single location: `packages/db/src/migrations/manual/`. Each file is an idempotent SQL script
+(using `IF NOT EXISTS`, `CREATE OR REPLACE`, and `DO` blocks with existence checks).
 
-Additionally, we provide a shell script `packages/db/scripts/apply-postgres-extras.sh` that
-consolidates all of these manual migrations into a single idempotent command. This script must be
-run after any `drizzle-kit push` or after applying Drizzle-generated migrations on a fresh database.
+A shell script `packages/db/scripts/apply-postgres-extras.sh` acts as a **generic orchestrator**:
+it iterates every `manual/*.sql` file in lexical order and applies it with
+`psql --file --single-transaction`. Files matching `*_down.sql` are skipped automatically — those
+are reversal scripts applied only through ad-hoc rollback procedures.
+
+The script is wrapped by the root `pnpm db:apply-extras` command, which is chained automatically
+into `db:fresh`, `db:fresh-dev`, and `db:reset`. Developers never need to invoke the script manually
+after a standard workflow command.
+
+**Note on Drizzle-generated migrations (2026-04-18 revision)**: this repository does NOT use
+`drizzle-kit migrate`. Schema synchronization is done with `drizzle-kit push` (dev) and no
+migration files are maintained under `packages/db/src/migrations/` root. The only migration files
+that ship with the repository live under `manual/` and are orchestrated by the script above.
 
 Where Drizzle supports a constrained form of `.check()` (simple IN-list constraints without
 function calls), we annotate the schema column with a JSDoc comment referencing the migration that
@@ -40,28 +52,39 @@ applies the actual constraint, so the intent is visible even though Drizzle cann
 
 ## Affected Features
 
+All manual migration files live under `packages/db/src/migrations/manual/` and are applied in
+lexical order by the orchestrator.
+
 ### Materialized View: `search_index`
 
 | Artifact | Migration file |
 |----------|---------------|
-| Materialized view definition (UNION of accommodations, destinations, events, posts) | `manual/0016_create_search_index.sql` |
-| GIN index `idx_search_index_tsv` on the `tsv` column | `manual/0017_create_search_index_gin.sql` |
-| `refresh_search_index()` PL/pgSQL function (called nightly via pg_cron or manually) | `manual/0018_refresh_search_index_function.sql` |
+| Materialized view definition (UNION of accommodations, destinations, events, posts) | `manual/0001_search_index_materialized_view.sql` |
+| GIN index `idx_search_index_tsv` on the `tsv` column | `manual/0002_search_index_gin_index.sql` |
+| UNIQUE index `idx_search_index_entity_unique (entity_type, entity_id)` (enables `REFRESH CONCURRENTLY`) | `manual/0003_search_index_entity_unique_index.sql` |
+| `refresh_search_index()` PL/pgSQL function (called by API cron; see `packages/api/src/cron/`) | `manual/0004_refresh_search_index_function.sql` |
 
 ### Triggers
 
 | Artifact | Migration file |
 |----------|---------------|
-| `set_updated_at()` function + `trg_set_updated_at_*` triggers on all tables with an `updated_at` column | `manual/0019_add_generic_updated_at_trigger.sql` |
-| `delete_entity_bookmarks()` function + `trg_delete_bookmarks_on_*` triggers on accommodations, destinations, events, user, posts | `manual/0020_add_delete_entity_bookmarks_trigger.sql` |
+| `set_updated_at()` function + `trg_set_updated_at_*` triggers on every table with an `updated_at` column | `manual/0005_set_updated_at_trigger.sql` |
+| `delete_entity_bookmarks()` function + `trg_delete_bookmarks_on_*` triggers on accommodations, destinations, events, users, posts | `manual/0006_delete_entity_bookmarks_trigger.sql` |
 
-### CHECK Constraints on `billing_addon_purchases`
+### CHECK Constraints
 
-| Constraint name | Column(s) | Migration file |
-|-----------------|-----------|---------------|
-| `billing_addon_purchases_status_check` | `status` | `0025_addon_purchases_status_check.sql` |
-| `chk_limit_adjustments_type` | `limit_adjustments` | `0026_addon_purchases_jsonb_check.sql` |
-| `chk_entitlement_adjustments_type` | `entitlement_adjustments` | `0026_addon_purchases_jsonb_check.sql` |
+| Constraint name | Table / column | Migration file |
+|-----------------|----------------|----------------|
+| `billing_addon_purchases_status_check` | `billing_addon_purchases.status` | `manual/0007_billing_addon_purchases_status_check.sql` |
+| `chk_limit_adjustments_type` | `billing_addon_purchases.limit_adjustments` | `manual/0008_billing_addon_purchases_jsonb_checks.sql` |
+| `chk_entitlement_adjustments_type` | `billing_addon_purchases.entitlement_adjustments` | `manual/0008_billing_addon_purchases_jsonb_checks.sql` |
+| `billing_subscription_events_event_type_check` | `billing_subscription_events.event_type` (non-empty, length ≤ 100) | `manual/0010_billing_subscription_events_event_type_check.sql` |
+
+### Functional / JSONB Indexes
+
+| Index name | Expression | Migration file |
+|------------|------------|----------------|
+| `idx_notification_log_idempotency_key` | UNIQUE on `billing_notification_log.metadata->>'idempotencyKey'` WHERE key IS NOT NULL | `manual/0009_notification_log_idempotency_index.sql` |
 
 ## Consequences
 
@@ -95,23 +118,27 @@ applies the actual constraint, so the intent is visible even though Drizzle cann
 
 ## Developer Workflow
 
-After any of the following operations, run `apply-postgres-extras.sh`:
+The orchestrator is chained automatically into the primary schema commands, so most of the time you
+do not need to invoke it manually:
 
 ```bash
-# 1. After drizzle-kit push (schema development)
-pnpm db:fresh-dev
-packages/db/scripts/apply-postgres-extras.sh
-
-# 2. After a fresh migration sequence
-pnpm db:migrate
-packages/db/scripts/apply-postgres-extras.sh
-
-# 3. Verify the script is safe to re-run
-packages/db/scripts/apply-postgres-extras.sh  # idempotent
+pnpm db:fresh-dev   # drop + push + apply-extras + seed  (dev default)
+pnpm db:fresh       # drop + generate + migrate + apply-extras + seed
+pnpm db:reset       # drop + migrate + apply-extras
 ```
 
+For ad-hoc or CI usage you can invoke it directly:
+
+```bash
+pnpm db:apply-extras                                          # resolves URL from env or apps/api/.env.local
+packages/db/scripts/apply-postgres-extras.sh "$CUSTOM_URL"    # explicit URL as first arg
+```
+
+The script is idempotent — it can be re-run safely after adding new `manual/*.sql` files or when a
+table acquires an `updated_at` column after the trigger was last applied.
+
 See `packages/db/docs/triggers-manifest.md` for the full reference of all triggers, functions,
-materialized views, and CHECK constraints managed this way.
+materialized views, CHECK constraints, and functional indexes managed this way.
 
 ## Alternatives Considered
 
