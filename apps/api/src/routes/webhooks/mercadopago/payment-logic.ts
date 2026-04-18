@@ -11,6 +11,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getAddonBySlug } from '@repo/billing';
+import { eq, getDb } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { AddonService } from '../../../services/addon.service';
 import { apiLogger } from '../../../utils/logger';
@@ -115,6 +116,45 @@ export async function processPaymentUpdated({
     }
 
     const { addonSlug, customerId: addonCustomerId } = addonInfo;
+
+    // ── Idempotency check: skip if this paymentId was already processed ───────
+    const paymentId =
+        typeof data.id === 'string' || typeof data.id === 'number' ? String(data.id) : null;
+
+    if (paymentId) {
+        try {
+            const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
+            const db = getDb();
+
+            const [existing] = await db
+                .select({ id: billingAddonPurchases.id })
+                .from(billingAddonPurchases)
+                .where(eq(billingAddonPurchases.paymentId, paymentId))
+                .limit(1);
+
+            if (existing) {
+                apiLogger.info(
+                    { addonSlug, customerId: addonCustomerId, paymentId, source },
+                    'Add-on purchase already processed for this paymentId — skipping (idempotent)'
+                );
+                return { success: true, addonConfirmed: false };
+            }
+        } catch (idempotencyCheckError) {
+            apiLogger.warn(
+                {
+                    addonSlug,
+                    customerId: addonCustomerId,
+                    paymentId,
+                    source,
+                    error:
+                        idempotencyCheckError instanceof Error
+                            ? idempotencyCheckError.message
+                            : String(idempotencyCheckError)
+                },
+                'Idempotency check failed — proceeding with addon confirmation'
+            );
+        }
+    }
 
     apiLogger.info(
         { addonSlug, customerId: addonCustomerId, source },

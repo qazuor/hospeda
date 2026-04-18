@@ -179,7 +179,36 @@ export class AddonEntitlementService {
                         'Skipping limits.set() for add-on: base plan limit is already unlimited (-1)'
                     );
                 } else {
-                    const newMaxValue = basePlanLimit + addon.limitIncrease;
+                    // ── Sum ALL active addon increments for this limitKey ─────────
+                    // Multiple addons may contribute to the same limitKey. We must
+                    // aggregate them to avoid "limit stomping" where the last addon
+                    // to call limits.set() overwrites prior contributions instead of
+                    // adding to them.
+                    const db = getDb();
+                    const allActivePurchases = await db
+                        .select()
+                        .from(billingAddonPurchases)
+                        .where(
+                            and(
+                                eq(billingAddonPurchases.customerId, input.customerId),
+                                eq(billingAddonPurchases.status, 'active'),
+                                isNull(billingAddonPurchases.deletedAt)
+                            )
+                        );
+
+                    // Sum increments from all active purchases that affect this limitKey
+                    let totalIncrement = 0;
+                    for (const purchase of allActivePurchases) {
+                        const purchaseAddon = getAddonBySlug(purchase.addonSlug);
+                        if (
+                            purchaseAddon?.affectsLimitKey === addon.affectsLimitKey &&
+                            purchaseAddon.limitIncrease !== null
+                        ) {
+                            totalIncrement += purchaseAddon.limitIncrease;
+                        }
+                    }
+
+                    const newMaxValue = basePlanLimit + totalIncrement;
 
                     await this.billing.limits.set({
                         customerId: input.customerId,
@@ -195,11 +224,11 @@ export class AddonEntitlementService {
                             addonSlug: input.addonSlug,
                             limitKey: addon.affectsLimitKey,
                             basePlanLimit,
-                            limitIncrease: addon.limitIncrease,
+                            totalIncrement,
                             newMaxValue,
                             purchaseId: input.purchaseId
                         },
-                        'Set add-on limit via QZPay'
+                        'Set aggregated add-on limit via QZPay (sum of all active addon increments)'
                     );
                 }
             }

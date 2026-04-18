@@ -35,6 +35,8 @@
  */
 
 import { createWebhookRouter } from '@qazuor/qzpay-hono';
+import { Hono } from 'hono';
+import { webhookSignatureMiddleware } from '../../../middlewares/webhook-signature';
 import type { AppOpenAPI } from '../../../types';
 import { apiLogger } from '../../../utils/logger';
 import { handleDisputeOpened } from './dispute-handler';
@@ -77,9 +79,15 @@ function createMercadoPagoWebhookRouter(): AppOpenAPI | null {
             onError: handleWebhookError
         });
 
+        // Wrap in an outer Hono app so the signature middleware runs BEFORE
+        // any route handler registered by createWebhookRouter.
+        const securedRouter = new Hono();
+        securedRouter.use('*', webhookSignatureMiddleware);
+        securedRouter.route('/', webhookRouter as unknown as Hono);
+
         apiLogger.info('MercadoPago webhook router created successfully');
 
-        return webhookRouter as unknown as AppOpenAPI;
+        return securedRouter as unknown as AppOpenAPI;
     } catch (error) {
         apiLogger.error(
             'Failed to create MercadoPago webhook router:',

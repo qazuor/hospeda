@@ -16,7 +16,7 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getAddonBySlug, getPlanBySlug } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
-import { and, eq, isNull } from 'drizzle-orm';
+import { sql, withTransaction } from '@repo/db';
 import { ADDON_RECALC_SOURCE_ID } from './addon-lifecycle.constants.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -118,7 +118,9 @@ export interface RecalculateAddonLimitsInput {
 export async function recalculateAddonLimitsForCustomer(
     input: RecalculateAddonLimitsInput
 ): Promise<RecalculationResult> {
-    const { customerId, limitKey, billing, db } = input;
+    // Note: `db` is retained in the input interface for backward compatibility.
+    // The implementation now uses `withTransaction` from @repo/db directly.
+    const { customerId, limitKey, billing } = input;
 
     const failedResult = (reason: string): RecalculationResult => ({
         limitKey,
@@ -130,89 +132,164 @@ export async function recalculateAddonLimitsForCustomer(
     });
 
     try {
-        // ── Step 1: Load all active addon purchases for the customer ──────────
-
         // Lazy-import mirrors the pattern in addon.checkout.ts to avoid circular
         // module references at load time.
         const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
 
-        const activePurchases = await db
-            .select()
-            .from(billingAddonPurchases)
-            .where(
-                and(
-                    eq(billingAddonPurchases.customerId, customerId),
-                    eq(billingAddonPurchases.status, 'active'),
-                    isNull(billingAddonPurchases.deletedAt)
-                )
+        // ── Steps 1–6: Read + calculate inside a transaction with FOR UPDATE ──
+        // Using FOR UPDATE on the addon purchases rows prevents two concurrent
+        // recalculations from reading stale data and stomping each other's results.
+        type ReadPhaseResult =
+            | { skipped: true; result: RecalculationResult }
+            | {
+                  skipped: false;
+                  basePlanLimit: number;
+                  newMaxValue: number;
+                  addonCount: number;
+                  totalAddonIncrement: number;
+              };
+
+        const readPhase = await withTransaction(async (tx) => {
+            // ── Step 1: Lock and load all active addon purchases (FOR UPDATE) ──
+            // Using a raw SQL execute with FOR UPDATE to acquire row-level locks,
+            // preventing concurrent recalculations from reading stale data.
+            type AddonPurchaseRow = {
+                id: string;
+                addonSlug: string;
+                status: string;
+                limitAdjustments: Array<{ limitKey: string; increase: number }> | null;
+            };
+
+            const lockResult = await tx.execute<AddonPurchaseRow>(
+                sql`SELECT id, addon_slug AS "addonSlug", status, limit_adjustments AS "limitAdjustments"
+                    FROM ${billingAddonPurchases}
+                    WHERE customer_id = ${customerId}
+                      AND status = 'active'
+                      AND deleted_at IS NULL
+                    FOR UPDATE`
             );
 
-        // ── Step 2: Filter to purchases that affect this limitKey ─────────────
+            const activePurchases = lockResult.rows ?? [];
 
-        const relevantPurchases = activePurchases.filter((purchase: { addonSlug: string }) => {
-            const addonDef = getAddonBySlug(purchase.addonSlug);
-            return addonDef?.affectsLimitKey === limitKey;
+            // ── Step 2: Filter to purchases that affect this limitKey ─────────
+
+            const relevantPurchases = activePurchases.filter((purchase: { addonSlug: string }) => {
+                const addonDef = getAddonBySlug(purchase.addonSlug);
+                return addonDef?.affectsLimitKey === limitKey;
+            });
+
+            // ── Step 3: Resolve the active subscription ───────────────────────
+            // External API call inside the transaction is unavoidable here
+            // because we need the subscription data to determine the base plan
+            // limit. The call is read-only and does not mutate any state.
+
+            const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
+
+            if (!subscriptions || subscriptions.length === 0) {
+                const skippedResult: ReadPhaseResult = {
+                    skipped: true,
+                    result: {
+                        limitKey,
+                        oldMaxValue: 0,
+                        newMaxValue: 0,
+                        addonCount: 0,
+                        outcome: 'failed',
+                        reason: 'Customer has no subscriptions'
+                    }
+                };
+                return skippedResult;
+            }
+
+            const activeSubscription = subscriptions.find(
+                (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
+            );
+
+            if (!activeSubscription) {
+                const skippedResult: ReadPhaseResult = {
+                    skipped: true,
+                    result: {
+                        limitKey,
+                        oldMaxValue: 0,
+                        newMaxValue: 0,
+                        addonCount: 0,
+                        outcome: 'failed',
+                        reason: 'Customer has no active or trialing subscription'
+                    }
+                };
+                return skippedResult;
+            }
+
+            // ── Step 4: Resolve base plan limit from canonical config ─────────
+
+            const planDef = getPlanBySlug(activeSubscription.planId);
+
+            if (!planDef) {
+                const skippedResult: ReadPhaseResult = {
+                    skipped: true,
+                    result: {
+                        limitKey,
+                        oldMaxValue: 0,
+                        newMaxValue: 0,
+                        addonCount: 0,
+                        outcome: 'failed',
+                        reason: `Plan '${activeSubscription.planId}' not found in canonical config`
+                    }
+                };
+                return skippedResult;
+            }
+
+            const planLimitDef = planDef.limits.find((l) => l.key === limitKey);
+            const basePlanLimit = planLimitDef?.value ?? 0;
+
+            // ── Step 5: Skip if the plan grants unlimited ─────────────────────
+
+            if (basePlanLimit === -1) {
+                const skippedResult: ReadPhaseResult = {
+                    skipped: true,
+                    result: {
+                        limitKey,
+                        oldMaxValue: -1,
+                        newMaxValue: -1,
+                        addonCount: relevantPurchases.length,
+                        outcome: 'skipped',
+                        reason: 'Base plan has unlimited for this limitKey'
+                    }
+                };
+                return skippedResult;
+            }
+
+            // ── Step 6: Sum increments from all matching purchases ────────────
+
+            let totalAddonIncrement = 0;
+
+            for (const purchase of relevantPurchases) {
+                const adjustments: Array<{ limitKey: string; increase: number }> =
+                    purchase.limitAdjustments ?? [];
+                const match = adjustments.find((la) => la.limitKey === limitKey);
+                if (match) {
+                    totalAddonIncrement += match.increase;
+                }
+            }
+
+            const computedResult: ReadPhaseResult = {
+                skipped: false,
+                basePlanLimit,
+                newMaxValue: basePlanLimit + totalAddonIncrement,
+                addonCount: relevantPurchases.length,
+                totalAddonIncrement
+            };
+            return computedResult;
         });
 
-        // ── Step 3: Resolve the active subscription ───────────────────────────
-
-        const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
-
-        if (!subscriptions || subscriptions.length === 0) {
-            return failedResult('Customer has no subscriptions');
+        if (readPhase.skipped) {
+            return readPhase.result;
         }
 
-        const activeSubscription = subscriptions.find(
-            (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
-        );
-
-        if (!activeSubscription) {
-            return failedResult('Customer has no active or trialing subscription');
-        }
-
-        // ── Step 4: Resolve base plan limit from canonical config ─────────────
-
-        const planDef = getPlanBySlug(activeSubscription.planId);
-
-        if (!planDef) {
-            return failedResult(
-                `Plan '${activeSubscription.planId}' not found in canonical config`
-            );
-        }
-
-        const planLimitDef = planDef.limits.find((l) => l.key === limitKey);
-
-        const basePlanLimit = planLimitDef?.value ?? 0;
-
-        // ── Step 5: Skip if the plan grants unlimited ─────────────────────────
-
-        if (basePlanLimit === -1) {
-            return {
-                limitKey,
-                oldMaxValue: -1,
-                newMaxValue: -1,
-                addonCount: relevantPurchases.length,
-                outcome: 'skipped',
-                reason: 'Base plan has unlimited for this limitKey'
-            };
-        }
-
-        // ── Step 6: Sum increments from all matching purchases ────────────────
-
-        let totalAddonIncrement = 0;
-
-        for (const purchase of relevantPurchases) {
-            const adjustments: Array<{ limitKey: string; increase: number }> =
-                purchase.limitAdjustments ?? [];
-            const match = adjustments.find((la) => la.limitKey === limitKey);
-            if (match) {
-                totalAddonIncrement += match.increase;
-            }
-        }
-
-        const newMaxValue = basePlanLimit + totalAddonIncrement;
+        const { basePlanLimit, newMaxValue, addonCount, totalAddonIncrement } = readPhase;
 
         // ── Step 7 / 8: Apply or remove the aggregated limit ─────────────────
+        // External API calls MUST stay OUTSIDE the transaction (they are not
+        // rollback-able). The read+lock phase has already completed atomically.
 
         if (totalAddonIncrement > 0) {
             await billing.limits.set({
@@ -232,7 +309,7 @@ export async function recalculateAddonLimitsForCustomer(
             limitKey,
             oldMaxValue: basePlanLimit,
             newMaxValue,
-            addonCount: relevantPurchases.length,
+            addonCount,
             outcome: 'success'
         };
     } catch (error) {

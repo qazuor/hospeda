@@ -18,7 +18,7 @@ import {
     withTransaction
 } from '@repo/db';
 import type { ServiceResult } from '@repo/service-core';
-import { type SQL, and, count, desc, eq, isNull } from 'drizzle-orm';
+import { type SQL, and, count, desc, eq, isNull, sql } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
 import { AddonEntitlementService } from './addon-entitlement.service';
 import { AddonExpirationService } from './addon-expiration.service';
@@ -283,66 +283,78 @@ export class AdminAddonService {
         input: ActivateAddonInput & { tx?: DrizzleClient }
     ): Promise<ServiceResult<CustomerAddonRow>> {
         try {
-            const db = input.tx ?? getDb();
+            // ── 1–3. Read (FOR UPDATE) + validate + write inside a single tx ───
+            // The SELECT ... FOR UPDATE locks the row so no concurrent activation
+            // can race between the read and the update (TOCTOU prevention).
+            // If an outer tx is passed in, withTransaction reuses it transparently.
+            type PurchaseRow = {
+                id: string;
+                customerId: string;
+                addonSlug: string;
+                status: string;
+            };
 
-            // ── 1. Read the purchase (outside the transaction — read-only) ──────
-            const [purchase] = await db
-                .select()
-                .from(billingAddonPurchases)
-                .where(
-                    and(
-                        eq(billingAddonPurchases.id, input.purchaseId),
-                        isNull(billingAddonPurchases.deletedAt)
-                    )
-                )
-                .limit(1);
+            let lockedPurchase: PurchaseRow | undefined;
+            let newExpiresAt: Date | null = null;
+            let validationError: { code: string; message: string } | undefined;
 
-            if (!purchase) {
-                return {
-                    success: false,
-                    error: {
+            await withTransaction(async (tx) => {
+                // ── 1. SELECT FOR UPDATE — locks the row for the duration of tx ──
+                const result = await tx.execute<PurchaseRow>(
+                    sql`SELECT id,
+                               customer_id    AS "customerId",
+                               addon_slug     AS "addonSlug",
+                               status
+                        FROM   billing_addon_purchases
+                        WHERE  id         = ${input.purchaseId}
+                          AND  deleted_at IS NULL
+                        LIMIT  1
+                        FOR UPDATE`
+                );
+
+                const row = result.rows[0];
+
+                if (!row) {
+                    validationError = {
                         code: 'NOT_FOUND',
                         message: `Add-on purchase '${input.purchaseId}' not found`
-                    }
-                };
-            }
+                    };
+                    return;
+                }
 
-            if (purchase.status === 'active') {
-                return {
-                    success: false,
-                    error: {
+                if (row.status === 'active') {
+                    validationError = {
                         code: 'INVALID_STATUS',
                         message: 'Add-on purchase is already active'
-                    }
-                };
-            }
+                    };
+                    return;
+                }
 
-            if (purchase.status !== 'expired' && purchase.status !== 'canceled') {
-                return {
-                    success: false,
-                    error: {
+                if (row.status !== 'expired' && row.status !== 'canceled') {
+                    validationError = {
                         code: 'INVALID_STATUS',
-                        message: `Cannot activate add-on with status '${purchase.status}'. Must be 'expired' or 'canceled'.`
-                    }
-                };
-            }
+                        message: `Cannot activate add-on with status '${row.status}'. Must be 'expired' or 'canceled'.`
+                    };
+                    return;
+                }
 
-            // ── 2. Calculate new expiresAt ────────────────────────────────────
-            const addon = getAddonBySlug(purchase.addonSlug);
-            const now = new Date();
-            let newExpiresAt: Date | null = null;
+                lockedPurchase = row;
 
-            if (
-                addon?.durationDays !== null &&
-                addon?.durationDays !== undefined &&
-                addon.durationDays > 0
-            ) {
-                newExpiresAt = new Date(now.getTime() + addon.durationDays * 24 * 60 * 60 * 1000);
-            }
+                // ── 2. Calculate new expiresAt ────────────────────────────────
+                const addon = getAddonBySlug(row.addonSlug);
+                const now = new Date();
 
-            // ── 3. Transactional DB write ─────────────────────────────────────
-            // If an outer tx is passed in, withTransaction reuses it transparently.
-            await withTransaction(async (tx) => {
+                if (
+                    addon?.durationDays !== null &&
+                    addon?.durationDays !== undefined &&
+                    addon.durationDays > 0
+                ) {
+                    newExpiresAt = new Date(
+                        now.getTime() + addon.durationDays * 24 * 60 * 60 * 1000
+                    );
+                }
+
+                // ── 3. Transactional DB write ─────────────────────────────────
                 await tx
                     .update(billingAddonPurchases)
                     .set({
@@ -359,6 +371,22 @@ export class AdminAddonService {
                         )
                     );
             }, input.tx);
+
+            if (validationError) {
+                return { success: false, error: validationError };
+            }
+
+            if (!lockedPurchase) {
+                return {
+                    success: false,
+                    error: {
+                        code: 'NOT_FOUND',
+                        message: `Add-on purchase '${input.purchaseId}' not found`
+                    }
+                };
+            }
+
+            const purchase = lockedPurchase;
 
             // ── 4. Re-apply entitlements via QZPay (outside the transaction) ──
             // Intentionally runs after commit so a QZPay failure does not roll
@@ -409,12 +437,16 @@ export class AdminAddonService {
                 }
             }
 
+            // newExpiresAt is assigned inside withTransaction — cast via unknown to inform TS
+            const expiresAtResolved = newExpiresAt as unknown as Date | null;
+            const expiresAtIso: string | null = expiresAtResolved?.toISOString() ?? null;
+
             apiLogger.info(
                 {
                     purchaseId: input.purchaseId,
                     customerId: purchase.customerId,
                     addonSlug: purchase.addonSlug,
-                    newExpiresAt: newExpiresAt?.toISOString() ?? null
+                    newExpiresAt: expiresAtIso
                 },
                 'Successfully activated add-on purchase'
             );

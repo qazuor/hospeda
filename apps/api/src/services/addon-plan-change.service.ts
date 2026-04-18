@@ -171,6 +171,11 @@ export async function handlePlanChangeAddonRecalculation(
 ): Promise<PlanChangeRecalculationResult> {
     const { customerId, oldPlanId, newPlanId, billing } = input;
 
+    // Capture a single reference timestamp for the entire invocation.
+    // This prevents subtle bugs where multiple Date.now() calls within the same
+    // execution path return slightly different values if the function takes time.
+    const nowMs = Date.now();
+
     // ── Step 0: Feature flag guard ────────────────────────────────────────────
     const addonLifecycleEnabled = env.HOSPEDA_ADDON_LIFECYCLE_ENABLED;
     if (!addonLifecycleEnabled) {
@@ -191,7 +196,7 @@ export async function handlePlanChangeAddonRecalculation(
     // Suppress duplicate recalculations triggered within a 5-minute window for
     // the same customer (e.g. two webhook deliveries for the same plan change).
     const lastRecalc = recentRecalculations.get(customerId);
-    if (lastRecalc !== undefined && Date.now() - lastRecalc < DEDUP_WINDOW_MS) {
+    if (lastRecalc !== undefined && nowMs - lastRecalc < DEDUP_WINDOW_MS) {
         apiLogger.info(
             { customerId, oldPlanId, newPlanId },
             'Skipping duplicate plan-change recalculation (within 5-minute dedup window)'
@@ -205,25 +210,36 @@ export async function handlePlanChangeAddonRecalculation(
         };
     }
 
-    // ── Steps 0c–10: All DB operations wrapped in a single transaction ─────────
-    // withServiceTransaction automatically applies SET LOCAL statement_timeout
-    // (default 30 000 ms) so the lock + queries are bounded.
-    // NOTE: billing.limits.set() calls are external (QZPay HTTP) — they stay
-    // inside the callback body but are not rolled back on DB failure.
-    return withServiceTransaction(async (ctx) => {
+    // ── Phase 1: Read data inside a transaction (with advisory lock + dedup) ─────
+    // All DB reads happen here. The transaction commits at the end of this block,
+    // releasing the advisory lock. QZPay calls happen OUTSIDE any open transaction
+    // to avoid holding DB locks during slow external HTTP round-trips.
+
+    /** Minimal purchase row shape needed for limit recalculation. */
+    type PurchaseRecord = {
+        id: string;
+        addonSlug: string;
+        limitAdjustments: Array<{ limitKey: string; increase: number }> | null | undefined;
+    };
+
+    type PlanChangeData =
+        | {
+              earlyReturn: PlanChangeRecalculationResult;
+          }
+        | {
+              byLimitKey: Map<string, PurchaseRecord[]>;
+              affectedLimitKeys: readonly string[];
+              newPlanDef: NonNullable<ReturnType<typeof getPlanBySlug>>;
+              subscriptionId: string | undefined;
+          };
+
+    const phase1 = await withServiceTransaction(async (ctx) => {
         // ── Step 0c: Per-customer advisory lock (GAP-043-035) ─────────────────
-        // The lock is transaction-scoped: pg_advisory_xact_lock holds until the
-        // transaction commits or rolls back, preventing concurrent recalculations.
         const lockId = hashCustomerId(customerId);
         // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
         await ctx.tx!.execute(sql`SELECT pg_advisory_xact_lock(${lockId})`);
 
-        // ── Step 0d: DB-backed dedup check (authoritative — survives restarts) ──
-        // The in-memory map above is a fast path that avoids opening a transaction.
-        // This check is the authoritative guard: it queries billing_subscription_events
-        // for any ADDON_RECALC_COMPLETED event for this customer's subscriptions
-        // recorded within the last DEDUP_WINDOW_MS, spanning across process restarts
-        // and multiple Vercel instances.
+        // ── Step 0d: DB-backed dedup check ────────────────────────────────────
         const { billingSubscriptionEvents, billingSubscriptions } = await import('@repo/db');
 
         // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
@@ -241,7 +257,7 @@ export async function handlePlanChangeAddonRecalculation(
                         billingSubscriptionEvents.eventType,
                         BILLING_EVENT_TYPES.ADDON_RECALC_COMPLETED
                     ),
-                    gte(billingSubscriptionEvents.createdAt, new Date(Date.now() - DEDUP_WINDOW_MS))
+                    gte(billingSubscriptionEvents.createdAt, new Date(nowMs - DEDUP_WINDOW_MS))
                 )
             )
             .limit(1);
@@ -251,17 +267,19 @@ export async function handlePlanChangeAddonRecalculation(
                 { customerId, oldPlanId, newPlanId },
                 'Skipping duplicate plan-change recalculation (DB dedup: ADDON_RECALC_COMPLETED within 5-minute window)'
             );
-            return {
-                customerId,
-                oldPlanId,
-                newPlanId,
-                recalculations: [],
-                direction: 'lateral'
+            const result: PlanChangeData = {
+                earlyReturn: {
+                    customerId,
+                    oldPlanId,
+                    newPlanId,
+                    recalculations: [],
+                    direction: 'lateral'
+                }
             };
+            return result;
         }
 
         // ── Step 1: Load all active addon purchases for the customer ──────────
-
         const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
 
         // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
@@ -281,8 +299,7 @@ export async function handlePlanChangeAddonRecalculation(
             'Loaded active addon purchases for plan-change recalculation'
         );
 
-        // ── Step 2 & 3: Resolve addon defs, filter to limit-type only ─────────
-
+        // ── Steps 2 & 3: Resolve addon defs, filter to limit-type only ────────
         type PurchaseRow = (typeof activePurchases)[number];
 
         interface LimitAddon {
@@ -304,7 +321,6 @@ export async function handlePlanChangeAddonRecalculation(
             }
 
             if (!addonDef.affectsLimitKey) {
-                // Entitlement-type addon — not affected by plan limit changes
                 continue;
             }
 
@@ -312,26 +328,24 @@ export async function handlePlanChangeAddonRecalculation(
         }
 
         // ── Step 4: Early exit when no limit-type addons are active ──────────
-
         if (limitAddons.length === 0) {
             apiLogger.debug(
                 { customerId, oldPlanId, newPlanId },
                 'No active limit addons for customer, skipping plan-change recalculation'
             );
-
-            clearEntitlementCache(customerId);
-
-            return {
-                customerId,
-                oldPlanId,
-                newPlanId,
-                recalculations: [],
-                direction: computeDirection([], oldPlanId, newPlanId)
+            const result: PlanChangeData = {
+                earlyReturn: {
+                    customerId,
+                    oldPlanId,
+                    newPlanId,
+                    recalculations: [],
+                    direction: computeDirection([], oldPlanId, newPlanId)
+                }
             };
+            return result;
         }
 
         // ── Step 5: Group purchases by limitKey ───────────────────────────────
-
         const byLimitKey = new Map<string, PurchaseRow[]>();
 
         for (const { purchase, limitKey } of limitAddons) {
@@ -343,7 +357,6 @@ export async function handlePlanChangeAddonRecalculation(
         const affectedLimitKeys = [...byLimitKey.keys()] as readonly string[];
 
         // ── Step 6: Validate new plan exists in canonical config ──────────────
-
         const newPlanDef = getPlanBySlug(newPlanId);
 
         if (!newPlanDef) {
@@ -359,166 +372,28 @@ export async function handlePlanChangeAddonRecalculation(
                     extra: { customerId, oldPlanId, newPlanId }
                 }
             );
-
-            return {
-                customerId,
-                oldPlanId,
-                newPlanId,
-                recalculations: affectedLimitKeys.map((limitKey) => ({
-                    limitKey,
-                    oldMaxValue: 0,
-                    newMaxValue: 0,
-                    addonCount: byLimitKey.get(limitKey)?.length ?? 0,
-                    outcome: 'failed' as const,
-                    reason: `New plan '${newPlanId}' not found in canonical config`
-                })),
-                direction: 'lateral'
-            };
-        }
-
-        // ── Step 7: Process each limitKey group ───────────────────────────────
-
-        const recalculations: RecalculationResult[] = [];
-
-        for (const [limitKey, purchases] of byLimitKey) {
-            const planLimitDef = newPlanDef.limits.find((l) => l.key === limitKey);
-
-            // AC-3.6: limitKey not in new plan's limits array
-            if (!planLimitDef) {
-                apiLogger.warn(
-                    { customerId, newPlanId, limitKey },
-                    'limitKey not present in new plan limits array; treating new base as 0'
-                );
-                Sentry.captureMessage(
-                    `limitKey '${limitKey}' not found in plan '${newPlanId}' during plan-change recalculation`,
-                    {
-                        level: 'warning',
-                        tags: {
-                            subsystem: 'billing-addon-lifecycle',
-                            action: 'plan-change-recalc'
-                        },
-                        extra: { customerId, oldPlanId, newPlanId, limitKey }
-                    }
-                );
-            }
-
-            const newBasePlanLimit = planLimitDef?.value ?? 0;
-
-            // AC-3.5: new plan has unlimited for this key — skip
-            if (newBasePlanLimit === -1) {
-                apiLogger.debug(
-                    { customerId, newPlanId, limitKey },
-                    'New plan has unlimited for limitKey; skipping recalculation for this key'
-                );
-
-                const oldBasePlanLimit = resolvePlanBaseLimit(oldPlanId, limitKey);
-                const totalAddonIncrement = sumIncrements(purchases, limitKey);
-
-                recalculations.push({
-                    limitKey,
-                    oldMaxValue:
-                        oldBasePlanLimit === -1 ? -1 : oldBasePlanLimit + totalAddonIncrement,
-                    newMaxValue: -1,
-                    addonCount: purchases.length,
-                    outcome: 'skipped',
-                    reason: 'New plan has unlimited for this limitKey'
-                });
-                continue;
-            }
-
-            // Sum increments from all purchases in this group
-            const totalAddonIncrement = sumIncrements(purchases, limitKey);
-            const newMaxValue = newBasePlanLimit + totalAddonIncrement;
-
-            // Compute old max value for T-011 downgrade detection
-            const oldBasePlanLimit = resolvePlanBaseLimit(oldPlanId, limitKey);
-            const oldMaxValue =
-                oldBasePlanLimit === -1 ? -1 : oldBasePlanLimit + totalAddonIncrement;
-
-            apiLogger.info(
-                {
+            const result: PlanChangeData = {
+                earlyReturn: {
                     customerId,
-                    limitKey,
-                    oldBasePlanLimit,
-                    newBasePlanLimit,
-                    totalAddonIncrement,
-                    oldMaxValue,
-                    newMaxValue,
-                    purchaseCount: purchases.length
-                },
-                'Computed new max value for plan-change addon limit recalculation'
-            );
-
-            // Apply the recalculated limit via QZPay (external call — not rolled back on DB failure)
-            try {
-                await billing.limits.set({
-                    customerId,
-                    limitKey,
-                    maxValue: newMaxValue,
-                    source: 'addon',
-                    sourceId: ADDON_RECALC_SOURCE_ID
-                });
-
-                apiLogger.info(
-                    {
-                        customerId,
+                    oldPlanId,
+                    newPlanId,
+                    recalculations: affectedLimitKeys.map((limitKey) => ({
                         limitKey,
-                        newMaxValue,
-                        sourceId: ADDON_RECALC_SOURCE_ID
-                    },
-                    'Updated aggregated addon limit via billing.limits.set for plan change'
-                );
-
-                recalculations.push({
-                    limitKey,
-                    oldMaxValue,
-                    newMaxValue,
-                    addonCount: purchases.length,
-                    outcome: 'success'
-                });
-            } catch (err) {
-                const errorMessage = err instanceof Error ? err.message : String(err);
-
-                apiLogger.error(
-                    { customerId, limitKey, newMaxValue, error: errorMessage },
-                    'Failed to apply recalculated addon limit during plan change'
-                );
-
-                Sentry.captureException(err, {
-                    tags: {
-                        subsystem: 'billing-addon-lifecycle',
-                        action: 'plan-change-recalc-set'
-                    },
-                    extra: { customerId, oldPlanId, newPlanId, limitKey, newMaxValue }
-                });
-
-                recalculations.push({
-                    limitKey,
-                    oldMaxValue,
-                    newMaxValue: 0,
-                    addonCount: purchases.length,
-                    outcome: 'failed',
-                    reason: `billing.limits.set failed: ${errorMessage}`
-                });
-                // Failure in one limitKey does NOT block others — continue
-            }
+                        oldMaxValue: 0,
+                        newMaxValue: 0,
+                        addonCount: byLimitKey.get(limitKey)?.length ?? 0,
+                        outcome: 'failed' as const,
+                        reason: `New plan '${newPlanId}' not found in canonical config`
+                    })),
+                    direction: 'lateral'
+                }
+            };
+            return result;
         }
 
-        // ── Step 8: Downgrade detection and notification dispatch (AC-4.1–4.4) ─
-        await detectAndNotifyDowngrades({ customerId, recalculations, billing, newPlanDef });
-
-        // ── Step 9: Clear entitlement cache ───────────────────────────────────
-
-        clearEntitlementCache(customerId);
-
-        // ── Step 9b: Mark recalculation timestamp for dedup guard (GAP-043-014) ─
-        recentRecalculations.set(customerId, Date.now());
-
-        // ── Step 9c: Write dedup record atomically (T-025) ───────────────────
-        // Resolve the customer's active subscription to obtain a valid subscriptionId
-        // for the foreign-key constraint on billing_subscription_events.
+        // ── Pre-fetch subscriptionId for dedup event write (Phase 3) ─────────
         // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
-        const activeSubscription = await ctx
+        const activeSubRows = await ctx
             .tx!.select({ id: billingSubscriptions.id })
             .from(billingSubscriptions)
             .where(
@@ -529,7 +404,192 @@ export async function handlePlanChangeAddonRecalculation(
             )
             .limit(1);
 
-        const subscriptionId = activeSubscription[0]?.id;
+        // Map full drizzle rows to the minimal PurchaseRecord shape needed outside
+        const purchaseRecordMap = new Map<string, PurchaseRecord[]>();
+        for (const [limitKey, purchases] of byLimitKey) {
+            purchaseRecordMap.set(
+                limitKey,
+                purchases.map((p) => ({
+                    id: p.id,
+                    addonSlug: p.addonSlug,
+                    limitAdjustments: Array.isArray(p.limitAdjustments)
+                        ? (p.limitAdjustments as Array<{ limitKey: string; increase: number }>)
+                        : null
+                }))
+            );
+        }
+
+        const result: PlanChangeData = {
+            byLimitKey: purchaseRecordMap,
+            affectedLimitKeys,
+            newPlanDef,
+            subscriptionId: activeSubRows[0]?.id
+        };
+        return result;
+    });
+
+    // Early return if phase 1 decided we should stop
+    if ('earlyReturn' in phase1) {
+        if (
+            'recalculations' in phase1.earlyReturn &&
+            phase1.earlyReturn.recalculations.length === 0
+        ) {
+            clearEntitlementCache(customerId);
+        }
+        return phase1.earlyReturn;
+    }
+
+    const { byLimitKey, affectedLimitKeys, newPlanDef, subscriptionId } = phase1;
+
+    // ── Phase 2: QZPay calls — OUTSIDE any open transaction ──────────────────
+    // Calling billing.limits.set() while holding a DB transaction is hazardous:
+    // - If QZPay is slow the DB transaction holds row-level locks for the full
+    //   duration, blocking concurrent readers/writers.
+    // - If QZPay succeeds but the DB tx later rolls back, the external state is
+    //   mutated with no compensating action.
+    // By calling QZPay here (after the Phase 1 tx committed) we eliminate both
+    // risks. The dedup event is written in Phase 3 after QZPay completes.
+
+    const recalculations: RecalculationResult[] = [];
+
+    for (const [limitKey, purchases] of byLimitKey) {
+        const planLimitDef = newPlanDef.limits.find((l) => l.key === limitKey);
+
+        // AC-3.6: limitKey not in new plan's limits array
+        if (!planLimitDef) {
+            apiLogger.warn(
+                { customerId, newPlanId, limitKey },
+                'limitKey not present in new plan limits array; treating new base as 0'
+            );
+            Sentry.captureMessage(
+                `limitKey '${limitKey}' not found in plan '${newPlanId}' during plan-change recalculation`,
+                {
+                    level: 'warning',
+                    tags: {
+                        subsystem: 'billing-addon-lifecycle',
+                        action: 'plan-change-recalc'
+                    },
+                    extra: { customerId, oldPlanId, newPlanId, limitKey }
+                }
+            );
+        }
+
+        const newBasePlanLimit = planLimitDef?.value ?? 0;
+
+        // AC-3.5: new plan has unlimited for this key — skip
+        if (newBasePlanLimit === -1) {
+            apiLogger.debug(
+                { customerId, newPlanId, limitKey },
+                'New plan has unlimited for limitKey; skipping recalculation for this key'
+            );
+
+            const oldBasePlanLimit = resolvePlanBaseLimit(oldPlanId, limitKey);
+            const totalAddonIncrement = sumIncrements(purchases as PurchaseRecord[], limitKey);
+
+            recalculations.push({
+                limitKey,
+                oldMaxValue: oldBasePlanLimit === -1 ? -1 : oldBasePlanLimit + totalAddonIncrement,
+                newMaxValue: -1,
+                addonCount: purchases.length,
+                outcome: 'skipped',
+                reason: 'New plan has unlimited for this limitKey'
+            });
+            continue;
+        }
+
+        // Sum increments from all purchases in this group
+        const totalAddonIncrement = sumIncrements(purchases as PurchaseRecord[], limitKey);
+        const newMaxValue = newBasePlanLimit + totalAddonIncrement;
+
+        // Compute old max value for T-011 downgrade detection
+        const oldBasePlanLimit = resolvePlanBaseLimit(oldPlanId, limitKey);
+        const oldMaxValue = oldBasePlanLimit === -1 ? -1 : oldBasePlanLimit + totalAddonIncrement;
+
+        apiLogger.info(
+            {
+                customerId,
+                limitKey,
+                oldBasePlanLimit,
+                newBasePlanLimit,
+                totalAddonIncrement,
+                oldMaxValue,
+                newMaxValue,
+                purchaseCount: purchases.length
+            },
+            'Computed new max value for plan-change addon limit recalculation'
+        );
+
+        // Apply the recalculated limit via QZPay — outside any DB transaction
+        try {
+            await billing.limits.set({
+                customerId,
+                limitKey,
+                maxValue: newMaxValue,
+                source: 'addon',
+                sourceId: ADDON_RECALC_SOURCE_ID
+            });
+
+            apiLogger.info(
+                {
+                    customerId,
+                    limitKey,
+                    newMaxValue,
+                    sourceId: ADDON_RECALC_SOURCE_ID
+                },
+                'Updated aggregated addon limit via billing.limits.set for plan change'
+            );
+
+            recalculations.push({
+                limitKey,
+                oldMaxValue,
+                newMaxValue,
+                addonCount: purchases.length,
+                outcome: 'success'
+            });
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : String(err);
+
+            apiLogger.error(
+                { customerId, limitKey, newMaxValue, error: errorMessage },
+                'Failed to apply recalculated addon limit during plan change'
+            );
+
+            Sentry.captureException(err, {
+                tags: {
+                    subsystem: 'billing-addon-lifecycle',
+                    action: 'plan-change-recalc-set'
+                },
+                extra: { customerId, oldPlanId, newPlanId, limitKey, newMaxValue }
+            });
+
+            recalculations.push({
+                limitKey,
+                oldMaxValue,
+                newMaxValue: 0,
+                addonCount: purchases.length,
+                outcome: 'failed',
+                reason: `billing.limits.set failed: ${errorMessage}`
+            });
+            // Failure in one limitKey does NOT block others — continue
+        }
+    }
+
+    // ── Step 8: Downgrade detection and notification dispatch (AC-4.1–4.4) ──
+    await detectAndNotifyDowngrades({ customerId, recalculations, billing, newPlanDef });
+
+    // ── Step 9: Clear entitlement cache ──────────────────────────────────────
+    clearEntitlementCache(customerId);
+
+    // ── Step 9b: Mark recalculation timestamp for dedup guard (GAP-043-014) ─
+    recentRecalculations.set(customerId, nowMs);
+
+    // ── Phase 3: Write dedup event in a new transaction ──────────────────────
+    // Opens a fresh transaction only to record the ADDON_RECALC_COMPLETED event.
+    // Keeping this separate from Phase 1 ensures the dedup write reflects the
+    // actual QZPay outcome (Phase 2) rather than pre-committing before the
+    // external call.
+    await withServiceTransaction(async (ctx) => {
+        const { billingSubscriptionEvents } = await import('@repo/db');
 
         if (subscriptionId) {
             // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
@@ -556,35 +616,34 @@ export async function handlePlanChangeAddonRecalculation(
                 'No active subscription found for customer — dedup event not written to DB'
             );
         }
+    });
 
-        // ── Step 10: Summary audit log ────────────────────────────────────────
+    // ── Step 10: Summary audit log ────────────────────────────────────────────
+    const direction = computeDirection(affectedLimitKeys, oldPlanId, newPlanId);
+    const successCount = recalculations.filter((r) => r.outcome === 'success').length;
+    const failedCount = recalculations.filter((r) => r.outcome === 'failed').length;
+    const skippedCount = recalculations.filter((r) => r.outcome === 'skipped').length;
 
-        const direction = computeDirection(affectedLimitKeys, oldPlanId, newPlanId);
-        const successCount = recalculations.filter((r) => r.outcome === 'success').length;
-        const failedCount = recalculations.filter((r) => r.outcome === 'failed').length;
-        const skippedCount = recalculations.filter((r) => r.outcome === 'skipped').length;
-
-        apiLogger.info(
-            {
-                eventType: 'plan_changed',
-                customerId,
-                oldPlanId,
-                newPlanId,
-                direction,
-                limitKeysProcessed: affectedLimitKeys.length,
-                successCount,
-                failedCount,
-                skippedCount
-            },
-            'Plan-change addon recalculation complete'
-        );
-
-        return {
+    apiLogger.info(
+        {
+            eventType: 'plan_changed',
             customerId,
             oldPlanId,
             newPlanId,
-            recalculations,
-            direction
-        };
-    });
+            direction,
+            limitKeysProcessed: affectedLimitKeys.length,
+            successCount,
+            failedCount,
+            skippedCount
+        },
+        'Plan-change addon recalculation complete'
+    );
+
+    return {
+        customerId,
+        oldPlanId,
+        newPlanId,
+        recalculations,
+        direction
+    };
 }

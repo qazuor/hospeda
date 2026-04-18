@@ -16,7 +16,7 @@ import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { withServiceTransaction } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../../services/addon-lifecycle.service.js';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service.js';
@@ -585,19 +585,26 @@ export async function processSubscriptionUpdated({
     // This is fire-and-forget: errors do not block webhook processing.
     if (mappedStatus === SubscriptionStatusEnum.PAST_DUE) {
         try {
-            const subMeta = (localSubscription.metadata ?? {}) as Record<string, unknown>;
-            const previousFailureCount =
-                typeof subMeta.paymentFailureCount === 'number' ? subMeta.paymentFailureCount : 0;
-            const newFailureCount = previousFailureCount + 1;
-
-            // Persist updated failure count
-            await db
+            // Atomic increment via jsonb_set to avoid read-modify-write race conditions.
+            // RETURNING gives us the post-update value without a second SELECT.
+            const [updatedSub] = await db
                 .update(billingSubscriptions)
                 .set({
-                    metadata: { ...subMeta, paymentFailureCount: newFailureCount },
+                    metadata: sql`jsonb_set(
+                        COALESCE(${billingSubscriptions.metadata}, '{}'::jsonb),
+                        '{paymentFailureCount}',
+                        to_jsonb(COALESCE((${billingSubscriptions.metadata}->>'paymentFailureCount')::int, 0) + 1)
+                    )`,
                     updatedAt: new Date()
                 })
-                .where(eq(billingSubscriptions.id, localSubscription.id));
+                .where(eq(billingSubscriptions.id, localSubscription.id))
+                .returning({ metadata: billingSubscriptions.metadata });
+
+            const updatedMeta = (updatedSub?.metadata ?? {}) as Record<string, unknown>;
+            const newFailureCount =
+                typeof updatedMeta.paymentFailureCount === 'number'
+                    ? updatedMeta.paymentFailureCount
+                    : 1;
 
             apiLogger.info(
                 {
@@ -696,27 +703,32 @@ export async function processSubscriptionUpdated({
         previousStatus === SubscriptionStatusEnum.PAST_DUE
     ) {
         try {
-            const subMeta = (localSubscription.metadata ?? {}) as Record<string, unknown>;
-            if (
-                typeof subMeta.paymentFailureCount === 'number' &&
-                subMeta.paymentFailureCount > 0
-            ) {
-                await db
-                    .update(billingSubscriptions)
-                    .set({
-                        metadata: { ...subMeta, paymentFailureCount: 0 },
-                        updatedAt: new Date()
-                    })
-                    .where(eq(billingSubscriptions.id, localSubscription.id));
-
-                apiLogger.info(
-                    {
-                        subscriptionId: localSubscription.id,
-                        customerId: localSubscription.customerId
-                    },
-                    'Payment failure count reset on subscription reactivation'
+            // Atomically zero-out paymentFailureCount only if it is currently set.
+            // Using jsonb_set avoids a prior read and prevents losing other metadata keys.
+            await db
+                .update(billingSubscriptions)
+                .set({
+                    metadata: sql`jsonb_set(
+                        COALESCE(${billingSubscriptions.metadata}, '{}'::jsonb),
+                        '{paymentFailureCount}',
+                        '0'::jsonb
+                    )`,
+                    updatedAt: new Date()
+                })
+                .where(
+                    and(
+                        eq(billingSubscriptions.id, localSubscription.id),
+                        sql`(${billingSubscriptions.metadata}->>'paymentFailureCount')::int > 0`
+                    )
                 );
-            }
+
+            apiLogger.info(
+                {
+                    subscriptionId: localSubscription.id,
+                    customerId: localSubscription.customerId
+                },
+                'Payment failure count reset on subscription reactivation'
+            );
         } catch (resetErr) {
             // Non-blocking
             apiLogger.warn(

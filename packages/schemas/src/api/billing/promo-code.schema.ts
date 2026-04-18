@@ -67,11 +67,12 @@ export const ApplyPromoCodeRequestSchema = z.object({
             message: 'zodError.billing.promoCode.apply.customerId.invalidType'
         })
         .min(1, { message: 'zodError.billing.promoCode.apply.customerId.min' }),
-    /** Optional base amount in ARS cents used to compute fixed discounts */
+    /** Optional base amount in ARS cents used to compute fixed discounts (must be a non-negative integer) */
     amount: z
         .number({
             message: 'zodError.billing.promoCode.apply.amount.invalidType'
         })
+        .int({ message: 'zodError.billing.promoCode.apply.amount.int' })
         .min(0, { message: 'zodError.billing.promoCode.apply.amount.min' })
         .optional()
 });
@@ -93,12 +94,14 @@ export const CreatePromoCodeSchema = z.object({
         .max(50, { message: 'zodError.billing.promoCode.create.code.max' }),
     /** Whether the discount is a percentage or a fixed amount */
     discountType: PromoCodeDiscountTypeEnumSchema,
-    /** The discount value — percentage (0-100) or fixed amount in ARS cents (positive) */
+    /** The discount value — percentage (0-100) or fixed amount in ARS cents (positive integer, max 9999999 ≈ $99,999.99) */
     discountValue: z
         .number({
             message: 'zodError.billing.promoCode.create.discountValue.invalidType'
         })
-        .positive({ message: 'zodError.billing.promoCode.create.discountValue.positive' }),
+        .int({ message: 'zodError.billing.promoCode.create.discountValue.int' })
+        .positive({ message: 'zodError.billing.promoCode.create.discountValue.positive' })
+        .max(9999999, { message: 'zodError.billing.promoCode.create.discountValue.max' }),
     /** Maximum number of total redemptions allowed across all users */
     maxUses: z
         .number({

@@ -279,6 +279,8 @@ const ApiEnvSchema = z
         // Billing
         /** MercadoPago access token for payment processing */
         HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: z.string().optional(),
+        /** MercadoPago webhook signature secret for verifying incoming IPN notifications */
+        HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: z.string().optional(),
         /**
          * Feature flag for addon lifecycle processing (cancellations, plan changes, expiry).
          * Set to 'false' to disable all addon lifecycle side-effects without deploying code.
