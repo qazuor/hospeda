@@ -12,10 +12,13 @@
 # CREATE OR REPLACE, so it is safe to run multiple times.
 #
 # Usage:
-#   # Reads DATABASE_URL from environment
+#   # Preferred: run via pnpm wrapper (chained automatically in db:fresh/db:fresh-dev/db:reset)
+#   pnpm db:apply-extras
+#
+#   # Direct: reads DATABASE_URL from env or auto-loads apps/api/.env.local
 #   packages/db/scripts/apply-postgres-extras.sh
 #
-#   # Pass DATABASE_URL explicitly as first argument
+#   # Direct with explicit URL as first argument
 #   packages/db/scripts/apply-postgres-extras.sh "postgresql://user:pass@host:5432/db"
 #
 # Run this after any of:
@@ -33,11 +36,25 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # Resolve DATABASE_URL
 # ---------------------------------------------------------------------------
+# Order of precedence:
+#   1. First CLI argument
+#   2. DATABASE_URL or HOSPEDA_DATABASE_URL from current shell
+#   3. HOSPEDA_DATABASE_URL from apps/api/.env.local (canonical per SPEC-035)
+# ---------------------------------------------------------------------------
 DB_URL="${1:-${DATABASE_URL:-${HOSPEDA_DATABASE_URL:-}}}"
+
+if [[ -z "${DB_URL}" ]]; then
+  SCRIPT_DIR_EARLY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  ENV_FILE="${SCRIPT_DIR_EARLY}/../../../apps/api/.env.local"
+  if [[ -f "${ENV_FILE}" ]]; then
+    DB_URL="$(grep -E '^HOSPEDA_DATABASE_URL=' "${ENV_FILE}" | head -1 | cut -d '=' -f 2- | sed -E 's/^["'\'']?//; s/["'\'']?$//')"
+  fi
+fi
 
 if [[ -z "${DB_URL}" ]]; then
   echo "ERROR: No database URL provided." >&2
   echo "  Set HOSPEDA_DATABASE_URL or DATABASE_URL in your environment," >&2
+  echo "  define it in apps/api/.env.local," >&2
   echo "  or pass the URL as the first argument to this script." >&2
   exit 1
 fi
@@ -98,213 +115,41 @@ echo " Target: ${DB_URL%%@*}@..."
 echo "============================================================"
 echo ""
 
-# ------------------------------------------------------------
-# Step 1: Materialized view — search_index
-# Migration: manual/0016_create_search_index.sql
-# ------------------------------------------------------------
-echo "[1/8] Materialized view: search_index"
-run_file \
-  "search_index materialized view (0016)" \
-  "${MANUAL_DIR}/0016_create_search_index.sql"
-echo ""
+# ---------------------------------------------------------------------------
+# Apply all manual migrations in lexical order
+# ---------------------------------------------------------------------------
+# Each SQL file under manual/ is expected to be idempotent (IF NOT EXISTS,
+# CREATE OR REPLACE, DO blocks with existence checks). Files matching
+# *_down.sql are skipped automatically — those are reversal migrations,
+# applied only via ad-hoc rollback procedures.
+# ---------------------------------------------------------------------------
 
-# ------------------------------------------------------------
-# Step 2: GIN index on search_index.tsv
-# Migration: manual/0017_create_search_index_gin.sql
-# ------------------------------------------------------------
-echo "[2/8] GIN index: idx_search_index_tsv"
-run_file \
-  "GIN index on search_index.tsv (0017)" \
-  "${MANUAL_DIR}/0017_create_search_index_gin.sql"
-echo ""
+mapfile -t SQL_FILES < <(find "${MANUAL_DIR}" -maxdepth 1 -type f -name '*.sql' | sort)
 
-# ------------------------------------------------------------
-# Step 3: refresh_search_index() function
-# Migration: manual/0018_refresh_search_index_function.sql
-# Note: Only the CREATE OR REPLACE FUNCTION statement is applied.
-# The optional pg_cron schedule (commented out in the file) is skipped.
-# ------------------------------------------------------------
-echo "[3/8] Function: refresh_search_index()"
-run_file \
-  "refresh_search_index function (0018)" \
-  "${MANUAL_DIR}/0018_refresh_search_index_function.sql"
-echo ""
+TOTAL=0
+for f in "${SQL_FILES[@]}"; do
+  base="$(basename "${f}")"
+  [[ "${base}" == *_down.sql ]] && continue
+  TOTAL=$((TOTAL + 1))
+done
 
-# ------------------------------------------------------------
-# Step 4: set_updated_at trigger (generic, all tables with updated_at)
-# Migration: manual/0019_add_generic_updated_at_trigger.sql
-#
-# IMPORTANT: this migration attaches the trigger to all tables in the
-# public schema that have an updated_at column AT THE TIME IT RUNS.
-# Re-run this script if new tables are added later.
-# ------------------------------------------------------------
-echo "[4/8] Trigger function + triggers: set_updated_at"
-echo "  NOTE: Trigger will be attached to all tables with updated_at column"
-
-# The DO block in 0019 uses EXECUTE format() which will fail with
-# --single-transaction if a trigger already exists. We wrap the DO block
-# to make each individual CREATE TRIGGER idempotent using IF NOT EXISTS
-# via a modified inline block instead of the raw file.
-run_sql \
-  "set_updated_at function (0019)" \
-  "CREATE OR REPLACE FUNCTION set_updated_at()
-     RETURNS TRIGGER AS \$\$
-   BEGIN
-     IF TG_OP = 'UPDATE' THEN
-       BEGIN
-         NEW.updated_at := NOW();
-       EXCEPTION WHEN undefined_column THEN
-         NULL;
-       END;
-     END IF;
-     RETURN NEW;
-   END;
-   \$\$ LANGUAGE plpgsql;"
-
-run_sql \
-  "set_updated_at triggers on all tables (0019)" \
-  "DO \$\$
-   DECLARE
-     tbl RECORD;
-   BEGIN
-     FOR tbl IN
-       SELECT table_name
-       FROM information_schema.columns
-       WHERE table_schema = 'public'
-         AND column_name = 'updated_at'
-     LOOP
-       IF NOT EXISTS (
-         SELECT 1 FROM information_schema.triggers
-         WHERE trigger_schema = 'public'
-           AND event_object_table = tbl.table_name
-           AND trigger_name = 'trg_set_updated_at_' || tbl.table_name
-       ) THEN
-         EXECUTE format(\$fmt\$
-           CREATE TRIGGER trg_set_updated_at_%1\$I
-             BEFORE UPDATE ON public.%1\$I
-             FOR EACH ROW
-             EXECUTE FUNCTION set_updated_at();
-         \$fmt\$, tbl.table_name);
-       END IF;
-     END LOOP;
-   END;
-   \$\$;"
-
-echo ""
-
-# ------------------------------------------------------------
-# Step 5: delete_entity_bookmarks trigger
-# Migration: manual/0020_add_delete_entity_bookmarks_trigger.sql
-#
-# This file uses DROP TRIGGER IF EXISTS + CREATE TRIGGER, so it is
-# already idempotent. Run it directly.
-# ------------------------------------------------------------
-echo "[5/8] Trigger function + triggers: delete_entity_bookmarks"
-run_file \
-  "delete_entity_bookmarks trigger (0020)" \
-  "${MANUAL_DIR}/0020_add_delete_entity_bookmarks_trigger.sql"
-echo ""
-
-# ------------------------------------------------------------
-# Step 6: CHECK constraint — billing_addon_purchases.status
-# Migration: 0025_addon_purchases_status_check.sql
-#
-# ALTER TABLE ADD CONSTRAINT fails if the constraint already exists.
-# Wrap in a DO block to make it idempotent.
-# ------------------------------------------------------------
-echo "[6/8] CHECK constraint: billing_addon_purchases_status_check"
-run_sql \
-  "status CHECK constraint (0025)" \
-  "DO \$\$
-   BEGIN
-     IF NOT EXISTS (
-       SELECT 1 FROM pg_constraint
-       WHERE conname = 'billing_addon_purchases_status_check'
-         AND conrelid = 'billing_addon_purchases'::regclass
-     ) THEN
-       ALTER TABLE billing_addon_purchases
-         ADD CONSTRAINT billing_addon_purchases_status_check
-         CHECK (status IN ('active', 'expired', 'canceled', 'pending'));
-     END IF;
-   END;
-   \$\$;"
-echo ""
-
-# ------------------------------------------------------------
-# Step 7: CHECK constraints — billing_addon_purchases JSONB columns
-# Migration: 0026_addon_purchases_jsonb_check.sql
-# ------------------------------------------------------------
-echo "[7/8] CHECK constraints: chk_limit_adjustments_type + chk_entitlement_adjustments_type"
-run_sql \
-  "limit_adjustments JSONB CHECK constraint (0026)" \
-  "DO \$\$
-   BEGIN
-     IF NOT EXISTS (
-       SELECT 1 FROM pg_constraint
-       WHERE conname = 'chk_limit_adjustments_type'
-         AND conrelid = 'billing_addon_purchases'::regclass
-     ) THEN
-       ALTER TABLE billing_addon_purchases
-         ADD CONSTRAINT chk_limit_adjustments_type
-         CHECK (limit_adjustments IS NULL OR jsonb_typeof(limit_adjustments) = 'array');
-     END IF;
-   END;
-   \$\$;"
-
-run_sql \
-  "entitlement_adjustments JSONB CHECK constraint (0026)" \
-  "DO \$\$
-   BEGIN
-     IF NOT EXISTS (
-       SELECT 1 FROM pg_constraint
-       WHERE conname = 'chk_entitlement_adjustments_type'
-         AND conrelid = 'billing_addon_purchases'::regclass
-     ) THEN
-       ALTER TABLE billing_addon_purchases
-         ADD CONSTRAINT chk_entitlement_adjustments_type
-         CHECK (entitlement_adjustments IS NULL OR jsonb_typeof(entitlement_adjustments) = 'array');
-     END IF;
-   END;
-   \$\$;"
-
-echo ""
-
-# ------------------------------------------------------------
-# Step 8: Unique index on billing_notification_log idempotency key
-# Uses JSONB extraction (metadata->>'idempotencyKey') which Drizzle
-# cannot declare natively.
-# ------------------------------------------------------------
-echo "[8/8] Unique index: idx_notification_log_idempotency_key"
-run_sql \
-  "billing_notification_log idempotency key unique index" \
-  "CREATE UNIQUE INDEX IF NOT EXISTS idx_notification_log_idempotency_key
-   ON billing_notification_log ((metadata->>'idempotencyKey'))
-   WHERE metadata->>'idempotencyKey' IS NOT NULL;"
-echo ""
-
-# ------------------------------------------------------------
-# Step 9: CHECK constraint — billing_subscription_events.event_type length
-# Ensures operational event_type values do not exceed the varchar(100) limit
-# and prevents empty strings being stored as event types.
-# Uses the same idempotent DO-block pattern as steps 6 and 7.
-# ------------------------------------------------------------
-echo "[9/9] CHECK constraint: billing_subscription_events_event_type_check"
-run_sql \
-  "event_type CHECK constraint on billing_subscription_events" \
-  "DO \$\$
-   BEGIN
-     IF NOT EXISTS (
-       SELECT 1 FROM pg_constraint
-       WHERE conname = 'billing_subscription_events_event_type_check'
-         AND conrelid = 'billing_subscription_events'::regclass
-     ) THEN
-       ALTER TABLE billing_subscription_events
-         ADD CONSTRAINT billing_subscription_events_event_type_check
-         CHECK (event_type IS NULL OR (char_length(event_type) > 0 AND char_length(event_type) <= 100));
-     END IF;
-   END;
-   \$\$;"
-echo ""
+if (( TOTAL == 0 )); then
+  echo "WARNING: No manual migration files found in ${MANUAL_DIR}"
+  echo ""
+else
+  IDX=0
+  for f in "${SQL_FILES[@]}"; do
+    base="$(basename "${f}")"
+    if [[ "${base}" == *_down.sql ]]; then
+      echo "  Skipping (down migration): ${base}"
+      continue
+    fi
+    IDX=$((IDX + 1))
+    echo "[${IDX}/${TOTAL}] Applying: ${base}"
+    run_file "${base}" "${f}"
+    echo ""
+  done
+fi
 
 # ---------------------------------------------------------------------------
 # Done
