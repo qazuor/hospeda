@@ -5,11 +5,10 @@
 import { DestinationIdSchema, PermissionEnum } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
-
-const destinationService = new DestinationService({ logger: apiLogger });
 
 /**
  * DELETE /api/v1/admin/destinations/:id/hard
@@ -27,6 +26,11 @@ export const adminHardDeleteDestinationRoute = createAdminRoute({
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
+        const destinationService = new DestinationService(
+            { logger: apiLogger },
+            undefined,
+            getMediaProvider()
+        );
         const result = await destinationService.hardDelete(actor, id);
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return { id };

@@ -29,3 +29,5 @@ export type {
     ExpireAddonResult,
     ProcessExpiredAddonsResult
 } from './addon-expiration.service';
+
+export { getMediaProvider } from './media';

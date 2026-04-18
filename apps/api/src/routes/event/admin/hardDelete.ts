@@ -6,11 +6,10 @@ import { EventIdSchema, PermissionEnum } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
-
-const eventService = new EventService({ logger: apiLogger });
 
 /**
  * DELETE /api/v1/admin/events/:id/hard
@@ -32,6 +31,7 @@ export const adminHardDeleteEventRoute = createAdminRoute({
     }),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
+        const eventService = new EventService({ logger: apiLogger }, getMediaProvider());
         const result = await eventService.hardDelete(actor, params.id as string);
 
         if (result.error) {

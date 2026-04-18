@@ -6,11 +6,10 @@ import { AccommodationIdSchema, PermissionEnum } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
-
-const accommodationService = new AccommodationService({ logger: apiLogger });
 
 /**
  * DELETE /api/v1/admin/accommodations/:id/hard
@@ -33,6 +32,11 @@ export const adminHardDeleteAccommodationRoute = createAdminRoute({
     }),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
+        const accommodationService = new AccommodationService(
+            { logger: apiLogger },
+            undefined,
+            getMediaProvider()
+        );
         const result = await accommodationService.hardDelete(actor, params.id as string);
 
         if (result.error) {

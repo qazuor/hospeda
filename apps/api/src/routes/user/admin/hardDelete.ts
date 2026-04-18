@@ -5,12 +5,11 @@
 import { PermissionEnum, UserIdSchema } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
+import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
-
-const userService = new UserService({ logger: apiLogger });
 
 /**
  * DELETE /api/v1/admin/users/:id/hard
@@ -28,6 +27,7 @@ export const adminHardDeleteUserRoute = createAdminRoute({
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
+        const userService = new UserService({ logger: apiLogger }, undefined, getMediaProvider());
         const result = await userService.hardDelete(actor, id);
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
 
