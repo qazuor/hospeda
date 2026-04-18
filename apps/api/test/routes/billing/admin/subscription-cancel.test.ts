@@ -956,7 +956,7 @@ describe('AC-2.3 — subscriptionCancelRoute: registration and param/body schema
 });
 
 // ---------------------------------------------------------------------------
-// IT-3: Compensating event — ADDON_REVOCATIONS_PENDING inserted before Phase 2
+// unit: Compensating event — ADDON_REVOCATIONS_PENDING inserted before Phase 2
 //
 // When Phase 1 revocations all succeed and Phase 2 (withServiceTransaction) throws,
 // the compensating INSERT must have been committed to the DB BEFORE the transaction

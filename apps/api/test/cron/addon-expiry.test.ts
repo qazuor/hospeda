@@ -51,7 +51,7 @@ vi.mock('@repo/db', () => ({
      * Default passthrough: executes the callback with a tx stub that simulates
      * pg_try_advisory_xact_lock(43001) returning acquired=true.
      *
-     * Tests that need to override lock behavior (e.g. IT-4: lock not acquired)
+     * Tests that need to override lock behavior (e.g. unit: lock not acquired)
      * can replace this via vi.mocked(withTransaction).mockImplementationOnce(...).
      */
     withTransaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => {
@@ -1904,10 +1904,10 @@ describe('Add-on Expiry Cron Job', () => {
     });
 
     // -------------------------------------------------------------------------
-    // IT-4: Concurrent lock behavior (SPEC-064, T-028)
+    // unit: Concurrent lock behavior (SPEC-064, T-028)
     // -------------------------------------------------------------------------
 
-    describe('IT-4: Concurrent cron executions — advisory lock serialization', () => {
+    describe('unit: Concurrent cron executions — advisory lock serialization', () => {
         /**
          * Creates a tx stub whose execute() returns the provided lock acquisition result.
          *

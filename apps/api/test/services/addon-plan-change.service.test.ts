@@ -17,8 +17,8 @@
  * - AC-4.3: Notification dispatch + Sentry.captureMessage when usage > newMaxValue
  * - AC-4.4: billing.limits.check() throws — warn log, skip key, continue
  *
- * IT-5: Dedup blocks second call within window
- * IT-5b: Dedup survives server restart (DB-backed dedup)
+ * unit: Dedup blocks second call within window
+ * unit: Dedup survives server restart (DB-backed dedup)
  *
  * Additional coverage:
  * - Direction detection: upgrade / downgrade / lateral
@@ -1429,7 +1429,7 @@ describe('handlePlanChangeAddonRecalculation — new plan not found in config', 
     });
 });
 
-// ─── IT-5: Dedup blocks second call within window ─────────────────────────────
+// ─── unit: Dedup blocks second call within window ─────────────────────────────
 //
 // After a successful recalculation, a second call within the DEDUP_WINDOW_MS for
 // the same customer must be suppressed. Two layers enforce this:
@@ -1442,7 +1442,7 @@ describe('handlePlanChangeAddonRecalculation — new plan not found in config', 
 // IT-5b verifies that after a simulated server restart (Map cleared), the DB-backed
 // dedup query (Step 0d) still blocks the second call.
 
-describe('IT-5: dedup guard — in-memory Map blocks second call within window', () => {
+describe('unit: dedup guard — in-memory Map blocks second call within window', () => {
     let billing: QZPayBilling;
 
     // Use a distinct customer ID to avoid state pollution from other describe blocks
@@ -1479,7 +1479,7 @@ describe('IT-5: dedup guard — in-memory Map blocks second call within window',
         vi.restoreAllMocks();
     });
 
-    it('IT-5: should skip second call within 5-minute window via in-memory Map', async () => {
+    it('unit: should skip second call within 5-minute window via in-memory Map', async () => {
         // Arrange — one active purchase so the first call actually runs recalculations
         const db = setupDbWithPurchases([{ ...activePurchaseRow, customerId: DEDUP_CUSTOMER_ID }]);
 
@@ -1519,7 +1519,7 @@ describe('IT-5: dedup guard — in-memory Map blocks second call within window',
         expect(billing.limits.set).toHaveBeenCalledOnce();
     });
 
-    it('IT-5: should allow second call after dedup window expires', async () => {
+    it('unit: should allow second call after dedup window expires', async () => {
         // Arrange
         const db = setupDbWithPurchases([{ ...activePurchaseRow, customerId: DEDUP_CUSTOMER_ID }]);
 
@@ -1553,7 +1553,7 @@ describe('IT-5: dedup guard — in-memory Map blocks second call within window',
         expect(billing.limits.set).toHaveBeenCalledTimes(2);
     });
 
-    it('IT-5: should write ADDON_RECALC_COMPLETED event to DB after successful recalculation', async () => {
+    it('unit: should write ADDON_RECALC_COMPLETED event to DB after successful recalculation', async () => {
         // Arrange — one purchase, one active subscription found
         const mockSubscriptionId = 'sub_test_dedup_write';
         // mockTxLimit returns subscription on first call (Step 9c), [] on others
@@ -1594,7 +1594,7 @@ describe('IT-5: dedup guard — in-memory Map blocks second call within window',
         );
     });
 
-    it('IT-5: should NOT write dedup event when no active subscription is found', async () => {
+    it('unit: should NOT write dedup event when no active subscription is found', async () => {
         // Arrange — no subscription found (mockTxLimit always returns [])
         mockTxLimit.mockResolvedValue([]);
 
@@ -1724,5 +1724,213 @@ describe('IT-5b: dedup guard — DB-backed dedup survives in-memory Map clear', 
         expect(result.recalculations).toHaveLength(1);
         expect(result.recalculations[0]?.outcome).toBe('success');
         expect(billing.limits.set).toHaveBeenCalledOnce();
+    });
+});
+
+// ─── T-032: 3-phase transaction structure ────────────────────────────────────
+//
+// T-031 restructured addon-plan-change.service.ts so that QZPay is called
+// OUTSIDE any open database transaction. The function now uses two separate
+// transactions:
+//
+//   TX1 (Phase 1): advisory lock + read active purchases + dedup check
+//   QZPay (Phase 2): billing.limits.set — outside any DB transaction
+//   TX2 (Phase 3): write ADDON_RECALC_COMPLETED dedup event
+//
+// These tests verify the structural invariants of that 3-phase design.
+
+describe('T-032: 3-phase transaction structure — QZPay called between TX1 and TX2', () => {
+    let billing: QZPayBilling;
+
+    const PHASE_CUSTOMER_ID = 'cus_test_t032_phase_structure';
+
+    beforeEach(async () => {
+        vi.clearAllMocks();
+        mockDbWhere.mockResolvedValue([]);
+        mockTxLimit
+            .mockResolvedValueOnce([]) // TX1 Step 0d: no recent dedup event
+            .mockResolvedValueOnce([{ id: 'sub_t032_phase' }]); // TX1 Step 9c: subscription found
+        mockTxInsertValues.mockResolvedValue(undefined);
+        mockSendNotification.mockResolvedValue(undefined);
+        mockCaptureSentryMessage.mockReturnValue('');
+
+        const { getPlanBySlug, getAddonBySlug } = await import('@repo/billing');
+        (getPlanBySlug as unknown as MockInstance).mockImplementation((slug: string) => {
+            if (slug === OLD_PLAN_SLUG) return mockOldPlan;
+            if (slug === NEW_PLAN_SLUG) return mockNewPlan;
+            return null;
+        });
+        (getAddonBySlug as unknown as MockInstance).mockImplementation((slug: string) => {
+            if (slug === 'extra-accommodations-5') return mockAddonDef;
+            return null;
+        });
+
+        billing = createMockBilling();
+        (billing.limits.set as unknown as MockInstance).mockResolvedValue(undefined);
+        (billing.limits.check as unknown as MockInstance).mockResolvedValue({ currentValue: 0 });
+        (billing.customers.get as unknown as MockInstance).mockResolvedValue(
+            createMockCustomer({ id: PHASE_CUSTOMER_ID })
+        );
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('should call withServiceTransaction exactly twice on the happy path (TX1 + TX2)', async () => {
+        // Arrange
+        const db = setupDbWithPurchases([{ ...activePurchaseRow, customerId: PHASE_CUSTOMER_ID }]);
+
+        const { withServiceTransaction } = await import('@repo/service-core');
+
+        // Act
+        const result = await handlePlanChangeAddonRecalculation({
+            customerId: PHASE_CUSTOMER_ID,
+            oldPlanId: OLD_PLAN_SLUG,
+            newPlanId: NEW_PLAN_SLUG,
+            billing,
+            db: db as never
+        });
+
+        // Assert — two separate transaction boundaries used
+        expect(withServiceTransaction).toHaveBeenCalledTimes(2);
+        expect(result.recalculations[0]?.outcome).toBe('success');
+    });
+
+    it('should call billing.limits.set between TX1 and TX2 (QZPay outside any transaction)', async () => {
+        // Arrange — track call order by recording invocation sequence
+        const callOrder: string[] = [];
+
+        const { withServiceTransaction } = await import('@repo/service-core');
+
+        const buildTxStub = () => ({
+            execute: vi.fn().mockResolvedValue(undefined),
+            select: vi.fn(() => ({
+                from: vi.fn(() => ({
+                    innerJoin: vi.fn(() => ({
+                        where: vi.fn(() => ({ limit: mockTxLimit }))
+                    })),
+                    where: vi.fn(() => {
+                        const p = mockDbWhere() as Promise<unknown> & {
+                            limit: typeof mockTxLimit;
+                        };
+                        p.limit = mockTxLimit;
+                        return p;
+                    })
+                }))
+            })),
+            insert: vi.fn(() => ({ values: mockTxInsertValues }))
+        });
+
+        (withServiceTransaction as unknown as MockInstance)
+            .mockImplementationOnce(
+                async (
+                    cb: (ctx: {
+                        tx: unknown;
+                        hookState: Record<string, unknown>;
+                    }) => Promise<unknown>
+                ) => {
+                    callOrder.push('TX1_start');
+                    const result = await cb({ tx: buildTxStub(), hookState: {} });
+                    callOrder.push('TX1_end');
+                    return result;
+                }
+            )
+            .mockImplementationOnce(
+                async (
+                    cb: (ctx: {
+                        tx: unknown;
+                        hookState: Record<string, unknown>;
+                    }) => Promise<unknown>
+                ) => {
+                    callOrder.push('TX2_start');
+                    const result = await cb({ tx: buildTxStub(), hookState: {} });
+                    callOrder.push('TX2_end');
+                    return result;
+                }
+            );
+
+        (billing.limits.set as unknown as MockInstance).mockImplementationOnce(async () => {
+            callOrder.push('QZPay_set');
+        });
+
+        const db = setupDbWithPurchases([{ ...activePurchaseRow, customerId: PHASE_CUSTOMER_ID }]);
+
+        // Act
+        await handlePlanChangeAddonRecalculation({
+            customerId: PHASE_CUSTOMER_ID,
+            oldPlanId: OLD_PLAN_SLUG,
+            newPlanId: NEW_PLAN_SLUG,
+            billing,
+            db: db as never
+        });
+
+        // Assert — QZPay call happens after TX1 commits and before TX2 opens.
+        // This is the core invariant of T-031: no DB lock held during external HTTP.
+        const tx1EndIndex = callOrder.indexOf('TX1_end');
+        const qzpayIndex = callOrder.indexOf('QZPay_set');
+        const tx2StartIndex = callOrder.indexOf('TX2_start');
+
+        expect(tx1EndIndex).toBeGreaterThanOrEqual(0);
+        expect(qzpayIndex).toBeGreaterThanOrEqual(0);
+        expect(tx2StartIndex).toBeGreaterThanOrEqual(0);
+
+        expect(qzpayIndex).toBeGreaterThan(tx1EndIndex);
+        expect(tx2StartIndex).toBeGreaterThan(qzpayIndex);
+    });
+
+    it('should call withServiceTransaction only once when early exit occurs (no active limit addons)', async () => {
+        // Arrange — empty purchases → early exit from Phase 1, Phase 3 never runs
+        const db = setupDbWithPurchases([]);
+
+        const { withServiceTransaction } = await import('@repo/service-core');
+
+        // Act
+        const result = await handlePlanChangeAddonRecalculation({
+            customerId: PHASE_CUSTOMER_ID,
+            oldPlanId: OLD_PLAN_SLUG,
+            newPlanId: NEW_PLAN_SLUG,
+            billing,
+            db: db as never
+        });
+
+        // Assert — only TX1 opened; TX2 is skipped because there's nothing to write
+        expect(withServiceTransaction).toHaveBeenCalledOnce();
+        expect(result.recalculations).toHaveLength(0);
+        expect(billing.limits.set).not.toHaveBeenCalled();
+    });
+
+    it('should NOT call withServiceTransaction at all when in-memory dedup fast-path triggers', async () => {
+        // Arrange — pin time and run first call to populate the in-memory Map
+        const fixedNow = 7_000_000_000_000;
+        vi.spyOn(Date, 'now').mockReturnValue(fixedNow);
+
+        const db = setupDbWithPurchases([{ ...activePurchaseRow, customerId: PHASE_CUSTOMER_ID }]);
+
+        // First call — populates in-memory dedup Map
+        await handlePlanChangeAddonRecalculation({
+            customerId: PHASE_CUSTOMER_ID,
+            oldPlanId: OLD_PLAN_SLUG,
+            newPlanId: NEW_PLAN_SLUG,
+            billing,
+            db: db as never
+        });
+
+        const { withServiceTransaction } = await import('@repo/service-core');
+        (withServiceTransaction as unknown as MockInstance).mockClear();
+
+        // Act — second call within the same window (in-memory fast-path)
+        const result = await handlePlanChangeAddonRecalculation({
+            customerId: PHASE_CUSTOMER_ID,
+            oldPlanId: OLD_PLAN_SLUG,
+            newPlanId: NEW_PLAN_SLUG,
+            billing,
+            db: db as never
+        });
+
+        // Assert — dedup guard fires before any transaction opens
+        expect(withServiceTransaction).not.toHaveBeenCalled();
+        expect(result.recalculations).toHaveLength(0);
+        expect(result.direction).toBe('lateral');
     });
 });

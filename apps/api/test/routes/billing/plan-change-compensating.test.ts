@@ -1,5 +1,5 @@
 /**
- * IT-6: Compensating event on local transaction failure (SPEC-064 T-023)
+ * unit: Compensating event on local transaction failure (SPEC-064 T-023)
  *
  * Tests that when QZPay changePlan() succeeds but the local DB transaction
  * (addon recalculation) throws, the handler:
@@ -244,7 +244,7 @@ describe('BILLING_EVENT_TYPES constant', () => {
 });
 
 // ============================================================================
-// IT-6: Compensating event on local transaction failure
+// unit: Compensating event on local transaction failure
 // ============================================================================
 
 describe('IT-6 — handlePlanChange: compensating event on local transaction failure', () => {

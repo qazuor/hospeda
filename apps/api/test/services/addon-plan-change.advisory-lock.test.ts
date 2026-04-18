@@ -3,9 +3,9 @@
  * handlePlanChangeAddonRecalculation (SPEC-064, T-018).
  *
  * These tests validate:
- * - IT-1: pg_advisory_xact_lock is acquired via ctx.tx.execute() BEFORE any
+ * - unit: pg_advisory_xact_lock is acquired via ctx.tx.execute() BEFORE any
  *         business logic (billing.limits.set) runs inside the transaction.
- * - IT-2: errors thrown inside the transaction callback propagate out of
+ * - unit: errors thrown inside the transaction callback propagate out of
  *         withServiceTransaction (no silent swallowing of DB-level errors).
  * - Early-return guards (feature flag, in-memory dedup) fire BEFORE the
  *         transaction is opened, so withServiceTransaction is never called.
@@ -366,9 +366,9 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
         );
     });
 
-    // ── IT-1: Advisory lock is acquired before business logic ─────────────────
+    // ── unit: Advisory lock is acquired before business logic ─────────────────
 
-    describe('IT-1: pg_advisory_xact_lock acquired before billing.limits.set', () => {
+    describe('unit: pg_advisory_xact_lock acquired before billing.limits.set', () => {
         it('should call tx.execute(pg_advisory_xact_lock) before billing.limits.set', async () => {
             // Arrange — intercept the withServiceTransaction callback to inject a
             // tx that records the order of execute() and limits.set() calls.
@@ -525,9 +525,9 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
         });
     });
 
-    // ── IT-2: Error propagation from the transaction callback ─────────────────
+    // ── unit: Error propagation from the transaction callback ─────────────────
 
-    describe('IT-2: transaction callback errors propagate out of withServiceTransaction', () => {
+    describe('unit: transaction callback errors propagate out of withServiceTransaction', () => {
         it('should propagate when tx.execute() throws during lock acquisition', async () => {
             // Arrange — tx.execute() rejects, simulating a DB failure when acquiring the lock
             mockWithServiceTransaction.mockImplementation(

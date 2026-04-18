@@ -24,7 +24,7 @@
 
 import { describe, it } from 'vitest';
 
-// ─── IT-7: Promo code concurrency ────────────────────────────────────────────
+// ─── unit: Promo code concurrency ────────────────────────────────────────────
 //
 // Scenario: A promo code with maxUses: 5 is redeemed by 10 concurrent callers.
 // The row-level lock (SELECT ... FOR UPDATE) inside tryRedeemAtomically must
@@ -68,7 +68,7 @@ describe('SPEC-064 IT-7 — promo code concurrency (real-DB required)', () => {
     );
 });
 
-// ─── IT-8: Transaction timeout via SET LOCAL statement_timeout ────────────────
+// ─── unit: Transaction timeout via SET LOCAL statement_timeout ────────────────
 //
 // Scenario: A transaction is opened and `SET LOCAL statement_timeout = '1000'`
 // is applied (1 second). A `SELECT pg_sleep(2)` is then executed inside the

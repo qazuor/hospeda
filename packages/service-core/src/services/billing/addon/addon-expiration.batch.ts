@@ -8,6 +8,7 @@
  * @module services/addon-expiration.batch
  */
 
+import type { QueryContext } from '@repo/db';
 import { findExpiredAddons } from './addon-expiration.queries.js';
 import type { ServiceResult } from './addon.types.js';
 
@@ -52,6 +53,8 @@ export type ExpireAddonFn = (input: {
  * Safe for concurrent execution: each add-on is processed with idempotent ops.
  *
  * @param expireAddonFn - Function to call for expiring a single addon purchase.
+ * @param ctx - Optional query context. When `ctx.tx` is present, the
+ *   `findExpiredAddons` query runs inside that transaction.
  * @returns Processing summary with counts and errors.
  *
  * @example
@@ -63,10 +66,11 @@ export type ExpireAddonFn = (input: {
  * ```
  */
 export async function processExpiredAddonsBatch(
-    expireAddonFn: ExpireAddonFn
+    expireAddonFn: ExpireAddonFn,
+    ctx?: QueryContext
 ): Promise<ServiceResult<ProcessExpiredAddonsResult>> {
     try {
-        const findResult = await findExpiredAddons();
+        const findResult = await findExpiredAddons(ctx);
 
         if (!findResult.success) {
             return { success: false, error: findResult.error };

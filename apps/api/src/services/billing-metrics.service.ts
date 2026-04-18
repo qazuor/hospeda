@@ -170,58 +170,92 @@ export class BillingMetricsService {
         try {
             const db = tx ?? getDb();
 
-            // Get active subscriptions count
-            const activeSubsResult = await db.execute(sql`
-                SELECT COUNT(*) as count
-                FROM billing_subscriptions
-                WHERE status = 'active'
-                AND livemode = ${livemode}
-                AND deleted_at IS NULL
-            `);
-            const activeSubscriptions = Number(activeSubsResult.rows[0]?.count || 0);
-
-            // Get trialing subscriptions count
-            const trialingSubsResult = await db.execute(sql`
-                SELECT COUNT(*) as count
-                FROM billing_subscriptions
-                WHERE status = 'trialing'
-                AND livemode = ${livemode}
-                AND deleted_at IS NULL
-            `);
-            const trialingSubscriptions = Number(trialingSubsResult.rows[0]?.count || 0);
-
-            // Calculate MRR from active subscriptions by joining with actual prices
-            // For annual subscriptions, divide by 12 to get monthly equivalent
-            const mrrResult = await db.execute(sql`
-                SELECT COALESCE(SUM(
-                    CASE
-                        WHEN s.billing_interval = 'month' THEN p.unit_amount
-                        WHEN s.billing_interval = 'year' THEN p.unit_amount / 12.0
-                        ELSE 0
-                    END
-                ), 0) as mrr_total
-                FROM billing_subscriptions s
-                INNER JOIN billing_prices p ON s.plan_id = p.plan_id::text
-                    AND s.billing_interval = p.billing_interval
-                    AND p.livemode = s.livemode
-                    AND p.active = true
-                WHERE s.status = 'active'
-                AND s.livemode = ${livemode}
-                AND s.deleted_at IS NULL
-            `);
-            const mrr = Number(mrrResult.rows[0]?.mrr_total || 0);
-
-            // Calculate churn rate (last 30 days)
+            // Calculate churn rate (last 30 days) — capture reference date once
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-            const churnResult = await db.execute(sql`
-                SELECT COUNT(*) as churned
-                FROM billing_subscriptions
-                WHERE status = 'canceled'
-                AND canceled_at >= ${thirtyDaysAgo.toISOString()}
-                AND livemode = ${livemode}
-            `);
+            // Run all independent queries in parallel to reduce total latency
+            const [
+                activeSubsResult,
+                trialingSubsResult,
+                mrrResult,
+                churnResult,
+                conversionResult,
+                customersResult,
+                revenueResult
+            ] = await Promise.all([
+                // Get active subscriptions count
+                db.execute(sql`
+                    SELECT COUNT(*) as count
+                    FROM billing_subscriptions
+                    WHERE status = 'active'
+                    AND livemode = ${livemode}
+                    AND deleted_at IS NULL
+                `),
+                // Get trialing subscriptions count
+                db.execute(sql`
+                    SELECT COUNT(*) as count
+                    FROM billing_subscriptions
+                    WHERE status = 'trialing'
+                    AND livemode = ${livemode}
+                    AND deleted_at IS NULL
+                `),
+                // Calculate MRR from active subscriptions by joining with actual prices
+                // For annual subscriptions, divide by 12 to get monthly equivalent
+                db.execute(sql`
+                    SELECT COALESCE(SUM(
+                        CASE
+                            WHEN s.billing_interval = 'month' THEN p.unit_amount
+                            WHEN s.billing_interval = 'year' THEN p.unit_amount / 12.0
+                            ELSE 0
+                        END
+                    ), 0) as mrr_total
+                    FROM billing_subscriptions s
+                    INNER JOIN billing_prices p ON s.plan_id = p.plan_id::text
+                        AND s.billing_interval = p.billing_interval
+                        AND p.livemode = s.livemode
+                        AND p.active = true
+                    WHERE s.status = 'active'
+                    AND s.livemode = ${livemode}
+                    AND s.deleted_at IS NULL
+                `),
+                // Calculate churn rate (last 30 days)
+                db.execute(sql`
+                    SELECT COUNT(*) as churned
+                    FROM billing_subscriptions
+                    WHERE status = 'canceled'
+                    AND canceled_at >= ${thirtyDaysAgo.toISOString()}
+                    AND livemode = ${livemode}
+                `),
+                // Calculate trial conversion rate
+                // Using trial_converted column to track successful conversions from trial to paid
+                db.execute(sql`
+                    SELECT
+                        COUNT(*) FILTER (WHERE trial_converted = true) as converted,
+                        COUNT(*) as total_trials
+                    FROM billing_subscriptions
+                    WHERE trial_start IS NOT NULL
+                    AND livemode = ${livemode}
+                `),
+                // Get total customers
+                db.execute(sql`
+                    SELECT COUNT(*) as count
+                    FROM billing_customers
+                    WHERE livemode = ${livemode}
+                    AND deleted_at IS NULL
+                `),
+                // Get total revenue
+                db.execute(sql`
+                    SELECT COALESCE(SUM(amount), 0) as total
+                    FROM billing_payments
+                    WHERE status = 'completed'
+                    AND livemode = ${livemode}
+                `)
+            ]);
+
+            const activeSubscriptions = Number(activeSubsResult.rows[0]?.count || 0);
+            const trialingSubscriptions = Number(trialingSubsResult.rows[0]?.count || 0);
+            const mrr = Number(mrrResult.rows[0]?.mrr_total || 0);
             const churnedCount = Number(churnResult.rows[0]?.churned || 0);
             const churnRate =
                 activeSubscriptions > 0 ? (churnedCount / activeSubscriptions) * 100 : 0;
@@ -229,36 +263,11 @@ export class BillingMetricsService {
             // Calculate ARPU
             const arpu = activeSubscriptions > 0 ? mrr / activeSubscriptions : 0;
 
-            // Calculate trial conversion rate
-            // Using trial_converted column to track successful conversions from trial to paid
-            const conversionResult = await db.execute(sql`
-                SELECT
-                    COUNT(*) FILTER (WHERE trial_converted = true) as converted,
-                    COUNT(*) as total_trials
-                FROM billing_subscriptions
-                WHERE trial_start IS NOT NULL
-                AND livemode = ${livemode}
-            `);
             const converted = Number(conversionResult.rows[0]?.converted || 0);
             const totalTrials = Number(conversionResult.rows[0]?.total_trials || 0);
             const trialConversionRate = totalTrials > 0 ? (converted / totalTrials) * 100 : 0;
 
-            // Get total customers
-            const customersResult = await db.execute(sql`
-                SELECT COUNT(*) as count
-                FROM billing_customers
-                WHERE livemode = ${livemode}
-                AND deleted_at IS NULL
-            `);
             const totalCustomers = Number(customersResult.rows[0]?.count || 0);
-
-            // Get total revenue
-            const revenueResult = await db.execute(sql`
-                SELECT COALESCE(SUM(amount), 0) as total
-                FROM billing_payments
-                WHERE status = 'completed'
-                AND livemode = ${livemode}
-            `);
             const totalRevenue = Number(revenueResult.rows[0]?.total || 0);
 
             const metrics: BillingOverviewMetrics = {
