@@ -1,6 +1,10 @@
 import { relations } from 'drizzle-orm';
 import { index, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { SponsorshipStatusPgEnum, SponsorshipTargetTypePgEnum } from '../enums.dbschema.ts';
+import {
+    LifecycleStatusPgEnum,
+    SponsorshipStatusPgEnum,
+    SponsorshipTargetTypePgEnum
+} from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { sponsorshipLevels } from './sponsorship_level.dbschema.ts';
 import { sponsorshipPackages } from './sponsorship_package.dbschema.ts';
@@ -30,7 +34,10 @@ export const sponsorships = pgTable(
         packageId: uuid('package_id').references(() => sponsorshipPackages.id, {
             onDelete: 'set null'
         }),
-        status: SponsorshipStatusPgEnum('status').notNull().default('pending'),
+        sponsorshipStatus: SponsorshipStatusPgEnum('sponsorship_status')
+            .notNull()
+            .default('pending'),
+        lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
         endsAt: timestamp('ends_at', { withTimezone: true }),
         paymentId: text('payment_id'),
@@ -53,7 +60,12 @@ export const sponsorships = pgTable(
         ),
         sponsorships_targetType_idx: index('sponsorships_targetType_idx').on(table.targetType),
         sponsorships_targetId_idx: index('sponsorships_targetId_idx').on(table.targetId),
-        sponsorships_status_idx: index('sponsorships_status_idx').on(table.status),
+        sponsorships_sponsorshipStatus_idx: index('sponsorships_sponsorshipStatus_idx').on(
+            table.sponsorshipStatus
+        ),
+        sponsorships_lifecycleState_idx: index('sponsorships_lifecycleState_idx').on(
+            table.lifecycleState
+        ),
         sponsorships_startsAt_idx: index('sponsorships_startsAt_idx').on(table.startsAt),
         sponsorships_deletedAt_idx: index('sponsorships_deletedAt_idx').on(table.deletedAt),
         sponsorships_targetType_targetId_idx: index('sponsorships_targetType_targetId_idx').on(
