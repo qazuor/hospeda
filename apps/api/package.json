@@ -39,6 +39,7 @@
         "@repo/db": "workspace:*",
         "@repo/email": "workspace:*",
         "@repo/logger": "workspace:*",
+        "@repo/media": "workspace:*",
         "@repo/notifications": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@repo/service-core": "workspace:*",
