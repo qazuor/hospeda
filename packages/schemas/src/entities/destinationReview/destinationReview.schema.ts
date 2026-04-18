@@ -7,6 +7,7 @@ import {
     DestinationReviewIdSchema,
     UserIdSchema
 } from '../../common/id.schema.js';
+import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { DestinationRatingSchema } from '../destination/subtypes/destination.rating.schema.js';
 
 /**
@@ -19,6 +20,7 @@ export const DestinationReviewSchema = z.object({
     id: DestinationReviewIdSchema,
     ...BaseAuditFields,
     ...BaseAdminFields,
+    ...BaseLifecycleFields,
 
     // Relation fields
     userId: UserIdSchema,

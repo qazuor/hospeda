@@ -7,6 +7,7 @@
  */
 import { z } from 'zod';
 import { BaseHttpSearchSchema, createBooleanQueryParam } from '../../api/http/base-http.schema.js';
+import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 
 /**
  * HTTP-compatible destination review search schema with automatic coercion
@@ -230,6 +231,7 @@ export const httpToDomainDestinationReviewCreate = (
         wouldVisitAgain: httpData.wouldVisitAgain ?? true,
         language: httpData.language,
         // System-managed fields: provide defaults for domain type compatibility
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
         isVerified: false,
         isPublished: false,
         helpfulVotes: 0,
