@@ -1,8 +1,8 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 37/63 completed + 7 deferred — effective 37/56
+## Progress: 38/63 completed + 7 deferred — effective 38/56
 
-**Last updated:** 2026-04-18T17:55:00Z
+**Last updated:** 2026-04-18T18:22:00Z
 **Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). See progress.md + state.json `_pushOnlyMigrationPolicy`. Effective Phase 3 scope drops from 19 to 13 tasks.
 
 ### Push-only migration policy (summary)
@@ -283,7 +283,9 @@
 
 ### Database
 
-- [ ] **T-039** (complexity: 2.5) — Update Sponsorship Drizzle DB schema: add lifecycleState + rename status
+- [x] **T-039** (complexity: 2.5) — Update Sponsorship Drizzle DB schema: add lifecycleState + rename status
+  - COMPLETED 2026-04-18 · lint: pass · typecheck: deferred (cascade to T-043/T-047/T-050..T-054)
+  - SQL column also renamed `status` → `sponsorship_status` (TS/SQL alignment; user-approved option 1, push-only friendly)
   - Blocked by: T-038 · Blocks: T-040, T-043, T-047
 
 - [~] **T-040** (complexity: 2.5) — Generate Sponsorship up migration (add-copy-drop pattern) — **DEFERRED 2026-04-18 (push-only policy)**

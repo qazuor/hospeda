@@ -1362,31 +1362,31 @@
         {
             "id": "T-039",
             "title": "Update Sponsorship Drizzle DB schema: add lifecycleState + rename status",
-            "description": "Update `packages/db/src/schemas/sponsorship/sponsorship.dbschema.ts`: (1) add `lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE')`, (2) rename `status` column to `sponsorshipStatus` (keep `SponsorshipStatusPgEnum` type), (3) drop `sponsorships_status_idx`, add `sponsorships_sponsorshipStatus_idx` (on sponsorshipStatus) and `sponsorships_lifecycleState_idx` (on lifecycleState).\n\nFiles: `packages/db/src/schemas/sponsorship/sponsorship.dbschema.ts`",
-            "status": "pending",
+            "description": "Update `packages/db/src/schemas/sponsorship/sponsorship.dbschema.ts`: (1) add `lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE')`, (2) rename `status` column to `sponsorshipStatus` (keep `SponsorshipStatusPgEnum` type), (3) drop `sponsorships_status_idx`, add `sponsorships_sponsorshipStatus_idx` (on sponsorshipStatus) and `sponsorships_lifecycleState_idx` (on lifecycleState).\n\nFiles: `packages/db/src/schemas/sponsorship/sponsorship.dbschema.ts`\n\nCOMPLETION NOTE: SQL column also renamed (`status` → `sponsorship_status`) to keep TS/SQL aligned under push-only policy (user-approved option 1, same criterion as OwnerPromotion T-003). Typecheck deferred — consumers (model findByStatus/findActiveByTarget, zod base, admin UI) reference old `.status` until T-043/T-047/T-050..T-054.",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-038"],
             "blocks": ["T-040", "T-043", "T-047"],
             "subtasks": [
                 {
                     "title": "Add lifecycleState column with NOT NULL DEFAULT ACTIVE",
-                    "completed": false
+                    "completed": true
                 },
                 {
-                    "title": "Rename status to sponsorshipStatus (keep SponsorshipStatusPgEnum)",
-                    "completed": false
+                    "title": "Rename status to sponsorshipStatus (keep SponsorshipStatusPgEnum); SQL column renamed to sponsorship_status",
+                    "completed": true
                 },
-                { "title": "Drop sponsorships_status_idx", "completed": false },
-                { "title": "Add sponsorships_sponsorshipStatus_idx", "completed": false },
-                { "title": "Add sponsorships_lifecycleState_idx", "completed": false }
+                { "title": "Drop sponsorships_status_idx", "completed": true },
+                { "title": "Add sponsorships_sponsorshipStatus_idx", "completed": true },
+                { "title": "Add sponsorships_lifecycleState_idx", "completed": true }
             ],
             "tags": ["db", "schema", "phase-3", "sponsorship"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": null, "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T18:20:00.000Z",
+                "completed": "2026-04-18T18:22:00.000Z"
             }
         },
         {
@@ -1913,9 +1913,9 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 19,
+        "pending": 18,
         "inProgress": 0,
-        "completed": 37,
+        "completed": 38,
         "deferred": 7,
         "blocked": 0,
         "averageComplexity": 2.0,
