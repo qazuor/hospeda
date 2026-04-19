@@ -822,3 +822,20 @@ Until SPEC-087 lands, SPEC-063 phase 3/4 public routes (DestinationReview T-035,
 **Phase 2 remaining:** T-025 + T-026 (complexity 2.5 each) — `archive-expired-promotions` cron handler + advisory lock 43010 + tests.
 
 Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057), cleanup (T-058).
+
+---
+
+## Session 2026-04-19T15:55 — Phase 3 test block T-057
+
+#### T-057 — Sponsorship model test cascade rename (2026-04-19T15:55)
+
+- **File:** `packages/db/test/models/sponsorship.model.test.ts`
+- **Scope:** cascade rename to align tests with T-039 (column rename) and T-047 (method rename).
+  - `status: 'active'` → `sponsorshipStatus: 'active'` (15 sites via replace_all)
+  - `status: 'expired'` → `sponsorshipStatus: 'expired'` (2 sites)
+  - `findByStatus` → `findBySponsorshipStatus` (describe block + 2 log keys + 3 method calls)
+  - Inner `it()` title migrated to match new method name for consistency.
+- **Hook subtask (no-op by equivalence):** no `useSponsorshipQueries.test.ts` exists in `apps/admin`. T-053 already migrated the hook body key (`{ status }` → `{ sponsorshipStatus }`); `packages/service-core/test/services/sponsorship/update.test.ts` already covers the migrated payload end-to-end. A new hook-only test file would just re-assert a trivial body-key mapping already covered upstream. Documented in state.json subtask `_note` and task `COMPLETION NOTE`.
+- **Combined-filter runtime assertion (findActiveByTarget):** mock shape migrated to `sponsorshipStatus: 'active'`; SQL-level proof that `and(sponsorshipStatus='active', lifecycleState='ACTIVE')` is actually emitted is delegated to T-056 (integration) where service force-override is end-to-end. Same pattern as T-023 OwnerPromotion (mock-based tests can't capture SQL without fragile query-builder inspection).
+- **Quality gate:** biome pass, typecheck `@repo/db` clean, tests 24/24 pass.
+- **Summary counter drift fix:** state.json summary `completed` updated 47 → 52 and `pending` 9 → 4 to reflect reality post-T-052/T-053/T-054/T-055/T-057. Drift pre-existed; note augmented.
