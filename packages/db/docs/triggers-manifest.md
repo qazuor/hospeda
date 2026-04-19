@@ -34,6 +34,7 @@ most of the time you do not need to invoke it manually.
 | 0008 | `0008_billing_addon_purchases_jsonb_checks.sql` | CHECK JSONB column types (array-or-null) |
 | 0009 | `0009_notification_log_idempotency_index.sql` | UNIQUE partial index over JSONB-extracted key |
 | 0010 | `0010_billing_subscription_events_event_type_check.sql` | CHECK `event_type` non-empty and ≤ 100 chars |
+| 0014 | `0014_extend_delete_entity_bookmarks_trigger.sql` | Extend `delete_entity_bookmarks` to also fire on soft-delete (AFTER UPDATE) |
 
 Files named `*_down.sql` (e.g. `0005_awesome_wild_child_down.sql`) are rollback scripts and are
 skipped by the orchestrator. They are applied only through ad-hoc rollback procedures.
@@ -74,12 +75,12 @@ All tables in `public` schema with an `updated_at` column — currently 43 table
 | Field | Value |
 |-------|-------|
 | **Function name** | `delete_entity_bookmarks()` |
-| **Trigger names** | `trg_delete_bookmarks_on_accommodations`, `trg_delete_bookmarks_on_destinations`, `trg_delete_bookmarks_on_events`, `trg_delete_bookmarks_on_users`, `trg_delete_bookmarks_on_posts` |
+| **Trigger names** | `trg_delete_bookmarks_on_accommodations`, `trg_delete_bookmarks_on_destinations`, `trg_delete_bookmarks_on_events`, `trg_delete_bookmarks_on_users`, `trg_delete_bookmarks_on_posts` (AFTER DELETE); `trg_softdelete_bookmarks_on_accommodations`, `trg_softdelete_bookmarks_on_destinations`, `trg_softdelete_bookmarks_on_events`, `trg_softdelete_bookmarks_on_users`, `trg_softdelete_bookmarks_on_posts` (AFTER UPDATE, added by 0014) |
 | **Attached to** | `accommodations`, `destinations`, `events`, `users`, `posts` |
-| **Event** | `AFTER DELETE` |
+| **Event** | `AFTER DELETE` (hard delete) and `AFTER UPDATE` (soft delete) |
 | **Granularity** | `FOR EACH ROW` |
-| **Purpose** | Deletes all rows from `user_bookmarks` where `entity_id = OLD.id` and `entity_type` matches the deleted entity. Keeps bookmarks consistent when a bookmarked entity is hard-deleted. |
-| **Migration file** | `manual/0006_delete_entity_bookmarks_trigger.sql` |
+| **Purpose** | Deletes all rows from `user_bookmarks` where `entity_id = OLD.id` and `entity_type` matches the entity. Fires on hard delete (AFTER DELETE) and on soft-delete (AFTER UPDATE when `OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL`). |
+| **Migration file** | `manual/0006_delete_entity_bookmarks_trigger.sql` (original), `manual/0014_extend_delete_entity_bookmarks_trigger.sql` (soft-delete extension) |
 
 **Notes:**
 
@@ -89,6 +90,12 @@ All tables in `public` schema with an `updated_at` column — currently 43 table
   that was a reconstruction artifact and has been corrected.
 - Triggers are dropped with `DROP TRIGGER IF EXISTS` and recreated so the correct function version
   is always attached on re-apply.
+- Migration 0014 extends the function to handle `TG_OP = 'UPDATE'` and adds 5 additional
+  `AFTER UPDATE` triggers (`trg_softdelete_bookmarks_on_*`). The AFTER DELETE triggers from 0006
+  remain unchanged. The down migration restores the pre-0014 function body and drops the UPDATE
+  triggers.
+- The soft-delete guard in the function body (`OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL`)
+  ensures only genuine soft-delete transitions trigger bookmark cleanup — not other UPDATE operations.
 
 ---
 
@@ -273,10 +280,16 @@ SELECT COUNT(*) AS trg_set_updated_at_count
 FROM pg_trigger
 WHERE tgname LIKE 'trg_set_updated_at_%';
 
--- delete_entity_bookmarks triggers (should be 5)
+-- delete_entity_bookmarks triggers (AFTER DELETE, should be 5)
 SELECT trigger_name, event_object_table
 FROM information_schema.triggers
 WHERE trigger_name LIKE 'trg_delete_bookmarks_%'
+ORDER BY event_object_table;
+
+-- soft-delete bookmark cleanup triggers (AFTER UPDATE, should be 5, added by 0014)
+SELECT trigger_name, event_object_table
+FROM information_schema.triggers
+WHERE trigger_name LIKE 'trg_softdelete_bookmarks_%'
 ORDER BY event_object_table;
 
 -- CHECK constraints on billing_addon_purchases + billing_subscription_events
