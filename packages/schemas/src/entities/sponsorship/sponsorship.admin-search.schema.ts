@@ -17,9 +17,8 @@ export const SponsorshipAdminSearchSchema = AdminSearchBaseSchema.extend({
     targetId: z.string().uuid().optional().describe('Filter by target entity'),
 
     /**
-     * Filter by sponsorship status.
-     * Named `sponsorshipStatus` (not `status`) to avoid collision with
-     * the base schema's `status` field which maps to lifecycleState.
+     * Filter by sponsorship domain status (pending/active/expired/cancelled).
+     * The base `status` field from `AdminSearchBaseSchema` maps to `lifecycleState`.
      */
     sponsorshipStatus: SponsorshipStatusEnumSchema.optional().describe(
         'Filter by sponsorship status'

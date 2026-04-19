@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
+import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { SponsorshipStatusEnumSchema } from '../../enums/sponsorship-status.schema.js';
 import { SponsorshipTargetTypeEnumSchema } from '../../enums/sponsorship-target-type.schema.js';
 import { SponsorshipSchema } from './sponsorship.schema.js';
@@ -29,7 +30,15 @@ export const SponsorshipFiltersSchema = z.object({
     packageId: z.string().uuid().optional(),
 
     // Status filters
-    status: SponsorshipStatusEnumSchema.optional(),
+    sponsorshipStatus: SponsorshipStatusEnumSchema.optional(),
+
+    /**
+     * Filter by lifecycle state (admin-only in practice).
+     * NOTE: For public/protected endpoints the service layer must force ACTIVE
+     * (see AC-005-01); any caller-supplied value should be overridden at the
+     * service boundary to prevent DRAFT/ARCHIVED leakage.
+     */
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
 
     // Date range filters for startsAt
     startsAtAfter: z.date().optional(),
@@ -83,7 +92,15 @@ export const SponsorshipQuerySchema = BaseSearchSchema.extend({
     packageId: z.string().uuid().optional(),
 
     // Status filters
-    status: SponsorshipStatusEnumSchema.optional(),
+    sponsorshipStatus: SponsorshipStatusEnumSchema.optional(),
+
+    /**
+     * Filter by lifecycle state (admin-only in practice).
+     * NOTE: For public/protected endpoints the service layer must force ACTIVE
+     * (see AC-005-01); any caller-supplied value should be overridden at the
+     * service boundary to prevent DRAFT/ARCHIVED leakage.
+     */
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
 
     // Date range filters for startsAt
     startsAtAfter: z.date().optional(),
@@ -128,7 +145,7 @@ export const SponsorshipListItemSchema = SponsorshipSchema.pick({
     targetType: true,
     targetId: true,
     levelId: true,
-    status: true,
+    sponsorshipStatus: true,
     startsAt: true,
     endsAt: true,
     couponCode: true,
@@ -174,7 +191,7 @@ export const SponsorshipSummarySchema = SponsorshipSchema.pick({
     sponsorUserId: true,
     targetType: true,
     targetId: true,
-    status: true,
+    sponsorshipStatus: true,
     startsAt: true,
     endsAt: true
 });
