@@ -1,8 +1,8 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 44/63 completed + 7 deferred — effective 44/56
+## Progress: 45/63 completed + 7 deferred — effective 45/56
 
-**Last updated:** 2026-04-18T19:18:00Z
+**Last updated:** 2026-04-18T19:24:00Z
 **Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). See progress.md + state.json `_pushOnlyMigrationPolicy`. Effective Phase 3 scope drops from 19 to 13 tasks.
 
 ### Push-only migration policy (summary)
@@ -342,7 +342,11 @@
   - Pruned unused imports (EntityFilters, AdminSearchExecuteParams, PaginatedListOutput)
   - Blocked by: T-047 · Blocks: T-050, T-051, T-056
 
-- [ ] **T-049** (complexity: 2) — Update Sponsorship service _executeSearch with lifecycleState=ACTIVE default
+- [x] **T-049** (complexity: 2) — Update Sponsorship service _executeSearch with lifecycleState=ACTIVE default
+  - COMPLETED 2026-04-18 · lint: pass · typecheck: service source clean
+  - Force-override (not just default-inject) on both _executeSearch and _executeCount
+    matching T-022 OwnerPromotion security hardening — prevents AC-005-01 bypass
+  - Import LifecycleStatusEnum value
   - Blocked by: T-048 · Blocks: T-051
 
 ### API Routes + Frontend

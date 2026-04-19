@@ -1,5 +1,24 @@
 # SPEC-063 — Implementation Progress Log
 
+## Session summary (as of 2026-04-18T19:24)
+
+- **Progress:** 45/63 completed + 7 deferred. Effective scope **45/56**.
+- **Phase 3 pace:** T-039 + T-043 + T-044 + T-045 + T-046 + T-047 + T-048 + T-049 landed in sequence — service layer fully aligned. Phase 3 now 5/13 remaining. Next: T-050..T-054 routes + admin UI + T-055..T-057 tests. Service entire source (schemas + db + service-core) 100% typecheck-clean; only cascade remaining is test-file migrations (T-055/T-056/T-057).
+
+### T-049 completed 2026-04-18T19:24
+
+- **File:** `packages/service-core/src/services/sponsorship/sponsorship.service.ts`
+- **Pattern applied:** T-022 OwnerPromotion force-override (user-approved security hardening precedent).
+- `_executeSearch`: FORCE-OVERRIDE `filterParams.lifecycleState = LifecycleStatusEnum.ACTIVE` before passing to `model.findAll`. Never trusts caller-supplied value on public/protected path. Prevents the AC-005-01 bypass where a user could append `?lifecycleState=DRAFT` and receive DRAFT records.
+- `_executeCount`: mirrors the override so pagination `total` stays consistent with `_executeSearch` filtered items. Missing this leads to UI showing `total=N` but only `M` active items returned on page 1.
+- Admin path uses the separate `adminList()` pipeline (via `_executeAdminSearch` base) and is unaffected — admins can still filter by DRAFT/ARCHIVED via `AdminSearchBaseSchema.status` → `lifecycleState` mapping.
+- Import: added `LifecycleStatusEnum` (value) to the existing `@repo/schemas` import.
+- Same `(filterParams as Record<string, unknown>).lifecycleState = …` cast pattern used — `SponsorshipSearchInput` type doesn't include `lifecycleState` (inherited from legacy search schema), so the cast is required to write through without changing the public input type.
+- **Lint:** pass. **Typecheck:** service source 100% clean. Service-level unit tests + public endpoint integration tests deferred to T-056 test task (mirror T-022 pattern: 5 service unit tests + 5 integration tests).
+- Commit boundary: 1 feat(service-core) + 1 chore(tasks).
+
+---
+
 ## Session summary (as of 2026-04-18T19:18)
 
 - **Progress:** 44/63 completed + 7 deferred. Effective scope **44/56**.
