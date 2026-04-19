@@ -27,10 +27,15 @@ describe('SponsorshipService.update', () => {
 
     it('should update a sponsorship when actor has UPDATE_ANY permission', async () => {
         const existing = createMockSponsorship({ id });
-        const updated = createMockSponsorship({ id, status: SponsorshipStatusEnum.CANCELLED });
+        const updated = createMockSponsorship({
+            id,
+            sponsorshipStatus: SponsorshipStatusEnum.CANCELLED
+        });
         modelMock.findById.mockResolvedValue(existing);
         modelMock.update.mockResolvedValue(updated);
-        const result = await service.update(actor, id, { status: SponsorshipStatusEnum.CANCELLED });
+        const result = await service.update(actor, id, {
+            sponsorshipStatus: SponsorshipStatusEnum.CANCELLED
+        });
         expect(result.data).toBeDefined();
         expect(result.error).toBeUndefined();
     });
@@ -42,12 +47,12 @@ describe('SponsorshipService.update', () => {
         const updated = createMockSponsorship({
             id,
             sponsorUserId: ownActor.id as never,
-            status: SponsorshipStatusEnum.EXPIRED
+            sponsorshipStatus: SponsorshipStatusEnum.EXPIRED
         });
         modelMock.findById.mockResolvedValue(existing);
         modelMock.update.mockResolvedValue(updated);
         const result = await service.update(ownActor, id, {
-            status: SponsorshipStatusEnum.EXPIRED
+            sponsorshipStatus: SponsorshipStatusEnum.EXPIRED
         });
         expect(result.data).toBeDefined();
         expect(result.error).toBeUndefined();
@@ -59,7 +64,7 @@ describe('SponsorshipService.update', () => {
         const existing = createMockSponsorship({ id, sponsorUserId: 'different-user-id' as never });
         modelMock.findById.mockResolvedValue(existing);
         const result = await service.update(otherActor, id, {
-            status: SponsorshipStatusEnum.CANCELLED
+            sponsorshipStatus: SponsorshipStatusEnum.CANCELLED
         });
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
@@ -70,7 +75,9 @@ describe('SponsorshipService.update', () => {
         actor = createActor({ permissions: [] });
         const existing = createMockSponsorship({ id });
         modelMock.findById.mockResolvedValue(existing);
-        const result = await service.update(actor, id, { status: SponsorshipStatusEnum.CANCELLED });
+        const result = await service.update(actor, id, {
+            sponsorshipStatus: SponsorshipStatusEnum.CANCELLED
+        });
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
         expect(result.data).toBeUndefined();
@@ -78,7 +85,9 @@ describe('SponsorshipService.update', () => {
 
     it('should return NOT_FOUND if entity does not exist', async () => {
         modelMock.findById.mockResolvedValue(null);
-        const result = await service.update(actor, id, { status: SponsorshipStatusEnum.CANCELLED });
+        const result = await service.update(actor, id, {
+            sponsorshipStatus: SponsorshipStatusEnum.CANCELLED
+        });
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
         expect(result.data).toBeUndefined();
@@ -88,7 +97,9 @@ describe('SponsorshipService.update', () => {
         const existing = createMockSponsorship({ id });
         modelMock.findById.mockResolvedValue(existing);
         modelMock.update.mockRejectedValue(new Error('DB error'));
-        const result = await service.update(actor, id, { status: SponsorshipStatusEnum.CANCELLED });
+        const result = await service.update(actor, id, {
+            sponsorshipStatus: SponsorshipStatusEnum.CANCELLED
+        });
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
         expect(result.data).toBeUndefined();
@@ -96,7 +107,9 @@ describe('SponsorshipService.update', () => {
 
     it('should return UNAUTHORIZED if actor is null', async () => {
         // @ts-expect-error purposely passing null
-        const result = await service.update(null, id, { status: SponsorshipStatusEnum.CANCELLED });
+        const result = await service.update(null, id, {
+            sponsorshipStatus: SponsorshipStatusEnum.CANCELLED
+        });
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe('UNAUTHORIZED');
         expect(result.data).toBeUndefined();

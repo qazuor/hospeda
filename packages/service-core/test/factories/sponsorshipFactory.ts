@@ -6,7 +6,11 @@ import type {
     SponsorshipPackageIdType,
     UserIdType
 } from '@repo/schemas';
-import { SponsorshipStatusEnum, SponsorshipTargetTypeEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    SponsorshipStatusEnum,
+    SponsorshipTargetTypeEnum
+} from '@repo/schemas';
 import { getMockId } from './utilsFactory';
 
 export class SponsorshipFactoryBuilder {
@@ -26,7 +30,8 @@ export class SponsorshipFactoryBuilder {
             targetId: getMockId('event'),
             levelId: getMockId('sponsorshipLevel') as SponsorshipLevelIdType,
             packageId: getMockId('sponsorshipPackage') as SponsorshipPackageIdType,
-            status: SponsorshipStatusEnum.ACTIVE,
+            sponsorshipStatus: SponsorshipStatusEnum.ACTIVE,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
             startsAt: new Date(),
             endsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
             paymentId: null,
@@ -60,7 +65,8 @@ export const createMockSponsorshipCreateInput = (
         targetType: SponsorshipTargetTypeEnum.EVENT,
         targetId: getMockId('event'),
         levelId: getMockId('sponsorshipLevel') as SponsorshipLevelIdType,
-        status: SponsorshipStatusEnum.PENDING,
+        sponsorshipStatus: SponsorshipStatusEnum.PENDING,
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
         startsAt: new Date(),
         ...overrides
     };

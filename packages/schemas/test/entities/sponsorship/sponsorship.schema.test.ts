@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import {
+    SponsorshipAdminSchema,
     SponsorshipAnalyticsSchema,
+    SponsorshipProtectedSchema,
+    SponsorshipPublicSchema,
     SponsorshipSchema
 } from '../../../src/entities/sponsorship/index.js';
+import { LifecycleStatusEnum } from '../../../src/enums/lifecycle-state.enum.js';
 import {
     createMinimalSponsorship,
     createValidSponsorship
@@ -104,11 +108,11 @@ describe('SponsorshipSchema', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should default status to "pending" when not provided', () => {
+        it('should default sponsorshipStatus to "pending" when not provided', () => {
             // Arrange
             const data = { ...createMinimalSponsorship() };
             // biome-ignore lint/performance/noDelete: intentional for testing default
-            delete (data as Record<string, unknown>).status;
+            delete (data as Record<string, unknown>).sponsorshipStatus;
 
             // Act
             const result = SponsorshipSchema.safeParse(data);
@@ -116,7 +120,7 @@ describe('SponsorshipSchema', () => {
             // Assert
             expect(result.success).toBe(true);
             if (result.success) {
-                expect(result.data.status).toBe('pending');
+                expect(result.data.sponsorshipStatus).toBe('pending');
             }
         });
 
@@ -138,18 +142,21 @@ describe('SponsorshipSchema', () => {
             }
         });
 
-        it('should accept all valid status enum values', () => {
+        it('should accept all valid sponsorshipStatus enum values', () => {
             // Arrange
             const statusValues = ['pending', 'active', 'expired', 'cancelled'];
 
-            for (const status of statusValues) {
-                const data = { ...createMinimalSponsorship(), status };
+            for (const sponsorshipStatus of statusValues) {
+                const data = { ...createMinimalSponsorship(), sponsorshipStatus };
 
                 // Act
                 const result = SponsorshipSchema.safeParse(data);
 
                 // Assert
-                expect(result.success, `Status "${status}" should be valid`).toBe(true);
+                expect(
+                    result.success,
+                    `sponsorshipStatus "${sponsorshipStatus}" should be valid`
+                ).toBe(true);
             }
         });
 
@@ -296,9 +303,12 @@ describe('SponsorshipSchema', () => {
             expect(result.success).toBe(false);
         });
 
-        it('should reject invalid status enum value', () => {
+        it('should reject invalid sponsorshipStatus enum value', () => {
             // Arrange
-            const data = { ...createMinimalSponsorship(), status: 'INVALID_STATUS' };
+            const data = {
+                ...createMinimalSponsorship(),
+                sponsorshipStatus: 'INVALID_STATUS'
+            };
 
             // Act
             const result = SponsorshipSchema.safeParse(data);
@@ -402,5 +412,135 @@ describe('SponsorshipSchema', () => {
             expect(result.startsAt).toBeInstanceOf(Date);
             expect(result.analytics).toBeTypeOf('object');
         });
+    });
+});
+
+describe('SponsorshipSchema — lifecycleState (AC-003-03)', () => {
+    it('should default lifecycleState to ACTIVE when not provided', () => {
+        // Arrange
+        const data = { ...createMinimalSponsorship() };
+        // biome-ignore lint/performance/noDelete: intentional for testing default
+        delete (data as Record<string, unknown>).lifecycleState;
+
+        // Act
+        const result = SponsorshipSchema.safeParse(data);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+        }
+    });
+
+    it('should accept all valid lifecycleState enum values', () => {
+        // Arrange
+        const lifecycleValues = [
+            LifecycleStatusEnum.DRAFT,
+            LifecycleStatusEnum.ACTIVE,
+            LifecycleStatusEnum.ARCHIVED
+        ];
+
+        for (const lifecycleState of lifecycleValues) {
+            const data = { ...createMinimalSponsorship(), lifecycleState };
+
+            // Act
+            const result = SponsorshipSchema.safeParse(data);
+
+            // Assert
+            expect(result.success, `lifecycleState "${lifecycleState}" should be valid`).toBe(true);
+        }
+    });
+
+    it('should reject invalid lifecycleState enum value', () => {
+        // Arrange
+        const data = { ...createMinimalSponsorship(), lifecycleState: 'INVALID_LIFECYCLE' };
+
+        // Act
+        const result = SponsorshipSchema.safeParse(data);
+
+        // Assert
+        expect(result.success).toBe(false);
+    });
+
+    it('should treat sponsorshipStatus and lifecycleState as independent fields', () => {
+        // Arrange: any combination is valid
+        const data = {
+            ...createMinimalSponsorship(),
+            sponsorshipStatus: 'active',
+            lifecycleState: LifecycleStatusEnum.DRAFT
+        };
+
+        // Act
+        const result = SponsorshipSchema.safeParse(data);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.sponsorshipStatus).toBe('active');
+            expect(result.data.lifecycleState).toBe(LifecycleStatusEnum.DRAFT);
+        }
+    });
+});
+
+describe('Sponsorship access boundary (AC-003-03)', () => {
+    it('Public tier should strip lifecycleState', () => {
+        // Arrange
+        const valid = createValidSponsorship();
+
+        // Act
+        const result = SponsorshipPublicSchema.safeParse(valid);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect('lifecycleState' in result.data).toBe(false);
+        }
+    });
+
+    it('Protected tier should strip lifecycleState', () => {
+        // Arrange
+        const valid = createValidSponsorship();
+
+        // Act
+        const result = SponsorshipProtectedSchema.safeParse(valid);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect('lifecycleState' in result.data).toBe(false);
+        }
+    });
+
+    it('Admin tier should preserve lifecycleState', () => {
+        // Arrange
+        const valid = createValidSponsorship();
+
+        // Act
+        const result = SponsorshipAdminSchema.safeParse(valid);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.lifecycleState).toBeDefined();
+        }
+    });
+
+    it('Public and Protected tiers should still include sponsorshipStatus', () => {
+        // Arrange
+        const valid = createValidSponsorship();
+
+        // Act
+        const publicResult = SponsorshipPublicSchema.safeParse(valid);
+        const protectedResult = SponsorshipProtectedSchema.safeParse(valid);
+
+        // Assert
+        expect(publicResult.success).toBe(true);
+        expect(protectedResult.success).toBe(true);
+        if (publicResult.success) {
+            expect(publicResult.data.sponsorshipStatus).toBe(valid.sponsorshipStatus);
+        }
+        if (protectedResult.success) {
+            expect(protectedResult.data.sponsorshipStatus).toBe(valid.sponsorshipStatus);
+        }
     });
 });
