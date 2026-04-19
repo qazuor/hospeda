@@ -1,11 +1,11 @@
 # SPEC-078-GAPS: Cloudinary Image Management — Gaps Remediation
 
-## Progress: 19/68 tasks (28%)
+## Progress: 21/68 tasks (31%)
 
 **Average Complexity**: 1.7 / 2.5 (max)
 **Completed from prior work**: 3 tasks (Phase 0 + Phase 1A) — see already-done.md
 **Completed 2026-04-18 (previous session)**: 1 task (T-004 — Phase 1B migrations reconstruction)
-**Completed 2026-04-18/19 (current session)**: 15 tasks — 4 warmups (T-011, T-028, T-037, T-053) + 5 Phase 1C security (T-005..T-009) + 5 schema/DB Phase 2 (T-010, T-012, T-013, T-014, T-016) + T-017 (bundle architecture critical path)
+**Completed 2026-04-18/19 (current session)**: 17 tasks — 4 warmups (T-011, T-028, T-037, T-053) + 5 Phase 1C security (T-005..T-009) + 5 schema/DB Phase 2 (T-010, T-012, T-013, T-014, T-016) + T-017 (bundle architecture critical path) + T-022 (seed refactor) + T-029 (API contract critical path)
 **Splits applied**: 20 parent tasks split into 45 child tasks (68 total vs 47 original)
 
 **Known follow-ups**:
@@ -183,10 +183,11 @@
 
 ### Phase 4A — Seed strategy refactor
 
-- [ ] **T-022** (complexity: 2.0) — Seed strategy refactor: seedSource required/example, processor counters, and resolveEnvironment
+- [x] **T-022** (complexity: 2.0) — Seed strategy refactor: seedSource required/example, processor counters, and resolveEnvironment
   - Gaps: GAP-078-036, GAP-078-116, GAP-078-007, GAP-078-037, GAP-078-039
   - Blocked by: T-010
   - Blocks: T-023
+  - Outcome (commit `6f5b0589`): seedSource discriminator on SeedContext; `example` early-returns preserving raw URL + attribution. CLI flag `--allow-required-fallback` tolerates required failures with warn. Counters `{ uploaded, cached, failures, skippedExample }` emitted. `resolveEnvironment()` replaces 3 NODE env read sites (imported from `@repo/media/server` per T-017). Gallery role is template-literal `gallery/${index}`. env-registry adds `'seed'` to 4 Cloudinary entries. Refactor: `uploadSeedImage` returns discriminated `UploadSeedImageOutcome`. 9 new tests, 121/121 pass.
 
 - [ ] **T-023** (complexity: 1.5) — Seed strategy: avatars path, moderation default, and spec amendment
   - Gaps: GAP-078-008, GAP-078-063, GAP-078-019
@@ -227,10 +228,11 @@
 
 ### Phase 5A — API response contract
 
-- [ ] **T-029** (complexity: 2.0) — API response contract: route factory status 200, ResponseFactory wrap, UploadResponseSchema, and moderationState
+- [x] **T-029** (complexity: 2.0) — API response contract: route factory status 200, ResponseFactory wrap, UploadResponseSchema, and moderationState
   - Gaps: GAP-078-026, GAP-078-029, GAP-078-159, GAP-078-178, GAP-078-062, GAP-078-149
   - Blocked by: T-010, T-017
   - Blocks: T-030, T-031, T-032, T-033
+  - Outcome (commit `c28cb4c6`): `route-factory.ts` gains `successStatusCode?: 200 | 201` honored in `createCRUDRoute`. Both admin+protected upload routes pass 200 and removed every `ctx.json` bypass (all exit via `createErrorResponse` / factory-wrapped `createResponse`). Handler runs `UploadResponseDataSchema.parse()` before return and injects `moderationState: 'APPROVED'`. Schemas split: `UploadResponseDataSchema` (unwrapped payload, APPROVED default) + `UploadResponseSchema` (wrapped). 35 new schema tests + 2 integration tests. SPEC-078 parent amended v1.7. **Deviation**: fixed latent bug in `createCRUDRoute` consuming body stream on POST even without requestBody schema — was breaking multipart handlers. Factory now skips body parse when `requestBody` is undefined.
 
 - [ ] **T-030** (complexity: 1.0) — API response contract: DELETE wasPresent flag and tags/overwrite forwarding
   - Gaps: GAP-078-154, GAP-078-155
@@ -583,3 +585,4 @@ Critical path: T-001 -> T-003 -> T-017 -> T-029 -> T-031 -> T-040 -> T-067 -> T-
 - **2026-04-19 (Phase 1C security sweep)**: 5 security tasks landed in 5 atomic commits on main (`5e978f1e` T-005, `becb8a58` T-006, `31e42ac6` T-007, `9d12e3d8` T-008, `fc0428cc` T-009). All 5 sub-agents in parallel (zero file collision — T-005/T-008 on apps/api/routes/media different files; T-006/T-007/T-009 on packages/media different files). T-009 took scope creep: CLI refactor + env-registry test-count bumps — accepted as necessary. Progress now 13/68. Follow-ups: GAP-078-105 (provider upload flags) + env-registry x-validation pre-existing breakage.
 - **2026-04-19 (Phase 2 schema+DB sweep)**: 5 schema/DB tasks landed in 5 atomic commits on main (`21b62d75` T-010, `a247c95d` T-013, `b436ac58` T-016, `6350c5c0` T-014, `9f01d7e7` T-012). All 5 sub-agents in parallel with pre-assigned manual SQL numbers (0011 T-012, 0012 T-013, 0013 T-014, 0014 T-016) to avoid lex-order collision. T-012 excluded destination.service.ts workaround cleanup (pre-existing uncommitted work in that file). All acceptance criteria met; 10 new updateAvatar tests; 18 new media.schema tests. Progress now 18/68. Next available: T-015 (BaseModel JSONB merge FOR UPDATE — 2.5 complexity, requires user consult), T-017 (bundle refactor — critical path, architectural, requires user consult), T-019..T-021 (docs/tests, blocked by T-017), T-022 (seed, blocked by T-010 — NOW UNBLOCKED), T-028 done, T-029 (API contract, blocked by T-010+T-017).
 - **2026-04-19 (T-017 bundle critical path)**: T-017 landed atomic on main (`697b8404`). Big-bang split per spec acceptance (import `CloudinaryProvider` from `@repo/media` MUST fail TypeScript). 3 subpath entries wired via tsup (external [cloudinary, image-size]), package.json exports, typescript-config paths + explicit apps/admin tsconfig paths, Biome `noRestrictedImports` in admin+web, Vite `optimizeDeps.exclude` + Astro `optimizeDeps`/`ssr.external`. 14 server-side consumers migrated (service-core/accommodation/destination/event/post/user, apps/api media routes+service, seed cli/index/utils), 7 browser-safe consumers unchanged, 1 mixed (apps/api/routes/media/admin/upload.ts) split imports. Agent excluded pre-existing destination.service.ts workaround edits via targeted hunk staging. `test-utils/index.ts` is empty placeholder until T-018. Deviation: kept single tsconfig with `types: [node]` — runtime isolation via tsup `external` + Biome is sufficient; composite-tsconfig refactor deferred. Progress now 19/68. **Unlocked**: T-018, T-019, T-020, T-021 (docs/test utils, blocked only on T-017 — now available), T-022 (seed, dual-blocked on T-010+T-017 — both done — now available), T-029 (API contract, dual-blocked on T-010+T-017 — both done — now available), T-041/T-042/T-043 (web media migration — now available), T-048/T-049 (web media migration — now available).
+- **2026-04-19 (T-022 + T-029 parallel sweep)**: Two independent sub-agents in parallel, zero file collision (T-029 on `apps/api` + `@repo/schemas`, T-022 on `packages/seed` + `packages/config`). T-022 landed first (`6f5b0589`) then T-029 (`c28cb4c6`). SPEC-063 commits (`40ae06cc`, `90216e93`) landed from unrelated parallel autonomous work during this window — not from my agents (scope mismatch, proper SPEC-063 conventional commit messages). T-029 agent caught and fixed a latent bug in `createCRUDRoute` consuming body stream on POST without requestBody schema; scope-creep accepted (was blocking the happy-path test). T-022 agent couldn't run `pnpm env:check` (sandbox lacks `VERCEL_TOKEN`) — registry change is authoritative source, deferred verification. Follow-ups captured: (a) pre-existing typecheck errors in `accommodations.seed.ts`/`destinations.seed.ts` (service constructor mismatches), (b) pre-existing `env-registry-schema-cross-validation` failures on Cloudinary vs `ApiEnvSchema` (still not resolved), (c) T-030 still owns 9 remaining `ctx.json` calls in `apps/api/src/routes/media/admin/delete.ts`. Progress now 21/68. **Unlocked**: T-023 (seed avatars/moderation/spec amendment, blocked on T-022), T-030 (DELETE wasPresent + tags/overwrite), T-031 (request schema discriminated union — blocks T-040), T-032 (empty file reject), T-033 (rate limit + content-length + gallery cap), T-034 (OpenAPI multipart + lazy services), T-035 (p-retry resilience), T-036 (i18n error keys), T-051/T-052 (Vercel config + observability), T-054/T-055 (CI/CD), T-056/T-057 (observability).
