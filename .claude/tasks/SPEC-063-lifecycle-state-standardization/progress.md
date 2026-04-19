@@ -1,5 +1,19 @@
 # SPEC-063 — Implementation Progress Log
 
+## Session summary (as of 2026-04-18T19:31)
+
+- **Progress:** 47/63 completed + 7 deferred. Effective scope **47/56**.
+- **Phase 3 pace:** T-039 → T-051 landed in sequence — backend + service + API routes all complete (latest two are verification-only). Phase 3 now 3/13 remaining in core scope: T-052 (admin frontend routes+types), T-053 (hook), T-054 (SponsorshipsTab + filter) — all frontend. Then T-055/T-056/T-057 tests + T-058 cleanup.
+
+### T-050 + T-051 completed 2026-04-18T19:31 (verification-only batch)
+
+- **T-050 (admin routes):** 0 code changes. Routes under `apps/api/src/routes/sponsorship/admin/` — only `list.ts` + `index.ts`. Consumes already-migrated `SponsorshipAdminSearchSchema` + `SponsorshipAdminSchema` (T-044/T-045). Grep for `status|sponsorshipStatus|lifecycleState`: 0 matches. lifecycleState flows into admin response via `SponsorshipAdminSchema.extend(SponsorshipSchema)` (base has BaseLifecycleFields since T-043). Path correction logged: spec said `admin/sponsorship/`, actual is `sponsorship/admin/` (entity-first, tier-second).
+- **T-051 (public/protected routes):** 0 code changes. **No public tier exists for Sponsorship** — only `protected/` + `admin/` directories. Protected files (`list, getById, create, update, softDelete, getAnalytics` + index): 0 matches for status/sponsorshipStatus/lifecycleState. Consumes `SponsorshipProtectedSchema` + `SponsorshipSearchSchema` (T-044/T-045 migrated). `SponsorshipProtectedSchema` already excludes lifecycleState via `.pick` (T-044), but per SPEC-087 systemic gap, runtime strip is factory-level — not applied per-handler here. Service-layer force-override (T-049) provides defense-in-depth: DRAFT/ARCHIVED cannot leak through `_executeSearch`/`_executeCount` even without response strip.
+- **SPEC-087 dependency documented** in both task entries. When SPEC-087 lands and factory enforces responseSchema.parse at runtime, the protected-tier strip becomes automatic.
+- Commit boundary: single chore(tasks) covers both (no feat commits).
+
+---
+
 ## Session summary (as of 2026-04-18T19:24)
 
 - **Progress:** 45/63 completed + 7 deferred. Effective scope **45/56**.

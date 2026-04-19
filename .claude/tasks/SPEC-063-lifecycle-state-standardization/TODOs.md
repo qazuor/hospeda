@@ -1,8 +1,8 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 45/63 completed + 7 deferred — effective 45/56
+## Progress: 47/63 completed + 7 deferred — effective 47/56
 
-**Last updated:** 2026-04-18T19:24:00Z
+**Last updated:** 2026-04-18T19:31:00Z
 **Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). See progress.md + state.json `_pushOnlyMigrationPolicy`. Effective Phase 3 scope drops from 19 to 13 tasks.
 
 ### Push-only migration policy (summary)
@@ -351,10 +351,16 @@
 
 ### API Routes + Frontend
 
-- [ ] **T-050** (complexity: 2) — Update admin Sponsorship API routes
+- [x] **T-050** (complexity: 2) — Update admin Sponsorship API routes
+  - COMPLETED 2026-04-18 · verification-only (same pattern as T-013/T-035)
+  - Path correction: actual path is `routes/sponsorship/admin/` (entity-first)
+  - Routes consume already-migrated schemas (T-044/T-045). 0 code changes, grep clean
   - Blocked by: T-044, T-045, T-046, T-048 · Blocks: T-052, T-053, T-055, T-056
 
-- [ ] **T-051** (complexity: 2) — Update public/protected Sponsorship API routes
+- [x] **T-051** (complexity: 2) — Update public/protected Sponsorship API routes
+  - COMPLETED 2026-04-18 · verification-only. No public tier exists for Sponsorship
+  - Protected routes consume already-migrated schemas (T-044). Grep clean
+  - Per-handler response strip deferred to SPEC-087 (service-layer force-override T-049 covers defense-in-depth)
   - Blocked by: T-044, T-045, T-046, T-049 · Blocks: none
 
 - [ ] **T-052** (complexity: 2) — Update admin Sponsorship frontend routes + types
