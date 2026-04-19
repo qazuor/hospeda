@@ -6,7 +6,7 @@
     "summary": "Ciudad histórica del interior entrerriano con tradición gaucha y vida rural",
     "description": "Rosario del Tala es la ciudad cabecera del departamento Tala en Entre Ríos, conocida por su rica historia y sus tradiciones gauchas. Con un pasado de estancias y producción agropecuaria, la ciudad conserva el espíritu del campo entrerriano. Sus festivales folklóricos, sus artesanías regionales y los paisajes rurales que la rodean la convierten en un destino auténtico para los amantes de la cultura gaucha y la vida del campo. La pesca en los arroyos cercanos y las cabalgatas son actividades muy apreciadas por los visitantes.",
     "isFeatured": false,
-    "moderationState": "PENDING",
+    "moderationState": "APPROVED",
     "destinationType": "CITY",
     "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
@@ -27,18 +27,18 @@
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
             "caption": "Paisajes rurales de Rosario del Tala",
-            "moderationState": "PENDING"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
                 "caption": "Campo gaucho en Rosario del Tala",
-                "moderationState": "PENDING"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
                 "caption": "Estancias cerca de Rosario del Tala",
-                "moderationState": "PENDING"
+                "moderationState": "APPROVED"
             }
         ]
     },

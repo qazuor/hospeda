@@ -375,6 +375,16 @@ Example amenity seed:
 }
 ```
 
+## Seed Moderation Conventions
+
+Seed fixtures use `"moderationState": "APPROVED"` as the default for both entity-level and media (`featuredImage`, `gallery`, `videos`) moderation fields. Seeded data is curated and pre-vetted, so it should not enter the system in a pending review state.
+
+- **`APPROVED`** (default): Normal seed fixtures. Use this for every media asset and entity unless there is a specific reason otherwise.
+- **`PENDING`**: Do NOT use in seed fixtures. This is the runtime default the moderation pipeline assigns to user-uploaded content awaiting review; seeding it would simulate an inconsistent state.
+- **`REJECTED`**: Reserved for test fixtures that exercise the rejected-moderation branch. Keep the set small (currently `022-destination-ceibas.json` and `020-destination-larroque.json`, each with one gallery image flipped). Do not expand without a test-coverage justification.
+
+If `moderationState` is missing from a fixture, `withModerationDefault('APPROVED')` in `src/utils/` fills it in. `MediaSchema.parse()` then fails loudly on any malformed media shape, so omissions are safe but malformed values are not.
+
 ## Notes
 
 - Seeds are meant for development/testing, not production

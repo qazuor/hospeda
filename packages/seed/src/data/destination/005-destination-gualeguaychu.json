@@ -6,7 +6,7 @@
     "summary": "Capital Nacional del Carnaval y puerta de entrada a las termas de Entre Ríos",
     "description": "Gualeguaychú es una hermosa ciudad ubicada en el sureste de Entre Ríos, famosa mundialmente por su espectacular Carnaval del País. Esta vibrante ciudad combina tradición y modernidad, ofreciendo desde el famoso Corsódromo hasta pintorescas costas sobre el río Gualeguaychú. Es conocida por sus termas, su rica historia, arquitectura colonial y como centro neurálgico del turismo entrerriano. La ciudad ofrece una amplia variedad de actividades culturales, gastronómicas y de entretenimiento, siendo un destino ideal tanto para familias como para jóvenes que buscan diversión y relax.",
     "isFeatured": true,
-    "moderationState": "PENDING",
+    "moderationState": "APPROVED",
     "destinationType": "CITY",
     "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
@@ -27,23 +27,23 @@
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop",
             "caption": "Vista panorámica de Gualeguaychú y su carnaval",
-            "moderationState": "PENDING"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop",
                 "caption": "Carnaval de Gualeguaychú",
-                "moderationState": "PENDING"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
                 "caption": "Costanera de Gualeguaychú",
-                "moderationState": "PENDING"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
                 "caption": "Termas de Gualeguaychú",
-                "moderationState": "PENDING"
+                "moderationState": "APPROVED"
             }
         ]
     },

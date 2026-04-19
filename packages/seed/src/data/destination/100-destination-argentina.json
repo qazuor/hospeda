@@ -6,7 +6,7 @@
     "summary": "Pais sudamericano con diversidad geografica, cultural y turistica unica",
     "description": "Argentina es un pais de America del Sur conocido por su increible diversidad geografica que abarca desde las cumbres andinas hasta las llanuras pampeanas, desde los glaciares patagonicos hasta las cataratas del Iguazu. Con una rica herencia cultural que mezcla influencias europeas e indigenas, Argentina ofrece experiencias turisticas unicas: tango en Buenos Aires, vinos en Mendoza, naturaleza en la Patagonia y termas en el Litoral.",
     "isFeatured": true,
-    "moderationState": "PENDING",
+    "moderationState": "APPROVED",
     "reviewsCount": 0,
     "averageRating": 0,
     "destinationType": "COUNTRY",
@@ -24,7 +24,7 @@
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1612294037637-ec328d0e075e?w=800&h=600&fit=crop",
             "caption": "Argentina - Paisajes diversos",
-            "moderationState": "PENDING"
+            "moderationState": "APPROVED"
         },
         "gallery": []
     },

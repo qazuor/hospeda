@@ -6,7 +6,7 @@
     "summary": "Tranquila localidad rural con paisajes naturales y tradición agropecuaria",
     "description": "San Justo es una localidad ubicada en el centro de la provincia de Entre Ríos, caracterizada por su actividad agropecuaria y sus tranquilos paisajes rurales. Rodeada de campos y arroyos, la localidad ofrece una experiencia auténtica del interior entrerriano. Sus habitantes conservan las tradiciones del campo y la ganadería, y reciben a los visitantes con la hospitalidad característica de los pueblos pequeños de la mesopotamia argentina. La pesca y el contacto con la naturaleza son las principales actividades turísticas.",
     "isFeatured": false,
-    "moderationState": "PENDING",
+    "moderationState": "APPROVED",
     "destinationType": "CITY",
     "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
@@ -27,18 +27,18 @@
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
             "caption": "Paisajes rurales de San Justo",
-            "moderationState": "PENDING"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
                 "caption": "Campo entrerriano en San Justo",
-                "moderationState": "PENDING"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
                 "caption": "Naturaleza alrededor de San Justo",
-                "moderationState": "PENDING"
+                "moderationState": "APPROVED"
             }
         ]
     },

@@ -6,7 +6,7 @@
     "summary": "Ciudad histórica con tradición artesanal, gastronomía regional y costas del río Gualeguay",
     "description": "Gualeguay es una de las ciudades más antiguas e importantes de Entre Ríos, ubicada en el departamento homónimo y bañada por el río Gualeguay. Con una rica historia colonial y una tradición artesanal reconocida en toda la provincia, la ciudad ofrece una experiencia cultural profunda. Su centro histórico, museos, artesanías y gastronomía regional son los principales atractivos. La pesca deportiva, las playas fluviales y los deportes náuticos completan la oferta turística de esta vibrante ciudad entrerriana.",
     "isFeatured": false,
-    "moderationState": "PENDING",
+    "moderationState": "APPROVED",
     "destinationType": "CITY",
     "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
@@ -27,18 +27,18 @@
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
             "caption": "Centro histórico de Gualeguay",
-            "moderationState": "PENDING"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
                 "caption": "Arquitectura histórica de Gualeguay",
-                "moderationState": "PENDING"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
                 "caption": "Costas del río Gualeguay",
-                "moderationState": "PENDING"
+                "moderationState": "APPROVED"
             }
         ]
     },

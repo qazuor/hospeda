@@ -6,7 +6,7 @@
     "summary": "Ciudad entrerriana con termas y naturaleza exuberante sobre el río Uruguay",
     "description": "Villa Elisa es una encantadora ciudad ubicada en el departamento Colón de Entre Ríos, famosa por sus complejos termales y su cercanía al río Uruguay. Rodeada de una naturaleza exuberante, la ciudad ofrece una experiencia de relax y bienestar a sus visitantes. Sus termas de aguas minerales, sus playas fluviales y la tranquilidad de su entorno la convierten en un destino ideal para el turismo de salud y bienestar. También cuenta con una oferta gastronómica regional y artesanal que encanta a los viajeros.",
     "isFeatured": false,
-    "moderationState": "PENDING",
+    "moderationState": "APPROVED",
     "destinationType": "CITY",
     "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
@@ -27,18 +27,18 @@
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
             "caption": "Termas de Villa Elisa",
-            "moderationState": "PENDING"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
                 "caption": "Complejo termal de Villa Elisa",
-                "moderationState": "PENDING"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
                 "caption": "Naturaleza en Villa Elisa",
-                "moderationState": "PENDING"
+                "moderationState": "APPROVED"
             }
         ]
     },

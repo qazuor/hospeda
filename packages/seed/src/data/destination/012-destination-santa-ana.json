@@ -6,7 +6,7 @@
     "summary": "Tranquila localidad rural con costas fluviales y vida campestre entrerriana",
     "description": "Santa Ana es una pequeña localidad ubicada en el departamento Federación de Entre Ríos, emplazada sobre las costas del río Uruguay. Con un ritmo de vida tranquilo y apacible, Santa Ana ofrece a sus visitantes la experiencia auténtica del campo entrerriano, con actividades de pesca, contacto con la naturaleza y la calidez de su gente. Sus costas fluviales y sus paisajes rurales la convierten en un refugio ideal para quienes buscan descanso y tranquilidad lejos del bullicio urbano.",
     "isFeatured": false,
-    "moderationState": "PENDING",
+    "moderationState": "APPROVED",
     "destinationType": "CITY",
     "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
@@ -27,18 +27,18 @@
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
             "caption": "Paisajes rurales de Santa Ana",
-            "moderationState": "PENDING"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
                 "caption": "Campo entrerriano en Santa Ana",
-                "moderationState": "PENDING"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
                 "caption": "Costa fluvial de Santa Ana",
-                "moderationState": "PENDING"
+                "moderationState": "APPROVED"
             }
         ]
     },

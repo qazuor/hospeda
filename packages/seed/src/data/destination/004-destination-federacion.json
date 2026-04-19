@@ -6,7 +6,7 @@
     "summary": "Destino termal por excelencia con el complejo termal más grande de Argentina",
     "description": "Federación es una pequeña pero encantadora ciudad ubicada en el norte de Entre Ríos, mundialmente reconocida por albergar el complejo termal más grande de Argentina. Con sus aguas termales naturales, modernas instalaciones y un entorno natural privilegiado, Federación se ha convertido en el destino termal más popular del país. La ciudad ofrece una perfecta combinación de relajación, entretenimiento y contacto con la naturaleza, con actividades para toda la familia en un ambiente tranquilo y revitalizante.",
     "isFeatured": true,
-    "moderationState": "PENDING",
+    "moderationState": "APPROVED",
     "destinationType": "CITY",
     "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
@@ -27,23 +27,23 @@
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
             "caption": "Complejo termal de Federación",
-            "moderationState": "PENDING"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
                 "caption": "Piscinas termales de Federación",
-                "moderationState": "PENDING"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
                 "caption": "Instalaciones del complejo termal",
-                "moderationState": "PENDING"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
                 "caption": "Entorno natural de Federación",
-                "moderationState": "PENDING"
+                "moderationState": "APPROVED"
             }
         ]
     },

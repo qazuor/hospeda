@@ -6,7 +6,7 @@
     "summary": "Pequeña localidad del sur entrerriano con costas del Paraná y ecoturismo en el delta",
     "description": "Ceibas es una pequeña localidad ubicada en el sur de Entre Ríos, en el departamento Islas del Ibicuy, emplazada sobre las costas del río Paraná. Con una ubicación privilegiada en el delta entrerriano, Ceibas ofrece un turismo de naturaleza único, con actividades de pesca, avistamiento de aves, kayak y navegación en canales del delta. La exuberante fauna y flora autóctona, junto con el silencio de sus paisajes de islas y humedales, convierten a Ceibas en un destino ideal para el ecoturismo y la desconexión total.",
     "isFeatured": false,
-    "moderationState": "PENDING",
+    "moderationState": "APPROVED",
     "destinationType": "CITY",
     "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
@@ -27,18 +27,18 @@
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
             "caption": "Delta del Paraná en Ceibas",
-            "moderationState": "PENDING"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
                 "caption": "Canales del delta cerca de Ceibas",
-                "moderationState": "PENDING"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
                 "caption": "Fauna y flora del delta en Ceibas",
-                "moderationState": "PENDING"
+                "moderationState": "REJECTED"
             }
         ]
     },

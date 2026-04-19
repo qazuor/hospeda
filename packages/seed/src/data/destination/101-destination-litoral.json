@@ -6,7 +6,7 @@
     "summary": "Region mesopotamica con rios, termas, carnavales y naturaleza exuberante",
     "description": "El Litoral Argentino es una region que abarca las provincias de Entre Rios, Corrientes, Misiones, Santa Fe, Chaco y Formosa. Conocida por sus caudalosos rios, sus aguas termales, sus carnavales vibrantes y su naturaleza exuberante, esta region ofrece una experiencia turistica unica. Desde las cataratas del Iguazu hasta las termas de Federacion, el Litoral combina aventura, relax y cultura en un entorno natural privilegiado.",
     "isFeatured": true,
-    "moderationState": "PENDING",
+    "moderationState": "APPROVED",
     "reviewsCount": 0,
     "averageRating": 0,
     "destinationType": "REGION",
@@ -25,7 +25,7 @@
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
             "caption": "Litoral Argentino - Rios y naturaleza",
-            "moderationState": "PENDING"
+            "moderationState": "APPROVED"
         },
         "gallery": []
     },

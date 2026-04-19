@@ -6,7 +6,7 @@
     "summary": "Provincia mesopotamica entre los rios Parana y Uruguay, tierra de termas y carnavales",
     "description": "Entre Rios es una provincia argentina ubicada en la region mesopotamica, delimitada por los rios Parana y Uruguay. Conocida como la 'Tierra de los Carnavales' y cuna del turismo termal argentino, ofrece una combinacion unica de playas fluviales, complejos termales, historia y tradicion. Sus ciudades costeras como Colon, Gualeguaychu y Concepcion del Uruguay son destinos turisticos consolidados que atraen visitantes durante todo el anio.",
     "isFeatured": true,
-    "moderationState": "PENDING",
+    "moderationState": "APPROVED",
     "reviewsCount": 0,
     "averageRating": 0,
     "destinationType": "PROVINCE",
@@ -25,7 +25,7 @@
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
             "caption": "Entre Rios - Provincia mesopotamica",
-            "moderationState": "PENDING"
+            "moderationState": "APPROVED"
         },
         "gallery": []
     },
