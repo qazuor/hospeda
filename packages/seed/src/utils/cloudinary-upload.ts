@@ -12,7 +12,7 @@ export interface UploadSeedImageInput {
     readonly entityType: string;
     /** Seed entity ID, e.g. '004-accommodation-colon-cabin-cabana-del-rio-colon'. */
     readonly entityId: string;
-    /** Role within the entity, e.g. 'featured', '0', '1', '2'. */
+    /** Role within the entity, e.g. 'featured', 'gallery/0', 'gallery/1', 'avatar'. */
     readonly role: string;
     /** Configured Cloudinary provider instance. */
     readonly provider: ImageProvider;
@@ -20,19 +20,35 @@ export interface UploadSeedImageInput {
     readonly cache: ImageCache;
     /** Absolute path to the cache JSON file on disk. */
     readonly cachePath: string;
-    /** Environment label used in the Cloudinary folder path, e.g. 'development'. */
+    /** Environment label used in the Cloudinary folder path, e.g. 'dev'. */
     readonly env: string;
+    /**
+     * When `true`, fetch/upload failures throw instead of returning a
+     * `failed` outcome. Used by the required-track pipeline when the caller
+     * did NOT pass `--allow-required-fallback`.
+     * @default false
+     */
+    readonly throwOnFailure?: boolean;
 }
 
 /**
- * Result of a seed image upload operation.
+ * Discriminated outcome of a seed image upload. Encodes cache hits, fresh
+ * uploads, and failures so callers can drive counters and fallback logic.
  */
-export interface UploadSeedImageResult {
-    /** Final Cloudinary URL (or original URL on error / cache hit). */
-    readonly cloudinaryUrl: string;
-    /** Whether the URL was served from the local cache without a new upload. */
-    readonly fromCache: boolean;
-}
+export type UploadSeedImageOutcome =
+    | {
+          readonly status: 'uploaded';
+          readonly cloudinaryUrl: string;
+      }
+    | {
+          readonly status: 'cached';
+          readonly cloudinaryUrl: string;
+      }
+    | {
+          readonly status: 'failed';
+          readonly cloudinaryUrl: string;
+          readonly errorMessage?: string;
+      };
 
 /**
  * Uploads a seed image to Cloudinary, using the cache to avoid re-uploads.
@@ -40,18 +56,21 @@ export interface UploadSeedImageResult {
  * The Cloudinary public ID is built as:
  *   `hospeda/{env}/seed/{entityType}/{entityId}/{role}`
  *
- * On cache hit (same original URL already uploaded), returns the cached URL
- * immediately without making any network request.
+ * On cache hit (same original URL already uploaded), returns a `cached`
+ * outcome immediately without making any network request.
  *
- * On fetch or upload failure, logs a warning and returns the original URL so
- * the seed process continues without interruption.
+ * On fetch or upload failure:
+ * - If `throwOnFailure` is `true`, throws the underlying error so the caller
+ *   can abort the seed (loud failure for required-track jobs).
+ * - Otherwise, logs a warning and returns a `failed` outcome carrying the
+ *   original URL as `cloudinaryUrl`.
  *
  * @param input - Upload parameters. See {@link UploadSeedImageInput}.
- * @returns Resolved upload result with the final URL and cache flag.
+ * @returns Resolved {@link UploadSeedImageOutcome}.
  *
  * @example
  * ```ts
- * const result = await uploadSeedImage({
+ * const outcome = await uploadSeedImage({
  *   originalUrl: 'https://images.pexels.com/photos/123/pexels-photo-123.jpeg',
  *   entityType: 'accommodations',
  *   entityId: '004-accommodation-colon-cabin',
@@ -59,14 +78,27 @@ export interface UploadSeedImageResult {
  *   provider,
  *   cache,
  *   cachePath: '/path/to/.cloudinary-cache.json',
- *   env: 'development',
+ *   env: 'dev',
  * });
- * // result.cloudinaryUrl => 'https://res.cloudinary.com/...'
- * // result.fromCache     => false (first time)
+ * if (outcome.status === 'uploaded') {
+ *   // fresh upload
+ * }
  * ```
  */
-export async function uploadSeedImage(input: UploadSeedImageInput): Promise<UploadSeedImageResult> {
-    const { originalUrl, entityType, entityId, role, provider, cache, cachePath, env } = input;
+export async function uploadSeedImage(
+    input: UploadSeedImageInput
+): Promise<UploadSeedImageOutcome> {
+    const {
+        originalUrl,
+        entityType,
+        entityId,
+        role,
+        provider,
+        cache,
+        cachePath,
+        env,
+        throwOnFailure = false
+    } = input;
 
     // Build the full Cloudinary public ID
     const fullPublicId = `hospeda/${env}/seed/${entityType}/${entityId}/${role}`;
@@ -79,17 +111,19 @@ export async function uploadSeedImage(input: UploadSeedImageInput): Promise<Uplo
     // Cache hit check — skip upload if same URL was already processed
     if (isCacheHit({ cacheEntry: cache[fullPublicId], currentUrl: originalUrl })) {
         const cachedUrl = cache[fullPublicId]?.cloudinaryUrl ?? originalUrl;
-        return { cloudinaryUrl: cachedUrl, fromCache: true };
+        return { status: 'cached', cloudinaryUrl: cachedUrl };
     }
 
     try {
         // Fetch the original image
         const response = await fetch(originalUrl);
         if (!response.ok) {
-            logger.warn(
-                `[seed:images] Failed to fetch image (${response.status}): ${originalUrl} — using original URL`
-            );
-            return { cloudinaryUrl: originalUrl, fromCache: false };
+            const message = `Failed to fetch image (${response.status}): ${originalUrl}`;
+            if (throwOnFailure) {
+                throw new Error(message);
+            }
+            logger.warn(`[seed:images] ${message} — using original URL`);
+            return { status: 'failed', cloudinaryUrl: originalUrl, errorMessage: message };
         }
 
         const buffer = Buffer.from(await response.arrayBuffer());
@@ -111,11 +145,15 @@ export async function uploadSeedImage(input: UploadSeedImageInput): Promise<Uplo
             fileModifiedAt: null
         });
 
-        return { cloudinaryUrl: uploadResult.url, fromCache: false };
+        return { status: 'uploaded', cloudinaryUrl: uploadResult.url };
     } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (throwOnFailure) {
+            throw error instanceof Error ? error : new Error(message);
+        }
         logger.warn(
-            `[seed:images] Upload failed for ${fullPublicId}: ${error instanceof Error ? error.message : String(error)} — using original URL`
+            `[seed:images] Upload failed for ${fullPublicId}: ${message} — using original URL`
         );
-        return { cloudinaryUrl: originalUrl, fromCache: false };
+        return { status: 'failed', cloudinaryUrl: originalUrl, errorMessage: message };
     }
 }

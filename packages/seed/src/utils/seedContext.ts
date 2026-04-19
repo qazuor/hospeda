@@ -4,6 +4,30 @@ import type { ImageCache } from './cloudinary-cache.js';
 import { IdMapper } from './idMapper.js';
 
 /**
+ * Discriminates whether an image job originates from the `required` or `example`
+ * seed track. `example` jobs skip Cloudinary uploads entirely and preserve the
+ * raw URL + attribution metadata coming from the seed JSON.
+ */
+export type SeedSource = 'required' | 'example';
+
+/**
+ * Per-run image processing counters, used to produce the final tally log line
+ * at the end of the seed run.
+ *
+ * - `uploaded`: new successful Cloudinary uploads.
+ * - `cached`: cache hits that skipped the network round-trip.
+ * - `failures`: fetch/upload failures (either loud or tolerated via fallback).
+ * - `skippedExample`: image jobs skipped because they came from the `example`
+ *   track.
+ */
+export interface ImageProcessingCounters {
+    uploaded: number;
+    cached: number;
+    failures: number;
+    skippedExample: number;
+}
+
+/**
  * Context configuration for seed operations
  */
 export interface SeedContext {
@@ -62,10 +86,30 @@ export interface SeedContext {
     imageCachePath?: string;
 
     /**
-     * Environment label for Cloudinary folder paths, e.g. 'development'.
-     * Defaults to NODE_ENV.
+     * Environment label for Cloudinary folder paths, e.g. 'dev', 'test', 'preview', 'prod'.
+     * Resolved via `resolveEnvironment()` from `@repo/media/server`.
      */
     imageEnv?: string;
+
+    /**
+     * Discriminator set by `runRequiredSeeds` / `runExampleSeeds` before each
+     * seed batch runs. Drives the behaviour of the Cloudinary image processor:
+     * `required` → upload, `example` → skip (keep raw URL + attribution).
+     */
+    seedSource?: SeedSource;
+
+    /**
+     * When `true` and `seedSource === 'required'`, a fetch/upload failure is
+     * logged as warn and the original URL is kept instead of aborting the run.
+     * When `false` (default), required-source failures are fatal.
+     */
+    allowRequiredFallback?: boolean;
+
+    /**
+     * Mutable per-run counters for image processing telemetry. Populated by
+     * the cloudinary image processor and printed at the end of the run.
+     */
+    imageCounters?: ImageProcessingCounters;
 
     /**
      * Current entity being processed (for error tracking)
@@ -98,5 +142,17 @@ export function createSeedContext(overrides: Partial<SeedContext> = {}): SeedCon
     return {
         ...defaultSeedContext,
         ...overrides
+    };
+}
+
+/**
+ * Creates a fresh zeroed {@link ImageProcessingCounters} instance.
+ */
+export function createImageProcessingCounters(): ImageProcessingCounters {
+    return {
+        uploaded: 0,
+        cached: 0,
+        failures: 0,
+        skippedExample: 0
     };
 }

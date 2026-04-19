@@ -1,6 +1,8 @@
 import type { ImageProvider } from '@repo/media/server';
 import type { ImageCache } from './cloudinary-cache.js';
-import { uploadSeedImage } from './cloudinary-upload.js';
+import { type UploadSeedImageOutcome, uploadSeedImage } from './cloudinary-upload.js';
+import { logger } from './logger.js';
+import type { ImageProcessingCounters, SeedSource } from './seedContext.js';
 
 /**
  * Parameters for {@link processEntityImages}.
@@ -24,8 +26,25 @@ export interface ProcessEntityImagesParams {
     readonly cache: ImageCache;
     /** Absolute path to the cache JSON file on disk. */
     readonly cachePath: string;
-    /** Environment label used in the Cloudinary folder path, e.g. 'development'. */
+    /** Environment label used in the Cloudinary folder path, e.g. 'dev'. */
     readonly env: string;
+    /**
+     * Discriminates between required and example seed tracks. For `example`,
+     * the processor skips Cloudinary entirely and keeps the raw URL plus the
+     * attribution block (photographer/sourceUrl/license) intact.
+     */
+    readonly seedSource: SeedSource;
+    /**
+     * When `seedSource === 'required'` and this flag is `true`, fetch/upload
+     * failures fall back to the original URL and are counted as failures but
+     * do not abort the seed. When `false` (default), required failures throw.
+     */
+    readonly allowRequiredFallback?: boolean;
+    /**
+     * Mutable counters instance updated in-place by this function. Optional
+     * because callers outside the seed factory may not care about telemetry.
+     */
+    readonly counters?: ImageProcessingCounters;
 }
 
 /**
@@ -46,19 +65,82 @@ interface MediaBlock {
 }
 
 /**
- * Processes all image URLs within an entity's data and replaces them with
- * Cloudinary URLs, using the cache to avoid redundant uploads.
+ * Internal helper: runs an upload job for a required-track image, applying the
+ * `allowRequiredFallback` semantics and updating counters.
+ *
+ * @throws When `allowRequiredFallback` is false and the upload fails.
+ */
+async function runRequiredUpload(args: {
+    readonly originalUrl: string;
+    readonly entityType: string;
+    readonly entityId: string;
+    readonly role: string;
+    readonly provider: ImageProvider;
+    readonly cache: ImageCache;
+    readonly cachePath: string;
+    readonly env: string;
+    readonly allowFallback: boolean;
+    readonly counters?: ImageProcessingCounters;
+}): Promise<string> {
+    const {
+        originalUrl,
+        entityType,
+        entityId,
+        role,
+        provider,
+        cache,
+        cachePath,
+        env,
+        allowFallback,
+        counters
+    } = args;
+
+    const outcome = await uploadSeedImage({
+        originalUrl,
+        entityType,
+        entityId,
+        role,
+        provider,
+        cache,
+        cachePath,
+        env,
+        throwOnFailure: !allowFallback
+    });
+
+    if (counters) {
+        if (outcome.status === 'uploaded') counters.uploaded += 1;
+        else if (outcome.status === 'cached') counters.cached += 1;
+        else counters.failures += 1;
+    }
+
+    if (outcome.status === 'failed' && allowFallback) {
+        logger.warn(
+            `[seed:images] required fallback engaged for ${entityType}/${entityId}/${role}: ${outcome.errorMessage ?? 'unknown error'}`
+        );
+    }
+
+    return outcome.cloudinaryUrl;
+}
+
+/**
+ * Processes all image URLs within an entity's data.
+ *
+ * For `required` seed source with a configured provider, replaces URLs with
+ * Cloudinary URLs (using cache to dedupe). For `example` seed source, early
+ * returns `data` unchanged to preserve the raw source URL and attribution
+ * metadata (`photographer`, `sourceUrl`, `license`) added in SPEC-078-GAPS T-010.
  *
  * Handles three image locations:
  * - `data.media.featuredImage.url`  → role `'featured'`
- * - `data.media.gallery[n].url`     → role `'0'`, `'1'`, … (index as string)
+ * - `data.media.gallery[n].url`     → role `'gallery/0'`, `'gallery/1'`, …
  * - `data.profile.avatar`           → role `'avatar'` (user entities)
  *
- * If `provider` is `null`, the function returns the `data` object unchanged
- * so the seed process works normally without Cloudinary configured.
+ * If `provider` is `null` (no Cloudinary configured), the function returns
+ * `data` unchanged so the seed process works normally.
  *
  * @param params - See {@link ProcessEntityImagesParams}.
- * @returns A shallow copy of `data` with image URLs replaced by Cloudinary URLs.
+ * @returns A shallow copy of `data` with image URLs replaced by Cloudinary URLs
+ *          (required track), or the original `data` (example/no-provider).
  *
  * @example
  * ```ts
@@ -69,17 +151,37 @@ interface MediaBlock {
  *   provider,
  *   cache,
  *   cachePath: '/path/to/.cloudinary-cache.json',
- *   env: 'development',
+ *   env: 'dev',
+ *   seedSource: 'required',
  * });
- * // processed.media.featuredImage.url => 'https://res.cloudinary.com/...'
  * ```
  */
 export async function processEntityImages(
     params: ProcessEntityImagesParams
 ): Promise<Record<string, unknown>> {
-    const { data, entityType, entityId, provider, cache, cachePath, env } = params;
+    const {
+        data,
+        entityType,
+        entityId,
+        provider,
+        cache,
+        cachePath,
+        env,
+        seedSource,
+        allowRequiredFallback = false,
+        counters
+    } = params;
 
-    // No provider configured — return unchanged
+    // --- Early return: example source skips Cloudinary entirely ---
+    if (seedSource === 'example') {
+        if (counters) {
+            const examplePendingJobs = countImageJobs(data);
+            counters.skippedExample += examplePendingJobs;
+        }
+        return data;
+    }
+
+    // --- Early return: no provider configured → keep originals ---
     if (!provider) {
         return data;
     }
@@ -92,7 +194,7 @@ export async function processEntityImages(
         const updatedMedia: MediaBlock = { ...media };
 
         if (media.featuredImage?.url) {
-            const { cloudinaryUrl } = await uploadSeedImage({
+            const cloudinaryUrl = await runRequiredUpload({
                 originalUrl: media.featuredImage.url,
                 entityType,
                 entityId,
@@ -100,7 +202,9 @@ export async function processEntityImages(
                 provider,
                 cache,
                 cachePath,
-                env
+                env,
+                allowFallback: allowRequiredFallback,
+                counters
             });
             updatedMedia.featuredImage = { ...media.featuredImage, url: cloudinaryUrl };
         }
@@ -110,15 +214,17 @@ export async function processEntityImages(
             const updatedGallery = await Promise.all(
                 media.gallery.map(async (entry, index) => {
                     if (!entry.url) return entry;
-                    const { cloudinaryUrl } = await uploadSeedImage({
+                    const cloudinaryUrl = await runRequiredUpload({
                         originalUrl: entry.url,
                         entityType,
                         entityId,
-                        role: String(index),
+                        role: `gallery/${index}`,
                         provider,
                         cache,
                         cachePath,
-                        env
+                        env,
+                        allowFallback: allowRequiredFallback,
+                        counters
                     });
                     return { ...entry, url: cloudinaryUrl };
                 })
@@ -132,7 +238,7 @@ export async function processEntityImages(
     // --- profile.avatar (user entities) ---
     const profile = data.profile as Record<string, unknown> | undefined;
     if (profile?.avatar && typeof profile.avatar === 'string') {
-        const { cloudinaryUrl } = await uploadSeedImage({
+        const cloudinaryUrl = await runRequiredUpload({
             originalUrl: profile.avatar,
             entityType,
             entityId,
@@ -140,10 +246,36 @@ export async function processEntityImages(
             provider,
             cache,
             cachePath,
-            env
+            env,
+            allowFallback: allowRequiredFallback,
+            counters
         });
         result.profile = { ...profile, avatar: cloudinaryUrl };
     }
 
     return result;
 }
+
+/**
+ * Counts the number of image jobs that would be processed for a given entity
+ * payload. Used to increment the `skippedExample` counter when short-circuiting
+ * the `example` path without actually iterating uploads.
+ *
+ * @internal
+ */
+function countImageJobs(data: Record<string, unknown>): number {
+    let count = 0;
+    const media = data.media as MediaBlock | undefined;
+    if (media?.featuredImage?.url) count += 1;
+    if (Array.isArray(media?.gallery)) {
+        for (const entry of media.gallery) {
+            if (entry?.url) count += 1;
+        }
+    }
+    const profile = data.profile as Record<string, unknown> | undefined;
+    if (typeof profile?.avatar === 'string' && profile.avatar) count += 1;
+    return count;
+}
+
+// Re-export internal type for upstream callers if needed.
+export type { UploadSeedImageOutcome };

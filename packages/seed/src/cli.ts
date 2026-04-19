@@ -64,6 +64,7 @@ if (IS_CLI_ENTRY) {
     config({ path: path.resolve(__dirname, '../../../apps/api/.env.local') });
 
     const { dbLogger } = await import('@repo/db');
+    const { resolveEnvironment } = await import('@repo/media/server');
     const { runSeed } = await import('./index.js');
     const { DEFAULT_CACHE_PATH, deleteCache } = await import('./utils/cloudinary-cache.js');
     const { STATUS_ICONS } = await import('./utils/icons.js');
@@ -83,6 +84,7 @@ if (IS_CLI_ENTRY) {
         rollbackOnError: args.includes('--rollbackOnError'),
         continueOnError: args.includes('--continueOnError'),
         cleanImages: args.includes('--clean-images'),
+        allowRequiredFallback: args.includes('--allow-required-fallback'),
         exclude: [] as string[]
     };
 
@@ -112,7 +114,7 @@ if (IS_CLI_ENTRY) {
         const cloudName = process.env.HOSPEDA_CLOUDINARY_CLOUD_NAME;
         const apiKey = process.env.HOSPEDA_CLOUDINARY_API_KEY;
         const apiSecret = process.env.HOSPEDA_CLOUDINARY_API_SECRET;
-        const nodeEnv = process.env.NODE_ENV ?? 'development';
+        const mediaEnv = resolveEnvironment();
 
         // GAP-078-117 / GAP-078-234: production safety gate.
         const gate = evaluateProdCleanupGate(process.env);
@@ -125,7 +127,7 @@ if (IS_CLI_ENTRY) {
             try {
                 const { CloudinaryProvider } = await import('@repo/media/server');
                 const provider = new CloudinaryProvider({ cloudName, apiKey, apiSecret });
-                const prefix = `hospeda/${nodeEnv}/seed/`;
+                const prefix = `hospeda/${mediaEnv}/seed/`;
                 logger.info(
                     `[seed:clean-images] Deleting Cloudinary assets under prefix: ${prefix}`
                 );

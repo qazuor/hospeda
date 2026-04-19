@@ -403,7 +403,7 @@ export const HOSPEDA_ENV_VARS = [
         required: false,
         secret: false,
         exampleValue: 'hospeda',
-        apps: ['api'],
+        apps: ['api', 'seed'],
         category: 'integrations'
     },
     {
@@ -413,7 +413,7 @@ export const HOSPEDA_ENV_VARS = [
         required: false,
         secret: true,
         exampleValue: '123456789012345',
-        apps: ['api'],
+        apps: ['api', 'seed'],
         category: 'integrations'
     },
     {
@@ -423,7 +423,7 @@ export const HOSPEDA_ENV_VARS = [
         required: false,
         secret: true,
         exampleValue: 'your-cloudinary-api-secret',
-        apps: ['api'],
+        apps: ['api', 'seed'],
         category: 'integrations'
     },
     {
@@ -447,7 +447,7 @@ export const HOSPEDA_ENV_VARS = [
         secret: false,
         defaultValue: '10',
         exampleValue: '10',
-        apps: ['api'],
+        apps: ['api', 'seed'],
         category: 'integrations'
     },
 

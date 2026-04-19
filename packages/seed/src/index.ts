@@ -14,7 +14,7 @@ envConfig({
 });
 
 import { configureLogger } from '@repo/logger';
-import { CloudinaryProvider } from '@repo/media/server';
+import { CloudinaryProvider, resolveEnvironment } from '@repo/media/server';
 import { runExampleSeeds } from './example/index.js';
 import { runRequiredSeeds } from './required/index.js';
 import { DEFAULT_CACHE_PATH, readCache } from './utils/cloudinary-cache.js';
@@ -23,7 +23,7 @@ import { resetDatabase } from './utils/dbReset';
 import { errorHistory } from './utils/errorHistory.js';
 import { STATUS_ICONS } from './utils/icons.js';
 import { logger } from './utils/logger.js';
-import { createSeedContext } from './utils/seedContext.js';
+import { createImageProcessingCounters, createSeedContext } from './utils/seedContext.js';
 import { summaryTracker } from './utils/summaryTracker.js';
 import { loadSuperAdminAndGetActor } from './utils/superAdminLoader.js';
 import { validateAllManifests } from './utils/validateAllManifests.js';
@@ -44,6 +44,12 @@ type SeedOptions = {
     continueOnError?: boolean;
     /** List of entities to exclude from seeding */
     exclude?: string[];
+    /**
+     * When `true`, fetch/upload failures on required-source images are tolerated
+     * (warn + keep original URL) instead of aborting the run. Maps to the CLI
+     * flag `--allow-required-fallback` (GAP-078-036 / GAP-078-116).
+     */
+    allowRequiredFallback?: boolean;
 };
 
 /**
@@ -73,7 +79,14 @@ type SeedOptions = {
  * @throws {Error} When seeding fails and continueOnError is false
  */
 export async function runSeed(options: SeedOptions): Promise<void> {
-    const { required, example, reset, exclude = [], continueOnError = false } = options;
+    const {
+        required,
+        example,
+        reset,
+        exclude = [],
+        continueOnError = false,
+        allowRequiredFallback = false
+    } = options;
 
     // Start execution timer and error tracking
     summaryTracker.startTimer();
@@ -92,7 +105,7 @@ export async function runSeed(options: SeedOptions): Promise<void> {
     const cloudName = process.env.HOSPEDA_CLOUDINARY_CLOUD_NAME;
     const apiKey = process.env.HOSPEDA_CLOUDINARY_API_KEY;
     const apiSecret = process.env.HOSPEDA_CLOUDINARY_API_SECRET;
-    const nodeEnv = process.env.NODE_ENV ?? 'development';
+    const mediaEnv = resolveEnvironment();
 
     let imageProvider: CloudinaryProvider | undefined;
     if (cloudName && apiKey && apiSecret) {
@@ -103,6 +116,7 @@ export async function runSeed(options: SeedOptions): Promise<void> {
     }
 
     const imageCache = imageProvider ? readCache(DEFAULT_CACHE_PATH) : undefined;
+    const imageCounters = createImageProcessingCounters();
 
     // Create seed context
     const seedContext = createSeedContext({
@@ -112,7 +126,9 @@ export async function runSeed(options: SeedOptions): Promise<void> {
         imageProvider,
         imageCache,
         imageCachePath: imageProvider ? DEFAULT_CACHE_PATH : undefined,
-        imageEnv: nodeEnv
+        imageEnv: mediaEnv,
+        allowRequiredFallback,
+        imageCounters
     });
 
     logger.info('🚀 Starting seed process...');
@@ -208,10 +224,12 @@ export async function runSeed(options: SeedOptions): Promise<void> {
         }
 
         if (required) {
+            seedContext.seedSource = 'required';
             await runRequiredSeeds(seedContext);
         }
 
         if (example) {
+            seedContext.seedSource = 'example';
             await runExampleSeeds(seedContext);
         }
 
@@ -252,5 +270,10 @@ export async function runSeed(options: SeedOptions): Promise<void> {
         // Print final summary with execution time and error history
         summaryTracker.print();
         errorHistory.printSummary();
+
+        // Print image processing tally (GAP-078-036)
+        logger.info(
+            `[seed:images] tally uploaded=${imageCounters.uploaded} cached=${imageCounters.cached} failures=${imageCounters.failures} skippedExample=${imageCounters.skippedExample}`
+        );
     }
 }

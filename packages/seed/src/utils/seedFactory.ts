@@ -1,3 +1,4 @@
+import { resolveEnvironment } from '@repo/media/server';
 import type { Actor } from '@repo/service-core';
 import { processEntityImages } from './cloudinary-image-processor.js';
 import { errorHistory } from './errorHistory.js';
@@ -172,18 +173,28 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
                     ? config.normalizer(item as Record<string, unknown>)
                     : defaultNormalizer(item as Record<string, unknown>);
 
-                // Process images: replace original URLs with Cloudinary URLs when configured
-                if (context.imageProvider && context.imageCache && context.imageCachePath) {
+                // Process images: replace original URLs with Cloudinary URLs for the
+                // `required` seed source; skip entirely for `example` (preserve raw URL +
+                // attribution metadata from T-010).
+                const seedSource = context.seedSource ?? 'required';
+                const shouldProcess =
+                    seedSource === 'example' ||
+                    (context.imageProvider && context.imageCache && context.imageCachePath);
+                if (shouldProcess) {
                     const itemData = item as Record<string, unknown>;
                     const entityId = (itemData.id as string | undefined) ?? `item-${index}`;
                     normalizedData = (await processEntityImages({
                         data: normalizedData as Record<string, unknown>,
                         entityType: config.entityName.toLowerCase(),
                         entityId,
-                        provider: context.imageProvider,
-                        cache: context.imageCache,
-                        cachePath: context.imageCachePath,
-                        env: context.imageEnv ?? 'development'
+                        provider: context.imageProvider ?? null,
+                        // These are safe no-ops when example/provider-null paths are taken.
+                        cache: context.imageCache ?? {},
+                        cachePath: context.imageCachePath ?? '',
+                        env: context.imageEnv ?? resolveEnvironment(),
+                        seedSource,
+                        allowRequiredFallback: context.allowRequiredFallback ?? false,
+                        counters: context.imageCounters
                     })) as typeof normalizedData;
                 }
 
