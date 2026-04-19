@@ -136,6 +136,47 @@ describe('AccommodationReview CRUD Schemas', () => {
                 expect(result.data.lifecycleState).toBe('ARCHIVED');
             }
         });
+
+        it('should default lifecycleState to ACTIVE when omitted on create', () => {
+            const inputWithoutLifecycle = {
+                userId: '123e4567-e89b-12d3-a456-426614174000',
+                accommodationId: '123e4567-e89b-12d3-a456-426614174001',
+                rating: {
+                    cleanliness: 5,
+                    hospitality: 4,
+                    services: 5,
+                    accuracy: 4,
+                    communication: 5,
+                    location: 4
+                }
+            };
+
+            const result = AccommodationReviewCreateInputSchema.safeParse(inputWithoutLifecycle);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.lifecycleState).toBe('ACTIVE');
+            }
+        });
+
+        it('should reject invalid lifecycleState on create', () => {
+            const inputWithInvalidLifecycle = {
+                userId: '123e4567-e89b-12d3-a456-426614174000',
+                accommodationId: '123e4567-e89b-12d3-a456-426614174001',
+                lifecycleState: 'PUBLISHED',
+                rating: {
+                    cleanliness: 5,
+                    hospitality: 4,
+                    services: 5,
+                    accuracy: 4,
+                    communication: 5,
+                    location: 4
+                }
+            };
+
+            const result =
+                AccommodationReviewCreateInputSchema.safeParse(inputWithInvalidLifecycle);
+            expect(result.success).toBe(false);
+        });
     });
 
     describe('AccommodationReviewUpdateInputSchema', () => {
@@ -175,6 +216,23 @@ describe('AccommodationReview CRUD Schemas', () => {
                 expect(result.data).not.toHaveProperty('id');
                 expect(result.data).not.toHaveProperty('createdAt');
             }
+        });
+
+        it('should accept lifecycleState in update input', () => {
+            const result = AccommodationReviewUpdateInputSchema.safeParse({
+                lifecycleState: 'ARCHIVED'
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.lifecycleState).toBe('ARCHIVED');
+            }
+        });
+
+        it('should reject invalid lifecycleState in update input', () => {
+            const result = AccommodationReviewUpdateInputSchema.safeParse({
+                lifecycleState: 'DELETED'
+            });
+            expect(result.success).toBe(false);
         });
     });
 

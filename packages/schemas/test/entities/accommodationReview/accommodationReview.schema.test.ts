@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import {
+    AccommodationReviewAdminSchema,
+    AccommodationReviewProtectedSchema,
+    AccommodationReviewPublicSchema
+} from '../../../src/entities/accommodationReview/accommodationReview.access.schema';
 import { AccommodationReviewSchema } from '../../../src/entities/accommodationReview/accommodationReview.schema';
+import { LifecycleStatusEnum } from '../../../src/enums/lifecycle-state.enum';
 
 describe('AccommodationReview Schemas', () => {
     const validReviewData = {
@@ -174,6 +180,41 @@ describe('AccommodationReview Schemas', () => {
 
             const result = AccommodationReviewSchema.safeParse(invalidState);
             expect(result.success).toBe(false);
+        });
+    });
+
+    describe('Tier access boundary (AC-005 admin-only lifecycleState)', () => {
+        it('AccommodationReviewPublicSchema should NOT expose lifecycleState', () => {
+            const result = AccommodationReviewPublicSchema.safeParse({
+                ...validReviewData,
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect('lifecycleState' in result.data).toBe(false);
+            }
+        });
+
+        it('AccommodationReviewProtectedSchema should NOT expose lifecycleState', () => {
+            const result = AccommodationReviewProtectedSchema.safeParse({
+                ...validReviewData,
+                lifecycleState: LifecycleStatusEnum.ARCHIVED
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect('lifecycleState' in result.data).toBe(false);
+            }
+        });
+
+        it('AccommodationReviewAdminSchema should preserve lifecycleState', () => {
+            const result = AccommodationReviewAdminSchema.safeParse({
+                ...validReviewData,
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.lifecycleState).toBe(LifecycleStatusEnum.DRAFT);
+            }
         });
     });
 });
