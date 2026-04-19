@@ -670,19 +670,19 @@
         {
             "id": "T-036",
             "title": "Add i18n error keys for media error codes",
-            "description": "Gap: GAP-078-139.\n\nFiles: packages/i18n/locales/es.json, packages/i18n/locales/en.json, packages/i18n/locales/pt.json, apps/api/src/routes/media/ error handlers\n- Error codes map to i18n keys api.media.errors.{code} via @repo/i18n\n- Response includes code for client\n- Keys: api.media.errors.EMPTY_FILE, .GALLERY_LIMIT_EXCEEDED, .CLOUDINARY_NOT_CONFIGURED\n\nAcceptance: Keys exist in es/en/pt locale files; response body includes code string.",
-            "status": "pending",
+            "description": "Gap: GAP-078-139.\n\nFiles: packages/i18n/src/locales/{es,en,pt}/api.json (new), packages/i18n/src/config.ts\n- Error codes map to i18n keys api.media.errors.{code} via @repo/i18n\n- Response includes code for client (already in response shape, additive on i18n side)\n- 11 codes: EMPTY_FILE, GALLERY_LIMIT_EXCEEDED, CLOUDINARY_NOT_CONFIGURED, PAYLOAD_TOO_LARGE, SESSION_STALE, VALIDATION_ERROR, ENTITY_NOT_FOUND, FORBIDDEN, UPSTREAM_ERROR, UNPROCESSABLE_ENTITY, INTERNAL_ERROR\n\nAcceptance: Keys exist in es/en/pt locale files; response body includes code string.\n\nOutcome (commit 8afd6227): Pure additive on i18n side (response shape already exposed code field). Spanish=Rioplatense, Portuguese=Brazilian. Key path uses literal CODE as leaf so server-emitted code and client lookup stay in 1:1 lockstep. 33 new key-resolution assertions (11 codes × 3 locales) pass.",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-029"],
             "blocks": [],
             "subtasks": [],
             "tags": ["backend", "i18n"],
             "phase": "phase-5e",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
@@ -1012,19 +1012,19 @@
         {
             "id": "T-055",
             "title": "CI/CD: Renovate pin, pnpm env:check pre-deploy, dpr_auto presets, and Cache-Control header",
-            "description": "Gaps: GAP-078-226, GAP-078-230, GAP-078-133, GAP-078-135.\n\nFiles: renovate.json, packages/media/src/presets.ts, apps/api/src/routes/media/\n- GAP-078-226: renovate.json pin rule: cloudinary minor-only, no major auto-bump\n- GAP-078-230: CI step pnpm env:check before deploy to preview/production\n- GAP-078-133: Add dpr_auto to each preset in packages/media/src/presets.ts\n- GAP-078-135: Cache-Control: no-store header on POST /media/* responses\n\nAcceptance: pnpm env:check in deploy job; every preset includes dpr_auto; POST /media/* response has Cache-Control: no-store.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-226, GAP-078-230, GAP-078-133, GAP-078-135.\n\nFiles: renovate.json, .github/workflows/cd-{staging,production}.yml, packages/media/src/presets.ts, apps/api/src/routes/media/{admin,protected}/upload.ts\n- GAP-078-226: renovate.json pin rule: cloudinary minor-only, no major auto-bump\n- GAP-078-230: CI step pnpm env:check before deploy to preview/production\n- GAP-078-133: Add dpr_auto to each preset in packages/media/src/presets.ts\n- GAP-078-135: Cache-Control: no-store header on POST /media/* responses\n\nAcceptance: pnpm env:check in deploy job; every preset includes dpr_auto; POST /media/* response has Cache-Control: no-store.\n\nOutcome (commit e08b0c17): Renovate split into 2 packageRules (minor/patch with manual review + major disabled — self-documenting intent). Both cd-staging.yml + cd-production.yml deploy jobs (api/web/admin × 2 envs = 6 jobs) gain Setup Node + pnpm + install + env:check before each Vercel deploy. All 7 presets get dpr_auto suffix; dpr_ token already in ALLOWED_RAW_TOKEN_PREFIXES. Cache-Control: no-store at handler entry of both upload routes (DRY one-liner provably applies to all branches incl EMPTY_FILE short-circuit). 147/147 media + 55/55 api media route tests pass.",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-017", "T-029"],
             "blocks": [],
             "subtasks": [],
             "tags": ["tooling", "ci", "infra"],
             "phase": "phase-7c",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
