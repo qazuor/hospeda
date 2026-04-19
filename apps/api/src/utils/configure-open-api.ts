@@ -3,13 +3,16 @@ import { createErrorHandler } from '../middlewares/response';
 import type { AppOpenAPI } from '../types';
 import { env } from './env';
 import { apiLogger } from './logger';
+import { applyMediaMultipartOpenApiOverrides } from './openapi-multipart-overrides';
 
 export function configureOpenAPI(app: AppOpenAPI) {
     try {
         apiLogger.debug('🔧 Configuring OpenAPI endpoint...');
 
-        app.doc('/docs/openapi.json', {
-            openapi: '3.0.0',
+        // Inline the spec config so it can be re-used both by the registered
+        // `app.doc()` handler and by the post-processing GET below.
+        const docConfig = {
+            openapi: '3.0.0' as const,
             info: {
                 title: packageJSON.name,
                 version: packageJSON.version,
@@ -21,6 +24,28 @@ export function configureOpenAPI(app: AppOpenAPI) {
                     description: 'Development server'
                 }
             ]
+        };
+
+        // Custom GET handler that builds the OpenAPI document at request
+        // time and post-processes it to inject `multipart/form-data` request
+        // bodies on media upload routes (SPEC-078-GAPS T-034 / GAP-078-072).
+        //
+        // We cannot declare the multipart body via the route factory because
+        // doing so makes `@hono/zod-openapi` register a body validator that
+        // fails on real multipart payloads (the validator only understands
+        // JSON). Post-processing keeps the runtime contract intact (handlers
+        // own multipart parsing) while exposing the actual upload schema in
+        // the docs.
+        app.get('/docs/openapi.json', (c) => {
+            const document = app.getOpenAPIDocument(docConfig);
+            // The OpenAPIObject type from `@hono/zod-openapi` does not have
+            // an index signature, so we widen via `unknown` before handing
+            // it to the post-processor (which only mutates the `paths`
+            // sub-tree and is intentionally schema-agnostic).
+            const annotated = applyMediaMultipartOpenApiOverrides(
+                document as unknown as Record<string, unknown>
+            );
+            return c.json(annotated);
         });
 
         apiLogger.debug('✅ OpenAPI endpoint configured successfully');

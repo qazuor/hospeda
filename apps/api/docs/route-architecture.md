@@ -610,6 +610,28 @@ HTTP status codes set by the factory:
 
 ---
 
+## CORS — media routes
+
+Media upload and delete routes (`POST /api/v1/admin/media/upload`, `DELETE /api/v1/admin/media`, `POST /api/v1/protected/media/upload`) inherit the global CORS configuration from `src/middlewares/cors.ts` (`createCorsMiddleware` → `getCorsConfig`). No per-route CORS override is applied.
+
+| Setting | Value (default) | Source |
+|---------|-----------------|--------|
+| Allowed origins | `HOSPEDA_SITE_URL` (web) and `HOSPEDA_ADMIN_URL` (admin) | `API_CORS_ORIGINS` env (comma-separated) |
+| Allowed methods | `GET, POST, PUT, DELETE, PATCH, OPTIONS` | `API_CORS_ALLOW_METHODS` env |
+| Allowed headers | `Content-Type, Authorization, X-Requested-With` | `API_CORS_ALLOW_HEADERS` env |
+| Credentials | `true` (forced `false` if any origin is `*`) | `API_CORS_ALLOW_CREDENTIALS` env |
+| Preflight cache (`Access-Control-Max-Age`) | `86400` seconds | `API_CORS_MAX_AGE` env |
+
+Per-route notes:
+
+- The `OPTIONS` preflight is handled by Hono's CORS middleware before authentication runs, so unauthenticated browsers can negotiate the upload contract without hitting `401`.
+- Multipart uploads MUST send `Content-Type: multipart/form-data; boundary=...` (the boundary is set by the browser — clients should not override it manually). Cookie-based auth flows additionally rely on `Authorization` being present in `API_CORS_ALLOW_HEADERS`.
+- Wildcard origins (`*`) are incompatible with credentialed uploads: `createCorsMiddleware` automatically downgrades `credentials` to `false` in that case (see `src/middlewares/cors.ts`). Production deployments must enumerate explicit origins for the web and admin apps.
+
+See also: `apps/api/docs/cors-configuration.md` for the global CORS configuration reference and `originVerificationMiddleware` defense-in-depth check.
+
+---
+
 ## Related Documentation
 
 - `docs/development/route-factories.md` - factory API reference

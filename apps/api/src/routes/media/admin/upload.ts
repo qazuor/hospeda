@@ -65,20 +65,35 @@ const ActorIdSchema = z.string().uuid();
  */
 const GALLERY_HARD_CAP = 50;
 
-/** Service instances for entity existence validation. */
-const accommodationService = new AccommodationService({ logger: apiLogger });
-const destinationService = new DestinationService({ logger: apiLogger });
-const eventService = new EventService({ logger: apiLogger });
-const postService = new PostService({ logger: apiLogger });
-
-const entityServices: Record<
-    string,
-    AccommodationService | DestinationService | EventService | PostService
-> = {
-    accommodation: accommodationService,
-    destination: destinationService,
-    event: eventService,
-    post: postService
+/**
+ * Resolves an entity service per-request (SPEC-078-GAPS T-034 / GAP-078-060).
+ *
+ * Service instances are constructed lazily inside the handler instead of at
+ * module load time so that:
+ *
+ *   - test isolation is preserved (no singleton state leaks across the
+ *     request boundary), and
+ *   - any context-bound dependencies (logger, request id) introduced later
+ *     can be passed in without refactoring this module.
+ *
+ * The previous module-level singletons would have made it impossible to
+ * vary the logger or other dependencies per request.
+ */
+const resolveEntityService = (
+    entityType: string
+): AccommodationService | DestinationService | EventService | PostService | null => {
+    switch (entityType) {
+        case 'accommodation':
+            return new AccommodationService({ logger: apiLogger });
+        case 'destination':
+            return new DestinationService({ logger: apiLogger });
+        case 'event':
+            return new EventService({ logger: apiLogger });
+        case 'post':
+            return new PostService({ logger: apiLogger });
+        default:
+            return null;
+    }
 };
 
 /**
@@ -284,7 +299,9 @@ export const adminUploadMediaRoute = createAdminRoute({
         const overwrite = parseResult.data.overwrite;
 
         // ── 3b. Verify entity exists in DB ────────────────────────────────────
-        const service = entityServices[entityType];
+        // Lazy per-request service instantiation (SPEC-078-GAPS T-034 /
+        // GAP-078-060). See `resolveEntityService` for rationale.
+        const service = resolveEntityService(entityType);
         if (!service) {
             return createErrorResponse(
                 {

@@ -93,20 +93,28 @@ const adminDeleteMediaPreValidation: MiddlewareHandler = async (ctx, next) => {
     await next();
 };
 
-/** Service instances for entity ownership lookup during delete authorization. */
-const deleteAccommodationService = new AccommodationService({ logger: apiLogger });
-const deleteDestinationService = new DestinationService({ logger: apiLogger });
-const deleteEventService = new EventService({ logger: apiLogger });
-const deletePostService = new PostService({ logger: apiLogger });
-
-const deleteEntityServices: Record<
-    MediaEntityType,
-    AccommodationService | DestinationService | EventService | PostService
-> = {
-    accommodation: deleteAccommodationService,
-    destination: deleteDestinationService,
-    event: deleteEventService,
-    post: deletePostService
+/**
+ * Resolves an entity service per-request for delete-authorization lookups
+ * (SPEC-078-GAPS T-034 / GAP-078-060).
+ *
+ * Service instances are constructed lazily inside the handler instead of
+ * at module load time so test isolation is preserved (no singleton state
+ * leaks across the request boundary) and any context-bound dependencies
+ * introduced later can be supplied without refactoring this module.
+ */
+const resolveDeleteEntityService = (
+    entityType: MediaEntityType
+): AccommodationService | DestinationService | EventService | PostService => {
+    switch (entityType) {
+        case 'accommodation':
+            return new AccommodationService({ logger: apiLogger });
+        case 'destination':
+            return new DestinationService({ logger: apiLogger });
+        case 'event':
+            return new EventService({ logger: apiLogger });
+        case 'post':
+            return new PostService({ logger: apiLogger });
+    }
 };
 
 /**
@@ -243,7 +251,7 @@ export const adminDeleteMediaRoute = createAdminRoute({
 
         // ── 1c. Fetch entity to verify existence and ownership ───────────────
         const actor = getActorFromContext(ctx);
-        const service = deleteEntityServices[parsed.entityType];
+        const service = resolveDeleteEntityService(parsed.entityType);
         const entityResult = await service.getById(actor, parsed.entityId);
 
         if (entityResult.error || !entityResult.data) {
