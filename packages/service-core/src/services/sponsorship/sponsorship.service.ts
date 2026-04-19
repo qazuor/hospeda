@@ -1,10 +1,5 @@
 import { SponsorshipModel } from '@repo/db';
-import type {
-    EntityFilters,
-    Sponsorship,
-    SponsorshipCreateInput,
-    SponsorshipSearchInput
-} from '@repo/schemas';
+import type { Sponsorship, SponsorshipCreateInput, SponsorshipSearchInput } from '@repo/schemas';
 import {
     SponsorshipAdminSearchSchema,
     SponsorshipCreateInputSchema,
@@ -12,13 +7,7 @@ import {
     SponsorshipUpdateInputSchema
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type {
-    Actor,
-    AdminSearchExecuteParams,
-    PaginatedListOutput,
-    ServiceConfig,
-    ServiceContext
-} from '../../types';
+import type { Actor, ServiceConfig, ServiceContext } from '../../types';
 import {
     checkCanAdminList,
     checkCanCount,
@@ -32,9 +21,6 @@ import {
     checkCanUpdateVisibility,
     checkCanView
 } from './sponsorship.permissions';
-
-/** Entity-specific filter fields for sponsorship admin search. */
-type SponsorshipEntityFilters = EntityFilters<typeof SponsorshipAdminSearchSchema>;
 
 /**
  * Service for managing sponsorships.
@@ -173,29 +159,6 @@ export class SponsorshipService extends BaseCrudService<
     protected async _canAdminList(actor: Actor): Promise<void> {
         await super._canAdminList(actor);
         checkCanAdminList(actor);
-    }
-
-    /**
-     * Executes admin search with column rename for sponsorship status.
-     *
-     * The `sponsorships` table has no `lifecycleState` column, so the base
-     * `status` filter from `AdminSearchBaseSchema` is silently ignored by
-     * `buildWhereClause`. The entity-specific `sponsorshipStatus` filter is
-     * remapped to the DB `status` column here.
-     *
-     * @param params - The assembled admin search parameters.
-     * @returns A paginated list of matching sponsorships.
-     */
-    protected override async _executeAdminSearch(
-        params: AdminSearchExecuteParams<SponsorshipEntityFilters>
-    ): Promise<PaginatedListOutput<Sponsorship>> {
-        const { entityFilters, ...rest } = params;
-        const { sponsorshipStatus, ...otherFilters } = entityFilters;
-        const mappedFilters: Record<string, unknown> = { ...otherFilters };
-        if (sponsorshipStatus) {
-            mappedFilters.status = sponsorshipStatus;
-        }
-        return super._executeAdminSearch({ ...rest, entityFilters: mappedFilters });
     }
 
     /**
