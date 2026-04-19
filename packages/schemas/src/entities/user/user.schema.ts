@@ -9,6 +9,7 @@ import { SocialNetworkFields } from '../../common/social.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { AuthProviderEnumSchema } from '../../enums/auth-provider.schema.js';
 import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
+import { ModerationStatusEnumSchema } from '../../enums/moderation-status.schema.js';
 import { UserBookmarkSchema } from '../userBookmark/userBookmark.schema.js';
 import { UserProfileSchema } from './user.profile.schema.js';
 import { UserSettingsSchema } from './user.settings.schema.js';
@@ -51,6 +52,30 @@ export const UserSchema = z.object({
 
     /** Better Auth required: avatar/profile image URL */
     image: z.string().url({ message: 'zodError.user.image.invalidUrl' }).nullish(),
+
+    // -------------------------------------------------------------------------
+    // Image satellite columns (GAP-078-081 + GAP-078-197, SPEC-078-GAPS T-014)
+    // These mirror Cloudinary metadata for efficient querying without URL parsing.
+    // -------------------------------------------------------------------------
+
+    /**
+     * Cloudinary public_id for the user avatar.
+     * Enables direct asset deletion in _afterHardDelete without URL parsing.
+     * Null for users without an uploaded avatar or with legacy rows.
+     */
+    imagePublicId: z.string().nullish(),
+
+    /**
+     * Moderation state of the user avatar image.
+     * Mirrors the moderationState returned by Cloudinary after upload.
+     * Indexed for moderation-dashboard queries.
+     */
+    imageModerationState: ModerationStatusEnumSchema.nullish(),
+
+    /**
+     * Optional human-readable caption for the user avatar.
+     */
+    imageCaption: z.string().max(500).nullish(),
 
     /** Better Auth Admin plugin: whether user is banned */
     banned: z.boolean().default(false).optional(),

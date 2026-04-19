@@ -40,7 +40,11 @@ export const mockUser: InferredUser = {
     createdById: null,
     updatedById: null,
     deletedAt: null,
-    deletedById: null
+    deletedById: null,
+    // Image satellite columns (GAP-078-081 + GAP-078-197, SPEC-078-GAPS T-014)
+    imagePublicId: null,
+    imageModerationState: null,
+    imageCaption: null
 };
 
 export const mockActor: Actor = new ActorFactoryBuilder()

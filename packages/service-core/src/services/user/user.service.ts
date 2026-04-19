@@ -21,6 +21,8 @@ import {
     UserSearchSchema,
     type UserSetPermissionsInput,
     UserSetPermissionsInputSchema,
+    type UserUpdateAvatarInput,
+    UserUpdateAvatarInputSchema,
     UserUpdateInputSchema
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
@@ -441,6 +443,62 @@ export class UserService extends BaseCrudService<
     }
 
     /**
+     * Updates the user avatar image URL and satellite columns atomically.
+     *
+     * Writes the `image` URL, `imagePublicId`, `imageModerationState`, and
+     * `imageCaption` columns within a single model update so that all four
+     * values are committed together or not at all.
+     *
+     * @param actor - The actor performing the action.
+     * @param params - Input containing userId and Cloudinary metadata.
+     * @param ctx - Optional service context carrying transaction and hookState.
+     * @returns The updated user object.
+     * @throws ServiceError (FORBIDDEN, NOT_FOUND, INTERNAL)
+     */
+    public async updateAvatar(
+        actor: Actor,
+        params: UserUpdateAvatarInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<User>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'updateAvatar',
+            input: { ...params, actor },
+            schema: UserUpdateAvatarInputSchema,
+            ctx,
+            execute: async (
+                { userId, imageUrl, imagePublicId, imageModerationState, imageCaption },
+                _validatedActor,
+                execCtx
+            ) => {
+                const existing = await this.model.findById(userId, execCtx?.tx);
+                if (!existing) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
+                }
+
+                const updated = await this.model.update(
+                    { id: userId },
+                    {
+                        image: imageUrl,
+                        imagePublicId,
+                        imageModerationState,
+                        imageCaption: imageCaption ?? null
+                    },
+                    execCtx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to update user avatar'
+                    );
+                }
+
+                return updated;
+            }
+        });
+    }
+
+    /**
      * Executes admin search for users with email partial match support.
      *
      * Overrides the base implementation to handle the `email` filter as a
@@ -472,7 +530,12 @@ export class UserService extends BaseCrudService<
     }
 
     /**
-     * Lifecycle hook: captures the user ID before hard delete for avatar cleanup.
+     * Lifecycle hook: captures the user ID and imagePublicId before hard delete
+     * for avatar cleanup in _afterHardDelete.
+     *
+     * Reads the satellite column `imagePublicId` so the post-delete hook can
+     * delete the Cloudinary asset directly without URL parsing.
+     *
      * @param id - The ID of the user to hard-delete.
      * @param _actor - The actor performing the action.
      * @param ctx - Service execution context carrying transaction and hookState.
@@ -484,13 +547,22 @@ export class UserService extends BaseCrudService<
     ): Promise<string> {
         if (ctx.hookState) {
             ctx.hookState.deletedEntityId = id;
+            // Read imagePublicId from satellite column before the row is gone.
+            const user = await this.model.findById(id, ctx.tx);
+            ctx.hookState.deletedImagePublicId = user?.imagePublicId ?? null;
         }
         return id;
     }
 
     /**
      * Lifecycle hook: removes the user avatar from Cloudinary after a confirmed hard delete.
+     *
+     * Uses the satellite column value (`deletedImagePublicId`) captured in
+     * _beforeHardDelete when available. Falls back to the legacy
+     * path-construction strategy for rows that pre-date the satellite column.
+     *
      * Best-effort: errors are logged but never propagated.
+     *
      * @param result - An object containing the count of affected rows.
      * @param _actor - The actor performing the action.
      * @param ctx - Service execution context carrying transaction and hookState.
@@ -500,10 +572,13 @@ export class UserService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<UserHookState>
     ): Promise<{ count: number }> {
-        // Best-effort Cloudinary avatar cleanup after confirmed hard delete
         if (result.count > 0 && ctx.hookState?.deletedEntityId && this.mediaProvider) {
+            // Prefer the satellite column value; fall back to legacy path construction
+            // for rows created before the 0013 migration populated the column.
             const env = resolveEnvironment();
-            const publicId = `hospeda/${env}/avatars/${ctx.hookState.deletedEntityId}`;
+            const publicId =
+                ctx.hookState.deletedImagePublicId ??
+                `hospeda/${env}/avatars/${ctx.hookState.deletedEntityId}`;
             try {
                 await this.mediaProvider.delete({ publicId });
             } catch (mediaError) {

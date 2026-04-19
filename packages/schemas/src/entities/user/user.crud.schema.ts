@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { UserIdSchema } from '../../common/id.schema.js';
 import { StrongPasswordSchema } from '../../common/password.schema.js';
 import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
+import { ModerationStatusEnumSchema } from '../../enums/moderation-status.schema.js';
 import { UserSchema } from './user.schema.js';
 
 /**
@@ -206,6 +207,37 @@ export const UserPasswordOutputSchema = z.object({
 });
 
 // ============================================================================
+// AVATAR UPDATE SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for updating a user avatar with Cloudinary satellite metadata.
+ * Used by UserService.updateAvatar to atomically set the image URL and
+ * the three satellite columns (imagePublicId, imageModerationState, imageCaption).
+ */
+export const UserUpdateAvatarInputSchema = z.object({
+    /** User whose avatar is being updated. */
+    userId: UserIdSchema,
+    /** Public URL of the new avatar (stored in the `image` column). */
+    imageUrl: z.string().url({ message: 'zodError.user.image.invalidUrl' }),
+    /** Cloudinary public_id for the uploaded asset (used for direct deletion). */
+    imagePublicId: z.string().min(1, { message: 'zodError.user.imagePublicId.min' }),
+    /** Moderation state returned by Cloudinary after upload. */
+    imageModerationState: ModerationStatusEnumSchema,
+    /** Optional human-readable caption for the avatar. */
+    imageCaption: z.string().max(500, { message: 'zodError.user.imageCaption.max' }).optional()
+});
+
+/**
+ * Output schema for the updateAvatar operation.
+ * Returns the complete updated user.
+ */
+export const UserUpdateAvatarOutputSchema = UserSchema;
+
+export type UserUpdateAvatarInput = z.infer<typeof UserUpdateAvatarInputSchema>;
+export type UserUpdateAvatarOutput = z.infer<typeof UserUpdateAvatarOutputSchema>;
+
+// ============================================================================
 // AUTH PROVIDER SCHEMAS
 // ============================================================================
 
@@ -283,3 +315,5 @@ export type UserAddPermissionInput = z.infer<typeof UserAddPermissionInputSchema
 export type UserRemovePermissionInput = z.infer<typeof UserRemovePermissionInputSchema>;
 export type UserSetPermissionsInput = z.infer<typeof UserSetPermissionsInputSchema>;
 export type UserRolePermissionOutput = z.infer<typeof UserRolePermissionOutputSchema>;
+
+// Avatar update types are already exported inline above the ROLE section.

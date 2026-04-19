@@ -21,7 +21,12 @@ import {
 } from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema.ts';
 import { destinations } from '../destination/destination.dbschema.ts';
-import { LifecycleStatusPgEnum, RolePgEnum, VisibilityPgEnum } from '../enums.dbschema.ts';
+import {
+    LifecycleStatusPgEnum,
+    ModerationStatusPgEnum,
+    RolePgEnum,
+    VisibilityPgEnum
+} from '../enums.dbschema.ts';
 import { events } from '../event/event.dbschema.ts';
 import { eventLocations } from '../event/event_location.dbschema.ts';
 import { eventOrganizers } from '../event/event_organizer.dbschema.ts';
@@ -49,6 +54,24 @@ export const users = pgTable(
         emailVerified: boolean('email_verified').notNull().default(false),
         /** Better Auth required: avatar/profile image URL */
         image: text('image'),
+        /**
+         * Cloudinary public ID for the user avatar.
+         * Satellite column: mirrors the Cloudinary public_id so that
+         * _afterHardDelete can delete the asset directly without URL parsing.
+         * Null for users without an uploaded avatar or with legacy rows.
+         */
+        imagePublicId: text('image_public_id'),
+        /**
+         * Moderation state of the user avatar image.
+         * Satellite column: mirrors moderationState from Cloudinary image metadata.
+         * Typed as moderation_status_enum for index-friendly dashboard queries.
+         */
+        imageModerationState: ModerationStatusPgEnum('image_moderation_state'),
+        /**
+         * Optional human-readable caption for the user avatar.
+         * Satellite column: stored alongside the image URL for display purposes.
+         */
+        imageCaption: text('image_caption'),
         /** Better Auth Admin plugin: whether user is banned */
         banned: boolean('banned').default(false),
         /** Better Auth Admin plugin: reason for ban */
@@ -121,6 +144,10 @@ export const users = pgTable(
         users_lifecycleState_deletedAt_idx: index('users_lifecycleState_deletedAt_idx').on(
             table.lifecycleState,
             table.deletedAt
+        ),
+        /** Index on imageModerationState for moderation dashboard queries */
+        users_image_moderation_state_idx: index('users_image_moderation_state_idx').on(
+            table.imageModerationState
         )
     })
 );
