@@ -634,19 +634,19 @@
         {
             "id": "T-034",
             "title": "Defensive route hardening: OpenAPI multipart schema, lazy services, and CORS doc",
-            "description": "Gaps: GAP-078-072, GAP-078-060, GAP-078-150.\n\nFiles: apps/api/src/routes/media/admin/upload.ts, apps/api/src/routes/media/protected/upload.ts, apps/api/docs/route-architecture.md\n- GAP-078-072: OpenAPI requestBody multipart schema for upload routes via createAdminRoute factory\n- GAP-078-060: Lazy services instantiation inside handler (not module-level)\n- GAP-078-150: Document CORS contract for media routes in apps/api/docs/route-architecture.md\n\nAcceptance: OpenAPI spec includes multipart requestBody for upload; no module-level const service = new XService() in route files; CORS section exists in route-architecture.md.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-072, GAP-078-060, GAP-078-150.\n\nFiles: apps/api/src/utils/configure-open-api.ts, apps/api/src/utils/openapi-multipart-overrides.ts (new), apps/api/src/routes/media/admin/{upload,delete}.ts, apps/api/docs/route-architecture.md\n- GAP-078-072: OpenAPI requestBody multipart schema for upload routes (post-process spec, not factory extension)\n- GAP-078-060: Lazy services instantiation inside handler (not module-level)\n- GAP-078-150: Document CORS contract for media routes in apps/api/docs/route-architecture.md\n\nAcceptance: OpenAPI spec includes multipart requestBody for upload; no module-level const service = new XService() in route files; CORS section exists in route-architecture.md.\n\nOutcome (commit 9cc01a7e): configure-open-api post-processes generated doc via new openapi-multipart-overrides helper. Architectural choice: post-process rather than extend route factory (extending broke 12 tests because @hono/zod-openapi installs JSON validator that rejects multipart). Module-level service singletons in admin/{upload,delete}.ts (4 services each) moved into per-request resolver helpers; protected/upload.ts already had none. route-architecture.md gains 17-line CORS section. 47/47 media route tests pass (2 new multipart-spec).",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-029"],
             "blocks": [],
             "subtasks": [],
             "tags": ["backend", "api", "docs"],
             "phase": "phase-5c",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
@@ -940,19 +940,19 @@
         {
             "id": "T-051",
             "title": "Vercel config: upload route maxDuration per-route and preview env Cloudinary warning",
-            "description": "Gaps: GAP-078-222, GAP-078-223, GAP-078-134.\n\nFiles: apps/api/vercel.json, apps/api/src/services/media.ts\n- GAP-078-222+223: apps/api/vercel.json per-route functions config with maxDuration: 60 and regions: [\"iad1\"] for both upload routes\n- GAP-078-134: Log warn at startup if Cloudinary vars missing AND VERCEL_ENV === 'preview'\n\nAcceptance: vercel.json contains function entries with maxDuration: 60; startup log warn emitted in preview when creds absent.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-222, GAP-078-223, GAP-078-134.\n\nFiles: apps/api/vercel.json, apps/api/src/index.ts, apps/api/src/utils/cloudinary-preview-warn.ts (new)\n- GAP-078-222+223: apps/api/vercel.json functions config with maxDuration: 60 and regions: [\"iad1\"] (catch-all topology, whole app inherits 60s)\n- GAP-078-134: Log warn at startup if Cloudinary vars missing AND VERCEL_ENV === 'preview'\n\nAcceptance: vercel.json contains function entries with maxDuration: 60; startup log warn emitted in preview when creds absent.\n\nOutcome (commit 1fad794f): vercel.json bumps maxDuration 30->60s and pins regions: ['iad1']. Catch-all topology means whole app inherits 60s as documented tradeoff (per-route requires splitting into separate Vercel functions, out of scope). New warnIfCloudinaryMissingOnPreview() helper runs once at boot; predicate VERCEL_ENV==='preview' AND any of 3 Cloudinary vars absent or whitespace-only; logs structured warn via @repo/logger; app continues normally (graceful degradation via T-018 InMemoryImageProvider). 7 new tests with RO-RO injectable env + logger.",
+            "status": "completed",
             "complexity": 1.0,
             "blockedBy": ["T-003", "T-029"],
             "blocks": [],
             "subtasks": [],
             "tags": ["backend", "infra"],
             "phase": "phase-7a",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
