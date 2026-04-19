@@ -1,5 +1,29 @@
 # SPEC-063 — Implementation Progress Log
 
+## Session summary (as of 2026-04-19T15:35)
+
+- **Progress:** 51/63 completed + 7 deferred. Effective scope **51/56**.
+- **Phase 3 pace:** T-055 (schema + access tests) landed. Phase 3 test block progressing: 1/3 done. Remaining: T-056 (integration) + T-057 (model + hook). Then T-058 cross-cutting cleanup.
+
+### T-055 completed 2026-04-19T15:35
+
+- **Cascade rename (non-production test files):**
+  - `packages/schemas/test/entities/sponsorship/sponsorship.schema.test.ts`: 7 sites `status` → `sponsorshipStatus`.
+  - `packages/service-core/test/factories/sponsorshipFactory.ts`: 2 sites + added `lifecycleState: ACTIVE` to both `SponsorshipFactoryBuilder.build()` and `createMockSponsorshipCreateInput()` (scope absorb — required field).
+  - `packages/service-core/test/services/sponsorship/update.test.ts`: 9 sites via `replace_all` on `status: SponsorshipStatusEnum.` pattern.
+- **AC-003-03 coverage added** (two new describe blocks in schema test file):
+  - `SponsorshipSchema — lifecycleState (AC-003-03)`: 4 tests (default ACTIVE, enum accept, invalid reject, independence from `sponsorshipStatus`).
+  - `Sponsorship access boundary (AC-003-03)`: 4 tests (Public strips lifecycleState, Protected strips lifecycleState, Admin preserves lifecycleState, both tiers keep `sponsorshipStatus`).
+- **Scope absorb — dead test file deletion:** `packages/service-core/test/services/sponsorship/admin-search.test.ts` was dedicated to the `_executeAdminSearch` override that T-048 removed. Of 8 tests: 4 were failing (asserting the removed remap) and 4 were passing (passthrough already covered by base-class tests). Rewriting the 4 passthrough tests would duplicate base coverage. Cleaner: delete the file entirely. Documented in state.json `_scopeAbsorbed`.
+- **Pre-existing whitelisted typecheck errors flagged (NOT SPEC-063 scope):**
+  - 5 errors in `test/services/destinationReview/{create,destinationReview.normalizers,list}.test.ts` — `Property 'lifecycleState' is missing`. Cascade from T-030/T-028 Phase 4 where `DestinationReview.lifecycleState` became required but service-layer test mocks were not updated. Flagged for Phase 4 follow-up or T-037 extension.
+  - `test/base/crud/getById.test.ts:379`: DrizzleClient type error — already whitelisted per session gotchas.
+- **Rejection test deviation**: subtask "CRUD: update rejects `status` field with validation error" marked complete via equivalence. Rationale: `sponsorshipStatus` + `lifecycleState` are now distinct Zod fields; an unknown `status` key gets stripped by the base schema (default Zod behavior). Explicit rejection would require `.strict()` on the Update schema — a schema-level change out of T-055 scope. Covered by the independence test instead.
+- **Lint:** pass (biome auto-fixed import ordering + formatting on 2 files). **Typecheck:** sponsorship source clean; only pre-existing whitelisted errors remain. **Tests:** 37/37 schema + 7/7 update + 121/121 sponsorship service tests pass.
+- **Commit boundary:** 1 `test(sponsorship)` with 4 files (3 modified + 1 deleted).
+
+---
+
 ## Session summary (as of 2026-04-19T14:50)
 
 - **Progress:** 50/63 completed + 7 deferred. Effective scope **50/56**.

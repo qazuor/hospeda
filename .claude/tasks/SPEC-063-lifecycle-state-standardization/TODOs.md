@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 50/63 completed + 7 deferred — effective 50/56
+## Progress: 51/63 completed + 7 deferred — effective 51/56
 
-**Last updated:** 2026-04-19T14:50:00Z
-**Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Phase 3 Sponsorship frontend FULLY CLOSED 2026-04-19** (T-052 + T-053 + T-054: types, columns, hook payload, lifecycleState filter + i18n). Remaining Phase 3 work is test-only (T-055/T-056/T-057). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). Effective Phase 3 scope: 13 non-migration tasks, 10 done.
+**Last updated:** 2026-04-19T15:35:00Z
+**Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Phase 3 Sponsorship frontend FULLY CLOSED 2026-04-19** (T-052+T-053+T-054). **Phase 3 test block progressing** (T-055 done 2026-04-19). Remaining Phase 3: T-056 (integration) + T-057 (model + hook). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). Effective Phase 3 scope: 13 non-migration tasks, 11 done.
 
 ### Push-only migration policy (summary)
 
@@ -18,11 +18,11 @@
 
 ### Next up (in priority order)
 
-1. **T-055** (complexity 2.5) — Sponsorship schema + access tests. Cascade cleanup: rename `status`→`sponsorshipStatus` in `packages/schemas/test/entities/sponsorship/sponsorship.schema.test.ts` L119 + `packages/service-core/test/factories/sponsorshipFactory.ts` L29/L63 + `packages/service-core/test/services/sponsorship/update.test.ts` (multiple sites). Then add AC-003-03 tests (lifecycleState enum defaults + access boundary preserve/strip).
-2. **T-056** (complexity 2.5) — Sponsorship integration test: filter independence (AC-001-02, AC-003-02). Mirror pattern from `apps/api/test/integration/owner-promotion/public-endpoint.test.ts` + `accommodation/admin-search-filters.test.ts`. Use service-level mock; apps/api/.env.test required.
-3. **T-057** (complexity 2) — Sponsorship model + hook tests. Cascade: `packages/db/test/models/sponsorship.model.test.ts` 5 findByStatus→findBySponsorshipStatus sites. Hook tests for useSponsorshipQueries if coverage missing.
-4. **T-001, T-002** (complexity 2 each) — Phase 1 AccommodationReview verification tests. Independent of Phase 3; can run in parallel.
-5. **Follow-up cleanup (not a formal task):** delete the two T-029 output SQL files + amend state.json/progress.md to record the cleanup done. Small, non-blocking. Could bundle with the next feature commit.
+1. **T-056** (complexity 2.5) — Sponsorship integration test: filter independence (AC-001-02, AC-003-02). Mirror pattern from `apps/api/test/integration/owner-promotion/public-endpoint.test.ts` + `accommodation/admin-search-filters.test.ts`. Use service-level mock; apps/api/.env.test required.
+2. **T-057** (complexity 2) — Sponsorship model + hook tests. Cascade: `packages/db/test/models/sponsorship.model.test.ts` 5 findByStatus→findBySponsorshipStatus sites. Hook tests for useSponsorshipQueries if coverage missing.
+3. **T-001, T-002** (complexity 2 each) — Phase 1 AccommodationReview verification tests. Independent of Phase 3; can run in parallel.
+4. **Follow-up cleanup (not a formal task):** delete the two T-029 output SQL files + amend state.json/progress.md to record the cleanup done. Small, non-blocking. Could bundle with the next feature commit.
+5. **Phase 4 cascade follow-up (flagged):** 5 typecheck errors in `packages/service-core/test/services/destinationReview/*` (Property 'lifecycleState' is missing) from T-030/T-028. Not SPEC-063 scope but tracked here for visibility; either fold into T-037 or spawn a standalone cleanup task.
 6. **T-058** (complexity 2.5) — cleanup / cross-cutting verification. T-036 removed from blockedBy; `_deferredDependencies` note tracks the deferral for final-report mention.
 
 **Average Complexity:** 2.1/2.5 (ceiling)
@@ -390,7 +390,14 @@
 
 ### Tests
 
-- [ ] **T-055** (complexity: 2.5) — Write Sponsorship schema + access tests (AC-003-03)
+- [x] **T-055** (complexity: 2.5) — Write Sponsorship schema + access tests (AC-003-03)
+  - COMPLETED 2026-04-19 · lint: pass · typecheck: pass (SPEC-063 source clean) · tests: 37/37 + 7/7 + 121/121
+  - Cascade rename: schema test 7 sites + factory 2 sites + update.test 9 sites
+  - Added describe blocks: lifecycleState (4 tests) + access boundary (4 tests)
+  - Scope absorb: DELETED admin-search.test.ts (8 tests for removed T-048 override, replaced by base-class passthrough coverage)
+  - Scope absorb: added `lifecycleState: ACTIVE` to both factory functions (required field)
+  - Rejection test (subtask) marked complete via equivalence — unknown `status` key stripped by default Zod behavior; `.strict()` would be out of scope
+  - Pre-existing flags recorded: 5 destinationReview typecheck errors (Phase 4 cascade, NOT SPEC-063)
   - Blocked by: T-043, T-044 · Blocks: none
 
 - [ ] **T-056** (complexity: 2.5) — Write Sponsorship integration test: filter independence (AC-001-02, AC-003-02)
