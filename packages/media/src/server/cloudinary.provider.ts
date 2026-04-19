@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary';
+import pRetry, { AbortError } from 'p-retry';
 import type {
     DeleteByPrefixOptions,
     DeleteOptions,
@@ -69,6 +70,42 @@ const CLOUD_NAME_REGEX = /^[a-z0-9_-]+$/;
 const REQUIRED_FOLDER_PREFIX = 'hospeda/';
 
 /**
+ * p-retry configuration for destructive Cloudinary operations.
+ *
+ * Retries up to 3 additional attempts (4 total invocations) with an
+ * exponential backoff factor of 3 starting at 1 second.
+ *
+ * Schedule (approx): attempt 1 immediate, then waits ~1s, ~3s, ~9s.
+ *
+ * SPEC-078-GAPS GAP-078-087.
+ */
+const RETRY_OPTIONS = { retries: 3, factor: 3, minTimeout: 1000 } as const;
+
+/**
+ * Determines whether a Cloudinary error represents a permanent 4xx failure
+ * that should NOT be retried.
+ *
+ * Treats every `http_code` in the 400-499 range as permanent EXCEPT 429
+ * (Too Many Requests), which is a transient rate-limit signal and IS
+ * eligible for retry.
+ *
+ * SPEC-078-GAPS GAP-078-087.
+ *
+ * @param err - Error thrown by the Cloudinary SDK
+ * @returns true if the error is a permanent 4xx (i.e. retry should abort)
+ */
+function isPermanent4xx(err: unknown): boolean {
+    if (typeof err !== 'object' || err === null) {
+        return false;
+    }
+    const code = (err as { http_code?: unknown }).http_code;
+    if (typeof code !== 'number') {
+        return false;
+    }
+    return code >= 400 && code < 500 && code !== 429;
+}
+
+/**
  * Cloudinary implementation of the ImageProvider interface.
  *
  * All Cloudinary SDK interactions are encapsulated here.
@@ -114,6 +151,12 @@ export class CloudinaryProvider implements ImageProvider {
 
     /**
      * Uploads a file buffer to Cloudinary.
+     *
+     * No retry by design (SPEC-078-GAPS GAP-078-087): re-running an upload
+     * with the same `publicId` after a partial failure can produce duplicate
+     * or inconsistent state on the Cloudinary side, since uploads are not
+     * provably idempotent at the SDK level. Callers must handle upload
+     * failures explicitly (e.g. surface to user, request a fresh attempt).
      *
      * @param options - Upload parameters including file buffer and folder path
      * @returns Resolved upload result with URL and dimensions
@@ -168,13 +211,27 @@ export class CloudinaryProvider implements ImageProvider {
      * Any other (defensive) value is treated as not-present so the caller can
      * still respond consistently.
      *
+     * SPEC-078-GAPS GAP-078-087 — wrapped with `pRetry` (3 retries, factor 3,
+     * minTimeout 1s). Retries on Cloudinary 429 (rate limit) and 5xx upstream
+     * errors. Permanent 4xx responses (other than 429) abort retry via
+     * `AbortError`.
+     *
      * @param options - Contains the public ID of the asset to delete
      * @returns `{ wasPresent }` indicating whether the asset existed at delete time
      */
     async delete(options: DeleteOptions): Promise<DeleteResult> {
-        const response = (await cloudinary.uploader.destroy(options.publicId, {
-            invalidate: true
-        })) as { result?: string } | undefined;
+        const response = await pRetry(async () => {
+            try {
+                return (await cloudinary.uploader.destroy(options.publicId, {
+                    invalidate: true
+                })) as { result?: string } | undefined;
+            } catch (err) {
+                if (isPermanent4xx(err)) {
+                    throw new AbortError(err as Error);
+                }
+                throw err;
+            }
+        }, RETRY_OPTIONS);
 
         const wasPresent = response?.result === 'ok';
         return { wasPresent };
@@ -183,10 +240,28 @@ export class CloudinaryProvider implements ImageProvider {
     /**
      * Deletes all assets under a folder prefix via the Admin API.
      *
+     * SPEC-078-GAPS GAP-078-054 — passes `{ invalidate: true }` so the CDN
+     * cache is invalidated immediately for every removed asset.
+     *
+     * SPEC-078-GAPS GAP-078-087 — wrapped with `pRetry` (3 retries, factor 3,
+     * minTimeout 1s). Same retry policy as `delete()`: retry on 429 and 5xx,
+     * abort on permanent 4xx.
+     *
      * @param options - Contains the folder prefix to delete
      */
     async deleteByPrefix(options: DeleteByPrefixOptions): Promise<void> {
-        await cloudinary.api.delete_resources_by_prefix(options.prefix);
+        await pRetry(async () => {
+            try {
+                await cloudinary.api.delete_resources_by_prefix(options.prefix, {
+                    invalidate: true
+                });
+            } catch (err) {
+                if (isPermanent4xx(err)) {
+                    throw new AbortError(err as Error);
+                }
+                throw err;
+            }
+        }, RETRY_OPTIONS);
     }
 
     /**

@@ -378,6 +378,23 @@ describe('CloudinaryProvider', () => {
             expect(mockUploadStream).not.toHaveBeenCalled();
         });
 
+        // SPEC-078-GAPS GAP-078-087: upload() has NO retry by design
+        it('should NOT retry on upload failure even if the error looks transient (5xx)', async () => {
+            // Arrange: simulate a 500-like upstream error from upload_stream
+            const uploadError = Object.assign(new Error('Upstream failure'), { http_code: 500 });
+            setupUploadStream(uploadError, null);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act + Assert
+            await expect(
+                provider.upload({
+                    file: Buffer.from('fake-image'),
+                    folder: 'hospeda/prod/accommodations/abc-123'
+                })
+            ).rejects.toThrow('Upstream failure');
+            expect(mockUploadStream).toHaveBeenCalledTimes(1);
+        });
+
         it('should throw when Cloudinary returns incomplete response missing secure_url', async () => {
             const incompleteResult = { ...MOCK_UPLOAD_RESPONSE, secure_url: '' };
             setupUploadStream(null, incompleteResult);
@@ -408,6 +425,44 @@ describe('CloudinaryProvider', () => {
                 'hospeda/prod/accommodations/abc-123/featured',
                 { invalidate: true }
             );
+        });
+
+        // SPEC-078-GAPS GAP-078-087: 429 rate-limit should retry then succeed
+        it('should retry once on a 429 rate-limit and resolve on the second attempt', async () => {
+            // Arrange
+            vi.useFakeTimers();
+            const rateLimitError = Object.assign(new Error('Too Many Requests'), {
+                http_code: 429
+            });
+            mockDestroy
+                .mockRejectedValueOnce(rateLimitError)
+                .mockResolvedValueOnce({ result: 'ok' });
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            const promise = provider.delete({ publicId: 'hospeda/prod/abc/featured' });
+            // Drain p-retry's internal setTimeout backoff
+            await vi.runAllTimersAsync();
+            const result = await promise;
+            vi.useRealTimers();
+
+            // Assert
+            expect(mockDestroy).toHaveBeenCalledTimes(2);
+            expect(result).toEqual({ wasPresent: true });
+        });
+
+        // SPEC-078-GAPS GAP-078-087: permanent 4xx (e.g. 401) must NOT retry
+        it('should NOT retry on a permanent 4xx error such as 401 and reject immediately', async () => {
+            // Arrange
+            const error = Object.assign(new Error('Unauthorized'), { http_code: 401 });
+            mockDestroy.mockRejectedValue(error);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act + Assert
+            await expect(
+                provider.delete({ publicId: 'hospeda/prod/abc/featured' })
+            ).rejects.toThrow('Unauthorized');
+            expect(mockDestroy).toHaveBeenCalledTimes(1);
         });
 
         // SPEC-078-GAPS GAP-078-154: present asset → wasPresent: true
@@ -460,7 +515,9 @@ describe('CloudinaryProvider', () => {
     // -------------------------------------------------------------------------
 
     describe('deleteByPrefix()', () => {
-        it('should call cloudinary.api.delete_resources_by_prefix with the given prefix', async () => {
+        // SPEC-078-GAPS GAP-078-054: must pass { invalidate: true } so the
+        // CDN cache is purged immediately for every removed asset.
+        it('should call cloudinary.api.delete_resources_by_prefix with prefix and invalidate flag', async () => {
             mockDeleteByPrefix.mockResolvedValue({ deleted: {} });
             const provider = new CloudinaryProvider(VALID_CONFIG);
 
@@ -469,7 +526,10 @@ describe('CloudinaryProvider', () => {
             });
 
             expect(mockDeleteByPrefix).toHaveBeenCalledOnce();
-            expect(mockDeleteByPrefix).toHaveBeenCalledWith('hospeda/prod/accommodations/abc-123/');
+            expect(mockDeleteByPrefix).toHaveBeenCalledWith(
+                'hospeda/prod/accommodations/abc-123/',
+                { invalidate: true }
+            );
         });
     });
 });
