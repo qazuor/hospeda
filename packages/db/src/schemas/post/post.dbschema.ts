@@ -33,7 +33,7 @@ export const posts = pgTable(
         title: text('title').notNull(),
         summary: text('summary').notNull(),
         content: text('content').notNull(),
-        media: jsonb('media').$type<Media>().notNull(),
+        media: jsonb('media').$type<Media | null>(),
         authorId: uuid('author_id')
             .notNull()
             .references(() => users.id, { onDelete: 'restrict' }),

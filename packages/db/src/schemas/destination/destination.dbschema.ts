@@ -51,7 +51,7 @@ export const destinations = pgTable(
         summary: text('summary').notNull(),
         description: text('description').notNull(),
         location: jsonb('location').$type<BaseLocationType>().notNull(),
-        media: jsonb('media').$type<Media>().notNull(),
+        media: jsonb('media').$type<Media | null>(),
         isFeatured: boolean('is_featured').notNull().default(false),
         visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),

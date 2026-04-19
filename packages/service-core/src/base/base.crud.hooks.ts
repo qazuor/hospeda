@@ -1,7 +1,8 @@
-import type { VisibilityEnum } from '@repo/schemas';
+import { MediaSchema, ServiceErrorCode, type VisibilityEnum } from '@repo/schemas';
 import type { ZodObject } from 'zod';
 import type { z } from 'zod';
 import type { Actor, BaseModel, ListOptions, PaginatedListOutput, ServiceContext } from '../types';
+import { ServiceError } from '../types';
 import { BaseCrudPermissions } from './base.crud.permissions';
 
 /**
@@ -36,6 +37,33 @@ export abstract class BaseCrudHooks<
     TUpdateSchema extends ZodObject,
     TSearchSchema extends ZodObject
 > extends BaseCrudPermissions<TEntity, TModel, TCreateSchema, TUpdateSchema, TSearchSchema> {
+    /**
+     * Validates the shape of the `media` field in a payload when present.
+     *
+     * Called automatically by the write layer (base.crud.write.ts) after
+     * `_beforeCreate` and `_beforeUpdate` complete, before the database
+     * operation. Throws `ServiceError(VALIDATION_ERROR)` if `media` is
+     * present but does not conform to `MediaSchema`.
+     *
+     * Entities that do not have a `media` column are unaffected — the check
+     * is skipped when `payload.media` is `undefined`.
+     *
+     * @param payload - The merged data object about to be persisted.
+     * @throws {ServiceError} When `media` is present but invalid per MediaSchema.
+     */
+    protected _validateMediaShape(payload: Record<string, unknown>): void {
+        if (!('media' in payload) || payload.media === undefined || payload.media === null) {
+            return;
+        }
+        const result = MediaSchema.safeParse(payload.media);
+        if (!result.success) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                `Invalid media shape for ${this.entityName}: ${result.error.issues.map((i) => i.message).join(', ')}`
+            );
+        }
+    }
+
     /**
      * Lifecycle hook executed after data normalization but before the `create` operation.
      * Override to add custom pre-insert logic (e.g., hashing passwords, generating slugs).

@@ -99,6 +99,9 @@ export abstract class BaseCrudWrite<
 
                 const finalData = { ...normalizedData, ...processedData };
 
+                // Validate media shape before persistence (GAP-078-075)
+                this._validateMediaShape(finalData as Record<string, unknown>);
+
                 const { bookmarks, ...payload } = finalData as Record<string, unknown> & {
                     bookmarks?: unknown;
                 };
@@ -167,9 +170,12 @@ export abstract class BaseCrudWrite<
 
                 const processedData = await this._beforeUpdate(normalizedData, validActor, execCtx);
 
+                // Validate media shape before persistence (GAP-078-075)
+                const mergedUpdateData = { ...normalizedData, ...processedData };
+                this._validateMediaShape(mergedUpdateData as Record<string, unknown>);
+
                 const payload = {
-                    ...normalizedData,
-                    ...processedData,
+                    ...mergedUpdateData,
                     updatedById: validActor.id
                 } as unknown as Partial<TEntity>;
 
