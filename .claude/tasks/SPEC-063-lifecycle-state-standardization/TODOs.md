@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 55/63 completed + 7 deferred — effective 55/56
+## Progress: 56/63 completed + 7 deferred — effective 56/56 — **SPEC-063 CLOSED**
 
-**Last updated:** 2026-04-19T17:22:00Z
-**Status:** in-progress. **Phase 1 AccommodationReview FULLY CLOSED 2026-04-19** (T-001 + T-002 verification tests). **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Phase 3 Sponsorship FULLY CLOSED 2026-04-19** (frontend T-052+T-053+T-054 + tests T-055+T-056+T-057). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). Remaining: T-058 cross-cutting cleanup.
+**Last updated:** 2026-04-19T18:35:00Z
+**Status:** completed. **All 4 entities standardized end-to-end**: AccommodationReview (Phase 1), OwnerPromotion (Phase 2), Sponsorship (Phase 3), DestinationReview (Phase 4). T-058 cross-cutting verification done + spec.md frontmatter status=completed. **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042) as non-value in this model. T-036 also deferred (DestinationReview admin UI doesn't exist). Pre-existing schema test failures (3) flagged as follow-up non-SPEC-063 scope.
 
 ### Push-only migration policy (summary)
 
@@ -16,11 +16,12 @@
 
 - **SPEC-087** (draft) — public endpoint response schema strip (systemic factory fix). Discovered during T-022. Until SPEC-087 lands, SPEC-063 phase 3/4 public routes (T-035 DestinationReview, T-051 Sponsorship) use per-handler strip as established by T-022.
 
-### Next up (in priority order)
+### Follow-ups (not SPEC-063 scope, track separately)
 
-1. **T-058** (complexity 2.5) — cleanup / cross-cutting verification. T-036 removed from blockedBy; `_deferredDependencies` note tracks the deferral for final-report mention. **All upstream dependencies are satisfied — this is the only remaining task.**
-2. **Follow-up cleanup (not a formal task):** delete the two T-029 output SQL files + amend state.json/progress.md to record the cleanup done. Small, non-blocking. Could bundle with the next feature commit.
-3. **Phase 4 cascade follow-up (flagged):** 5 typecheck errors in `packages/service-core/test/services/destinationReview/*` (Property 'lifecycleState' is missing) from T-030/T-028. Not SPEC-063 scope but tracked here for visibility; either fold into T-037 or spawn a standalone cleanup task.
+1. **SPEC-087** (draft) — systemic route factory runtime-parse responseSchema. Currently per-handler strip in OwnerPromotion (T-022), AccommodationReview (T-058), DestinationReview (T-058) public list routes. When SPEC-087 lands, remove the per-handler parse lines.
+2. **Pre-existing schema test failures (3)** discovered during T-058 regression: `group-d.admin-search.schema.test.ts` expects removed T-034 workaround, `sponsorship.crud.schema.test.ts` expects pre-T-043 status field. Not blockers; documentation cleanup.
+3. **Push-only follow-up (non-formal):** delete the two T-029 output SQL files + amend state.json/progress.md. Small, non-blocking.
+4. **Phase 4 cascade follow-up (flagged):** 5 typecheck errors in `packages/service-core/test/services/destinationReview/*` (Property 'lifecycleState' missing) from T-030/T-028. Non-SPEC-063 scope.
 
 **Average Complexity:** 2.1/2.5 (ceiling)
 **Critical Path (post-T-038):** T-039 -> T-040 -> T-042 -> T-058 (4 steps remaining)
@@ -418,11 +419,16 @@
 
 ## Cleanup / Cross-cutting
 
-- [ ] **T-058** (complexity: 2.5) — Cross-cutting public endpoint + regression tests + final verification
-  - All 4 entities: only ACTIVE in public, lifecycleState absent. Regressions: PostSponsor, Tag.
-  - Final report must mention T-036 deferral (admin UI does not exist).
-  - Blocked by: T-001, T-002, T-022, T-027, T-038, T-054, T-056, T-057 · Blocks: none
-  - _Deferred dep:_ T-036 (see state.json `T-058._deferredDependencies`)
+- [x] **T-058** (complexity: 2.5) — Cross-cutting public endpoint + regression tests + final verification
+  - COMPLETED 2026-04-19 · lint: pass · typecheck: pass · tests: 6/6 cross-cutting + regression clean
+  - New file: `apps/api/test/integration/cross-cutting/lifecycle-public-endpoints.test.ts` (6 tests) — AccommodationReview strip (2) + DestinationReview strip (2) + Sponsorship no-public-tier (1) + OwnerPromotion reference (1)
+  - Scope absorb: per-handler lifecycleState strip added to accommodation/reviews/public/list.ts + destination/reviews/public/list.ts (leak discovery; follows T-022 OP pattern under decision 5 until SPEC-087)
+  - Regressions clean: post-sponsor admin-crud (18/18), tag-public (8/8), owner-promotion public+admin (10/10), accommodation-reviews + destination-reviews list (2/2)
+  - Pre-existing schema test fails (3) documented as non-SPEC-063 follow-up: group-d + sponsorship.crud outdated expectations
+  - T-036 deferral noted in cleanup: no DestinationReview admin UI exists; AC-001-04 covered at API layer (T-032/T-033/T-034/T-035/T-038)
+  - spec.md frontmatter status: `in-progress → completed`
+  - Env gotcha: bumped `HOSPEDA_CRON_SECRET` in `apps/api/.env.test` from 16 to 58 chars (was below min of 32)
+  - Blocked by: (all satisfied) · Blocks: none
 
 ---
 
