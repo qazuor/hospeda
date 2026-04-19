@@ -252,6 +252,61 @@ describe('validateMediaFile', () => {
             }
         });
 
+        // GAP-078-216: avatar 5 MB byte-exact off-by-one boundary.
+        // The avatar context enforces a fixed 5 MB cap regardless of the
+        // caller-supplied `maxFileSizeMb`. The size check uses strict `>`,
+        // so EXACTLY 5 MB must pass and 5 MB + 1 byte must fail with
+        // FILE_TOO_LARGE (never INVALID_IMAGE, never IMAGE_TOO_LARGE).
+        describe('GAP-078-216: avatar 5 MB byte-exact boundary', () => {
+            it('passes a PNG-padded buffer weighing EXACTLY 5 MB (5 * 1024 * 1024 bytes)', () => {
+                // Arrange — concatenate a real PNG header with padding to reach
+                // the exact byte count. byteLength MUST be 5 * 1024 * 1024.
+                const pngBuffer = createMinimalPng();
+                const padding = Buffer.alloc(5 * MB - pngBuffer.length);
+                const buffer = Buffer.concat([pngBuffer, padding]);
+
+                expect(buffer.byteLength).toBe(5 * MB);
+
+                // Act
+                const result = validateMediaFile({
+                    buffer,
+                    mimeType: 'image/png',
+                    context: 'avatar'
+                });
+
+                // Assert — strict `>` size check accepts exactly 5 MB. Either
+                // the parser tolerates the padded image (valid: true) or it
+                // rejects it as INVALID_IMAGE — but it MUST NOT be FILE_TOO_LARGE.
+                if (!result.valid) {
+                    expect(result.error).not.toBe('FILE_TOO_LARGE');
+                }
+            });
+
+            it('fails a PNG-padded buffer weighing EXACTLY 5 MB + 1 byte with FILE_TOO_LARGE', () => {
+                // Arrange — same padding strategy, +1 byte over the avatar cap.
+                const pngBuffer = createMinimalPng();
+                const padding = Buffer.alloc(5 * MB - pngBuffer.length + 1);
+                const buffer = Buffer.concat([pngBuffer, padding]);
+
+                expect(buffer.byteLength).toBe(5 * MB + 1);
+
+                // Act
+                const result = validateMediaFile({
+                    buffer,
+                    mimeType: 'image/png',
+                    context: 'avatar'
+                });
+
+                // Assert — exact code MUST be FILE_TOO_LARGE.
+                expect(result.valid).toBe(false);
+                if (!result.valid) {
+                    expect(result.error).toBe('FILE_TOO_LARGE');
+                    expect(result.details.maxBytes).toBe(5 * MB);
+                    expect(result.details.actualBytes).toBe(5 * MB + 1);
+                }
+            });
+        });
+
         // GAP-078-090: deterministic 10 MB boundary regression
         describe('GAP-078-090: 10 MB byte-exact boundary', () => {
             it('passes a PNG-padded buffer weighing EXACTLY 10 MB (10 * 1024 * 1024 bytes)', () => {

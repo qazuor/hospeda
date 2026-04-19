@@ -55,8 +55,14 @@ const MOCK_UPLOAD_RESPONSE = {
 };
 
 /**
- * Sets up mockUploadStream to immediately invoke the callback with the given
+ * Sets up mockUploadStream to invoke the callback asynchronously with the given
  * error or result, and returns a fake writable stream.
+ *
+ * SPEC-078-GAPS GAP-078-210: callbacks fire via `setImmediate` (NOT
+ * synchronously inside `end()`) so the mock mirrors the real Cloudinary SDK,
+ * which always defers `upload_stream` callbacks to a later microtask. A
+ * synchronous mock would mask race conditions where the production code
+ * accidentally relies on the callback firing before `end()` returns.
  */
 function setupUploadStream(error: Error | null, result: typeof MOCK_UPLOAD_RESPONSE | null) {
     mockUploadStream.mockImplementation(
@@ -66,7 +72,7 @@ function setupUploadStream(error: Error | null, result: typeof MOCK_UPLOAD_RESPO
         ) => ({
             on: vi.fn(),
             end: vi.fn(() => {
-                callback(error, result);
+                setImmediate(callback, error, result);
             })
         })
     );
@@ -303,13 +309,16 @@ describe('CloudinaryProvider', () => {
         });
 
         it('should reject with error when Cloudinary returns no result', async () => {
+            // GAP-078-210: setImmediate to mirror real SDK async callback timing.
             mockUploadStream.mockImplementation(
                 (
                     _options: Record<string, unknown>,
                     callback: (err: null, result: undefined) => void
                 ) => ({
                     on: vi.fn(),
-                    end: vi.fn(() => callback(null, undefined))
+                    end: vi.fn(() => {
+                        setImmediate(callback, null, undefined);
+                    })
                 })
             );
             const provider = new CloudinaryProvider(VALID_CONFIG);
@@ -410,6 +419,130 @@ describe('CloudinaryProvider', () => {
                     folder: 'hospeda/prod/accommodations/abc-123'
                 })
             ).rejects.toThrow('Cloudinary returned an incomplete response');
+        });
+
+        // GAP-078-085: data-URI input shape.
+        // The provider's `UploadOptions.file` is typed as Buffer, so callers
+        // converting a `data:image/png;base64,...` URI into a Buffer must work
+        // end-to-end. We assert the decoded buffer reaches the SDK unchanged.
+        it('should upload a Buffer derived from a base64 data-URI', async () => {
+            // Arrange — minimal 1x1 transparent PNG encoded as a data-URI.
+            const base64Payload =
+                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+            const dataUri = `data:image/png;base64,${base64Payload}`;
+            const commaIndex = dataUri.indexOf(',');
+            const buffer = Buffer.from(dataUri.slice(commaIndex + 1), 'base64');
+
+            let endedWith: Buffer | undefined;
+            mockUploadStream.mockImplementation(
+                (
+                    _options: Record<string, unknown>,
+                    callback: (err: Error | null, result: unknown) => void
+                ) => ({
+                    on: vi.fn(),
+                    end: vi.fn((chunk: Buffer) => {
+                        endedWith = chunk;
+                        setImmediate(callback, null, MOCK_UPLOAD_RESPONSE);
+                    })
+                })
+            );
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            const result = await provider.upload({
+                file: buffer,
+                folder: 'hospeda/prod/users/avatar-from-data-uri'
+            });
+
+            // Assert
+            expect(result.url).toBe(MOCK_UPLOAD_RESPONSE.secure_url);
+            expect(endedWith).toBeDefined();
+            expect(Buffer.isBuffer(endedWith)).toBe(true);
+            expect(endedWith?.equals(buffer)).toBe(true);
+        });
+
+        // GAP-078-085: remote URL input shape.
+        // The provider only accepts Buffer inputs, so a "remote URL" upload is
+        // modelled by the caller fetching the URL into a Buffer first. The
+        // assertion here is that the same Buffer the caller produced is what
+        // the SDK ultimately writes downstream — no string passthrough exists.
+        it('should upload a Buffer fetched from a remote URL source', async () => {
+            // Arrange — simulate a `fetch(url).then(r => r.arrayBuffer())` result.
+            const remoteBytes = new Uint8Array([
+                0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0xde, 0xad, 0xbe, 0xef
+            ]);
+            const buffer = Buffer.from(remoteBytes);
+
+            let endedWith: Buffer | undefined;
+            mockUploadStream.mockImplementation(
+                (
+                    _options: Record<string, unknown>,
+                    callback: (err: Error | null, result: unknown) => void
+                ) => ({
+                    on: vi.fn(),
+                    end: vi.fn((chunk: Buffer) => {
+                        endedWith = chunk;
+                        setImmediate(callback, null, MOCK_UPLOAD_RESPONSE);
+                    })
+                })
+            );
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            const result = await provider.upload({
+                file: buffer,
+                folder: 'hospeda/prod/accommodations/abc-123/imported'
+            });
+
+            // Assert
+            expect(result.publicId).toBe(MOCK_UPLOAD_RESPONSE.public_id);
+            expect(endedWith).toBeDefined();
+            expect(endedWith?.equals(buffer)).toBe(true);
+        });
+
+        // GAP-078-217: SDK call must include resource_type: 'image'.
+        // Cloudinary's `upload_stream` defaults to `resource_type: 'image'` when
+        // omitted, but we forward it explicitly so the contract is impossible to
+        // accidentally break by relying on SDK defaults.
+        it("should forward resource_type: 'image' to the upload_stream SDK call", async () => {
+            // Arrange
+            setupUploadStream(null, MOCK_UPLOAD_RESPONSE);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            await provider.upload({
+                file: Buffer.from('fake-image'),
+                folder: 'hospeda/prod/accommodations/abc-123'
+            });
+
+            // Assert — first arg of the first call is the options object.
+            const callOptions = mockUploadStream.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(callOptions).toBeDefined();
+            expect(callOptions.resource_type).toBe('image');
+        });
+
+        // GAP-078-219: empty tags array must not be forwarded to the SDK and
+        // must not throw. The provider explicitly skips the `tags` option when
+        // the array is empty, since Cloudinary rejects `tags: ''` in some SDK
+        // versions and there is no semantic difference between `[]` and "no
+        // tags supplied".
+        it('should resolve successfully when tags is an empty array', async () => {
+            // Arrange
+            setupUploadStream(null, MOCK_UPLOAD_RESPONSE);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            const result = await provider.upload({
+                file: Buffer.from('fake-image'),
+                folder: 'hospeda/prod/accommodations/abc-123',
+                tags: []
+            });
+
+            // Assert — call resolves AND tags is not forwarded as an empty array.
+            expect(result.url).toBe(MOCK_UPLOAD_RESPONSE.secure_url);
+            const callOptions = mockUploadStream.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(callOptions).toBeDefined();
+            expect(callOptions.tags).toBeUndefined();
         });
     });
 
