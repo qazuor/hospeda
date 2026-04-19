@@ -72,3 +72,26 @@ export const mediaPreSpec078Full = {
     gallery: [imagePreSpec078],
     videos: [videoPreSpec078]
 } as const;
+
+/**
+ * Empty media container post-SPEC-078 (GAP-078-185). `featuredImage` is now
+ * optional; writers are allowed to emit `{}` or `{ gallery: [] }` shapes.
+ * Enforces the relaxed contract.
+ */
+export const mediaPostSpec078Empty = {} as const;
+
+/**
+ * Post-SPEC-078 image with the new additive fields populated
+ * (GAP-078-196 `publicId`, GAP-078-116 `attribution`). Mirrors what the
+ * Cloudinary seed pipeline emits after SPEC-078.
+ */
+export const imagePostSpec078WithExtensions = {
+    url: 'https://res.cloudinary.com/hospeda/image/upload/v1/hospeda/dev/seed/x.jpg',
+    moderationState: 'APPROVED',
+    publicId: 'hospeda/dev/seed/x',
+    attribution: {
+        photographer: 'Alice Doe',
+        sourceUrl: 'https://unsplash.com/photos/abc123',
+        license: 'Unsplash License'
+    }
+} as const;

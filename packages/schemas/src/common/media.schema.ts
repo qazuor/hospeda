@@ -1,6 +1,32 @@
 import { z } from 'zod';
 import { ModerationStatusEnumSchema } from '../enums/index.js';
 
+/**
+ * Optional attribution metadata for images sourced from third parties
+ * (stock photo services, contributed photography, licensed archives).
+ *
+ * Added by SPEC-078-GAPS (GAP-078-116) as an optional, additive extension
+ * to `ImageSchema`. All fields are optional so historic payloads without
+ * attribution keep parsing.
+ */
+export const ImageAttributionSchema = z.object({
+    photographer: z
+        .string()
+        .min(1, { message: 'zodError.common.media.image.attribution.photographer.min' })
+        .max(200, { message: 'zodError.common.media.image.attribution.photographer.max' })
+        .optional(),
+    sourceUrl: z
+        .string()
+        .url({ message: 'zodError.common.media.image.attribution.sourceUrl.invalid' })
+        .optional(),
+    license: z
+        .string()
+        .min(1, { message: 'zodError.common.media.image.attribution.license.min' })
+        .max(200, { message: 'zodError.common.media.image.attribution.license.max' })
+        .optional()
+});
+export type ImageAttribution = z.infer<typeof ImageAttributionSchema>;
+
 export const ImageSchema = z.object({
     moderationState: ModerationStatusEnumSchema,
     url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
@@ -17,7 +43,20 @@ export const ImageSchema = z.object({
         })
         .min(10, { message: 'zodError.common.media.image.description.min' })
         .max(300, { message: 'zodError.common.media.image.description.max' })
-        .optional()
+        .optional(),
+    /**
+     * Cloudinary `public_id` for the uploaded asset (e.g. `hospeda/dev/x`).
+     * Optional because historic payloads pre-SPEC-078 and external URLs
+     * (Unsplash, Pexels) do not carry a Cloudinary identifier.
+     *
+     * Added by SPEC-078-GAPS (GAP-078-196).
+     */
+    publicId: z.string().min(1, { message: 'zodError.common.media.image.publicId.min' }).optional(),
+    /**
+     * Optional credits/source metadata (photographer, source URL, license).
+     * Added by SPEC-078-GAPS (GAP-078-116).
+     */
+    attribution: ImageAttributionSchema.optional()
 });
 export type Image = z.infer<typeof ImageSchema>;
 
@@ -42,7 +81,13 @@ export const VideoSchema = z.object({
 export type Video = z.infer<typeof VideoSchema>;
 
 export const MediaSchema = z.object({
-    featuredImage: ImageSchema,
+    /**
+     * Featured image. Optional as of SPEC-078-GAPS (GAP-078-185) to align
+     * with `BaseMediaFields.media.featuredImage` below. Historic payloads
+     * that always populated `featuredImage` still parse because a valid
+     * `Image` is also a valid "present optional".
+     */
+    featuredImage: ImageSchema.optional(),
     gallery: z.array(ImageSchema).optional(),
     videos: z.array(VideoSchema).optional()
 });
