@@ -32,6 +32,11 @@ jobs:
       PUBLIC_API_URL: ${{ secrets.HOSPEDA_API_URL }}
       PUBLIC_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL }}
 
+      # Cloudinary (consumed by integration tests in @repo/media and @repo/seed)
+      HOSPEDA_CLOUDINARY_CLOUD_NAME: ${{ secrets.HOSPEDA_CLOUDINARY_CLOUD_NAME }}
+      HOSPEDA_CLOUDINARY_API_KEY: ${{ secrets.HOSPEDA_CLOUDINARY_API_KEY }}
+      HOSPEDA_CLOUDINARY_API_SECRET: ${{ secrets.HOSPEDA_CLOUDINARY_API_SECRET }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -88,6 +93,9 @@ jobs:
 
       - name: Check for unsafe ilike() usage
         run: bash scripts/check-unsafe-ilike.sh
+
+      - name: Check Cloudinary SDK isolation
+        run: bash scripts/check-cloudinary-isolation.sh
 
       - name: Check for disabled tests (.only/.skip)
         run: |
