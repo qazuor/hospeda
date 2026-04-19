@@ -35,8 +35,17 @@ export const publicListDestinationReviewsRoute = createPublicListRoute({
         const service = new DestinationReviewService({ logger: apiLogger });
         const result = await service.list(actor, { page, pageSize });
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
+
+        // AC-005: strip admin-only fields (lifecycleState, audit fields, adminInfo)
+        // via DestinationReviewPublicSchema before the response leaves the public
+        // tier. The route factory only uses responseSchema for OpenAPI docs, not
+        // runtime validation, so the strip must happen here. Tracked systemically
+        // in SPEC-087.
+        const rawItems = result.data.items ?? [];
+        const items = rawItems.map((item) => DestinationReviewPublicSchema.parse(item));
+
         return {
-            items: result.data.items,
+            items,
             pagination: getPaginationResponse(result.data.total, { page, pageSize })
         };
     },

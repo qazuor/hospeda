@@ -93,11 +93,23 @@ export const publicListAccommodationReviewsRoute = createPublicListRoute({
             }
         }
 
+        // AC-005: strip admin-only fields (lifecycleState, audit fields, adminInfo)
+        // via AccommodationReviewPublicSchema before the response leaves the public
+        // tier. The route factory only uses responseSchema for OpenAPI docs, not
+        // runtime validation, so the strip must happen here. The user relation has
+        // a custom safe shape (PublicUserInfo) that does not match UserPublicSchema,
+        // so it is attached AFTER the strip. Tracked systemically in SPEC-087.
+        const ReviewWithoutRelations = AccommodationReviewPublicSchema.omit({
+            user: true,
+            accommodation: true
+        });
+
         const itemsWithUser = reviews.map((review) => {
             const userId = (review as Record<string, unknown>).userId as string | undefined;
             const userInfo = userId ? userMap.get(userId) : undefined;
+            const stripped = ReviewWithoutRelations.parse(review);
             return {
-                ...review,
+                ...stripped,
                 user: userInfo ?? { name: null, image: null }
             };
         });
