@@ -11,6 +11,8 @@ import {
     createBooleanQueryParam,
     createDateQueryParam
 } from '../../api/http/base-http.schema.js';
+import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { SponsorshipStatusEnumSchema } from '../../enums/sponsorship-status.schema.js';
 import { SponsorshipTargetTypeEnumSchema } from '../../enums/sponsorship-target-type.schema.js';
 
@@ -27,7 +29,10 @@ export const SponsorshipSearchHttpSchema = BaseHttpSearchSchema.extend({
     packageId: z.string().uuid().optional(),
 
     // Status filters
-    status: SponsorshipStatusEnumSchema.optional(),
+    sponsorshipStatus: SponsorshipStatusEnumSchema.optional(),
+
+    // Lifecycle state filter (admin-only; service forces ACTIVE on public per AC-005-01)
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
 
     // Date range filters for startsAt with coercion
     startsAtAfter: createDateQueryParam('Filter sponsorships starting after this date'),
@@ -70,7 +75,8 @@ export const SponsorshipCreateHttpSchema = z.object({
     targetId: z.string().uuid(),
     levelId: z.string().uuid(),
     packageId: z.string().uuid().optional(),
-    status: SponsorshipStatusEnumSchema.optional(),
+    sponsorshipStatus: SponsorshipStatusEnumSchema.optional(),
+    lifecycleState: LifecycleStatusEnumSchema.default(LifecycleStatusEnum.ACTIVE),
     startsAt: z.coerce.date(),
     endsAt: z.coerce.date().optional(),
     paymentId: z.string().optional(),
@@ -122,7 +128,8 @@ export const httpToDomainSponsorshipSearch = (
         packageId: httpParams.packageId,
 
         // Status filters
-        status: httpParams.status,
+        sponsorshipStatus: httpParams.sponsorshipStatus,
+        lifecycleState: httpParams.lifecycleState,
 
         // Date range filters
         startsAtAfter: httpParams.startsAtAfter,
@@ -164,7 +171,8 @@ export const httpToDomainSponsorshipCreate = (
         targetId: httpData.targetId,
         levelId: httpData.levelId,
         packageId: httpData.packageId ?? null,
-        status: httpData.status ?? SponsorshipStatusEnum.PENDING,
+        sponsorshipStatus: httpData.sponsorshipStatus ?? SponsorshipStatusEnum.PENDING,
+        lifecycleState: httpData.lifecycleState,
         startsAt: httpData.startsAt,
         endsAt: httpData.endsAt ?? null,
         paymentId: httpData.paymentId ?? null,
@@ -189,7 +197,9 @@ export const httpToDomainSponsorshipUpdate = (
     if (httpData.targetId !== undefined) result.targetId = httpData.targetId;
     if (httpData.levelId !== undefined) result.levelId = httpData.levelId;
     if (httpData.packageId !== undefined) result.packageId = httpData.packageId ?? null;
-    if (httpData.status !== undefined) result.status = httpData.status;
+    if (httpData.sponsorshipStatus !== undefined)
+        result.sponsorshipStatus = httpData.sponsorshipStatus;
+    if (httpData.lifecycleState !== undefined) result.lifecycleState = httpData.lifecycleState;
     if (httpData.startsAt !== undefined) result.startsAt = httpData.startsAt;
     if (httpData.endsAt !== undefined) result.endsAt = httpData.endsAt ?? null;
     if (httpData.paymentId !== undefined) result.paymentId = httpData.paymentId ?? null;
