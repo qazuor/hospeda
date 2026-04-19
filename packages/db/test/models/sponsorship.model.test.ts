@@ -44,7 +44,11 @@ describe('SponsorshipModel', () => {
                         where: () => ({
                             limit: () =>
                                 Promise.resolve([
-                                    { id: 's1', slug: 'test-sponsorship', status: 'active' }
+                                    {
+                                        id: 's1',
+                                        slug: 'test-sponsorship',
+                                        sponsorshipStatus: 'active'
+                                    }
                                 ])
                         })
                     })
@@ -53,7 +57,11 @@ describe('SponsorshipModel', () => {
 
             const result = await model.findBySlug('test-sponsorship');
 
-            expect(result).toEqual({ id: 's1', slug: 'test-sponsorship', status: 'active' });
+            expect(result).toEqual({
+                id: 's1',
+                slug: 'test-sponsorship',
+                sponsorshipStatus: 'active'
+            });
             expect(logQuery).toHaveBeenCalledWith(
                 'sponsorships',
                 'findBySlug',
@@ -161,7 +169,12 @@ describe('SponsorshipModel', () => {
                     from: () => ({
                         where: () =>
                             Promise.resolve([
-                                { id: 's1', targetType: 'post', targetId: 'p1', status: 'active' }
+                                {
+                                    id: 's1',
+                                    targetType: 'post',
+                                    targetId: 'p1',
+                                    sponsorshipStatus: 'active'
+                                }
                             ])
                     })
                 })
@@ -213,27 +226,27 @@ describe('SponsorshipModel', () => {
         });
     });
 
-    describe('findByStatus', () => {
-        it('should find sponsorships by status', async () => {
+    describe('findBySponsorshipStatus', () => {
+        it('should find sponsorships by sponsorshipStatus', async () => {
             const mockFindAll = vi.spyOn(model, 'findAll').mockResolvedValue({
-                items: [{ id: 's1', status: 'active' } as never],
+                items: [{ id: 's1', sponsorshipStatus: 'active' } as never],
                 total: 1
             });
 
-            const result = await model.findByStatus('active');
+            const result = await model.findBySponsorshipStatus('active');
 
             expect(result.items).toHaveLength(1);
             expect(result.total).toBe(1);
             expect(mockFindAll).toHaveBeenCalledWith(
-                { status: 'active', deletedAt: null },
+                { sponsorshipStatus: 'active', deletedAt: null },
                 undefined,
                 undefined,
                 undefined
             );
             expect(logQuery).toHaveBeenCalledWith(
                 'sponsorships',
-                'findByStatus',
-                { status: 'active' },
+                'findBySponsorshipStatus',
+                { sponsorshipStatus: 'active' },
                 expect.any(Object)
             );
 
@@ -247,10 +260,10 @@ describe('SponsorshipModel', () => {
                 total: 0
             });
 
-            await model.findByStatus('active', mockTx);
+            await model.findBySponsorshipStatus('active', mockTx);
 
             expect(mockFindAll).toHaveBeenCalledWith(
-                { status: 'active', deletedAt: null },
+                { sponsorshipStatus: 'active', deletedAt: null },
                 undefined,
                 undefined,
                 mockTx
@@ -262,11 +275,11 @@ describe('SponsorshipModel', () => {
         it('should throw on database error', async () => {
             vi.spyOn(model, 'findAll').mockRejectedValue(new Error('db error'));
 
-            await expect(model.findByStatus('active')).rejects.toThrow('db error');
+            await expect(model.findBySponsorshipStatus('active')).rejects.toThrow('db error');
             expect(logError).toHaveBeenCalledWith(
                 'sponsorships',
-                'findByStatus',
-                { status: 'active' },
+                'findBySponsorshipStatus',
+                { sponsorshipStatus: 'active' },
                 expect.any(Error)
             );
         });
@@ -307,17 +320,17 @@ describe('SponsorshipModel', () => {
             getDb.mockReturnValue({});
             const where = { id: 's2' };
             const relations = { sponsorUser: false };
-            mockFindOne.mockResolvedValue({ id: 's2', status: 'active' });
+            mockFindOne.mockResolvedValue({ id: 's2', sponsorshipStatus: 'active' });
 
             const result = await model.findWithRelations(where, relations);
 
-            expect(result).toEqual({ id: 's2', status: 'active' });
+            expect(result).toEqual({ id: 's2', sponsorshipStatus: 'active' });
             expect(mockFindOne).toHaveBeenCalledWith(where, undefined);
             expect(logQuery).toHaveBeenCalledWith(
                 'sponsorships',
                 'findWithRelations',
                 { where, relations },
-                { id: 's2', status: 'active' }
+                { id: 's2', sponsorshipStatus: 'active' }
             );
         });
 
@@ -426,8 +439,8 @@ describe('SponsorshipModel', () => {
                                 limit: () => ({
                                     offset: () =>
                                         Promise.resolve([
-                                            { id: 's1', status: 'active' },
-                                            { id: 's2', status: 'expired' }
+                                            { id: 's1', sponsorshipStatus: 'active' },
+                                            { id: 's2', sponsorshipStatus: 'expired' }
                                         ])
                                 }),
                                 $dynamic: () => qb
@@ -442,8 +455,8 @@ describe('SponsorshipModel', () => {
 
             expect(result).toEqual({
                 items: [
-                    { id: 's1', status: 'active' },
-                    { id: 's2', status: 'expired' }
+                    { id: 's1', sponsorshipStatus: 'active' },
+                    { id: 's2', sponsorshipStatus: 'expired' }
                 ],
                 total: 2
             });
@@ -457,7 +470,7 @@ describe('SponsorshipModel', () => {
                 select: () => ({
                     from: () => ({
                         where: () => ({
-                            limit: () => [{ id: 's1', status: 'active' }]
+                            limit: () => [{ id: 's1', sponsorshipStatus: 'active' }]
                         })
                     })
                 })
@@ -465,7 +478,7 @@ describe('SponsorshipModel', () => {
 
             const result = await model.findById('s1');
 
-            expect(result).toEqual({ id: 's1', status: 'active' });
+            expect(result).toEqual({ id: 's1', sponsorshipStatus: 'active' });
             expect(logQuery).toHaveBeenCalled();
         });
 
