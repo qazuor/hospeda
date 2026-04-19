@@ -139,19 +139,19 @@ function PostSponsorshipPage() {
                                     ) : null}
 
                                     {/* Status */}
-                                    {sponsorship?.status ? (
+                                    {sponsorship?.sponsorshipStatus ? (
                                         <div>
                                             <span className="mb-1 block font-medium text-sm">
                                                 {t('admin-pages.posts.sponsorship.status')}
                                             </span>
                                             <Badge
                                                 variant={
-                                                    sponsorship.status === 'active'
+                                                    sponsorship.sponsorshipStatus === 'active'
                                                         ? 'default'
                                                         : 'secondary'
                                                 }
                                             >
-                                                {String(sponsorship.status)}
+                                                {String(sponsorship.sponsorshipStatus)}
                                             </Badge>
                                         </div>
                                     ) : null}

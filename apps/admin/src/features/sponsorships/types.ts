@@ -1,4 +1,9 @@
-import type { Sponsorship, SponsorshipLevel, SponsorshipPackage } from '@repo/schemas';
+import type {
+    LifecycleStatusEnum,
+    Sponsorship,
+    SponsorshipLevel,
+    SponsorshipPackage
+} from '@repo/schemas';
 
 /**
  * Extended sponsorship with related data
@@ -24,7 +29,8 @@ export interface SponsorshipWithRelations extends Sponsorship {
  * Sponsorship filters for UI
  */
 export interface SponsorshipFilters {
-    status?: string;
+    sponsorshipStatus?: string;
+    lifecycleState?: LifecycleStatusEnum;
     targetType?: string;
     page?: number;
     limit?: number;

@@ -79,9 +79,9 @@ export function SponsorshipsTab() {
             columnType: ColumnType.STRING
         },
         {
-            id: 'status',
+            id: 'sponsorshipStatus',
             header: t('admin-billing.sponsorships.columns.status'),
-            accessorKey: 'status',
+            accessorKey: 'sponsorshipStatus',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
@@ -128,7 +128,7 @@ export function SponsorshipsTab() {
             enableHiding: false,
             cell: ({ row }) => (
                 <div className="flex gap-2">
-                    {row.status === SponsorshipStatusEnum.PENDING && (
+                    {row.sponsorshipStatus === SponsorshipStatusEnum.PENDING && (
                         <Button
                             variant="outline"
                             size="sm"
@@ -144,8 +144,8 @@ export function SponsorshipsTab() {
                             {t('admin-billing.sponsorships.actions.approve')}
                         </Button>
                     )}
-                    {(row.status === SponsorshipStatusEnum.PENDING ||
-                        row.status === SponsorshipStatusEnum.ACTIVE) && (
+                    {(row.sponsorshipStatus === SponsorshipStatusEnum.PENDING ||
+                        row.sponsorshipStatus === SponsorshipStatusEnum.ACTIVE) && (
                         <Button
                             variant="outline"
                             size="sm"

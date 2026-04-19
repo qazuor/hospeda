@@ -16,7 +16,7 @@ export interface SponsorSponsorship {
     targetName: string;
     levelName: string;
     levelTier: string;
-    status: 'pending' | 'active' | 'expired' | 'cancelled';
+    sponsorshipStatus: 'pending' | 'active' | 'expired' | 'cancelled';
     startsAt: string;
     endsAt: string;
     impressions: number;

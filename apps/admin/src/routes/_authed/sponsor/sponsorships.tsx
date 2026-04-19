@@ -103,9 +103,9 @@ function SponsorSponsorshipsPage() {
             ]
         },
         {
-            id: 'status',
+            id: 'sponsorshipStatus',
             header: t('admin-pages.sponsor.sponsorships.colStatus'),
-            accessorKey: 'status',
+            accessorKey: 'sponsorshipStatus',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
@@ -324,9 +324,13 @@ function SponsorshipDetailDialog({
                                 {t('admin-pages.sponsor.sponsorships.dialog.status')}
                             </span>
                             <Badge
-                                variant={sponsorship.status === 'active' ? 'success' : 'secondary'}
+                                variant={
+                                    sponsorship.sponsorshipStatus === 'active'
+                                        ? 'success'
+                                        : 'secondary'
+                                }
                             >
-                                {sponsorship.status}
+                                {sponsorship.sponsorshipStatus}
                             </Badge>
                         </div>
                         <div className="flex justify-between">
