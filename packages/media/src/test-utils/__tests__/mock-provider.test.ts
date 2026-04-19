@@ -101,6 +101,14 @@ describe('InMemoryImageProvider', () => {
         expect(provider.has('hospeda/prod/b/z')).toBe(true);
     });
 
+    // SPEC-078-GAPS GAP-078-232: healthCheck always succeeds for the in-memory
+    // provider since there is no upstream backend to authenticate against.
+    it('healthCheck() always returns {ok: true}', async () => {
+        const provider = new InMemoryImageProvider();
+
+        await expect(provider.healthCheck()).resolves.toEqual({ ok: true });
+    });
+
     it('clear() empties the store', async () => {
         const provider = new InMemoryImageProvider();
         await provider.upload({

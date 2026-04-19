@@ -20,6 +20,7 @@ export type {
     DeleteByPrefixOptions,
     DeleteOptions,
     DeleteResult,
+    HealthCheckResult,
     ImageProvider,
     UploadOptions,
     UploadResult

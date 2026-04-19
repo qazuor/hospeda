@@ -24,3 +24,4 @@ export { searchIndexRefreshJob } from './search-index-refresh.job.js';
 export { notificationLogPurgeJob } from './notification-log-purge.job.js';
 export { pageRevalidationJob } from './page-revalidation.job.js';
 export { archiveExpiredPromotionsJob } from './archive-expired-promotions.job.js';
+export { mediaOrphanCleanupJob } from './media-orphan-cleanup.job.js';

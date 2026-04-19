@@ -18,6 +18,7 @@ import type {
     DeleteByPrefixOptions,
     DeleteOptions,
     DeleteResult,
+    HealthCheckResult,
     ImageProvider,
     UploadOptions,
     UploadResult
@@ -168,6 +169,16 @@ export class InMemoryImageProvider implements ImageProvider {
                 this.store.delete(key);
             }
         }
+    }
+
+    /**
+     * Always returns `{ok: true}`. The in-memory provider has no upstream
+     * backend to authenticate against, so the health check is a no-op.
+     *
+     * SPEC-078-GAPS GAP-078-232.
+     */
+    async healthCheck(): Promise<HealthCheckResult> {
+        return { ok: true };
     }
 
     /**

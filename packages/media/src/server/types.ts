@@ -64,6 +64,26 @@ export interface DeleteByPrefixOptions {
 }
 
 /**
+ * Result of a {@link ImageProvider.healthCheck} call.
+ *
+ * `ok` is the discriminator: `true` means the provider's credentials are
+ * valid and the upstream storage API responded successfully; `false` means
+ * the check failed for any reason (bad creds, network error, 5xx upstream).
+ *
+ * `message` is an optional human-readable explanation surfaced to the
+ * `/health/media` endpoint when `ok === false`. It MUST NOT include any
+ * secret material — the implementation maps SDK errors to safe messages.
+ *
+ * SPEC-078-GAPS GAP-078-232.
+ */
+export interface HealthCheckResult {
+    /** `true` when the provider successfully authenticated with its backend. */
+    readonly ok: boolean;
+    /** Optional human-readable description of the failure. Omitted on success. */
+    readonly message?: string;
+}
+
+/**
  * Provider-agnostic interface for image storage operations.
  *
  * No app or package outside `packages/media` should interact with the
@@ -73,4 +93,12 @@ export interface ImageProvider {
     upload(options: UploadOptions): Promise<UploadResult>;
     delete(options: DeleteOptions): Promise<DeleteResult>;
     deleteByPrefix(options: DeleteByPrefixOptions): Promise<void>;
+    /**
+     * Verifies the provider can authenticate with its upstream backend.
+     *
+     * Implementations MUST use a cheap, side-effect-free operation
+     * (e.g. Cloudinary's `api.ping()`) and MUST NOT upload, list, or
+     * mutate any asset. Errors are caught and surfaced as `{ok: false}`.
+     */
+    healthCheck(): Promise<HealthCheckResult>;
 }

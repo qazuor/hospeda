@@ -63,6 +63,7 @@ import { adminExchangeRateRoutes } from './exchange-rates/admin/index.js';
 import { publicExchangeRateRoutes } from './exchange-rates/public/index.js';
 import { publicFeedbackRoutes } from './feedback';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
+import { mediaHealthRoutes } from './health/media';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
@@ -114,6 +115,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
     app.route('/health', dbHealthRoutes);
     app.route('/health', readyRoutes);
     app.route('/health', liveRoutes);
+    // Media provider auth check — public, unauthenticated, returns 503 when
+    // Cloudinary credentials are missing or invalid (SPEC-078-GAPS GAP-078-232).
+    app.route('/api/v1/public/health', mediaHealthRoutes);
     app.route('/api/v1/admin/metrics', metricsRoutes);
 
     // ─── Auth routes ──────────────────────────────────────────────────────────

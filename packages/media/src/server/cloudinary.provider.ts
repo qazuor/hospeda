@@ -4,6 +4,7 @@ import type {
     DeleteByPrefixOptions,
     DeleteOptions,
     DeleteResult,
+    HealthCheckResult,
     ImageProvider,
     UploadOptions,
     UploadResult
@@ -262,6 +263,40 @@ export class CloudinaryProvider implements ImageProvider {
                 throw err;
             }
         }, RETRY_OPTIONS);
+    }
+
+    /**
+     * Verifies Cloudinary credentials by calling the cheap `api.ping()` admin
+     * endpoint. Does not upload, list, or mutate any asset.
+     *
+     * SPEC-078-GAPS GAP-078-232 — backs the public `/health/media` route.
+     *
+     * Returns `{ok: true}` when Cloudinary responds with `status === 'ok'`.
+     * Any thrown error or non-ok response resolves to `{ok: false, message}`
+     * with a sanitized message (the SDK's `error.message` plus, when present,
+     * `http_code`). Secrets are NEVER included in the message.
+     *
+     * @returns Health check result indicating whether auth succeeded
+     */
+    async healthCheck(): Promise<HealthCheckResult> {
+        try {
+            const response = (await cloudinary.api.ping()) as { status?: string } | undefined;
+            if (response?.status === 'ok') {
+                return { ok: true };
+            }
+            return {
+                ok: false,
+                message: `Unexpected Cloudinary ping response: ${JSON.stringify(response ?? null)}`
+            };
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            const httpCode =
+                typeof err === 'object' && err !== null
+                    ? (err as { http_code?: unknown }).http_code
+                    : undefined;
+            const suffix = typeof httpCode === 'number' ? ` (http_code=${httpCode})` : '';
+            return { ok: false, message: `${message}${suffix}` };
+        }
     }
 
     /**

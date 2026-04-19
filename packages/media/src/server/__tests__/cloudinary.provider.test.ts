@@ -11,12 +11,15 @@ import {
 // the file by Vitest, before any variable declarations run.
 // ---------------------------------------------------------------------------
 
-const { mockConfig, mockUploadStream, mockDestroy, mockDeleteByPrefix } = vi.hoisted(() => ({
-    mockConfig: vi.fn(),
-    mockUploadStream: vi.fn(),
-    mockDestroy: vi.fn(),
-    mockDeleteByPrefix: vi.fn()
-}));
+const { mockConfig, mockUploadStream, mockDestroy, mockDeleteByPrefix, mockPing } = vi.hoisted(
+    () => ({
+        mockConfig: vi.fn(),
+        mockUploadStream: vi.fn(),
+        mockDestroy: vi.fn(),
+        mockDeleteByPrefix: vi.fn(),
+        mockPing: vi.fn()
+    })
+);
 
 vi.mock('cloudinary', () => ({
     v2: {
@@ -26,7 +29,8 @@ vi.mock('cloudinary', () => ({
             destroy: mockDestroy
         },
         api: {
-            delete_resources_by_prefix: mockDeleteByPrefix
+            delete_resources_by_prefix: mockDeleteByPrefix,
+            ping: mockPing
         }
     }
 }));
@@ -530,6 +534,79 @@ describe('CloudinaryProvider', () => {
                 'hospeda/prod/accommodations/abc-123/',
                 { invalidate: true }
             );
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // healthCheck() — SPEC-078-GAPS GAP-078-232
+    // -------------------------------------------------------------------------
+
+    describe('healthCheck()', () => {
+        it('should return {ok: true} when cloudinary.api.ping() resolves with status: "ok"', async () => {
+            // Arrange
+            mockPing.mockResolvedValue({ status: 'ok' });
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            const result = await provider.healthCheck();
+
+            // Assert
+            expect(result).toEqual({ ok: true });
+            expect(mockPing).toHaveBeenCalledOnce();
+        });
+
+        it('should return {ok: false} with the SDK error message when ping rejects', async () => {
+            // Arrange
+            const sdkError = Object.assign(new Error('Invalid API key'), { http_code: 401 });
+            mockPing.mockRejectedValue(sdkError);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            const result = await provider.healthCheck();
+
+            // Assert
+            expect(result.ok).toBe(false);
+            expect(result.message).toContain('Invalid API key');
+            expect(result.message).toContain('http_code=401');
+        });
+
+        it('should not upload, list, or mutate any asset', async () => {
+            // Arrange
+            mockPing.mockResolvedValue({ status: 'ok' });
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            await provider.healthCheck();
+
+            // Assert
+            expect(mockUploadStream).not.toHaveBeenCalled();
+            expect(mockDestroy).not.toHaveBeenCalled();
+            expect(mockDeleteByPrefix).not.toHaveBeenCalled();
+        });
+
+        it('should return {ok: false} when ping returns an unexpected payload', async () => {
+            // Arrange
+            mockPing.mockResolvedValue({ status: 'degraded' });
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            const result = await provider.healthCheck();
+
+            // Assert
+            expect(result.ok).toBe(false);
+            expect(result.message).toContain('degraded');
+        });
+
+        it('should sanitize non-Error rejections', async () => {
+            // Arrange
+            mockPing.mockRejectedValue('something exploded');
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            const result = await provider.healthCheck();
+
+            // Assert
+            expect(result).toEqual({ ok: false, message: 'something exploded' });
         });
     });
 });

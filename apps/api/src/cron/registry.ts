@@ -9,6 +9,7 @@ import {
     archiveExpiredPromotionsJob,
     dunningJob,
     exchangeRateFetchJob,
+    mediaOrphanCleanupJob,
     notificationLogPurgeJob,
     notificationScheduleJob,
     pageRevalidationJob,
@@ -32,7 +33,8 @@ export const cronJobs: CronJobDefinition[] = [
     searchIndexRefreshJob,
     notificationLogPurgeJob,
     pageRevalidationJob,
-    archiveExpiredPromotionsJob
+    archiveExpiredPromotionsJob,
+    mediaOrphanCleanupJob
 ];
 
 /**
