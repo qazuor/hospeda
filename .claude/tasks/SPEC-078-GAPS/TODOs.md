@@ -1,11 +1,11 @@
 # SPEC-078-GAPS: Cloudinary Image Management — Gaps Remediation
 
-## Progress: 21/68 tasks (31%)
+## Progress: 24/68 tasks (35%)
 
 **Average Complexity**: 1.7 / 2.5 (max)
 **Completed from prior work**: 3 tasks (Phase 0 + Phase 1A) — see already-done.md
 **Completed 2026-04-18 (previous session)**: 1 task (T-004 — Phase 1B migrations reconstruction)
-**Completed 2026-04-18/19 (current session)**: 17 tasks — 4 warmups (T-011, T-028, T-037, T-053) + 5 Phase 1C security (T-005..T-009) + 5 schema/DB Phase 2 (T-010, T-012, T-013, T-014, T-016) + T-017 (bundle architecture critical path) + T-022 (seed refactor) + T-029 (API contract critical path)
+**Completed 2026-04-18/19 (current session)**: 20 tasks — 4 warmups (T-011, T-028, T-037, T-053) + 5 Phase 1C security (T-005..T-009) + 5 schema/DB Phase 2 (T-010, T-012, T-013, T-014, T-016) + T-017 (bundle architecture critical path) + T-022 (seed refactor) + T-029 (API contract critical path) + T-018/T-019 (Phase 3B test utils merged) + T-031 (request schema discriminated union)
 **Splits applied**: 20 parent tasks split into 45 child tasks (68 total vs 47 original)
 
 **Known follow-ups**:
@@ -155,15 +155,17 @@
 
 ### Phase 3B — Test utilities
 
-- [ ] **T-018** (complexity: 2.0) — Add InMemoryImageProvider and extractAllMediaPublicIds to @repo/media
+- [x] **T-018** (complexity: 2.0) — Add InMemoryImageProvider and extractAllMediaPublicIds to @repo/media
   - Gaps: GAP-078-102, GAP-078-082, GAP-078-229
   - Blocked by: T-017
   - Blocks: T-036 (i18n), T-037 (spec amendment)
+  - Outcome (commit `c3c64823`, merged with T-019): `InMemoryImageProvider` under `@repo/media/test-utils` implements full ImageProvider contract (upload/delete/deleteByPrefix) with in-memory Map; returns `res.cloudinary.com` URLs so `extractPublicId` round-trips. `extractAllMediaPublicIds` under `@repo/media/server` walks featuredImage → gallery → videos with de-dup. `getMediaProvider()` falls back to InMemory in dev NODE env when creds missing, warn-logged. 15 new tests, media suite 133/133 green, API media suite 28/28 green.
 
-- [ ] **T-019** (complexity: 1.0) — Add resetMediaProviderForTesting export and test-utils subpath
+- [x] **T-019** (complexity: 1.0) — Add resetMediaProviderForTesting export and test-utils subpath
   - Gaps: GAP-078-059, GAP-078-168
   - Blocked by: T-017, T-010
   - Blocks: T-036, T-037
+  - Outcome (commit `c3c64823`, merged with T-018): `resetMediaProviderForTesting()` exported from API media service, throws on non-test NODE env (cleaner than conditional undefined). Works correctly after `vi.resetModules()` via `constructor.name` assertion pattern. 4 of 15 new tests cover this path.
 
 ---
 
@@ -243,10 +245,11 @@
 
 ### Phase 5B — Request schemas
 
-- [ ] **T-031** (complexity: 1.5) — Request schema refinements: discriminatedUnion role and ENTITY_FOLDER_MAP
+- [x] **T-031** (complexity: 1.5) — Request schema refinements: discriminatedUnion role and ENTITY_FOLDER_MAP
   - Gaps: GAP-078-153, GAP-078-055
   - Blocked by: T-029
   - Blocks: T-040
+  - Outcome (commit `8328477f`): `packages/schemas/src/common/media-upload.schema.ts` rewritten with `z.discriminatedUnion('role', [featured, gallery, avatar, sponsorLogo, organizerLogo])`. Each variant double-narrows by pinning entityType (featured/gallery → 4 CRUD entities; avatar → user + requires userId; sponsorLogo → postSponsor; organizerLogo → eventOrganizer). `galleryId` regex matches `generateGalleryId()` output (nanoid 10). `ENTITY_FOLDER_MAP` is `Readonly<Record<MediaEntityType, (ctx) => string>>` function-only for uniformity; resolvers throw on missing ctx. apps/api admin upload route wires the map + 400 early-return for avatar/sponsor/organizer variants (those flow through dedicated routes, out of scope here). 81 tests (55 → 81).
 
 - [ ] **T-032** (complexity: 1.0) — Request schema refinements: empty file reject and env-configurable max size
   - Gaps: GAP-078-148, GAP-078-106
@@ -586,3 +589,4 @@ Critical path: T-001 -> T-003 -> T-017 -> T-029 -> T-031 -> T-040 -> T-067 -> T-
 - **2026-04-19 (Phase 2 schema+DB sweep)**: 5 schema/DB tasks landed in 5 atomic commits on main (`21b62d75` T-010, `a247c95d` T-013, `b436ac58` T-016, `6350c5c0` T-014, `9f01d7e7` T-012). All 5 sub-agents in parallel with pre-assigned manual SQL numbers (0011 T-012, 0012 T-013, 0013 T-014, 0014 T-016) to avoid lex-order collision. T-012 excluded destination.service.ts workaround cleanup (pre-existing uncommitted work in that file). All acceptance criteria met; 10 new updateAvatar tests; 18 new media.schema tests. Progress now 18/68. Next available: T-015 (BaseModel JSONB merge FOR UPDATE — 2.5 complexity, requires user consult), T-017 (bundle refactor — critical path, architectural, requires user consult), T-019..T-021 (docs/tests, blocked by T-017), T-022 (seed, blocked by T-010 — NOW UNBLOCKED), T-028 done, T-029 (API contract, blocked by T-010+T-017).
 - **2026-04-19 (T-017 bundle critical path)**: T-017 landed atomic on main (`697b8404`). Big-bang split per spec acceptance (import `CloudinaryProvider` from `@repo/media` MUST fail TypeScript). 3 subpath entries wired via tsup (external [cloudinary, image-size]), package.json exports, typescript-config paths + explicit apps/admin tsconfig paths, Biome `noRestrictedImports` in admin+web, Vite `optimizeDeps.exclude` + Astro `optimizeDeps`/`ssr.external`. 14 server-side consumers migrated (service-core/accommodation/destination/event/post/user, apps/api media routes+service, seed cli/index/utils), 7 browser-safe consumers unchanged, 1 mixed (apps/api/routes/media/admin/upload.ts) split imports. Agent excluded pre-existing destination.service.ts workaround edits via targeted hunk staging. `test-utils/index.ts` is empty placeholder until T-018. Deviation: kept single tsconfig with `types: [node]` — runtime isolation via tsup `external` + Biome is sufficient; composite-tsconfig refactor deferred. Progress now 19/68. **Unlocked**: T-018, T-019, T-020, T-021 (docs/test utils, blocked only on T-017 — now available), T-022 (seed, dual-blocked on T-010+T-017 — both done — now available), T-029 (API contract, dual-blocked on T-010+T-017 — both done — now available), T-041/T-042/T-043 (web media migration — now available), T-048/T-049 (web media migration — now available).
 - **2026-04-19 (T-022 + T-029 parallel sweep)**: Two independent sub-agents in parallel, zero file collision (T-029 on `apps/api` + `@repo/schemas`, T-022 on `packages/seed` + `packages/config`). T-022 landed first (`6f5b0589`) then T-029 (`c28cb4c6`). SPEC-063 commits (`40ae06cc`, `90216e93`) landed from unrelated parallel autonomous work during this window — not from my agents (scope mismatch, proper SPEC-063 conventional commit messages). T-029 agent caught and fixed a latent bug in `createCRUDRoute` consuming body stream on POST without requestBody schema; scope-creep accepted (was blocking the happy-path test). T-022 agent couldn't run `pnpm env:check` (sandbox lacks `VERCEL_TOKEN`) — registry change is authoritative source, deferred verification. Follow-ups captured: (a) pre-existing typecheck errors in `accommodations.seed.ts`/`destinations.seed.ts` (service constructor mismatches), (b) pre-existing `env-registry-schema-cross-validation` failures on Cloudinary vs `ApiEnvSchema` (still not resolved), (c) T-030 still owns 9 remaining `ctx.json` calls in `apps/api/src/routes/media/admin/delete.ts`. Progress now 21/68. **Unlocked**: T-023 (seed avatars/moderation/spec amendment, blocked on T-022), T-030 (DELETE wasPresent + tags/overwrite), T-031 (request schema discriminated union — blocks T-040), T-032 (empty file reject), T-033 (rate limit + content-length + gallery cap), T-034 (OpenAPI multipart + lazy services), T-035 (p-retry resilience), T-036 (i18n error keys), T-051/T-052 (Vercel config + observability), T-054/T-055 (CI/CD), T-056/T-057 (observability).
+- **2026-04-19 (T-018/T-019 + T-031 parallel sweep)**: Two independent sub-agents in parallel, zero file collision (T-018/T-019 merged on `packages/media` + `apps/api/src/services/media.ts`, T-031 on `packages/schemas` + `apps/api/src/routes/media/admin/upload.ts` schema wiring). T-018/T-019 merged into single atomic commit (`c3c64823`) because both touch `apps/api/src/services/media.ts` — cleaner than two separate commits fighting over the same file. T-031 landed separate (`8328477f`). SPEC-063 auto-loop landed `a68fc868` in parallel (test(sponsorship) T-055) — not from my agents. Progress now 24/68. **Unlocked**: T-036 (i18n error keys, now dual-unblocked by T-018+T-019), T-040 (admin use-media-upload hook type safety, unblocked by T-031), plus full Phase 9 unit tests (T-059..T-063) that were all blocked on T-018+T-019.
