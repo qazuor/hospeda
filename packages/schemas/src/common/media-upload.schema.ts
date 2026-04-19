@@ -5,36 +5,266 @@ import { z } from 'zod';
  *
  * Defines the set of content domains for which the upload API accepts files.
  * Used to build the storage path and to validate the target entity before upload.
+ *
+ * The base set reflects the four CRUD-managed content entities. The extended
+ * variants (`user`, `postSponsor`, `eventOrganizer`, `avatars`) are declared
+ * here so that `AdminUploadRequestSchema` can narrow per-role without the
+ * schema having to duplicate the enum per variant.
+ *
+ * GAP-078-055 — used as the key for `ENTITY_FOLDER_MAP`.
  */
-export const MediaEntityTypeSchema = z.enum(['accommodation', 'destination', 'event', 'post']);
+export const MediaEntityTypeSchema = z.enum([
+    'accommodation',
+    'destination',
+    'event',
+    'post',
+    'user',
+    'postSponsor',
+    'eventOrganizer',
+    'avatars'
+]);
 
 /**
  * Image role within an entity's media structure.
  *
  * - `featured` — the primary image shown in listings and headers.
  * - `gallery` — additional images in the entity's photo gallery.
+ * - `avatar` — a user avatar (profile picture).
+ * - `sponsorLogo` — a logo for a post sponsor entity.
+ * - `organizerLogo` — a logo for an event organizer entity.
  */
-export const MediaRoleSchema = z.enum(['featured', 'gallery']);
+export const MediaRoleSchema = z.enum([
+    'featured',
+    'gallery',
+    'avatar',
+    'sponsorLogo',
+    'organizerLogo'
+]);
+
+/**
+ * UUID validator reused across role variants for `entityId`.
+ *
+ * Kept as a module-level constant so the error message stays consistent for
+ * every variant of the discriminated union.
+ */
+const EntityIdSchema = z.string().uuid({ message: 'entityId must be a valid UUID' });
+
+/**
+ * UUID validator reused for `userId` on the avatar variant.
+ */
+const UserIdSchema = z.string().uuid({ message: 'userId must be a valid UUID' });
+
+/**
+ * Entity-type subset for image roles that belong to a content entity with a
+ * gallery (accommodation, destination, event, post).
+ *
+ * Narrowing the discriminant at this level prevents `role: 'gallery'` from
+ * being paired with an entity type that has no gallery concept (user, avatars).
+ */
+const GalleryEntityTypeSchema = z.enum(['accommodation', 'destination', 'event', 'post']);
+
+/**
+ * Entity-type subset for featured-image uploads. Same shape as gallery —
+ * featured images only apply to the four CRUD content entities.
+ */
+const FeaturedEntityTypeSchema = GalleryEntityTypeSchema;
+
+/**
+ * Featured-image variant of the upload request.
+ *
+ * Each CRUD content entity has exactly one featured image (the upload
+ * overwrites the existing asset at `.../featured`). Not applicable to users
+ * or sponsor/organizer logos.
+ */
+const FeaturedImageUploadSchema = z.object({
+    role: z.literal('featured'),
+    entityType: FeaturedEntityTypeSchema,
+    entityId: EntityIdSchema
+});
+
+/**
+ * Gallery variant of the upload request.
+ *
+ * Each CRUD content entity may have many gallery images. A `galleryId` MAY be
+ * provided by the client to address a specific slot; when omitted, the server
+ * generates one (via `generateGalleryId()`). The field is constrained to a
+ * nanoid-shaped token (10 URL-safe characters) so that it cannot smuggle a
+ * folder traversal segment into the Cloudinary path.
+ */
+const GalleryUploadSchema = z.object({
+    role: z.literal('gallery'),
+    entityType: GalleryEntityTypeSchema,
+    entityId: EntityIdSchema,
+    galleryId: z
+        .string()
+        .regex(/^[A-Za-z0-9_-]{10}$/u, {
+            message: 'galleryId must be a 10-char nanoid-shaped token'
+        })
+        .optional()
+});
+
+/**
+ * Avatar variant of the upload request.
+ *
+ * Avatars are addressed by the user's own UUID and stored under a dedicated
+ * folder (see `ENTITY_FOLDER_MAP`). The `userId` field is the discriminator
+ * between "avatar of myself" and "avatar uploaded by an admin on behalf of
+ * another user" — both valid, both require a valid UUID. The `entityType`
+ * literal is pinned to `'user'` so the variant cannot accidentally apply to
+ * any other entity.
+ */
+const AvatarUploadSchema = z.object({
+    role: z.literal('avatar'),
+    entityType: z.literal('user'),
+    userId: UserIdSchema
+});
+
+/**
+ * Sponsor-logo variant of the upload request.
+ *
+ * A single logo per post-sponsor entity (overwrites). Identified by the
+ * sponsor's UUID.
+ */
+const SponsorLogoUploadSchema = z.object({
+    role: z.literal('sponsorLogo'),
+    entityType: z.literal('postSponsor'),
+    entityId: EntityIdSchema
+});
+
+/**
+ * Organizer-logo variant of the upload request.
+ *
+ * A single logo per event-organizer entity (overwrites). Identified by the
+ * organizer's UUID.
+ */
+const OrganizerLogoUploadSchema = z.object({
+    role: z.literal('organizerLogo'),
+    entityType: z.literal('eventOrganizer'),
+    entityId: EntityIdSchema
+});
 
 /**
  * Request validation for `POST /api/v1/admin/media/upload` (multipart form fields).
  *
- * All three fields must be present in the form alongside the binary file part.
+ * GAP-078-153: the schema is a Zod discriminated union on `role` so the
+ * TypeScript type narrows per-variant without requiring runtime guards in the
+ * route handler. Invalid combinations (e.g. `role: 'avatar'` without
+ * `userId`, or `role: 'gallery'` with `entityType: 'user'`) fail to parse.
  *
- * @example
+ * All variants carry the binary file part in the multipart body; this schema
+ * only validates the form fields.
+ *
+ * @example Featured image
  * ```ts
- * const parsed = AdminUploadRequestSchema.parse({
+ * AdminUploadRequestSchema.parse({
+ *   role: 'featured',
  *   entityType: 'accommodation',
  *   entityId: '550e8400-e29b-41d4-a716-446655440000',
- *   role: 'featured',
+ * });
+ * ```
+ *
+ * @example Avatar
+ * ```ts
+ * AdminUploadRequestSchema.parse({
+ *   role: 'avatar',
+ *   entityType: 'user',
+ *   userId: '550e8400-e29b-41d4-a716-446655440000',
  * });
  * ```
  */
-export const AdminUploadRequestSchema = z.object({
-    entityType: MediaEntityTypeSchema,
-    entityId: z.string().uuid({ message: 'entityId must be a valid UUID' }),
-    role: MediaRoleSchema
-});
+export const AdminUploadRequestSchema = z.discriminatedUnion('role', [
+    FeaturedImageUploadSchema,
+    GalleryUploadSchema,
+    AvatarUploadSchema,
+    SponsorLogoUploadSchema,
+    OrganizerLogoUploadSchema
+]);
+
+/**
+ * Context passed to an `ENTITY_FOLDER_MAP` resolver function.
+ *
+ * `environment` is the current media environment (`dev`, `test`, `prod`, ...).
+ * `entityId` is the UUID of the target entity (for per-entity-id folders).
+ * `userId` is only set for the avatar variant (folder is user-addressed).
+ *
+ * The caller supplies whichever fields the variant requires — resolvers
+ * consume only what they need and ignore the rest.
+ */
+export type MediaFolderContext = {
+    readonly environment: string;
+    readonly entityId?: string;
+    readonly userId?: string;
+};
+
+type MediaFolderResolver = (ctx: MediaFolderContext) => string;
+
+/**
+ * Maps each `MediaEntityType` to the Cloudinary folder path used for uploads.
+ *
+ * GAP-078-055 — single source of truth for the Cloudinary folder layout.
+ * Previously the admin upload route computed the folder inline with
+ * ``hospeda/${environment}/${entityType}s/${entityId}`` which made it easy to
+ * silently drift (e.g. an entity type named `news` would produce `newss/`
+ * — see the spec gap). The resolvers below pin the exact folder segment per
+ * entity type so the layout is auditable and reviewable.
+ *
+ * Resolver contract:
+ * - Returned path MUST NOT have a trailing slash; the provider appends the
+ *   `publicId` with its own separator.
+ * - Returned path MUST start with `hospeda/{environment}/` so the delete
+ *   endpoint's environment-scope refinement accepts it.
+ * - Resolvers MUST throw if a required context field is missing, rather
+ *   than producing a partial path like `.../undefined`.
+ */
+export const ENTITY_FOLDER_MAP = {
+    accommodation: ({ environment, entityId }) => {
+        if (!entityId) throw new Error('ENTITY_FOLDER_MAP.accommodation requires entityId');
+        return `hospeda/${environment}/accommodations/${entityId}`;
+    },
+    destination: ({ environment, entityId }) => {
+        if (!entityId) throw new Error('ENTITY_FOLDER_MAP.destination requires entityId');
+        return `hospeda/${environment}/destinations/${entityId}`;
+    },
+    event: ({ environment, entityId }) => {
+        if (!entityId) throw new Error('ENTITY_FOLDER_MAP.event requires entityId');
+        return `hospeda/${environment}/events/${entityId}`;
+    },
+    post: ({ environment, entityId }) => {
+        if (!entityId) throw new Error('ENTITY_FOLDER_MAP.post requires entityId');
+        return `hospeda/${environment}/posts/${entityId}`;
+    },
+    user: ({ environment, userId, entityId }) => {
+        const id = userId ?? entityId;
+        if (!id) throw new Error('ENTITY_FOLDER_MAP.user requires userId');
+        return `hospeda/${environment}/avatars/${id}`;
+    },
+    postSponsor: ({ environment, entityId }) => {
+        if (!entityId) throw new Error('ENTITY_FOLDER_MAP.postSponsor requires entityId');
+        return `hospeda/${environment}/postSponsors/${entityId}`;
+    },
+    eventOrganizer: ({ environment, entityId }) => {
+        if (!entityId) throw new Error('ENTITY_FOLDER_MAP.eventOrganizer requires entityId');
+        return `hospeda/${environment}/eventOrganizers/${entityId}`;
+    },
+    avatars: ({ environment }) => `hospeda/${environment}/seed/avatars`
+} as const satisfies Readonly<Record<z.infer<typeof MediaEntityTypeSchema>, MediaFolderResolver>>;
+
+/**
+ * Resolve the Cloudinary folder for a given entity type, using the
+ * `ENTITY_FOLDER_MAP`. Convenience wrapper that keeps call sites free of
+ * the resolver-indirection noise.
+ */
+export const resolveMediaFolder = ({
+    entityType,
+    environment,
+    entityId,
+    userId
+}: {
+    readonly entityType: z.infer<typeof MediaEntityTypeSchema>;
+    readonly environment: string;
+    readonly entityId?: string;
+    readonly userId?: string;
+}): string => ENTITY_FOLDER_MAP[entityType]({ environment, entityId, userId });
 
 /**
  * Safely decode a URL-encoded string. Returns the input unchanged when
@@ -196,8 +426,23 @@ export type MediaEntityType = z.infer<typeof MediaEntityTypeSchema>;
 /** Role of an image within an entity's media structure. */
 export type MediaRole = z.infer<typeof MediaRoleSchema>;
 
-/** Validated form fields for a media upload request. */
+/** Validated form fields for a media upload request (discriminated union). */
 export type AdminUploadRequest = z.infer<typeof AdminUploadRequestSchema>;
+
+/** Featured-image variant of the upload request. */
+export type FeaturedImageUploadRequest = z.infer<typeof FeaturedImageUploadSchema>;
+
+/** Gallery variant of the upload request. */
+export type GalleryUploadRequest = z.infer<typeof GalleryUploadSchema>;
+
+/** Avatar variant of the upload request. */
+export type AvatarUploadRequest = z.infer<typeof AvatarUploadSchema>;
+
+/** Sponsor-logo variant of the upload request. */
+export type SponsorLogoUploadRequest = z.infer<typeof SponsorLogoUploadSchema>;
+
+/** Organizer-logo variant of the upload request. */
+export type OrganizerLogoUploadRequest = z.infer<typeof OrganizerLogoUploadSchema>;
 
 /** Validated query parameters for a media delete request. */
 export type DeleteMediaQuery = z.infer<typeof DeleteMediaQuerySchema>;

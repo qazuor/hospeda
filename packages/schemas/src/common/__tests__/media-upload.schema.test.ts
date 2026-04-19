@@ -1,12 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
     AdminUploadRequestSchema,
     DeleteMediaQuerySchema,
     DeleteMediaResponseSchema,
+    ENTITY_FOLDER_MAP,
     MediaEntityTypeSchema,
     MediaRoleSchema,
     UploadResponseDataSchema,
-    UploadResponseSchema
+    UploadResponseSchema,
+    resolveMediaFolder
 } from '../media-upload.schema.js';
 
 // ============================================================================
@@ -15,7 +17,16 @@ import {
 
 describe('MediaEntityTypeSchema', () => {
     it('should accept all valid entity types', () => {
-        const validTypes = ['accommodation', 'destination', 'event', 'post'];
+        const validTypes = [
+            'accommodation',
+            'destination',
+            'event',
+            'post',
+            'user',
+            'postSponsor',
+            'eventOrganizer',
+            'avatars'
+        ];
         for (const type of validTypes) {
             const result = MediaEntityTypeSchema.safeParse(type);
             expect(result.success).toBe(true);
@@ -23,7 +34,7 @@ describe('MediaEntityTypeSchema', () => {
     });
 
     it('should reject an unknown entity type', () => {
-        const result = MediaEntityTypeSchema.safeParse('user');
+        const result = MediaEntityTypeSchema.safeParse('hotel');
         expect(result.success).toBe(false);
     });
 
@@ -43,15 +54,13 @@ describe('MediaEntityTypeSchema', () => {
 // ============================================================================
 
 describe('MediaRoleSchema', () => {
-    it('should accept "featured"', () => {
-        const result = MediaRoleSchema.safeParse('featured');
-        expect(result.success).toBe(true);
-    });
-
-    it('should accept "gallery"', () => {
-        const result = MediaRoleSchema.safeParse('gallery');
-        expect(result.success).toBe(true);
-    });
+    it.each(['featured', 'gallery', 'avatar', 'sponsorLogo', 'organizerLogo'])(
+        'should accept "%s"',
+        (role) => {
+            const result = MediaRoleSchema.safeParse(role);
+            expect(result.success).toBe(true);
+        }
+    );
 
     it('should reject an unknown role', () => {
         const result = MediaRoleSchema.safeParse('thumbnail');
@@ -65,116 +74,342 @@ describe('MediaRoleSchema', () => {
 });
 
 // ============================================================================
-// AdminUploadRequestSchema
+// AdminUploadRequestSchema — discriminated union (GAP-078-153)
 // ============================================================================
 
 describe('AdminUploadRequestSchema', () => {
     const VALID_UUID = '550e8400-e29b-41d4-a716-446655440000';
+    const VALID_UUID_2 = '550e8400-e29b-41d4-a716-446655440001';
 
-    describe('when given valid input', () => {
-        it('should pass with all fields correct', () => {
-            const result = AdminUploadRequestSchema.safeParse({
-                entityType: 'accommodation',
-                entityId: VALID_UUID,
-                role: 'featured'
-            });
-            expect(result.success).toBe(true);
-        });
-
-        it('should pass for every entity type', () => {
-            const types = ['accommodation', 'destination', 'event', 'post'];
-            for (const entityType of types) {
+    describe('featured variant', () => {
+        it('should pass for each CRUD content entity', () => {
+            for (const entityType of ['accommodation', 'destination', 'event', 'post']) {
                 const result = AdminUploadRequestSchema.safeParse({
+                    role: 'featured',
                     entityType,
-                    entityId: VALID_UUID,
-                    role: 'gallery'
+                    entityId: VALID_UUID
                 });
                 expect(result.success).toBe(true);
             }
         });
 
-        it('should pass for both roles', () => {
-            const roles = ['featured', 'gallery'];
-            for (const role of roles) {
-                const result = AdminUploadRequestSchema.safeParse({
-                    entityType: 'event',
-                    entityId: VALID_UUID,
-                    role
-                });
-                expect(result.success).toBe(true);
+        it('should narrow the TypeScript type to the featured variant', () => {
+            const parsed = AdminUploadRequestSchema.parse({
+                role: 'featured',
+                entityType: 'accommodation',
+                entityId: VALID_UUID
+            });
+            if (parsed.role === 'featured') {
+                expectTypeOf(parsed.entityType).toEqualTypeOf<
+                    'accommodation' | 'destination' | 'event' | 'post'
+                >();
+                expectTypeOf(parsed.entityId).toEqualTypeOf<string>();
             }
         });
-    });
 
-    describe('when given invalid entityType', () => {
-        it('should fail for an unknown entity type', () => {
+        it('should fail when entityType is not a gallery-capable entity', () => {
             const result = AdminUploadRequestSchema.safeParse({
-                entityType: 'hotel',
-                entityId: VALID_UUID,
-                role: 'featured'
-            });
-            expect(result.success).toBe(false);
-        });
-    });
-
-    describe('when given invalid entityId', () => {
-        it('should fail for a non-UUID string', () => {
-            const result = AdminUploadRequestSchema.safeParse({
-                entityType: 'accommodation',
-                entityId: '../malicious',
-                role: 'featured'
-            });
-            expect(result.success).toBe(false);
-        });
-
-        it('should fail for an empty entityId', () => {
-            const result = AdminUploadRequestSchema.safeParse({
-                entityType: 'accommodation',
-                entityId: '',
-                role: 'featured'
-            });
-            expect(result.success).toBe(false);
-        });
-
-        it('should fail for a numeric entityId', () => {
-            const result = AdminUploadRequestSchema.safeParse({
-                entityType: 'accommodation',
-                entityId: 12345,
-                role: 'featured'
-            });
-            expect(result.success).toBe(false);
-        });
-    });
-
-    describe('when fields are missing', () => {
-        it('should fail when entityType is missing', () => {
-            const result = AdminUploadRequestSchema.safeParse({
-                entityId: VALID_UUID,
-                role: 'featured'
+                role: 'featured',
+                entityType: 'user',
+                entityId: VALID_UUID
             });
             expect(result.success).toBe(false);
         });
 
         it('should fail when entityId is missing', () => {
             const result = AdminUploadRequestSchema.safeParse({
-                entityType: 'accommodation',
-                role: 'featured'
+                role: 'featured',
+                entityType: 'accommodation'
             });
             expect(result.success).toBe(false);
         });
 
-        it('should fail when role is missing', () => {
+        it('should fail when entityId is not a UUID', () => {
             const result = AdminUploadRequestSchema.safeParse({
+                role: 'featured',
+                entityType: 'accommodation',
+                entityId: '../malicious'
+            });
+            expect(result.success).toBe(false);
+        });
+    });
+
+    describe('gallery variant', () => {
+        it('should pass without a galleryId (server will generate one)', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'gallery',
+                entityType: 'accommodation',
+                entityId: VALID_UUID
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('should pass with a valid 10-char nanoid-shaped galleryId', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'gallery',
+                entityType: 'post',
+                entityId: VALID_UUID,
+                galleryId: 'a7x3kB9m2p'
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('should fail for a too-short galleryId', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'gallery',
+                entityType: 'post',
+                entityId: VALID_UUID,
+                galleryId: 'abc'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should fail for a galleryId containing path traversal characters', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'gallery',
+                entityType: 'post',
+                entityId: VALID_UUID,
+                galleryId: '../xxx/../'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should fail for entityType "user" (no gallery on users)', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'gallery',
+                entityType: 'user',
+                entityId: VALID_UUID
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should narrow the TypeScript type to the gallery variant', () => {
+            const parsed = AdminUploadRequestSchema.parse({
+                role: 'gallery',
+                entityType: 'post',
+                entityId: VALID_UUID,
+                galleryId: 'a7x3kB9m2p'
+            });
+            if (parsed.role === 'gallery') {
+                expectTypeOf(parsed.galleryId).toEqualTypeOf<string | undefined>();
+            }
+        });
+    });
+
+    describe('avatar variant', () => {
+        it('should pass with userId and entityType "user"', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'avatar',
+                entityType: 'user',
+                userId: VALID_UUID
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('should fail without userId', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'avatar',
+                entityType: 'user'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should fail when userId is not a UUID', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'avatar',
+                entityType: 'user',
+                userId: 'not-a-uuid'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should fail when entityType is not "user"', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'avatar',
+                entityType: 'accommodation',
+                userId: VALID_UUID
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should narrow the TypeScript type to the avatar variant', () => {
+            const parsed = AdminUploadRequestSchema.parse({
+                role: 'avatar',
+                entityType: 'user',
+                userId: VALID_UUID
+            });
+            if (parsed.role === 'avatar') {
+                expectTypeOf(parsed.entityType).toEqualTypeOf<'user'>();
+                expectTypeOf(parsed.userId).toEqualTypeOf<string>();
+            }
+        });
+    });
+
+    describe('sponsorLogo variant', () => {
+        it('should pass with entityType "postSponsor" and a UUID entityId', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'sponsorLogo',
+                entityType: 'postSponsor',
+                entityId: VALID_UUID_2
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('should fail when entityType is not "postSponsor"', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'sponsorLogo',
+                entityType: 'accommodation',
+                entityId: VALID_UUID_2
+            });
+            expect(result.success).toBe(false);
+        });
+    });
+
+    describe('organizerLogo variant', () => {
+        it('should pass with entityType "eventOrganizer" and a UUID entityId', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'organizerLogo',
+                entityType: 'eventOrganizer',
+                entityId: VALID_UUID_2
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('should fail when entityType is not "eventOrganizer"', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'organizerLogo',
+                entityType: 'event',
+                entityId: VALID_UUID_2
+            });
+            expect(result.success).toBe(false);
+        });
+    });
+
+    describe('unknown role', () => {
+        it('should fail when role is not one of the discriminants', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'thumbnail',
                 entityType: 'accommodation',
                 entityId: VALID_UUID
             });
             expect(result.success).toBe(false);
         });
 
-        it('should fail for an empty object', () => {
+        it('should fail for an empty object (no discriminator)', () => {
             const result = AdminUploadRequestSchema.safeParse({});
             expect(result.success).toBe(false);
         });
+    });
+});
+
+// ============================================================================
+// ENTITY_FOLDER_MAP (GAP-078-055)
+// ============================================================================
+
+describe('ENTITY_FOLDER_MAP', () => {
+    const ENV = 'dev';
+    const ID = '550e8400-e29b-41d4-a716-446655440000';
+
+    it('should produce the expected folder for accommodation', () => {
+        expect(ENTITY_FOLDER_MAP.accommodation({ environment: ENV, entityId: ID })).toBe(
+            `hospeda/${ENV}/accommodations/${ID}`
+        );
+    });
+
+    it('should produce the expected folder for destination', () => {
+        expect(ENTITY_FOLDER_MAP.destination({ environment: ENV, entityId: ID })).toBe(
+            `hospeda/${ENV}/destinations/${ID}`
+        );
+    });
+
+    it('should produce the expected folder for event', () => {
+        expect(ENTITY_FOLDER_MAP.event({ environment: ENV, entityId: ID })).toBe(
+            `hospeda/${ENV}/events/${ID}`
+        );
+    });
+
+    it('should produce the expected folder for post', () => {
+        expect(ENTITY_FOLDER_MAP.post({ environment: ENV, entityId: ID })).toBe(
+            `hospeda/${ENV}/posts/${ID}`
+        );
+    });
+
+    it('should produce the avatar folder for a user given userId', () => {
+        expect(ENTITY_FOLDER_MAP.user({ environment: ENV, userId: ID })).toBe(
+            `hospeda/${ENV}/avatars/${ID}`
+        );
+    });
+
+    it('should fall back to entityId if userId is absent on the user resolver', () => {
+        expect(ENTITY_FOLDER_MAP.user({ environment: ENV, entityId: ID })).toBe(
+            `hospeda/${ENV}/avatars/${ID}`
+        );
+    });
+
+    it('should produce the seed-avatars folder', () => {
+        expect(ENTITY_FOLDER_MAP.avatars({ environment: ENV })).toBe(`hospeda/${ENV}/seed/avatars`);
+    });
+
+    it('should produce the postSponsor folder', () => {
+        expect(ENTITY_FOLDER_MAP.postSponsor({ environment: ENV, entityId: ID })).toBe(
+            `hospeda/${ENV}/postSponsors/${ID}`
+        );
+    });
+
+    it('should produce the eventOrganizer folder', () => {
+        expect(ENTITY_FOLDER_MAP.eventOrganizer({ environment: ENV, entityId: ID })).toBe(
+            `hospeda/${ENV}/eventOrganizers/${ID}`
+        );
+    });
+
+    it('should throw when a required entityId is missing', () => {
+        expect(() => ENTITY_FOLDER_MAP.accommodation({ environment: ENV })).toThrow(/entityId/);
+    });
+
+    it('should throw on the user resolver when no identifier is supplied', () => {
+        expect(() => ENTITY_FOLDER_MAP.user({ environment: ENV })).toThrow(/userId/);
+    });
+
+    it('every returned path should start with hospeda/{env}/', () => {
+        const keys = Object.keys(ENTITY_FOLDER_MAP) as Array<keyof typeof ENTITY_FOLDER_MAP>;
+        for (const key of keys) {
+            const path =
+                key === 'avatars'
+                    ? ENTITY_FOLDER_MAP[key]({ environment: ENV })
+                    : key === 'user'
+                      ? ENTITY_FOLDER_MAP[key]({ environment: ENV, userId: ID })
+                      : ENTITY_FOLDER_MAP[key]({ environment: ENV, entityId: ID });
+            expect(path.startsWith(`hospeda/${ENV}/`)).toBe(true);
+            expect(path.endsWith('/')).toBe(false);
+        }
+    });
+});
+
+// ============================================================================
+// resolveMediaFolder
+// ============================================================================
+
+describe('resolveMediaFolder', () => {
+    const ID = '550e8400-e29b-41d4-a716-446655440000';
+
+    it('should resolve a content-entity folder via entityId', () => {
+        expect(
+            resolveMediaFolder({
+                entityType: 'accommodation',
+                environment: 'prod',
+                entityId: ID
+            })
+        ).toBe(`hospeda/prod/accommodations/${ID}`);
+    });
+
+    it('should resolve the avatar folder via userId', () => {
+        expect(
+            resolveMediaFolder({
+                entityType: 'user',
+                environment: 'prod',
+                userId: ID
+            })
+        ).toBe(`hospeda/prod/avatars/${ID}`);
     });
 });
 

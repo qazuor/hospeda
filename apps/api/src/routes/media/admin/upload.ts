@@ -23,7 +23,12 @@ import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
  *   - The provider response is validated with `UploadResponseDataSchema.parse()`
  *     before being returned — malformed provider output fails with 500.
  */
-import { AdminUploadRequestSchema, PermissionEnum, UploadResponseDataSchema } from '@repo/schemas';
+import {
+    AdminUploadRequestSchema,
+    ENTITY_FOLDER_MAP,
+    PermissionEnum,
+    UploadResponseDataSchema
+} from '@repo/schemas';
 import {
     AccommodationService,
     DestinationService,
@@ -210,6 +215,23 @@ export const adminUploadMediaRoute = createAdminRoute({
             );
         }
 
+        // This route currently only wires up the four CRUD content entities
+        // (accommodation, destination, event, post) with the `featured` and
+        // `gallery` role variants. The discriminated union accepts avatar /
+        // sponsorLogo / organizerLogo variants too (single source of truth for
+        // the upload contract), but those flow through dedicated routes. Guard
+        // the handler so unsupported variants fail cleanly.
+        if (parseResult.data.role !== 'featured' && parseResult.data.role !== 'gallery') {
+            return createErrorResponse(
+                {
+                    code: 'VALIDATION_ERROR',
+                    message: `Unsupported role for this endpoint: ${parseResult.data.role}`
+                },
+                ctx,
+                400
+            );
+        }
+
         const { entityType, entityId, role } = parseResult.data;
 
         // ── 3b. Verify entity exists in DB ────────────────────────────────────
@@ -293,8 +315,13 @@ export const adminUploadMediaRoute = createAdminRoute({
         }
 
         // ── 6. Build storage path ─────────────────────────────────────────────
+        // Folder layout is centralized in `ENTITY_FOLDER_MAP` (GAP-078-055) so
+        // the delete endpoint's environment-scope refinement and the upload
+        // path stay structurally in sync. The resolver returns the full
+        // `hospeda/{env}/{entityPlural}/{entityId}` prefix; the publicId
+        // (`featured` or `gallery/{nanoid}`) is appended by the provider.
         const environment = resolveEnvironment();
-        const folder = `hospeda/${environment}/${entityType}s/${entityId}`;
+        const folder = ENTITY_FOLDER_MAP[entityType]({ environment, entityId });
         const publicId = role === 'featured' ? 'featured' : `gallery/${generateGalleryId()}`;
 
         // ── 6b. Re-verify session right before provider call (GAP-078-114).
