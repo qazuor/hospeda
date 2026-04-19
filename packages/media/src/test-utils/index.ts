@@ -1,13 +1,17 @@
 /**
- * @repo/media/test-utils — placeholder barrel.
+ * @repo/media/test-utils — test doubles for the media package.
  *
- * The actual in-memory test provider (`InMemoryImageProvider`) lands in
- * SPEC-078-GAPS T-018 (GAP-078-102). This file exists now so that the
- * package's `exports` map and the rest of the consumer migration can land
- * without waiting for the mock implementation.
+ * The in-memory {@link InMemoryImageProvider} satisfies the full
+ * {@link ImageProvider} contract without any network I/O, so tests and local
+ * dev fallback paths can upload/delete assets deterministically.
  *
- * Do not add runtime code here in T-017 — keep the entry empty so bundlers
- * never pull the (not-yet-existing) mock into production output by accident.
+ * This entrypoint is intentionally kept tiny so bundlers never accidentally
+ * pull a test double into production output: consumers must request it
+ * explicitly via the `@repo/media/test-utils` subpath.
  */
 
-export {};
+export { InMemoryImageProvider } from './mock-provider.js';
+export type {
+    InMemoryImageProviderOptions,
+    InMemoryImageRecord
+} from './mock-provider.js';

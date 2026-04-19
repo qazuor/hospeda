@@ -40,3 +40,11 @@ export type {
 
 export { resolveEnvironment } from './environment.js';
 export type { MediaEnvironment } from './environment.js';
+
+export { extractAllMediaPublicIds } from './extract-all-public-ids.js';
+export type {
+    EntityWithMedia,
+    ExtractAllMediaPublicIdsOptions,
+    MediaAssetLike,
+    MediaLike
+} from './extract-all-public-ids.js';
