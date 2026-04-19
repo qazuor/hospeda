@@ -60,6 +60,8 @@ describe('Admin Sponsorship List - entity-specific filter params', () => {
         permissions: [
             PermissionEnum.ACCESS_API_PUBLIC,
             PermissionEnum.ACCESS_API_PRIVATE,
+            PermissionEnum.ACCESS_PANEL_ADMIN,
+            PermissionEnum.ACCESS_API_ADMIN,
             PermissionEnum.SPONSORSHIP_VIEW,
             PermissionEnum.SPONSORSHIP_VIEW_ANY,
             PermissionEnum.MANAGE_CONTENT
@@ -189,6 +191,42 @@ describe('Admin Sponsorship List - entity-specific filter params', () => {
                 expect(query).toHaveProperty('sponsorshipStatus', 'active');
                 expect(query).toHaveProperty('status');
             }
+        });
+    });
+
+    describe('lifecycleState (status base) filter independence (AC-001-02)', () => {
+        it('passes status=DRAFT to adminList without sponsorshipStatus', async () => {
+            // Base `status` maps to lifecycleState in adminList(). sponsorshipStatus
+            // must NOT be injected when the caller did not provide it.
+            const res = await app.request(`${base}?status=DRAFT`, {
+                headers: makeHeaders(adminActor)
+            });
+
+            expect(res.status).toBe(200);
+            expect(mockRef.adminList).toHaveBeenCalledOnce();
+            const [_actor, query] = mockRef.adminList.mock.calls[0] as [
+                unknown,
+                Record<string, unknown>
+            ];
+            expect(query).toHaveProperty('status', 'DRAFT');
+            expect(query.sponsorshipStatus).toBeUndefined();
+        });
+
+        it('passes sponsorshipStatus=active to adminList with status default "all"', async () => {
+            // When only the business-status filter is supplied, the base `status`
+            // filter falls back to its "all" default (i.e. no lifecycleState filter).
+            const res = await app.request(`${base}?sponsorshipStatus=active`, {
+                headers: makeHeaders(adminActor)
+            });
+
+            expect(res.status).toBe(200);
+            expect(mockRef.adminList).toHaveBeenCalledOnce();
+            const [_actor, query] = mockRef.adminList.mock.calls[0] as [
+                unknown,
+                Record<string, unknown>
+            ];
+            expect(query).toHaveProperty('sponsorshipStatus', 'active');
+            expect(query.status).toBe('all');
         });
     });
 
