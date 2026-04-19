@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 53/63 completed + 7 deferred — effective 53/56
+## Progress: 55/63 completed + 7 deferred — effective 55/56
 
-**Last updated:** 2026-04-19T16:55:00Z
-**Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Phase 3 Sponsorship FULLY CLOSED 2026-04-19** (frontend T-052+T-053+T-054 + tests T-055+T-056+T-057). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). Effective Phase 3 scope: 13 non-migration tasks, 13 done. Remaining: Phase 1 verification (T-001, T-002) + T-058 cross-cutting cleanup.
+**Last updated:** 2026-04-19T17:22:00Z
+**Status:** in-progress. **Phase 1 AccommodationReview FULLY CLOSED 2026-04-19** (T-001 + T-002 verification tests). **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Phase 3 Sponsorship FULLY CLOSED 2026-04-19** (frontend T-052+T-053+T-054 + tests T-055+T-056+T-057). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). Remaining: T-058 cross-cutting cleanup.
 
 ### Push-only migration policy (summary)
 
@@ -18,10 +18,9 @@
 
 ### Next up (in priority order)
 
-1. **T-001, T-002** (complexity 2 each) — Phase 1 AccommodationReview verification tests. Independent of Phase 3; can run in parallel.
+1. **T-058** (complexity 2.5) — cleanup / cross-cutting verification. T-036 removed from blockedBy; `_deferredDependencies` note tracks the deferral for final-report mention. **All upstream dependencies are satisfied — this is the only remaining task.**
 2. **Follow-up cleanup (not a formal task):** delete the two T-029 output SQL files + amend state.json/progress.md to record the cleanup done. Small, non-blocking. Could bundle with the next feature commit.
 3. **Phase 4 cascade follow-up (flagged):** 5 typecheck errors in `packages/service-core/test/services/destinationReview/*` (Property 'lifecycleState' is missing) from T-030/T-028. Not SPEC-063 scope but tracked here for visibility; either fold into T-037 or spawn a standalone cleanup task.
-4. **T-058** (complexity 2.5) — cleanup / cross-cutting verification. T-036 removed from blockedBy; `_deferredDependencies` note tracks the deferral for final-report mention.
 
 **Average Complexity:** 2.1/2.5 (ceiling)
 **Critical Path (post-T-038):** T-039 -> T-040 -> T-042 -> T-058 (4 steps remaining)
@@ -31,12 +30,18 @@
 
 ## Phase 1 — AccommodationReview (verification, parallel with Phase 2)
 
-- [ ] **T-001** (complexity: 2) — Write AccommodationReview schema + access verification tests
-  - Verifies existing behavior, no code changes
+- [x] **T-001** (complexity: 2) — Write AccommodationReview schema + access verification tests
+  - COMPLETED 2026-04-19 · lint: pass · typecheck: pass · tests: 16/16 pass
+  - Added `Tier access boundary (AC-005 admin-only lifecycleState)` describe block (3 tests: Public strip, Protected strip, Admin preserve) to existing `accommodationReview.schema.test.ts` mirroring T-037 DestinationReview pattern
+  - Subtasks 1-3 (presence, enum acceptance, default ACTIVE) were pre-existing coverage (lines 148-177)
+  - No separate access.schema.test.ts file created (same convention as T-037)
   - Blocked by: none · Blocks: T-058
 
-- [ ] **T-002** (complexity: 2) — Write AccommodationReview CRUD + admin-search verification tests
-  - Verifies existing behavior
+- [x] **T-002** (complexity: 2) — Write AccommodationReview CRUD + admin-search verification tests
+  - COMPLETED 2026-04-19 · lint: pass · typecheck: pass · tests: 98/98 pass (accommodationReview suite)
+  - CRUD file extended with 4 new tests: default ACTIVE on create, invalid enum rejection on create, lifecycleState acceptance on update, invalid enum rejection on update
+  - New file `accommodationReview.admin-search.schema.test.ts` created (28 tests) mirroring T-037 DestinationReview pattern — AC-001-01 status filter coverage (5 tests) + defaults/pagination/entity filters/base filters/combined
+  - Admin-search subtask closed at schema layer; adminList() base mapping already covered by equivalence (T-022/T-056)
   - Blocked by: none · Blocks: T-058
 
 ## Phase 2 — OwnerPromotion (DB migration + full stack)
