@@ -389,6 +389,186 @@ describe('processEntityImages — SPEC-078-GAPS T-022', () => {
         });
     });
 
+    // -----------------------------------------------------------------------
+    // SPEC-078-GAPS T-064 — countImageJobs accuracy via skippedExample counter
+    // -----------------------------------------------------------------------
+
+    describe('SPEC-078-GAPS T-064 — countImageJobs (skippedExample counter)', () => {
+        it('counts featured + gallery + avatar + sponsor logo + organizer logo', async () => {
+            // Arrange: a synthetic entity hitting every countable branch.
+            const { provider } = createProviderMock();
+            const cache: ImageCache = {};
+            const counters = createImageProcessingCounters();
+            const data = {
+                id: 'multi',
+                media: {
+                    featuredImage: { url: 'https://src/featured.jpg' },
+                    gallery: [
+                        { url: 'https://src/g0.jpg' },
+                        { url: 'https://src/g1.jpg' },
+                        // No URL → does NOT count.
+                        { caption: 'broken' }
+                    ]
+                },
+                profile: { avatar: 'https://src/avatar.jpg' },
+                // Both sponsor (object) and organizer (string) shapes
+                // co-exist here; only one would in a real fixture but the
+                // counter must tally based on shape, not branch selection.
+                logo: { url: 'https://src/logo.jpg' }
+            };
+
+            // Act
+            await processEntityImages({
+                data,
+                entityType: 'mixed',
+                entityId: 'multi',
+                provider,
+                cache,
+                cachePath: '/tmp/cache.json',
+                env: 'dev',
+                seedSource: 'example',
+                counters
+            });
+
+            // Assert: 1 featured + 2 gallery (entry without URL skipped) + 1 avatar + 1 logo = 5
+            expect(counters.skippedExample).toBe(5);
+        });
+
+        it('returns 0 jobs for an entity with no images', async () => {
+            // Arrange
+            const { provider } = createProviderMock();
+            const cache: ImageCache = {};
+            const counters = createImageProcessingCounters();
+            const data = { id: 'empty', name: 'No images here' };
+
+            // Act
+            await processEntityImages({
+                data,
+                entityType: 'misc',
+                entityId: 'empty',
+                provider,
+                cache,
+                cachePath: '/tmp/cache.json',
+                env: 'dev',
+                seedSource: 'example',
+                counters
+            });
+
+            // Assert
+            expect(counters.skippedExample).toBe(0);
+        });
+
+        it('counts an organizer-style string `logo` field in example mode', async () => {
+            // Arrange
+            const { provider } = createProviderMock();
+            const cache: ImageCache = {};
+            const counters = createImageProcessingCounters();
+            const data = { id: 'org', logo: 'https://src/logo.jpg' };
+
+            // Act
+            await processEntityImages({
+                data,
+                entityType: 'eventorganizers',
+                entityId: 'org',
+                provider,
+                cache,
+                cachePath: '/tmp/cache.json',
+                env: 'dev',
+                seedSource: 'example',
+                counters
+            });
+
+            // Assert
+            expect(counters.skippedExample).toBe(1);
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // SPEC-078-GAPS T-064 — counters across all outcome kinds
+    // -----------------------------------------------------------------------
+
+    describe('SPEC-078-GAPS T-064 — counter increments per outcome kind', () => {
+        it('increments `cached` counter on cache hit and skips the provider', async () => {
+            // Arrange: pre-seed the cache so featured is a hit.
+            const { provider, uploads } = createProviderMock();
+            const cachedUrl = 'https://cdn.example.com/cached/url.jpg';
+            const cache: ImageCache = {
+                'hospeda/dev/seed/accommodations/acc-cached/featured': {
+                    originalUrl: 'https://src/featured.jpg',
+                    cloudinaryUrl: cachedUrl,
+                    uploadedAt: '2024-01-01T00:00:00.000Z',
+                    fileModifiedAt: null
+                }
+            };
+            const counters = createImageProcessingCounters();
+            const data = {
+                id: 'acc-cached',
+                media: { featuredImage: { url: 'https://src/featured.jpg' } }
+            };
+
+            // Act
+            const result = await processEntityImages({
+                data,
+                entityType: 'accommodations',
+                entityId: 'acc-cached',
+                provider,
+                cache,
+                cachePath: '/tmp/cache.json',
+                env: 'dev',
+                seedSource: 'required',
+                counters
+            });
+
+            // Assert
+            expect(counters.cached).toBe(1);
+            expect(counters.uploaded).toBe(0);
+            expect(uploads).toHaveLength(0);
+            const media = (result as typeof data).media as {
+                featuredImage?: { url?: string };
+            };
+            expect(media.featuredImage?.url).toBe(cachedUrl);
+        });
+
+        it('mixes uploaded + cached across multiple media entries', async () => {
+            // Arrange: cache featured but NOT gallery → uploaded:2, cached:1.
+            const { provider } = createProviderMock();
+            const cache: ImageCache = {
+                'hospeda/dev/seed/accommodations/acc-mix/featured': {
+                    originalUrl: 'https://src/featured.jpg',
+                    cloudinaryUrl: 'https://cdn.example.com/cached.jpg',
+                    uploadedAt: '2024-01-01T00:00:00.000Z',
+                    fileModifiedAt: null
+                }
+            };
+            const counters = createImageProcessingCounters();
+            const data = {
+                id: 'acc-mix',
+                media: {
+                    featuredImage: { url: 'https://src/featured.jpg' },
+                    gallery: [{ url: 'https://src/g0.jpg' }, { url: 'https://src/g1.jpg' }]
+                }
+            };
+
+            // Act
+            await processEntityImages({
+                data,
+                entityType: 'accommodations',
+                entityId: 'acc-mix',
+                provider,
+                cache,
+                cachePath: '/tmp/cache.json',
+                env: 'dev',
+                seedSource: 'required',
+                counters
+            });
+
+            // Assert
+            expect(counters.cached).toBe(1);
+            expect(counters.uploaded).toBe(2);
+            expect(counters.failures).toBe(0);
+        });
+    });
+
     describe('SPEC-078-GAPS T-023 — moderationState default (GAP-078-063)', () => {
         it('injects moderationState: APPROVED on featured image when missing', async () => {
             // Arrange
