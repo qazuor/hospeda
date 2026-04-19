@@ -1,12 +1,16 @@
 # SPEC-078-GAPS: Cloudinary Image Management — Gaps Remediation
 
-## Progress: 8/68 tasks (12%)
+## Progress: 13/68 tasks (19%)
 
 **Average Complexity**: 1.7 / 2.5 (max)
 **Completed from prior work**: 3 tasks (Phase 0 + Phase 1A) — see already-done.md
 **Completed 2026-04-18 (previous session)**: 1 task (T-004 — Phase 1B migrations reconstruction)
-**Completed 2026-04-18 (current session)**: 4 warmup tasks (T-011, T-028, T-037, T-053)
+**Completed 2026-04-18/19 (current session)**: 9 tasks — 4 warmups (T-011, T-028, T-037, T-053) + 5 Phase 1C security (T-005, T-006, T-007, T-008, T-009)
 **Splits applied**: 20 parent tasks split into 45 child tasks (68 total vs 47 original)
+
+**Known follow-ups**:
+- GAP-078-105 (Cloudinary upload_stream flags invalidate/exif/faces): lives in cloudinary.provider.ts, fell outside T-006 scope.
+- env-registry-schema-cross-validation: 4 pre-existing failures on Cloudinary vars not yet in ApiEnvSchema (unrelated to any current task).
 
 ---
 
@@ -45,30 +49,35 @@
 
 ### Phase 1C — Security defensive hardening
 
-- [ ] **T-005** (complexity: 2.0) — Security: env-prefix validation on DELETE and path-traversal refine
+- [x] **T-005** (complexity: 2.0) — Security: env-prefix validation on DELETE and path-traversal refine
   - Gaps: GAP-078-035, GAP-078-034, GAP-078-173
   - Blocked by: T-003
   - Blocks: none
+  - Outcome: DeleteMediaQuerySchema refine rejects `..` (raw + URL-encoded). adminDeleteMediaPreValidation middleware returns 422 for traversal and 403 for env-prefix mismatch before OpenAPI zod hook. Defense-in-depth env check kept in handler.
 
-- [ ] **T-006** (complexity: 2.0) — Security: magic-bytes validation, decompression-bomb guard, and pixel-count reject
+- [x] **T-006** (complexity: 2.0) — Security: magic-bytes validation, decompression-bomb guard, and pixel-count reject
   - Gaps: GAP-078-103, GAP-078-104, GAP-078-105
   - Blocked by: T-003
   - Blocks: none
+  - Outcome: validateMediaFile inspects PNG/JPEG/WEBP/HEIC/AVIF magic bytes and rejects with MIME_MISMATCH. DECOMPRESSION_BOMB for pixel count > 2e8. `file-type ^19.6.0` added as dep (held for future async path). **GAP-078-105 partial** — Cloudinary upload_stream flags belong in provider, deferred as follow-up.
 
-- [ ] **T-007** (complexity: 1.5) — Security: Cloudinary provider hardening — cloudName regex, stream error, folder assertion
+- [x] **T-007** (complexity: 1.5) — Security: Cloudinary provider hardening — cloudName regex, stream error, folder assertion
   - Gaps: GAP-078-057, GAP-078-027, GAP-078-112
   - Blocked by: T-003
   - Blocks: none
+  - Outcome: Constructor validates cloudName regex; uploadBuffer surfaces stream errors via reject; upload() throws new InvalidFolderError if folder does not start with `hospeda/`. InvalidFolderError re-exported from barrel.
 
-- [ ] **T-008** (complexity: 1.5) — Security: actor-UUID validation and session re-verify before provider call
+- [x] **T-008** (complexity: 1.5) — Security: actor-UUID validation and session re-verify before provider call
   - Gaps: GAP-078-058, GAP-078-175, GAP-078-114
   - Blocked by: T-003
   - Blocks: none
+  - Outcome: ActorIdSchema UUID check yields sanitized 500 on failure. Session re-verify is an in-memory cmp against ctx user/session, applied both early and just before provider.upload() (defense-in-depth). Strict variant (missing session => 401) flagged for optional follow-up.
 
-- [ ] **T-009** (complexity: 2.0) — Security: getMediaUrl SSRF guards, extractPublicId hostname fix, and prod-cleanup env var
+- [x] **T-009** (complexity: 2.0) — Security: getMediaUrl SSRF guards, extractPublicId hostname fix, and prod-cleanup env var
   - Gaps: GAP-078-109, GAP-078-182, GAP-078-117, GAP-078-234, GAP-078-113
   - Blocked by: T-003
   - Blocks: none
+  - Outcome: extractPublicId requires hostname === 'res.cloudinary.com' exactly. getMediaUrl allowlists raw transform tokens. HOSPEDA_ALLOW_PROD_CLEANUP gates seed --clean-images in prod; evaluateProdCleanupGate extracted as pure helper. Env var registered in packages/config. apps/api/vercel.json functions[api/index.js].maxBodySize=12mb (catch-all topology).
 
 ---
 
@@ -563,4 +572,5 @@ Critical path: T-001 -> T-003 -> T-017 -> T-029 -> T-031 -> T-040 -> T-067 -> T-
 ## Session Log
 
 - **2026-04-18 (session close)**: T-004 merged in 6 atomic commits (`50b80475` → `a11ae6df` on main). Fixed hidden `db:fresh-dev` bug (apply-postgres-extras never chained). Renumbered manual SQL to clean 0001-0010 sequence. Rewrote orchestrator as generic iterator. Removed 4 unused Drizzle-generated migration files (preserved `0005_awesome_wild_child.sql` — SPEC-063 in progress). Full end-to-end validation passed (3571 seeded rows, 3 CHECKs + MV + 43 triggers).
-- **2026-04-18 (warmup sweep)**: 4 warmup tasks landed in 4 atomic commits on main (`f713d682` T-037, `a365aec8` T-053, `31fe19e8` T-028, `88f713e2` T-011). All complexity 1.0, delegated to parallel sub-agents. Zero file overlap across tasks. Agents reported truthfully (verified via git status diff). Progress now 8/68. Next available (all unblocked): T-005..T-009 Phase 1C security (parallel), T-010 schema alignment, T-017 bundle refactor (critical path), T-012..T-016 DB Phase 2B+.
+- **2026-04-18 (warmup sweep)**: 4 warmup tasks landed in 4 atomic commits on main (`f713d682` T-037, `a365aec8` T-053, `31fe19e8` T-028, `88f713e2` T-011). All complexity 1.0, delegated to parallel sub-agents. Zero file overlap across tasks. Agents reported truthfully (verified via git status diff). Progress now 8/68.
+- **2026-04-19 (Phase 1C security sweep)**: 5 security tasks landed in 5 atomic commits on main (`5e978f1e` T-005, `becb8a58` T-006, `31e42ac6` T-007, `9d12e3d8` T-008, `fc0428cc` T-009). All 5 sub-agents in parallel (zero file collision — T-005/T-008 on apps/api/routes/media different files; T-006/T-007/T-009 on packages/media different files). T-009 took scope creep: CLI refactor + env-registry test-count bumps — accepted as necessary. Progress now 13/68. Follow-ups: GAP-078-105 (provider upload flags) + env-registry x-validation pre-existing breakage. Next available (all unblocked except T-004-dependents): T-010 schema alignment, T-011 done, T-012..T-016 DB Phase 2B+, T-017 bundle refactor (critical path).
