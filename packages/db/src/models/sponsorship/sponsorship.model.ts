@@ -104,7 +104,8 @@ export class SponsorshipModel extends BaseModelImpl<Sponsorship> {
                     and(
                         eq(sponsorships.targetType, targetType),
                         eq(sponsorships.targetId, targetId),
-                        eq(sponsorships.status, 'active'),
+                        eq(sponsorships.sponsorshipStatus, 'active'),
+                        eq(sponsorships.lifecycleState, 'ACTIVE'),
                         lte(sponsorships.startsAt, now),
                         gte(sponsorships.endsAt, now)
                     )
@@ -130,31 +131,36 @@ export class SponsorshipModel extends BaseModelImpl<Sponsorship> {
     }
 
     /**
-     * Finds sponsorships by status.
-     * @param status - The status to filter by
+     * Finds sponsorships by domain status (pending/active/expired/cancelled).
+     * @param sponsorshipStatus - The sponsorship status to filter by
      * @param tx - Optional transaction client
      * @returns Promise resolving to an object with items and total count
      */
-    async findByStatus(
-        status: string,
+    async findBySponsorshipStatus(
+        sponsorshipStatus: string,
         tx?: DrizzleClient
     ): Promise<{ items: Sponsorship[]; total: number }> {
         try {
             const result = await this.findAll(
-                { status, deletedAt: null },
+                { sponsorshipStatus, deletedAt: null },
                 undefined,
                 undefined,
                 tx
             );
 
-            logQuery(this.entityName, 'findByStatus', { status }, result);
+            logQuery(this.entityName, 'findBySponsorshipStatus', { sponsorshipStatus }, result);
             return result;
         } catch (error) {
-            logError(this.entityName, 'findByStatus', { status }, error as Error);
+            logError(
+                this.entityName,
+                'findBySponsorshipStatus',
+                { sponsorshipStatus },
+                error as Error
+            );
             throw new DbError(
                 this.entityName,
-                'findByStatus',
-                { status },
+                'findBySponsorshipStatus',
+                { sponsorshipStatus },
                 (error as Error).message
             );
         }
