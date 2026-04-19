@@ -328,19 +328,19 @@
         {
             "id": "T-017",
             "title": "Restructure @repo/media subpath exports bundle architecture",
-            "description": "Gaps: GAP-078-126, GAP-078-162, GAP-078-183, GAP-078-172, GAP-078-177.\n\nFiles: packages/media/package.json, packages/media/tsup.config.ts, packages/media/src/server/index.ts, packages/media/src/test-utils/index.ts, packages/media/src/index.ts\n- Root index.ts: browser-safe only (getMediaUrl, MEDIA_PRESETS, extractPublicId, generateGalleryId, types)\n- src/server/index.ts: server-only (CloudinaryProvider, uploadBuffer, validateMediaFile, resolveEnvironment)\n- src/test-utils/index.ts: InMemoryImageProvider\n- package.json exports field with 3 subpath entries\n- tsup.config.ts with 3 entries + external: ['cloudinary', 'image-size']\n- Biome rule prevents admin/web from importing @repo/media/server\n- Vite/Astro optimizeDeps.exclude: ['cloudinary', 'image-size']\n\nAcceptance: import CloudinaryProvider from '@repo/media' fails TypeScript; from '@repo/media/server' succeeds; pnpm build:api completes without Cloudinary SDK in browser chunk.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-126, GAP-078-162, GAP-078-183, GAP-078-172, GAP-078-177.\n\nFiles: packages/media/package.json, packages/media/tsup.config.ts, packages/media/src/server/index.ts, packages/media/src/test-utils/index.ts, packages/media/src/index.ts\n- Root index.ts: browser-safe only (getMediaUrl, MEDIA_PRESETS, extractPublicId, generateGalleryId, types)\n- src/server/index.ts: server-only (CloudinaryProvider, uploadBuffer, validateMediaFile, resolveEnvironment)\n- src/test-utils/index.ts: InMemoryImageProvider\n- package.json exports field with 3 subpath entries\n- tsup.config.ts with 3 entries + external: ['cloudinary', 'image-size']\n- Biome rule prevents admin/web from importing @repo/media/server\n- Vite/Astro optimizeDeps.exclude: ['cloudinary', 'image-size']\n\nAcceptance: import CloudinaryProvider from '@repo/media' fails TypeScript; from '@repo/media/server' succeeds; pnpm build:api completes without Cloudinary SDK in browser chunk.\n\nOutcome (2026-04-19, commit 697b8404): Big-bang split landed. New tsup.config.ts builds 3 entries with external [cloudinary, image-size]. package.json exports map + typescript-config path entries + apps/admin tsconfig explicit paths. Biome noRestrictedImports in admin/web blocking /server. Vite optimizeDeps.exclude + Astro optimizeDeps + ssr.external. 14 server-side consumers migrated to @repo/media/server; 7 browser-safe consumers unchanged; apps/api/routes/media/admin/upload.ts split between root and /server. test-utils/index.ts is empty placeholder (InMemoryImageProvider lands in T-018). All typechecks green, build emits 3 entries, 122/122 tests pass, ts-expect-error sanity confirms root CloudinaryProvider import errors. Deviation: kept single tsconfig with types: [node] — runtime isolation via tsup external + Biome rule is sufficient; second tsconfig would require composite refactor.",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-003"],
             "blocks": ["T-018", "T-021", "T-022", "T-023", "T-024", "T-025", "T-026", "T-027"],
             "subtasks": [],
             "tags": ["backend", "package", "bundle"],
             "phase": "phase-3a",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {

@@ -1,11 +1,11 @@
 # SPEC-078-GAPS: Cloudinary Image Management — Gaps Remediation
 
-## Progress: 18/68 tasks (26%)
+## Progress: 19/68 tasks (28%)
 
 **Average Complexity**: 1.7 / 2.5 (max)
 **Completed from prior work**: 3 tasks (Phase 0 + Phase 1A) — see already-done.md
 **Completed 2026-04-18 (previous session)**: 1 task (T-004 — Phase 1B migrations reconstruction)
-**Completed 2026-04-18/19 (current session)**: 14 tasks — 4 warmups (T-011, T-028, T-037, T-053) + 5 Phase 1C security (T-005..T-009) + 5 schema/DB Phase 2 (T-010, T-012, T-013, T-014, T-016)
+**Completed 2026-04-18/19 (current session)**: 15 tasks — 4 warmups (T-011, T-028, T-037, T-053) + 5 Phase 1C security (T-005..T-009) + 5 schema/DB Phase 2 (T-010, T-012, T-013, T-014, T-016) + T-017 (bundle architecture critical path)
 **Splits applied**: 20 parent tasks split into 45 child tasks (68 total vs 47 original)
 
 **Known follow-ups**:
@@ -145,10 +145,11 @@
 
 ### Phase 3A — @repo/media subpath exports bundle architecture
 
-- [ ] **T-017** (complexity: 2.5) — Restructure @repo/media subpath exports bundle architecture
+- [x] **T-017** (complexity: 2.5) — Restructure @repo/media subpath exports bundle architecture
   - Gaps: GAP-078-126, GAP-078-162, GAP-078-183, GAP-078-172, GAP-078-177
   - Blocked by: T-003
   - Blocks: T-018, T-021, T-022, T-023, T-024, T-025, T-026, T-027
+  - Outcome (commit `697b8404`): Big-bang split — 3 subpath entries (`.`, `./server`, `./test-utils`). New `tsup.config.ts` with `external: ['cloudinary', 'image-size']`. Biome `noRestrictedImports` in admin+web blocks `/server`. Vite `optimizeDeps.exclude` + Astro `optimizeDeps` + `ssr.external`. 14 server-side consumers migrated to `@repo/media/server`; 7 browser-safe consumers unchanged; `apps/api/routes/media/admin/upload.ts` splits imports. `test-utils/index.ts` is empty placeholder (InMemoryImageProvider → T-018). All typechecks green, 122/122 media tests pass. **Deviation**: kept single tsconfig with `types: [node]` — runtime isolation via tsup `external` + Biome is sufficient; second tsconfig would need composite refactor (follow-up if needed).
 
 ---
 
@@ -581,3 +582,4 @@ Critical path: T-001 -> T-003 -> T-017 -> T-029 -> T-031 -> T-040 -> T-067 -> T-
 - **2026-04-18 (warmup sweep)**: 4 warmup tasks landed in 4 atomic commits on main (`f713d682` T-037, `a365aec8` T-053, `31fe19e8` T-028, `88f713e2` T-011). All complexity 1.0, delegated to parallel sub-agents. Zero file overlap across tasks. Agents reported truthfully (verified via git status diff). Progress now 8/68.
 - **2026-04-19 (Phase 1C security sweep)**: 5 security tasks landed in 5 atomic commits on main (`5e978f1e` T-005, `becb8a58` T-006, `31e42ac6` T-007, `9d12e3d8` T-008, `fc0428cc` T-009). All 5 sub-agents in parallel (zero file collision — T-005/T-008 on apps/api/routes/media different files; T-006/T-007/T-009 on packages/media different files). T-009 took scope creep: CLI refactor + env-registry test-count bumps — accepted as necessary. Progress now 13/68. Follow-ups: GAP-078-105 (provider upload flags) + env-registry x-validation pre-existing breakage.
 - **2026-04-19 (Phase 2 schema+DB sweep)**: 5 schema/DB tasks landed in 5 atomic commits on main (`21b62d75` T-010, `a247c95d` T-013, `b436ac58` T-016, `6350c5c0` T-014, `9f01d7e7` T-012). All 5 sub-agents in parallel with pre-assigned manual SQL numbers (0011 T-012, 0012 T-013, 0013 T-014, 0014 T-016) to avoid lex-order collision. T-012 excluded destination.service.ts workaround cleanup (pre-existing uncommitted work in that file). All acceptance criteria met; 10 new updateAvatar tests; 18 new media.schema tests. Progress now 18/68. Next available: T-015 (BaseModel JSONB merge FOR UPDATE — 2.5 complexity, requires user consult), T-017 (bundle refactor — critical path, architectural, requires user consult), T-019..T-021 (docs/tests, blocked by T-017), T-022 (seed, blocked by T-010 — NOW UNBLOCKED), T-028 done, T-029 (API contract, blocked by T-010+T-017).
+- **2026-04-19 (T-017 bundle critical path)**: T-017 landed atomic on main (`697b8404`). Big-bang split per spec acceptance (import `CloudinaryProvider` from `@repo/media` MUST fail TypeScript). 3 subpath entries wired via tsup (external [cloudinary, image-size]), package.json exports, typescript-config paths + explicit apps/admin tsconfig paths, Biome `noRestrictedImports` in admin+web, Vite `optimizeDeps.exclude` + Astro `optimizeDeps`/`ssr.external`. 14 server-side consumers migrated (service-core/accommodation/destination/event/post/user, apps/api media routes+service, seed cli/index/utils), 7 browser-safe consumers unchanged, 1 mixed (apps/api/routes/media/admin/upload.ts) split imports. Agent excluded pre-existing destination.service.ts workaround edits via targeted hunk staging. `test-utils/index.ts` is empty placeholder until T-018. Deviation: kept single tsconfig with `types: [node]` — runtime isolation via tsup `external` + Biome is sufficient; composite-tsconfig refactor deferred. Progress now 19/68. **Unlocked**: T-018, T-019, T-020, T-021 (docs/test utils, blocked only on T-017 — now available), T-022 (seed, dual-blocked on T-010+T-017 — both done — now available), T-029 (API contract, dual-blocked on T-010+T-017 — both done — now available), T-041/T-042/T-043 (web media migration — now available), T-048/T-049 (web media migration — now available).
