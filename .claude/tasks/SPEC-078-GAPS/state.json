@@ -724,19 +724,19 @@
         {
             "id": "T-039",
             "title": "Delete accommodations gallery tab and add TanStack Router redirect",
-            "description": "Gap: GAP-078-073.\n\nFiles: apps/admin/src/routes/_authed/accommodations/$id_.gallery.tsx, apps/admin/src/routes/_authed/accommodations/\n- Delete apps/admin/src/routes/_authed/accommodations/$id_.gallery.tsx\n- Add TanStack Router redirect /accommodations/:id/gallery -> /accommodations/:id/edit#gallery-section\n\nAcceptance: File deleted; navigation to /gallery redirects; no 404 in admin.",
-            "status": "pending",
+            "description": "Gap: GAP-078-073.\n\nFiles: apps/admin/src/routes/_authed/accommodations/$id_.gallery.tsx (replaced), apps/admin/test/routes/_authed/accommodations/$id_.gallery.test.tsx (new)\n- Replace standalone gallery route with TanStack Router redirect /accommodations/:id/gallery -> /accommodations/:id/edit#gallery-section\n\nAcceptance: File replaced with redirect; navigation to /gallery redirects; no 404 in admin.\n\nOutcome (commit 56ef6b72): 143-line component replaced with 22-line redirect-only route via beforeLoad: throw redirect({to, params: {id}, hash: 'gallery-section', replace: true}). Component returns null. 2 new tests assert beforeLoad payload + null fallback. Follow-up: hash 'gallery-section' has no matching DOM anchor in EntityFormSection — auto-scroll won't fire (no 404 either way).",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-017", "T-029"],
             "blocks": [],
             "subtasks": [],
             "tags": ["frontend", "admin"],
             "phase": "phase-6a",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
@@ -1156,19 +1156,19 @@
         {
             "id": "T-063",
             "title": "Unit tests: CloudinaryProvider delete paths, multi-instance, and avatar boundary",
-            "description": "Gaps: GAP-078-086, GAP-078-031, GAP-078-208, GAP-078-209, GAP-078-216.\n\nFile: packages/media/test/cloudinary.provider.test.ts\n- GAP-078-086: deleteByPrefix asserts Admin API path (not Uploader)\n- GAP-078-031: Test with 2 CloudinaryProvider instances with different creds; assert global config behavior (last-init-wins documented)\n- GAP-078-208+209: CloudinaryProvider.delete() error paths + deleteByPrefix partial-delete response handling\n- GAP-078-216: Avatar boundary 5MB off-by-one\n\nAcceptance: deleteByPrefix uses Admin API; 2-instance behavior documented and verified; partial-delete handled gracefully; 5MB boundary tested at exact byte boundary.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-086, GAP-078-031, GAP-078-208, GAP-078-209, GAP-078-215 (216 done in T-062).\n\nFile: packages/media/src/server/__tests__/cloudinary.provider.test.ts\n- GAP-078-086: deleteByPrefix asserts Admin API path (not Uploader)\n- GAP-078-031+215: 2 CloudinaryProvider instances with different creds; last-init-wins footgun pinned\n- GAP-078-208+209: delete() error paths + deleteByPrefix partial-delete handling\n\nAcceptance: deleteByPrefix uses Admin API; 2-instance behavior documented and verified; partial-delete handled gracefully.\n\nOutcome (commit 71a69ea0): 4 new tests. (a) delete() permanent 404 NO retry. (b) deleteByPrefix asserts Admin API + uploader.* NOT called. (c) partial-success {deleted: {a:'deleted', b:'not_found'}} resolves cleanly. (d+e) multi-instance describe with 2 tests pinning the SDK module-level singleton footgun (older provider ref operates under tenant-B creds). 190/190 media pass.",
+            "status": "completed",
             "complexity": 2.0,
             "blockedBy": ["T-018", "T-019"],
             "blocks": [],
             "subtasks": [],
             "tags": ["testing", "media"],
             "phase": "phase-9b",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {

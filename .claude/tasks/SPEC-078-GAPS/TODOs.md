@@ -1,11 +1,11 @@
 # SPEC-078-GAPS: Cloudinary Image Management — Gaps Remediation
 
-## Progress: 48/68 tasks (71%)
+## Progress: 50/68 tasks (74%)
 
 **Average Complexity**: 1.7 / 2.5 (max)
 **Completed from prior work**: 3 tasks (Phase 0 + Phase 1A) — see already-done.md
 **Completed 2026-04-18 (previous session)**: 1 task (T-004 — Phase 1B migrations reconstruction)
-**Completed 2026-04-18/19 (current session)**: 44 tasks — 4 warmups + 5 security + 5 schema/DB + T-017 + T-022 + T-029 + T-018/T-019 + T-031 + T-023 + T-040 + T-024 + T-030 + T-025 + T-032 + T-033 + T-035 + T-034 + T-051 + T-052 + T-054 + T-056 + T-057 + T-036 + T-055 + T-020 + T-058 + T-059 + T-060 + T-062 + T-064 + T-021 (packages/media README + CLAUDE) + T-061 (cloudinary SDK contract test)
+**Completed 2026-04-18/19 (current session)**: 46 tasks — 4 warmups + 5 security + 5 schema/DB + T-017 + T-022 + T-029 + T-018/T-019 + T-031 + T-023 + T-040 + T-024 + T-030 + T-025 + T-032 + T-033 + T-035 + T-034 + T-051 + T-052 + T-054 + T-056 + T-057 + T-036 + T-055 + T-020 + T-058 + T-059 + T-060 + T-062 + T-064 + T-021 + T-061 + T-063 (provider delete paths + multi-instance) + T-039 (admin gallery tab redirect)
 **Splits applied**: 20 parent tasks split into 45 child tasks (68 total vs 47 original)
 
 **Known follow-ups**:
@@ -318,10 +318,11 @@
   - Blocked by: T-017, T-029
   - Blocks: none
 
-- [ ] **T-039** (complexity: 1.5) — Delete accommodations gallery tab and add TanStack Router redirect
+- [x] **T-039** (complexity: 1.5) — Delete accommodations gallery tab and add TanStack Router redirect
   - Gap: GAP-078-073
   - Blocked by: T-017, T-029
   - Blocks: none
+  - Outcome (commit `56ef6b72`): Replaced 143-line standalone gallery route with 22-line redirect-only route via `beforeLoad: throw redirect({to: '/accommodations/$id/edit', params: {id}, hash: 'gallery-section', replace: true})`. Component returns null. 2 new tests assert beforeLoad payload + null fallback. **Follow-up flagged**: redirect targets hash `gallery-section` per spec but the actual `EntityFormSection` for gallery currently renders no DOM element with that id — auto-scroll won't fire until the anchor is added. No 404 either way.
 
 ---
 
@@ -495,10 +496,11 @@
   - Blocks: none
   - Outcome (commit `6f0b286f`): 5 new provider tests + 2 validate-media-file boundary tests. data-URI + remote-URL inputs modeled via Buffer conversion (provider only accepts Buffer). setupUploadStream helper rewritten with `setImmediate(cb, null, result)` for realistic async — 12+ existing tests benefit. resource_type='image' assertion via mock.calls inspection. Empty `tags: []` resolves AND provider strips option entirely (`callOptions.tags === undefined`, NOT `[]`) — explicit gating on line 217. Avatar 5MB exact passes; 5MB+1 fails with FILE_TOO_LARGE. 184/184 media tests pass; coverage above T-060 perFile thresholds. **Note**: GAP-078-215 (multi-instance behavior) was listed but deferred — left for T-063 sweep where it fits with delete paths + multi-instance scenarios.
 
-- [ ] **T-063** (complexity: 2.0) — Unit tests: CloudinaryProvider delete paths, multi-instance, and avatar boundary
-  - Gaps: GAP-078-086, GAP-078-031, GAP-078-208, GAP-078-209, GAP-078-216
+- [x] **T-063** (complexity: 2.0) — Unit tests: CloudinaryProvider delete paths, multi-instance, and avatar boundary
+  - Gaps: GAP-078-086, GAP-078-031, GAP-078-208, GAP-078-209, GAP-078-215, GAP-078-216 (216 already done in T-062)
   - Blocked by: T-018, T-019
   - Blocks: none
+  - Outcome (commit `71a69ea0`): 4 new provider tests. (a) delete() permanent 404 NO retry (distinct from T-035's 401 — 404 is endpoint hard-reject vs auth); (b) deleteByPrefix asserts cloudinary.api.delete_resources_by_prefix called + uploader.* NOT called; (c) deleteByPrefix partial-success `{deleted: {a:'deleted', b:'not_found'}}` resolves cleanly; (d+e) **multi-instance describe with 2 tests pinning the last-init-wins footgun** — older provider reference still operates under tenant-B creds because SDK is module-level singleton. Documented in T-020's constructor JSDoc, now pinned by tests. 190/190 media pass; coverage 94.15%/91.52% above thresholds.
 
 ---
 
@@ -626,3 +628,4 @@ Critical path: T-001 -> T-003 -> T-017 -> T-029 -> T-031 -> T-040 -> T-067 -> T-
 - **2026-04-19 (T-059 + T-060 combined sweep)**: Two parallel sub-agents both touched `validate-media-file.test.ts` (with 3 vs 12 tests respectively, no semantic conflict). Single combined commit (`04180ddc`) for atomic file diff. **Discoveries**: (a) 0-byte buffer returns `INVALID_IMAGE` (NOT route-level `EMPTY_FILE` from T-032); (b) `getMediaUrl` is a pure string transformer that preserves HTTP scheme as-is — HTTPS enforcement lives elsewhere; (c) `/image/fetch/` URLs return null from extractPublicId; (d) `/upload/v1/upload/file.jpg` matches FIRST `/upload/` (literal becomes folder); (e) `MEDIA_PRESETS` needed runtime `Object.freeze()` because `as const` is type-only. T-060 set vitest coverage `perFile: true` 90/85/90/90 (barrel + types excluded); final coverage 95.81/94.66/96.77/95.81. Synthetic AVIF/HEIC/WEBP via 12-byte ftyp/RIFF headers built in-process (no binary fixtures). 178/178 media tests pass. Progress now 44/68 (65%). **Unlocked**: nothing new — T-021, T-038/T-039, Phase 9 remainders (T-061..T-068) still available.
 - **2026-04-19 (T-062 + T-064 parallel sweep)**: Two independent sub-agents in parallel, zero file collision (T-062 on packages/media provider+validate tests, T-064 on packages/seed test/utils). T-062 landed first (`6f0b286f`) then T-064 (`dc7eb3cb`). T-062 discoveries: (a) `upload()` accepts Buffer ONLY (data-URI/URL strings must be caller-converted); (b) provider strips `tags: []` entirely — option becomes undefined, not `[]`; (c) setupUploadStream helper rewrite with setImmediate benefits 12+ existing tests; (d) GAP-078-215 multi-instance deferred to T-063 where it fits better. T-064 discoveries: (a) SeedSource enum is `'required'|'example'` only — no `'optional'` literal (warn-only = `required + allowRequiredFallback`); (b) `id-mappings.json` not gitignored, caused stale formatter error (follow-up). 184/184 media + 13 files/144 tests seed pass. Progress now 46/68 (68%). **Unlocked**: nothing new — T-021, T-038/T-039, T-061/T-063/T-065/T-066/T-067 still available.
 - **2026-04-19 (T-021 + T-061 parallel sweep)**: Two trivial complexity-1.0 sub-agents in parallel, zero file collision (T-021 docs at `packages/media/{README,CLAUDE}.md`, T-061 new test at `cloudinary-sdk-contract.test.ts`). T-021 landed first (`014c30f1`) then T-061 (`cf830e97`). Both clean — no source touched, no behavior change. T-021 documented avatar race condition trade-off (last-write-wins, mitigated by T-008 + future T-015). T-061 contract test asserts 5 SDK methods are typeof function (config, upload_stream, destroy, delete_resources_by_prefix, ping) so SDK breaking changes from minor/patch updates fail loudly. 185/185 media tests pass. Progress now 48/68 (71%). **Unlocked**: nothing new — T-038/T-039 (admin UI requires consult), T-063/T-065/T-066, T-041..T-043, T-048..T-050 (web), T-067 still gated on T-040+T-044+T-045.
+- **2026-04-19 (T-063 + T-039 parallel sweep)**: Two independent sub-agents in parallel, zero file collision (T-063 on packages/media provider tests, T-039 on apps/admin gallery route). T-063 landed first (`71a69ea0`) then T-039 (`56ef6b72`). T-063: pinned the multi-instance last-init-wins footgun via 2 tests (older provider reference operates under tenant-B creds because SDK is module-level singleton). T-039: standalone gallery route replaced with thin TanStack Router redirect (143→22 lines). T-039 follow-up: hash `gallery-section` doesn't have matching DOM anchor in EntityFormSection — auto-scroll won't fire (no 404 either). Progress now 50/68 (74%). **Unlocked**: nothing new — T-038 (admin UI requires consult), T-041..T-043, T-048..T-050, T-065/T-066/T-067/T-068 still available.
