@@ -1,5 +1,26 @@
 # SPEC-063 — Implementation Progress Log
 
+## Session summary (as of 2026-04-18T19:11)
+
+- **Progress:** 43/63 completed + 7 deferred. Effective scope **43/56**.
+- **Phase 3 pace:** T-039 + T-043 + T-044 + T-045 + T-046 + T-047 landed in sequence. Phase 3 now 7/13 remaining. Next: T-048 (service remove _executeAdminSearch override) + T-049 (service force-override lifecycleState=ACTIVE on public), then T-050..T-054 routes + admin UI.
+- **Milestone:** `packages/schemas` SOURCE + `packages/db` 100% typecheck-clean for Phase 3 Sponsorship. Only remaining model-layer cascade is `packages/db/test/models/sponsorship.model.test.ts` (findByStatus references) → T-057 test task scope.
+
+### T-047 completed 2026-04-18T19:11
+
+- **File:** `packages/db/src/models/sponsorship/sponsorship.model.ts`
+- `findActiveByTarget` (line ~107): added `eq(sponsorships.lifecycleState, 'ACTIVE')` as a new condition inside the existing `and(...)` composite, right after `eq(sponsorships.sponsorshipStatus, 'active')`. Satisfies AC-003-02: archived sponsorships do NOT leak even when domain status is still `'active'`. Used string literal `'ACTIVE'` for Drizzle enum value (consistent with codebase convention — same decision as T-011 OwnerPromotion).
+- `findByStatus` → `findBySponsorshipStatus` (method name, parameter name, all 3 log/error key strings including `logQuery`, `logError`, `DbError` args, and JSDoc). Also renamed internal `findAll` filter key from `status` to `sponsorshipStatus`.
+- Consumer grep (post-edit):
+  - `packages/service-core`: 0 matches.
+  - `apps/`: 0 matches.
+  - `packages/db/test/models/sponsorship.model.test.ts`: 5 residual `findByStatus` references → T-057 test task scope.
+  - `packages/db/examples/complex-queries.ts`: has `findByStatus` but it's a generic `OrderModel` example, unrelated. Ignored.
+- **Lint:** pass. **Typecheck `@repo/db`:** 100% clean (no sponsorship errors).
+- Commit boundary: 1 feat(db) + 1 chore(tasks).
+
+---
+
 ## Session summary (as of 2026-04-18T19:02)
 
 - **Progress:** 42/63 completed + 7 deferred. Effective scope **42/56**.

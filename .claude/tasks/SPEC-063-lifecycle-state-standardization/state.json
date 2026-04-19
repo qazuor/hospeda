@@ -1589,27 +1589,27 @@
         {
             "id": "T-047",
             "title": "Update Sponsorship model: rename findByStatus + update findActiveByTarget",
-            "description": "Update `packages/db/src/models/sponsorship/sponsorship.model.ts`: (1) rename `findByStatus(status)` to `findBySponsorshipStatus(sponsorshipStatus)`, update internal query from `eq(sponsorships.status, status)` to `eq(sponsorships.sponsorshipStatus, sponsorshipStatus)`. (2) Update `findActiveByTarget()` to use BOTH conditions: `and(eq(sponsorships.sponsorshipStatus, 'active'), eq(sponsorships.lifecycleState, 'ACTIVE'))`. Per AC-003-02, archived sponsorships must NOT be returned even if domain status is still 'active'.\n\nFiles: `packages/db/src/models/sponsorship/sponsorship.model.ts`",
-            "status": "pending",
+            "description": "Update `packages/db/src/models/sponsorship/sponsorship.model.ts`: (1) rename `findByStatus(status)` to `findBySponsorshipStatus(sponsorshipStatus)`, update internal query from `eq(sponsorships.status, status)` to `eq(sponsorships.sponsorshipStatus, sponsorshipStatus)`. (2) Update `findActiveByTarget()` to use BOTH conditions: `and(eq(sponsorships.sponsorshipStatus, 'active'), eq(sponsorships.lifecycleState, 'ACTIVE'))`. Per AC-003-02, archived sponsorships must NOT be returned even if domain status is still 'active'.\n\nFiles: `packages/db/src/models/sponsorship/sponsorship.model.ts`\n\nCOMPLETION NOTE: findByStatus renamed to findBySponsorshipStatus (method, parameter, all log/error key strings, JSDoc). findActiveByTarget now filters by BOTH eq(sponsorships.sponsorshipStatus, 'active') AND eq(sponsorships.lifecycleState, 'ACTIVE') inside the existing `and(...)` composite (AC-003-02 archived-must-not-leak). No consumers in service-core or apps (grep clean). Test file `packages/db/test/models/sponsorship.model.test.ts` still references findByStatus (5 sites) — deferred to T-057 test task. Lint pass; typecheck `@repo/db` clean.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-039", "T-043"],
             "blocks": ["T-048", "T-055"],
             "subtasks": [
-                { "title": "Rename findByStatus to findBySponsorshipStatus", "completed": false },
-                { "title": "Update findBySponsorshipStatus internal query", "completed": false },
+                { "title": "Rename findByStatus to findBySponsorshipStatus", "completed": true },
+                { "title": "Update findBySponsorshipStatus internal query", "completed": true },
                 {
                     "title": "Update findActiveByTarget to filter by BOTH fields",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Grep model for any remaining status references", "completed": false }
+                { "title": "Grep model for any remaining status references", "completed": true }
             ],
             "tags": ["db", "model", "phase-3", "sponsorship"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T19:08:00.000Z",
+                "completed": "2026-04-18T19:11:00.000Z"
             }
         },
         {
@@ -1913,9 +1913,9 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 14,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 42,
+        "completed": 43,
         "deferred": 7,
         "blocked": 0,
         "averageComplexity": 2.0,
