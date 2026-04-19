@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CloudinaryProvider, ConfigurationError } from '../cloudinary.provider.js';
+import {
+    CloudinaryProvider,
+    ConfigurationError,
+    InvalidFolderError
+} from '../cloudinary.provider.js';
 
 // ---------------------------------------------------------------------------
 // Mock cloudinary SDK
@@ -56,11 +60,34 @@ function setupUploadStream(error: Error | null, result: typeof MOCK_UPLOAD_RESPO
             _options: Record<string, unknown>,
             callback: (err: Error | null, result: unknown) => void
         ) => ({
+            on: vi.fn(),
             end: vi.fn(() => {
                 callback(error, result);
             })
         })
     );
+}
+
+/**
+ * Sets up mockUploadStream so it never invokes the result callback, but instead
+ * emits a transport-level 'error' event via the registered `on('error', ...)`
+ * handler. Mirrors the silent-hang scenario GAP-078-027 protects against.
+ */
+function setupUploadStreamWithTransportError(error: Error) {
+    mockUploadStream.mockImplementation(() => {
+        const listeners = new Map<string, (err: Error) => void>();
+        return {
+            on: vi.fn((event: string, handler: (err: Error) => void) => {
+                listeners.set(event, handler);
+            }),
+            end: vi.fn(() => {
+                const handler = listeners.get('error');
+                if (handler) {
+                    handler(error);
+                }
+            })
+        };
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -115,6 +142,42 @@ describe('CloudinaryProvider', () => {
 
         it('should not throw when all config values are present', () => {
             expect(() => new CloudinaryProvider(VALID_CONFIG)).not.toThrow();
+        });
+
+        // GAP-078-057: cloudName must match /^[a-z0-9_-]+$/
+        it('should throw ConfigurationError when cloudName contains a space', () => {
+            // Arrange
+            const invalidConfig = { ...VALID_CONFIG, cloudName: 'my cloud!' };
+
+            // Act + Assert
+            expect(() => new CloudinaryProvider(invalidConfig)).toThrow(ConfigurationError);
+            expect(() => new CloudinaryProvider(invalidConfig)).toThrow(
+                /must match \/\^\[a-z0-9_-\]\+\$\//
+            );
+        });
+
+        it('should throw ConfigurationError when cloudName contains uppercase letters', () => {
+            // Arrange
+            const invalidConfig = { ...VALID_CONFIG, cloudName: 'MyCloud' };
+
+            // Act + Assert
+            expect(() => new CloudinaryProvider(invalidConfig)).toThrow(ConfigurationError);
+        });
+
+        it('should throw ConfigurationError when cloudName contains forbidden punctuation', () => {
+            // Arrange
+            const invalidConfig = { ...VALID_CONFIG, cloudName: 'cloud.name' };
+
+            // Act + Assert
+            expect(() => new CloudinaryProvider(invalidConfig)).toThrow(ConfigurationError);
+        });
+
+        it('should accept cloudName composed of allowed characters', () => {
+            // Arrange
+            const validConfig = { ...VALID_CONFIG, cloudName: 'hospeda_dev-01' };
+
+            // Act + Assert
+            expect(() => new CloudinaryProvider(validConfig)).not.toThrow();
         });
 
         it('should call cloudinary.config with snake_case param names', () => {
@@ -241,6 +304,7 @@ describe('CloudinaryProvider', () => {
                     _options: Record<string, unknown>,
                     callback: (err: null, result: undefined) => void
                 ) => ({
+                    on: vi.fn(),
                     end: vi.fn(() => callback(null, undefined))
                 })
             );
@@ -252,6 +316,66 @@ describe('CloudinaryProvider', () => {
                     folder: 'hospeda/prod/accommodations/abc-123'
                 })
             ).rejects.toThrow('Cloudinary returned no result');
+        });
+
+        // GAP-078-027: stream error event must reject the upload promise
+        it('should reject when the underlying upload stream emits a transport error event', async () => {
+            // Arrange
+            const transportError = new Error('socket hang up');
+            setupUploadStreamWithTransportError(transportError);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act + Assert
+            await expect(
+                provider.upload({
+                    file: Buffer.from('fake-image'),
+                    folder: 'hospeda/prod/accommodations/abc-123'
+                })
+            ).rejects.toThrow('socket hang up');
+        });
+
+        // GAP-078-112: folder must start with 'hospeda/'
+        it('should throw InvalidFolderError when folder does not start with hospeda/', async () => {
+            // Arrange
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act + Assert
+            await expect(
+                provider.upload({
+                    file: Buffer.from('fake-image'),
+                    folder: 'other/x'
+                })
+            ).rejects.toBeInstanceOf(InvalidFolderError);
+            // SDK must NOT have been invoked when the guard rejects
+            expect(mockUploadStream).not.toHaveBeenCalled();
+        });
+
+        it('should throw InvalidFolderError when folder is an empty string', async () => {
+            // Arrange
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act + Assert
+            await expect(
+                provider.upload({
+                    file: Buffer.from('fake-image'),
+                    folder: ''
+                })
+            ).rejects.toBeInstanceOf(InvalidFolderError);
+            expect(mockUploadStream).not.toHaveBeenCalled();
+        });
+
+        it('should not be fooled by a folder that merely contains hospeda/ later in the path', async () => {
+            // Arrange
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act + Assert
+            await expect(
+                provider.upload({
+                    file: Buffer.from('fake-image'),
+                    folder: 'evil/hospeda/prod'
+                })
+            ).rejects.toBeInstanceOf(InvalidFolderError);
+            expect(mockUploadStream).not.toHaveBeenCalled();
         });
 
         it('should throw when Cloudinary returns incomplete response missing secure_url', async () => {

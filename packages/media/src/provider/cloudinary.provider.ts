@@ -39,6 +39,35 @@ export class ConfigurationError extends Error {
 }
 
 /**
+ * Error thrown when a folder path does not satisfy the required `hospeda/` namespace prefix.
+ *
+ * All assets uploaded through this provider MUST live under the `hospeda/`
+ * namespace to prevent cross-tenant collisions and accidental writes to the
+ * Cloudinary root. This guard runs at `upload()` entry, before any SDK call.
+ */
+export class InvalidFolderError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'InvalidFolderError';
+    }
+}
+
+/**
+ * Allowed characters for a Cloudinary cloud name.
+ *
+ * Cloudinary cloud names are URL slugs and must only contain lowercase letters,
+ * digits, underscores, and hyphens. Validating with this regex prevents invalid
+ * configuration values (e.g. with spaces or `!`) from reaching the SDK or
+ * being interpolated into URLs.
+ */
+const CLOUD_NAME_REGEX = /^[a-z0-9_-]+$/;
+
+/**
+ * Required folder prefix for all uploads through this provider.
+ */
+const REQUIRED_FOLDER_PREFIX = 'hospeda/';
+
+/**
  * Cloudinary implementation of the ImageProvider interface.
  *
  * All Cloudinary SDK interactions are encapsulated here.
@@ -63,6 +92,11 @@ export class CloudinaryProvider implements ImageProvider {
         if (!config.cloudName) {
             throw new ConfigurationError('Missing HOSPEDA_CLOUDINARY_CLOUD_NAME');
         }
+        if (!CLOUD_NAME_REGEX.test(config.cloudName)) {
+            throw new ConfigurationError(
+                'Invalid HOSPEDA_CLOUDINARY_CLOUD_NAME: must match /^[a-z0-9_-]+$/'
+            );
+        }
         if (!config.apiKey) {
             throw new ConfigurationError('Missing HOSPEDA_CLOUDINARY_API_KEY');
         }
@@ -86,6 +120,12 @@ export class CloudinaryProvider implements ImageProvider {
      */
     async upload(options: UploadOptions): Promise<UploadResult> {
         const { file, folder, publicId, tags, overwrite } = options;
+
+        if (!folder || !folder.startsWith(REQUIRED_FOLDER_PREFIX)) {
+            throw new InvalidFolderError(
+                `Folder must start with '${REQUIRED_FOLDER_PREFIX}' (received: '${folder ?? ''}')`
+            );
+        }
 
         const uploadOptions: Record<string, unknown> = {
             folder,
@@ -166,6 +206,9 @@ export class CloudinaryProvider implements ImageProvider {
                     reject(new Error('Cloudinary returned no result'));
                 }
             });
+            // Surface stream-level transport errors so the promise rejects instead
+            // of hanging silently when the underlying socket fails.
+            stream.on('error', reject);
             stream.end(buffer);
         });
     }

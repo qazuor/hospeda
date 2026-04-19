@@ -25,7 +25,11 @@ export type {
     ValidationFailure
 } from './validate-media-file.js';
 
-export { CloudinaryProvider, ConfigurationError } from './provider/cloudinary.provider.js';
+export {
+    CloudinaryProvider,
+    ConfigurationError,
+    InvalidFolderError
+} from './provider/cloudinary.provider.js';
 export type { CloudinaryProviderConfig } from './provider/cloudinary.provider.js';
 export type {
     DeleteByPrefixOptions,
