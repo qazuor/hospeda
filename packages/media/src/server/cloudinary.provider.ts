@@ -127,6 +127,39 @@ function isPermanent4xx(err: unknown): boolean {
  * ```
  */
 export class CloudinaryProvider implements ImageProvider {
+    /**
+     * @internal
+     *
+     * Direct instantiation is reserved for the canonical access point
+     * `getMediaProvider()` in `apps/api/src/services/media.ts` and for
+     * unit tests under `packages/media/src/server/__tests__/`.
+     *
+     * **Do NOT call `new CloudinaryProvider(...)` from application code.**
+     * Application code (routes, services, seed pipelines) MUST resolve the
+     * provider through `getMediaProvider()` so that a single configured
+     * instance is reused process-wide.
+     *
+     * **Why this matters.** The Cloudinary SDK v2 keeps configuration in a
+     * module-level singleton (`cloudinary.config({...})`). Constructing
+     * multiple providers within the same process silently overwrites the
+     * global SDK state, and the most recent constructor wins. Multi-instance
+     * usage (e.g. multi-tenant credentials per-request) is therefore
+     * unsupported and will produce hard-to-debug cross-tenant leaks.
+     *
+     * SPEC-078-GAPS GAP-078-028 + GAP-078-174.
+     *
+     * TODO(SPEC-078-GAPS follow-up): Biome 1.5.3 `noRestrictedImports` only
+     * intercepts module imports, not `new ClassName(...)` AST nodes, so we
+     * cannot lint-enforce this restriction today. Revisit once Biome ships
+     * `useRestrictedSyntax` (or equivalent AST-level rule) and migrate the
+     * remaining direct callers in `packages/seed/src/index.ts` and
+     * `packages/seed/src/cli.ts` to `getMediaProvider()`.
+     *
+     * @see {@link getMediaProvider} in `apps/api/src/services/media.ts`
+     * @param config - Validated Cloudinary credentials
+     * @throws {ConfigurationError} When any credential is missing or the
+     *   `cloudName` does not match the allowed slug regex
+     */
     constructor(config: CloudinaryProviderConfig) {
         if (!config.cloudName) {
             throw new ConfigurationError('Missing HOSPEDA_CLOUDINARY_CLOUD_NAME');
