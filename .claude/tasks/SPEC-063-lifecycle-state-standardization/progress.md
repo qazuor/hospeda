@@ -1,5 +1,23 @@
 # SPEC-063 — Implementation Progress Log
 
+## Session summary (as of 2026-04-19T12:08)
+
+- **Progress:** 49/63 completed + 7 deferred. Effective scope **49/56**.
+- **Phase 3 pace:** T-052 + T-053 landed back-to-back. Hook payload + consumer call-sites fully aligned with `sponsorshipStatus`. Phase 3 now 1/13 remaining in core scope: T-054 (SponsorshipsTab + lifecycleState filter dropdown). Then T-055/T-056/T-057 tests + T-058 cleanup.
+
+### T-053 completed 2026-04-19T12:08
+
+- **Files touched:**
+  - `apps/admin/src/features/sponsorships/hooks/useSponsorshipQueries.ts`:
+    - `updateSponsorshipStatus(id, status)` → `updateSponsorshipStatus(id, sponsorshipStatus)`; body key renamed.
+    - `useUpdateSponsorshipStatusMutation.mutationFn` destructured `{ id, status }` → `{ id, sponsorshipStatus }`; type signature updated.
+    - `toggleLevelActive` + `togglePackageActive` intentionally NOT touched — SponsorshipLevel / SponsorshipPackage are not in SPEC-063 scope (they keep their `isActive` semantics).
+- **Scope absorb:** `apps/admin/src/features/sponsorships/components/SponsorshipsTab.tsx` L138 + L155 mutate payload keys `status` → `sponsorshipStatus` (T-052 had flagged these as T-053 scope; resolved here together with the hook rename to keep the atomic commit consistent).
+- **Lint:** pass. **Typecheck `@repo/admin`:** clean for SPEC-063 (whitelist preexisting only).
+- **Commit boundary:** 1 `feat(admin)` covering hook + consumer payload key alignment (2 files). Clean commit, no auto-promotions from lint-staged this time.
+
+---
+
 ## Session summary (as of 2026-04-19T11:55)
 
 - **Progress:** 48/63 completed + 7 deferred. Effective scope **48/56**.

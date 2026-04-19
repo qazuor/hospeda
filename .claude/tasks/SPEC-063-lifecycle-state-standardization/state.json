@@ -1761,22 +1761,34 @@
             "id": "T-053",
             "title": "Update Sponsorship useSponsorshipQueries hook",
             "description": "Update `apps/admin/src/features/sponsorships/hooks/useSponsorshipQueries.ts`: (1) line 96: change `body: { status }` to `body: { sponsorshipStatus }` in `updateSponsorshipStatus()`, (2) line 170: change mutation type `{ id: string; status: string }` to `{ id: string; sponsorshipStatus: string }`.\n\nFiles: `apps/admin/src/features/sponsorships/hooks/useSponsorshipQueries.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-050", "T-052"],
             "blocks": ["T-055"],
             "subtasks": [
-                { "title": "Update updateSponsorshipStatus body field name", "completed": false },
-                { "title": "Update mutation type signature", "completed": false }
+                {
+                    "title": "Update updateSponsorshipStatus body field name",
+                    "completed": true,
+                    "_note": "param rename + body key; toggleLevelActive/togglePackageActive left untouched (SponsorshipLevel/Package out of SPEC-063 scope)"
+                },
+                {
+                    "title": "Update mutation type signature",
+                    "completed": true,
+                    "_note": "mutationFn destructured param renamed; flows to SponsorshipsTab.tsx consumer payload keys"
+                }
             ],
             "tags": ["admin", "frontend", "hooks", "phase-3", "sponsorship"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "deferred" },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-04-19T12:05:00.000Z",
+                "completed": "2026-04-19T12:08:00.000Z"
+            },
+            "_scopeAbsorbed": [
+                "apps/admin/src/features/sponsorships/components/SponsorshipsTab.tsx: 2 mutate payload keys (L138/L155) `status` → `sponsorshipStatus` (flagged in T-052, resolved here together with hook rename)"
+            ],
+            "_commitHash": "b7e018e6"
         },
         {
             "id": "T-054",
