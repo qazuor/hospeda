@@ -602,6 +602,24 @@ describe('CloudinaryProvider', () => {
             expect(mockDestroy).toHaveBeenCalledTimes(1);
         });
 
+        // SPEC-078-GAPS GAP-078-208: permanent 4xx (404) must NOT retry either.
+        // 404 here means the SDK itself rejected (rather than returning a
+        // `{result: 'not found'}` payload), e.g. an admin endpoint reachable
+        // via destroy that returns hard 404 for malformed public IDs. Same
+        // policy applies: abort retry, propagate the original error.
+        it('should NOT retry on a permanent 4xx error such as 404 and propagate the error', async () => {
+            // Arrange
+            const error = Object.assign(new Error('Not Found'), { http_code: 404 });
+            mockDestroy.mockRejectedValue(error);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act + Assert
+            await expect(provider.delete({ publicId: 'hospeda/prod/abc/missing' })).rejects.toThrow(
+                'Not Found'
+            );
+            expect(mockDestroy).toHaveBeenCalledTimes(1);
+        });
+
         // SPEC-078-GAPS GAP-078-154: present asset → wasPresent: true
         it('should return wasPresent: true when Cloudinary reports result === "ok"', async () => {
             mockDestroy.mockResolvedValue({ result: 'ok' });
@@ -667,6 +685,138 @@ describe('CloudinaryProvider', () => {
                 'hospeda/prod/accommodations/abc-123/',
                 { invalidate: true }
             );
+        });
+
+        // SPEC-078-GAPS GAP-078-086: deleteByPrefix MUST be implemented via the
+        // Admin API endpoint (`cloudinary.api.delete_resources_by_prefix`), NOT
+        // via any Uploader endpoint. Uploader endpoints only operate on a
+        // single public_id and would silently no-op on a folder prefix, leaving
+        // assets behind. This test pins the wiring so a future refactor can't
+        // accidentally route the call through `cloudinary.uploader.*`.
+        it('should target the Admin API (not the Uploader) when deleting a prefix', async () => {
+            // Arrange
+            mockDeleteByPrefix.mockResolvedValue({ deleted: {} });
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            await provider.deleteByPrefix({
+                prefix: 'hospeda/prod/accommodations/abc-123/'
+            });
+
+            // Assert: Admin API hit exactly once; no Uploader endpoint touched.
+            expect(mockDeleteByPrefix).toHaveBeenCalledOnce();
+            expect(mockDestroy).not.toHaveBeenCalled();
+            expect(mockUploadStream).not.toHaveBeenCalled();
+        });
+
+        // SPEC-078-GAPS GAP-078-209: Cloudinary's Admin API responds with a
+        // partial-success shape that contains BOTH 'deleted' and 'not_found'
+        // entries when some of the matched resources had already been removed
+        // (e.g. by a prior cleanup). The provider does not surface per-asset
+        // status (that's `delete()`'s contract per T-030 / GAP-078-154); for
+        // `deleteByPrefix()` the only requirement is that the partial-shape
+        // response resolves cleanly without crashing or being misinterpreted
+        // as a failure.
+        it('should resolve cleanly when the Admin API returns a partial-deleted response', async () => {
+            // Arrange — partial-success payload as documented by Cloudinary.
+            mockDeleteByPrefix.mockResolvedValue({
+                deleted: { a: 'deleted', b: 'not_found' }
+            });
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act + Assert — must not throw, must not retry.
+            await expect(
+                provider.deleteByPrefix({
+                    prefix: 'hospeda/prod/accommodations/abc-123/'
+                })
+            ).resolves.toBeUndefined();
+            expect(mockDeleteByPrefix).toHaveBeenCalledOnce();
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Multi-instance global config footgun
+    //
+    // SPEC-078-GAPS GAP-078-031 + GAP-078-215 — the Cloudinary SDK v2 keeps
+    // configuration in a module-level singleton (`cloudinary.config({...})`).
+    // Constructing two `CloudinaryProvider` instances inside the same process
+    // therefore overwrites the global SDK state, and the most recent
+    // constructor wins. Multi-instance usage (e.g. multi-tenant credentials
+    // per-request) is unsupported and will produce hard-to-debug cross-tenant
+    // leaks. The provider's constructor JSDoc already documents this footgun
+    // (see T-020 / GAP-078-028 + GAP-078-174); these tests pin the observable
+    // last-init-wins behavior so a regression is loud.
+    // -------------------------------------------------------------------------
+
+    describe('multi-instance global config (last-init-wins footgun)', () => {
+        it('should overwrite the global SDK config when a second instance is constructed', () => {
+            // Arrange
+            const firstConfig = {
+                cloudName: 'tenant-a',
+                apiKey: 'key-a',
+                apiSecret: 'secret-a'
+            };
+            const secondConfig = {
+                cloudName: 'tenant-b',
+                apiKey: 'key-b',
+                apiSecret: 'secret-b'
+            };
+
+            // Act — construct two providers with distinct credentials.
+            new CloudinaryProvider(firstConfig);
+            new CloudinaryProvider(secondConfig);
+
+            // Assert — both calls reached the global `cloudinary.config()`,
+            // and the SECOND call (last-init-wins) is the surviving state.
+            expect(mockConfig).toHaveBeenCalledTimes(2);
+            expect(mockConfig).toHaveBeenNthCalledWith(1, {
+                cloud_name: firstConfig.cloudName,
+                api_key: firstConfig.apiKey,
+                api_secret: firstConfig.apiSecret
+            });
+            expect(mockConfig).toHaveBeenNthCalledWith(2, {
+                cloud_name: secondConfig.cloudName,
+                api_key: secondConfig.apiKey,
+                api_secret: secondConfig.apiSecret
+            });
+            // The "active" (most recent) config is the last call's payload.
+            const lastCall = mockConfig.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+            expect(lastCall).toEqual({
+                cloud_name: secondConfig.cloudName,
+                api_key: secondConfig.apiKey,
+                api_secret: secondConfig.apiSecret
+            });
+        });
+
+        it('should route SDK calls under the surviving (last-init) credentials regardless of which instance is invoked', async () => {
+            // Arrange — instance A is constructed first, then B. Per the
+            // global-config footgun, B's credentials overwrite A's in the
+            // SDK singleton. Because the SDK is a module-level singleton,
+            // calls made via the OLDER `providerA` reference still execute
+            // under B's credentials — this is exactly the cross-tenant leak
+            // we want a regression test to catch.
+            mockDestroy.mockResolvedValue({ result: 'ok' });
+            const providerA = new CloudinaryProvider({
+                cloudName: 'tenant-a',
+                apiKey: 'key-a',
+                apiSecret: 'secret-a'
+            });
+            new CloudinaryProvider({
+                cloudName: 'tenant-b',
+                apiKey: 'key-b',
+                apiSecret: 'secret-b'
+            });
+
+            // Act — operate via the OLDER instance.
+            await providerA.delete({ publicId: 'hospeda/prod/abc/featured' });
+
+            // Assert — destroy was hit (the SDK singleton accepted the call),
+            // but the active config seen by the SDK is tenant-b's. This is
+            // the documented footgun: providerA is effectively a stale handle.
+            expect(mockDestroy).toHaveBeenCalledOnce();
+            const surviving = mockConfig.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+            expect(surviving.cloud_name).toBe('tenant-b');
+            expect(surviving.api_key).toBe('key-b');
         });
     });
 
