@@ -202,19 +202,19 @@
         {
             "id": "T-010",
             "title": "Schema alignment: MediaSchema.featuredImage optional, ImageSchema publicId and attribution",
-            "description": "Gaps: GAP-078-185, GAP-078-163, GAP-078-196, GAP-078-116.\n\nFile: packages/schemas/src/common/media.schema.ts\n- GAP-078-185+163: MediaSchema.featuredImage -> .optional()\n- GAP-078-196: ImageSchema adds publicId: z.string().min(1).optional()\n- GAP-078-116: ImageSchema adds attribution?: { photographer?, sourceUrl?, license? }\n\nAcceptance: MediaSchema.parse({}) succeeds; ImageSchema.parse({ url: '...', publicId: 'hospeda/dev/x' }) succeeds; ImageSchema.parse({ url: '...', attribution: { photographer: 'Jane' } }) succeeds.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-185, GAP-078-163, GAP-078-196, GAP-078-116.\n\nFile: packages/schemas/src/common/media.schema.ts\n- GAP-078-185+163: MediaSchema.featuredImage -> .optional()\n- GAP-078-196: ImageSchema adds publicId: z.string().min(1).optional()\n- GAP-078-116: ImageSchema adds attribution?: { photographer?, sourceUrl?, license? }\n\nAcceptance: MediaSchema.parse({}) succeeds; ImageSchema.parse({ url: '...', publicId: 'hospeda/dev/x' }) succeeds; ImageSchema.parse({ url: '...', attribution: { photographer: 'Jane' } }) succeeds.\n\nNOTE (2026-04-19): ImageAttributionSchema exported as dedicated sub-schema. Historic fixtures continue parsing; 18 new tests (11 unit + 7 compat). Unblocks T-019, T-022 (seed), T-029 (API).",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-004"],
             "blocks": ["T-019", "T-020"],
             "subtasks": [],
             "tags": ["schemas", "types"],
             "phase": "phase-2a",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:50:00.000Z",
+                "completed": "2026-04-19T01:30:00.000Z"
             }
         },
         {
@@ -238,8 +238,8 @@
         {
             "id": "T-012",
             "title": "DB nullability alignment: DROP NOT NULL on posts/destinations media + $type fix + media shape CHECK",
-            "description": "Gaps: GAP-078-184, GAP-078-180, GAP-078-080, GAP-078-075.\n\nFiles: packages/db/src/schemas/*.dbschema.ts, packages/db/src/migrations/manual/*.sql\n- GAP-078-184+180+080: Migration ALTER TABLE posts/destinations ALTER COLUMN media DROP NOT NULL; change $type<Media>() to $type<Media | null>() in all 4 entities; update derived types in @repo/schemas\n- GAP-078-075: Migration ADD CONSTRAINT chk_{entity}_media_shape CHECK (media IS NULL OR jsonb_typeof(media) = 'object') on accommodations/destinations/events/posts/post_sponsor; BaseCrudService._beforeCreate/_beforeUpdate run MediaSchema.safeParse when entity has media column\n\nAcceptance: Insert post without media succeeds; TypeScript Drizzle type reflects Media | null; media = 'string'::jsonb fails with CHECK violation.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-184, GAP-078-180, GAP-078-080, GAP-078-075.\n\nFiles: packages/db/src/schemas/*.dbschema.ts, packages/db/src/migrations/manual/*.sql\n- GAP-078-184+180+080: Migration ALTER TABLE posts/destinations ALTER COLUMN media DROP NOT NULL; change $type<Media>() to $type<Media | null>() in all 4 entities; update derived types in @repo/schemas\n- GAP-078-075: Migration ADD CONSTRAINT chk_{entity}_media_shape CHECK (media IS NULL OR jsonb_typeof(media) = 'object') on accommodations/destinations/events/posts/post_sponsor; BaseCrudService._beforeCreate/_beforeUpdate run MediaSchema.safeParse when entity has media column\n\nAcceptance: Insert post without media succeeds; TypeScript Drizzle type reflects Media | null; media = 'string'::jsonb fails with CHECK violation.\n\nNOTE (2026-04-19): post_sponsors has `logo` (Image), not `media` (JSONB) — documented in SQL with RAISE NOTICE. CHECK applied to 4 tables (accommodations/destinations/events/posts). destination.service.ts workaround cleanup deferred (file has pre-existing uncommitted work).",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-004"],
             "blocks": ["T-018"],
@@ -256,37 +256,37 @@
         {
             "id": "T-013",
             "title": "DB gallery max CHECK constraint migration",
-            "description": "Gap: GAP-078-195.\n\nFile: packages/db/src/migrations/manual/\n- Migration: ALTER TABLE {accommodations,destinations,events,posts} ADD CONSTRAINT chk_gallery_max_items CHECK (media IS NULL OR media->'gallery' IS NULL OR jsonb_array_length(media->'gallery') <= 50)\n\nAcceptance: Insert with gallery.length = 51 fails with CHECK violation; insert with 50 succeeds.",
-            "status": "pending",
+            "description": "Gap: GAP-078-195.\n\nFile: packages/db/src/migrations/manual/\n- Migration: ALTER TABLE {accommodations,destinations,events,posts} ADD CONSTRAINT chk_gallery_max_items CHECK (media IS NULL OR media->'gallery' IS NULL OR jsonb_array_length(media->'gallery') <= 50)\n\nAcceptance: Insert with gallery.length = 51 fails with CHECK violation; insert with 50 succeeds.\n\nNOTE (2026-04-19): existing seed max is 10 gallery items. Migration 0012 applied to 4 tables. Down migration idempotent.",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-004"],
             "blocks": [],
             "subtasks": [],
             "tags": ["database", "migrations"],
             "phase": "phase-2b",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:50:00.000Z",
+                "completed": "2026-04-19T01:30:00.000Z"
             }
         },
         {
             "id": "T-014",
             "title": "Add users.image satellite columns migration and update UserService.updateAvatar",
-            "description": "Gaps: GAP-078-081, GAP-078-197.\n\nFiles: packages/db/src/migrations/manual/, packages/service-core/src/services/user.service.ts\n- Migration: add nullable columns users.image_public_id text, users.image_moderation_state enum, users.image_caption text\n- UserService.updateAvatar() sets all 3 on upload\n- _afterHardDelete reads image_public_id directly (fallback to extractPublicId for legacy rows)\n- Optional backfill script\n\nAcceptance: UserService.updateAvatar() test asserts all 3 columns updated; hardDelete test uses column directly without URL parsing.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-081, GAP-078-197.\n\nFiles: packages/db/src/migrations/manual/, packages/service-core/src/services/user.service.ts\n- Migration: add nullable columns users.image_public_id text, users.image_moderation_state enum, users.image_caption text\n- UserService.updateAvatar() sets all 3 on upload\n- _afterHardDelete reads image_public_id directly (fallback to extractPublicId for legacy rows)\n- Optional backfill script\n\nAcceptance: UserService.updateAvatar() test asserts all 3 columns updated; hardDelete test uses column directly without URL parsing.\n\nNOTE (2026-04-19): btree index on image_moderation_state for moderation queue. UserHookState gained deletedImagePublicId. 10 updateAvatar unit tests; 189/189 user + 211/211 base tests pass.",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-004"],
             "blocks": [],
             "subtasks": [],
             "tags": ["database", "migrations", "services"],
             "phase": "phase-2c",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:50:00.000Z",
+                "completed": "2026-04-19T01:30:00.000Z"
             }
         },
         {
@@ -310,19 +310,19 @@
         {
             "id": "T-016",
             "title": "Extend delete_entity_bookmarks trigger for soft-delete",
-            "description": "Gap: GAP-078-192.\n\nFile: packages/db/src/migrations/manual/ + packages/db/scripts/apply-postgres-extras.sh\n- Extend trigger delete_entity_bookmarks to also fire AFTER UPDATE when OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL\n\nAcceptance: soft-delete accommodation -> bookmarks for that entity are removed from DB.",
-            "status": "pending",
+            "description": "Gap: GAP-078-192.\n\nFile: packages/db/src/migrations/manual/ + packages/db/scripts/apply-postgres-extras.sh\n- Extend trigger delete_entity_bookmarks to also fire AFTER UPDATE when OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL\n\nAcceptance: soft-delete accommodation -> bookmarks for that entity are removed from DB.\n\nNOTE (2026-04-19): implemented as AFTER UPDATE trigger guarded on deleted_at NULL -> NOT NULL transition on 5 tables (accommodations/destinations/events/users/posts). Original AFTER DELETE triggers unchanged. Manifest updated with new trigger names, file index, and verification queries.",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-004"],
             "blocks": [],
             "subtasks": [],
             "tags": ["database", "migrations"],
             "phase": "phase-2e",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:50:00.000Z",
+                "completed": "2026-04-19T01:30:00.000Z"
             }
         },
         {
@@ -1275,8 +1275,8 @@
     ],
     "summary": {
         "total": 68,
-        "completed": 13,
-        "pending": 55,
+        "completed": 18,
+        "pending": 50,
         "inProgress": 0
     }
 }

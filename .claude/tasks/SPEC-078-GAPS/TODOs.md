@@ -1,16 +1,17 @@
 # SPEC-078-GAPS: Cloudinary Image Management — Gaps Remediation
 
-## Progress: 13/68 tasks (19%)
+## Progress: 18/68 tasks (26%)
 
 **Average Complexity**: 1.7 / 2.5 (max)
 **Completed from prior work**: 3 tasks (Phase 0 + Phase 1A) — see already-done.md
 **Completed 2026-04-18 (previous session)**: 1 task (T-004 — Phase 1B migrations reconstruction)
-**Completed 2026-04-18/19 (current session)**: 9 tasks — 4 warmups (T-011, T-028, T-037, T-053) + 5 Phase 1C security (T-005, T-006, T-007, T-008, T-009)
+**Completed 2026-04-18/19 (current session)**: 14 tasks — 4 warmups (T-011, T-028, T-037, T-053) + 5 Phase 1C security (T-005..T-009) + 5 schema/DB Phase 2 (T-010, T-012, T-013, T-014, T-016)
 **Splits applied**: 20 parent tasks split into 45 child tasks (68 total vs 47 original)
 
 **Known follow-ups**:
 - GAP-078-105 (Cloudinary upload_stream flags invalidate/exif/faces): lives in cloudinary.provider.ts, fell outside T-006 scope.
 - env-registry-schema-cross-validation: 4 pre-existing failures on Cloudinary vars not yet in ApiEnvSchema (unrelated to any current task).
+- destination.service.ts workaround cleanup (5-line dead code block post-DROP NOT NULL): left unstaged to avoid mixing with pre-existing uncommitted work in that file.
 
 ---
 
@@ -83,10 +84,11 @@
 
 ### Phase 2A — Schema alignment (Zod)
 
-- [ ] **T-010** (complexity: 1.5) — Schema alignment: MediaSchema.featuredImage optional, ImageSchema publicId and attribution
+- [x] **T-010** (complexity: 1.5) — Schema alignment: MediaSchema.featuredImage optional, ImageSchema publicId and attribution
   - Gaps: GAP-078-185, GAP-078-163, GAP-078-196, GAP-078-116
   - Blocked by: T-004
   - Blocks: T-019, T-020 (seed), T-029 (API)
+  - Outcome: MediaSchema.featuredImage optional. ImageSchema gains optional publicId + attribution (ImageAttributionSchema sub-schema). Additive-only per compat policy. 18 new tests; historic fixtures still parse.
 
 - [x] **T-011** (complexity: 1.0) — Schema compat policy: additive-only documentation and historic shape fixtures
   - Gaps: GAP-078-122, GAP-078-201
@@ -98,24 +100,27 @@
 
 ### Phase 2B — DB nullability alignment
 
-- [ ] **T-012** (complexity: 2.5) — DB nullability alignment: DROP NOT NULL on posts/destinations media + $type fix + media shape CHECK
+- [x] **T-012** (complexity: 2.5) — DB nullability alignment: DROP NOT NULL on posts/destinations media + $type fix + media shape CHECK
   - Gaps: GAP-078-184, GAP-078-180, GAP-078-080, GAP-078-075
   - Blocked by: T-004
   - Blocks: T-015
+  - Outcome: manual migration 0011 drops NOT NULL on posts/destinations.media; $type widened to Media | null; chk_{accommodations,destinations,events,posts}_media_shape CHECKs added. post_sponsors uses logo (Image), not media JSONB — documented via RAISE NOTICE. BaseCrudService._validateMediaShape hook runs MediaSchema.safeParse on create/update. destination.service.ts workaround cleanup deferred (see follow-ups).
 
-- [ ] **T-013** (complexity: 1.5) — DB gallery max CHECK constraint migration
+- [x] **T-013** (complexity: 1.5) — DB gallery max CHECK constraint migration
   - Gap: GAP-078-195
   - Blocked by: T-004
   - Blocks: none
+  - Outcome: manual migration 0012 adds 50-item CHECK on 4 tables. Seed safe (max existing gallery is 10). Idempotent down migration.
 
 ---
 
 ### Phase 2C — users.image satellite columns
 
-- [ ] **T-014** (complexity: 2.5) — Add users.image satellite columns migration and update UserService.updateAvatar
+- [x] **T-014** (complexity: 2.5) — Add users.image satellite columns migration and update UserService.updateAvatar
   - Gaps: GAP-078-081, GAP-078-197
   - Blocked by: T-004
   - Blocks: none
+  - Outcome: manual migration 0013 adds image_public_id text, image_moderation_state enum, image_caption text + btree index on moderation state. UserService.updateAvatar writes JSONB + 3 satellites atomically. _beforeHardDelete captures deletedImagePublicId in UserHookState for _afterHardDelete to consume. 10 new updateAvatar tests.
 
 ---
 
@@ -130,10 +135,11 @@
 
 ### Phase 2E — Bookmarks trigger soft-delete extension
 
-- [ ] **T-016** (complexity: 1.5) — Extend delete_entity_bookmarks trigger for soft-delete
+- [x] **T-016** (complexity: 1.5) — Extend delete_entity_bookmarks trigger for soft-delete
   - Gap: GAP-078-192
   - Blocked by: T-004
   - Blocks: none
+  - Outcome: manual migration 0014 adds AFTER UPDATE triggers (5 tables) guarded on deleted_at NULL -> NOT NULL transition. Original AFTER DELETE triggers unchanged. Triggers manifest updated.
 
 ---
 
@@ -573,4 +579,5 @@ Critical path: T-001 -> T-003 -> T-017 -> T-029 -> T-031 -> T-040 -> T-067 -> T-
 
 - **2026-04-18 (session close)**: T-004 merged in 6 atomic commits (`50b80475` → `a11ae6df` on main). Fixed hidden `db:fresh-dev` bug (apply-postgres-extras never chained). Renumbered manual SQL to clean 0001-0010 sequence. Rewrote orchestrator as generic iterator. Removed 4 unused Drizzle-generated migration files (preserved `0005_awesome_wild_child.sql` — SPEC-063 in progress). Full end-to-end validation passed (3571 seeded rows, 3 CHECKs + MV + 43 triggers).
 - **2026-04-18 (warmup sweep)**: 4 warmup tasks landed in 4 atomic commits on main (`f713d682` T-037, `a365aec8` T-053, `31fe19e8` T-028, `88f713e2` T-011). All complexity 1.0, delegated to parallel sub-agents. Zero file overlap across tasks. Agents reported truthfully (verified via git status diff). Progress now 8/68.
-- **2026-04-19 (Phase 1C security sweep)**: 5 security tasks landed in 5 atomic commits on main (`5e978f1e` T-005, `becb8a58` T-006, `31e42ac6` T-007, `9d12e3d8` T-008, `fc0428cc` T-009). All 5 sub-agents in parallel (zero file collision — T-005/T-008 on apps/api/routes/media different files; T-006/T-007/T-009 on packages/media different files). T-009 took scope creep: CLI refactor + env-registry test-count bumps — accepted as necessary. Progress now 13/68. Follow-ups: GAP-078-105 (provider upload flags) + env-registry x-validation pre-existing breakage. Next available (all unblocked except T-004-dependents): T-010 schema alignment, T-011 done, T-012..T-016 DB Phase 2B+, T-017 bundle refactor (critical path).
+- **2026-04-19 (Phase 1C security sweep)**: 5 security tasks landed in 5 atomic commits on main (`5e978f1e` T-005, `becb8a58` T-006, `31e42ac6` T-007, `9d12e3d8` T-008, `fc0428cc` T-009). All 5 sub-agents in parallel (zero file collision — T-005/T-008 on apps/api/routes/media different files; T-006/T-007/T-009 on packages/media different files). T-009 took scope creep: CLI refactor + env-registry test-count bumps — accepted as necessary. Progress now 13/68. Follow-ups: GAP-078-105 (provider upload flags) + env-registry x-validation pre-existing breakage.
+- **2026-04-19 (Phase 2 schema+DB sweep)**: 5 schema/DB tasks landed in 5 atomic commits on main (`21b62d75` T-010, `a247c95d` T-013, `b436ac58` T-016, `6350c5c0` T-014, `9f01d7e7` T-012). All 5 sub-agents in parallel with pre-assigned manual SQL numbers (0011 T-012, 0012 T-013, 0013 T-014, 0014 T-016) to avoid lex-order collision. T-012 excluded destination.service.ts workaround cleanup (pre-existing uncommitted work in that file). All acceptance criteria met; 10 new updateAvatar tests; 18 new media.schema tests. Progress now 18/68. Next available: T-015 (BaseModel JSONB merge FOR UPDATE — 2.5 complexity, requires user consult), T-017 (bundle refactor — critical path, architectural, requires user consult), T-019..T-021 (docs/tests, blocked by T-017), T-022 (seed, blocked by T-010 — NOW UNBLOCKED), T-028 done, T-029 (API contract, blocked by T-010+T-017).
