@@ -9,12 +9,21 @@ import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
  *
  * Uploads to Cloudinary under hospeda/{env}/avatars/{userId}.
  * Always overwrites the existing avatar for the user.
+ *
+ * Response contract (SPEC-078-GAPS T-029):
+ *   - HTTP 200 on success (avatars are always overwrites — not a creation).
+ *   - Body is wrapped via `ResponseFactory` (`createResponse`) as
+ *     `{ success: true, data: {...}, metadata: {...} }`.
+ *   - `data.moderationState` is always `'APPROVED'`.
+ *   - The provider response is validated with `UploadResponseDataSchema.parse()`
+ *     before being returned — malformed provider output fails with 500.
  */
-import { UploadResponseSchema } from '@repo/schemas';
+import { UploadResponseDataSchema } from '@repo/schemas';
 import type { Context } from 'hono';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
+import { createErrorResponse } from '../../../utils/response-helpers';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 /** Fixed avatar upload limit in bytes (5MB). */
@@ -23,6 +32,10 @@ const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 /**
  * POST /api/v1/protected/media/upload
  * Upload an avatar image for the authenticated user.
+ *
+ * Success status is forced to 200 (not 201) via `successStatusCode` because
+ * avatar uploads always overwrite the user's existing avatar asset (fixed
+ * publicId = userId). See SPEC-078-GAPS T-029 / GAP-078-062.
  */
 export const protectedUploadAvatarRoute = createProtectedRoute({
     method: 'post',
@@ -32,7 +45,8 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
         'Uploads a JPEG, PNG, or WebP avatar image (max 5MB) for the authenticated user. ' +
         'Overwrites any previously uploaded avatar.',
     tags: ['Media'],
-    responseSchema: UploadResponseSchema,
+    responseSchema: UploadResponseDataSchema,
+    successStatusCode: 200,
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -41,14 +55,12 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
         // ── 0. Provider availability check ───────────────────────────────────
         const provider = getMediaProvider();
         if (!provider) {
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'CLOUDINARY_NOT_CONFIGURED',
-                        message: 'Media upload service is not configured'
-                    }
+                    code: 'CLOUDINARY_NOT_CONFIGURED',
+                    message: 'Media upload service is not configured'
                 },
+                ctx,
                 503
             );
         }
@@ -56,14 +68,12 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
         // ── 1. Content-Length pre-check ───────────────────────────────────────
         const contentLength = Number(ctx.req.header('content-length') ?? 0);
         if (contentLength > AVATAR_MAX_BYTES) {
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'PAYLOAD_TOO_LARGE',
-                        message: 'Avatar file exceeds the 5MB limit'
-                    }
+                    code: 'PAYLOAD_TOO_LARGE',
+                    message: 'Avatar file exceeds the 5MB limit'
                 },
+                ctx,
                 413
             );
         }
@@ -73,11 +83,9 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
         try {
             formData = await ctx.req.formData();
         } catch {
-            return ctx.json(
-                {
-                    success: false,
-                    error: { code: 'VALIDATION_ERROR', message: 'Invalid multipart form data' }
-                },
+            return createErrorResponse(
+                { code: 'VALIDATION_ERROR', message: 'Invalid multipart form data' },
+                ctx,
                 400
             );
         }
@@ -89,11 +97,9 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
         // ── 4. Extract file ───────────────────────────────────────────────────
         const fileEntry = formData.get('file');
         if (!(fileEntry instanceof File)) {
-            return ctx.json(
-                {
-                    success: false,
-                    error: { code: 'VALIDATION_ERROR', message: 'Missing required "file" field' }
-                },
+            return createErrorResponse(
+                { code: 'VALIDATION_ERROR', message: 'Missing required "file" field' },
+                ctx,
                 400
             );
         }
@@ -109,15 +115,13 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
         });
 
         if (!validation.valid) {
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'UNPROCESSABLE_ENTITY',
-                        message: `Avatar validation failed: ${validation.error}`,
-                        details: validation.details
-                    }
+                    code: 'UNPROCESSABLE_ENTITY',
+                    message: `Avatar validation failed: ${validation.error}`,
+                    details: validation.details
                 },
+                ctx,
                 422
             );
         }
@@ -143,39 +147,52 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
                 },
                 'Cloudinary avatar upload failed'
             );
-            return ctx.json(
-                {
-                    success: false,
-                    error: { code: 'UPSTREAM_ERROR', message: 'Avatar upload failed' }
-                },
+            return createErrorResponse(
+                { code: 'UPSTREAM_ERROR', message: 'Avatar upload failed' },
+                ctx,
                 502
             );
         }
 
         // ── 8. Validate upload response completeness ──────────────────────────
-        if (!uploadResult.url || !uploadResult.publicId) {
+        // `UploadResponseDataSchema` is the single source of truth for the
+        // response payload shape. A malformed provider response MUST fail here
+        // rather than silently flowing bad data downstream
+        // (SPEC-078-GAPS T-029 / GAP-078-149).
+        const parsedResponse = UploadResponseDataSchema.safeParse({
+            url: uploadResult.url,
+            publicId: uploadResult.publicId,
+            width: uploadResult.width,
+            height: uploadResult.height,
+            moderationState: 'APPROVED'
+        });
+
+        if (!parsedResponse.success) {
             apiLogger.error(
-                { uploadResult, userId },
-                'Cloudinary response missing url or publicId'
-            );
-            return ctx.json(
                 {
-                    success: false,
-                    error: {
-                        code: 'UPSTREAM_ERROR',
-                        message: 'Incomplete response from image service'
-                    }
+                    issues: parsedResponse.error.issues.map((i) => ({
+                        path: i.path.join('.'),
+                        code: i.code
+                    })),
+                    userId
                 },
+                'Cloudinary avatar response did not match UploadResponseDataSchema'
+            );
+            return createErrorResponse(
+                {
+                    code: 'UPSTREAM_ERROR',
+                    message: 'Incomplete response from image service'
+                },
+                ctx,
                 502
             );
         }
 
-        // ── 9. Return result ──────────────────────────────────────────────────
-        return {
-            url: uploadResult.url,
-            publicId: uploadResult.publicId,
-            width: uploadResult.width,
-            height: uploadResult.height
-        };
+        // ── 9. Return result — wrapping via ResponseFactory happens in the
+        //       factory (`createCRUDRoute → createResponse`). No `ctx.json`
+        //       bypass here. The factory attaches the `{ success, data,
+        //       metadata }` envelope and returns HTTP 200 per
+        //       `successStatusCode` above.
+        return parsedResponse.data;
     }
 });

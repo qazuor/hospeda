@@ -20,6 +20,7 @@ created: 2026-04-13
 | v1.4 | 2026-04-14 | Exhaustive review pass 4 (cross-verified SDK docs, codebase hooks, and seed data): corrected upload() to accept Buffer directly (official docs list "byte array buffer" as valid input), removed incorrect "CJS-only" SDK claim (SDK supports ESM imports natively), added concrete Admin API rate limits (500/hr free, 2000/hr paid), added X-FeatureRateLimit-Reset header reference, detailed REQ-12.3 implementation pattern using _beforeHardDelete + hookState (hooks verified in base.crud.hooks.ts lines 216-238), added seed data distribution detail (Pexels: 603 refs across 107 files, Unsplash: 169 refs across 80 files), confirmed Attraction entity excluded (no media field, icon-only) |
 | v1.5 | 2026-04-14 | Exhaustive review pass 5 (full SDK re-verification against npm + official Cloudinary docs, full codebase audit with 34-point checklist): **REVERTED** upload() Buffer claim back to upload_stream()/data URI (official docs do NOT list raw Buffer as valid input for upload(), only for upload_stream()); clarified SDK is CJS-only natively (ESM import works via Node.js interop, not native exports); replaced galleryIndex with nanoid-based unique suffix (eliminates index assignment ambiguity); added avatar DB persistence flow mirroring entity pattern (upload is proxy-only, user profile PATCH persists URL); corrected Unsplash seed count (182 refs across 82 files, not 169/80); updated account settings page prerequisite (edit page exists at mi-cuenta/editar); added magic bytes validation note for MIME type spoofing; added REQ-04.2-FLOW for avatar persistence; 33/34 codebase claims verified accurate |
 | v1.6 | 2026-04-18 | SPEC-078-GAPS T-037 (GAP-078-009): aligned REQ-04.2-FLOW avatar persistence endpoint with the canonical repo convention for `/api/v1/protected/*` routes. The avatar update endpoint is `PATCH /api/v1/protected/users/${userId}` with an ownership check (session user MUST equal `userId`), NOT `/users/me`. Added forward-looking note: adopting a `/me` alias pattern across protected routes requires a dedicated API-conventions SPEC and is out of scope here. No code change, documentation-only amendment |
+| v1.7 | 2026-04-19 | SPEC-078-GAPS T-029 (GAP-078-026 + 029 + 062 + 149 + 159 + 178): upload endpoints (admin + protected) return **HTTP 200 Created-semantics-off** because uploads may overwrite existing assets (fixed-publicId featured images, avatars with userId as publicId) and are not strictly a creation. Response body is wrapped via the shared `ResponseFactory` as `{ success: true, data: { url, publicId, width, height, moderationState: 'APPROVED' }, metadata: {...} }` — same envelope as every other successful API response. `moderationState` is always `'APPROVED'` for fresh uploads (pre-approved at creation). The route runs `UploadResponseDataSchema.parse()` on the provider result before returning, so a malformed Cloudinary response fails closed with HTTP 502 rather than flowing bad data downstream. |
 
 ---
 
@@ -487,15 +488,23 @@ When `role` is `gallery`, the server generates a unique suffix (10-character nan
 
 **Multipart parsing**: Use Hono's native `ctx.req.formData()` API (no external multipart middleware). This is the established pattern in the codebase (see `apps/api/src/routes/feedback/public/submit.ts`).
 
-Response on success (HTTP 200):
+Response on success (HTTP 200 — **not 201**, because uploads may overwrite an existing asset and are not strictly a creation):
+
 ```json
 {
-  "url": "https://res.cloudinary.com/hospeda/image/upload/v.../hospeda/prod/accommodations/abc/featured.jpg",
-  "publicId": "hospeda/prod/accommodations/abc/featured",
-  "width": 1920,
-  "height": 1080
+  "success": true,
+  "data": {
+    "url": "https://res.cloudinary.com/hospeda/image/upload/v.../hospeda/prod/accommodations/abc/featured.jpg",
+    "publicId": "hospeda/prod/accommodations/abc/featured",
+    "width": 1920,
+    "height": 1080,
+    "moderationState": "APPROVED"
+  },
+  "metadata": { "timestamp": "...", "requestId": "..." }
 }
 ```
+
+The body is wrapped via the shared `ResponseFactory` (`createResponse()`), same envelope as every other successful API response. `moderationState` is always `'APPROVED'` for fresh uploads. The route runs `UploadResponseDataSchema.parse()` on the provider result before returning; a malformed Cloudinary response fails closed with HTTP 502.
 
 The `url` returned MUST be the **base URL** (from Cloudinary's `secure_url` response field) without any transform parameters. The caller (admin UI) stores this URL in the DB.
 

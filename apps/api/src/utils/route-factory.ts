@@ -66,6 +66,22 @@ export interface CreateOpenApiRouteInterface {
     requestBody?: z.ZodTypeAny;
     requestQuery?: Record<string, z.ZodTypeAny>;
     responseSchema: z.ZodTypeAny;
+    /**
+     * Override the success HTTP status code returned by the handler.
+     *
+     * When unset the factory uses the standard mapping:
+     *   - POST → 201 Created
+     *   - DELETE → 204 (empty) or 200 (with body)
+     *   - others → 200 OK
+     *
+     * Set this for routes that should break the default (e.g. media uploads
+     * return 200 OK because an upload may overwrite an existing asset and
+     * therefore is not strictly a creation — SPEC-078-GAPS T-029).
+     *
+     * Only 200 and 201 are supported here because `createResponse()` only
+     * types those two codes.
+     */
+    successStatusCode?: 200 | 201;
     handler: (
         c: Context,
         params: Record<string, unknown>,
@@ -324,15 +340,20 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
                       // biome-ignore lint/suspicious/noExplicitAny: Hono ctx.req.valid() type narrowing not available in generic context
                       (ctx.req as any).valid('param')
                     : ctx.req.param() || {};
-            // Only parse JSON body for methods that are expected to have one
+            // Only parse JSON body when the method expects one AND a
+            // `requestBody` schema is declared. Calling `ctx.req.json()`
+            // consumes the raw body stream, which breaks handlers that need
+            // to read the body themselves (e.g. multipart/form-data uploads).
+            // Routes without a JSON schema receive `body = {}` and must
+            // consume the body via `ctx.req.formData()` / `ctx.req.raw.clone()`
+            // inside the handler (SPEC-078-GAPS T-029).
             const shouldParseBody = !(options.method === 'get' || options.method === 'delete');
-            const body = shouldParseBody
-                ? options.requestBody
+            const body =
+                shouldParseBody && options.requestBody
                     ? // Hono's .valid() requires route-specific type params that are unavailable in a generic factory.
                       // biome-ignore lint/suspicious/noExplicitAny: Hono ctx.req.valid() type narrowing not available in generic context
                       (ctx.req as any).valid('json')
-                    : await ctx.req.json().catch(() => ({}))
-                : {};
+                    : {};
             const query =
                 options.requestQuery && Object.keys(options.requestQuery).length > 0
                     ? // Hono's .valid() requires route-specific type params that are unavailable in a generic factory.
@@ -364,7 +385,11 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
                 return createResponse(result, ctx, 200);
             }
 
-            const statusCode = options.method === 'post' ? 201 : 200;
+            // Per-route override takes precedence over the method default.
+            // Media upload routes use this to return 200 instead of 201 because
+            // an upload may overwrite an existing asset (SPEC-078-GAPS T-029).
+            const defaultStatusCode = options.method === 'post' ? 201 : 200;
+            const statusCode = options.successStatusCode ?? defaultStatusCode;
             return createResponse(result, ctx, statusCode);
         } catch (error) {
             return handleRouteError(error, ctx);

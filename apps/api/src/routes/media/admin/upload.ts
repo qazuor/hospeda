@@ -13,8 +13,17 @@ import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
  *
  * Validates file size, MIME type, and image dimensions before uploading
  * to Cloudinary. Returns the resulting URL, publicId, width, and height.
+ *
+ * Response contract (SPEC-078-GAPS T-029):
+ *   - HTTP 200 on success (NOT 201 — uploads may overwrite an existing asset).
+ *   - Body is wrapped via `ResponseFactory` (`createResponse`) as
+ *     `{ success: true, data: {...}, metadata: {...} }`.
+ *   - `data.moderationState` is always `'APPROVED'` (images persisted via the
+ *     upload endpoint are pre-approved at creation time).
+ *   - The provider response is validated with `UploadResponseDataSchema.parse()`
+ *     before being returned — malformed provider output fails with 500.
  */
-import { AdminUploadRequestSchema, PermissionEnum, UploadResponseSchema } from '@repo/schemas';
+import { AdminUploadRequestSchema, PermissionEnum, UploadResponseDataSchema } from '@repo/schemas';
 import {
     AccommodationService,
     DestinationService,
@@ -27,6 +36,7 @@ import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env.js';
 import { apiLogger } from '../../../utils/logger';
+import { createErrorResponse } from '../../../utils/response-helpers';
 import { createAdminRoute } from '../../../utils/route-factory';
 import { type MediaEntityType, validateEntityMediaPermission } from './permissions';
 
@@ -58,6 +68,10 @@ const entityServices: Record<
 /**
  * POST /api/v1/admin/media/upload
  * Upload an image for a content entity. Admin only.
+ *
+ * Success status is forced to 200 (not 201) via `successStatusCode` because
+ * uploads may overwrite an existing asset (featured images, galleries with
+ * a fixed publicId). See SPEC-078-GAPS T-029 / GAP-078-062.
  */
 export const adminUploadMediaRoute = createAdminRoute({
     method: 'post',
@@ -68,7 +82,8 @@ export const adminUploadMediaRoute = createAdminRoute({
         'Accepts multipart/form-data. Returns the Cloudinary URL and asset metadata.',
     tags: ['Media'],
     requiredPermissions: [PermissionEnum.MEDIA_UPLOAD],
-    responseSchema: UploadResponseSchema,
+    responseSchema: UploadResponseDataSchema,
+    successStatusCode: 200,
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -77,14 +92,12 @@ export const adminUploadMediaRoute = createAdminRoute({
         // ── 0. Provider availability check ───────────────────────────────────
         const provider = getMediaProvider();
         if (!provider) {
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'CLOUDINARY_NOT_CONFIGURED',
-                        message: 'Media upload service is not configured'
-                    }
+                    code: 'CLOUDINARY_NOT_CONFIGURED',
+                    message: 'Media upload service is not configured'
                 },
+                ctx,
                 503
             );
         }
@@ -95,14 +108,12 @@ export const adminUploadMediaRoute = createAdminRoute({
         const contentLength = Number(ctx.req.header('content-length') ?? 0);
 
         if (contentLength > maxBytes) {
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'PAYLOAD_TOO_LARGE',
-                        message: `File exceeds the ${maxMb}MB limit`
-                    }
+                    code: 'PAYLOAD_TOO_LARGE',
+                    message: `File exceeds the ${maxMb}MB limit`
                 },
+                ctx,
                 413
             );
         }
@@ -120,14 +131,12 @@ export const adminUploadMediaRoute = createAdminRoute({
                 { issue: actorIdCheck.error.issues[0]?.code ?? 'invalid_string' },
                 'Refusing media upload: actor.id is not a valid UUID'
             );
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'INTERNAL_ERROR',
-                        message: 'Internal server error'
-                    }
+                    code: 'INTERNAL_ERROR',
+                    message: 'Internal server error'
                 },
+                ctx,
                 500
             );
         }
@@ -156,14 +165,12 @@ export const adminUploadMediaRoute = createAdminRoute({
                 },
                 'Aborting media upload: session no longer matches actor at provider call'
             );
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'SESSION_STALE',
-                        message: 'Session expired or revoked. Please re-authenticate.'
-                    }
+                    code: 'SESSION_STALE',
+                    message: 'Session expired or revoked. Please re-authenticate.'
                 },
+                ctx,
                 401
             );
         }
@@ -173,11 +180,9 @@ export const adminUploadMediaRoute = createAdminRoute({
         try {
             formData = await ctx.req.formData();
         } catch {
-            return ctx.json(
-                {
-                    success: false,
-                    error: { code: 'VALIDATION_ERROR', message: 'Invalid multipart form data' }
-                },
+            return createErrorResponse(
+                { code: 'VALIDATION_ERROR', message: 'Invalid multipart form data' },
+                ctx,
                 400
             );
         }
@@ -191,18 +196,16 @@ export const adminUploadMediaRoute = createAdminRoute({
 
         const parseResult = AdminUploadRequestSchema.safeParse(rawFields);
         if (!parseResult.success) {
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'VALIDATION_ERROR',
-                        message: 'Invalid form fields',
-                        details: parseResult.error.issues.map((issue) => ({
-                            field: issue.path.join('.'),
-                            message: issue.message
-                        }))
-                    }
+                    code: 'VALIDATION_ERROR',
+                    message: 'Invalid form fields',
+                    details: parseResult.error.issues.map((issue) => ({
+                        field: issue.path.join('.'),
+                        message: issue.message
+                    }))
                 },
+                ctx,
                 400
             );
         }
@@ -212,30 +215,25 @@ export const adminUploadMediaRoute = createAdminRoute({
         // ── 3b. Verify entity exists in DB ────────────────────────────────────
         const service = entityServices[entityType];
         if (!service) {
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'VALIDATION_ERROR',
-                        message: `Unsupported entity type: ${entityType}`
-                    }
+                    code: 'VALIDATION_ERROR',
+                    message: `Unsupported entity type: ${entityType}`
                 },
+                ctx,
                 400
             );
         }
         const entityResult = await service.getById(actor, entityId);
 
         if (entityResult.error || !entityResult.data) {
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'ENTITY_NOT_FOUND',
-                        message: `Entity not found: ${entityType} with id ${entityId}`,
-                        entityType,
-                        entityId
-                    }
+                    code: 'ENTITY_NOT_FOUND',
+                    message: `Entity not found: ${entityType} with id ${entityId}`,
+                    details: { entityType, entityId }
                 },
+                ctx,
                 404
             );
         }
@@ -248,17 +246,15 @@ export const adminUploadMediaRoute = createAdminRoute({
         });
 
         if (!permissionCheck.allowed) {
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'FORBIDDEN',
-                        message:
-                            permissionCheck.reason === 'NOT_ENTITY_OWNER'
-                                ? 'You do not own this entity'
-                                : `Insufficient permissions to modify ${entityType} media`
-                    }
+                    code: 'FORBIDDEN',
+                    message:
+                        permissionCheck.reason === 'NOT_ENTITY_OWNER'
+                            ? 'You do not own this entity'
+                            : `Insufficient permissions to modify ${entityType} media`
                 },
+                ctx,
                 403
             );
         }
@@ -266,11 +262,9 @@ export const adminUploadMediaRoute = createAdminRoute({
         // ── 4. Extract file ───────────────────────────────────────────────────
         const fileEntry = formData.get('file');
         if (!(fileEntry instanceof File)) {
-            return ctx.json(
-                {
-                    success: false,
-                    error: { code: 'VALIDATION_ERROR', message: 'Missing required "file" field' }
-                },
+            return createErrorResponse(
+                { code: 'VALIDATION_ERROR', message: 'Missing required "file" field' },
+                ctx,
                 400
             );
         }
@@ -287,15 +281,13 @@ export const adminUploadMediaRoute = createAdminRoute({
         });
 
         if (!validation.valid) {
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'UNPROCESSABLE_ENTITY',
-                        message: `File validation failed: ${validation.error}`,
-                        details: validation.details
-                    }
+                    code: 'UNPROCESSABLE_ENTITY',
+                    message: `File validation failed: ${validation.error}`,
+                    details: validation.details
                 },
+                ctx,
                 422
             );
         }
@@ -319,14 +311,12 @@ export const adminUploadMediaRoute = createAdminRoute({
                 { hadSession: Boolean(sessionPre), hadUser: Boolean(sessionUserPre) },
                 'Aborting media upload: session no longer matches actor at provider call'
             );
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'SESSION_STALE',
-                        message: 'Session expired or revoked. Please re-authenticate.'
-                    }
+                    code: 'SESSION_STALE',
+                    message: 'Session expired or revoked. Please re-authenticate.'
                 },
+                ctx,
                 401
             );
         }
@@ -344,39 +334,53 @@ export const adminUploadMediaRoute = createAdminRoute({
                 },
                 'Cloudinary upload failed'
             );
-            return ctx.json(
-                {
-                    success: false,
-                    error: { code: 'UPSTREAM_ERROR', message: 'Image upload failed' }
-                },
+            return createErrorResponse(
+                { code: 'UPSTREAM_ERROR', message: 'Image upload failed' },
+                ctx,
                 502
             );
         }
 
         // ── 8. Validate upload response completeness ──────────────────────────
-        if (!uploadResult.url || !uploadResult.publicId) {
+        // `UploadResponseDataSchema` is the single source of truth for the
+        // response payload shape. A malformed provider response MUST fail here
+        // with 500 rather than silently flowing bad data downstream
+        // (SPEC-078-GAPS T-029 / GAP-078-149).
+        const parsedResponse = UploadResponseDataSchema.safeParse({
+            url: uploadResult.url,
+            publicId: uploadResult.publicId,
+            width: uploadResult.width,
+            height: uploadResult.height,
+            moderationState: 'APPROVED'
+        });
+
+        if (!parsedResponse.success) {
             apiLogger.error(
-                { uploadResult, entityType, entityId },
-                'Cloudinary response missing url or publicId'
-            );
-            return ctx.json(
                 {
-                    success: false,
-                    error: {
-                        code: 'UPSTREAM_ERROR',
-                        message: 'Incomplete response from image service'
-                    }
+                    issues: parsedResponse.error.issues.map((i) => ({
+                        path: i.path.join('.'),
+                        code: i.code
+                    })),
+                    entityType,
+                    entityId
                 },
+                'Cloudinary response did not match UploadResponseDataSchema'
+            );
+            return createErrorResponse(
+                {
+                    code: 'UPSTREAM_ERROR',
+                    message: 'Incomplete response from image service'
+                },
+                ctx,
                 502
             );
         }
 
-        // ── 9. Return result ──────────────────────────────────────────────────
-        return {
-            url: uploadResult.url,
-            publicId: uploadResult.publicId,
-            width: uploadResult.width,
-            height: uploadResult.height
-        };
+        // ── 9. Return result — wrapping via ResponseFactory happens in the
+        //       factory (`createCRUDRoute → createResponse`). No `ctx.json`
+        //       bypass here. The factory attaches the `{ success, data,
+        //       metadata }` envelope and returns HTTP 200 per
+        //       `successStatusCode` above.
+        return parsedResponse.data;
     }
 });

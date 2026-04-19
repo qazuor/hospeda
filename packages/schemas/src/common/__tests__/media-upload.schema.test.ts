@@ -5,6 +5,7 @@ import {
     DeleteMediaResponseSchema,
     MediaEntityTypeSchema,
     MediaRoleSchema,
+    UploadResponseDataSchema,
     UploadResponseSchema
 } from '../media-upload.schema.js';
 
@@ -276,27 +277,64 @@ describe('DeleteMediaQuerySchema', () => {
 });
 
 // ============================================================================
-// UploadResponseSchema
+// UploadResponseDataSchema
 // ============================================================================
 
-describe('UploadResponseSchema', () => {
+describe('UploadResponseDataSchema', () => {
     const VALID_RESPONSE = {
         url: 'https://res.cloudinary.com/hospeda/image/upload/v1/hospeda/abc.jpg',
         publicId: 'hospeda/prod/accommodations/abc/featured',
         width: 1920,
-        height: 1080
+        height: 1080,
+        moderationState: 'APPROVED' as const
     };
 
     describe('when given valid input', () => {
         it('should pass for a complete valid response', () => {
-            const result = UploadResponseSchema.safeParse(VALID_RESPONSE);
+            const result = UploadResponseDataSchema.safeParse(VALID_RESPONSE);
             expect(result.success).toBe(true);
+        });
+
+        it('should default moderationState to APPROVED when omitted', () => {
+            const { moderationState: _m, ...rest } = VALID_RESPONSE;
+            const result = UploadResponseDataSchema.safeParse(rest);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.moderationState).toBe('APPROVED');
+            }
+        });
+
+        it('should strip unknown provider fields (schema compatibility policy)', () => {
+            const result = UploadResponseDataSchema.safeParse({
+                ...VALID_RESPONSE,
+                // Extra fields that a Cloudinary SDK upgrade might introduce.
+                // The schema strips them so the public contract stays stable.
+                format: 'jpg',
+                bytes: 12345,
+                etag: 'abc'
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect('format' in result.data).toBe(false);
+                expect('bytes' in result.data).toBe(false);
+                expect('etag' in result.data).toBe(false);
+            }
+        });
+    });
+
+    describe('when moderationState is not APPROVED', () => {
+        it('should fail for any other literal value', () => {
+            const result = UploadResponseDataSchema.safeParse({
+                ...VALID_RESPONSE,
+                moderationState: 'PENDING'
+            });
+            expect(result.success).toBe(false);
         });
     });
 
     describe('when url is invalid', () => {
         it('should fail for a relative URL', () => {
-            const result = UploadResponseSchema.safeParse({
+            const result = UploadResponseDataSchema.safeParse({
                 ...VALID_RESPONSE,
                 url: '/relative/path.jpg'
             });
@@ -304,7 +342,7 @@ describe('UploadResponseSchema', () => {
         });
 
         it('should fail for an empty url', () => {
-            const result = UploadResponseSchema.safeParse({
+            const result = UploadResponseDataSchema.safeParse({
                 ...VALID_RESPONSE,
                 url: ''
             });
@@ -314,17 +352,20 @@ describe('UploadResponseSchema', () => {
 
     describe('when dimensions are invalid', () => {
         it('should fail for a zero width', () => {
-            const result = UploadResponseSchema.safeParse({ ...VALID_RESPONSE, width: 0 });
+            const result = UploadResponseDataSchema.safeParse({ ...VALID_RESPONSE, width: 0 });
             expect(result.success).toBe(false);
         });
 
         it('should fail for a negative height', () => {
-            const result = UploadResponseSchema.safeParse({ ...VALID_RESPONSE, height: -1 });
+            const result = UploadResponseDataSchema.safeParse({ ...VALID_RESPONSE, height: -1 });
             expect(result.success).toBe(false);
         });
 
         it('should fail for a non-integer width', () => {
-            const result = UploadResponseSchema.safeParse({ ...VALID_RESPONSE, width: 1920.5 });
+            const result = UploadResponseDataSchema.safeParse({
+                ...VALID_RESPONSE,
+                width: 1920.5
+            });
             expect(result.success).toBe(false);
         });
     });
@@ -332,25 +373,100 @@ describe('UploadResponseSchema', () => {
     describe('when fields are missing', () => {
         it('should fail when url is missing', () => {
             const { url: _url, ...rest } = VALID_RESPONSE;
-            const result = UploadResponseSchema.safeParse(rest);
+            const result = UploadResponseDataSchema.safeParse(rest);
             expect(result.success).toBe(false);
         });
 
         it('should fail when publicId is missing', () => {
             const { publicId: _publicId, ...rest } = VALID_RESPONSE;
-            const result = UploadResponseSchema.safeParse(rest);
+            const result = UploadResponseDataSchema.safeParse(rest);
             expect(result.success).toBe(false);
         });
 
         it('should fail when width is missing', () => {
             const { width: _width, ...rest } = VALID_RESPONSE;
-            const result = UploadResponseSchema.safeParse(rest);
+            const result = UploadResponseDataSchema.safeParse(rest);
             expect(result.success).toBe(false);
         });
 
         it('should fail when height is missing', () => {
             const { height: _height, ...rest } = VALID_RESPONSE;
-            const result = UploadResponseSchema.safeParse(rest);
+            const result = UploadResponseDataSchema.safeParse(rest);
+            expect(result.success).toBe(false);
+        });
+    });
+});
+
+// ============================================================================
+// UploadResponseSchema (wrapped)
+// ============================================================================
+
+describe('UploadResponseSchema (wrapped envelope)', () => {
+    const VALID_DATA = {
+        url: 'https://res.cloudinary.com/hospeda/image/upload/v1/hospeda/abc.jpg',
+        publicId: 'hospeda/prod/accommodations/abc/featured',
+        width: 1920,
+        height: 1080,
+        moderationState: 'APPROVED' as const
+    };
+
+    const VALID_METADATA = {
+        timestamp: '2026-04-19T00:00:00.000Z',
+        requestId: 'req-123'
+    };
+
+    describe('when given a valid wrapped response', () => {
+        it('should pass for a fully-populated envelope', () => {
+            const result = UploadResponseSchema.safeParse({
+                success: true,
+                data: VALID_DATA,
+                metadata: VALID_METADATA
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('should pass when metadata fields are omitted (all optional)', () => {
+            const result = UploadResponseSchema.safeParse({
+                success: true,
+                data: VALID_DATA,
+                metadata: {}
+            });
+            expect(result.success).toBe(true);
+        });
+    });
+
+    describe('when the envelope is malformed', () => {
+        it('should fail when success is false', () => {
+            const result = UploadResponseSchema.safeParse({
+                success: false,
+                data: VALID_DATA,
+                metadata: VALID_METADATA
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should fail when data is missing', () => {
+            const result = UploadResponseSchema.safeParse({
+                success: true,
+                metadata: VALID_METADATA
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should fail when metadata is missing', () => {
+            const result = UploadResponseSchema.safeParse({
+                success: true,
+                data: VALID_DATA
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should fail when data.moderationState is not APPROVED', () => {
+            const result = UploadResponseSchema.safeParse({
+                success: true,
+                data: { ...VALID_DATA, moderationState: 'REJECTED' },
+                metadata: VALID_METADATA
+            });
             expect(result.success).toBe(false);
         });
     });

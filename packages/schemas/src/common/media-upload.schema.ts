@@ -87,26 +87,84 @@ export const DeleteMediaQuerySchema = z.object({
 });
 
 /**
- * Response shape returned by the upload endpoint on success.
+ * Shape of the `data` payload on a successful upload response.
  *
  * Mirrors the relevant subset of the Cloudinary upload API response that
  * downstream consumers (admin UI, service layer) need to store on the entity.
  *
+ * Includes `moderationState: 'APPROVED'` because, per project policy, every
+ * image persisted via the upload endpoint is considered pre-approved at
+ * creation time. Keeping the literal in the schema makes the contract
+ * explicit and lets callers consume the status without a follow-up fetch.
+ *
+ * Unknown provider fields are stripped (default Zod behavior). This matches
+ * the schema compatibility policy: the contract is additive only and
+ * downstream clients must never see non-contractual fields leaking through.
+ *
  * @example
  * ```ts
- * const response: UploadResponse = {
+ * const data: UploadResponseData = {
  *   url: 'https://res.cloudinary.com/hospeda/image/upload/v1/hospeda/abc.jpg',
  *   publicId: 'hospeda/prod/accommodations/abc/featured',
  *   width: 1920,
  *   height: 1080,
+ *   moderationState: 'APPROVED',
+ * };
+ * ```
+ */
+export const UploadResponseDataSchema = z.object({
+    url: z.string().url({ message: 'url must be a valid URL' }),
+    publicId: z.string().min(1, 'publicId is required'),
+    width: z.number().int().positive({ message: 'width must be a positive integer' }),
+    height: z.number().int().positive({ message: 'height must be a positive integer' }),
+    moderationState: z.literal('APPROVED').default('APPROVED')
+});
+
+/**
+ * Metadata envelope returned alongside every successful upload response.
+ *
+ * Matches the project-wide `ApiResponse.metadata` shape produced by
+ * `createResponse()` in the API. Kept inline here (rather than imported from
+ * a shared API response schema) so this package remains decoupled from the
+ * API app and can be consumed by any client that needs to validate upload
+ * responses end-to-end.
+ */
+export const UploadResponseMetadataSchema = z.object({
+    timestamp: z.string().datetime().optional(),
+    requestId: z.string().optional()
+});
+
+/**
+ * Full wrapped response shape returned by the upload endpoint on success.
+ *
+ * The shape is `{ success: true, data: {...}, metadata: {...} }` (wrapped via
+ * the shared `ResponseFactory` on the API side). Route handlers call
+ * `UploadResponseSchema.parse(response)` before returning so a malformed
+ * provider response causes an explicit 500 instead of silent bad data.
+ *
+ * Upload routes return HTTP 200 (not 201) because uploads may overwrite an
+ * existing asset (avatars, featured images) — they are not strictly a
+ * creation.
+ *
+ * @example
+ * ```ts
+ * const response: UploadResponse = {
+ *   success: true,
+ *   data: {
+ *     url: 'https://res.cloudinary.com/hospeda/image/upload/v1/hospeda/abc.jpg',
+ *     publicId: 'hospeda/prod/accommodations/abc/featured',
+ *     width: 1920,
+ *     height: 1080,
+ *     moderationState: 'APPROVED',
+ *   },
+ *   metadata: { timestamp: '2026-04-19T00:00:00.000Z', requestId: 'abc' },
  * };
  * ```
  */
 export const UploadResponseSchema = z.object({
-    url: z.string().url({ message: 'url must be a valid URL' }),
-    publicId: z.string().min(1, 'publicId is required'),
-    width: z.number().int().positive({ message: 'width must be a positive integer' }),
-    height: z.number().int().positive({ message: 'height must be a positive integer' })
+    success: z.literal(true),
+    data: UploadResponseDataSchema,
+    metadata: UploadResponseMetadataSchema
 });
 
 /**
@@ -144,7 +202,13 @@ export type AdminUploadRequest = z.infer<typeof AdminUploadRequestSchema>;
 /** Validated query parameters for a media delete request. */
 export type DeleteMediaQuery = z.infer<typeof DeleteMediaQuerySchema>;
 
-/** Shape of a successful upload response. */
+/** Shape of the `data` payload on a successful upload response. */
+export type UploadResponseData = z.infer<typeof UploadResponseDataSchema>;
+
+/** Metadata envelope returned alongside a successful upload response. */
+export type UploadResponseMetadata = z.infer<typeof UploadResponseMetadataSchema>;
+
+/** Shape of a successful (wrapped) upload response. */
 export type UploadResponse = z.infer<typeof UploadResponseSchema>;
 
 /** Shape of a successful delete response. */
