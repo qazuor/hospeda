@@ -19,6 +19,7 @@ export type { CloudinaryProviderConfig } from './cloudinary.provider.js';
 export type {
     DeleteByPrefixOptions,
     DeleteOptions,
+    DeleteResult,
     ImageProvider,
     UploadOptions,
     UploadResult

@@ -2,6 +2,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import type {
     DeleteByPrefixOptions,
     DeleteOptions,
+    DeleteResult,
     ImageProvider,
     UploadOptions,
     UploadResult
@@ -158,15 +159,25 @@ export class CloudinaryProvider implements ImageProvider {
      * Deletes a single asset by public ID.
      *
      * This operation is idempotent: a 'not found' result from Cloudinary
-     * is treated as success rather than an error.
+     * is treated as success rather than an error. The returned `wasPresent`
+     * flag lets callers distinguish between "deleted just now" (`true`) and
+     * "already absent" (`false`) without needing to inspect any error state.
+     *
+     * SPEC-078-GAPS GAP-078-154 — wasPresent is derived from Cloudinary's
+     * `result` field: `'ok'` maps to `true`, `'not found'` maps to `false`.
+     * Any other (defensive) value is treated as not-present so the caller can
+     * still respond consistently.
      *
      * @param options - Contains the public ID of the asset to delete
+     * @returns `{ wasPresent }` indicating whether the asset existed at delete time
      */
-    async delete(options: DeleteOptions): Promise<void> {
-        await cloudinary.uploader.destroy(options.publicId, {
+    async delete(options: DeleteOptions): Promise<DeleteResult> {
+        const response = (await cloudinary.uploader.destroy(options.publicId, {
             invalidate: true
-        });
-        // result.result is 'ok' or 'not found' — both are acceptable (idempotent delete)
+        })) as { result?: string } | undefined;
+
+        const wasPresent = response?.result === 'ok';
+        return { wasPresent };
     }
 
     /**

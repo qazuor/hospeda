@@ -53,7 +53,26 @@ describe('InMemoryImageProvider', () => {
     it('delete() is idempotent for missing publicIds', async () => {
         const provider = new InMemoryImageProvider();
 
-        await expect(provider.delete({ publicId: 'does-not-exist' })).resolves.toBeUndefined();
+        // SPEC-078-GAPS GAP-078-154: idempotent delete on absent asset
+        // resolves with `wasPresent: false` rather than throwing.
+        await expect(provider.delete({ publicId: 'does-not-exist' })).resolves.toEqual({
+            wasPresent: false
+        });
+    });
+
+    // SPEC-078-GAPS GAP-078-154: delete on a present asset reports wasPresent: true
+    it('delete() returns wasPresent: true when removing an existing asset', async () => {
+        const provider = new InMemoryImageProvider();
+        const uploaded = await provider.upload({
+            file: Buffer.from('a'),
+            folder: 'hospeda/test',
+            publicId: 'present'
+        });
+
+        const result = await provider.delete({ publicId: uploaded.publicId });
+
+        expect(result).toEqual({ wasPresent: true });
+        expect(provider.has(uploaded.publicId)).toBe(false);
     });
 
     it('deleteByPrefix() removes matching entries only', async () => {

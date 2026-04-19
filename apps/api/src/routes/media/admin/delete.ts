@@ -6,6 +6,15 @@
  * Deletes a Cloudinary asset by its publicId.
  * The publicId must start with "hospeda/" to prevent accidental deletion of
  * assets outside the project namespace.
+ *
+ * Response contract (SPEC-078-GAPS T-030):
+ *   - Body is wrapped via `ResponseFactory` (`createResponse`) as
+ *     `{ success: true, data: {...}, metadata: {...} }`. No `ctx.json` bypass
+ *     in the success path — error helpers (`createErrorResponse`) carry the
+ *     same wrapping for the failure paths.
+ *   - `data.wasPresent` (GAP-078-154) reports whether the asset existed at
+ *     delete time: `true` for a real removal, `false` when Cloudinary
+ *     returned `'not found'` (idempotent no-op).
  */
 import { resolveEnvironment } from '@repo/media/server';
 import { DeleteMediaQuerySchema, DeleteMediaResponseSchema, PermissionEnum } from '@repo/schemas';
@@ -19,6 +28,7 @@ import type { Context, MiddlewareHandler } from 'hono';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
+import { createErrorResponse } from '../../../utils/response-helpers';
 import { createAdminRoute } from '../../../utils/route-factory';
 import { type MediaEntityType, validateEntityMediaPermission } from './permissions';
 
@@ -57,28 +67,24 @@ const adminDeleteMediaPreValidation: MiddlewareHandler = async (ctx, next) => {
     if (typeof publicIdRaw === 'string' && publicIdRaw.length > 0) {
         const decoded = safeDecode(publicIdRaw);
         if (publicIdRaw.includes('..') || decoded.includes('..')) {
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'UNPROCESSABLE_ENTITY',
-                        message: 'publicId contains a forbidden path traversal segment'
-                    }
+                    code: 'UNPROCESSABLE_ENTITY',
+                    message: 'publicId contains a forbidden path traversal segment'
                 },
+                ctx,
                 422
             );
         }
 
         const expectedPrefix = `hospeda/${resolveEnvironment()}/`;
         if (publicIdRaw.startsWith('hospeda/') && !publicIdRaw.startsWith(expectedPrefix)) {
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'FORBIDDEN',
-                        message: `publicId must start with "${expectedPrefix}" in this environment`
-                    }
+                    code: 'FORBIDDEN',
+                    message: `publicId must start with "${expectedPrefix}" in this environment`
                 },
+                ctx,
                 403
             );
         }
@@ -165,14 +171,12 @@ export const adminDeleteMediaRoute = createAdminRoute({
         // ── 0. Provider availability check ───────────────────────────────────
         const provider = getMediaProvider();
         if (!provider) {
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'CLOUDINARY_NOT_CONFIGURED',
-                        message: 'Media service is not configured'
-                    }
+                    code: 'CLOUDINARY_NOT_CONFIGURED',
+                    message: 'Media service is not configured'
                 },
+                ctx,
                 503
             );
         }
@@ -187,20 +191,18 @@ export const adminDeleteMediaRoute = createAdminRoute({
             const isTraversal = parseResult.error.issues.some((issue) =>
                 issue.message.includes('path traversal')
             );
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: isTraversal ? 'UNPROCESSABLE_ENTITY' : 'VALIDATION_ERROR',
-                        message: isTraversal
-                            ? 'publicId contains a forbidden path traversal segment'
-                            : 'Invalid query parameters',
-                        details: parseResult.error.issues.map((issue) => ({
-                            field: issue.path.join('.'),
-                            message: issue.message
-                        }))
-                    }
+                    code: isTraversal ? 'UNPROCESSABLE_ENTITY' : 'VALIDATION_ERROR',
+                    message: isTraversal
+                        ? 'publicId contains a forbidden path traversal segment'
+                        : 'Invalid query parameters',
+                    details: parseResult.error.issues.map((issue) => ({
+                        field: issue.path.join('.'),
+                        message: issue.message
+                    }))
                 },
+                ctx,
                 isTraversal ? 422 : 400
             );
         }
@@ -215,14 +217,12 @@ export const adminDeleteMediaRoute = createAdminRoute({
         const currentEnv = resolveEnvironment();
         const expectedPrefix = `hospeda/${currentEnv}/`;
         if (!publicId.startsWith(expectedPrefix)) {
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'FORBIDDEN',
-                        message: `publicId must start with "${expectedPrefix}" in this environment`
-                    }
+                    code: 'FORBIDDEN',
+                    message: `publicId must start with "${expectedPrefix}" in this environment`
                 },
+                ctx,
                 403
             );
         }
@@ -230,15 +230,13 @@ export const adminDeleteMediaRoute = createAdminRoute({
         // ── 1b. Resolve target entity from publicId ──────────────────────────
         const parsed = parseEntityFromPublicId(publicId);
         if (!parsed) {
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'VALIDATION_ERROR',
-                        message:
-                            'publicId does not target a known admin-managed entity (accommodations, destinations, events, posts)'
-                    }
+                    code: 'VALIDATION_ERROR',
+                    message:
+                        'publicId does not target a known admin-managed entity (accommodations, destinations, events, posts)'
                 },
+                ctx,
                 400
             );
         }
@@ -249,14 +247,12 @@ export const adminDeleteMediaRoute = createAdminRoute({
         const entityResult = await service.getById(actor, parsed.entityId);
 
         if (entityResult.error || !entityResult.data) {
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'ENTITY_NOT_FOUND',
-                        message: `Entity not found: ${parsed.entityType} with id ${parsed.entityId}`
-                    }
+                    code: 'ENTITY_NOT_FOUND',
+                    message: `Entity not found: ${parsed.entityType} with id ${parsed.entityId}`
                 },
+                ctx,
                 404
             );
         }
@@ -269,24 +265,28 @@ export const adminDeleteMediaRoute = createAdminRoute({
         });
 
         if (!permissionCheck.allowed) {
-            return ctx.json(
+            return createErrorResponse(
                 {
-                    success: false,
-                    error: {
-                        code: 'FORBIDDEN',
-                        message:
-                            permissionCheck.reason === 'NOT_ENTITY_OWNER'
-                                ? 'You do not own this entity'
-                                : `Insufficient permissions to modify ${parsed.entityType} media`
-                    }
+                    code: 'FORBIDDEN',
+                    message:
+                        permissionCheck.reason === 'NOT_ENTITY_OWNER'
+                            ? 'You do not own this entity'
+                            : `Insufficient permissions to modify ${parsed.entityType} media`
                 },
+                ctx,
                 403
             );
         }
 
         // ── 2. Delete from Cloudinary ─────────────────────────────────────────
+        // SPEC-078-GAPS GAP-078-154: capture the provider's `wasPresent`
+        // signal so the response distinguishes "deleted just now" from
+        // "already absent". Both outcomes resolve normally — only a thrown
+        // upstream error maps to 502.
+        let wasPresent: boolean;
         try {
-            await provider.delete({ publicId });
+            const deleteResult = await provider.delete({ publicId });
+            wasPresent = deleteResult.wasPresent;
         } catch (deleteError) {
             apiLogger.error(
                 {
@@ -295,15 +295,15 @@ export const adminDeleteMediaRoute = createAdminRoute({
                 },
                 'Cloudinary delete failed'
             );
-            return ctx.json(
-                {
-                    success: false,
-                    error: { code: 'UPSTREAM_ERROR', message: 'Media deletion failed' }
-                },
+            return createErrorResponse(
+                { code: 'UPSTREAM_ERROR', message: 'Media deletion failed' },
+                ctx,
                 502
             );
         }
 
-        return { deleted: true as const, publicId };
+        // The factory wraps `{ deleted, publicId, wasPresent }` via
+        // `ResponseFactory.createResponse` and emits the standard envelope.
+        return { deleted: true as const, publicId, wasPresent };
     }
 });

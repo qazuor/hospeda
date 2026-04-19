@@ -300,6 +300,67 @@ describe('AdminUploadRequestSchema', () => {
             expect(result.success).toBe(false);
         });
     });
+
+    // SPEC-078-GAPS GAP-078-155: optional `tags` and `overwrite` pass-through
+    describe('tags + overwrite pass-through', () => {
+        it('should accept featured uploads with tags and overwrite', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'featured',
+                entityType: 'accommodation',
+                entityId: VALID_UUID,
+                tags: ['hero', 'beach'],
+                overwrite: false
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                // tags + overwrite live on the parsed shape regardless of variant
+                expect(result.data.tags).toEqual(['hero', 'beach']);
+                expect(result.data.overwrite).toBe(false);
+            }
+        });
+
+        it('should accept gallery uploads with tags and overwrite', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'gallery',
+                entityType: 'post',
+                entityId: VALID_UUID,
+                tags: ['gallery'],
+                overwrite: true
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('should reject tags containing a comma (Cloudinary delimiter)', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'featured',
+                entityType: 'accommodation',
+                entityId: VALID_UUID,
+                tags: ['safe', 'evil,injection']
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject more than 20 tags', () => {
+            const tooMany = Array.from({ length: 21 }, (_, i) => `tag${i}`);
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'featured',
+                entityType: 'accommodation',
+                entityId: VALID_UUID,
+                tags: tooMany
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject overwrite of non-boolean type', () => {
+            const result = AdminUploadRequestSchema.safeParse({
+                role: 'featured',
+                entityType: 'accommodation',
+                entityId: VALID_UUID,
+                overwrite: 'true'
+            });
+            expect(result.success).toBe(false);
+        });
+    });
 });
 
 // ============================================================================
@@ -719,6 +780,40 @@ describe('DeleteMediaResponseSchema', () => {
                 publicId: 'hospeda/prod/accommodations/abc/featured'
             });
             expect(result.success).toBe(true);
+        });
+
+        // SPEC-078-GAPS GAP-078-154: wasPresent is an optional boolean signal
+        it('should accept wasPresent: true', () => {
+            const result = DeleteMediaResponseSchema.safeParse({
+                deleted: true,
+                publicId: 'hospeda/prod/accommodations/abc/featured',
+                wasPresent: true
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.wasPresent).toBe(true);
+            }
+        });
+
+        it('should accept wasPresent: false', () => {
+            const result = DeleteMediaResponseSchema.safeParse({
+                deleted: true,
+                publicId: 'hospeda/prod/accommodations/abc/featured',
+                wasPresent: false
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.wasPresent).toBe(false);
+            }
+        });
+
+        it('should reject wasPresent of non-boolean type', () => {
+            const result = DeleteMediaResponseSchema.safeParse({
+                deleted: true,
+                publicId: 'hospeda/prod/accommodations/abc/featured',
+                wasPresent: 'yes'
+            });
+            expect(result.success).toBe(false);
         });
     });
 

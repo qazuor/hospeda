@@ -410,13 +410,48 @@ describe('CloudinaryProvider', () => {
             );
         });
 
+        // SPEC-078-GAPS GAP-078-154: present asset → wasPresent: true
+        it('should return wasPresent: true when Cloudinary reports result === "ok"', async () => {
+            mockDestroy.mockResolvedValue({ result: 'ok' });
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            const result = await provider.delete({
+                publicId: 'hospeda/prod/accommodations/abc-123/featured'
+            });
+
+            expect(result).toEqual({ wasPresent: true });
+        });
+
         it('should not throw when Cloudinary returns not found (idempotent delete)', async () => {
             mockDestroy.mockResolvedValue({ result: 'not found' });
             const provider = new CloudinaryProvider(VALID_CONFIG);
 
             await expect(
                 provider.delete({ publicId: 'hospeda/prod/does-not-exist' })
-            ).resolves.toBeUndefined();
+            ).resolves.toEqual({ wasPresent: false });
+        });
+
+        // SPEC-078-GAPS GAP-078-154: absent asset → wasPresent: false
+        it('should return wasPresent: false when Cloudinary reports result === "not found"', async () => {
+            mockDestroy.mockResolvedValue({ result: 'not found' });
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            const result = await provider.delete({ publicId: 'hospeda/prod/does-not-exist' });
+
+            expect(result).toEqual({ wasPresent: false });
+        });
+
+        // Defensive: any unexpected result string maps to wasPresent: false
+        // so the caller still gets a consistent boolean signal.
+        it('should default wasPresent to false when Cloudinary response is missing or unexpected', async () => {
+            mockDestroy.mockResolvedValue(undefined);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            const result = await provider.delete({
+                publicId: 'hospeda/prod/accommodations/abc/featured'
+            });
+
+            expect(result).toEqual({ wasPresent: false });
         });
     });
 

@@ -70,6 +70,31 @@ const GalleryEntityTypeSchema = z.enum(['accommodation', 'destination', 'event',
 const FeaturedEntityTypeSchema = GalleryEntityTypeSchema;
 
 /**
+ * Optional Cloudinary tags. Forwarded to the provider when present.
+ *
+ * Each tag is constrained so it cannot smuggle a comma (Cloudinary's tag
+ * delimiter), whitespace, or path-traversal characters into the SDK call.
+ *
+ * SPEC-078-GAPS GAP-078-155.
+ */
+const MediaTagsSchema = z
+    .array(
+        z.string().regex(/^[A-Za-z0-9_-]{1,64}$/u, {
+            message: 'tag must be 1-64 chars of [A-Za-z0-9_-]'
+        })
+    )
+    .max(20, { message: 'tags supports at most 20 entries per upload' })
+    .optional();
+
+/**
+ * Optional `overwrite` flag forwarded to the provider. Defaults to provider
+ * behavior (true) when omitted.
+ *
+ * SPEC-078-GAPS GAP-078-155.
+ */
+const MediaOverwriteSchema = z.boolean().optional();
+
+/**
  * Featured-image variant of the upload request.
  *
  * Each CRUD content entity has exactly one featured image (the upload
@@ -79,7 +104,9 @@ const FeaturedEntityTypeSchema = GalleryEntityTypeSchema;
 const FeaturedImageUploadSchema = z.object({
     role: z.literal('featured'),
     entityType: FeaturedEntityTypeSchema,
-    entityId: EntityIdSchema
+    entityId: EntityIdSchema,
+    tags: MediaTagsSchema,
+    overwrite: MediaOverwriteSchema
 });
 
 /**
@@ -100,7 +127,9 @@ const GalleryUploadSchema = z.object({
         .regex(/^[A-Za-z0-9_-]{10}$/u, {
             message: 'galleryId must be a 10-char nanoid-shaped token'
         })
-        .optional()
+        .optional(),
+    tags: MediaTagsSchema,
+    overwrite: MediaOverwriteSchema
 });
 
 /**
@@ -116,7 +145,9 @@ const GalleryUploadSchema = z.object({
 const AvatarUploadSchema = z.object({
     role: z.literal('avatar'),
     entityType: z.literal('user'),
-    userId: UserIdSchema
+    userId: UserIdSchema,
+    tags: MediaTagsSchema,
+    overwrite: MediaOverwriteSchema
 });
 
 /**
@@ -128,7 +159,9 @@ const AvatarUploadSchema = z.object({
 const SponsorLogoUploadSchema = z.object({
     role: z.literal('sponsorLogo'),
     entityType: z.literal('postSponsor'),
-    entityId: EntityIdSchema
+    entityId: EntityIdSchema,
+    tags: MediaTagsSchema,
+    overwrite: MediaOverwriteSchema
 });
 
 /**
@@ -140,7 +173,9 @@ const SponsorLogoUploadSchema = z.object({
 const OrganizerLogoUploadSchema = z.object({
     role: z.literal('organizerLogo'),
     entityType: z.literal('eventOrganizer'),
-    entityId: EntityIdSchema
+    entityId: EntityIdSchema,
+    tags: MediaTagsSchema,
+    overwrite: MediaOverwriteSchema
 });
 
 /**
@@ -403,17 +438,26 @@ export const UploadResponseSchema = z.object({
  * The `deleted: true` literal acts as a discriminant so callers can safely
  * assert that the operation completed without needing to inspect HTTP status.
  *
+ * `wasPresent` (SPEC-078-GAPS GAP-078-154) reports whether the asset existed
+ * at the time of the call: `true` when Cloudinary deleted it just now, `false`
+ * when the asset was already absent (idempotent no-op). The flag is OPTIONAL
+ * for backward compatibility with the previous response shape; new callers
+ * MAY rely on it but consumers reading historic logs MUST tolerate its
+ * absence.
+ *
  * @example
  * ```ts
  * const response: DeleteMediaResponse = {
  *   deleted: true,
  *   publicId: 'hospeda/prod/accommodations/abc/featured',
+ *   wasPresent: true,
  * };
  * ```
  */
 export const DeleteMediaResponseSchema = z.object({
     deleted: z.literal(true),
-    publicId: z.string().min(1, 'publicId is required')
+    publicId: z.string().min(1, 'publicId is required'),
+    wasPresent: z.boolean().optional()
 });
 
 // ---------------------------------------------------------------------------

@@ -193,10 +193,37 @@ export const adminUploadMediaRoute = createAdminRoute({
         }
 
         // ── 3. Validate form fields with Zod ──────────────────────────────────
+        // `tags` and `overwrite` are optional pass-through fields forwarded to
+        // the provider (SPEC-078-GAPS GAP-078-155). `tags` is sent as a
+        // comma-separated multipart field (Cloudinary's own tag delimiter is
+        // a comma, so we accept the same shape on the wire) and split here
+        // before Zod validates each entry. `overwrite` is the literal string
+        // `'true'` / `'false'` and parsed to a boolean below.
+        const rawTags = formData.get('tags');
+        const tagsArray =
+            typeof rawTags === 'string' && rawTags.length > 0
+                ? rawTags
+                      .split(',')
+                      .map((tag) => tag.trim())
+                      .filter((tag) => tag.length > 0)
+                : undefined;
+
+        const rawOverwrite = formData.get('overwrite');
+        const overwriteBool =
+            typeof rawOverwrite === 'string'
+                ? rawOverwrite === 'true'
+                    ? true
+                    : rawOverwrite === 'false'
+                      ? false
+                      : undefined
+                : undefined;
+
         const rawFields = {
             entityType: formData.get('entityType'),
             entityId: formData.get('entityId'),
-            role: formData.get('role')
+            role: formData.get('role'),
+            ...(tagsArray !== undefined ? { tags: tagsArray } : {}),
+            ...(overwriteBool !== undefined ? { overwrite: overwriteBool } : {})
         };
 
         const parseResult = AdminUploadRequestSchema.safeParse(rawFields);
@@ -233,6 +260,11 @@ export const adminUploadMediaRoute = createAdminRoute({
         }
 
         const { entityType, entityId, role } = parseResult.data;
+        // `tags` / `overwrite` live on every variant of the discriminated
+        // union (all-optional). Read them post-narrow so the type stays
+        // accurate per-variant.
+        const tags = parseResult.data.tags;
+        const overwrite = parseResult.data.overwrite;
 
         // ── 3b. Verify entity exists in DB ────────────────────────────────────
         const service = entityServices[entityType];
@@ -349,9 +381,19 @@ export const adminUploadMediaRoute = createAdminRoute({
         }
 
         // ── 7. Upload to Cloudinary ───────────────────────────────────────────
+        // Forward `tags` and `overwrite` from the parsed request body to the
+        // provider when present (SPEC-078-GAPS GAP-078-155). Both fields are
+        // optional pass-throughs; omit them entirely from the call when the
+        // caller did not supply them so the provider's own defaults apply.
         let uploadResult: Awaited<ReturnType<typeof provider.upload>>;
         try {
-            uploadResult = await provider.upload({ file: buffer, folder, publicId });
+            uploadResult = await provider.upload({
+                file: buffer,
+                folder,
+                publicId,
+                ...(tags !== undefined ? { tags } : {}),
+                ...(overwrite !== undefined ? { overwrite } : {})
+            });
         } catch (uploadError) {
             apiLogger.error(
                 {

@@ -17,6 +17,7 @@
 import type {
     DeleteByPrefixOptions,
     DeleteOptions,
+    DeleteResult,
     ImageProvider,
     UploadOptions,
     UploadResult
@@ -144,10 +145,15 @@ export class InMemoryImageProvider implements ImageProvider {
     /**
      * Removes the asset with the given publicId, if present. Idempotent.
      *
+     * Returns `{ wasPresent }` to mirror the Cloudinary provider's contract
+     * (SPEC-078-GAPS GAP-078-154): `true` when the asset existed at delete
+     * time, `false` when it did not.
+     *
      * @param options - Contains the publicId to delete
      */
-    async delete(options: DeleteOptions): Promise<void> {
-        this.store.delete(options.publicId);
+    async delete(options: DeleteOptions): Promise<DeleteResult> {
+        const wasPresent = this.store.delete(options.publicId);
+        return { wasPresent };
     }
 
     /**

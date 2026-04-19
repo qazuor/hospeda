@@ -37,6 +37,25 @@ export interface DeleteOptions {
 }
 
 /**
+ * Result of a {@link ImageProvider.delete} call.
+ *
+ * `wasPresent` discriminates between an asset that existed at delete time
+ * (Cloudinary returns `result === 'ok'`) and one that did not (`'not found'`).
+ * The delete operation itself is idempotent — both outcomes resolve normally —
+ * but callers (notably the admin DELETE route) need to surface the distinction
+ * to the client so they can tell "deleted just now" from "already gone".
+ *
+ * SPEC-078-GAPS GAP-078-154.
+ */
+export interface DeleteResult {
+    /**
+     * `true` when the asset existed and was deleted by this call.
+     * `false` when Cloudinary reported the asset did not exist (idempotent no-op).
+     */
+    readonly wasPresent: boolean;
+}
+
+/**
  * Options for deleting all images under a prefix.
  */
 export interface DeleteByPrefixOptions {
@@ -52,6 +71,6 @@ export interface DeleteByPrefixOptions {
  */
 export interface ImageProvider {
     upload(options: UploadOptions): Promise<UploadResult>;
-    delete(options: DeleteOptions): Promise<void>;
+    delete(options: DeleteOptions): Promise<DeleteResult>;
     deleteByPrefix(options: DeleteByPrefixOptions): Promise<void>;
 }
