@@ -14,7 +14,7 @@ import {
 import type { Sponsorship } from '@/features/sponsorships/types';
 import { useTranslations } from '@/hooks/use-translations';
 import { AddIcon, CheckIcon, CloseIcon } from '@repo/icons';
-import { SponsorshipStatusEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, SponsorshipStatusEnum } from '@repo/schemas';
 import { useState } from 'react';
 
 /**
@@ -27,6 +27,7 @@ export function SponsorshipsTab() {
     const [filters, setFilters] = useState<{
         sponsorshipStatus?: string;
         targetType?: string;
+        lifecycleState?: LifecycleStatusEnum;
     }>({});
 
     const { data, isLoading, error } = useSponsorshipsQuery({
@@ -235,6 +236,34 @@ export function SponsorshipsTab() {
                         </option>
                         <option value="POST">
                             {t('admin-billing.sponsorships.targetTypes.post')}
+                        </option>
+                    </select>
+
+                    <select
+                        aria-label={t('admin-billing.sponsorships.filters.allLifecycle')}
+                        className="rounded-md border px-3 py-2 text-sm"
+                        value={filters.lifecycleState || 'all'}
+                        onChange={(e) =>
+                            setFilters((prev) => ({
+                                ...prev,
+                                lifecycleState:
+                                    e.target.value === 'all'
+                                        ? undefined
+                                        : (e.target.value as LifecycleStatusEnum)
+                            }))
+                        }
+                    >
+                        <option value="all">
+                            {t('admin-billing.sponsorships.filters.allLifecycle')}
+                        </option>
+                        <option value={LifecycleStatusEnum.DRAFT}>
+                            {t('admin-billing.sponsorships.lifecycle.draft')}
+                        </option>
+                        <option value={LifecycleStatusEnum.ACTIVE}>
+                            {t('admin-billing.sponsorships.lifecycle.active')}
+                        </option>
+                        <option value={LifecycleStatusEnum.ARCHIVED}>
+                            {t('admin-billing.sponsorships.lifecycle.archived')}
                         </option>
                     </select>
                 </div>

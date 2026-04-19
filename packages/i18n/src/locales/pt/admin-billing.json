@@ -492,7 +492,13 @@
         },
         "filters": {
             "allStatuses": "Todos os status",
-            "allTypes": "Todos os tipos"
+            "allTypes": "Todos os tipos",
+            "allLifecycle": "Todos os ciclos de vida"
+        },
+        "lifecycle": {
+            "draft": "Rascunho",
+            "active": "Ativo",
+            "archived": "Arquivado"
         },
         "create": {
             "sponsorship": "Criar patrocínio",
