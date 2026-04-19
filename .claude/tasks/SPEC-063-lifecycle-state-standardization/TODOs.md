@@ -1,8 +1,8 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 41/63 completed + 7 deferred — effective 41/56
+## Progress: 42/63 completed + 7 deferred — effective 42/56
 
-**Last updated:** 2026-04-18T18:54:00Z
+**Last updated:** 2026-04-18T19:02:00Z
 **Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). See progress.md + state.json `_pushOnlyMigrationPolicy`. Effective Phase 3 scope drops from 19 to 13 tasks.
 
 ### Push-only migration policy (summary)
@@ -321,7 +321,10 @@
   - admin-search.schema.ts: removed stale collision comment (semantic clarification preserved)
   - Blocked by: T-043 · Blocks: T-050, T-051
 
-- [ ] **T-046** (complexity: 2.5) — Update Sponsorship HTTP schema + conversion functions
+- [x] **T-046** (complexity: 2.5) — Update Sponsorship HTTP schema + conversion functions
+  - COMPLETED 2026-04-18 · lint: pass · typecheck: `packages/schemas` SOURCE 100% clean for Phase 3
+  - Search/Create HTTP schemas renamed status→sponsorshipStatus + added lifecycleState (optional in search, default ACTIVE in create)
+  - 3 conversion functions updated (search, create, update)
   - Blocked by: T-043 · Blocks: T-050, T-051
 
 ### Model + Service

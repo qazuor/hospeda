@@ -1,5 +1,27 @@
 # SPEC-063 — Implementation Progress Log
 
+## Session summary (as of 2026-04-18T19:02)
+
+- **Progress:** 42/63 completed + 7 deferred. Effective scope **42/56**.
+- **Phase 3 pace:** T-039 + T-043 + T-044 + T-045 + T-046 landed in sequence. Phase 3 now 8/13 remaining. Next: T-047 (model), T-048 (service remove _executeAdminSearch override), T-049 (service force-override lifecycleState=ACTIVE on public).
+- **Milestone:** `packages/schemas` SOURCE 100% typecheck-clean for Phase 3 Sponsorship. Only remaining schema-layer error is test-file at `sponsorship.schema.test.ts` L119 (T-055 scope).
+
+### T-046 completed 2026-04-18T19:02
+
+- **File:** `packages/schemas/src/entities/sponsorship/sponsorship.http.schema.ts`
+- Imports: added `LifecycleStatusEnum` (value) from `lifecycle-state.enum.js` and `LifecycleStatusEnumSchema` (zod) from `lifecycle-state.schema.js`.
+- `SponsorshipSearchHttpSchema`: `status: SponsorshipStatusEnumSchema.optional()` → `sponsorshipStatus: ...`. Added `lifecycleState: LifecycleStatusEnumSchema.optional()` with comment noting service force-override for public (AC-005-01).
+- `SponsorshipCreateHttpSchema`: same rename + added `lifecycleState: LifecycleStatusEnumSchema.default(LifecycleStatusEnum.ACTIVE)`. Default matches base `BaseLifecycleFields` default.
+- `SponsorshipUpdateHttpSchema`: auto-inherits via `.partial()` — no direct edits needed.
+- **Conversion functions updated (3):**
+  - `httpToDomainSponsorshipSearch`: passes `sponsorshipStatus: httpParams.sponsorshipStatus` + `lifecycleState: httpParams.lifecycleState` through to domain shape.
+  - `httpToDomainSponsorshipCreate`: `sponsorshipStatus: httpData.sponsorshipStatus ?? SponsorshipStatusEnum.PENDING` (preserves original default fallback); `lifecycleState: httpData.lifecycleState` (zod applies ACTIVE default at parse).
+  - `httpToDomainSponsorshipUpdate`: conditional assignment pattern for both `sponsorshipStatus` and `lifecycleState` (same if-undefined-skip pattern used for other optional fields).
+- **Lint:** pass. **Typecheck `@repo/schemas`:** 100% clean for SOURCE. Only remaining Phase 3 error is `test/entities/sponsorship/sponsorship.schema.test.ts:119` — T-055 test task scope.
+- Commit boundary: 1 feat(schemas) + 1 chore(tasks).
+
+---
+
 ## Session summary (as of 2026-04-18T18:54)
 
 - **Progress:** 41/63 completed + 7 deferred. Effective scope **41/56**.

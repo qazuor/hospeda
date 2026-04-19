@@ -1563,27 +1563,27 @@
         {
             "id": "T-046",
             "title": "Update Sponsorship HTTP schema + conversion functions",
-            "description": "Update `packages/schemas/src/entities/sponsorship/sponsorship.http.schema.ts`: rename `status` to `sponsorshipStatus` in search and create schemas, update conversion functions. Also add `lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()` to search schemas and `lifecycleState: z.nativeEnum(LifecycleStatusEnum).default('ACTIVE')` to create schemas.\n\nFiles: `packages/schemas/src/entities/sponsorship/sponsorship.http.schema.ts`",
-            "status": "pending",
+            "description": "Update `packages/schemas/src/entities/sponsorship/sponsorship.http.schema.ts`: rename `status` to `sponsorshipStatus` in search and create schemas, update conversion functions. Also add `lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()` to search schemas and `lifecycleState: z.nativeEnum(LifecycleStatusEnum).default('ACTIVE')` to create schemas.\n\nFiles: `packages/schemas/src/entities/sponsorship/sponsorship.http.schema.ts`\n\nCOMPLETION NOTE: http.schema.ts — added imports for LifecycleStatusEnum (value) + LifecycleStatusEnumSchema (zod). SponsorshipSearchHttpSchema: renamed status→sponsorshipStatus + added lifecycleState optional filter. SponsorshipCreateHttpSchema: renamed status→sponsorshipStatus + added lifecycleState with default ACTIVE (matches base BaseLifecycleFields). SponsorshipUpdateHttpSchema: auto-inherits via .partial(). Conversion functions updated: httpToDomainSponsorshipSearch passes both sponsorshipStatus and lifecycleState through; httpToDomainSponsorshipCreate uses sponsorshipStatus default PENDING and lifecycleState from httpData (default applied by zod at parse time); httpToDomainSponsorshipUpdate adds conditional assignment for both fields. packages/schemas SOURCE now 100% typecheck-clean for Phase 3; remaining error in test file L119 is T-055 scope.",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-043"],
             "blocks": ["T-051"],
             "subtasks": [
                 {
                     "title": "Rename status to sponsorshipStatus in search/create schemas",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Add lifecycleState to search/create schemas", "completed": false },
-                { "title": "Update HTTP→domain conversion functions", "completed": false },
-                { "title": "Verify unrelated fields unchanged", "completed": false }
+                { "title": "Add lifecycleState to search/create schemas", "completed": true },
+                { "title": "Update HTTP→domain conversion functions", "completed": true },
+                { "title": "Verify unrelated fields unchanged", "completed": true }
             ],
             "tags": ["schemas", "http", "phase-3", "sponsorship"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T18:58:00.000Z",
+                "completed": "2026-04-18T19:02:00.000Z"
             }
         },
         {
@@ -1913,9 +1913,9 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 41,
+        "completed": 42,
         "deferred": 7,
         "blocked": 0,
         "averageComplexity": 2.0,
