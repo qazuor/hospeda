@@ -228,6 +228,51 @@ describe('DeleteMediaQuerySchema', () => {
             expect(result.success).toBe(false);
         });
     });
+
+    // GAP-078-034 + GAP-078-173 — path traversal protection
+    describe('when publicId contains path traversal', () => {
+        it('should fail for a raw ".." segment in the middle', () => {
+            const result = DeleteMediaQuerySchema.safeParse({
+                publicId: 'hospeda/dev/../prod/x'
+            });
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.issues.some((i) => i.message.includes('path traversal'))).toBe(
+                    true
+                );
+            }
+        });
+
+        it('should fail for URL-encoded ".." (%2E%2E)', () => {
+            const result = DeleteMediaQuerySchema.safeParse({
+                publicId: 'hospeda/dev/%2E%2E/prod/x'
+            });
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.issues.some((i) => i.message.includes('path traversal'))).toBe(
+                    true
+                );
+            }
+        });
+
+        it('should fail for a ".." segment at the end', () => {
+            const result = DeleteMediaQuerySchema.safeParse({
+                publicId: 'hospeda/dev/foo/..'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should not throw on malformed URL-encoded input', () => {
+            // `%E0` is an invalid UTF-8 start byte and makes decodeURIComponent
+            // throw. The refinement must swallow that and fall back to checking
+            // the raw string instead of crashing validation.
+            expect(() =>
+                DeleteMediaQuerySchema.safeParse({
+                    publicId: 'hospeda/dev/%E0/foo'
+                })
+            ).not.toThrow();
+        });
+    });
 });
 
 // ============================================================================

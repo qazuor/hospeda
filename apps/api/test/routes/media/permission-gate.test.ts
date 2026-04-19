@@ -184,3 +184,119 @@ describe('Admin media routes — route-level permission gate (smoke)', () => {
         });
     });
 });
+
+/**
+ * SPEC-078-GAPS T-005 — security hardening for DELETE /admin/media.
+ *
+ * Covers:
+ *   - GAP-078-035: env-prefix validation via `resolveEnvironment()` returns 403
+ *     when `publicId` does not target the current environment.
+ *   - GAP-078-034 + GAP-078-173: schema-level path-traversal rejection (raw `..`
+ *     and URL-encoded `%2E%2E`) surfaces as HTTP 422.
+ *
+ * The runtime environment under Vitest is `'test'` (NODE_ENV=test, no
+ * VERCEL_ENV), so `resolveEnvironment()` yields `'test'`. All test paths use
+ * either `hospeda/test/...` (allowed prefix) or `hospeda/prod/...` (forbidden).
+ */
+describe('DELETE /api/v1/admin/media — security hardening (T-005)', () => {
+    let app: AppOpenAPI;
+
+    beforeAll(() => {
+        app = initApp();
+    });
+
+    const adminWithDelete = () =>
+        createMockAdminActor({
+            permissions: [
+                PermissionEnum.ACCESS_PANEL_ADMIN,
+                PermissionEnum.ACCESS_API_ADMIN,
+                PermissionEnum.MEDIA_DELETE
+            ]
+        });
+
+    describe('GAP-078-035 — env prefix enforcement', () => {
+        it('returns 403 when publicId targets a different environment (prod from test)', async () => {
+            // Arrange
+            const actor = adminWithDelete();
+
+            // Act
+            const res = await app.request(
+                '/api/v1/admin/media?publicId=hospeda/prod/accommodations/id-1/featured',
+                {
+                    method: 'DELETE',
+                    ...createAuthenticatedRequest(actor)
+                }
+            );
+
+            // Assert
+            expect(res.status).toBe(403);
+            const body = (await res.json()) as { success: boolean; error: { code: string } };
+            expect(body.success).toBe(false);
+            expect(body.error.code).toBe('FORBIDDEN');
+        });
+
+        it('does NOT return 403 (env reason) when publicId matches the current env', async () => {
+            // Arrange
+            const actor = adminWithDelete();
+
+            // Act
+            const res = await app.request(
+                '/api/v1/admin/media?publicId=hospeda/test/accommodations/id-1/featured',
+                {
+                    method: 'DELETE',
+                    ...createAuthenticatedRequest(actor)
+                }
+            );
+
+            // Assert: env check passes; downstream lookup/permission/provider
+            // layers may still surface other statuses, but none must be 403
+            // *with reason FORBIDDEN-from-env*. We accept the same set as the
+            // permission-gate happy path.
+            expect([400, 403, 404, 422, 503]).toContain(res.status);
+            if (res.status === 403) {
+                const body = (await res.json()) as { error: { message: string } };
+                // If 403, it must be from the entity-permission layer, not env.
+                expect(body.error.message).not.toContain('in this environment');
+            }
+        });
+    });
+
+    describe('GAP-078-034 + GAP-078-173 — path traversal rejection', () => {
+        it('returns 422 for raw ".." traversal segment', async () => {
+            // Arrange
+            const actor = adminWithDelete();
+
+            // Act
+            const res = await app.request('/api/v1/admin/media?publicId=hospeda/dev/../prod/x', {
+                method: 'DELETE',
+                ...createAuthenticatedRequest(actor)
+            });
+
+            // Assert
+            expect(res.status).toBe(422);
+            const body = (await res.json()) as { success: boolean; error: { code: string } };
+            expect(body.success).toBe(false);
+            expect(body.error.code).toBe('UNPROCESSABLE_ENTITY');
+        });
+
+        it('returns 422 for URL-encoded ".." (%2E%2E) traversal segment', async () => {
+            // Arrange
+            const actor = adminWithDelete();
+
+            // Act
+            const res = await app.request(
+                '/api/v1/admin/media?publicId=hospeda/dev/%2E%2E/prod/x',
+                {
+                    method: 'DELETE',
+                    ...createAuthenticatedRequest(actor)
+                }
+            );
+
+            // Assert
+            expect(res.status).toBe(422);
+            const body = (await res.json()) as { success: boolean; error: { code: string } };
+            expect(body.success).toBe(false);
+            expect(body.error.code).toBe('UNPROCESSABLE_ENTITY');
+        });
+    });
+});

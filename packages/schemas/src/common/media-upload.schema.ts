@@ -37,10 +37,29 @@ export const AdminUploadRequestSchema = z.object({
 });
 
 /**
+ * Safely decode a URL-encoded string. Returns the input unchanged when
+ * `decodeURIComponent` throws (malformed sequence). The fallback ensures the
+ * traversal refinement still inspects the raw value instead of crashing
+ * validation with an uncaught error.
+ */
+const safeDecode = (value: string): string => {
+    try {
+        return decodeURIComponent(value);
+    } catch {
+        return value;
+    }
+};
+
+/**
  * Query parameter validation for `DELETE /api/v1/admin/media`.
  *
  * The `publicId` must start with `'hospeda/'` to prevent callers from deleting
  * assets that live outside the project's Cloudinary namespace.
+ *
+ * It must also not contain a parent-directory traversal segment (`..`) in
+ * either its raw form or after URL-decoding. This blocks attempts such as
+ * `hospeda/dev/../prod/x` and `hospeda/dev/%2E%2E/prod/x` from escaping the
+ * environment-scoped folder layout.
  *
  * @example
  * ```ts
@@ -49,6 +68,10 @@ export const AdminUploadRequestSchema = z.object({
  *
  * // Invalid — wrong namespace
  * DeleteMediaQuerySchema.parse({ publicId: 'other/image' }); // throws
+ *
+ * // Invalid — path traversal
+ * DeleteMediaQuerySchema.parse({ publicId: 'hospeda/dev/../prod/x' }); // throws
+ * DeleteMediaQuerySchema.parse({ publicId: 'hospeda/dev/%2E%2E/prod/x' }); // throws
  * ```
  */
 export const DeleteMediaQuerySchema = z.object({
@@ -57,6 +80,9 @@ export const DeleteMediaQuerySchema = z.object({
         .min(1, 'publicId is required')
         .refine((s) => s.startsWith('hospeda/'), {
             message: 'publicId must start with "hospeda/"'
+        })
+        .refine((s) => !s.includes('..') && !safeDecode(s).includes('..'), {
+            message: 'publicId must not contain path traversal segments'
         })
 });
 
