@@ -54,6 +54,17 @@ import { type MediaEntityType, validateEntityMediaPermission } from './permissio
  */
 const ActorIdSchema = z.string().uuid();
 
+/**
+ * Server-side hard cap on the number of gallery items per entity
+ * (SPEC-078-GAPS T-033 / GAP-078-071). Mirrors the DB-level CHECK
+ * constraint added in T-013 so the route returns a typed error
+ * (`GALLERY_LIMIT_EXCEEDED`) instead of a generic constraint violation.
+ *
+ * TODO(billing): respect billing-tier addon entitlements for gallery cap
+ * (currently flat 50).
+ */
+const GALLERY_HARD_CAP = 50;
+
 /** Service instances for entity existence validation. */
 const accommodationService = new AccommodationService({ logger: apiLogger });
 const destinationService = new DestinationService({ logger: apiLogger });
@@ -108,11 +119,17 @@ export const adminUploadMediaRoute = createAdminRoute({
         }
 
         // ── 1. Content-Length pre-check (anti-DoS) ────────────────────────────
+        // SPEC-078-GAPS T-033 / GAP-078-021: allow a 1KB margin above the
+        // declared limit so multipart envelope overhead (boundaries, field
+        // headers) on a file that is exactly at the byte limit does not
+        // trigger a false-positive 413. The downstream `validateMediaFile`
+        // call enforces the strict file-size limit on the parsed file body.
         const maxMb = env.HOSPEDA_MEDIA_MAX_FILE_SIZE_MB;
         const maxBytes = maxMb * 1024 * 1024;
+        const contentLengthMaxBytes = maxBytes + 1024;
         const contentLength = Number(ctx.req.header('content-length') ?? 0);
 
-        if (contentLength > maxBytes) {
+        if (contentLength > contentLengthMaxBytes) {
             return createErrorResponse(
                 {
                     code: 'PAYLOAD_TOO_LARGE',
@@ -313,6 +330,37 @@ export const adminUploadMediaRoute = createAdminRoute({
             );
         }
 
+        // ── 3d. Enforce gallery hard cap (SPEC-078-GAPS T-033 / GAP-078-071).
+        // Server-side flat cap of 50 gallery items per entity. The DB-level
+        // CHECK constraint added in T-013 also enforces this, but throws a
+        // generic constraint-violation; we reject here BEFORE attempting the
+        // upload so clients receive a typed `GALLERY_LIMIT_EXCEEDED` error
+        // and the provider is never called for a doomed insert.
+        // Featured / avatar / sponsorLogo / organizerLogo roles bypass this
+        // check — only the gallery role grows unbounded.
+        // TODO(billing): respect billing-tier addon entitlements for gallery
+        // cap (currently flat 50)
+        if (role === 'gallery') {
+            const entityMedia = (entityResult.data as { media?: { gallery?: unknown[] } }).media;
+            const currentGalleryCount = entityMedia?.gallery?.length ?? 0;
+            if (currentGalleryCount >= GALLERY_HARD_CAP) {
+                return createErrorResponse(
+                    {
+                        code: 'GALLERY_LIMIT_EXCEEDED',
+                        message: `Gallery limit of ${GALLERY_HARD_CAP} items reached for this entity`,
+                        details: {
+                            entityType,
+                            entityId,
+                            currentCount: currentGalleryCount,
+                            limit: GALLERY_HARD_CAP
+                        }
+                    },
+                    ctx,
+                    422
+                );
+            }
+        }
+
         // ── 4. Extract file ───────────────────────────────────────────────────
         const fileEntry = formData.get('file');
         if (!(fileEntry instanceof File)) {
@@ -465,5 +513,11 @@ export const adminUploadMediaRoute = createAdminRoute({
         //       metadata }` envelope and returns HTTP 200 per
         //       `successStatusCode` above.
         return parsedResponse.data;
+    },
+    // SPEC-078-GAPS T-033 / GAP-078-068: interim per-route rate limit on
+    // the upload endpoint until billing-tier-aware limits land.
+    // TODO(SPEC-079): replace interim rate limit with billing-tier-aware limits
+    options: {
+        customRateLimit: { requests: 10, windowMs: 60000 }
     }
 });

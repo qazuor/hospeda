@@ -30,6 +30,17 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 
 /**
+ * Allowance above the strict file-size limit for the Content-Length
+ * pre-check (SPEC-078-GAPS T-033 / GAP-078-021). Multipart envelope
+ * overhead (boundaries, field headers) on a file exactly at the byte
+ * limit can push the declared Content-Length a few hundred bytes past
+ * `AVATAR_MAX_BYTES` even though the parsed file body is within the
+ * limit. The downstream `validateMediaFile` enforces the strict limit on
+ * the parsed buffer.
+ */
+const CONTENT_LENGTH_MARGIN = 1024;
+
+/**
  * POST /api/v1/protected/media/upload
  * Upload an avatar image for the authenticated user.
  *
@@ -67,7 +78,7 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
 
         // ── 1. Content-Length pre-check ───────────────────────────────────────
         const contentLength = Number(ctx.req.header('content-length') ?? 0);
-        if (contentLength > AVATAR_MAX_BYTES) {
+        if (contentLength > AVATAR_MAX_BYTES + CONTENT_LENGTH_MARGIN) {
             return createErrorResponse(
                 {
                     code: 'PAYLOAD_TOO_LARGE',
@@ -208,5 +219,11 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
         //       metadata }` envelope and returns HTTP 200 per
         //       `successStatusCode` above.
         return parsedResponse.data;
+    },
+    // SPEC-078-GAPS T-033 / GAP-078-068: interim per-route rate limit on
+    // the avatar upload endpoint until billing-tier-aware limits land.
+    // TODO(SPEC-079): replace interim rate limit with billing-tier-aware limits
+    options: {
+        customRateLimit: { requests: 10, windowMs: 60000 }
     }
 });
