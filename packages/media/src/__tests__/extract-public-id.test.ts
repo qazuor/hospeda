@@ -137,4 +137,109 @@ describe('extractPublicId', () => {
             expect(result).toBe('hospeda/prod/acc/abc/gallery/a7x3k');
         });
     });
+
+    // GAP-078-088 / GAP-078-206 / GAP-078-207: additional URL shape edge cases
+    describe('GAP-078-088: video and resource-type variants', () => {
+        it('extracts public ID from a video upload URL (resource_type=video)', () => {
+            // Arrange — Cloudinary serves videos under /video/upload/
+            const url =
+                'https://res.cloudinary.com/hospeda/video/upload/v1700000000/hospeda/prod/tours/intro.mp4';
+
+            // Act
+            const result = extractPublicId(url);
+
+            // Assert
+            expect(result).toBe('hospeda/prod/tours/intro');
+        });
+
+        it('extracts public ID from raw resource type URL', () => {
+            // Arrange — raw is also a Cloudinary delivery type
+            const url =
+                'https://res.cloudinary.com/hospeda/raw/upload/v1700000000/hospeda/prod/docs/contract.pdf';
+
+            // Act
+            const result = extractPublicId(url);
+
+            // Assert
+            expect(result).toBe('hospeda/prod/docs/contract');
+        });
+
+        it('extracts public ID from fetch delivery type URL', () => {
+            // Arrange — fetch delivery type proxies a remote URL through Cloudinary.
+            // The "public ID" here is the remote URL fragment after /upload/.
+            const url =
+                'https://res.cloudinary.com/hospeda/image/fetch/v1/https://example.com/photo.jpg';
+
+            // Act
+            const result = extractPublicId(url);
+
+            // Assert — fetch URLs do not contain `/upload/` so result must be null.
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('GAP-078-206: query strings and fragments', () => {
+        it('strips file extension and ignores query string', () => {
+            // Arrange — Cloudinary appends `?_a=...` analytics tokens on some URLs
+            const url =
+                'https://res.cloudinary.com/hospeda/image/upload/v1234/hospeda/prod/acc/abc/featured.jpg?_a=BAMAH+AA0';
+
+            // Act
+            const result = extractPublicId(url);
+
+            // Assert — query string lives outside `parsed.pathname`, so it is naturally ignored
+            expect(result).toBe('hospeda/prod/acc/abc/featured');
+        });
+
+        it('ignores URL fragment (#anchor)', () => {
+            // Arrange
+            const url =
+                'https://res.cloudinary.com/hospeda/image/upload/v1234/hospeda/prod/acc/abc/featured.jpg#section';
+
+            // Act
+            const result = extractPublicId(url);
+
+            // Assert
+            expect(result).toBe('hospeda/prod/acc/abc/featured');
+        });
+    });
+
+    describe('GAP-078-207: ambiguous path segments', () => {
+        it('uses the FIRST occurrence of /upload/ when it appears twice in the path', () => {
+            // Arrange — pathologic case: a folder literally named "upload" lives under /upload/
+            const url = 'https://res.cloudinary.com/hospeda/image/upload/v1/upload/file.jpg';
+
+            // Act
+            const result = extractPublicId(url);
+
+            // Assert — `indexOf('/upload/')` returns the first match, so the second
+            // `upload` is treated as a folder segment within the public ID.
+            expect(result).toBe('upload/file');
+        });
+
+        it('preserves a folder name containing dots', () => {
+            // Arrange — folders with dots are valid in Cloudinary
+            const url =
+                'https://res.cloudinary.com/hospeda/image/upload/v1/folder.with.dot/file.jpg';
+
+            // Act
+            const result = extractPublicId(url);
+
+            // Assert — only the LAST `.` of the LAST segment is treated as the
+            // file extension; folder dots are preserved.
+            expect(result).toBe('folder.with.dot/file');
+        });
+
+        it('strips only the last extension when the file name itself contains dots', () => {
+            // Arrange
+            const url =
+                'https://res.cloudinary.com/hospeda/image/upload/v1/folder/file.name.with.dots.png';
+
+            // Act
+            const result = extractPublicId(url);
+
+            // Assert
+            expect(result).toBe('folder/file.name.with.dots');
+        });
+    });
 });

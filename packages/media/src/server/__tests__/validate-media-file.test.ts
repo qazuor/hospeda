@@ -68,6 +68,40 @@ function createPngWithDimensions(width: number, height: number): Buffer {
     return Buffer.concat([signature, ihdrLen, ihdrType, ihdrData, ihdrCrc]);
 }
 
+/**
+ * Builds a minimal ISO Base Media (`ftyp`) header with the given brand.
+ * Padded to 12 bytes so it satisfies `detectMimeFromMagic`'s length guard.
+ * Used to prove that the magic-byte detector recognises the brand without
+ * needing real codec payload (GAP-078-205).
+ */
+function createIsoFtypHeader(brand: string): Buffer {
+    // 4 bytes box size (placeholder) + 'ftyp' (4) + 4-char brand = 12 bytes
+    const sizeAndType = Buffer.from([0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70]);
+    const brandBytes = Buffer.from(brand.padEnd(4, ' ').slice(0, 4), 'ascii');
+    return Buffer.concat([sizeAndType, brandBytes]);
+}
+
+/**
+ * Builds a minimal RIFF/WEBP container header (12 bytes), enough for the
+ * magic-byte detector to identify the format without any VP8 payload.
+ */
+function createWebpHeader(): Buffer {
+    return Buffer.from([
+        0x52,
+        0x49,
+        0x46,
+        0x46, // 'RIFF'
+        0x00,
+        0x00,
+        0x00,
+        0x00, // file size (placeholder)
+        0x57,
+        0x45,
+        0x42,
+        0x50 // 'WEBP'
+    ]);
+}
+
 const MB = 1024 * 1024;
 
 // ---------------------------------------------------------------------------
@@ -217,6 +251,57 @@ describe('validateMediaFile', () => {
                 expect(result.error).not.toBe('FILE_TOO_LARGE');
             }
         });
+
+        // GAP-078-090: deterministic 10 MB boundary regression
+        describe('GAP-078-090: 10 MB byte-exact boundary', () => {
+            it('passes a PNG-padded buffer weighing EXACTLY 10 MB (10 * 1024 * 1024 bytes)', () => {
+                // Arrange — concatenate a real PNG header with padding to reach the
+                // exact byte count. byteLength MUST be 10 * 1024 * 1024.
+                const pngBuffer = createMinimalPng();
+                const padding = Buffer.alloc(10 * MB - pngBuffer.length);
+                const buffer = Buffer.concat([pngBuffer, padding]);
+
+                expect(buffer.byteLength).toBe(10 * MB);
+
+                // Act
+                const result = validateMediaFile({
+                    buffer,
+                    mimeType: 'image/png',
+                    context: 'entity'
+                });
+
+                // Assert — size check uses strict `>`, so 10 MB exactly is allowed.
+                // Either the parser tolerates the padded image (valid: true) or it
+                // rejects it as INVALID_IMAGE — but it MUST NOT be FILE_TOO_LARGE.
+                if (!result.valid) {
+                    expect(result.error).not.toBe('FILE_TOO_LARGE');
+                }
+            });
+
+            it('fails a PNG-padded buffer weighing EXACTLY 10 MB + 1 byte with FILE_TOO_LARGE', () => {
+                // Arrange — same padding strategy, +1 byte over the limit.
+                const pngBuffer = createMinimalPng();
+                const padding = Buffer.alloc(10 * MB - pngBuffer.length + 1);
+                const buffer = Buffer.concat([pngBuffer, padding]);
+
+                expect(buffer.byteLength).toBe(10 * MB + 1);
+
+                // Act
+                const result = validateMediaFile({
+                    buffer,
+                    mimeType: 'image/png',
+                    context: 'entity'
+                });
+
+                // Assert — exact code MUST be FILE_TOO_LARGE.
+                expect(result.valid).toBe(false);
+                if (!result.valid) {
+                    expect(result.error).toBe('FILE_TOO_LARGE');
+                    expect(result.details.maxBytes).toBe(10 * MB);
+                    expect(result.details.actualBytes).toBe(10 * MB + 1);
+                }
+            });
+        });
     });
 
     // -----------------------------------------------------------------------
@@ -320,6 +405,30 @@ describe('validateMediaFile', () => {
             }
         });
 
+        // GAP-078-213: exact assertion (no `.toContain`) for 0-byte input.
+        // The `EMPTY_FILE` code lives at the route layer (T-032). At the validator
+        // layer the resulting error is `INVALID_IMAGE` because the size check uses
+        // strict `>` (0 > 0 is false), the MIME allowlist passes, magic-byte
+        // detection returns null (buffer.length < 12), and `image-size` throws
+        // when handed a 0-byte buffer.
+        it('GAP-078-213: returns EXACTLY INVALID_IMAGE for a 0-byte buffer', () => {
+            // Arrange
+            const buffer = Buffer.alloc(0);
+
+            // Act
+            const result = validateMediaFile({
+                buffer,
+                mimeType: 'image/png',
+                context: 'entity'
+            });
+
+            // Assert — strict `.toBe`, not `.toContain`.
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).toBe('INVALID_IMAGE');
+            }
+        });
+
         it('should fail when buffer contains random binary data', () => {
             const buffer = Buffer.from([0x00, 0x01, 0x02, 0x03, 0x04]);
             const result = validateMediaFile({ buffer, mimeType: 'image/jpeg', context: 'entity' });
@@ -405,6 +514,240 @@ describe('validateMediaFile', () => {
             expect(result.valid).toBe(false);
             if (!result.valid) {
                 expect(result.error).toBe('IMAGE_TOO_LARGE');
+            }
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // IMAGE_TOO_LARGE (GAP-078-204)
+    //
+    // The decompression-bomb guard fires only above 2e8 pixels. Images
+    // whose pixel count is below the bomb threshold but whose individual
+    // dimensions exceed the per-context cap (8000 px for entity, 4000 px
+    // for avatar) must surface as IMAGE_TOO_LARGE — never as a bomb and
+    // never as INVALID_IMAGE.
+    // -----------------------------------------------------------------------
+
+    describe('IMAGE_TOO_LARGE (GAP-078-204)', () => {
+        it('should reject an entity image wider than 8000 px', () => {
+            // Arrange — 8001 x 100 = 800,100 pixels (well under bomb cap)
+            const buffer = createPngWithDimensions(8001, 100);
+
+            // Act
+            const result = validateMediaFile({ buffer, mimeType: 'image/png', context: 'entity' });
+
+            // Assert
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).toBe('IMAGE_TOO_LARGE');
+                expect(result.details.maxWidth).toBe(8000);
+                expect(result.details.maxHeight).toBe(8000);
+                expect(result.details.actualWidth).toBe(8001);
+                expect(result.details.actualHeight).toBe(100);
+            }
+        });
+
+        it('should reject an entity image taller than 8000 px', () => {
+            // Arrange — 100 x 8001
+            const buffer = createPngWithDimensions(100, 8001);
+
+            // Act
+            const result = validateMediaFile({ buffer, mimeType: 'image/png', context: 'entity' });
+
+            // Assert
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).toBe('IMAGE_TOO_LARGE');
+                expect(result.details.actualHeight).toBe(8001);
+            }
+        });
+
+        it('should reject an avatar image wider than 4000 px', () => {
+            // Arrange — 4001 x 100, avatar context tightens the cap to 4000
+            const buffer = createPngWithDimensions(4001, 100);
+
+            // Act
+            const result = validateMediaFile({ buffer, mimeType: 'image/png', context: 'avatar' });
+
+            // Assert
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).toBe('IMAGE_TOO_LARGE');
+                expect(result.details.maxWidth).toBe(4000);
+            }
+        });
+
+        it('should accept an avatar image exactly at the 4000 px boundary', () => {
+            // Arrange — 4000 x 4000 = 16M pixels, well under both the
+            // dimension cap (the check is strict `>`, so equal passes) and
+            // the bomb cap.
+            const buffer = createPngWithDimensions(4000, 4000);
+
+            // Act
+            const result = validateMediaFile({ buffer, mimeType: 'image/png', context: 'avatar' });
+
+            // Assert — must NOT be IMAGE_TOO_LARGE; image-size on a synthetic
+            // header may surface other errors but the dimension cap is satisfied.
+            if (!result.valid) {
+                expect(result.error).not.toBe('IMAGE_TOO_LARGE');
+            }
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // Magic-byte detection: WEBP, HEIC, AVIF (GAP-078-205)
+    //
+    // GAP-078-205 originally requested real HEIC/AVIF binary fixtures to
+    // replace PNG-with-MIME-spoof tests. We synthesize minimal ISO Base
+    // Media (`ftyp` + brand) and RIFF/WEBP headers in-process instead of
+    // committing binary fixtures. Rationale:
+    //   - Real HEIC/AVIF binaries are 1-10 KB minimum and exercise codec
+    //     details (HEVC tiles, AV1 sequence headers) that this validator
+    //     never inspects. The validator only reads the first 12 bytes via
+    //     `detectMimeFromMagic`, so a synthetic 12-byte buffer covers the
+    //     same code paths that a real file would.
+    //   - Keeps the test suite hermetic, the repository slim, and removes
+    //     any dependency on third-party sample images with unclear licenses.
+    // -----------------------------------------------------------------------
+
+    describe('magic-byte detection (GAP-078-205)', () => {
+        it('should detect AVIF brand in an ISO ftyp header', () => {
+            // Arrange — declared MIME matches detected brand
+            const buffer = createIsoFtypHeader('avif');
+
+            // Act — image-size will fail to fully parse (synthetic header),
+            // but the magic-byte check must NOT raise MIME_MISMATCH.
+            const result = validateMediaFile({
+                buffer,
+                mimeType: 'image/avif',
+                context: 'entity'
+            });
+
+            // Assert — pass-through to dimension check (INVALID_IMAGE)
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).not.toBe('MIME_MISMATCH');
+            }
+        });
+
+        it("should detect HEIC brand 'heic' in an ISO ftyp header", () => {
+            // Arrange
+            const buffer = createIsoFtypHeader('heic');
+
+            // Act
+            const result = validateMediaFile({
+                buffer,
+                mimeType: 'image/heic',
+                context: 'entity'
+            });
+
+            // Assert
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).not.toBe('MIME_MISMATCH');
+            }
+        });
+
+        it("should detect HEIC brand 'mif1' in an ISO ftyp header", () => {
+            // Arrange — newer HEIF files commonly use the 'mif1' brand
+            const buffer = createIsoFtypHeader('mif1');
+
+            // Act
+            const result = validateMediaFile({
+                buffer,
+                mimeType: 'image/heic',
+                context: 'entity'
+            });
+
+            // Assert
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).not.toBe('MIME_MISMATCH');
+            }
+        });
+
+        it("should reject an HEIC ftyp brand declared as 'image/jpeg' with MIME_MISMATCH", () => {
+            // Arrange — real HEIC magic but client claims JPEG
+            const buffer = createIsoFtypHeader('heic');
+
+            // Act
+            const result = validateMediaFile({
+                buffer,
+                mimeType: 'image/jpeg',
+                context: 'entity'
+            });
+
+            // Assert
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).toBe('MIME_MISMATCH');
+                expect(result.details.declaredType).toBe('image/jpeg');
+                expect(result.details.detectedType).toBe('image/heic');
+            }
+        });
+
+        it('should detect WEBP magic bytes in a minimal RIFF/WEBP header', () => {
+            // Arrange
+            const buffer = createWebpHeader();
+
+            // Act
+            const result = validateMediaFile({
+                buffer,
+                mimeType: 'image/webp',
+                context: 'entity'
+            });
+
+            // Assert
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).not.toBe('MIME_MISMATCH');
+            }
+        });
+
+        it("should treat an unknown ftyp brand as 'unknown magic' (passes through)", () => {
+            // Arrange — 'xxxx' is not in the AVIF or HEIC brand sets
+            const buffer = createIsoFtypHeader('xxxx');
+
+            // Act
+            const result = validateMediaFile({ buffer, mimeType: 'image/png', context: 'entity' });
+
+            // Assert — magic-byte check returns null and skips MIME_MISMATCH;
+            // the dimension parser then fails the buffer as INVALID_IMAGE.
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).toBe('INVALID_IMAGE');
+            }
+        });
+
+        it('should treat a buffer shorter than 12 bytes as unknown magic', () => {
+            // Arrange — too short for detectMimeFromMagic to inspect
+            const buffer = Buffer.from([0x89, 0x50, 0x4e]);
+
+            // Act
+            const result = validateMediaFile({ buffer, mimeType: 'image/png', context: 'entity' });
+
+            // Assert — falls through to image-size which rejects as INVALID_IMAGE
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).toBe('INVALID_IMAGE');
+            }
+        });
+
+        it('should detect an AVIF sequence (image collection) brand', () => {
+            // Arrange — 'avis' is the AVIF image-sequence brand
+            const buffer = createIsoFtypHeader('avis');
+
+            // Act
+            const result = validateMediaFile({
+                buffer,
+                mimeType: 'image/avif',
+                context: 'entity'
+            });
+
+            // Assert
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).not.toBe('MIME_MISMATCH');
             }
         });
     });

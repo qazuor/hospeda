@@ -110,4 +110,34 @@ describe('MEDIA_PRESETS', () => {
             }
         });
     });
+
+    // -----------------------------------------------------------------------
+    // SPEC-078-GAPS GAP-078-089
+    //
+    // Defensive contract checks: the registry must be frozen at module load
+    // (preventing accidental mutation of named transforms by consumers) and
+    // every preset value must consist exclusively of safe Cloudinary
+    // transform characters. The character set covers:
+    //   - lowercase letters and digits (parameter names, numeric values)
+    //   - underscore (parameter/value separator, e.g. `w_400`)
+    //   - comma (transform separator, e.g. `w_400,h_300`)
+    //   - slash (chained transformation separator, currently unused but
+    //     reserved for future composite presets)
+    // Anything outside this set (whitespace, control characters, attacker-
+    // controlled input from string interpolation, etc.) is a bug.
+    // -----------------------------------------------------------------------
+    describe('contract: frozen + safe character set (GAP-078-089)', () => {
+        it('should be frozen so callers cannot mutate the registry at runtime', () => {
+            expect(Object.isFrozen(MEDIA_PRESETS)).toBe(true);
+        });
+
+        it('every preset transform string should match the safe character set', () => {
+            // Allowed: a-z, 0-9, underscore, comma, slash. No spaces, no
+            // uppercase, no quotes, no semicolons, no `<` etc.
+            const SAFE_TRANSFORM = /^[a-z0-9_,/]+$/;
+            for (const key of EXPECTED_PRESETS) {
+                expect(MEDIA_PRESETS[key]).toMatch(SAFE_TRANSFORM);
+            }
+        });
+    });
 });

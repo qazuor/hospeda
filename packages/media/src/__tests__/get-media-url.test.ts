@@ -202,4 +202,33 @@ describe('getMediaUrl', () => {
         const afterUpload = parts[1] ?? '';
         expect(afterUpload.startsWith('w_400,h_300')).toBe(true);
     });
+
+    // GAP-078-212: HTTP (non-HTTPS) Cloudinary URL handling.
+    // Documents current behavior: `getMediaUrl` is a pure string transformer
+    // that detects the Cloudinary host via `url.includes('res.cloudinary.com')`,
+    // so http:// URLs are accepted and transforms are inserted in place. The
+    // scheme is preserved as-is (no upgrade, no throw). Hostname enforcement
+    // and HTTPS upgrade live in `extractPublicId` and the ingestion layer.
+    describe('GAP-078-212: HTTP (non-HTTPS) Cloudinary URLs', () => {
+        const httpCloudinaryUrl =
+            'http://res.cloudinary.com/hospeda/image/upload/v1234/hospeda/prod/accommodations/abc/featured.jpg';
+
+        it('inserts transforms into an http:// Cloudinary URL without upgrading the scheme', () => {
+            const result = getMediaUrl(httpCloudinaryUrl, { preset: 'card' });
+
+            // Scheme is preserved (no auto-upgrade at this layer).
+            expect(result.startsWith('http://')).toBe(true);
+            expect(result.startsWith('https://')).toBe(false);
+
+            // Transforms are inserted exactly after /upload/.
+            expect(result).toContain('/upload/w_400,h_300,c_fill,g_auto,q_auto,f_auto,dpr_auto/');
+        });
+
+        it('returns an http:// Cloudinary URL unchanged when no options are provided', () => {
+            const result = getMediaUrl(httpCloudinaryUrl);
+
+            // Pure passthrough when no preset/raw is supplied.
+            expect(result).toBe(httpCloudinaryUrl);
+        });
+    });
 });

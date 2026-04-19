@@ -22,7 +22,7 @@
  * const url = `https://res.cloudinary.com/demo/image/upload/${transform}/sample.jpg`;
  * ```
  */
-export const MEDIA_PRESETS = {
+export const MEDIA_PRESETS = Object.freeze({
     /** 200x200 thumbnail with automatic gravity, cropping, and DPR. */
     thumbnail: 'w_200,h_200,c_thumb,g_auto,q_auto,f_auto,dpr_auto',
     /** 400x300 card image with fill crop, automatic gravity, and DPR. */
@@ -37,7 +37,7 @@ export const MEDIA_PRESETS = {
     full: 'q_auto,f_auto,dpr_auto',
     /** 1200x630 Open Graph image (Facebook/Twitter card standard) with automatic DPR. */
     og: 'w_1200,h_630,c_fill,q_auto,f_auto,dpr_auto'
-} as const;
+} as const);
 
 /**
  * A valid preset key for use with `getMediaUrl()`.
