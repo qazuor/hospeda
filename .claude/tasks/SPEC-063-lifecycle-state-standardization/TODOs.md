@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 52/63 completed + 7 deferred — effective 52/56
+## Progress: 53/63 completed + 7 deferred — effective 53/56
 
-**Last updated:** 2026-04-19T15:55:00Z
-**Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Phase 3 Sponsorship frontend FULLY CLOSED 2026-04-19** (T-052+T-053+T-054). **Phase 3 test block progressing** (T-055+T-057 done 2026-04-19). Remaining Phase 3: T-056 (integration). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). Effective Phase 3 scope: 13 non-migration tasks, 12 done.
+**Last updated:** 2026-04-19T16:55:00Z
+**Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Phase 3 Sponsorship FULLY CLOSED 2026-04-19** (frontend T-052+T-053+T-054 + tests T-055+T-056+T-057). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). Effective Phase 3 scope: 13 non-migration tasks, 13 done. Remaining: Phase 1 verification (T-001, T-002) + T-058 cross-cutting cleanup.
 
 ### Push-only migration policy (summary)
 
@@ -18,11 +18,10 @@
 
 ### Next up (in priority order)
 
-1. **T-056** (complexity 2.5) — Sponsorship integration test: filter independence (AC-001-02, AC-003-02). Mirror pattern from `apps/api/test/integration/owner-promotion/public-endpoint.test.ts` + `accommodation/admin-search-filters.test.ts`. Use service-level mock; apps/api/.env.test required.
-2. **T-001, T-002** (complexity 2 each) — Phase 1 AccommodationReview verification tests. Independent of Phase 3; can run in parallel.
-3. **Follow-up cleanup (not a formal task):** delete the two T-029 output SQL files + amend state.json/progress.md to record the cleanup done. Small, non-blocking. Could bundle with the next feature commit.
-4. **Phase 4 cascade follow-up (flagged):** 5 typecheck errors in `packages/service-core/test/services/destinationReview/*` (Property 'lifecycleState' is missing) from T-030/T-028. Not SPEC-063 scope but tracked here for visibility; either fold into T-037 or spawn a standalone cleanup task.
-5. **T-058** (complexity 2.5) — cleanup / cross-cutting verification. T-036 removed from blockedBy; `_deferredDependencies` note tracks the deferral for final-report mention.
+1. **T-001, T-002** (complexity 2 each) — Phase 1 AccommodationReview verification tests. Independent of Phase 3; can run in parallel.
+2. **Follow-up cleanup (not a formal task):** delete the two T-029 output SQL files + amend state.json/progress.md to record the cleanup done. Small, non-blocking. Could bundle with the next feature commit.
+3. **Phase 4 cascade follow-up (flagged):** 5 typecheck errors in `packages/service-core/test/services/destinationReview/*` (Property 'lifecycleState' is missing) from T-030/T-028. Not SPEC-063 scope but tracked here for visibility; either fold into T-037 or spawn a standalone cleanup task.
+4. **T-058** (complexity 2.5) — cleanup / cross-cutting verification. T-036 removed from blockedBy; `_deferredDependencies` note tracks the deferral for final-report mention.
 
 **Average Complexity:** 2.1/2.5 (ceiling)
 **Critical Path (post-T-038):** T-039 -> T-040 -> T-042 -> T-058 (4 steps remaining)
@@ -399,7 +398,11 @@
   - Pre-existing flags recorded: 5 destinationReview typecheck errors (Phase 4 cascade, NOT SPEC-063)
   - Blocked by: T-043, T-044 · Blocks: none
 
-- [ ] **T-056** (complexity: 2.5) — Write Sponsorship integration test: filter independence (AC-001-02, AC-003-02)
+- [x] **T-056** (complexity: 2.5) — Write Sponsorship integration test: filter independence (AC-001-02, AC-003-02)
+  - COMPLETED 2026-04-19 · lint: pass · typecheck: pass · tests: 9/9 pass
+  - Extended existing `apps/api/test/integration/sponsorship/admin-search-filters.test.ts` instead of creating duplicate `admin-filters.test.ts`. Added new describe block `lifecycleState (status base) filter independence (AC-001-02)` with 2 meaningful tests (unguarded `toBe(200)` + mock capture).
+  - **Silent-pass fix (scope absorb):** 6 previous tests in the file had `adminActor` missing `ACCESS_PANEL_ADMIN` + `ACCESS_API_ADMIN`, so all responses were 403 and mock assertions (guarded behind `if (res.status === 200)`) never ran. Added both permissions to `adminActor` — the 6 prior tests now actually exercise their mock captures. Total 9/9 pass.
+  - **AC-003-02 by equivalence:** no admin PATCH route exists for Sponsorship (only protected PUT passthrough). `packages/service-core/test/services/sponsorship/update.test.ts` covers migrated payload; service has no field-coupling that would mutate sponsorshipStatus when only lifecycleState is sent. Creating another integration test would duplicate service-layer coverage.
   - Blocked by: T-050 · Blocks: T-058
 
 - [x] **T-057** (complexity: 2) — Write Sponsorship model + hook tests

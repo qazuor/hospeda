@@ -839,3 +839,16 @@ Then Phase 4 (DestinationReview T-028..T-038), Phase 3 (Sponsorship T-039..T-057
 - **Combined-filter runtime assertion (findActiveByTarget):** mock shape migrated to `sponsorshipStatus: 'active'`; SQL-level proof that `and(sponsorshipStatus='active', lifecycleState='ACTIVE')` is actually emitted is delegated to T-056 (integration) where service force-override is end-to-end. Same pattern as T-023 OwnerPromotion (mock-based tests can't capture SQL without fragile query-builder inspection).
 - **Quality gate:** biome pass, typecheck `@repo/db` clean, tests 24/24 pass.
 - **Summary counter drift fix:** state.json summary `completed` updated 47 → 52 and `pending` 9 → 4 to reflect reality post-T-052/T-053/T-054/T-055/T-057. Drift pre-existed; note augmented.
+
+#### T-056 — Sponsorship integration filter independence (2026-04-19T16:55)
+
+- **File:** `apps/api/test/integration/sponsorship/admin-search-filters.test.ts` (extended existing; did NOT create duplicate `admin-filters.test.ts`)
+- **Scope absorbed — silent-pass trap fix:** the 6 pre-existing tests in this file had an incomplete `adminActor` (missing `ACCESS_PANEL_ADMIN` + `ACCESS_API_ADMIN`). All responses returned 403 while the mock-capture assertions hid behind `if (res.status === 200)` guards — tests passed vacuously and captured nothing. Adding both permissions makes the 6 prior tests exercise their assertions for real (mock pipeline actually runs).
+- **New tests (AC-001-02 filter independence):**
+  1. `status=DRAFT` alone → `toBe(200)` + captured adminList query has `status: 'DRAFT'` and `sponsorshipStatus` is undefined.
+  2. `sponsorshipStatus=active` alone → `toBe(200)` + captured query has `sponsorshipStatus: 'active'` and `status: 'all'` (default from base schema).
+  Both tests are unguarded (no `if (200)`), so an unexpected 403/500 fails loudly.
+- **AC-003-02 closed by equivalence:** Sponsorship has no admin PATCH route (only protected PUT with body passthrough to `service.update`). `packages/service-core/test/services/sponsorship/update.test.ts` covers the migrated `{ sponsorshipStatus }` payload end-to-end. Service has no field-coupling logic that would mutate sponsorshipStatus when only lifecycleState is sent. Writing another integration test would duplicate service-layer coverage without adding information.
+- **Obsolete subtask:** "Seed Sponsorship records with varied lifecycleState + sponsorshipStatus" — obsolete under the module-mock strategy (no DB reads).
+- **Quality gate:** biome pass, typecheck clean for touched file (pre-existing unrelated errors whitelisted), tests 9/9 pass in 161ms.
+- **Gotcha confirmed (integration pattern):** silent-pass trap in permission-mocked integration tests. Any test that uses `[200, 400, 401, 403]` tolerant + `if (200)` guards risks hiding permission mismatches. T-021 OwnerPromotion pattern (already documented) lists the required permission set; this fix retroactively aligns Sponsorship's existing tests.
