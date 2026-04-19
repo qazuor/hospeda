@@ -1,0 +1,17 @@
+{
+    "media": {
+        "errors": {
+            "EMPTY_FILE": "O arquivo enviado está vazio",
+            "GALLERY_LIMIT_EXCEEDED": "Limite da galeria excedido",
+            "CLOUDINARY_NOT_CONFIGURED": "O armazenamento de imagens não está configurado",
+            "PAYLOAD_TOO_LARGE": "O arquivo é muito grande",
+            "SESSION_STALE": "A sessão de upload expirou, por favor tente novamente",
+            "VALIDATION_ERROR": "Dados de solicitação inválidos",
+            "ENTITY_NOT_FOUND": "Entidade não encontrada",
+            "FORBIDDEN": "Você não tem permissão para realizar esta ação",
+            "UPSTREAM_ERROR": "Erro no serviço de imagens externo",
+            "UNPROCESSABLE_ENTITY": "Não é possível processar a solicitação",
+            "INTERNAL_ERROR": "Ocorreu um erro inesperado"
+        }
+    }
+}

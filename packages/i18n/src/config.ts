@@ -54,7 +54,8 @@ export const namespaces = [
     'admin-filters',
     'admin-tabs',
     'validation',
-    'revalidation'
+    'revalidation',
+    'api'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -113,6 +114,7 @@ import adminNavEs from './locales/es/admin-nav.json';
 import adminPagesEs from './locales/es/admin-pages.json';
 import adminTablesEs from './locales/es/admin-tables.json';
 import adminTabsEs from './locales/es/admin-tabs.json';
+import apiEs from './locales/es/api.json';
 import authUiEs from './locales/es/auth-ui.json';
 import benefitsEs from './locales/es/benefits.json';
 import billingEs from './locales/es/billing.json';
@@ -152,6 +154,7 @@ import adminNavEn from './locales/en/admin-nav.json';
 import adminPagesEn from './locales/en/admin-pages.json';
 import adminTablesEn from './locales/en/admin-tables.json';
 import adminTabsEn from './locales/en/admin-tabs.json';
+import apiEn from './locales/en/api.json';
 import authUiEn from './locales/en/auth-ui.json';
 import benefitsEn from './locales/en/benefits.json';
 import billingEn from './locales/en/billing.json';
@@ -191,6 +194,7 @@ import adminNavPt from './locales/pt/admin-nav.json';
 import adminPagesPt from './locales/pt/admin-pages.json';
 import adminTablesPt from './locales/pt/admin-tables.json';
 import adminTabsPt from './locales/pt/admin-tabs.json';
+import apiPt from './locales/pt/api.json';
 import authUiPt from './locales/pt/auth-ui.json';
 import benefitsPt from './locales/pt/benefits.json';
 import billingPt from './locales/pt/billing.json';
@@ -224,6 +228,7 @@ const rawTranslations = {
         about: aboutEs,
         account: accountEs,
         accommodations: accommodationsEs,
+        api: apiEs,
         'auth-ui': authUiEs,
         billing: billingEs,
         benefits: benefitsEs,
@@ -263,6 +268,7 @@ const rawTranslations = {
         about: aboutEn,
         account: accountEn,
         accommodations: accommodationsEn,
+        api: apiEn,
         'auth-ui': authUiEn,
         billing: billingEn,
         benefits: benefitsEn,
@@ -302,6 +308,7 @@ const rawTranslations = {
         about: aboutPt,
         account: accountPt,
         accommodations: accommodationsPt,
+        api: apiPt,
         'auth-ui': authUiPt,
         billing: billingPt,
         benefits: benefitsPt,

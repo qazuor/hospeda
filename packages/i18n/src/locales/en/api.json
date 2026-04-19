@@ -1,0 +1,17 @@
+{
+    "media": {
+        "errors": {
+            "EMPTY_FILE": "Uploaded file is empty",
+            "GALLERY_LIMIT_EXCEEDED": "Gallery limit exceeded",
+            "CLOUDINARY_NOT_CONFIGURED": "Image storage is not configured",
+            "PAYLOAD_TOO_LARGE": "File is too large",
+            "SESSION_STALE": "Upload session is stale, please retry",
+            "VALIDATION_ERROR": "Invalid request data",
+            "ENTITY_NOT_FOUND": "Entity not found",
+            "FORBIDDEN": "You do not have permission to perform this action",
+            "UPSTREAM_ERROR": "Upstream image service error",
+            "UNPROCESSABLE_ENTITY": "Cannot process the request",
+            "INTERNAL_ERROR": "An unexpected error occurred"
+        }
+    }
+}
