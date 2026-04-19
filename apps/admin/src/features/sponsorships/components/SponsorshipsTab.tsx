@@ -135,7 +135,7 @@ export function SponsorshipsTab() {
                             onClick={() =>
                                 updateStatusMutation.mutate({
                                     id: row.id,
-                                    status: SponsorshipStatusEnum.ACTIVE
+                                    sponsorshipStatus: SponsorshipStatusEnum.ACTIVE
                                 })
                             }
                             disabled={updateStatusMutation.isPending}
@@ -152,7 +152,7 @@ export function SponsorshipsTab() {
                             onClick={() =>
                                 updateStatusMutation.mutate({
                                     id: row.id,
-                                    status: SponsorshipStatusEnum.CANCELLED
+                                    sponsorshipStatus: SponsorshipStatusEnum.CANCELLED
                                 })
                             }
                             disabled={updateStatusMutation.isPending}

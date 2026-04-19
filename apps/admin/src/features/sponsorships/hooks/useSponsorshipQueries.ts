@@ -93,11 +93,11 @@ async function fetchSponsorshipPackages(filters: Record<string, unknown> = {}) {
 /**
  * Update sponsorship status (approve/cancel)
  */
-async function updateSponsorshipStatus(id: string, status: string) {
+async function updateSponsorshipStatus(id: string, sponsorshipStatus: string) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
         path: `/api/v1/admin/sponsorships/${id}`,
         method: 'PATCH',
-        body: { status }
+        body: { sponsorshipStatus }
     });
     return result.data.data;
 }
@@ -166,8 +166,8 @@ export const useUpdateSponsorshipStatusMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, status }: { id: string; status: string }) =>
-            updateSponsorshipStatus(id, status),
+        mutationFn: ({ id, sponsorshipStatus }: { id: string; sponsorshipStatus: string }) =>
+            updateSponsorshipStatus(id, sponsorshipStatus),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: sponsorshipQueryKeys.sponsorships.lists() });
         }
