@@ -391,3 +391,51 @@ export function getBadgeStatusColor({ status }: { readonly status: string }): Co
 export function getDestinationBadgeColor(): ColorScheme {
     return scheme({ token: 'primary' });
 }
+
+// ---------------------------------------------------------------------------
+// Shared decorative schemes (muted, warm)
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the muted color scheme used for secondary tag chips and neutral
+ * decorative badges (e.g. tag lists inside ArticleCard/FeaturedArticleCard).
+ *
+ * @returns A ColorScheme with low-contrast bg/border and muted-foreground text.
+ *
+ * @example
+ * ```ts
+ * getMutedColorScheme()
+ * // { bg: 'oklch(from var(--core-muted-foreground) l c h / 0.08)', text: 'var(--core-muted-foreground)', border: 'oklch(from var(--core-muted-foreground) l c h / 0.20)' }
+ * ```
+ */
+export function getMutedColorScheme(): ColorScheme {
+    return {
+        bg: 'oklch(from var(--core-muted-foreground) l c h / 0.08)',
+        text: 'var(--core-muted-foreground)',
+        border: 'oklch(from var(--core-muted-foreground) l c h / 0.20)'
+    };
+}
+
+/**
+ * Returns the warm color scheme used for destination chips on post-related
+ * cards (e.g. RelatedPostCard), preserving the peach-tinted surface + accent
+ * text look.
+ *
+ * Resolves to the `--brand-accent` token (the canonical accent colour in this
+ * app) for foreground so the chip reads correctly in both light and dark mode.
+ *
+ * @returns A ColorScheme with warm surface bg, accent text, and transparent border.
+ *
+ * @example
+ * ```ts
+ * getWarmColorScheme()
+ * // { bg: 'var(--surface-warm)', text: 'var(--brand-accent)', border: 'transparent' }
+ * ```
+ */
+export function getWarmColorScheme(): ColorScheme {
+    return {
+        bg: 'var(--surface-warm)',
+        text: 'var(--brand-accent)',
+        border: 'transparent'
+    };
+}

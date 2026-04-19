@@ -11,8 +11,14 @@
  * - Review date formatted as short month + year (e.g. "mar 2024")
  */
 
+import { Badge } from '@/components/shared/ui/Badge';
 import type { ReviewCardData } from '@/data/types';
 import { cn } from '@/lib/cn';
+import {
+    getAccommodationTypeColor,
+    getDestinationBadgeColor,
+    getMutedColorScheme
+} from '@/lib/colors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { QuotesIcon, StarIcon } from '@repo/icons';
 import styles from './ReviewCard.module.css';
@@ -100,6 +106,26 @@ export function ReviewCard({ data, locale, className }: ReviewCardProps) {
 
     const entityUrl = buildEntityUrl(locale, data.entityType, data.entitySlug);
 
+    /**
+     * Contextual colour scheme for the entity badge.
+     * Accommodation reviews reuse the "hotel" accent (we don't know the real
+     * subtype at review-list time). Destination reviews use the dedicated
+     * destination badge colour. Anything else falls back to the muted scheme.
+     */
+    const entityBadgeColorScheme = (() => {
+        if (data.entityType === 'accommodation') {
+            return getAccommodationTypeColor({ type: 'hotel' });
+        }
+        if (data.entityType === 'destination') {
+            return getDestinationBadgeColor();
+        }
+        return getMutedColorScheme();
+    })();
+
+    const entityBadgeAriaLabel = entityUrl
+        ? `Ver ${badgeLabel}: ${data.entityName ?? badgeLabel}`
+        : `Tipo: ${badgeLabel}`;
+
     return (
         <figure
             className={cn(styles.card, className)}
@@ -113,24 +139,18 @@ export function ReviewCard({ data, locale, className }: ReviewCardProps) {
                 aria-hidden="true"
             />
 
-            {/* Entity type badge — top-right chip, links to entity when slug available */}
-            {badgeLabel &&
-                (entityUrl ? (
-                    <a
-                        href={entityUrl}
-                        className={styles.entityBadgeLink}
-                        aria-label={`Ver ${badgeLabel}: ${data.entityName ?? badgeLabel}`}
-                    >
-                        {badgeLabel}
-                    </a>
-                ) : (
-                    <span
-                        className={styles.entityBadge}
-                        aria-label={`Tipo: ${badgeLabel}`}
-                    >
-                        {badgeLabel}
-                    </span>
-                ))}
+            {/* Entity type badge — positioned slot owns layout; Badge owns colours. */}
+            {badgeLabel && (
+                <div className={styles.entityBadgeSlot}>
+                    <Badge
+                        label={badgeLabel}
+                        href={entityUrl ?? undefined}
+                        colorScheme={entityBadgeColorScheme}
+                        size="xs"
+                        ariaLabel={entityBadgeAriaLabel}
+                    />
+                </div>
+            )}
 
             {/* Quote text */}
             <blockquote>

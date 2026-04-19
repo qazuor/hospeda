@@ -5,6 +5,9 @@
  * Zero client-side JS. Pure Astro.
  */
 
+import Badge from '@/components/shared/ui/Badge.astro';
+import { getWarmColorScheme } from '@/lib/colors';
+
 interface Props {
   readonly id: string;
   readonly slug: string;
@@ -25,6 +28,8 @@ const formattedDate = publishedAt
       day: 'numeric'
     })
   : null;
+
+const warmColorScheme = getWarmColorScheme();
 ---
 
 <article class="related-post-card">
@@ -47,7 +52,11 @@ const formattedDate = publishedAt
       <p class="related-post-card__summary">{summary}</p>
       <div class="related-post-card__meta">
         {destinationName && (
-          <span class="related-post-card__chip">{destinationName}</span>
+          <Badge
+            label={destinationName}
+            colorScheme={warmColorScheme}
+            size="sm"
+          />
         )}
         {formattedDate && (
           <time class="related-post-card__date" datetime={publishedAt!}>
@@ -121,15 +130,6 @@ const formattedDate = publishedAt
     align-items: center;
     gap: var(--space-2, 8px);
     margin-top: var(--space-3, 12px);
-  }
-  .related-post-card__chip {
-    font-family: var(--font-sans);
-    font-size: 0.75rem;
-    background-color: var(--surface-warm);
-    color: var(--accent);
-    padding: 2px 10px;
-    border-radius: var(--radius-pill);
-    font-weight: 500;
   }
   .related-post-card__date {
     font-family: var(--font-sans);

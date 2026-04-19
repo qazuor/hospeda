@@ -2,11 +2,23 @@
 /**
  * @file DetailHeader.astro
  * @description Accommodation detail page header with name, badges, destination, and rating.
+ *
+ * Badges are rendered via the shared `Badge` primitive so visuals stay in sync
+ * with the rest of the app. Per-type colour comes from `getAccommodationTypeColor`
+ * and status colours (featured/new) from `getBadgeStatusColor`. The
+ * `.detail-header__type-badge` and `.detail-header__status-badge` class hooks
+ * are preserved so the compact-mode (wave-header) typography and padding
+ * overrides keep working — colours are no longer set here.
  */
 import type { AccommodationDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { getAccommodationTypeLabel, getBadgeStatusColor } from '@/lib/colors';
+import {
+  getAccommodationTypeColor,
+  getAccommodationTypeLabel,
+  getBadgeStatusColor,
+} from '@/lib/colors';
+import Badge from '@/components/shared/ui/Badge.astro';
 import RatingStars from '@/components/shared/ui/RatingStars.astro';
 
 interface Props {
@@ -19,32 +31,37 @@ const { t } = createTranslations(lang as SupportedLocale);
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const isNew = (Date.now() - new Date(accommodation.createdAt).getTime()) < THIRTY_DAYS_MS;
+
+const normalizedType = accommodation.type.toLowerCase();
 const typeLabel = getAccommodationTypeLabel({ type: accommodation.type, t });
+const typeColors = getAccommodationTypeColor({ type: normalizedType });
 const featuredColors = getBadgeStatusColor({ status: 'featured' });
 const newColors = getBadgeStatusColor({ status: 'new' });
 ---
 
 <header class="detail-header">
   <div class="detail-header__badges">
-    <span
+    <Badge
+      label={typeLabel}
+      colorScheme={typeColors}
+      size="sm"
       class="detail-header__type-badge"
-      style="background-color: var(--brand-secondary-foreground); color: var(--primary-foreground);"
-    >{typeLabel}</span>
+    />
     {accommodation.isFeatured && (
-      <span
+      <Badge
+        label={t('accommodations.detail.badges.featured')}
+        colorScheme={featuredColors}
+        size="sm"
         class="detail-header__status-badge"
-        style={`background-color: ${featuredColors.bg}; color: ${featuredColors.text}; border-color: ${featuredColors.border};`}
-      >
-        {t('accommodations.detail.badges.featured')}
-      </span>
+      />
     )}
     {isNew && (
-      <span
+      <Badge
+        label={t('accommodations.detail.badges.new')}
+        colorScheme={newColors}
+        size="sm"
         class="detail-header__status-badge"
-        style={`background-color: ${newColors.bg}; color: ${newColors.text}; border-color: ${newColors.border};`}
-      >
-        {t('accommodations.detail.badges.new')}
-      </span>
+      />
     )}
   </div>
 
@@ -78,29 +95,31 @@ const newColors = getBadgeStatusColor({ status: 'new' });
     align-items: center;
     transition: gap 0.3s ease;
   }
-  .detail-header__type-badge {
+
+  /* Typography + padding overrides for the Badge primitive used as the type badge.
+   * Colours are owned by Badge (per-type scheme from getAccommodationTypeColor). */
+  :global(.detail-header__type-badge) {
     font-family: var(--font-sans);
     font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding: 4px 14px;
-    border-radius: var(--radius-pill);
-    background-color: var(--brand-secondary-foreground);
-    color: var(--primary-foreground);
     transition: padding 0.3s ease, font-size 0.3s ease;
   }
-  .detail-header__status-badge {
+
+  /* Same story for the status pills (featured / new).
+   * The Badge primitive applies solid colours via getBadgeStatusColor. */
+  :global(.detail-header__status-badge) {
     font-family: var(--font-sans);
     font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     padding: 4px 14px;
-    border-radius: var(--radius-pill);
-    border: 1px solid;
     transition: padding 0.3s ease, font-size 0.3s ease;
   }
+
   .detail-header__name {
     font-family: var(--font-heading);
     font-size: clamp(1.5rem, 4vw, 2.5rem);
@@ -154,8 +173,8 @@ const newColors = getBadgeStatusColor({ status: 'new' });
     gap: 4px;
   }
 
-  :global(.wave-header--compact) .detail-header__type-badge,
-  :global(.wave-header--compact) .detail-header__status-badge {
+  :global(.wave-header--compact .detail-header__type-badge),
+  :global(.wave-header--compact .detail-header__status-badge) {
     font-size: 0.6rem;
     padding: 2px 10px;
   }
@@ -184,8 +203,8 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 
   @media (prefers-reduced-motion: reduce) {
     .detail-header,
-    .detail-header__type-badge,
-    .detail-header__status-badge,
+    :global(.detail-header__type-badge),
+    :global(.detail-header__status-badge),
     .detail-header__name,
     .detail-header__destination,
     .detail-header__rating {

@@ -20,20 +20,12 @@
     transition: opacity var(--duration-normal) ease;
 }
 
-/* Entity type badge — top-right chip */
-.entityBadge {
+/* Positioning slot for the entity Badge (Badge primitive owns colours + typography) */
+.entityBadgeSlot {
     position: absolute;
     top: 0;
     right: 0;
-    font-family: var(--font-sans);
-    font-size: var(--text-meta);
-    color: var(--brand-accent);
-    background-color: oklch(from var(--brand-accent) l c h / 0.1);
-    border-radius: var(--radius-pill);
-    padding: 0.2rem 0.6rem;
-    line-height: 1.4;
-    white-space: nowrap;
-    font-weight: 500;
+    z-index: 1;
 }
 
 /* Quote text — slightly enlarged for readability */
@@ -142,26 +134,4 @@
 .reviewDate {
     font-size: var(--text-meta);
     color: var(--core-muted-foreground);
-}
-
-/* Entity badge as clickable link */
-.entityBadgeLink {
-    position: absolute;
-    top: 0;
-    right: 0;
-    font-family: var(--font-sans);
-    font-size: var(--text-meta);
-    color: var(--brand-accent);
-    background-color: oklch(from var(--brand-accent) l c h / 0.1);
-    border-radius: var(--radius-pill);
-    padding: 0.2rem 0.6rem;
-    line-height: 1.4;
-    white-space: nowrap;
-    font-weight: 500;
-    text-decoration: none;
-    transition: opacity var(--duration-normal) ease;
-}
-
-.entityBadgeLink:hover {
-    opacity: 0.8;
 }

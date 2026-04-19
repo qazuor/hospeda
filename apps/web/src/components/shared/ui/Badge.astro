@@ -1,91 +1,177 @@
 ---
 /**
  * @file Badge.astro
- * @description Pill-shaped badge component. Renders as an anchor when href is
- * provided, otherwise as a plain span. Color scheme is applied via inline
- * style using tokenized CSS values from colors.ts.
+ * @description Pill-shaped badge component. Renders as an `<a>` element when
+ * `href` is provided, otherwise as a `<span>`. The color scheme is applied via
+ * an inline style using tokenized CSS values from `@/lib/colors`, and the
+ * class list / style object are computed through pure helpers in
+ * `./badge.utils` so the React twin (`Badge.tsx`) produces identical output.
  *
  * Variants:
- * - 'default' (implicit): uses `colorScheme` for per-type colors.
- * - 'filled-dark': uniform dark pill (dark background, white text) used in
- *   homepage filter rows where all badges must look identical regardless of type.
+ * - `default`: uses `colorScheme` for per-type bg / text / border.
+ * - `filled-dark`: uniform dark pill for homepage filter rows.
+ * - `outline`: transparent bg, colored border and text.
+ * - `dot`: neutral bg with a colored leading dot indicator.
+ *
+ * Sizes (`xs`, `sm`, `md`) control padding, font-size, icon size and, for
+ * clickable badges only, a minimum tap-target height.
+ *
+ * Icon support: when `icon` is provided it is resolved via
+ * `resolveIcon({ iconName })` from `@repo/icons`. If the name is unknown the
+ * icon is silently omitted (and a dev-mode warning is emitted via
+ * `webLogger.warn`).
  */
 
-/** Color scheme applied to the badge surface, text, and border. */
-export interface BadgeColorScheme {
-  /** CSS background-color value (e.g. 'oklch(from var(--brand-accent) l c h / 0.15)'). */
-  readonly bg: string;
-  /** CSS color value (e.g. 'var(--brand-accent)'). */
-  readonly text: string;
-  /** CSS border-color value (e.g. 'oklch(from var(--brand-accent) l c h / 0.30)'). */
-  readonly border: string;
-}
+import { resolveIcon } from '@repo/icons';
+import { webLogger } from '@/lib/logger';
+import type { BadgeColorScheme, BadgeSize, BadgeVariant } from './badge.types';
+import {
+    buildBadgeClassName,
+    buildBadgeInlineStyle,
+    getBadgeIconSize
+} from './badge.utils';
+
+/**
+ * Re-export `BadgeColorScheme` from `./badge.types` so existing consumers that
+ * do `import type { BadgeColorScheme } from '@/components/shared/ui/Badge.astro'`
+ * continue to work after the type was moved to the shared types module.
+ */
+export type { BadgeColorScheme } from './badge.types';
 
 interface Props {
-  /** Text label displayed inside the badge. */
-  readonly label: string;
-  /** Optional href. When provided the badge renders as an <a> element. */
-  readonly href?: string;
-  /** Color scheme object controlling badge appearance (ignored when variant is 'filled-dark'). */
-  readonly colorScheme: BadgeColorScheme;
-  /** Size variant. 'sm' uses tighter padding; 'md' is the default. */
-  readonly size?: 'sm' | 'md';
-  /**
-   * Visual variant.
-   * - 'default': per-type color from colorScheme (default behavior).
-   * - 'filled-dark': uniform dark fill with white text and uppercase label.
-   */
-  readonly variant?: 'default' | 'filled-dark';
+    /** Text label displayed inside the badge. */
+    readonly label: string;
+    /** Optional href. When provided the badge renders as an `<a>` element. */
+    readonly href?: string;
+    /** Color scheme object controlling badge appearance (ignored for `filled-dark`/`dot`). */
+    readonly colorScheme: BadgeColorScheme;
+    /** Size variant. Defaults to `'sm'`. */
+    readonly size?: BadgeSize;
+    /** Visual variant. Defaults to `'default'`. */
+    readonly variant?: BadgeVariant;
+    /** Optional icon name resolved via `@repo/icons`. */
+    readonly icon?: string;
+    /** Optional aria-label applied to the root element. */
+    readonly ariaLabel?: string;
+    /** Optional extra class forwarded to the root element's class list. */
+    readonly class?: string;
 }
 
-const { label, href, colorScheme, size = 'md', variant = 'default' } = Astro.props;
+const {
+    label,
+    href,
+    colorScheme,
+    size = 'sm',
+    variant = 'default',
+    icon,
+    ariaLabel,
+    class: extraClass
+} = Astro.props;
 
-const paddingValue = size === 'sm' ? '2px 8px' : '4px 12px';
+const hasHref = Boolean(href);
+const classes = buildBadgeClassName({
+    variant,
+    size,
+    hasHref,
+    extraClassName: extraClass
+});
+const inlineStyle = buildBadgeInlineStyle({ variant, colorScheme, size, hasHref });
 
-const inlineStyle =
-  variant === 'filled-dark'
-    ? `padding: ${paddingValue};`
-    : `background-color: ${colorScheme.bg}; color: ${colorScheme.text}; border: 1px solid ${colorScheme.border}; padding: ${paddingValue};`;
-
-const classes = ['badge', variant === 'filled-dark' ? 'badge--filled-dark' : ''].filter(Boolean).join(' ');
+const IconComponent = icon ? resolveIcon({ iconName: icon }) : undefined;
+if (icon && !IconComponent && import.meta.env.DEV) {
+    webLogger.warn(
+        `Badge: icon "${icon}" could not be resolved via @repo/icons`
+    );
+}
+const iconPixelSize = getBadgeIconSize({ size });
 ---
 
-{
-  href ? (
-    <a href={href} class={classes} style={inlineStyle}>
-      {label}
+{href ? (
+    <a href={href} class={classes} style={inlineStyle} aria-label={ariaLabel}>
+        {variant === 'dot' && (
+            <span class="badge__dot" aria-hidden="true" style={`background-color: ${colorScheme.text};`}></span>
+        )}
+        {IconComponent && (
+            <IconComponent size={iconPixelSize} weight="regular" aria-hidden="true" />
+        )}
+        <span>{label}</span>
     </a>
-  ) : (
-    <span class={classes} style={inlineStyle}>
-      {label}
+) : (
+    <span class={classes} style={inlineStyle} aria-label={ariaLabel}>
+        {variant === 'dot' && (
+            <span class="badge__dot" aria-hidden="true" style={`background-color: ${colorScheme.text};`}></span>
+        )}
+        {IconComponent && (
+            <IconComponent size={iconPixelSize} weight="regular" aria-hidden="true" />
+        )}
+        <span>{label}</span>
     </span>
-  )
-}
+)}
 
 <style>
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-  }
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        border-radius: var(--radius-pill);
+        font-family: var(--font-sans);
+        font-weight: 600;
+        white-space: nowrap;
+        text-decoration: none;
+    }
 
-  .badge--filled-dark {
-    background-color: var(--core-foreground);
-    color: var(--core-background);
-    border: none;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
+    /* Interactive affordance: only anchors get tap-target height + hover lift */
+    a.badge {
+        min-height: 44px;
+        cursor: pointer;
+        transition:
+            transform 150ms ease,
+            filter 150ms ease,
+            background-color 150ms ease;
+    }
 
-  .badge--filled-dark:hover {
-    background-color: oklch(from var(--core-foreground) calc(l * 1.15) c h);
-    color: var(--core-background);
-  }
+    span.badge {
+        min-height: auto;
+    }
 
-  .badge:focus-visible {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 2px;
-  }
+    a.badge--size-xs {
+        min-height: 24px;
+    }
+
+    a.badge:hover,
+    .badge--interactive:hover {
+        transform: translateY(-1px);
+        filter: brightness(0.96);
+    }
+
+    .badge--interactive {
+        cursor: pointer;
+    }
+
+    .badge__dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .badge--variant-filled-dark {
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .badge:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        a.badge,
+        a.badge:hover {
+            transform: none;
+            filter: none;
+            transition: none;
+        }
+    }
 </style>

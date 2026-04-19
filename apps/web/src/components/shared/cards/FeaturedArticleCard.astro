@@ -21,7 +21,7 @@ import {
 } from '@/lib/article-card-utils';
 import { Image } from 'astro:assets';
 import Badge from '@/components/shared/ui/Badge.astro';
-import { getPostCategoryColor, getPostCategoryLabel, getPostCategoryEmoji, getBadgeStatusColor } from '@/lib/colors';
+import { getPostCategoryColor, getPostCategoryLabel, getPostCategoryEmoji, getBadgeStatusColor, getMutedColorScheme } from '@/lib/colors';
 
 interface Props {
     /** Full article card data. */
@@ -63,11 +63,7 @@ const publishedDate = data.publishedAt
     : '';
 
 /** Muted color scheme for secondary tag chips. */
-const mutedColorScheme = {
-    bg: 'oklch(from var(--core-muted-foreground) l c h / 0.08)',
-    text: 'var(--core-muted-foreground)',
-    border: 'oklch(from var(--core-muted-foreground) l c h / 0.20)',
-};
+const mutedColorScheme = getMutedColorScheme();
 ---
 
 <article class="featured-card">

@@ -1,0 +1,93 @@
+/* Badge.module.css
+ * KEEP IN SYNC WITH Badge.astro <style> block.
+ * Scoped CSS Module counterpart used by Badge.tsx. Class names are camelCased
+ * to match CSS Modules conventions — the React component resolves them via
+ * `buildBadgeClassList({ styles, ... })` from badge.utils.ts.
+ */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background-color 150ms ease;
+}
+
+.badgeDot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* Interactive affordance: cursor + hover-lift, no dotted underline */
+.badgeInteractive {
+    cursor: pointer;
+    transition: transform 150ms ease, filter 150ms ease, background-color 150ms ease;
+}
+
+.badgeInteractive:hover {
+    transform: translateY(-1px);
+    filter: brightness(0.96);
+}
+
+/* Size modifiers. Padding + font-size + min-height are applied via inline
+ * style on the root element (see `buildBadgeStyleObject`). We set a CSS
+ * custom property as a harmless marker so the class remains non-empty. */
+.badgeSizeXs {
+    --badge-size: "xs";
+}
+
+.badgeSizeSm {
+    --badge-size: "sm";
+}
+
+.badgeSizeMd {
+    --badge-size: "md";
+}
+
+/* Variant modifiers. Colors are applied via inline style on the root element,
+ * so these declarations are mostly markers used by the class list. We use a
+ * custom property as a harmless, explicit declaration to keep the rule
+ * non-empty and to document the variant at the DOM level. */
+.badgeVariantDefault {
+    --badge-variant: "default";
+}
+
+.badgeVariantFilledDark {
+    --badge-variant: "filled-dark";
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.badgeVariantFilledDark.badgeInteractive:hover {
+    background-color: oklch(from var(--core-foreground) calc(l * 1.15) c h);
+    filter: none;
+}
+
+.badgeVariantOutline {
+    --badge-variant: "outline";
+}
+
+.badgeVariantDot {
+    --badge-variant: "dot";
+}
+
+.badge:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .badge,
+    .badgeInteractive,
+    .badgeInteractive:hover {
+        transform: none;
+        transition: none;
+    }
+}
