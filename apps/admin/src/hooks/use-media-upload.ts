@@ -10,17 +10,37 @@
 
 import { ApiError } from '@/lib/errors';
 import { adminLogger } from '@/utils/logger';
+import { AdminUploadRequestSchema } from '@repo/schemas';
+import type { MediaEntityType, MediaRole } from '@repo/schemas';
 import { useMutation } from '@tanstack/react-query';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-/** Supported entity types for image uploads */
-export type UploadEntityType = 'accommodation' | 'destination' | 'event' | 'post';
+/**
+ * Subset of `MediaEntityType` that the admin gallery/featured upload flow
+ * supports. The full union (which includes `user`, `postSponsor`,
+ * `eventOrganizer`, `avatars`) is intentionally narrower here because the
+ * `uploadEntityImage` mutation only handles the four CRUD content entities
+ * via their `entityId` discriminator. Other variants (avatar by `userId`,
+ * sponsor/organizer logos) require a different payload shape and should be
+ * added as separate mutations rather than overloaded onto this one.
+ *
+ * Re-exported under the legacy `UploadEntityType` name for backward
+ * compatibility with existing call sites.
+ */
+export type UploadEntityType = Extract<
+    MediaEntityType,
+    'accommodation' | 'destination' | 'event' | 'post'
+>;
 
-/** Supported image roles */
-export type UploadImageRole = 'featured' | 'gallery';
+/**
+ * Subset of `MediaRole` that the `uploadEntityImage` mutation supports.
+ * Mirrors the entity-type narrowing above: featured + gallery are the only
+ * roles that pair with `entityId`-addressed CRUD entities.
+ */
+export type UploadImageRole = Extract<MediaRole, 'featured' | 'gallery'>;
 
 /**
  * Input for the uploadEntityImage mutation.
@@ -169,6 +189,27 @@ export interface UseMediaUploadReturn {
 export function useMediaUpload(): UseMediaUploadReturn {
     const uploadEntityImage = useMutation<UploadResponse, Error, UploadEntityImageInput>({
         mutationFn: async ({ file, entityType, entityId, role }: UploadEntityImageInput) => {
+            // GAP-078-052: validate the form-field payload against the shared
+            // `AdminUploadRequestSchema` BEFORE constructing FormData so any
+            // structural error (bad UUID, role/entityType mismatch, future
+            // schema tightening) surfaces immediately and the network call is
+            // skipped. The schema is a Zod discriminated union on `role`;
+            // both `featured` and `gallery` variants share the same required
+            // shape (`role`, `entityType`, `entityId`) so a single payload
+            // construction satisfies either branch.
+            const payload = { role, entityType, entityId };
+            const parsed = AdminUploadRequestSchema.safeParse(payload);
+            if (!parsed.success) {
+                adminLogger.error(
+                    `[use-media-upload] payload validation failed: ${parsed.error.message}`
+                );
+                throw new Error(
+                    `Invalid media upload payload: ${parsed.error.issues
+                        .map((issue) => `${issue.path.join('.') || '_root'}: ${issue.message}`)
+                        .join('; ')}`
+                );
+            }
+
             const base = getBaseUrl();
             const url = `${base}/api/v1/admin/media/upload`;
 
