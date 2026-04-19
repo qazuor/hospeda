@@ -436,19 +436,19 @@
         {
             "id": "T-023",
             "title": "Seed strategy: avatars path, moderation default, and spec amendment",
-            "description": "Gaps: GAP-078-008, GAP-078-063, GAP-078-019.\n\nFiles: packages/seed/src/cloudinary-image-processor.ts, .claude/specs/SPEC-078-cloudinary-image-management/spec.md\n- GAP-078-008: Avatars seed path: hospeda/{env}/seed/avatars/{userId}.{ext} with entityType: 'avatars' override\n- GAP-078-063: Seed processor injects moderationState: 'APPROVED' default if missing\n- GAP-078-019: Amend SPEC-078 v1.5 -> v1.6 REQ-02: seed gallery uses array index; runtime admin uses nanoid\n\nAcceptance: Seeded avatar publicId contains 'avatars/{userId}'; processed entity always has moderationState; spec.md REQ-02 updated.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-008, GAP-078-063, GAP-078-019.\n\nFiles: packages/seed/src/cloudinary-image-processor.ts, .claude/specs/SPEC-078-cloudinary-image-management/spec.md\n- GAP-078-008: Avatars seed path: hospeda/{env}/seed/avatars/{userId}.{ext} with entityType: 'avatars' override\n- GAP-078-063: Seed processor injects moderationState: 'APPROVED' default if missing\n- GAP-078-019: Amend SPEC-078 v1.5 -> v1.6 REQ-02: seed gallery uses array index; runtime admin uses nanoid\n\nAcceptance: Seeded avatar publicId contains 'avatars/{userId}'; processed entity always has moderationState; spec.md REQ-02 updated.\n\nOutcome (commit 2d5e4be2): Avatar pipeline uses publicIdOverride flat path hospeda/{env}/seed/avatars/{userId} via new uploadSeedImage() parameter. AVATAR_ENTITY_TYPE='avatars' constant. withModerationDefault() helper injects ModerationStatusEnum.APPROVED on featuredImage + gallery[] when missing; explicit values preserved. SPEC-078 v1.7 -> v1.8 with REQ-02 Technical Notes documenting seed=index vs runtime=nanoid divergence + avatar flat path. 3 new processor tests (8/8 file pass, 124/124 suite pass).",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-022"],
             "blocks": ["T-024"],
             "subtasks": [],
             "tags": ["seed", "backend"],
             "phase": "phase-4a",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
@@ -742,19 +742,19 @@
         {
             "id": "T-040",
             "title": "Admin hooks type safety: use-media-upload with MediaEntityType/MediaRole and schema validation",
-            "description": "Gap: GAP-078-052.\n\nFile: apps/admin/src/hooks/use-media-upload.ts\n- Admin hook use-media-upload uses MediaEntityType/MediaRole from @repo/schemas\n- Validates with AdminUploadRequestSchema.parse() before FormData construction\n\nAcceptance: TypeScript error if entityType: 'unknown' passed to hook; Zod parse throws before network call if payload invalid.",
-            "status": "pending",
+            "description": "Gap: GAP-078-052.\n\nFile: apps/admin/src/hooks/use-media-upload.ts\n- Admin hook use-media-upload uses MediaEntityType/MediaRole from @repo/schemas\n- Validates with AdminUploadRequestSchema.parse() before FormData construction\n\nAcceptance: TypeScript error if entityType: 'unknown' passed to hook; Zod parse throws before network call if payload invalid.\n\nOutcome (commit 75068a8f): Hook imports MediaEntityType + MediaRole + AdminUploadRequestSchema from @repo/schemas. UploadEntityType narrowed via Extract<MediaEntityType, 'accommodation'|'destination'|'event'|'post'>; UploadImageRole via Extract<MediaRole, 'featured'|'gallery'> to preserve back-compat. mutationFn runs safeParse({role, entityType, entityId}) BEFORE FormData; failure throws plain Error (not ApiError). 4 new tests (1 compile-time @ts-expect-error, 3 runtime fetch-spy). Single existing consumer typechecks.",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-031"],
             "blocks": [],
             "subtasks": [],
             "tags": ["frontend", "admin", "schemas"],
             "phase": "phase-6b",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
