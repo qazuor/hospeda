@@ -454,19 +454,19 @@
         {
             "id": "T-024",
             "title": "Seed strategy: sponsor/organizer logo handling, MediaBlock videos, and MediaSchema validation",
-            "description": "Gaps: GAP-078-077, GAP-078-083, GAP-078-084.\n\nFiles: packages/seed/src/cloudinary-image-processor.ts, packages/seed/src/types.ts\n- GAP-078-077: Processor handles postSponsor.logo (object {url}) and eventOrganizer.logo (string); paths postSponsor/{id}/logo and eventOrganizer/{id}/logo\n- GAP-078-083: MediaBlock interface adds videos?: unknown[] pass-through\n- GAP-078-084: MediaSchema.parse(processed.media) in seedFactory.ts after processEntityImages; fail loudly with Zod error if malformed\n\nAcceptance: Seed completes without error for sponsor + event fixtures; MediaSchema.parse throws on malformed media; MediaBlock type accepts videos field.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-077, GAP-078-083, GAP-078-084.\n\nFiles: packages/seed/src/utils/cloudinary-image-processor.ts, packages/seed/src/utils/seedFactory.ts\n- GAP-078-077: Processor handles postSponsor.logo (object {url}) and eventOrganizer.logo (string); paths postSponsor/{id}/logo and eventOrganizer/{id}/logo\n- GAP-078-083: MediaBlock interface adds videos?: unknown[] pass-through\n- GAP-078-084: MediaSchema.parse(processed.media) in seedFactory.ts after processEntityImages; fail loudly with Zod error if malformed\n\nAcceptance: Seed completes without error for sponsor + event fixtures; MediaSchema.parse throws on malformed media; MediaBlock type accepts videos field.\n\nOutcome (commit dcdb9d77): Two new processor branches mirror T-023 avatar pattern: postSponsor.logo (object {url}) + eventOrganizer.logo (string) via publicIdOverride to hospeda/{env}/seed/{postSponsor|eventOrganizer}/{id}/logo. Branches gate on entityType.toLowerCase().startsWith() so singular+plural casings handled. MediaBlock interface (lives inline in cloudinary-image-processor.ts, no separate types.ts) widened with videos?: unknown[]. seedFactory.MediaSchema.parse() runs unconditionally after processEntityImages so malformed fixtures fail loudly. 5 new tests, 12 files / 129 tests pass.",
+            "status": "completed",
             "complexity": 2.0,
             "blockedBy": ["T-023"],
             "blocks": [],
             "subtasks": [],
             "tags": ["seed", "backend"],
             "phase": "phase-4a",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
@@ -562,19 +562,19 @@
         {
             "id": "T-030",
             "title": "API response contract: DELETE wasPresent flag and tags/overwrite forwarding",
-            "description": "Gaps: GAP-078-154, GAP-078-155.\n\nFiles: apps/api/src/routes/media/admin/delete.ts, packages/schemas/src/api/media/delete.schema.ts\n- GAP-078-154: DELETE response adds wasPresent: boolean based on Cloudinary result === 'ok' vs 'not found'\n- GAP-078-155: Forward tags and overwrite from upload route to provider\n\nAcceptance: DELETE on existing asset returns { wasPresent: true }; DELETE on missing asset returns { wasPresent: false }; upload with tags array calls provider with tags forwarded.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-154, GAP-078-155.\n\nFiles: apps/api/src/routes/media/admin/delete.ts, apps/api/src/routes/media/admin/upload.ts, packages/media/src/server/{types,cloudinary.provider,index}.ts, packages/schemas/src/common/media-upload.schema.ts\n- GAP-078-154: DELETE response adds wasPresent: boolean based on Cloudinary result === 'ok' vs 'not found'\n- GAP-078-155: Forward tags and overwrite from upload route to provider\n\nAcceptance: DELETE on existing asset returns { wasPresent: true }; DELETE on missing asset returns { wasPresent: false }; upload with tags array calls provider with tags forwarded.\n\nOutcome (commit 0d9fca75): ImageProvider.delete() widened from Promise<void> to Promise<DeleteResult> exposing wasPresent: boolean. CloudinaryProvider, mock provider, admin DELETE route propagate end-to-end. DeleteMediaResponseSchema adds optional wasPresent (additive-only). Admin upload route parses multipart tags (comma-split, [A-Za-z0-9_-]{1,64}, max 20) and overwrite (boolean coerce); centralized MediaTagsSchema/MediaOverwriteSchema for all 5 AdminUploadRequest variants. T-029 follow-up: 9 ctx.json bypass calls in delete route replaced with createErrorResponse + return-shape. 8 new tests; 137/137 media, 89/89 schemas, 36/36 api media routes pass.",
+            "status": "completed",
             "complexity": 1.0,
             "blockedBy": ["T-029"],
             "blocks": [],
             "subtasks": [],
             "tags": ["backend", "api"],
             "phase": "phase-5a",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
