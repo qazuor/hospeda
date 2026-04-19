@@ -400,19 +400,19 @@
         {
             "id": "T-021",
             "title": "Create packages/media README.md and CLAUDE.md",
-            "description": "Gap: GAP-078-047.\n\nFiles: packages/media/README.md, packages/media/CLAUDE.md\n- GAP-078-047: Create packages/media/README.md (quickstart, exports table, presets table) + CLAUDE.md (patterns, race condition note, subpath import rules)\n\nAcceptance: Both files exist with substantive content; README includes exports table and presets table; CLAUDE.md documents the race condition note.",
-            "status": "pending",
+            "description": "Gap: GAP-078-047.\n\nFiles: packages/media/README.md, packages/media/CLAUDE.md\n- GAP-078-047: Create packages/media/README.md (quickstart, exports table, presets table) + CLAUDE.md (patterns, race condition note, subpath import rules)\n\nAcceptance: Both files exist with substantive content; README includes exports table and presets table; CLAUDE.md documents the race condition note.\n\nOutcome (commit 014c30f1): README.md (152 lines) with installation, subpath exports, 3-pattern quickstart, exports tables, 7 presets table, env vars table, operational notes, runbook link. CLAUDE.md (122 lines) with 3-subpath rule (allowed/forbidden matrix), anti-patterns, avatar race condition note, provider behavior summary, dev fallback.",
+            "status": "completed",
             "complexity": 1.0,
             "blockedBy": ["T-017"],
             "blocks": [],
             "subtasks": [],
             "tags": ["docs"],
             "phase": "phase-3c",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
@@ -1120,19 +1120,19 @@
         {
             "id": "T-061",
             "title": "Unit tests: @repo/media contract test and misc edge cases",
-            "description": "Gaps: GAP-078-100.\n\nFile: packages/media/test/cloudinary.contract.test.ts\n- GAP-078-100: Contract test: import real cloudinary and assert v2.uploader.upload_stream exists; v2.api.delete_resources_by_prefix exists; ensures SDK shape not broken by upgrade\n\nAcceptance: Contract test passes with current installed SDK; test fails if SDK removes methods; CI runs this test.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-100.\n\nFile: packages/media/src/server/__tests__/cloudinary-sdk-contract.test.ts (new)\n- GAP-078-100: Contract test imports real cloudinary SDK (no mocks) and asserts each method the provider depends on is typeof === 'function'\n\nAcceptance: Contract test passes with current installed SDK; test fails if SDK removes methods; CI runs this test.\n\nOutcome (commit cf830e97): 33-line single describe / single test iterating a requiredMethods table for clear failure messages. Asserts: cloudinary.config, uploader.upload_stream, uploader.destroy, api.delete_resources_by_prefix, api.ping. 185/185 media pass.",
+            "status": "completed",
             "complexity": 1.0,
             "blockedBy": ["T-018", "T-019"],
             "blocks": [],
             "subtasks": [],
             "tags": ["testing", "media"],
             "phase": "phase-9b",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {

@@ -1,11 +1,11 @@
 # SPEC-078-GAPS: Cloudinary Image Management — Gaps Remediation
 
-## Progress: 46/68 tasks (68%)
+## Progress: 48/68 tasks (71%)
 
 **Average Complexity**: 1.7 / 2.5 (max)
 **Completed from prior work**: 3 tasks (Phase 0 + Phase 1A) — see already-done.md
 **Completed 2026-04-18 (previous session)**: 1 task (T-004 — Phase 1B migrations reconstruction)
-**Completed 2026-04-18/19 (current session)**: 42 tasks — 4 warmups + 5 security + 5 schema/DB + T-017 + T-022 + T-029 + T-018/T-019 + T-031 + T-023 + T-040 + T-024 + T-030 + T-025 + T-032 + T-033 + T-035 + T-034 + T-051 + T-052 + T-054 + T-056 + T-057 + T-036 + T-055 + T-020 + T-058 + T-059 + T-060 + T-062 (provider edge cases + avatar 5MB) + T-064 (seed upload + processor coverage)
+**Completed 2026-04-18/19 (current session)**: 44 tasks — 4 warmups + 5 security + 5 schema/DB + T-017 + T-022 + T-029 + T-018/T-019 + T-031 + T-023 + T-040 + T-024 + T-030 + T-025 + T-032 + T-033 + T-035 + T-034 + T-051 + T-052 + T-054 + T-056 + T-057 + T-036 + T-055 + T-020 + T-058 + T-059 + T-060 + T-062 + T-064 + T-021 (packages/media README + CLAUDE) + T-061 (cloudinary SDK contract test)
 **Splits applied**: 20 parent tasks split into 45 child tasks (68 total vs 47 original)
 
 **Known follow-ups**:
@@ -177,10 +177,11 @@
   - Blocks: none
   - Outcome (commit `00025241`): 32-line JSDoc on `CloudinaryProvider` constructor with `@internal` tag, SDK v2 singleton warning, `@see {@link getMediaProvider}` ref, and TODO note (Biome 1.5.3 lacks AST-level rule to block `new CloudinaryProvider(...)` outside the canonical access point — flagged 2 known direct-construction sites in `packages/seed/src/{cli,index}.ts` as out of scope). `buildUrl` already absent from `ImageProvider` interface (likely removed during T-017 restructure) — pure doc work for GAP-078-032 + closed 161 as duplicate. Spec v1.8 → v1.9 amendment.
 
-- [ ] **T-021** (complexity: 1.0) — Create packages/media README.md and CLAUDE.md
+- [x] **T-021** (complexity: 1.0) — Create packages/media README.md and CLAUDE.md
   - Gap: GAP-078-047
   - Blocked by: T-017
   - Blocks: none
+  - Outcome (commit `014c30f1`): README.md (152 lines) with installation, subpath exports table, 3-pattern quickstart (browser-safe / server / test-utils), exports tables, presets table for 7 transforms, env vars table, operational notes (T-035 retry + T-052 healthCheck), runbook link. CLAUDE.md (122 lines) with the 3-subpath rule (allowed/forbidden matrix), anti-patterns (never `new CloudinaryProvider` outside services/media.ts, never inline cloudinary URLs), avatar fixed-publicId race condition note (last-write-wins mitigated by T-008 + future T-015), provider behavior summary, dev fallback to InMemoryImageProvider, key files list, related SPEC links. Style matches `packages/i18n/{README,CLAUDE}.md`.
 
 ---
 
@@ -482,10 +483,11 @@
   - Blocks: none
   - Outcome (commit `04180ddc`, combined with T-059): 23 new tests + source change to `Object.freeze(MEDIA_PRESETS)` (as const is type-only — runtime freeze required for `Object.isFrozen` assertion). environment.test.ts full rewrite with `vi.stubEnv`/`vi.unstubAllEnvs`. validate-media-file +12 tests (4 IMAGE_TOO_LARGE pixel-count branch + 8 synthetic AVIF/HEIC/WEBP magic-byte detection — 12-byte ftyp/RIFF headers built in-process, no binary fixtures committed). gallery-id deterministic via `vi.mock('nanoid')`. vitest.config.ts coverage threshold `perFile: true` 90/85/90/90 with barrel + types excluded; final coverage 95.81/94.66/96.77/95.81. 178/178 media tests pass.
 
-- [ ] **T-061** (complexity: 1.0) — Unit tests: @repo/media contract test (cloudinary SDK shape)
+- [x] **T-061** (complexity: 1.0) — Unit tests: @repo/media contract test (cloudinary SDK shape)
   - Gap: GAP-078-100
   - Blocked by: T-018, T-019
   - Blocks: none
+  - Outcome (commit `cf830e97`): New `cloudinary-sdk-contract.test.ts` (33 lines) imports the real SDK (no mocks) and asserts 5 methods are functions: `cloudinary.config`, `uploader.upload_stream`, `uploader.destroy`, `api.delete_resources_by_prefix`, `api.ping`. Single test iterates a requiredMethods table for clear failure messages. Guards against SDK breaking changes that escape Renovate review. 185/185 media tests pass.
 
 - [x] **T-062** (complexity: 2.0) — Unit tests: CloudinaryProvider upload edge cases and mock patterns
   - Gaps: GAP-078-085, GAP-078-210, GAP-078-215, GAP-078-217, GAP-078-219, GAP-078-216
@@ -623,3 +625,4 @@ Critical path: T-001 -> T-003 -> T-017 -> T-029 -> T-031 -> T-040 -> T-067 -> T-
 - **2026-04-19 (T-020 + T-058 parallel sweep)**: Two independent sub-agents in parallel, zero file collision (T-020 on `packages/media/src/server/cloudinary.provider.ts` + parent SPEC, T-058 on `packages/schemas/test/common/media.schema.test.ts`). T-020 landed first (`00025241`) then T-058 (`225d1778`). T-020 discovery: `buildUrl` was already absent from interface (removed during T-017 restructure) — gaps 032 + 161 became doc-only; Biome 1.5.3 lacks AST-level rule to block `new CloudinaryProvider(...)` outside canonical access — captured as TODO follow-up in JSDoc + flagged 2 known direct-construction sites in `packages/seed/{cli,index}.ts`. T-058 documented 2 schema enforcement quirks in tests: (a) gallery 50-item cap is DB-only (CHECK constraint, not Zod), (b) `BaseMediaFields` uses inline image shape and silently strips `publicId`/`attribution` keys. Spec amended v1.8 → v1.9. Progress now 42/68 (62%). **Unlocked**: nothing new — T-021, T-038/T-039, Phase 9 remainders (T-059..T-068) still available.
 - **2026-04-19 (T-059 + T-060 combined sweep)**: Two parallel sub-agents both touched `validate-media-file.test.ts` (with 3 vs 12 tests respectively, no semantic conflict). Single combined commit (`04180ddc`) for atomic file diff. **Discoveries**: (a) 0-byte buffer returns `INVALID_IMAGE` (NOT route-level `EMPTY_FILE` from T-032); (b) `getMediaUrl` is a pure string transformer that preserves HTTP scheme as-is — HTTPS enforcement lives elsewhere; (c) `/image/fetch/` URLs return null from extractPublicId; (d) `/upload/v1/upload/file.jpg` matches FIRST `/upload/` (literal becomes folder); (e) `MEDIA_PRESETS` needed runtime `Object.freeze()` because `as const` is type-only. T-060 set vitest coverage `perFile: true` 90/85/90/90 (barrel + types excluded); final coverage 95.81/94.66/96.77/95.81. Synthetic AVIF/HEIC/WEBP via 12-byte ftyp/RIFF headers built in-process (no binary fixtures). 178/178 media tests pass. Progress now 44/68 (65%). **Unlocked**: nothing new — T-021, T-038/T-039, Phase 9 remainders (T-061..T-068) still available.
 - **2026-04-19 (T-062 + T-064 parallel sweep)**: Two independent sub-agents in parallel, zero file collision (T-062 on packages/media provider+validate tests, T-064 on packages/seed test/utils). T-062 landed first (`6f0b286f`) then T-064 (`dc7eb3cb`). T-062 discoveries: (a) `upload()` accepts Buffer ONLY (data-URI/URL strings must be caller-converted); (b) provider strips `tags: []` entirely — option becomes undefined, not `[]`; (c) setupUploadStream helper rewrite with setImmediate benefits 12+ existing tests; (d) GAP-078-215 multi-instance deferred to T-063 where it fits better. T-064 discoveries: (a) SeedSource enum is `'required'|'example'` only — no `'optional'` literal (warn-only = `required + allowRequiredFallback`); (b) `id-mappings.json` not gitignored, caused stale formatter error (follow-up). 184/184 media + 13 files/144 tests seed pass. Progress now 46/68 (68%). **Unlocked**: nothing new — T-021, T-038/T-039, T-061/T-063/T-065/T-066/T-067 still available.
+- **2026-04-19 (T-021 + T-061 parallel sweep)**: Two trivial complexity-1.0 sub-agents in parallel, zero file collision (T-021 docs at `packages/media/{README,CLAUDE}.md`, T-061 new test at `cloudinary-sdk-contract.test.ts`). T-021 landed first (`014c30f1`) then T-061 (`cf830e97`). Both clean — no source touched, no behavior change. T-021 documented avatar race condition trade-off (last-write-wins, mitigated by T-008 + future T-015). T-061 contract test asserts 5 SDK methods are typeof function (config, upload_stream, destroy, delete_resources_by_prefix, ping) so SDK breaking changes from minor/patch updates fail loudly. 185/185 media tests pass. Progress now 48/68 (71%). **Unlocked**: nothing new — T-038/T-039 (admin UI requires consult), T-063/T-065/T-066, T-041..T-043, T-048..T-050 (web), T-067 still gated on T-040+T-044+T-045.
