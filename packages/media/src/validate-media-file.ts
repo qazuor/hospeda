@@ -27,10 +27,31 @@ export interface ValidationSuccess {
     readonly height: number;
 }
 
+/**
+ * All possible validation error codes.
+ *
+ * - `FILE_TOO_LARGE`: Buffer byte length exceeds the configured limit.
+ * - `INVALID_FILE_TYPE`: Declared MIME type is not in the allowlist for the context.
+ * - `MIME_MISMATCH`: Magic bytes in the buffer do not match the declared MIME type.
+ *   Returned by GAP-078-103/104 to prevent extension/content-type spoofing.
+ * - `IMAGE_TOO_LARGE`: Width or height exceeds the per-context dimension limit.
+ * - `DECOMPRESSION_BOMB`: Total pixel count (width * height) exceeds
+ *   `MAX_PIXEL_COUNT` (2e8). Prevents memory-exhaustion attacks via
+ *   small files declaring huge dimensions (decompression bombs).
+ * - `INVALID_IMAGE`: Buffer cannot be parsed as a valid image.
+ */
+export type ValidationErrorCode =
+    | 'FILE_TOO_LARGE'
+    | 'INVALID_FILE_TYPE'
+    | 'MIME_MISMATCH'
+    | 'IMAGE_TOO_LARGE'
+    | 'DECOMPRESSION_BOMB'
+    | 'INVALID_IMAGE';
+
 /** Failed validation result. */
 export interface ValidationFailure {
     readonly valid: false;
-    readonly error: 'FILE_TOO_LARGE' | 'INVALID_FILE_TYPE' | 'IMAGE_TOO_LARGE' | 'INVALID_IMAGE';
+    readonly error: ValidationErrorCode;
     readonly details: Record<string, unknown>;
 }
 
@@ -57,6 +78,15 @@ const AVATAR_MAX_SIZE_MB = 5;
 const DEFAULT_MAX_SIZE_MB = 10;
 
 /**
+ * Maximum total pixel count (width * height) accepted for any image.
+ *
+ * 2e8 (200 megapixels) corresponds roughly to a 14142x14142 square image.
+ * Any image whose declared dimensions multiply above this threshold is
+ * treated as a decompression bomb and rejected.
+ */
+const MAX_PIXEL_COUNT = 2e8;
+
+/**
  * Allowed MIME types for entity images (general uploads).
  * Exported for client-side validation reuse.
  */
@@ -69,20 +99,126 @@ export const ENTITY_ALLOWED_MIME_TYPES = [...ENTITY_MIME_TYPES] as const;
 export const AVATAR_ALLOWED_MIME_TYPES = [...AVATAR_MIME_TYPES] as const;
 
 // ---------------------------------------------------------------------------
+// Magic-byte detection
+// ---------------------------------------------------------------------------
+
+/**
+ * Detects the actual image MIME type by inspecting the buffer's magic bytes.
+ *
+ * Recognised formats: JPEG, PNG, WEBP, HEIC/HEIF, AVIF. For ISO Base Media
+ * formats (HEIC, AVIF) the discriminator lives in the `ftyp` brand at offset 8.
+ *
+ * @param buffer - Buffer whose first bytes are inspected
+ * @returns Detected MIME type, or `null` if the format is unknown
+ */
+function detectMimeFromMagic(buffer: Buffer): string | null {
+    if (buffer.length < 12) {
+        return null;
+    }
+
+    // PNG: 89 50 4E 47 0D 0A 1A 0A
+    if (
+        buffer[0] === 0x89 &&
+        buffer[1] === 0x50 &&
+        buffer[2] === 0x4e &&
+        buffer[3] === 0x47 &&
+        buffer[4] === 0x0d &&
+        buffer[5] === 0x0a &&
+        buffer[6] === 0x1a &&
+        buffer[7] === 0x0a
+    ) {
+        return 'image/png';
+    }
+
+    // JPEG: FF D8 FF
+    if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+        return 'image/jpeg';
+    }
+
+    // WEBP: "RIFF" .... "WEBP"
+    if (
+        buffer[0] === 0x52 &&
+        buffer[1] === 0x49 &&
+        buffer[2] === 0x46 &&
+        buffer[3] === 0x46 &&
+        buffer[8] === 0x57 &&
+        buffer[9] === 0x45 &&
+        buffer[10] === 0x42 &&
+        buffer[11] === 0x50
+    ) {
+        return 'image/webp';
+    }
+
+    // ISO Base Media (HEIC / AVIF): bytes 4..8 == "ftyp"
+    if (buffer[4] === 0x66 && buffer[5] === 0x74 && buffer[6] === 0x79 && buffer[7] === 0x70) {
+        const brand = buffer.subarray(8, 12).toString('ascii');
+        // AVIF brands
+        if (brand === 'avif' || brand === 'avis') {
+            return 'image/avif';
+        }
+        // HEIC/HEIF brands
+        if (
+            brand === 'heic' ||
+            brand === 'heix' ||
+            brand === 'hevc' ||
+            brand === 'hevx' ||
+            brand === 'mif1' ||
+            brand === 'msf1' ||
+            brand === 'heim' ||
+            brand === 'heis' ||
+            brand === 'hevm' ||
+            brand === 'hevs'
+        ) {
+            return 'image/heic';
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Determines whether a detected MIME type is acceptable for a declared MIME type.
+ *
+ * Most formats require an exact match. HEIC and HEIF are intentionally treated
+ * as interchangeable because they share the same container and brand set, and
+ * the `image/heic` declaration is the canonical one we accept.
+ *
+ * @param declared - MIME type declared by the client
+ * @param detected - MIME type detected from magic bytes
+ */
+function isMimeCompatible(declared: string, detected: string): boolean {
+    if (declared === detected) {
+        return true;
+    }
+    if (
+        (declared === 'image/heic' && detected === 'image/heif') ||
+        (declared === 'image/heif' && detected === 'image/heic')
+    ) {
+        return true;
+    }
+    return false;
+}
+
+// ---------------------------------------------------------------------------
 // Implementation
 // ---------------------------------------------------------------------------
 
 /**
  * Validates a media file before upload to Cloudinary.
  *
- * Performs three checks in order:
+ * Performs the following checks in order:
  * 1. **File size** — compares buffer byte length against the context-specific
  *    limit (entity: `maxFileSizeMb` or 10 MB default; avatar: always 5 MB).
- * 2. **MIME type** — verifies the declared Content-Type against the
+ * 2. **MIME type allowlist** — verifies the declared Content-Type against the
  *    context-specific allowlist.
- * 3. **Image dimensions** — parses the buffer with `image-size` to confirm
+ * 3. **Magic-byte / MIME match** — inspects the buffer's signature bytes and
+ *    rejects with `MIME_MISMATCH` if they do not match the declared MIME.
+ *    Mitigates extension-spoofing attacks (GAP-078-103/104).
+ * 4. **Image dimensions** — parses the buffer with `image-size` to confirm
  *    it is a valid image and that neither dimension exceeds the limit
  *    (entity: 8 000 px; avatar: 4 000 px).
+ * 5. **Decompression-bomb guard** — rejects any image whose total pixel count
+ *    (`width * height`) exceeds 2e8 (`DECOMPRESSION_BOMB`).
  *
  * @param input - Validation parameters including buffer, MIME type, and context
  * @returns `ValidationSuccess` with `width` and `height` on success, or
@@ -119,7 +255,7 @@ export function validateMediaFile(input: ValidateMediaFileInput): ValidationResu
         };
     }
 
-    // 2. MIME type check
+    // 2. MIME type allowlist check
     const allowedTypes = context === 'avatar' ? AVATAR_MIME_TYPES : ENTITY_MIME_TYPES;
 
     if (!allowedTypes.has(mimeType)) {
@@ -130,7 +266,20 @@ export function validateMediaFile(input: ValidateMediaFileInput): ValidationResu
         };
     }
 
-    // 3. Dimension check via image-size
+    // 3. Magic-byte / declared-MIME match check (GAP-078-103, GAP-078-104).
+    //    Done BEFORE dimension parsing so spoofed payloads never reach
+    //    `image-size`. If the buffer is too short or unrecognised we treat it
+    //    as INVALID_IMAGE (handled by the dimension parser below).
+    const detectedMime = detectMimeFromMagic(buffer);
+    if (detectedMime !== null && !isMimeCompatible(mimeType, detectedMime)) {
+        return {
+            valid: false,
+            error: 'MIME_MISMATCH',
+            details: { declaredType: mimeType, detectedType: detectedMime }
+        };
+    }
+
+    // 4. Dimension check via image-size
     let width: number;
     let height: number;
 
@@ -152,6 +301,23 @@ export function validateMediaFile(input: ValidateMediaFileInput): ValidationResu
             valid: false,
             error: 'INVALID_IMAGE',
             details: { message: 'Unable to determine image dimensions' }
+        };
+    }
+
+    // 5. Decompression-bomb guard (GAP-078-104). Run BEFORE the per-dimension
+    //    cap so that, for example, a 15001x15001 image is reported as a bomb
+    //    rather than as IMAGE_TOO_LARGE — that distinction matters for clients.
+    const pixelCount = width * height;
+    if (pixelCount > MAX_PIXEL_COUNT) {
+        return {
+            valid: false,
+            error: 'DECOMPRESSION_BOMB',
+            details: {
+                maxPixelCount: MAX_PIXEL_COUNT,
+                actualPixelCount: pixelCount,
+                width,
+                height
+            }
         };
     }
 

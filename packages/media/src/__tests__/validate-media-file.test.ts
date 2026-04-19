@@ -28,6 +28,46 @@ function createZeroBuffer(bytes: number): Buffer {
     return Buffer.alloc(bytes);
 }
 
+/**
+ * Minimal 1x1 JPEG (~125 bytes). Hand-crafted SOI + APP0/JFIF + SOF0 + DQT + DHT + SOS + EOI.
+ * Used to assert magic-byte happy path for `image/jpeg`.
+ */
+function createMinimalJpeg(): Buffer {
+    return Buffer.from(
+        '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AL+AAH//2Q==',
+        'base64'
+    );
+}
+
+/**
+ * Creates a synthetic PNG header buffer that declares an arbitrary width/height.
+ * This is enough for `image-size` to read the IHDR chunk without needing real image data.
+ *
+ * Used to test the decompression-bomb guard: we need a buffer whose dimensions
+ * parse to an arbitrary large value, regardless of payload.
+ */
+function createPngWithDimensions(width: number, height: number): Buffer {
+    // PNG signature
+    const signature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+    // IHDR chunk: length(4) + 'IHDR'(4) + data(13) + crc(4) = 25 bytes
+    const ihdrData = Buffer.alloc(13);
+    ihdrData.writeUInt32BE(width, 0);
+    ihdrData.writeUInt32BE(height, 4);
+    ihdrData[8] = 8; // bit depth
+    ihdrData[9] = 2; // color type (RGB)
+    ihdrData[10] = 0; // compression
+    ihdrData[11] = 0; // filter
+    ihdrData[12] = 0; // interlace
+
+    const ihdrLen = Buffer.alloc(4);
+    ihdrLen.writeUInt32BE(13, 0);
+    const ihdrType = Buffer.from('IHDR', 'ascii');
+    const ihdrCrc = Buffer.alloc(4); // CRC not validated by image-size
+
+    return Buffer.concat([signature, ihdrLen, ihdrType, ihdrData, ihdrCrc]);
+}
+
 const MB = 1024 * 1024;
 
 // ---------------------------------------------------------------------------
@@ -40,12 +80,12 @@ describe('validateMediaFile', () => {
     // -----------------------------------------------------------------------
 
     describe('valid inputs', () => {
-        it('should return valid: true with dimensions for a valid entity JPEG', () => {
-            // Arrange
+        it('should return valid: true with dimensions for a PNG with matching MIME', () => {
+            // Arrange — declared MIME matches buffer magic bytes
             const buffer = createMinimalPng();
 
             // Act
-            const result = validateMediaFile({ buffer, mimeType: 'image/jpeg', context: 'entity' });
+            const result = validateMediaFile({ buffer, mimeType: 'image/png', context: 'entity' });
 
             // Assert
             expect(result.valid).toBe(true);
@@ -66,24 +106,19 @@ describe('validateMediaFile', () => {
             expect(result.valid).toBe(true);
         });
 
-        it('should return valid: true for entity context with webp MIME type', () => {
-            const buffer = createMinimalPng();
-            const result = validateMediaFile({ buffer, mimeType: 'image/webp', context: 'entity' });
-            expect(result.valid).toBe(true);
-        });
+        it('should return valid: true with dimensions for a valid JPEG buffer', () => {
+            // Arrange — minimal valid JPEG (SOI + APP0/JFIF + SOF0 1x1 + SOS + EOI)
+            const buffer = createMinimalJpeg();
 
-        it('should return valid: true for entity context with HEIC MIME type', () => {
-            // HEIC shares the PNG signature when parsed through a minimal buffer;
-            // image-size will recognise the PNG format regardless of declared MIME.
-            const buffer = createMinimalPng();
-            const result = validateMediaFile({ buffer, mimeType: 'image/heic', context: 'entity' });
-            expect(result.valid).toBe(true);
-        });
+            // Act
+            const result = validateMediaFile({ buffer, mimeType: 'image/jpeg', context: 'entity' });
 
-        it('should return valid: true for entity context with AVIF MIME type', () => {
-            const buffer = createMinimalPng();
-            const result = validateMediaFile({ buffer, mimeType: 'image/avif', context: 'entity' });
+            // Assert
             expect(result.valid).toBe(true);
+            if (result.valid) {
+                expect(result.width).toBe(1);
+                expect(result.height).toBe(1);
+            }
         });
     });
 
@@ -292,6 +327,84 @@ describe('validateMediaFile', () => {
             expect(result.valid).toBe(false);
             if (!result.valid) {
                 expect(result.error).toBe('INVALID_IMAGE');
+            }
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // MIME_MISMATCH (GAP-078-103, GAP-078-104)
+    // -----------------------------------------------------------------------
+
+    describe('MIME_MISMATCH', () => {
+        it('should reject a buffer with PNG magic bytes when MIME is image/jpeg', () => {
+            // Arrange — declared JPEG, but payload is a real PNG
+            const buffer = createMinimalPng();
+
+            // Act
+            const result = validateMediaFile({ buffer, mimeType: 'image/jpeg', context: 'entity' });
+
+            // Assert
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).toBe('MIME_MISMATCH');
+                expect(result.details.declaredType).toBe('image/jpeg');
+                expect(result.details.detectedType).toBe('image/png');
+            }
+        });
+
+        it('should reject a JPEG payload declared as image/png', () => {
+            // Arrange
+            const buffer = createMinimalJpeg();
+
+            // Act
+            const result = validateMediaFile({ buffer, mimeType: 'image/png', context: 'entity' });
+
+            // Assert
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).toBe('MIME_MISMATCH');
+                expect(result.details.detectedType).toBe('image/jpeg');
+            }
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // DECOMPRESSION_BOMB (GAP-078-104)
+    // -----------------------------------------------------------------------
+
+    describe('DECOMPRESSION_BOMB', () => {
+        it('should reject a 15001x15001 PNG with DECOMPRESSION_BOMB code', () => {
+            // Arrange — 15001 * 15001 = 225,030,001 > 2e8
+            const buffer = createPngWithDimensions(15001, 15001);
+
+            // Act
+            const result = validateMediaFile({ buffer, mimeType: 'image/png', context: 'entity' });
+
+            // Assert
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).toBe('DECOMPRESSION_BOMB');
+                expect(result.details.maxPixelCount).toBe(2e8);
+                expect(result.details.actualPixelCount).toBe(15001 * 15001);
+                expect(result.details.width).toBe(15001);
+                expect(result.details.height).toBe(15001);
+            }
+        });
+
+        it('should accept an image whose pixel count is exactly at the threshold', () => {
+            // Arrange — sqrt(2e8) ~ 14142.13, so 14142x14142 = 199,996,164 (under the cap)
+            // but each side > ENTITY_MAX_DIMENSION (8000), so we expect IMAGE_TOO_LARGE
+            // (NOT DECOMPRESSION_BOMB) — the bomb guard must defer to per-dim only when
+            // pixel count is below 2e8.
+            const buffer = createPngWithDimensions(14142, 14142);
+
+            // Act
+            const result = validateMediaFile({ buffer, mimeType: 'image/png', context: 'entity' });
+
+            // Assert
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).toBe('IMAGE_TOO_LARGE');
             }
         });
     });

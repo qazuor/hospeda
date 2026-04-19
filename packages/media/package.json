@@ -27,6 +27,7 @@
     },
     "dependencies": {
         "cloudinary": "^2.9.0",
+        "file-type": "^19.6.0",
         "image-size": "^2.0.0",
         "nanoid": "^5.0.0"
     },
