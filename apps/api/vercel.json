@@ -4,6 +4,7 @@
     "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
     "buildCommand": "cd ../.. && pnpm turbo run build --filter=hospeda-api; mkdir -p apps/api/_static && echo '' > apps/api/_static/.keep",
     "outputDirectory": "_static",
+    "regions": ["iad1"],
     "rewrites": [
         {
             "source": "/(.*)",
@@ -53,7 +54,7 @@
     ],
     "functions": {
         "api/index.js": {
-            "maxDuration": 30,
+            "maxDuration": 60,
             "memory": 512,
             "maxBodySize": "12mb"
         }
