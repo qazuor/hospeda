@@ -1,11 +1,11 @@
 # SPEC-078-GAPS: Cloudinary Image Management — Gaps Remediation
 
-## Progress: 40/68 tasks (59%)
+## Progress: 42/68 tasks (62%)
 
 **Average Complexity**: 1.7 / 2.5 (max)
 **Completed from prior work**: 3 tasks (Phase 0 + Phase 1A) — see already-done.md
 **Completed 2026-04-18 (previous session)**: 1 task (T-004 — Phase 1B migrations reconstruction)
-**Completed 2026-04-18/19 (current session)**: 36 tasks — 4 warmups + 5 security + 5 schema/DB + T-017 + T-022 + T-029 + T-018/T-019 + T-031 + T-023 + T-040 + T-024 + T-030 + T-025 + T-032 + T-033 + T-035 + T-034 + T-051 + T-052 + T-054 + T-056 + T-057 + T-036 (i18n keys) + T-055 (Renovate + env:check + dpr_auto + Cache-Control)
+**Completed 2026-04-18/19 (current session)**: 38 tasks — 4 warmups + 5 security + 5 schema/DB + T-017 + T-022 + T-029 + T-018/T-019 + T-031 + T-023 + T-040 + T-024 + T-030 + T-025 + T-032 + T-033 + T-035 + T-034 + T-051 + T-052 + T-054 + T-056 + T-057 + T-036 + T-055 + T-020 (provider JSDoc + spec v1.9) + T-058 (media common schema tests)
 **Splits applied**: 20 parent tasks split into 45 child tasks (68 total vs 47 original)
 
 **Known follow-ups**:
@@ -171,10 +171,11 @@
 
 ### Phase 3C — Documentation and spec amendments
 
-- [ ] **T-020** (complexity: 1.0) — Create packages/media JSDoc and interface cleanup documentation
+- [x] **T-020** (complexity: 1.0) — Create packages/media JSDoc and interface cleanup documentation
   - Gaps: GAP-078-028, GAP-078-174, GAP-078-032, GAP-078-161
   - Blocked by: T-017
   - Blocks: none
+  - Outcome (commit `00025241`): 32-line JSDoc on `CloudinaryProvider` constructor with `@internal` tag, SDK v2 singleton warning, `@see {@link getMediaProvider}` ref, and TODO note (Biome 1.5.3 lacks AST-level rule to block `new CloudinaryProvider(...)` outside the canonical access point — flagged 2 known direct-construction sites in `packages/seed/src/{cli,index}.ts` as out of scope). `buildUrl` already absent from `ImageProvider` interface (likely removed during T-017 restructure) — pure doc work for GAP-078-032 + closed 161 as duplicate. Spec v1.8 → v1.9 amendment.
 
 - [ ] **T-021** (complexity: 1.0) — Create packages/media README.md and CLAUDE.md
   - Gap: GAP-078-047
@@ -459,10 +460,11 @@
 
 ### Phase 9A — Schema tests
 
-- [ ] **T-058** (complexity: 1.5) — Schema tests: ImageSchema, VideoSchema, MediaSchema, BaseMediaFields coverage
+- [x] **T-058** (complexity: 1.5) — Schema tests: ImageSchema, VideoSchema, MediaSchema, BaseMediaFields coverage
   - Gap: GAP-078-101
   - Blocked by: T-010
   - Blocks: none
+  - Outcome (commit `225d1778`): Extended `media.schema.test.ts` 12 → 60 tests across 5 schema exports (ImageAttributionSchema 9, ImageSchema 22, VideoSchema 10, MediaSchema 13, BaseMediaFields 11). **Quirks documented in tests**: (a) gallery 50-item cap is DB-only CHECK constraint, NOT enforced at Zod level (51-item arrays parse fine); (b) `BaseMediaFields` uses its own inline image shape (no publicId/attribution) and silently strips those keys via Zod's strip default. 67/67 pass (60 new + 7 pre-existing compat).
 
 ---
 
@@ -614,3 +616,4 @@ Critical path: T-001 -> T-003 -> T-017 -> T-029 -> T-031 -> T-040 -> T-067 -> T-
 - **2026-04-19 (T-052 + T-054 parallel sweep)**: Two independent sub-agents in parallel, zero file collision (T-052 on `packages/media/src/server/*` + `apps/api/src/cron/*` + new `apps/api/src/routes/health/media.ts`, T-054 on `scripts/check-cloudinary-isolation.sh` + `.github/workflows/ci.yml` + root package.json). T-054 landed first (`60207154`) then T-052 (`738b40b9`). T-052: `ImageProvider.healthCheck()` interface added with all 3 impls wired; new public health route + weekly cron with NODE_ENV production guard (no-op explicit, not silent). T-054: bash script with rg+grep fallback for runners lacking ripgrep; baseline 0 violations confirmed; injected fixture exits 1 as expected. Both sweeps clean — NO `.env.test` collision this time (no rate-limit setup needed). Progress now 36/68 (53%). **Unlocked**: nothing new specifically — T-036, T-055, T-056, T-057, T-020, T-021 still available. Phase 7C/7B/8 nearly done.
 - **2026-04-19 (T-056 + T-057 parallel sweep)**: Two independent sub-agents in parallel, zero file collision (T-056 on `apps/api/src/routes/media/*` + `apps/api/src/middlewares/metrics.ts` + `apps/api/src/services/media.ts` + `apps/api/src/index.ts` + `packages/service-core/src/services/accommodation/accommodation.service.ts`, T-057 on docs only `docs/runbooks/cloudinary-incidents.md`). T-057 landed first (`5005ac90`) then T-056 (`cd4658fd`). T-056 took broader scope than minimum: agent extended `metrics.ts` with `domainCounters` Map (separate from per-endpoint request map so 30-min cleanup doesn't reset); also added `initializeMediaProvider()` for once-per-boot init log instead of first-request lazy init. T-056 swapped all 7 `revalidationLogger.warn` calls in AccommodationService (not just `_afterHardDelete`) since the gap acceptance asked for zero `revalidationLogger` in the file — agent removed the static field + createLogger import too. T-057 left 11 TODO placeholders for team-specific values (on-call rotation, Slack channel, lead names) — flagged inline. Progress now 38/68 (56%). **Unlocked**: nothing new — T-036, T-055, T-020, T-021 still available + Phase 9 testing tasks (T-058..T-067) most still gated on T-018/T-019 which are done.
 - **2026-04-19 (T-036 + T-055 parallel sweep)**: Two independent sub-agents in parallel, zero file collision (T-036 on `packages/i18n/src/{locales/{es,en,pt}/api.json,config.ts}` + new test, T-055 on `renovate.json` + `.github/workflows/cd-{staging,production}.yml` + `packages/media/src/presets.ts` + `apps/api/src/routes/media/{admin,protected}/upload.ts` + tests). T-036 landed first (`8afd6227`) then T-055 (`e08b0c17`). T-036 discovery: response shape already exposed `code` field — pure additive on i18n side; key path uses literal CODE as leaf so server emit + client lookup stay in 1:1 lockstep. T-055 deploy workflows are split into 2 files (cd-staging.yml + cd-production.yml); 6 deploy jobs each got Setup Node + pnpm + install + env:check. dpr_ token was already in `ALLOWED_RAW_TOKEN_PREFIXES` so dpr_auto preset addition needed no companion change. Cache-Control set at handler entry (DRY one-liner) provably applies to all branches including EMPTY_FILE short-circuit. Renovate rule split into 2 entries (minor+patch separate from major-disabled) for self-documenting intent. Progress now 40/68 (59%). **Unlocked**: nothing new — T-020, T-021, T-038/T-039 (admin UI, requires consult), Phase 9 testing tasks still available.
+- **2026-04-19 (T-020 + T-058 parallel sweep)**: Two independent sub-agents in parallel, zero file collision (T-020 on `packages/media/src/server/cloudinary.provider.ts` + parent SPEC, T-058 on `packages/schemas/test/common/media.schema.test.ts`). T-020 landed first (`00025241`) then T-058 (`225d1778`). T-020 discovery: `buildUrl` was already absent from interface (removed during T-017 restructure) — gaps 032 + 161 became doc-only; Biome 1.5.3 lacks AST-level rule to block `new CloudinaryProvider(...)` outside canonical access — captured as TODO follow-up in JSDoc + flagged 2 known direct-construction sites in `packages/seed/{cli,index}.ts`. T-058 documented 2 schema enforcement quirks in tests: (a) gallery 50-item cap is DB-only (CHECK constraint, not Zod), (b) `BaseMediaFields` uses inline image shape and silently strips `publicId`/`attribution` keys. Spec amended v1.8 → v1.9. Progress now 42/68 (62%). **Unlocked**: nothing new — T-021, T-038/T-039, Phase 9 remainders (T-059..T-068) still available.

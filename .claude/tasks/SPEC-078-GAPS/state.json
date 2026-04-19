@@ -382,19 +382,19 @@
         {
             "id": "T-020",
             "title": "Create packages/media JSDoc and interface cleanup documentation",
-            "description": "Gaps: GAP-078-028, GAP-078-174, GAP-078-032, GAP-078-161.\n\nFiles: packages/media/src/cloudinary.provider.ts, packages/media/src/types.ts, .claude/specs/SPEC-078-cloudinary-image-management/spec.md\n- GAP-078-028+174: JSDoc on CloudinaryProvider constructor: 'For internal use; access only via getMediaProvider(). SDK v2 uses global config state — multi-instance per process is unsupported.'\n- GAP-078-032: Remove buildUrl from ImageProvider interface; getMediaUrl() covers it; amend SPEC-078 v1.5 -> v1.6\n- GAP-078-161: Close as duplicate of GAP-078-032; note in spec\n\nAcceptance: JSDoc visible in IDE hover; ImageProvider interface does not declare buildUrl; spec.md version updated to v1.6.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-028, GAP-078-174, GAP-078-032, GAP-078-161.\n\nFiles: packages/media/src/server/cloudinary.provider.ts, .claude/specs/SPEC-078-cloudinary-image-management/spec.md\n- GAP-078-028+174: JSDoc on CloudinaryProvider constructor (@internal + SDK singleton warning + see getMediaProvider)\n- GAP-078-032+161: buildUrl already absent from ImageProvider (removed during T-017); doc-only spec amendment\n\nAcceptance: JSDoc visible in IDE hover; spec.md updated.\n\nOutcome (commit 00025241): 32-line JSDoc with @internal + SDK v2 singleton warning + TODO follow-up note (Biome 1.5.3 lacks AST-level rule to block direct construction; flagged 2 known sites in packages/seed). buildUrl already absent; pure doc work for 032+161. Spec v1.8 -> v1.9 amendment.",
+            "status": "completed",
             "complexity": 1.0,
             "blockedBy": ["T-017"],
             "blocks": [],
             "subtasks": [],
             "tags": ["docs", "media"],
             "phase": "phase-3c",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
@@ -1066,19 +1066,19 @@
         {
             "id": "T-058",
             "title": "Schema tests: ImageSchema, VideoSchema, MediaSchema, BaseMediaFields coverage",
-            "description": "Gap: GAP-078-101.\n\nFile: packages/schemas/test/common/media.schema.test.ts\n- GAP-078-101: Create media.schema.test.ts covering ImageSchema, VideoSchema, MediaSchema, BaseMediaFields including optional featuredImage, publicId, attribution shapes\n\nAcceptance: Test file exists; all 4 schemas covered with valid and invalid fixtures; pnpm test passes.",
-            "status": "pending",
+            "description": "Gap: GAP-078-101.\n\nFile: packages/schemas/test/common/media.schema.test.ts\n- GAP-078-101: media.schema.test.ts covering ImageSchema, VideoSchema, MediaSchema, BaseMediaFields including optional featuredImage, publicId, attribution shapes\n\nAcceptance: Test file exists; all 4 schemas covered with valid and invalid fixtures; pnpm test passes.\n\nOutcome (commit 225d1778): Extended 12 -> 60 tests across 5 schema exports. Quirks documented: (a) gallery 50-item cap is DB-only CHECK, NOT Zod; (b) BaseMediaFields uses inline image shape (no publicId/attribution) and silently strips those keys. 67/67 pass.",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-010"],
             "blocks": [],
             "subtasks": [],
             "tags": ["testing", "schemas"],
             "phase": "phase-9a",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
