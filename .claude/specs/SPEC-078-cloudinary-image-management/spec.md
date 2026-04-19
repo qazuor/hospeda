@@ -21,6 +21,7 @@ created: 2026-04-13
 | v1.5 | 2026-04-14 | Exhaustive review pass 5 (full SDK re-verification against npm + official Cloudinary docs, full codebase audit with 34-point checklist): **REVERTED** upload() Buffer claim back to upload_stream()/data URI (official docs do NOT list raw Buffer as valid input for upload(), only for upload_stream()); clarified SDK is CJS-only natively (ESM import works via Node.js interop, not native exports); replaced galleryIndex with nanoid-based unique suffix (eliminates index assignment ambiguity); added avatar DB persistence flow mirroring entity pattern (upload is proxy-only, user profile PATCH persists URL); corrected Unsplash seed count (182 refs across 82 files, not 169/80); updated account settings page prerequisite (edit page exists at mi-cuenta/editar); added magic bytes validation note for MIME type spoofing; added REQ-04.2-FLOW for avatar persistence; 33/34 codebase claims verified accurate |
 | v1.6 | 2026-04-18 | SPEC-078-GAPS T-037 (GAP-078-009): aligned REQ-04.2-FLOW avatar persistence endpoint with the canonical repo convention for `/api/v1/protected/*` routes. The avatar update endpoint is `PATCH /api/v1/protected/users/${userId}` with an ownership check (session user MUST equal `userId`), NOT `/users/me`. Added forward-looking note: adopting a `/me` alias pattern across protected routes requires a dedicated API-conventions SPEC and is out of scope here. No code change, documentation-only amendment |
 | v1.7 | 2026-04-19 | SPEC-078-GAPS T-029 (GAP-078-026 + 029 + 062 + 149 + 159 + 178): upload endpoints (admin + protected) return **HTTP 200 Created-semantics-off** because uploads may overwrite existing assets (fixed-publicId featured images, avatars with userId as publicId) and are not strictly a creation. Response body is wrapped via the shared `ResponseFactory` as `{ success: true, data: { url, publicId, width, height, moderationState: 'APPROVED' }, metadata: {...} }` — same envelope as every other successful API response. `moderationState` is always `'APPROVED'` for fresh uploads (pre-approved at creation). The route runs `UploadResponseDataSchema.parse()` on the provider result before returning, so a malformed Cloudinary response fails closed with HTTP 502 rather than flowing bad data downstream. |
+| v1.8 | 2026-04-19 | SPEC-078-GAPS T-023 (GAP-078-019): documentation-only amendment to REQ-02. Added Technical Notes clarifying the gallery public-ID divergence between the seed pipeline and the runtime admin pipeline: seed uses array index (e.g. `gallery/2`) for deterministic, reproducible publicIds across re-runs, while runtime admin uploads use `nanoid` via `generateGalleryId()` for collision-free unique IDs. No code change. |
 
 ---
 
@@ -365,6 +366,14 @@ When the seed process uploads its featured image,
 Then the Cloudinary public ID is "hospeda/dev/seed/accommodations/abc-123/featured"
   (note the "seed/" segment between env and entity type).
 ```
+
+#### REQ-02 Technical Notes (added in v1.8 — SPEC-078-GAPS T-023)
+
+- **Gallery public-ID strategy diverges between seed and runtime admin**:
+  - **Seed pipeline** (`packages/seed/src/utils/cloudinary-image-processor.ts`) uses the **array index** of the source gallery entry as the role suffix (e.g. `gallery/0`, `gallery/1`, `gallery/2`). This is deterministic across re-runs so the cache (`.cloudinary-cache.json`) can dedupe correctly and `--clean-images` can target known publicIds.
+  - **Runtime admin uploads** (REQ-04 endpoints) use a server-generated `nanoid` (10-char default alphabet) via `generateGalleryId()`. This eliminates the index-assignment ambiguity that arises when the client lacks the authoritative ordering of an entity's gallery (REQ-08.2).
+  - The two strategies coexist: seed-uploaded gallery items keep their indexed publicIds for the lifetime of the asset; subsequent admin-side additions get nanoid-suffixed publicIds. The `getMediaUrl()` consumer is agnostic to which scheme produced the URL.
+- **Avatar pipeline path** (SPEC-078-GAPS T-023, GAP-078-008): Avatars use a **flat path** with no `role` segment — `hospeda/{env}/seed/avatars/{userId}` — matching the runtime admin avatar layout (`hospeda/{env}/avatars/{userId}.{ext}`). The processor overrides the default `{entityType}/{entityId}/{role}` construction for this branch only via the `publicIdOverride` parameter on `uploadSeedImage()`.
 
 ---
 

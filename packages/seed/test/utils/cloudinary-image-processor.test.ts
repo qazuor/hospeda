@@ -241,4 +241,129 @@ describe('processEntityImages — SPEC-078-GAPS T-022', () => {
             expect(result).toBe(data);
         });
     });
+
+    // -----------------------------------------------------------------------
+    // SPEC-078-GAPS T-023 — avatar path override + moderationState default
+    // -----------------------------------------------------------------------
+
+    describe('SPEC-078-GAPS T-023 — avatars seed path (GAP-078-008)', () => {
+        it('uploads avatars under hospeda/{env}/seed/avatars/{userId} (no role suffix)', async () => {
+            // Arrange
+            const { provider, uploads } = createProviderMock();
+            const cache: ImageCache = {};
+            const counters = createImageProcessingCounters();
+            const userId = 'user-001';
+            const data = {
+                id: userId,
+                profile: { avatar: 'https://src/avatar.jpg' }
+            };
+
+            // Act
+            await processEntityImages({
+                data,
+                // The seedFactory calls this with the entity name lowercased
+                // ('users'), but the processor MUST override to 'avatars' for
+                // the avatar branch per REQ-02.
+                entityType: 'users',
+                entityId: userId,
+                provider,
+                cache,
+                cachePath: '/tmp/cache.json',
+                env: 'dev',
+                seedSource: 'required',
+                counters
+            });
+
+            // Assert: the upload landed in the flat avatars folder with the
+            // userId as the public ID leaf (no `/avatar` role segment).
+            expect(uploads).toHaveLength(1);
+            const upload = uploads[0];
+            expect(upload?.folder).toBe('hospeda/dev/seed/avatars');
+            expect(upload?.publicId).toBe(userId);
+
+            // The cached entry key is the full publicId; assert it matches the
+            // documented REQ-02 shape.
+            const cacheKeys = Object.keys(cache);
+            expect(cacheKeys).toContain(`hospeda/dev/seed/avatars/${userId}`);
+
+            // Counter reflects the single upload.
+            expect(counters.uploaded).toBe(1);
+        });
+    });
+
+    describe('SPEC-078-GAPS T-023 — moderationState default (GAP-078-063)', () => {
+        it('injects moderationState: APPROVED on featured image when missing', async () => {
+            // Arrange
+            const { provider } = createProviderMock();
+            const cache: ImageCache = {};
+            const data = {
+                id: 'acc-mod-1',
+                media: {
+                    featuredImage: { url: 'https://src/featured.jpg' }
+                }
+            };
+
+            // Act
+            const result = await processEntityImages({
+                data,
+                entityType: 'accommodations',
+                entityId: 'acc-mod-1',
+                provider,
+                cache,
+                cachePath: '/tmp/cache.json',
+                env: 'dev',
+                seedSource: 'required'
+            });
+
+            // Assert
+            const media = (result as typeof data).media as {
+                featuredImage?: { url?: string; moderationState?: string };
+            };
+            expect(media.featuredImage?.moderationState).toBe('APPROVED');
+        });
+
+        it('preserves an explicit moderationState (does NOT overwrite)', async () => {
+            // Arrange
+            const { provider } = createProviderMock();
+            const cache: ImageCache = {};
+            const data = {
+                id: 'acc-mod-2',
+                media: {
+                    featuredImage: {
+                        url: 'https://src/pending.jpg',
+                        moderationState: 'PENDING' as const
+                    },
+                    gallery: [
+                        {
+                            url: 'https://src/g0.jpg',
+                            moderationState: 'REJECTED' as const
+                        },
+                        // No moderationState — should be defaulted.
+                        { url: 'https://src/g1.jpg' }
+                    ]
+                }
+            };
+
+            // Act
+            const result = await processEntityImages({
+                data,
+                entityType: 'accommodations',
+                entityId: 'acc-mod-2',
+                provider,
+                cache,
+                cachePath: '/tmp/cache.json',
+                env: 'dev',
+                seedSource: 'required'
+            });
+
+            // Assert
+            const media = (result as typeof data).media as {
+                featuredImage?: { moderationState?: string };
+                gallery?: Array<{ moderationState?: string }>;
+            };
+            expect(media.featuredImage?.moderationState).toBe('PENDING');
+            expect(media.gallery?.[0]?.moderationState).toBe('REJECTED');
+            expect(media.gallery?.[1]?.moderationState).toBe('APPROVED');
+        });
+    });
 });

@@ -1,8 +1,16 @@
 import type { ImageProvider } from '@repo/media/server';
+import { ModerationStatusEnum } from '@repo/schemas';
 import type { ImageCache } from './cloudinary-cache.js';
 import { type UploadSeedImageOutcome, uploadSeedImage } from './cloudinary-upload.js';
 import { logger } from './logger.js';
 import type { ImageProcessingCounters, SeedSource } from './seedContext.js';
+
+/**
+ * Folder segment used by the avatar seed pipeline. Per SPEC-078 REQ-02,
+ * avatar assets live under `hospeda/{env}/seed/avatars/{userId}.{ext}` rather
+ * than the default `{entityType}/{entityId}/{role}` layout.
+ */
+const AVATAR_ENTITY_TYPE = 'avatars' as const;
 
 /**
  * Parameters for {@link processEntityImages}.
@@ -81,6 +89,12 @@ async function runRequiredUpload(args: {
     readonly env: string;
     readonly allowFallback: boolean;
     readonly counters?: ImageProcessingCounters;
+    /**
+     * Optional explicit public ID. When provided, the standard
+     * `hospeda/{env}/seed/{entityType}/{entityId}/{role}` construction is
+     * bypassed (used by the avatar pipeline per REQ-02).
+     */
+    readonly publicIdOverride?: string;
 }): Promise<string> {
     const {
         originalUrl,
@@ -92,7 +106,8 @@ async function runRequiredUpload(args: {
         cachePath,
         env,
         allowFallback,
-        counters
+        counters,
+        publicIdOverride
     } = args;
 
     const outcome = await uploadSeedImage({
@@ -104,7 +119,8 @@ async function runRequiredUpload(args: {
         cache,
         cachePath,
         env,
-        throwOnFailure: !allowFallback
+        throwOnFailure: !allowFallback,
+        publicIdOverride
     });
 
     if (counters) {
@@ -206,14 +222,17 @@ export async function processEntityImages(
                 allowFallback: allowRequiredFallback,
                 counters
             });
-            updatedMedia.featuredImage = { ...media.featuredImage, url: cloudinaryUrl };
+            updatedMedia.featuredImage = withModerationDefault({
+                ...media.featuredImage,
+                url: cloudinaryUrl
+            });
         }
 
         // --- media.gallery ---
         if (Array.isArray(media.gallery) && media.gallery.length > 0) {
             const updatedGallery = await Promise.all(
                 media.gallery.map(async (entry, index) => {
-                    if (!entry.url) return entry;
+                    if (!entry.url) return withModerationDefault(entry);
                     const cloudinaryUrl = await runRequiredUpload({
                         originalUrl: entry.url,
                         entityType,
@@ -226,7 +245,7 @@ export async function processEntityImages(
                         allowFallback: allowRequiredFallback,
                         counters
                     });
-                    return { ...entry, url: cloudinaryUrl };
+                    return withModerationDefault({ ...entry, url: cloudinaryUrl });
                 })
             );
             updatedMedia.gallery = updatedGallery;
@@ -236,11 +255,15 @@ export async function processEntityImages(
     }
 
     // --- profile.avatar (user entities) ---
+    // Per SPEC-078 REQ-02, avatars live at `hospeda/{env}/seed/avatars/{userId}`
+    // (flat path, no `role` suffix). The processor overrides the default
+    // `{entityType}/{entityId}/{role}` layout for this branch only.
     const profile = data.profile as Record<string, unknown> | undefined;
     if (profile?.avatar && typeof profile.avatar === 'string') {
+        const avatarPublicId = `hospeda/${env}/seed/${AVATAR_ENTITY_TYPE}/${entityId}`;
         const cloudinaryUrl = await runRequiredUpload({
             originalUrl: profile.avatar,
-            entityType,
+            entityType: AVATAR_ENTITY_TYPE,
             entityId,
             role: 'avatar',
             provider,
@@ -248,12 +271,27 @@ export async function processEntityImages(
             cachePath,
             env,
             allowFallback: allowRequiredFallback,
-            counters
+            counters,
+            publicIdOverride: avatarPublicId
         });
         result.profile = { ...profile, avatar: cloudinaryUrl };
     }
 
     return result;
+}
+
+/**
+ * Injects a default `moderationState: 'APPROVED'` on a media image entry when
+ * the input does not specify one (SPEC-078-GAPS GAP-078-063). Existing values
+ * are preserved verbatim — the helper does NOT overwrite an explicit state.
+ *
+ * @internal
+ */
+function withModerationDefault(entry: MediaImageEntry): MediaImageEntry {
+    if (entry.moderationState === undefined || entry.moderationState === null) {
+        return { ...entry, moderationState: ModerationStatusEnum.APPROVED };
+    }
+    return entry;
 }
 
 /**

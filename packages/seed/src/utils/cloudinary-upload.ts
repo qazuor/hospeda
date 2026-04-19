@@ -29,6 +29,16 @@ export interface UploadSeedImageInput {
      * @default false
      */
     readonly throwOnFailure?: boolean;
+    /**
+     * Optional override for the full Cloudinary public ID. When provided, the
+     * standard `hospeda/{env}/seed/{entityType}/{entityId}/{role}` construction
+     * is bypassed and this value is used verbatim as the public ID.
+     *
+     * Used by the avatar pipeline (SPEC-078-GAPS T-023) which requires a flat
+     * path of `hospeda/{env}/seed/avatars/{userId}` with no `role` suffix
+     * (REQ-02).
+     */
+    readonly publicIdOverride?: string;
 }
 
 /**
@@ -97,11 +107,14 @@ export async function uploadSeedImage(
         cache,
         cachePath,
         env,
-        throwOnFailure = false
+        throwOnFailure = false,
+        publicIdOverride
     } = input;
 
-    // Build the full Cloudinary public ID
-    const fullPublicId = `hospeda/${env}/seed/${entityType}/${entityId}/${role}`;
+    // Build the full Cloudinary public ID. The avatar pipeline (T-023) supplies
+    // a flat-path override (`hospeda/{env}/seed/avatars/{userId}`) per REQ-02.
+    const fullPublicId =
+        publicIdOverride ?? `hospeda/${env}/seed/${entityType}/${entityId}/${role}`;
 
     // Derive folder and filename from the full public ID
     const lastSlash = fullPublicId.lastIndexOf('/');
