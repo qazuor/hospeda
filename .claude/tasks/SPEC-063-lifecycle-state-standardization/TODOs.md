@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 47/63 completed + 7 deferred — effective 47/56
+## Progress: 48/63 completed + 7 deferred — effective 48/56
 
-**Last updated:** 2026-04-18T19:31:00Z
-**Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). See progress.md + state.json `_pushOnlyMigrationPolicy`. Effective Phase 3 scope drops from 19 to 13 tasks.
+**Last updated:** 2026-04-19T11:55:00Z
+**Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). See progress.md + state.json `_pushOnlyMigrationPolicy`. Effective Phase 3 scope drops from 19 to 13 tasks. **Phase 3 frontend kicked off 2026-04-19** with T-052 (types + column accessors).
 
 ### Push-only migration policy (summary)
 
@@ -18,10 +18,12 @@
 
 ### Next up (in priority order)
 
-1. **Follow-up cleanup (not a formal task):** delete the two T-029 output SQL files + amend state.json/progress.md to record the cleanup done. Small, non-blocking. Could bundle with the next feature commit.
-2. **T-039..T-057** — Phase 3 Sponsorship (13 non-migration tasks: T-039 schema, T-043..T-049 zod/model/service, T-050..T-054 API/frontend, T-055..T-057 tests). Starts with T-039 (DB schema + dual field rename/add) — highest impact, no blockers.
-3. **T-001, T-002** (complexity 2 each) — Phase 1 AccommodationReview verification tests. Independent of Phase 3; can run in parallel.
-4. **T-058** (complexity 2.5) — cleanup / cross-cutting verification. T-036 removed from blockedBy; `_deferredDependencies` note tracks the deferral for final-report mention.
+1. **T-053** (complexity 2) — useSponsorshipQueries hook rename: `body: { status }` → `{ sponsorshipStatus }` (L96) + mutation type update (L170). Direct unblock from T-052. Also unblocks the `updateStatusMutation.mutate({ status: ... })` payload refs in SponsorshipsTab.tsx L138/L154 (flagged during T-052 scope absorb — those payload keys need updating alongside the hook rename).
+2. **T-054** (complexity 2.5) — SponsorshipsTab + add lifecycleState filter dropdown. Pattern mirror: T-018a OwnerPromotion (inline `<select>`, 4 options: all / DRAFT / ACTIVE / ARCHIVED).
+3. **Follow-up cleanup (not a formal task):** delete the two T-029 output SQL files + amend state.json/progress.md to record the cleanup done. Small, non-blocking. Could bundle with the next feature commit.
+4. **T-001, T-002** (complexity 2 each) — Phase 1 AccommodationReview verification tests. Independent of Phase 3; can run in parallel.
+5. **T-055/T-056/T-057** — Phase 3 tests (schemas/integration/model+hook). Block T-058 cross-cutting.
+6. **T-058** (complexity 2.5) — cleanup / cross-cutting verification. T-036 removed from blockedBy; `_deferredDependencies` note tracks the deferral for final-report mention.
 
 **Average Complexity:** 2.1/2.5 (ceiling)
 **Critical Path (post-T-038):** T-039 -> T-040 -> T-042 -> T-058 (4 steps remaining)
@@ -363,7 +365,12 @@
   - Per-handler response strip deferred to SPEC-087 (service-layer force-override T-049 covers defense-in-depth)
   - Blocked by: T-044, T-045, T-046, T-049 · Blocks: none
 
-- [ ] **T-052** (complexity: 2) — Update admin Sponsorship frontend routes + types
+- [x] **T-052** (complexity: 2) — Update admin Sponsorship frontend routes + types
+  - COMPLETED 2026-04-19 · lint: pass · typecheck: pass (SPEC-063 clean; whitelist preexisting only)
+  - types.ts: SponsorshipFilters.status → sponsorshipStatus + added lifecycleState field
+  - sponsor/sponsorships.tsx: accessorKey L108 + display L327/L329 migrated
+  - billing/sponsorships.tsx NOT TOUCHED (isActive refs are Tab nav state, not SPEC-063)
+  - Scope absorbed: SponsorSponsorship.status (sponsor-dashboard/types.ts), posts/$id_.sponsorship.tsx (3 refs), SponsorshipsTab.tsx (4 refs). Mutation payload keys in SponsorshipsTab.tsx L138/L154 (`{ status: ... }`) flagged for T-053 scope.
   - Blocked by: T-050 · Blocks: T-053, T-055
 
 - [ ] **T-053** (complexity: 2) — Update Sponsorship useSponsorshipQueries hook

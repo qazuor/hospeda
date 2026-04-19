@@ -1724,29 +1724,38 @@
             "id": "T-052",
             "title": "Update admin Sponsorship frontend (routes + types)",
             "description": "Update `apps/admin/src/routes/_authed/billing/sponsorships.tsx` and `apps/admin/src/routes/_authed/sponsor/sponsorships.tsx`: rename `status` references to `sponsorshipStatus`. Update `apps/admin/src/features/sponsorships/types.ts`: update type definitions for renamed field.\n\nFiles: `apps/admin/src/routes/_authed/billing/sponsorships.tsx`, `apps/admin/src/routes/_authed/sponsor/sponsorships.tsx`, `apps/admin/src/features/sponsorships/types.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-050"],
             "blocks": ["T-053", "T-055"],
             "subtasks": [
                 {
                     "title": "Rename status → sponsorshipStatus in billing route",
-                    "completed": false
+                    "completed": true,
+                    "_note": "billing/sponsorships.tsx `isActive` refs are Tab nav state, not Sponsorship status — no changes needed there"
                 },
                 {
                     "title": "Verify sponsor route already uses sponsorshipStatus",
-                    "completed": false
+                    "completed": true,
+                    "_note": "sponsor/sponsorships.tsx filter already had sponsorshipStatus (L37); migrated accessorKey (L108) + display (L327/L329)"
                 },
-                { "title": "Update types.ts for renamed field", "completed": false }
+                { "title": "Update types.ts for renamed field", "completed": true }
             ],
             "tags": ["admin", "frontend", "phase-3", "sponsorship"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "deferred" },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-04-19T11:50:00.000Z",
+                "completed": "2026-04-19T11:55:00.000Z"
+            },
+            "_scopeAbsorbed": [
+                "apps/admin/src/features/sponsor-dashboard/types.ts: SponsorSponsorship.status → sponsorshipStatus (type used by sponsor/sponsorships.tsx route)",
+                "apps/admin/src/routes/_authed/posts/$id_.sponsorship.tsx: 3 sponsorship.status refs (L142/L149/L154) migrated",
+                "apps/admin/src/features/sponsorships/components/SponsorshipsTab.tsx: 4 refs (accessorKey L84 + row.status L131/L147/L148) migrated to keep typecheck clean"
+            ],
+            "_commitHash": "8a2b88d0",
+            "_commitNote": "lint-staged auto-promoted 7 pre-existing packages/media/* renames (0-line file moves) into same commit; unrelated to SPEC-063 but recorded for auditability"
         },
         {
             "id": "T-053",

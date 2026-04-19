@@ -1,5 +1,26 @@
 # SPEC-063 — Implementation Progress Log
 
+## Session summary (as of 2026-04-19T11:55)
+
+- **Progress:** 48/63 completed + 7 deferred. Effective scope **48/56**.
+- **Phase 3 pace:** T-052 landed — admin Sponsorship frontend types + column accessors migrated. Phase 3 now 2/13 remaining in core scope: T-053 (hook), T-054 (SponsorshipsTab filter). Then T-055/T-056/T-057 tests + T-058 cleanup.
+
+### T-052 completed 2026-04-19T11:55
+
+- **Files touched:**
+  - `apps/admin/src/features/sponsorships/types.ts`: `SponsorshipFilters.status` → `sponsorshipStatus`; added `lifecycleState?: LifecycleStatusEnum` field; `LifecycleStatusEnum` imported as type.
+  - `apps/admin/src/routes/_authed/sponsor/sponsorships.tsx`: column `id/accessorKey 'status'` → `'sponsorshipStatus'` (L106/L108); display Badge `sponsorship.status` → `sponsorship.sponsorshipStatus` (L327/L329). Filter state already had `sponsorshipStatus` pre-T-052.
+  - **billing/sponsorships.tsx NOT TOUCHED** — its `isActive` refs are Tab nav state, not Sponsorship `status`. No SPEC-063 changes required there.
+- **Scope absorb (3 files, kept typecheck clean):**
+  - `apps/admin/src/features/sponsor-dashboard/types.ts`: `SponsorSponsorship.status` → `sponsorshipStatus`. That type is consumed by `sponsor/sponsorships.tsx` via route imports.
+  - `apps/admin/src/routes/_authed/posts/$id_.sponsorship.tsx`: 3 `sponsorship.status` refs (L142/L149/L154) → `sponsorship.sponsorshipStatus`. Read the joined Sponsorship shape from API, same rename applies.
+  - `apps/admin/src/features/sponsorships/components/SponsorshipsTab.tsx`: `accessorKey 'status'` → `'sponsorshipStatus'` (L84); `row.status` → `row.sponsorshipStatus` (L131/L147/L148). Note: the `updateStatusMutation.mutate({ status: ... })` payload on L138/L154 uses `status` as the MUTATION payload key — T-053 scope (hook rename).
+- **Lint:** pass. **Typecheck `@repo/admin`:** clean for SPEC-063. Only pre-existing whitelisted errors remain (`createEntityApi.ts:121`, `me/accommodations/index.tsx:28`).
+- **Commit boundary:** 1 `feat(admin)` covering feat + scope-absorb (5 files). Bookkeeping as separate `chore(tasks)` to follow.
+- **Commit hygiene flag:** lint-staged auto-promoted 7 pre-existing `packages/media/*` file renames (0-line moves) into commit `8a2b88d0`. Unrelated to SPEC-063 but recorded for auditability.
+
+---
+
 ## Session summary (as of 2026-04-18T19:31)
 
 - **Progress:** 47/63 completed + 7 deferred. Effective scope **47/56**.
