@@ -1,8 +1,8 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 40/63 completed + 7 deferred — effective 40/56
+## Progress: 41/63 completed + 7 deferred — effective 41/56
 
-**Last updated:** 2026-04-18T18:45:00Z
+**Last updated:** 2026-04-18T18:54:00Z
 **Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). See progress.md + state.json `_pushOnlyMigrationPolicy`. Effective Phase 3 scope drops from 19 to 13 tasks.
 
 ### Push-only migration policy (summary)
@@ -315,7 +315,10 @@
   - Converted `import { z }` to `import type { z }` since only used in `z.infer`
   - Blocked by: T-043 · Blocks: T-050, T-051, T-055
 
-- [ ] **T-045** (complexity: 2) — Update Sponsorship query + admin-search schemas
+- [x] **T-045** (complexity: 2) — Update Sponsorship query + admin-search schemas
+  - COMPLETED 2026-04-18 · lint: pass · typecheck: pass for query (cascade to T-046 http remains)
+  - query.schema.ts: renamed status→sponsorshipStatus in Filters + Query + ListItem pick + Summary pick. Added lifecycleState filter with JSDoc security warning (service forces ACTIVE on public)
+  - admin-search.schema.ts: removed stale collision comment (semantic clarification preserved)
   - Blocked by: T-043 · Blocks: T-050, T-051
 
 - [ ] **T-046** (complexity: 2.5) — Update Sponsorship HTTP schema + conversion functions

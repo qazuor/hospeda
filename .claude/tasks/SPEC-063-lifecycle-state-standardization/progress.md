@@ -1,5 +1,26 @@
 # SPEC-063 — Implementation Progress Log
 
+## Session summary (as of 2026-04-18T18:54)
+
+- **Progress:** 41/63 completed + 7 deferred. Effective scope **41/56**.
+- **Phase 3 pace:** T-039 + T-043 + T-044 + T-045 landed in sequence. Phase 3 now 9/13 remaining. Next: T-046 (http conversion), T-047 (model findBy rename + findActiveByTarget).
+
+### T-045 completed 2026-04-18T18:54
+
+- **Files:** `packages/schemas/src/entities/sponsorship/sponsorship.query.schema.ts`, `packages/schemas/src/entities/sponsorship/sponsorship.admin-search.schema.ts`
+- **query.schema.ts:**
+  - Import: added `LifecycleStatusEnumSchema` from `../../enums/lifecycle-state.schema.js`.
+  - `SponsorshipFiltersSchema`: `status: SponsorshipStatusEnumSchema.optional()` → `sponsorshipStatus: ...`. Added `lifecycleState: LifecycleStatusEnumSchema.optional()` filter with JSDoc security warning (service layer must force ACTIVE for public endpoints, AC-005-01).
+  - `SponsorshipQuerySchema`: same rename + same lifecycleState add with identical JSDoc.
+  - `SponsorshipListItemSchema` (line ~131): `status: true` pick → `sponsorshipStatus: true`.
+  - `SponsorshipSummarySchema` (line ~177): `status: true` pick → `sponsorshipStatus: true`.
+- **admin-search.schema.ts:** no code-level change needed — file was already defensive (`sponsorshipStatus` explicit since SPEC-062 T-008). Dropped the stale collision comment since SPEC-063 has landed the field naming; replaced with a concise semantic note ("base status maps to lifecycleState").
+- **Lint:** pass. **Typecheck `@repo/schemas`:** query/admin-search clean. Remaining errors (cascade): `http.schema.ts` L125/L167/L192 → T-046 scope; `sponsorship.schema.test.ts` L119 → test task scope.
+- **Security note:** JSDoc on `lifecycleState` filter documents the service-layer force-override contract, same pattern as DestinationReview T-033 before T-035 closed it. When Sponsorship service `_executeSearch` lands in T-049, it MUST force-override `lifecycleState = ACTIVE` on public path to prevent DRAFT/ARCHIVED leakage (analogous to OwnerPromotion T-022 pattern).
+- Commit boundary: 1 feat(schemas) + 1 chore(tasks).
+
+---
+
 ## Session summary (as of 2026-04-18T18:45)
 
 - **Progress:** 40/63 completed + 7 deferred. Effective scope **40/56**.

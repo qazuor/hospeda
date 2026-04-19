@@ -1538,26 +1538,26 @@
         {
             "id": "T-045",
             "title": "Update Sponsorship query + admin-search schemas",
-            "description": "Update `packages/schemas/src/entities/sponsorship/sponsorship.query.schema.ts`: rename `status` filter to `sponsorshipStatus`, add `lifecycleState: LifecycleStatusEnumSchema.optional()` filter. Update `sponsorship.admin-search.schema.ts`: `sponsorshipStatus` already exists at line 24 — remove any comment about collision since the DB column now matches the schema field name. Base `status` from `AdminSearchBaseSchema` now maps to `lifecycleState`.\n\nFiles: `packages/schemas/src/entities/sponsorship/sponsorship.query.schema.ts`, `packages/schemas/src/entities/sponsorship/sponsorship.admin-search.schema.ts`",
-            "status": "pending",
+            "description": "Update `packages/schemas/src/entities/sponsorship/sponsorship.query.schema.ts`: rename `status` filter to `sponsorshipStatus`, add `lifecycleState: LifecycleStatusEnumSchema.optional()` filter. Update `sponsorship.admin-search.schema.ts`: `sponsorshipStatus` already exists at line 24 — remove any comment about collision since the DB column now matches the schema field name. Base `status` from `AdminSearchBaseSchema` now maps to `lifecycleState`.\n\nFiles: `packages/schemas/src/entities/sponsorship/sponsorship.query.schema.ts`, `packages/schemas/src/entities/sponsorship/sponsorship.admin-search.schema.ts`\n\nCOMPLETION NOTE: query.schema.ts — renamed `status` to `sponsorshipStatus` in both `SponsorshipFiltersSchema` and `SponsorshipQuerySchema` (2 sites). Also renamed `status: true` picks to `sponsorshipStatus: true` in `SponsorshipListItemSchema` (L131) and `SponsorshipSummarySchema` (L177) to resolve typecheck cascade. Added `lifecycleState: LifecycleStatusEnumSchema.optional()` filter to both Filters and Query schemas with JSDoc warning that service must force ACTIVE for public endpoints (T-049 security hardening). Imported `LifecycleStatusEnumSchema` from `../../enums/lifecycle-state.schema.js`. admin-search.schema.ts — removed stale collision comment; semantic clarification JSDoc now accurate (base `status` maps to lifecycleState). Typecheck: query clean. Remaining errors are T-046 (http.schema.ts L125/L167/L192) cascade scope.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-043"],
             "blocks": ["T-051"],
             "subtasks": [
                 {
                     "title": "Rename status filter to sponsorshipStatus in query schema",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Add lifecycleState filter in query schema", "completed": false },
-                { "title": "Remove collision comment in admin-search schema", "completed": false }
+                { "title": "Add lifecycleState filter in query schema", "completed": true },
+                { "title": "Remove collision comment in admin-search schema", "completed": true }
             ],
             "tags": ["schemas", "phase-3", "sponsorship"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T18:50:00.000Z",
+                "completed": "2026-04-18T18:54:00.000Z"
             }
         },
         {
@@ -1913,9 +1913,9 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 16,
+        "pending": 15,
         "inProgress": 0,
-        "completed": 40,
+        "completed": 41,
         "deferred": 7,
         "blocked": 0,
         "averageComplexity": 2.0,
