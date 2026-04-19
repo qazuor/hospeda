@@ -1,9 +1,9 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 49/63 completed + 7 deferred — effective 49/56
+## Progress: 50/63 completed + 7 deferred — effective 50/56
 
-**Last updated:** 2026-04-19T12:08:00Z
-**Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). See progress.md + state.json `_pushOnlyMigrationPolicy`. Effective Phase 3 scope drops from 19 to 13 tasks. **Phase 3 frontend**: T-052 + T-053 landed 2026-04-19 (types + columns + hook + consumer payload keys). Last frontend task remaining: T-054 (filter dropdown).
+**Last updated:** 2026-04-19T14:50:00Z
+**Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Phase 3 Sponsorship frontend FULLY CLOSED 2026-04-19** (T-052 + T-053 + T-054: types, columns, hook payload, lifecycleState filter + i18n). Remaining Phase 3 work is test-only (T-055/T-056/T-057). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). Effective Phase 3 scope: 13 non-migration tasks, 10 done.
 
 ### Push-only migration policy (summary)
 
@@ -18,11 +18,12 @@
 
 ### Next up (in priority order)
 
-1. **T-054** (complexity 2.5) — SponsorshipsTab + add lifecycleState filter dropdown. Pattern mirror: T-018a OwnerPromotion (inline `<select>`, 4 options: all / DRAFT / ACTIVE / ARCHIVED). This closes out Phase 3 frontend entirely.
-2. **Follow-up cleanup (not a formal task):** delete the two T-029 output SQL files + amend state.json/progress.md to record the cleanup done. Small, non-blocking. Could bundle with the next feature commit.
-3. **T-001, T-002** (complexity 2 each) — Phase 1 AccommodationReview verification tests. Independent of Phase 3; can run in parallel.
-4. **T-055/T-056/T-057** — Phase 3 tests (schemas/integration/model+hook). Block T-058 cross-cutting.
-5. **T-058** (complexity 2.5) — cleanup / cross-cutting verification. T-036 removed from blockedBy; `_deferredDependencies` note tracks the deferral for final-report mention.
+1. **T-055** (complexity 2.5) — Sponsorship schema + access tests. Cascade cleanup: rename `status`→`sponsorshipStatus` in `packages/schemas/test/entities/sponsorship/sponsorship.schema.test.ts` L119 + `packages/service-core/test/factories/sponsorshipFactory.ts` L29/L63 + `packages/service-core/test/services/sponsorship/update.test.ts` (multiple sites). Then add AC-003-03 tests (lifecycleState enum defaults + access boundary preserve/strip).
+2. **T-056** (complexity 2.5) — Sponsorship integration test: filter independence (AC-001-02, AC-003-02). Mirror pattern from `apps/api/test/integration/owner-promotion/public-endpoint.test.ts` + `accommodation/admin-search-filters.test.ts`. Use service-level mock; apps/api/.env.test required.
+3. **T-057** (complexity 2) — Sponsorship model + hook tests. Cascade: `packages/db/test/models/sponsorship.model.test.ts` 5 findByStatus→findBySponsorshipStatus sites. Hook tests for useSponsorshipQueries if coverage missing.
+4. **T-001, T-002** (complexity 2 each) — Phase 1 AccommodationReview verification tests. Independent of Phase 3; can run in parallel.
+5. **Follow-up cleanup (not a formal task):** delete the two T-029 output SQL files + amend state.json/progress.md to record the cleanup done. Small, non-blocking. Could bundle with the next feature commit.
+6. **T-058** (complexity 2.5) — cleanup / cross-cutting verification. T-036 removed from blockedBy; `_deferredDependencies` note tracks the deferral for final-report mention.
 
 **Average Complexity:** 2.1/2.5 (ceiling)
 **Critical Path (post-T-038):** T-039 -> T-040 -> T-042 -> T-058 (4 steps remaining)
@@ -379,7 +380,12 @@
   - `toggleLevelActive` + `togglePackageActive` intentionally NOT touched (SponsorshipLevel/Package out of SPEC-063 scope)
   - Blocked by: T-050, T-052 · Blocks: T-055, T-057
 
-- [ ] **T-054** (complexity: 2.5) — Update SponsorshipsTab + add lifecycle filter to Sponsorship list
+- [x] **T-054** (complexity: 2.5) — Update SponsorshipsTab + add lifecycle filter to Sponsorship list
+  - COMPLETED 2026-04-19 · lint: pass · typecheck: pass (SPEC-063 clean)
+  - Rename subtask was pre-absorbed by T-052/T-053; this task added the lifecycleState dropdown + i18n keys (es/en/pt) + regenerated types
+  - Inline `<select>` pattern (T-018a mirror), 4 options: all/DRAFT/ACTIVE/ARCHIVED, aria-label for a11y
+  - i18n keys added: sponsorships.filters.allLifecycle + sponsorships.lifecycle.{draft,active,archived}
+  - tsbuildinfo cache trap observed after types regen — cleared apps/admin .tsbuildinfo
   - Blocked by: T-052, T-053 · Blocks: T-058
 
 ### Tests

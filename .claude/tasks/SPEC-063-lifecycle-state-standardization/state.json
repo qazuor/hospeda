@@ -1794,26 +1794,40 @@
             "id": "T-054",
             "title": "Update SponsorshipsTab + add lifecycle filter to Sponsorship list",
             "description": "Update `apps/admin/src/features/sponsorships/components/SponsorshipsTab.tsx`: rename `status` references to `sponsorshipStatus`. Also add a separate `lifecycleState` filter control to the Sponsorship list (independent of `sponsorshipStatus` filter per AC-001-02). Use the shared lifecycle filter config pattern.\n\nFiles: `apps/admin/src/features/sponsorships/components/SponsorshipsTab.tsx`, related filter config files",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-052", "T-053"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Rename status → sponsorshipStatus in SponsorshipsTab",
-                    "completed": false
+                    "completed": true,
+                    "_note": "Completed in T-052 scope absorb (4 refs) + T-053 scope absorb (2 mutate payload keys). Verified grep clean in this task."
                 },
-                { "title": "Add lifecycleState filter control", "completed": false },
-                { "title": "Verify filters operate independently", "completed": false }
+                {
+                    "title": "Add lifecycleState filter control",
+                    "completed": true,
+                    "_note": "Inline native <select> after targetType, 4 options (all/DRAFT/ACTIVE/ARCHIVED), pattern mirror T-018a OwnerPromotion. aria-label for a11y."
+                },
+                {
+                    "title": "Verify filters operate independently",
+                    "completed": true,
+                    "_note": "Filter state object holds sponsorshipStatus + lifecycleState as separate keys; both flow independently to hook via URLSearchParams. Backend filter independence covered by T-056 integration tests."
+                }
             ],
             "tags": ["admin", "frontend", "phase-3", "sponsorship"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "deferred" },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-04-19T12:12:00.000Z",
+                "completed": "2026-04-19T14:50:00.000Z"
+            },
+            "_scopeAbsorbed": [
+                "packages/i18n/src/locales/{es,en,pt}/admin-billing.json: added sponsorships.filters.allLifecycle + sponsorships.lifecycle.{draft,active,archived} keys in 3 locales",
+                "packages/i18n/src/types.ts: regenerated via `pnpm --filter @repo/i18n generate-types` (auto-generated file, 5708 keys)"
+            ],
+            "_commitHash": "90216e93"
         },
         {
             "id": "T-055",

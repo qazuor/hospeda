@@ -1,5 +1,24 @@
 # SPEC-063 — Implementation Progress Log
 
+## Session summary (as of 2026-04-19T14:50)
+
+- **Progress:** 50/63 completed + 7 deferred. Effective scope **50/56**.
+- **Phase 3 pace:** **Phase 3 frontend FULLY CLOSED.** T-052 + T-053 + T-054 landed same session. Remaining Phase 3 work is test-only: T-055/T-056/T-057. Then T-058 cross-cutting cleanup.
+
+### T-054 completed 2026-04-19T14:50
+
+- **Files touched:**
+  - `apps/admin/src/features/sponsorships/components/SponsorshipsTab.tsx`: imported `LifecycleStatusEnum` value (was not imported before); extended filter state with `lifecycleState?: LifecycleStatusEnum`; added 3rd `<select>` after targetType filter — 4 options: all / DRAFT / ACTIVE / ARCHIVED. Inline native `<select>` pattern (consistent with existing sponsorshipStatus + targetType selects and with T-018a OwnerPromotion filter). `aria-label` on the new select for a11y.
+  - `packages/i18n/src/locales/{es,en,pt}/admin-billing.json`: added under `sponsorships` namespace: `filters.allLifecycle` + `lifecycle.{draft,active,archived}` in all 3 locales. PT translations use project convention (`Rascunho`/`Ativo`/`Arquivado`).
+  - `packages/i18n/src/types.ts`: regenerated via `pnpm --filter @repo/i18n generate-types` (5708 keys total). Auto-generated file.
+- **Rename subtask marked DONE on arrival:** the `status` → `sponsorshipStatus` rename in SponsorshipsTab was already covered under T-052 scope absorb (4 refs: accessorKey + 3 row refs) and T-053 scope absorb (2 mutate payload keys). Grep verified clean before closing.
+- **Filter independence:** filters live as separate keys on the local state object; `useSponsorshipsQuery` forwards them via `URLSearchParams`. Backend independence (user can filter by `sponsorshipStatus` only, `lifecycleState` only, or both) is covered by T-056 integration test.
+- **tsbuildinfo cache trap:** after regenerating i18n types, `tsc` kept reporting missing keys until `*.tsbuildinfo` was cleared in apps/admin. Documenting for future i18n key additions.
+- **Lint:** pass (biome auto-formatted generated types.ts). **Typecheck `@repo/admin`:** clean for SPEC-063 (whitelist preexisting only).
+- **Commit boundary:** 1 `feat(admin)` covering filter + i18n keys + types regen (5 files).
+
+---
+
 ## Session summary (as of 2026-04-19T12:08)
 
 - **Progress:** 49/63 completed + 7 deferred. Effective scope **49/56**.
