@@ -1615,29 +1615,29 @@
         {
             "id": "T-048",
             "title": "Update Sponsorship service: remove _executeAdminSearch override",
-            "description": "Update `packages/service-core/src/services/sponsorship/sponsorship.service.ts`: remove the `_executeAdminSearch` override (lines 168-184) that remaps `sponsorshipStatus -> status`. No longer needed after DB column rename — the base `adminList()` handles `lifecycleState` filtering directly.\n\nFiles: `packages/service-core/src/services/sponsorship/sponsorship.service.ts`",
-            "status": "pending",
+            "description": "Update `packages/service-core/src/services/sponsorship/sponsorship.service.ts`: remove the `_executeAdminSearch` override (lines 168-184) that remaps `sponsorshipStatus -> status`. No longer needed after DB column rename — the base `adminList()` handles `lifecycleState` filtering directly.\n\nFiles: `packages/service-core/src/services/sponsorship/sponsorship.service.ts`\n\nCOMPLETION NOTE: Removed _executeAdminSearch override entirely (was lines 189-199). Base BaseCrudRead._executeAdminSearch now handles filtering directly since the DB column rename (T-039 status→sponsorship_status) means entityFilters.sponsorshipStatus maps 1:1 to the Drizzle schema column. lifecycleState filter (from AdminSearchBaseSchema.status mapping) also flows through the base. Also pruned now-unused imports: EntityFilters (type), AdminSearchExecuteParams, PaginatedListOutput + local SponsorshipEntityFilters type alias. Service source typecheck clean. Remaining service-core typecheck errors (factory + update tests) cascade to T-055 scope.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-047"],
             "blocks": ["T-051", "T-056"],
             "subtasks": [
                 {
                     "title": "Locate _executeAdminSearch override (lines 168-184)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Remove override method", "completed": false },
+                { "title": "Remove override method", "completed": true },
                 {
                     "title": "Verify base adminList() handles filtering correctly",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service", "phase-3", "sponsorship"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": null },
             "timestamps": {
                 "created": "2026-04-17T16:15:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-18T19:16:00.000Z",
+                "completed": "2026-04-18T19:18:00.000Z"
             }
         },
         {
@@ -1913,9 +1913,9 @@
     ],
     "summary": {
         "total": 63,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 43,
+        "completed": 44,
         "deferred": 7,
         "blocked": 0,
         "averageComplexity": 2.0,

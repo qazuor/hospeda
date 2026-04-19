@@ -1,8 +1,8 @@
 # SPEC-063: Lifecycle State Standardization
 
-## Progress: 43/63 completed + 7 deferred — effective 43/56
+## Progress: 44/63 completed + 7 deferred — effective 44/56
 
-**Last updated:** 2026-04-18T19:11:00Z
+**Last updated:** 2026-04-18T19:18:00Z
 **Status:** in-progress. **Phase 4 DestinationReview FULLY CLOSED** (sans deferred T-036). Phase 2 OwnerPromotion complete end-to-end (sans deferred migration trio T-004/T-005/T-006). **Push-only migration policy decided 2026-04-18**: 6 migration-ceremony tasks deferred (T-004, T-005, T-006, T-040, T-041, T-042). See progress.md + state.json `_pushOnlyMigrationPolicy`. Effective Phase 3 scope drops from 19 to 13 tasks.
 
 ### Push-only migration policy (summary)
@@ -336,7 +336,10 @@
   - No service-core/apps consumers (grep clean). Test file cascade → T-057 scope
   - Blocked by: T-039, T-043 · Blocks: T-048, T-057
 
-- [ ] **T-048** (complexity: 2) — Update Sponsorship service: remove _executeAdminSearch override
+- [x] **T-048** (complexity: 2) — Update Sponsorship service: remove _executeAdminSearch override
+  - COMPLETED 2026-04-18 · lint: pass · typecheck: service source clean (test cascade → T-055)
+  - Override removed; base handles filtering via renamed column
+  - Pruned unused imports (EntityFilters, AdminSearchExecuteParams, PaginatedListOutput)
   - Blocked by: T-047 · Blocks: T-050, T-051, T-056
 
 - [ ] **T-049** (complexity: 2) — Update Sponsorship service _executeSearch with lifecycleState=ACTIVE default

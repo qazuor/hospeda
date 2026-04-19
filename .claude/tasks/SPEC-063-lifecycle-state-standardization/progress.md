@@ -1,5 +1,24 @@
 # SPEC-063 — Implementation Progress Log
 
+## Session summary (as of 2026-04-18T19:18)
+
+- **Progress:** 44/63 completed + 7 deferred. Effective scope **44/56**.
+- **Phase 3 pace:** T-039 + T-043 + T-044 + T-045 + T-046 + T-047 + T-048 landed in sequence. Phase 3 now 6/13 remaining. Next: T-049 (service `_executeSearch` + `_executeCount` force-override lifecycleState=ACTIVE on public, same hardening as T-022), then T-050..T-054 routes + admin UI + T-055..T-057 tests.
+- **Milestone:** `packages/schemas` SOURCE + `packages/db` + `packages/service-core` SOURCE 100% typecheck-clean for Phase 3 Sponsorship. Remaining cascade is in test files only (T-055/T-057 scope).
+
+### T-048 completed 2026-04-18T19:18
+
+- **File:** `packages/service-core/src/services/sponsorship/sponsorship.service.ts`
+- Removed `_executeAdminSearch` override (was lines 189-199). The override remapped `entityFilters.sponsorshipStatus → db.status` because the old Drizzle column was named `status`. After T-039 renamed the column to `sponsorship_status`, the base `BaseCrudRead._executeAdminSearch` handles `entityFilters.sponsorshipStatus` → `sponsorshipStatus` column directly, and the base `lifecycleState` filter (from `AdminSearchBaseSchema.status` → `lifecycleState` mapping in `adminList()`) flows through identically to OwnerPromotion / DestinationReview.
+- Also pruned now-unused imports:
+  - `import type { EntityFilters, ... } from '@repo/schemas'` → removed `EntityFilters`.
+  - `import type { ..., AdminSearchExecuteParams, PaginatedListOutput, ... } from '../../types'` → removed `AdminSearchExecuteParams` and `PaginatedListOutput`.
+  - Local type alias `type SponsorshipEntityFilters = EntityFilters<typeof SponsorshipAdminSearchSchema>` removed.
+- **Lint:** pass. **Typecheck `@repo/service-core`:** service source clean. Remaining errors in `test/factories/sponsorshipFactory.ts` (2 sites) and `test/services/sponsorship/update.test.ts` (multiple sites) — all `status` → `sponsorshipStatus` migration pending in T-055 test task scope.
+- Commit boundary: 1 feat(service-core) + 1 chore(tasks).
+
+---
+
 ## Session summary (as of 2026-04-18T19:11)
 
 - **Progress:** 43/63 completed + 7 deferred. Effective scope **43/56**.
