@@ -616,19 +616,19 @@
         {
             "id": "T-033",
             "title": "Defensive route hardening: rate limit, Content-Length margin, and gallery cap",
-            "description": "Gaps: GAP-078-068, GAP-078-021, GAP-078-071.\n\nFiles: apps/api/src/routes/media/admin/upload.ts, apps/api/src/routes/media/protected/upload.ts\n- GAP-078-068: Interim rate limit { requests: 10, windowMs: 60000 } on upload routes; TODO comment linking to SPEC-079\n- GAP-078-021: Content-Length pre-check uses maxBytes + 1024 margin\n- GAP-078-071: Server hard cap 50 gallery items; reject 422 GALLERY_LIMIT_EXCEEDED; TODO comment for billing entitlements\n\nAcceptance: 11th upload in 60s returns 429; entity gallery at 50 returns 422 GALLERY_LIMIT_EXCEEDED; Content-Length within margin is not pre-rejected.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-068, GAP-078-021, GAP-078-071.\n\nFiles: apps/api/src/routes/media/admin/upload.ts, apps/api/src/routes/media/protected/upload.ts\n- GAP-078-068: Interim rate limit { requests: 10, windowMs: 60000 } on upload routes; TODO comment linking to SPEC-079\n- GAP-078-021: Content-Length pre-check uses maxBytes + 1024 margin\n- GAP-078-071: Server hard cap 50 gallery items; reject 422 GALLERY_LIMIT_EXCEEDED; TODO comment for billing entitlements\n\nAcceptance: 11th upload in 60s returns 429; entity gallery at 50 returns 422 GALLERY_LIMIT_EXCEEDED; Content-Length within margin is not pre-rejected.\n\nOutcome (commit bfa122df): customRateLimit option on both upload routes (TODO ref SPEC-079). Content-Length pre-check uses maxBytes+1024 margin. Admin upload route adds 50-item gallery cap with typed GALLERY_LIMIT_EXCEEDED error code; reads gallery.length from entity already loaded by service.getById (zero extra DB queries); skipped unless role==='gallery'. Discovery: global bodyLimit middleware (10MB) preempts route-level Content-Length check. 7 new tests; 45/45 media routes pass.",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-029"],
             "blocks": [],
             "subtasks": [],
             "tags": ["backend", "api", "security"],
             "phase": "phase-5c",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
@@ -652,19 +652,19 @@
         {
             "id": "T-035",
             "title": "Add p-retry resilience to provider delete/deleteByPrefix",
-            "description": "Gaps: GAP-078-087, GAP-078-054.\n\nFiles: packages/media/src/cloudinary.provider.ts\n- GAP-078-087: Add dep p-retry; delete() and deleteByPrefix() wrapped with pRetry({ retries: 3, factor: 3, minTimeout: 1000 }); retry on 429/5xx only; upload() has no retry; JSDoc on upload() noting 'no retry by design'\n- GAP-078-054: delete_resources_by_prefix() passes { invalidate: true }\n\nAcceptance: delete mock rejects once with 429 then resolves; pRetry callback invoked twice total; upload mock rejects -> no retry, promise rejects immediately.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-087, GAP-078-054.\n\nFiles: packages/media/src/server/cloudinary.provider.ts, packages/media/package.json\n- GAP-078-087: Add dep p-retry; delete() and deleteByPrefix() wrapped with pRetry({ retries: 3, factor: 3, minTimeout: 1000 }); retry on 429/5xx only; upload() has no retry; JSDoc on upload() noting 'no retry by design'\n- GAP-078-054: delete_resources_by_prefix() passes { invalidate: true }\n\nAcceptance: delete mock rejects once with 429 then resolves; pRetry callback invoked twice total; upload mock rejects -> no retry, promise rejects immediately.\n\nOutcome (commit 11e0b113): delete() + deleteByPrefix() wrapped with pRetry; isPermanent4xx() throws AbortError for non-429 4xx (permanent failures); upload() has explicit JSDoc 'no retry by design' (idempotency risk). deleteByPrefix passes {invalidate: true}. Added p-retry@^8.0.0 dep (ESM-only). 4 new/updated tests; 140/140 media tests pass. Test gotcha: p-retry v8 requires Error instances (not plain objects) — used Object.assign(new Error(...), {http_code: ...}).",
+            "status": "completed",
             "complexity": 2.0,
             "blockedBy": ["T-029"],
             "blocks": [],
             "subtasks": [],
             "tags": ["backend", "resilience", "media"],
             "phase": "phase-5d",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
