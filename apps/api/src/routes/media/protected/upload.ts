@@ -104,6 +104,20 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
             );
         }
 
+        // ── 4b. Reject empty files (SPEC-078-GAPS T-032 / GAP-078-148).
+        // A zero-byte upload bypasses every downstream content check (magic
+        // bytes, dimensions) and would only fail much later inside the
+        // provider call, wasting work. Reject it as early as possible with
+        // a dedicated `EMPTY_FILE` code so clients can distinguish it from
+        // generic validation errors.
+        if (fileEntry.size === 0) {
+            return createErrorResponse(
+                { code: 'EMPTY_FILE', message: 'Uploaded file is empty' },
+                ctx,
+                422
+            );
+        }
+
         const arrayBuffer = await fileEntry.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 

@@ -324,6 +324,66 @@ describe('Environment Configuration', () => {
         });
     });
 
+    describe('HOSPEDA_MEDIA_MAX_FILE_SIZE_MB (SPEC-078-GAPS T-032 / GAP-078-106)', () => {
+        it('defaults to 10 when not provided', async () => {
+            // Arrange — minimal env without HOSPEDA_MEDIA_MAX_FILE_SIZE_MB
+            process.env = createValidTestEnv();
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_MEDIA_MAX_FILE_SIZE_MB).toBe(10);
+        });
+
+        it('coerces a numeric string to a number', async () => {
+            // Arrange
+            process.env = createValidTestEnv({ HOSPEDA_MEDIA_MAX_FILE_SIZE_MB: '25' });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_MEDIA_MAX_FILE_SIZE_MB).toBe(25);
+        });
+
+        it('fails startup on a non-numeric value', async () => {
+            // Arrange
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+                throw new Error('Process exit');
+            });
+            process.env = createValidTestEnv({ HOSPEDA_MEDIA_MAX_FILE_SIZE_MB: 'abc' });
+
+            // Act + Assert
+            const { validateApiEnv } = await import('../../src/utils/env');
+            expect(() => validateApiEnv()).toThrow('Process exit');
+            expect(exitSpy).toHaveBeenCalledWith(1);
+
+            consoleSpy.mockRestore();
+            exitSpy.mockRestore();
+        });
+
+        it('rejects a non-positive value (zero / negative)', async () => {
+            // Arrange
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+                throw new Error('Process exit');
+            });
+            process.env = createValidTestEnv({ HOSPEDA_MEDIA_MAX_FILE_SIZE_MB: '0' });
+
+            // Act + Assert
+            const { validateApiEnv } = await import('../../src/utils/env');
+            expect(() => validateApiEnv()).toThrow('Process exit');
+            expect(exitSpy).toHaveBeenCalledWith(1);
+
+            consoleSpy.mockRestore();
+            exitSpy.mockRestore();
+        });
+    });
+
     describe('Production Environment Requirements', () => {
         it('should require HOSPEDA_REDIS_URL in production', async () => {
             const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
