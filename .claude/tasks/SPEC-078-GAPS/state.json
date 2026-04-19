@@ -1030,37 +1030,37 @@
         {
             "id": "T-056",
             "title": "Observability: structured logs, Sentry capture, and metrics counters",
-            "description": "Gaps: GAP-078-050, GAP-078-128, GAP-078-129, GAP-078-014, GAP-078-056.\n\nFiles: apps/api/src/routes/media/admin/upload.ts, apps/api/src/services/media.ts, apps/api/src/services/accommodation.service.ts\n- GAP-078-050+128+129: Structured info log per upload success; Sentry.captureException on Cloudinary SDK errors; counters media_upload_total{result=success/failure}, media_delete_total{result}\n- GAP-078-014: Replace console.warn with apiLogger.warn in apps/api/src/services/media.ts:33; move init log to startup\n- GAP-078-056: AccommodationService._afterHardDelete: replace revalidationLogger.warn with this.logger.warn\n\nAcceptance: grep 'console.warn' apps/api/src/services/media.ts returns 0; Sentry mock receives exception on provider error; counter increments.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-050, GAP-078-128, GAP-078-129, GAP-078-014, GAP-078-056.\n\nFiles: apps/api/src/routes/media/{admin,protected}/{upload,delete}.ts, apps/api/src/middlewares/metrics.ts, apps/api/src/services/media.ts, apps/api/src/index.ts, packages/service-core/src/services/accommodation/accommodation.service.ts\n- GAP-078-050+128+129: Structured info log per upload success; Sentry.captureException on Cloudinary SDK errors; counters media_upload_total{result=success/failure}, media_delete_total{result}\n- GAP-078-014: Replace console.warn with apiLogger.warn in services/media.ts; move init log to startup via initializeMediaProvider()\n- GAP-078-056: AccommodationService swap all 7 revalidationLogger.warn -> this.logger.warn (across all _after* hooks)\n\nAcceptance: grep 'console.warn' services/media.ts returns 0; grep 'revalidationLogger' returns 0; Sentry mock receives exception on provider error; counter increments.\n\nOutcome (commit cd4658fd): structured info logs on success path of upload (admin+protected) + delete (admin); Sentry.captureException with tags {component, operation} on provider errors. New domainCounters Map in metrics.ts (separate from per-endpoint map so 30-min cleanup doesn't reset). New initializeMediaProvider() called once from index.ts after Sentry init. AccommodationService 7 revalidationLogger swaps + static field + import removed. 55/55 media routes + provider tests pass (4 new observability tests).",
+            "status": "completed",
             "complexity": 2.0,
             "blockedBy": ["T-029"],
             "blocks": [],
             "subtasks": [],
             "tags": ["backend", "observability"],
             "phase": "phase-8",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
             "id": "T-057",
             "title": "Observability: create Cloudinary incidents runbook",
-            "description": "Gap: GAP-078-158.\n\nFile: docs/runbooks/cloudinary-incidents.md\n- GAP-078-158: Create docs/runbooks/cloudinary-incidents.md with 9 sections covering: detection, escalation, rollback, env rotation, orphan cleanup, preview purge, billing alerts, monitoring queries, post-incident checklist\n\nAcceptance: Runbook exists with all 9 sections; linked from main docs/index.md.",
-            "status": "pending",
+            "description": "Gap: GAP-078-158.\n\nFile: docs/runbooks/cloudinary-incidents.md (new)\n- GAP-078-158: Create docs/runbooks/cloudinary-incidents.md with 9 sections: detection, health check, credential rotation, account suspension, quota exceeded, soft-delete + restore note, GDPR erasure reference, emergency contacts, escalation tree\n\nAcceptance: Runbook exists with all 9 sections; tech-lead-reviewable.\n\nOutcome (commit 5005ac90): 401-line runbook with all 9 sections + quick reference + severity definitions + reference-files appendix. Cross-references SPEC-078 + 7 task IDs (T-007/T-009/T-018/T-035/T-051/T-052/T-054). Real env var names and grep-able file paths. 11 TODO placeholders flagged for team-specific values. Style matches existing runbooks (billing-incidents.md, sentry-setup.md).",
+            "status": "completed",
             "complexity": 1.0,
             "blockedBy": ["T-029"],
             "blocks": [],
             "subtasks": [],
             "tags": ["docs", "observability"],
             "phase": "phase-8",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
