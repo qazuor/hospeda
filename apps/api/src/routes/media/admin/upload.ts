@@ -122,6 +122,16 @@ export const adminUploadMediaRoute = createAdminRoute({
         _params: Record<string, unknown>,
         _body: Record<string, unknown>
     ) => {
+        // ── 0a. Cache-Control header (SPEC-078-GAPS GAP-078-135).
+        // Upload responses MUST never be cached: they contain a freshly minted
+        // publicId / URL pair tied to a single actor + entity, and any
+        // intermediary caching them would (a) leak that asset reference across
+        // requests, and (b) serve stale data to subsequent uploads that
+        // overwrote the asset. Set the header on `ctx` early so it applies to
+        // every return path below — success, validation, permission, provider,
+        // and schema errors alike.
+        ctx.header('Cache-Control', 'no-store');
+
         // ── 0. Provider availability check ───────────────────────────────────
         const provider = getMediaProvider();
         if (!provider) {

@@ -16,6 +16,18 @@
             "schedule": ["at any time"],
             "automerge": false,
             "description": "Security patches should not wait for weekend schedule"
+        },
+        {
+            "matchPackageNames": ["cloudinary"],
+            "matchUpdateTypes": ["minor", "patch"],
+            "automerge": false,
+            "description": "SPEC-078-GAPS GAP-078-226: pin cloudinary to minor/patch updates only — major bumps require manual review (breaking changes in upload contract)"
+        },
+        {
+            "matchPackageNames": ["cloudinary"],
+            "matchUpdateTypes": ["major"],
+            "enabled": false,
+            "description": "SPEC-078-GAPS GAP-078-226: block automatic major bumps for cloudinary; open an issue and upgrade by hand"
         }
     ],
     "prConcurrentLimit": 5,

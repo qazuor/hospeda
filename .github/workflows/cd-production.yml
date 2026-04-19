@@ -25,6 +25,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # SPEC-078-GAPS GAP-078-230: validate environment variables against
+      # the canonical registry in @repo/config BEFORE deploying. Catches
+      # missing/misnamed Cloudinary, DB, and auth vars before they reach
+      # production traffic.
+      - name: Validate environment variables
+        run: pnpm env:check
+
       - name: Deploy to Vercel (Production)
         uses: amondnet/vercel-action@v25
         with:
@@ -44,6 +62,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # SPEC-078-GAPS GAP-078-230: validate environment variables against
+      # the canonical registry in @repo/config BEFORE deploying.
+      - name: Validate environment variables
+        run: pnpm env:check
+
       - name: Deploy to Vercel (Production)
         uses: amondnet/vercel-action@v25
         with:
@@ -62,6 +96,22 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # SPEC-078-GAPS GAP-078-230: validate environment variables against
+      # the canonical registry in @repo/config BEFORE deploying.
+      - name: Validate environment variables
+        run: pnpm env:check
 
       - name: Deploy to Vercel (Production)
         uses: amondnet/vercel-action@v25

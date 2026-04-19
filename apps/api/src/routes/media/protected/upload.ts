@@ -65,6 +65,14 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
         _params: Record<string, unknown>,
         _body: Record<string, unknown>
     ) => {
+        // ── 0a. Cache-Control header (SPEC-078-GAPS GAP-078-135).
+        // Avatar upload responses MUST never be cached: they contain the
+        // freshly minted Cloudinary URL for the user's avatar, which is
+        // immediately overwritten on the next upload (fixed publicId =
+        // userId). Set the header on `ctx` early so it applies to every
+        // return path — success, validation, and provider errors alike.
+        ctx.header('Cache-Control', 'no-store');
+
         // ── 0. Provider availability check ───────────────────────────────────
         const provider = getMediaProvider();
         if (!provider) {

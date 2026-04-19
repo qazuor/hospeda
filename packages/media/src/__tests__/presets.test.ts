@@ -100,5 +100,14 @@ describe('MEDIA_PRESETS', () => {
                 expect(MEDIA_PRESETS[key]).toContain('f_auto');
             }
         });
+
+        // SPEC-078-GAPS GAP-078-133: every preset must request automatic DPR
+        // handling so Retina/HiDPI screens receive 2x or 3x resolution variants
+        // without callers having to encode the device pixel ratio into the URL.
+        it('should include dpr_auto for automatic device pixel ratio', () => {
+            for (const key of EXPECTED_PRESETS) {
+                expect(MEDIA_PRESETS[key]).toContain('dpr_auto');
+            }
+        });
     });
 });

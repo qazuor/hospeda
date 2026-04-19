@@ -6,11 +6,12 @@ describe('getMediaUrl', () => {
         'https://res.cloudinary.com/hospeda/image/upload/v1234/hospeda/prod/accommodations/abc/featured.jpg';
     const unsplashUrl = 'https://images.unsplash.com/photo-abc?w=800';
 
-    // REQ-01.3-A: Cloudinary URL with preset
+    // REQ-01.3-A: Cloudinary URL with preset (SPEC-078-GAPS GAP-078-133:
+    // every preset now ends in `dpr_auto` for Retina/HiDPI support).
     it('should insert card preset transforms into Cloudinary URL', () => {
         const result = getMediaUrl(cloudinaryBase, { preset: 'card' });
         expect(result).toBe(
-            'https://res.cloudinary.com/hospeda/image/upload/w_400,h_300,c_fill,g_auto,q_auto,f_auto/v1234/hospeda/prod/accommodations/abc/featured.jpg'
+            'https://res.cloudinary.com/hospeda/image/upload/w_400,h_300,c_fill,g_auto,q_auto,f_auto,dpr_auto/v1234/hospeda/prod/accommodations/abc/featured.jpg'
         );
     });
 
