@@ -472,19 +472,19 @@
         {
             "id": "T-025",
             "title": "Seed data: moderation state bulk-fix in destination JSONs and CLAUDE.md doc",
-            "description": "Gap: GAP-078-076.\n\nFiles: packages/seed/data/destinations/*.json, packages/seed/CLAUDE.md\n- GAP-078-076: Bulk-replace 'moderationState': 'PENDING' -> 'APPROVED' in 26 destination JSONs; add 1-2 REJECTED fixtures; document in packages/seed/CLAUDE.md\n\nAcceptance: grep -r '\"PENDING\"' packages/seed/data/destinations returns 0; REJECTED fixtures exist; packages/seed/CLAUDE.md documents moderation state conventions.",
-            "status": "pending",
+            "description": "Gap: GAP-078-076.\n\nFiles: packages/seed/src/data/destination/*.json, packages/seed/CLAUDE.md\n- GAP-078-076: Bulk-replace 'moderationState': 'PENDING' -> 'APPROVED' in 26 destination JSONs; add 1-2 REJECTED fixtures; document in packages/seed/CLAUDE.md\n\nAcceptance: grep -r '\"PENDING\"' packages/seed/src/data/destination returns 0; REJECTED fixtures exist; packages/seed/CLAUDE.md documents moderation state conventions.\n\nOutcome (commit 9ef34171): 26 destination JSONs (101 occurrences) flipped PENDING->APPROVED. Two REJECTED fixtures kept on gallery image #2 of 022-destination-ceibas + 020-destination-larroque (preserved hero image usability while exercising rejected branch). ImageSchema/VideoSchema have no moderationReason field; only state flipped. CLAUDE.md gains Seed Moderation Conventions subsection.",
+            "status": "completed",
             "complexity": 1.0,
             "blockedBy": ["T-023"],
             "blocks": [],
             "subtasks": [],
             "tags": ["seed", "data"],
             "phase": "phase-4a",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
@@ -598,19 +598,19 @@
         {
             "id": "T-032",
             "title": "Request schema refinements: empty file reject and env-configurable max size",
-            "description": "Gaps: GAP-078-148, GAP-078-106.\n\nFiles: apps/api/src/routes/media/admin/upload.ts, apps/api/src/utils/env.ts\n- GAP-078-148: Reject file.size === 0 with 422 EMPTY_FILE before multipart validation\n- GAP-078-106: HOSPEDA_MEDIA_MAX_FILE_SIZE_MB: z.coerce.number().positive().default(10) in ApiEnvSchema\n\nAcceptance: POST with empty file returns 422 EMPTY_FILE; HOSPEDA_MEDIA_MAX_FILE_SIZE_MB=abc at startup causes Zod error; max size enforced at runtime.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-148, GAP-078-106.\n\nFiles: apps/api/src/routes/media/{admin,protected}/upload.ts, apps/api/src/utils/env.ts (already done), apps/api/test/utils/env.test.ts, apps/api/test/routes/media/upload-empty-file.test.ts (new)\n- GAP-078-148: Reject file.size === 0 with 422 EMPTY_FILE before multipart validation\n- GAP-078-106: HOSPEDA_MEDIA_MAX_FILE_SIZE_MB: z.coerce.number().positive().default(10) in ApiEnvSchema\n\nAcceptance: POST with empty file returns 422 EMPTY_FILE; HOSPEDA_MEDIA_MAX_FILE_SIZE_MB=abc at startup causes Zod error; max size enforced at runtime.\n\nOutcome (commit bc53c7b5): Both upload routes (admin + protected) check file.size === 0 right after multipart parsing and return 422 EMPTY_FILE before any other validation. Provider never reached. EMPTY_FILE follows route-level inline literal pattern. **Discovery**: GAP-078-106 was 90% pre-implemented (env var, registry, route wiring already present from prior sweep) - only boot-time tests were missing. 4 new env tests + 2 route tests; 38/38 media-routes pass; 65/65 new tests pass.",
+            "status": "completed",
             "complexity": 1.0,
             "blockedBy": ["T-029"],
             "blocks": [],
             "subtasks": [],
             "tags": ["backend", "schemas", "api"],
             "phase": "phase-5b",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
