@@ -10,6 +10,7 @@ import { initApp } from './app';
 import { startCronScheduler } from './cron';
 import { createEntityResolver } from './lib/entity-resolver';
 import { closeSentry, initializeSentry } from './lib/sentry';
+import { initializeMediaProvider } from './services/media';
 import { warnIfCloudinaryMissingOnPreview } from './utils/cloudinary-preview-warn';
 import { closeDatabase, initializeDatabase } from './utils/database';
 import { env, validateApiEnv } from './utils/env';
@@ -29,6 +30,11 @@ warnIfCloudinaryMissingOnPreview();
 
 // Initialize Sentry for error tracking (if DSN is configured)
 initializeSentry();
+
+// SPEC-078-GAPS T-056 / GAP-078-014:
+// Eagerly initialize the Cloudinary media provider so its init warning is
+// emitted exactly once at boot (not lazily on the first upload request).
+initializeMediaProvider();
 
 const port = env.API_PORT;
 

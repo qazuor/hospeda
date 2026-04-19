@@ -6,7 +6,6 @@ import {
     accommodations,
     sql
 } from '@repo/db';
-import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
 import {
@@ -114,7 +113,6 @@ export class AccommodationService extends BaseCrudService<
 > {
     static readonly ENTITY_NAME = 'accommodation';
     protected readonly entityName = AccommodationService.ENTITY_NAME;
-    private static readonly revalidationLogger = createLogger('accommodation-revalidation');
     /**
      * @inheritdoc
      */
@@ -388,7 +386,7 @@ export class AccommodationService extends BaseCrudService<
                 accommodationType: entity.type?.toLowerCase()
             });
         } catch (error) {
-            AccommodationService.revalidationLogger.warn(
+            this.logger.warn(
                 { error, entityType: 'accommodation' },
                 'Revalidation scheduling failed (non-blocking)'
             );
@@ -412,7 +410,7 @@ export class AccommodationService extends BaseCrudService<
                 accommodationType: entity.type?.toLowerCase()
             });
         } catch (error) {
-            AccommodationService.revalidationLogger.warn(
+            this.logger.warn(
                 { error, entityType: 'accommodation' },
                 'Revalidation scheduling failed (non-blocking)'
             );
@@ -436,7 +434,7 @@ export class AccommodationService extends BaseCrudService<
                 accommodationType: entity.type?.toLowerCase()
             });
         } catch (error) {
-            AccommodationService.revalidationLogger.warn(
+            this.logger.warn(
                 { error, entityType: 'accommodation' },
                 'Revalidation scheduling failed (non-blocking)'
             );
@@ -480,7 +478,7 @@ export class AccommodationService extends BaseCrudService<
                 accommodationType: restored?.type?.toLowerCase()
             });
         } catch (error) {
-            AccommodationService.revalidationLogger.warn(
+            this.logger.warn(
                 { error, entityType: 'accommodation' },
                 'Revalidation scheduling failed (non-blocking)'
             );
@@ -524,7 +522,7 @@ export class AccommodationService extends BaseCrudService<
                 accommodationType: deleted?.type?.toLowerCase()
             });
         } catch (error) {
-            AccommodationService.revalidationLogger.warn(
+            this.logger.warn(
                 { error, entityType: 'accommodation' },
                 'Revalidation scheduling failed (non-blocking)'
             );
@@ -569,7 +567,7 @@ export class AccommodationService extends BaseCrudService<
                 accommodationType: deleted?.type?.toLowerCase()
             });
         } catch (error) {
-            AccommodationService.revalidationLogger.warn(
+            this.logger.warn(
                 { error, entityType: 'accommodation' },
                 'Revalidation scheduling failed (non-blocking)'
             );
@@ -581,7 +579,7 @@ export class AccommodationService extends BaseCrudService<
             try {
                 await this.mediaProvider.deleteByPrefix({ prefix });
             } catch (mediaError) {
-                AccommodationService.revalidationLogger.warn(
+                this.logger.warn(
                     { error: mediaError, prefix },
                     '[media] Failed to clean up Cloudinary assets for accommodation'
                 );

@@ -25,6 +25,8 @@ import {
     PostService
 } from '@repo/service-core';
 import type { Context, MiddlewareHandler } from 'hono';
+import { Sentry } from '../../../lib/sentry';
+import { incrementDomainCounter } from '../../../middlewares/metrics';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -303,12 +305,44 @@ export const adminDeleteMediaRoute = createAdminRoute({
                 },
                 'Cloudinary delete failed'
             );
+            // SPEC-078-GAPS T-056 / GAP-078-129: capture provider errors so
+            // upstream Cloudinary failures surface in Sentry with a tag that
+            // groups them under the media-provider component.
+            Sentry.captureException(deleteError, {
+                tags: { component: 'media-provider', operation: 'delete' },
+                contexts: {
+                    media: {
+                        publicId,
+                        entityType: parsed.entityType,
+                        entityId: parsed.entityId
+                    }
+                }
+            });
+            incrementDomainCounter('media_delete_total', 'failure');
             return createErrorResponse(
                 { code: 'UPSTREAM_ERROR', message: 'Media deletion failed' },
                 ctx,
                 502
             );
         }
+
+        // ── 2b. Structured success log + counter (SPEC-078-GAPS T-056 /
+        //         GAP-078-050 + GAP-078-129). Both `wasPresent=true` and
+        //         `wasPresent=false` are recorded as `success` here — the
+        //         counter measures provider-call outcome, not asset state.
+        apiLogger.info(
+            {
+                event: 'media.delete.success',
+                publicId,
+                preset: `${parsed.entityType}:delete`,
+                entityType: parsed.entityType,
+                entityId: parsed.entityId,
+                wasPresent,
+                actorId: actor.id
+            },
+            'media delete success'
+        );
+        incrementDomainCounter('media_delete_total', 'success');
 
         // The factory wraps `{ deleted, publicId, wasPresent }` via
         // `ResponseFactory.createResponse` and emits the standard envelope.

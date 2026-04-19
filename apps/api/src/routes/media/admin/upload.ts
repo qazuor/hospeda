@@ -37,6 +37,8 @@ import {
 } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { Sentry } from '../../../lib/sentry';
+import { incrementDomainCounter } from '../../../middlewares/metrics';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env.js';
@@ -482,6 +484,15 @@ export const adminUploadMediaRoute = createAdminRoute({
                 },
                 'Cloudinary upload failed'
             );
+            // SPEC-078-GAPS T-056 / GAP-078-128: capture provider errors so
+            // upstream Cloudinary failures surface in Sentry with a tag that
+            // groups them under the media-provider component.
+            Sentry.captureException(uploadError, {
+                tags: { component: 'media-provider', operation: 'upload' },
+                contexts: { media: { entityType, entityId, role } }
+            });
+            // Record the failure outcome for the upload counter.
+            incrementDomainCounter('media_upload_total', 'failure');
             return createErrorResponse(
                 { code: 'UPSTREAM_ERROR', message: 'Image upload failed' },
                 ctx,
@@ -514,6 +525,7 @@ export const adminUploadMediaRoute = createAdminRoute({
                 },
                 'Cloudinary response did not match UploadResponseDataSchema'
             );
+            incrementDomainCounter('media_upload_total', 'failure');
             return createErrorResponse(
                 {
                     code: 'UPSTREAM_ERROR',
@@ -523,6 +535,24 @@ export const adminUploadMediaRoute = createAdminRoute({
                 502
             );
         }
+
+        // ── 8b. Structured success log + counter (SPEC-078-GAPS T-056 /
+        //         GAP-078-050 + GAP-078-128). Emitted once per confirmed
+        //         upload so dashboards can correlate publicId + preset
+        //         (here: entityType+role) with downstream entity edits.
+        apiLogger.info(
+            {
+                event: 'media.upload.success',
+                publicId: parsedResponse.data.publicId,
+                preset: `${entityType}:${role}`,
+                entityType,
+                entityId,
+                role,
+                actorId: actor.id
+            },
+            'media upload success'
+        );
+        incrementDomainCounter('media_upload_total', 'success');
 
         // ── 9. Return result — wrapping via ResponseFactory happens in the
         //       factory (`createCRUDRoute → createResponse`). No `ctx.json`

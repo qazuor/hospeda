@@ -32,6 +32,22 @@ const DEFAULT_METRICS_CONFIG: MetricsConfig = {
  * Enhanced metrics store with memory optimization and percentiles
  * In production, this would be replaced with a proper metrics backend
  */
+/**
+ * Result label for domain-specific counters such as media uploads/deletes.
+ *
+ * SPEC-078-GAPS T-056 / GAP-078-128 + GAP-078-129: media counters are keyed
+ * by `success` or `failure` so dashboards can compute error rates directly
+ * without parsing endpoint labels.
+ */
+export type CounterResult = 'success' | 'failure';
+
+/**
+ * Domain-specific counter name. Currently scoped to media flows so we don't
+ * accidentally let a free-form string proliferate; widen this union when a
+ * second domain (e.g. webhooks) needs a counter.
+ */
+export type DomainCounterName = 'media_upload_total' | 'media_delete_total';
+
 class MetricsStore {
     private requestCounts = new Map<string, number>();
     private responseTimes = new Map<string, number[]>();
@@ -40,6 +56,14 @@ class MetricsStore {
     private activeConnections = 0;
     private totalRequests = 0;
     private totalErrors = 0;
+    /**
+     * Domain-specific counters, keyed by `${name}{result=success|failure}`.
+     *
+     * Separate from request/error maps so cleanup of stale endpoints does
+     * not also reset domain totals (media uploads should persist across
+     * the 30-minute idle window).
+     */
+    private domainCounters = new Map<string, number>();
     private config: MetricsConfig;
     private cleanupTimer?: NodeJS.Timeout;
 
@@ -219,6 +243,29 @@ class MetricsStore {
     }
 
     /**
+     * Increment a domain-specific counter (SPEC-078-GAPS T-056 /
+     * GAP-078-128 + GAP-078-129).
+     *
+     * Counters are stored under `${name}{result=success|failure}` so the
+     * Prometheus exporter can emit them with the same shape used by the
+     * rest of the metrics surface.
+     */
+    incrementDomainCounter(name: DomainCounterName, result: CounterResult): void {
+        const key = `${name}{result=${result}}`;
+        const current = this.domainCounters.get(key) ?? 0;
+        this.domainCounters.set(key, current + 1);
+    }
+
+    /**
+     * Read a snapshot of the domain counter map. Returned object is a
+     * plain `Record<string, number>` so callers (tests, dashboards) can
+     * iterate without coupling to the internal `Map` instance.
+     */
+    getDomainCounters(): Record<string, number> {
+        return Object.fromEntries(this.domainCounters.entries());
+    }
+
+    /**
      * Reset all metrics (useful for testing)
      */
     reset(): void {
@@ -226,6 +273,7 @@ class MetricsStore {
         this.responseTimes.clear();
         this.errorCounts.clear();
         this.endpointLastAccess.clear();
+        this.domainCounters.clear();
         this.activeConnections = 0;
         this.totalRequests = 0;
         this.totalErrors = 0;
@@ -424,6 +472,26 @@ export const resetMetrics = () => {
 };
 
 /**
+ * Increment a domain-specific counter (SPEC-078-GAPS T-056 /
+ * GAP-078-128 + GAP-078-129).
+ *
+ * Used by the media upload/delete routes to track success vs failure
+ * outcomes independently of HTTP-level metrics.
+ */
+export const incrementDomainCounter = (name: DomainCounterName, result: CounterResult): void => {
+    metricsStore.incrementDomainCounter(name, result);
+};
+
+/**
+ * Returns a snapshot of all domain counters as a plain object.
+ * Primarily consumed by the Prometheus exporter and by tests asserting
+ * that media routes increment the right counter.
+ */
+export const getDomainCounters = (): Record<string, number> => {
+    return metricsStore.getDomainCounters();
+};
+
+/**
  * Get metrics in Prometheus format
  * Basic implementation for Prometheus compatibility
  */
@@ -464,6 +532,26 @@ export const getPrometheusMetrics = (): string => {
     lines.push(`http_requests_total_global ${metrics.summary.totalRequests}`);
     lines.push(`http_errors_total_global ${metrics.summary.totalErrors}`);
     lines.push(`http_active_connections ${metrics.summary.activeConnections}`);
+
+    // Domain-specific counters (SPEC-078-GAPS T-056 / GAP-078-128 + 129).
+    // Emit each `${name}{result=success|failure} value` line. Help/type
+    // annotations are emitted once per name, regardless of how many
+    // result variants have been seen so far.
+    const domainCounters = metricsStore.getDomainCounters();
+    const domainNames = new Set<string>();
+    for (const key of Object.keys(domainCounters)) {
+        const baseName = key.split('{')[0];
+        if (baseName) {
+            domainNames.add(baseName);
+        }
+    }
+    for (const name of domainNames) {
+        lines.push(`# HELP ${name} Total number of ${name.replace(/_/g, ' ')} events`);
+        lines.push(`# TYPE ${name} counter`);
+    }
+    for (const [key, value] of Object.entries(domainCounters)) {
+        lines.push(`${key} ${value}`);
+    }
 
     return `${lines.join('\n')}\n`;
 };

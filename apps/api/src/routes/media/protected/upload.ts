@@ -20,6 +20,8 @@ import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
  */
 import { UploadResponseDataSchema } from '@repo/schemas';
 import type { Context } from 'hono';
+import { Sentry } from '../../../lib/sentry';
+import { incrementDomainCounter } from '../../../middlewares/metrics';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -172,6 +174,14 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
                 },
                 'Cloudinary avatar upload failed'
             );
+            // SPEC-078-GAPS T-056 / GAP-078-128: capture provider errors so
+            // upstream Cloudinary failures surface in Sentry with a tag that
+            // groups them under the media-provider component.
+            Sentry.captureException(uploadError, {
+                tags: { component: 'media-provider', operation: 'upload' },
+                contexts: { media: { preset: 'avatar', userId } }
+            });
+            incrementDomainCounter('media_upload_total', 'failure');
             return createErrorResponse(
                 { code: 'UPSTREAM_ERROR', message: 'Avatar upload failed' },
                 ctx,
@@ -203,6 +213,7 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
                 },
                 'Cloudinary avatar response did not match UploadResponseDataSchema'
             );
+            incrementDomainCounter('media_upload_total', 'failure');
             return createErrorResponse(
                 {
                     code: 'UPSTREAM_ERROR',
@@ -212,6 +223,22 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
                 502
             );
         }
+
+        // ── 8b. Structured success log + counter (SPEC-078-GAPS T-056 /
+        //         GAP-078-050 + GAP-078-128). Emitted once per confirmed
+        //         avatar upload so dashboards can correlate publicId +
+        //         preset with downstream profile updates.
+        apiLogger.info(
+            {
+                event: 'media.upload.success',
+                publicId: parsedResponse.data.publicId,
+                preset: 'avatar',
+                userId,
+                actorId: actor.id
+            },
+            'media upload success'
+        );
+        incrementDomainCounter('media_upload_total', 'success');
 
         // ── 9. Return result — wrapping via ResponseFactory happens in the
         //       factory (`createCRUDRoute → createResponse`). No `ctx.json`

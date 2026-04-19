@@ -11,11 +11,20 @@
  *   - GAP-078-229: dev fallback to InMemoryImageProvider.
  *   - GAP-078-059 + GAP-078-168: `resetMediaProviderForTesting` exposed in
  *     the test NODE env for deterministic singleton reset between tests.
+ *
+ * SPEC-078-GAPS T-056 / GAP-078-014:
+ *   - Bare stdout warn calls replaced with `apiLogger.warn` so init
+ *     warnings respect the structured-logging contract (level,
+ *     formatters, sinks).
+ *   - `initializeMediaProvider()` is called once at startup from
+ *     `index.ts` so the init log is emitted exactly once on boot rather
+ *     than lazily on the first request that touches the provider.
  */
 import { CloudinaryProvider } from '@repo/media/server';
 import type { ImageProvider } from '@repo/media/server';
 import { InMemoryImageProvider } from '@repo/media/test-utils';
 import { env } from '../utils/env.js';
+import { apiLogger } from '../utils/logger.js';
 
 let provider: ImageProvider | null = null;
 let initialized = false;
@@ -46,15 +55,31 @@ export function getMediaProvider(): ImageProvider | null {
         if (cloudName && apiKey && apiSecret) {
             provider = new CloudinaryProvider({ cloudName, apiKey, apiSecret });
         } else if (env.NODE_ENV === 'development') {
-            console.warn(
+            apiLogger.warn(
+                { component: 'media' },
                 '[media] Cloudinary not configured - falling back to InMemoryImageProvider (development only)'
             );
             provider = new InMemoryImageProvider();
         } else {
-            console.warn('[media] Cloudinary not configured - upload endpoints disabled');
+            apiLogger.warn(
+                { component: 'media' },
+                '[media] Cloudinary not configured - upload endpoints disabled'
+            );
         }
     }
     return provider;
+}
+
+/**
+ * Eagerly initializes the media provider at startup so the init log is
+ * emitted exactly once on boot rather than lazily on the first request
+ * that happens to touch the provider (SPEC-078-GAPS T-056 / GAP-078-014).
+ *
+ * Safe to call multiple times — re-entrant via the same `initialized`
+ * guard used by {@link getMediaProvider}.
+ */
+export function initializeMediaProvider(): void {
+    getMediaProvider();
 }
 
 /**

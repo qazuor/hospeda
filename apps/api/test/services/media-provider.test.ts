@@ -54,10 +54,18 @@ describe('getMediaProvider()', () => {
         process.env.HOSPEDA_CLOUDINARY_API_KEY = '';
         process.env.HOSPEDA_CLOUDINARY_API_SECRET = '';
 
-        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-
-        const { getMediaProvider } = await loadMedia();
-        const provider = getMediaProvider();
+        // SPEC-078-GAPS T-056 / GAP-078-014: the media provider now warns
+        // through `apiLogger.warn` instead of `console.warn`. Spy on the
+        // structured logger to assert the init line is still emitted.
+        vi.resetModules();
+        const envModule: EnvModule = await import('../../src/utils/env');
+        envModule.validateApiEnv();
+        const loggerModule = await import('../../src/utils/logger');
+        const warnSpy = vi
+            .spyOn(loggerModule.apiLogger, 'warn')
+            .mockImplementation(() => undefined);
+        const mediaModule: MediaModule = await import('../../src/services/media');
+        const provider = mediaModule.getMediaProvider();
 
         // Constructor name rather than `instanceof` — vi.resetModules()
         // creates a fresh module copy, so the class identity imported at
@@ -65,7 +73,7 @@ describe('getMediaProvider()', () => {
         // module instantiated. The name check is equivalent in intent.
         expect(provider?.constructor.name).toBe('InMemoryImageProvider');
         expect(warnSpy).toHaveBeenCalled();
-        const joined = warnSpy.mock.calls.map((c) => String(c[0])).join('\n');
+        const joined = warnSpy.mock.calls.map((c) => String(c[1])).join('\n');
         expect(joined).toContain('InMemoryImageProvider');
     });
 
@@ -81,10 +89,13 @@ describe('getMediaProvider()', () => {
         process.env.API_CORS_ORIGINS = 'https://example.com';
         process.env.API_SECURITY_CSRF_ORIGINS = 'https://example.com';
 
-        vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-
-        const { getMediaProvider } = await loadMedia();
-        expect(getMediaProvider()).toBeNull();
+        vi.resetModules();
+        const envModule: EnvModule = await import('../../src/utils/env');
+        envModule.validateApiEnv();
+        const loggerModule = await import('../../src/utils/logger');
+        vi.spyOn(loggerModule.apiLogger, 'warn').mockImplementation(() => undefined);
+        const mediaModule: MediaModule = await import('../../src/services/media');
+        expect(mediaModule.getMediaProvider()).toBeNull();
     });
 });
 
@@ -104,9 +115,13 @@ describe('resetMediaProviderForTesting()', () => {
         process.env.HOSPEDA_CLOUDINARY_API_KEY = '';
         process.env.HOSPEDA_CLOUDINARY_API_SECRET = '';
 
-        vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-
-        const { getMediaProvider, resetMediaProviderForTesting } = await loadMedia();
+        vi.resetModules();
+        const _envModule0: EnvModule = await import('../../src/utils/env');
+        _envModule0.validateApiEnv();
+        const _loggerModule0 = await import('../../src/utils/logger');
+        vi.spyOn(_loggerModule0.apiLogger, 'warn').mockImplementation(() => undefined);
+        const _mediaModule0: MediaModule = await import('../../src/services/media');
+        const { getMediaProvider, resetMediaProviderForTesting } = _mediaModule0;
 
         // First resolution: no creds + non-dev => null.
         expect(getMediaProvider()).toBeNull();
@@ -132,9 +147,13 @@ describe('resetMediaProviderForTesting()', () => {
         process.env.HOSPEDA_CLOUDINARY_CLOUD_NAME = '';
         process.env.HOSPEDA_CLOUDINARY_API_KEY = '';
         process.env.HOSPEDA_CLOUDINARY_API_SECRET = '';
-        vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-
-        const { resetMediaProviderForTesting } = await loadMedia();
+        vi.resetModules();
+        const _envModule1: EnvModule = await import('../../src/utils/env');
+        _envModule1.validateApiEnv();
+        const _loggerModule1 = await import('../../src/utils/logger');
+        vi.spyOn(_loggerModule1.apiLogger, 'warn').mockImplementation(() => undefined);
+        const _mediaModule1: MediaModule = await import('../../src/services/media');
+        const { resetMediaProviderForTesting } = _mediaModule1;
 
         expect(() => resetMediaProviderForTesting()).toThrow(/only available when NODE_ENV=test/);
     });
