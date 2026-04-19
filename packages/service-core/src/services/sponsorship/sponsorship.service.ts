@@ -1,6 +1,7 @@
 import { SponsorshipModel } from '@repo/db';
 import type { Sponsorship, SponsorshipCreateInput, SponsorshipSearchInput } from '@repo/schemas';
 import {
+    LifecycleStatusEnum,
     SponsorshipAdminSearchSchema,
     SponsorshipCreateInputSchema,
     SponsorshipSearchSchema,
@@ -163,6 +164,10 @@ export class SponsorshipService extends BaseCrudService<
 
     /**
      * Executes the search for sponsorships.
+     *
+     * AC-005-01 security hardening: public/protected list endpoints force
+     * `lifecycleState = ACTIVE` regardless of caller-supplied value.
+     * Admin list uses the separate `adminList()` pipeline so it is unaffected.
      */
     protected async _executeSearch(
         params: SponsorshipSearchInput,
@@ -170,11 +175,16 @@ export class SponsorshipService extends BaseCrudService<
         _ctx: ServiceContext
     ) {
         const { page = 1, limit = 20, ...filterParams } = params;
+        // Force-override: never trust caller-supplied lifecycleState on public path.
+        (filterParams as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
         return this.model.findAll(filterParams, { page, pageSize: limit });
     }
 
     /**
      * Executes the count for sponsorships.
+     *
+     * Mirrors `_executeSearch` force-override so pagination `total` stays
+     * consistent with filtered items on public endpoints.
      */
     protected async _executeCount(
         params: SponsorshipSearchInput,
@@ -182,6 +192,7 @@ export class SponsorshipService extends BaseCrudService<
         _ctx: ServiceContext
     ) {
         const { page: _page, limit: _limit, ...filterParams } = params;
+        (filterParams as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
         const count = await this.model.count(filterParams);
         return { count };
     }
