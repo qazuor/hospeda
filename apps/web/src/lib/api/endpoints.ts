@@ -218,12 +218,11 @@ export const featuresApi = {
     list(params?: {
         page?: number;
         pageSize?: number;
-        isActive?: boolean;
         isFeatured?: boolean;
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
     }): Promise<ApiResult<PaginatedResponse<FeaturePublic>>> {
-        return apiClient.getList({ path: `${BASE}/feature`, params });
+        return apiClient.getList({ path: `${BASE}/features`, params });
     }
 };
 

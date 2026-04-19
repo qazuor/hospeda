@@ -64,7 +64,7 @@ const amenitiesResult = await amenitiesApi.list({ pageSize: 100, isActive: true,
 const amenities = amenitiesResult.ok ? amenitiesResult.data.items : [];
 
 // Fetch features for filter chips
-const featuresResult = await featuresApi.list({ pageSize: 100, isActive: true, sortBy: 'displayWeight', sortOrder: 'desc' });
+const featuresResult = await featuresApi.list({ pageSize: 100, sortBy: 'displayWeight', sortOrder: 'desc' });
 const features = featuresResult.ok ? featuresResult.data.items : [];
 
 // Fetch accommodations
