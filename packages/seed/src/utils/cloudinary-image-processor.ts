@@ -1,4 +1,4 @@
-import type { ImageProvider } from '@repo/media';
+import type { ImageProvider } from '@repo/media/server';
 import type { ImageCache } from './cloudinary-cache.js';
 import { uploadSeedImage } from './cloudinary-upload.js';
 

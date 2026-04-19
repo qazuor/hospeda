@@ -5,8 +5,8 @@
  * Returns null when Cloudinary credentials are not configured,
  * allowing routes to return 503 gracefully.
  */
-import { CloudinaryProvider } from '@repo/media';
-import type { ImageProvider } from '@repo/media';
+import { CloudinaryProvider } from '@repo/media/server';
+import type { ImageProvider } from '@repo/media/server';
 import { env } from '../utils/env.js';
 
 let provider: ImageProvider | null = null;

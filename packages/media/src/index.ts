@@ -1,45 +1,24 @@
 /**
- * @repo/media - Cloudinary image management package
+ * @repo/media — browser-safe entrypoint.
  *
- * Provides provider-agnostic image upload, deletion, and URL building.
- * No other package or app should import from the Cloudinary SDK directly.
+ * Exposes only pure, dependency-free helpers that can run in any runtime
+ * (Node, Vite, Astro, browser): URL builders, named transform presets, ID
+ * generation, and Cloudinary URL parsing.
+ *
+ * Server-only concerns (Cloudinary SDK, file-magic validation, environment
+ * resolution) live behind the `@repo/media/server` subpath. Consumers in
+ * apps/admin and apps/web are forbidden from importing `/server` (enforced
+ * by Biome's `noRestrictedImports` rule).
+ *
+ * See SPEC-078-GAPS T-017 + GAPs 126 / 162 / 172 / 177 / 183.
  */
 
 export { extractPublicId } from './extract-public-id.js';
-export { resolveEnvironment } from './utils/environment.js';
-export type { MediaEnvironment } from './utils/environment.js';
-export { MEDIA_PRESETS } from './presets.js';
-export type { MediaPreset } from './presets.js';
-
-export {
-    validateMediaFile,
-    ENTITY_ALLOWED_MIME_TYPES,
-    AVATAR_ALLOWED_MIME_TYPES
-} from './validate-media-file.js';
-
-export type {
-    ValidateMediaFileInput,
-    ValidationContext,
-    ValidationResult,
-    ValidationSuccess,
-    ValidationFailure
-} from './validate-media-file.js';
-
-export {
-    CloudinaryProvider,
-    ConfigurationError,
-    InvalidFolderError
-} from './provider/cloudinary.provider.js';
-export type { CloudinaryProviderConfig } from './provider/cloudinary.provider.js';
-export type {
-    DeleteByPrefixOptions,
-    DeleteOptions,
-    ImageProvider,
-    UploadOptions,
-    UploadResult
-} from './provider/types.js';
-
-export { generateGalleryId } from './utils/gallery-id.js';
 
 export { getMediaUrl } from './get-media-url.js';
 export type { GetMediaUrlOptions } from './get-media-url.js';
+
+export { MEDIA_PRESETS } from './presets.js';
+export type { MediaPreset } from './presets.js';
+
+export { generateGalleryId } from './utils/gallery-id.js';

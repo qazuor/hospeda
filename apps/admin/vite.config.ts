@@ -150,6 +150,12 @@ export default defineConfig({
     optimizeDeps: {
         force: true,
         include: ['react/jsx-runtime', 'react/jsx-dev-runtime', '@phosphor-icons/react'],
+        // `cloudinary` and `image-size` are Node-only deps transitively reachable
+        // through `@repo/media/server`. Excluding them from optimize + leaving
+        // them unresolvable at browser build time mirrors the tsup `external`
+        // contract in packages/media and prevents Vite from attempting to pull
+        // the Cloudinary SDK into an admin chunk. Admin source code MUST NOT
+        // import `@repo/media/server` (enforced by Biome `noRestrictedImports`).
         exclude: [
             '@repo/schemas',
             '@repo/db',
@@ -158,7 +164,9 @@ export default defineConfig({
             '@repo/config',
             '@repo/service-core',
             '@repo/icons',
-            '@repo/i18n'
+            '@repo/i18n',
+            'cloudinary',
+            'image-size'
         ]
     },
     server: {

@@ -123,7 +123,7 @@ if (IS_CLI_ENTRY) {
 
         if (cloudName && apiKey && apiSecret) {
             try {
-                const { CloudinaryProvider } = await import('@repo/media');
+                const { CloudinaryProvider } = await import('@repo/media/server');
                 const provider = new CloudinaryProvider({ cloudName, apiKey, apiSecret });
                 const prefix = `hospeda/${nodeEnv}/seed/`;
                 logger.info(

@@ -1,9 +1,6 @@
 {
     "$schema": "https://biomejs.dev/schemas/1.5.3/schema.json",
     "extends": ["../../packages/biome-config/biome.json"],
-    "files": {
-        "ignore": ["docs/development/examples/**", "docs/examples/**"]
-    },
     "linter": {
         "rules": {
             "nursery": {
@@ -11,7 +8,7 @@
                     "level": "error",
                     "options": {
                         "paths": {
-                            "@repo/media/server": "Server-only module. The admin app is browser-side and must not import the Cloudinary SDK, file-magic validation, or runtime environment resolution. Use the browser-safe entrypoint `@repo/media` (getMediaUrl, MEDIA_PRESETS, extractPublicId, generateGalleryId) instead."
+                            "@repo/media/server": "Server-only module. The web app is browser-first (Astro SSR + islands) and must not import the Cloudinary SDK, file-magic validation, or runtime environment resolution. Use the browser-safe entrypoint `@repo/media` (getMediaUrl, MEDIA_PRESETS, extractPublicId, generateGalleryId) instead."
                         }
                     }
                 }

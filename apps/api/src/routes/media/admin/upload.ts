@@ -1,4 +1,5 @@
-import { generateGalleryId, resolveEnvironment, validateMediaFile } from '@repo/media';
+import { generateGalleryId } from '@repo/media';
+import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
 /**
  * Admin media upload endpoint.
  *

@@ -1,4 +1,4 @@
-import { resolveEnvironment, validateMediaFile } from '@repo/media';
+import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
 /**
  * Protected avatar upload endpoint.
  *

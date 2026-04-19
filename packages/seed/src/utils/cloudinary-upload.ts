@@ -1,4 +1,4 @@
-import type { ImageProvider } from '@repo/media';
+import type { ImageProvider } from '@repo/media/server';
 import { type ImageCache, isCacheHit, updateCacheEntry } from './cloudinary-cache.js';
 import { logger } from './logger.js';
 

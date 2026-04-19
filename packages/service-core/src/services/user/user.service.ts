@@ -1,6 +1,6 @@
 import { UserModel, safeIlike, users as userTable } from '@repo/db';
-import type { ImageProvider } from '@repo/media';
-import { resolveEnvironment } from '@repo/media';
+import type { ImageProvider } from '@repo/media/server';
+import { resolveEnvironment } from '@repo/media/server';
 import type { EntityFilters, User } from '@repo/schemas';
 import {
     PermissionEnum,

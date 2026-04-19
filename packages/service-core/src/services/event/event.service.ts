@@ -1,7 +1,7 @@
 import { EventModel, events as eventTable } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import type { ImageProvider } from '@repo/media';
-import { resolveEnvironment } from '@repo/media';
+import type { ImageProvider } from '@repo/media/server';
+import { resolveEnvironment } from '@repo/media/server';
 import type {
     Event,
     EventByAuthorInput,

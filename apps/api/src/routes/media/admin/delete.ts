@@ -7,7 +7,7 @@
  * The publicId must start with "hospeda/" to prevent accidental deletion of
  * assets outside the project namespace.
  */
-import { resolveEnvironment } from '@repo/media';
+import { resolveEnvironment } from '@repo/media/server';
 import { DeleteMediaQuerySchema, DeleteMediaResponseSchema, PermissionEnum } from '@repo/schemas';
 import {
     AccommodationService,

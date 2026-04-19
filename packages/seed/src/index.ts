@@ -14,7 +14,7 @@ envConfig({
 });
 
 import { configureLogger } from '@repo/logger';
-import { CloudinaryProvider } from '@repo/media';
+import { CloudinaryProvider } from '@repo/media/server';
 import { runExampleSeeds } from './example/index.js';
 import { runRequiredSeeds } from './required/index.js';
 import { DEFAULT_CACHE_PATH, readCache } from './utils/cloudinary-cache.js';

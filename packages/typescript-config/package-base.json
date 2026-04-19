@@ -23,6 +23,8 @@
             "@repo/seed": ["../seed/src/index.ts"],
             "@repo/seed/*": ["../seed/src/*"],
             "@repo/media": ["../media/src/index.ts"],
+            "@repo/media/server": ["../media/src/server/index.ts"],
+            "@repo/media/test-utils": ["../media/src/test-utils/index.ts"],
             "@repo/media/*": ["../media/src/*"]
         }
     },

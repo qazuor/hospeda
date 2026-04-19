@@ -1,7 +1,7 @@
 import { AccommodationModel, DestinationModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import type { ImageProvider } from '@repo/media';
-import { resolveEnvironment } from '@repo/media';
+import type { ImageProvider } from '@repo/media/server';
+import { resolveEnvironment } from '@repo/media/server';
 import type {
     AccommodationListItem,
     BreadcrumbItem,
@@ -598,11 +598,6 @@ export class DestinationService extends BaseCrudService<
         // Generate slug if not provided
         const slug = data.slug || (await generateDestinationSlug(data.name));
         result.slug = slug;
-
-        // Ensure media has a default value (DB column is NOT NULL)
-        if (!data.media) {
-            result.media = { featuredImage: undefined, gallery: [], videos: [] };
-        }
 
         // Ensure location has a default value (DB column is NOT NULL)
         if (!data.location) {

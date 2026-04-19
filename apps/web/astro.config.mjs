@@ -141,6 +141,17 @@ export default defineConfig({
                 '@repo/service-core': resolve(rootDir, 'packages/service-core/src')
             }
         },
+        // `cloudinary` and `image-size` are Node-only transitively reachable
+        // through `@repo/media/server`. Excluding them from optimize keeps
+        // browser bundles free of the Cloudinary SDK. Web source must not
+        // import `@repo/media/server` (enforced by Biome `noRestrictedImports`).
+        optimizeDeps: {
+            exclude: ['cloudinary', 'image-size']
+        },
+        ssr: {
+            noExternal: [],
+            external: ['cloudinary', 'image-size']
+        },
         define: {
             'import.meta.env.PUBLIC_API_URL': JSON.stringify(HOSPEDA_API_URL),
             'import.meta.env.PUBLIC_SITE_URL': JSON.stringify(HOSPEDA_SITE_URL),
