@@ -958,19 +958,19 @@
         {
             "id": "T-052",
             "title": "Vercel observability: /health/media endpoint and orphan cleanup cron",
-            "description": "Gaps: GAP-078-232, GAP-078-231.\n\nFiles: apps/api/src/routes/health/, apps/api/src/cron/\n- GAP-078-232: Endpoint GET /api/v1/public/health/media calls Cloudinary GET /resources/image with creds; returns 200/503\n- GAP-078-231: Weekly cron orphan cleanup for hospeda/preview/* and hospeda/test/* prefix\n\nAcceptance: GET /health/media with valid creds returns 200; GET /health/media with invalid creds returns 503; cron job registered targeting weekly schedule.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-232, GAP-078-231.\n\nFiles: packages/media/src/server/{types,cloudinary.provider,index}.ts + test-utils, apps/api/src/routes/health/media.ts (new), apps/api/src/cron/jobs/media-orphan-cleanup.job.ts (new), apps/api/src/cron/{registry,jobs/index}.ts\n- GAP-078-232: Endpoint GET /api/v1/public/health/media via cloudinary.api.ping(); returns 200/503\n- GAP-078-231: Weekly cron orphan cleanup for hospeda/preview/* and hospeda/test/* prefix\n\nAcceptance: GET /health/media with valid creds returns 200; with invalid creds returns 503; cron job registered targeting weekly schedule.\n\nOutcome (commit 738b40b9): ImageProvider.healthCheck() added with all 3 impls (Cloudinary via api.ping, mock, InMemory). New public health route 200/503. New weekly cron Sundays 00:00 UTC; NODE_ENV=production guard short-circuits with explicit no-op (not silent). 10 new tests; 146/146 media tests pass.",
+            "status": "completed",
             "complexity": 2.0,
             "blockedBy": ["T-003", "T-029"],
             "blocks": [],
             "subtasks": [],
             "tags": ["backend", "infra", "observability"],
             "phase": "phase-7a",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
@@ -994,19 +994,19 @@
         {
             "id": "T-054",
             "title": "CI/CD: Cloudinary isolation script and CI jobs",
-            "description": "Gaps: GAP-078-038, GAP-078-225, GAP-078-224.\n\nFiles: scripts/check-cloudinary-isolation.sh, .github/workflows/ci.yml\n- GAP-078-038: scripts/check-cloudinary-isolation.sh: rg exit non-zero if cloudinary imported outside packages/media\n- GAP-078-225: CI job check-cloudinary-isolation runs the script\n- GAP-078-224: CI .github/workflows/ci.yml adds HOSPEDA_CLOUDINARY_* secrets to integration test step\n\nAcceptance: Script exits 0 with no violations; CI job invokes script; integration test step has Cloudinary secrets.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-038, GAP-078-225, GAP-078-224.\n\nFiles: scripts/check-cloudinary-isolation.sh (new), .github/workflows/ci.yml, package.json\n- GAP-078-038: scripts/check-cloudinary-isolation.sh: rg exit non-zero if cloudinary imported outside packages/media\n- GAP-078-225: CI job check-cloudinary-isolation runs the script\n- GAP-078-224: CI .github/workflows/ci.yml adds HOSPEDA_CLOUDINARY_* secrets to integration test step\n\nAcceptance: Script exits 0 with no violations; CI job invokes script; integration test step has Cloudinary secrets.\n\nOutcome (commit 60207154): bash script with rg+grep fallback (matches existing isolation-check sibling style). CI workflow gains step right after CSP + unsafe-ilike checks (Hospeda CI is single quality-check job). 3 Cloudinary secrets in env block. Root package.json check:cloudinary-isolation script. Verified baseline 0 violations + injected fixture exits 1.",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-017", "T-029"],
             "blocks": [],
             "subtasks": [],
             "tags": ["tooling", "ci"],
             "phase": "phase-7c",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-19T00:00:00.000Z",
+                "completed": "2026-04-19T00:00:00.000Z"
             }
         },
         {
