@@ -291,6 +291,104 @@ describe('processEntityImages — SPEC-078-GAPS T-022', () => {
         });
     });
 
+    // -----------------------------------------------------------------------
+    // SPEC-078-GAPS T-024 — sponsor + organizer logos (GAP-078-077)
+    // -----------------------------------------------------------------------
+
+    describe('SPEC-078-GAPS T-024 — postSponsor logo (GAP-078-077)', () => {
+        it('uploads logo at hospeda/{env}/seed/postSponsor/{entityId}/logo and rewrites url', async () => {
+            // Arrange
+            const { provider, uploads } = createProviderMock();
+            const cache: ImageCache = {};
+            const counters = createImageProcessingCounters();
+            const sponsorId = '016-postSponsor-advertiser-turismo-entrerriano';
+            const data = {
+                id: sponsorId,
+                name: 'Turismo Entrerriano',
+                logo: {
+                    url: 'https://images.pexels.com/photos/675764/pexels-photo-675764.jpeg',
+                    caption: 'Logo oficial',
+                    description: 'Logotipo de la agencia',
+                    moderationState: 'APPROVED'
+                }
+            };
+
+            // Act
+            const result = await processEntityImages({
+                data,
+                // Seed factory passes the lowercased plural entityName.
+                entityType: 'postsponsors',
+                entityId: sponsorId,
+                provider,
+                cache,
+                cachePath: '/tmp/cache.json',
+                env: 'dev',
+                seedSource: 'required',
+                counters
+            });
+
+            // Assert
+            expect(uploads).toHaveLength(1);
+            const upload = uploads[0];
+            // The override forces the FULL public ID. Folder is the path
+            // prefix (everything before the last slash) and publicId is the
+            // leaf segment; together they reconstruct the spec-mandated path.
+            expect(upload?.folder).toBe(`hospeda/dev/seed/postSponsor/${sponsorId}`);
+            expect(upload?.publicId).toBe('logo');
+            expect(Object.keys(cache)).toContain(`hospeda/dev/seed/postSponsor/${sponsorId}/logo`);
+
+            // Result preserves the rest of the logo object and rewrites url.
+            const logo = (result as typeof data).logo;
+            expect(logo.url).toMatch(/cdn\.example\.com/);
+            expect(logo.caption).toBe('Logo oficial');
+            expect(logo.description).toBe('Logotipo de la agencia');
+            expect(logo.moderationState).toBe('APPROVED');
+
+            expect(counters.uploaded).toBe(1);
+        });
+    });
+
+    describe('SPEC-078-GAPS T-024 — eventOrganizer logo (GAP-078-077)', () => {
+        it('uploads logo at hospeda/{env}/seed/eventOrganizer/{entityId}/logo and rewrites string', async () => {
+            // Arrange
+            const { provider, uploads } = createProviderMock();
+            const cache: ImageCache = {};
+            const counters = createImageProcessingCounters();
+            const organizerId = '001-eventOrganizer-turismo-de-gualeguaychu';
+            const data = {
+                id: organizerId,
+                name: 'Cámara de Turismo de Gualeguaychú',
+                logo: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43'
+            };
+
+            // Act
+            const result = await processEntityImages({
+                data,
+                entityType: 'eventorganizers',
+                entityId: organizerId,
+                provider,
+                cache,
+                cachePath: '/tmp/cache.json',
+                env: 'dev',
+                seedSource: 'required',
+                counters
+            });
+
+            // Assert
+            expect(uploads).toHaveLength(1);
+            expect(Object.keys(cache)).toContain(
+                `hospeda/dev/seed/eventOrganizer/${organizerId}/logo`
+            );
+
+            // Logo string replaced with cloudinary URL.
+            const logo = (result as typeof data).logo;
+            expect(typeof logo).toBe('string');
+            expect(logo).toMatch(/cdn\.example\.com/);
+
+            expect(counters.uploaded).toBe(1);
+        });
+    });
+
     describe('SPEC-078-GAPS T-023 — moderationState default (GAP-078-063)', () => {
         it('injects moderationState: APPROVED on featured image when missing', async () => {
             // Arrange

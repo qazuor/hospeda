@@ -1,4 +1,5 @@
 import { resolveEnvironment } from '@repo/media/server';
+import { MediaSchema } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { processEntityImages } from './cloudinary-image-processor.js';
 import { errorHistory } from './errorHistory.js';
@@ -196,6 +197,26 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
                         allowRequiredFallback: context.allowRequiredFallback ?? false,
                         counters: context.imageCounters
                     })) as typeof normalizedData;
+                }
+
+                // SPEC-078-GAPS GAP-078-084 — fail loudly on malformed media
+                // shape. Runs unconditionally (after potential cloudinary
+                // rewrite) so seeds reject invalid fixtures even when no
+                // image provider is configured. Skip when the entity has no
+                // `media` block (sponsors, organizers, attractions, etc.).
+                const processedMedia = (normalizedData as Record<string, unknown>).media;
+                if (processedMedia !== undefined && processedMedia !== null) {
+                    try {
+                        MediaSchema.parse(processedMedia);
+                    } catch (error) {
+                        errorHistory.recordError(
+                            config.entityName,
+                            config.files[index] || `item-${index}`,
+                            'Media validation failed (MediaSchema.parse)',
+                            error
+                        );
+                        throw error;
+                    }
                 }
 
                 // Custom validation

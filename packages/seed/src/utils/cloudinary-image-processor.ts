@@ -13,6 +13,20 @@ import type { ImageProcessingCounters, SeedSource } from './seedContext.js';
 const AVATAR_ENTITY_TYPE = 'avatars' as const;
 
 /**
+ * Folder segment used for post sponsor logos. SPEC-078-GAPS GAP-078-077
+ * requires `hospeda/{env}/seed/postSponsor/{entityId}/logo` regardless of
+ * how the seed factory pluralises/cases the calling `entityType`.
+ */
+const POST_SPONSOR_ENTITY_TYPE = 'postSponsor' as const;
+
+/**
+ * Folder segment used for event organizer logos. SPEC-078-GAPS GAP-078-077
+ * requires `hospeda/{env}/seed/eventOrganizer/{entityId}/logo` regardless of
+ * how the seed factory pluralises/cases the calling `entityType`.
+ */
+const EVENT_ORGANIZER_ENTITY_TYPE = 'eventOrganizer' as const;
+
+/**
  * Parameters for {@link processEntityImages}.
  */
 export interface ProcessEntityImagesParams {
@@ -65,10 +79,26 @@ interface MediaImageEntry {
 
 /**
  * Internal shape for the `media` block found in most seed entities.
+ *
+ * `videos` is included as a pass-through field per SPEC-078-GAPS GAP-078-083.
+ * The processor does not upload videos (their URLs are external in this
+ * pipeline); the property exists only to keep TypeScript happy when fixtures
+ * carry a `media.videos` array.
  */
 interface MediaBlock {
     featuredImage?: MediaImageEntry;
     gallery?: MediaImageEntry[];
+    videos?: unknown[];
+    [key: string]: unknown;
+}
+
+/**
+ * Internal shape for the object form of a sponsor `logo` block.
+ * Per SPEC-078-GAPS GAP-078-077, post sponsor fixtures store `logo` as
+ * `{ url, caption?, description?, moderationState?, ... }`.
+ */
+interface LogoBlock {
+    url?: string;
     [key: string]: unknown;
 }
 
@@ -277,6 +307,58 @@ export async function processEntityImages(
         result.profile = { ...profile, avatar: cloudinaryUrl };
     }
 
+    // --- logo (postSponsor + eventOrganizer) ---
+    // Per SPEC-078-GAPS GAP-078-077, sponsor + organizer logos live at
+    // `hospeda/{env}/seed/{postSponsor|eventOrganizer}/{entityId}/logo`.
+    // The seed factory passes `entityType` as the lowercased `entityName`
+    // (e.g. 'postsponsors', 'eventorganizers'), so we override the public
+    // ID to enforce the camelCase, singular folder segment expected by the
+    // spec. Detection rules:
+    //   - postSponsor: `data.logo` is an object `{ url, ... }`. The whole
+    //     object is preserved with the URL replaced by the Cloudinary URL.
+    //   - eventOrganizer: `data.logo` is a raw string URL. The string is
+    //     replaced with the Cloudinary URL.
+    const lowerEntityType = entityType.toLowerCase();
+    const isPostSponsor = lowerEntityType.startsWith('postsponsor');
+    const isEventOrganizer = lowerEntityType.startsWith('eventorganizer');
+
+    if (isPostSponsor && data.logo && typeof data.logo === 'object') {
+        const logo = data.logo as LogoBlock;
+        if (typeof logo.url === 'string' && logo.url.length > 0) {
+            const logoPublicId = `hospeda/${env}/seed/${POST_SPONSOR_ENTITY_TYPE}/${entityId}/logo`;
+            const cloudinaryUrl = await runRequiredUpload({
+                originalUrl: logo.url,
+                entityType: POST_SPONSOR_ENTITY_TYPE,
+                entityId,
+                role: 'logo',
+                provider,
+                cache,
+                cachePath,
+                env,
+                allowFallback: allowRequiredFallback,
+                counters,
+                publicIdOverride: logoPublicId
+            });
+            result.logo = { ...logo, url: cloudinaryUrl };
+        }
+    } else if (isEventOrganizer && typeof data.logo === 'string' && data.logo.length > 0) {
+        const logoPublicId = `hospeda/${env}/seed/${EVENT_ORGANIZER_ENTITY_TYPE}/${entityId}/logo`;
+        const cloudinaryUrl = await runRequiredUpload({
+            originalUrl: data.logo,
+            entityType: EVENT_ORGANIZER_ENTITY_TYPE,
+            entityId,
+            role: 'logo',
+            provider,
+            cache,
+            cachePath,
+            env,
+            allowFallback: allowRequiredFallback,
+            counters,
+            publicIdOverride: logoPublicId
+        });
+        result.logo = cloudinaryUrl;
+    }
+
     return result;
 }
 
@@ -312,6 +394,17 @@ function countImageJobs(data: Record<string, unknown>): number {
     }
     const profile = data.profile as Record<string, unknown> | undefined;
     if (typeof profile?.avatar === 'string' && profile.avatar) count += 1;
+    // Sponsor logo (object) + organizer logo (string) — SPEC-078-GAPS GAP-078-077.
+    if (data.logo) {
+        if (typeof data.logo === 'string' && data.logo.length > 0) count += 1;
+        else if (
+            typeof data.logo === 'object' &&
+            typeof (data.logo as LogoBlock).url === 'string' &&
+            ((data.logo as LogoBlock).url as string).length > 0
+        ) {
+            count += 1;
+        }
+    }
     return count;
 }
 
