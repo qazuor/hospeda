@@ -99,6 +99,31 @@ describe('extractPublicId', () => {
         });
     });
 
+    // GAP-078-109: SSRF / subdomain-spoofing regression tests
+    describe('GAP-078-109: strict hostname check', () => {
+        it('returns null for subdomain-spoofed hostname', () => {
+            const url =
+                'https://evil.res.cloudinary.com.attacker.com/hospeda/image/upload/v1/x.jpg';
+            expect(extractPublicId(url)).toBeNull();
+        });
+
+        it('returns null for hostname containing res.cloudinary.com as suffix prefix', () => {
+            const url = 'https://notres.cloudinary.com/hospeda/image/upload/v1/x.jpg';
+            expect(extractPublicId(url)).toBeNull();
+        });
+
+        it('returns null when res.cloudinary.com appears only in the path', () => {
+            const url = 'https://attacker.com/res.cloudinary.com/image/upload/v1/x.jpg';
+            expect(extractPublicId(url)).toBeNull();
+        });
+
+        it('returns null for malformed URLs (URL parser throws)', () => {
+            expect(extractPublicId('not a url')).toBeNull();
+            expect(extractPublicId('http://')).toBeNull();
+            expect(extractPublicId('://res.cloudinary.com/x')).toBeNull();
+        });
+    });
+
     describe('URL with .webp extension', () => {
         it('should strip .webp extension from the last segment', () => {
             // Arrange

@@ -427,6 +427,18 @@ export const HOSPEDA_ENV_VARS = [
         category: 'integrations'
     },
     {
+        name: 'HOSPEDA_ALLOW_PROD_CLEANUP',
+        description:
+            'Safety flag required to allow destructive cleanup operations (e.g. seed --clean-images) in production environments. Must be exactly "true".',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'false',
+        apps: ['seed'],
+        category: 'integrations'
+    },
+    {
         name: 'HOSPEDA_MEDIA_MAX_FILE_SIZE_MB',
         description:
             'Maximum upload file size in megabytes (values above 4.5 require Vercel Pro plan)',

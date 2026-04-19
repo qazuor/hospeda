@@ -54,7 +54,8 @@
     "functions": {
         "api/index.js": {
             "maxDuration": 30,
-            "memory": 512
+            "memory": 512,
+            "maxBodySize": "12mb"
         }
     }
 }

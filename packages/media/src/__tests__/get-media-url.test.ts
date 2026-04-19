@@ -153,6 +153,46 @@ describe('getMediaUrl', () => {
         expect(result).toContain('w_1200,h_630,c_fill,q_auto,f_auto');
     });
 
+    // GAP-078-182: raw transform allowlist
+    describe('GAP-078-182: raw transform allowlist', () => {
+        it('accepts an allowlisted single token (e_grayscale)', () => {
+            const result = getMediaUrl(cloudinaryBase, { raw: 'e_grayscale' });
+            expect(result).toContain('/upload/e_grayscale/v1234');
+        });
+
+        it('accepts a comma-separated string of allowlisted tokens', () => {
+            const result = getMediaUrl(cloudinaryBase, {
+                raw: 'w_300,h_300,c_crop,g_center,q_auto,f_auto,ar_1.5,dpr_2.0,e_blur:200'
+            });
+            expect(result).toContain(
+                '/upload/w_300,h_300,c_crop,g_center,q_auto,f_auto,ar_1.5,dpr_2.0,e_blur:200/'
+            );
+        });
+
+        it('rejects an unknown raw token', () => {
+            expect(() => getMediaUrl(cloudinaryBase, { raw: 'unknown_token' })).toThrow(TypeError);
+            expect(() => getMediaUrl(cloudinaryBase, { raw: 'unknown_token' })).toThrow(
+                /Disallowed transform token/
+            );
+        });
+
+        it('rejects a mixed string when even one token is disallowed', () => {
+            expect(() => getMediaUrl(cloudinaryBase, { raw: 'w_300,fl_attachment' })).toThrow(
+                TypeError
+            );
+        });
+
+        it('rejects an l_/u_ overlay token (potential SSRF / remote layer)', () => {
+            expect(() => getMediaUrl(cloudinaryBase, { raw: 'l_remote:image:url' })).toThrow(
+                TypeError
+            );
+        });
+
+        it('rejects empty token within raw string', () => {
+            expect(() => getMediaUrl(cloudinaryBase, { raw: 'w_300,,h_300' })).toThrow(TypeError);
+        });
+    });
+
     // Transforms placed exactly between /upload/ and path
     it('should place transforms exactly after /upload/ and before the rest of the path', () => {
         const result = getMediaUrl(cloudinaryBase, { preset: 'card' });
