@@ -1,0 +1,133 @@
+/**
+ * @file Destination Edit Route — media upload wiring test
+ *
+ * SPEC-078-GAPS T-038 / GAP-078-005: verifies the destination edit page
+ * wires the shared media upload hook and forwards a `fieldHandlers` prop
+ * to EntityEditContent with an `images.onUpload` that calls
+ * `uploadEntityImage.mutateAsync` with `entityType: 'destination'`.
+ *
+ * This replicates the accommodations pattern 1:1 so any regression in the
+ * shared factory (`createUploadHandler`) surfaces per-entity.
+ */
+
+import { render } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
+// -- Mocks ------------------------------------------------------------------
+
+const uploadEntityImageMutateAsync = vi.fn().mockResolvedValue({
+    url: 'https://cdn.example.com/destination.jpg',
+    publicId: 'destination/public-id',
+    width: 1024,
+    height: 768
+});
+const deleteImageMutateAsync = vi.fn().mockResolvedValue({
+    deleted: true,
+    publicId: 'destination/public-id'
+});
+
+vi.mock('@/hooks/use-media-upload', async () => {
+    const actual = await vi.importActual<typeof import('@/hooks/use-media-upload')>(
+        '@/hooks/use-media-upload'
+    );
+    return {
+        ...actual,
+        useMediaUpload: () => ({
+            uploadEntityImage: { mutateAsync: uploadEntityImageMutateAsync },
+            deleteImage: { mutateAsync: deleteImageMutateAsync },
+            isUploading: false,
+            uploadError: null,
+            isDeleting: false
+        })
+    };
+});
+
+type CapturedFieldHandlers = Record<
+    string,
+    {
+        onUpload: (file: File) => Promise<string>;
+        onDelete: (publicId: string) => Promise<void>;
+    }
+>;
+
+let capturedFieldHandlers: CapturedFieldHandlers | undefined;
+
+vi.mock('@/components/entity-pages/EntityEditContent', () => ({
+    EntityEditContent: (props: { fieldHandlers?: CapturedFieldHandlers }) => {
+        capturedFieldHandlers = props.fieldHandlers;
+        return <div data-testid="entity-edit-content" />;
+    }
+}));
+
+vi.mock('@/components/entity-pages/EntityPageBase', () => ({
+    EntityPageBase: ({ children }: { children: React.ReactNode }) => <>{children}</>
+}));
+
+vi.mock('@/components/auth/RoutePermissionGuard', () => ({
+    RoutePermissionGuard: ({ children }: { children: React.ReactNode }) => <>{children}</>
+}));
+
+vi.mock('@/components/RevalidateEntityButton', () => ({
+    RevalidateEntityButton: () => null
+}));
+
+vi.mock('@/components/layout/PageTabs', () => ({
+    PageTabs: () => null,
+    destinationTabs: []
+}));
+
+vi.mock('@/features/destinations/hooks/useDestinationPage', () => ({
+    useDestinationPage: () => ({
+        entity: null,
+        isLoading: false,
+        error: null,
+        permissions: {}
+    })
+}));
+
+vi.mock('@/lib/factories', () => ({
+    createErrorComponent: () => () => null,
+    createPendingComponent: () => () => null
+}));
+
+vi.mock('@tanstack/react-router', () => ({
+    createFileRoute:
+        (_path: string) =>
+        <T extends Record<string, unknown>>(options: T) => ({
+            options,
+            useParams: () => ({ id: '550e8400-e29b-41d4-a716-446655440000' })
+        })
+}));
+
+// -- Test -------------------------------------------------------------------
+
+describe('Route /_authed/destinations/$id_/edit', () => {
+    it("wires EntityEditContent with fieldHandlers that upload as entityType='destination'", async () => {
+        const mod = await import('../../../../src/routes/_authed/destinations/$id_.edit');
+        const Page = (mod.Route as unknown as { options: { component: React.ComponentType } })
+            .options.component;
+
+        render(<Page />);
+
+        const handlers = capturedFieldHandlers as CapturedFieldHandlers | undefined;
+        if (!handlers) throw new Error('fieldHandlers was not forwarded to EntityEditContent');
+        expect(handlers.images).toBeDefined();
+
+        const file = new File(['x'], 'x.jpg', { type: 'image/jpeg' });
+        const url = await handlers.images.onUpload(file);
+
+        expect(url).toBe('https://cdn.example.com/destination.jpg');
+        expect(uploadEntityImageMutateAsync).toHaveBeenCalledTimes(1);
+        expect(uploadEntityImageMutateAsync).toHaveBeenCalledWith({
+            file,
+            entityType: 'destination',
+            entityId: '550e8400-e29b-41d4-a716-446655440000',
+            role: 'gallery'
+        });
+
+        await handlers.images.onDelete('destination/public-id');
+        expect(deleteImageMutateAsync).toHaveBeenCalledWith({
+            publicId: 'destination/public-id'
+        });
+    });
+});

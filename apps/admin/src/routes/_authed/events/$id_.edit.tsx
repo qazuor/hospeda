@@ -3,9 +3,11 @@ import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { useEventPage } from '@/features/events/hooks/useEventPage';
+import { createUploadHandler, useMediaUpload } from '@/hooks/use-media-upload';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { EventUpdateInputSchema, PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
+import { useMemo } from 'react';
 
 /**
  * Event Edit Route Configuration
@@ -19,11 +21,40 @@ export const Route = createFileRoute('/_authed/events/$id_/edit')({
 
 /**
  * Event Edit Page Component
+ *
+ * Wires GalleryField (field id: "images") to the media upload/delete API
+ * via useMediaUpload and createUploadHandler.
  */
 function EventEditPage() {
     const { id } = Route.useParams();
     // Use the hook at the top level
     const entityData = useEventPage(id);
+
+    // Media upload/delete hooks for the gallery field
+    const { uploadEntityImage, deleteImage } = useMediaUpload();
+
+    /**
+     * Field handlers for the event gallery.
+     * - onUpload: calls POST /api/v1/admin/media/upload with role=gallery
+     * - onDelete: calls DELETE /api/v1/admin/media?publicId=... for Cloudinary assets.
+     *   Non-Cloudinary URLs are handled by GalleryField without calling this.
+     */
+    const galleryFieldHandlers = useMemo(
+        () => ({
+            images: {
+                onUpload: createUploadHandler({
+                    entityType: 'event',
+                    entityId: id,
+                    role: 'gallery',
+                    onUpload: (input) => uploadEntityImage.mutateAsync(input)
+                }),
+                onDelete: async (publicId: string) => {
+                    await deleteImage.mutateAsync({ publicId });
+                }
+            }
+        }),
+        [id, uploadEntityImage, deleteImage]
+    );
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.EVENT_UPDATE]}>
@@ -41,7 +72,10 @@ function EventEditPage() {
                     entityData={entityData}
                     zodSchema={EventUpdateInputSchema}
                 >
-                    <EntityEditContent entityType="event" />
+                    <EntityEditContent
+                        entityType="event"
+                        fieldHandlers={galleryFieldHandlers}
+                    />
                 </EntityPageBase>
             </div>
         </RoutePermissionGuard>
