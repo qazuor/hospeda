@@ -1262,8 +1262,8 @@
         {
             "id": "T-068",
             "title": "Reconcile state.json and TODOs.md with actual post-remediation state",
-            "description": "Gap: GAP-078-022.\n\nFiles: .claude/tasks/SPEC-078-GAPS/state.json, .claude/tasks/SPEC-078-GAPS/TODOs.md\n- Reconcile state.json / TODOs.md vs actual post-remediation state\n- All completed tasks marked completed; no stale entries\n\nAcceptance: state.json reflects all completed tasks; TODOs.md has no stale entries.",
-            "status": "pending",
+            "description": "Gap: GAP-078-022.\n\nFiles: .claude/tasks/SPEC-078-GAPS/state.json, .claude/tasks/SPEC-078-GAPS/TODOs.md\n- Reconcile state.json / TODOs.md vs actual post-remediation state\n- All completed tasks marked completed; no stale entries\n\nAcceptance: state.json reflects all completed tasks; TODOs.md has no stale entries.\n\nOutcome (partial close 2026-04-20): Counter drift fixed (summary block said 18 completed / 50 pending — real state was 58 completed / 10 pending). T-068 itself completed docs-only, bumping to 59/68. Nine tasks remain deferred by design (T-015 needs architectural consult, T-026/T-027 seed hardening unblocked but not prioritized this session, T-038 admin UI multi-entity requires product consult, T-044/T-045/T-046/T-047 blocked behind T-038, T-067 blocked behind T-044+T-045). Follow-ups captured from 2026-04-20 sweeps consolidated into TODOs.md 'Known follow-ups' section (transforms.ts getInitials @deprecated wrapper, processEntityImages adoption, EN/PT avatar translations, T-066 spec drift 400 vs 422, admin script-src 'https:' replacement, apps/web/src/lib/media.ts fallback migration).",
+            "status": "completed",
             "complexity": 1.0,
             "blockedBy": [
                 "T-058",
@@ -1281,18 +1281,18 @@
             "subtasks": [],
             "tags": ["docs", "reconciliation"],
             "phase": "phase-9g",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-20T00:00:00.000Z",
+                "completed": "2026-04-20T00:00:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 68,
-        "completed": 18,
-        "pending": 50,
+        "completed": 59,
+        "pending": 9,
         "inProgress": 0
     }
 }
