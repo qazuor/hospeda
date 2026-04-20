@@ -89,7 +89,7 @@ Serialising avatar writes with a distributed lock is expensive and rarely buys a
 
 - The avatar route re-verifies the actor's session inside the handler before allowing the write (SPEC-078-GAPS T-008), so a stale form post can't overwrite a freshly logged-in user's avatar.
 - Upload is NOT retried by the provider (see next section), so a transient error from step 1 surfaces to the caller immediately instead of compounding the race with silent retries.
-- Future JSONB merge semantics on the user `media` field (SPEC-078-GAPS T-015) will read-modify-write on the DB side so a stale URL can't clobber a newer one; that change is the point at which we can also add a `mediaVersion` field for optimistic concurrency.
+- JSONB merge semantics on the user `media` field (SPEC-078-GAPS T-015) now do read-modify-write inside a `SELECT ... FOR UPDATE` transaction — a stale URL cannot clobber a newer one. A future `mediaVersion` field would still be required for application-level optimistic concurrency feedback.
 
 ### When to diverge
 
