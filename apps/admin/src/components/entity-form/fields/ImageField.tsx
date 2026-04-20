@@ -103,7 +103,14 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
         const helperId = helper ? `${fieldId}-helper` : undefined;
 
         const maxSize = imageConfig?.maxSize || DEFAULT_MEDIA_MAX_SIZE_BYTES;
-        const allowedTypes = imageConfig?.allowedTypes || ['image/jpeg', 'image/png', 'image/webp'];
+        const allowedTypes = imageConfig?.allowedTypes || [
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+            'image/heic',
+            'image/heif',
+            'image/avif'
+        ];
         const maxWidth = imageConfig?.maxWidth;
         const maxHeight = imageConfig?.maxHeight;
         const aspectRatio = imageConfig?.aspectRatio;
@@ -259,6 +266,19 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
             return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
         };
 
+        // Browsers can't natively render HEIC/HEIF/AVIF in most desktop
+        // setups. Detect via the URL or filename (alt) so we can swap the
+        // broken <img> for a descriptive placeholder. We check both the URL
+        // path (Cloudinary-hosted files keep the extension) and `alt` (which
+        // is populated with `file.name` on local `URL.createObjectURL`).
+        const hasUnpreviewableFormat = (imageValue: ImageValue | undefined): boolean => {
+            if (!imageValue) return false;
+            const candidate = `${imageValue.url} ${imageValue.alt ?? ''}`.toLowerCase();
+            return /\.(heic|heif|avif)(\?|#|$)/.test(candidate);
+        };
+
+        const previewUnavailable = hasUnpreviewableFormat(value);
+
         return (
             <div className={cn('space-y-4', className)}>
                 {/* Label */}
@@ -298,20 +318,41 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                     <div className="space-y-3">
                         {/* Image Preview */}
                         <div className="relative inline-block">
-                            <img
-                                src={value.url}
-                                alt={value.alt || t('admin-entities.fields.image.uploadedAlt')}
-                                data-testid="image-field-preview"
-                                className={cn(
-                                    'h-auto max-w-full rounded-lg border',
-                                    // Respect prefers-reduced-motion: disable fade-in transition.
-                                    'motion-reduce:animate-none motion-reduce:transition-none',
-                                    maxWidth && `max-w-[${maxWidth}px]`,
-                                    maxHeight && `max-h-[${maxHeight}px]`,
-                                    aspectRatio && `aspect-[${aspectRatio.replace(':', '/')}]`,
-                                    'object-cover'
-                                )}
-                            />
+                            {previewUnavailable ? (
+                                <div
+                                    data-testid="image-field-preview-unavailable"
+                                    className={cn(
+                                        'flex h-48 w-48 flex-col items-center justify-center rounded-lg border border-dashed bg-muted p-4 text-center',
+                                        maxWidth && `max-w-[${maxWidth}px]`,
+                                        maxHeight && `max-h-[${maxHeight}px]`
+                                    )}
+                                >
+                                    <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                                    <p className="mt-2 text-muted-foreground text-sm">
+                                        {t('admin-entities.fields.image.previewUnavailable')}
+                                    </p>
+                                    {value.alt ? (
+                                        <p className="mt-1 truncate text-muted-foreground text-xs">
+                                            {value.alt}
+                                        </p>
+                                    ) : null}
+                                </div>
+                            ) : (
+                                <img
+                                    src={value.url}
+                                    alt={value.alt || t('admin-entities.fields.image.uploadedAlt')}
+                                    data-testid="image-field-preview"
+                                    className={cn(
+                                        'h-auto max-w-full rounded-lg border',
+                                        // Respect prefers-reduced-motion: disable fade-in transition.
+                                        'motion-reduce:animate-none motion-reduce:transition-none',
+                                        maxWidth && `max-w-[${maxWidth}px]`,
+                                        maxHeight && `max-h-[${maxHeight}px]`,
+                                        aspectRatio && `aspect-[${aspectRatio.replace(':', '/')}]`,
+                                        'object-cover'
+                                    )}
+                                />
+                            )}
 
                             {/* Remove button — opens confirm dialog. */}
                             {!disabled && (

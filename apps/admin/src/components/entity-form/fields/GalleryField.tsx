@@ -23,9 +23,10 @@ import {
     rectSortingStrategy,
     sortableKeyboardCoordinates
 } from '@dnd-kit/sortable';
-import { AddIcon, ImageIcon, LoaderIcon, UploadIcon } from '@repo/icons';
+import { AddIcon, ImageIcon, UploadIcon } from '@repo/icons';
 import * as React from 'react';
 import { SortableGalleryItem } from './SortableGalleryItem';
+import { UploadProgressIndicator } from './UploadProgressIndicator';
 import type { GalleryImage } from './gallery-types';
 import { useGalleryUploads } from './use-gallery-uploads';
 
@@ -135,6 +136,7 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
             'image/png',
             'image/webp',
             'image/heic',
+            'image/heif',
             'image/avif'
         ];
         const maxWidth = galleryConfig?.maxWidth;
@@ -162,6 +164,7 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
             uploadingIds,
             deletingIds,
             uploadError,
+            progress,
             handleFilesSelect,
             handleRemoveImage,
             handleUpdateImage
@@ -361,6 +364,20 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                     </DndContext>
                 )}
 
+                {isUploading && progress && (
+                    <UploadProgressIndicator
+                        label={t('admin-entities.fields.gallery.uploadingProgress', {
+                            size: formatFileSize(progress.totalBytes)
+                        })}
+                        detail={t('admin-entities.fields.gallery.uploadingProgressCount', {
+                            current: String(progress.completed),
+                            total: String(progress.total),
+                            size: formatFileSize(progress.totalBytes)
+                        })}
+                        data-testid="gallery-upload-progress"
+                    />
+                )}
+
                 {canAddMore && (
                     <button
                         type="button"
@@ -375,16 +392,13 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onClick={() => !disabled && fileInputRef.current?.click()}
-                        disabled={disabled}
+                        disabled={disabled || isUploading}
                         aria-label={t('admin-entities.fields.gallery.uploadAriaLabel')}
                     >
                         {isUploading ? (
-                            <div className="flex flex-col items-center gap-2">
-                                <LoaderIcon className="h-6 w-6 animate-spin text-primary" />
-                                <p className="text-muted-foreground text-sm">
-                                    {t('admin-entities.fields.gallery.uploading')}
-                                </p>
-                            </div>
+                            <p className="text-muted-foreground text-sm">
+                                {t('admin-entities.fields.gallery.uploading')}
+                            </p>
                         ) : (
                             <div className="flex flex-col items-center gap-2">
                                 <ImageIcon className="h-8 w-8 text-muted-foreground" />

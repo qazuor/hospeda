@@ -1,7 +1,15 @@
 import { adminLogger } from '@/utils/logger';
 import { extractPublicId } from '@repo/media';
+import pLimit from 'p-limit';
 import * as React from 'react';
 import type { GalleryImage } from './gallery-types';
+
+/**
+ * Maximum number of parallel upload requests. Caps pressure on Cloudinary and
+ * the admin's outbound connection budget while still amortising latency
+ * across a large batch.
+ */
+export const GALLERY_UPLOAD_CONCURRENCY = 4;
 
 /**
  * Inputs for the `useGalleryUploads` hook (RO-RO pattern).
@@ -26,6 +34,23 @@ export interface UseGalleryUploadsInput {
 }
 
 /**
+ * Snapshot describing the aggregate progress of the active batch upload.
+ * Because `fetch()` does not expose request upload progress events, this is
+ * inherently indeterminate: we track how many files the batch started with,
+ * how many have resolved, and the total bytes being uploaded. GalleryField
+ * surfaces these numbers inside a `role="status"` live region so assistive
+ * tech announces activity even without a real percentage.
+ */
+export interface GalleryUploadProgress {
+    /** Files resolved (successfully or with error). */
+    completed: number;
+    /** Total files selected in the current batch. */
+    total: number;
+    /** Aggregate size in bytes of the current batch (for display). */
+    totalBytes: number;
+}
+
+/**
  * Outputs from the `useGalleryUploads` hook (RO-RO pattern).
  */
 export interface UseGalleryUploadsOutput {
@@ -37,6 +62,8 @@ export interface UseGalleryUploadsOutput {
     deletingIds: ReadonlySet<string>;
     /** Current upload/delete error message, if any. */
     uploadError: string | null;
+    /** Indeterminate progress snapshot for the active batch (null when idle). */
+    progress: GalleryUploadProgress | null;
     /** Handle a FileList from input or drop event. */
     handleFilesSelect: (files: FileList) => Promise<void>;
     /** Remove an image from the gallery (optionally deleting from storage). */
@@ -47,11 +74,25 @@ export interface UseGalleryUploadsOutput {
 
 const generateId = (): string => `img-${crypto.randomUUID()}`;
 
+interface UploadOutcome {
+    file: File;
+    tempId: string;
+    url?: string;
+    error?: unknown;
+}
+
 /**
  * Encapsulates the upload, delete, and per-item update logic for GalleryField.
  *
  * Kept as a standalone hook so GalleryField.tsx stays under the 500 LOC limit
  * and the upload/delete flow can be tested in isolation.
+ *
+ * T-046 (SPEC-078-GAPS):
+ * - Parallel batch upload via `p-limit` (cap = {@link GALLERY_UPLOAD_CONCURRENCY}).
+ *   Replaces the previous `for...of await` sequential loop so a 6-file drop
+ *   finishes in roughly `ceil(6/4)` round trips instead of six.
+ * - Exposes a `progress` snapshot for the active batch so GalleryField can
+ *   surface an aria-live indicator ("Uploading X MB...").
  */
 export const useGalleryUploads = ({
     value,
@@ -67,81 +108,100 @@ export const useGalleryUploads = ({
     const [uploadingIds, setUploadingIds] = React.useState<Set<string>>(new Set());
     const [uploadError, setUploadError] = React.useState<string | null>(null);
     const [deletingIds, setDeletingIds] = React.useState<Set<string>>(new Set());
+    const [progress, setProgress] = React.useState<GalleryUploadProgress | null>(null);
+
+    const uploadFile = async (file: File, tempId: string): Promise<UploadOutcome> => {
+        try {
+            const url = onUpload ? await onUpload(file) : URL.createObjectURL(file);
+            return { file, tempId, url };
+        } catch (err) {
+            adminLogger.error(`Upload failed: ${file.name}`, err);
+            return { file, tempId, error: err };
+        } finally {
+            setUploadingIds((prev) => {
+                const next = new Set(prev);
+                next.delete(tempId);
+                return next;
+            });
+            setProgress((prev) => (prev ? { ...prev, completed: prev.completed + 1 } : prev));
+        }
+    };
 
     const handleFilesSelect = async (files: FileList) => {
         if (!files.length) return;
 
         const filesToProcess = Array.from(files).slice(0, maxImages - value.length);
+
+        // Partition into valid and invalid so we report validation errors
+        // upfront without touching the upload queue.
+        const validFiles: Array<{ file: File; tempId: string }> = [];
+        let firstValidationError: string | null = null;
+
+        for (const file of filesToProcess) {
+            if (!allowedTypes.includes(file.type)) {
+                adminLogger.error(`Invalid file type: ${file.name}`);
+                if (!firstValidationError) {
+                    firstValidationError = `"${file.name}": invalid type. Allowed: ${allowedTypes.join(', ')}`;
+                }
+                continue;
+            }
+            if (file.size > maxSize) {
+                adminLogger.error(`File too large: ${file.name}`);
+                if (!firstValidationError) {
+                    firstValidationError = `"${file.name}": file exceeds max size of ${formatFileSize(maxSize)}`;
+                }
+                continue;
+            }
+            validFiles.push({ file, tempId: generateId() });
+        }
+
+        if (firstValidationError) {
+            setUploadError(firstValidationError);
+        } else {
+            setUploadError(null);
+        }
+
+        if (validFiles.length === 0) return;
+
+        const totalBytes = validFiles.reduce((sum, v) => sum + v.file.size, 0);
+
         setIsUploading(true);
-        setUploadError(null);
+        setProgress({ completed: 0, total: validFiles.length, totalBytes });
+        setUploadingIds(() => new Set(validFiles.map((v) => v.tempId)));
 
         try {
-            const newImages: GalleryImage[] = [];
+            const limit = pLimit(GALLERY_UPLOAD_CONCURRENCY);
+            const outcomes = await Promise.all(
+                validFiles.map(({ file, tempId }) => limit(() => uploadFile(file, tempId)))
+            );
 
-            for (const file of filesToProcess) {
-                if (!allowedTypes.includes(file.type)) {
-                    adminLogger.error(`Invalid file type: ${file.name}`);
-                    setUploadError(
-                        `"${file.name}": invalid type. Allowed: ${allowedTypes.join(', ')}`
-                    );
-                    continue;
-                }
+            const successes = outcomes.filter(
+                (o): o is UploadOutcome & { url: string } => typeof o.url === 'string'
+            );
+            const firstFailure = outcomes.find((o) => o.error !== undefined);
 
-                if (file.size > maxSize) {
-                    adminLogger.error(`File too large: ${file.name}`);
-                    setUploadError(
-                        `"${file.name}": file exceeds max size of ${formatFileSize(maxSize)}`
-                    );
-                    continue;
-                }
-
-                const tempId = generateId();
-                setUploadingIds((prev) => new Set(prev).add(tempId));
-
-                let imageUrl: string;
-
-                try {
-                    if (onUpload) {
-                        imageUrl = await onUpload(file);
-                    } else {
-                        imageUrl = URL.createObjectURL(file);
-                    }
-                } catch (uploadErr) {
-                    adminLogger.error(`Upload failed: ${file.name}`, uploadErr);
-                    setUploadError(
-                        uploadErr instanceof Error
-                            ? uploadErr.message
-                            : `Failed to upload "${file.name}"`
-                    );
-                    setUploadingIds((prev) => {
-                        const next = new Set(prev);
-                        next.delete(tempId);
-                        return next;
-                    });
-                    continue;
-                }
-
-                setUploadingIds((prev) => {
-                    const next = new Set(prev);
-                    next.delete(tempId);
-                    return next;
-                });
-
-                const galleryImage: GalleryImage = {
-                    id: generateId(),
-                    url: imageUrl,
-                    alt: file.name,
-                    order: value.length + newImages.length
-                };
-                newImages.push(galleryImage);
+            if (firstFailure) {
+                const err = firstFailure.error;
+                setUploadError(
+                    err instanceof Error
+                        ? err.message
+                        : `Failed to upload "${firstFailure.file.name}"`
+                );
             }
 
-            if (newImages.length > 0) {
+            if (successes.length > 0) {
+                const newImages: GalleryImage[] = successes.map((outcome, index) => ({
+                    id: generateId(),
+                    url: outcome.url,
+                    alt: outcome.file.name,
+                    order: value.length + index
+                }));
                 onChange?.([...value, ...newImages]);
             }
         } finally {
             setIsUploading(false);
             setUploadingIds(new Set());
+            setProgress(null);
         }
     };
 
@@ -183,6 +243,7 @@ export const useGalleryUploads = ({
         uploadingIds,
         deletingIds,
         uploadError,
+        progress,
         handleFilesSelect,
         handleRemoveImage,
         handleUpdateImage

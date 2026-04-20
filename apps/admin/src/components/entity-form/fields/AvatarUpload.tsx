@@ -11,8 +11,19 @@ import * as React from 'react';
 
 /**
  * Default accepted MIME types for avatar uploads.
+ *
+ * HEIC/HEIF/AVIF are accepted client-side (iOS cameras produce HEIC by default)
+ * and converted server-side by the Cloudinary pipeline. The picker still
+ * surfaces them so mobile users don't hit silent rejects.
  */
-const DEFAULT_AVATAR_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const DEFAULT_AVATAR_ALLOWED_TYPES = [
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/heic',
+    'image/heif',
+    'image/avif'
+];
 
 /**
  * Props for {@link AvatarUpload}.
