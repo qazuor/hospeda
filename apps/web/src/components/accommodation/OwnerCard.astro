@@ -6,7 +6,7 @@
 import type { AccommodationOwnerData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { getInitials } from '@/lib/api/transforms';
+import { getInitialsFromName } from '@/lib/avatar-utils';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { getMediaUrl } from '@repo/media';
 
@@ -20,7 +20,7 @@ interface Props {
 const { owner, accommodationId, userId, lang } = Astro.props;
 const { t } = createTranslations(lang as SupportedLocale);
 
-const initials = getInitials(owner.name);
+const initials = getInitialsFromName(owner.name);
 const memberDate = new Date(owner.createdAt).toLocaleDateString(
   lang === 'pt' ? 'pt-BR' : lang === 'en' ? 'en-US' : 'es-AR',
   { year: 'numeric', month: 'long' }

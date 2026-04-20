@@ -56,6 +56,31 @@ describe('extractFeaturedImageUrl', () => {
         const item = { featuredImage: '' };
         expect(extractFeaturedImageUrl(item)).toBe('/images/placeholder.svg');
     });
+
+    it('should honor options.fallback over positional fallback (GAP-078-061)', () => {
+        // No image on the item — options.fallback must win over the positional param
+        expect(
+            extractFeaturedImageUrl({}, '/positional.svg', 'card', { fallback: '/options.svg' })
+        ).toBe('/options.svg');
+    });
+
+    it('should use positional fallback when options.fallback is not provided (GAP-078-061)', () => {
+        // Backward-compat: options present but no fallback key — positional still wins
+        expect(extractFeaturedImageUrl({}, '/positional.svg', 'card', {})).toBe('/positional.svg');
+    });
+
+    it('should use DEFAULT_PLACEHOLDER when neither fallback nor options.fallback given (GAP-078-061)', () => {
+        expect(extractFeaturedImageUrl({})).toBe('/images/placeholder.svg');
+    });
+
+    it('should NOT override the result when an image IS found, even if options.fallback is set (GAP-078-061)', () => {
+        const item = { image: 'https://example.com/real.jpg' };
+        const result = extractFeaturedImageUrl(item, '/positional.svg', 'card', {
+            fallback: '/options.svg'
+        });
+        // The real image wins; fallback is never reached
+        expect(result).toBe('https://example.com/real.jpg');
+    });
 });
 
 describe('extractGalleryUrls', () => {

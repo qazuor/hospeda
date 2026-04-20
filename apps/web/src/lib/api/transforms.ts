@@ -313,7 +313,7 @@ export function toTestimonialCardProps({
         reviewerName: String(item.userName || 'Usuario'),
         reviewerOrigin: String(item.entityName || ''),
         reviewerAvatar: item.avatarUrl ? String(item.avatarUrl) : undefined,
-        initials: getInitials(String(item.userName || 'U')),
+        initials: getInitialsFromName(String(item.userName || 'U')),
         location: String(item.entityName || ''),
         entityName: String(item.entityName || ''),
         entityType:
@@ -452,19 +452,6 @@ export function toAccommodationDetailPageProps({
             category: faq.category ? String(faq.category) : null
         }))
     };
-}
-
-/**
- * Helper to get initials from a name.
- *
- * @deprecated Prefer `getInitials` from `@/lib/avatar-utils` (RO-RO form with
- * optional email fallback). This positional wrapper remains for the Astro
- * components (`OwnerCard.astro`, `ReviewPreview.astro`) and
- * `ReviewsModal.client.tsx` that still import from here. Removed once those
- * callsites migrate to the shared helper.
- */
-export function getInitials(name: string): string {
-    return getInitialsFromName(name);
 }
 
 /**

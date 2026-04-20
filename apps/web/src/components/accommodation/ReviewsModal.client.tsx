@@ -5,7 +5,7 @@ import { GradientButton } from '@/components/ui/GradientButtonReact';
  * Focus trap, Escape close, load more pagination.
  */
 import { accommodationsApi } from '@/lib/api/endpoints';
-import { getInitials } from '@/lib/api/transforms';
+import { getInitialsFromName } from '@/lib/avatar-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -145,7 +145,7 @@ export function ReviewsModal({ accommodationId, reviewsCount, locale }: ReviewsM
                 <div className={styles.body}>
                     {reviews.map((review) => {
                         const userName = review.user?.name ?? 'Anónimo';
-                        const initials = getInitials(userName);
+                        const initials = getInitialsFromName(userName);
                         const dateStr = review.createdAt
                             ? new Date(review.createdAt).toLocaleDateString(
                                   locale === 'pt' ? 'pt-BR' : locale === 'en' ? 'en-US' : 'es-AR',

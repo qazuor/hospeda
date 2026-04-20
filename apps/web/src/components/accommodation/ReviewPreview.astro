@@ -8,7 +8,7 @@ import type { AccommodationDetailData } from '@/data/types';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { getInitials } from '@/lib/api/transforms';
+import { getInitialsFromName } from '@/lib/avatar-utils';
 import { getMediaUrl } from '@repo/media';
 import RatingBreakdown from './RatingBreakdown.astro';
 
@@ -52,7 +52,7 @@ const hasReviews = accommodation.reviewsCount > 0;
             const userName = review.user?.name ?? 'Anónimo';
             const rawUserImage = review.user?.image ?? null;
             const userImage = rawUserImage ? getMediaUrl(rawUserImage, { preset: 'avatar' }) : null;
-            const initials = getInitials(userName);
+            const initials = getInitialsFromName(userName);
             const dateStr = review.createdAt
               ? new Date(review.createdAt).toLocaleDateString(
                   lang === 'pt' ? 'pt-BR' : lang === 'en' ? 'en-US' : 'es-AR',
