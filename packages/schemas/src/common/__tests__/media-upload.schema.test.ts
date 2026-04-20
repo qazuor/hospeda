@@ -4,10 +4,13 @@ import {
     DeleteMediaQuerySchema,
     DeleteMediaResponseSchema,
     ENTITY_FOLDER_MAP,
+    ENTITY_GALLERY_CAPS,
+    MAX_GALLERY_CAP_FALLBACK,
     MediaEntityTypeSchema,
     MediaRoleSchema,
     UploadResponseDataSchema,
     UploadResponseSchema,
+    getGalleryCap,
     resolveMediaFolder
 } from '../media-upload.schema.js';
 
@@ -847,5 +850,88 @@ describe('DeleteMediaResponseSchema', () => {
             });
             expect(result.success).toBe(false);
         });
+    });
+});
+
+// ============================================================================
+// ENTITY_GALLERY_CAPS + getGalleryCap (SSOT for per-entity gallery limits)
+// ============================================================================
+
+describe('ENTITY_GALLERY_CAPS', () => {
+    it('should define accommodation cap as 50', () => {
+        expect(ENTITY_GALLERY_CAPS.accommodation).toBe(50);
+    });
+
+    it('should define destination cap as 20', () => {
+        expect(ENTITY_GALLERY_CAPS.destination).toBe(20);
+    });
+
+    it('should define event cap as 10', () => {
+        expect(ENTITY_GALLERY_CAPS.event).toBe(10);
+    });
+
+    it('should define post cap as 15', () => {
+        expect(ENTITY_GALLERY_CAPS.post).toBe(15);
+    });
+
+    it('should export all four gallery entity cap keys', () => {
+        // Verify that all expected keys are present and hold numeric values.
+        const keys = Object.keys(ENTITY_GALLERY_CAPS);
+        expect(keys).toContain('accommodation');
+        expect(keys).toContain('destination');
+        expect(keys).toContain('event');
+        expect(keys).toContain('post');
+        for (const key of keys) {
+            expect(typeof ENTITY_GALLERY_CAPS[key as keyof typeof ENTITY_GALLERY_CAPS]).toBe(
+                'number'
+            );
+        }
+    });
+});
+
+describe('MAX_GALLERY_CAP_FALLBACK', () => {
+    it('should be a positive integer', () => {
+        expect(MAX_GALLERY_CAP_FALLBACK).toBeGreaterThan(0);
+        expect(Number.isInteger(MAX_GALLERY_CAP_FALLBACK)).toBe(true);
+    });
+});
+
+describe('getGalleryCap', () => {
+    it('should return 50 for accommodation', () => {
+        expect(getGalleryCap('accommodation')).toBe(50);
+    });
+
+    it('should return 20 for destination', () => {
+        expect(getGalleryCap('destination')).toBe(20);
+    });
+
+    it('should return 10 for event', () => {
+        expect(getGalleryCap('event')).toBe(10);
+    });
+
+    it('should return 15 for post', () => {
+        expect(getGalleryCap('post')).toBe(15);
+    });
+
+    it('should return MAX_GALLERY_CAP_FALLBACK for an unknown entity type', () => {
+        expect(getGalleryCap('unknown')).toBe(MAX_GALLERY_CAP_FALLBACK);
+    });
+
+    it('should return MAX_GALLERY_CAP_FALLBACK for an empty string', () => {
+        expect(getGalleryCap('')).toBe(MAX_GALLERY_CAP_FALLBACK);
+    });
+
+    it('should return MAX_GALLERY_CAP_FALLBACK for a case-mismatched entity type', () => {
+        // Entity types are lowercase; 'Accommodation' is not a known key.
+        expect(getGalleryCap('Accommodation')).toBe(MAX_GALLERY_CAP_FALLBACK);
+    });
+
+    it('should return a number for all four gallery entity types', () => {
+        const galleryEntities = ['accommodation', 'destination', 'event', 'post'] as const;
+        for (const entity of galleryEntities) {
+            const cap = getGalleryCap(entity);
+            expect(typeof cap).toBe('number');
+            expect(cap).toBeGreaterThan(0);
+        }
     });
 });

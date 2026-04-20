@@ -1,5 +1,78 @@
 import { z } from 'zod';
 
+// ---------------------------------------------------------------------------
+// Gallery cap constants (SSOT for per-entity gallery limits)
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-entity gallery image caps.
+ *
+ * This is the **single source of truth** for how many gallery images are
+ * allowed per content entity. Both the API route (server-side enforcement)
+ * and the admin frontend (client-side UI gating) import from here so they
+ * can never drift apart.
+ *
+ * Keys MUST match the `GalleryEntityTypeSchema` literals exactly
+ * (`accommodation`, `destination`, `event`, `post`).
+ *
+ * TODO(billing): billing-tier addon entitlements will override these defaults
+ * once the addon system is wired in.
+ *
+ * @example
+ * ```ts
+ * import { ENTITY_GALLERY_CAPS, getGalleryCap } from '@repo/schemas';
+ *
+ * // Direct lookup
+ * const cap = ENTITY_GALLERY_CAPS.accommodation; // 50
+ *
+ * // Dynamic lookup (string entity type from request)
+ * const cap = getGalleryCap(entityType); // safe fallback for unknown types
+ * ```
+ */
+export const ENTITY_GALLERY_CAPS = {
+    accommodation: 50,
+    destination: 20,
+    event: 10,
+    post: 15
+} as const;
+
+/**
+ * Union of entity type strings that have an explicit gallery cap defined in
+ * `ENTITY_GALLERY_CAPS`.
+ */
+export type EntityGalleryCapKey = keyof typeof ENTITY_GALLERY_CAPS;
+
+/**
+ * Fallback gallery cap used for entity types not listed in
+ * `ENTITY_GALLERY_CAPS`. Acts as a conservative safety net so an unexpected
+ * entity type never gets an unlimited gallery.
+ *
+ * Set to the same value as the accommodation cap (the largest known cap) to
+ * avoid silently blocking legitimate uploads on unrecognized entity types.
+ */
+export const MAX_GALLERY_CAP_FALLBACK = 50;
+
+/**
+ * Returns the maximum number of gallery images allowed for the given entity
+ * type.
+ *
+ * Falls back to `MAX_GALLERY_CAP_FALLBACK` for entity types not present in
+ * `ENTITY_GALLERY_CAPS` so callers never have to special-case unknown types.
+ *
+ * @param entityType - The entity type string (e.g. `'accommodation'`).
+ * @returns The gallery cap for that entity type.
+ *
+ * @example
+ * ```ts
+ * getGalleryCap('accommodation') // 50
+ * getGalleryCap('event')         // 10
+ * getGalleryCap('unknown')       // 50 (MAX_GALLERY_CAP_FALLBACK)
+ * ```
+ */
+export function getGalleryCap(entityType: string): number {
+    return ENTITY_GALLERY_CAPS[entityType as EntityGalleryCapKey] ?? MAX_GALLERY_CAP_FALLBACK;
+}
+
 /**
  * Entity types that support image upload via the admin media endpoint.
  *
