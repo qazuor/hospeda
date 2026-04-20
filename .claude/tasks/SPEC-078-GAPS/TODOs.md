@@ -1,21 +1,20 @@
 # SPEC-078-GAPS: Cloudinary Image Management — Gaps Remediation
 
-## Progress: 62/68 tasks (91%)
+## Progress: 64/68 tasks (94%, 1 in_progress)
 
 **Average Complexity**: 1.7 / 2.5 (max)
 **Completed from prior work**: 3 tasks (Phase 0 + Phase 1A) — see already-done.md
 **Completed 2026-04-18 (previous session)**: 1 task (T-004 — Phase 1B migrations reconstruction)
-**Completed 2026-04-18/19 (current session)**: 46 tasks — 4 warmups + 5 security + 5 schema/DB + T-017 + T-022 + T-029 + T-018/T-019 + T-031 + T-023 + T-040 + T-024 + T-030 + T-025 + T-032 + T-033 + T-035 + T-034 + T-051 + T-052 + T-054 + T-056 + T-057 + T-036 + T-055 + T-020 + T-058 + T-059 + T-060 + T-062 + T-064 + T-021 + T-061 + T-063 (provider delete paths + multi-instance) + T-039 (admin gallery tab redirect)
-**Completed 2026-04-20 (current session)**: 12 tasks — T-041 + T-048 + T-042 + T-049 + T-043 + T-050 + T-065 + T-066 + T-068 + T-026 + T-027 + T-038 (admin media wiring for destinations/events/posts)
+**Completed 2026-04-18/19 (current session)**: 46 tasks — 4 warmups + 5 security + 5 schema/DB + T-017 + T-022 + T-029 + T-018/T-019 + T-031 + T-023 + T-040 + T-024 + T-030 + T-025 + T-032 + T-033 + T-035 + T-034 + T-051 + T-052 + T-054 + T-056 + T-057 + T-036 + T-055 + T-020 + T-058 + T-059 + T-060 + T-062 + T-064 + T-021 + T-061 + T-063 + T-039
+**Completed 2026-04-20 (current session)**: 14 tasks — T-041 + T-048 + T-042 + T-049 + T-043 + T-050 + T-065 + T-066 + T-068 + T-026 + T-027 + T-038 + T-044 (dnd-kit a11y) + T-045 (ImageField error + confirmation + reduced-motion)
+**In progress 2026-04-20**: T-047 (shadcn Avatar — partial landed, recovery agent addressing scope miss)
 **Splits applied**: 20 parent tasks split into 45 child tasks (68 total vs 47 original)
 
-**Remaining pending (6 tasks)**:
-- **T-015** (complexity 2.5, no deps) — BaseModel JSONB merge semantics with FOR UPDATE transaction. Deferred: requires architectural consult on concurrency model; captured as race-condition follow-up in `packages/media/CLAUDE.md` per T-008 + T-021 deliverables.
-- **T-044** (complexity 2.0, unblocked 2026-04-20 by T-038) — Admin a11y: GalleryField dnd-kit refactor. **Partial work in working tree** (sub-agent hit rate limit mid-task 2026-04-20): `apps/admin/src/components/entity-form/fields/GalleryField.tsx` + `apps/admin/package.json` modified but NOT committed; next session must assess state (finish, discard, or rebase).
-- **T-045** (complexity 2.0, unblocked 2026-04-20 by T-038) — Admin a11y: ImageField error banner + confirmation dialog + reduced-motion. Per T-038 D3-C decision, this is where the delete confirmation dialog lands.
-- **T-046** (complexity 2.0, unblocked 2026-04-20 by T-038) — Admin UX: HEIC/AVIF handling + p-limit + progress indicator.
-- **T-047** (complexity 1.5, unblocked 2026-04-20 by T-038) — Admin UX: shadcn Avatar + maxFileSizeMb prop.
-- **T-067** (complexity 2.5, blocked on T-040 + T-044 + T-045) — UI component tests: GalleryField, ImageField, use-media-upload, AvatarUpload.
+**Remaining pending (3 tasks) + 1 in_progress**:
+- **T-015** (complexity 2.5, no deps) — BaseModel JSONB merge semantics with FOR UPDATE transaction. Deferred: requires architectural consult on concurrency model.
+- **T-046** (complexity 2.0, unblocked by T-038) — Admin UX: HEIC/AVIF handling + p-limit + progress indicator. Next to launch.
+- **T-047** (complexity 1.5, IN_PROGRESS) — Partial landed at `2f206323` (new AvatarUpload component + primitive). Recovery agent working on missing scope: `header-user.tsx` + `profile.tsx` + `validate-media-file.ts`.
+- **T-067** (complexity 2.5, NOW UNBLOCKED by T-040+T-044+T-045) — UI component tests: GalleryField, ImageField, use-media-upload, AvatarUpload.
 
 **Known follow-ups** (captured in commits but not tracked as standalone tasks):
 - **GAP-078-105** (Cloudinary upload_stream flags invalidate/exif/faces): lives in `packages/media/src/server/cloudinary.provider.ts`, fell outside T-006 scope.
@@ -28,7 +27,8 @@
 - **T-066 spec drift 400 vs 422**: REQ-04.1-D/H + REQ-04.3-B/E spec 422 but implementation surfaces 400 `VALIDATION_ERROR` from explicit `safeParse` branch. Tests assert real behavior with inline comments. Spec reconciliation deferred (would be a SPEC-078 amendment, not a code fix).
 - **GAP-078-066 admin script-src `'https:'` blanket replacement**: `'strict-dynamic'` neutralizes it in CSP2+ browsers; dedicated admin-hardening pass would cover CSP1 fallback (T-050 partial close).
 - **Backend gallery cap drift vs frontend config**: `apps/api` enforces `GALLERY_HARD_CAP = 50` flat for all entities, but admin frontend config-sections declare smaller caps per entity (acc 50 / dest 20 / event 10 / post 15). Adversary with direct API access could exceed the config cap. Deferred from T-038 (D4 decision). Needs either new task or inclusion in next admin/API sweep.
-- **T-044 partial work in working tree (2026-04-20)**: `apps/admin/src/components/entity-form/fields/GalleryField.tsx` + `apps/admin/package.json` modified by an aborted sub-agent (hit API rate limit mid-task). Not committed. Next session must inspect and decide — resume, discard via `git checkout HEAD -- <paths>`, or rebase.
+- **T-044 partial work resolved 2026-04-20**: Rate-limited sub-agent had done ~70% of the dnd-kit refactor. Closer agent finished i18n + tests and committed at `fad73ed7`. ✓ Closed.
+- **T-047 scope miss (2026-04-20)**: First T-047 agent built a NEW AvatarUpload.tsx component instead of refactoring the 3 original target files. Valuable foundation laid (shadcn primitive + pattern + 9 i18n keys). Recovery agent spawned to close original scope (header-user.tsx + profile.tsx migration to shadcn Avatar primitive + validate-media-file.ts maxFileSizeMb prop). Lesson: when task description lists SPECIFIC target files, spec out "MUST touch these files, not replace them" explicitly in the agent prompt.
 
 ---
 
@@ -380,25 +380,28 @@
 
 ### Phase 6D — Accessibility + UX
 
-- [ ] **T-044** (complexity: 2.0) — Admin accessibility: GalleryField dnd-kit drag-and-drop refactor
+- [x] **T-044** (complexity: 2.0) — Admin accessibility: GalleryField dnd-kit drag-and-drop refactor
   - Gaps: GAP-078-048, GAP-078-144
   - Blocked by: T-017, T-038
-  - Blocks: none
+  - Blocks: T-067
+  - Outcome (commit `fad73ed7`, recovery close): Original agent hit rate limit at ~70%; closer finished i18n keys + tests. 11 files, +863/-304. dnd-kit deps (`@dnd-kit/core ^6.3.1`, `@dnd-kit/sortable ^10.0.0`, `@dnd-kit/utilities ^3.2.2`). Extracted `SortableGalleryItem.tsx`, `gallery-types.ts`, `use-gallery-uploads.ts` to respect 500-line budget. 7 i18n keys × 3 locales = 21 entries under `admin-entities.fields.gallery.*` (dnd announcements with position placeholders + instructions + dragHandleLabel + deleteLabel). 4 component tests via `vi.hoisted + vi.mock('@dnd-kit/core')` spy pattern. 1012/1014 admin tests pass (2 pre-existing).
 
-- [ ] **T-045** (complexity: 2.0) — Admin accessibility: ImageField error state, delete confirmation dialog, reduced-motion, and aria-describedby
+- [x] **T-045** (complexity: 2.0) — Admin accessibility: ImageField error state, delete confirmation dialog, reduced-motion, and aria-describedby
   - Gaps: GAP-078-046, GAP-078-138, GAP-078-141, GAP-078-142, GAP-078-143
   - Blocked by: T-017, T-038
-  - Blocks: none
+  - Blocks: T-067
+  - Outcome (commit `d53d940b`): 4 files, +534/-11. ImageField.tsx refactored with new `ImageFieldErrorBanner.tsx` (90 lines, role=alert + aria-live=assertive, dismissible) + `DeleteConfirmDialog.tsx` (127 lines, shadcn AlertDialog). Reduced-motion via Tailwind `motion-reduce:animate-none` + `motion-reduce:transition-none`. 9 i18n keys × 3 locales under `admin-entities.fields.image.*`. 8 component tests covering error banner + delete dialog + reduced-motion. Test gotcha: `user.upload` honors `accept` attribute silently; used `fireEvent.change` + `Object.defineProperty(files)` instead.
 
 - [ ] **T-046** (complexity: 2.0) — Admin UX: HEIC/AVIF accept, p-limit parallel upload, and progress indicator
   - Gaps: GAP-078-152, GAP-078-127, GAP-078-140
   - Blocked by: T-017, T-038
   - Blocks: none
 
-- [ ] **T-047** (complexity: 1.5) — Admin UX: shadcn Avatar component refactor and validateMediaFile maxFileSizeMb prop
+- [~] **T-047** (complexity: 1.5) — Admin UX: shadcn Avatar component refactor and validateMediaFile maxFileSizeMb prop *(PARTIAL)*
   - Gaps: GAP-078-145, GAP-078-176
   - Blocked by: T-017, T-038
   - Blocks: none
+  - Partial outcome (commit `2f206323`): Agent misinterpreted scope. Built new `AvatarUpload.tsx` + `ui/avatar.tsx` shadcn primitive (+ `@radix-ui/react-avatar` dep), `avatar-utils.ts`, `DEFAULT_AVATAR_MAX_SIZE_MB = 5` in constants. 9 i18n keys × 3 locales under `admin-entities.fields.avatar.*`. 6 component tests. 1026/1028 admin tests pass. **Scope miss**: did NOT touch the 3 files in the original spec: `apps/admin/src/integrations/clerk/header-user.tsx` (GAP-078-145), `apps/admin/src/routes/_authed/me/profile.tsx` (GAP-078-145), `packages/media/src/validate-media-file.ts` (GAP-078-176). Recovery agent spawning now. Status in state.json: `in_progress`.
 
 ---
 
@@ -665,3 +668,4 @@ Critical path: T-001 -> T-003 -> T-017 -> T-029 -> T-031 -> T-040 -> T-067 -> T-
 - **2026-04-20 (T-068 partial close — reconciliation docs-only)**: Coordinator-level tracker update (no sub-agent). **Drift discovered**: `state.json` summary block claimed `completed: 18, pending: 50` — reality was 58 completed / 10 pending. Full delta fixed in one edit. **Hidden-pending audit**: prior session close-out listed 7 remaining tasks but machine state carried 10 — three untracked in session notes: T-015 (complexity 2.5, BaseModel JSONB merge FOR UPDATE — needs architectural consult), T-026/T-027 (complexity 1.5 each, seed SSRF + cache hardening — unblocked since T-022 but deprioritized). Now explicitly documented as deferred with rationale. **Follow-ups consolidation**: six 2026-04-20 follow-ups (GAP-078-061 web fallback, transforms.ts getInitials @deprecated wrapper, processEntityImages adoption, EN/PT avatar translations, T-066 spec drift 400 vs 422, admin script-src 'https:') merged into "Known follow-ups" section alongside the three pre-existing (GAP-078-105, env-registry cross-validation, destination.service.ts workaround). T-068 marked completed with "partial" qualifier because full reconciliation is only possible after T-038's cascade resolves — this close captures state-as-of-today, future close captures state-after-admin-UI-sweep. Progress now 59/68 (87%). **Remaining**: 9 tasks, all deferred by design.
 - **2026-04-20 (T-026 + T-027 Phase 4B closeout — serial seed hardening)**: Two seed-layer tasks serialized (not parallel) due to `cli.ts` file collision point — both add CLI flags. T-026 (`306f62d0`) landed first, T-027 (`dd644eb1`) second. T-026: SSRF allowlist helper `is-allowed-seed-url.ts` (68 lines, frozen unsplash/pexels/cloudinary, case-insensitive, rejects non-HTTP(S) + malformed); guard in `cloudinary-upload.ts` returns `{status:'failed'}` without throwing on fixture defect; `coerceResetImpliesCleanImages` pure helper in `cli.ts` makes `--reset` imply cleanup. 15 tests, 159/159. T-027: versioned cache envelope `{version:1, entries:{...}}` in new `schemas/cloudinary-cache.schema.ts`; reject legacy unversioned on read (cheap to rebuild); deferred flush from per-entry writes to single `flushCache` in `runSeed` finally block; `--validate-cache` flag does sequential HEAD + 5s timeout; root `.gitignore` gets `**/.cloudinary-cache.json`. 17 tests, 170/170. **Design choices**: T-027 kept T-026's `cloudinary-upload.ts` untouched by making `cachePath` param `@deprecated` on `updateCacheEntry` rather than threading the new flush path through there. Flush hook lives in `index.ts#runSeed` (allowed file) not `cloudinary-image-processor.ts` because per-entity callsites would yield N writes. T-027 agent refused to add p-limit dep — sequential HEAD is fine for maintenance flag. No `.env.test` collision either run. Auto-loop commits continued landing during both runs on `packages/service-core/feature/*`, `apps/api/test/schema-validation/*`, and various untracked files — verified untouched by both agents. **Phase 4B closed**. Progress now 61/68 (90%). **Remaining**: 7 tasks — T-015 (architectural consult), T-038 (product consult) + cascade T-044/T-045/T-046/T-047/T-067.
 - **2026-04-20 (T-038 CONSULT + wiring + T-044 partial aborted)**: Explore agent first reconnoitered the 3 target edit pages + accommodations reference to surface the true delta (~4-6 lines per file — the spec's 2.5 complexity was overestimated). User was presented 4 decision axes (D1 scope / D2 commit strategy / D3 delete confirmation / D4 backend cap alignment) and confirmed my recommendation **A+A+C+B**: 1:1 replication, atomic commit, delete confirmation deferred to T-045, backend cap alignment deferred as follow-up. T-038 landed `2d581d49` — 6 files (3 routes + 3 tests), ~28 net lines per route, hook untouched (T-040's `Extract<>` already covered all 4 entity types). 3 component-level tests assert `fieldHandlers.images.onUpload` invokes `uploadEntityImage.mutateAsync` with correct `entityType` + `role: 'gallery'` and `onDelete` forwards publicId. Attempted immediate T-044 parallel spawn — **sub-agent hit Anthropic API rate limit mid-task (reset 14:00 ART)**. Partial work left in working tree (NOT committed): `apps/admin/src/components/entity-form/fields/GalleryField.tsx` + `apps/admin/package.json` modified. Unknown quality — next session must assess (finish / discard / rebase). Did NOT auto-revert (destructive action, CLAUDE.md forbids). Pre-existing TS errors in `createEntityApi.ts` + `me/accommodations/index.tsx` surface in typecheck (last touched `0450eed6`/`460e5a77`, not T-038's fault). Progress now 62/68 (91%). **New follow-up captured**: backend `GALLERY_HARD_CAP = 50` flat but frontend caps are config-level per entity (acc 50 / dest 20 / event 10 / post 15) — adversary with admin API access could bypass. Needs new task or inclusion in next admin sweep.
+- **2026-04-20 (T-044 recovery + T-045 + T-047 sweep)**: After rate-limit window cleared, coordinator inspected T-044 partial (typecheck revealed 8 missing i18n keys + zero tests) and spawned a CLOSER AGENT with tight scope (just finish i18n + tests + commit). Closer landed `fad73ed7` (11 files, +863/-304, 7 keys × 3 locales = 21 entries, 4 tests via `vi.hoisted + vi.mock('@dnd-kit/core')` spy pattern). Then launched T-045 + T-047 in parallel (different components — ImageField vs AvatarUpload). T-045 landed `d53d940b` clean (8 tests, 9 keys, extracted DeleteConfirmDialog + ImageFieldErrorBanner helpers, reduced-motion via Tailwind motion-reduce:). T-047 landed `2f206323` but **MISINTERPRETED SCOPE**: built a brand-new `AvatarUpload.tsx` component instead of migrating `header-user.tsx` + `profile.tsx` + extending `validate-media-file.ts` as the original task specified. Foundation IS valuable (established shadcn Avatar primitive pattern + 9 i18n keys + `@radix-ui/react-avatar` dep + `DEFAULT_AVATAR_MAX_SIZE_MB` constant), so kept the commit and marked T-047 `in_progress`. Recovery agent spawning now for remaining 3 files. Sibling i18n namespace (`avatar.*` vs `image.*`) meant zero JSON key collision across T-045 + T-047. Test suite after both: 1026/1028 admin tests (2 pre-existing failures on clean main: `accommodations.smoke` timeout + `billing.smoke` hook typo). TS only 2 pre-existing errors remain. Progress now 64/68 completed + 1 in_progress = 65/68 counted. **Lesson learned for future prompts**: when task description lists specific target files (`File: path/to/X`), explicitly include in prompt "MUST modify these files, not create new replacements". The T-047 agent took the spirit but not the letter, producing working but off-spec code.
