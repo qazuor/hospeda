@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePostQuery } from '@/features/posts/hooks/usePostQuery';
 import { useTranslations } from '@/hooks/use-translations';
+import { getMediaUrl } from '@repo/media';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/posts/$id_/seo')({
@@ -199,8 +200,10 @@ function PostSeoPage() {
                                 {ogImage && (
                                     <div className="mt-4">
                                         <img
-                                            src={ogImage}
+                                            src={getMediaUrl(ogImage, { preset: 'og' })}
                                             alt={t('admin-pages.posts.seo.ogImageAlt')}
+                                            loading="lazy"
+                                            decoding="async"
                                             className="max-h-48 rounded-md border object-cover"
                                         />
                                     </div>

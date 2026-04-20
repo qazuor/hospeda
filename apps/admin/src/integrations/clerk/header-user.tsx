@@ -11,6 +11,7 @@
 
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { signOut } from '@/lib/auth-client';
+import { getMediaUrl } from '@repo/media';
 import { useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 
@@ -83,8 +84,10 @@ export function HeaderUser() {
             >
                 {user.avatar ? (
                     <img
-                        src={user.avatar}
+                        src={getMediaUrl(user.avatar, { preset: 'avatar' })}
                         alt={user.displayName || 'User'}
+                        loading="eager"
+                        decoding="async"
                         className="h-8 w-8 rounded-full object-cover"
                     />
                 ) : (

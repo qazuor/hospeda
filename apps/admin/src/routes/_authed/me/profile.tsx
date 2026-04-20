@@ -22,6 +22,7 @@ import {
     UserIcon,
     WebIcon
 } from '@repo/icons';
+import { getMediaUrl } from '@repo/media';
 import { createFileRoute } from '@tanstack/react-router';
 
 import {
@@ -122,8 +123,10 @@ function MyProfilePage() {
                             {/* Avatar */}
                             {avatarUrl ? (
                                 <img
-                                    src={avatarUrl}
+                                    src={getMediaUrl(avatarUrl, { preset: 'avatar' })}
                                     alt={displayName}
+                                    loading="lazy"
+                                    decoding="async"
                                     className="h-20 w-20 flex-shrink-0 rounded-full object-cover"
                                 />
                             ) : (

@@ -8,7 +8,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { DEFAULT_GALLERY_FALLBACK_MAX_SIZE_BYTES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
-import { extractPublicId } from '@repo/media';
+import { extractPublicId, getMediaUrl } from '@repo/media';
 
 import {
     AddIcon,
@@ -386,13 +386,15 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                                     >
                                         {/* Image */}
                                         <img
-                                            src={image.url}
+                                            src={getMediaUrl(image.url, { preset: 'thumbnail' })}
                                             alt={
                                                 image.alt ||
                                                 t('admin-entities.fields.gallery.imageAlt', {
                                                     index: String(index + 1)
                                                 })
                                             }
+                                            loading="lazy"
+                                            decoding="async"
                                             className={cn(
                                                 'h-32 w-full object-cover',
                                                 maxWidth && `max-w-[${maxWidth}px]`,
