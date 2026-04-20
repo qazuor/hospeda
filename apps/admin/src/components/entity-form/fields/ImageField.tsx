@@ -1,4 +1,6 @@
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import { DeleteConfirmDialog } from '@/components/entity-form/fields/DeleteConfirmDialog';
+import { ImageFieldErrorBanner } from '@/components/entity-form/fields/ImageFieldErrorBanner';
 import type {
     FieldConfig,
     ImageFieldConfig
@@ -48,11 +50,23 @@ export interface ImageFieldProps {
     className?: string;
     /** Upload handler - should return the uploaded image URL */
     onUpload?: (file: File) => Promise<string>;
+    /** External upload error (e.g. from useMediaUpload). Surfaced in the error banner. */
+    uploadError?: Error | null;
 }
 
 /**
- * ImageField component for image upload and management
- * Handles IMAGE field type from FieldConfig
+ * ImageField component for image upload and management.
+ *
+ * T-045 additions (SPEC-078-GAPS):
+ * - Inline dismissible error banner with role="alert" + aria-live="assertive"
+ *   (no longer silent / toast-only on upload failure).
+ * - Delete confirmation via `AlertDialog` before `onChange(null)` fires. Per
+ *   D3-C, the confirmation lives in the field component, not in accommodation
+ *   edit pages.
+ * - All transient UI animations (spinner, dialog fade, banner) respect
+ *   `prefers-reduced-motion: reduce` via Tailwind's `motion-reduce:` utilities.
+ *
+ * Handles IMAGE field type from FieldConfig.
  */
 export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
     (
@@ -65,7 +79,8 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
             disabled = false,
             required = false,
             className,
-            onUpload
+            onUpload,
+            uploadError = null
         },
         _ref
     ) => {
@@ -99,25 +114,48 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
         // State
         const [isUploading, setIsUploading] = React.useState(false);
         const [dragOver, setDragOver] = React.useState(false);
+        // Internal upload error (set on validation/upload failure). Separate
+        // from `uploadError` prop so caller-driven errors and local validation
+        // can coexist; caller's wins when both are present.
+        const [internalError, setInternalError] = React.useState<string | null>(null);
+        // When user dismisses the banner, remember which error was dismissed so
+        // we don't re-show the same message until a new upload attempt.
+        const [dismissedErrorKey, setDismissedErrorKey] = React.useState<string | null>(null);
+        // Delete confirmation dialog state.
+        const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false);
+
+        // Effective error message: caller-provided error takes precedence over internal.
+        const effectiveError = uploadError?.message ?? internalError ?? null;
+        const bannerVisible = effectiveError !== null && effectiveError !== dismissedErrorKey;
 
         const handleFileSelect = async (file: File) => {
             if (!file) return;
 
+            // Reset dismissed banner so a new error shows up.
+            setDismissedErrorKey(null);
+
             // Validate file type
             if (!allowedTypes.includes(file.type)) {
-                // TODO: Show error toast
+                const msg = t('admin-entities.fields.image.errorInvalidType', {
+                    types: allowedTypes.join(', ')
+                });
                 adminLogger.error('Invalid file type');
+                setInternalError(msg);
                 return;
             }
 
             // Validate file size
             if (file.size > maxSize) {
-                // TODO: Show error toast
+                const msg = t('admin-entities.fields.image.errorTooLarge', {
+                    maxSize: formatFileSize(maxSize)
+                });
                 adminLogger.error('File too large');
+                setInternalError(msg);
                 return;
             }
 
             setIsUploading(true);
+            setInternalError(null);
 
             try {
                 let imageUrl: string;
@@ -139,7 +177,11 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                 onChange?.(imageValue);
             } catch (error) {
                 adminLogger.error('Upload failed', error);
-                // TODO: Show error toast
+                const msg =
+                    error instanceof Error
+                        ? error.message
+                        : t('admin-entities.fields.image.errorBannerFallback');
+                setInternalError(msg);
             } finally {
                 setIsUploading(false);
             }
@@ -172,10 +214,22 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
             setDragOver(false);
         };
 
-        const handleRemove = () => {
+        // Opens the confirmation dialog; actual removal happens on confirm.
+        const handleRemoveClick = () => {
+            setConfirmDeleteOpen(true);
+        };
+
+        const handleConfirmDelete = () => {
+            setConfirmDeleteOpen(false);
             onChange?.(null);
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
+            }
+        };
+
+        const handleDismissError = () => {
+            if (effectiveError) {
+                setDismissedErrorKey(effectiveError);
             }
         };
 
@@ -229,6 +283,16 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                     </p>
                 )}
 
+                {/* Error banner — screen-reader-announced, dismissible. */}
+                {bannerVisible && effectiveError && (
+                    <ImageFieldErrorBanner
+                        title={t('admin-entities.fields.image.errorBannerTitle')}
+                        message={effectiveError}
+                        dismissLabel={t('admin-entities.fields.image.errorBannerDismiss')}
+                        onDismiss={handleDismissError}
+                    />
+                )}
+
                 {/* Image Preview or Upload Area */}
                 {value?.url ? (
                     <div className="space-y-3">
@@ -237,8 +301,11 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                             <img
                                 src={value.url}
                                 alt={value.alt || t('admin-entities.fields.image.uploadedAlt')}
+                                data-testid="image-field-preview"
                                 className={cn(
                                     'h-auto max-w-full rounded-lg border',
+                                    // Respect prefers-reduced-motion: disable fade-in transition.
+                                    'motion-reduce:animate-none motion-reduce:transition-none',
                                     maxWidth && `max-w-[${maxWidth}px]`,
                                     maxHeight && `max-h-[${maxHeight}px]`,
                                     aspectRatio && `aspect-[${aspectRatio.replace(':', '/')}]`,
@@ -246,14 +313,18 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                                 )}
                             />
 
-                            {/* Remove button */}
+                            {/* Remove button — opens confirm dialog. */}
                             {!disabled && (
                                 <Button
                                     type="button"
                                     variant="destructive"
                                     size="sm"
                                     className="absolute top-2 right-2"
-                                    onClick={handleRemove}
+                                    onClick={handleRemoveClick}
+                                    data-testid="image-field-remove"
+                                    aria-label={t(
+                                        'admin-entities.fields.image.deleteDialogConfirm'
+                                    )}
                                 >
                                     <CloseIcon className="h-4 w-4" />
                                 </Button>
@@ -326,6 +397,8 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                         type="button"
                         className={cn(
                             'rounded-lg border-2 border-dashed p-8 text-center transition-colors',
+                            // Disable the hover/drop-over transition when user opts out.
+                            'motion-reduce:transition-none',
                             dragOver && 'border-primary bg-primary/5',
                             hasError && 'border-destructive',
                             disabled && 'cursor-not-allowed opacity-50',
@@ -340,7 +413,10 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                     >
                         {isUploading ? (
                             <div className="flex flex-col items-center gap-2">
-                                <LoaderIcon className="h-8 w-8 animate-spin text-primary" />
+                                <LoaderIcon
+                                    // Reduced-motion: cancel the spinner animation.
+                                    className="h-8 w-8 animate-spin text-primary motion-reduce:animate-none"
+                                />
                                 <p className="text-muted-foreground text-sm">
                                     {t('admin-entities.fields.image.uploading')}
                                 </p>
@@ -390,7 +466,7 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                     </p>
                 )}
 
-                {/* Error Message */}
+                {/* Error Message (validation layer — separate from upload error banner) */}
                 {hasError && errorMessage && (
                     <p
                         id={errorId}
@@ -399,6 +475,17 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                         {errorMessage}
                     </p>
                 )}
+
+                {/* Delete confirmation dialog */}
+                <DeleteConfirmDialog
+                    open={confirmDeleteOpen}
+                    onOpenChange={setConfirmDeleteOpen}
+                    title={t('admin-entities.fields.image.deleteDialogTitle')}
+                    description={t('admin-entities.fields.image.deleteDialogDescription')}
+                    cancelLabel={t('admin-entities.fields.image.deleteDialogCancel')}
+                    confirmLabel={t('admin-entities.fields.image.deleteDialogConfirm')}
+                    onConfirm={handleConfirmDelete}
+                />
             </div>
         );
     }
