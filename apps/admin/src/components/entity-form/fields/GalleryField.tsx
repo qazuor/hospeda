@@ -3,34 +3,33 @@ import type {
     FieldConfig,
     GalleryFieldConfig
 } from '@/components/entity-form/types/field-config.types';
-import { Button, Input, Label } from '@/components/ui-wrapped';
+import { Input, Label } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
 import { DEFAULT_GALLERY_FALLBACK_MAX_SIZE_BYTES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
-import { adminLogger } from '@/utils/logger';
-import { extractPublicId, getMediaUrl } from '@repo/media';
-
 import {
-    AddIcon,
-    DeleteIcon,
-    GripVerticalIcon,
-    ImageIcon,
-    LoaderIcon,
-    UploadIcon
-} from '@repo/icons';
+    DndContext,
+    type DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
+    type UniqueIdentifier,
+    useSensor,
+    useSensors
+} from '@dnd-kit/core';
+import type { Announcements, ScreenReaderInstructions } from '@dnd-kit/core';
+import {
+    SortableContext,
+    arrayMove,
+    rectSortingStrategy,
+    sortableKeyboardCoordinates
+} from '@dnd-kit/sortable';
+import { AddIcon, ImageIcon, LoaderIcon, UploadIcon } from '@repo/icons';
 import * as React from 'react';
+import { SortableGalleryItem } from './SortableGalleryItem';
+import type { GalleryImage } from './gallery-types';
+import { useGalleryUploads } from './use-gallery-uploads';
 
-/**
- * Gallery image type
- */
-export interface GalleryImage {
-    id: string;
-    url: string;
-    caption?: string;
-    description?: string;
-    alt?: string;
-    order: number;
-}
+export type { GalleryImage };
 
 /**
  * Props for GalleryField component
@@ -71,9 +70,24 @@ export interface GalleryFieldProps {
     defaultMaxSize?: number;
 }
 
+const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
+};
+
 /**
  * GalleryField component for multiple image upload and management.
  * Handles GALLERY field type from FieldConfig.
+ *
+ * Accessibility:
+ * - Drag-and-drop reorder uses @dnd-kit with pointer + keyboard sensors.
+ * - Keyboard: Tab to drag handle, Space to pick up, Arrow keys to move,
+ *   Space/Enter to drop, Escape to cancel.
+ * - Announcements are emitted via dnd-kit for screen readers (localized).
+ * - Respects prefers-reduced-motion by disabling drag transitions.
  *
  * - Supports HEIC, AVIF, JPEG, PNG, and WebP out of the box.
  * - Shows per-image upload progress via an overlay spinner.
@@ -100,12 +114,10 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
     ) => {
         const { t } = useTranslations();
 
-        // Use direct translations from config
         const label = config.label;
         const description = config.description;
         const helper = config.help;
 
-        // Get gallery specific config
         const galleryConfig =
             config.type === FieldTypeEnum.GALLERY
                 ? (config.typeConfig as GalleryFieldConfig)
@@ -129,103 +141,40 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
         const maxHeight = galleryConfig?.maxHeight;
         const sortable = galleryConfig?.sortable !== false;
 
-        // File input ref
         const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-        // State
-        const [isUploading, setIsUploading] = React.useState(false);
-        const [uploadingIds, setUploadingIds] = React.useState<Set<string>>(new Set());
-        const [uploadError, setUploadError] = React.useState<string | null>(null);
-        const [deletingIds, setDeletingIds] = React.useState<Set<string>>(new Set());
         const [dragOver, setDragOver] = React.useState(false);
-        const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
+
+        // Detect prefers-reduced-motion (SSR-safe).
+        const [reducedMotion, setReducedMotion] = React.useState(false);
+        React.useEffect(() => {
+            if (typeof window === 'undefined' || !window.matchMedia) return;
+            const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+            const apply = () => setReducedMotion(mq.matches);
+            apply();
+            mq.addEventListener('change', apply);
+            return () => mq.removeEventListener('change', apply);
+        }, []);
 
         const canAddMore = value.length < maxImages;
 
-        const generateId = () => `img-${crypto.randomUUID()}`;
-
-        const handleFilesSelect = async (files: FileList) => {
-            if (!files.length) return;
-
-            const filesToProcess = Array.from(files).slice(0, maxImages - value.length);
-            setIsUploading(true);
-            setUploadError(null);
-
-            try {
-                const newImages: GalleryImage[] = [];
-
-                for (const file of filesToProcess) {
-                    // Validate file type
-                    if (!allowedTypes.includes(file.type)) {
-                        adminLogger.error(`Invalid file type: ${file.name}`);
-                        setUploadError(
-                            `"${file.name}": invalid type. Allowed: ${allowedTypes.join(', ')}`
-                        );
-                        continue;
-                    }
-
-                    // Validate file size
-                    if (file.size > maxSize) {
-                        adminLogger.error(`File too large: ${file.name}`);
-                        setUploadError(
-                            `"${file.name}": file exceeds max size of ${formatFileSize(maxSize)}`
-                        );
-                        continue;
-                    }
-
-                    const tempId = generateId();
-                    setUploadingIds((prev) => new Set(prev).add(tempId));
-
-                    let imageUrl: string;
-
-                    try {
-                        if (onUpload) {
-                            // Use custom upload handler
-                            imageUrl = await onUpload(file);
-                        } else {
-                            // Create local URL (for preview/development)
-                            imageUrl = URL.createObjectURL(file);
-                        }
-                    } catch (uploadErr) {
-                        adminLogger.error(`Upload failed: ${file.name}`, uploadErr);
-                        setUploadError(
-                            uploadErr instanceof Error
-                                ? uploadErr.message
-                                : `Failed to upload "${file.name}"`
-                        );
-                        setUploadingIds((prev) => {
-                            const next = new Set(prev);
-                            next.delete(tempId);
-                            return next;
-                        });
-                        continue;
-                    }
-
-                    setUploadingIds((prev) => {
-                        const next = new Set(prev);
-                        next.delete(tempId);
-                        return next;
-                    });
-
-                    // Create gallery image
-                    const galleryImage: GalleryImage = {
-                        id: generateId(),
-                        url: imageUrl,
-                        alt: file.name,
-                        order: value.length + newImages.length
-                    };
-
-                    newImages.push(galleryImage);
-                }
-
-                if (newImages.length > 0) {
-                    onChange?.([...value, ...newImages]);
-                }
-            } finally {
-                setIsUploading(false);
-                setUploadingIds(new Set());
-            }
-        };
+        const {
+            isUploading,
+            uploadingIds,
+            deletingIds,
+            uploadError,
+            handleFilesSelect,
+            handleRemoveImage,
+            handleUpdateImage
+        } = useGalleryUploads({
+            value,
+            onChange,
+            maxImages,
+            maxSize,
+            allowedTypes,
+            onUpload,
+            onDelete,
+            formatFileSize
+        });
 
         const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             const files = e.target.files;
@@ -237,7 +186,6 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
         const handleDrop = (e: React.DragEvent) => {
             e.preventDefault();
             setDragOver(false);
-
             const files = e.dataTransfer.files;
             if (files) {
                 handleFilesSelect(files);
@@ -254,92 +202,87 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
             setDragOver(false);
         };
 
-        const handleRemoveImage = async (imageId: string, imageUrl: string) => {
-            setUploadError(null);
+        // Sorted view used both for rendering and SortableContext items.
+        const sortedImages = React.useMemo(
+            () => [...value].sort((a, b) => a.order - b.order),
+            [value]
+        );
+        const itemIds = React.useMemo<UniqueIdentifier[]>(
+            () => sortedImages.map((img) => img.id),
+            [sortedImages]
+        );
 
-            // Mark as deleting for visual feedback
-            setDeletingIds((prev) => new Set(prev).add(imageId));
+        // dnd-kit sensors: pointer + keyboard (with sortable coordinates getter).
+        const sensors = useSensors(
+            useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+            useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+        );
 
-            try {
-                // Extract publicId — returns null for non-Cloudinary URLs
-                const publicId = extractPublicId(imageUrl);
+        const handleDragEnd = (event: DragEndEvent) => {
+            const { active, over } = event;
+            if (!over || active.id === over.id) return;
 
-                if (publicId && onDelete) {
-                    try {
-                        await onDelete(publicId);
-                    } catch (deleteErr) {
-                        // Log but don't block UI removal — graceful degradation
-                        adminLogger.error('Failed to delete image from Cloudinary', deleteErr);
-                    }
-                }
-            } finally {
-                setDeletingIds((prev) => {
-                    const next = new Set(prev);
-                    next.delete(imageId);
-                    return next;
-                });
-            }
+            const oldIndex = sortedImages.findIndex((img) => img.id === active.id);
+            const newIndex = sortedImages.findIndex((img) => img.id === over.id);
+            if (oldIndex === -1 || newIndex === -1) return;
 
-            // Always remove from the array regardless of delete success
-            const updatedImages = value.filter((img) => img.id !== imageId);
-            // Reorder remaining images
-            const reorderedImages = updatedImages.map((img, index) => ({
+            const reordered = arrayMove(sortedImages, oldIndex, newIndex).map((img, idx) => ({
                 ...img,
-                order: index
+                order: idx
             }));
-            onChange?.(reorderedImages);
+            onChange?.(reordered);
         };
 
-        const handleUpdateImage = (imageId: string, updates: Partial<GalleryImage>) => {
-            const updatedImages = value.map((img) =>
-                img.id === imageId ? { ...img, ...updates } : img
-            );
-            onChange?.(updatedImages);
-        };
+        // Localized announcements for screen readers (dnd-kit Announcements API).
+        const announcements: Announcements = React.useMemo(
+            () => ({
+                onDragStart({ active }) {
+                    const pos = sortedImages.findIndex((img) => img.id === active.id) + 1;
+                    return t('admin-entities.fields.gallery.dnd.onDragStart', {
+                        position: String(pos)
+                    });
+                },
+                onDragOver({ active, over }) {
+                    if (!over) return undefined;
+                    const activePos = sortedImages.findIndex((img) => img.id === active.id) + 1;
+                    const overPos = sortedImages.findIndex((img) => img.id === over.id) + 1;
+                    return t('admin-entities.fields.gallery.dnd.onDragOver', {
+                        from: String(activePos),
+                        to: String(overPos)
+                    });
+                },
+                onDragEnd({ active, over }) {
+                    if (!over) {
+                        return t('admin-entities.fields.gallery.dnd.onDragCancel', {
+                            position: String(
+                                sortedImages.findIndex((img) => img.id === active.id) + 1
+                            )
+                        });
+                    }
+                    const newPos = sortedImages.findIndex((img) => img.id === over.id) + 1;
+                    return t('admin-entities.fields.gallery.dnd.onDragEnd', {
+                        position: String(newPos)
+                    });
+                },
+                onDragCancel({ active }) {
+                    const pos = sortedImages.findIndex((img) => img.id === active.id) + 1;
+                    return t('admin-entities.fields.gallery.dnd.onDragCancel', {
+                        position: String(pos)
+                    });
+                }
+            }),
+            [sortedImages, t]
+        );
 
-        // Drag and drop for reordering
-        const handleDragStart = (e: React.DragEvent, index: number) => {
-            if (!sortable) return;
-            setDraggedIndex(index);
-            e.dataTransfer.effectAllowed = 'move';
-        };
-
-        const handleDragEnd = () => {
-            setDraggedIndex(null);
-        };
-
-        const handleDragOverItem = (e: React.DragEvent, index: number) => {
-            if (!sortable || draggedIndex === null) return;
-            e.preventDefault();
-
-            if (draggedIndex !== index) {
-                const newImages = [...value];
-                const draggedItem = newImages[draggedIndex];
-                newImages.splice(draggedIndex, 1);
-                newImages.splice(index, 0, draggedItem);
-
-                // Update order
-                const reorderedImages = newImages.map((img, idx) => ({
-                    ...img,
-                    order: idx
-                }));
-
-                onChange?.(reorderedImages);
-                setDraggedIndex(index);
-            }
-        };
-
-        const formatFileSize = (bytes: number): string => {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
-        };
+        const screenReaderInstructions: ScreenReaderInstructions = React.useMemo(
+            () => ({
+                draggable: t('admin-entities.fields.gallery.dnd.instructions')
+            }),
+            [t]
+        );
 
         return (
             <div className={cn('space-y-4', className)}>
-                {/* Label */}
                 {label && (
                     <Label
                         htmlFor={fieldId}
@@ -351,7 +294,6 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                     </Label>
                 )}
 
-                {/* Description */}
                 {description && (
                     <p
                         id={descriptionId}
@@ -361,115 +303,64 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                     </p>
                 )}
 
-                {/* Gallery Grid */}
                 {value.length > 0 && (
-                    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-                        {value
-                            .sort((a, b) => a.order - b.order)
-                            .map((image, index) => {
-                                const isThisUploading = uploadingIds.has(image.id);
-                                const isThisDeleting = deletingIds.has(image.id);
-                                const isThisBusy = isThisUploading || isThisDeleting;
-
-                                return (
-                                    <div
-                                        key={image.id}
-                                        className={cn(
-                                            'group relative overflow-hidden rounded-lg border',
-                                            sortable && !isThisBusy && 'cursor-move',
-                                            isThisBusy && 'opacity-70'
-                                        )}
-                                        draggable={sortable && !disabled && !isThisBusy}
-                                        onDragStart={(e) => handleDragStart(e, index)}
-                                        onDragEnd={handleDragEnd}
-                                        onDragOver={(e) => handleDragOverItem(e, index)}
-                                    >
-                                        {/* Image */}
-                                        <img
-                                            src={getMediaUrl(image.url, { preset: 'thumbnail' })}
-                                            alt={
-                                                image.alt ||
-                                                t('admin-entities.fields.gallery.imageAlt', {
-                                                    index: String(index + 1)
-                                                })
-                                            }
-                                            loading="lazy"
-                                            decoding="async"
-                                            className={cn(
-                                                'h-32 w-full object-cover',
-                                                maxWidth && `max-w-[${maxWidth}px]`,
-                                                maxHeight && `max-h-[${maxHeight}px]`
-                                            )}
-                                        />
-
-                                        {/* Per-image busy overlay */}
-                                        {isThisBusy && (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                                                <LoaderIcon className="h-6 w-6 animate-spin text-white" />
-                                            </div>
-                                        )}
-
-                                        {/* Overlay Controls */}
-                                        {!isThisBusy && (
-                                            <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                                                {sortable && (
-                                                    <div className="absolute top-2 left-2">
-                                                        <GripVerticalIcon className="h-4 w-4 text-white" />
-                                                    </div>
+                    <DndContext
+                        sensors={sensors}
+                        onDragEnd={handleDragEnd}
+                        accessibility={{ announcements, screenReaderInstructions }}
+                    >
+                        <SortableContext
+                            items={itemIds}
+                            strategy={rectSortingStrategy}
+                        >
+                            <ul
+                                data-testid="gallery-list"
+                                className="grid list-none grid-cols-2 gap-4 p-0 md:grid-cols-3 lg:grid-cols-4"
+                            >
+                                {sortedImages.map((image, index) => {
+                                    const isBusy =
+                                        uploadingIds.has(image.id) || deletingIds.has(image.id);
+                                    return (
+                                        <li
+                                            key={image.id}
+                                            data-testid={`gallery-item-${index}`}
+                                        >
+                                            <SortableGalleryItem
+                                                image={image}
+                                                index={index}
+                                                sortable={sortable}
+                                                disabled={disabled}
+                                                isBusy={isBusy}
+                                                reducedMotion={reducedMotion}
+                                                maxWidth={maxWidth}
+                                                maxHeight={maxHeight}
+                                                imageAltFallback={t(
+                                                    'admin-entities.fields.gallery.imageAlt',
+                                                    { index: String(index + 1) }
                                                 )}
-
-                                                {!disabled && (
-                                                    <Button
-                                                        type="button"
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            handleRemoveImage(image.id, image.url)
-                                                        }
-                                                        className="absolute top-2 right-2"
-                                                    >
-                                                        <DeleteIcon className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Image Metadata */}
-                                        <div className="space-y-1 p-2">
-                                            <Input
-                                                value={image.caption || ''}
-                                                onChange={(e) =>
-                                                    handleUpdateImage(image.id, {
-                                                        caption: e.target.value
-                                                    })
-                                                }
-                                                placeholder={t(
+                                                captionPlaceholder={t(
                                                     'admin-entities.fields.gallery.captionPlaceholder'
                                                 )}
-                                                disabled={disabled || isThisBusy}
-                                                className="h-7 text-xs"
-                                            />
-                                            <Input
-                                                value={image.alt || ''}
-                                                onChange={(e) =>
-                                                    handleUpdateImage(image.id, {
-                                                        alt: e.target.value
-                                                    })
-                                                }
-                                                placeholder={t(
+                                                altPlaceholder={t(
                                                     'admin-entities.fields.gallery.altTextPlaceholder'
                                                 )}
-                                                disabled={disabled || isThisBusy}
-                                                className="h-7 text-xs"
+                                                dragHandleLabel={t(
+                                                    'admin-entities.fields.gallery.dnd.dragHandleLabel'
+                                                )}
+                                                deleteLabel={t(
+                                                    'admin-entities.fields.gallery.deleteLabel'
+                                                )}
+                                                onRemove={handleRemoveImage}
+                                                onUpdate={handleUpdateImage}
                                             />
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                    </div>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </SortableContext>
+                    </DndContext>
                 )}
 
-                {/* Upload Area */}
                 {canAddMore && (
                     <button
                         type="button"
@@ -521,7 +412,6 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                     </button>
                 )}
 
-                {/* Hidden File Input */}
                 <Input
                     ref={fileInputRef}
                     type="file"
@@ -533,7 +423,6 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                     aria-describedby={cn(errorId, descriptionId, helperId).trim() || undefined}
                 />
 
-                {/* Upload/Delete Error Message */}
                 {uploadError && (
                     <p
                         role="alert"
@@ -543,7 +432,6 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                     </p>
                 )}
 
-                {/* Helper Text */}
                 {helper && !hasError && (
                     <p
                         id={helperId}
@@ -553,7 +441,6 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                     </p>
                 )}
 
-                {/* Field-level Error Message */}
                 {hasError && errorMessage && (
                     <p
                         id={errorId}

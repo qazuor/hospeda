@@ -351,7 +351,16 @@
             "uploading": "Subiendo...",
             "addImages": "Agregar imágenes ({current}/{max})",
             "fileConstraints": "Tipos: {types}, tamaño máximo: {maxSize} cada una",
-            "selectButton": "Seleccionar imágenes"
+            "selectButton": "Seleccionar imágenes",
+            "deleteLabel": "Eliminar imagen",
+            "dnd": {
+                "instructions": "Para reordenar las imágenes, presione Tab para navegar hasta un controlador, luego Espacio o Enter para tomar el elemento. Use las flechas para mover, Espacio o Enter para soltar, y Escape para cancelar.",
+                "dragHandleLabel": "Reordenar imagen",
+                "onDragStart": "Se tomó la imagen en posición {position}.",
+                "onDragOver": "Moviendo imagen de posición {from} a posición {to}.",
+                "onDragEnd": "Imagen soltada en posición {position}.",
+                "onDragCancel": "Movimiento cancelado. Imagen devuelta a posición {position}."
+            }
         }
     },
     "entitlementGate": {

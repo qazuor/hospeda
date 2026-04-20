@@ -375,7 +375,16 @@
             "uploading": "Enviando...",
             "addImages": "Adicionar imagens ({current}/{max})",
             "fileConstraints": "{types} até {maxSize} cada",
-            "selectButton": "Selecionar Imagens"
+            "selectButton": "Selecionar Imagens",
+            "deleteLabel": "Remover imagem",
+            "dnd": {
+                "instructions": "Para reordenar as imagens, pressione Tab para focar em um controlador, depois Espaço ou Enter para pegar o item. Use as setas para mover, Espaço ou Enter para soltar e Escape para cancelar.",
+                "dragHandleLabel": "Reordenar imagem",
+                "onDragStart": "Imagem pega na posição {position}.",
+                "onDragOver": "Movendo imagem da posição {from} para a posição {to}.",
+                "onDragEnd": "Imagem solta na posição {position}.",
+                "onDragCancel": "Movimento cancelado. Imagem retornou à posição {position}."
+            }
         },
         "fileUploadNotImplemented": "Upload de arquivos ainda não implementado",
         "unknownFieldType": "Tipo de campo desconhecido: {type}"

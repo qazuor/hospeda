@@ -375,7 +375,16 @@
             "uploading": "Uploading...",
             "addImages": "Add images ({current}/{max})",
             "fileConstraints": "{types} up to {maxSize} each",
-            "selectButton": "Select Images"
+            "selectButton": "Select Images",
+            "deleteLabel": "Remove image",
+            "dnd": {
+                "instructions": "To reorder images, press Tab to focus a drag handle, then Space or Enter to pick up the item. Use arrow keys to move, Space or Enter to drop, and Escape to cancel.",
+                "dragHandleLabel": "Reorder image",
+                "onDragStart": "Picked up image at position {position}.",
+                "onDragOver": "Moving image from position {from} to position {to}.",
+                "onDragEnd": "Image dropped at position {position}.",
+                "onDragCancel": "Movement cancelled. Image returned to position {position}."
+            }
         },
         "fileUploadNotImplemented": "File upload not yet implemented",
         "unknownFieldType": "Unknown field type: {type}"
