@@ -1205,37 +1205,41 @@
             "id": "T-065",
             "title": "Service-core tests: hardDelete cleanup and hookstate propagation",
             "description": "Gaps: GAP-078-094, GAP-078-095.\n\nFiles: packages/service-core/test/ (5 service test files)\n- GAP-078-094: Tests for hardDelete cleanup: 5 services x mock InMemoryImageProvider -> assert deleteByPrefix called with correct prefix + error swallowed\n- GAP-078-095: hookstate.test.ts per service: deletedEntityId propagation via ctx.hookState\n\nAcceptance: Test per service: mock InMemoryImageProvider; hardDelete entity; assert deleteByPrefix('hospeda/dev/{entityType}/{entityId}/') called; ctx.hookState.deletedEntityId equals entity ID.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-018", "T-019"],
             "blocks": [],
             "subtasks": [],
             "tags": ["testing", "services"],
             "phase": "phase-9d",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-04-20T13:48:00.000Z",
+                "completed": "2026-04-20T14:02:36.000Z"
+            },
+            "commit": "028a44c8",
+            "outcome": "26 tests across 5 files (accommodation=5, destination=5, event=5, post=5, user=6). Each file creates own InMemoryImageProvider + mocks in beforeEach (no shared fixture, duplication <50 lines). Canonical contract: provider.deleteByPrefix invoked with hospeda/{env}/{entity}/{id}/ prefix after confirmed hard delete; short-circuits when no provider injected or zero deleted rows; swallows provider errors while preserving DB-level success. Accommodation (167 lines) stubs destinationService.updateAccommodationsCount + _destinationModel.findById via @ts-expect-error; asserts logger.warn metadata (error + prefix). User covers satellite imagePublicId column vs legacy hospeda/{env}/avatars/{id} fallback. Destination/event/post assert only error non-propagation (destination warn goes through class-level revalidation logger not this.logger, documented inline). 26/26 pass in 149ms. Lint clean, typecheck clean on new files (pre-existing getById.test.ts:379 error unrelated). Closer-agent pattern used: T-065 primary agent finished work but output truncated before commit; follow-up closer spawned to verify + commit cleanly."
         },
         {
             "id": "T-066",
             "title": "API integration tests: admin upload/delete and protected upload scenarios",
             "description": "Gaps: GAP-078-092, GAP-078-024, GAP-078-093.\n\nFiles: apps/api/test/integration/media/admin-upload.test.ts, apps/api/test/integration/media/admin-delete.test.ts, apps/api/test/integration/media/protected-upload.test.ts\n- GAP-078-092+024: admin-upload.test.ts (9 scenarios REQ-04.1) + admin-delete.test.ts (5 REQ-04.3) + protected-upload.test.ts (2 REQ-04.2); mock getMediaProvider() with InMemoryImageProvider\n- GAP-078-093: Test HTTP 503 CLOUDINARY_NOT_CONFIGURED by unsetting Cloudinary env vars\n\nAcceptance: All 16 integration test scenarios pass; each test file has named scenarios matching spec REQ numbers; unset env vars -> POST returns 503 CLOUDINARY_NOT_CONFIGURED.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-018", "T-019", "T-029"],
             "blocks": [],
             "subtasks": [],
             "tags": ["testing", "api", "integration"],
             "phase": "phase-9e",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-04-20T13:48:00.000Z",
+                "completed": "2026-04-20T14:00:00.000Z"
+            },
+            "commit": "4bc7653f",
+            "outcome": "24 tests across 3 files in apps/api/test/routes/media/t066-*.test.ts: admin-upload (10 scenarios), admin-delete (9), protected-upload (5). Location NOT test/integration (excluded from default vitest config; existing media tests already live at test/routes/media/ and are integration-style via app.request). Fixture: canonical 1x1 PNG base64 67 bytes, reused from existing tests (no binary commits). Mocking: vi.hoisted providerState.configured + vi.mock apps/api/src/services/media for null-fallback toggle (GAP-078-093); getById via vi.spyOn(.prototype) for 4 entity services. Counter assertions via getDomainCounters() + resetMetrics() on media_upload_total{result} + media_delete_total{result} - confirms T-056 observability reach. Spec drift documented inline (reconciliation T-068, no silent fixes): REQ-04.1-D/H + REQ-04.3-B/E spec 422 but impl surfaces 400 VALIDATION_ERROR from explicit safeParse branch. Gotcha: 401 test needs headers user-agent='vitest' or validation middleware cuts before auth with 400 false-positive. 14 files / 79 tests pass (24 new + 55 pre-existing). Biome + typecheck clean on T-066 files (pre-existing getBySlug/similar/status/schema-validation/cron/admin-list/permission-gate/addon-limit-recalculation errors orthogonal)."
         },
         {
             "id": "T-067",

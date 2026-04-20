@@ -3,6 +3,7 @@ import type {
     AccommodationRatingInput,
     AccommodationSearchInput,
     DestinationSummary,
+    SortField,
     UserSummary
 } from '@repo/schemas';
 import type { AnyColumn, SQL } from 'drizzle-orm';
@@ -16,6 +17,88 @@ import { safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
+
+/**
+ * Nullable numeric columns where Postgres' default NULLS handling causes UX surprises.
+ * With `DESC`, Postgres places NULLs FIRST by default — so "sort by rating desc" would
+ * bubble up rows WITHOUT rating. We force `NULLS LAST` for these fields regardless of
+ * direction so empty values are always last.
+ *
+ * `minPrice` / `maxPrice` are listed for spec-literal compatibility (SPEC-076) but are
+ * NOT actual columns on the accommodations table — price is stored under a JSONB `price`
+ * object. These entries are defensive: if a future refactor ever exposes them as direct
+ * sort-eligible columns, the `NULLS LAST` rule will apply automatically. Until then the
+ * `columns[field]` lookup in `buildAccommodationOrderBy` returns `undefined` and the
+ * entry is silently skipped (same as any unknown column).
+ */
+const NUMERIC_NULLABLE_FIELDS = new Set<string>([
+    'averageRating',
+    'reviewsCount',
+    'minPrice',
+    'maxPrice'
+]);
+
+/**
+ * Build a Drizzle-compatible sort expression. For nullable numeric fields we emit a raw
+ * `NULLS LAST` fragment (Drizzle's `asc`/`desc` do not expose NULLS positioning). For
+ * every other column we defer to the stock helpers.
+ */
+function buildSortExpr(column: AnyColumn, order: 'asc' | 'desc', field: string): SQL {
+    if (NUMERIC_NULLABLE_FIELDS.has(field)) {
+        return order === 'desc' ? sql`${column} DESC NULLS LAST` : sql`${column} ASC NULLS LAST`;
+    }
+    return order === 'desc' ? desc(column) : asc(column);
+}
+
+/**
+ * Compose the full ORDER BY list for accommodation search queries.
+ *
+ * Precedence (applied in order):
+ *   1. `featuredFirst` pin     → `isFeatured DESC` prepended.
+ *   2. `sorts[]` if present    → iterated in declared order. Any `isFeatured`
+ *                                entry is dropped when `featuredFirst` is pinned
+ *                                (prevents a duplicated `ORDER BY is_featured`).
+ *   3. Legacy `sortBy`/`sortOrder` fallback when `sorts[]` is absent or empty.
+ *                                Also dropped if it would duplicate the pin.
+ *   4. `id DESC`               → stable tiebreaker, ALWAYS appended so pagination
+ *                                is deterministic when leading sort keys tie.
+ *
+ * Unknown fields (not present on the `accommodations` table) are silently skipped,
+ * preserving parity with the legacy single-column behavior.
+ */
+export function buildAccommodationOrderBy(params: {
+    featuredFirst?: boolean;
+    sorts?: SortField[];
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+}): SQL[] {
+    const orderBy: SQL[] = [];
+
+    if (params.featuredFirst) {
+        orderBy.push(desc(accommodations.isFeatured));
+    }
+
+    const legacyFallback: SortField[] =
+        params.sortBy && !(params.featuredFirst && params.sortBy === 'isFeatured')
+            ? [{ field: params.sortBy, order: params.sortOrder ?? 'asc' }]
+            : [];
+    const rawSortFields: SortField[] =
+        params.sorts && params.sorts.length > 0 ? params.sorts : legacyFallback;
+
+    const sortFields = params.featuredFirst
+        ? rawSortFields.filter((s) => s.field !== 'isFeatured')
+        : rawSortFields;
+
+    for (const sort of sortFields) {
+        const column = accommodations[sort.field as keyof typeof accommodations];
+        if (column && typeof column === 'object' && 'name' in column) {
+            orderBy.push(buildSortExpr(column as AnyColumn, sort.order, sort.field));
+        }
+    }
+
+    orderBy.push(desc(accommodations.id));
+    return orderBy;
+}
 
 export class AccommodationModel extends BaseModelImpl<Accommodation> {
     protected table = accommodations;
@@ -224,17 +307,12 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
 
         const where = and(...whereClauses);
 
-        const orderBy = [];
-        if (params.sortBy) {
-            const column = accommodations[params.sortBy as keyof typeof accommodations];
-            if (column && typeof column === 'object' && 'name' in column) {
-                orderBy.push(
-                    params.sortOrder === 'desc'
-                        ? desc(column as AnyColumn)
-                        : asc(column as AnyColumn)
-                );
-            }
-        }
+        const orderBy = buildAccommodationOrderBy({
+            featuredFirst: params.featuredFirst,
+            sorts: params.sorts,
+            sortBy: params.sortBy,
+            sortOrder: params.sortOrder
+        });
 
         const page = params.page ?? 1;
         const pageSize = params.pageSize ?? 10;
@@ -371,22 +449,18 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
 
         const where = and(...whereClauses);
 
-        const orderBy = [];
-        if (params.sortBy) {
-            const column = accommodations[params.sortBy as keyof typeof accommodations];
-            if (column && typeof column === 'object' && 'name' in column) {
-                orderBy.push(
-                    params.sortOrder === 'desc'
-                        ? desc(column as AnyColumn)
-                        : asc(column as AnyColumn)
-                );
-            }
-        }
+        const orderBy = buildAccommodationOrderBy({
+            featuredFirst: params.featuredFirst,
+            sorts: params.sorts,
+            sortBy: params.sortBy,
+            sortOrder: params.sortOrder
+        });
 
         const page = params.page ?? 1;
         const pageSize = params.pageSize ?? 10;
 
-        // Get accommodations with relations
+        // Get accommodations with relations (RQB API — `orderBy` is a bare array
+        // property, NOT spread; spread inside an object literal is a SyntaxError).
         const results = await db.query.accommodations.findMany({
             where,
             with: {
