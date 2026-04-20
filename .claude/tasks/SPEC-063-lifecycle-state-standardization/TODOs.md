@@ -282,7 +282,11 @@
   - Coverage: lifecycleState enum values + default ACTIVE + invalid rejection + public/protected strip + admin preserve + isPublished/isVerified regression guard
   - Blocked by: T-032 · Blocks: none
 
-- [ ] **T-038** (complexity: 2) — Write DestinationReview admin-search + integration tests (AC-001-04)
+- [x] **T-038** (complexity: 2) — Write DestinationReview admin-search + integration tests (AC-001-04)
+  - COMPLETED 2026-04-18 · lint: pass · typecheck: pass · tests: 29 schema + 5 integration pass
+  - Schema tests: 5 lifecycle-specific (default 'all', accept DRAFT/ACTIVE/ARCHIVED, reject invalid) + 24 scope-bonus covering pagination, UUID filters, rating boundaries, base admin filters, combined
+  - Integration tests: 5 via module-level mock of DestinationReviewService — verifies query.status reaches service with correct enum, invalid rejected with 400/422 before handler, default 'all'
+  - Router collision gotcha: Hono evaluates middleware for all sibling routes at `/` on same path — mock actor required DESTINATION_VIEW_ALL + DESTINATION_CREATE + other peer perms; trailing slash required on URL
   - Blocked by: T-034, T-035 · Blocks: T-039, T-058
 
 ## Phase 3 — Sponsorship (rename + add)
