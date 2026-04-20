@@ -1,7 +1,7 @@
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
 import { DEFAULT_MEDIA_MAX_SIZE_BYTES } from '@/lib/constants';
-import { PermissionEnum } from '@repo/schemas';
+import { ENTITY_GALLERY_CAPS, PermissionEnum } from '@repo/schemas';
 
 /**
  * Consolidated configuration for the Contact & Media section of event
@@ -97,7 +97,7 @@ export const createContactMediaConsolidatedSection = (): ConsolidatedSectionConf
             },
             typeConfig: {
                 type: 'GALLERY',
-                maxImages: 10,
+                maxImages: ENTITY_GALLERY_CAPS.event,
                 allowedTypes: ['image/jpeg', 'image/png', 'image/webp']
             }
         }

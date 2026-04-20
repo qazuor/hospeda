@@ -1,7 +1,7 @@
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { DEFAULT_MEDIA_MAX_SIZE_BYTES } from '@/lib/constants';
 import type { useTranslations } from '@repo/i18n';
-import { PermissionEnum } from '@repo/schemas';
+import { ENTITY_GALLERY_CAPS, PermissionEnum } from '@repo/schemas';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
 
 /**
@@ -78,7 +78,7 @@ export const createGalleryConsolidatedSection = (
                 required: false,
                 modes: ['view', 'edit', 'create'],
                 label: 'Galería de Imágenes',
-                description: 'Colección de imágenes del alojamiento (máximo 20)',
+                description: `Colección de imágenes del alojamiento (máximo ${ENTITY_GALLERY_CAPS.accommodation})`,
                 placeholder: 'Arrastra imágenes aquí o haz clic para seleccionar...',
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
@@ -87,7 +87,7 @@ export const createGalleryConsolidatedSection = (
                 limitKey: 'max_photos_per_accommodation',
                 typeConfig: {
                     type: 'GALLERY',
-                    maxImages: 20,
+                    maxImages: ENTITY_GALLERY_CAPS.accommodation,
                     maxSize: DEFAULT_MEDIA_MAX_SIZE_BYTES,
                     allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
                     maxWidth: 1920,
