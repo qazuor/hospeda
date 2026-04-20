@@ -103,11 +103,11 @@ describe('processEntityImages — SPEC-078-GAPS T-022', () => {
             const data = {
                 id: 'acc-1',
                 media: {
-                    featuredImage: { url: 'https://src/featured.jpg' },
+                    featuredImage: { url: 'https://images.unsplash.com/featured.jpg' },
                     gallery: [
-                        { url: 'https://src/g0.jpg' },
-                        { url: 'https://src/g1.jpg' },
-                        { url: 'https://src/g2.jpg' }
+                        { url: 'https://images.unsplash.com/g0.jpg' },
+                        { url: 'https://images.unsplash.com/g1.jpg' },
+                        { url: 'https://images.unsplash.com/g2.jpg' }
                     ]
                 }
             };
@@ -160,7 +160,7 @@ describe('processEntityImages — SPEC-078-GAPS T-022', () => {
             const data = {
                 id: 'acc-2',
                 media: {
-                    featuredImage: { url: 'https://src/broken.jpg' }
+                    featuredImage: { url: 'https://images.unsplash.com/broken.jpg' }
                 }
             };
 
@@ -180,7 +180,7 @@ describe('processEntityImages — SPEC-078-GAPS T-022', () => {
 
             // Assert
             const media = (result as typeof data).media;
-            expect(media.featuredImage?.url).toBe('https://src/broken.jpg');
+            expect(media.featuredImage?.url).toBe('https://images.unsplash.com/broken.jpg');
             expect(counters.failures).toBe(1);
             expect(counters.uploaded).toBe(0);
         });
@@ -198,7 +198,7 @@ describe('processEntityImages — SPEC-078-GAPS T-022', () => {
             const data = {
                 id: 'acc-3',
                 media: {
-                    featuredImage: { url: 'https://src/broken.jpg' }
+                    featuredImage: { url: 'https://images.unsplash.com/broken.jpg' }
                 }
             };
 
@@ -223,7 +223,7 @@ describe('processEntityImages — SPEC-078-GAPS T-022', () => {
         it('returns data unchanged', async () => {
             // Arrange
             const cache: ImageCache = {};
-            const data = { media: { featuredImage: { url: 'https://src/x.jpg' } } };
+            const data = { media: { featuredImage: { url: 'https://images.unsplash.com/x.jpg' } } };
 
             // Act
             const result = await processEntityImages({
@@ -255,7 +255,7 @@ describe('processEntityImages — SPEC-078-GAPS T-022', () => {
             const userId = 'user-001';
             const data = {
                 id: userId,
-                profile: { avatar: 'https://src/avatar.jpg' }
+                profile: { avatar: 'https://images.unsplash.com/avatar.jpg' }
             };
 
             // Act
@@ -402,19 +402,19 @@ describe('processEntityImages — SPEC-078-GAPS T-022', () => {
             const data = {
                 id: 'multi',
                 media: {
-                    featuredImage: { url: 'https://src/featured.jpg' },
+                    featuredImage: { url: 'https://images.unsplash.com/featured.jpg' },
                     gallery: [
-                        { url: 'https://src/g0.jpg' },
-                        { url: 'https://src/g1.jpg' },
+                        { url: 'https://images.unsplash.com/g0.jpg' },
+                        { url: 'https://images.unsplash.com/g1.jpg' },
                         // No URL → does NOT count.
                         { caption: 'broken' }
                     ]
                 },
-                profile: { avatar: 'https://src/avatar.jpg' },
+                profile: { avatar: 'https://images.unsplash.com/avatar.jpg' },
                 // Both sponsor (object) and organizer (string) shapes
                 // co-exist here; only one would in a real fixture but the
                 // counter must tally based on shape, not branch selection.
-                logo: { url: 'https://src/logo.jpg' }
+                logo: { url: 'https://images.unsplash.com/logo.jpg' }
             };
 
             // Act
@@ -463,7 +463,7 @@ describe('processEntityImages — SPEC-078-GAPS T-022', () => {
             const { provider } = createProviderMock();
             const cache: ImageCache = {};
             const counters = createImageProcessingCounters();
-            const data = { id: 'org', logo: 'https://src/logo.jpg' };
+            const data = { id: 'org', logo: 'https://images.unsplash.com/logo.jpg' };
 
             // Act
             await processEntityImages({
@@ -494,7 +494,7 @@ describe('processEntityImages — SPEC-078-GAPS T-022', () => {
             const cachedUrl = 'https://cdn.example.com/cached/url.jpg';
             const cache: ImageCache = {
                 'hospeda/dev/seed/accommodations/acc-cached/featured': {
-                    originalUrl: 'https://src/featured.jpg',
+                    originalUrl: 'https://images.unsplash.com/featured.jpg',
                     cloudinaryUrl: cachedUrl,
                     uploadedAt: '2024-01-01T00:00:00.000Z',
                     fileModifiedAt: null
@@ -503,7 +503,7 @@ describe('processEntityImages — SPEC-078-GAPS T-022', () => {
             const counters = createImageProcessingCounters();
             const data = {
                 id: 'acc-cached',
-                media: { featuredImage: { url: 'https://src/featured.jpg' } }
+                media: { featuredImage: { url: 'https://images.unsplash.com/featured.jpg' } }
             };
 
             // Act
@@ -534,7 +534,7 @@ describe('processEntityImages — SPEC-078-GAPS T-022', () => {
             const { provider } = createProviderMock();
             const cache: ImageCache = {
                 'hospeda/dev/seed/accommodations/acc-mix/featured': {
-                    originalUrl: 'https://src/featured.jpg',
+                    originalUrl: 'https://images.unsplash.com/featured.jpg',
                     cloudinaryUrl: 'https://cdn.example.com/cached.jpg',
                     uploadedAt: '2024-01-01T00:00:00.000Z',
                     fileModifiedAt: null
@@ -544,8 +544,11 @@ describe('processEntityImages — SPEC-078-GAPS T-022', () => {
             const data = {
                 id: 'acc-mix',
                 media: {
-                    featuredImage: { url: 'https://src/featured.jpg' },
-                    gallery: [{ url: 'https://src/g0.jpg' }, { url: 'https://src/g1.jpg' }]
+                    featuredImage: { url: 'https://images.unsplash.com/featured.jpg' },
+                    gallery: [
+                        { url: 'https://images.unsplash.com/g0.jpg' },
+                        { url: 'https://images.unsplash.com/g1.jpg' }
+                    ]
                 }
             };
 
@@ -577,7 +580,7 @@ describe('processEntityImages — SPEC-078-GAPS T-022', () => {
             const data = {
                 id: 'acc-mod-1',
                 media: {
-                    featuredImage: { url: 'https://src/featured.jpg' }
+                    featuredImage: { url: 'https://images.unsplash.com/featured.jpg' }
                 }
             };
 
@@ -608,16 +611,16 @@ describe('processEntityImages — SPEC-078-GAPS T-022', () => {
                 id: 'acc-mod-2',
                 media: {
                     featuredImage: {
-                        url: 'https://src/pending.jpg',
+                        url: 'https://images.unsplash.com/pending.jpg',
                         moderationState: 'PENDING' as const
                     },
                     gallery: [
                         {
-                            url: 'https://src/g0.jpg',
+                            url: 'https://images.unsplash.com/g0.jpg',
                             moderationState: 'REJECTED' as const
                         },
                         // No moderationState — should be defaulted.
-                        { url: 'https://src/g1.jpg' }
+                        { url: 'https://images.unsplash.com/g1.jpg' }
                     ]
                 }
             };

@@ -13,7 +13,7 @@ import { uploadSeedImage } from '../../src/utils/cloudinary-upload.js';
  */
 function makeCacheEntry(overrides: Partial<CacheEntry> = {}): CacheEntry {
     return {
-        originalUrl: 'https://src.example/photo.jpg',
+        originalUrl: 'https://images.unsplash.com/photo.jpg',
         cloudinaryUrl: 'https://res.cloudinary.com/test-cloud/image/upload/v1/cached.jpg',
         uploadedAt: '2024-01-01T00:00:00.000Z',
         fileModifiedAt: null,
@@ -54,7 +54,7 @@ describe('uploadSeedImage — SPEC-078-GAPS T-064', () => {
 
             // Act
             const outcome = await uploadSeedImage({
-                originalUrl: 'https://src/featured.jpg',
+                originalUrl: 'https://images.unsplash.com/featured.jpg',
                 entityType: 'accommodations',
                 entityId: 'acc-1',
                 role: 'featured',
@@ -82,7 +82,7 @@ describe('uploadSeedImage — SPEC-078-GAPS T-064', () => {
 
             // Act
             const outcome = await uploadSeedImage({
-                originalUrl: 'https://src/g0.jpg',
+                originalUrl: 'https://images.unsplash.com/g0.jpg',
                 entityType: 'destinations',
                 entityId: 'colon',
                 role: 'gallery/0',
@@ -112,7 +112,7 @@ describe('uploadSeedImage — SPEC-078-GAPS T-064', () => {
                 'https://res.cloudinary.com/test-cloud/image/upload/v1/hospeda/dev/seed/accommodations/acc-1/featured';
             const cache: ImageCache = {
                 'hospeda/dev/seed/accommodations/acc-1/featured': makeCacheEntry({
-                    originalUrl: 'https://src/featured.jpg',
+                    originalUrl: 'https://images.unsplash.com/featured.jpg',
                     cloudinaryUrl: cachedUrl
                 })
             };
@@ -126,7 +126,7 @@ describe('uploadSeedImage — SPEC-078-GAPS T-064', () => {
 
             // Act
             const outcome = await uploadSeedImage({
-                originalUrl: 'https://src/featured.jpg',
+                originalUrl: 'https://images.unsplash.com/featured.jpg',
                 entityType: 'accommodations',
                 entityId: 'acc-1',
                 role: 'featured',
@@ -149,14 +149,14 @@ describe('uploadSeedImage — SPEC-078-GAPS T-064', () => {
             vi.stubGlobal('fetch', makeFetchOk());
             const cache: ImageCache = {
                 'hospeda/dev/seed/accommodations/acc-1/featured': makeCacheEntry({
-                    originalUrl: 'https://src/OLD.jpg'
+                    originalUrl: 'https://images.unsplash.com/OLD.jpg'
                 })
             };
             const provider = new InMemoryImageProvider();
 
             // Act
             const outcome = await uploadSeedImage({
-                originalUrl: 'https://src/NEW.jpg',
+                originalUrl: 'https://images.unsplash.com/NEW.jpg',
                 entityType: 'accommodations',
                 entityId: 'acc-1',
                 role: 'featured',
@@ -170,7 +170,7 @@ describe('uploadSeedImage — SPEC-078-GAPS T-064', () => {
             expect(outcome.status).toBe('uploaded');
             // Cache replaced with the new originalUrl.
             expect(cache['hospeda/dev/seed/accommodations/acc-1/featured']?.originalUrl).toBe(
-                'https://src/NEW.jpg'
+                'https://images.unsplash.com/NEW.jpg'
             );
         });
     });
@@ -194,7 +194,7 @@ describe('uploadSeedImage — SPEC-078-GAPS T-064', () => {
 
             // Act
             const outcome = await uploadSeedImage({
-                originalUrl: 'https://src/down.jpg',
+                originalUrl: 'https://images.unsplash.com/down.jpg',
                 entityType: 'events',
                 entityId: 'evt-1',
                 role: 'featured',
@@ -208,7 +208,7 @@ describe('uploadSeedImage — SPEC-078-GAPS T-064', () => {
             // Assert
             expect(outcome.status).toBe('failed');
             if (outcome.status !== 'failed') throw new Error('unreachable');
-            expect(outcome.cloudinaryUrl).toBe('https://src/down.jpg');
+            expect(outcome.cloudinaryUrl).toBe('https://images.unsplash.com/down.jpg');
             expect(outcome.errorMessage).toMatch(/Failed to fetch image \(503\)/);
             // No cache write on failure.
             expect(Object.keys(cache)).toHaveLength(0);
@@ -230,7 +230,7 @@ describe('uploadSeedImage — SPEC-078-GAPS T-064', () => {
             // Act + Assert
             await expect(
                 uploadSeedImage({
-                    originalUrl: 'https://src/missing.jpg',
+                    originalUrl: 'https://images.unsplash.com/missing.jpg',
                     entityType: 'events',
                     entityId: 'evt-2',
                     role: 'featured',
@@ -256,7 +256,7 @@ describe('uploadSeedImage — SPEC-078-GAPS T-064', () => {
 
             // Act
             const outcome = await uploadSeedImage({
-                originalUrl: 'https://src/x.jpg',
+                originalUrl: 'https://images.unsplash.com/x.jpg',
                 entityType: 'posts',
                 entityId: 'p-1',
                 role: 'featured',
@@ -270,7 +270,7 @@ describe('uploadSeedImage — SPEC-078-GAPS T-064', () => {
             // Assert
             expect(outcome.status).toBe('failed');
             if (outcome.status !== 'failed') throw new Error('unreachable');
-            expect(outcome.cloudinaryUrl).toBe('https://src/x.jpg');
+            expect(outcome.cloudinaryUrl).toBe('https://images.unsplash.com/x.jpg');
             expect(outcome.errorMessage).toBe('cloudinary down');
         });
 
@@ -289,7 +289,7 @@ describe('uploadSeedImage — SPEC-078-GAPS T-064', () => {
             // Act + Assert
             await expect(
                 uploadSeedImage({
-                    originalUrl: 'https://src/x.jpg',
+                    originalUrl: 'https://images.unsplash.com/x.jpg',
                     entityType: 'posts',
                     entityId: 'p-2',
                     role: 'featured',
@@ -317,7 +317,7 @@ describe('uploadSeedImage — SPEC-078-GAPS T-064', () => {
 
             // Act
             const outcome = await uploadSeedImage({
-                originalUrl: 'https://src/avatar.jpg',
+                originalUrl: 'https://images.unsplash.com/avatar.jpg',
                 // entityType + role are still required by the signature but
                 // when publicIdOverride is set they MUST NOT influence the
                 // resulting publicId.
@@ -351,14 +351,14 @@ describe('uploadSeedImage — SPEC-078-GAPS T-064', () => {
             const provider = new InMemoryImageProvider();
             const cache: ImageCache = {
                 'hospeda/dev/seed/users/user-002/avatar': makeCacheEntry({
-                    originalUrl: 'https://src/avatar.jpg'
+                    originalUrl: 'https://images.unsplash.com/avatar.jpg'
                 })
             };
             const flatId = 'hospeda/dev/seed/avatars/user-002';
 
             // Act
             const outcome = await uploadSeedImage({
-                originalUrl: 'https://src/avatar.jpg',
+                originalUrl: 'https://images.unsplash.com/avatar.jpg',
                 entityType: 'users',
                 entityId: 'user-002',
                 role: 'avatar',
@@ -374,6 +374,97 @@ describe('uploadSeedImage — SPEC-078-GAPS T-064', () => {
             // Both keys now exist in the cache (default seeded + override new).
             expect(cache[flatId]).toBeDefined();
             expect(cache['hospeda/dev/seed/users/user-002/avatar']).toBeDefined();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // GAP-078-030: SSRF allowlist
+    // -----------------------------------------------------------------------
+    describe('SSRF allowlist (GAP-078-030)', () => {
+        it('skips fetch + upload when the originalUrl hostname is not allowlisted', async () => {
+            // Arrange — fetch would "succeed" if called; the allowlist must
+            // short-circuit before any network call.
+            const fetchSpy = makeFetchOk();
+            vi.stubGlobal('fetch', fetchSpy);
+            const upload = vi.fn().mockResolvedValue({ url: 'should-not-be-called' });
+            const provider = {
+                upload,
+                delete: vi.fn(),
+                deleteByPrefix: vi.fn(),
+                healthCheck: vi.fn()
+            } as unknown as ImageProvider;
+            const cache: ImageCache = {};
+
+            // Act
+            const outcome = await uploadSeedImage({
+                originalUrl: 'https://evil.internal.local/secret.jpg',
+                entityType: 'accommodations',
+                entityId: 'acc-ssrf',
+                role: 'featured',
+                provider,
+                cache,
+                cachePath,
+                env: 'dev'
+            });
+
+            // Assert — behavior: failed outcome, no fetch, no upload, no cache write.
+            expect(outcome.status).toBe('failed');
+            if (outcome.status !== 'failed') throw new Error('unreachable');
+            expect(outcome.cloudinaryUrl).toBe('https://evil.internal.local/secret.jpg');
+            expect(outcome.errorMessage).toMatch(/not in allowlist/);
+            expect(fetchSpy).not.toHaveBeenCalled();
+            expect(upload).not.toHaveBeenCalled();
+            expect(Object.keys(cache)).toHaveLength(0);
+        });
+
+        it('does NOT throw on disallowed URL even when throwOnFailure=true', async () => {
+            // Arrange — a disallowed URL is a fixture/data defect, not a
+            // network error; it must never abort a required-track run.
+            const fetchSpy = makeFetchOk();
+            vi.stubGlobal('fetch', fetchSpy);
+            const provider = new InMemoryImageProvider();
+            const cache: ImageCache = {};
+
+            // Act
+            const outcome = await uploadSeedImage({
+                originalUrl: 'http://169.254.169.254/latest/meta-data/',
+                entityType: 'users',
+                entityId: 'u-ssrf',
+                role: 'avatar',
+                provider,
+                cache,
+                cachePath,
+                env: 'dev',
+                throwOnFailure: true
+            });
+
+            // Assert
+            expect(outcome.status).toBe('failed');
+            expect(fetchSpy).not.toHaveBeenCalled();
+        });
+
+        it('allows fetch when the URL is on the allowlist (happy-path regression)', async () => {
+            // Arrange
+            const fetchSpy = makeFetchOk();
+            vi.stubGlobal('fetch', fetchSpy);
+            const provider = new InMemoryImageProvider({ cloudName: 'demo' });
+            const cache: ImageCache = {};
+
+            // Act
+            const outcome = await uploadSeedImage({
+                originalUrl: 'https://images.pexels.com/photos/1/pexels-photo-1.jpeg',
+                entityType: 'posts',
+                entityId: 'p-1',
+                role: 'featured',
+                provider,
+                cache,
+                cachePath,
+                env: 'dev'
+            });
+
+            // Assert
+            expect(outcome.status).toBe('uploaded');
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
         });
     });
 });

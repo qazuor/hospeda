@@ -42,6 +42,52 @@ export function evaluateProdCleanupGate(
     };
 }
 
+/**
+ * Input shape for {@link coerceResetImpliesCleanImages}.
+ */
+export interface ResetCoercionInput {
+    /** Parsed value of `--reset`. */
+    readonly reset: boolean;
+    /** Parsed value of `--clean-images`. */
+    readonly cleanImages: boolean;
+}
+
+/**
+ * Output shape for {@link coerceResetImpliesCleanImages}.
+ */
+export interface ResetCoercionResult {
+    /** Final value of `reset` (unchanged — passed through). */
+    readonly reset: boolean;
+    /** Final value of `cleanImages` after coercion. */
+    readonly cleanImages: boolean;
+    /** `true` when the helper had to force `cleanImages` on because of `reset`. */
+    readonly coerced: boolean;
+}
+
+/**
+ * GAP-078-006 + GAP-078-078 — pure flag coercion for `--reset` / `--clean-images`.
+ *
+ * When `reset` is `true`, `cleanImages` is forced to `true` so the Cloudinary
+ * seed prefix (`hospeda/{env}/seed/`) is purged before the database is
+ * reseeded; otherwise we'd leave orphan assets pointing at rows that no
+ * longer exist. The flags are NOT mutually exclusive: passing both is valid,
+ * passing only `--clean-images` is still a cleanup-only operation.
+ *
+ * The helper returns `coerced: true` only when it actually flipped the bit,
+ * so the CLI can log the implicit behavior once at startup without spamming
+ * when the user was already explicit.
+ *
+ * @param input - Raw parsed flags. See {@link ResetCoercionInput}.
+ * @returns Coerced flags. See {@link ResetCoercionResult}.
+ */
+export function coerceResetImpliesCleanImages(input: ResetCoercionInput): ResetCoercionResult {
+    const { reset, cleanImages } = input;
+    if (reset && !cleanImages) {
+        return { reset: true, cleanImages: true, coerced: true };
+    }
+    return { reset, cleanImages, coerced: false };
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -94,6 +140,21 @@ if (IS_CLI_ENTRY) {
             `${STATUS_ICONS.Error} Cannot use --rollbackOnError and --continueOnError at the same time.`
         );
         process.exit(1);
+    }
+
+    // GAP-078-006 + GAP-078-078: --reset implies --clean-images.
+    // Resetting the database without dropping the Cloudinary seed bucket
+    // leaves orphan assets pointing at rows that no longer exist. The flags
+    // are NOT mutually exclusive — see {@link coerceResetImpliesCleanImages}.
+    const coercion = coerceResetImpliesCleanImages({
+        reset: options.reset,
+        cleanImages: options.cleanImages
+    });
+    options.cleanImages = coercion.cleanImages;
+    if (coercion.coerced) {
+        logger.info(
+            '[seed] --reset implies --clean-images: enabling Cloudinary seed cleanup before reseeding.'
+        );
     }
 
     // Parse --exclude roles,permissions
@@ -149,11 +210,22 @@ if (IS_CLI_ENTRY) {
     };
 
     try {
-        if (options.cleanImages) {
+        if (options.cleanImages && !options.reset) {
+            // Cleanup-only mode: delete seed assets and exit without reseeding.
             handleCleanImages().catch((err) => {
                 logger.error(`${STATUS_ICONS.Error} Error during image cleanup: ${String(err)}`);
                 process.exit(1);
             });
+        } else if (options.reset) {
+            // Reset mode: clean Cloudinary seed assets FIRST, then run the
+            // seed pipeline. This preserves the GAP-078-006/078 semantics
+            // (reset implies a clean image bucket).
+            handleCleanImages()
+                .then(() => runSeed(options))
+                .catch((err) => {
+                    logger.error(`${STATUS_ICONS.Error} Error during reset+seed: ${String(err)}`);
+                    process.exit(1);
+                });
         } else {
             runSeed(options);
         }

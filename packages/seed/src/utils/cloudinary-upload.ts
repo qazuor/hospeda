@@ -1,5 +1,6 @@
 import type { ImageProvider } from '@repo/media/server';
 import { type ImageCache, isCacheHit, updateCacheEntry } from './cloudinary-cache.js';
+import { ALLOWED_SEED_HOSTNAMES, isAllowedSeedUrl } from './is-allowed-seed-url.js';
 import { logger } from './logger.js';
 
 /**
@@ -125,6 +126,17 @@ export async function uploadSeedImage(
     if (isCacheHit({ cacheEntry: cache[fullPublicId], currentUrl: originalUrl })) {
         const cachedUrl = cache[fullPublicId]?.cloudinaryUrl ?? originalUrl;
         return { status: 'cached', cloudinaryUrl: cachedUrl };
+    }
+
+    // GAP-078-030: SSRF allowlist — only fetch from well-known image CDNs.
+    // On violation we log + skip; we never throw (even with throwOnFailure),
+    // because a disallowed URL is a fixture/data issue, not a network error.
+    if (!isAllowedSeedUrl(originalUrl)) {
+        const message = `Rejected seed image fetch: URL hostname not in allowlist (${ALLOWED_SEED_HOSTNAMES.join(', ')})`;
+        logger.warn(
+            `[seed:images] ${message} — url=${originalUrl} — skipping upload, using original URL`
+        );
+        return { status: 'failed', cloudinaryUrl: originalUrl, errorMessage: message };
     }
 
     try {
