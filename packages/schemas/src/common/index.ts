@@ -33,7 +33,9 @@ export * from './media.schema.js';
 export * from './media-upload.schema.js';
 export * from './moderation.schema.js';
 export * from './password.schema.js';
-// Skip pagination.schema.js to avoid conflicts with base.schema.js
+// Skip pagination.schema.js to avoid `BaseSearchSchema` conflict with base.schema.js,
+// but re-export the multi-sort primitives which have no counterpart elsewhere.
+export { SortFieldSchema, type SortField } from './pagination.schema.js';
 export * from './params.schema.js';
 export * from './price.schema.js';
 export * from './relations.schema.js';

@@ -27,16 +27,91 @@ export const HttpPaginationSchema = z.object({
 export type HttpPagination = z.infer<typeof HttpPaginationSchema>;
 
 /**
+ * Utility for creating boolean query parameters
+ * Converts 'true'/'false' strings to boolean values.
+ *
+ * Declared here (ahead of `HttpSortingSchema`) so that shared sort-related
+ * fields like `featuredFirst` can reuse it without a temporal-dead-zone issue.
+ */
+export const createBooleanQueryParam = (description: string) =>
+    z
+        .enum(['true', 'false'])
+        .transform((v) => v === 'true')
+        .optional()
+        .describe(description);
+
+/**
+ * Duck-typed OpenAPI example attacher.
+ *
+ * `@repo/schemas` imports from plain `zod`, which does not statically expose
+ * `.openapi()`. The method IS available at runtime on every Zod schema whenever
+ * `@hono/zod-openapi` has been imported anywhere in the process (it extends the
+ * Zod prototype globally on import). In the API app it is always loaded, so the
+ * metadata is picked up by the OpenAPI generator. In isolated schema tests the
+ * method is absent and the call is a no-op.
+ *
+ * Falling back to `.describe()` would already surface the example in the
+ * Swagger description, but this helper lets us attach a proper `example` field
+ * on the OpenAPI schema for tools that consume it programmatically.
+ */
+const attachOpenApiExample = <T>(schema: T, example: unknown): T => {
+    const candidate = schema as T & { openapi?: (meta: Record<string, unknown>) => T };
+    if (typeof candidate.openapi === 'function') {
+        return candidate.openapi({ example });
+    }
+    return schema;
+};
+
+/**
  * HTTP-compatible sorting schema
- * Handles string-based sort parameters from query strings
+ * Handles string-based sort parameters from query strings.
+ *
+ * Precedence (enforced by the model layer): when both `sorts` and
+ * `sortBy`/`sortOrder` are present, `sorts` wins. When `sorts` is absent or
+ * empty after whitelist filtering, the model falls back to the legacy
+ * `sortBy`/`sortOrder` pair.
+ *
+ * `featuredFirst` is an independent flag. When `true`, the model prepends
+ * `isFeatured DESC` to the ORDER BY clause. Public routes may force this to
+ * `true` server-side, ignoring the client value.
  */
 export const HttpSortingSchema = z.object({
-    sortBy: z.string().optional().describe('Field name to sort by'),
+    sortBy: z.string().optional().describe('Field name to sort by (legacy single-sort)'),
     sortOrder: z
         .enum(['asc', 'desc'])
         .default('asc')
         .optional()
-        .describe('Sort direction (ascending or descending)')
+        .describe('Sort direction (ascending or descending)'),
+    sorts: attachOpenApiExample(
+        z
+            .string()
+            .transform((val) =>
+                val
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                    .map((s) => {
+                        const [field, order] = s.split(':');
+                        return {
+                            field: (field ?? '').trim(),
+                            order: order === 'desc' ? ('desc' as const) : ('asc' as const)
+                        };
+                    })
+                    .filter((sf) => sf.field.length > 0)
+                    .slice(0, 5)
+            )
+            .optional()
+            .describe(
+                'Comma-separated sort fields in precedence order: `field:order,field:order`. ' +
+                    'Max 5 entries. Unknown/empty fields are silently dropped. ' +
+                    'Example: `averageRating:desc,name:asc`'
+            ),
+        'averageRating:desc,name:asc'
+    ),
+    featuredFirst: createBooleanQueryParam(
+        'When true, featured accommodations appear before non-featured within any sort. ' +
+            'Public listing routes force this to true server-side.'
+    )
 });
 
 export type HttpSorting = z.infer<typeof HttpSortingSchema>;
@@ -52,17 +127,6 @@ export const BaseHttpSearchSchema = z.object({
 });
 
 export type BaseHttpSearch = z.infer<typeof BaseHttpSearchSchema>;
-
-/**
- * Utility for creating boolean query parameters
- * Converts 'true'/'false' strings to boolean values
- */
-export const createBooleanQueryParam = (description: string) =>
-    z
-        .enum(['true', 'false'])
-        .transform((v) => v === 'true')
-        .optional()
-        .describe(description);
 
 /**
  * Utility for creating date query parameters

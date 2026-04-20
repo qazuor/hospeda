@@ -157,6 +157,8 @@ export const httpToDomainAccommodationSearch = (
     pageSize: httpParams.pageSize,
     sortBy: httpParams.sortBy,
     sortOrder: httpParams.sortOrder,
+    sorts: httpParams.sorts,
+    featuredFirst: httpParams.featuredFirst,
     q: httpParams.q,
 
     // Entity-specific filters that exist in BOTH schemas
@@ -180,6 +182,7 @@ export const httpToDomainAccommodationSearch = (
     minRating: httpParams.minRating,
     maxRating: httpParams.maxRating,
     amenities: httpParams.amenities,
+    features: httpParams.features,
     checkIn: httpParams.checkIn,
     checkOut: httpParams.checkOut,
     isAvailable: httpParams.isAvailable

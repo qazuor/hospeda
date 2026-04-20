@@ -137,7 +137,14 @@ export type AccommodationSearchResult = z.infer<typeof AccommodationSearchResult
 
 /**
  * HTTP-compatible accommodation search schema with query string coercion
- * Converts string query parameters to appropriate types for web requests
+ * Converts string query parameters to appropriate types for web requests.
+ *
+ * @deprecated Use `AccommodationSearchHttpSchema` from `./accommodation.http.schema.ts`
+ * instead. That schema is the one wired to the current public list route, supports
+ * `features`, `sorts`, `featuredFirst`, and has a compile-time contract with
+ * `httpToDomainAccommodationSearch`. This schema has zero external consumers and is
+ * preserved only to avoid breaking an inferred re-export chain; it is a removal
+ * candidate in a follow-up cleanup.
  */
 export const HttpAccommodationSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
     // Search
@@ -198,7 +205,12 @@ export type HttpAccommodationSearch = z.infer<typeof HttpAccommodationSearchSche
 // ============================================================================
 
 /**
- * Accommodation search schema with OpenAPI metadata applied
+ * Accommodation search schema with OpenAPI metadata applied.
+ *
+ * @deprecated Built on top of the deprecated `HttpAccommodationSearchSchema`;
+ * use `AccommodationSearchHttpSchema` from `./accommodation.http.schema.ts`
+ * instead. This export has zero external consumers and is a removal candidate
+ * in a follow-up cleanup.
  */
 export const AccommodationSearchSchemaWithMetadata = applyOpenApiMetadata(
     HttpAccommodationSearchSchema,
