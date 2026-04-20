@@ -1078,6 +1078,9 @@
                 "pattern": "[EN] El formato del youtube no es válido"
             }
         },
+        "sort": {
+            "maxFields": "A maximum of 5 sort fields is allowed"
+        },
         "updatedAt": {
             "required": "[EN] La fecha de actualización es obligatoria"
         },

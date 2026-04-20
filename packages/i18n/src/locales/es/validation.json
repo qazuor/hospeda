@@ -1078,6 +1078,9 @@
                 "pattern": "El formato del youtube no es válido"
             }
         },
+        "sort": {
+            "maxFields": "No se pueden especificar más de 5 campos de ordenamiento"
+        },
         "updatedAt": {
             "required": "La fecha de actualización es obligatoria"
         },

@@ -1078,6 +1078,9 @@
                 "pattern": "[PT] El formato del youtube no es válido"
             }
         },
+        "sort": {
+            "maxFields": "Um máximo de 5 campos de ordenação é permitido"
+        },
         "updatedAt": {
             "required": "[PT] La fecha de actualización es obligatoria"
         },
