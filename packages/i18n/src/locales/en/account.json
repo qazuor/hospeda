@@ -1,6 +1,22 @@
 {
     "navigation": "Account navigation",
     "sections": "Account sections",
+    "avatar": {
+        "hint": "JPEG, PNG and WebP only · Max. 5 MB",
+        "actions": {
+            "change": "Change avatar",
+            "uploading": "Uploading..."
+        },
+        "alt": "Avatar",
+        "success": "Avatar updated successfully",
+        "errors": {
+            "invalidType": "Only JPEG, PNG and WebP are accepted",
+            "fileTooLarge": "File too large (max. 5 MB)",
+            "uploadFailed": "Failed to upload the image",
+            "updateFailed": "Failed to update the profile",
+            "unexpectedResponse": "Unexpected server response"
+        }
+    },
     "profileEdit": {
         "name": "Full name",
         "email": "Email address",

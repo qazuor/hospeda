@@ -1,6 +1,22 @@
 {
     "navigation": "Navegación de cuenta",
     "sections": "Secciones de cuenta",
+    "avatar": {
+        "hint": "Solo JPEG, PNG y WebP · Máx. 5 MB",
+        "actions": {
+            "change": "Cambiar avatar",
+            "uploading": "Subiendo..."
+        },
+        "alt": "Avatar",
+        "success": "Avatar actualizado correctamente",
+        "errors": {
+            "invalidType": "Solo JPEG, PNG y WebP son aceptados",
+            "fileTooLarge": "Archivo muy grande (máx. 5 MB)",
+            "uploadFailed": "Error al subir la imagen",
+            "updateFailed": "Error al actualizar el perfil",
+            "unexpectedResponse": "Respuesta inesperada del servidor"
+        }
+    },
     "profileEdit": {
         "name": "Nombre completo",
         "email": "Correo electrónico",
