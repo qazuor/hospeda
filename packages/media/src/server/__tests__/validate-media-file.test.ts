@@ -212,9 +212,30 @@ describe('validateMediaFile', () => {
             }
         });
 
-        it('should ignore maxFileSizeMb for avatar context and enforce 5 MB', () => {
-            // Arrange — 6 MB buffer, maxFileSizeMb would allow 10 MB but avatar overrides it
-            const buffer = createZeroBuffer(6 * MB);
+        it('should default the avatar cap to 5 MB when maxFileSizeMb is not supplied', () => {
+            // Arrange — 5 MB + 1 byte buffer, no maxFileSizeMb provided
+            const buffer = createZeroBuffer(5 * MB + 1);
+
+            // Act
+            const result = validateMediaFile({
+                buffer,
+                mimeType: 'image/png',
+                context: 'avatar'
+            });
+
+            // Assert — default 5 MB cap applied, details reflect it
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).toBe('FILE_TOO_LARGE');
+                expect(result.details.maxBytes).toBe(5 * MB);
+                expect(result.details.actualBytes).toBe(5 * MB + 1);
+            }
+        });
+
+        it('should honour a caller-supplied maxFileSizeMb override on the avatar context (10 MB)', () => {
+            // Arrange — 7 MB buffer; caller raised the avatar cap to 10 MB.
+            // Under the old fixed-cap behaviour this buffer would have failed.
+            const buffer = createZeroBuffer(7 * MB);
 
             // Act
             const result = validateMediaFile({
@@ -224,11 +245,54 @@ describe('validateMediaFile', () => {
                 maxFileSizeMb: 10
             });
 
-            // Assert
+            // Assert — size check passes because caller overrode the cap.
+            // The parser will still reject the zero-padded buffer as
+            // INVALID_IMAGE, but crucially the error MUST NOT be FILE_TOO_LARGE.
+            if (!result.valid) {
+                expect(result.error).not.toBe('FILE_TOO_LARGE');
+            }
+        });
+
+        it('should honour a caller-supplied maxFileSizeMb override below the default (2 MB)', () => {
+            // Arrange — 3 MB buffer; caller tightened the avatar cap to 2 MB.
+            const buffer = createZeroBuffer(3 * MB);
+
+            // Act
+            const result = validateMediaFile({
+                buffer,
+                mimeType: 'image/png',
+                context: 'avatar',
+                maxFileSizeMb: 2
+            });
+
+            // Assert — failure surfaces the TIGHTENED cap, not the 5 MB default.
             expect(result.valid).toBe(false);
             if (!result.valid) {
                 expect(result.error).toBe('FILE_TOO_LARGE');
-                expect(result.details.maxBytes).toBe(5 * MB);
+                expect(result.details.maxBytes).toBe(2 * MB);
+                expect(result.details.actualBytes).toBe(3 * MB);
+            }
+        });
+
+        it('should surface the caller-supplied avatar cap in details.maxBytes (dynamic, not hardcoded)', () => {
+            // Arrange — 4 MB buffer; caller narrowed the avatar cap to 3 MB.
+            const buffer = createZeroBuffer(4 * MB);
+
+            // Act
+            const result = validateMediaFile({
+                buffer,
+                mimeType: 'image/png',
+                context: 'avatar',
+                maxFileSizeMb: 3
+            });
+
+            // Assert — details.maxBytes MUST equal 3 * MB (the caller's value),
+            // NOT 5 * MB (the old hardcoded constant).
+            expect(result.valid).toBe(false);
+            if (!result.valid) {
+                expect(result.error).toBe('FILE_TOO_LARGE');
+                expect(result.details.maxBytes).toBe(3 * MB);
+                expect(result.details.maxBytes).not.toBe(5 * MB);
             }
         });
 
@@ -253,11 +317,11 @@ describe('validateMediaFile', () => {
         });
 
         // GAP-078-216: avatar 5 MB byte-exact off-by-one boundary.
-        // The avatar context enforces a fixed 5 MB cap regardless of the
-        // caller-supplied `maxFileSizeMb`. The size check uses strict `>`,
+        // The avatar context defaults to a 5 MB cap when the caller does not
+        // supply `maxFileSizeMb` (GAP-078-176). The size check uses strict `>`,
         // so EXACTLY 5 MB must pass and 5 MB + 1 byte must fail with
         // FILE_TOO_LARGE (never INVALID_IMAGE, never IMAGE_TOO_LARGE).
-        describe('GAP-078-216: avatar 5 MB byte-exact boundary', () => {
+        describe('GAP-078-216: avatar 5 MB byte-exact boundary (default cap)', () => {
             it('passes a PNG-padded buffer weighing EXACTLY 5 MB (5 * 1024 * 1024 bytes)', () => {
                 // Arrange — concatenate a real PNG header with padding to reach
                 // the exact byte count. byteLength MUST be 5 * 1024 * 1024.

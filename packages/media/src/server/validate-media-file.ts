@@ -14,8 +14,16 @@ export interface ValidateMediaFileInput {
     /** Validation context: 'entity' for general images, 'avatar' for user avatars. */
     readonly context: ValidationContext;
     /**
-     * Maximum file size in MB for entity context. Default: 10.
-     * Ignored for avatar context (fixed 5MB limit).
+     * Maximum file size in MB.
+     *
+     * - For `entity` context: defaults to 10 MB when omitted.
+     * - For `avatar` context: defaults to 5 MB when omitted
+     *   (matches `DEFAULT_AVATAR_MAX_SIZE_MB` on the admin client).
+     *
+     * Callers can override either default to tighten or loosen the cap. The
+     * resulting byte count is surfaced in `details.maxBytes` of a
+     * `FILE_TOO_LARGE` failure so error messages reflect the actual cap
+     * applied rather than a hardcoded constant.
      */
     readonly maxFileSizeMb?: number;
 }
@@ -74,7 +82,11 @@ const AVATAR_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 const ENTITY_MAX_DIMENSION = 8000;
 const AVATAR_MAX_DIMENSION = 4000;
-const AVATAR_MAX_SIZE_MB = 5;
+/**
+ * Default avatar size cap when the caller does not override `maxFileSizeMb`.
+ * Matches `DEFAULT_AVATAR_MAX_SIZE_MB` on the admin client.
+ */
+const DEFAULT_AVATAR_MAX_SIZE_MB = 5;
 const DEFAULT_MAX_SIZE_MB = 10;
 
 /**
@@ -208,7 +220,10 @@ function isMimeCompatible(declared: string, detected: string): boolean {
  *
  * Performs the following checks in order:
  * 1. **File size** — compares buffer byte length against the context-specific
- *    limit (entity: `maxFileSizeMb` or 10 MB default; avatar: always 5 MB).
+ *    limit. Both `entity` and `avatar` contexts honour the caller-supplied
+ *    `maxFileSizeMb` when provided; defaults fall back to 10 MB (entity) and
+ *    5 MB (avatar). The resulting cap is reflected in `details.maxBytes` on
+ *    a `FILE_TOO_LARGE` failure.
  * 2. **MIME type allowlist** — verifies the declared Content-Type against the
  *    context-specific allowlist.
  * 3. **Magic-byte / MIME match** — inspects the buffer's signature bytes and
@@ -242,9 +257,15 @@ function isMimeCompatible(declared: string, detected: string): boolean {
 export function validateMediaFile(input: ValidateMediaFileInput): ValidationResult {
     const { buffer, mimeType, context, maxFileSizeMb } = input;
 
-    // 1. File size check
-    const maxMb =
-        context === 'avatar' ? AVATAR_MAX_SIZE_MB : (maxFileSizeMb ?? DEFAULT_MAX_SIZE_MB);
+    // 1. File size check.
+    //    Both contexts honour the caller-supplied `maxFileSizeMb`. When it is
+    //    omitted we fall back to the context-specific default (5 MB avatar,
+    //    10 MB entity). The resolved cap is surfaced in `details.maxBytes` so
+    //    the error reflects the ACTUAL limit applied rather than a hardcoded
+    //    constant — callers that tighten or loosen the cap see accurate caps
+    //    in their error UIs.
+    const defaultMb = context === 'avatar' ? DEFAULT_AVATAR_MAX_SIZE_MB : DEFAULT_MAX_SIZE_MB;
+    const maxMb = maxFileSizeMb ?? defaultMb;
     const maxBytes = maxMb * 1024 * 1024;
 
     if (buffer.length > maxBytes) {

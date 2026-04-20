@@ -9,8 +9,10 @@
  * location in the cleanup phase.
  */
 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { signOut } from '@/lib/auth-client';
+import { getInitialsFromName } from '@/lib/avatar-utils';
 import { getMediaUrl } from '@repo/media';
 import { useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
@@ -56,12 +58,10 @@ export function HeaderUser() {
         return null;
     }
 
-    const initials = (user.displayName || user.email || '?')
-        .split(' ')
-        .map((part) => part[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase();
+    const { initials } = getInitialsFromName({
+        name: user.displayName,
+        email: user.email
+    });
 
     const handleSignOut = async () => {
         setIsOpen(false);
@@ -79,20 +79,22 @@ export function HeaderUser() {
             <button
                 type="button"
                 onClick={() => setIsOpen((v) => !v)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-primary font-medium text-primary-foreground text-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                className="flex h-8 w-8 items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 aria-label="User menu"
             >
-                {user.avatar ? (
-                    <img
-                        src={getMediaUrl(user.avatar, { preset: 'avatar' })}
-                        alt={user.displayName || 'User'}
-                        loading="eager"
-                        decoding="async"
-                        className="h-8 w-8 rounded-full object-cover"
-                    />
-                ) : (
-                    initials
-                )}
+                <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
+                    {user.avatar ? (
+                        <AvatarImage
+                            src={getMediaUrl(user.avatar, { preset: 'avatar' })}
+                            alt={user.displayName || 'User'}
+                            loading="eager"
+                            decoding="async"
+                        />
+                    ) : null}
+                    <AvatarFallback className="bg-primary font-medium text-primary-foreground text-sm">
+                        {initials}
+                    </AvatarFallback>
+                </Avatar>
             </button>
 
             {isOpen && (

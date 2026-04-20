@@ -6,6 +6,7 @@
  */
 
 import { MainPageLayout } from '@/components/layout/MainPageLayout';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -121,19 +122,19 @@ function MyProfilePage() {
                     <CardContent className="pt-6">
                         <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
                             {/* Avatar */}
-                            {avatarUrl ? (
-                                <img
-                                    src={getMediaUrl(avatarUrl, { preset: 'avatar' })}
-                                    alt={displayName}
-                                    loading="lazy"
-                                    decoding="async"
-                                    className="h-20 w-20 flex-shrink-0 rounded-full object-cover"
-                                />
-                            ) : (
-                                <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-full bg-primary font-bold text-3xl text-primary-foreground">
+                            <Avatar className="h-20 w-20 flex-shrink-0">
+                                {avatarUrl ? (
+                                    <AvatarImage
+                                        src={getMediaUrl(avatarUrl, { preset: 'avatar' })}
+                                        alt={displayName}
+                                        loading="lazy"
+                                        decoding="async"
+                                    />
+                                ) : null}
+                                <AvatarFallback className="bg-primary font-bold text-3xl text-primary-foreground">
                                     {initials}
-                                </div>
-                            )}
+                                </AvatarFallback>
+                            </Avatar>
 
                             {/* Info */}
                             <div className="flex-1 space-y-3 text-center sm:text-left">
