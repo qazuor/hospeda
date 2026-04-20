@@ -856,26 +856,26 @@
         {
             "id": "T-046",
             "title": "Admin UX: HEIC/AVIF accept, p-limit parallel upload, and progress indicator",
-            "description": "Gaps: GAP-078-152, GAP-078-127, GAP-078-140.\n\nFiles: apps/admin/src/components/entity-form/fields/GalleryField.tsx, apps/admin/src/components/account/AvatarUpload.client.tsx\n- GAP-078-152: Client MIME allowlist accepts HEIC/HEIF/AVIF; show placeholder 'Preview no disponible' for those formats\n- GAP-078-127: Refactor GalleryField from for...of await to Promise.all with p-limit cap=4\n- GAP-078-140: Upload shows rich indeterminate progress: 'Subiendo X MB...', animated bar, estimated time; role=\"status\" aria-live=\"polite\"\n\nAcceptance: HEIC file accepted; 6 files upload with max 4 concurrent; progress indicator visible with aria-live.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-152, GAP-078-127, GAP-078-140.\n\nFiles: apps/admin/src/components/entity-form/fields/GalleryField.tsx, apps/admin/src/components/account/AvatarUpload.client.tsx\n- GAP-078-152: Client MIME allowlist accepts HEIC/HEIF/AVIF; show placeholder 'Preview no disponible' for those formats\n- GAP-078-127: Refactor GalleryField from for...of await to Promise.all with p-limit cap=4\n- GAP-078-140: Upload shows rich indeterminate progress: 'Subiendo X MB...', animated bar, estimated time; role=\"status\" aria-live=\"polite\"\n\nAcceptance: HEIC file accepted; 6 files upload with max 4 concurrent; progress indicator visible with aria-live.\n\nOutcome (commit 227f90ca): 12 files changed. p-limit refactor landed in `use-gallery-uploads.ts` hook (T-044 extraction), NOT in GalleryField.tsx — `GALLERY_UPLOAD_CONCURRENCY = 4` constant exposed; loop now `Promise.all(files.map(f => limit(() => uploadFile(f))))`. `p-limit` added as admin dep. MIME allowlist: `image/heic`, `image/heif`, `image/avif` added to accept attribute on GalleryField + ImageField + AvatarUpload (entity-form/fields path). New `UploadProgressIndicator.tsx` extracted helper with `<div role=status aria-live=polite aria-atomic=true>` + count detail + pulsing bar respecting `motion-reduce:`. 4 i18n keys × 3 locales = 12 entries (image/gallery.previewUnavailable + gallery.uploadingProgress + uploadingProgressCount). 11 new tests in `upload-t046.test.tsx`: accept attribute (2), HEIC/AVIF/HEIF happy path (2), PDF rejection (1), preview placeholder renders for HEIC/AVIF but not JPEG (3), p-limit peak concurrency 1-4 for 6 files (1), role=status visible during upload (1), progress clears on resolution (1). T-044 + T-045 tests still pass (4 + 8). 1037/1039 admin tests pass (2 pre-existing). JSDOM lacks DataTransfer — tests use hand-rolled FileList shim. Used `div role=status` + biome-ignore for useSemanticElements instead of `<output>` (form-associated semantics inappropriate here).",
+            "status": "completed",
             "complexity": 2.0,
             "blockedBy": ["T-017", "T-038"],
             "blocks": [],
             "subtasks": [],
             "tags": ["frontend", "admin"],
             "phase": "phase-6d",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-20T00:00:00.000Z",
+                "completed": "2026-04-20T00:00:00.000Z"
             }
         },
         {
             "id": "T-047",
             "title": "Admin UX: shadcn Avatar component refactor and validateMediaFile maxFileSizeMb prop",
-            "description": "Gaps: GAP-078-145, GAP-078-176.\n\nFiles: apps/admin/src/integrations/clerk/header-user.tsx, apps/admin/src/routes/_authed/me/profile.tsx, packages/media/src/validate-media-file.ts\n- GAP-078-145: Refactor header-user.tsx + profile.tsx using shadcn <Avatar> + <AvatarImage> + <AvatarFallback> with initials\n- GAP-078-176: validateMediaFile respects maxFileSizeMb prop in avatar branch\n\nAcceptance: Both files use shadcn Avatar; avatar > maxFileSizeMb returns size error; initials fallback renders when image not available.\n\nPartial outcome (commit 2f206323): Agent misinterpreted scope — built a NEW `AvatarUpload.tsx` component from scratch at `apps/admin/src/components/entity-form/fields/AvatarUpload.tsx` with shadcn Avatar primitives, `maxFileSizeMb` prop (default 5), 6 component tests. Also created `apps/admin/src/components/ui/avatar.tsx` (shadcn primitive, hand-authored — no shadcn CLI in this admin app, `@radix-ui/react-avatar` added as dep). Added 9 i18n keys × 3 locales under `admin-entities.fields.avatar.*`. 1026/1028 admin tests pass. **Scope miss**: did NOT touch the 3 target files in the original spec (header-user.tsx + profile.tsx + packages/media/src/validate-media-file.ts). The pattern is established (component + primitive + utils + i18n + tests), so GAP-078-145 and GAP-078-176 remain OPEN. Recovery agent must: (a) migrate header-user.tsx + profile.tsx to use the new Avatar primitive, (b) extend packages/media/src/validate-media-file.ts to accept maxFileSizeMb option in the avatar branch.",
-            "status": "in_progress",
+            "description": "Gaps: GAP-078-145, GAP-078-176.\n\nFiles: apps/admin/src/integrations/clerk/header-user.tsx, apps/admin/src/routes/_authed/me/profile.tsx, packages/media/src/validate-media-file.ts\n- GAP-078-145: Refactor header-user.tsx + profile.tsx using shadcn <Avatar> + <AvatarImage> + <AvatarFallback> with initials\n- GAP-078-176: validateMediaFile respects maxFileSizeMb prop in avatar branch\n\nAcceptance: Both files use shadcn Avatar; avatar > maxFileSizeMb returns size error; initials fallback renders when image not available.\n\n\n\nPartial outcome (commit 2f206323): Agent misinterpreted scope — built a NEW `AvatarUpload.tsx` component from scratch at `apps/admin/src/components/entity-form/fields/AvatarUpload.tsx` with shadcn Avatar primitives, `maxFileSizeMb` prop (default 5), 6 component tests. Also created `apps/admin/src/components/ui/avatar.tsx` (shadcn primitive, hand-authored — no shadcn CLI in this admin app, `@radix-ui/react-avatar` added as dep). Added 9 i18n keys × 3 locales under `admin-entities.fields.avatar.*`. 1026/1028 admin tests pass. **Scope miss**: did NOT touch the 3 target files in the original spec (header-user.tsx + profile.tsx + packages/media/src/validate-media-file.ts).\n\nRecovery outcome (commit 0e2ac7c9): 5 files, +145/-47. `header-user.tsx` migrated to use `<Avatar>` + `<AvatarImage>` + `<AvatarFallback>` from the T-047 primitive; inline `.split(' ').map(...)` initials replaced by `getInitialsFromName({name, email})`. `profile.tsx` header card migrated from ternary `<img>` vs `<div>initials</div>` to `<Avatar>`. `validate-media-file.ts` (canonical path: `packages/media/src/server/validate-media-file.ts`) renamed `AVATAR_MAX_SIZE_MB` → `DEFAULT_AVATAR_MAX_SIZE_MB`; size check branch now: `const defaultMb = context === 'avatar' ? DEFAULT_AVATAR_MAX_SIZE_MB : DEFAULT_MAX_SIZE_MB; const maxMb = maxFileSizeMb ?? defaultMb`. Inverted pre-existing 'should ignore maxFileSizeMb for avatar' test to match new contract. 4 new validate-media-file tests (default applied, override above, override below with accurate cap in error, error.details.maxBytes reflects caller cap). 211/211 media tests pass. 1026/1028 admin. `header-user.test.tsx` updated to handle Radix AvatarImage deferred render under jsdom (asserts `data-slot=avatar` + fallback instead of `getByRole('img')`). No smoke test added for profile.tsx because `test/smoke/me.smoke.test.tsx` already covers it.",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-017", "T-038"],
             "blocks": [],
@@ -1291,8 +1291,8 @@
     ],
     "summary": {
         "total": 68,
-        "completed": 64,
-        "pending": 3,
-        "inProgress": 1
+        "completed": 66,
+        "pending": 2,
+        "inProgress": 0
     }
 }
