@@ -97,6 +97,9 @@ jobs:
       - name: Check Cloudinary SDK isolation
         run: bash scripts/check-cloudinary-isolation.sh
 
+      - name: Check bare Cloudinary <img>
+        run: bash scripts/check-bare-cloudinary-img.sh
+
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."
