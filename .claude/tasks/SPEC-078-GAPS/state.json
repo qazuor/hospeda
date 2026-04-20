@@ -490,37 +490,37 @@
         {
             "id": "T-026",
             "title": "Seed hardening: SSRF allowlist and --reset / --clean-images flag integration",
-            "description": "Gaps: GAP-078-030, GAP-078-006, GAP-078-078.\n\nFiles: packages/seed/src/\n- GAP-078-030: Allowlist ['images.unsplash.com','images.pexels.com','res.cloudinary.com'] + isAllowedSeedUrl() in seed fetch; skip + log if URL not in allowlist\n- GAP-078-006+078: --reset implies --clean-images for hospeda/{env}/seed/ prefix automatically; flags not mutually exclusive\n\nAcceptance: Seed with URL from unlisted host logs warning and skips; pnpm db:seed --reset calls deleteByPrefix for seed prefix.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-030, GAP-078-006, GAP-078-078.\n\nFiles: packages/seed/src/\n- GAP-078-030: Allowlist ['images.unsplash.com','images.pexels.com','res.cloudinary.com'] + isAllowedSeedUrl() in seed fetch; skip + log if URL not in allowlist\n- GAP-078-006+078: --reset implies --clean-images for hospeda/{env}/seed/ prefix automatically; flags not mutually exclusive\n\nAcceptance: Seed with URL from unlisted host logs warning and skips; pnpm db:seed --reset calls deleteByPrefix for seed prefix.\n\nOutcome (commit 306f62d0): New `packages/seed/src/utils/is-allowed-seed-url.ts` (~68 lines) with frozen readonly allowlist and case-insensitive hostname check (rejects non-HTTP(S) protocols + malformed URLs). `cloudinary-upload.ts` short-circuits before fetch on disallowed host — logs warn + returns `{status:'failed'}` even with `throwOnFailure=true` (disallowed URL = fixture defect, not network error). `cli.ts` gains pure exported `coerceResetImpliesCleanImages` helper; `--reset` branch now runs `handleCleanImages()` then `runSeed()` sequentially; `--clean-images` alone still runs cleanup-only. 15 new tests (7 allowlist + 5 coerce + 3 SSRF-flow integration). 159/159 seed tests pass. Pre-existing test files `cloudinary-upload.test.ts` and `cloudinary-image-processor.test.ts` updated to use real allowlisted hostnames (knock-on behavior change, not scope creep).",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-022"],
             "blocks": [],
             "subtasks": [],
             "tags": ["seed", "security"],
             "phase": "phase-4b",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-20T00:00:00.000Z",
+                "completed": "2026-04-20T00:00:00.000Z"
             }
         },
         {
             "id": "T-027",
             "title": "Seed hardening: cache flush, --validate-cache, cache schema Zod validation, and .gitignore",
-            "description": "Gaps: GAP-078-033, GAP-078-079, GAP-078-120, GAP-078-074.\n\nFiles: packages/seed/src/, root .gitignore\n- GAP-078-033: Cache writes accumulate in memory during Promise.all; single flush at end\n- GAP-078-079: Optional --validate-cache flag: HEAD each cached URL; remove stale entries\n- GAP-078-120: Validate cache file shape with Zod on read; truncate orphan entries; add version field\n- GAP-078-074: Add **/.cloudinary-cache.json to root .gitignore\n\nAcceptance: Cache file not written until all uploads complete; --validate-cache removes entries returning non-200 HEAD; git status does not show cache file.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-033, GAP-078-079, GAP-078-120, GAP-078-074.\n\nFiles: packages/seed/src/, root .gitignore\n- GAP-078-033: Cache writes accumulate in memory during Promise.all; single flush at end\n- GAP-078-079: Optional --validate-cache flag: HEAD each cached URL; remove stale entries\n- GAP-078-120: Validate cache file shape with Zod on read; truncate orphan entries; add version field\n- GAP-078-074: Add **/.cloudinary-cache.json to root .gitignore\n\nAcceptance: Cache file not written until all uploads complete; --validate-cache removes entries returning non-200 HEAD; git status does not show cache file.\n\nOutcome (commit dd644eb1): New `packages/seed/src/schemas/cloudinary-cache.schema.ts` with Zod schema for versioned envelope `{version:1, entries:{...}}` + `CLOUDINARY_CACHE_VERSION` constant. `cloudinary-cache.ts` validates on read, rejects legacy unversioned caches with warn (cache is cheap to rebuild — no migration needed); `updateCacheEntry` now mutates in-memory only (kept `cachePath` param as @deprecated to avoid touching T-026's `cloudinary-upload.ts`); new `flushCache` + `validateCacheEntries` helpers. `index.ts#runSeed` flushes once in finally block (error-swallowed). `cli.ts` gains `--validate-cache` flag independent of `--reset`/`--clean-images` — sequential HEAD with 5s timeout (no p-limit added). Root `.gitignore` got `**/.cloudinary-cache.json`. 17 new tests covering: Zod valid/array/null/missing-version/wrong-version/bad-entry/legacy-unversioned (7), versioned envelope write (3), deferred-flush no-disk-write (2), `validateCacheEntries` kept/stale/timeout/HEAD-method/empty (5). 170/170 seed tests pass. Flush hook in `runSeed` finally (allowed file) rather than `cloudinary-image-processor.ts` because per-entity callsites would yield N writes.",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-022"],
             "blocks": [],
             "subtasks": [],
             "tags": ["seed", "security"],
             "phase": "phase-4b",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-20T00:00:00.000Z",
+                "completed": "2026-04-20T00:00:00.000Z"
             }
         },
         {
@@ -1291,8 +1291,8 @@
     ],
     "summary": {
         "total": 68,
-        "completed": 59,
-        "pending": 9,
+        "completed": 61,
+        "pending": 7,
         "inProgress": 0
     }
 }
