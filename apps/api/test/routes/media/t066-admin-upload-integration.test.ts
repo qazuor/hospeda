@@ -16,8 +16,8 @@
  *     provider under the canonical folder.
  *   - REQ-04.1-C: gallery upload generates a server-side nanoid publicId
  *     (`gallery/{nanoid10}`) and echoes it back to the caller.
- *   - REQ-04.1-D: missing required field surfaces as a validation error
- *     (current implementation returns 400, not 422 — see Learned).
+ *   - REQ-04.1-D: missing required field surfaces as a validation error —
+ *     400 VALIDATION_ERROR (spec amended 2026-04-20, v2.0).
  *   - REQ-04.1-G: entity lookup miss surfaces as 404 ENTITY_NOT_FOUND before
  *     any provider call.
  *   - REQ-04.1-H: path-traversal-shaped entityId (not a UUID) rejected before
@@ -317,12 +317,10 @@ describe('POST /api/v1/admin/media/upload — integration (T-066)', () => {
                 error?: { code: string };
             };
 
-            // Assert: spec REQ-04.1-D nominates 422; current implementation
-            // emits 400 VALIDATION_ERROR from the explicit safeParse branch
-            // in upload.ts before any downstream 422 path fires (see the
-            // Learned note at the top of this file). Both are rejections,
-            // but they are distinguishable. Asserting the actual behavior
-            // keeps the integration-test honest.
+            // Assert: spec REQ-04.1-D (amended 2026-04-20, v2.0) specifies
+            // HTTP 400 VALIDATION_ERROR — the Hospeda API convention for all
+            // Zod validation failures. The spec was reconciled to match the
+            // implementation; no code change was needed.
             expect(res.status).toBe(400);
             expect(body.success).toBe(false);
             expect(body.error?.code).toBe('VALIDATION_ERROR');
@@ -378,10 +376,9 @@ describe('POST /api/v1/admin/media/upload — integration (T-066)', () => {
             };
 
             // Assert: schema rejects non-UUID entityId before the provider
-            // is touched. Current implementation returns 400
-            // VALIDATION_ERROR (the admin upload route's safeParse branch
-            // converts every schema failure to 400). Spec REQ-04.1-H
-            // nominates 422; we assert actual behavior.
+            // is touched. Spec REQ-04.1-H (amended 2026-04-20, v2.0)
+            // specifies HTTP 400 VALIDATION_ERROR — reconciled to the
+            // Hospeda API convention for all Zod validation failures.
             expect(res.status).toBe(400);
             expect(body.error?.code).toBe('VALIDATION_ERROR');
             expect(mockUpload).not.toHaveBeenCalled();

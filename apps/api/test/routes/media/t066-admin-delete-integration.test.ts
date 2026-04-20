@@ -5,13 +5,13 @@
  * Scenarios covered:
  *   - REQ-04.3-A: happy-path delete returns 200 and calls provider.delete
  *     with the canonical publicId.
- *   - REQ-04.3-B: publicId outside the `hospeda/` namespace is rejected.
- *     (Current implementation returns 400 VALIDATION_ERROR from the schema
- *     refinement. Spec nominates 422; we assert actual behavior.)
+ *   - REQ-04.3-B: publicId outside the `hospeda/` namespace is rejected
+ *     with 400 VALIDATION_ERROR (spec amended 2026-04-20, v2.0).
  *   - REQ-04.3-C: idempotent delete — Cloudinary "not found" surfaces as
  *     200 with `wasPresent: false`, no error raised.
  *   - REQ-04.3-D: unauthenticated DELETE is rejected with 401.
- *   - REQ-04.3-E: missing `publicId` query parameter is rejected with 400.
+ *   - REQ-04.3-E: missing `publicId` query parameter is rejected with 400
+ *     VALIDATION_ERROR (spec amended 2026-04-20, v2.0).
  *   - GAP-078-093: when the media provider is not configured
  *     (`getMediaProvider()` returns null), the route responds 503
  *     CLOUDINARY_NOT_CONFIGURED.
@@ -155,10 +155,9 @@ describe('DELETE /api/v1/admin/media — integration (T-066)', () => {
 
             // Assert: the schema refinement on `DeleteMediaQuerySchema`
             // rejects with a generic validation error. Spec REQ-04.3-B
-            // nominates 422; current implementation surfaces 400
-            // VALIDATION_ERROR because the refinement message does not
-            // contain "path traversal" so the route does not promote it to
-            // 422. Asserting actual behavior to keep the test honest.
+            // (amended 2026-04-20, v2.0) specifies HTTP 400 VALIDATION_ERROR
+            // — reconciled to the Hospeda API convention for all Zod
+            // validation failures.
             expect(res.status).toBe(400);
             expect(body.success).toBe(false);
             expect(body.error?.code).toBe('VALIDATION_ERROR');
@@ -231,10 +230,10 @@ describe('DELETE /api/v1/admin/media — integration (T-066)', () => {
                 error?: { code: string };
             };
 
-            // Assert: schema rejects missing publicId. The route surfaces
-            // this as 400 VALIDATION_ERROR (schema-level). Spec REQ-04.3-E
-            // nominates 422; asserting actual behavior so the test does not
-            // silently misrepresent contract drift.
+            // Assert: schema rejects missing publicId. Spec REQ-04.3-E
+            // (amended 2026-04-20, v2.0) specifies HTTP 400 VALIDATION_ERROR
+            // — reconciled to the Hospeda API convention for all Zod
+            // validation failures.
             expect(res.status).toBe(400);
             expect(body.success).toBe(false);
             expect(body.error?.code).toBe('VALIDATION_ERROR');

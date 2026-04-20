@@ -23,6 +23,7 @@ created: 2026-04-13
 | v1.7 | 2026-04-19 | SPEC-078-GAPS T-029 (GAP-078-026 + 029 + 062 + 149 + 159 + 178): upload endpoints (admin + protected) return **HTTP 200 Created-semantics-off** because uploads may overwrite existing assets (fixed-publicId featured images, avatars with userId as publicId) and are not strictly a creation. Response body is wrapped via the shared `ResponseFactory` as `{ success: true, data: { url, publicId, width, height, moderationState: 'APPROVED' }, metadata: {...} }` — same envelope as every other successful API response. `moderationState` is always `'APPROVED'` for fresh uploads (pre-approved at creation). The route runs `UploadResponseDataSchema.parse()` on the provider result before returning, so a malformed Cloudinary response fails closed with HTTP 502 rather than flowing bad data downstream. |
 | v1.8 | 2026-04-19 | SPEC-078-GAPS T-023 (GAP-078-019): documentation-only amendment to REQ-02. Added Technical Notes clarifying the gallery public-ID divergence between the seed pipeline and the runtime admin pipeline: seed uses array index (e.g. `gallery/2`) for deterministic, reproducible publicIds across re-runs, while runtime admin uploads use `nanoid` via `generateGalleryId()` for collision-free unique IDs. No code change. |
 | v1.9 | 2026-04-19 | SPEC-078-GAPS T-020 (GAP-078-028 + 032 + 161 + 174): provider boundary + interface cleanup. (1) Added an `@internal` JSDoc block to `CloudinaryProvider`'s constructor warning that direct instantiation is reserved for `getMediaProvider()` (the canonical access point) and tests, because Cloudinary SDK v2 stores configuration in a module-level singleton and multi-instance usage silently overwrites it. (2) Confirmed the `ImageProvider` interface in `packages/media/src/server/types.ts` does NOT declare a `buildUrl` method — `getMediaUrl()` from `@repo/media` is the single URL-construction entry point. The internal `buildUrl()` helper inside `mock-provider.ts` is a private utility (lowercase function), not part of the public interface, and is unaffected. (3) Biome 1.5.3 cannot AST-restrict `new CloudinaryProvider(...)` outside the canonical file (its `noRestrictedImports` rule only covers module imports); a TODO in the JSDoc captures the follow-up to migrate the two remaining direct callers in `packages/seed/` once a suitable AST-level rule is available. > Note: GAP-078-161 closed as duplicate of GAP-078-032. No production code behavior change. |
+| v2.0 | 2026-04-20 | SPEC-078-GAPS T-066 (spec drift reconciliation): REQ-04.1-D, REQ-04.1-H, REQ-04.3-B, REQ-04.3-E originally specified HTTP 422 Unprocessable Entity for Zod validation failures. Reconciled to HTTP 400 Bad Request with `error.code: VALIDATION_ERROR` to match the established Hospeda API convention — all Zod validation failures across the entire API surface return 400 VALIDATION_ERROR, never 422. The T-066 integration tests (t066-admin-upload-integration.test.ts, t066-admin-delete-integration.test.ts) already asserted the actual 400 behavior; the spec was the outlier. No production code was changed — implementation was already correct. |
 
 ---
 
@@ -552,9 +553,11 @@ Then the server generates a unique nanoid suffix (e.g., "a7x3kB9m2p")
 ```
 Given an admin submits a valid file but omits entityType,
 When the API processes the request,
-Then HTTP 422 is returned with a validation error body
+Then HTTP 400 is returned with a validation error body
+  and error.code: VALIDATION_ERROR
   and Cloudinary is never called.
 ```
+> **Amendment (2026-04-20)**: Originally specified HTTP 422 Unprocessable Entity. Reconciled to HTTP 400 Bad Request with `error.code: VALIDATION_ERROR` to match the Hospeda API convention for all Zod validation failures. See v2.0 in Revision History.
 
 **Scenario REQ-04.1-E .. Cloudinary unreachable:**
 ```
@@ -580,9 +583,11 @@ Given an admin submits a request with entityId="../../../malicious",
 When the API processes the request,
 Then entityId is validated as a UUID v4 format (via Zod `z.string().uuid()`)
   and entityType is validated against an allowlist enum (accommodation | destination | event | post)
-  and HTTP 422 is returned because entityId is not a valid UUID
+  and HTTP 400 is returned because entityId is not a valid UUID
+  and error.code: VALIDATION_ERROR
   and Cloudinary is never called.
 ```
+> **Amendment (2026-04-20)**: Originally specified HTTP 422 Unprocessable Entity. Reconciled to HTTP 400 Bad Request with `error.code: VALIDATION_ERROR` to match the Hospeda API convention for all Zod validation failures. See v2.0 in Revision History.
 
 **Security note**: The combination of UUID validation on `entityId` and enum validation on `entityType` inherently prevents path traversal attacks in Cloudinary folder paths. No additional sanitization is needed because UUIDs cannot contain `/`, `..`, or other path metacharacters.
 
@@ -700,8 +705,10 @@ Then the Cloudinary asset is deleted via provider.delete()
 ```
 Given an admin sends a delete request with publicId=some-other-account%2Fimage,
 When the API processes the request,
-Then HTTP 422 is returned with an error indicating the publicId must start with "hospeda/".
+Then HTTP 400 is returned with error.code: VALIDATION_ERROR
+  indicating the publicId must start with "hospeda/".
 ```
+> **Amendment (2026-04-20)**: Originally specified HTTP 422 Unprocessable Entity. Reconciled to HTTP 400 Bad Request with `error.code: VALIDATION_ERROR` to match the Hospeda API convention for all Zod validation failures. See v2.0 in Revision History.
 
 **Scenario REQ-04.3-C .. Cloudinary returns not found:**
 ```
@@ -724,8 +731,10 @@ Then HTTP 401 is returned.
 ```
 Given an admin sends DELETE /api/v1/admin/media without a publicId query parameter,
 When the API processes the request,
-Then HTTP 422 is returned with a validation error indicating publicId is required.
+Then HTTP 400 is returned with error.code: VALIDATION_ERROR
+  indicating publicId is required.
 ```
+> **Amendment (2026-04-20)**: Originally specified HTTP 422 Unprocessable Entity. Reconciled to HTTP 400 Bad Request with `error.code: VALIDATION_ERROR` to match the Hospeda API convention for all Zod validation failures. See v2.0 in Revision History.
 
 ---
 
