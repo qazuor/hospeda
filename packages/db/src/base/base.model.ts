@@ -1,10 +1,11 @@
 import type { PaginatedListOptions } from '@repo/schemas';
 import type { SQL, Table } from 'drizzle-orm';
-import { and, count } from 'drizzle-orm';
-import { getDb } from '../client.ts';
+import { and, count, sql } from 'drizzle-orm';
+import { getDb, withTransaction } from '../client.ts';
 import type { BaseModel, DrizzleClient } from '../types.ts';
 import { buildOrderByClause, buildWhereClause } from '../utils/drizzle-helpers.ts';
 import { DbError } from '../utils/error.ts';
+import { buildMergeSetClause } from '../utils/jsonb-merge.ts';
 import { dbLogger, logError, logQuery } from '../utils/logger.ts';
 import { warnUnknownRelationKeys } from '../utils/relations-validator.ts';
 
@@ -82,6 +83,37 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      * Used by warnUnknownRelationKeys to warn on unknown keys in findWithRelations calls.
      */
     protected readonly validRelationKeys: ReadonlyArray<string> = [];
+
+    /**
+     * JSONB columns that receive shallow-merge semantics on `update()` instead of
+     * wholesale replacement.
+     *
+     * When a subclass declares column names here (using camelCase Drizzle property keys,
+     * e.g. `['media']`), any `update()` call whose patch includes one of those keys will:
+     *   1. Open a transaction (reusing the caller's `tx` via `withTransaction`).
+     *   2. Issue `SELECT id FROM <table> WHERE <where> FOR UPDATE` to acquire a pessimistic
+     *      row lock and verify the row exists.
+     *   3. Replace the JSONB assignment with `existing_col || patch_value::jsonb` so that
+     *      keys present in the existing object but absent from the patch are preserved.
+     *
+     * Semantics: **shallow merge only** — nested objects at the same key are replaced, not
+     * recursively merged. Example: `{ a: { x: 1 } }` merged with `{ a: { y: 2 } }` yields
+     * `{ a: { y: 2 } }`, NOT `{ a: { x: 1, y: 2 } }`.
+     *
+     * Default is empty (no columns), which means the current plain-replacement behavior is
+     * preserved with zero overhead for models that do not opt in.
+     *
+     * Subclasses that store user-uploaded media metadata in a JSONB column should override
+     * this to prevent a partial write from clobbering sibling keys written by a concurrent
+     * request (GAP-078-186, GAP-078-198).
+     *
+     * @example
+     * ```ts
+     * // In a subclass that has a `media` JSONB column:
+     * protected override readonly mergeableJsonbColumns = ['media'] as const;
+     * ```
+     */
+    protected readonly mergeableJsonbColumns: readonly string[] = [];
 
     /**
      * Returns the provided tx if available, otherwise returns the default db connection from getDb().
@@ -249,9 +281,22 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
 
     /**
      * Updates entities matching the where clause.
-     * @param where - The filter object
+     *
+     * **JSONB merge path** (opt-in per subclass):
+     * When `mergeableJsonbColumns` is non-empty AND the patch contains at least one key
+     * from that list, `update()` wraps the operation in a transaction and:
+     *   1. Issues `SELECT id ... FOR UPDATE` to acquire a pessimistic row lock.
+     *      If the row does not exist, returns `null` immediately without issuing the UPDATE.
+     *   2. Builds the SET clause using `buildMergeSetClause`, replacing each JSONB column
+     *      assignment with `existing_col || patch_value::jsonb` (shallow merge via PostgreSQL
+     *      `||` operator) while leaving non-JSONB columns as plain replacements.
+     *
+     * When `mergeableJsonbColumns` is empty OR the patch has no intersection with it, the
+     * existing plain-replacement path runs unchanged (zero overhead).
+     *
+     * @param where - The filter object — must be non-empty
      * @param data - The fields to update
-     * @param tx - Optional transaction client
+     * @param tx - Optional transaction client (reused via `withTransaction` passthrough)
      * @returns Promise resolving to the updated entity or null if not found
      */
     async update(
@@ -267,20 +312,104 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
                 'where clause cannot be empty — this would update all records'
             );
         }
-        const db = this.getClient(tx);
         const safeWhere = where ?? {};
         const safeData = data ?? {};
 
         if (Object.keys(safeData).length === 0) return null;
 
+        // Determine whether any patch key requires JSONB merge semantics.
+        const needsMerge =
+            this.mergeableJsonbColumns.length > 0 &&
+            Object.keys(safeData).some((k) => this.mergeableJsonbColumns.includes(k));
+
+        if (needsMerge) {
+            return this._updateWithMerge(safeWhere, safeData, tx);
+        }
+
+        // Plain-replacement path (unchanged).
+        const db = this.getClient(tx);
         try {
             const whereClause = buildWhereClause(safeWhere, this.table);
-
             const result = await db.update(this.table).set(safeData).where(whereClause).returning();
             try {
                 logQuery(this.entityName, 'update', { where: safeWhere, data: safeData }, result);
             } catch {}
             return (result[0] as T) ?? null;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'update', { where: safeWhere, data: safeData }, err);
+            } catch {}
+            throw new DbError(
+                this.entityName,
+                'update',
+                { where: safeWhere, data: safeData },
+                err.message
+            );
+        }
+    }
+
+    /**
+     * Internal: executes an UPDATE with JSONB merge semantics inside a transaction.
+     *
+     * Steps:
+     *   1. `SELECT id FROM <table> WHERE <where> FOR UPDATE` — acquires a pessimistic row
+     *      lock and confirms the row exists. Returns `null` immediately if no row matched.
+     *   2. Builds a mixed SET clause via `buildMergeSetClause` — mergeable JSONB columns
+     *      use `existing || patch::jsonb`; all other columns use plain assignment.
+     *   3. Executes the UPDATE ... RETURNING and returns the first row or null.
+     *
+     * @param safeWhere - Non-empty filter object (already validated by `update()`).
+     * @param safeData - Partial entity patch (already validated by `update()`).
+     * @param tx - Optional outer transaction client — forwarded to `withTransaction`.
+     * @returns The updated entity row, or `null` if the WHERE matched no row.
+     */
+    private async _updateWithMerge(
+        safeWhere: Record<string, unknown>,
+        safeData: Partial<T>,
+        tx?: DrizzleClient
+    ): Promise<T | null> {
+        try {
+            return await withTransaction(async (innerTx) => {
+                const whereClause = buildWhereClause(safeWhere, this.table);
+
+                // Acquire pessimistic row lock — verify the row exists before updating.
+                // We use a raw sql`` fragment via execute() because Drizzle's .for('update')
+                // is not available on all select builder variants.
+                const lockResult = await innerTx.execute(
+                    sql`SELECT id FROM ${this.table} WHERE ${whereClause} FOR UPDATE`
+                );
+
+                // lockResult.rows is the pg driver's row array.
+                const rows = (lockResult as unknown as { rows?: unknown[] }).rows;
+                if (!rows || rows.length === 0) {
+                    return null;
+                }
+
+                // Build the SET clause with merge semantics for declared JSONB columns.
+                const setClause = buildMergeSetClause(
+                    safeData as Record<string, unknown>,
+                    this.table,
+                    this.mergeableJsonbColumns
+                );
+
+                const result = await innerTx
+                    .update(this.table)
+                    .set(setClause)
+                    .where(whereClause)
+                    .returning();
+
+                try {
+                    logQuery(
+                        this.entityName,
+                        'update(merge)',
+                        { where: safeWhere, data: safeData },
+                        result
+                    );
+                } catch {}
+
+                return (result[0] as T) ?? null;
+            }, tx);
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
             try {
