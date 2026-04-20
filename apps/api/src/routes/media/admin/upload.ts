@@ -27,7 +27,8 @@ import {
     AdminUploadRequestSchema,
     ENTITY_FOLDER_MAP,
     PermissionEnum,
-    UploadResponseDataSchema
+    UploadResponseDataSchema,
+    getGalleryCap
 } from '@repo/schemas';
 import {
     AccommodationService,
@@ -57,15 +58,17 @@ import { type MediaEntityType, validateEntityMediaPermission } from './permissio
 const ActorIdSchema = z.string().uuid();
 
 /**
- * Server-side hard cap on the number of gallery items per entity
- * (SPEC-078-GAPS T-033 / GAP-078-071). Mirrors the DB-level CHECK
- * constraint added in T-013 so the route returns a typed error
- * (`GALLERY_LIMIT_EXCEEDED`) instead of a generic constraint violation.
+ * Per-entity gallery cap is sourced from `@repo/schemas` via `getGalleryCap`
+ * (SPEC-078-GAPS T-033 / GAP-078-071). The per-entity limit is enforced at
+ * the route level so the route returns a typed error (`GALLERY_LIMIT_EXCEEDED`)
+ * instead of a generic DB constraint violation.
  *
- * TODO(billing): respect billing-tier addon entitlements for gallery cap
- * (currently flat 50).
+ * `getGalleryCap` is imported from `@repo/schemas` and is the single source of
+ * truth shared with the admin frontend, preventing cap drift between the two
+ * layers.
+ *
+ * TODO(billing): respect billing-tier addon entitlements for gallery cap.
  */
-const GALLERY_HARD_CAP = 50;
 
 /**
  * Resolves an entity service per-request (SPEC-078-GAPS T-034 / GAP-078-060).
@@ -359,29 +362,31 @@ export const adminUploadMediaRoute = createAdminRoute({
             );
         }
 
-        // ── 3d. Enforce gallery hard cap (SPEC-078-GAPS T-033 / GAP-078-071).
-        // Server-side flat cap of 50 gallery items per entity. The DB-level
-        // CHECK constraint added in T-013 also enforces this, but throws a
-        // generic constraint-violation; we reject here BEFORE attempting the
-        // upload so clients receive a typed `GALLERY_LIMIT_EXCEEDED` error
-        // and the provider is never called for a doomed insert.
+        // ── 3d. Enforce per-entity gallery cap (SPEC-078-GAPS T-033 / GAP-078-071).
+        // The cap is sourced from `getGalleryCap(entityType)` in `@repo/schemas`
+        // — the single source of truth shared with the admin frontend. The
+        // DB-level CHECK constraint added in T-013 also enforces this, but
+        // throws a generic constraint-violation; we reject here BEFORE
+        // attempting the upload so clients receive a typed
+        // `GALLERY_LIMIT_EXCEEDED` error and the provider is never called for
+        // a doomed insert.
         // Featured / avatar / sponsorLogo / organizerLogo roles bypass this
-        // check — only the gallery role grows unbounded.
-        // TODO(billing): respect billing-tier addon entitlements for gallery
-        // cap (currently flat 50)
+        // check — only the gallery role is capped.
+        // TODO(billing): respect billing-tier addon entitlements for gallery cap.
         if (role === 'gallery') {
             const entityMedia = (entityResult.data as { media?: { gallery?: unknown[] } }).media;
             const currentGalleryCount = entityMedia?.gallery?.length ?? 0;
-            if (currentGalleryCount >= GALLERY_HARD_CAP) {
+            const galleryLimit = getGalleryCap(entityType);
+            if (currentGalleryCount >= galleryLimit) {
                 return createErrorResponse(
                     {
                         code: 'GALLERY_LIMIT_EXCEEDED',
-                        message: `Gallery limit of ${GALLERY_HARD_CAP} items reached for this entity`,
+                        message: `Gallery limit of ${galleryLimit} items reached for this entity`,
                         details: {
                             entityType,
                             entityId,
                             currentCount: currentGalleryCount,
-                            limit: GALLERY_HARD_CAP
+                            limit: galleryLimit
                         }
                     },
                     ctx,
