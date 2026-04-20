@@ -17,7 +17,7 @@ import { configureLogger } from '@repo/logger';
 import { CloudinaryProvider, resolveEnvironment } from '@repo/media/server';
 import { runExampleSeeds } from './example/index.js';
 import { runRequiredSeeds } from './required/index.js';
-import { DEFAULT_CACHE_PATH, readCache } from './utils/cloudinary-cache.js';
+import { DEFAULT_CACHE_PATH, flushCache, readCache } from './utils/cloudinary-cache.js';
 import { closeSeedDb, initSeedDb } from './utils/db.js';
 import { resetDatabase } from './utils/dbReset';
 import { errorHistory } from './utils/errorHistory.js';
@@ -266,6 +266,21 @@ export async function runSeed(options: SeedOptions): Promise<void> {
 
         // Always close the connection
         await closeSeedDb();
+
+        // GAP-078-033 — deferred cache flush. Every `updateCacheEntry` call
+        // during the run only mutated the in-memory `imageCache`; write the
+        // accumulated state to disk exactly once here, regardless of whether
+        // the run succeeded or threw. Failure during flush must not mask a
+        // real seed error, so we log and swallow.
+        if (imageProvider && imageCache) {
+            try {
+                flushCache(DEFAULT_CACHE_PATH, imageCache);
+            } catch (flushError) {
+                logger.warn(
+                    `[seed:images] Failed to flush cloudinary cache: ${flushError instanceof Error ? flushError.message : String(flushError)}`
+                );
+            }
+        }
 
         // Print final summary with execution time and error history
         summaryTracker.print();

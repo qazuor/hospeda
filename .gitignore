@@ -88,6 +88,9 @@ mcp-todos.json
 packages/seed/mappings/id-mappings.json
 docs/dev
 
+# Cloudinary seed cache (generated at runtime by @repo/seed — GAP-078-074)
+**/.cloudinary-cache.json
+
 # TanStack Router generated files
 **/routeTree.gen.ts
 

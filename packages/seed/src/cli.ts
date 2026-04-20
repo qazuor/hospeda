@@ -112,7 +112,8 @@ if (IS_CLI_ENTRY) {
     const { dbLogger } = await import('@repo/db');
     const { resolveEnvironment } = await import('@repo/media/server');
     const { runSeed } = await import('./index.js');
-    const { DEFAULT_CACHE_PATH, deleteCache } = await import('./utils/cloudinary-cache.js');
+    const { DEFAULT_CACHE_PATH, deleteCache, flushCache, readCache, validateCacheEntries } =
+        await import('./utils/cloudinary-cache.js');
     const { STATUS_ICONS } = await import('./utils/icons.js');
     const { logger } = await import('./utils/logger.js');
 
@@ -130,6 +131,7 @@ if (IS_CLI_ENTRY) {
         rollbackOnError: args.includes('--rollbackOnError'),
         continueOnError: args.includes('--continueOnError'),
         cleanImages: args.includes('--clean-images'),
+        validateCache: args.includes('--validate-cache'),
         allowRequiredFallback: args.includes('--allow-required-fallback'),
         exclude: [] as string[]
     };
@@ -209,8 +211,39 @@ if (IS_CLI_ENTRY) {
         logger.info('[seed:clean-images] Local image cache deleted.');
     };
 
+    /**
+     * GAP-078-079 — Maintenance-only handler for the `--validate-cache` flag.
+     *
+     * Loads the cloudinary cache, HEADs each cached URL, drops stale entries,
+     * and flushes the cleaned cache back to disk. Sequential by design (this
+     * is a maintenance flag, extra wall time is fine) so it does not add a
+     * `p-limit` dependency. Independent of `--reset` and `--clean-images`.
+     */
+    const handleValidateCache = async (): Promise<void> => {
+        const cache = readCache(DEFAULT_CACHE_PATH);
+        const keys = Object.keys(cache);
+        if (keys.length === 0) {
+            logger.info('[seed:validate-cache] Cache is empty — nothing to validate.');
+            return;
+        }
+        logger.info(`[seed:validate-cache] Validating ${keys.length} cached URL(s) via HEAD...`);
+        const result = await validateCacheEntries({ cache });
+        flushCache(DEFAULT_CACHE_PATH, cache);
+        logger.info(
+            `[seed:validate-cache] Done — checked=${result.checked} kept=${result.kept} removed=${result.removed}`
+        );
+    };
+
     try {
-        if (options.cleanImages && !options.reset) {
+        if (options.validateCache) {
+            // Maintenance-only mode: validate cache and exit. Runs BEFORE the
+            // reset/clean branches so users can pass `--validate-cache` on its
+            // own without kicking off a full seed.
+            handleValidateCache().catch((err) => {
+                logger.error(`${STATUS_ICONS.Error} Error during cache validation: ${String(err)}`);
+                process.exit(1);
+            });
+        } else if (options.cleanImages && !options.reset) {
             // Cleanup-only mode: delete seed assets and exit without reseeding.
             handleCleanImages().catch((err) => {
                 logger.error(`${STATUS_ICONS.Error} Error during image cleanup: ${String(err)}`);
