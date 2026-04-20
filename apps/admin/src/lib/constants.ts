@@ -21,3 +21,9 @@ export const DEFAULT_MEDIA_MAX_SIZE_BYTES = 5 * 1024 * 1024;
  * Equivalent to 10 MiB (10 * 1024 * 1024).
  */
 export const DEFAULT_GALLERY_FALLBACK_MAX_SIZE_BYTES = 10 * 1024 * 1024;
+
+/**
+ * Default maximum size (in megabytes) for avatar uploads. Matches the
+ * `AVATAR_MAX_SIZE` cap enforced by `@repo/media` for user avatars.
+ */
+export const DEFAULT_AVATAR_MAX_SIZE_MB = 5;

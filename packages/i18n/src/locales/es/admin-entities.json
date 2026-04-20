@@ -341,7 +341,27 @@
             "uploading": "Subiendo...",
             "dropText": "Suelta una imagen aquí, o haz clic para seleccionar",
             "fileConstraints": "Tipos: {types}, tamaño máximo: {maxSize}",
-            "selectButton": "Seleccionar imagen"
+            "selectButton": "Seleccionar imagen",
+            "errorBannerTitle": "Error al subir",
+            "errorBannerDismiss": "Descartar",
+            "errorBannerFallback": "No se pudo subir la imagen. Intenta nuevamente.",
+            "errorInvalidType": "Tipo de archivo no permitido. Permitidos: {types}.",
+            "errorTooLarge": "El archivo es demasiado grande. Máximo permitido: {maxSize}.",
+            "deleteDialogTitle": "¿Eliminar imagen?",
+            "deleteDialogDescription": "Esta acción no se puede deshacer.",
+            "deleteDialogCancel": "Cancelar",
+            "deleteDialogConfirm": "Eliminar"
+        },
+        "avatar": {
+            "label": "Avatar",
+            "uploadAriaLabel": "Subir avatar",
+            "uploadButton": "Subir avatar",
+            "changeButton": "Cambiar avatar",
+            "removeButton": "Quitar avatar",
+            "uploading": "Subiendo...",
+            "fileTooLarge": "El archivo supera el tamaño máximo de {maxSize} MB.",
+            "invalidType": "Tipo de archivo no válido.",
+            "fallbackAriaLabel": "Iniciales del usuario"
         },
         "gallery": {
             "imageAlt": "Imagen de galería {index}",

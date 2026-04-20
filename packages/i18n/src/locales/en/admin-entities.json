@@ -365,7 +365,27 @@
             "uploading": "Uploading...",
             "dropText": "Drop an image here, or click to select",
             "fileConstraints": "{types} up to {maxSize}",
-            "selectButton": "Select Image"
+            "selectButton": "Select Image",
+            "errorBannerTitle": "Upload failed",
+            "errorBannerDismiss": "Dismiss",
+            "errorBannerFallback": "Could not upload the image. Please try again.",
+            "errorInvalidType": "Unsupported file type. Allowed: {types}.",
+            "errorTooLarge": "File is too large. Maximum allowed: {maxSize}.",
+            "deleteDialogTitle": "Delete image?",
+            "deleteDialogDescription": "This action cannot be undone.",
+            "deleteDialogCancel": "Cancel",
+            "deleteDialogConfirm": "Delete"
+        },
+        "avatar": {
+            "label": "Avatar",
+            "uploadAriaLabel": "Upload avatar",
+            "uploadButton": "Upload avatar",
+            "changeButton": "Change avatar",
+            "removeButton": "Remove avatar",
+            "uploading": "Uploading...",
+            "fileTooLarge": "File exceeds the {maxSize} MB maximum size.",
+            "invalidType": "Invalid file type.",
+            "fallbackAriaLabel": "User initials"
         },
         "gallery": {
             "imageAlt": "Gallery image {index}",
