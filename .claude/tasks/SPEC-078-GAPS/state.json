@@ -706,19 +706,19 @@
         {
             "id": "T-038",
             "title": "Admin UI: wire upload/delete for destinations, events, posts entity edit pages",
-            "description": "Gaps: GAP-078-004, GAP-078-005, GAP-078-018.\n\nFiles: apps/admin/src/routes/_authed/destinations/$id_.edit.tsx, apps/admin/src/routes/_authed/events/$id_.edit.tsx, apps/admin/src/routes/_authed/posts/$id_.edit.tsx\n- Replicate wiring from accommodations/$id_.edit.tsx in all 3 entity edit pages\n- Handlers: images + featuredImage/mainImage via uploadEntityImage.mutateAsync\n- Integration test: upload + assert entity media.featuredImage.url updated\n\nAcceptance: Upload image button functional in all 3 entity edit pages; integration test passes.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-004, GAP-078-005, GAP-078-018.\n\nFiles: apps/admin/src/routes/_authed/destinations/$id_.edit.tsx, apps/admin/src/routes/_authed/events/$id_.edit.tsx, apps/admin/src/routes/_authed/posts/$id_.edit.tsx\n- Replicate wiring from accommodations/$id_.edit.tsx in all 3 entity edit pages\n- Handlers: images + featuredImage/mainImage via uploadEntityImage.mutateAsync\n- Integration test: upload + assert entity media.featuredImage.url updated\n\nAcceptance: Upload image button functional in all 3 entity edit pages; integration test passes.\n\nOutcome (commit 2d581d49): 1:1 replication of accommodations wiring in 3 edit pages (~28 net lines each). Imports `useMediaUpload` + `createUploadHandler` + `useMemo`; builds `galleryFieldHandlers` memo block verbatim from accommodations pattern; forwards as `fieldHandlers` prop to `EntityEditContent`. Hook untouched — T-040 already narrowed `UploadEntityType` to `Extract<MediaEntityType, 'accommodation'|'destination'|'event'|'post'>`. 3 component-level tests added (one per entity) asserting `fieldHandlers.images.onUpload` invokes `uploadEntityImage.mutateAsync` with correct entityType + `role: 'gallery'`, and `onDelete` forwards publicId to `deleteImage.mutateAsync`. Product decisions: D1 scope = 1:1 replication (A), D2 commit = single atomic (A), D3 delete confirmation deferred to T-045 (C), D4 backend gallery cap alignment deferred as follow-up (B). Pre-existing TS errors in createEntityApi.ts + me/accommodations/index.tsx unrelated (last touched 0450eed6/460e5a77).",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-017", "T-029"],
             "blocks": [],
             "subtasks": [],
             "tags": ["frontend", "admin"],
             "phase": "phase-6a",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-20T00:00:00.000Z",
+                "completed": "2026-04-20T00:00:00.000Z"
             }
         },
         {
@@ -1291,8 +1291,8 @@
     ],
     "summary": {
         "total": 68,
-        "completed": 61,
-        "pending": 7,
+        "completed": 62,
+        "pending": 6,
         "inProgress": 0
     }
 }
