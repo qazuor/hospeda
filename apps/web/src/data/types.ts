@@ -403,6 +403,17 @@ export interface AccommodationDetailData {
     readonly featuredImage: string;
     readonly media: {
         readonly images: readonly string[];
+        /**
+         * Gallery items carrying the image URL plus optional caption and
+         * description metadata preserved from the API response. Rendered by
+         * HeroGallery and the full photo page; kept alongside `images` for
+         * backward compatibility.
+         */
+        readonly galleryItems: readonly {
+            readonly url: string;
+            readonly caption?: string;
+            readonly description?: string;
+        }[];
         readonly videos: readonly string[];
     };
     readonly location: {

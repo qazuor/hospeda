@@ -8,6 +8,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getInitials } from '@/lib/api/transforms';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import { getMediaUrl } from '@repo/media';
 
 interface Props {
   readonly owner: AccommodationOwnerData;
@@ -24,12 +25,23 @@ const memberDate = new Date(owner.createdAt).toLocaleDateString(
   lang === 'pt' ? 'pt-BR' : lang === 'en' ? 'en-US' : 'es-AR',
   { year: 'numeric', month: 'long' }
 );
+const ownerAvatarUrl = owner.image
+  ? getMediaUrl(owner.image, { preset: 'avatar' })
+  : null;
 ---
 
 <div class="owner-card">
   <div class="owner-card__header">
-    {owner.image ? (
-      <img src={owner.image} alt={owner.name} class="owner-card__avatar" loading="lazy" />
+    {ownerAvatarUrl ? (
+      <img
+        src={ownerAvatarUrl}
+        alt={owner.name}
+        class="owner-card__avatar"
+        width="56"
+        height="56"
+        loading="lazy"
+        decoding="async"
+      />
     ) : (
       <div class="owner-card__avatar-fallback" aria-hidden="true">
         {initials}

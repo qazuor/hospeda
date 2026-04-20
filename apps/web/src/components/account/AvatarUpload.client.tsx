@@ -5,6 +5,7 @@
  */
 
 import { ImageIcon, UploadIcon } from '@repo/icons';
+import { getMediaUrl } from '@repo/media';
 import { useRef, useState } from 'react';
 import styles from './AvatarUpload.module.css';
 
@@ -62,7 +63,13 @@ export function AvatarUpload({ currentImageUrl, userName, userId, apiUrl }: Avat
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const activeImageUrl = previewUrl ?? displayUrl;
+    // `previewUrl` is a transient `blob:` URL from URL.createObjectURL and must
+    // never pass through getMediaUrl (which would treat it as non-Cloudinary
+    // and return it unchanged, but explicitly segregating avoids mistakes).
+    // `displayUrl` is the persisted avatar URL returned by the media endpoint
+    // and is the only value that gets the `avatar` Cloudinary preset applied.
+    const activeImageUrl =
+        previewUrl ?? (displayUrl ? getMediaUrl(displayUrl, { preset: 'avatar' }) : null);
     const initials = getInitials(userName);
     const base = apiUrl.replace(/\/$/, '');
 
@@ -178,6 +185,10 @@ export function AvatarUpload({ currentImageUrl, userName, userId, apiUrl }: Avat
                         src={activeImageUrl}
                         alt={userName ?? 'Avatar'}
                         className={styles.avatarImage}
+                        width={150}
+                        height={150}
+                        loading="lazy"
+                        decoding="async"
                     />
                 ) : (
                     <div

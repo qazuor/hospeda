@@ -9,6 +9,7 @@ import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getInitials } from '@/lib/api/transforms';
+import { getMediaUrl } from '@repo/media';
 import RatingBreakdown from './RatingBreakdown.astro';
 
 interface ReviewItem {
@@ -49,7 +50,8 @@ const hasReviews = accommodation.reviewsCount > 0;
         <div class="review-preview__cards">
           {topReviews.map((review) => {
             const userName = review.user?.name ?? 'Anónimo';
-            const userImage = review.user?.image ?? null;
+            const rawUserImage = review.user?.image ?? null;
+            const userImage = rawUserImage ? getMediaUrl(rawUserImage, { preset: 'avatar' }) : null;
             const initials = getInitials(userName);
             const dateStr = review.createdAt
               ? new Date(review.createdAt).toLocaleDateString(
@@ -61,7 +63,15 @@ const hasReviews = accommodation.reviewsCount > 0;
               <article class="review-card">
                 <div class="review-card__header">
                   {userImage ? (
-                    <img src={userImage} alt={userName} class="review-card__avatar" loading="lazy" />
+                    <img
+                      src={userImage}
+                      alt={userName}
+                      class="review-card__avatar"
+                      width="40"
+                      height="40"
+                      loading="lazy"
+                      decoding="async"
+                    />
                   ) : (
                     <div class="review-card__avatar-fallback" aria-hidden="true">{initials}</div>
                   )}

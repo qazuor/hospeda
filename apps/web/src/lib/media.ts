@@ -16,6 +16,7 @@ const DEFAULT_PLACEHOLDER = '/images/placeholder.svg';
 interface MediaImage {
     readonly url?: string;
     readonly caption?: string;
+    readonly description?: string;
     readonly moderationState?: string;
 }
 
@@ -23,6 +24,20 @@ interface MediaObject {
     readonly featuredImage?: MediaImage | string;
     readonly gallery?: readonly MediaImage[];
     readonly videos?: readonly { readonly url?: string }[];
+}
+
+/**
+ * A gallery item carrying the transformed image URL plus any caption and
+ * description metadata attached to it on the API side.
+ *
+ * Produced by {@link extractGalleryItems}. Components that render captions
+ * (HeroGallery, full photo page) should consume this shape; components that
+ * only need the URL list can keep using {@link extractGalleryUrls}.
+ */
+export interface GalleryItem {
+    readonly url: string;
+    readonly caption?: string;
+    readonly description?: string;
 }
 
 /**
@@ -90,4 +105,52 @@ export function extractGalleryUrls(
         .map((img) => (typeof img === 'string' ? img : img?.url))
         .filter((url): url is string => typeof url === 'string' && url.length > 0)
         .map((url) => getMediaUrl(url, { preset }));
+}
+
+/**
+ * Extracts gallery items (url + caption + description) from an API response
+ * item and applies a Cloudinary transform preset to each URL.
+ *
+ * Unlike {@link extractGalleryUrls}, this function preserves the `caption` and
+ * `description` metadata attached to each gallery entry on the API side.
+ * Consumers that need to surface captions (for example HeroGallery's
+ * GLightbox integration) should use this helper.
+ *
+ * Non-Cloudinary URLs pass through `getMediaUrl()` unchanged.
+ *
+ * @param item - API response item
+ * @param preset - Named Cloudinary preset to apply (default: `'gallery'`)
+ * @returns Array of gallery items with transformed URLs and preserved metadata
+ */
+export function extractGalleryItems(
+    item: Record<string, unknown>,
+    preset: MediaPreset = 'gallery'
+): readonly GalleryItem[] {
+    const media = item.media as MediaObject | undefined;
+    if (!media?.gallery || !Array.isArray(media.gallery)) {
+        return [];
+    }
+
+    return media.gallery
+        .map((entry) => {
+            if (typeof entry === 'string') {
+                return entry ? { url: getMediaUrl(entry, { preset }) } : null;
+            }
+            if (!entry || typeof entry.url !== 'string' || entry.url.length === 0) {
+                return null;
+            }
+            const item: {
+                url: string;
+                caption?: string;
+                description?: string;
+            } = { url: getMediaUrl(entry.url, { preset }) };
+            if (typeof entry.caption === 'string' && entry.caption.length > 0) {
+                item.caption = entry.caption;
+            }
+            if (typeof entry.description === 'string' && entry.description.length > 0) {
+                item.description = entry.description;
+            }
+            return item;
+        })
+        .filter((item): item is GalleryItem => item !== null);
 }

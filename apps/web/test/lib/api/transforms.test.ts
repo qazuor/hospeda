@@ -263,6 +263,42 @@ describe('toAccommodationDetailPageProps', () => {
             expect(result.media.videos).toEqual(['/vid/c.mp4']);
         });
 
+        it('should preserve caption and description in media.galleryItems (GAP-078-136)', () => {
+            const item = {
+                id: 'acc-002',
+                slug: 'cabin-with-captions',
+                name: 'Captioned Cabin',
+                media: {
+                    images: ['/img/x.jpg'],
+                    videos: [],
+                    gallery: [
+                        {
+                            url: 'https://example.com/1.jpg',
+                            caption: 'Sunset view',
+                            description: 'Captured at golden hour'
+                        },
+                        { url: 'https://example.com/2.jpg', caption: 'Main living area' }
+                    ]
+                }
+            } satisfies Record<string, unknown>;
+            const result = toAccommodationDetailPageProps({ item });
+            expect(result.media.galleryItems).toHaveLength(2);
+            expect(result.media.galleryItems[0]).toEqual({
+                url: 'https://example.com/1.jpg',
+                caption: 'Sunset view',
+                description: 'Captured at golden hour'
+            });
+            expect(result.media.galleryItems[1]).toEqual({
+                url: 'https://example.com/2.jpg',
+                caption: 'Main living area'
+            });
+        });
+
+        it('should fall back to an empty galleryItems array when no gallery exists', () => {
+            const result = toAccommodationDetailPageProps({ item: makeFullItem() });
+            expect(result.media.galleryItems).toEqual([]);
+        });
+
         it('should map location with numeric lat/lng', () => {
             const result = toAccommodationDetailPageProps({ item: makeFullItem() });
             expect(result.location.lat).toBe(-30.75);

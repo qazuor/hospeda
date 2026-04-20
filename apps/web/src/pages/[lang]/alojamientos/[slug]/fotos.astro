@@ -42,6 +42,8 @@ interface GalleryItem {
     thumb: string;
     thumbFallback?: string;
     alt: string;
+    caption?: string;
+    description?: string;
 }
 
 const galleryItems: GalleryItem[] = [];
@@ -51,10 +53,21 @@ if (accommodation.featuredImage && !accommodation.featuredImage.includes('placeh
     galleryItems.push({ type: 'image', src: accommodation.featuredImage, thumb: accommodation.featuredImage, alt: accommodation.name });
 }
 
-// Gallery images (skip duplicate of featured)
-for (const url of accommodation.media.images) {
-    if (url !== accommodation.featuredImage) {
-        galleryItems.push({ type: 'image', src: url, thumb: url, alt: `${accommodation.name}` });
+// Gallery images (skip duplicate of featured). Prefer galleryItems so captions
+// survive (GAP-078-136); fall back to the URL list for legacy payloads.
+const galleryEntries = accommodation.media.galleryItems.length > 0
+    ? accommodation.media.galleryItems
+    : accommodation.media.images.map((url) => ({ url }));
+for (const entry of galleryEntries) {
+    if (entry.url !== accommodation.featuredImage) {
+        galleryItems.push({
+            type: 'image',
+            src: entry.url,
+            thumb: entry.url,
+            alt: entry.caption ?? accommodation.name,
+            caption: entry.caption,
+            description: entry.description
+        });
     }
 }
 
@@ -119,6 +132,8 @@ const jsonLd = {
                         href={item.src}
                         data-glightbox
                         data-gallery="accommodation-gallery"
+                        data-title={item.caption ?? undefined}
+                        data-description={item.description ?? undefined}
                         aria-label={t('accommodations.detail.gallery.viewFullscreen', { n: i + 1 })}
                         class="fotos__link"
                     >

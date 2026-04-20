@@ -17,6 +17,7 @@ import { buildUrl } from '@/lib/urls';
 import { formatDate } from '@/lib/format-utils';
 import { Image } from 'astro:assets';
 import { getPostCategoryColor } from '@/lib/colors';
+import { getMediaUrl } from '@repo/media';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -37,7 +38,14 @@ const featuredImage = String(post.featuredImage || '/assets/images/placeholder-p
 const readingTime = Number(post.readingTimeMinutes || 0);
 const authorObj = post.author as Record<string, unknown> | undefined;
 const authorName = String(authorObj?.displayName || authorObj?.name || '');
-const authorAvatar = String(authorObj?.image || authorObj?.avatarUrl || '');
+const rawAuthorAvatar = String(authorObj?.image || authorObj?.avatarUrl || '');
+// Route Cloudinary-hosted author avatars through the `avatar` preset so a
+// 150x150 face-cropped variant is delivered. Non-Cloudinary URLs pass through
+// unchanged (getMediaUrl contract). Empty strings stay empty to keep the
+// conditional render below unchanged.
+const authorAvatar = rawAuthorAvatar
+	? getMediaUrl(rawAuthorAvatar, { preset: 'avatar' })
+	: '';
 const tags = Array.isArray(post.tags) ? post.tags.map((tag: unknown) => {
 	if (typeof tag === 'string') return { name: tag, slug: tag };
 	const t = tag as Record<string, unknown>;
@@ -123,18 +131,16 @@ const jsonLd = {
 		<!-- Author -->
 		{authorName && (
 			<div class="post-detail__author">
-				{authorAvatar && !authorAvatar.includes('placeholder') && !authorAvatar.endsWith('.svg') ? (
-					<Image
+				{authorAvatar ? (
+					<img
 						src={authorAvatar}
 						alt={authorName}
 						class="post-detail__author-avatar"
 						width={40}
 						height={40}
-						format="webp"
 						loading="lazy"
+						decoding="async"
 					/>
-				) : authorAvatar ? (
-					<img src={authorAvatar} alt={authorName} class="post-detail__author-avatar" width={40} height={40} loading="lazy" />
 				) : null}
 				<span class="post-detail__author-name">{authorName}</span>
 			</div>

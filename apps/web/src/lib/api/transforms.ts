@@ -19,7 +19,7 @@ import type {
     EventCardData,
     ReviewCardData
 } from '@/data/types';
-import { extractFeaturedImageUrl, extractGalleryUrls } from '../media';
+import { extractFeaturedImageUrl, extractGalleryItems, extractGalleryUrls } from '../media';
 
 // Re-export types from canonical source for backward compatibility
 export type {
@@ -365,10 +365,16 @@ export function toAccommodationDetailPageProps({
         averageRating: Number(item.averageRating || 0),
         reviewsCount: Number(item.reviewsCount || 0),
         featuredImage: extractFeaturedImageUrl(item, '/images/placeholder-accommodation.svg'),
-        media: {
-            images: mediaObj?.images ?? extractGalleryUrls(item),
-            videos: mediaObj?.videos ?? []
-        },
+        media: (() => {
+            const galleryItems = extractGalleryItems(item);
+            return {
+                images: mediaObj?.images ?? extractGalleryUrls(item),
+                // Preserve caption/description alongside gallery URLs so
+                // HeroGallery + fotos can surface them (GAP-078-136).
+                galleryItems,
+                videos: mediaObj?.videos ?? []
+            };
+        })(),
         location: {
             lat: locationObj?.lat != null ? Number(locationObj.lat) : null,
             lng: locationObj?.lng != null ? Number(locationObj.lng) : null

@@ -4,7 +4,11 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { extractFeaturedImageUrl, extractGalleryUrls } from '../../src/lib/media';
+import {
+    extractFeaturedImageUrl,
+    extractGalleryItems,
+    extractGalleryUrls
+} from '../../src/lib/media';
 
 describe('extractFeaturedImageUrl', () => {
     it('should extract URL from nested media.featuredImage object', () => {
@@ -92,5 +96,99 @@ describe('extractGalleryUrls', () => {
         const result = extractGalleryUrls(item);
         expect(result).toHaveLength(1);
         expect(result[0]).toBe('https://example.com/valid.jpg');
+    });
+});
+
+describe('extractGalleryItems', () => {
+    it('should return empty array when no gallery', () => {
+        expect(extractGalleryItems({})).toEqual([]);
+    });
+
+    it('should preserve caption and description per entry (GAP-078-136)', () => {
+        const item = {
+            media: {
+                gallery: [
+                    {
+                        url: 'https://example.com/a.jpg',
+                        caption: 'Sunset over the lake',
+                        description: 'Photo taken at golden hour'
+                    },
+                    { url: 'https://example.com/b.jpg', caption: 'Pool area' },
+                    { url: 'https://example.com/c.jpg' }
+                ]
+            }
+        };
+        const result = extractGalleryItems(item);
+        expect(result).toHaveLength(3);
+        expect(result[0]).toEqual({
+            url: 'https://example.com/a.jpg',
+            caption: 'Sunset over the lake',
+            description: 'Photo taken at golden hour'
+        });
+        expect(result[1]).toEqual({
+            url: 'https://example.com/b.jpg',
+            caption: 'Pool area'
+        });
+        expect(result[2]).toEqual({ url: 'https://example.com/c.jpg' });
+    });
+
+    it('should omit empty caption and description fields', () => {
+        const item = {
+            media: {
+                gallery: [{ url: 'https://example.com/a.jpg', caption: '', description: '' }]
+            }
+        };
+        const result = extractGalleryItems(item);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toEqual({ url: 'https://example.com/a.jpg' });
+        expect(result[0]).not.toHaveProperty('caption');
+        expect(result[0]).not.toHaveProperty('description');
+    });
+
+    it('should transform Cloudinary URLs with the requested preset', () => {
+        const item = {
+            media: {
+                gallery: [
+                    {
+                        url: 'https://res.cloudinary.com/demo/image/upload/v1/sample.jpg',
+                        caption: 'Living room'
+                    }
+                ]
+            }
+        };
+        const result = extractGalleryItems(item, 'card');
+        expect(result).toHaveLength(1);
+        expect(result[0].url).toContain('/upload/w_400,h_300');
+        expect(result[0].url).toContain('/sample.jpg');
+        expect(result[0].caption).toBe('Living room');
+    });
+
+    it('should accept string entries without captions', () => {
+        const item: Record<string, unknown> = {
+            media: {
+                gallery: ['https://example.com/a.jpg', '', 'https://example.com/b.jpg']
+            }
+        };
+        const result = extractGalleryItems(item);
+        expect(result).toHaveLength(2);
+        expect(result.map((r) => r.url)).toEqual([
+            'https://example.com/a.jpg',
+            'https://example.com/b.jpg'
+        ]);
+    });
+
+    it('should filter out entries without a valid URL', () => {
+        const item = {
+            media: {
+                gallery: [
+                    { url: 'https://example.com/valid.jpg', caption: 'ok' },
+                    { url: '' },
+                    { caption: 'no url' }
+                ]
+            }
+        };
+        const result = extractGalleryItems(item);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toEqual({ url: 'https://example.com/valid.jpg', caption: 'ok' });
     });
 });
