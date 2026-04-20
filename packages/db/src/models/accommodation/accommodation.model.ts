@@ -118,6 +118,14 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         'tags'
     ] as const;
 
+    /**
+     * The `media` column stores structured image metadata as JSONB.
+     * Opting in here ensures that a partial media patch (e.g. updating only
+     * `gallery`) does not overwrite sibling keys (e.g. `featuredImage`) that
+     * were written by a concurrent request (GAP-078-186, GAP-078-198).
+     */
+    protected override readonly mergeableJsonbColumns = ['media'] as const;
+
     protected getTableName(): string {
         return 'accommodations';
     }

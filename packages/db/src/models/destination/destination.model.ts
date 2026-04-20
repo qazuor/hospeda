@@ -40,6 +40,13 @@ export class DestinationModel extends BaseModelImpl<Destination> {
         'deletedBy'
     ] as const;
 
+    /**
+     * The `media` column stores structured image metadata as JSONB.
+     * Opting in here ensures that a partial media patch does not overwrite
+     * sibling keys written by a concurrent request (GAP-078-186, GAP-078-198).
+     */
+    protected override readonly mergeableJsonbColumns = ['media'] as const;
+
     protected getTableName(): string {
         return 'destinations';
     }
