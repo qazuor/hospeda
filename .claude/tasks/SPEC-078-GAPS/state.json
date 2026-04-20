@@ -761,19 +761,21 @@
             "id": "T-041",
             "title": "Migrate raw <img> to getMediaUrl() in admin components: profile, SEO, header, GalleryField",
             "description": "Gaps: GAP-078-015, GAP-078-016, GAP-078-042, GAP-078-043, GAP-078-137.\n\nFiles: apps/admin/src/routes/_authed/me/profile.tsx, apps/admin/src/routes/_authed/posts/$id_.seo.tsx, apps/admin/src/integrations/clerk/header-user.tsx, apps/admin/src/components/entity-form/fields/GalleryField.tsx, apps/admin/src/routes/_authed/accommodations/$id_.gallery.tsx\n- GAP-078-015: profile.tsx:124 -> preset avatar\n- GAP-078-016: $id_.seo.tsx:201 -> preset og\n- GAP-078-042: header-user.tsx:86 -> preset avatar + width={32} height={32} loading=\"eager\" decoding=\"async\"\n- GAP-078-043+137: GalleryField.tsx:387 + $id_.gallery.tsx:61 -> preset thumbnail + loading=\"lazy\"\n\nAcceptance: No raw <img src={cloudinaryUrl} in listed admin files; presets applied correctly per component type.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-017"],
             "blocks": ["T-047"],
             "subtasks": [],
             "tags": ["frontend", "admin", "media"],
             "phase": "phase-6c",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-04-20T12:48:00.000Z",
+                "completed": "2026-04-20T12:48:39.000Z"
+            },
+            "commit": "fcb9e9a6",
+            "outcome": "4 admin surfaces migrated: profile.tsx (avatar preset, lazy), $id_.seo.tsx (og preset, lazy), header-user.tsx (avatar preset, eager - above fold), GalleryField.tsx (thumbnail preset, lazy). $id_.gallery.tsx skipped - already a 22-line TanStack redirect since T-039 (56ef6b72), no raw <img> tags. ImageField/GalleryViewField/ImageViewField/ImageCell/GalleryCell already used getMediaUrl from prior tasks. Biome useSortedImports auto-reordered @repo/media after @repo/icons. 11/11 header-user tests pass (src-equality holds: getMediaUrl returns non-Cloudinary URLs unchanged). Pre-existing typecheck errors in createEntityApi.ts + me/accommodations/index.tsx verified pre-change via git stash."
         },
         {
             "id": "T-042",
@@ -887,19 +889,21 @@
             "id": "T-048",
             "title": "Web media migration: transforms.ts and Astro component raw img replacements",
             "description": "Gaps: GAP-078-017, GAP-078-041, GAP-078-044, GAP-078-045, GAP-078-136.\n\nFiles: apps/web/src/lib/api/transforms.ts, apps/web/src/components/accommodation/OwnerCard.astro, apps/web/src/components/accommodation/ReviewPreview.astro, apps/web/src/components/account/AvatarUpload.client.tsx, apps/web/src/pages/[lang]/destinos/atraccion/[slug]/index.astro, apps/web/src/pages/[lang]/publicaciones/[slug].astro\n- GAP-078-017: OwnerCard.astro + ReviewPreview.astro via transforms.ts -> preset avatar\n- GAP-078-041: AvatarUpload.client.tsx:178 -> preset avatar\n- GAP-078-044: atraccion/[slug]/index.astro:50 -> preset hero\n- GAP-078-045: publicaciones/[slug].astro:137 -> preset avatar\n- GAP-078-136: transforms.ts:368 preserves caption and description in HeroGallery output\n\nAcceptance: No raw <img src={cloudinaryUrl} in listed web files; transforms output includes caption; presets applied per component.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.0,
             "blockedBy": ["T-017"],
             "blocks": [],
             "subtasks": [],
             "tags": ["frontend", "web", "media"],
             "phase": "phase-6e",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-04-20T12:48:00.000Z",
+                "completed": "2026-04-20T12:55:34.000Z"
+            },
+            "commit": "a321ee66",
+            "outcome": "Path correction - canonical file is apps/web/src/lib/api/transforms.ts (not utils/transforms.ts); already delegated to lib/media.ts which wraps getMediaUrl, no shim/delete needed. 7 Astro components/pages + AvatarUpload island migrated with preset-appropriate attrs (hero eager+fetchpriority=high, avatars/cards lazy). Scope grew: new extractGalleryItems + media.galleryItems field through lib/media + lib/api/transforms + data/types so HeroGallery.astro + fotos.astro can emit GLightbox data-title/data-description (closes GAP-078-136 inline). Dropped redundant Astro <Image> double-optimization branch for author avatars. AvatarUpload: only persisted displayUrl transformed; blob: previewUrl kept raw. 7 new tests (5 media.test + 2 transforms.test), 62/62 lib pass, 599 web test suite pass. Pre-existing AccommodationCard/EventCard test regressions from 1583b849 unrelated."
         },
         {
             "id": "T-049",

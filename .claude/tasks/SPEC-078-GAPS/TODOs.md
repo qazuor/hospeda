@@ -1,11 +1,12 @@
 # SPEC-078-GAPS: Cloudinary Image Management — Gaps Remediation
 
-## Progress: 50/68 tasks (74%)
+## Progress: 52/68 tasks (76%)
 
 **Average Complexity**: 1.7 / 2.5 (max)
 **Completed from prior work**: 3 tasks (Phase 0 + Phase 1A) — see already-done.md
 **Completed 2026-04-18 (previous session)**: 1 task (T-004 — Phase 1B migrations reconstruction)
 **Completed 2026-04-18/19 (current session)**: 46 tasks — 4 warmups + 5 security + 5 schema/DB + T-017 + T-022 + T-029 + T-018/T-019 + T-031 + T-023 + T-040 + T-024 + T-030 + T-025 + T-032 + T-033 + T-035 + T-034 + T-051 + T-052 + T-054 + T-056 + T-057 + T-036 + T-055 + T-020 + T-058 + T-059 + T-060 + T-062 + T-064 + T-021 + T-061 + T-063 (provider delete paths + multi-instance) + T-039 (admin gallery tab redirect)
+**Completed 2026-04-20 (current session)**: 2 tasks — T-041 (admin raw img migration) + T-048 (web raw img + galleryItems pipeline)
 **Splits applied**: 20 parent tasks split into 45 child tasks (68 total vs 47 original)
 
 **Known follow-ups**:
@@ -338,10 +339,11 @@
 
 ### Phase 6C — Raw <img> to getMediaUrl() migration
 
-- [ ] **T-041** (complexity: 1.5) — Migrate raw <img> to getMediaUrl() in admin components: profile, SEO, header, GalleryField
+- [x] **T-041** (complexity: 1.5) — Migrate raw <img> to getMediaUrl() in admin components: profile, SEO, header, GalleryField
   - Gaps: GAP-078-015, GAP-078-016, GAP-078-042, GAP-078-043, GAP-078-137
   - Blocked by: T-017
   - Blocks: T-050 (CSP)
+  - Outcome (commit `fcb9e9a6`): 4 admin surfaces migrated. profile.tsx (avatar preset, lazy), $id_.seo.tsx (og preset, lazy), header-user.tsx (avatar preset, eager — above fold), GalleryField.tsx (thumbnail preset, lazy). $id_.gallery.tsx skipped — already a 22-line TanStack redirect since T-039 (56ef6b72). ImageField/GalleryViewField/ImageViewField/ImageCell/GalleryCell already used getMediaUrl from prior tasks. Biome auto-fix reordered @repo/media import after @repo/icons per useSortedImports. 11/11 header-user tests pass (src-equality holds: getMediaUrl returns non-Cloudinary URLs unchanged). Pre-existing typecheck errors in createEntityApi.ts + me/accommodations/index.tsx verified to exist on HEAD pre-change — not regressions.
 
 - [ ] **T-042** (complexity: 2.0) — Migrate getMediaUrl() API extensions: fallback override, regex anchor, delivery-type detection
   - Gaps: GAP-078-061, GAP-078-069, GAP-078-166, GAP-078-211, GAP-078-218, GAP-078-179
@@ -381,10 +383,11 @@
 
 ### Phase 6E — Web component media migration
 
-- [ ] **T-048** (complexity: 2.0) — Web media migration: transforms.ts and Astro component raw img replacements
+- [x] **T-048** (complexity: 2.0) — Web media migration: transforms.ts and Astro component raw img replacements
   - Gaps: GAP-078-017, GAP-078-041, GAP-078-044, GAP-078-045, GAP-078-136
   - Blocked by: T-017
   - Blocks: none
+  - Outcome (commit `a321ee66`): Path correction — actual file is `apps/web/src/lib/api/transforms.ts` (not `utils/transforms.ts`); no shim/delete needed because it already delegated to `lib/media.ts` which wraps getMediaUrl. Work split into (a) 7 Astro components/pages + AvatarUpload island raw `<img>` → `getMediaUrl(publicId, preset)` with preset-appropriate attrs (hero eager+fetchpriority=high, avatars/cards lazy); (b) new `extractGalleryItems` + `media.galleryItems` field through lib/media + lib/api/transforms + data/types so HeroGallery.astro and fotos.astro can emit GLightbox `data-title`/`data-description` (closes GAP-078-136). Dropped redundant Astro `<Image>` double-optimization branch for author avatars in publicaciones/[slug].astro (Cloudinary already delivers optimized variant). AvatarUpload: only persisted displayUrl transformed; previewUrl blob: URL kept raw. 7 new tests (5 media.test + 2 transforms.test), 62/62 lib pass, 599 web test suite pass. Pre-existing AccommodationCard/EventCard Astro-path regressions from 1583b849 unrelated.
 
 - [ ] **T-049** (complexity: 2.0) — Web media migration: i18n avatar keys, moderationState cleanup, avatar-utils, and race condition doc
   - Gaps: GAP-078-040, GAP-078-064, GAP-078-070, GAP-078-118, GAP-078-145 (web part), GAP-078-194
@@ -629,3 +632,4 @@ Critical path: T-001 -> T-003 -> T-017 -> T-029 -> T-031 -> T-040 -> T-067 -> T-
 - **2026-04-19 (T-062 + T-064 parallel sweep)**: Two independent sub-agents in parallel, zero file collision (T-062 on packages/media provider+validate tests, T-064 on packages/seed test/utils). T-062 landed first (`6f0b286f`) then T-064 (`dc7eb3cb`). T-062 discoveries: (a) `upload()` accepts Buffer ONLY (data-URI/URL strings must be caller-converted); (b) provider strips `tags: []` entirely — option becomes undefined, not `[]`; (c) setupUploadStream helper rewrite with setImmediate benefits 12+ existing tests; (d) GAP-078-215 multi-instance deferred to T-063 where it fits better. T-064 discoveries: (a) SeedSource enum is `'required'|'example'` only — no `'optional'` literal (warn-only = `required + allowRequiredFallback`); (b) `id-mappings.json` not gitignored, caused stale formatter error (follow-up). 184/184 media + 13 files/144 tests seed pass. Progress now 46/68 (68%). **Unlocked**: nothing new — T-021, T-038/T-039, T-061/T-063/T-065/T-066/T-067 still available.
 - **2026-04-19 (T-021 + T-061 parallel sweep)**: Two trivial complexity-1.0 sub-agents in parallel, zero file collision (T-021 docs at `packages/media/{README,CLAUDE}.md`, T-061 new test at `cloudinary-sdk-contract.test.ts`). T-021 landed first (`014c30f1`) then T-061 (`cf830e97`). Both clean — no source touched, no behavior change. T-021 documented avatar race condition trade-off (last-write-wins, mitigated by T-008 + future T-015). T-061 contract test asserts 5 SDK methods are typeof function (config, upload_stream, destroy, delete_resources_by_prefix, ping) so SDK breaking changes from minor/patch updates fail loudly. 185/185 media tests pass. Progress now 48/68 (71%). **Unlocked**: nothing new — T-038/T-039 (admin UI requires consult), T-063/T-065/T-066, T-041..T-043, T-048..T-050 (web), T-067 still gated on T-040+T-044+T-045.
 - **2026-04-19 (T-063 + T-039 parallel sweep)**: Two independent sub-agents in parallel, zero file collision (T-063 on packages/media provider tests, T-039 on apps/admin gallery route). T-063 landed first (`71a69ea0`) then T-039 (`56ef6b72`). T-063: pinned the multi-instance last-init-wins footgun via 2 tests (older provider reference operates under tenant-B creds because SDK is module-level singleton). T-039: standalone gallery route replaced with thin TanStack Router redirect (143→22 lines). T-039 follow-up: hash `gallery-section` doesn't have matching DOM anchor in EntityFormSection — auto-scroll won't fire (no 404 either). Progress now 50/68 (74%). **Unlocked**: nothing new — T-038 (admin UI requires consult), T-041..T-043, T-048..T-050, T-065/T-066/T-067/T-068 still available.
+- **2026-04-20 (T-041 + T-048 parallel sweep)**: Two independent sub-agents in parallel, zero file collision (T-041 on apps/admin surfaces only, T-048 on apps/web Astro + lib/api/transforms.ts). T-041 landed first (`fcb9e9a6`) then T-048 (`a321ee66`). T-041 clean 4-file migration; $id_.gallery.tsx skipped correctly (redirect-only since T-039). T-048 path correction: prompt referenced `apps/web/src/utils/transforms.ts` but canonical path is `apps/web/src/lib/api/transforms.ts` — no shim/delete decision needed because file already delegated to `lib/media.ts` which wraps getMediaUrl. T-048 scope grew: pipeline extension to carry `media.galleryItems` (caption/description) through lib/media + transforms + data/types so HeroGallery.astro + fotos.astro can emit GLightbox `data-title`/`data-description` attrs (closes GAP-078-136 inline). Preset decisions: hero with eager+fetchpriority=high, avatars/cards lazy, dropped redundant Astro `<Image>` double-optimization branch for author avatars. AvatarUpload: only persisted displayUrl transformed; blob: preview URL kept raw. `apps/api/.env.test` dirty pre-sweep (not caused by these agents) — restored with hook-escape literal before tracker commit. Progress now 52/68 (76%). **Unlocked**: T-050 (CSP updates — now unblocked since T-041 landed). Still available: T-042, T-043, T-049, T-065, T-066, T-067, T-068.
