@@ -351,7 +351,7 @@ export function buildCspHeader({
         `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
         `style-src 'self' https://fonts.googleapis.com 'nonce-${nonce}'`,
         "font-src 'self' https://fonts.gstatic.com",
-        `img-src 'self' data: blob: https://*.vercel-storage.com https://*.public.blob.vercel-storage.com${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
+        `img-src 'self' data: blob: https://res.cloudinary.com https://*.vercel-storage.com https://*.public.blob.vercel-storage.com${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
         `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''} https://*.sentry.io https://*.vercel.app`,
         "worker-src 'self' blob:",
         'child-src blob:',

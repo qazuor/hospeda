@@ -180,6 +180,25 @@ describe('buildCspHeader', () => {
         expect(header).not.toContain("img-src 'self' data: https:");
     });
 
+    it('should allowlist res.cloudinary.com in img-src', () => {
+        const header = buildCspHeader({ nonce: 'x' });
+        const imgSrc = header.split('; ').find((d) => d.startsWith('img-src'));
+        expect(imgSrc).toBeDefined();
+        expect(imgSrc).toContain('https://res.cloudinary.com');
+    });
+
+    it('should use exact cloudinary hostname, not a wildcard', () => {
+        const header = buildCspHeader({ nonce: 'x' });
+        expect(header).not.toContain('https://*.cloudinary.com');
+    });
+
+    it('should allow blob: in img-src for AvatarUpload previews', () => {
+        const header = buildCspHeader({ nonce: 'x' });
+        const imgSrc = header.split('; ').find((d) => d.startsWith('img-src'));
+        expect(imgSrc).toBeDefined();
+        expect(imgSrc).toContain('blob:');
+    });
+
     it('should not include unsafe-inline', () => {
         const header = buildCspHeader({ nonce: 'x' });
         expect(header).not.toContain('unsafe-inline');

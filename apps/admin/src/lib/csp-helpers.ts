@@ -37,8 +37,12 @@ export function buildCspDirectives({
         // 'unsafe-inline' required for Sentry Replay (rrweb uses inline style attributes).
         "style-src 'self' 'unsafe-inline'",
         "font-src 'self'",
-        // MercadoPago domains for QZPay billing integration
-        "img-src 'self' data: https: https://*.mlstatic.com",
+        // MercadoPago domains for QZPay billing integration.
+        // Cloudinary (res.cloudinary.com) is the media CDN for Hospeda uploads (T-041 enabled
+        // admin media rendering via getMediaUrl). blob: is required for AvatarUpload previews
+        // using URL.createObjectURL. The explicit res.cloudinary.com entry enforces principle
+        // of least privilege even though the current 'https:' blanket already covers it.
+        "img-src 'self' data: blob: https: https://res.cloudinary.com https://*.mlstatic.com",
         "connect-src 'self' https://*.sentry.io https://*.vercel.app https://api.mercadopago.com https://sdk.mercadopago.com https://www.mercadopago.com https://api.mercadolibre.com https://api-static.mercadopago.com",
         'frame-src https://www.mercadopago.com',
         "worker-src 'self' blob:",

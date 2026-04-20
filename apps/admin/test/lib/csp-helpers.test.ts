@@ -112,4 +112,32 @@ describe('buildCspDirectives', () => {
         // Assert - wildcard must NOT be used
         expect(result).not.toContain('*.mercadopago.com');
     });
+
+    it('should allowlist res.cloudinary.com in img-src', () => {
+        // Arrange & Act
+        const result = buildCspDirectives({ nonce: 'test', sentryDsn: '' });
+
+        // Assert
+        const imgSrc = result.split('; ').find((d) => d.startsWith('img-src'));
+        expect(imgSrc).toBeDefined();
+        expect(imgSrc).toContain('https://res.cloudinary.com');
+    });
+
+    it('should use exact cloudinary hostname, not a wildcard', () => {
+        // Arrange & Act
+        const result = buildCspDirectives({ nonce: 'test', sentryDsn: '' });
+
+        // Assert - no cloudinary wildcard (principle of least privilege)
+        expect(result).not.toContain('https://*.cloudinary.com');
+    });
+
+    it('should allow blob: in img-src for AvatarUpload previews', () => {
+        // Arrange & Act
+        const result = buildCspDirectives({ nonce: 'test', sentryDsn: '' });
+
+        // Assert
+        const imgSrc = result.split('; ').find((d) => d.startsWith('img-src'));
+        expect(imgSrc).toBeDefined();
+        expect(imgSrc).toContain('blob:');
+    });
 });
