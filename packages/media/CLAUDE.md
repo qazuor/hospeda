@@ -67,14 +67,33 @@ const url = getMediaUrl({ publicId: id, preset: 'card', cloudName: 'hospeda' });
 
 Avatars use a **fixed `publicId` equal to the user ID** (e.g. `users/<userId>/avatar`). This is intentional: it means the latest upload always overwrites the previous one and no orphan assets accumulate.
 
-The trade-off: **two concurrent admin updates on the same avatar race**, and the order of writes is not guaranteed. Cloudinary's delivery is last-write-wins — whichever upload completes second is the one served.
+### The race
 
-Mitigations in place:
+The avatar upload is NOT atomic with the DB update. Writing a new avatar is a two-step flow:
+
+1. `POST /api/v1/protected/media/upload` — uploads the asset to Cloudinary at `users/<userId>/avatar`.
+2. `PATCH /api/v1/protected/users/<userId>` with `{ image: <newUrl> }` — writes the URL back to the `users.image` column.
+
+Because step 1 overwrites by publicId and step 2 is a separate request, two concurrent updates on the same user produce **last-write-wins** semantics at two levels:
+
+- **Cloudinary storage**: whichever upload call finishes second is the asset served for that publicId.
+- **`users.image` column**: whichever `PATCH` commits last is the URL stored — and it may point to an asset that is no longer served (e.g. request A's upload completed second but A's PATCH committed first, so the DB row now points at A's URL while Cloudinary serves B's image).
+
+The windows are small — a few hundred milliseconds — but they are reachable when an admin and the user simultaneously change the avatar, or when two admin sessions racing (GAP-078-070, GAP-078-118).
+
+### Why we accept it
+
+Serialising avatar writes with a distributed lock is expensive and rarely buys anything: the user only cares that their *latest* intent wins, and from the user's perspective the latest upload *does* win. The DB-vs-Cloudinary divergence only matters if a third party is comparing both offline — not a flow we support.
+
+### Mitigations in place
 
 - The avatar route re-verifies the actor's session inside the handler before allowing the write (SPEC-078-GAPS T-008), so a stale form post can't overwrite a freshly logged-in user's avatar.
-- Future JSONB merge semantics on the user `media` field (SPEC-078-GAPS T-015) will detect simultaneous writes at the persistence layer.
+- Upload is NOT retried by the provider (see next section), so a transient error from step 1 surfaces to the caller immediately instead of compounding the race with silent retries.
+- Future JSONB merge semantics on the user `media` field (SPEC-078-GAPS T-015) will read-modify-write on the DB side so a stale URL can't clobber a newer one; that change is the point at which we can also add a `mediaVersion` field for optimistic concurrency.
 
-If you need true serialization on avatar writes, use a per-user advisory lock around the upload + DB update — but only for cases where order genuinely matters (audit-graded media, contracts, etc.). Do not add locking to the default avatar flow.
+### When to diverge
+
+If you ever need true serialization on avatar writes (audit-graded media, signed contracts, KYC avatars, etc.), use a per-user advisory lock around the entire upload + DB update transaction — but only for those specialised flows. Do not add locking to the default avatar path, and do not try to coordinate step 1 and step 2 with application-level retries.
 
 ## Provider Behavior
 

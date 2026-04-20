@@ -19,6 +19,8 @@ import type {
     EventCardData,
     ReviewCardData
 } from '@/data/types';
+import { getInitialsFromName } from '../avatar-utils';
+import { webLogger } from '../logger';
 import { extractFeaturedImageUrl, extractGalleryItems, extractGalleryUrls } from '../media';
 
 // Re-export types from canonical source for backward compatibility
@@ -454,9 +456,78 @@ export function toAccommodationDetailPageProps({
 
 /**
  * Helper to get initials from a name.
+ *
+ * @deprecated Prefer `getInitials` from `@/lib/avatar-utils` (RO-RO form with
+ * optional email fallback). This positional wrapper remains for the Astro
+ * components (`OwnerCard.astro`, `ReviewPreview.astro`) and
+ * `ReviewsModal.client.tsx` that still import from here. Removed once those
+ * callsites migrate to the shared helper.
  */
 export function getInitials(name: string): string {
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 1) return (parts[0]?.[0] ?? '').toUpperCase();
-    return `${(parts[0]?.[0] ?? '').toUpperCase()}${(parts[parts.length - 1]?.[0] ?? '').toUpperCase()}`;
+    return getInitialsFromName(name);
+}
+
+/**
+ * Shape of the `media` JSONB field as returned by the API for list/detail
+ * entity endpoints.
+ *
+ * `extractFeaturedImageUrl` and `extractGalleryUrls` already normalise the
+ * nested vs flat variants — this local type exists only so {@link processEntityImages}
+ * can warn about partial payloads without reaching for `any`.
+ */
+interface EntityMediaShape {
+    readonly featuredImage?: { readonly url?: string } | string;
+    readonly gallery?: ReadonlyArray<{ readonly url?: string } | string>;
+}
+
+/**
+ * Development-time smell detector for API entity responses.
+ *
+ * The API should either return `media.featuredImage` AND `media.gallery`
+ * together or omit the whole `media` block. If `media` is present but the
+ * `featuredImage` slot is empty, the card falls back to the default
+ * placeholder even though the entity clearly has imagery attached (the
+ * gallery is non-empty). That inconsistency usually traces back to a
+ * backend transform bug or a partially migrated fixture — easy to miss
+ * unless we shout about it at dev-time.
+ *
+ * This helper does NOT throw, and it does NOT short-circuit rendering. It
+ * just emits a `warn` line via `webLogger` (which is a no-op in production
+ * unless `PUBLIC_ENABLE_LOGGING=true`) so reviewers browsing the site
+ * locally see a single, specific breadcrumb in the console.
+ *
+ * GAP-078-194 (SPEC-078-GAPS T-049).
+ *
+ * @param item - Raw entity object from the API.
+ * @param entity - Label for the warn message (e.g. `'accommodation'`).
+ * @param id - Optional entity identifier for the warn message.
+ * @returns The original item, unchanged (identity — kept so call-sites can
+ *          chain it inline if they want).
+ */
+export function processEntityImages<T extends Record<string, unknown>>({
+    item,
+    entity,
+    id
+}: {
+    readonly item: T;
+    readonly entity: string;
+    readonly id?: string;
+}): T {
+    const media = item.media as EntityMediaShape | undefined;
+    if (!media) return item;
+
+    const hasFeatured =
+        typeof media.featuredImage === 'string'
+            ? media.featuredImage.length > 0
+            : typeof media.featuredImage?.url === 'string' && media.featuredImage.url.length > 0;
+
+    if (hasFeatured) return item;
+
+    const galleryLength = Array.isArray(media.gallery) ? media.gallery.length : 0;
+
+    webLogger.warn(
+        `[transforms] ${entity}${id ? `#${id}` : ''}: media present but featuredImage missing (gallery=${galleryLength}). Backend data-shape smell — check the API transform.`
+    );
+
+    return item;
 }
