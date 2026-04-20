@@ -689,6 +689,8 @@ export class AccommodationService extends BaseCrudService<
                     pageSize,
                     sortBy: processedParams.sortBy,
                     sortOrder: processedParams.sortOrder,
+                    sorts: processedParams.sorts,
+                    featuredFirst: processedParams.featuredFirst,
                     q: processedParams.q,
                     type: processedParams.type,
                     types: processedParams.types,
@@ -697,6 +699,7 @@ export class AccommodationService extends BaseCrudService<
                     destinationId: processedParams.destinationId,
                     destinationIds: processedParams.destinationIds,
                     amenities: processedParams.amenities,
+                    features: processedParams.features,
                     isFeatured: processedParams.isFeatured,
                     isAvailable: processedParams.isAvailable,
                     excludeRestricted: !hasVipAccess
