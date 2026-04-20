@@ -203,6 +203,157 @@ describe('getMediaUrl', () => {
         expect(afterUpload.startsWith('w_400,h_300')).toBe(true);
     });
 
+    // GAP-078-069 (T-042): per-call fallback override routed through transforms.
+    describe('GAP-078-069: options.fallback override', () => {
+        it('returns options.fallback when input is null', () => {
+            expect(getMediaUrl(null, { fallback: '/default.png' })).toBe('/default.png');
+        });
+
+        it('returns options.fallback when input is undefined', () => {
+            expect(getMediaUrl(undefined, { fallback: '/default.png' })).toBe('/default.png');
+        });
+
+        it('returns options.fallback when input is empty string', () => {
+            expect(getMediaUrl('', { fallback: '/default.png' })).toBe('/default.png');
+        });
+
+        it('returns options.fallback when input is whitespace-only', () => {
+            expect(getMediaUrl('   ', { fallback: '/default.png' })).toBe('/default.png');
+        });
+
+        it('prefers per-call fallback over the module-level placeholder', () => {
+            // Module default would be `/images/placeholder.svg`; caller override wins.
+            const result = getMediaUrl(null, { fallback: '/brand/avatar.svg' });
+            expect(result).toBe('/brand/avatar.svg');
+            expect(result).not.toBe('/images/placeholder.svg');
+        });
+
+        it('applies the preset to a Cloudinary fallback URL', () => {
+            const cloudinaryFallback =
+                'https://res.cloudinary.com/hospeda/image/upload/v1/placeholders/avatar.jpg';
+            const result = getMediaUrl(null, {
+                preset: 'avatar',
+                fallback: cloudinaryFallback
+            });
+            // Same preset semantics the normal input would have received.
+            expect(result).toContain('/upload/w_150,h_150,c_thumb,g_face,q_auto,f_auto,dpr_auto/');
+            expect(result).toContain('placeholders/avatar.jpg');
+        });
+
+        it('applies raw transforms to a Cloudinary fallback URL', () => {
+            const cloudinaryFallback =
+                'https://res.cloudinary.com/hospeda/image/upload/v1/placeholders/hero.jpg';
+            const result = getMediaUrl(undefined, {
+                raw: 'w_800,h_400,c_fill',
+                fallback: cloudinaryFallback
+            });
+            expect(result).toContain('/upload/w_800,h_400,c_fill/');
+        });
+
+        it('applies width/height overrides to a Cloudinary fallback URL', () => {
+            const cloudinaryFallback =
+                'https://res.cloudinary.com/hospeda/image/upload/v1/placeholders/card.jpg';
+            const result = getMediaUrl('', {
+                preset: 'card',
+                width: 800,
+                height: 600,
+                fallback: cloudinaryFallback
+            });
+            expect(result).toContain('w_800');
+            expect(result).toContain('h_600');
+            expect(result).not.toContain('w_400');
+            expect(result).not.toContain('h_300');
+        });
+
+        it('leaves a non-Cloudinary fallback URL unchanged', () => {
+            const result = getMediaUrl(null, {
+                preset: 'avatar',
+                fallback: '/local/avatar.svg'
+            });
+            expect(result).toBe('/local/avatar.svg');
+        });
+
+        it('falls back to the module placeholder when options.fallback is empty', () => {
+            // Empty-string fallback is treated as "no override"; we never want
+            // the function to recurse into another empty branch.
+            expect(getMediaUrl(null, { fallback: '' })).toBe('/images/placeholder.svg');
+            expect(getMediaUrl(null, { fallback: '   ' })).toBe('/images/placeholder.svg');
+        });
+    });
+
+    // GAP-078-179 (T-042): skip .replace('/upload/') for non-upload delivery types.
+    describe('GAP-078-179: non-upload delivery types are not re-transformed', () => {
+        it('returns /image/fetch/ URLs unchanged (preset ignored)', () => {
+            const fetchUrl =
+                'https://res.cloudinary.com/hospeda/image/fetch/https%3A%2F%2Fimages.unsplash.com%2Fphoto-abc';
+            expect(getMediaUrl(fetchUrl, { preset: 'card' })).toBe(fetchUrl);
+        });
+
+        it('returns /image/private/ URLs unchanged (signed — mutating path would break signature)', () => {
+            const privateUrl =
+                'https://res.cloudinary.com/hospeda/image/private/s--abcDEF12--/v1/secret/report.jpg';
+            expect(getMediaUrl(privateUrl, { preset: 'card' })).toBe(privateUrl);
+        });
+
+        it('returns /image/authenticated/ URLs unchanged', () => {
+            const authenticatedUrl =
+                'https://res.cloudinary.com/hospeda/image/authenticated/s--abcDEF12--/v1/restricted/doc.jpg';
+            expect(getMediaUrl(authenticatedUrl, { preset: 'hero' })).toBe(authenticatedUrl);
+        });
+
+        it('does not skip /upload/ URLs just because the string contains the word fetch', () => {
+            // Regression: make sure the detection is anchored on the path
+            // segment, not an arbitrary substring match.
+            const uploadUrl =
+                'https://res.cloudinary.com/hospeda/image/upload/v1/fetch-notes/hero.jpg';
+            const result = getMediaUrl(uploadUrl, { preset: 'card' });
+            expect(result).toContain('/upload/w_400,h_300');
+            expect(result).toContain('fetch-notes/hero.jpg');
+        });
+    });
+
+    // GAP-078-166 + GAP-078-211 + GAP-078-218 (T-042): double-transform guard.
+    describe('GAP-078-166/211/218: double-transform regression', () => {
+        it('does not inject a second transform into an already-transformed URL (preset)', () => {
+            const alreadyTransformed =
+                'https://res.cloudinary.com/hospeda/image/upload/w_400,h_300,c_fill,g_auto,q_auto,f_auto,dpr_auto/v1234/hospeda/prod/accommodations/abc/featured.jpg';
+            const result = getMediaUrl(alreadyTransformed, { preset: 'card' });
+            // URL is returned verbatim — no second preset segment stitched in.
+            expect(result).toBe(alreadyTransformed);
+            // Specifically: must not contain two transform segments side by side.
+            expect(result).not.toMatch(/\/upload\/[^/]+\/w_400/);
+        });
+
+        it('does not inject a second transform into a named-transform URL (t_<name>)', () => {
+            // Cloudinary also supports named transforms of the form `t_<name>`
+            // baked into the URL. Those must also short-circuit the replace.
+            const namedTransformed =
+                'https://res.cloudinary.com/hospeda/image/upload/t_card/v1234/hospeda/prod/accommodations/abc/featured.jpg';
+            const result = getMediaUrl(namedTransformed, { preset: 'card' });
+            expect(result).toBe(namedTransformed);
+            expect(result).not.toMatch(/\/upload\/t_card\/w_400/);
+        });
+
+        it('still transforms an URL whose first segment after /upload/ is a version marker', () => {
+            // Guard: `v1234` is a version segment, NOT a transform segment.
+            // The double-transform detector must let it through so the
+            // insert path still runs.
+            const versionedUrl =
+                'https://res.cloudinary.com/hospeda/image/upload/v1234/hospeda/prod/accommodations/abc/featured.jpg';
+            const result = getMediaUrl(versionedUrl, { preset: 'card' });
+            expect(result).toContain(
+                '/upload/w_400,h_300,c_fill,g_auto,q_auto,f_auto,dpr_auto/v1234/'
+            );
+        });
+
+        it('does not inject a second transform with raw option either', () => {
+            const alreadyTransformed =
+                'https://res.cloudinary.com/hospeda/image/upload/w_200,h_200,c_thumb,g_auto,q_auto,f_auto,dpr_auto/v1234/hospeda/prod/users/xyz/avatar.jpg';
+            const result = getMediaUrl(alreadyTransformed, { raw: 'w_300,h_300,c_crop' });
+            expect(result).toBe(alreadyTransformed);
+        });
+    });
+
     // GAP-078-212: HTTP (non-HTTPS) Cloudinary URL handling.
     // Documents current behavior: `getMediaUrl` is a pure string transformer
     // that detects the Cloudinary host via `url.includes('res.cloudinary.com')`,

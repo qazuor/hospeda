@@ -41,6 +41,23 @@ export interface GetMediaUrlOptions {
      * {@link ALLOWED_RAW_TOKEN_PREFIXES}. Unknown tokens cause a TypeError.
      */
     readonly raw?: string;
+    /**
+     * Per-call fallback URL used when `url` is nullish or empty.
+     *
+     * When provided, it replaces the module-level placeholder
+     * (`/images/placeholder.svg`). If the fallback itself is a Cloudinary
+     * URL it is routed through the same transform pipeline — the same
+     * `preset` / `raw` / `width` / `height` options are applied to it —
+     * so the caller never has to choose between "use a fallback" and
+     * "honor the preset".
+     *
+     * Non-Cloudinary fallbacks (local SVGs, external assets) pass through
+     * unchanged, matching the normal pass-through semantics of this function.
+     *
+     * Precedence: a per-call `options.fallback` always wins over the default
+     * placeholder (principle of most-specific). SPEC-078-GAPS GAP-078-069.
+     */
+    readonly fallback?: string;
 }
 
 /**
@@ -66,6 +83,66 @@ function assertAllowedRawTokens(raw: string): void {
 }
 
 /**
+ * Cloudinary delivery-type path segments where the `/upload/` transform
+ * injection pattern does NOT apply.
+ *
+ * - `/image/fetch/`: remote URL fetch delivery — path carries an encoded URL,
+ *   not a public ID; transform syntax differs and we must not splice tokens in.
+ * - `/image/private/`, `/image/authenticated/`: access-controlled delivery with
+ *   signed URLs — modifying the path would invalidate the signature.
+ *
+ * SPEC-078-GAPS GAP-078-179.
+ */
+const NON_UPLOAD_DELIVERY_PATTERN = /\/image\/(fetch|private|authenticated)\//;
+
+/**
+ * Detects whether a Cloudinary URL already carries a transform segment
+ * immediately after `/upload/`, which would cause `.replace('/upload/', ...)`
+ * to inject a second transform and produce a broken URL like
+ * `/upload/t_card/w_400,.../v1/sample.jpg`.
+ *
+ * The heuristic positively matches a transform segment by looking for a
+ * comma-separated sequence of tokens right after `/upload/` where at least
+ * one token starts with a known Cloudinary transform prefix
+ * ({@link ALLOWED_RAW_TOKEN_PREFIXES}) or a named transform (`t_<name>`).
+ * We anchor on `/upload/` so other path fragments can't trigger false
+ * positives. Version segments (`v1234/`) are NOT transforms and are
+ * deliberately not matched.
+ *
+ * SPEC-078-GAPS GAP-078-166 + GAP-078-211 + GAP-078-218.
+ *
+ * @param url - Full Cloudinary URL to inspect.
+ * @returns `true` when a transform segment is already present.
+ */
+function hasExistingTransform(url: string): boolean {
+    const uploadIdx = url.indexOf('/upload/');
+    if (uploadIdx === -1) {
+        return false;
+    }
+    const afterUpload = url.slice(uploadIdx + '/upload/'.length);
+    // Isolate the first path segment after `/upload/`.
+    const firstSeg = afterUpload.split('/', 1)[0] ?? '';
+    if (firstSeg === '') {
+        return false;
+    }
+    // Version segments like `v1234` are numeric-only after the `v` prefix —
+    // treat them as not-a-transform so they fall through to the insert path.
+    if (/^v\d+$/.test(firstSeg)) {
+        return false;
+    }
+    const tokens = firstSeg.split(',');
+    for (const token of tokens) {
+        if (token.startsWith('t_')) {
+            return true;
+        }
+        if (ALLOWED_RAW_TOKEN_PREFIXES.some((prefix) => token.startsWith(prefix))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
  * Builds an optimized image URL from a stored base URL.
  *
  * This is THE single function all apps call to render any image URL.
@@ -76,8 +153,17 @@ function assertAllowedRawTokens(raw: string): void {
  * Behavior:
  * - Cloudinary URL (contains 'res.cloudinary.com'): inserts transform string
  *   from the named preset between '/upload/' and the version/path segment.
+ * - Cloudinary URL with a `/image/fetch/`, `/image/private/`, or
+ *   `/image/authenticated/` delivery segment: returns unchanged. Those
+ *   delivery types use a different URL shape where splicing in transform
+ *   tokens would break the fetch encoding or invalidate a signed URL.
+ * - Cloudinary URL that already carries a transform segment after
+ *   `/upload/` (for example a previously-transformed URL being rendered
+ *   again through a preset): returns unchanged to avoid double-transform.
  * - Non-Cloudinary URL: returns unchanged.
- * - Nullish or empty: returns fallback placeholder URL.
+ * - Nullish or empty: returns `options.fallback` if provided, otherwise the
+ *   module-level placeholder. The fallback is routed back through this
+ *   function so the same preset/raw/width/height options apply to it.
  *
  * @param url - The base image URL to transform.
  * @param options - Optional transform options (preset, width, height, raw).
@@ -105,17 +191,46 @@ function assertAllowedRawTokens(raw: string): void {
  *   or if `options.raw` contains a token outside {@link ALLOWED_RAW_TOKEN_PREFIXES}.
  */
 export function getMediaUrl(url: string | null | undefined, options?: GetMediaUrlOptions): string {
-    // Handle nullish/empty
+    // Handle nullish/empty — route through the fallback pipeline so the
+    // per-call fallback receives the same preset/raw/width/height treatment.
+    // Per-call `options.fallback` wins over the module default placeholder.
+    // SPEC-078-GAPS GAP-078-069.
     if (!url || url.trim() === '') {
-        return FALLBACK_PLACEHOLDER;
+        const fallbackUrl = options?.fallback ?? FALLBACK_PLACEHOLDER;
+        // Re-enter with the fallback but WITHOUT `options.fallback` so we can't
+        // recurse indefinitely if a caller mistakenly passed an empty fallback.
+        const { fallback: _fallback, ...rest } = options ?? {};
+        // Guard: if the fallback itself is empty, return the module default
+        // to avoid bouncing back into this branch with no way out.
+        if (!fallbackUrl || fallbackUrl.trim() === '') {
+            return FALLBACK_PLACEHOLDER;
+        }
+        return getMediaUrl(fallbackUrl, rest);
     }
 
-    // Non-Cloudinary URLs pass through unchanged
+    // Non-Cloudinary URLs pass through unchanged.
     if (!url.includes('res.cloudinary.com')) {
         return url;
     }
 
-    // Build transform string
+    // Non-`/upload/` delivery types (fetch, private, authenticated) use a
+    // different URL shape — splicing a transform segment in breaks the
+    // fetch-URL encoding or the signed-URL signature. Return unchanged.
+    // SPEC-078-GAPS GAP-078-179.
+    if (NON_UPLOAD_DELIVERY_PATTERN.test(url)) {
+        return url;
+    }
+
+    // Defend against callers that pre-transform a URL and then pass it back
+    // through `getMediaUrl` (for example persisting a preset-baked URL and
+    // later re-rendering it through a preset). Re-injecting would yield
+    // `/upload/w_400,.../w_200,.../...` which Cloudinary rejects.
+    // SPEC-078-GAPS GAP-078-166 + GAP-078-211 + GAP-078-218.
+    if (hasExistingTransform(url)) {
+        return url;
+    }
+
+    // Build transform string.
     let transforms: string;
 
     if (options?.raw) {
@@ -151,6 +266,11 @@ export function getMediaUrl(url: string | null | undefined, options?: GetMediaUr
         return url;
     }
 
-    // Insert transforms after /upload/
-    return url.replace('/upload/', `/upload/${transforms}/`);
+    // Insert transforms after the FIRST `/upload/` only. `url.replace` with a
+    // string needle already targets the first occurrence, but we anchor the
+    // intent explicitly via indexOf + slice so reviewers don't assume the
+    // behavior depends on replacing the path verbatim.
+    const uploadIdx = url.indexOf('/upload/');
+    const uploadEnd = uploadIdx + '/upload/'.length;
+    return `${url.slice(0, uploadEnd)}${transforms}/${url.slice(uploadEnd)}`;
 }
