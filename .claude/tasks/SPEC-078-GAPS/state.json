@@ -292,19 +292,19 @@
         {
             "id": "T-015",
             "title": "BaseModel JSONB merge semantics with transaction FOR UPDATE",
-            "description": "Gaps: GAP-078-186, GAP-078-198.\n\nFile: packages/db/src/base/base.model.ts\n- GAP-078-186: BaseModel.update() uses sql`${table.media} || ${JSON.stringify(patch.media)}::jsonb` when entity declares mergeableJsonbColumns = ['media']\n- GAP-078-198: Wrap JSONB merge path in SELECT ... FOR UPDATE transaction when entity has mergeableJsonbColumns\n\nAcceptance: PATCH with { gallery: [] } on entity with existing featuredImage preserves featuredImage in DB; concurrent PATCH writers both values present in final state.",
-            "status": "pending",
+            "description": "Gaps: GAP-078-186, GAP-078-198.\n\nFile: packages/db/src/base/base.model.ts\n- GAP-078-186: BaseModel.update() uses sql`${table.media} || ${JSON.stringify(patch.media)}::jsonb` when entity declares mergeableJsonbColumns = ['media']\n- GAP-078-198: Wrap JSONB merge path in SELECT ... FOR UPDATE transaction when entity has mergeableJsonbColumns\n\nAcceptance: PATCH with { gallery: [] } on entity with existing featuredImage preserves featuredImage in DB; concurrent PATCH writers both values present in final state.\n\nOUTCOME (2026-04-20): Opt-in mergeableJsonbColumns protected field added to BaseModelImpl (default []). When set and patch intersects, update() calls withTransaction() with SELECT id ... FOR UPDATE lock + buildMergeSetClause helper (new file packages/db/src/utils/jsonb-merge.ts) that yields `col::jsonb || patch::jsonb` for mergeable keys and plain values for the rest. Accommodation/Destination/Event/Post declared ['media']; User excluded because users.image is text, not JSONB. 9 unit tests (buildMergeSetClause + update dispatch + FOR UPDATE spy + null short-circuit + outer-tx passthrough) + 2 skipped integration tests gated on HOSPEDA_DATABASE_URL. Commits 0bf15334/4dad7c56/d7d3eb88/8be27c2a.",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-004", "T-012"],
             "blocks": [],
             "subtasks": [],
             "tags": ["database", "services"],
             "phase": "phase-2d",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-20T17:00:00.000Z",
+                "completed": "2026-04-20T17:55:00.000Z"
             }
         },
         {
@@ -1291,8 +1291,8 @@
     ],
     "summary": {
         "total": 68,
-        "completed": 67,
-        "pending": 1,
+        "completed": 68,
+        "pending": 0,
         "inProgress": 0
     }
 }
