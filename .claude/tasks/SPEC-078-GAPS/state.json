@@ -781,19 +781,21 @@
             "id": "T-042",
             "title": "Migrate getMediaUrl() API extensions: fallback override, regex anchor, delivery-type detection",
             "description": "Gaps: GAP-078-061, GAP-078-069, GAP-078-166, GAP-078-211, GAP-078-218, GAP-078-179.\n\nFile: packages/media/src/get-media-url.ts\n- GAP-078-061: extractFeaturedImageUrl returns getMediaUrl(fallback, { preset }) instead of raw fallback\n- GAP-078-069: getMediaUrl accepts options.fallback?: string per-call override\n- GAP-078-166+211+218: Regex anchor in getMediaUrl.replace() to prevent double-transform; 2 regression tests\n- GAP-078-179: getMediaUrl detects /fetch/, /private/ delivery types and skips .replace('/upload/')\n\nAcceptance: double-transform regression tests pass; getMediaUrl with /fetch/ URL returns unmodified; fallback option applied per-call.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.0,
             "blockedBy": ["T-017"],
             "blocks": [],
             "subtasks": [],
             "tags": ["backend", "media"],
             "phase": "phase-6c",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-04-20T13:05:00.000Z",
+                "completed": "2026-04-20T13:09:06.000Z"
+            },
+            "commit": "3c23300f",
+            "outcome": "4 hardening extensions. (1) Per-call options.fallback wins over module default via recursive re-entry with fallback stripped; empty/whitespace collapses to module default (no infinite recursion). (2) Delivery-type detection: regex /\\/image\\/(fetch|private|authenticated)\\// path-segment anchored; returns URL unchanged for those types. (3) Double-transform guard: positive-match heuristic slices first path segment after /upload/, flags tokens with t_ prefix or any ALLOWED_RAW_TOKEN_PREFIXES prefix, version markers v\\d+ excluded. (4) Switched .replace('/upload/', ...) to indexOf+slice compose for reviewable first-occurrence semantics. 18 new tests, 208/208 media pass. Coverage 94.11/91.83/100/94.11 on get-media-url.ts (above perFile 90/85/90/90). GAP-078-061 transitively covered — web-side apps/web/src/lib/media.ts:82 switch to options.fallback deferred as documented follow-up."
         },
         {
             "id": "T-043",
@@ -909,19 +911,21 @@
             "id": "T-049",
             "title": "Web media migration: i18n avatar keys, moderationState cleanup, avatar-utils, and race condition doc",
             "description": "Gaps: GAP-078-040, GAP-078-064, GAP-078-070, GAP-078-118, GAP-078-145 (web part), GAP-078-194.\n\nFiles: packages/i18n/locales/, apps/web/src/lib/avatar-utils.ts, apps/web/src/lib/api/transforms.ts, packages/media/CLAUDE.md\n- GAP-078-040: i18n keys account.avatar.errors.*, account.avatar.actions.*, account.avatar.hint in es/en/pt\n- GAP-078-064: Remove moderationState reading from web helpers\n- GAP-078-070+118: Document avatar upload race condition in @repo/media/CLAUDE.md\n- GAP-078-145 web part: Extract initials/fallback logic to apps/web/src/lib/avatar-utils.ts\n- GAP-078-194: processEntityImages logs warn if media present but featuredImage absent\n\nAcceptance: All 3 locales have avatar keys; grep -r 'moderationState' apps/web/src/lib returns 0; avatar-utils.ts exists; race condition note in CLAUDE.md.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.0,
             "blockedBy": ["T-017"],
             "blocks": [],
             "subtasks": [],
             "tags": ["frontend", "web", "i18n"],
             "phase": "phase-6e",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-04-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-04-20T13:05:00.000Z",
+                "completed": "2026-04-20T13:16:19.000Z"
+            },
+            "commit": "1e290384+1ac1c5c8+dfbd9291",
+            "outcome": "3 atomic commits. (1) i18n 1e290384: 10 account.avatar.* keys x 3 locales = 30 entries (hint, alt, success, actions.change/uploading, errors.invalidType/fileTooLarge/uploadFailed/updateFailed/unexpectedResponse). EN/PT unreviewed - flagged for team pass. (2) avatar-utils 1ac1c5c8: new apps/web/src/lib/avatar-utils.ts with RO-RO getInitials({name, email, placeholder}) + getInitialsFromName(name); 12 tests. Migrated 5 callsites: AvatarUpload.client.tsx (full consumer + locale + userEmail props), UserNav.client.tsx + MobileMenu.client.tsx (thin shims with placeholder='' legacy contract), ReviewCard.tsx, transforms.ts (kept @deprecated positional wrapper). Scope-growth: added UserNav/MobileMenu beyond spec (identical duplicated bodies). (3) warn+race dfbd9291: processEntityImages helper seeded in transforms.ts, identity function emits PUBLIC_ENABLE_LOGGING-gated webLogger.warn when media present but featuredImage absent; exported but not yet wired into existing transforms (adoption follow-up). moderationState removed from apps/web/src/lib/media.ts:20 MediaImage interface. Race-condition doc in packages/media/CLAUDE.md expanded 1 paragraph to 4 subsections (The race / Why we accept / Mitigations in place / When to diverge with advisory-lock guidance). OwnerCard.astro/ReviewPreview.astro/ReviewsModal.client.tsx still use @deprecated transforms.ts#getInitials - follow-up sweep needed to complete dedup."
         },
         {
             "id": "T-050",
