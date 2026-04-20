@@ -1,5 +1,5 @@
 import type { DestinationRatingInput, DestinationReview } from '@repo/schemas';
-import { RoleEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     normalizeCreateInput,
@@ -41,6 +41,7 @@ const baseInput: DestinationReview = {
     title: 'Great place!',
     content: 'Very nice experience.',
     averageRating: 0,
+    lifecycleState: LifecycleStatusEnum.ACTIVE,
     isBusinessTravel: false,
     isVerified: false,
     isPublished: false,

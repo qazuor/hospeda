@@ -6,7 +6,7 @@ import type {
     DestinationReviewIdType,
     UserIdType
 } from '@repo/schemas';
-import { PermissionEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationReviewService } from '../../../src/services/destinationReview/destinationReview.service';
 import type { ServiceConfig } from '../../../src/types';
@@ -61,6 +61,7 @@ describe('create', () => {
         },
         title: 'Amazing destination',
         content: 'Loved everything.',
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
         isBusinessTravel: false,
         isVerified: false,
         isPublished: false,
@@ -90,6 +91,7 @@ describe('create', () => {
             content: reviewInput.content,
             rating: reviewInput.rating,
             averageRating: 0,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
             isBusinessTravel: false,
             isVerified: false,
             isPublished: false,

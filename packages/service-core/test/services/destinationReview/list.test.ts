@@ -5,7 +5,7 @@ import type {
     DestinationReviewIdType,
     UserIdType
 } from '@repo/schemas';
-import { PermissionEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DestinationReviewService } from '../../../src/services/destinationReview/destinationReview.service';
@@ -67,6 +67,7 @@ describe('list', () => {
                 weatherSatisfaction: 5
             },
             averageRating: 0,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
             isBusinessTravel: false,
             isVerified: false,
             isPublished: false,
@@ -124,6 +125,7 @@ describe('list', () => {
                 weatherSatisfaction: 4.7
             },
             averageRating: 0,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
             isBusinessTravel: false,
             isVerified: false,
             isPublished: false,
