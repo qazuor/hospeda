@@ -13,12 +13,23 @@
  * - minBathrooms, maxBathrooms: bathroom count range (JSONB extraInfo.bathrooms)
  * - minRating: minimum average rating
  * - amenities: array of amenity UUIDs (EXISTS subquery filter)
- * - sortBy/sortOrder: sorting on direct table columns
+ * - features: array of feature UUIDs (EXISTS subquery filter)
+ *
+ * Sorting:
+ * - `sortBy`/`sortOrder`: legacy single-column sort. Whitelisted via `sanitizeSortBy`.
+ * - `sorts`: multi-column compound sort, `?sorts=field:order,field:order` (max 5).
+ *           Whitelisted via `sanitizeSorts`. Takes precedence over `sortBy`.
+ * - `featuredFirst`: FORCED to `true` server-side. Featured accommodations are
+ *           ALWAYS returned before non-featured within any sort. The client
+ *           cannot opt out — any `?featuredFirst=false` is ignored.
+ * - Stable `id DESC` tiebreaker is appended by the model to guarantee
+ *           deterministic pagination across pages when leading sort keys tie.
  */
 import {
     AccommodationPublicSchema,
     type AccommodationSearchHttp,
     AccommodationSearchHttpSchema,
+    type SortField,
     httpToDomainAccommodationSearch
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
@@ -42,12 +53,27 @@ const ALLOWED_SORT_FIELDS = new Set([
  * Validates the sortBy field against the allowed public sort columns.
  * Returns undefined if the field is not in the allow-list to prevent
  * sorting on internal or sensitive columns.
+ *
+ * Guards the legacy single-sort fallback path. Coexists with `sanitizeSorts`;
+ * both share `ALLOWED_SORT_FIELDS` as the single source of truth.
  */
 function sanitizeSortBy(sortBy: string | undefined): string | undefined {
     if (sortBy && ALLOWED_SORT_FIELDS.has(sortBy)) {
         return sortBy;
     }
     return undefined;
+}
+
+/**
+ * Filters the multi-column `sorts[]` array against the public allow-list.
+ * Any entry whose `field` is not whitelisted is silently dropped. If the
+ * resulting array is empty, returns `undefined` so the model falls back to
+ * `sortBy`/`sortOrder` (and then to the stable `id DESC` tiebreaker).
+ */
+export function sanitizeSorts(sorts: SortField[] | undefined): SortField[] | undefined {
+    if (!sorts) return undefined;
+    const filtered = sorts.filter((s) => ALLOWED_SORT_FIELDS.has(s.field));
+    return filtered.length > 0 ? filtered : undefined;
 }
 
 /**
@@ -89,7 +115,12 @@ export const publicListAccommodationsRoute = createPublicListRoute({
             page,
             pageSize,
             sortBy: safeSortBy,
-            sortOrder: safeSortBy ? (domainParams.sortOrder ?? 'asc') : undefined
+            sortOrder: safeSortBy ? (domainParams.sortOrder ?? 'asc') : undefined,
+            sorts: sanitizeSorts(domainParams.sorts),
+            // Forced server-side: featured accommodations always appear first on
+            // the public listing, regardless of what the client requested in the
+            // `?featuredFirst=...` query parameter.
+            featuredFirst: true
         });
 
         if (result.error) {
