@@ -103,13 +103,21 @@ export function toAccommodationCardProps({
     const city = String(locationObj?.city || destinationObj?.name || '');
     const state = String(locationObj?.state || '');
 
+    const { featuredImageUrl } = processEntityImages({
+        item,
+        entity: 'accommodation',
+        id: String(item.id || ''),
+        extract: true,
+        fallback: '/images/placeholder-accommodation.svg'
+    });
+
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
         name: String(item.name || ''),
         summary: String(item.summary || item.description || ''),
         type: String(item.type || item.accommodationType || ''),
-        featuredImage: extractFeaturedImageUrl(item, '/images/placeholder-accommodation.svg'),
+        featuredImage: featuredImageUrl,
         averageRating: Number(item.averageRating || 0),
         reviewsCount: Number(item.reviewsCount || item.ratingCount || 0),
         location: { city, state },
@@ -138,13 +146,14 @@ export function toAccommodationCardProps({
 export function toAccommodationDetailedProps({
     item
 }: { readonly item: Record<string, unknown> }): AccommodationDetailedCardData {
-    const mediaWrapper = { media: item.media } as Record<string, unknown>;
-    const featuredImage = extractFeaturedImageUrl(
-        mediaWrapper,
-        '/images/placeholder-accommodation.svg'
-    );
-    const gallery = extractGalleryUrls(mediaWrapper);
-    const images = gallery.length > 0 ? gallery : [featuredImage];
+    const { featuredImageUrl, galleryUrls } = processEntityImages({
+        item,
+        entity: 'accommodation-detailed',
+        id: String(item.id || ''),
+        extract: true,
+        fallback: '/images/placeholder-accommodation.svg'
+    });
+    const images = galleryUrls.length > 0 ? galleryUrls : [featuredImageUrl];
 
     const locationObj = item.location as Record<string, unknown> | undefined;
     const extraInfo = item.extraInfo as Record<string, unknown> | undefined;
@@ -188,6 +197,16 @@ export function toAccommodationDetailedProps({
 export function toDestinationCardProps({
     item
 }: { readonly item: Record<string, unknown> }): DestinationCardData {
+    const { featuredImageUrl } = processEntityImages({
+        item,
+        entity: 'destination',
+        id: String(item.slug || ''),
+        extract: true,
+        fallback: '/images/placeholder-destination.svg'
+    });
+
+    // `gallery` on DestinationCardData carries `{ url, caption }` objects,
+    // not plain URL strings — keep the inline construction here (option 2b).
     const mediaObj = item.media as
         | { gallery?: Array<{ url?: string; caption?: string }> }
         | undefined;
@@ -203,7 +222,7 @@ export function toDestinationCardProps({
         slug: String(item.slug || ''),
         name: String(item.name || 'Sin nombre'),
         summary: String(item.summary || item.description || ''),
-        featuredImage: extractFeaturedImageUrl(item, '/images/placeholder-destination.svg'),
+        featuredImage: featuredImageUrl,
         accommodationsCount: Number(item.accommodationsCount || 0),
         isFeatured: Boolean(item.isFeatured),
         path: String(item.path || item.slug || ''),
@@ -233,6 +252,14 @@ export function toDestinationCardProps({
 export function toEventCardProps({
     item
 }: { readonly item: Record<string, unknown> }): EventCardData {
+    const { featuredImageUrl } = processEntityImages({
+        item,
+        entity: 'event',
+        id: String(item.slug || ''),
+        extract: true,
+        fallback: '/images/placeholder-event.svg'
+    });
+
     const dateObj = item.date as { start?: string; end?: string } | undefined;
     const locationObj = item.location as Record<string, unknown> | undefined;
 
@@ -240,7 +267,7 @@ export function toEventCardProps({
         slug: String(item.slug || ''),
         name: String(item.name || ''),
         summary: String(item.summary || item.description || ''),
-        featuredImage: extractFeaturedImageUrl(item, '/images/placeholder-event.svg'),
+        featuredImage: featuredImageUrl,
         category: String(item.category || ''),
         date: {
             start: String(dateObj?.start || item.startDate || ''),
@@ -282,11 +309,19 @@ export function toArticleCardProps({
           ? String(authorObj.image)
           : undefined;
 
+    const { featuredImageUrl } = processEntityImages({
+        item,
+        entity: 'post',
+        id: String(item.slug || ''),
+        extract: true,
+        fallback: '/images/placeholder-post.svg'
+    });
+
     return {
         slug: String(item.slug || ''),
         title: String(item.title || ''),
         summary: String(item.summary || item.content || ''),
-        featuredImage: extractFeaturedImageUrl(item, '/images/placeholder-post.svg'),
+        featuredImage: featuredImageUrl,
         category: String(item.category || ''),
         publishedAt: String(item.publishedAt || item.createdAt || ''),
         readingTimeMinutes: Number(item.readingTimeMinutes || 0),
@@ -468,8 +503,31 @@ interface EntityMediaShape {
 }
 
 /**
- * Development-time smell detector for API entity responses.
+ * Result returned by {@link processEntityImages} when called with
+ * `extract: true`.  Carries the resolved `featuredImageUrl` and the
+ * `galleryUrls` array alongside the original item so call-sites can
+ * destructure instead of calling `extractFeaturedImageUrl` /
+ * `extractGalleryUrls` separately.
+ */
+export interface ProcessEntityImagesResult<T extends Record<string, unknown>> {
+    /** The original item, unchanged (identity). */
+    readonly item: T;
+    /**
+     * Resolved featured image URL.  Falls back to `fallback` when no image
+     * is found on the entity.
+     */
+    readonly featuredImageUrl: string;
+    /**
+     * Resolved gallery URL list.  Empty array when the entity has no gallery.
+     */
+    readonly galleryUrls: readonly string[];
+}
+
+/**
+ * Development-time smell detector **and** media extraction helper for API
+ * entity responses.
  *
+ * ### Smell detection (always active)
  * The API should either return `media.featuredImage` AND `media.gallery`
  * together or omit the whole `media` block. If `media` is present but the
  * `featuredImage` slot is empty, the card falls back to the default
@@ -483,38 +541,79 @@ interface EntityMediaShape {
  * unless `PUBLIC_ENABLE_LOGGING=true`) so reviewers browsing the site
  * locally see a single, specific breadcrumb in the console.
  *
+ * ### Media extraction (opt-in via `extract: true`)
+ * When `extract` is `true` the helper returns a
+ * {@link ProcessEntityImagesResult} object that carries `featuredImageUrl`
+ * and `galleryUrls`.  Pass `fallback` to control the placeholder used when
+ * no image is found (defaults to `'/images/placeholder.svg'`).
+ *
+ * Call-sites that only need the smell-detection side-effect can still call
+ * the function without `extract` and get back the original item directly
+ * (backward-compatible behaviour).
+ *
  * GAP-078-194 (SPEC-078-GAPS T-049).
  *
  * @param item - Raw entity object from the API.
  * @param entity - Label for the warn message (e.g. `'accommodation'`).
  * @param id - Optional entity identifier for the warn message.
- * @returns The original item, unchanged (identity — kept so call-sites can
- *          chain it inline if they want).
+ * @param extract - When `true`, also resolve `featuredImageUrl` and
+ *   `galleryUrls` and return them alongside `item`.
+ * @param fallback - Placeholder URL used when no featured image is found.
+ *   Only meaningful when `extract` is `true`.
+ * @returns When `extract` is `true`: a {@link ProcessEntityImagesResult}.
+ *   Otherwise: the original item, unchanged (identity — kept so call-sites
+ *   can chain it inline if they want).
  */
+export function processEntityImages<T extends Record<string, unknown>>(args: {
+    readonly item: T;
+    readonly entity: string;
+    readonly id?: string;
+    readonly extract?: false;
+    readonly fallback?: string;
+}): T;
+export function processEntityImages<T extends Record<string, unknown>>(args: {
+    readonly item: T;
+    readonly entity: string;
+    readonly id?: string;
+    readonly extract: true;
+    readonly fallback?: string;
+}): ProcessEntityImagesResult<T>;
 export function processEntityImages<T extends Record<string, unknown>>({
     item,
     entity,
-    id
+    id,
+    extract = false,
+    fallback
 }: {
     readonly item: T;
     readonly entity: string;
     readonly id?: string;
-}): T {
+    readonly extract?: boolean;
+    readonly fallback?: string;
+}): T | ProcessEntityImagesResult<T> {
     const media = item.media as EntityMediaShape | undefined;
-    if (!media) return item;
 
-    const hasFeatured =
-        typeof media.featuredImage === 'string'
-            ? media.featuredImage.length > 0
-            : typeof media.featuredImage?.url === 'string' && media.featuredImage.url.length > 0;
+    if (media) {
+        const hasFeatured =
+            typeof media.featuredImage === 'string'
+                ? media.featuredImage.length > 0
+                : typeof media.featuredImage?.url === 'string' &&
+                  media.featuredImage.url.length > 0;
 
-    if (hasFeatured) return item;
+        if (!hasFeatured) {
+            const galleryLength = Array.isArray(media.gallery) ? media.gallery.length : 0;
 
-    const galleryLength = Array.isArray(media.gallery) ? media.gallery.length : 0;
+            webLogger.warn(
+                `[transforms] ${entity}${id ? `#${id}` : ''}: media present but featuredImage missing (gallery=${galleryLength}). Backend data-shape smell — check the API transform.`
+            );
+        }
+    }
 
-    webLogger.warn(
-        `[transforms] ${entity}${id ? `#${id}` : ''}: media present but featuredImage missing (gallery=${galleryLength}). Backend data-shape smell — check the API transform.`
-    );
+    if (!extract) return item;
 
-    return item;
+    return {
+        item,
+        featuredImageUrl: extractFeaturedImageUrl(item, fallback),
+        galleryUrls: extractGalleryUrls(item)
+    };
 }
