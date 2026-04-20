@@ -184,20 +184,22 @@ describe('Group D Admin Search Schemas (Reviews)', () => {
             expect(result.maxRating).toBeUndefined();
         });
 
-        it('should always resolve status to "all" regardless of input', () => {
-            // Arrange -- destination_reviews has no lifecycleState column
-            const inputWithStatus = { status: 'ACTIVE' };
+        it('should accept lifecycle enum values in status filter and default to "all"', () => {
+            // Arrange -- SPEC-063 T-028 added lifecycleState to destination_reviews;
+            // T-034 removed the prior `z.unknown().transform` workaround that forced
+            // status='all'. The schema now accepts DRAFT/ACTIVE/ARCHIVED directly.
+            const inputWithActive = { status: 'ACTIVE' };
             const inputWithDraft = { status: 'DRAFT' };
             const inputEmpty = {};
 
             // Act
-            const result1 = DestinationReviewAdminSearchSchema.parse(inputWithStatus);
+            const result1 = DestinationReviewAdminSearchSchema.parse(inputWithActive);
             const result2 = DestinationReviewAdminSearchSchema.parse(inputWithDraft);
             const result3 = DestinationReviewAdminSearchSchema.parse(inputEmpty);
 
-            // Assert -- status is always forced to 'all'
-            expect(result1.status).toBe('all');
-            expect(result2.status).toBe('all');
+            // Assert -- enum values pass through; default is 'all'
+            expect(result1.status).toBe('ACTIVE');
+            expect(result2.status).toBe('DRAFT');
             expect(result3.status).toBe('all');
         });
 

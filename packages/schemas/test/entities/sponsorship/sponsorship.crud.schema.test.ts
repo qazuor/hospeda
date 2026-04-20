@@ -34,7 +34,7 @@ describe('SponsorshipCreateInputSchema', () => {
             targetType: 'event',
             targetId: '660e8400-e29b-41d4-a716-446655440001',
             levelId: '770e8400-e29b-41d4-a716-446655440002',
-            status: 'pending',
+            sponsorshipStatus: 'pending',
             startsAt: new Date()
         };
 
@@ -64,7 +64,7 @@ describe('SponsorshipCreateInputSchema', () => {
 
     it('should require sponsorUserId, targetType, targetId, levelId, and startsAt', () => {
         // Arrange
-        const incompleteInput = { status: 'pending' };
+        const incompleteInput = { sponsorshipStatus: 'pending' };
 
         // Act
         const result = SponsorshipCreateInputSchema.safeParse(incompleteInput);
@@ -73,11 +73,11 @@ describe('SponsorshipCreateInputSchema', () => {
         expect(result.success).toBe(false);
     });
 
-    it('should reject invalid status enum in create input', () => {
+    it('should reject invalid sponsorshipStatus enum in create input', () => {
         // Arrange
         const invalidInput = {
             ...createSponsorshipCreateInput(),
-            status: 'UNKNOWN_STATUS'
+            sponsorshipStatus: 'UNKNOWN_STATUS'
         };
 
         // Act
@@ -125,9 +125,9 @@ describe('SponsorshipUpdateInputSchema', () => {
         expect(result.success).toBe(true);
     });
 
-    it('should accept partial update with only status', () => {
+    it('should accept partial update with only sponsorshipStatus', () => {
         // Arrange
-        const partialInput = { status: 'active' };
+        const partialInput = { sponsorshipStatus: 'active' };
 
         // Act
         const result = SponsorshipUpdateInputSchema.safeParse(partialInput);
@@ -138,7 +138,7 @@ describe('SponsorshipUpdateInputSchema', () => {
 
     it('should reject invalid enum value in partial update', () => {
         // Arrange
-        const invalidInput = { status: 'INVALID_STATUS' };
+        const invalidInput = { sponsorshipStatus: 'INVALID_STATUS' };
 
         // Act
         const result = SponsorshipUpdateInputSchema.safeParse(invalidInput);
@@ -321,7 +321,7 @@ describe('CRUD Integration', () => {
     it('should validate a full create-update-delete lifecycle', () => {
         // Arrange
         const createInput = createSponsorshipCreateInput();
-        const updateInput = { status: 'active', endsAt: new Date('2027-01-01') };
+        const updateInput = { sponsorshipStatus: 'active', endsAt: new Date('2027-01-01') };
         const deleteInput = { id: createValidSponsorship().id };
         const patchInput = { couponDiscountPercent: 15 };
 
