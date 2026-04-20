@@ -7,7 +7,13 @@ const mockFindOne = vi.fn();
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
-    logError: vi.fn()
+    logError: vi.fn(),
+    dbLogger: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn()
+    }
 }));
 
 describe('TagModel', () => {
