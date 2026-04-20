@@ -1,0 +1,782 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-076",
+    "title": "Multi-Column Sort + featuredFirst for Accommodation Search",
+    "created": "2026-04-20T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add SortFieldSchema and SortField type in packages/schemas/src/common/pagination.schema.ts",
+            "description": "Define the reusable SortField primitive consumed by BaseSearchSchema and (indirectly) every entity search schema.\n\nFile: `packages/schemas/src/common/pagination.schema.ts`\n\nAdd:\n```ts\nexport const SortFieldSchema = z.object({\n    field: z.string().min(1),\n    order: z.enum(['asc', 'desc'])\n});\nexport type SortField = z.infer<typeof SortFieldSchema>;\n```\n\nExport from the file (it is re-exported by the package barrel since other symbols in this file already are).\n\nTests: none at this step — exercised transitively by T-002/T-009 tests on BaseSearchSchema.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-004", "T-010"],
+            "subtasks": [
+                {
+                    "title": "Add SortFieldSchema with field+order",
+                    "completed": true
+                },
+                {
+                    "title": "Export SortField type",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "foundation"],
+            "phase": "schemas",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Extend BaseSearchSchema with sorts (max 5) and featuredFirst",
+            "description": "Add the two new optional fields to the shared base search schema. Keep legacy sortBy/sortOrder for backward compat.\n\nFile: `packages/schemas/src/common/pagination.schema.ts`\n\nChange BaseSearchSchema to:\n```ts\nexport const BaseSearchSchema = z.object({\n    page: z.number().int().positive().default(1),\n    pageSize: z.number().int().positive().max(100).default(10),\n    sortBy: z.string().optional(),\n    sortOrder: z.enum(['asc', 'desc']).default('asc').optional(),\n    sorts: z\n        .array(SortFieldSchema)\n        .max(5, { message: 'zodError.common.sort.maxFields' })\n        .optional(),\n    featuredFirst: z.boolean().optional(),\n    q: z.string().optional()\n});\n```\n\nNotes:\n- Use `{ message: 'zodError.common.sort.maxFields' }` (legacy shim, matches codebase convention — see spec pass #5).\n- Do NOT switch call-sites to `{ error }` (cross-cutting scope).\n\nTests: covered by T-009.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006", "T-009", "T-010"],
+            "subtasks": [
+                {
+                    "title": "Add sorts array with .max(5) and i18n key",
+                    "completed": true
+                },
+                {
+                    "title": "Add featuredFirst optional boolean",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas"],
+            "phase": "schemas",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add common.sort.maxFields i18n key to es/en/pt validation locales",
+            "description": "Add the translation key used by the new Zod `.max(5)` error.\n\nFiles:\n- `packages/i18n/src/locales/es/validation.json`\n- `packages/i18n/src/locales/en/validation.json`\n- `packages/i18n/src/locales/pt/validation.json`\n\nAdd under an existing or new `common.sort` namespace:\n- es: `No se pueden especificar más de 5 campos de ordenamiento`\n- en: `A maximum of 5 sort fields is allowed`\n- pt: `Um máximo de 5 campos de ordenação é permitido`\n\nIMPORTANT: if a `common` namespace already exists in each locale, add `sort.maxFields` inside it rather than creating a duplicate top-level key. Keep valid JSON (double-quoted keys, trailing commas forbidden).\n\nTests: not testable in isolation — transform verified client-side in T-009.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Add key to es validation.json",
+                    "completed": true
+                },
+                {
+                    "title": "Add key to en validation.json",
+                    "completed": true
+                },
+                {
+                    "title": "Add key to pt validation.json",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n"],
+            "phase": "schemas",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Extend HttpSortingSchema with sorts (csv transform) and featuredFirst (createBooleanQueryParam)",
+            "description": "Add HTTP-coerced versions of the new fields.\n\nFile: `packages/schemas/src/api/http/base-http.schema.ts`\n\nUpdate `HttpSortingSchema` to include `sorts` and `featuredFirst`. Use the inline `.transform(...)` for `sorts` documented in the spec (parse `field:order,field:order`, drop empty, .slice(0,5)). Use `createBooleanQueryParam(...)` for `featuredFirst` — NOT `z.coerce.boolean()`.\n\nAttach OpenAPI metadata via `.openapi({ example: 'averageRating:desc,name:asc' })` on `sorts` (project convention; do NOT use `.meta()`).\n\nAll new fields MUST have `.describe(...)` metadata. Keep existing `sortBy`/`sortOrder` unchanged (just add `.describe(...)` if missing).\n\nTests: covered by T-008.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005", "T-006", "T-008"],
+            "subtasks": [
+                {
+                    "title": "Add sorts CSV transform with slice(0,5)",
+                    "completed": true
+                },
+                {
+                    "title": "Add featuredFirst via createBooleanQueryParam",
+                    "completed": true
+                },
+                {
+                    "title": "Attach .openapi({example}) on sorts",
+                    "completed": true
+                },
+                {
+                    "title": "Add .describe() on sortBy/sortOrder if missing",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "http"],
+            "phase": "schemas",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add features field (CSV UUID array) to AccommodationSearchHttpSchema",
+            "description": "Close the pre-existing `features` orphan: the domain schema already has it but the HTTP schema doesn't.\n\nFile: `packages/schemas/src/entities/accommodation/accommodation.http.schema.ts`\n\nAdd `features` next to `amenities` using the canonical helper `createArrayQueryParam('Filter by required feature IDs')` (see `base-http.schema.ts:83`). Same CSV pattern as `amenities`.\n\nTests: covered implicitly by T-006 typecheck (compile-time assertion) and T-008 transform tests.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Add features field via createArrayQueryParam",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "http"],
+            "phase": "schemas",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Map sorts, featuredFirst, features in httpToDomainAccommodationSearch",
+            "description": "Update the HTTP→Domain mapper to forward the three new fields.\n\nFile: `packages/schemas/src/entities/accommodation/accommodation.http.schema.ts`\n\nUpdate `httpToDomainAccommodationSearch` (around lines 152-189) to spread/add:\n```ts\nsorts: httpParams.sorts,\nfeaturedFirst: httpParams.featuredFirst,\nfeatures: httpParams.features,\n```\n\nThe compile-time assertions at lines 314-399 MUST remain green — if you miss a field, `pnpm typecheck` fails. This is the guard.\n\nTests: `pnpm typecheck --filter @repo/schemas` is the primary gate.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-004", "T-005"],
+            "blocks": ["T-015", "T-017"],
+            "subtasks": [
+                {
+                    "title": "Add sorts mapping",
+                    "completed": true
+                },
+                {
+                    "title": "Add featuredFirst mapping",
+                    "completed": true
+                },
+                {
+                    "title": "Add features mapping",
+                    "completed": true
+                },
+                {
+                    "title": "Verify compile-time assertions pass",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "http"],
+            "phase": "schemas",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add @deprecated JSDoc on HttpAccommodationSearchSchema and AccommodationSearchSchemaWithMetadata",
+            "description": "Documentary-only change: flag the two dead-alternate schemas so future contributors don't extend them.\n\nFile: `packages/schemas/src/entities/accommodation/accommodation.query.schema.ts`\n\n- Line ~142 `HttpAccommodationSearchSchema`: add `@deprecated Use AccommodationSearchHttpSchema from accommodation.http.schema.ts instead.`\n- Line ~203 `AccommodationSearchSchemaWithMetadata`: same deprecation pointer.\n\nNo structural change, no runtime behavior change.\n\nTests: none.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add @deprecated on HttpAccommodationSearchSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Add @deprecated on AccommodationSearchSchemaWithMetadata",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "docs"],
+            "phase": "schemas",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Unit tests for HttpSortingSchema.sorts CSV transform (edge case table)",
+            "description": "Cover every row of the spec's Edge-case Table for sorts parsing.\n\nFile: add or extend a test file alongside `packages/schemas/src/api/http/base-http.schema.ts`.\n\nCases to assert:\n- `averageRating:desc,name:asc` → 2 entries parsed in order\n- `name` → `[{field:'name',order:'asc'}]` (missing order defaults asc)\n- `name:invalid` → `[{field:'name',order:'asc'}]` (unknown order → asc)\n- `:desc` → `[]` (empty field dropped)\n- `` (empty) → `[]`\n- 6 entries → only first 5 kept (`.slice(0,5)`)\n- Duplicate field names `name:asc,name:desc` → both preserved\n\nAlso assert `featuredFirst`:\n- `'true'` → true\n- `'false'` → false\n- `'truthy'` → fails validation (not an accepted literal)\n\nUse AAA. Follow existing test style in the package.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "Tests for sorts CSV transform happy path",
+                    "completed": true
+                },
+                {
+                    "title": "Tests for sorts edge cases (empty, unknown order, truncation)",
+                    "completed": true
+                },
+                {
+                    "title": "Tests for featuredFirst strict boolean coercion",
+                    "completed": true
+                }
+            ],
+            "tags": ["tests", "schemas"],
+            "phase": "schema-tests",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Unit tests for BaseSearchSchema.sorts .max(5) with i18n key",
+            "description": "Verify:\n- 5 entries pass\n- 6 entries fail with issue `code: 'too_big'`, `origin: 'array'`, `message: 'zodError.common.sort.maxFields'`\n- Zod v4 issue shape: use the literal string `'too_big'` (do NOT import `ZodIssueCode` enum in new tests)\n\nFile: alongside pagination.schema.ts test file or new sibling.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "Test 5 entries pass",
+                    "completed": true
+                },
+                {
+                    "title": "Test 6 entries fail with i18n key",
+                    "completed": true
+                }
+            ],
+            "tags": ["tests", "schemas"],
+            "phase": "schema-tests",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Add NUMERIC_NULLABLE_FIELDS + buildSortExpr() helper in accommodation.model.ts",
+            "description": "Introduce the two module-scope helpers that both `search()` and `searchWithRelations()` will call.\n\nFile: `packages/db/src/models/accommodation/accommodation.model.ts`\n\nAt the top of the file (after imports, import `sql` from `drizzle-orm`):\n```ts\nconst NUMERIC_NULLABLE_FIELDS = new Set<string>([\n    'averageRating', 'reviewsCount', 'minPrice', 'maxPrice'\n]);\n\nfunction buildSortExpr(column: AnyColumn, order: 'asc' | 'desc', field: string) {\n    if (NUMERIC_NULLABLE_FIELDS.has(field)) {\n        return order === 'desc'\n            ? sql`${column} DESC NULLS LAST`\n            : sql`${column} ASC NULLS LAST`;\n    }\n    return order === 'desc' ? desc(column) : asc(column);\n}\n```\n\nThese are module-private (no export).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-011", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Add NUMERIC_NULLABLE_FIELDS constant",
+                    "completed": true
+                },
+                {
+                    "title": "Add buildSortExpr helper",
+                    "completed": true
+                },
+                {
+                    "title": "Import sql from drizzle-orm if missing",
+                    "completed": true
+                }
+            ],
+            "tags": ["db", "model"],
+            "phase": "model",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Rewrite orderBy in AccommodationModel.search() (multi-sort + featuredFirst + tiebreaker)",
+            "description": "Replace the single-column orderBy block at ~line 227 with the multi-sort + featuredFirst + stable-tiebreaker logic defined in the spec (see 'Model implementation').\n\nRules in order:\n1. If `params.featuredFirst`: push `desc(accommodations.isFeatured)`.\n2. Compute `rawSortFields = params.sorts ?? legacyFallback`, where `legacyFallback` = `[{field: sortBy, order: sortOrder ?? 'asc'}]` only if `sortBy` is set AND NOT (`featuredFirst && sortBy === 'isFeatured'`).\n3. Filter out any `{field: 'isFeatured'}` entries when `featuredFirst === true` (dedup).\n4. For each remaining sort: look up the column on `accommodations`; if valid, push `buildSortExpr(...)`.\n5. Always append `desc(accommodations.id)` as stable tiebreaker.\n\nINVOKE: `.orderBy(...orderBy)` — spread (select builder is variadic). Do NOT pass the bare array.\n\nTests: covered by T-013.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Replace single-column orderBy block",
+                    "completed": true
+                },
+                {
+                    "title": "Implement featuredFirst prefix",
+                    "completed": true
+                },
+                {
+                    "title": "Implement multi-sort + legacy fallback with dedup",
+                    "completed": true
+                },
+                {
+                    "title": "Append id DESC tiebreaker",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm spread .orderBy(...orderBy) invocation",
+                    "completed": true
+                }
+            ],
+            "tags": ["db", "model"],
+            "phase": "model",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Rewrite orderBy in AccommodationModel.searchWithRelations() (RQB findMany — bare array)",
+            "description": "Apply the same multi-sort + featuredFirst + tiebreaker logic to `searchWithRelations()` at ~line 374.\n\nCRITICAL: this method uses `db.query.accommodations.findMany({ ... orderBy, ... })` (Relational Query Builder). Pass the orderBy array as a BARE array property, NOT spread. `...orderBy` inside an object literal is a SyntaxError.\n\nReuse `NUMERIC_NULLABLE_FIELDS` + `buildSortExpr` (T-010) so there is no duplication.\n\nTests: covered by T-014.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Replace single-column orderBy block",
+                    "completed": true
+                },
+                {
+                    "title": "Implement featuredFirst + sorts + dedup + fallback + tiebreaker",
+                    "completed": true
+                },
+                {
+                    "title": "Ensure findMany uses bare array orderBy (no spread)",
+                    "completed": true
+                }
+            ],
+            "tags": ["db", "model"],
+            "phase": "model",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Unit tests for AccommodationModel.search() orderBy construction",
+            "description": "Integration-style test against a seeded test DB (follow patterns already used in `packages/db/test` or `packages/service-core/test`).\n\nCases to cover:\n- `featuredFirst: true` only → featured rows first; tiebreaker present\n- `sorts: [{field:'averageRating',order:'desc'}]` only → desc by rating then id desc\n- `featuredFirst: true` + `sorts: [{field:'isFeatured',order:'asc'}, {field:'name',order:'asc'}]` → isFeatured entry deduplicated; result ordered featured DESC, name ASC, id DESC\n- Legacy fallback: `sortBy: 'name', sortOrder: 'asc'` → name asc + id desc\n- Legacy-path dedup: `featuredFirst: true, sortBy: 'isFeatured'` → ORDER BY is_featured DESC, id DESC (no duplicate)\n- Empty/undefined → `ORDER BY id DESC` only\n- 5 entries boundary → all applied\n- NULLS LAST: seed a null-averageRating row; assert it appears last with `sorts: [{field:'averageRating',order:'desc'}]`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "Test featuredFirst only",
+                    "completed": true
+                },
+                {
+                    "title": "Test sorts only",
+                    "completed": true
+                },
+                {
+                    "title": "Test dedup of isFeatured in sorts when featuredFirst=true",
+                    "completed": true
+                },
+                {
+                    "title": "Test legacy sortBy/sortOrder fallback",
+                    "completed": true
+                },
+                {
+                    "title": "Test legacy-path isFeatured dedup",
+                    "completed": true
+                },
+                {
+                    "title": "Test empty input → id DESC only",
+                    "completed": true
+                },
+                {
+                    "title": "Test 5-entry boundary",
+                    "completed": true
+                },
+                {
+                    "title": "Test NULLS LAST on averageRating desc",
+                    "completed": true
+                }
+            ],
+            "tags": ["tests", "db", "model"],
+            "phase": "model-tests",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Unit tests for AccommodationModel.searchWithRelations() orderBy construction",
+            "description": "Mirror T-013 but against `searchWithRelations()`. Keep the matrix tight: featuredFirst-only, sorts-only, dedup case, legacy fallback, empty → id DESC, NULLS LAST check.\n\nDo not re-test every edge from T-013 if the helper path is identical — skip the 5-entry boundary and rely on T-013 for it. But DO cover the RQB-specific code path (findMany) once to prove the bare-array property works end-to-end.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "Test featuredFirst + sorts + dedup",
+                    "completed": true
+                },
+                {
+                    "title": "Test legacy fallback",
+                    "completed": true
+                },
+                {
+                    "title": "Test empty → id DESC only",
+                    "completed": true
+                },
+                {
+                    "title": "Test NULLS LAST",
+                    "completed": true
+                }
+            ],
+            "tags": ["tests", "db", "model"],
+            "phase": "model-tests",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Extend AccommodationService.searchWithRelations() modelParams with sorts, featuredFirst, features",
+            "description": "File: `packages/service-core/src/services/accommodation/accommodation.service.ts`\n\nAt the manual `modelParams` object (lines 687-703), add EXACTLY three fields:\n```ts\nsorts: processedParams.sorts,\nfeaturedFirst: processedParams.featuredFirst,\nfeatures: processedParams.features,\n```\n\nDo NOT re-add `sortBy`/`sortOrder` — already present.\n\n`_executeSearch()` is untouched (spreads params already).\n\nTests: existing tests must continue passing. No dedicated test needed at service layer because end-to-end is covered by T-019/T-020.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Add sorts to modelParams",
+                    "completed": true
+                },
+                {
+                    "title": "Add featuredFirst to modelParams",
+                    "completed": true
+                },
+                {
+                    "title": "Add features to modelParams",
+                    "completed": true
+                }
+            ],
+            "tags": ["service"],
+            "phase": "service",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Add sanitizeSorts() helper in apps/api/src/routes/accommodation/public/list.ts",
+            "description": "Mirror the existing `sanitizeSortBy()` helper (line 46) but for the new `sorts[]` array.\n\n```ts\nfunction sanitizeSorts(sorts: SortField[] | undefined): SortField[] | undefined {\n    if (!sorts) return undefined;\n    const filtered = sorts.filter((s) => ALLOWED_SORT_FIELDS.has(s.field));\n    return filtered.length > 0 ? filtered : undefined;\n}\n```\n\nReuse the existing `ALLOWED_SORT_FIELDS` set — do NOT fork it. Keep `sanitizeSortBy()` (preserve verbatim).\n\nImport `SortField` type from `@repo/schemas`.\n\nTests: covered by T-018.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-017", "T-018"],
+            "subtasks": [
+                {
+                    "title": "Import SortField type",
+                    "completed": true
+                },
+                {
+                    "title": "Add sanitizeSorts function reusing ALLOWED_SORT_FIELDS",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "route"],
+            "phase": "api",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Wire sanitizeSorts + forced featuredFirst:true in public list route; update header JSDoc",
+            "description": "File: `apps/api/src/routes/accommodation/public/list.ts`\n\nIn the handler (inside the `accommodationService.search(actor, {...})` call), add:\n```ts\nsorts: sanitizeSorts(domainParams.sorts),\nfeaturedFirst: true,\n```\n\n`featuredFirst: true` is FORCED regardless of client input — the client cannot opt out. This is a product rule enforced server-side.\n\nAlso update the file-header JSDoc (lines 1-17) to mention `sorts`, `featuredFirst` (forced), and the `features` filter.\n\nTests: covered by T-019/T-020.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-016"],
+            "blocks": ["T-019", "T-020"],
+            "subtasks": [
+                {
+                    "title": "Pass sanitizeSorts(domainParams.sorts) in service call",
+                    "completed": true
+                },
+                {
+                    "title": "Inject featuredFirst: true (forced)",
+                    "completed": true
+                },
+                {
+                    "title": "Update header JSDoc",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "route"],
+            "phase": "api",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Unit tests for sanitizeSorts()",
+            "description": "Cases:\n- undefined input → undefined\n- empty array input → undefined (collapse rule)\n- all fields in whitelist → array returned unchanged\n- some fields not whitelisted → filtered, remaining kept\n- none whitelisted → undefined (collapse rule)\n\nFile: sibling test file to `list.ts` (follow existing pattern in `apps/api/test/unit/...` if one exists for this route).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-016"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "Set up test file",
+                    "completed": true
+                },
+                {
+                    "title": "Cover undefined + empty collapse",
+                    "completed": true
+                },
+                {
+                    "title": "Cover mixed valid/invalid",
+                    "completed": true
+                }
+            ],
+            "tags": ["tests", "api"],
+            "phase": "api-tests",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Integration test: public list sorts=... returns featured first + stable pagination",
+            "description": "End-to-end test exercising `GET /api/v1/public/accommodations?sorts=averageRating:desc,name:asc&pageSize=N`.\n\nAssertions:\n(a) Featured items appear before non-featured.\n(b) Within each group, results are ordered by averageRating DESC then name ASC.\n(c) Paginating across two pages with the same query never repeats rows — proves the `id DESC` tiebreaker works.\n\nFile: extend `apps/api/test/integration/accommodation/list.test.ts` or add a sibling `list-sorts.test.ts`.\n\nUse the existing test fixture/seed helpers.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-015", "T-017"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "Seed featured + non-featured rows with tied sort keys",
+                    "completed": true
+                },
+                {
+                    "title": "Assert featured-first ordering",
+                    "completed": true
+                },
+                {
+                    "title": "Assert secondary sort applied",
+                    "completed": true
+                },
+                {
+                    "title": "Assert pagination across two pages has no duplicates",
+                    "completed": true
+                }
+            ],
+            "tags": ["tests", "integration", "api"],
+            "phase": "api-tests",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Integration test: client featuredFirst=false cannot override server-forced true",
+            "description": "Assert that `GET /api/v1/public/accommodations?featuredFirst=false` STILL returns featured items first. The public route forces `featuredFirst: true`; no legitimate opt-out for clients.\n\nFile: same as T-019.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "Send featuredFirst=false query",
+                    "completed": true
+                },
+                {
+                    "title": "Assert featured items still appear first",
+                    "completed": true
+                }
+            ],
+            "tags": ["tests", "integration", "api"],
+            "phase": "api-tests",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Quality gate: typecheck + lint across changed packages",
+            "description": "Run:\n- `pnpm --filter @repo/schemas typecheck`\n- `pnpm --filter @repo/db typecheck`\n- `pnpm --filter @repo/service-core typecheck`\n- `pnpm --filter @hospeda/api typecheck`\n- `pnpm lint` (root)\n\nAll must be green with no new errors/warnings.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-008", "T-009"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "Run typecheck across changed packages",
+                    "completed": true
+                },
+                {
+                    "title": "Run lint",
+                    "completed": true
+                }
+            ],
+            "tags": ["quality"],
+            "phase": "quality",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Quality gate: full test run across changed packages",
+            "description": "Run:\n- `pnpm --filter @repo/schemas test`\n- `pnpm --filter @repo/db test`\n- `pnpm --filter @repo/service-core test`\n- `pnpm --filter @hospeda/api test`\n\nAll must be green. No existing tests regressed.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-013", "T-014", "T-018", "T-019", "T-020", "T-021"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Run tests across changed packages",
+                    "completed": true
+                },
+                {
+                    "title": "Verify no regressions in existing suites",
+                    "completed": true
+                }
+            ],
+            "tags": ["quality"],
+            "phase": "quality",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-04-20T00:00:00.000Z",
+                "started": "2026-04-20T13:43:34.951Z",
+                "completed": "2026-04-20T13:43:34.951Z"
+            }
+        }
+    ]
+}
