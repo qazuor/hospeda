@@ -35,8 +35,10 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 			client:idle
 			currentImageUrl={user.image ?? null}
 			userName={user.name ?? undefined}
+			userEmail={user.email ?? undefined}
 			userId={user.id}
 			apiUrl={apiUrl}
+			locale={locale}
 		/>
 	</section>
 

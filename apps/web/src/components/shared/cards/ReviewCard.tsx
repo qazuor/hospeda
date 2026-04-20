@@ -13,6 +13,7 @@
 
 import { Badge } from '@/components/shared/ui/Badge';
 import type { ReviewCardData } from '@/data/types';
+import { getInitialsFromName } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
 import {
     getAccommodationTypeColor,
@@ -31,13 +32,6 @@ interface ReviewCardProps {
     readonly locale: SupportedLocale;
     /** Optional additional CSS classes for the card root element. */
     readonly className?: string;
-}
-
-/** Derive initials from a full name (first + last initial). */
-function getInitials(name: string): string {
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 1) return (parts[0]?.[0] ?? 'U').toUpperCase();
-    return `${(parts[0]?.[0] ?? '').toUpperCase()}${(parts[parts.length - 1]?.[0] ?? '').toUpperCase()}`;
 }
 
 /**
@@ -95,7 +89,7 @@ function buildEntityUrl(
  */
 export function ReviewCard({ data, locale, className }: ReviewCardProps) {
     const filledStars = Math.floor(data.rating);
-    const initials = data.initials ?? getInitials(data.reviewerName);
+    const initials = data.initials ?? getInitialsFromName(data.reviewerName);
     const badgeLabel =
         data.badge ??
         (data.entityType === 'accommodation'

@@ -2,10 +2,15 @@
  * Utility functions for extracting media URLs from API response objects.
  *
  * API responses store images in a nested `media` JSONB structure:
- * `{ media: { featuredImage: { url, caption, moderationState }, gallery: [...] } }`
+ * `{ media: { featuredImage: { url, caption }, gallery: [...] } }`
  *
  * These helpers extract the plain URL string and apply Cloudinary transforms
  * via `getMediaUrl()` from `@repo/media`. Non-Cloudinary URLs pass through unchanged.
+ *
+ * Note: the API may attach a `moderationState` on each image but that field is
+ * an admin-only concern. Moderation filtering happens on the server — public
+ * web responses only ever include approved assets, so this file ignores the
+ * field entirely. See SPEC-078-GAPS T-049 (GAP-078-064).
  */
 
 import { getMediaUrl } from '@repo/media';
@@ -17,7 +22,6 @@ interface MediaImage {
     readonly url?: string;
     readonly caption?: string;
     readonly description?: string;
-    readonly moderationState?: string;
 }
 
 interface MediaObject {

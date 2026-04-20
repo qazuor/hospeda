@@ -17,6 +17,7 @@ import { ChevronDownIcon, MoonIcon, SunIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { signOut } from '../../lib/auth-client';
+import { getInitials as getInitialsShared } from '../../lib/avatar-utils';
 import { cn } from '../../lib/cn';
 import type { SupportedLocale } from '../../lib/i18n';
 import { buildUrl } from '../../lib/urls';
@@ -116,16 +117,14 @@ export interface UserNavProps {
 /**
  * Returns up to two uppercase initials from a full name.
  *
+ * Thin wrapper around the shared `getInitials` helper that preserves this
+ * component's historical empty-string default (instead of `"?"`).
+ *
  * @param params.name - Full display name
  * @returns One or two uppercase characters
  */
 function getInitials({ name }: { readonly name: string }): string {
-    const parts = name.trim().split(/\s+/);
-    const first = parts[0];
-    if (!first) return '';
-    if (parts.length === 1) return first.charAt(0).toUpperCase();
-    const last = parts[parts.length - 1];
-    return `${first.charAt(0)}${last ? last.charAt(0) : ''}`.toUpperCase();
+    return getInitialsShared({ name, placeholder: '' });
 }
 
 // ---------------------------------------------------------------------------

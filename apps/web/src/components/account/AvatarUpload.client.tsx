@@ -4,6 +4,9 @@
  * Handles file validation, preview, upload to the media endpoint, and profile update.
  */
 
+import { getInitials } from '@/lib/avatar-utils';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { ImageIcon, UploadIcon } from '@repo/icons';
 import { getMediaUrl } from '@repo/media';
 import { useRef, useState } from 'react';
@@ -32,21 +35,14 @@ interface AvatarUploadProps {
     readonly currentImageUrl?: string | null;
     /** User's display name (used to generate initials placeholder) */
     readonly userName?: string;
+    /** User's email (fallback for initials when name is empty) */
+    readonly userEmail?: string;
     /** Authenticated user's ID for profile update */
     readonly userId: string;
     /** API base URL (PUBLIC_API_URL from Astro) */
     readonly apiUrl: string;
-}
-
-/**
- * Derive two-letter initials from a display name.
- * Returns '?' when the name is empty or undefined.
- */
-function getInitials(name?: string): string {
-    if (!name?.trim()) return '?';
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    /** Active locale for UI strings */
+    readonly locale: SupportedLocale;
 }
 
 /**
@@ -55,7 +51,15 @@ function getInitials(name?: string): string {
  * `POST /api/v1/protected/media/upload`, then patches the user profile
  * with the returned URL via `PATCH /api/v1/protected/users/{id}`.
  */
-export function AvatarUpload({ currentImageUrl, userName, userId, apiUrl }: AvatarUploadProps) {
+export function AvatarUpload({
+    currentImageUrl,
+    userName,
+    userEmail,
+    userId,
+    apiUrl,
+    locale
+}: AvatarUploadProps) {
+    const { t } = createTranslations(locale);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [displayUrl, setDisplayUrl] = useState<string | null>(currentImageUrl ?? null);
     const [isLoading, setIsLoading] = useState(false);
@@ -70,8 +74,9 @@ export function AvatarUpload({ currentImageUrl, userName, userId, apiUrl }: Avat
     // and is the only value that gets the `avatar` Cloudinary preset applied.
     const activeImageUrl =
         previewUrl ?? (displayUrl ? getMediaUrl(displayUrl, { preset: 'avatar' }) : null);
-    const initials = getInitials(userName);
+    const initials = getInitials({ name: userName, email: userEmail });
     const base = apiUrl.replace(/\/$/, '');
+    const avatarAlt = userName ?? t('account.avatar.alt', 'Avatar');
 
     function handleButtonClick() {
         fileInputRef.current?.click();
@@ -94,12 +99,12 @@ export function AvatarUpload({ currentImageUrl, userName, userId, apiUrl }: Avat
         clearMessages();
 
         if (!(ACCEPTED_TYPES as readonly string[]).includes(file.type)) {
-            setError('Solo JPEG, PNG y WebP son aceptados');
+            setError(t('account.avatar.errors.invalidType'));
             return;
         }
 
         if (file.size > MAX_FILE_BYTES) {
-            setError('Archivo muy grande (máx. 5 MB)');
+            setError(t('account.avatar.errors.fileTooLarge'));
             return;
         }
 
@@ -125,7 +130,7 @@ export function AvatarUpload({ currentImageUrl, userName, userId, apiUrl }: Avat
             });
 
             if (!uploadResponse.ok) {
-                let message = 'Error al subir la imagen';
+                let message = t('account.avatar.errors.uploadFailed');
                 try {
                     const errBody = (await uploadResponse.json()) as ApiResponse<unknown>;
                     if (errBody.error?.message) message = errBody.error.message;
@@ -139,7 +144,7 @@ export function AvatarUpload({ currentImageUrl, userName, userId, apiUrl }: Avat
             const imageUrl = uploadBody.data?.url;
 
             if (!imageUrl) {
-                throw new Error('Respuesta inesperada del servidor');
+                throw new Error(t('account.avatar.errors.unexpectedResponse'));
             }
 
             // Step 2: Update the user profile with the new image URL
@@ -151,7 +156,7 @@ export function AvatarUpload({ currentImageUrl, userName, userId, apiUrl }: Avat
             });
 
             if (!patchResponse.ok) {
-                let message = 'Error al actualizar el perfil';
+                let message = t('account.avatar.errors.updateFailed');
                 try {
                     const errBody = (await patchResponse.json()) as ApiResponse<unknown>;
                     if (errBody.error?.message) message = errBody.error.message;
@@ -165,9 +170,9 @@ export function AvatarUpload({ currentImageUrl, userName, userId, apiUrl }: Avat
             setDisplayUrl(imageUrl);
             setPreviewUrl(null);
             URL.revokeObjectURL(localPreview);
-            setSuccessMsg('Avatar actualizado correctamente');
+            setSuccessMsg(t('account.avatar.success'));
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Error al subir la imagen');
+            setError(err instanceof Error ? err.message : t('account.avatar.errors.uploadFailed'));
             // Revert preview on failure
             setPreviewUrl(null);
             URL.revokeObjectURL(localPreview);
@@ -183,7 +188,7 @@ export function AvatarUpload({ currentImageUrl, userName, userId, apiUrl }: Avat
                 {activeImageUrl ? (
                     <img
                         src={activeImageUrl}
-                        alt={userName ?? 'Avatar'}
+                        alt={avatarAlt}
                         className={styles.avatarImage}
                         width={150}
                         height={150}
@@ -229,10 +234,12 @@ export function AvatarUpload({ currentImageUrl, userName, userId, apiUrl }: Avat
                     weight="regular"
                     aria-hidden="true"
                 />
-                {isLoading ? 'Subiendo...' : 'Cambiar avatar'}
+                {isLoading
+                    ? t('account.avatar.actions.uploading')
+                    : t('account.avatar.actions.change')}
             </button>
 
-            <p className={styles.hint}>Solo JPEG, PNG y WebP · Máx. 5 MB</p>
+            <p className={styles.hint}>{t('account.avatar.hint')}</p>
 
             {/* Hidden file input */}
             <input

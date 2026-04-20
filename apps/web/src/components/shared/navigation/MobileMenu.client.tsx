@@ -16,6 +16,7 @@
 
 import { IconButton } from '@/components/ui/IconButtonReact';
 import { signOut } from '@/lib/auth-client';
+import { getInitials as getInitialsShared } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -63,14 +64,13 @@ const AUTH_TEXTS = {
 
 /**
  * Returns up to two uppercase initials from a full name.
+ *
+ * Thin wrapper around `getInitials` from `@/lib/avatar-utils` that preserves
+ * the empty-string default this component has always returned (instead of the
+ * shared helper's default `"?"` placeholder).
  */
 function getInitials({ name }: { readonly name: string }): string {
-    const parts = name.trim().split(/\s+/);
-    const first = parts[0];
-    if (!first) return '';
-    if (parts.length === 1) return first.charAt(0).toUpperCase();
-    const last = parts[parts.length - 1];
-    return `${first.charAt(0)}${last ? last.charAt(0) : ''}`.toUpperCase();
+    return getInitialsShared({ name, placeholder: '' });
 }
 
 // ---------------------------------------------------------------------------
