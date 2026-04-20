@@ -335,6 +335,19 @@ export class CloudinaryProvider implements ImageProvider {
     /**
      * Uploads a Buffer using upload_stream (wraps callback API in a Promise).
      *
+     * Always applies two hardcoded defaults that callers cannot override:
+     * - `invalidate: true` — purges the CDN edge cache when overwriting an
+     *   existing `publicId` (e.g. avatar or gallery overwrites). Without this,
+     *   Cloudinary may serve the stale asset for hours even after a successful
+     *   upload.
+     * - `eager_async: true` — when the caller supplies `eager: [...]`
+     *   transformations, Cloudinary processes them in the background instead of
+     *   blocking the HTTP response. Omitting this flag would tie response
+     *   latency to eager-transform processing time.
+     *
+     * Intentionally NOT enabled: `exif`, `faces`, `moderation`. These flags
+     * trigger paid Cloudinary add-ons that are not part of our pipeline.
+     *
      * @param buffer - Raw file buffer to upload
      * @param options - Cloudinary upload options passed to the stream
      * @returns Resolved Cloudinary upload response
@@ -343,8 +356,15 @@ export class CloudinaryProvider implements ImageProvider {
         buffer: Buffer,
         options: Record<string, unknown>
     ): Promise<CloudinaryUploadResponse> {
+        // Merge caller options first, then apply hardcoded defaults so they
+        // cannot be overridden by the caller.
+        const streamOptions: Record<string, unknown> = {
+            ...options,
+            invalidate: true,
+            eager_async: true
+        };
         return new Promise((resolve, reject) => {
-            const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
+            const stream = cloudinary.uploader.upload_stream(streamOptions, (error, result) => {
                 if (error) {
                     reject(error);
                 } else if (result) {
