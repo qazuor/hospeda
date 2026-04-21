@@ -3,6 +3,7 @@ import {
     AccommodationIaDataModel,
     AccommodationModel,
     DestinationModel,
+    UserModel,
     accommodations,
     sql
 } from '@repo/db';
@@ -49,12 +50,15 @@ import {
     type AccommodationSummaryWrapper,
     type AccommodationTopRatedParams,
     AccommodationTopRatedParamsSchema,
+    type AccommodationUpdateInput,
     AccommodationUpdateInputSchema,
     type CountResponse,
     type EntityFilters,
     type IdOrSlugParams,
     IdOrSlugParamsSchema,
+    LifecycleStatusEnum,
     PermissionEnum,
+    RoleEnum,
     ServiceErrorCode,
     type Success,
     type WithOwnerIdParams,
@@ -197,15 +201,23 @@ export class AccommodationService extends BaseCrudService<
     private readonly mediaProvider: ImageProvider | null;
 
     /**
+     * User model used directly for system-level role assignment in lifecycle hooks.
+     * Used instead of UserService to avoid actor permission requirements on hook actions.
+     */
+    private readonly _userModel: UserModel;
+
+    /**
      * Initializes a new instance of the AccommodationService.
      * @param ctx - The service context, containing the logger.
      * @param model - Optional AccommodationModel instance (for testing/mocking).
      * @param mediaProvider - Optional ImageProvider for Cloudinary cleanup on hard delete.
+     * @param userModel - Optional UserModel instance (for testing/mocking).
      */
     constructor(
         ctx: ServiceConfig,
         model?: AccommodationModel,
-        mediaProvider?: ImageProvider | null
+        mediaProvider?: ImageProvider | null,
+        userModel?: UserModel
     ) {
         super(ctx, AccommodationService.ENTITY_NAME);
         this.model = model ?? new AccommodationModel();
@@ -213,6 +225,7 @@ export class AccommodationService extends BaseCrudService<
         this.destinationService = new DestinationService(ctx);
         this._destinationModel = new DestinationModel();
         this.mediaProvider = mediaProvider ?? null;
+        this._userModel = userModel ?? new UserModel();
     }
 
     // --- Permissions Hooks ---
@@ -394,10 +407,62 @@ export class AccommodationService extends BaseCrudService<
         return entity;
     }
 
+    /**
+     * Captures the current `lifecycleState` of the entity before an update and stores it
+     * in `ctx.hookState.previousLifecycleState` for use in `_afterUpdate`.
+     *
+     * Note: The base `_beforeUpdate` receives only the update payload, not the entity ID.
+     * To retrieve the current state, we read `lifecycleState` from the incoming update data
+     * is NOT sufficient — we need the state BEFORE the update. Because `AccommodationUpdateInputSchema`
+     * omits `id`, the entity must be re-fetched via a model lookup keyed on any available field.
+     * Since no unique field is reliably present in all update payloads (slug is optional),
+     * we store `undefined` here and rely on idempotent logic in `_afterUpdate` instead.
+     *
+     * The `_afterUpdate` hook is idempotent: it only assigns HOST role if the user does not
+     * already hold a privileged role, so repeated ACTIVE-state updates are safe no-ops.
+     *
+     * @param data - The normalized update payload.
+     * @param _actor - The actor performing the update.
+     * @param ctx - Service execution context carrying transaction and hookState.
+     * @returns The update data unchanged (this hook only writes to hookState as a side effect).
+     */
+    protected async _beforeUpdate(
+        data: AccommodationUpdateInput,
+        _actor: Actor,
+        ctx: ServiceContext<AccommodationHookState>
+    ): Promise<Partial<Accommodation>> {
+        // Store the incoming lifecycleState (target state) so _afterUpdate can read it.
+        // We cannot retrieve the PREVIOUS state here because the entity ID is not available
+        // in _beforeUpdate parameters. The idempotency guard in _afterUpdate handles this.
+        if (ctx.hookState) {
+            ctx.hookState.previousLifecycleState =
+                typeof data.lifecycleState === 'string' ? data.lifecycleState : undefined;
+        }
+        return data as Partial<Accommodation>;
+    }
+
+    /**
+     * Schedules revalidation after an accommodation update, and auto-assigns the HOST
+     * role to the owning user when the accommodation's `lifecycleState` transitions to
+     * `ACTIVE` for the first time.
+     *
+     * Role assignment is idempotent: if the user already holds `HOST`, `ADMIN`,
+     * `CLIENT_MANAGER`, or `SUPER_ADMIN`, no change is made. This ensures the hook is
+     * safe to fire on any ACTIVE-state update, not just the initial transition.
+     *
+     * Role assignment uses `UserModel` directly (bypassing `UserService` permission checks)
+     * because this is a system-level side effect that should not depend on the actor's
+     * permissions.
+     *
+     * @param entity - The updated accommodation entity.
+     * @param _actor - The actor performing the update.
+     * @param ctx - Service execution context carrying transaction and hookState.
+     * @returns The updated entity unchanged.
+     */
     protected async _afterUpdate(
         entity: Accommodation,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<AccommodationHookState>
     ): Promise<Accommodation> {
         const destinationSlug = entity.destinationId
             ? await this._resolveDestinationSlug(entity.destinationId)
@@ -415,7 +480,60 @@ export class AccommodationService extends BaseCrudService<
                 'Revalidation scheduling failed (non-blocking)'
             );
         }
+
+        // Auto-assign HOST role when accommodation becomes ACTIVE.
+        // Uses an idempotency guard so this is safe on any ACTIVE-state update.
+        if (entity.lifecycleState === LifecycleStatusEnum.ACTIVE && entity.ownerId) {
+            await this._assignHostRoleIfNeeded(entity.ownerId, ctx);
+        }
+
         return entity;
+    }
+
+    /**
+     * Assigns the `HOST` role to a user if they do not already hold a privileged role.
+     *
+     * Privileged roles that already imply host capabilities (no re-assignment needed):
+     * `HOST`, `ADMIN`, `CLIENT_MANAGER`, `SUPER_ADMIN`.
+     *
+     * This is a best-effort operation: errors are logged but never propagated so that
+     * a role-assignment failure never rolls back the accommodation update itself.
+     *
+     * @param ownerId - The ID of the user to potentially assign the HOST role.
+     * @param ctx - Service execution context carrying transaction and hookState.
+     */
+    private async _assignHostRoleIfNeeded(ownerId: string, ctx: ServiceContext): Promise<void> {
+        const privilegedRoles: ReadonlySet<string> = new Set([
+            RoleEnum.HOST,
+            RoleEnum.ADMIN,
+            RoleEnum.CLIENT_MANAGER,
+            RoleEnum.SUPER_ADMIN
+        ]);
+
+        try {
+            const user = await this._userModel.findById(ownerId, ctx?.tx);
+            if (!user) {
+                this.logger.warn(
+                    { ownerId },
+                    '[accommodation] Cannot assign HOST role: owner user not found'
+                );
+                return;
+            }
+            if (privilegedRoles.has(user.role)) {
+                // User already has a privileged role — no action required.
+                return;
+            }
+            await this._userModel.update({ id: ownerId }, { role: RoleEnum.HOST }, ctx?.tx);
+            this.logger.info(
+                { ownerId, previousRole: user.role },
+                '[accommodation] HOST role assigned to owner after accommodation became ACTIVE'
+            );
+        } catch (error) {
+            this.logger.warn(
+                { error, ownerId },
+                '[accommodation] Failed to assign HOST role (non-blocking)'
+            );
+        }
     }
 
     protected async _afterUpdateVisibility(

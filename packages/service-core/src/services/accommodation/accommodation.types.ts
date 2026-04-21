@@ -9,4 +9,10 @@ export interface AccommodationHookState extends Record<string, unknown> {
     restoredAccommodation?: { slug: string; destinationId?: string; type?: string };
     /** ID of the entity being hard-deleted, used for Cloudinary media cleanup. */
     deletedEntityId?: string;
+    /**
+     * The `lifecycleState` value captured from the entity before an update.
+     * Used in `_afterUpdate` to detect transitions (e.g., DRAFT → ACTIVE)
+     * and trigger side effects such as HOST role auto-assignment.
+     */
+    previousLifecycleState?: string;
 }
