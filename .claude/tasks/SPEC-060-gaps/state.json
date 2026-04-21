@@ -1,7 +1,7 @@
 {
     "version": "1.0",
     "specRef": "SPEC-060-gaps",
-    "title": "SPEC-060 Gap Remediation — All 56 Gaps",
+    "title": "SPEC-060 Gap Remediation \u2014 All 56 Gaps",
     "created": "2026-04-10T00:00:00.000Z",
     "tasks": [
         {
@@ -65,7 +65,7 @@
         {
             "id": "T-003",
             "title": "GAP-011 (partial): Reconciliation cron for addon-expiration",
-            "description": "Pre-existing partial fix. Reconciliation cron exists at apps/api/src/cron/jobs/addon-expiry.job.ts:1064. Root non-atomicity remains — tracked as T-039 (Phase 5).",
+            "description": "Pre-existing partial fix. Reconciliation cron exists at apps/api/src/cron/jobs/addon-expiry.job.ts:1064. Root non-atomicity remains \u2014 tracked as T-039 (Phase 5).",
             "status": "completed",
             "complexity": 2,
             "blockedBy": [],
@@ -92,7 +92,7 @@
         {
             "id": "T-004",
             "title": "GAP-017: Fix pagination loop bug (firstPage.hasMore vs page.hasMore)",
-            "description": "Pre-existing fix. Fixed pagination loop in packages/db/src/billing/migrate-addon-purchases.ts — was using firstPage.hasMore instead of page.hasMore in the inner loop. Now uses proper hasMore/total tracking with PAGE_SIZE = 100.",
+            "description": "Pre-existing fix. Fixed pagination loop in packages/db/src/billing/migrate-addon-purchases.ts \u2014 was using firstPage.hasMore instead of page.hasMore in the inner loop. Now uses proper hasMore/total tracking with PAGE_SIZE = 100.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": [],
@@ -150,7 +150,7 @@
         {
             "id": "T-006",
             "title": "GAP-050: Fix findAllByAttractionId wrong WHERE clause (CRITICAL logic bug)",
-            "description": "CRITICAL. Fix packages/db/src/models/destination/destination.model.ts — findAllByAttractionId currently filters eq(fields.id, attractionId) which is wrong. Must JOIN through r_destination_attractions table: innerJoin(rDestinationAttraction, eq(rDestinationAttraction.destinationId, destinations.id)).where(eq(rDestinationAttraction.attractionId, attractionId)). TDD: write regression test FIRST at packages/db/test/models/destination.model.test.ts before fixing.",
+            "description": "CRITICAL. Fix packages/db/src/models/destination/destination.model.ts \u2014 findAllByAttractionId currently filters eq(fields.id, attractionId) which is wrong. Must JOIN through r_destination_attractions table: innerJoin(rDestinationAttraction, eq(rDestinationAttraction.destinationId, destinations.id)).where(eq(rDestinationAttraction.attractionId, attractionId)). TDD: write regression test FIRST at packages/db/test/models/destination.model.test.ts before fixing.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": [],
@@ -190,7 +190,7 @@
         {
             "id": "T-007",
             "title": "GAP-015: Create TransactionRollbackError class in error.ts",
-            "description": "Create TransactionRollbackError sentinel class in packages/db/src/utils/error.ts. MUST extend Error (NOT DbError — it is intentional rollback, not a DB error). MUST include Object.setPrototypeOf(this, TransactionRollbackError.prototype) for correct instanceof behavior. Export from packages/db/src/index.ts. This class is required by T-016 (GAP-002 fix).",
+            "description": "Create TransactionRollbackError sentinel class in packages/db/src/utils/error.ts. MUST extend Error (NOT DbError \u2014 it is intentional rollback, not a DB error). MUST include Object.setPrototypeOf(this, TransactionRollbackError.prototype) for correct instanceof behavior. Export from packages/db/src/index.ts. This class is required by T-016 (GAP-002 fix).",
             "status": "completed",
             "complexity": 2,
             "blockedBy": [],
@@ -226,7 +226,7 @@
         {
             "id": "T-008",
             "title": "GAP-003/018/030/031: Unify 4 types to DrizzleClient in client.ts",
-            "description": "Change 4 locations in packages/db/src/client.ts from NodePgDatabase<typeof schema> to DrizzleClient: (1) runtimeClient variable type, (2) setDb() parameter type, (3) getDb() return type, (4) initializeDb() return type. DrizzleClient is the wider union type — this change is safe (NodePgDatabase is a subtype).",
+            "description": "Change 4 locations in packages/db/src/client.ts from NodePgDatabase<typeof schema> to DrizzleClient: (1) runtimeClient variable type, (2) setDb() parameter type, (3) getDb() return type, (4) initializeDb() return type. DrizzleClient is the wider union type \u2014 this change is safe (NodePgDatabase is a subtype).",
             "status": "completed",
             "complexity": 2,
             "blockedBy": [],
@@ -270,7 +270,7 @@
         {
             "id": "T-009",
             "title": "GAP-004/029: Fix createBillingAdapter() and initBillingInstance to accept DrizzleClient",
-            "description": "Change packages/db/src/billing/drizzle-adapter.ts — createBillingAdapter(db: NodePgDatabase<typeof schema>) to createBillingAdapter(db: DrizzleClient). This auto-resolves GAP-029 (initBillingInstance passes DrizzleClient to a function expecting NodePgDatabase).",
+            "description": "Change packages/db/src/billing/drizzle-adapter.ts \u2014 createBillingAdapter(db: NodePgDatabase<typeof schema>) to createBillingAdapter(db: DrizzleClient). This auto-resolves GAP-029 (initBillingInstance passes DrizzleClient to a function expecting NodePgDatabase).",
             "status": "completed",
             "complexity": 2,
             "blockedBy": [],
@@ -466,7 +466,7 @@
         {
             "id": "T-015",
             "title": "GAP-021: Update SPEC-060 task state to reflect 100% completed implementation",
-            "description": "Process task only. Update .claude/tasks/SPEC-060-model-subclass-tx-propagation/state.json — set all 35 implementation tasks to 'completed' since the core SPEC-060 implementation is verified 100% done.",
+            "description": "Process task only. Update .claude/tasks/SPEC-060-model-subclass-tx-propagation/state.json \u2014 set all 35 implementation tasks to 'completed' since the core SPEC-060 implementation is verified 100% done.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": [],
@@ -501,7 +501,7 @@
         },
         {
             "id": "T-016",
-            "title": "GAP-002: Fix withTransaction error handling — stop swallowing TransactionRollbackError",
+            "title": "GAP-002: Fix withTransaction error handling \u2014 stop swallowing TransactionRollbackError",
             "description": "Fix packages/db/src/client.ts withTransaction (lines 114-128). Currently wraps ALL errors in DbError causing double-wrapping. Fix: if error instanceof TransactionRollbackError, re-throw as-is. If error instanceof DbError, re-throw as-is. Only wrap unknown errors in DbError. REQUIRES T-007 (TransactionRollbackError class) to be done first.",
             "status": "completed",
             "complexity": 3,
@@ -513,11 +513,11 @@
                     "completed": false
                 },
                 {
-                    "title": "Add instanceof check for TransactionRollbackError — re-throw",
+                    "title": "Add instanceof check for TransactionRollbackError \u2014 re-throw",
                     "completed": false
                 },
                 {
-                    "title": "Add instanceof check for DbError — re-throw",
+                    "title": "Add instanceof check for DbError \u2014 re-throw",
                     "completed": false
                 },
                 {
@@ -586,7 +586,7 @@
         {
             "id": "T-018",
             "title": "GAP-001: Move tx from params object to positional param in findTopRated",
-            "description": "Refactor packages/db/src/models/accommodation/accommodation.model.ts — findTopRated(params: { tx?: DrizzleClient, ... }) to findTopRated(where?, options?, tx?). Update all callers. Consistent with the positional tx pattern used everywhere else.",
+            "description": "Refactor packages/db/src/models/accommodation/accommodation.model.ts \u2014 findTopRated(params: { tx?: DrizzleClient, ... }) to findTopRated(where?, options?, tx?). Update all callers. Consistent with the positional tx pattern used everywhere else.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": [],
@@ -622,7 +622,7 @@
         {
             "id": "T-019",
             "title": "GAP-020: Refactor findPopularTags to make tx accessible without explicit limit",
-            "description": "Fix packages/db/src/models/tag/rEntityTag.model.ts — findPopularTags(limit = 10, tx?) makes tx unusable without specifying limit. Change to findPopularTags(tx?, options?: { limit?: number }) so callers can pass tx without knowing the default limit.",
+            "description": "Fix packages/db/src/models/tag/rEntityTag.model.ts \u2014 findPopularTags(limit = 10, tx?) makes tx unusable without specifying limit. Change to findPopularTags(tx?, options?: { limit?: number }) so callers can pass tx without knowing the default limit.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": [],
@@ -658,7 +658,7 @@
         {
             "id": "T-020",
             "title": "GAP-016: Change getBasePlanLimit to accept db as parameter",
-            "description": "Fix packages/db/src/billing/migrate-addon-purchases.ts — getBasePlanLimit() currently calls getDb() directly. Change to accept db: DrizzleClient as a parameter so it can participate in caller transactions.",
+            "description": "Fix packages/db/src/billing/migrate-addon-purchases.ts \u2014 getBasePlanLimit() currently calls getDb() directly. Change to accept db: DrizzleClient as a parameter so it can participate in caller transactions.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": [],
@@ -769,7 +769,7 @@
         {
             "id": "T-023",
             "title": "GAP-039 (1/3): Add tx types to BaseCrudService type definitions",
-            "description": "Add tx?: DrizzleClient to type definitions in packages/service-core/src/base/base.crud.types.ts. This is the non-breaking first step — adding the types without changing any runtime behavior. REQUIRES T-017 (nested tx withTransaction) to be done first.",
+            "description": "Add tx?: DrizzleClient to type definitions in packages/service-core/src/base/base.crud.types.ts. This is the non-breaking first step \u2014 adding the types without changing any runtime behavior. REQUIRES T-017 (nested tx withTransaction) to be done first.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
@@ -811,19 +811,19 @@
             "blocks": ["T-025"],
             "subtasks": [
                 {
-                    "title": "Add tx param to create() — thread to model.create(data, tx)",
+                    "title": "Add tx param to create() \u2014 thread to model.create(data, tx)",
                     "completed": true
                 },
                 {
-                    "title": "Add tx param to update() — thread to model.update(id, data, tx)",
+                    "title": "Add tx param to update() \u2014 thread to model.update(id, data, tx)",
                     "completed": true
                 },
                 {
-                    "title": "Add tx param to softDelete() — thread to model.softDelete(id, tx)",
+                    "title": "Add tx param to softDelete() \u2014 thread to model.softDelete(id, tx)",
                     "completed": true
                 },
                 {
-                    "title": "Add tx param to restore() if exists — thread to model.restore(id, tx)",
+                    "title": "Add tx param to restore() if exists \u2014 thread to model.restore(id, tx)",
                     "completed": true
                 },
                 {
@@ -909,7 +909,7 @@
         {
             "id": "T-026",
             "title": "GAP-040: Wrap DestinationService.update + descendant cascade in single tx",
-            "description": "Fix packages/service-core/src/services/destination/destination.service.ts — the override update() calls parent update then updates descendant paths in a separate operation. Wrap both in a single withTransaction so path cascade is atomic with parent row update.",
+            "description": "Fix packages/service-core/src/services/destination/destination.service.ts \u2014 the override update() calls parent update then updates descendant paths in a separate operation. Wrap both in a single withTransaction so path cascade is atomic with parent row update.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-025"],
@@ -948,7 +948,7 @@
         {
             "id": "T-027",
             "title": "GAP-041: Fix AccommodationReviewService hooks to participate in parent tx",
-            "description": "Fix packages/service-core/src/services/accommodationReview/accommodation-review.service.ts — _afterCreate/_afterUpdate perform 3+ unwrapped DB writes (stats updates, etc.) outside parent tx. Use tx passed from hooks system so all 3+ writes are atomic with the parent create/update.",
+            "description": "Fix packages/service-core/src/services/accommodationReview/accommodation-review.service.ts \u2014 _afterCreate/_afterUpdate perform 3+ unwrapped DB writes (stats updates, etc.) outside parent tx. Use tx passed from hooks system so all 3+ writes are atomic with the parent create/update.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-025"],
@@ -963,7 +963,7 @@
                     "completed": true
                 },
                 {
-                    "title": "Write test verifying atomicity (hook write fails → parent rolled back)",
+                    "title": "Write test verifying atomicity (hook write fails \u2192 parent rolled back)",
                     "completed": true
                 }
             ],
@@ -983,7 +983,7 @@
         {
             "id": "T-028",
             "title": "GAP-042: Fix DestinationReviewService hooks to participate in parent tx",
-            "description": "Fix packages/service-core/src/services/destinationReview/destination-review.service.ts — same pattern as T-027 (AccommodationReviewService). _afterCreate/_afterUpdate perform multiple unwrapped DB writes. Apply same fix.",
+            "description": "Fix packages/service-core/src/services/destinationReview/destination-review.service.ts \u2014 same pattern as T-027 (AccommodationReviewService). _afterCreate/_afterUpdate perform multiple unwrapped DB writes. Apply same fix.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-025"],
@@ -1017,8 +1017,8 @@
         },
         {
             "id": "T-029",
-            "title": "GAP-043: Fix PostSponsorshipService hooks — add tx + remove silent error swallowing",
-            "description": "Fix packages/service-core/src/services/postSponsorship/post-sponsorship.service.ts — _afterCreate/_beforeSoftDelete write to Post table without tx AND errors are silently swallowed. (1) Use tx in cross-entity writes. (2) Remove try/catch that silently swallows errors — let errors propagate to trigger rollback.",
+            "title": "GAP-043: Fix PostSponsorshipService hooks \u2014 add tx + remove silent error swallowing",
+            "description": "Fix packages/service-core/src/services/postSponsorship/post-sponsorship.service.ts \u2014 _afterCreate/_beforeSoftDelete write to Post table without tx AND errors are silently swallowed. (1) Use tx in cross-entity writes. (2) Remove try/catch that silently swallows errors \u2014 let errors propagate to trigger rollback.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-025"],
@@ -1053,7 +1053,7 @@
         {
             "id": "T-030",
             "title": "GAP-044: Fix AccommodationService._afterCreate to participate in parent tx",
-            "description": "Fix packages/service-core/src/services/accommodation/accommodation.service.ts — _afterCreate updates destination.accommodationsCount without tx. Use tx param passed from base hook infrastructure.",
+            "description": "Fix packages/service-core/src/services/accommodation/accommodation.service.ts \u2014 _afterCreate updates destination.accommodationsCount without tx. Use tx param passed from base hook infrastructure.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-025"],
@@ -1232,7 +1232,7 @@
         {
             "id": "T-035",
             "title": "GAP-045: Add tx param to cancelAddonPurchaseRecord and update callers",
-            "description": "Fix packages/service-core/src/services/billing/addon/addon-user-addons.ts — cancelAddonPurchaseRecord has no tx param. revokeAllAddonsForCustomer iterates records without wrapping in tx. Add tx?: DrizzleClient param, pass to model calls, update callers.",
+            "description": "Fix packages/service-core/src/services/billing/addon/addon-user-addons.ts \u2014 cancelAddonPurchaseRecord has no tx param. revokeAllAddonsForCustomer iterates records without wrapping in tx. Add tx?: DrizzleClient param, pass to model calls, update callers.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-025"],
@@ -1267,7 +1267,7 @@
         {
             "id": "T-036",
             "title": "GAP-046: Add tx param to 6 promo-code CRUD functions",
-            "description": "Fix packages/service-core/src/services/billing/promo-code/promo-code.crud.ts — all 6 CRUD functions (createPromoCode, updatePromoCode, deletePromoCode, etc.) call getDb() directly. Add tx?: DrizzleClient param to each and pass through to model/db calls.",
+            "description": "Fix packages/service-core/src/services/billing/promo-code/promo-code.crud.ts \u2014 all 6 CRUD functions (createPromoCode, updatePromoCode, deletePromoCode, etc.) call getDb() directly. Add tx?: DrizzleClient param to each and pass through to model/db calls.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-025"],
@@ -1302,7 +1302,7 @@
         {
             "id": "T-037",
             "title": "GAP-005: Wrap addon-lifecycle-cancellation DB updates in withTransaction",
-            "description": "Fix apps/api/src/services/addon-lifecycle-cancellation.service.ts — DB updates (purchase record status changes) are non-atomic. Wrap DB operations in withTransaction per-purchase. Note: Full DB+QZPay atomicity is deferred to a future billing reconciliation spec.",
+            "description": "Fix apps/api/src/services/addon-lifecycle-cancellation.service.ts \u2014 DB updates (purchase record status changes) are non-atomic. Wrap DB operations in withTransaction per-purchase. Note: Full DB+QZPay atomicity is deferred to a future billing reconciliation spec.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017"],
@@ -1341,7 +1341,7 @@
         {
             "id": "T-038",
             "title": "GAP-010: Add tx wrapping + needsEntitlementSync flag to activateAddon",
-            "description": "Fix apps/api/src/services/addon.admin.ts activateAddon — DB operations and QZPay entitlement grants are non-atomic. (1) Wrap DB operations in withTransaction. (2) If QZPay fails, set needsEntitlementSync=true flag on purchase record for async reconciliation.",
+            "description": "Fix apps/api/src/services/addon.admin.ts activateAddon \u2014 DB operations and QZPay entitlement grants are non-atomic. (1) Wrap DB operations in withTransaction. (2) If QZPay fails, set needsEntitlementSync=true flag on purchase record for async reconciliation.",
             "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-017"],
@@ -1384,7 +1384,7 @@
         {
             "id": "T-039",
             "title": "GAP-011 (remaining): Create reconciliation logic for entitlementRemovalPending flag",
-            "description": "The cron job exists (T-003 partial fix) but the root non-atomicity in apps/api/src/services/addon-expiration.service.ts remains. Add: (1) entitlementRemovalPending flag set when DB expiry succeeds but entitlement removal fails. (2) Cron/reconciliation logic to process this flag — remove entitlements for flagged records.",
+            "description": "The cron job exists (T-003 partial fix) but the root non-atomicity in apps/api/src/services/addon-expiration.service.ts remains. Add: (1) entitlementRemovalPending flag set when DB expiry succeeds but entitlement removal fails. (2) Cron/reconciliation logic to process this flag \u2014 remove entitlements for flagged records.",
             "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-017"],
@@ -1423,7 +1423,7 @@
         {
             "id": "T-040",
             "title": "GAP-012: Add multi-subscription reconciliation to trial.service",
-            "description": "Fix apps/api/src/services/trial.service.ts — can leave 2 active QZPay subscriptions if cancel fails during trial upgrade. Add: (1) query to detect multiple active subscriptions for same customer. (2) Auto-cancel the older subscription when detected. Can run as part of subscription creation flow or separate reconciliation query.",
+            "description": "Fix apps/api/src/services/trial.service.ts \u2014 can leave 2 active QZPay subscriptions if cancel fails during trial upgrade. Add: (1) query to detect multiple active subscriptions for same customer. (2) Auto-cancel the older subscription when detected. Can run as part of subscription creation flow or separate reconciliation query.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017"],
@@ -1462,7 +1462,7 @@
         {
             "id": "T-041",
             "title": "GAP-013: Fix notification-retry TOCTOU with atomic SQL increment",
-            "description": "Fix apps/api/src/services/notification-retry.service.ts — retryCount is incremented with read-modify-write (TOCTOU). Replace with atomic SQL: UPDATE ... SET retry_count = retry_count + 1 WHERE id = $1 RETURNING *. Eliminates race condition in concurrent executions.",
+            "description": "Fix apps/api/src/services/notification-retry.service.ts \u2014 retryCount is incremented with read-modify-write (TOCTOU). Replace with atomic SQL: UPDATE ... SET retry_count = retry_count + 1 WHERE id = $1 RETURNING *. Eliminates race condition in concurrent executions.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
@@ -1493,7 +1493,7 @@
         {
             "id": "T-042",
             "title": "GAP-009: Add pg_try_advisory_lock to webhook-retry cron job",
-            "description": "Fix apps/api/src/cron/jobs/webhook-retry.job.ts — false idempotency claim in docstring + no concurrency protection. Add pg_try_advisory_lock at job start (acquire before processing, release on exit). Fix docstring to accurately describe idempotency guarantees. Use same lock ID pattern as existing cron jobs (e.g., 43001 used by addon-expiry).",
+            "description": "Fix apps/api/src/cron/jobs/webhook-retry.job.ts \u2014 false idempotency claim in docstring + no concurrency protection. Add pg_try_advisory_lock at job start (acquire before processing, release on exit). Fix docstring to accurately describe idempotency guarantees. Use same lock ID pattern as existing cron jobs (e.g., 43001 used by addon-expiry).",
             "status": "completed",
             "complexity": 2,
             "blockedBy": [],
@@ -1528,7 +1528,7 @@
         {
             "id": "T-043",
             "title": "GAP-034: Add pg_try_advisory_lock to notification-schedule cron job",
-            "description": "Fix apps/api/src/cron/jobs/notification-schedule.job.ts — no concurrency protection. Add pg_try_advisory_lock. Same pattern as T-042.",
+            "description": "Fix apps/api/src/cron/jobs/notification-schedule.job.ts \u2014 no concurrency protection. Add pg_try_advisory_lock. Same pattern as T-042.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": [],
@@ -1559,7 +1559,7 @@
         {
             "id": "T-044",
             "title": "GAP-035: Add pg_try_advisory_lock to dunning cron job",
-            "description": "Fix apps/api/src/cron/jobs/dunning.job.ts — no concurrency protection. Add pg_try_advisory_lock. Same pattern as T-042.",
+            "description": "Fix apps/api/src/cron/jobs/dunning.job.ts \u2014 no concurrency protection. Add pg_try_advisory_lock. Same pattern as T-042.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": [],
@@ -1590,7 +1590,7 @@
         {
             "id": "T-045",
             "title": "GAP-022: Write unit tests for withTransaction",
-            "description": "Create packages/db/test/client.withTransaction.test.ts with tests: (1) success path — callback result returned, (2) callback throws — transaction rolled back, (3) TransactionRollbackError — re-thrown, (4) DbError — re-thrown, (5) unknown error — wrapped in DbError, (6) existingTx provided — uses it without creating new tx (nested tx). REQUIRES T-017 (withTransaction with existingTx) to be done first.",
+            "description": "Create packages/db/test/client.withTransaction.test.ts with tests: (1) success path \u2014 callback result returned, (2) callback throws \u2014 transaction rolled back, (3) TransactionRollbackError \u2014 re-thrown, (4) DbError \u2014 re-thrown, (5) unknown error \u2014 wrapped in DbError, (6) existingTx provided \u2014 uses it without creating new tx (nested tx). REQUIRES T-017 (withTransaction with existingTx) to be done first.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017"],
@@ -1605,7 +1605,7 @@
                     "completed": false
                 },
                 {
-                    "title": "Test callback throws → rollback",
+                    "title": "Test callback throws \u2192 rollback",
                     "completed": false
                 },
                 {
@@ -2085,7 +2085,7 @@
         {
             "id": "T-058",
             "title": "GAP-056: Create service-core billing service tests",
-            "description": "Create packages/service-core/test/billing/ directory with tests for: (1) promo-code.redemption — redemption flow with valid/invalid codes, (2) billing-settings — CRUD operations, (3) addon-limit-recalculation — recalc triggered correctly. REQUIRES T-039 (billing code stabilized).",
+            "description": "Create packages/service-core/test/billing/ directory with tests for: (1) promo-code.redemption \u2014 redemption flow with valid/invalid codes, (2) billing-settings \u2014 CRUD operations, (3) addon-limit-recalculation \u2014 recalc triggered correctly. REQUIRES T-039 (billing code stabilized).",
             "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-039"],
@@ -2135,5 +2135,6 @@
         "averageComplexity": 2.7
     },
     "status": "completed",
-    "completedAt": "2026-04-13T14:00:52.531019+00:00"
+    "completedAt": "2026-04-13T14:00:52.531019+00:00",
+    "updated_at": "2026-04-21"
 }

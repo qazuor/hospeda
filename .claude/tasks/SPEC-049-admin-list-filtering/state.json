@@ -13,13 +13,26 @@
             "blockedBy": [],
             "blocks": ["T-003", "T-034"],
             "subtasks": [
-                { "title": "Add CONFIGURATION_ERROR to enum", "completed": true },
-                { "title": "Add JSDoc comment", "completed": true },
-                { "title": "Update schema file if needed", "completed": true }
+                {
+                    "title": "Add CONFIGURATION_ERROR to enum",
+                    "completed": true
+                },
+                {
+                    "title": "Add JSDoc comment",
+                    "completed": true
+                },
+                {
+                    "title": "Update schema file if needed",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "enum"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -35,12 +48,22 @@
             "blockedBy": ["T-001"],
             "blocks": [],
             "subtasks": [
-                { "title": "Find error-to-HTTP-status mapping", "completed": true },
-                { "title": "Add CONFIGURATION_ERROR -> 500 mapping", "completed": true }
+                {
+                    "title": "Find error-to-HTTP-status mapping",
+                    "completed": true
+                },
+                {
+                    "title": "Add CONFIGURATION_ERROR -> 500 mapping",
+                    "completed": true
+                }
             ],
             "tags": ["api", "error-handling"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -56,12 +79,22 @@
             "blockedBy": [],
             "blocks": ["T-004", "T-005", "T-006", "T-007"],
             "subtasks": [
-                { "title": "Create query-helpers.ts with queryBooleanParam()", "completed": true },
-                { "title": "Export from common/index.ts", "completed": true }
+                {
+                    "title": "Create query-helpers.ts with queryBooleanParam()",
+                    "completed": true
+                },
+                {
+                    "title": "Export from common/index.ts",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "helpers"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -77,13 +110,26 @@
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
-                { "title": "Create test file", "completed": true },
-                { "title": "Test all boolean coercion cases", "completed": true },
-                { "title": "Test the critical \"false\" -> false case", "completed": true }
+                {
+                    "title": "Create test file",
+                    "completed": true
+                },
+                {
+                    "title": "Test all boolean coercion cases",
+                    "completed": true
+                },
+                {
+                    "title": "Test the critical \"false\" -> false case",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "testing"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -99,13 +145,26 @@
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
-                { "title": "Update accommodation.admin-search.schema.ts", "completed": true },
-                { "title": "Update attraction.admin-search.schema.ts", "completed": true },
-                { "title": "Update event.admin-search.schema.ts", "completed": true }
+                {
+                    "title": "Update accommodation.admin-search.schema.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Update attraction.admin-search.schema.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Update event.admin-search.schema.ts",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "boolean-fix"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -121,14 +180,30 @@
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
-                { "title": "Update post.admin-search.schema.ts (2 fields)", "completed": true },
-                { "title": "Update destination.admin-search.schema.ts", "completed": true },
-                { "title": "Update amenity.admin-search.schema.ts", "completed": true },
-                { "title": "Update feature.admin-search.schema.ts", "completed": true }
+                {
+                    "title": "Update post.admin-search.schema.ts (2 fields)",
+                    "completed": true
+                },
+                {
+                    "title": "Update destination.admin-search.schema.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Update amenity.admin-search.schema.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Update feature.admin-search.schema.ts",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "boolean-fix"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -144,13 +219,26 @@
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
-                { "title": "Update owner-promotion.admin-search.schema.ts", "completed": true },
-                { "title": "Update eventLocation.admin-search.schema.ts", "completed": true },
-                { "title": "Update eventOrganizer.admin-search.schema.ts", "completed": true }
+                {
+                    "title": "Update owner-promotion.admin-search.schema.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Update eventLocation.admin-search.schema.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Update eventOrganizer.admin-search.schema.ts",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "boolean-fix"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -166,12 +254,22 @@
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
-                { "title": "Update accommodationReview.admin-search.schema.ts", "completed": true },
-                { "title": "Update destinationReview.admin-search.schema.ts", "completed": true }
+                {
+                    "title": "Update accommodationReview.admin-search.schema.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Update destinationReview.admin-search.schema.ts",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "boolean-fix"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -187,13 +285,26 @@
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Check admin frontend for nameContains usage", "completed": true },
-                { "title": "Remove nameContains from schema", "completed": true },
-                { "title": "Update frontend if needed", "completed": true }
+                {
+                    "title": "Check admin frontend for nameContains usage",
+                    "completed": true
+                },
+                {
+                    "title": "Remove nameContains from schema",
+                    "completed": true
+                },
+                {
+                    "title": "Update frontend if needed",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "tag"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -209,12 +320,22 @@
             "blockedBy": [],
             "blocks": ["T-012", "T-014"],
             "subtasks": [
-                { "title": "Find accommodationReview table schema file", "completed": true },
-                { "title": "Add averageRating column definition", "completed": true }
+                {
+                    "title": "Find accommodationReview table schema file",
+                    "completed": true
+                },
+                {
+                    "title": "Add averageRating column definition",
+                    "completed": true
+                }
             ],
             "tags": ["database", "schema"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -230,12 +351,22 @@
             "blockedBy": [],
             "blocks": ["T-013", "T-015"],
             "subtasks": [
-                { "title": "Find destinationReview table schema file", "completed": true },
-                { "title": "Add averageRating column definition", "completed": true }
+                {
+                    "title": "Find destinationReview table schema file",
+                    "completed": true
+                },
+                {
+                    "title": "Add averageRating column definition",
+                    "completed": true
+                }
             ],
             "tags": ["database", "schema"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -251,14 +382,30 @@
             "blockedBy": ["T-010", "T-011"],
             "blocks": ["T-014", "T-015"],
             "subtasks": [
-                { "title": "Run pnpm db:generate to create migration", "completed": true },
-                { "title": "Add accommodation_reviews backfill SQL", "completed": true },
-                { "title": "Add destination_reviews backfill SQL", "completed": true },
-                { "title": "Verify migration applies cleanly", "completed": true }
+                {
+                    "title": "Run pnpm db:generate to create migration",
+                    "completed": true
+                },
+                {
+                    "title": "Add accommodation_reviews backfill SQL",
+                    "completed": true
+                },
+                {
+                    "title": "Add destination_reviews backfill SQL",
+                    "completed": true
+                },
+                {
+                    "title": "Verify migration applies cleanly",
+                    "completed": true
+                }
             ],
             "tags": ["database", "migration"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -274,13 +421,26 @@
             "blockedBy": ["T-010", "T-012"],
             "blocks": ["T-014", "T-051"],
             "subtasks": [
-                { "title": "Add averageRating computation in _afterCreate", "completed": true },
-                { "title": "Add averageRating computation in _afterUpdate", "completed": true },
-                { "title": "Recalculate parent accommodation averageRating", "completed": true }
+                {
+                    "title": "Add averageRating computation in _afterCreate",
+                    "completed": true
+                },
+                {
+                    "title": "Add averageRating computation in _afterUpdate",
+                    "completed": true
+                },
+                {
+                    "title": "Recalculate parent accommodation averageRating",
+                    "completed": true
+                }
             ],
             "tags": ["service-core", "reviews"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -296,13 +456,26 @@
             "blockedBy": ["T-011", "T-012"],
             "blocks": ["T-015", "T-052"],
             "subtasks": [
-                { "title": "Add averageRating computation in _afterCreate", "completed": true },
-                { "title": "Add averageRating computation in _afterUpdate", "completed": true },
-                { "title": "Recalculate parent destination averageRating", "completed": true }
+                {
+                    "title": "Add averageRating computation in _afterCreate",
+                    "completed": true
+                },
+                {
+                    "title": "Add averageRating computation in _afterUpdate",
+                    "completed": true
+                },
+                {
+                    "title": "Recalculate parent destination averageRating",
+                    "completed": true
+                }
             ],
             "tags": ["service-core", "reviews"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -318,8 +491,14 @@
             "blockedBy": ["T-013"],
             "blocks": [],
             "subtasks": [
-                { "title": "Test _afterCreate averageRating computation", "completed": true },
-                { "title": "Test _afterUpdate averageRating recomputation", "completed": true },
+                {
+                    "title": "Test _afterCreate averageRating computation",
+                    "completed": true
+                },
+                {
+                    "title": "Test _afterUpdate averageRating recomputation",
+                    "completed": true
+                },
                 {
                     "title": "Test parent accommodation averageRating recalculation",
                     "completed": true
@@ -327,7 +506,11 @@
             ],
             "tags": ["testing", "reviews"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -343,12 +526,22 @@
             "blockedBy": ["T-014"],
             "blocks": [],
             "subtasks": [
-                { "title": "Test _afterCreate averageRating computation", "completed": true },
-                { "title": "Test _afterUpdate averageRating recomputation", "completed": true }
+                {
+                    "title": "Test _afterCreate averageRating computation",
+                    "completed": true
+                },
+                {
+                    "title": "Test _afterUpdate averageRating recomputation",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "reviews"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -364,13 +557,26 @@
             "blockedBy": [],
             "blocks": ["T-019", "T-024"],
             "subtasks": [
-                { "title": "Add gte, lte to drizzle-orm imports", "completed": true },
-                { "title": "Add _gte suffix handling before eq() fallback", "completed": true },
-                { "title": "Add _lte suffix handling before eq() fallback", "completed": true }
+                {
+                    "title": "Add gte, lte to drizzle-orm imports",
+                    "completed": true
+                },
+                {
+                    "title": "Add _gte suffix handling before eq() fallback",
+                    "completed": true
+                },
+                {
+                    "title": "Add _lte suffix handling before eq() fallback",
+                    "completed": true
+                }
             ],
             "tags": ["database", "drizzle-helpers"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -386,13 +592,26 @@
             "blockedBy": [],
             "blocks": ["T-020", "T-030"],
             "subtasks": [
-                { "title": "Add or to drizzle-orm import", "completed": true },
-                { "title": "Implement buildSearchCondition function", "completed": true },
-                { "title": "Export from module", "completed": true }
+                {
+                    "title": "Add or to drizzle-orm import",
+                    "completed": true
+                },
+                {
+                    "title": "Implement buildSearchCondition function",
+                    "completed": true
+                },
+                {
+                    "title": "Export from module",
+                    "completed": true
+                }
             ],
             "tags": ["database", "drizzle-helpers"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -408,14 +627,30 @@
             "blockedBy": ["T-017"],
             "blocks": [],
             "subtasks": [
-                { "title": "Test _gte with dates and numbers", "completed": true },
-                { "title": "Test _lte with dates and numbers", "completed": true },
-                { "title": "Test missing column handling", "completed": true },
-                { "title": "Test combined operators", "completed": true }
+                {
+                    "title": "Test _gte with dates and numbers",
+                    "completed": true
+                },
+                {
+                    "title": "Test _lte with dates and numbers",
+                    "completed": true
+                },
+                {
+                    "title": "Test missing column handling",
+                    "completed": true
+                },
+                {
+                    "title": "Test combined operators",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "drizzle-helpers"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -431,8 +666,14 @@
             "blockedBy": ["T-018"],
             "blocks": [],
             "subtasks": [
-                { "title": "Test single column search", "completed": true },
-                { "title": "Test multi-column OR search", "completed": true },
+                {
+                    "title": "Test single column search",
+                    "completed": true
+                },
+                {
+                    "title": "Test multi-column OR search",
+                    "completed": true
+                },
                 {
                     "title": "Test edge cases (empty, whitespace, missing columns)",
                     "completed": true
@@ -440,7 +681,11 @@
             ],
             "tags": ["testing", "drizzle-helpers"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -456,12 +701,22 @@
             "blockedBy": [],
             "blocks": ["T-024", "T-030"],
             "subtasks": [
-                { "title": "Add getTable() method to BaseModel", "completed": true },
-                { "title": "Add JSDoc comment", "completed": true }
+                {
+                    "title": "Add getTable() method to BaseModel",
+                    "completed": true
+                },
+                {
+                    "title": "Add JSDoc comment",
+                    "completed": true
+                }
             ],
             "tags": ["database", "base-model"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -485,11 +740,18 @@
                     "title": "Combine base where clause with additionalConditions via and()",
                     "completed": true
                 },
-                { "title": "Apply combined clause to both query and count", "completed": true }
+                {
+                    "title": "Apply combined clause to both query and count",
+                    "completed": true
+                }
             ],
             "tags": ["database", "base-model"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -505,8 +767,14 @@
             "blockedBy": [],
             "blocks": ["T-024"],
             "subtasks": [
-                { "title": "Change count() signature to options object", "completed": true },
-                { "title": "Implement additionalConditions combining", "completed": true },
+                {
+                    "title": "Change count() signature to options object",
+                    "completed": true
+                },
+                {
+                    "title": "Implement additionalConditions combining",
+                    "completed": true
+                },
                 {
                     "title": "Ensure backward compat with count(where) (no options)",
                     "completed": true
@@ -514,7 +782,11 @@
             ],
             "tags": ["database", "base-model"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -530,13 +802,26 @@
             "blockedBy": ["T-023"],
             "blocks": ["T-027"],
             "subtasks": [
-                { "title": "Search for all count(where, tx) call sites", "completed": true },
-                { "title": "Migrate each caller to count(where, { tx })", "completed": true },
-                { "title": "Run typecheck to verify", "completed": true }
+                {
+                    "title": "Search for all count(where, tx) call sites",
+                    "completed": true
+                },
+                {
+                    "title": "Migrate each caller to count(where, { tx })",
+                    "completed": true
+                },
+                {
+                    "title": "Run typecheck to verify",
+                    "completed": true
+                }
             ],
             "tags": ["database", "refactoring"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -552,13 +837,26 @@
             "blockedBy": ["T-022", "T-024"],
             "blocks": ["T-030", "T-035"],
             "subtasks": [
-                { "title": "Add additionalConditions parameter", "completed": true },
-                { "title": "Combine conditions in main query", "completed": true },
-                { "title": "Pass additionalConditions to count query", "completed": true }
+                {
+                    "title": "Add additionalConditions parameter",
+                    "completed": true
+                },
+                {
+                    "title": "Combine conditions in main query",
+                    "completed": true
+                },
+                {
+                    "title": "Pass additionalConditions to count query",
+                    "completed": true
+                }
             ],
             "tags": ["database", "base-model"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -569,22 +867,35 @@
             "id": "T-026",
             "title": "Tests for findAll with additionalConditions",
             "description": "Add unit tests for `findAll()` with the new `additionalConditions` parameter.\n\nTest cases:\n- `findAll(where, options)` without additionalConditions (backward compat)\n- `findAll(where, options, [sqlCondition])` combines where + condition\n- `findAll({}, options, [cond1, cond2])` multiple conditions combined with and()\n- Empty additionalConditions array treated as undefined\n\nFile: `packages/db/test/models/base.model.test.ts` (or create if needed)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-022"],
             "blocks": [],
             "subtasks": [
-                { "title": "Test backward compatibility", "completed": false },
-                { "title": "Test single additional condition", "completed": false },
-                { "title": "Test multiple additional conditions", "completed": false }
+                {
+                    "title": "Test backward compatibility",
+                    "completed": true
+                },
+                {
+                    "title": "Test single additional condition",
+                    "completed": true
+                },
+                {
+                    "title": "Test multiple additional conditions",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "base-model"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
             }
         },
         {
@@ -596,13 +907,26 @@
             "blockedBy": ["T-023", "T-024"],
             "blocks": [],
             "subtasks": [
-                { "title": "Test backward compat count(where)", "completed": false },
-                { "title": "Test count(where, { tx })", "completed": false },
-                { "title": "Test count with additionalConditions", "completed": false }
+                {
+                    "title": "Test backward compat count(where)",
+                    "completed": false
+                },
+                {
+                    "title": "Test count(where, { tx })",
+                    "completed": false
+                },
+                {
+                    "title": "Test count with additionalConditions",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "base-model"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": null,
@@ -618,7 +942,10 @@
             "blockedBy": ["T-018", "T-021", "T-022", "T-025"],
             "blocks": ["T-029"],
             "subtasks": [
-                { "title": "Import buildSearchCondition and SQL type", "completed": true },
+                {
+                    "title": "Import buildSearchCondition and SQL type",
+                    "completed": true
+                },
                 {
                     "title": "Replace AND search loop with buildSearchCondition call",
                     "completed": true
@@ -634,7 +961,11 @@
             ],
             "tags": ["service-core", "bugfix"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -650,8 +981,14 @@
             "blockedBy": ["T-028"],
             "blocks": [],
             "subtasks": [
-                { "title": "Test search matches name OR description", "completed": false },
-                { "title": "Test empty/missing search term", "completed": false },
+                {
+                    "title": "Test search matches name OR description",
+                    "completed": false
+                },
+                {
+                    "title": "Test empty/missing search term",
+                    "completed": false
+                },
                 {
                     "title": "Regression: verify existing list behavior unchanged",
                     "completed": false
@@ -659,7 +996,11 @@
             ],
             "tags": ["testing", "service-core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": null,
@@ -675,12 +1016,22 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-031"],
             "subtasks": [
-                { "title": "Add adminSearchSchema property declaration", "completed": true },
-                { "title": "Add JSDoc comment", "completed": true }
+                {
+                    "title": "Add adminSearchSchema property declaration",
+                    "completed": true
+                },
+                {
+                    "title": "Add JSDoc comment",
+                    "completed": true
+                }
             ],
             "tags": ["service-core", "base"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -700,12 +1051,22 @@
                     "title": "Add imports (parseAdminSort, ServiceErrorCode, buildSearchCondition)",
                     "completed": true
                 },
-                { "title": "Implement adminList() method body", "completed": true },
-                { "title": "Wrap in runWithLoggingAndValidation", "completed": true }
+                {
+                    "title": "Implement adminList() method body",
+                    "completed": true
+                },
+                {
+                    "title": "Wrap in runWithLoggingAndValidation",
+                    "completed": true
+                }
             ],
             "tags": ["service-core", "adminList"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -721,14 +1082,30 @@
             "blockedBy": ["T-031"],
             "blocks": ["T-033", "T-034", "T-043"],
             "subtasks": [
-                { "title": "Define _executeAdminSearch params type", "completed": true },
-                { "title": "Implement default entity filter merging", "completed": true },
-                { "title": "Handle relations vs no-relations path", "completed": true },
-                { "title": "Pass additionalConditions to model methods", "completed": true }
+                {
+                    "title": "Define _executeAdminSearch params type",
+                    "completed": true
+                },
+                {
+                    "title": "Implement default entity filter merging",
+                    "completed": true
+                },
+                {
+                    "title": "Handle relations vs no-relations path",
+                    "completed": true
+                },
+                {
+                    "title": "Pass additionalConditions to model methods",
+                    "completed": true
+                }
             ],
             "tags": ["service-core", "adminList"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -739,71 +1116,125 @@
             "id": "T-033",
             "title": "Tests for adminList() - sort, validation, permissions",
             "description": "Unit tests for `adminList()` base behavior (part 1).\n\nTest cases:\n- Sort parsing from compound string: `sort=name:asc` -> sortBy=name, sortOrder=asc\n- Invalid sort field returns VALIDATION_ERROR\n- Permission check calls `_canList`\n- Missing adminSearchSchema throws CONFIGURATION_ERROR\n- Invalid params against adminSearchSchema returns VALIDATION_ERROR\n\nFile: `packages/service-core/test/base/crud/adminList.test.ts` (NEW)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-031", "T-032"],
             "blocks": [],
             "subtasks": [
-                { "title": "Setup test fixtures with mock service", "completed": false },
-                { "title": "Test sort parsing", "completed": false },
-                { "title": "Test invalid sort field", "completed": false },
-                { "title": "Test permission check", "completed": false },
-                { "title": "Test missing schema error", "completed": false }
+                {
+                    "title": "Setup test fixtures with mock service",
+                    "completed": true
+                },
+                {
+                    "title": "Test sort parsing",
+                    "completed": true
+                },
+                {
+                    "title": "Test invalid sort field",
+                    "completed": true
+                },
+                {
+                    "title": "Test permission check",
+                    "completed": true
+                },
+                {
+                    "title": "Test missing schema error",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "service-core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
             }
         },
         {
             "id": "T-034",
             "title": "Tests for adminList() - status, includeDeleted, dates, search",
             "description": "Unit tests for `adminList()` base behavior (part 2).\n\nTest cases:\n- status=ACTIVE maps to lifecycleState=ACTIVE in where\n- status=all skips lifecycleState filter\n- includeDeleted=false adds deletedAt=null\n- includeDeleted=true omits deletedAt filter\n- createdAfter maps to createdAt_gte\n- createdBefore maps to createdAt_lte\n- search uses OR condition via buildSearchCondition\n- Entity filters passed through to _executeAdminSearch\n\nFile: `packages/service-core/test/base/crud/adminList.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-031", "T-032"],
             "blocks": [],
             "subtasks": [
-                { "title": "Test status -> lifecycleState mapping", "completed": false },
-                { "title": "Test includeDeleted behavior", "completed": false },
-                { "title": "Test date range mapping", "completed": false },
-                { "title": "Test search OR condition", "completed": false },
-                { "title": "Test entity filter passthrough", "completed": false }
+                {
+                    "title": "Test status -> lifecycleState mapping",
+                    "completed": true
+                },
+                {
+                    "title": "Test includeDeleted behavior",
+                    "completed": true
+                },
+                {
+                    "title": "Test date range mapping",
+                    "completed": true
+                },
+                {
+                    "title": "Test search OR condition",
+                    "completed": true
+                },
+                {
+                    "title": "Test entity filter passthrough",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "service-core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
             }
         },
         {
             "id": "T-035",
             "title": "Tests for _executeAdminSearch default behavior",
             "description": "Unit tests for the default `_executeAdminSearch()` implementation.\n\nTest cases:\n- Entity filters merged into where clause\n- Pagination params passed correctly\n- Sort params passed correctly\n- Search condition included in additionalConditions\n- extraConditions included in additionalConditions\n- Empty entityFilters -> no extra where clause entries\n- Uses findAllWithRelations when getDefaultListRelations returns relations\n- Uses findAll when no relations\n\nFile: `packages/service-core/test/base/crud/adminList.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-032"],
             "blocks": [],
             "subtasks": [
-                { "title": "Test entity filter merging", "completed": false },
-                { "title": "Test pagination and sort passthrough", "completed": false },
-                { "title": "Test relations vs no-relations path", "completed": false },
-                { "title": "Test additionalConditions handling", "completed": false }
+                {
+                    "title": "Test entity filter merging",
+                    "completed": true
+                },
+                {
+                    "title": "Test pagination and sort passthrough",
+                    "completed": true
+                },
+                {
+                    "title": "Test relations vs no-relations path",
+                    "completed": true
+                },
+                {
+                    "title": "Test additionalConditions handling",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "service-core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
             }
         },
         {
@@ -815,13 +1246,26 @@
             "blockedBy": [],
             "blocks": ["T-037", "T-053"],
             "subtasks": [
-                { "title": "Create schema file with proper imports", "completed": true },
-                { "title": "Define schema extending AdminSearchBaseSchema", "completed": true },
-                { "title": "Export type", "completed": true }
+                {
+                    "title": "Create schema file with proper imports",
+                    "completed": true
+                },
+                {
+                    "title": "Define schema extending AdminSearchBaseSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Export type",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "sponsorship"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -837,12 +1281,22 @@
             "blockedBy": ["T-036"],
             "blocks": [],
             "subtasks": [
-                { "title": "Export from index.ts", "completed": true },
-                { "title": "Write schema validation tests", "completed": true }
+                {
+                    "title": "Export from index.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Write schema validation tests",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "testing", "sponsorship"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -858,12 +1312,22 @@
             "blockedBy": ["T-032"],
             "blocks": ["T-055"],
             "subtasks": [
-                { "title": "Wire AmenityService adminSearchSchema", "completed": true },
-                { "title": "Wire FeatureService adminSearchSchema", "completed": true }
+                {
+                    "title": "Wire AmenityService adminSearchSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Wire FeatureService adminSearchSchema",
+                    "completed": true
+                }
             ],
             "tags": ["service-core", "wiring"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -879,12 +1343,22 @@
             "blockedBy": ["T-032"],
             "blocks": ["T-056"],
             "subtasks": [
-                { "title": "Wire TagService adminSearchSchema", "completed": true },
-                { "title": "Wire AttractionService adminSearchSchema", "completed": true }
+                {
+                    "title": "Wire TagService adminSearchSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Wire AttractionService adminSearchSchema",
+                    "completed": true
+                }
             ],
             "tags": ["service-core", "wiring"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -900,12 +1374,22 @@
             "blockedBy": ["T-032"],
             "blocks": ["T-057"],
             "subtasks": [
-                { "title": "Wire EventLocationService adminSearchSchema", "completed": true },
-                { "title": "Wire EventOrganizerService adminSearchSchema", "completed": true }
+                {
+                    "title": "Wire EventLocationService adminSearchSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Wire EventOrganizerService adminSearchSchema",
+                    "completed": true
+                }
             ],
             "tags": ["service-core", "wiring"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -921,12 +1405,22 @@
             "blockedBy": ["T-032"],
             "blocks": ["T-058"],
             "subtasks": [
-                { "title": "Wire OwnerPromotionService adminSearchSchema", "completed": true },
-                { "title": "Wire PostSponsorService adminSearchSchema", "completed": true }
+                {
+                    "title": "Wire OwnerPromotionService adminSearchSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Wire PostSponsorService adminSearchSchema",
+                    "completed": true
+                }
             ],
             "tags": ["service-core", "wiring"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -942,12 +1436,22 @@
             "blockedBy": ["T-032"],
             "blocks": ["T-059"],
             "subtasks": [
-                { "title": "Wire PostService adminSearchSchema", "completed": true },
-                { "title": "Wire DestinationService adminSearchSchema", "completed": true }
+                {
+                    "title": "Wire PostService adminSearchSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Wire DestinationService adminSearchSchema",
+                    "completed": true
+                }
             ],
             "tags": ["service-core", "wiring"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -963,14 +1467,30 @@
             "blockedBy": ["T-032"],
             "blocks": ["T-054"],
             "subtasks": [
-                { "title": "Wire adminSearchSchema", "completed": true },
-                { "title": "Override _executeAdminSearch", "completed": true },
-                { "title": "Handle minPrice/maxPrice JSONB extraction", "completed": true },
-                { "title": "Delegate simple filters to super", "completed": true }
+                {
+                    "title": "Wire adminSearchSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Override _executeAdminSearch",
+                    "completed": true
+                },
+                {
+                    "title": "Handle minPrice/maxPrice JSONB extraction",
+                    "completed": true
+                },
+                {
+                    "title": "Delegate simple filters to super",
+                    "completed": true
+                }
             ],
             "tags": ["service-core", "accommodation", "jsonb"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -986,14 +1506,30 @@
             "blockedBy": ["T-032"],
             "blocks": ["T-054"],
             "subtasks": [
-                { "title": "Wire adminSearchSchema", "completed": true },
-                { "title": "Override _executeAdminSearch", "completed": true },
-                { "title": "Handle date range JSONB extraction", "completed": true },
-                { "title": "Delegate simple filters to super", "completed": true }
+                {
+                    "title": "Wire adminSearchSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Override _executeAdminSearch",
+                    "completed": true
+                },
+                {
+                    "title": "Handle date range JSONB extraction",
+                    "completed": true
+                },
+                {
+                    "title": "Delegate simple filters to super",
+                    "completed": true
+                }
             ],
             "tags": ["service-core", "event", "jsonb"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -1009,14 +1545,30 @@
             "blockedBy": ["T-032"],
             "blocks": ["T-054"],
             "subtasks": [
-                { "title": "Wire adminSearchSchema", "completed": true },
-                { "title": "Override _executeAdminSearch", "completed": true },
-                { "title": "Handle email partial match with ilike", "completed": true },
-                { "title": "Call findAll directly (no relations)", "completed": true }
+                {
+                    "title": "Wire adminSearchSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Override _executeAdminSearch",
+                    "completed": true
+                },
+                {
+                    "title": "Handle email partial match with ilike",
+                    "completed": true
+                },
+                {
+                    "title": "Call findAll directly (no relations)",
+                    "completed": true
+                }
             ],
             "tags": ["service-core", "user"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -1032,13 +1584,26 @@
             "blockedBy": ["T-032", "T-013"],
             "blocks": ["T-060"],
             "subtasks": [
-                { "title": "Wire adminSearchSchema", "completed": true },
-                { "title": "Override _executeAdminSearch for rating range", "completed": true },
-                { "title": "Use averageRating numeric column (not JSONB)", "completed": true }
+                {
+                    "title": "Wire adminSearchSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Override _executeAdminSearch for rating range",
+                    "completed": true
+                },
+                {
+                    "title": "Use averageRating numeric column (not JSONB)",
+                    "completed": true
+                }
             ],
             "tags": ["service-core", "reviews"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -1054,12 +1619,22 @@
             "blockedBy": ["T-032", "T-014"],
             "blocks": ["T-060"],
             "subtasks": [
-                { "title": "Wire adminSearchSchema", "completed": true },
-                { "title": "Override _executeAdminSearch for rating range", "completed": true }
+                {
+                    "title": "Wire adminSearchSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Override _executeAdminSearch for rating range",
+                    "completed": true
+                }
             ],
             "tags": ["service-core", "reviews"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -1075,7 +1650,10 @@
             "blockedBy": ["T-032", "T-036"],
             "blocks": ["T-061"],
             "subtasks": [
-                { "title": "Wire adminSearchSchema", "completed": true },
+                {
+                    "title": "Wire adminSearchSchema",
+                    "completed": true
+                },
                 {
                     "title": "Override _executeAdminSearch for sponsorshipStatus rename",
                     "completed": true
@@ -1083,7 +1661,11 @@
             ],
             "tags": ["service-core", "sponsorship"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -1099,13 +1681,26 @@
             "blockedBy": ["T-043", "T-045"],
             "blocks": ["T-063"],
             "subtasks": [
-                { "title": "Update accommodation admin list route", "completed": true },
-                { "title": "Update user admin list route", "completed": true },
-                { "title": "Apply .omit({ page, pageSize }) to requestQuery", "completed": true }
+                {
+                    "title": "Update accommodation admin list route",
+                    "completed": true
+                },
+                {
+                    "title": "Update user admin list route",
+                    "completed": true
+                },
+                {
+                    "title": "Apply .omit({ page, pageSize }) to requestQuery",
+                    "completed": true
+                }
             ],
             "tags": ["api", "routes"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -1121,13 +1716,26 @@
             "blockedBy": ["T-042", "T-044"],
             "blocks": ["T-063"],
             "subtasks": [
-                { "title": "Update destination admin list route", "completed": true },
-                { "title": "Update event admin list route", "completed": true },
-                { "title": "Update post admin list route", "completed": true }
+                {
+                    "title": "Update destination admin list route",
+                    "completed": true
+                },
+                {
+                    "title": "Update event admin list route",
+                    "completed": true
+                },
+                {
+                    "title": "Update post admin list route",
+                    "completed": true
+                }
             ],
             "tags": ["api", "routes"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -1143,14 +1751,30 @@
             "blockedBy": ["T-038", "T-039"],
             "blocks": ["T-063"],
             "subtasks": [
-                { "title": "Update amenity admin list route", "completed": true },
-                { "title": "Update feature admin list route", "completed": true },
-                { "title": "Update tag admin list route", "completed": true },
-                { "title": "Update attraction admin list route", "completed": true }
+                {
+                    "title": "Update amenity admin list route",
+                    "completed": true
+                },
+                {
+                    "title": "Update feature admin list route",
+                    "completed": true
+                },
+                {
+                    "title": "Update tag admin list route",
+                    "completed": true
+                },
+                {
+                    "title": "Update attraction admin list route",
+                    "completed": true
+                }
             ],
             "tags": ["api", "routes"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -1166,13 +1790,26 @@
             "blockedBy": ["T-040", "T-041"],
             "blocks": ["T-063"],
             "subtasks": [
-                { "title": "Update event-location admin list route", "completed": true },
-                { "title": "Update event-organizer admin list route", "completed": true },
-                { "title": "Update owner-promotion admin list route", "completed": true }
+                {
+                    "title": "Update event-location admin list route",
+                    "completed": true
+                },
+                {
+                    "title": "Update event-organizer admin list route",
+                    "completed": true
+                },
+                {
+                    "title": "Update owner-promotion admin list route",
+                    "completed": true
+                }
             ],
             "tags": ["api", "routes"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -1187,10 +1824,19 @@
             "complexity": 1,
             "blockedBy": ["T-041"],
             "blocks": ["T-063"],
-            "subtasks": [{ "title": "Update postSponsor admin list route", "completed": true }],
+            "subtasks": [
+                {
+                    "title": "Update postSponsor admin list route",
+                    "completed": true
+                }
+            ],
             "tags": ["api", "routes"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -1206,12 +1852,22 @@
             "blockedBy": ["T-046", "T-047"],
             "blocks": ["T-063"],
             "subtasks": [
-                { "title": "Update accommodation-review admin list route", "completed": true },
-                { "title": "Update destination-review admin list route", "completed": true }
+                {
+                    "title": "Update accommodation-review admin list route",
+                    "completed": true
+                },
+                {
+                    "title": "Update destination-review admin list route",
+                    "completed": true
+                }
             ],
             "tags": ["api", "routes"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -1227,13 +1883,26 @@
             "blockedBy": ["T-048"],
             "blocks": ["T-063"],
             "subtasks": [
-                { "title": "Update requestQuery schema", "completed": true },
-                { "title": "Update handler to use adminList", "completed": true },
-                { "title": "Update imports", "completed": true }
+                {
+                    "title": "Update requestQuery schema",
+                    "completed": true
+                },
+                {
+                    "title": "Update handler to use adminList",
+                    "completed": true
+                },
+                {
+                    "title": "Update imports",
+                    "completed": true
+                }
             ],
             "tags": ["api", "routes", "sponsorship"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": "2026-03-20T04:30:00.000Z",
@@ -1244,185 +1913,316 @@
             "id": "T-056",
             "title": "Integration tests: accommodation admin list (ownerId, type, status)",
             "description": "Create integration tests for accommodation admin list endpoint.\n\nTest cases:\n- Filter by `ownerId` returns only matching accommodations\n- Filter by `type=HOTEL` returns only hotels\n- Filter by `status=DRAFT` returns only drafts\n- `status=all` returns all accommodations\n- Combined: `ownerId=X&type=HOTEL&status=ACTIVE` intersects all conditions\n- Empty result when no matches: `{ items: [], pagination: { total: 0 } }`\n\nFile: `apps/api/test/routes/admin/accommodation-list.test.ts` (NEW)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-049"],
             "blocks": ["T-063"],
             "subtasks": [
-                { "title": "Setup test fixtures (seed accommodations)", "completed": false },
-                { "title": "Test ownerId filter", "completed": false },
-                { "title": "Test type filter", "completed": false },
-                { "title": "Test status filter", "completed": false },
-                { "title": "Test combined filters", "completed": false }
+                {
+                    "title": "Setup test fixtures (seed accommodations)",
+                    "completed": true
+                },
+                {
+                    "title": "Test ownerId filter",
+                    "completed": true
+                },
+                {
+                    "title": "Test type filter",
+                    "completed": true
+                },
+                {
+                    "title": "Test status filter",
+                    "completed": true
+                },
+                {
+                    "title": "Test combined filters",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "integration", "accommodation"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
             }
         },
         {
             "id": "T-057",
             "title": "Integration tests: accommodation admin list (sort, deleted, search, price)",
             "description": "Additional integration tests for accommodation admin list.\n\nTest cases:\n- `sort=name:asc` returns sorted results\n- `sort=invalidCol:asc` returns 400 VALIDATION_ERROR\n- `includeDeleted=true` includes soft-deleted\n- `includeDeleted=false` excludes soft-deleted\n- `search=hotel` matches name OR description (OR logic)\n- `minPrice=50&maxPrice=200` filters by JSONB price\n- `createdAfter=date&createdBefore=date` date range\n\nFile: `apps/api/test/routes/admin/accommodation-list.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-049"],
             "blocks": ["T-063"],
             "subtasks": [
-                { "title": "Test sort valid/invalid", "completed": false },
-                { "title": "Test includeDeleted", "completed": false },
-                { "title": "Test search OR logic", "completed": false },
-                { "title": "Test price range JSONB", "completed": false },
-                { "title": "Test date range", "completed": false }
+                {
+                    "title": "Test sort valid/invalid",
+                    "completed": true
+                },
+                {
+                    "title": "Test includeDeleted",
+                    "completed": true
+                },
+                {
+                    "title": "Test search OR logic",
+                    "completed": true
+                },
+                {
+                    "title": "Test price range JSONB",
+                    "completed": true
+                },
+                {
+                    "title": "Test date range",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "integration", "accommodation"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
             }
         },
         {
             "id": "T-058",
             "title": "Integration tests: event admin list",
             "description": "Integration tests for event admin list endpoint.\n\nTest cases:\n- `startDateAfter`/`startDateBefore` JSONB date extraction (->>'start' key)\n- `endDateAfter`/`endDateBefore` JSONB date extraction (->>'end' key)\n- `organizerId` simple eq filter\n- `category` simple eq filter\n- `isFeatured` boolean filter\n\nFile: `apps/api/test/routes/admin/event-list.test.ts` (NEW)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-050"],
             "blocks": ["T-063"],
             "subtasks": [
-                { "title": "Setup test fixtures (seed events)", "completed": false },
-                { "title": "Test startDate range filters", "completed": false },
-                { "title": "Test endDate range filters", "completed": false },
-                { "title": "Test simple eq filters", "completed": false }
+                {
+                    "title": "Setup test fixtures (seed events)",
+                    "completed": true
+                },
+                {
+                    "title": "Test startDate range filters",
+                    "completed": true
+                },
+                {
+                    "title": "Test endDate range filters",
+                    "completed": true
+                },
+                {
+                    "title": "Test simple eq filters",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "integration", "event"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
             }
         },
         {
             "id": "T-059",
             "title": "Integration tests: user admin list",
             "description": "Integration tests for user admin list endpoint.\n\nTest cases:\n- `role` filter returns only users with that role\n- `email` partial match (ilike, not exact)\n- `authProvider` filter\n- `search` by name matches name column (OR)\n\nFile: `apps/api/test/routes/admin/user-list.test.ts` (NEW)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-049"],
             "blocks": ["T-063"],
             "subtasks": [
-                { "title": "Setup test fixtures (seed users)", "completed": false },
-                { "title": "Test role filter", "completed": false },
-                { "title": "Test email partial match", "completed": false },
-                { "title": "Test search by name", "completed": false }
+                {
+                    "title": "Setup test fixtures (seed users)",
+                    "completed": true
+                },
+                {
+                    "title": "Test role filter",
+                    "completed": true
+                },
+                {
+                    "title": "Test email partial match",
+                    "completed": true
+                },
+                {
+                    "title": "Test search by name",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "integration", "user"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
             }
         },
         {
             "id": "T-060",
             "title": "Integration tests: amenity admin list (default impl)",
             "description": "Integration tests for amenity admin list - validates default `_executeAdminSearch` works without override.\n\nTest cases:\n- `category` simple eq filter\n- `isBuiltin=true` boolean filter\n- `search` by name (OR across searchable columns)\n- Verify pagination works with filters\n\nFile: `apps/api/test/routes/admin/amenity-list.test.ts` (NEW)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-051"],
             "blocks": ["T-063"],
             "subtasks": [
-                { "title": "Setup test fixtures", "completed": false },
-                { "title": "Test category filter", "completed": false },
-                { "title": "Test isBuiltin filter", "completed": false },
-                { "title": "Test pagination with filters", "completed": false }
+                {
+                    "title": "Setup test fixtures",
+                    "completed": true
+                },
+                {
+                    "title": "Test category filter",
+                    "completed": true
+                },
+                {
+                    "title": "Test isBuiltin filter",
+                    "completed": true
+                },
+                {
+                    "title": "Test pagination with filters",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "integration", "amenity"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
             }
         },
         {
             "id": "T-061",
             "title": "Integration tests: accommodation-review and destination-review admin lists",
             "description": "Integration tests for review admin list endpoints.\n\nTest cases:\n- `minRating`/`maxRating` using averageRating numeric column (gte/lte)\n- `accommodationId`/`destinationId` simple eq filter\n- `userId` simple eq filter\n- `isVerified` boolean filter\n\nFiles:\n- `apps/api/test/routes/admin/accommodation-review-list.test.ts` (NEW)\n- `apps/api/test/routes/admin/destination-review-list.test.ts` (NEW)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-054"],
             "blocks": ["T-063"],
             "subtasks": [
-                { "title": "Test accommodation-review rating range", "completed": false },
-                { "title": "Test accommodation-review simple filters", "completed": false },
-                { "title": "Test destination-review rating range", "completed": false },
-                { "title": "Test destination-review simple filters", "completed": false }
+                {
+                    "title": "Test accommodation-review rating range",
+                    "completed": true
+                },
+                {
+                    "title": "Test accommodation-review simple filters",
+                    "completed": true
+                },
+                {
+                    "title": "Test destination-review rating range",
+                    "completed": true
+                },
+                {
+                    "title": "Test destination-review simple filters",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "integration", "reviews"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
             }
         },
         {
             "id": "T-062",
             "title": "Integration tests: sponsorship admin list",
             "description": "Integration tests for sponsorship admin list endpoint.\n\nTest cases:\n- `sponsorshipStatus` filter (mapped to `status` column)\n- Base `status` filter silently ignored (no lifecycleState column)\n- `sponsorUserId` simple eq filter\n- `targetType` simple eq filter\n- `targetId` simple eq filter\n\nFile: `apps/api/test/routes/admin/sponsorship-list.test.ts` (NEW)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-055", "T-066"],
             "blocks": ["T-063"],
             "subtasks": [
-                { "title": "Test sponsorshipStatus filter", "completed": false },
-                { "title": "Test base status ignored", "completed": false },
-                { "title": "Test simple eq filters", "completed": false }
+                {
+                    "title": "Test sponsorshipStatus filter",
+                    "completed": true
+                },
+                {
+                    "title": "Test base status ignored",
+                    "completed": true
+                },
+                {
+                    "title": "Test simple eq filters",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "integration", "sponsorship"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
             }
         },
         {
             "id": "T-063",
             "title": "Integration tests: destination admin list (default impl with relations)",
             "description": "Integration tests for destination admin list - validates default `_executeAdminSearch` with relations.\n\nTest cases:\n- `destinationType` simple eq filter\n- `isFeatured` boolean filter\n- `parentDestinationId` filter\n- `level` filter\n- Verify response includes relations from `getDefaultListRelations()`\n- Validates findAllWithRelations path in default _executeAdminSearch\n\nFile: `apps/api/test/routes/admin/destination-list.test.ts` (NEW)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-050"],
             "blocks": ["T-064"],
             "subtasks": [
-                { "title": "Setup test fixtures", "completed": false },
-                { "title": "Test destinationType filter", "completed": false },
-                { "title": "Test isFeatured filter", "completed": false },
-                { "title": "Test relations included in response", "completed": false }
+                {
+                    "title": "Setup test fixtures",
+                    "completed": true
+                },
+                {
+                    "title": "Test destinationType filter",
+                    "completed": true
+                },
+                {
+                    "title": "Test isFeatured filter",
+                    "completed": true
+                },
+                {
+                    "title": "Test relations included in response",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "integration", "destination"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
             }
         },
         {
@@ -1446,14 +2246,30 @@
             ],
             "blocks": [],
             "subtasks": [
-                { "title": "Run pnpm test", "completed": false },
-                { "title": "Run pnpm typecheck", "completed": false },
-                { "title": "Run pnpm lint", "completed": false },
-                { "title": "Fix any regressions", "completed": false }
+                {
+                    "title": "Run pnpm test",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm typecheck",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm lint",
+                    "completed": false
+                },
+                {
+                    "title": "Fix any regressions",
+                    "completed": false
+                }
             ],
             "tags": ["verification"],
             "phase": "verification",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
                 "started": null,
@@ -1464,48 +2280,62 @@
             "id": "T-065",
             "title": "[GAP-001] Fix sort format mismatch: frontend sends JSON array, backend expects field:dir",
             "description": "CRITICAL GAP found in audit. The admin frontend (createEntityApi.ts) sends sort as JSON.stringify([{id, desc}]) but AdminSearchBaseSchema validates with regex /^[a-zA-Z_]+:(asc|desc)$/. All admin sorting is silently broken.\n\nFix in apps/admin/src/components/entity-list/api/createEntityApi.ts lines 58-60:\n\nChange:\n```ts\nif (sort && sort.length > 0) {\n    params.set('sort', JSON.stringify(sort));\n}\n```\nTo:\n```ts\nif (sort && sort.length > 0) {\n    const [firstSort] = sort;\n    if (firstSort) {\n        const direction = firstSort.desc ? 'desc' : 'asc';\n        params.set('sort', `${firstSort.id}:${direction}`);\n    }\n}\n```\n\nFiles: apps/admin/src/components/entity-list/api/createEntityApi.ts",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-064"],
             "subtasks": [
                 {
                     "title": "Update createEntityApi.ts to send field:dir format",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Verify admin DataTable sorting works end-to-end", "completed": false }
+                {
+                    "title": "Verify admin DataTable sorting works end-to-end",
+                    "completed": true
+                }
             ],
             "tags": ["admin", "frontend", "critical-gap"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-03-20T18:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
             }
         },
         {
             "id": "T-066",
             "title": "[GAP-009] Fix sponsorship status filter: frontend sends 'status', backend expects 'sponsorshipStatus'",
             "description": "GAP found in audit. Admin SponsorshipsTab sends filter as 'status' param but SponsorshipAdminSearchSchema expects 'sponsorshipStatus'. Base AdminSearchBaseSchema also has a 'status' field (maps to lifecycleState). The sponsorship table has no lifecycleState column, so the base status filter is silently ignored AND the entity-specific sponsorshipStatus is never sent.\n\nFix in apps/admin/src/features/sponsorships/components/SponsorshipsTab.tsx: Change the filter parameter name from 'status' to 'sponsorshipStatus'.\n\nAlso check apps/admin/src/features/sponsorships/hooks/ for any query parameter references.\n\nFiles: apps/admin/src/features/sponsorships/components/SponsorshipsTab.tsx",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-062"],
             "subtasks": [
                 {
                     "title": "Update SponsorshipsTab to use sponsorshipStatus param name",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Verify sponsorship filtering works in admin panel", "completed": false }
+                {
+                    "title": "Verify sponsorship filtering works in admin panel",
+                    "completed": true
+                }
             ],
             "tags": ["admin", "frontend", "gap"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-03-20T18:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
             }
         },
         {
@@ -1528,7 +2358,11 @@
             ],
             "tags": ["service-core", "documentation", "gap"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T18:00:00.000Z",
                 "started": null,
@@ -1548,12 +2382,22 @@
                     "title": "Add CONFIGURATION_ERROR test to service-error-code.test.ts",
                     "completed": false
                 },
-                { "title": "Create tag admin-search.test.ts", "completed": false },
-                { "title": "Create accommodation-review admin-search.test.ts", "completed": false }
+                {
+                    "title": "Create tag admin-search.test.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Create accommodation-review admin-search.test.ts",
+                    "completed": false
+                }
             ],
             "tags": ["schemas", "testing", "gap"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-20T18:00:00.000Z",
                 "started": null,
@@ -1563,10 +2407,11 @@
     ],
     "summary": {
         "total": 68,
-        "pending": 21,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 47,
+        "completed": 63,
         "blocked": 0,
         "averageComplexity": 1.9
-    }
+    },
+    "updated_at": "2026-04-21"
 }

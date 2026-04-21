@@ -29,11 +29,18 @@
                     "title": "Convert Drizzle undefined to null for Hospeda convention",
                     "completed": true
                 },
-                { "title": "Add logQuery/logError/DbError error handling", "completed": true }
+                {
+                    "title": "Add logQuery/logError/DbError error handling",
+                    "completed": true
+                }
             ],
             "tags": ["database", "base-model"],
             "phase": "core",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-14T04:00:00.000Z",
                 "started": "2026-04-14T04:00:00.000Z",
@@ -53,11 +60,18 @@
                     "title": "Add method near line 57 adjacent to getDefaultListRelations()",
                     "completed": true
                 },
-                { "title": "Add JSDoc documenting override behavior", "completed": true }
+                {
+                    "title": "Add JSDoc documenting override behavior",
+                    "completed": true
+                }
             ],
             "tags": ["service-core", "base-service"],
             "phase": "core",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-14T04:00:00.000Z",
                 "started": "2026-04-14T04:00:00.000Z",
@@ -77,12 +91,22 @@
                     "title": "Add relations = this.getDefaultGetByIdRelations() call",
                     "completed": true
                 },
-                { "title": "Conditional: findOneWithRelations vs findOne", "completed": true },
-                { "title": "Thread ctx?.tx to model call", "completed": true }
+                {
+                    "title": "Conditional: findOneWithRelations vs findOne",
+                    "completed": true
+                },
+                {
+                    "title": "Thread ctx?.tx to model call",
+                    "completed": true
+                }
             ],
             "tags": ["service-core", "base-service"],
             "phase": "core",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-14T04:00:00.000Z",
                 "started": "2026-04-14T04:00:00.000Z",
@@ -98,13 +122,26 @@
             "blockedBy": [],
             "blocks": ["T-006"],
             "subtasks": [
-                { "title": "Add to StandardModelMock type", "completed": true },
-                { "title": "Add vi.fn() to createModelMock()", "completed": true },
-                { "title": "Add mock to MockBaseModel<T> class", "completed": true }
+                {
+                    "title": "Add to StandardModelMock type",
+                    "completed": true
+                },
+                {
+                    "title": "Add vi.fn() to createModelMock()",
+                    "completed": true
+                },
+                {
+                    "title": "Add mock to MockBaseModel<T> class",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "mock-factory"],
             "phase": "setup",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-14T04:00:00.000Z",
                 "started": "2026-04-14T04:00:00.000Z",
@@ -124,16 +161,38 @@
                     "title": "Tests added to base.model.test.ts findOneWithRelations describe block",
                     "completed": true
                 },
-                { "title": "Test: entity found with populated relations", "completed": true },
-                { "title": "Test: entity not found returns null", "completed": true },
-                { "title": "Test: nested relations work correctly", "completed": true },
-                { "title": "Test: tx parameter threading", "completed": true },
-                { "title": "Test: empty/false relations fallback to findOne", "completed": true },
-                { "title": "Test: error handling throws DbError", "completed": true }
+                {
+                    "title": "Test: entity found with populated relations",
+                    "completed": true
+                },
+                {
+                    "title": "Test: entity not found returns null",
+                    "completed": true
+                },
+                {
+                    "title": "Test: nested relations work correctly",
+                    "completed": true
+                },
+                {
+                    "title": "Test: tx parameter threading",
+                    "completed": true
+                },
+                {
+                    "title": "Test: empty/false relations fallback to findOne",
+                    "completed": true
+                },
+                {
+                    "title": "Test: error handling throws DbError",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "database"],
             "phase": "testing",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-14T04:00:00.000Z",
                 "started": "2026-04-14T04:00:00.000Z",
@@ -169,11 +228,18 @@
                     "title": "Test: getByField calls findOne when relations undefined",
                     "completed": true
                 },
-                { "title": "Test: nested relations config forwarded correctly", "completed": true }
+                {
+                    "title": "Test: nested relations config forwarded correctly",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "service-core"],
             "phase": "testing",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-14T04:00:00.000Z",
                 "started": "2026-04-14T04:00:00.000Z",
@@ -182,20 +248,33 @@
         },
         {
             "id": "T-007",
-            "title": "Run full quality gate — typecheck + lint + tests",
+            "title": "Run full quality gate \u2014 typecheck + lint + tests",
             "description": "Run pnpm typecheck, pnpm lint, pnpm test. Verify zero regressions across all 10 affected services. Verify all new SPEC-066 tests pass.",
             "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-005", "T-006"],
             "blocks": [],
             "subtasks": [
-                { "title": "pnpm typecheck passes", "completed": true },
-                { "title": "pnpm lint passes", "completed": true },
-                { "title": "pnpm test passes (all suites)", "completed": true }
+                {
+                    "title": "pnpm typecheck passes",
+                    "completed": true
+                },
+                {
+                    "title": "pnpm lint passes",
+                    "completed": true
+                },
+                {
+                    "title": "pnpm test passes (all suites)",
+                    "completed": true
+                }
             ],
             "tags": ["verification"],
             "phase": "verification",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-14T04:00:00.000Z",
                 "started": "2026-04-14T12:00:00.000Z",
@@ -210,5 +289,6 @@
         "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.4
-    }
+    },
+    "updated_at": "2026-04-21"
 }

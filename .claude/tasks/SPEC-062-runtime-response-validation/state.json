@@ -7,7 +7,7 @@
         {
             "id": "T-001",
             "title": "Extend Post access schemas with relation fields",
-            "description": "Extend PostPublicSchema, PostProtectedSchema, and PostAdminSchema in `packages/schemas/src/entities/post/post.access.schema.ts` to include 5 relation fields: `author` (UserPublicSchema), `relatedAccommodation` (AccommodationPublicSchema), `relatedDestination` (DestinationPublicSchema), `relatedEvent` (EventPublicSchema), and `sponsorship` (PostSponsorshipPublicSchema.extend({ sponsor: UserPublicSchema.optional() })). All relation fields must be `.optional()`. Each tier uses tier-appropriate schemas (Public→*PublicSchema, Protected→*ProtectedSchema, Admin→*AdminSchema). Watch for circular references between Post↔User — use getter properties if needed (Zod v4 preferred pattern). The `import type { z }` must become `import { z }` to use `.extend()`. Run boundary tests after changes.\n\nFiles: `packages/schemas/src/entities/post/post.access.schema.ts`\nTests: Run `pnpm test -- packages/schemas/test/entities/access-boundary/access-boundary.test.ts`",
+            "description": "Extend PostPublicSchema, PostProtectedSchema, and PostAdminSchema in `packages/schemas/src/entities/post/post.access.schema.ts` to include 5 relation fields: `author` (UserPublicSchema), `relatedAccommodation` (AccommodationPublicSchema), `relatedDestination` (DestinationPublicSchema), `relatedEvent` (EventPublicSchema), and `sponsorship` (PostSponsorshipPublicSchema.extend({ sponsor: UserPublicSchema.optional() })). All relation fields must be `.optional()`. Each tier uses tier-appropriate schemas (Public\u2192*PublicSchema, Protected\u2192*ProtectedSchema, Admin\u2192*AdminSchema). Watch for circular references between Post\u2194User \u2014 use getter properties if needed (Zod v4 preferred pattern). The `import type { z }` must become `import { z }` to use `.extend()`. Run boundary tests after changes.\n\nFiles: `packages/schemas/src/entities/post/post.access.schema.ts`\nTests: Run `pnpm test -- packages/schemas/test/entities/access-boundary/access-boundary.test.ts`",
             "status": "completed",
             "complexity": 4,
             "blockedBy": [],
@@ -30,15 +30,25 @@
                     "completed": true
                 },
                 {
-                    "title": "Handle nested sponsorship→sponsor at each tier level",
+                    "title": "Handle nested sponsorship\u2192sponsor at each tier level",
                     "completed": true
                 },
-                { "title": "Check for circular references (Post↔User)", "completed": true },
-                { "title": "Run boundary tests", "completed": true }
+                {
+                    "title": "Check for circular references (Post\u2194User)",
+                    "completed": true
+                },
+                {
+                    "title": "Run boundary tests",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "phase-0"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-13T22:10:00.000Z",
@@ -62,14 +72,30 @@
                     "title": "Add destination relation to PublicSchema .extend()",
                     "completed": true
                 },
-                { "title": "Add destination relation to ProtectedSchema", "completed": true },
-                { "title": "Add destination relation to AdminSchema", "completed": true },
-                { "title": "Verify amenities/features arrays already present", "completed": true },
-                { "title": "Run boundary tests", "completed": true }
+                {
+                    "title": "Add destination relation to ProtectedSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Add destination relation to AdminSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Verify amenities/features arrays already present",
+                    "completed": true
+                },
+                {
+                    "title": "Run boundary tests",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "phase-0"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-13T22:10:00.000Z",
@@ -85,7 +111,10 @@
             "blockedBy": [],
             "blocks": ["T-010"],
             "subtasks": [
-                { "title": "Import User and Accommodation access schemas", "completed": true },
+                {
+                    "title": "Import User and Accommodation access schemas",
+                    "completed": true
+                },
                 {
                     "title": "Extend PublicSchema with user and accommodation relations",
                     "completed": true
@@ -98,11 +127,18 @@
                     "title": "Extend AdminSchema with user and accommodation relations",
                     "completed": true
                 },
-                { "title": "Run boundary tests", "completed": true }
+                {
+                    "title": "Run boundary tests",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "phase-0"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-13T22:10:00.000Z",
@@ -118,8 +154,14 @@
             "blockedBy": [],
             "blocks": ["T-010"],
             "subtasks": [
-                { "title": "Import User and Destination access schemas", "completed": true },
-                { "title": "Import LifecycleStatusEnum", "completed": true },
+                {
+                    "title": "Import User and Destination access schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Import LifecycleStatusEnum",
+                    "completed": true
+                },
                 {
                     "title": "Extend PublicSchema with user and destination relations",
                     "completed": true
@@ -132,11 +174,18 @@
                     "title": "Extend AdminSchema with user, destination relations AND lifecycleState",
                     "completed": true
                 },
-                { "title": "Run boundary tests", "completed": true }
+                {
+                    "title": "Run boundary tests",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "phase-0", "spec-063-prep"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-13T22:10:00.000Z",
@@ -152,7 +201,10 @@
             "blockedBy": [],
             "blocks": ["T-010"],
             "subtasks": [
-                { "title": "Import Post and User access schemas", "completed": true },
+                {
+                    "title": "Import Post and User access schemas",
+                    "completed": true
+                },
                 {
                     "title": "Extend PublicSchema with post and sponsor relations",
                     "completed": true
@@ -165,11 +217,18 @@
                     "title": "Extend AdminSchema with post and sponsor relations",
                     "completed": true
                 },
-                { "title": "Run boundary tests", "completed": true }
+                {
+                    "title": "Run boundary tests",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "phase-0"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-13T22:10:00.000Z",
@@ -185,13 +244,26 @@
             "blockedBy": [],
             "blocks": ["T-010"],
             "subtasks": [
-                { "title": "Import User access schemas", "completed": true },
-                { "title": "Extend all 3 tier schemas with user relation", "completed": true },
-                { "title": "Run boundary tests", "completed": true }
+                {
+                    "title": "Import User access schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Extend all 3 tier schemas with user relation",
+                    "completed": true
+                },
+                {
+                    "title": "Run boundary tests",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "phase-0"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-13T22:10:00.000Z",
@@ -207,8 +279,14 @@
             "blockedBy": [],
             "blocks": ["T-010"],
             "subtasks": [
-                { "title": "Import User and Accommodation access schemas", "completed": true },
-                { "title": "Import LifecycleStatusEnum", "completed": true },
+                {
+                    "title": "Import User and Accommodation access schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Import LifecycleStatusEnum",
+                    "completed": true
+                },
                 {
                     "title": "Extend PublicSchema with owner and accommodation relations",
                     "completed": true
@@ -221,11 +299,18 @@
                     "title": "Extend AdminSchema with owner, accommodation relations AND lifecycleState",
                     "completed": true
                 },
-                { "title": "Run boundary tests", "completed": true }
+                {
+                    "title": "Run boundary tests",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "phase-0", "spec-063-prep"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-13T22:10:00.000Z",
@@ -245,7 +330,10 @@
                     "title": "Import User access schemas and SponsorshipLevel/Package base schemas",
                     "completed": true
                 },
-                { "title": "Import LifecycleStatusEnum", "completed": true },
+                {
+                    "title": "Import LifecycleStatusEnum",
+                    "completed": true
+                },
                 {
                     "title": "Extend PublicSchema with sponsorUser, level, package relations",
                     "completed": true
@@ -258,11 +346,18 @@
                     "title": "Extend AdminSchema with relations AND lifecycleState",
                     "completed": true
                 },
-                { "title": "Run boundary tests", "completed": true }
+                {
+                    "title": "Run boundary tests",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "phase-0", "spec-063-prep"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-13T22:10:00.000Z",
@@ -294,11 +389,18 @@
                     "title": "Extend AdminSchema with organizer and location relations",
                     "completed": true
                 },
-                { "title": "Run boundary tests", "completed": true }
+                {
+                    "title": "Run boundary tests",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "phase-0"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-13T22:10:00.000Z",
@@ -332,7 +434,10 @@
                     "title": "Add adminInfo absence assertions to 15 applicable Public schemas",
                     "completed": true
                 },
-                { "title": "Add notes absence assertion to Tag Public schema", "completed": true },
+                {
+                    "title": "Add notes absence assertion to Tag Public schema",
+                    "completed": true
+                },
                 {
                     "title": "Add lifecycleState absence assertion to applicable Public schemas",
                     "completed": true
@@ -341,16 +446,26 @@
                     "title": "Add paymentId absence assertion to Sponsorship Public schema",
                     "completed": true
                 },
-                { "title": "Add Protected tier admin-field absence assertions", "completed": true },
+                {
+                    "title": "Add Protected tier admin-field absence assertions",
+                    "completed": true
+                },
                 {
                     "title": "Verify AdminSchema retains all fields including new relations",
                     "completed": true
                 },
-                { "title": "Run all boundary tests", "completed": true }
+                {
+                    "title": "Run all boundary tests",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "phase-0"],
             "phase": "testing",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-13T22:20:00.000Z",
@@ -360,19 +475,32 @@
         {
             "id": "T-011",
             "title": "Run full typecheck and test suite for Phase 0 verification",
-            "description": "Run `pnpm typecheck && pnpm test` to verify all Phase 0 changes pass. Fix any type errors or test failures. This is the final quality gate before Phase 0 can be merged. After this task, Phase 0 is complete. Do NOT proceed to Phase 1 — it is blocked until SPEC-063 and SPEC-066 are merged.\n\nCommands: `pnpm typecheck && pnpm test`",
+            "description": "Run `pnpm typecheck && pnpm test` to verify all Phase 0 changes pass. Fix any type errors or test failures. This is the final quality gate before Phase 0 can be merged. After this task, Phase 0 is complete. Do NOT proceed to Phase 1 \u2014 it is blocked until SPEC-063 and SPEC-066 are merged.\n\nCommands: `pnpm typecheck && pnpm test`",
             "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-010"],
             "blocks": ["T-012"],
             "subtasks": [
-                { "title": "Run pnpm typecheck", "completed": true },
-                { "title": "Run pnpm test", "completed": true },
-                { "title": "Fix any failures", "completed": true }
+                {
+                    "title": "Run pnpm typecheck",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm test",
+                    "completed": true
+                },
+                {
+                    "title": "Fix any failures",
+                    "completed": true
+                }
             ],
             "tags": ["verification", "phase-0"],
             "phase": "testing",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-13T22:35:00.000Z",
@@ -382,19 +510,32 @@
         {
             "id": "T-012",
             "title": "Add stripWithSchema utility function to response-helpers.ts",
-            "description": "Add a `stripWithSchema<T>()` helper function to `apps/api/src/utils/response-helpers.ts`. The function accepts `data: T` and `responseSchema?: ZodType`, calls `responseSchema.safeParse(data)` when schema is provided, returns stripped data on success, logs a warning and returns unstripped data on failure. Use `@repo/logger` for structured warning log. Export the function for testing.\n\nFiles: `apps/api/src/utils/response-helpers.ts`\nTests: Unit test in `apps/api/test/utils/response-helpers.test.ts` — test strip success, strip no-op (no schema), strip fallback (parse failure).",
+            "description": "Add a `stripWithSchema<T>()` helper function to `apps/api/src/utils/response-helpers.ts`. The function accepts `data: T` and `responseSchema?: ZodType`, calls `responseSchema.safeParse(data)` when schema is provided, returns stripped data on success, logs a warning and returns unstripped data on failure. Use `@repo/logger` for structured warning log. Export the function for testing.\n\nFiles: `apps/api/src/utils/response-helpers.ts`\nTests: Unit test in `apps/api/test/utils/response-helpers.test.ts` \u2014 test strip success, strip no-op (no schema), strip fallback (parse failure).",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-011"],
             "blocks": ["T-013", "T-014"],
             "subtasks": [
-                { "title": "Implement stripWithSchema function", "completed": true },
-                { "title": "Add structured warning log on safeParse failure", "completed": true },
-                { "title": "Write unit tests for all 3 paths", "completed": true }
+                {
+                    "title": "Implement stripWithSchema function",
+                    "completed": true
+                },
+                {
+                    "title": "Add structured warning log on safeParse failure",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for all 3 paths",
+                    "completed": true
+                }
             ],
             "tags": ["api", "phase-1"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-21T04:40:00.000Z",
@@ -414,13 +555,26 @@
                     "title": "Add responseSchema parameter to createResponse signature",
                     "completed": true
                 },
-                { "title": "Call stripWithSchema before envelope wrapping", "completed": true },
-                { "title": "Add JSDoc", "completed": true },
-                { "title": "Verify backward compatibility", "completed": true }
+                {
+                    "title": "Call stripWithSchema before envelope wrapping",
+                    "completed": true
+                },
+                {
+                    "title": "Add JSDoc",
+                    "completed": true
+                },
+                {
+                    "title": "Verify backward compatibility",
+                    "completed": true
+                }
             ],
             "tags": ["api", "phase-1"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-21T04:40:00.000Z",
@@ -444,7 +598,10 @@
                     "title": "Apply stripWithSchema to each item in items array",
                     "completed": true
                 },
-                { "title": "Add JSDoc noting stripping applies to items only", "completed": true },
+                {
+                    "title": "Add JSDoc noting stripping applies to items only",
+                    "completed": true
+                },
                 {
                     "title": "Test with populated items, empty items, and parse failure",
                     "completed": true
@@ -452,7 +609,11 @@
             ],
             "tags": ["api", "phase-1"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-21T04:40:00.000Z",
@@ -484,11 +645,18 @@
                     "title": "Verify tiered factories propagate responseSchema via spread",
                     "completed": true
                 },
-                { "title": "Run existing route tests", "completed": true }
+                {
+                    "title": "Run existing route tests",
+                    "completed": true
+                }
             ],
             "tags": ["api", "phase-1"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-21T04:40:00.000Z",
@@ -511,7 +679,11 @@
             ],
             "tags": ["api", "phase-1", "docs"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-21T04:40:00.000Z",
@@ -531,17 +703,30 @@
                     "title": "Set up test infrastructure (app instance, test data)",
                     "completed": true
                 },
-                { "title": "Test public list endpoints for field absence", "completed": true },
+                {
+                    "title": "Test public list endpoints for field absence",
+                    "completed": true
+                },
                 {
                     "title": "Test public getById/getBySlug endpoints for field absence",
                     "completed": true
                 },
-                { "title": "Test relation fields are tier-appropriate", "completed": true },
-                { "title": "Test empty response handling", "completed": true }
+                {
+                    "title": "Test relation fields are tier-appropriate",
+                    "completed": true
+                },
+                {
+                    "title": "Test empty response handling",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "phase-1"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-21T04:45:00.000Z",
@@ -565,7 +750,10 @@
                     "title": "Test protected endpoints include protected fields, exclude admin fields",
                     "completed": true
                 },
-                { "title": "Test admin endpoints include ALL fields", "completed": true },
+                {
+                    "title": "Test admin endpoints include ALL fields",
+                    "completed": true
+                },
                 {
                     "title": "Test admin endpoints with nullable fields (e.g., deletedById=null present)",
                     "completed": true
@@ -573,7 +761,11 @@
             ],
             "tags": ["testing", "phase-1"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-21T04:45:00.000Z",
@@ -589,13 +781,26 @@
             "blockedBy": ["T-015"],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "Construct scenario triggering safeParse failure", "completed": true },
-                { "title": "Assert response contains unstripped data", "completed": true },
-                { "title": "Assert warning log was emitted", "completed": true }
+                {
+                    "title": "Construct scenario triggering safeParse failure",
+                    "completed": true
+                },
+                {
+                    "title": "Assert response contains unstripped data",
+                    "completed": true
+                },
+                {
+                    "title": "Assert warning log was emitted",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "phase-1"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-21T04:45:00.000Z",
@@ -605,19 +810,28 @@
         {
             "id": "T-020",
             "title": "Run full test suite, fix regressions, and create route inventory",
-            "description": "Run `pnpm test` across the API to detect regressions from Phase 1 changes. Result: 2761 pass, 4 pre-existing failures in `admin-list-routes.test.ts` for AccommodationReview/DestinationReview (403 vs 200 — Hono sibling-route middleware collision, documented in project memory, unrelated to SPEC-062 stripping). New schema-stripping tests (unit + integration-style) all pass.",
+            "description": "Run `pnpm test` across the API to detect regressions from Phase 1 changes. Result: 2761 pass, 4 pre-existing failures in `admin-list-routes.test.ts` for AccommodationReview/DestinationReview (403 vs 200 \u2014 Hono sibling-route middleware collision, documented in project memory, unrelated to SPEC-062 stripping). New schema-stripping tests (unit + integration-style) all pass.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-016", "T-017", "T-018", "T-019"],
             "blocks": [],
             "subtasks": [
-                { "title": "Run pnpm typecheck", "completed": true },
-                { "title": "Run pnpm test", "completed": true },
+                {
+                    "title": "Run pnpm typecheck",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm test",
+                    "completed": true
+                },
                 {
                     "title": "Fix regression failures (update assertions for stripped fields)",
                     "completed": true
                 },
-                { "title": "Create route inventory with responseSchema count", "completed": true },
+                {
+                    "title": "Create route inventory with responseSchema count",
+                    "completed": true
+                },
                 {
                     "title": "Document c.json bypass routes as coverage boundary",
                     "completed": true
@@ -625,7 +839,11 @@
             ],
             "tags": ["verification", "phase-1"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-04-13T22:00:00.000Z",
                 "started": "2026-04-21T04:48:00.000Z",
@@ -640,5 +858,6 @@
         "completed": 20,
         "blocked": 0,
         "averageComplexity": 2.6
-    }
+    },
+    "updated_at": "2026-04-21"
 }
