@@ -6,6 +6,7 @@ import {
 } from '../../api/http/base-http.schema.js';
 import { createAverageRatingField } from '../../common/helpers.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
+import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { AccommodationReviewSchema } from './accommodationReview.schema.js';
 
@@ -29,6 +30,9 @@ export const AccommodationReviewFiltersSchema = z.object({
     // Entity relation filters
     accommodationId: z.string().uuid().optional(),
     userId: z.string().uuid().optional(),
+
+    // Lifecycle state filter (parity with Sponsorship / OwnerPromotion / DestinationReview)
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
 
     // Rating filters
     minRating: z.number().min(1).max(5).optional(),
@@ -88,6 +92,9 @@ export const AccommodationReviewSearchSchema = BaseSearchSchema.extend({
     // Entity relation filters (flattened from AccommodationReviewFiltersSchema)
     accommodationId: z.string().uuid().optional(),
     userId: z.string().uuid().optional(),
+
+    // Lifecycle state filter (parity with Sponsorship / OwnerPromotion / DestinationReview)
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
 
     // Rating filters
     minRating: z.number().min(1).max(5).optional(),

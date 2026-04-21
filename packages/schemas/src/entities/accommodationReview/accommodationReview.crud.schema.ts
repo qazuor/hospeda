@@ -43,8 +43,12 @@ export const AccommodationReviewCreateOutputSchema = AccommodationReviewSchema;
 // ============================================================================
 
 /**
- * Schema for updating an accommodation review (PUT - complete replacement)
- * Omits auto-generated fields and makes all fields partial
+ * Schema for updating an accommodation review (PUT - complete replacement).
+ * Omits auto-generated fields and makes all fields partial.
+ *
+ * SPEC-063-gaps T-017 (GAP-016, defense-in-depth): `.strict()` enforces that
+ * unknown keys are rejected at the route boundary with a 400 VALIDATION_ERROR
+ * instead of being silently dropped by the Hono zValidator middleware.
  */
 export const AccommodationReviewUpdateInputSchema = AccommodationReviewSchema.omit({
     id: true,
@@ -55,7 +59,9 @@ export const AccommodationReviewUpdateInputSchema = AccommodationReviewSchema.om
     deletedAt: true,
     deletedById: true,
     averageRating: true
-}).partial();
+})
+    .partial()
+    .strict();
 
 /**
  * Schema for partial accommodation review updates (PATCH)

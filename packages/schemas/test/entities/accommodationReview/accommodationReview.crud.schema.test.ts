@@ -202,20 +202,19 @@ describe('AccommodationReview CRUD Schemas', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should ignore auto-generated fields (they are omitted from schema)', () => {
+        it('should REJECT auto-generated fields when passed as input (strict mode, T-017)', () => {
+            // SPEC-063-gaps T-017 (GAP-016): .strict() changes the semantics from
+            // "silently drop unknown keys" to "reject with validation error", so
+            // the route boundary returns a 400 VALIDATION_ERROR instead of quietly
+            // ignoring the attacker's payload.
             const inputWithAutoFields = {
-                id: '123e4567-e89b-12d3-a456-426614174002', // Should be ignored
+                id: '123e4567-e89b-12d3-a456-426614174002', // omit() + .strict() → rejected
                 title: 'Updated title',
-                createdAt: new Date() // Should be ignored
+                createdAt: new Date() // omit() + .strict() → rejected
             };
 
             const result = AccommodationReviewUpdateInputSchema.safeParse(inputWithAutoFields);
-            expect(result.success).toBe(true);
-            // Verify that auto-generated fields are not in the result
-            if (result.success) {
-                expect(result.data).not.toHaveProperty('id');
-                expect(result.data).not.toHaveProperty('createdAt');
-            }
+            expect(result.success).toBe(false);
         });
 
         it('should accept lifecycleState in update input', () => {

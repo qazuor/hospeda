@@ -120,9 +120,13 @@ export const SponsorshipCreateInputSchema = SponsorshipSchema.omit({
 export type SponsorshipCreateInput = z.infer<typeof SponsorshipCreateInputSchema>;
 
 /**
- * Update input for sponsorship
+ * Update input for sponsorship.
+ *
+ * SPEC-063-gaps T-017 (GAP-016, AC-003-03): `.strict()` enforces that legacy keys
+ * (e.g. `status`) are rejected at the route boundary with a 400 VALIDATION_ERROR
+ * instead of being silently dropped by the Hono zValidator middleware.
  */
-export const SponsorshipUpdateInputSchema = SponsorshipCreateInputSchema.partial();
+export const SponsorshipUpdateInputSchema = SponsorshipCreateInputSchema.partial().strict();
 export type SponsorshipUpdateInput = z.infer<typeof SponsorshipUpdateInputSchema>;
 
 /**

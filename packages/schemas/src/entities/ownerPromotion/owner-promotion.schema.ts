@@ -103,9 +103,13 @@ export const OwnerPromotionCreateInputSchema = OwnerPromotionSchema.omit({
 export type OwnerPromotionCreateInput = z.infer<typeof OwnerPromotionCreateInputSchema>;
 
 /**
- * Update input for owner promotion
+ * Update input for owner promotion.
+ *
+ * SPEC-063-gaps T-017 (GAP-016, AC-002-02): `.strict()` enforces that legacy keys
+ * (e.g. `isActive`) are rejected at the route boundary with a 400 VALIDATION_ERROR
+ * instead of being silently dropped by the Hono zValidator middleware.
  */
-export const OwnerPromotionUpdateInputSchema = OwnerPromotionCreateInputSchema.partial();
+export const OwnerPromotionUpdateInputSchema = OwnerPromotionCreateInputSchema.partial().strict();
 export type OwnerPromotionUpdateInput = z.infer<typeof OwnerPromotionUpdateInputSchema>;
 
 /**

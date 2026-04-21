@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    AccommodationReviewFiltersSchema,
     AccommodationReviewListByAccommodationOutputSchema,
     AccommodationReviewListByAccommodationParamsSchema,
     AccommodationReviewListWithUserOutputSchema,
@@ -104,6 +105,47 @@ describe('AccommodationReview Query Schemas', () => {
             };
 
             const result = AccommodationReviewSearchParamsSchema.safeParse(invalidData);
+            expect(result.success).toBe(false);
+        });
+    });
+
+    describe('lifecycleState filter (GAP-013 / SPEC-063-gaps T-007)', () => {
+        it('accepts lifecycleState=ACTIVE in AccommodationReviewFiltersSchema', () => {
+            // Arrange
+            const validData = { lifecycleState: 'ACTIVE' as const };
+
+            // Act
+            const result = AccommodationReviewFiltersSchema.safeParse(validData);
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.lifecycleState).toBe('ACTIVE');
+            }
+        });
+
+        it('accepts lifecycleState=ARCHIVED in AccommodationReviewSearchParamsSchema (parity with peer entities)', () => {
+            // Arrange
+            const validData = { page: 1, lifecycleState: 'ARCHIVED' as const };
+
+            // Act
+            const result = AccommodationReviewSearchParamsSchema.safeParse(validData);
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.lifecycleState).toBe('ARCHIVED');
+            }
+        });
+
+        it('rejects invalid lifecycleState values', () => {
+            // Arrange
+            const invalidData = { lifecycleState: 'NOT_A_STATE' };
+
+            // Act
+            const result = AccommodationReviewFiltersSchema.safeParse(invalidData);
+
+            // Assert
             expect(result.success).toBe(false);
         });
     });
