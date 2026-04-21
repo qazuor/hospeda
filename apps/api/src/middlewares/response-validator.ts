@@ -1,7 +1,15 @@
 /**
  * Response Validator Middleware
- * Validates that API responses conform to the expected schema structure.
- * Helps catch malformed responses during development and optionally in production.
+ * Validates that API responses conform to the expected ENVELOPE schema structure
+ * (success/error/paginated envelope shape, pagination metadata, required fields).
+ *
+ * Field-level enforcement (stripping admin-only fields from public responses,
+ * tier-appropriate payloads, sensitive-field scrubbing) lives in the response
+ * helpers instead — see `stripWithSchema`, `createResponse`, and
+ * `createPaginatedResponse` in `apps/api/src/utils/response-helpers.ts`
+ * (SPEC-062). Routes opt into per-entity stripping by passing `responseSchema`
+ * to the route factories; this middleware continues to enforce the envelope
+ * contract and is unaffected by that flow.
  */
 
 import type { Context, MiddlewareHandler, Next } from 'hono';
