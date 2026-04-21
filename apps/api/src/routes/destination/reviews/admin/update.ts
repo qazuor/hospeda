@@ -25,9 +25,13 @@ export const adminUpdateDestinationReviewRoute = createAdminRoute({
     method: 'put',
     path: '/{id}',
     summary: 'Update destination review (admin)',
-    description: 'Updates any destination review. Admin only.',
+    description:
+        'Updates any destination review. Requires both DESTINATION_REVIEW_UPDATE and DESTINATION_REVIEW_MODERATE — reviews are moderated content (T-026 / GAP-036).',
     tags: ['Destination Reviews', 'Admin'],
-    requiredPermissions: [PermissionEnum.DESTINATION_REVIEW_UPDATE],
+    requiredPermissions: [
+        PermissionEnum.DESTINATION_REVIEW_UPDATE,
+        PermissionEnum.DESTINATION_REVIEW_MODERATE
+    ],
     requestParams: {
         id: DestinationReviewIdSchema
     },
