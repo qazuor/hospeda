@@ -2,6 +2,8 @@
  * Sponsor Dashboard Types
  */
 
+import type { SponsorshipStatusEnum } from '@repo/schemas';
+
 export interface SponsorSummary {
     activeSponsorships: number;
     totalImpressions: number;
@@ -47,7 +49,7 @@ export interface SponsorInvoice {
 }
 
 export interface SponsorshipFilters {
-    status?: string;
+    sponsorshipStatus?: SponsorshipStatusEnum;
     targetType?: string;
     page?: number;
     limit?: number;

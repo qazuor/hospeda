@@ -455,6 +455,7 @@
             "target": "Objetivo",
             "level": "Nível",
             "status": "Status",
+            "lifecycleState": "Ciclo de vida",
             "startsAt": "Início",
             "endsAt": "Fim",
             "actions": "Ações",

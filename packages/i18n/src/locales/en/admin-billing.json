@@ -455,6 +455,7 @@
             "target": "Target",
             "level": "Level",
             "status": "Status",
+            "lifecycleState": "Lifecycle",
             "startsAt": "Start",
             "endsAt": "End",
             "actions": "Actions",

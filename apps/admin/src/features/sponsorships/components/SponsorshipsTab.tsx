@@ -109,6 +109,30 @@ export function SponsorshipsTab() {
             ]
         },
         {
+            id: 'lifecycleState',
+            header: t('admin-billing.sponsorships.columns.lifecycleState'),
+            accessorKey: 'lifecycleState',
+            enableSorting: true,
+            columnType: ColumnType.BADGE,
+            badgeOptions: [
+                {
+                    value: LifecycleStatusEnum.DRAFT,
+                    label: t('admin-billing.sponsorships.lifecycle.draft'),
+                    color: BadgeColor.GRAY
+                },
+                {
+                    value: LifecycleStatusEnum.ACTIVE,
+                    label: t('admin-billing.sponsorships.lifecycle.active'),
+                    color: BadgeColor.GREEN
+                },
+                {
+                    value: LifecycleStatusEnum.ARCHIVED,
+                    label: t('admin-billing.sponsorships.lifecycle.archived'),
+                    color: BadgeColor.YELLOW
+                }
+            ]
+        },
+        {
             id: 'startsAt',
             header: t('admin-billing.sponsorships.columns.startsAt'),
             accessorKey: 'startsAt',
