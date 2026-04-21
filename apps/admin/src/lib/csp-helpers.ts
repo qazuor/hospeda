@@ -27,13 +27,17 @@ export function buildCspDirectives({
 
     const directives = [
         "default-src 'self'",
-        // 'nonce-{RANDOM}' for this request's scripts. 'strict-dynamic' extends trust
-        // to scripts loaded by nonced scripts. 'unsafe-eval' included as precaution for
-        // MercadoPago's optional antifraud script (security.js) which uses new Function().
+        // 'self' allows the admin's own bundled scripts (Vite ships everything self-hosted —
+        // no CDN script tags). 'nonce-{RANDOM}' for this request's inline scripts.
+        // 'strict-dynamic' extends trust to scripts loaded by nonced scripts.
+        // 'unsafe-eval' included as precaution for MercadoPago's optional antifraud script
+        // (security.js) which uses dynamic code evaluation internally.
         // Can be removed if @qazuor/qzpay-core does not load security.js.
         // 'unsafe-inline' ignored by CSP2+ when nonce is present (serves as CSP1 fallback).
-        // https: ignored by strict-dynamic (serves as CSP2 fallback).
-        `script-src 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' 'unsafe-inline' https:`,
+        // Previously included 'https:' as a CSP1 blanket fallback — removed because no
+        // external script CDNs are actually used (Sentry, MercadoPago, Vercel are all bundled
+        // via npm), and 'strict-dynamic' already neutralized it in CSP2+ browsers.
+        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' 'unsafe-inline'`,
         // 'unsafe-inline' required for Sentry Replay (rrweb uses inline style attributes).
         "style-src 'self' 'unsafe-inline'",
         "font-src 'self'",

@@ -140,4 +140,30 @@ describe('buildCspDirectives', () => {
         expect(imgSrc).toBeDefined();
         expect(imgSrc).toContain('blob:');
     });
+
+    it("script-src includes 'self' for Vite self-hosted bundles", () => {
+        // Arrange
+        const nonce = 'abc-self-test';
+
+        // Act
+        const result = buildCspDirectives({ nonce, sentryDsn: '' });
+        const scriptSrc = result.split('; ').find((d) => d.startsWith('script-src'));
+
+        // Assert
+        expect(scriptSrc).toBeDefined();
+        expect(scriptSrc).toContain("'self'");
+    });
+
+    it("script-src does NOT include the 'https:' blanket CDN fallback", () => {
+        // Arrange
+        const nonce = 'abc-no-https-test';
+
+        // Act
+        const result = buildCspDirectives({ nonce, sentryDsn: '' });
+        const scriptSrc = result.split('; ').find((d) => d.startsWith('script-src'));
+
+        // Assert — leading space prevents false matches against https://... URLs in other directives
+        expect(scriptSrc).toBeDefined();
+        expect(scriptSrc).not.toContain(' https:');
+    });
 });
