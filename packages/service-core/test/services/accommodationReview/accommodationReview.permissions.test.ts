@@ -103,12 +103,14 @@ describe('accommodationReview.permissions', () => {
     });
 
     describe('checkCanViewAccommodationReview', () => {
-        it('throws if actor is null', () => {
+        // T-034: the previous "if (!actor) throw" guard was unreachable via the
+        // non-nullable Actor type; checkCanView is now a no-op for any input.
+        it('does not throw even when actor is null (guard removed in T-034)', () => {
             expect(() =>
                 checkCanViewAccommodationReview(
                     null as unknown as import('../../../src/types').Actor
                 )
-            ).toThrow();
+            ).not.toThrow();
         });
         it('does not throw if actor has no specific permissions (public access)', () => {
             const actor = createActor({ permissions: [] });
