@@ -279,7 +279,7 @@ export const createSimpleRoute = (options: SimpleRouteInterface) => {
             if (result instanceof Response) {
                 return result;
             }
-            return createResponse(result, ctx, 200);
+            return createResponse(result, ctx, 200, options.responseSchema);
         } catch (error) {
             return handleRouteError(error, ctx);
         }
@@ -382,7 +382,7 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
                     return ctx.body(null, 204);
                 }
                 // Return 200 with body if DELETE returns content (e.g., deleted resource)
-                return createResponse(result, ctx, 200);
+                return createResponse(result, ctx, 200, options.responseSchema);
             }
 
             // Per-route override takes precedence over the method default.
@@ -390,7 +390,7 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
             // an upload may overwrite an existing asset (SPEC-078-GAPS T-029).
             const defaultStatusCode = options.method === 'post' ? 201 : 200;
             const statusCode = options.successStatusCode ?? defaultStatusCode;
-            return createResponse(result, ctx, statusCode);
+            return createResponse(result, ctx, statusCode, options.responseSchema);
         } catch (error) {
             return handleRouteError(error, ctx);
         }
@@ -482,7 +482,13 @@ export const createListRoute = (
                 throw new Error('Paginated result must have items and pagination properties');
             }
 
-            return createPaginatedResponse(typedResult.items, typedResult.pagination, ctx, 200);
+            return createPaginatedResponse(
+                typedResult.items,
+                typedResult.pagination,
+                ctx,
+                200,
+                options.responseSchema
+            );
         } catch (error) {
             return handleRouteError(error, ctx);
         }
