@@ -72,28 +72,14 @@ describe('feature.permissions', () => {
         expect(() => checkCanViewFeature(actorNoPerm, dummyFeature)).not.toThrow();
     });
 
-    it('checkCanListFeatures allows with permission', () => {
+    it('checkCanListFeatures always allows', () => {
         expect(() => checkCanListFeatures(actorWithPerm)).not.toThrow();
-    });
-    it('checkCanListFeatures throws FORBIDDEN without permission', () => {
-        try {
-            checkCanListFeatures(actorNoPerm);
-            throw new Error('Should have thrown');
-        } catch (err: unknown) {
-            expectForbiddenError(err);
-        }
+        expect(() => checkCanListFeatures(actorNoPerm)).not.toThrow();
     });
 
-    it('checkCanCountFeatures allows with permission', () => {
+    it('checkCanCountFeatures always allows', () => {
         expect(() => checkCanCountFeatures(actorWithPerm)).not.toThrow();
-    });
-    it('checkCanCountFeatures throws FORBIDDEN without permission', () => {
-        try {
-            checkCanCountFeatures(actorNoPerm);
-            throw new Error('Should have thrown');
-        } catch (err: unknown) {
-            expectForbiddenError(err);
-        }
+        expect(() => checkCanCountFeatures(actorNoPerm)).not.toThrow();
     });
 
     it('checkCanAddFeatureToAccommodation allows with permission', () => {

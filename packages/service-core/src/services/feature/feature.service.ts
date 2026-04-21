@@ -30,6 +30,8 @@ import {
     checkCanCountFeatures,
     checkCanCreateFeature,
     checkCanDeleteFeature,
+    checkCanGetAccommodationsByFeature,
+    checkCanGetFeaturesForAccommodation,
     checkCanListFeatures,
     checkCanRemoveFeatureFromAccommodation,
     checkCanUpdateFeature,
@@ -390,7 +392,7 @@ export class FeatureService extends BaseCrudRelatedService<
             schema: GetFeaturesForAccommodationSchema,
             ctx,
             execute: async (validatedParams, actor) => {
-                await this._canList(actor);
+                checkCanGetFeaturesForAccommodation(actor);
                 const { accommodationId } = validatedParams;
                 // Single query with JOIN instead of 2 sequential queries
                 const { items: relationsWithFeature } =
@@ -427,7 +429,7 @@ export class FeatureService extends BaseCrudRelatedService<
             schema: GetAccommodationsByFeatureSchema,
             ctx,
             execute: async (validatedParams, actor) => {
-                await this._canList(actor);
+                checkCanGetAccommodationsByFeature(actor);
                 const { featureId } = validatedParams;
                 const feature = await this.model.findOne({ id: featureId as FeatureIdType });
                 if (!feature) {

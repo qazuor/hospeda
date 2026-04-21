@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { FeatureService } from '../../../src/services/feature/feature.service';
 import type { Actor } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
-import { expectForbiddenError, expectInternalError, expectSuccess } from '../../helpers/assertions';
+import { expectInternalError, expectSuccess } from '../../helpers/assertions';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
 describe('FeatureService.count', () => {
@@ -31,11 +31,11 @@ describe('FeatureService.count', () => {
         expect(result.data?.count).toBe(1);
     });
 
-    it('should return FORBIDDEN if actor lacks ACCOMMODATION_FEATURES_EDIT permission', async () => {
+    it('should allow counting features without any permission (public endpoint)', async () => {
         actor = createActor({ permissions: [] });
         featureModelMock.count.mockResolvedValue(1);
         const result = await service.count(actor, countParams);
-        expectForbiddenError(result);
+        expectSuccess(result);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {

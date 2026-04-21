@@ -5,7 +5,7 @@ import { FeatureService } from '../../../src/services/feature/feature.service';
 import type { Actor } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { FeatureFactoryBuilder } from '../../factories/featureFactory';
-import { expectForbiddenError, expectInternalError, expectSuccess } from '../../helpers/assertions';
+import { expectInternalError, expectSuccess } from '../../helpers/assertions';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
 describe('FeatureService.search', () => {
@@ -35,11 +35,11 @@ describe('FeatureService.search', () => {
         expect(result.data?.total).toBe(1);
     });
 
-    it('should return FORBIDDEN if actor lacks ACCOMMODATION_FEATURES_EDIT permission', async () => {
+    it('should allow searching features without any permission (public endpoint)', async () => {
         actor = createActor({ permissions: [] });
         featureModelMock.findAll.mockResolvedValue(paginated);
         const result = await service.search(actor, searchParams);
-        expectForbiddenError(result);
+        expectSuccess(result);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
