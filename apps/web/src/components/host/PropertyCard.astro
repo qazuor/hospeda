@@ -1,0 +1,391 @@
+---
+/**
+ * @file PropertyCard.astro
+ * @description Reusable card displaying a host's property with status badge and actions.
+ * Shows thumbnail image, name, status badge (with color coding), location, price per night,
+ * and contextual action links (edit, view on site, publish, unpublish).
+ *
+ * Status badge mapping:
+ * - DRAFT    → amber background  → i18n key `host.properties.card.status.DRAFT`
+ * - ACTIVE   → green background  → i18n key `host.properties.card.status.PUBLISHED` (user-facing label)
+ * - ARCHIVED → red background    → i18n key `host.properties.card.status.SUSPENDED`
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import type { SupportedLocale } from '@/lib/i18n';
+import type { Accommodation } from '@repo/schemas';
+import { LifecycleStatusEnum } from '@repo/schemas';
+
+/**
+ * Props for the PropertyCard component.
+ */
+export interface Props {
+    /** The accommodation entity to display. */
+    readonly property: Accommodation;
+    /** Current locale for i18n and URL building. */
+    readonly locale: SupportedLocale;
+}
+
+const { property, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+/** Resolve thumbnail: first gallery image url, or featured image url, or placeholder. */
+const thumbnailUrl: string =
+    property.media?.gallery?.[0]?.url ??
+    property.media?.featuredImage?.url ??
+    '/assets/images/placeholder-accommodation.svg';
+
+const thumbnailAlt: string =
+    property.media?.gallery?.[0]?.caption ??
+    property.media?.featuredImage?.caption ??
+    property.name;
+
+/** Status badge label and CSS modifier class. */
+const lifecycleState = property.lifecycleState;
+
+type BadgeVariant = 'amber' | 'green' | 'red';
+
+const STATUS_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
+    [LifecycleStatusEnum.DRAFT]: {
+        label: t('host.properties.card.status.DRAFT', 'Borrador'),
+        variant: 'amber'
+    },
+    [LifecycleStatusEnum.ACTIVE]: {
+        label: t('host.properties.card.status.PUBLISHED', 'Publicada'),
+        variant: 'green'
+    },
+    [LifecycleStatusEnum.ARCHIVED]: {
+        label: t('host.properties.card.status.SUSPENDED', 'Suspendida'),
+        variant: 'red'
+    }
+};
+
+const statusInfo = STATUS_MAP[lifecycleState] ?? {
+    label: lifecycleState,
+    variant: 'amber' as BadgeVariant
+};
+
+/** Location string: "city, country" — show only available parts. */
+const locationParts: string[] = [];
+if (property.location?.city) {
+    locationParts.push(property.location.city);
+}
+if (property.location?.country) {
+    locationParts.push(property.location.country);
+}
+const locationText = locationParts.join(', ');
+
+/** Price display: show only if both price and currency are available. */
+const hasPrice = property.price?.price != null && property.price?.currency != null;
+const priceText = hasPrice
+    ? `${property.price?.currency} ${property.price?.price}`
+    : null;
+const pricePerNightLabel = t('host.properties.card.pricePerNight', 'por noche');
+
+/** Action URLs. */
+const editUrl = buildUrl({ locale, path: `mi-cuenta/propiedades/${property.id}/editar` });
+const viewOnSiteUrl = buildUrl({ locale, path: `alojamientos/${property.slug}` });
+const unpublishUrl = buildUrl({
+    locale,
+    path: `mi-cuenta/propiedades/${property.id}?action=unpublish`
+});
+const publishUrl = buildUrl({
+    locale,
+    path: `mi-cuenta/propiedades/${property.id}/editar?action=publish`
+});
+
+const isActive = lifecycleState === LifecycleStatusEnum.ACTIVE;
+const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
+---
+
+<article class="prop-card">
+    <!-- THUMBNAIL -->
+    <div class="prop-card__image-wrapper">
+        <img
+            src={thumbnailUrl}
+            alt={thumbnailAlt}
+            width="400"
+            height="220"
+            loading="lazy"
+            decoding="async"
+            class="prop-card__img"
+        />
+
+        <!-- STATUS BADGE overlaid on the image (top-left) -->
+        <span
+            class={`prop-card__status-badge prop-card__status-badge--${statusInfo.variant}`}
+            aria-label={statusInfo.label}
+        >
+            {statusInfo.label}
+        </span>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="prop-card__content">
+        <h3 class="prop-card__name">{property.name}</h3>
+
+        {locationText && (
+            <p class="prop-card__location">
+                <span aria-hidden="true">📍</span>
+                {locationText}
+            </p>
+        )}
+
+        {priceText && (
+            <p class="prop-card__price">
+                <span class="prop-card__price-value">{priceText}</span>
+                <span class="prop-card__price-label">{pricePerNightLabel}</span>
+            </p>
+        )}
+
+        <!-- ACTIONS -->
+        <div class="prop-card__actions" role="group" aria-label={property.name}>
+            <!-- Edit: always visible -->
+            <a href={editUrl} class="prop-card__action prop-card__action--primary">
+                {t('host.properties.card.actions.edit', 'Editar')}
+            </a>
+
+            <!-- View on site: only when ACTIVE -->
+            {isActive && (
+                <a
+                    href={viewOnSiteUrl}
+                    class="prop-card__action prop-card__action--secondary"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    {t('host.properties.card.actions.viewOnSite', 'Ver en el sitio')}
+                </a>
+            )}
+
+            <!-- Unpublish: only when ACTIVE -->
+            {isActive && (
+                <a href={unpublishUrl} class="prop-card__action prop-card__action--danger">
+                    {t('host.properties.card.actions.unpublish', 'Despublicar')}
+                </a>
+            )}
+
+            <!-- Publish: only when DRAFT -->
+            {isDraft && (
+                <a href={publishUrl} class="prop-card__action prop-card__action--secondary">
+                    {t('host.properties.card.actions.publish', 'Publicar')}
+                </a>
+            )}
+        </div>
+    </div>
+</article>
+
+<style>
+    .prop-card {
+        background-color: var(--core-card, var(--card));
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card, 24px);
+        box-shadow: var(--shadow-card);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        transition: box-shadow 200ms ease-out, transform 200ms ease-out;
+    }
+
+    .prop-card:hover {
+        box-shadow: var(--shadow-card-hover);
+        transform: translateY(-2px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .prop-card,
+        .prop-card:hover {
+            transform: none;
+            transition: none;
+        }
+    }
+
+    /* IMAGE AREA */
+    .prop-card__image-wrapper {
+        position: relative;
+        height: clamp(160px, 28vw, 220px);
+        overflow: hidden;
+        background-color: var(--muted, oklch(0.96 0.01 60));
+    }
+
+    .prop-card__img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 200ms ease-out;
+        display: block;
+    }
+
+    .prop-card:hover .prop-card__img {
+        transform: scale(1.05);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .prop-card:hover .prop-card__img {
+            transform: none;
+        }
+    }
+
+    /* STATUS BADGE */
+    .prop-card__status-badge {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: var(--radius-pill, 9999px);
+        font-family: var(--font-sans);
+        font-weight: 700;
+        font-size: 11px;
+        line-height: 1.4;
+        white-space: nowrap;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: var(--primary-foreground, #ffffff);
+        /* Default backdrop in case variant classes don't apply */
+        background-color: oklch(0.6 0.15 60);
+    }
+
+    .prop-card__status-badge--amber {
+        background-color: oklch(0.72 0.17 65);
+        color: oklch(0.25 0.06 65);
+    }
+
+    .prop-card__status-badge--green {
+        background-color: oklch(0.55 0.18 145);
+        color: #ffffff;
+    }
+
+    .prop-card__status-badge--red {
+        background-color: oklch(0.55 0.22 25);
+        color: #ffffff;
+    }
+
+    /* CONTENT AREA */
+    .prop-card__content {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex: 1;
+    }
+
+    /* NAME */
+    .prop-card__name {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(0.9375rem, 0.4vw + 0.875rem, 1.125rem);
+        line-height: 1.35;
+        color: var(--core-foreground, var(--foreground));
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* LOCATION */
+    .prop-card__location {
+        font-family: var(--font-sans);
+        font-size: 0.8125rem;
+        color: var(--core-muted-foreground, var(--muted-foreground));
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* PRICE */
+    .prop-card__price {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+        margin: 0;
+    }
+
+    .prop-card__price-value {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--brand-accent, var(--accent));
+    }
+
+    .prop-card__price-label {
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        color: var(--core-muted-foreground, var(--muted-foreground));
+    }
+
+    /* ACTIONS */
+    .prop-card__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 4px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+    }
+
+    .prop-card__action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 8px 14px;
+        border-radius: var(--radius-pill, 9999px);
+        font-family: var(--font-sans);
+        font-weight: 500;
+        font-size: 0.8125rem;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: opacity 150ms ease-out, background-color 150ms ease-out;
+        cursor: pointer;
+    }
+
+    .prop-card__action:focus-visible {
+        outline: 2px solid var(--brand-primary, var(--primary));
+        outline-offset: 2px;
+    }
+
+    .prop-card__action--primary {
+        background-color: var(--brand-primary, var(--primary));
+        color: var(--primary-foreground, #ffffff);
+    }
+
+    .prop-card__action--primary:hover {
+        opacity: 0.88;
+    }
+
+    .prop-card__action--secondary {
+        background-color: var(--surface-warm, oklch(0.96 0.02 60));
+        color: var(--core-foreground, var(--foreground));
+        border: 1px solid var(--border);
+    }
+
+    .prop-card__action--secondary:hover {
+        background-color: var(--muted, oklch(0.93 0.01 60));
+    }
+
+    .prop-card__action--danger {
+        background-color: oklch(0.96 0.02 25);
+        color: oklch(0.45 0.20 25);
+        border: 1px solid oklch(0.88 0.06 25);
+    }
+
+    .prop-card__action--danger:hover {
+        background-color: oklch(0.92 0.04 25);
+    }
+
+    @media (max-width: 360px) {
+        .prop-card__actions {
+            flex-direction: column;
+        }
+
+        .prop-card__action {
+            width: 100%;
+        }
+    }
+</style>

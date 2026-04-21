@@ -1,0 +1,172 @@
+/* PropertyFormSection.module.css
+ * Scoped styles for the PropertyFormSection React island.
+ * All values reference design tokens from global.css — no hardcoded colours. */
+
+/* ---------------------------------------------------------------------------
+ * Outer wrapper — one section block
+ * ------------------------------------------------------------------------- */
+
+.section {
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-card, 24px);
+    background-color: var(--card, oklch(1 0 0));
+    overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+ * Header / toggle button
+ * ------------------------------------------------------------------------- */
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    width: 100%;
+    min-height: 44px;
+    padding: var(--space-4, 16px) var(--space-5, 20px);
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid transparent;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color var(--duration-normal, 0.4s) ease;
+}
+
+.header:hover {
+    background-color: oklch(from var(--primary, oklch(0.5 0.18 260)) l c h / 0.04);
+}
+
+.header:focus-visible {
+    outline: 2px solid var(--primary, oklch(0.5 0.18 260));
+    outline-offset: -2px;
+}
+
+/* When expanded, show bottom border to separate header from content */
+.headerExpanded {
+    border-bottom-color: var(--border, oklch(0.8 0 0));
+}
+
+/* ---------------------------------------------------------------------------
+ * Title row inside the header
+ * ------------------------------------------------------------------------- */
+
+.titleRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    flex: 1;
+    min-width: 0;
+}
+
+.title {
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--foreground, oklch(0.15 0 0));
+    margin: 0;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------------------------
+ * Completion badge — green check when section is complete
+ * ------------------------------------------------------------------------- */
+
+.completeBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: oklch(0.6 0.17 145); /* success green */
+    color: white;
+    font-size: 0.7rem;
+    line-height: 1;
+    flex-shrink: 0;
+    aria-hidden: true;
+}
+
+.incompleteBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--surface-warm, oklch(0.97 0.01 60));
+    border: 1.5px solid var(--border, oklch(0.8 0 0));
+    color: var(--muted-foreground, oklch(0.55 0 0));
+    font-size: 0.65rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Chevron icon
+ * ------------------------------------------------------------------------- */
+
+.chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    flex-shrink: 0;
+    color: var(--muted-foreground, oklch(0.55 0 0));
+    transition: transform var(--duration-normal, 0.4s) ease;
+}
+
+.chevronExpanded {
+    transform: rotate(180deg);
+}
+
+/* ---------------------------------------------------------------------------
+ * Collapsible content area
+ * ------------------------------------------------------------------------- */
+
+.content {
+    padding: var(--space-5, 20px) var(--space-5, 20px) var(--space-6, 24px);
+}
+
+.contentHidden {
+    display: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * Fieldset inside content — semantic grouping
+ * ------------------------------------------------------------------------- */
+
+.fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+}
+
+.legend {
+    /* Visually hidden — sección ya tiene título visible en el header */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Reduced motion
+ * ------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .chevron {
+        transition: none;
+    }
+
+    .header {
+        transition: none;
+    }
+}

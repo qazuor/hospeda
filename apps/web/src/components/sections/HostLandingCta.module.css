@@ -1,0 +1,75 @@
+/**
+ * HostLandingCta.module.css
+ * Scoped styles for the auth-aware CTA island on the host landing page.
+ * Uses design tokens from global.css — no hardcoded values.
+ */
+
+.ctaWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+
+@media (min-width: 480px) {
+    .ctaWrapper {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+}
+
+/* Primary CTA — mirrors .btn-gradient--primary from components.css */
+.primaryBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-6);
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark, var(--brand-primary)));
+    color: #fff;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-lg);
+    font-weight: 600;
+    border-radius: var(--radius-pill);
+    text-decoration: none;
+    transition: opacity var(--duration-normal) ease, transform var(--duration-normal) ease;
+}
+
+.primaryBtn:hover,
+.primaryBtn:focus-visible {
+    opacity: 0.88;
+    transform: translateY(-1px);
+}
+
+.primaryBtn:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 3px;
+}
+
+.btnArrow {
+    font-size: 1.1em;
+    line-height: 1;
+}
+
+/* Secondary link — subtle, only visible when authenticated */
+.secondaryLink {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    color: var(--brand-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color var(--duration-normal) ease;
+}
+
+.secondaryLink:hover,
+.secondaryLink:focus-visible {
+    color: var(--accent);
+}
+
+.secondaryLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 3px;
+    border-radius: 2px;
+}
