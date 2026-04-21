@@ -1,0 +1,644 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-062",
+    "title": "Runtime Response Schema Enforcement",
+    "created": "2026-04-13T22:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Extend Post access schemas with relation fields",
+            "description": "Extend PostPublicSchema, PostProtectedSchema, and PostAdminSchema in `packages/schemas/src/entities/post/post.access.schema.ts` to include 5 relation fields: `author` (UserPublicSchema), `relatedAccommodation` (AccommodationPublicSchema), `relatedDestination` (DestinationPublicSchema), `relatedEvent` (EventPublicSchema), and `sponsorship` (PostSponsorshipPublicSchema.extend({ sponsor: UserPublicSchema.optional() })). All relation fields must be `.optional()`. Each tier uses tier-appropriate schemas (Public→*PublicSchema, Protected→*ProtectedSchema, Admin→*AdminSchema). Watch for circular references between Post↔User — use getter properties if needed (Zod v4 preferred pattern). The `import type { z }` must become `import { z }` to use `.extend()`. Run boundary tests after changes.\n\nFiles: `packages/schemas/src/entities/post/post.access.schema.ts`\nTests: Run `pnpm test -- packages/schemas/test/entities/access-boundary/access-boundary.test.ts`",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Import relation schemas (User, Accommodation, Destination, Event, PostSponsorship)",
+                    "completed": true
+                },
+                {
+                    "title": "Extend PublicSchema with 5 relation fields using *PublicSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Extend ProtectedSchema with 5 relation fields using *ProtectedSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Extend AdminSchema with 5 relation fields using *AdminSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Handle nested sponsorship→sponsor at each tier level",
+                    "completed": true
+                },
+                { "title": "Check for circular references (Post↔User)", "completed": true },
+                { "title": "Run boundary tests", "completed": true }
+            ],
+            "tags": ["schemas", "phase-0"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-13T22:10:00.000Z",
+                "completed": "2026-04-13T22:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Extend Accommodation access schemas with destination relation",
+            "description": "Extend AccommodationPublicSchema, AccommodationProtectedSchema, and AccommodationAdminSchema in `packages/schemas/src/entities/accommodation/accommodation.access.schema.ts` to include `destination` relation field. Public tier already has `owner`, `amenities`, `features`, `faqs` via `.extend()`. Only `destination: DestinationPublicSchema.optional()` is missing. Protected tier needs `destination` added too. Verify dynamic relations (`amenities`, `features` arrays) already exist. Each tier uses tier-appropriate Destination schema.\n\nFiles: `packages/schemas/src/entities/accommodation/accommodation.access.schema.ts`\nTests: Run boundary tests after changes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Import DestinationPublicSchema, DestinationProtectedSchema, DestinationAdminSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Add destination relation to PublicSchema .extend()",
+                    "completed": true
+                },
+                { "title": "Add destination relation to ProtectedSchema", "completed": true },
+                { "title": "Add destination relation to AdminSchema", "completed": true },
+                { "title": "Verify amenities/features arrays already present", "completed": true },
+                { "title": "Run boundary tests", "completed": true }
+            ],
+            "tags": ["schemas", "phase-0"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-13T22:10:00.000Z",
+                "completed": "2026-04-13T22:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Extend AccommodationReview access schemas with relation fields",
+            "description": "Extend AccommodationReviewPublicSchema, AccommodationReviewProtectedSchema, and AccommodationReviewAdminSchema in `packages/schemas/src/entities/accommodationReview/accommodationReview.access.schema.ts` to include `user` and `accommodation` relation fields. All `.optional()`. Each tier uses tier-appropriate schemas. Change `import type { z }` to `import { z }` for `.extend()` usage.\n\nFiles: `packages/schemas/src/entities/accommodationReview/accommodationReview.access.schema.ts`\nTests: Run boundary tests after changes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "subtasks": [
+                { "title": "Import User and Accommodation access schemas", "completed": true },
+                {
+                    "title": "Extend PublicSchema with user and accommodation relations",
+                    "completed": true
+                },
+                {
+                    "title": "Extend ProtectedSchema with user and accommodation relations",
+                    "completed": true
+                },
+                {
+                    "title": "Extend AdminSchema with user and accommodation relations",
+                    "completed": true
+                },
+                { "title": "Run boundary tests", "completed": true }
+            ],
+            "tags": ["schemas", "phase-0"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-13T22:10:00.000Z",
+                "completed": "2026-04-13T22:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Extend DestinationReview access schemas with relation fields and preemptive lifecycleState",
+            "description": "Extend DestinationReviewPublicSchema, DestinationReviewProtectedSchema, and DestinationReviewAdminSchema in `packages/schemas/src/entities/destinationReview/destinationReview.access.schema.ts` to include `user` and `destination` relation fields. All `.optional()`. Additionally, preemptively add `lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()` to AdminSchema ONLY (for forward compatibility with SPEC-063). Do NOT add lifecycleState to Public or Protected schemas. Change `import type { z }` to `import { z }`.\n\nFiles: `packages/schemas/src/entities/destinationReview/destinationReview.access.schema.ts`\nTests: Run boundary tests after changes.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "subtasks": [
+                { "title": "Import User and Destination access schemas", "completed": true },
+                { "title": "Import LifecycleStatusEnum", "completed": true },
+                {
+                    "title": "Extend PublicSchema with user and destination relations",
+                    "completed": true
+                },
+                {
+                    "title": "Extend ProtectedSchema with user and destination relations",
+                    "completed": true
+                },
+                {
+                    "title": "Extend AdminSchema with user, destination relations AND lifecycleState",
+                    "completed": true
+                },
+                { "title": "Run boundary tests", "completed": true }
+            ],
+            "tags": ["schemas", "phase-0", "spec-063-prep"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-13T22:10:00.000Z",
+                "completed": "2026-04-13T22:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Extend PostSponsorship access schemas with relation fields",
+            "description": "Extend PostSponsorshipPublicSchema, PostSponsorshipProtectedSchema, and PostSponsorshipAdminSchema in `packages/schemas/src/entities/postSponsorship/postSponsorship.access.schema.ts` to include `post` and `sponsor` relation fields. All `.optional()`. Each tier uses tier-appropriate schemas (Post*Schema, User*Schema). Change `import type { z }` to `import { z }`.\n\nFiles: `packages/schemas/src/entities/postSponsorship/postSponsorship.access.schema.ts`\nTests: Run boundary tests after changes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "subtasks": [
+                { "title": "Import Post and User access schemas", "completed": true },
+                {
+                    "title": "Extend PublicSchema with post and sponsor relations",
+                    "completed": true
+                },
+                {
+                    "title": "Extend ProtectedSchema with post and sponsor relations",
+                    "completed": true
+                },
+                {
+                    "title": "Extend AdminSchema with post and sponsor relations",
+                    "completed": true
+                },
+                { "title": "Run boundary tests", "completed": true }
+            ],
+            "tags": ["schemas", "phase-0"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-13T22:10:00.000Z",
+                "completed": "2026-04-13T22:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Extend UserBookmark access schemas with user relation field",
+            "description": "Extend UserBookmarkPublicSchema, UserBookmarkProtectedSchema, and UserBookmarkAdminSchema in `packages/schemas/src/entities/userBookmark/userBookmark.access.schema.ts` to include `user` relation field. `.optional()`. Each tier uses tier-appropriate User schema. Change `import type { z }` to `import { z }`.\n\nFiles: `packages/schemas/src/entities/userBookmark/userBookmark.access.schema.ts`\nTests: Run boundary tests after changes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "subtasks": [
+                { "title": "Import User access schemas", "completed": true },
+                { "title": "Extend all 3 tier schemas with user relation", "completed": true },
+                { "title": "Run boundary tests", "completed": true }
+            ],
+            "tags": ["schemas", "phase-0"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-13T22:10:00.000Z",
+                "completed": "2026-04-13T22:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Extend OwnerPromotion access schemas with relation fields and preemptive lifecycleState",
+            "description": "Extend OwnerPromotionPublicSchema, OwnerPromotionProtectedSchema, and OwnerPromotionAdminSchema in `packages/schemas/src/entities/ownerPromotion/owner-promotion.access.schema.ts` to include `owner` (User*Schema) and `accommodation` (Accommodation*Schema) relation fields. All `.optional()`. Additionally, preemptively add `lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()` to AdminSchema ONLY (for SPEC-063 forward compatibility). Change `import type { z }` to `import { z }`.\n\nFiles: `packages/schemas/src/entities/ownerPromotion/owner-promotion.access.schema.ts`\nTests: Run boundary tests after changes.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "subtasks": [
+                { "title": "Import User and Accommodation access schemas", "completed": true },
+                { "title": "Import LifecycleStatusEnum", "completed": true },
+                {
+                    "title": "Extend PublicSchema with owner and accommodation relations",
+                    "completed": true
+                },
+                {
+                    "title": "Extend ProtectedSchema with owner and accommodation relations",
+                    "completed": true
+                },
+                {
+                    "title": "Extend AdminSchema with owner, accommodation relations AND lifecycleState",
+                    "completed": true
+                },
+                { "title": "Run boundary tests", "completed": true }
+            ],
+            "tags": ["schemas", "phase-0", "spec-063-prep"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-13T22:10:00.000Z",
+                "completed": "2026-04-13T22:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Extend Sponsorship access schemas with relation fields and preemptive lifecycleState",
+            "description": "Extend SponsorshipPublicSchema, SponsorshipProtectedSchema, and SponsorshipAdminSchema in `packages/schemas/src/entities/sponsorship/sponsorship.access.schema.ts` to include `sponsorUser` (User*Schema), `level`, and `package` relation fields. Note: SponsorshipLevel and SponsorshipPackage do NOT have access schema files, so use their base schemas directly (e.g., `SponsorshipLevelSchema.optional()`, `SponsorshipPackageSchema.optional()`). Additionally, preemptively add `lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()` to AdminSchema ONLY. Change `import type { z }` to `import { z }`.\n\nFiles: `packages/schemas/src/entities/sponsorship/sponsorship.access.schema.ts`\nTests: Run boundary tests after changes.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Import User access schemas and SponsorshipLevel/Package base schemas",
+                    "completed": true
+                },
+                { "title": "Import LifecycleStatusEnum", "completed": true },
+                {
+                    "title": "Extend PublicSchema with sponsorUser, level, package relations",
+                    "completed": true
+                },
+                {
+                    "title": "Extend ProtectedSchema with sponsorUser, level, package relations",
+                    "completed": true
+                },
+                {
+                    "title": "Extend AdminSchema with relations AND lifecycleState",
+                    "completed": true
+                },
+                { "title": "Run boundary tests", "completed": true }
+            ],
+            "tags": ["schemas", "phase-0", "spec-063-prep"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-13T22:10:00.000Z",
+                "completed": "2026-04-13T22:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Extend Event access schemas with relation fields",
+            "description": "Extend EventPublicSchema, EventProtectedSchema, and EventAdminSchema in `packages/schemas/src/entities/event/event.access.schema.ts` to include `organizer` (EventOrganizer*Schema) and `location` (EventLocation*Schema) relation fields. All `.optional()`. Each tier uses tier-appropriate schemas. Change `import type { z }` to `import { z }`.\n\nFiles: `packages/schemas/src/entities/event/event.access.schema.ts`\nTests: Run boundary tests after changes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Import EventOrganizer and EventLocation access schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Extend PublicSchema with organizer and location relations",
+                    "completed": true
+                },
+                {
+                    "title": "Extend ProtectedSchema with organizer and location relations",
+                    "completed": true
+                },
+                {
+                    "title": "Extend AdminSchema with organizer and location relations",
+                    "completed": true
+                },
+                { "title": "Run boundary tests", "completed": true }
+            ],
+            "tags": ["schemas", "phase-0"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-13T22:10:00.000Z",
+                "completed": "2026-04-13T22:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Enhance boundary tests with explicit sensitive field absence assertions",
+            "description": "Update `packages/schemas/test/entities/access-boundary/access-boundary.test.ts` to add explicit absence assertions for ALL sensitive fields from the 'Sensitive Fields at Risk' table: `createdById`, `updatedById`, `deletedById`, `deletedAt`, `adminInfo`, `notes`, `lifecycleState`, `paymentId`. For each of the 23 schema sets, verify that PublicSchema strips admin fields, ProtectedSchema strips admin-only fields, and AdminSchema retains all fields. Also verify that the newly added relation fields from T-001 through T-009 are correctly handled (present when data provided, absent when not). Ensure test uses `expect(parsed.fieldName).toBeUndefined()` pattern for absence.\n\nFiles: `packages/schemas/test/entities/access-boundary/access-boundary.test.ts`\nTests: Run `pnpm test -- packages/schemas/test/entities/access-boundary/`",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": [
+                "T-001",
+                "T-002",
+                "T-003",
+                "T-004",
+                "T-005",
+                "T-006",
+                "T-007",
+                "T-008",
+                "T-009"
+            ],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Add createdById/updatedById/deletedById/deletedAt absence assertions to all 23 Public schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Add adminInfo absence assertions to 15 applicable Public schemas",
+                    "completed": true
+                },
+                { "title": "Add notes absence assertion to Tag Public schema", "completed": true },
+                {
+                    "title": "Add lifecycleState absence assertion to applicable Public schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Add paymentId absence assertion to Sponsorship Public schema",
+                    "completed": true
+                },
+                { "title": "Add Protected tier admin-field absence assertions", "completed": true },
+                {
+                    "title": "Verify AdminSchema retains all fields including new relations",
+                    "completed": true
+                },
+                { "title": "Run all boundary tests", "completed": true }
+            ],
+            "tags": ["testing", "phase-0"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-13T22:20:00.000Z",
+                "completed": "2026-04-13T22:35:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Run full typecheck and test suite for Phase 0 verification",
+            "description": "Run `pnpm typecheck && pnpm test` to verify all Phase 0 changes pass. Fix any type errors or test failures. This is the final quality gate before Phase 0 can be merged. After this task, Phase 0 is complete. Do NOT proceed to Phase 1 — it is blocked until SPEC-063 and SPEC-066 are merged.\n\nCommands: `pnpm typecheck && pnpm test`",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                { "title": "Run pnpm typecheck", "completed": true },
+                { "title": "Run pnpm test", "completed": true },
+                { "title": "Fix any failures", "completed": true }
+            ],
+            "tags": ["verification", "phase-0"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-13T22:35:00.000Z",
+                "completed": "2026-04-13T22:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Add stripWithSchema utility function to response-helpers.ts",
+            "description": "Add a `stripWithSchema<T>()` helper function to `apps/api/src/utils/response-helpers.ts`. The function accepts `data: T` and `responseSchema?: ZodType`, calls `responseSchema.safeParse(data)` when schema is provided, returns stripped data on success, logs a warning and returns unstripped data on failure. Use `@repo/logger` for structured warning log. Export the function for testing.\n\nFiles: `apps/api/src/utils/response-helpers.ts`\nTests: Unit test in `apps/api/test/utils/response-helpers.test.ts` — test strip success, strip no-op (no schema), strip fallback (parse failure).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-013", "T-014"],
+            "subtasks": [
+                { "title": "Implement stripWithSchema function", "completed": true },
+                { "title": "Add structured warning log on safeParse failure", "completed": true },
+                { "title": "Write unit tests for all 3 paths", "completed": true }
+            ],
+            "tags": ["api", "phase-1"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-21T04:40:00.000Z",
+                "completed": "2026-04-21T04:54:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Modify createResponse to accept and apply responseSchema",
+            "description": "Add optional `responseSchema?: ZodType` parameter to `createResponse()` in `apps/api/src/utils/response-helpers.ts`. Call `stripWithSchema(data, responseSchema)` before wrapping data in the response envelope. Backward compatible: routes without responseSchema continue unchanged. Add JSDoc documenting the new parameter.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Add responseSchema parameter to createResponse signature",
+                    "completed": true
+                },
+                { "title": "Call stripWithSchema before envelope wrapping", "completed": true },
+                { "title": "Add JSDoc", "completed": true },
+                { "title": "Verify backward compatibility", "completed": true }
+            ],
+            "tags": ["api", "phase-1"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-21T04:40:00.000Z",
+                "completed": "2026-04-21T04:54:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Modify createPaginatedResponse to accept and apply responseSchema per item",
+            "description": "Add optional `responseSchema?: ZodType` parameter to `createPaginatedResponse()`. Apply `stripWithSchema()` to each item in the `items[]` array. Pagination metadata is NOT subject to stripping. Add JSDoc documenting that schema stripping applies to items only.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Add responseSchema parameter to createPaginatedResponse signature",
+                    "completed": true
+                },
+                {
+                    "title": "Apply stripWithSchema to each item in items array",
+                    "completed": true
+                },
+                { "title": "Add JSDoc noting stripping applies to items only", "completed": true },
+                {
+                    "title": "Test with populated items, empty items, and parse failure",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "phase-1"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-21T04:40:00.000Z",
+                "completed": "2026-04-21T04:54:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Thread responseSchema through route factory functions to response helpers",
+            "description": "Modify route factory functions in `apps/api/src/utils/route-factory.ts` to pass `options.responseSchema` to `createResponse()` and `createPaginatedResponse()` calls. Tiered factories propagate automatically via spread.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-013", "T-014"],
+            "blocks": ["T-016", "T-017", "T-018"],
+            "subtasks": [
+                {
+                    "title": "Pass options.responseSchema to createResponse in createSimpleRoute",
+                    "completed": true
+                },
+                {
+                    "title": "Pass options.responseSchema to createResponse in createCRUDRoute",
+                    "completed": true
+                },
+                {
+                    "title": "Pass options.responseSchema to createPaginatedResponse in createListRoute",
+                    "completed": true
+                },
+                {
+                    "title": "Verify tiered factories propagate responseSchema via spread",
+                    "completed": true
+                },
+                { "title": "Run existing route tests", "completed": true }
+            ],
+            "tags": ["api", "phase-1"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-21T04:40:00.000Z",
+                "completed": "2026-04-21T04:54:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Update response-validator.ts with documentation comment",
+            "description": "Add a documentation comment to `apps/api/src/middlewares/response-validator.ts` noting that field-level enforcement has moved to the response helpers.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Add JSDoc comment explaining field-level enforcement location",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "phase-1", "docs"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-21T04:40:00.000Z",
+                "completed": "2026-04-21T04:54:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Write integration tests for public tier field enforcement",
+            "description": "Create integration tests that verify public endpoints strip admin-only fields from the response body. Tests live in `apps/api/test/schema-validation/field-enforcement/public-tier.test.ts` (mocked-service style, runs in default suite).",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Set up test infrastructure (app instance, test data)",
+                    "completed": true
+                },
+                { "title": "Test public list endpoints for field absence", "completed": true },
+                {
+                    "title": "Test public getById/getBySlug endpoints for field absence",
+                    "completed": true
+                },
+                { "title": "Test relation fields are tier-appropriate", "completed": true },
+                { "title": "Test empty response handling", "completed": true }
+            ],
+            "tags": ["testing", "phase-1"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-21T04:45:00.000Z",
+                "completed": "2026-04-21T04:54:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Write integration tests for protected and admin tier field enforcement",
+            "description": "Verify tiered field enforcement via `stripWithSchema` across Public / Protected / Admin schemas. Admin tier must retain all admin-only fields, including nullable ones (e.g. `deletedById: null`). Tests in `apps/api/test/schema-validation/field-enforcement/tiered-enforcement.test.ts`.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Set up authenticated test sessions (user + admin)",
+                    "completed": true
+                },
+                {
+                    "title": "Test protected endpoints include protected fields, exclude admin fields",
+                    "completed": true
+                },
+                { "title": "Test admin endpoints include ALL fields", "completed": true },
+                {
+                    "title": "Test admin endpoints with nullable fields (e.g., deletedById=null present)",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "phase-1"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-21T04:45:00.000Z",
+                "completed": "2026-04-21T04:54:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Write integration test for safeParse fallback path",
+            "description": "Verify the safeParse fallback: when the service returns data that fails schema validation, the route still responds 200 with the unstripped payload and a structured warning is logged. Test in `apps/api/test/schema-validation/field-enforcement/fallback.test.ts`.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                { "title": "Construct scenario triggering safeParse failure", "completed": true },
+                { "title": "Assert response contains unstripped data", "completed": true },
+                { "title": "Assert warning log was emitted", "completed": true }
+            ],
+            "tags": ["testing", "phase-1"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-21T04:45:00.000Z",
+                "completed": "2026-04-21T04:54:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Run full test suite, fix regressions, and create route inventory",
+            "description": "Run `pnpm test` across the API to detect regressions from Phase 1 changes. Result: 2761 pass, 4 pre-existing failures in `admin-list-routes.test.ts` for AccommodationReview/DestinationReview (403 vs 200 — Hono sibling-route middleware collision, documented in project memory, unrelated to SPEC-062 stripping). New schema-stripping tests (unit + integration-style) all pass.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-016", "T-017", "T-018", "T-019"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Run pnpm typecheck", "completed": true },
+                { "title": "Run pnpm test", "completed": true },
+                {
+                    "title": "Fix regression failures (update assertions for stripped fields)",
+                    "completed": true
+                },
+                { "title": "Create route inventory with responseSchema count", "completed": true },
+                {
+                    "title": "Document c.json bypass routes as coverage boundary",
+                    "completed": true
+                }
+            ],
+            "tags": ["verification", "phase-1"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": "pass" },
+            "timestamps": {
+                "created": "2026-04-13T22:00:00.000Z",
+                "started": "2026-04-21T04:48:00.000Z",
+                "completed": "2026-04-21T04:54:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 20,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 20,
+        "blocked": 0,
+        "averageComplexity": 2.6
+    }
+}
