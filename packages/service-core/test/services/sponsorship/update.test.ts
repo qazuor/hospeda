@@ -20,8 +20,15 @@ describe('SponsorshipService.update', () => {
             logger: loggerMock,
             model: modelMock as unknown as SponsorshipModel
         });
-        // Actor with UPDATE_ANY can update any sponsorship
-        actor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_UPDATE_ANY] });
+        // Actor with UPDATE_ANY + STATUS_MANAGE can update any sponsorship,
+        // including the `sponsorshipStatus` field. STATUS_MANAGE is required
+        // by the field-level guard added in SPEC-063-gaps T-030.
+        actor = createActor({
+            permissions: [
+                PermissionEnum.SPONSORSHIP_UPDATE_ANY,
+                PermissionEnum.SPONSORSHIP_STATUS_MANAGE
+            ]
+        });
         vi.clearAllMocks();
     });
 
@@ -41,8 +48,14 @@ describe('SponsorshipService.update', () => {
     });
 
     it('should update a sponsorship when actor has UPDATE_OWN and is the sponsor', async () => {
-        // Actor owns the sponsorship (sponsorUserId matches actor.id)
-        const ownActor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_UPDATE_OWN] });
+        // Actor owns the sponsorship (sponsorUserId matches actor.id) and has
+        // STATUS_MANAGE (required by T-030 field-level guard for sponsorshipStatus mutations).
+        const ownActor = createActor({
+            permissions: [
+                PermissionEnum.SPONSORSHIP_UPDATE_OWN,
+                PermissionEnum.SPONSORSHIP_STATUS_MANAGE
+            ]
+        });
         const existing = createMockSponsorship({ id, sponsorUserId: ownActor.id as never });
         const updated = createMockSponsorship({
             id,
@@ -69,6 +82,39 @@ describe('SponsorshipService.update', () => {
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
         expect(result.data).toBeUndefined();
+    });
+
+    it('T-030: should return FORBIDDEN when actor has UPDATE_ANY but lacks STATUS_MANAGE and payload mutates sponsorshipStatus', async () => {
+        // Actor has UPDATE permission but NOT the field-level STATUS_MANAGE permission
+        const noStatusActor = createActor({
+            permissions: [PermissionEnum.SPONSORSHIP_UPDATE_ANY]
+        });
+        const existing = createMockSponsorship({ id });
+        modelMock.findById.mockResolvedValue(existing);
+        const result = await service.update(noStatusActor, id, {
+            sponsorshipStatus: SponsorshipStatusEnum.CANCELLED
+        });
+        expect(result.error).toBeDefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(result.data).toBeUndefined();
+        // The model.update must NOT have been invoked — the guard fires before persistence
+        expect(modelMock.update).not.toHaveBeenCalled();
+    });
+
+    it('T-030: should ALLOW update when actor has UPDATE_ANY without STATUS_MANAGE if payload omits sponsorshipStatus', async () => {
+        const noStatusActor = createActor({
+            permissions: [PermissionEnum.SPONSORSHIP_UPDATE_ANY]
+        });
+        const existing = createMockSponsorship({ id });
+        const updated = createMockSponsorship({ id });
+        modelMock.findById.mockResolvedValue(existing);
+        modelMock.update.mockResolvedValue(updated);
+        // Payload mutates a non-status field — STATUS_MANAGE not required
+        const result = await service.update(noStatusActor, id, {
+            slug: 'new-slug'
+        });
+        expect(result.error).toBeUndefined();
+        expect(result.data).toBeDefined();
     });
 
     it('should return FORBIDDEN if actor lacks all update permissions', async () => {

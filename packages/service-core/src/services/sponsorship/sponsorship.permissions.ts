@@ -189,6 +189,33 @@ export function checkCanCount(actor: Actor): void {
 }
 
 /**
+ * Field-level guard for the `sponsorshipStatus` field on update payloads.
+ *
+ * If the update payload mutates `sponsorshipStatus`, the actor MUST hold
+ * `SPONSORSHIP_STATUS_MANAGE` in addition to `SPONSORSHIP_UPDATE_*`. This
+ * implements SPEC-063 Phase 3 R6 — the enum permission was added but never
+ * wired to a runtime check, leaving status transitions ungated.
+ *
+ * @param actor - The actor performing the update.
+ * @param data - The partial update payload (may or may not include `sponsorshipStatus`).
+ * @throws {ServiceError} If `sponsorshipStatus` is being changed and the actor lacks the permission.
+ */
+export function checkCanManageSponsorshipStatus(
+    actor: Actor,
+    data: { sponsorshipStatus?: unknown }
+): void {
+    if (data.sponsorshipStatus === undefined) {
+        return;
+    }
+    if (!hasPermission(actor, PermissionEnum.SPONSORSHIP_STATUS_MANAGE)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: SPONSORSHIP_STATUS_MANAGE required to change sponsorshipStatus'
+        );
+    }
+}
+
+/**
  * Checks if an actor has permission to update the visibility of a sponsorship.
  * Requires `SPONSORSHIP_UPDATE_VISIBILITY_ANY` for admin-level access, or
  * `SPONSORSHIP_UPDATE_VISIBILITY_OWN` when the actor is the sponsorship's sponsor.

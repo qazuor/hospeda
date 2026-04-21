@@ -15,6 +15,7 @@ import {
     checkCanCreate,
     checkCanHardDelete,
     checkCanList,
+    checkCanManageSponsorshipStatus,
     checkCanRestore,
     checkCanSearch,
     checkCanSoftDelete,
@@ -76,6 +77,24 @@ export class SponsorshipService extends BaseCrudService<
      */
     protected _canUpdate(actor: Actor, entity: Sponsorship): void {
         checkCanUpdate(actor, entity);
+    }
+
+    /**
+     * Lifecycle hook: runs after `_canUpdate` and before persistence.
+     *
+     * Adds a field-level guard for the `sponsorshipStatus` field per SPEC-063
+     * Phase 3 R6 — actors with `SPONSORSHIP_UPDATE_*` cannot mutate
+     * `sponsorshipStatus` unless they ALSO hold `SPONSORSHIP_STATUS_MANAGE`.
+     *
+     * Returns the data unchanged (no normalization performed here).
+     */
+    protected async _beforeUpdate(
+        data: Partial<Sponsorship>,
+        actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Partial<Sponsorship>> {
+        checkCanManageSponsorshipStatus(actor, data);
+        return data;
     }
 
     /**

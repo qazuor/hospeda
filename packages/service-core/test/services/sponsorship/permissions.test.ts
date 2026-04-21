@@ -5,6 +5,7 @@ import {
     checkCanCreate,
     checkCanHardDelete,
     checkCanList,
+    checkCanManageSponsorshipStatus,
     checkCanRestore,
     checkCanSearch,
     checkCanSoftDelete,
@@ -407,5 +408,49 @@ describe('ownership check edge cases', () => {
             sponsorUserId: actorId as never
         });
         expectAllowed(() => checkCanView(actor, entity));
+    });
+});
+
+// ---------------------------------------------------------------------------
+// checkCanManageSponsorshipStatus (T-030 / GAP-015 — field-level guard)
+// ---------------------------------------------------------------------------
+
+describe('checkCanManageSponsorshipStatus', () => {
+    it('rejects an actor with only SPONSORSHIP_UPDATE_ANY when payload mutates sponsorshipStatus', () => {
+        const actor: Actor = createActor({
+            permissions: [PermissionEnum.SPONSORSHIP_UPDATE_ANY]
+        });
+        expectForbidden(() =>
+            checkCanManageSponsorshipStatus(actor, { sponsorshipStatus: 'active' })
+        );
+    });
+
+    it('allows an actor with only SPONSORSHIP_UPDATE_ANY when payload does NOT mention sponsorshipStatus', () => {
+        const actor: Actor = createActor({
+            permissions: [PermissionEnum.SPONSORSHIP_UPDATE_ANY]
+        });
+        expectAllowed(() => checkCanManageSponsorshipStatus(actor, {}));
+    });
+
+    it('allows an actor with both SPONSORSHIP_UPDATE_ANY and SPONSORSHIP_STATUS_MANAGE for any payload', () => {
+        const actor: Actor = createActor({
+            permissions: [
+                PermissionEnum.SPONSORSHIP_UPDATE_ANY,
+                PermissionEnum.SPONSORSHIP_STATUS_MANAGE
+            ]
+        });
+        expectAllowed(() =>
+            checkCanManageSponsorshipStatus(actor, { sponsorshipStatus: 'cancelled' })
+        );
+        expectAllowed(() => checkCanManageSponsorshipStatus(actor, {}));
+    });
+
+    it('treats an explicit undefined sponsorshipStatus as "not mutating" (no permission check)', () => {
+        const actor: Actor = createActor({
+            permissions: [PermissionEnum.SPONSORSHIP_UPDATE_ANY]
+        });
+        expectAllowed(() =>
+            checkCanManageSponsorshipStatus(actor, { sponsorshipStatus: undefined })
+        );
     });
 });

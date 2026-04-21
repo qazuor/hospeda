@@ -125,8 +125,18 @@ export type SponsorshipCreateInput = z.infer<typeof SponsorshipCreateInputSchema
  * SPEC-063-gaps T-017 (GAP-016, AC-003-03): `.strict()` enforces that legacy keys
  * (e.g. `status`) are rejected at the route boundary with a 400 VALIDATION_ERROR
  * instead of being silently dropped by the Hono zValidator middleware.
+ *
+ * SPEC-063-gaps T-030 (GAP-015): `sponsorshipStatus` is overridden to `.optional()`
+ * (without a default) so the field-level guard in `_beforeUpdate` can distinguish
+ * between "caller did not touch sponsorshipStatus" and "caller is mutating it".
+ * The base `SponsorshipCreateInputSchema.sponsorshipStatus` keeps `.default(PENDING)`
+ * because new sponsorships always start as PENDING.
  */
-export const SponsorshipUpdateInputSchema = SponsorshipCreateInputSchema.partial().strict();
+export const SponsorshipUpdateInputSchema = SponsorshipCreateInputSchema.extend({
+    sponsorshipStatus: SponsorshipStatusEnumSchema.optional()
+})
+    .partial()
+    .strict();
 export type SponsorshipUpdateInput = z.infer<typeof SponsorshipUpdateInputSchema>;
 
 /**
