@@ -52,5 +52,6 @@ export interface SponsorshipFilters {
     sponsorshipStatus?: SponsorshipStatusEnum;
     targetType?: string;
     page?: number;
-    limit?: number;
+    // SPEC-063-gaps T-031: monorepo pagination convention is `pageSize`, not `limit`.
+    pageSize?: number;
 }

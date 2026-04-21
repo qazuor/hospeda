@@ -148,6 +148,9 @@ export const SponsorshipSearchSchema = z.object({
     targetId: z.string().uuid().optional(),
     sponsorshipStatus: SponsorshipStatusEnumSchema.optional(),
     page: z.coerce.number().int().min(1).default(1),
-    limit: z.coerce.number().int().min(1).max(100).default(20)
+    // SPEC-063-gaps T-031 (GAP-041): renamed `limit` → `pageSize` to match the
+    // monorepo-wide pagination convention (PaginationQuerySchema, AdminSearchBaseSchema).
+    // No backward-compat shim per CLAUDE.md policy.
+    pageSize: z.coerce.number().int().min(1).max(100).default(20)
 });
 export type SponsorshipSearchInput = z.infer<typeof SponsorshipSearchSchema>;

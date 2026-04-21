@@ -25,7 +25,7 @@ export const publicListOwnerPromotionsRoute = createPublicListRoute({
     summary: 'List owner promotions',
     description: 'Returns a paginated list of owner promotions',
     tags: ['Owner Promotions'],
-    requestQuery: OwnerPromotionSearchSchema.omit({ page: true, limit: true }).shape,
+    requestQuery: OwnerPromotionSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: OwnerPromotionPublicSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
@@ -34,7 +34,7 @@ export const publicListOwnerPromotionsRoute = createPublicListRoute({
         const result = await ownerPromotionService.search(actor, {
             ...(query as OwnerPromotionSearchInput),
             page,
-            limit: pageSize
+            pageSize
         });
 
         if (result.error) {

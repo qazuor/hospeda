@@ -25,7 +25,7 @@ export const sponsorshipPackageListRoute = createPublicListRoute({
     summary: 'List sponsorship packages',
     description: 'Returns a paginated list of sponsorship packages',
     tags: ['Sponsorship Packages'],
-    requestQuery: SponsorshipPackageSearchSchema.omit({ page: true, limit: true }).shape,
+    requestQuery: SponsorshipPackageSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: SponsorshipPackageSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
@@ -34,7 +34,7 @@ export const sponsorshipPackageListRoute = createPublicListRoute({
         const result = await sponsorshipPackageService.search(actor, {
             ...(query as SponsorshipPackageSearchInput),
             page,
-            limit: pageSize
+            pageSize
         });
 
         if (result.error) {

@@ -121,6 +121,7 @@ export const OwnerPromotionSearchSchema = z.object({
     discountType: OwnerPromotionDiscountTypeEnumSchema.optional(),
     lifecycleState: LifecycleStatusEnumSchema.optional(),
     page: z.coerce.number().int().min(1).default(1),
-    limit: z.coerce.number().int().min(1).max(100).default(20)
+    // SPEC-063-gaps T-031 (GAP-041): `limit` → `pageSize` (monorepo convention).
+    pageSize: z.coerce.number().int().min(1).max(100).default(20)
 });
 export type OwnerPromotionSearchInput = z.infer<typeof OwnerPromotionSearchSchema>;

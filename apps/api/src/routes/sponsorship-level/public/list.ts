@@ -25,7 +25,7 @@ export const sponsorshipLevelListRoute = createPublicListRoute({
     summary: 'List sponsorship levels',
     description: 'Returns a paginated list of sponsorship levels',
     tags: ['Sponsorship Levels'],
-    requestQuery: SponsorshipLevelSearchSchema.omit({ page: true, limit: true }).shape,
+    requestQuery: SponsorshipLevelSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: SponsorshipLevelSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
@@ -34,7 +34,7 @@ export const sponsorshipLevelListRoute = createPublicListRoute({
         const result = await sponsorshipLevelService.search(actor, {
             ...(query as SponsorshipLevelSearchInput),
             page,
-            limit: pageSize
+            pageSize
         });
 
         if (result.error) {

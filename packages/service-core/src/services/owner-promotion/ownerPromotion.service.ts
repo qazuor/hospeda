@@ -125,13 +125,13 @@ export class OwnerPromotionService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ) {
-        const { page = 1, limit = 20, ...filterParams } = params;
+        const { page = 1, pageSize = 20, ...filterParams } = params;
         // AC-005-01 strict enforcement: public search always filters by ACTIVE,
         // overriding any caller-supplied lifecycleState to prevent DRAFT/ARCHIVED
         // leakage via query-param manipulation. Admin path (adminList ->
         // _executeAdminSearch) is unaffected and honors caller filters.
         filterParams.lifecycleState = LifecycleStatusEnum.ACTIVE;
-        return this.model.findAll(filterParams, { page, pageSize: limit });
+        return this.model.findAll(filterParams, { page, pageSize });
     }
 
     protected async _executeCount(
@@ -139,7 +139,7 @@ export class OwnerPromotionService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ) {
-        const { page: _page, limit: _limit, ...filterParams } = params;
+        const { page: _page, pageSize: _pageSize, ...filterParams } = params;
         // AC-005-01 consistency: pagination `total` must match the ACTIVE-only
         // result set returned by _executeSearch. Force-override ensures count
         // and items never diverge even if a caller injects a lifecycleState.

@@ -193,10 +193,10 @@ export class SponsorshipService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ) {
-        const { page = 1, limit = 20, ...filterParams } = params;
+        const { page = 1, pageSize = 20, ...filterParams } = params;
         // Force-override: never trust caller-supplied lifecycleState on public path.
         (filterParams as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
-        return this.model.findAll(filterParams, { page, pageSize: limit });
+        return this.model.findAll(filterParams, { page, pageSize });
     }
 
     /**
@@ -210,7 +210,7 @@ export class SponsorshipService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ) {
-        const { page: _page, limit: _limit, ...filterParams } = params;
+        const { page: _page, pageSize: _pageSize, ...filterParams } = params;
         (filterParams as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
         const count = await this.model.count(filterParams);
         return { count };

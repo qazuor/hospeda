@@ -58,9 +58,9 @@ const result = await sponsorshipService.create(actor, {
 
 // Search sponsorships
 const sponsorships = await sponsorshipService.search(actor, {
-  status: 'active',
+  sponsorshipStatus: 'active',
   page: 1,
-  limit: 20
+  pageSize: 20
 });
 ```
 

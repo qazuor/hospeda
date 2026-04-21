@@ -96,6 +96,7 @@ export type SponsorshipPackageUpdateInput = z.infer<typeof SponsorshipPackageUpd
 export const SponsorshipPackageSearchSchema = z.object({
     isActive: z.boolean().optional(),
     page: z.coerce.number().int().min(1).default(1),
-    limit: z.coerce.number().int().min(1).max(100).default(20)
+    // SPEC-063-gaps T-031 (GAP-041): `limit` → `pageSize` (monorepo convention).
+    pageSize: z.coerce.number().int().min(1).max(100).default(20)
 });
 export type SponsorshipPackageSearchInput = z.infer<typeof SponsorshipPackageSearchSchema>;

@@ -25,7 +25,7 @@ export const protectedSponsorshipListRoute = createProtectedListRoute({
     summary: 'List sponsorships',
     description: 'Returns a paginated list of sponsorships. Requires authentication.',
     tags: ['Sponsorships'],
-    requestQuery: SponsorshipSearchSchema.omit({ page: true, limit: true }).shape,
+    requestQuery: SponsorshipSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: SponsorshipProtectedSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
@@ -34,7 +34,7 @@ export const protectedSponsorshipListRoute = createProtectedListRoute({
         const result = await sponsorshipService.search(actor, {
             ...(query as SponsorshipSearchInput),
             page,
-            limit: pageSize
+            pageSize
         });
 
         if (result.error) {
