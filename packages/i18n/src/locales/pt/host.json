@@ -1,0 +1,146 @@
+{
+    "form": {
+        "sections": {
+            "datos-basicos": {
+                "title": "[TODO]",
+                "description": "[TODO]",
+                "fields": {
+                    "name": "[TODO]",
+                    "namePlaceholder": "[TODO]",
+                    "shortDescription": "[TODO]",
+                    "shortDescriptionPlaceholder": "[TODO]",
+                    "longDescription": "[TODO]",
+                    "longDescriptionPlaceholder": "[TODO]",
+                    "type": "[TODO]",
+                    "typePlaceholder": "[TODO]"
+                }
+            },
+            "ubicacion": {
+                "title": "[TODO]",
+                "description": "[TODO]",
+                "fields": {
+                    "address": "[TODO]",
+                    "addressPlaceholder": "[TODO]",
+                    "city": "[TODO]",
+                    "state": "[TODO]",
+                    "country": "[TODO]",
+                    "postalCode": "[TODO]",
+                    "latitude": "[TODO]",
+                    "longitude": "[TODO]",
+                    "mapHint": "[TODO]",
+                    "mapToggleExpand": "[TODO]",
+                    "mapToggleCollapse": "[TODO]"
+                }
+            },
+            "capacidad": {
+                "title": "[TODO]",
+                "description": "[TODO]",
+                "fields": {
+                    "maxGuests": "[TODO]",
+                    "bedrooms": "[TODO]",
+                    "bathrooms": "[TODO]",
+                    "beds": "[TODO]"
+                }
+            },
+            "amenities": {
+                "title": "[TODO]",
+                "description": "[TODO]",
+                "loading": "[TODO]",
+                "empty": "[TODO]"
+            },
+            "fotos": {
+                "title": "[TODO]",
+                "description": "[TODO]",
+                "uploadPrompt": "[TODO]",
+                "uploadButton": "[TODO]",
+                "uploading": "[TODO]",
+                "maxReached": "[TODO]",
+                "removeAria": "[TODO]",
+                "errorPerFile": "[TODO]",
+                "requiresSaveFirst": "[TODO]"
+            },
+            "precio": {
+                "title": "[TODO]",
+                "description": "[TODO]",
+                "fields": {
+                    "pricePerNight": "[TODO]",
+                    "currency": "[TODO]"
+                }
+            },
+            "contacto": {
+                "title": "[TODO]",
+                "description": "[TODO]",
+                "fields": {
+                    "email": "[TODO]",
+                    "phone": "[TODO]",
+                    "preferredMethod": "[TODO]",
+                    "preferredMethodOptions": {
+                        "email": "[TODO]",
+                        "phone": "[TODO]",
+                        "whatsapp": "[TODO]"
+                    }
+                }
+            },
+            "publicar": {
+                "title": "[TODO]",
+                "description": "[TODO]",
+                "missingFieldsTitle": "[TODO]",
+                "missingFieldsHint": "[TODO]"
+            }
+        },
+        "actions": {
+            "saveDraft": "[TODO]",
+            "publish": "[TODO]",
+            "publishing": "[TODO]",
+            "publishDisabledHint": "[TODO]"
+        },
+        "status": {
+            "idle": "",
+            "saving": "[TODO]",
+            "saved": "[TODO]",
+            "error": "[TODO]",
+            "errorRetry": "[TODO]"
+        },
+        "draftPrompt": {
+            "title": "[TODO]",
+            "body": "[TODO]",
+            "resume": "[TODO]",
+            "startNew": "[TODO]"
+        },
+        "toast": {
+            "publishSuccess": "[TODO]",
+            "publishError": "[TODO]",
+            "updateSuccess": "[TODO]"
+        }
+    },
+    "properties": {
+        "list": {
+            "title": "[TODO]",
+            "subtitle": "[TODO]"
+        },
+        "card": {
+            "status": {
+                "DRAFT": "[TODO]",
+                "PUBLISHED": "[TODO]",
+                "SUSPENDED": "[TODO]"
+            },
+            "actions": {
+                "edit": "[TODO]",
+                "publish": "[TODO]",
+                "unpublish": "[TODO]",
+                "viewOnSite": "[TODO]"
+            },
+            "pricePerNight": "[TODO]"
+        },
+        "empty": {
+            "title": "[TODO]",
+            "cta": "[TODO]"
+        }
+    },
+    "landing": {
+        "heroHeadline": "[TODO]",
+        "heroSubheadline": "[TODO]",
+        "primaryCta": "[TODO]",
+        "secondaryCta": "[TODO]"
+    }
+}

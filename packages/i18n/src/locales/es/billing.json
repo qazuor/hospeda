@@ -180,12 +180,37 @@
     },
     "checkout": {
         "success": {
-            "title": "¡Gracias por tu compra!",
-            "message": "Tu suscripción está activa."
+            "title": "¡Tu suscripción está activa!",
+            "subtitle": "Tu pago fue aprobado correctamente",
+            "planDetails": "Plan: {{planName}}",
+            "amountDetails": "Monto: {{amount}}",
+            "verifyingStatus": "Verificando estado del pago...",
+            "cta": "Ir a mi cuenta",
+            "pageTitle": "Pago aprobado — Hospeda"
         },
-        "cancelled": {
-            "title": "Tu compra fue cancelada",
-            "message": "Podés intentar nuevamente cuando quieras."
+        "pending": {
+            "title": "Tu pago está siendo procesado",
+            "body": "Puede demorar hasta 24 horas en confirmarse. Te avisaremos por email cuando se acredite.",
+            "cta": "Verificar estado",
+            "pageTitle": "Pago en proceso — Hospeda"
+        },
+        "failure": {
+            "title": "El pago no pudo procesarse",
+            "genericMessage": "No pudimos procesar tu pago. Revisá los datos e intentá de nuevo.",
+            "reasonInsufficientFunds": "Fondos insuficientes en la tarjeta",
+            "reasonCardDeclined": "La tarjeta fue rechazada",
+            "reasonExpired": "La tarjeta está vencida",
+            "reasonInvalidData": "Datos de la tarjeta inválidos",
+            "retryCta": "Intentar de nuevo",
+            "supportCta": "Contactar soporte",
+            "pageTitle": "Pago rechazado — Hospeda"
+        },
+        "button": {
+            "cta": "Contratar",
+            "processing": "Procesando...",
+            "processingAriaLabel": "Procesando pago",
+            "error": "No pudimos iniciar el pago. Intentá de nuevo.",
+            "unauthCta": "Iniciá sesión para contratar"
         }
     },
     "limits": {

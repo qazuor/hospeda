@@ -180,12 +180,37 @@
     },
     "checkout": {
         "success": {
-            "title": "Thank you for your purchase!",
-            "message": "Your subscription is active."
+            "title": "[TODO]",
+            "subtitle": "[TODO]",
+            "planDetails": "[TODO]",
+            "amountDetails": "[TODO]",
+            "verifyingStatus": "[TODO]",
+            "cta": "[TODO]",
+            "pageTitle": "[TODO]"
         },
-        "cancelled": {
-            "title": "Your purchase was cancelled",
-            "message": "You can try again whenever you want."
+        "pending": {
+            "title": "[TODO]",
+            "body": "[TODO]",
+            "cta": "[TODO]",
+            "pageTitle": "[TODO]"
+        },
+        "failure": {
+            "title": "[TODO]",
+            "genericMessage": "[TODO]",
+            "reasonInsufficientFunds": "[TODO]",
+            "reasonCardDeclined": "[TODO]",
+            "reasonExpired": "[TODO]",
+            "reasonInvalidData": "[TODO]",
+            "retryCta": "[TODO]",
+            "supportCta": "[TODO]",
+            "pageTitle": "[TODO]"
+        },
+        "button": {
+            "cta": "[TODO]",
+            "processing": "[TODO]",
+            "processingAriaLabel": "[TODO]",
+            "error": "[TODO]",
+            "unauthCta": "[TODO]"
         }
     },
     "limits": {

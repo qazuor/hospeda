@@ -1,0 +1,146 @@
+{
+    "form": {
+        "sections": {
+            "datos-basicos": {
+                "title": "Datos básicos",
+                "description": "Contanos lo esencial sobre tu propiedad",
+                "fields": {
+                    "name": "Nombre de la propiedad",
+                    "namePlaceholder": "Ej: Casa del Río",
+                    "shortDescription": "Descripción corta",
+                    "shortDescriptionPlaceholder": "Una línea que resuma tu propiedad",
+                    "longDescription": "Descripción completa",
+                    "longDescriptionPlaceholder": "Detallá lo que hace única tu propiedad",
+                    "type": "Tipo de propiedad",
+                    "typePlaceholder": "Seleccioná un tipo"
+                }
+            },
+            "ubicacion": {
+                "title": "Ubicación",
+                "description": "Dónde está tu propiedad",
+                "fields": {
+                    "address": "Dirección",
+                    "addressPlaceholder": "Calle y número",
+                    "city": "Ciudad",
+                    "state": "Provincia",
+                    "country": "País",
+                    "postalCode": "Código postal",
+                    "latitude": "Latitud",
+                    "longitude": "Longitud",
+                    "mapHint": "Arrastrá el pin para ajustar la ubicación",
+                    "mapToggleExpand": "Expandir mapa",
+                    "mapToggleCollapse": "Contraer mapa"
+                }
+            },
+            "capacidad": {
+                "title": "Capacidad",
+                "description": "Cuánta gente podés recibir",
+                "fields": {
+                    "maxGuests": "Huéspedes máximos",
+                    "bedrooms": "Habitaciones",
+                    "bathrooms": "Baños",
+                    "beds": "Camas"
+                }
+            },
+            "amenities": {
+                "title": "Comodidades",
+                "description": "Seleccioná todas las que apliquen",
+                "loading": "Cargando comodidades...",
+                "empty": "No hay comodidades disponibles"
+            },
+            "fotos": {
+                "title": "Fotos",
+                "description": "Subí hasta 20 fotos de tu propiedad",
+                "uploadPrompt": "Arrastrá fotos acá o hacé click para seleccionar",
+                "uploadButton": "Seleccionar archivos",
+                "uploading": "Subiendo...",
+                "maxReached": "Llegaste al máximo de 20 fotos",
+                "removeAria": "Quitar foto",
+                "errorPerFile": "No se pudo subir esta imagen",
+                "requiresSaveFirst": "Guardá primero los datos básicos antes de subir fotos"
+            },
+            "precio": {
+                "title": "Precio",
+                "description": "Cuánto cobrás por noche",
+                "fields": {
+                    "pricePerNight": "Precio por noche",
+                    "currency": "Moneda"
+                }
+            },
+            "contacto": {
+                "title": "Contacto",
+                "description": "Cómo te pueden contactar los huéspedes",
+                "fields": {
+                    "email": "Email",
+                    "phone": "Teléfono",
+                    "preferredMethod": "Método preferido",
+                    "preferredMethodOptions": {
+                        "email": "Email",
+                        "phone": "Teléfono",
+                        "whatsapp": "WhatsApp"
+                    }
+                }
+            },
+            "publicar": {
+                "title": "Publicar",
+                "description": "Revisá los datos y publicá cuando estés listo",
+                "missingFieldsTitle": "Faltan datos obligatorios",
+                "missingFieldsHint": "Completá estos campos antes de publicar:"
+            }
+        },
+        "actions": {
+            "saveDraft": "Guardar borrador",
+            "publish": "Publicar",
+            "publishing": "Publicando...",
+            "publishDisabledHint": "Completá todos los campos obligatorios para publicar"
+        },
+        "status": {
+            "idle": "",
+            "saving": "Guardando...",
+            "saved": "Guardado",
+            "error": "Error al guardar",
+            "errorRetry": "Reintentando..."
+        },
+        "draftPrompt": {
+            "title": "Tenés un borrador sin publicar",
+            "body": "¿Querés continuar donde lo dejaste?",
+            "resume": "Continuar borrador",
+            "startNew": "Empezar de cero"
+        },
+        "toast": {
+            "publishSuccess": "¡Tu propiedad fue publicada!",
+            "publishError": "No pudimos publicar. Intentá de nuevo.",
+            "updateSuccess": "Cambios guardados"
+        }
+    },
+    "properties": {
+        "list": {
+            "title": "Mis propiedades",
+            "subtitle": "Gestioná tus publicaciones"
+        },
+        "card": {
+            "status": {
+                "DRAFT": "Borrador",
+                "PUBLISHED": "Publicada",
+                "SUSPENDED": "Suspendida"
+            },
+            "actions": {
+                "edit": "Editar",
+                "publish": "Publicar",
+                "unpublish": "Despublicar",
+                "viewOnSite": "Ver en el sitio"
+            },
+            "pricePerNight": "por noche"
+        },
+        "empty": {
+            "title": "Aún no publicaste ninguna propiedad",
+            "cta": "Publicar ahora"
+        }
+    },
+    "landing": {
+        "heroHeadline": "Convertí tu propiedad en un ingreso",
+        "heroSubheadline": "Publicá en minutos y empezá a recibir huéspedes",
+        "primaryCta": "Publicar tu propiedad",
+        "secondaryCta": "Ver mis propiedades"
+    }
+}

@@ -55,7 +55,8 @@ export const namespaces = [
     'admin-tabs',
     'validation',
     'revalidation',
-    'api'
+    'api',
+    'host'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -128,6 +129,7 @@ import exchangeRateEs from './locales/es/exchange-rate.json';
 import fieldsEs from './locales/es/fields.json';
 import footerEs from './locales/es/footer.json';
 import homeEs from './locales/es/home.json';
+import hostEs from './locales/es/host.json';
 import navEs from './locales/es/nav.json';
 import newsletterEs from './locales/es/newsletter.json';
 import ownersEs from './locales/es/owners.json';
@@ -168,6 +170,7 @@ import exchangeRateEn from './locales/en/exchange-rate.json';
 import fieldsEn from './locales/en/fields.json';
 import footerEn from './locales/en/footer.json';
 import homeEn from './locales/en/home.json';
+import hostEn from './locales/en/host.json';
 import navEn from './locales/en/nav.json';
 import newsletterEn from './locales/en/newsletter.json';
 import ownersEn from './locales/en/owners.json';
@@ -208,6 +211,7 @@ import exchangeRatePt from './locales/pt/exchange-rate.json';
 import fieldsPt from './locales/pt/fields.json';
 import footerPt from './locales/pt/footer.json';
 import homePt from './locales/pt/home.json';
+import hostPt from './locales/pt/host.json';
 import navPt from './locales/pt/nav.json';
 import newsletterPt from './locales/pt/newsletter.json';
 import ownersPt from './locales/pt/owners.json';
@@ -241,6 +245,7 @@ const rawTranslations = {
         'exchange-rate': exchangeRateEs,
         footer: footerEs,
         home: homeEs,
+        host: hostEs,
         nav: navEs,
         newsletter: newsletterEs,
         owners: ownersEs,
@@ -281,6 +286,7 @@ const rawTranslations = {
         'exchange-rate': exchangeRateEn,
         footer: footerEn,
         home: homeEn,
+        host: hostEn,
         nav: navEn,
         newsletter: newsletterEn,
         owners: ownersEn,
@@ -321,6 +327,7 @@ const rawTranslations = {
         'exchange-rate': exchangeRatePt,
         footer: footerPt,
         home: homePt,
+        host: hostPt,
         nav: navPt,
         newsletter: newsletterPt,
         owners: ownersPt,
