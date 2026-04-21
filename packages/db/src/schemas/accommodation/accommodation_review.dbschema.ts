@@ -49,7 +49,18 @@ export const accommodationReviews = pgTable(
         ),
         accommodation_reviews_user_accommodation_uniq: uniqueIndex(
             'accommodation_reviews_user_accommodation_uniq'
-        ).on(table.userId, table.accommodationId)
+        ).on(table.userId, table.accommodationId),
+        // SPEC-063-gaps T-011 (GAP-018): single-column lifecycleState index for parity
+        // with peer entities (Sponsorship, OwnerPromotion, DestinationReview).
+        accommodation_reviews_lifecycleState_idx: index(
+            'accommodation_reviews_lifecycleState_idx'
+        ).on(table.lifecycleState),
+        // SPEC-063-gaps T-012 (GAP-023): composite supports the dominant
+        // listByAccommodation query (accommodationId + lifecycleState filter after
+        // T-002).
+        accommodation_reviews_accommodationId_lifecycleState_idx: index(
+            'accommodation_reviews_accommodationId_lifecycleState_idx'
+        ).on(table.accommodationId, table.lifecycleState)
     })
 );
 

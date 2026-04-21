@@ -71,6 +71,18 @@ export const sponsorships = pgTable(
         sponsorships_targetType_targetId_idx: index('sponsorships_targetType_targetId_idx').on(
             table.targetType,
             table.targetId
+        ),
+        // SPEC-063-gaps T-014 (GAP-025): composite supporting findActiveByTarget
+        // (filters by both sponsorshipStatus and lifecycleState). Avoids index-merge
+        // or post-filter with two single-column indexes.
+        sponsorships_sponsorshipStatus_lifecycleState_idx: index(
+            'sponsorships_sponsorshipStatus_lifecycleState_idx'
+        ).on(table.sponsorshipStatus, table.lifecycleState),
+        // SPEC-063-gaps T-016 (GAP-034): anticipatory composite for a future
+        // sponsorship-expiry cron (mirrors archive-expired-promotions pattern).
+        sponsorships_lifecycleState_endsAt_idx: index('sponsorships_lifecycleState_endsAt_idx').on(
+            table.lifecycleState,
+            table.endsAt
         )
     })
 );

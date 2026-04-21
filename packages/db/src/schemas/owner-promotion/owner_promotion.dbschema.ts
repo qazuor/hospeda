@@ -45,7 +45,13 @@ export const ownerPromotions = pgTable(
         ownerPromotions_deletedAt_idx: index('ownerPromotions_deletedAt_idx').on(table.deletedAt),
         ownerPromotions_ownerId_lifecycleState_idx: index(
             'ownerPromotions_ownerId_lifecycleState_idx'
-        ).on(table.ownerId, table.lifecycleState)
+        ).on(table.ownerId, table.lifecycleState),
+        // SPEC-063-gaps T-015 (GAP-033): composite for the dominant query of the
+        // hourly archive cron (archive-expired-promotions.job.ts filters on both
+        // columns). Latent HIGH at 100k+ promotions.
+        ownerPromotions_lifecycleState_validUntil_idx: index(
+            'ownerPromotions_lifecycleState_validUntil_idx'
+        ).on(table.lifecycleState, table.validUntil)
     })
 );
 

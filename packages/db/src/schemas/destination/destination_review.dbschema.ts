@@ -37,7 +37,12 @@ export const destinationReviews = pgTable(
         destination_reviews_userId_idx: index('destination_reviews_userId_idx').on(table.userId),
         destinationReviews_lifecycleState_idx: index('destinationReviews_lifecycleState_idx').on(
             table.lifecycleState
-        )
+        ),
+        // SPEC-063-gaps T-013 (GAP-024): composite for the dominant listByDestination
+        // query (destinationId + lifecycleState filter after T-003).
+        destination_reviews_destinationId_lifecycleState_idx: index(
+            'destination_reviews_destinationId_lifecycleState_idx'
+        ).on(table.destinationId, table.lifecycleState)
     })
 );
 
