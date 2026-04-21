@@ -1,0 +1,156 @@
+---
+/**
+ * @file suscriptores/checkout/success.astro
+ * @description MercadoPago return page for approved payment state.
+ * No auth required — MP may redirect without an active session.
+ * Reads URL query params to determine collection_status and shows
+ * appropriate confirmation or verification message.
+ *
+ * @route /{lang}/suscriptores/checkout/success/
+ * @rendering SSR (no prerender — query params must be read server-side)
+ */
+
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import type { GetStaticPaths } from 'astro';
+
+export const prerender = false;
+
+const { lang } = Astro.params;
+const locale = (lang ?? 'es') as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const collectionStatus = Astro.url.searchParams.get('collection_status');
+const isApproved = collectionStatus === 'approved';
+
+const miCuentaUrl = buildUrl({ locale, path: 'mi-cuenta' });
+---
+
+<MarketingLayout
+	locale={locale}
+	title={t('billing.checkout.success.pageTitle', 'Pago aprobado — Hospeda')}
+	description={t('billing.checkout.success.subtitle', 'Tu pago fue aprobado correctamente')}
+>
+	<section class="checkout-result section">
+		<div class="checkout-result__container" data-reveal="up">
+			<div class="checkout-result__icon checkout-result__icon--success" aria-hidden="true">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 64 64"
+					fill="none"
+					width="80"
+					height="80"
+					aria-hidden="true"
+				>
+					<circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="4" />
+					<path
+						d="M20 32l9 9 15-18"
+						stroke="currentColor"
+						stroke-width="4"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					/>
+				</svg>
+			</div>
+
+			<h1 class="checkout-result__title">
+				{isApproved
+					? t('billing.checkout.success.title', '¡Tu suscripción está activa!')
+					: t('billing.checkout.success.verifyingStatus', 'Verificando estado del pago...')}
+			</h1>
+
+			{isApproved && (
+				<p class="checkout-result__subtitle">
+					{t('billing.checkout.success.subtitle', 'Tu pago fue aprobado correctamente')}
+				</p>
+			)}
+
+			<div class="checkout-result__actions">
+				<a href={miCuentaUrl} class="checkout-result__cta">
+					{t('billing.checkout.success.cta', 'Ir a mi cuenta')}
+				</a>
+			</div>
+		</div>
+	</section>
+</MarketingLayout>
+
+<style>
+	.checkout-result {
+		min-height: 60vh;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.checkout-result__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: var(--space-section) var(--space-container-x);
+		text-align: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-6);
+	}
+
+	.checkout-result__icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100px;
+		height: 100px;
+		border-radius: 50%;
+	}
+
+	.checkout-result__icon--success {
+		color: var(--color-success, oklch(0.55 0.18 145));
+		background-color: oklch(from var(--color-success, oklch(0.55 0.18 145)) l c h / 0.1);
+	}
+
+	.checkout-result__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		color: var(--foreground);
+		margin: 0;
+	}
+
+	.checkout-result__subtitle {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-lg);
+		color: var(--muted-foreground);
+		margin: 0;
+		max-width: 50ch;
+	}
+
+	.checkout-result__actions {
+		margin-top: var(--space-4);
+	}
+
+	.checkout-result__cta {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--space-3) var(--space-8);
+		background-color: var(--accent);
+		color: var(--accent-foreground, #fff);
+		font-family: var(--font-sans);
+		font-weight: 600;
+		font-size: var(--text-body-lg);
+		border-radius: var(--radius-button);
+		text-decoration: none;
+		transition: opacity var(--duration-normal) ease;
+	}
+
+	.checkout-result__cta:hover {
+		opacity: 0.85;
+	}
+
+	@media (max-width: 768px) {
+		.checkout-result__container {
+			padding: var(--space-12) var(--space-container-x);
+		}
+	}
+</style>

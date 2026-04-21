@@ -8,10 +8,9 @@
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import type { GetStaticPaths } from 'astro';
 
 export const prerender = true;
@@ -27,6 +26,7 @@ const { t } = createTranslations(locale);
 // Hardcoded fallback plans (pricing page must never be empty)
 const touristPlans = [
 	{
+		planId: 'tourist-free',
 		name: t('pricing.tourist.free.name', 'Explorador'),
 		price: 0,
 		period: t('pricing.tourist.period', '/mes'),
@@ -39,6 +39,7 @@ const touristPlans = [
 		highlighted: false,
 	},
 	{
+		planId: 'tourist-plus',
 		name: t('pricing.tourist.plus.name', 'Viajero Plus'),
 		price: 1990,
 		period: t('pricing.tourist.period', '/mes'),
@@ -52,6 +53,7 @@ const touristPlans = [
 		highlighted: true,
 	},
 	{
+		planId: 'tourist-vip',
 		name: t('pricing.tourist.premium.name', 'Premium'),
 		price: 3990,
 		period: t('pricing.tourist.period', '/mes'),
@@ -65,6 +67,8 @@ const touristPlans = [
 		highlighted: false,
 	},
 ] as const;
+
+const ctaText = t('pricing.cta', 'Empezar');
 ---
 
 <MarketingLayout
@@ -101,12 +105,13 @@ const touristPlans = [
 							))}
 						</ul>
 						<div class="pricing-card__btn-wrapper">
-							<GradientButton
-								href={buildUrl({ locale, path: 'auth/signup' })}
-								label={t('pricing.cta', 'Empezar')}
-								variant={plan.highlighted ? 'accent' : 'outline-accent'}
-								shape="rounded"
-								class="pricing-card__btn"
+							<PlanPurchaseButton
+								client:load
+								planId={plan.planId}
+								price={plan.price}
+								currency="ARS"
+								ctaText={ctaText}
+								locale={locale}
 							/>
 						</div>
 					</div>

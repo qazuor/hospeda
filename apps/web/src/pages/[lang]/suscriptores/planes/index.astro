@@ -8,10 +8,9 @@
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import type { GetStaticPaths } from 'astro';
 
 export const prerender = true;
@@ -26,6 +25,7 @@ const { t } = createTranslations(locale);
 
 const ownerPlans = [
 	{
+		planId: 'owner-basico',
 		name: t('pricing.owner.basic.name', 'Básico'),
 		price: 0,
 		period: t('pricing.owner.period', '/mes'),
@@ -39,6 +39,7 @@ const ownerPlans = [
 		highlighted: false,
 	},
 	{
+		planId: 'owner-pro',
 		name: t('pricing.owner.pro.name', 'Profesional'),
 		price: 4990,
 		period: t('pricing.owner.period', '/mes'),
@@ -53,6 +54,7 @@ const ownerPlans = [
 		highlighted: true,
 	},
 	{
+		planId: 'owner-premium',
 		name: t('pricing.owner.premium.name', 'Premium'),
 		price: 9990,
 		period: t('pricing.owner.period', '/mes'),
@@ -67,6 +69,8 @@ const ownerPlans = [
 		highlighted: false,
 	},
 ] as const;
+
+const ctaText = t('pricing.cta', 'Empezar');
 ---
 
 <MarketingLayout
@@ -103,12 +107,13 @@ const ownerPlans = [
 							))}
 						</ul>
 						<div class="pricing-card__btn-wrapper">
-							<GradientButton
-								href={buildUrl({ locale, path: 'auth/signup' })}
-								label={t('pricing.cta', 'Empezar')}
-								variant={plan.highlighted ? 'accent' : 'outline-accent'}
-								shape="rounded"
-								class="pricing-card__btn"
+							<PlanPurchaseButton
+								client:load
+								planId={plan.planId}
+								price={plan.price}
+								currency="ARS"
+								ctaText={ctaText}
+								locale={locale}
 							/>
 						</div>
 					</div>

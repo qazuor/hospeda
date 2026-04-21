@@ -1,0 +1,134 @@
+/* PlanPurchaseButton.module.css
+ * Scoped styles for the PlanPurchaseButton React island.
+ * All values reference design tokens from global.css — no hardcoded colours. */
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+ * Button
+ * ------------------------------------------------------------------------- */
+
+.button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: var(--space-3, 0.75rem) var(--space-5, 1.25rem);
+    border: none;
+    border-radius: var(--radius-button, 8px);
+    background-color: var(--accent);
+    color: var(--accent-foreground, #fff);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-normal, 0.4s) ease,
+                opacity var(--duration-normal, 0.4s) ease,
+                transform 0.15s ease;
+    text-align: center;
+    min-height: 48px; /* WCAG AA touch target */
+}
+
+.button:hover:not(:disabled) {
+    background-color: oklch(from var(--accent) calc(l - 0.06) c h);
+    transform: translateY(-1px);
+}
+
+.button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+}
+
+.button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------------------
+ * Idle content (cta label + price)
+ * ------------------------------------------------------------------------- */
+
+.idleContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.125rem;
+    line-height: 1.2;
+}
+
+.ctaText {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.price {
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0.88;
+}
+
+/* ---------------------------------------------------------------------------
+ * Loading content (spinner + text)
+ * ------------------------------------------------------------------------- */
+
+.loadingContent {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+/* Accessible spinner using a border animation — no image required */
+.spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid rgba(255 255 255 / 0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ---------------------------------------------------------------------------
+ * Inline error message
+ * ------------------------------------------------------------------------- */
+
+.errorMessage {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--destructive, #e53e3e);
+    text-align: center;
+    line-height: 1.4;
+}
+
+/* ---------------------------------------------------------------------------
+ * Reduced motion
+ * ------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .button {
+        transition: none;
+    }
+
+    .spinner {
+        animation: none;
+        border-top-color: #fff;
+    }
+}
