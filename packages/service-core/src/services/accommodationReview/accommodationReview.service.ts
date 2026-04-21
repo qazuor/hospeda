@@ -30,11 +30,11 @@ import {
     AccommodationReviewsByUserSchema,
     type CountResponse,
     type EntityFilters,
+    LifecycleStatusEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { type SQL, sql } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import {
     type Actor,
@@ -46,7 +46,7 @@ import {
     type ServiceOutput
 } from '../../types';
 import { AccommodationService } from '../accommodation/accommodation.service';
-import { normalizeCreateInput, normalizeUpdateInput } from './accommodationReview.normalizers';
+import { computeAccommodationReviewAverage } from './accommodationReview.helpers';
 import {
     checkCanAdminList,
     checkCanCreateAccommodationReview,
@@ -94,14 +94,6 @@ export class AccommodationReviewService extends BaseCrudService<
         return ['title', 'content'];
     }
 
-    protected normalizers: CrudNormalizersFromSchemas<
-        typeof AccommodationReviewCreateInputSchema,
-        typeof AccommodationReviewUpdateInputSchema,
-        typeof AccommodationReviewSearchParamsSchema
-    > = {
-        create: normalizeCreateInput,
-        update: normalizeUpdateInput
-    };
     private accommodationModel = new AccommodationModel();
     private accommodationService: AccommodationService;
 
@@ -172,7 +164,12 @@ export class AccommodationReviewService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<PaginatedListOutput<AccommodationReview>> {
-        const { page, pageSize, ...filters } = params;
+        const { page, pageSize, sortBy: _sortBy, sortOrder: _sortOrder, ...filters } = params;
+        // Force-override lifecycleState=ACTIVE: defense-in-depth for public paths
+        // (GAP-004 / SPEC-063-gaps T-005). Mirrors SponsorshipService pattern.
+        // sortBy/sortOrder are stripped to prevent WHERE-clause leak (regression
+        // covered by test/services/where-leak.regression.test.ts).
+        (filters as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
         return this.model.findAll({ ...filters, deletedAt: null }, { page, pageSize });
     }
 
@@ -181,7 +178,17 @@ export class AccommodationReviewService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<CountResponse> {
-        const { page: _p, pageSize: _ps, ...filters } = params;
+        const {
+            page: _p,
+            pageSize: _ps,
+            sortBy: _sortBy,
+            sortOrder: _sortOrder,
+            ...filters
+        } = params;
+        // Mirror _executeSearch force-override so pagination `total` stays consistent
+        // with the filtered items on public endpoints. sortBy/sortOrder also stripped
+        // to prevent WHERE-clause leak.
+        (filters as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
         const count = await this.model.count({ ...filters, deletedAt: null });
         return { count };
     }
@@ -302,9 +309,7 @@ export class AccommodationReviewService extends BaseCrudService<
         entity: AccommodationReview,
         tx?: DrizzleClient
     ): Promise<void> {
-        const rating = entity.rating as Record<string, number>;
-        const values = Object.values(rating).filter((v) => typeof v === 'number');
-        const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+        const avg = computeAccommodationReviewAverage(entity.rating);
         const roundedAvg = Math.round(avg * 100) / 100;
         await this.model.updateById(entity.id, { averageRating: roundedAvg }, tx);
     }
@@ -317,17 +322,7 @@ export class AccommodationReviewService extends BaseCrudService<
         await this.computeAndStoreReviewAverage(entity, ctx?.tx);
         await this.recalculateAndUpdateAccommodationStats(entity.accommodationId, ctx?.tx);
         const accommodationSlug = await this._resolveAccommodationSlug(entity.accommodationId);
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation_review',
-                accommodationSlug
-            });
-        } catch (error) {
-            AccommodationReviewService.revalidationLogger.warn(
-                { error, entityType: 'accommodation_review' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
-        }
+        this._scheduleAccommodationRevalidation(accommodationSlug);
         return entity;
     }
 
@@ -339,17 +334,7 @@ export class AccommodationReviewService extends BaseCrudService<
         await this.computeAndStoreReviewAverage(entity, ctx?.tx);
         await this.recalculateAndUpdateAccommodationStats(entity.accommodationId, ctx?.tx);
         const accommodationSlug = await this._resolveAccommodationSlug(entity.accommodationId);
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation_review',
-                accommodationSlug
-            });
-        } catch (error) {
-            AccommodationReviewService.revalidationLogger.warn(
-                { error, entityType: 'accommodation_review' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
-        }
+        this._scheduleAccommodationRevalidation(accommodationSlug);
         return entity;
     }
 
@@ -359,17 +344,7 @@ export class AccommodationReviewService extends BaseCrudService<
         _ctx: ServiceContext
     ): Promise<AccommodationReview> {
         const accommodationSlug = await this._resolveAccommodationSlug(entity.accommodationId);
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation_review',
-                accommodationSlug
-            });
-        } catch (error) {
-            AccommodationReviewService.revalidationLogger.warn(
-                { error, entityType: 'accommodation_review' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
-        }
+        this._scheduleAccommodationRevalidation(accommodationSlug);
         return entity;
     }
 
@@ -400,17 +375,7 @@ export class AccommodationReviewService extends BaseCrudService<
         const accommodationSlug = deletedAccommodationId
             ? await this._resolveAccommodationSlug(deletedAccommodationId)
             : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation_review',
-                accommodationSlug
-            });
-        } catch (error) {
-            AccommodationReviewService.revalidationLogger.warn(
-                { error, entityType: 'accommodation_review' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
-        }
+        this._scheduleAccommodationRevalidation(accommodationSlug);
         return result;
     }
 
@@ -438,17 +403,7 @@ export class AccommodationReviewService extends BaseCrudService<
         const accommodationSlug = deletedAccommodationId
             ? await this._resolveAccommodationSlug(deletedAccommodationId)
             : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation_review',
-                accommodationSlug
-            });
-        } catch (error) {
-            AccommodationReviewService.revalidationLogger.warn(
-                { error, entityType: 'accommodation_review' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
-        }
+        this._scheduleAccommodationRevalidation(accommodationSlug);
         return result;
     }
 
@@ -476,6 +431,19 @@ export class AccommodationReviewService extends BaseCrudService<
         const accommodationSlug = restoredAccommodationId
             ? await this._resolveAccommodationSlug(restoredAccommodationId)
             : undefined;
+        this._scheduleAccommodationRevalidation(accommodationSlug);
+        return result;
+    }
+
+    /**
+     * Schedules a non-blocking revalidation for the accommodation_review entity.
+     * Swallows revalidation-service failures (network/missing service) and warns
+     * via the dedicated revalidation logger so the caller's transaction is never
+     * disturbed by a downstream cache miss.
+     *
+     * Extracted from 6 inlined copies in lifecycle hooks (T-033 / GAP-040).
+     */
+    private _scheduleAccommodationRevalidation(accommodationSlug: string | undefined): void {
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'accommodation_review',
@@ -487,20 +455,31 @@ export class AccommodationReviewService extends BaseCrudService<
                 'Revalidation scheduling failed (non-blocking)'
             );
         }
-        return result;
     }
 
     /**
      * Gets paginated reviews for a specific accommodation.
-     * Validates permissions via _canList and returns only non-deleted reviews.
+     *
+     * Validates permissions via `_canList` and returns only non-deleted reviews.
+     * By default, the result set is restricted to records in `lifecycleState: ACTIVE`
+     * so the public tier never leaks DRAFT/ARCHIVED reviews (GAP-001 / SPEC-063-gaps).
+     * Callers that legitimately need the full set (e.g. an owner's "my reviews" view
+     * that includes drafts) can opt in by passing `opts.includeAllStates: true`.
+     *
+     * The `includeAllStates` flag is deliberately NOT part of the validated schema —
+     * it is a server-side control flag supplied by the calling route, not an HTTP
+     * query param, so a public client cannot set it.
+     *
      * @param actor - The actor performing the action
      * @param input - Object containing accommodationId and optional pagination
+     * @param opts - Server-side control options (not exposed via HTTP)
      * @param ctx - Optional service context for transaction propagation
      * @returns Paginated list of reviews for the accommodation wrapped in consistent format
      */
     public async listByAccommodation(
         actor: Actor,
         input: AccommodationReviewListByAccommodationParams,
+        opts?: { includeAllStates?: boolean },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationReviewListWrapper>> {
         return this.runWithLoggingAndValidation({
@@ -510,8 +489,15 @@ export class AccommodationReviewService extends BaseCrudService<
             execute: async (validated, validatedActor) => {
                 await this._canList(validatedActor);
                 const { accommodationId, page, pageSize } = validated;
+                const baseWhere: Record<string, unknown> = {
+                    accommodationId,
+                    deletedAt: null
+                };
+                if (!opts?.includeAllStates) {
+                    baseWhere.lifecycleState = LifecycleStatusEnum.ACTIVE;
+                }
                 const result = await this.model.findAll(
-                    { accommodationId, deletedAt: null },
+                    baseWhere,
                     { page, pageSize },
                     undefined,
                     ctx?.tx

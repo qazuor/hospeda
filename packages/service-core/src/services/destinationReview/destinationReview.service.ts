@@ -17,6 +17,8 @@ import {
     DestinationReviewAdminSearchSchema,
     type DestinationReviewCreateInput,
     DestinationReviewCreateInputSchema,
+    type DestinationReviewListByDestinationParams,
+    DestinationReviewListByDestinationParamsSchema,
     type DestinationReviewListResponse,
     type DestinationReviewListWithUserOutput,
     type DestinationReviewSearchInput,
@@ -24,11 +26,11 @@ import {
     DestinationReviewUpdateInputSchema,
     type DestinationReviewsByUserInput,
     DestinationReviewsByUserSchema,
-    type EntityFilters
+    type EntityFilters,
+    LifecycleStatusEnum
 } from '@repo/schemas';
 import { type SQL, sql } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type {
     Actor,
@@ -40,7 +42,6 @@ import type {
 } from '../../types';
 import { DestinationService } from '../destination/destination.service';
 import { computeReviewAverageRating } from './destinationReview.helpers';
-import { normalizeCreateInput, normalizeUpdateInput } from './destinationReview.normalizers';
 import {
     checkCanAdminList,
     checkCanCreateDestinationReview,
@@ -84,14 +85,6 @@ export class DestinationReviewService extends BaseCrudService<
     protected override getSearchableColumns(): string[] {
         return ['title', 'content'];
     }
-    protected normalizers: CrudNormalizersFromSchemas<
-        typeof DestinationReviewCreateInputSchema,
-        typeof DestinationReviewUpdateInputSchema,
-        typeof DestinationReviewSearchInputSchema
-    > = {
-        create: normalizeCreateInput,
-        update: normalizeUpdateInput
-    };
     private destinationModel = new DestinationModel();
     private destinationService: DestinationService;
 
@@ -100,6 +93,27 @@ export class DestinationReviewService extends BaseCrudService<
         this.model = new DestinationReviewModel();
         this.destinationService = new DestinationService(ctx);
         this.adminSearchSchema = DestinationReviewAdminSearchSchema;
+    }
+
+    /**
+     * Schedules a non-blocking revalidation for the destination_review entity.
+     * Swallows revalidation-service failures and warns via the dedicated logger
+     * so the caller's transaction is never disturbed by a downstream cache miss.
+     *
+     * Extracted from 6 inlined copies in lifecycle hooks (T-033 / GAP-040).
+     */
+    private _scheduleDestinationRevalidation(destinationSlug: string | undefined): void {
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'destination_review',
+                destinationSlug
+            });
+        } catch (error) {
+            DestinationReviewService.revalidationLogger.warn(
+                { error, entityType: 'destination_review' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
     }
 
     /**
@@ -162,7 +176,12 @@ export class DestinationReviewService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<PaginatedListOutput<DestinationReview>> {
-        const { page, pageSize, ...filters } = params;
+        const { page, pageSize, sortBy: _sortBy, sortOrder: _sortOrder, ...filters } = params;
+        // Force-override lifecycleState=ACTIVE: defense-in-depth for public paths
+        // (GAP-003 / SPEC-063-gaps T-004). Mirrors SponsorshipService pattern.
+        // sortBy/sortOrder are stripped to prevent WHERE-clause leak (regression
+        // covered by test/services/where-leak.regression.test.ts).
+        (filters as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
         return this.model.findAll({ ...filters, deletedAt: null }, { page, pageSize });
     }
 
@@ -171,7 +190,16 @@ export class DestinationReviewService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<{ count: number }> {
-        const { page: _p, pageSize: _ps, ...filters } = params;
+        const {
+            page: _p,
+            pageSize: _ps,
+            sortBy: _sortBy,
+            sortOrder: _sortOrder,
+            ...filters
+        } = params;
+        // Mirror _executeSearch force-override so pagination `total` stays consistent
+        // with the filtered items on public endpoints. sortBy/sortOrder also stripped.
+        (filters as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
         const count = await this.model.count({ ...filters, deletedAt: null });
         return { count };
     }
@@ -303,17 +331,7 @@ export class DestinationReviewService extends BaseCrudService<
 
         await this.recalculateAndUpdateDestinationStats(entity.destinationId, ctx?.tx);
         const destinationSlug = await this._resolveDestinationSlug(entity.destinationId);
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'destination_review',
-                destinationSlug
-            });
-        } catch (error) {
-            DestinationReviewService.revalidationLogger.warn(
-                { error, entityType: 'destination_review' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
-        }
+        this._scheduleDestinationRevalidation(destinationSlug);
         return entity;
     }
 
@@ -341,17 +359,7 @@ export class DestinationReviewService extends BaseCrudService<
         await this.recalculateAndUpdateDestinationStats(entity.destinationId, ctx?.tx);
 
         const destinationSlug = await this._resolveDestinationSlug(entity.destinationId);
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'destination_review',
-                destinationSlug
-            });
-        } catch (error) {
-            DestinationReviewService.revalidationLogger.warn(
-                { error, entityType: 'destination_review' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
-        }
+        this._scheduleDestinationRevalidation(destinationSlug);
         return entity;
     }
 
@@ -361,17 +369,7 @@ export class DestinationReviewService extends BaseCrudService<
         _ctx: ServiceContext
     ): Promise<DestinationReview> {
         const destinationSlug = await this._resolveDestinationSlug(entity.destinationId);
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'destination_review',
-                destinationSlug
-            });
-        } catch (error) {
-            DestinationReviewService.revalidationLogger.warn(
-                { error, entityType: 'destination_review' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
-        }
+        this._scheduleDestinationRevalidation(destinationSlug);
         return entity;
     }
 
@@ -407,17 +405,7 @@ export class DestinationReviewService extends BaseCrudService<
         const destinationSlug = deletedDestinationId
             ? await this._resolveDestinationSlug(deletedDestinationId)
             : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'destination_review',
-                destinationSlug
-            });
-        } catch (error) {
-            DestinationReviewService.revalidationLogger.warn(
-                { error, entityType: 'destination_review' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
-        }
+        this._scheduleDestinationRevalidation(destinationSlug);
         return result;
     }
 
@@ -450,17 +438,7 @@ export class DestinationReviewService extends BaseCrudService<
         const destinationSlug = deletedDestinationId
             ? await this._resolveDestinationSlug(deletedDestinationId)
             : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'destination_review',
-                destinationSlug
-            });
-        } catch (error) {
-            DestinationReviewService.revalidationLogger.warn(
-                { error, entityType: 'destination_review' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
-        }
+        this._scheduleDestinationRevalidation(destinationSlug);
         return result;
     }
 
@@ -493,17 +471,7 @@ export class DestinationReviewService extends BaseCrudService<
         const destinationSlug = restoredDestinationId
             ? await this._resolveDestinationSlug(restoredDestinationId)
             : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'destination_review',
-                destinationSlug
-            });
-        } catch (error) {
-            DestinationReviewService.revalidationLogger.warn(
-                { error, entityType: 'destination_review' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
-        }
+        this._scheduleDestinationRevalidation(destinationSlug);
         return result;
     }
 
@@ -531,6 +499,71 @@ export class DestinationReviewService extends BaseCrudService<
                 const filters: Record<string, unknown> = { userId, deletedAt: null };
                 if (destinationId) {
                     filters.destinationId = destinationId;
+                }
+                const result = await this.model.findAll(
+                    filters,
+                    { page, pageSize },
+                    undefined,
+                    resolvedCtx.tx
+                );
+
+                const currentPage = page || 1;
+                const currentPageSize = pageSize || 10;
+                const totalPages = Math.ceil(result.total / currentPageSize);
+
+                return {
+                    data: result.items,
+                    pagination: {
+                        page: currentPage,
+                        pageSize: currentPageSize,
+                        total: result.total,
+                        totalPages,
+                        hasNextPage: currentPage < totalPages,
+                        hasPreviousPage: currentPage > 1
+                    }
+                } as DestinationReviewListResponse;
+            }
+        });
+    }
+
+    /**
+     * Gets paginated reviews for a specific destination.
+     *
+     * Mirrors `AccommodationReviewService.listByAccommodation()`. Validates permissions
+     * via `_canList` and returns only non-deleted reviews. By default, the result set
+     * is restricted to records in `lifecycleState: ACTIVE` so the public tier never
+     * leaks DRAFT/ARCHIVED reviews (GAP-002 / SPEC-063-gaps T-003).
+     *
+     * The `includeAllStates` flag is a server-side control flag supplied by the
+     * calling route — it is NOT part of the validated HTTP schema, so a public
+     * client cannot set it.
+     *
+     * @param actor - The actor performing the action
+     * @param input - Object containing destinationId and optional pagination
+     * @param opts - Server-side control options (not exposed via HTTP)
+     * @param ctx - Optional service context. When provided with a transaction, model queries run within it.
+     * @returns Paginated list of reviews for the destination with pagination metadata
+     */
+    public async listByDestination(
+        actor: Actor,
+        input: DestinationReviewListByDestinationParams,
+        opts?: { includeAllStates?: boolean },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<DestinationReviewListResponse>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listByDestination',
+            input: { ...input, actor },
+            schema: DestinationReviewListByDestinationParamsSchema,
+            ctx,
+            execute: async (validated, validatedActor, resolvedCtx) => {
+                await this._canList(validatedActor);
+                const { destinationId, page, pageSize } = validated;
+                const filters: Record<string, unknown> = {
+                    destinationId,
+                    deletedAt: null
+                };
+                if (!opts?.includeAllStates) {
+                    filters.lifecycleState = LifecycleStatusEnum.ACTIVE;
                 }
                 const result = await this.model.findAll(
                     filters,

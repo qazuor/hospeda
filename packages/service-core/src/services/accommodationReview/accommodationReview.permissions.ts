@@ -43,12 +43,10 @@ export function checkCanDeleteAccommodationReview(actor: Actor): void {
 }
 
 /**
- * Throws if the actor cannot view an accommodation review.
- * Allows public access to reviews for any authenticated actor.
+ * Public — any actor can view accommodation reviews. Visibility filtering
+ * (lifecycleState, deletedAt) happens at the service/route layer.
  */
-export function checkCanViewAccommodationReview(actor: Actor): void {
-    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
-    // Allow any actor to view accommodation reviews; visibility filtering happens elsewhere
+export function checkCanViewAccommodationReview(_actor: Actor): void {
     return;
 }
 

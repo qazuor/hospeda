@@ -42,9 +42,11 @@ export function checkCanDeleteDestinationReview(actor: Actor): void {
     }
 }
 
-export function checkCanViewDestinationReview(actor: Actor): void {
-    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
-    // Allow any actor to view destination reviews; visibility filtering happens elsewhere
+/**
+ * Public — any actor can view destination reviews. Visibility filtering
+ * (lifecycleState, deletedAt) happens at the service/route layer.
+ */
+export function checkCanViewDestinationReview(_actor: Actor): void {
     return;
 }
 

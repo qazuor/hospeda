@@ -55,3 +55,25 @@ export function calculateStatsFromReviews(reviews: readonly AccommodationReview[
     const averageRating = totalRatings ? totalSum / totalRatings : 0;
     return { reviewsCount, averageRating, rating };
 }
+
+/**
+ * Computes the average of a per-review JSONB rating object whose runtime
+ * shape is not enforced by Zod (it comes from the DB column). The previous
+ * inline implementation cast the value to `Record<string, number>`, which
+ * was dishonest about the actual lack of guarantees.
+ *
+ * Accepts `unknown` and defensively filters numeric values; returns 0 for
+ * empty/non-object inputs (matching the legacy behavior). Caller decides
+ * whether to round.
+ *
+ * Extracted in T-032 / GAP-039.
+ */
+export function computeAccommodationReviewAverage(rating: unknown): number {
+    if (!rating || typeof rating !== 'object') {
+        return 0;
+    }
+    const values = Object.values(rating as Record<string, unknown>).filter(
+        (v): v is number => typeof v === 'number'
+    );
+    return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+}
