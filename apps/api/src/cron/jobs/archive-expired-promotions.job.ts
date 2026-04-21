@@ -16,10 +16,31 @@
  */
 
 import { and, eq, isNotNull, isNull, lt, ownerPromotions, sql, withTransaction } from '@repo/db';
+import { LifecycleStatusEnum } from '@repo/schemas';
 import * as Sentry from '@sentry/node';
 import { inArray } from 'drizzle-orm';
 import { apiLogger } from '../../utils/logger.js';
 import type { CronJobDefinition } from '../types.js';
+
+/**
+ * Reports an error to Sentry without ever propagating Sentry SDK failures
+ * (DSN misconfig, serialization OOM) to the caller. Falls back to apiLogger.warn
+ * so the structured CronJobResult contract is preserved.
+ */
+const safeReportToSentry = (
+    error: unknown,
+    context: Parameters<typeof Sentry.captureException>[1]
+): void => {
+    try {
+        Sentry.captureException(error, context);
+    } catch (sentryError) {
+        const sentryMessage =
+            sentryError instanceof Error ? sentryError.message : String(sentryError);
+        apiLogger.warn(
+            `Sentry.captureException failed in cron handler; original error preserved (sentry: ${sentryMessage})`
+        );
+    }
+};
 
 /**
  * Maximum number of promotions archived per run.
@@ -81,8 +102,19 @@ export const archiveExpiredPromotionsJob: CronJobDefinition = {
                 const lockResult = await tx.execute(
                     sql`SELECT pg_try_advisory_xact_lock(${ADVISORY_LOCK_ID}) as acquired`
                 );
-                const acquired = (lockResult.rows?.[0] as Record<string, unknown> | undefined)
-                    ?.acquired;
+                const lockRow = lockResult.rows?.[0] as Record<string, unknown> | undefined;
+                const acquired = lockRow?.acquired;
+
+                // Distinguish a benign "another pod holds the lock" (acquired=false)
+                // from a malformed DB response (missing row or non-boolean column).
+                // The former is expected and silently skipped; the latter must surface
+                // as an explicit error so operators can investigate transient DB issues
+                // instead of a silent skip masking a bug.
+                if (!lockRow || typeof acquired !== 'boolean') {
+                    throw new Error(
+                        `archive-expired-promotions: pg_try_advisory_xact_lock returned malformed result (rows=${JSON.stringify(lockResult.rows)})`
+                    );
+                }
 
                 if (!acquired) {
                     return { skipped: true };
@@ -95,7 +127,7 @@ export const archiveExpiredPromotionsJob: CronJobDefinition = {
                     .from(ownerPromotions)
                     .where(
                         and(
-                            eq(ownerPromotions.lifecycleState, 'ACTIVE'),
+                            eq(ownerPromotions.lifecycleState, LifecycleStatusEnum.ACTIVE),
                             isNotNull(ownerPromotions.validUntil),
                             lt(ownerPromotions.validUntil, sql`NOW()`),
                             isNull(ownerPromotions.deletedAt)
@@ -127,7 +159,7 @@ export const archiveExpiredPromotionsJob: CronJobDefinition = {
                 await tx
                     .update(ownerPromotions)
                     .set({
-                        lifecycleState: 'ARCHIVED',
+                        lifecycleState: LifecycleStatusEnum.ARCHIVED,
                         updatedAt: new Date(),
                         updatedById: null
                     })
@@ -135,7 +167,8 @@ export const archiveExpiredPromotionsJob: CronJobDefinition = {
 
                 logger.info('Archived expired promotions', {
                     source: LOG_SOURCE,
-                    count: expiredIds.length
+                    count: expiredIds.length,
+                    ids: expiredIds
                 });
 
                 return { skipped: false, dryRun: false, processed: expiredIds.length };
@@ -180,7 +213,7 @@ export const archiveExpiredPromotionsJob: CronJobDefinition = {
             const errorMessage = error instanceof Error ? error.message : String(error);
             const errorStack = error instanceof Error ? error.stack : undefined;
 
-            Sentry.captureException(error, {
+            safeReportToSentry(error, {
                 tags: { cronJob: 'archive-expired-promotions', phase: 'top-level' }
             });
 

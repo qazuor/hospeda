@@ -297,5 +297,99 @@ describe('Archive Expired Promotions Cron Job', () => {
                 })
             );
         });
+
+        // T-019 (GAP-027): Sentry SDK failures must not propagate; the handler
+        // must still return a structured error result.
+        it('still returns a structured error result when Sentry.captureException throws', async () => {
+            mockTxExecute
+                .mockResolvedValueOnce({ rows: [{ acquired: true }] })
+                .mockResolvedValueOnce({ rows: [] });
+            mockSelectLimit.mockRejectedValueOnce(new Error('connection reset'));
+
+            // Force Sentry.captureException to throw synchronously
+            vi.mocked(Sentry.captureException).mockImplementationOnce(() => {
+                throw new Error('Sentry DSN misconfigured');
+            });
+
+            const ctx = createMockContext({ dryRun: false });
+
+            // The handler must NOT propagate the Sentry failure
+            const result = await archiveExpiredPromotionsJob.handler(ctx);
+
+            expect(result.success).toBe(false);
+            expect(result.errors).toBe(1);
+            expect(result.processed).toBe(0);
+            expect(result.message).toContain('Failed to archive expired promotions');
+            expect(apiLogger.warn).toHaveBeenCalledWith(
+                expect.stringContaining('Sentry.captureException failed')
+            );
+        });
+    });
+
+    // T-020 (GAP-028): malformed advisory-lock result must throw, not silently skip.
+    describe('Advisory lock result shape validation', () => {
+        it('throws when pg_try_advisory_xact_lock returns no rows', async () => {
+            vi.mocked(withTransaction).mockImplementationOnce((async (
+                callback: (tx: unknown) => Promise<unknown>
+            ) => {
+                const txStub = {
+                    select: mockSelect,
+                    update: mockUpdate,
+                    execute: vi.fn().mockResolvedValueOnce({ rows: [] })
+                };
+                return callback(txStub);
+            }) as never);
+            const ctx = createMockContext({ dryRun: false });
+
+            const result = await archiveExpiredPromotionsJob.handler(ctx);
+
+            expect(result.success).toBe(false);
+            expect(result.errors).toBe(1);
+            expect(result.message).toContain('malformed result');
+            expect(Sentry.captureException).toHaveBeenCalledTimes(1);
+            // Crucially: NOT a silent skip
+            expect(result.details).not.toMatchObject({ skipped: true });
+        });
+
+        it('throws when pg_try_advisory_xact_lock returns a non-boolean acquired column', async () => {
+            vi.mocked(withTransaction).mockImplementationOnce((async (
+                callback: (tx: unknown) => Promise<unknown>
+            ) => {
+                const txStub = {
+                    select: mockSelect,
+                    update: mockUpdate,
+                    execute: vi.fn().mockResolvedValueOnce({ rows: [{ acquired: 'yes' }] })
+                };
+                return callback(txStub);
+            }) as never);
+            const ctx = createMockContext({ dryRun: false });
+
+            const result = await archiveExpiredPromotionsJob.handler(ctx);
+
+            expect(result.success).toBe(false);
+            expect(result.errors).toBe(1);
+            expect(result.message).toContain('malformed result');
+            expect(result.details).not.toMatchObject({ skipped: true });
+        });
+    });
+
+    // T-022 (GAP-045): partial close of audit-trail gap — log the archived ids.
+    describe('Audit log payload (T-022 / GAP-045)', () => {
+        it('includes the archived ids in the structured "Archived expired promotions" log', async () => {
+            const expired = [{ id: 'uuid-1' }, { id: 'uuid-2' }, { id: 'uuid-3' }];
+            arrangeDefaultTx(expired);
+            const ctx = createMockContext({ dryRun: false });
+
+            await archiveExpiredPromotionsJob.handler(ctx);
+
+            const archivedCall = vi
+                .mocked(ctx.logger.info)
+                .mock.calls.find((call) => call[0] === 'Archived expired promotions');
+            expect(archivedCall).toBeDefined();
+            const payload = archivedCall?.[1] as Record<string, unknown> | undefined;
+            expect(payload).toBeDefined();
+            expect(payload?.count).toBe(3);
+            expect(payload?.ids).toEqual(['uuid-1', 'uuid-2', 'uuid-3']);
+        });
     });
 });
