@@ -2,7 +2,11 @@
  * Public get owner promotion by ID endpoint
  * Returns a single owner promotion by its ID
  */
-import { OwnerPromotionIdSchema, OwnerPromotionPublicSchema } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    OwnerPromotionIdSchema,
+    OwnerPromotionPublicSchema
+} from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -14,6 +18,13 @@ const ownerPromotionService = new OwnerPromotionService({ logger: apiLogger });
 /**
  * GET /api/v1/public/owner-promotions/:id
  * Get owner promotion by ID - Public endpoint
+ *
+ * Two-part defense for GAP-005 / SPEC-063-gaps T-006:
+ *   1. Excludes records whose `lifecycleState !== ACTIVE` so DRAFT/ARCHIVED
+ *      promotions cannot be probed by UUID.
+ *   2. Parses the returned row through `OwnerPromotionPublicSchema` to strip
+ *      admin-only fields (`lifecycleState`, `ownerId`, `currentRedemptions`,
+ *      audit columns). Partial close of the systemic issue tracked by SPEC-087.
  */
 export const publicGetOwnerPromotionByIdRoute = createPublicRoute({
     method: 'get',
@@ -31,7 +42,14 @@ export const publicGetOwnerPromotionByIdRoute = createPublicRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        return result.data;
+        // Gate: only ACTIVE records are visible on the public tier.
+        const row = result.data as { lifecycleState?: string } | null | undefined;
+        if (!row || row.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
+            return null;
+        }
+
+        // Strip admin-only fields before the response leaves the public tier.
+        return OwnerPromotionPublicSchema.parse(row);
     },
     options: {
         cacheTTL: 300

@@ -17,6 +17,11 @@ import { createPublicListRoute } from '../../../../utils/route-factory';
 /**
  * GET /api/v1/public/destinations/:destinationId/reviews
  * List destination reviews - Public endpoint
+ *
+ * Uses `DestinationReviewService.listByDestination()` which force-filters
+ * `destinationId` and `lifecycleState=ACTIVE` (GAP-002 / SPEC-063-gaps T-003).
+ * Without this, the route silently ignored the `destinationId` path param and
+ * returned a global cross-destination review list leaking DRAFT rows.
  */
 export const publicListDestinationReviewsRoute = createPublicListRoute({
     method: 'get',
@@ -29,11 +34,17 @@ export const publicListDestinationReviewsRoute = createPublicListRoute({
     },
     requestQuery: DestinationReviewsByDestinationHttpSchema.shape,
     responseSchema: DestinationReviewPublicSchema,
-    handler: async (ctx: Context, _params, _body, query) => {
+    handler: async (ctx: Context, params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
         const service = new DestinationReviewService({ logger: apiLogger });
-        const result = await service.list(actor, { page, pageSize });
+        const result = await service.listByDestination(actor, {
+            destinationId: params.destinationId as string,
+            page,
+            pageSize,
+            sortBy: 'createdAt' as const,
+            sortOrder: 'desc' as const
+        });
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
 
         // AC-005: strip admin-only fields (lifecycleState, audit fields, adminInfo)
@@ -41,12 +52,12 @@ export const publicListDestinationReviewsRoute = createPublicListRoute({
         // tier. The route factory only uses responseSchema for OpenAPI docs, not
         // runtime validation, so the strip must happen here. Tracked systemically
         // in SPEC-087.
-        const rawItems = result.data.items ?? [];
+        const rawItems = result.data.data ?? [];
         const items = rawItems.map((item) => DestinationReviewPublicSchema.parse(item));
 
         return {
             items,
-            pagination: getPaginationResponse(result.data.total, { page, pageSize })
+            pagination: getPaginationResponse(result.data.pagination.total, { page, pageSize })
         };
     },
     options: {
