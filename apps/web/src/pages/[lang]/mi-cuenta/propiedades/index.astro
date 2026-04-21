@@ -1,0 +1,304 @@
+---
+/**
+ * @file mi-cuenta/propiedades/index.astro
+ * @description Host property listing page — shows all accommodations owned by the
+ * authenticated user, with empty state fallback and optional lifecycle filter.
+ *
+ * Auth protection: both middleware AND this page check for a valid user session.
+ * Middleware redirects before the page renders; the in-page guard is a safety net.
+ *
+ * Data: fetched server-side by forwarding the session cookie to the protected API
+ * endpoint `GET /api/v1/protected/accommodations` (owner-scoped, see T-014).
+ * On fetch error the page renders the empty state with an error log so the user
+ * still has a functional page and can navigate to publish a new property.
+ *
+ * @route    /[lang]/mi-cuenta/propiedades/
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+
+import type { Accommodation } from '@repo/schemas';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { getApiUrl } from '@/lib/env';
+import { logger } from '@/lib/logger';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import PropertyCard from '@/components/host/PropertyCard.astro';
+
+export const prerender = false;
+
+// ---------------------------------------------------------------------------
+// Locale — injected by middleware, always a valid SupportedLocale.
+// ---------------------------------------------------------------------------
+
+const locale = Astro.locals.locale as SupportedLocale;
+
+// ---------------------------------------------------------------------------
+// Auth guard: middleware protects /mi-cuenta/* automatically, but this is the
+// safety net for any SSR edge case where middleware did not run.
+// ---------------------------------------------------------------------------
+
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+// ---------------------------------------------------------------------------
+// Server-side fetch: list owner's accommodations.
+// The protected endpoint filters by actor.id server-side (T-014 / Option A).
+// Session cookie is forwarded to authenticate the request.
+// ---------------------------------------------------------------------------
+
+let properties: readonly Accommodation[] = [];
+let fetchError = false;
+
+try {
+    const apiUrl = getApiUrl();
+    const cookieHeader = Astro.request.headers.get('cookie');
+
+    if (cookieHeader) {
+        const response = await fetch(
+            `${apiUrl}/api/v1/protected/accommodations?pageSize=50&sortBy=createdAt&sortOrder=desc`,
+            {
+                headers: {
+                    cookie: cookieHeader,
+                    Accept: 'application/json'
+                }
+            }
+        );
+
+        if (response.ok) {
+            const body = (await response.json()) as {
+                data?: {
+                    items?: readonly Accommodation[];
+                };
+            };
+            properties = body.data?.items ?? [];
+        } else {
+            fetchError = true;
+            logger.error('[propiedades] API responded with status', response.status);
+        }
+    }
+} catch (err) {
+    fetchError = true;
+    logger.error('[propiedades] Failed to fetch properties', err instanceof Error ? err.message : String(err));
+}
+
+// ---------------------------------------------------------------------------
+// i18n
+// ---------------------------------------------------------------------------
+
+const { t } = createTranslations(locale);
+
+const title = t('host.properties.list.title', 'Mis propiedades');
+const subtitle = t('host.properties.list.subtitle', 'Gestioná tus publicaciones');
+const emptyTitle = t('host.properties.empty.title', 'Aún no publicaste ninguna propiedad');
+const emptyCta = t('host.properties.empty.cta', 'Publicar ahora');
+
+const publishNewUrl = buildUrl({ locale, path: 'publicar/nueva' });
+
+const isEmpty = properties.length === 0;
+---
+
+<AccountLayout locale={locale} title={title} description={subtitle} activeSection="propiedades">
+    <!-- Page header -->
+    <div class="props-page__header">
+        <div class="props-page__heading">
+            <h2 class="props-page__title">{title}</h2>
+            <p class="props-page__subtitle">{subtitle}</p>
+        </div>
+        <a href={publishNewUrl} class="props-page__cta-btn">
+            {emptyCta}
+        </a>
+    </div>
+
+    {!isEmpty ? (
+        <!-- Properties grid -->
+        <div class="props-page__grid" role="list" aria-label={title}>
+            {properties.map((property) => (
+                <div class="props-page__item" role="listitem" data-reveal="up">
+                    <PropertyCard property={property} locale={locale} />
+                </div>
+            ))}
+        </div>
+    ) : (
+        <!-- Empty state -->
+        <div class="props-page__empty" role="status">
+            <!-- Illustration placeholder -->
+            <div class="props-page__empty-illustration" aria-hidden="true">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 120 120"
+                    fill="none"
+                    width="120"
+                    height="120"
+                    aria-hidden="true"
+                >
+                    <rect
+                        x="20"
+                        y="50"
+                        width="80"
+                        height="55"
+                        rx="8"
+                        fill="var(--surface-warm)"
+                        stroke="var(--border)"
+                        stroke-width="2"
+                    />
+                    <polygon
+                        points="10,52 60,15 110,52"
+                        fill="var(--brand-primary, var(--primary))"
+                        opacity="0.9"
+                    />
+                    <rect
+                        x="45"
+                        y="75"
+                        width="30"
+                        height="30"
+                        rx="3"
+                        fill="var(--brand-accent, var(--accent))"
+                        opacity="0.7"
+                    />
+                </svg>
+            </div>
+
+            <p class="props-page__empty-title">{emptyTitle}</p>
+
+            {fetchError && (
+                <p class="props-page__empty-error">
+                    {t('host.properties.empty.fetchError', 'No se pudo cargar la lista. Intenta recargar la página.')}
+                </p>
+            )}
+
+            <a href={publishNewUrl} class="props-page__cta-btn props-page__cta-btn--centered">
+                {emptyCta}
+            </a>
+        </div>
+    )}
+</AccountLayout>
+
+<style>
+    /* ── Page header ── */
+    .props-page__header {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 1rem);
+        margin-bottom: var(--space-8, 2rem);
+    }
+
+    @media (min-width: 640px) {
+        .props-page__header {
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+    }
+
+    .props-page__heading {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .props-page__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground, var(--foreground));
+        margin: 0;
+    }
+
+    .props-page__subtitle {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm, 0.9375rem);
+        color: var(--core-muted-foreground, var(--muted-foreground));
+        margin: 0;
+    }
+
+    /* ── CTA button ── */
+    .props-page__cta-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0.625rem 1.25rem;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--brand-primary, var(--primary));
+        color: var(--primary-foreground, #ffffff);
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.9375rem;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: opacity 150ms ease-out;
+        align-self: flex-start;
+    }
+
+    .props-page__cta-btn:hover {
+        opacity: 0.88;
+    }
+
+    .props-page__cta-btn:focus-visible {
+        outline: 2px solid var(--brand-primary, var(--primary));
+        outline-offset: 2px;
+    }
+
+    .props-page__cta-btn--centered {
+        margin-top: var(--space-4, 1rem);
+    }
+
+    /* ── Properties grid: 1 col → 2 col → 3 col ── */
+    .props-page__grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-card-gap, 1.875rem);
+    }
+
+    @media (min-width: 640px) {
+        .props-page__grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .props-page__grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    .props-page__item {
+        display: contents;
+    }
+
+    /* ── Empty state ── */
+    .props-page__empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-4, 1rem);
+        padding: var(--space-12, 3rem) var(--space-8, 2rem);
+        background-color: var(--core-card, var(--card));
+        border: 1px dashed var(--border);
+        border-radius: var(--radius-card, 24px);
+        text-align: center;
+    }
+
+    .props-page__empty-illustration {
+        margin-bottom: var(--space-2, 0.5rem);
+        opacity: 0.85;
+    }
+
+    .props-page__empty-title {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: clamp(1rem, 2vw, 1.25rem);
+        color: var(--core-foreground, var(--foreground));
+        margin: 0;
+    }
+
+    .props-page__empty-error {
+        font-family: var(--font-sans);
+        font-size: var(--text-caption, 0.875rem);
+        color: oklch(0.55 0.22 25);
+        margin: 0;
+    }
+</style>

@@ -1,0 +1,208 @@
+---
+/**
+ * @file publicar/nueva.astro
+ * @description New property creation page. Mounts the PropertyForm island for
+ * authenticated hosts to create a new accommodation listing.
+ *
+ * Auth protection: middleware handles the redirect for `publicar` if it were a
+ * PROTECTED_SEGMENT, but since `publicar` is NOT listed in PROTECTED_SEGMENTS this
+ * page performs its own in-page auth guard (same safety-net pattern as mi-cuenta).
+ *
+ * Server-side data: fetches the user's existing DRAFT accommodations to surface a
+ * resume-draft banner in PropertyForm. If the fetch fails (endpoint unavailable,
+ * network error, etc.) the page still renders — it just omits the existingDraftId.
+ *
+ * @route    /{lang}/publicar/nueva/
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { buildUrl } from '@/lib/urls';
+import { getApiUrl } from '@/lib/env';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { PropertyForm } from '@/components/host/PropertyForm.client';
+
+export const prerender = false;
+
+// ---------------------------------------------------------------------------
+// Locale — injected by middleware, always a valid SupportedLocale.
+// ---------------------------------------------------------------------------
+
+const locale = Astro.locals.locale as SupportedLocale;
+
+// ---------------------------------------------------------------------------
+// Auth guard: middleware does NOT auto-protect /publicar/* routes, so we do it
+// here. Same double-guard pattern used by /mi-cuenta/*.
+// ---------------------------------------------------------------------------
+
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(
+        buildLoginRedirect({ locale, currentUrl: Astro.url.pathname })
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Fetch user's existing DRAFT accommodations server-side.
+// Forwards the session cookie so the protected endpoint authenticates the call.
+// Errors are swallowed — the page renders without a draft ID as fallback.
+// ---------------------------------------------------------------------------
+
+let existingDraftId: string | undefined;
+
+try {
+    const apiUrl = getApiUrl();
+    const cookieHeader = Astro.request.headers.get('cookie');
+
+    if (cookieHeader) {
+        const response = await fetch(
+            `${apiUrl}/api/v1/protected/accommodations?lifecycleState=DRAFT&pageSize=1`,
+            {
+                headers: {
+                    cookie: cookieHeader,
+                    Accept: 'application/json'
+                }
+            }
+        );
+
+        if (response.ok) {
+            const body = (await response.json()) as {
+                data?: {
+                    items?: ReadonlyArray<{ readonly id: string }>;
+                };
+            };
+
+            const firstDraft = body.data?.items?.[0];
+            if (firstDraft?.id) {
+                existingDraftId = firstDraft.id;
+            }
+        }
+    }
+} catch {
+    // Swallow fetch errors — graceful degradation: form renders without a draft ID.
+}
+
+// ---------------------------------------------------------------------------
+// i18n
+// ---------------------------------------------------------------------------
+
+const t = createT(locale);
+
+const pageTitle = t('host.pages.nueva.title', 'Nueva propiedad');
+const pageDescription = t(
+    'host.pages.nueva.description',
+    'Publicá tu alojamiento en Hospeda y llegá a miles de viajeros.'
+);
+
+// PUBLIC_API_URL is safe to pass to the client island.
+const apiUrl = import.meta.env.PUBLIC_API_URL as string;
+---
+
+<MarketingLayout
+    locale={locale}
+    title={pageTitle}
+    description={pageDescription}
+>
+    <section class="nueva-hero section section--warm">
+        <div class="nueva-hero__container">
+            <nav class="nueva-hero__breadcrumb" aria-label={t('host.pages.nueva.breadcrumbLabel', 'Ruta de navegación')}>
+                <a
+                    href={buildUrl({ locale, path: 'publicar' })}
+                    class="nueva-hero__breadcrumb-link"
+                >
+                    {t('host.landing.heroHeadline', 'Para propietarios')}
+                </a>
+                <span class="nueva-hero__breadcrumb-sep" aria-hidden="true">/</span>
+                <span class="nueva-hero__breadcrumb-current" aria-current="page">
+                    {pageTitle}
+                </span>
+            </nav>
+
+            <h1 class="nueva-hero__title">{pageTitle}</h1>
+            <p class="nueva-hero__desc">
+                {t(
+                    'host.pages.nueva.subtitle',
+                    'Completá los datos de tu alojamiento. Podés guardarlo como borrador en cualquier momento.'
+                )}
+            </p>
+        </div>
+    </section>
+
+    <section class="nueva-form section">
+        <div class="nueva-form__container">
+            <!-- PropertyForm React island: hydrated immediately (client:load) because
+                 the form requires interactivity from the first user interaction. -->
+            <PropertyForm
+                client:load
+                locale={locale}
+                apiUrl={apiUrl}
+                existingDraftId={existingDraftId}
+            />
+        </div>
+    </section>
+</MarketingLayout>
+
+<style>
+    /* ── Hero ──────────────────────────────────────────────────────────────── */
+    .nueva-hero__container {
+        max-width: var(--container-max);
+        margin: 0 auto;
+        padding: var(--space-8) var(--space-container-x) var(--space-6);
+    }
+
+    .nueva-hero__breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin-bottom: var(--space-4);
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--muted-foreground);
+    }
+
+    .nueva-hero__breadcrumb-link {
+        color: var(--brand-primary);
+        text-decoration: none;
+        transition: color var(--duration-fast) ease;
+    }
+
+    .nueva-hero__breadcrumb-link:hover {
+        color: var(--brand-accent);
+        text-decoration: underline;
+    }
+
+    .nueva-hero__breadcrumb-sep {
+        color: var(--border);
+    }
+
+    .nueva-hero__breadcrumb-current {
+        color: var(--muted-foreground);
+    }
+
+    .nueva-hero__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        color: var(--foreground);
+        margin: 0 0 var(--space-3);
+        line-height: 1.2;
+    }
+
+    .nueva-hero__desc {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-lg);
+        color: var(--muted-foreground);
+        line-height: 1.6;
+        margin: 0;
+        max-width: 60ch;
+    }
+
+    /* ── Form section ──────────────────────────────────────────────────────── */
+    .nueva-form__container {
+        max-width: var(--container-max);
+        margin: 0 auto;
+        padding: 0 var(--space-container-x) var(--space-section);
+    }
+</style>

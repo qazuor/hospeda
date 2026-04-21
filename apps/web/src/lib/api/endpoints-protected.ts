@@ -719,6 +719,9 @@ interface AccommodationContactResponse {
     readonly website?: string;
 }
 
+/** Accommodation lifecycle state values used as query filter */
+type AccommodationLifecycleState = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+
 /** Protected accommodation API endpoints (require auth). */
 export const protectedAccommodationsApi = {
     /**
@@ -734,5 +737,46 @@ export const protectedAccommodationsApi = {
         readonly id: string;
     }): Promise<ApiResult<AccommodationContactResponse>> {
         return apiClient.getProtected({ path: `${PROTECTED}/accommodations/${id}/contact` });
+    },
+
+    /**
+     * List accommodations owned by the authenticated user.
+     * Results are filtered server-side to only include accommodations where ownerId === actor.id.
+     *
+     * @param params - Optional pagination and lifecycle state filter
+     * @returns Paginated list of the user's accommodations
+     *
+     * @example
+     * ```ts
+     * const result = await protectedAccommodationsApi.listOwn({ pageSize: 50 });
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    listOwn(params?: {
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly lifecycleState?: AccommodationLifecycleState;
+    }): Promise<ApiResult<PaginatedResponse<Record<string, unknown>>>> {
+        return apiClient.getList({ path: `${PROTECTED}/accommodations`, params });
+    },
+
+    /**
+     * Get a single accommodation owned by the authenticated user.
+     * Returns the accommodation only if ownerId === actor.id.
+     * Returns a non-ok result if not found or not owned.
+     *
+     * @param params - Accommodation ID
+     * @returns The accommodation record or null
+     *
+     * @example
+     * ```ts
+     * const result = await protectedAccommodationsApi.getOwnById({ id: 'acc-uuid' });
+     * if (result.ok && result.data) { ... }
+     * ```
+     */
+    getOwnById({
+        id
+    }: { readonly id: string }): Promise<ApiResult<Record<string, unknown> | null>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/accommodations/${id}` });
     }
 };

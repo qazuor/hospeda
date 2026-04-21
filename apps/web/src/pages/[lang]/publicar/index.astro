@@ -1,0 +1,387 @@
+---
+/**
+ * @file publicar/index.astro
+ * @description Host onboarding landing page. Introduces the property publishing
+ * flow to potential hosts with a hero, benefits, how-it-works steps, FAQ, and CTA.
+ *
+ * The primary CTA is auth-aware: authenticated users are linked directly to the
+ * new-property form (/publicar/nueva/), unauthenticated users go to sign-in first.
+ * This is implemented via a small React island (HostLandingCta) with client:load
+ * so the swap happens on first paint without any server-side session check.
+ *
+ * Marketing prose (benefits, steps, FAQ) is deliberately kept in sync with
+ * /suscriptores/propietarios/ via shared i18n keys (owners.*) — no copy duplication.
+ *
+ * @route /{lang}/publicar/
+ * @rendering SSG (prerender = true) — no auth required at page level
+ */
+
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import { HostLandingCta } from '@/components/sections/HostLandingCta.client';
+import JsonLd from '@/components/seo/JsonLd.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import type { GetStaticPaths } from 'astro';
+
+export const prerender = true;
+
+export const getStaticPaths = (() => {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}) satisfies GetStaticPaths;
+
+const { lang } = Astro.params;
+const locale = lang as SupportedLocale;
+const { t } = createTranslations(locale);
+
+// ---------------------------------------------------------------------------
+// Reuse marketing content from /suscriptores/propietarios/ via shared keys
+// ---------------------------------------------------------------------------
+
+const benefits = [
+	{ titleKey: 'owners.benefits.1.title', titleFb: 'Visibilidad regional', descKey: 'owners.benefits.1.desc', descFb: 'Llegá a miles de viajeros que buscan alojamiento en la costa del río Uruguay y el litoral entrerriano.' },
+	{ titleKey: 'owners.benefits.2.title', titleFb: 'Gestión simple', descKey: 'owners.benefits.2.desc', descFb: 'Publicá, editá y gestioná tus propiedades desde un solo lugar. Panel de control intuitivo y fácil de usar.' },
+	{ titleKey: 'owners.benefits.3.title', titleFb: 'Sin comisiones ocultas', descKey: 'owners.benefits.3.desc', descFb: 'Planes transparentes con precios fijos. Sabés exactamente cuánto pagás, sin sorpresas en cada reserva.' },
+] as const;
+
+const steps = [
+	{ num: '01', titleKey: 'owners.steps.1.title', titleFb: 'Registrate', descKey: 'owners.steps.1.desc', descFb: 'Creá tu cuenta de propietario en menos de 2 minutos. Solo necesitás un email.' },
+	{ num: '02', titleKey: 'owners.steps.2.title', titleFb: 'Publicá', descKey: 'owners.steps.2.desc', descFb: 'Cargá fotos, descripción, servicios y precios de tu alojamiento.' },
+	{ num: '03', titleKey: 'owners.steps.3.title', titleFb: 'Recibí consultas', descKey: 'owners.steps.3.desc', descFb: 'Los viajeros te contactan directamente. Vos manejás las reservas.' },
+	{ num: '04', titleKey: 'owners.steps.4.title', titleFb: 'Crecé', descKey: 'owners.steps.4.desc', descFb: 'Accedé a estadísticas, destacá tu publicación y llegá a más viajeros.' },
+] as const;
+
+const faqs = [
+	{ qKey: 'owners.faq.1.q', qFb: '¿Cuánto cuesta publicar mi alojamiento?', aKey: 'owners.faq.1.a', aFb: 'Ofrecemos planes desde gratuitos hasta premium. El plan básico te permite publicar sin costo.' },
+	{ qKey: 'owners.faq.2.q', qFb: '¿Cómo recibo las reservas?', aKey: 'owners.faq.2.a', aFb: 'Los viajeros te contactan directamente por WhatsApp, email o teléfono. Vos manejás todo.' },
+	{ qKey: 'owners.faq.3.q', qFb: '¿Puedo publicar más de una propiedad?', aKey: 'owners.faq.3.a', aFb: 'Sí, podés publicar todas las propiedades que quieras desde una misma cuenta.' },
+	{ qKey: 'owners.faq.4.q', qFb: '¿Qué tipo de alojamientos puedo publicar?', aKey: 'owners.faq.4.a', aFb: 'Casas quintas, cabañas, departamentos, hoteles, apart hotels, campings y más.' },
+] as const;
+
+const faqJsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'FAQPage',
+	mainEntity: faqs.map((faq) => ({
+		'@type': 'Question',
+		name: t(faq.qKey, faq.qFb),
+		acceptedAnswer: {
+			'@type': 'Answer',
+			text: t(faq.aKey, faq.aFb),
+		},
+	})),
+};
+---
+
+<MarketingLayout
+	locale={locale}
+	title={t('host.landing.heroHeadline', 'Convertí tu propiedad en un ingreso')}
+	description={t('owners.description', 'Publicá tu propiedad en Hospeda y llegá a miles de viajeros del litoral entrerriano.')}
+>
+	<JsonLd slot="head-extra" data={faqJsonLd} />
+
+	<!-- Hero -->
+	<section class="publicar-hero section section--warm">
+		<div class="publicar-hero__container">
+			<div class="publicar-hero__text" data-reveal="up">
+				<p class="publicar-hero__tagline">{t('owners.hero.tagline', 'Para propietarios')}</p>
+				<h1 class="publicar-hero__title">{t('host.landing.heroHeadline', 'Convertí tu propiedad en un ingreso')}</h1>
+				<p class="publicar-hero__desc">
+					{t('host.landing.heroSubheadline', 'Publicá en minutos y empezá a recibir huéspedes')}
+				</p>
+
+				<!-- Auth-aware CTA island: authenticated → /publicar/nueva/, else → sign in -->
+				<HostLandingCta client:load locale={locale} />
+			</div>
+			<div class="publicar-hero__image" data-reveal="scale" aria-hidden="true">
+				<div class="publicar-hero__image-placeholder"></div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Benefits — reuses owners.benefits.* keys from /suscriptores/propietarios/ -->
+	<section class="publicar-benefits section">
+		<div class="publicar-benefits__container">
+			<p class="publicar-benefits__tagline" data-reveal="up">{t('owners.benefits.tagline', '¿Por qué Hospeda?')}</p>
+			<h2 class="publicar-benefits__title" data-reveal="up">{t('owners.benefits.title', 'Beneficios para propietarios')}</h2>
+			<div class="publicar-benefits__grid">
+				{benefits.map((b, i) => (
+					<div class="publicar-benefit-card" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+						<div class="publicar-benefit-card__icon" aria-hidden="true">
+							<svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+								<rect width="48" height="48" rx="12" fill="oklch(from var(--brand-primary) l c h / 0.1)" />
+							</svg>
+						</div>
+						<h3 class="publicar-benefit-card__title">{t(b.titleKey, b.titleFb)}</h3>
+						<p class="publicar-benefit-card__desc">{t(b.descKey, b.descFb)}</p>
+					</div>
+				))}
+			</div>
+		</div>
+	</section>
+
+	<!-- How it works — reuses owners.steps.* keys -->
+	<section class="publicar-steps section section--warm">
+		<div class="publicar-steps__container">
+			<p class="publicar-steps__tagline" data-reveal="up">{t('owners.steps.tagline', 'Es así de fácil')}</p>
+			<h2 class="publicar-steps__title" data-reveal="up">{t('owners.steps.title', '¿Cómo funciona?')}</h2>
+			<div class="publicar-steps__grid">
+				{steps.map((s, i) => (
+					<div class="publicar-step" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+						<span class="publicar-step__num">{s.num}</span>
+						<h3 class="publicar-step__title">{t(s.titleKey, s.titleFb)}</h3>
+						<p class="publicar-step__desc">{t(s.descKey, s.descFb)}</p>
+					</div>
+				))}
+			</div>
+		</div>
+	</section>
+
+	<!-- FAQ — reuses owners.faq.* keys -->
+	<section class="publicar-faq section">
+		<div class="publicar-faq__container">
+			<p class="publicar-faq__tagline" data-reveal="up">{t('owners.faq.tagline', 'Resolvé tus dudas')}</p>
+			<h2 class="publicar-faq__title" data-reveal="up">{t('owners.faq.title', 'Preguntas frecuentes')}</h2>
+			<div class="publicar-faq__list" data-reveal="up">
+				{faqs.map((faq) => (
+					<details class="publicar-faq__item">
+						<summary class="publicar-faq__question">{t(faq.qKey, faq.qFb)}</summary>
+						<p class="publicar-faq__answer">{t(faq.aKey, faq.aFb)}</p>
+					</details>
+				))}
+			</div>
+		</div>
+	</section>
+
+	<!-- Final CTA banner -->
+	<section class="publicar-cta">
+		<div class="publicar-cta__container" data-reveal="up">
+			<p class="publicar-cta__tagline">{t('owners.cta.tagline', '¿Listo para empezar?')}</p>
+			<h2 class="publicar-cta__title">{t('owners.cta.title', 'Publicá tu alojamiento hoy')}</h2>
+			<p class="publicar-cta__desc">
+				{t('owners.cta.desc', 'Unite a los cientos de propietarios que ya confían en Hospeda para mostrar sus alojamientos al mundo.')}
+			</p>
+			<GradientButton
+				href={buildUrl({ locale, path: 'auth/signup' })}
+				label={t('owners.cta.button', 'Empezar ahora')}
+				variant="accent"
+				icon="true"
+			/>
+		</div>
+	</section>
+</MarketingLayout>
+
+<style>
+	/* ── Hero ──────────────────────────────────────────────────────────── */
+	.publicar-hero__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-8);
+		align-items: center;
+	}
+
+	.publicar-hero__tagline {
+		font-family: var(--font-decorative);
+		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+		color: var(--brand-accent);
+		font-style: italic;
+		margin: 0 0 var(--space-2);
+	}
+
+	.publicar-hero__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.75rem);
+		color: var(--foreground);
+		margin: 0 0 var(--space-4);
+		line-height: 1.2;
+	}
+
+	.publicar-hero__desc {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-lg);
+		color: var(--muted-foreground);
+		line-height: 1.6;
+		margin: 0 0 var(--space-6);
+	}
+
+	.publicar-hero__image-placeholder {
+		width: 100%;
+		aspect-ratio: 4/3;
+		background-color: oklch(from var(--brand-primary) l c h / 0.08);
+		border-radius: var(--radius-card);
+	}
+
+	/* ── Benefits ──────────────────────────────────────────────────────── */
+	.publicar-benefits__container,
+	.publicar-steps__container,
+	.publicar-faq__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		text-align: center;
+	}
+
+	.publicar-benefits__tagline,
+	.publicar-steps__tagline,
+	.publicar-faq__tagline,
+	.publicar-cta__tagline {
+		font-family: var(--font-decorative);
+		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+		color: var(--brand-accent);
+		font-style: italic;
+		margin: 0 0 var(--space-2);
+	}
+
+	.publicar-benefits__title,
+	.publicar-steps__title,
+	.publicar-faq__title,
+	.publicar-cta__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		color: var(--foreground);
+		margin: 0 0 var(--space-8);
+	}
+
+	.publicar-benefits__grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-card-gap);
+		text-align: left;
+	}
+
+	.publicar-benefit-card {
+		background-color: var(--card);
+		border-radius: var(--radius-card);
+		padding: var(--space-6);
+		box-shadow: var(--shadow-card);
+	}
+
+	.publicar-benefit-card__icon { margin-bottom: var(--space-4); }
+
+	.publicar-benefit-card__title {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: var(--text-lg);
+		color: var(--foreground);
+		margin: 0 0 var(--space-2);
+	}
+
+	.publicar-benefit-card__desc {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--muted-foreground);
+		line-height: 1.6;
+		margin: 0;
+	}
+
+	/* ── Steps ─────────────────────────────────────────────────────────── */
+	.publicar-steps__grid {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: var(--space-card-gap);
+	}
+
+	.publicar-step__num {
+		font-family: var(--font-heading);
+		font-size: clamp(2rem, 4vw, 3rem);
+		font-weight: 700;
+		color: oklch(from var(--brand-primary) l c h / 0.2);
+		display: block;
+		margin-bottom: var(--space-3);
+	}
+
+	.publicar-step__title {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: var(--text-lg);
+		color: var(--foreground);
+		margin: 0 0 var(--space-2);
+	}
+
+	.publicar-step__desc {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--muted-foreground);
+		line-height: 1.6;
+		margin: 0;
+	}
+
+	/* ── FAQ ───────────────────────────────────────────────────────────── */
+	.publicar-faq__list {
+		max-width: 700px;
+		margin: 0 auto;
+		text-align: left;
+	}
+
+	.publicar-faq__item {
+		border-bottom: 1px solid var(--border);
+		padding: var(--space-4) 0;
+	}
+
+	.publicar-faq__question {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: var(--text-body-lg);
+		color: var(--foreground);
+		cursor: pointer;
+		list-style: none;
+		padding: var(--space-2) 0;
+	}
+
+	.publicar-faq__question::-webkit-details-marker { display: none; }
+
+	.publicar-faq__answer {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--muted-foreground);
+		line-height: 1.6;
+		padding: var(--space-2) 0 var(--space-4);
+		margin: 0;
+	}
+
+	/* ── Final CTA ─────────────────────────────────────────────────────── */
+	.publicar-cta {
+		background-color: var(--surface-dark);
+		padding: var(--space-section) 0;
+		text-align: center;
+	}
+
+	.publicar-cta__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+	}
+
+	.publicar-cta__tagline { color: oklch(from var(--brand-accent) l c h / 0.8); }
+
+	.publicar-cta__title {
+		color: #fff;
+		margin: 0 0 var(--space-4);
+	}
+
+	.publicar-cta__desc {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-lg);
+		color: oklch(1 0 0 / 0.7);
+		max-width: 55ch;
+		margin: 0 auto var(--space-6);
+		line-height: 1.6;
+	}
+
+	/* ── Responsive ────────────────────────────────────────────────────── */
+	@media (max-width: 768px) {
+		.publicar-hero__container { grid-template-columns: 1fr; }
+		.publicar-hero__image { order: -1; }
+		.publicar-benefits__grid { grid-template-columns: 1fr; }
+		.publicar-steps__grid { grid-template-columns: repeat(2, 1fr); }
+	}
+
+	@media (max-width: 480px) {
+		.publicar-steps__grid { grid-template-columns: 1fr; }
+	}
+</style>
