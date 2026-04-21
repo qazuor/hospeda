@@ -8,6 +8,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import type { ZodTypeAny } from 'zod';
 import { env } from './env';
 import { apiLogger } from './logger';
 
@@ -64,13 +65,59 @@ export interface ErrorResponse {
 }
 
 /**
+ * Strips a payload down to the fields declared in `responseSchema`.
+ *
+ * Behavior:
+ * - If `responseSchema` is not provided, returns the data unchanged (no-op).
+ * - If `responseSchema.safeParse(data)` succeeds, returns the parsed (stripped) data.
+ * - If parsing fails, logs a structured warning and returns the original data
+ *   as a safe fallback so a schema drift never takes down a live route.
+ *
+ * Used by {@link createResponse} and {@link createPaginatedResponse} to enforce
+ * tier-appropriate field exposure at runtime (SPEC-062).
+ *
+ * @param data - The data to strip
+ * @param responseSchema - Optional Zod schema describing the response contract
+ * @returns Stripped data on success, original data on failure/no-op
+ */
+export const stripWithSchema = <T>(data: T, responseSchema?: ZodTypeAny): T => {
+    if (!responseSchema) {
+        return data;
+    }
+
+    const parsed = responseSchema.safeParse(data);
+    if (parsed.success) {
+        return parsed.data as T;
+    }
+
+    apiLogger.warn({
+        message: 'Response schema stripping failed — falling back to unstripped data',
+        issues: parsed.error.issues
+    });
+    return data;
+};
+
+/**
  * Helper function to create standardized API responses
  * Reduces boilerplate and ensures consistency across endpoints
+ *
+ * @param data - Payload to include in the response envelope
+ * @param c - Hono context
+ * @param statusCode - HTTP status code (default 200)
+ * @param responseSchema - Optional Zod schema used to strip sensitive fields
+ *   from `data` via {@link stripWithSchema}. When omitted, the data is sent
+ *   as-is and no runtime field enforcement is performed.
  */
-export const createResponse = <T = unknown>(data: T, c: Context, statusCode = 200) => {
+export const createResponse = <T = unknown>(
+    data: T,
+    c: Context,
+    statusCode = 200,
+    responseSchema?: ZodTypeAny
+) => {
+    const stripped = stripWithSchema(data, responseSchema);
     const response: ApiResponse<T> = {
         success: true,
-        data,
+        data: stripped,
         metadata: {
             timestamp: new Date().toISOString(),
             requestId: c.get('requestId') || 'unknown'
@@ -104,17 +151,30 @@ export const createErrorResponse = (
 /**
  * Helper function to create paginated responses for list/search endpoints
  * Handles the specific structure required by paginatedListResponseSchema
+ *
+ * @param items - Array of result items for the current page
+ * @param pagination - Pagination metadata (untouched by schema stripping)
+ * @param c - Hono context
+ * @param statusCode - HTTP status code (default 200)
+ * @param responseSchema - Optional Zod schema applied to EACH item via
+ *   {@link stripWithSchema} to enforce tier-appropriate field exposure at
+ *   runtime (SPEC-062). Pagination metadata is never stripped.
  */
 export const createPaginatedResponse = (
     items: unknown[],
     pagination: PaginationMetadata,
     c: Context,
-    statusCode = 200
+    statusCode = 200,
+    responseSchema?: ZodTypeAny
 ) => {
+    const strippedItems = responseSchema
+        ? items.map((item) => stripWithSchema(item, responseSchema))
+        : items;
+
     const response: ApiResponse<{ items: unknown[]; pagination: PaginationMetadata }> = {
         success: true,
         data: {
-            items,
+            items: strippedItems,
             pagination
         },
         metadata: {
