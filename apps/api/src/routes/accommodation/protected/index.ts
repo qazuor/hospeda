@@ -11,7 +11,9 @@ import { protectedAccommodationReviewRoutes } from '../reviews/protected/index.j
 import { addFaqRoute } from './addFaq';
 import { protectedGetContactRoute } from './contact';
 import { protectedCreateAccommodationRoute } from './create';
+import { protectedGetOwnAccommodationByIdRoute } from './getById';
 import { getFaqsRoute } from './getFaqs';
+import { protectedListOwnAccommodationsRoute } from './list';
 import { protectedPatchAccommodationRoute } from './patch';
 import { removeFaqRoute } from './removeFaq';
 import { protectedSoftDeleteAccommodationRoute } from './softDelete';
@@ -28,6 +30,12 @@ ownershipRoutes.route('/', protectedPatchAccommodationRoute);
 ownershipRoutes.route('/', protectedSoftDeleteAccommodationRoute);
 
 const app = createRouter();
+
+// GET / - List own accommodations (no ownership check — filtered by actor.id in handler)
+app.route('/', protectedListOwnAccommodationsRoute);
+
+// GET /:id - Get own accommodation by ID (ownership check in handler)
+app.route('/', protectedGetOwnAccommodationByIdRoute);
 
 // POST / - Create accommodation (no ownership check)
 app.route('/', protectedCreateAccommodationRoute);
