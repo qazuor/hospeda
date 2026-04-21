@@ -608,9 +608,24 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
         const safeWhere = where ?? {};
         try {
             const whereClause = buildWhereClause(safeWhere, this.table);
+            // SPEC-063-gaps T-001 (GAP-022, CRITICAL): when restoring a soft-deleted
+            // row that lives in a table with a `lifecycleState` column, also reset
+            // the lifecycle back to ACTIVE. Without this, a record that was archived
+            // (lifecycleState=ARCHIVED) and then soft-deleted would silently return
+            // to ARCHIVED on restore, breaking the public-tier ACTIVE-only filter
+            // and re-leaking previously-hidden content. The Drizzle column-metadata
+            // probe (`'lifecycleState' in this.table`) keeps the change a no-op for
+            // tables that don't track lifecycle state.
+            const setPayload: Record<string, unknown> = {
+                deletedAt: null,
+                updatedAt: new Date()
+            };
+            if ('lifecycleState' in this.table) {
+                setPayload.lifecycleState = 'ACTIVE';
+            }
             const result = await db
                 .update(this.table)
-                .set({ deletedAt: null, updatedAt: new Date() })
+                .set(setPayload)
                 .where(whereClause)
                 .returning();
             try {

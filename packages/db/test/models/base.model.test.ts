@@ -326,6 +326,56 @@ describe('BaseModel', () => {
         expect(result).toBe(0);
     });
 
+    // T-001 / GAP-022 (CRITICAL): restore() must reset lifecycleState=ACTIVE
+    // when the table tracks lifecycle, otherwise restoring an archived+deleted
+    // record silently returns it to ARCHIVED and re-leaks via the public path.
+    describe('T-001 — restore() resets lifecycleState=ACTIVE on lifecycle-aware tables', () => {
+        class LifecycleAwareModel extends BaseModel<{ id: string; lifecycleState?: string }> {
+            // @ts-expect-error: mock table with lifecycleState column
+            protected table = {
+                id: {},
+                deletedAt: {},
+                lifecycleState: {}
+            } as unknown as Record<string, object>;
+            public entityName = 'lifecycleAware';
+            protected getTableName(): string {
+                return 'lifecycleAware';
+            }
+        }
+
+        it('includes lifecycleState=ACTIVE in the UPDATE SET when the column is present', async () => {
+            const setSpy = vi.fn(() => ({ where: () => ({ returning: () => [{ id: 'r1' }] }) }));
+            getDb.mockReturnValue({
+                update: () => ({ set: setSpy })
+            });
+            const aware = new LifecycleAwareModel();
+
+            await aware.restore({ id: 'r1' });
+
+            expect(setSpy).toHaveBeenCalledTimes(1);
+            const payload = setSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(payload.deletedAt).toBeNull();
+            expect(payload.updatedAt).toBeInstanceOf(Date);
+            expect(payload.lifecycleState).toBe('ACTIVE');
+        });
+
+        it('omits lifecycleState from the UPDATE SET when the table has no such column', async () => {
+            // Reuse the dummy model (table has no lifecycleState column)
+            const setSpy = vi.fn(() => ({ where: () => ({ returning: () => [{ id: 'r1' }] }) }));
+            getDb.mockReturnValue({
+                update: () => ({ set: setSpy })
+            });
+
+            await model.restore({ id: 'r1' });
+
+            expect(setSpy).toHaveBeenCalledTimes(1);
+            const payload = setSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(payload.deletedAt).toBeNull();
+            expect(payload.updatedAt).toBeInstanceOf(Date);
+            expect('lifecycleState' in payload).toBe(false);
+        });
+    });
+
     it('findAll handles where with wrong type', async () => {
         getDb.mockReturnValue({
             select: (args?: unknown) => ({
