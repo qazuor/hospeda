@@ -1,0 +1,577 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-091",
+    "title": "MVP Blockers: Host Onboarding + Subscription Checkout",
+    "created": "2026-04-21T00:00:00.000Z",
+    "updated_at": "2026-04-21T17:35:00.000Z",
+    "status": "completed",
+    "progress": {
+        "total": 25,
+        "pending": 0,
+        "in_progress": 0,
+        "completed": 25
+    },
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add i18n keys for host onboarding namespace",
+            "description": "Create the `host.*` i18n namespace in `packages/i18n/src/locales/es/host.json`. Must cover all labels, placeholders, error messages, and status strings used by the property form, autosave indicator, draft resume prompt, and the /mi-cuenta/propiedades page.\n\nKey sections: `form.sections.*` (datos-basicos, ubicacion, capacidad, amenities, fotos, precio, contacto, publicar), `form.actions.*` (guardar, publicar, publicando), `form.status.*` (guardando, guardado, error), `form.draftPrompt.*`, `properties.list.*`, `properties.card.*`, `properties.empty.*`.\n\nAlso create stub files `en/host.json` and `pt/host.json` with the same keys as Spanish but with placeholder values (e.g., `\"[TODO]\"`). Register the namespace in `packages/i18n/src/index.ts` or wherever namespaces are exported.\n\nAcceptance criteria:\n- `es/host.json` has all keys referenced in T-003 through T-015\n- `en/host.json` and `pt/host.json` exist as stubs\n- TypeScript types generated from i18n compile without errors\n- `pnpm typecheck` passes in `packages/i18n`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [
+                "T-003",
+                "T-005",
+                "T-007",
+                "T-009",
+                "T-010",
+                "T-011",
+                "T-012",
+                "T-014",
+                "T-015",
+                "T-016"
+            ],
+            "subtasks": [],
+            "tags": ["i18n", "setup", "feature-1"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add i18n keys for checkout result pages",
+            "description": "Create the `checkout.*` namespace keys in `packages/i18n/src/locales/es/billing.json` (or a new `checkout.json` if the billing namespace is already large). Must cover all strings for success, pending, and failure pages plus the `PlanPurchaseButton` component.\n\nKey sections: `checkout.success.*` (title, subtitle, cta), `checkout.pending.*` (title, body, cta), `checkout.failure.*` (title, body, retryCta, supportCta), `checkout.button.*` (cta, processing, error, unauthCta).\n\nCreate stub files `en/` and `pt/` counterparts. Register namespace if new.\n\nAcceptance criteria:\n- All keys referenced in T-017 through T-025 are present\n- `pnpm typecheck` passes in `packages/i18n`",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-017", "T-019", "T-020", "T-021", "T-024"],
+            "subtasks": [],
+            "tags": ["i18n", "setup", "feature-2"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Implement HOST role auto-assignment hook logic in AccommodationService",
+            "description": "Extend `packages/service-core/src/services/accommodation/accommodation.service.ts` to auto-assign the `HOST` role to the owning user when an accommodation transitions to `PUBLISHED` status for the first time.\n\nImplementation:\n- Override `_beforeUpdate`: read current entity status and store it in `ctx.hookState.previousStatus`\n- Override `_afterUpdate`: check `entity.status === 'PUBLISHED'` and `hookState.previousStatus !== 'PUBLISHED'`\n- If transition confirmed: fetch user's current roles via `UserService` or direct user model; if user has neither `HOST` nor `OWNER` role, assign `HOST` via the user service\n- Use `PermissionEnum` checks, not role checks\n- May need to inject `UserService` into `AccommodationService` constructor \u2014 verify no circular dependency before injecting\n\nKey files:\n- `packages/service-core/src/services/accommodation/accommodation.service.ts`\n\nAcceptance criteria:\n- `pnpm typecheck` passes in `packages/service-core`\n- No circular dependency introduced between services\n- Logic is correct but tests are NOT in this task (see T-004)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004"],
+            "subtasks": [],
+            "tags": ["backend", "service-core", "feature-1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Write unit tests for HOST role auto-assignment hook",
+            "description": "Write unit tests for the HOST role auto-assignment logic implemented in T-003.\n\nTest file: `packages/service-core/test/services/accommodation/roleAssignment.test.ts`\n\nTest cases:\n- HOST role assigned when accommodation transitions to PUBLISHED for the first time\n- No duplicate assignment if user already has HOST role\n- No assignment if user already has OWNER role\n- No assignment when transitioning to any status other than PUBLISHED (e.g., DRAFT, SUSPENDED)\n- Hook state correctly carries `previousStatus` from `_beforeUpdate` to `_afterUpdate`\n\nAcceptance criteria:\n- All test cases pass\n- `pnpm test` passes in `packages/service-core` targeting the new test file\n- No `.only()` or hard-coded `.skip()` in committed tests",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-012"],
+            "subtasks": [],
+            "tags": ["testing", "backend", "service-core", "feature-1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T16:00:00.000Z",
+                "completed": "2026-04-21T16:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Create useAutosave hook",
+            "description": "Create the autosave React hook for the property form.\n\nFile: `apps/web/src/hooks/useAutosave.ts`\n\nProps: `{ formData, accommodationId, onSaveSuccess, onSaveError }`\n\nBehavior:\n- Debounce 30s timer + blur trigger\n- First save (no `accommodationId`): POST `/api/v1/protected/accommodations/`\n- Subsequent saves: PATCH `/api/v1/protected/accommodations/{id}`\n- Returns: `{ saveStatus: 'idle' | 'saving' | 'saved' | 'error', lastSavedAt, triggerSave }`\n- On error: retry once after 5s\n- Last-write-wins concurrency (no optimistic lock check needed for MVP)\n- Named export only\n\nUnit tests in `apps/web/test/hooks/useAutosave.test.ts`:\n- Timer fires after 30s debounce\n- Blur trigger fires save\n- Transitions: idle \u2192 saving \u2192 saved\n- Error state + retry after 5s\n- POST on first save (no accommodationId), PATCH on subsequent saves\n\nAcceptance criteria:\n- `useAutosave` correctly switches from POST to PATCH after first successful save\n- All unit tests pass\n- `pnpm typecheck` passes for `apps/web`",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006"],
+            "subtasks": [],
+            "tags": ["frontend", "react", "feature-1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create usePropertyForm hook",
+            "description": "Create the form state management React hook for the property form.\n\nFile: `apps/web/src/hooks/usePropertyForm.ts`\n\n- Manages React Hook Form state for the 8 sections\n- Validates against `AccommodationInsertSchema` from `@repo/schemas`\n- Returns: `{ form, sections, completedSections, isFormComplete, handlePublish }`\n- `completedSections`: Set of section keys where all required fields are valid\n- `isFormComplete`: boolean \u2014 all required fields across all sections are filled\n- Named export only\n\nUnit tests in `apps/web/test/hooks/usePropertyForm.test.ts`:\n- Section completion tracking: `completedSections` updates when all required fields in a section are valid\n- `isFormComplete` returns false when any required field is empty\n- `isFormComplete` returns true when all required fields across all sections are filled\n- `handlePublish` triggers submission correctly\n\nAcceptance criteria:\n- Hook compiles with strict TypeScript\n- `isFormComplete` logic covers all 8 sections\n- All unit tests pass",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-007"],
+            "subtasks": [],
+            "tags": ["frontend", "react", "feature-1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T16:25:00.000Z",
+                "completed": "2026-04-21T16:27:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Create AccommodationImageUploader upload logic",
+            "description": "Create the Cloudinary image upload logic layer for the photos section island.\n\nFile: `apps/web/src/components/host/AccommodationImageUploader.client.tsx` (create file with upload functionality \u2014 UI shell added in T-008)\n\n- Verify the actual upload endpoint path from `apps/api/src/routes/` (likely `/api/v1/protected/upload` from SPEC-078 \u2014 do NOT assume)\n- Implement file selection (input + drag-and-drop event handlers)\n- Call upload endpoint per file with multipart/form-data\n- Track per-file upload progress state\n- Enforce max 20 images client-side (reject additional files)\n- Handle upload errors inline per file (error state per file entry)\n- Dynamic import of any heavy deps to avoid SSR issues\n- Props: `{ value: string[], onChange: (urls: string[]) => void, maxImages?: number }`\n\nAcceptance criteria:\n- Upload endpoint path verified from actual API routes before implementing\n- Max 20 images enforced (additional files rejected with user-visible message)\n- `onChange` called with updated URL array after each successful upload\n- `pnpm typecheck` passes for `apps/web`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-008"],
+            "subtasks": [],
+            "tags": ["frontend", "react", "cloudinary", "feature-1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T18:45:00.000Z",
+                "completed": "2026-04-21T19:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Complete AccommodationImageUploader UI and tests",
+            "description": "Complete the UI layer of `AccommodationImageUploader.client.tsx` and write unit tests.\n\nBuilds on upload logic from T-007:\n- Thumbnail grid with remove button per image\n- Visual upload progress indicator per file (e.g., progress bar or spinner overlay)\n- Drag-and-drop zone with visual feedback (active/hover state)\n- Renders without errors when `value=[]`\n- Touch-friendly remove buttons (44px min tap target)\n\nUnit tests in `apps/web/test/components/host/AccommodationImageUploader.test.tsx`:\n- Renders thumbnail grid from `value` prop\n- Remove button calls `onChange` with image removed from array\n- Enforces max limit: additional files rejected, error message shown\n- Renders empty state correctly when `value=[]`\n\nAcceptance criteria:\n- All unit tests pass\n- Component integrates with upload logic from T-007 without regressions\n- No SSR errors (dynamic import guard in place from T-007)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-009"],
+            "subtasks": [],
+            "tags": ["frontend", "react", "cloudinary", "feature-1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T19:30:00.000Z",
+                "completed": "2026-04-21T20:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Create PropertyFormSection component and PropertyForm shell (sections 1-4)",
+            "description": "Create the reusable section wrapper and the first half of PropertyForm.client.tsx.\n\n**`apps/web/src/components/host/PropertyFormSection.client.tsx`** (new):\n- Props: `{ sectionKey, title, isComplete, children, defaultOpen? }`\n- Uses `aria-expanded`, `aria-controls` on toggle button\n- Touch-friendly (44px min tap target)\n- Shows green check icon when `isComplete=true`\n- All sections use `<fieldset>` + `<legend>`\n- Error messages linked via `aria-describedby`\n\n**`apps/web/src/components/host/PropertyForm.client.tsx`** (new \u2014 scaffold + sections 1-4):\n- Composes `usePropertyForm`, `useAutosave`, and `PropertyFormSection`\n- Accepts props: `{ existingDraftId?, initialData?, accommodationId? }`\n- Edit mode: if `initialData` provided, saves via PATCH from the first save\n- Autosave status indicator with `aria-live=\"polite\"`\n- Draft resume prompt if `existingDraftId` prop provided\n- Section 1 (datos-basicos): title, description, type fields\n- Section 2 (ubicacion): address fields + Leaflet map via dynamic import; draggable pin updates `latitude`/`longitude`; plain text fallback; compact 200px map height on mobile with expand toggle\n- Section 3 (capacidad): guest/bed/bath count fields\n- Section 4 (amenities): multi-select fetching catalog from `GET /api/v1/public/amenities` (or equivalent \u2014 verify endpoint)\n\nAcceptance criteria:\n- No SSR errors from Leaflet (dynamic import guard)\n- All aria attributes present on collapsible sections\n- Draft resume prompt renders when `existingDraftId` provided\n- `pnpm typecheck` passes for `apps/web`",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-010"],
+            "subtasks": [],
+            "tags": ["frontend", "react", "feature-1"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T20:30:00.000Z",
+                "completed": "2026-04-21T21:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Complete PropertyForm sections 5-8 and publish logic with tests",
+            "description": "Add the remaining sections and publish action to `PropertyForm.client.tsx`, plus write component tests.\n\nBuilds on T-009 scaffold:\n- Section 5 (fotos): embeds `AccommodationImageUploader`\n- Section 6 (precio): price per night, currency fields\n- Section 7 (contacto): contact info fields\n- Section 8 (publicar): summary of missing required fields; `Guardar borrador` button always enabled; `Publicar` button disabled until `isFormComplete`\n- On publish success: `window.location.href = /alojamientos/{slug}` + success toast\n- On publish error: inline error near Publicar button; form data preserved\n\nComponent tests in `apps/web/test/components/host/PropertyForm.test.tsx`:\n- `Publicar` button disabled when required fields missing; enabled when all complete\n- Autosave indicator shows correct state strings from i18n (idle, saving, saved, error)\n- Missing-fields summary in section 8 lists correct fields\n- Draft resume prompt shown when `existingDraftId` provided\n- On publish success: redirects to accommodation slug URL\n- On publish error: inline error shown, form data preserved\n\nAcceptance criteria:\n- All component tests pass\n- `Publicar` button disabled until all required fields filled across all 8 sections\n- Autosave indicator transitions correctly in component tests\n- No regressions in sections 1-4 from T-009",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-012", "T-013", "T-014"],
+            "subtasks": [],
+            "tags": ["frontend", "react", "feature-1"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T21:00:00.000Z",
+                "completed": "2026-04-21T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Create /publicar landing page (SSG)",
+            "description": "Create the host onboarding landing Astro page.\n\nFile: `apps/web/src/pages/[lang]/publicar/index.astro` (new, SSG)\n\n- No auth required at page render level\n- Content reuses/references marketing copy already in `/suscriptores/propietarios/` via i18n keys \u2014 do not duplicate prose\n- Hero section with headline and sub-headline\n- CTA button `Publicar tu propiedad`:\n  - Authenticated: links directly to `/publicar/nueva`\n  - Unauthenticated: links to `/auth/signin?redirect=/publicar/nueva`\n- Secondary link `Ver mis propiedades` \u2192 `/mi-cuenta/propiedades` (visible only when authenticated)\n- All user-facing strings via i18n keys from T-001\n\nAcceptance criteria:\n- Page renders as SSG (no server-side session call at page render)\n- Auth-conditional CTAs work correctly (client-side auth check for link swap)\n- `pnpm typecheck` passes for `apps/web`",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-022"],
+            "subtasks": [],
+            "tags": ["frontend", "astro", "pages", "feature-1"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Create /publicar/nueva SSR page",
+            "description": "Create the new property creation Astro page.\n\nFile: `apps/web/src/pages/[lang]/publicar/nueva.astro` (new, SSR)\n\n- Auth-gated: middleware redirect to `/auth/signin?redirect=/publicar/nueva` if no session\n- Fetches user's existing DRAFT accommodations server-side via `GET /api/v1/protected/accommodations/?status=DRAFT`\n- Passes `existingDraftId` (first draft's id, if any) as prop to `PropertyForm.client.tsx` island\n- Mounts `PropertyForm.client.tsx` with `client:load`\n- All user-facing strings via i18n keys from T-001\n\nAcceptance criteria:\n- Redirects unauthenticated users to signin with correct return URL (`?redirect=/publicar/nueva`)\n- `existingDraftId` passed to form when a DRAFT exists; `undefined` when no drafts\n- `pnpm typecheck` passes for `apps/web`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-010"],
+            "blocks": ["T-022"],
+            "subtasks": [],
+            "tags": ["frontend", "astro", "pages", "feature-1"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T23:40:00.000Z",
+                "completed": "2026-04-21T23:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Create PropertyCard component",
+            "description": "Create the Astro property card component for the host dashboard.\n\nFile: `apps/web/src/components/host/PropertyCard.astro` (new)\n\nProps: `{ property: Accommodation }`\n\n- Shows: thumbnail, name, status badge (Borrador=amber, Publicada=green, Suspendida=red), city, price per night\n- Actions: `Editar` link \u2192 `/mi-cuenta/propiedades/{id}/editar`\n- Contextual action: `Publicar` link (for DRAFT), `Despublicar` link (for PUBLISHED) \u2014 simple links for MVP\n- `Ver en el sitio` link for PUBLISHED properties only\n- Status badge uses Tailwind color classes: amber-500 for DRAFT, green-500 for PUBLISHED, red-500 for SUSPENDED\n- All user-facing strings via i18n keys from T-001\n\nAcceptance criteria:\n- Status badges use correct Tailwind color classes\n- `Ver en el sitio` only rendered when status is PUBLISHED\n- `pnpm typecheck` passes for `apps/web`",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-014"],
+            "subtasks": [],
+            "tags": ["frontend", "astro", "feature-1"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T23:50:00.000Z",
+                "completed": "2026-04-21T23:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Create /mi-cuenta/propiedades listing page",
+            "description": "Create the property management dashboard page for hosts.\n\nFile: `apps/web/src/pages/[lang]/mi-cuenta/propiedades/index.astro` (new, SSR)\n\n- Auth-gated: redirect to `/auth/signin` if no session\n- Fetches user's accommodations server-side via `GET /api/v1/protected/accommodations/`\n- Responsive grid: 1 col mobile, 2 tablet, 3 desktop (Tailwind)\n- Empty state: illustration placeholder + `A\u00fan no publicaste ninguna propiedad.` + CTA `Publicar ahora` \u2192 `/publicar/nueva`\n- Renders `PropertyCard.astro` for each accommodation in the list\n- All user-facing strings via i18n keys from T-001\n\nAcceptance criteria:\n- Redirects unauthenticated visitors\n- Empty state renders when `properties.length === 0`\n- Responsive grid Tailwind classes applied\n- `pnpm typecheck` passes for `apps/web`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-015", "T-022"],
+            "subtasks": [],
+            "tags": ["frontend", "astro", "pages", "feature-1"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T10:00:00.000Z",
+                "completed": "2026-04-21T10:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Create /mi-cuenta/propiedades/[id]/editar page",
+            "description": "Create the edit page for existing properties.\n\nFile: `apps/web/src/pages/[lang]/mi-cuenta/propiedades/[id]/editar.astro` (new, SSR)\n\n- Auth-gated: redirect if no session\n- Fetches the accommodation server-side via `GET /api/v1/protected/accommodations/{id}`\n- 404 if accommodation not found or does not belong to current user\n- Passes `initialData` and `accommodationId` props to `PropertyForm.client.tsx`\n- Form operates in edit mode from mount: all saves use PATCH, no POST\n- On successful update: show toast `Cambios guardados`; stay on edit page\n- On publish from edit mode: redirect to `/alojamientos/{slug}` same as create flow\n\nAcceptance criteria:\n- Form pre-fills with existing accommodation data\n- Autosave uses PATCH from the first save (not POST)\n- Unauthorized access (different user's property) returns 404 or redirect\n- `pnpm typecheck` passes for `apps/web`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-014"],
+            "blocks": ["T-022"],
+            "subtasks": [],
+            "tags": ["frontend", "astro", "pages", "feature-1"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T12:00:00.000Z",
+                "completed": "2026-04-21T12:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Create PlanPurchaseButton.client.tsx island",
+            "description": "Create the checkout trigger React island for the pricing page.\n\nFile: `apps/web/src/components/billing/PlanPurchaseButton.client.tsx`\n\nProps:\n```ts\n{\n  planId: string\n  price: number\n  currency: 'ARS' | 'USD'\n  ctaText: string\n}\n```\n\nBehavior:\n- Reads auth session (`auth-client.ts` from `apps/web/src/lib/`) to determine if user is logged in\n- Unauthenticated: button click redirects to `/auth/signin?redirect=/suscriptores/planes`\n- Authenticated: button click POSTs to `POST /api/v1/protected/billing/checkout` with `{ planId }` \u2014 verify exact protected path before implementation from `apps/api/src/routes/billing/index.ts:115`\n  - Loading state: spinner + `Procesando...` text; button disabled; `aria-label` updated for screen readers\n  - Success: `window.location.href = response.checkoutUrl` (redirect to MercadoPago initPoint)\n  - API error: inline error message below button `No pudimos iniciar el pago. Intent\u00e1 de nuevo.`; button re-enabled\n- No double-submission: button disabled while in flight\n- Named export only\n\nAcceptance criteria:\n- Button disabled during in-flight request\n- Auth redirect includes correct return URL\n- Inline error clears on next click attempt\n- `aria-label` updated to `Procesando...` during loading\n- `pnpm typecheck` passes for `apps/web`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-017", "T-021"],
+            "subtasks": [],
+            "tags": ["frontend", "react", "billing", "feature-2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T14:00:00.000Z",
+                "completed": "2026-04-21T16:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Write unit tests for PlanPurchaseButton",
+            "description": "Write unit tests for the `PlanPurchaseButton.client.tsx` component created in T-016.\n\nTest file: `apps/web/test/components/billing/PlanPurchaseButton.test.tsx`\n\nTest cases:\n- Unauthenticated: button click redirects to `/auth/signin?redirect=/suscriptores/planes`\n- Loading state: spinner visible, button disabled, `aria-label` set to `Procesando...`\n- Success: `window.location.href` set to `checkoutUrl` from mocked API response\n- API error: inline error message appears, button re-enabled, loading state cleared\n- No double-submit: second click while in-flight has no effect\n- Inline error cleared on next click attempt\n\nFull checkout roundtrip mock (from T-024 baseline \u2014 add here too for component isolation):\n- POST fires with correct `planId`\n- Receives `{ checkoutUrl }` \u2192 `window.location.href` set\n- Network error: inline error appears, button re-enabled\n\nAcceptance criteria:\n- All test cases pass\n- No `.only()` or hard-coded `.skip()` in committed tests\n- `pnpm test` passes in `apps/web` targeting the new test file",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": ["T-016"],
+            "blocks": ["T-024"],
+            "subtasks": [],
+            "tags": ["testing", "frontend", "billing", "feature-2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "pre-existing-failure-in-usePropertyForm",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T18:00:00.000Z",
+                "completed": "2026-04-21T18:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Create checkout/success and checkout/pending Astro pages",
+            "description": "Create the MercadoPago return pages for approved and pending payment states.\n\n**`apps/web/src/pages/[lang]/suscriptores/checkout/success.astro`**\n- No auth required (MP redirects without session guarantee)\n- Reads URL query params: `collection_status`, `payment_id`, `preference_id`\n- If `collection_status === 'approved'`: shows `\u00a1Tu suscripci\u00f3n est\u00e1 activa!` + plan/amount confirmation + CTA `Ir a mi cuenta` \u2192 `/mi-cuenta`\n- If `collection_status` absent or unexpected: shows `Verificando estado del pago...` + link to `/mi-cuenta`\n- Page title/meta: `Pago aprobado \u2014 Hospeda`\n\n**`apps/web/src/pages/[lang]/suscriptores/checkout/pending.astro`**\n- No auth required\n- Shows `Tu pago est\u00e1 siendo procesado` + explanatory text (up to 24h) + CTA `Verificar estado` \u2192 `/mi-cuenta`\n- No retry button\n- Page title/meta: `Pago en proceso \u2014 Hospeda`\n\nAll user-facing strings via i18n keys from T-002.\n\nAcceptance criteria:\n- Pages render without auth session\n- `collection_status` absent case shows neutral verification message (no crash)\n- No sensitive payment data exposed in page source\n- `pnpm typecheck` passes for `apps/web`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-024"],
+            "subtasks": [],
+            "tags": ["frontend", "astro", "pages", "billing", "feature-2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T15:00:00.000Z",
+                "completed": "2026-04-21T15:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Create checkout/failure Astro page",
+            "description": "Create the MercadoPago return page for rejected payments.\n\nFile: `apps/web/src/pages/[lang]/suscriptores/checkout/failure.astro` (new)\n\n- No auth required\n- Reads URL query params: `collection_status`, `payment_id`, and any reason codes MP provides\n- Shows `El pago no pudo procesarse`\n- User-friendly explanation if available from query params (e.g., insufficient funds, card declined); fallback to generic message when no reason in params\n- Primary CTA `Intentar de nuevo` \u2192 `/suscriptores/planes`\n- Secondary CTA `Contactar soporte` \u2192 support contact method via i18n key `checkout.failure.supportUrl` from `@repo/config` or i18n\n- No sensitive payment data in UI or page source\n- Page title/meta: `Pago rechazado \u2014 Hospeda`\n- All user-facing strings via i18n keys from T-002\n\nAcceptance criteria:\n- Retry CTA links to `/suscriptores/planes`\n- Support CTA present and linked\n- Generic fallback message shown when no reason in query params\n- No sensitive data in rendered HTML\n- `pnpm typecheck` passes for `apps/web`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-024"],
+            "subtasks": [],
+            "tags": ["frontend", "astro", "pages", "billing", "feature-2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T17:00:00.000Z",
+                "completed": "2026-04-21T17:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Wire PlanPurchaseButton into /suscriptores/planes pricing page",
+            "description": "Update the existing `/suscriptores/planes/index.astro` (and any sub-pages) to embed `PlanPurchaseButton.client.tsx` into each plan card.\n\nSteps:\n1. Locate the existing pricing page(s) in `apps/web/src/pages/[lang]/suscriptores/planes/`\n2. Identify the plan card component(s) and where the CTA should appear\n3. Import and mount `PlanPurchaseButton` with `client:load` for each plan card, passing `planId`, `price`, `currency`, and `ctaText` props\n4. If plan data is fetched server-side from the API, ensure `planId` is available as a prop\n5. If plan data is static, map static plan objects to their correct `planId` values (verify against API)\n6. Integrate naturally into existing card layout \u2014 no layout changes to the pricing page itself\n\nKey files:\n- `apps/web/src/pages/[lang]/suscriptores/planes/index.astro` (modify)\n- Any plan card component files (modify)\n\nAcceptance criteria:\n- Each plan card shows a functional `PlanPurchaseButton`\n- Clicking while unauthenticated triggers redirect (no broken state)\n- Clicking while authenticated initiates checkout API call\n- No layout regression on pricing page (mobile + desktop)\n- `pnpm typecheck` passes for `apps/web`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-016"],
+            "blocks": ["T-024"],
+            "subtasks": [],
+            "tags": ["frontend", "astro", "billing", "feature-2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T19:00:00.000Z",
+                "completed": "2026-04-21T19:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Write PropertyForm component tests (partial \u2014 integration validation)",
+            "description": "Additional integration-level component tests that validate the PropertyForm assembles correctly with all 8 sections and the hooks.\n\nNote: Core component tests for PropertyForm sections and publish logic are already written in T-010. This task covers the remaining cross-section integration validations.\n\nTest additions to `apps/web/test/components/host/PropertyForm.test.tsx`:\n- Edit mode: form pre-fills from `initialData` prop; first save fires PATCH (not POST)\n- Edit mode: on successful publish redirects to `/alojamientos/{slug}`\n- `AccommodationImageUploader` renders inside section 5 and `onChange` propagates to form state\n- Amenities multi-select fetches from API and renders loaded options\n- Leaflet map dynamic import does not crash (mock dynamic import in test)\n\nAcceptance criteria:\n- All additional test cases pass without regressions on T-010 tests\n- No `.only()` or hard-coded `.skip()` in committed tests\n- `pnpm test` passes in `apps/web` targeting the test file",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-022"],
+            "subtasks": [],
+            "tags": ["testing", "frontend", "feature-1"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T17:15:00.000Z",
+                "completed": "2026-04-21T17:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Write host onboarding E2E tests",
+            "description": "Write the end-to-end test suite for Feature 1 (Host Onboarding).\n\nE2E test file (Playwright or Vitest integration \u2014 match existing test infra in `apps/web/test/`):\n`apps/web/test/e2e/host-onboarding.test.ts`\n\nTest cases:\n1. Full happy path: authenticated user \u2192 `/publicar/nueva` \u2192 fill minimum required fields \u2192 autosave fires \u2192 `Publicar` \u2192 redirect to property page\n2. Draft persistence: fill form \u2192 close (simulate) \u2192 reopen `/publicar/nueva` \u2192 resume prompt shown \u2192 continue \u2192 data pre-filled\n3. Unauthenticated guard: visit `/publicar/nueva` without auth \u2192 redirect to signin with `?redirect=/publicar/nueva`\n4. Property list: authenticated user visits `/mi-cuenta/propiedades` \u2192 properties rendered; empty state shown when none exist\n5. Edit flow: authenticated user opens `/mi-cuenta/propiedades/{id}/editar` \u2192 form pre-filled; save fires PATCH\n\nAcceptance criteria:\n- All 5 E2E test cases pass against running dev server or test fixtures\n- No `.only()` or hard-coded `.skip()` in committed tests\n- Tests do NOT depend on live external services (Cloudinary, etc.) \u2014 use mocks/fixtures",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-012", "T-014", "T-015", "T-021"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "e2e", "feature-1"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T17:30:00.000Z",
+                "completed": "2026-04-21T17:35:00.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Write checkout API integration tests",
+            "description": "Write the API-level integration tests for the checkout endpoint.\n\nTest file: `apps/api/test/routes/billing/checkout.integration.test.ts`\n\nTest cases:\n- POST to `/api/v1/protected/billing/checkout` with valid `planId` and auth \u2192 returns `{ checkoutUrl, orderId, amount, currency, expiresAt }` with HTTP 200\n- POST without auth \u2192 HTTP 401\n- POST with invalid `planId` (not found) \u2192 HTTP 422 or 404\n- POST with malformed body (missing `planId`) \u2192 HTTP 422\n\nNote: Use test DB fixtures. Do NOT call real MercadoPago in CI \u2014 mock the payment provider adapter.\n\nAcceptance criteria:\n- All test cases pass with running API against a test DB\n- Payment provider adapter is mocked (no real MP calls)\n- No `.only()` or hard-coded `.skip()` in committed tests\n- `pnpm test` passes in `apps/api` targeting the new test file",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017", "T-018", "T-019", "T-020"],
+            "blocks": ["T-024"],
+            "subtasks": [],
+            "tags": ["testing", "integration", "api", "billing", "feature-2"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T19:20:00.000Z",
+                "completed": "2026-04-21T19:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Write checkout result page tests",
+            "description": "Write unit/component tests for the checkout result pages (success, pending, failure) and the `collection_status` query param parsing logic.\n\nTest file: `apps/web/test/pages/billing/checkout-pages.test.ts` (or equivalent for Astro pages in this project's test infra)\n\nTest cases:\n- `success.astro`: `collection_status=approved` \u2192 shows confirmation message with plan details\n- `success.astro`: `collection_status` absent \u2192 shows neutral verification message (no crash, no undefined errors)\n- `pending.astro`: renders without crash; shows processing explanation; no retry button\n- `failure.astro`: reason code in query params \u2192 user-friendly message shown\n- `failure.astro`: no reason code \u2192 generic fallback message\n- `failure.astro`: retry CTA links to `/suscriptores/planes`; support CTA present\n\nAcceptance criteria:\n- All test cases pass\n- No `.only()` or hard-coded `.skip()` in committed tests\n- `pnpm test` passes targeting the new test file",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": ["T-023"],
+            "blocks": ["T-025"],
+            "subtasks": [],
+            "tags": ["testing", "frontend", "billing", "feature-2"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T20:00:00.000Z",
+                "completed": "2026-04-21T20:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Write checkout smoke test runbook",
+            "description": "Document the staging smoke test runbook for the checkout flow.\n\nFile: `.claude/specs/SPEC-091-mvp-blockers/staging-runbook.md` (new)\n\nContent (9-step procedure from spec):\n1. Configure MercadoPago sandbox credentials in staging env\n2. Open `/suscriptores/planes` and verify `PlanPurchaseButton` renders for each plan\n3. Click a plan CTA as authenticated user \u2192 verify redirect to MP checkout page (sandbox)\n4. Complete payment with MP sandbox test card (approved scenario)\n5. Verify redirect to `/suscriptores/checkout/success` with `collection_status=approved`\n6. Verify subscription status updated in `/mi-cuenta/suscripcion`\n7. Repeat step 4 with pending test card \u2192 verify redirect to `/suscriptores/checkout/pending`\n8. Repeat step 4 with rejected test card \u2192 verify redirect to `/suscriptores/checkout/failure` + retry CTA\n9. Pre-beta real transaction checklist (verify webhook HMAC, verify idempotency key, verify invoice email)\n\nAcceptance criteria:\n- Runbook file exists at the specified path\n- All 9 steps documented with sufficient detail for a developer unfamiliar with the flow\n- Pre-beta checklist section present and covers HMAC, idempotency, and email verification",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-024"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["docs", "billing", "feature-2"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-21T00:00:00.000Z",
+                "started": "2026-04-21T00:00:00.000Z",
+                "completed": "2026-04-21T00:00:00.000Z"
+            }
+        }
+    ]
+}
