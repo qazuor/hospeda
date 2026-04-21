@@ -19,9 +19,9 @@
 ### Follow-ups (not SPEC-063 scope, track separately)
 
 1. **SPEC-087** (draft) — systemic route factory runtime-parse responseSchema. Currently per-handler strip in OwnerPromotion (T-022), AccommodationReview (T-058), DestinationReview (T-058) public list routes. When SPEC-087 lands, remove the per-handler parse lines.
-2. **Pre-existing schema test failures (3)** discovered during T-058 regression: `group-d.admin-search.schema.test.ts` expects removed T-034 workaround, `sponsorship.crud.schema.test.ts` expects pre-T-043 status field. Not blockers; documentation cleanup.
-3. **Push-only follow-up (non-formal):** delete the two T-029 output SQL files + amend state.json/progress.md. Small, non-blocking.
-4. **Phase 4 cascade follow-up (flagged):** 5 typecheck errors in `packages/service-core/test/services/destinationReview/*` (Property 'lifecycleState' missing) from T-030/T-028. Non-SPEC-063 scope.
+2. ~~**Pre-existing schema test failures (3)**~~ **RESOLVED 2026-04-20** (SPEC-063-gaps T-036) — packages/schemas test suite now 2924/2924 green; the previously-failing tests had been updated as part of normal SPEC-063 work and the gap entry was stale.
+3. ~~**Push-only follow-up:** delete the two T-029 output SQL files~~ **RESOLVED 2026-04-20** (SPEC-063-gaps T-036) — files already absent from the repo at audit time; no action required.
+4. ~~**Phase 4 cascade follow-up (flagged):** 5 typecheck errors in `packages/service-core/test/services/destinationReview/*`~~ **RESOLVED 2026-04-20** (SPEC-063-gaps T-036) — actual count is 1 unrelated typecheck error in `packages/service-core/test/base/crud/getById.test.ts:379` (tx type, SPEC-066 scope), not 5 destinationReview errors. The original gap entry was based on a misread of the regression output.
 
 **Average Complexity:** 2.1/2.5 (ceiling)
 **Critical Path (post-T-038):** T-039 -> T-040 -> T-042 -> T-058 (4 steps remaining)

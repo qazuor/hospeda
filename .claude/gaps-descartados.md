@@ -162,3 +162,17 @@ Decisiones tomadas en sesión de revisión del 2026-03-08.
 - **Severidad:** Very Low (P4)
 - **Razón de descarte:** Impacto negligible con 3-5 filtros por entidad. Optimización prematura.
 - **Fecha:** 2026-04-05
+
+## SPEC-063 Triage (2026-04-20)
+
+### GAP-063-046 — `_canPatch` ownership-bypass (falso positivo)
+
+- **Severidad original:** MEDIUM (requeria investigacion)
+- **Razon de descarte:** Investigacion confirmo que `BaseCrudService` no tiene metodo `patch()` ni hook `_canPatch`. Las routes PATCH HTTP (p.ej. `apps/api/src/routes/owner-promotion/protected/patch.ts:41`) llaman a `service.update(actor, id, body)` — el mismo code path que PUT/update. `update()` fetchea la entity completa y pasa a `_canUpdate(actor, entity)` que ejecuta ownership check. OwnerPromotion usa `checkGenericPermission` con `*_UPDATE_ANY` vs `*_UPDATE_OWN + isOwner(actor, entity)`.
+- **Verificacion:**
+  - grep `patch|_canPatch` en `packages/service-core/src/base` → 0 matches
+  - `base.crud.write.ts:144-163` — `update()` hace fetch + `_canUpdate(actor, entity)` antes del UPDATE
+  - `ownerPromotion.permissions.ts:43-51` + `sponsorship.permissions.ts` tienen ownership check
+- **Deuda menor (no es este gap):** `packages/service-core/CLAUDE.md` documenta `_canPatch` como hook estandar en su tabla de 12 hooks, pero es aspiracional — no existe en la base. Podria eliminarse la fila o implementarse si se separa `patch` de `update` en base. Tracking aparte si se prioriza.
+- **Fecha:** 2026-04-20
+

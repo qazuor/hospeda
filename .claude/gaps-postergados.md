@@ -212,3 +212,47 @@ Los siguientes gaps requieren una spec separada por impacto transversal en todos
 - **Razon de postergacion:** Riesgo bajo hoy (ambos parsean los mismos valores). La solucion limpia requiere cambiar el tipo de retorno de `adminList()` + 16 route handlers. No justifica el esfuerzo ahora.
 - **Considerar en:** Un refactor general de routes futuro, especialmente si se cambian los defaults de paginacion.
 - **Fecha:** 2026-04-08
+
+## SPEC-063 Triage (2026-04-20) — Gaps postergados / promovidos a nuevas SPECs
+
+Contexto completo: `.claude/specs/specs-gaps-063.md` seccion "Triage 2026-04-20 — Decisiones".
+
+### GAP-063-012 — Cron archive job sin audit trail persistente
+
+- **Severidad:** LOW (P3)
+- **Razon de postergacion:** Spec mismo de SPEC-063 marca esto como "client-side inference, product call". Sin driver de producto no hay prioridad. GAP-063-045 (log `ids: expiredIds`) cierra parcialmente esto con cero esfuerzo.
+- **Considerar en:** Feedback directo de admin (UX complaint) o si se abre SPEC general de audit log de transiciones de lifecycle.
+- **Fecha:** 2026-04-20
+
+### GAP-063-031 — Admin UI no distingue "Auto-archived (expired)" vs "Admin archived"
+
+- **Severidad:** LOW (P3)
+- **Razon de postergacion:** Spec lo marca como SHOULD-have UX, no blocker. El backend ya tiene la data (validUntil + lifecycleState), es un refinamiento client-side.
+- **Considerar en:** UX pass posterior; posible spin-off como `SPEC-09X-owner-promotion-auto-archive-ui` si el admin lo pide.
+- **Fecha:** 2026-04-20
+
+### GAP-063-035 — Composite index `(lifecycleState, deletedAt)` en `tags`
+
+- **Severidad:** LOW (P3)
+- **Razon de postergacion:** Tag esta out-of-scope de SPEC-063. Perf parity menor en tabla pequena. No justifica un PR dedicado hoy.
+- **Considerar en:** Si aparece perf alert de Tag adminList o se abre spec de DB parity general.
+- **Fecha:** 2026-04-20
+
+### GAP-063-047 — `LifecycleStatusEnumSchema` no normaliza case en HTTP input
+
+- **Severidad:** LOW (P3)
+- **Razon de postergacion:** DX polish. La inconsistencia case-sensitivity entre `LifecycleStatusEnum` (UPPERCASE) y `SponsorshipStatusEnum` (lowercase) es confusa pero el error actual es detectable al primer intento.
+- **Considerar en:** PR de HTTP UX general; o si surge un error report por un integrator externo.
+- **Fecha:** 2026-04-20
+
+### GAPs promovidos a NUEVAS SPECS
+
+- **GAP-063-014** → `SPEC-09X-i18n-pt-translation-audit` (traducir `pt/validation.json` y sweep general de paridad PT en todos los locales)
+- **GAP-063-021** → `SPEC-09X-lifecycle-state-phase-2-sponsorship-catalog` (SponsorshipLevel, SponsorshipPackage, y otras entidades adyacentes que aun usan `isActive`)
+- **GAP-063-032** → `SPEC-09X-cron-dispatcher-resilience` (retry/backoff, dead-letter, observability metrics para node-cron HTTP dispatcher)
+- **GAP-063-037** → `SPEC-09X-destination-reviews-admin-ui` (feature admin completa: feature folder, routes, hooks, filtros, tests; ~800 LOC)
+
+Razon comun de promocion: cada uno requiere trabajo multi-archivo y/o decisiones de producto que exceden un gap fix. Tracking y priorizacion van a traves del proceso formal de SPEC.
+
+**Fecha:** 2026-04-20
+

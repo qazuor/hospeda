@@ -315,7 +315,7 @@ And the new `validUntil` is respected by future expiration job runs.
 - **Name**: `'archive-expired-promotions'`
 - **Timeout**: `60_000` (1 minute, simpler than addon-expiry)
 - **Dry-run support**: Required. When `ctx.dryRun` is true, return the count of records that WOULD be archived without modifying data.
-- **Advisory lock**: Use `pg_try_advisory_lock(43010)` to prevent overlapping runs (follow addon-expiry pattern with lock ID `43010`, next available after `43001`).
+- **Advisory lock**: Use `pg_try_advisory_xact_lock(43010)` (transaction-level per `packages/db/docs/advisory-locks.md` rule 1) to prevent overlapping runs (follow addon-expiry pattern with lock ID `43010`, next available after `43001`).
   - **Advisory Lock Registry**: Lock ID `43010` is registered for the OwnerPromotion archive cron job. All advisory lock IDs must be documented in `packages/db/docs/advisory-locks.md` (create if not exists). See also: `43001` (addon-expiry, SPEC-064).
 - **Query**: `SELECT id FROM owner_promotions WHERE lifecycle_state = 'ACTIVE' AND valid_until IS NOT NULL AND valid_until < NOW() AND deleted_at IS NULL LIMIT 100`
 - **Batch size**: Process up to 100 records per run. If more exist, the next hourly run picks them up.
