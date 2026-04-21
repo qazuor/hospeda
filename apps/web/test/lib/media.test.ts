@@ -5,10 +5,98 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    extractFeaturedImage,
     extractFeaturedImageUrl,
     extractGalleryItems,
     extractGalleryUrls
 } from '../../src/lib/media';
+
+// ---------------------------------------------------------------------------
+// extractFeaturedImage
+// ---------------------------------------------------------------------------
+
+describe('extractFeaturedImage', () => {
+    it('should return { url, caption } when media.featuredImage has caption', () => {
+        const item = {
+            media: {
+                featuredImage: { url: 'https://example.com/image.jpg', caption: 'Vista hermosa' }
+            }
+        };
+        const result = extractFeaturedImage(item);
+        expect(result.url).toBe('https://example.com/image.jpg');
+        expect(result.caption).toBe('Vista hermosa');
+    });
+
+    it('should return { url, caption: undefined } when caption is missing', () => {
+        const item = {
+            media: {
+                featuredImage: { url: 'https://example.com/image.jpg' }
+            }
+        };
+        const result = extractFeaturedImage(item);
+        expect(result.url).toBe('https://example.com/image.jpg');
+        expect(result.caption).toBeUndefined();
+    });
+
+    it('should return { url, caption: undefined } when media.featuredImage is a plain string', () => {
+        const item = {
+            media: {
+                featuredImage: 'https://example.com/image.jpg'
+            }
+        };
+        const result = extractFeaturedImage(item);
+        expect(result.url).toBe('https://example.com/image.jpg');
+        expect(result.caption).toBeUndefined();
+    });
+
+    it('should return { url: fallback, caption: undefined } when no media found', () => {
+        const result = extractFeaturedImage({}, { fallback: '/custom.svg' });
+        expect(result.url).toBe('/custom.svg');
+        expect(result.caption).toBeUndefined();
+    });
+
+    it('should return default placeholder when no image and no options', () => {
+        const result = extractFeaturedImage({});
+        expect(result.url).toBe('/images/placeholder.svg');
+        expect(result.caption).toBeUndefined();
+    });
+
+    it('should NOT set caption when caption is an empty string', () => {
+        const item = {
+            media: {
+                featuredImage: { url: 'https://example.com/image.jpg', caption: '' }
+            }
+        };
+        const result = extractFeaturedImage(item);
+        expect(result.url).toBe('https://example.com/image.jpg');
+        expect(result.caption).toBeUndefined();
+    });
+
+    it('should fall back to top-level featuredImage string (no caption)', () => {
+        const item = { featuredImage: 'https://example.com/direct.jpg' };
+        const result = extractFeaturedImage(item);
+        expect(result.url).toBe('https://example.com/direct.jpg');
+        expect(result.caption).toBeUndefined();
+    });
+
+    it('should fall back to heroImage string (no caption)', () => {
+        const item = { heroImage: 'https://example.com/hero.jpg' };
+        const result = extractFeaturedImage(item);
+        expect(result.url).toBe('https://example.com/hero.jpg');
+        expect(result.caption).toBeUndefined();
+    });
+
+    it('should fall back to image string (no caption)', () => {
+        const item = { image: 'https://example.com/img.jpg' };
+        const result = extractFeaturedImage(item);
+        expect(result.url).toBe('https://example.com/img.jpg');
+        expect(result.caption).toBeUndefined();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// extractFeaturedImageUrl (deprecated wrapper — must still return just the URL)
+// ---------------------------------------------------------------------------
 
 describe('extractFeaturedImageUrl', () => {
     it('should extract URL from nested media.featuredImage object', () => {

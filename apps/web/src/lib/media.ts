@@ -45,7 +45,7 @@ export interface GalleryItem {
 }
 
 /**
- * Options bag for {@link extractFeaturedImageUrl}.
+ * Options bag for {@link extractFeaturedImageUrl} and {@link extractFeaturedImage}.
  *
  * Allows callers to express fallback and preset as a named-argument object
  * instead of positional parameters.  When `options.fallback` is provided it
@@ -61,6 +61,86 @@ export interface ExtractFeaturedImageOptions {
 }
 
 /**
+ * The rich shape returned by {@link extractFeaturedImage}.
+ *
+ * Carries both the Cloudinary-transformed URL and the optional caption
+ * metadata from the API response, so components can use the caption as
+ * accessible `alt` text (falling back to the entity name when absent).
+ */
+export interface FeaturedImageResult {
+    /** Cloudinary-transformed (or passthrough) image URL. */
+    readonly url: string;
+    /**
+     * Optional caption text sourced from `media.featuredImage.caption`.
+     * Present only when the API returns a structured `{ url, caption }` object
+     * (not a plain string) and the caption is a non-empty string.
+     */
+    readonly caption?: string;
+}
+
+/**
+ * Extracts the featured image URL **and caption** from an API response item,
+ * applying a Cloudinary transform preset via `getMediaUrl()`.
+ *
+ * The returned `caption` field is populated only when the API stores the
+ * featured image as a structured `{ url, caption }` object (not a plain
+ * string) and the caption is a non-empty string.  Components should use
+ * `caption ?? entityName ?? ''` as the `alt` attribute so that API-provided
+ * captions are preferred over synthetic entity-name fallbacks.
+ *
+ * Lookup order:
+ * 1. `item.media.featuredImage` (object with `url` + optional `caption`, or plain string)
+ * 2. `item.featuredImage` (plain string)
+ * 3. `item.heroImage` (plain string)
+ * 4. `item.image` (plain string)
+ * 5. `options.fallback` → `fallback` → `DEFAULT_PLACEHOLDER`
+ *
+ * @param item - API response item (destination, accommodation, event, post, etc.)
+ * @param options - Optional overrides for `fallback` URL and Cloudinary `preset`
+ * @returns `{ url, caption? }` — transformed URL and optional caption string
+ */
+export function extractFeaturedImage(
+    item: Record<string, unknown>,
+    options?: ExtractFeaturedImageOptions
+): FeaturedImageResult {
+    const resolvedFallback = options?.fallback ?? DEFAULT_PLACEHOLDER;
+    const resolvedPreset = options?.preset ?? 'card';
+
+    const media = item.media as MediaObject | undefined;
+    if (media?.featuredImage) {
+        if (typeof media.featuredImage === 'string') {
+            return { url: getMediaUrl(media.featuredImage, { preset: resolvedPreset }) };
+        }
+        if (typeof media.featuredImage === 'object' && media.featuredImage.url) {
+            const result: { url: string; caption?: string } = {
+                url: getMediaUrl(media.featuredImage.url, { preset: resolvedPreset })
+            };
+            if (
+                typeof media.featuredImage.caption === 'string' &&
+                media.featuredImage.caption.length > 0
+            ) {
+                result.caption = media.featuredImage.caption;
+            }
+            return result;
+        }
+    }
+
+    if (typeof item.featuredImage === 'string' && item.featuredImage) {
+        return { url: getMediaUrl(item.featuredImage, { preset: resolvedPreset }) };
+    }
+
+    if (typeof item.heroImage === 'string' && item.heroImage) {
+        return { url: getMediaUrl(item.heroImage, { preset: resolvedPreset }) };
+    }
+
+    if (typeof item.image === 'string' && item.image) {
+        return { url: getMediaUrl(item.image, { preset: resolvedPreset }) };
+    }
+
+    return { url: resolvedFallback };
+}
+
+/**
  * Extracts the featured image URL from an API response item and applies
  * a Cloudinary transform preset via `getMediaUrl()`.
  *
@@ -70,6 +150,11 @@ export interface ExtractFeaturedImageOptions {
  * The positional `fallback` and `preset` parameters are preserved for
  * backward compatibility.  When `options.fallback` or `options.preset` are
  * provided they take precedence over the positional equivalents.
+ *
+ * @deprecated Use {@link extractFeaturedImage} instead, which returns the
+ * full `{ url, caption? }` shape enabling caption-as-alt accessibility.
+ * This wrapper will remain indefinitely for backward compatibility but new
+ * callers MUST NOT use it.
  *
  * @param item - API response item (destination, accommodation, event, post, etc.)
  * @param fallback - Fallback URL if no image is found (default: `'/images/placeholder.svg'`)
@@ -83,32 +168,10 @@ export function extractFeaturedImageUrl(
     preset: MediaPreset = 'card',
     options?: ExtractFeaturedImageOptions
 ): string {
-    const resolvedFallback = options?.fallback ?? fallback;
-    const resolvedPreset = options?.preset ?? preset;
-
-    const media = item.media as MediaObject | undefined;
-    if (media?.featuredImage) {
-        if (typeof media.featuredImage === 'string') {
-            return getMediaUrl(media.featuredImage, { preset: resolvedPreset });
-        }
-        if (typeof media.featuredImage === 'object' && media.featuredImage.url) {
-            return getMediaUrl(media.featuredImage.url, { preset: resolvedPreset });
-        }
-    }
-
-    if (typeof item.featuredImage === 'string' && item.featuredImage) {
-        return getMediaUrl(item.featuredImage, { preset: resolvedPreset });
-    }
-
-    if (typeof item.heroImage === 'string' && item.heroImage) {
-        return getMediaUrl(item.heroImage, { preset: resolvedPreset });
-    }
-
-    if (typeof item.image === 'string' && item.image) {
-        return getMediaUrl(item.image, { preset: resolvedPreset });
-    }
-
-    return resolvedFallback;
+    return extractFeaturedImage(item, {
+        fallback: options?.fallback ?? fallback,
+        preset: options?.preset ?? preset
+    }).url;
 }
 
 /**
