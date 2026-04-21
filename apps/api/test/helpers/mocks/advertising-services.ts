@@ -554,6 +554,25 @@ export class OwnerPromotionService {
         };
     }
 
+    async getById(_actor: unknown, id: string) {
+        if (id === NOT_FOUND_UUID) return { data: null };
+        return {
+            data: {
+                id,
+                slug: 'promo-mock-slug',
+                ownerId: 'owner_mock_id',
+                accommodationId: 'accommodation_mock_id',
+                title: 'Mock Promotion',
+                description: 'A mock promotion for tests.',
+                discountType: 'percentage',
+                discountValue: 10,
+                lifecycleState: 'ACTIVE',
+                createdAt: '2024-01-01T00:00:00.000Z',
+                updatedAt: '2024-01-01T00:00:00.000Z'
+            }
+        };
+    }
+
     async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
         return {
             data: {

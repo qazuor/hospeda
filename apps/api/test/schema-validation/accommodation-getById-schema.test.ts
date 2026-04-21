@@ -1,0 +1,183 @@
+/**
+ * GAP-031: Validates that the public getById route for Accommodation
+ * returns data conforming to AccommodationPublicSchema when relations
+ * are populated.
+ *
+ * @module test/schema-validation/accommodation-getById-schema
+ */
+
+import { AccommodationPublicSchema } from '@repo/schemas';
+import { AccommodationService } from '@repo/service-core';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { initApp } from '../../src/app';
+import { validateApiEnv } from '../../src/utils/env';
+import { validateResponseAgainstSchema } from '../helpers/relation-schema-validator';
+
+/** Valid UUID for the test entity. */
+const VALID_UUID = '11111111-1111-4111-8111-111111111111';
+
+/** Reusable media object that satisfies the image schema (moderationState is required). */
+const VALID_MEDIA = {
+    featuredImage: {
+        url: 'https://example.com/image.jpg',
+        moderationState: 'APPROVED'
+    }
+};
+
+/** Reusable SEO object (title min 30, description min 70). */
+const VALID_SEO = {
+    title: 'Hotel Test Accommodation SEO Title',
+    description:
+        'This is a long SEO description for the hotel test accommodation. It must be at least 70 characters long.'
+};
+
+/**
+ * Mock accommodation data with all relation fields populated
+ * to match AccommodationPublicSchema expectations.
+ */
+const ACCOMMODATION_WITH_RELATIONS = {
+    id: VALID_UUID,
+    slug: 'hotel-test-schema',
+    name: 'Hotel Test Schema',
+    type: 'HOTEL',
+    summary: 'A test accommodation for schema validation testing.',
+    description:
+        'This is a long enough description for schema validation. It needs to pass the minimum character requirements set in the Zod schema.',
+    isFeatured: true,
+    destinationId: '22222222-2222-4222-8222-222222222222',
+    media: VALID_MEDIA,
+    location: { city: 'Concepcion del Uruguay', country: 'Argentina' },
+    averageRating: 4.5,
+    reviewsCount: 42,
+    visibility: 'PUBLIC',
+    seo: VALID_SEO,
+    price: { price: 150, currency: 'ARS' },
+    tags: [],
+    extraInfo: {
+        capacity: 4,
+        minNights: 1,
+        bedrooms: 2,
+        bathrooms: 1
+    },
+    createdAt: '2024-01-01T00:00:00.000Z',
+    // Relation: owner (public tier uses inline object, not UserPublicSchema)
+    owner: {
+        id: '33333333-3333-4333-8333-333333333333',
+        name: 'Juan Propietario',
+        image: null,
+        createdAt: '2024-01-01T00:00:00.000Z'
+    },
+    // Relation: amenities (junction table shape)
+    amenities: [
+        {
+            amenityId: '44444444-4444-4444-8444-444444444444',
+            name: 'WiFi',
+            icon: 'wifi',
+            isOptional: false,
+            additionalCost: null
+        }
+    ],
+    // Relation: features (junction table shape)
+    features: [
+        {
+            featureId: '55555555-5555-4555-8555-555555555555',
+            name: 'Estacionamiento',
+            icon: 'parking',
+            hostReWriteName: null,
+            comments: null
+        }
+    ],
+    // Relation: faqs
+    faqs: [
+        {
+            id: '66666666-6666-4666-8666-666666666666',
+            question: 'What time is check-in?',
+            answer: 'Check-in is at 3pm',
+            category: null
+        }
+    ],
+    // Relation: destination (DestinationPublicSchema)
+    destination: {
+        id: '22222222-2222-4222-8222-222222222222',
+        slug: 'concepcion-del-uruguay',
+        name: 'Concepcion del Uruguay',
+        summary: 'A beautiful city in Entre Rios province of Argentina.',
+        description:
+            'Concepcion del Uruguay is a city located on the banks of the Uruguay River in the province of Entre Rios.',
+        isFeatured: true,
+        destinationType: 'CITY',
+        level: 4,
+        path: '/argentina/litoral/entre-rios/concepcion-del-uruguay',
+        media: VALID_MEDIA,
+        location: { city: 'Concepcion del Uruguay', country: 'Argentina' },
+        averageRating: 4.2,
+        reviewsCount: 10,
+        accommodationsCount: 50,
+        visibility: 'PUBLIC',
+        seo: VALID_SEO,
+        tags: [],
+        attractions: []
+    }
+};
+
+describe('GAP-031: Accommodation getById schema validation', () => {
+    let app: ReturnType<typeof initApp>;
+    const base = '/api/v1/public/accommodations';
+
+    beforeAll(() => {
+        validateApiEnv();
+
+        // Override the mock getById to return relation-populated data
+        vi.spyOn(AccommodationService.prototype, 'getById').mockResolvedValue({
+            data: ACCOMMODATION_WITH_RELATIONS
+        });
+
+        app = initApp();
+    });
+
+    it('response data with populated relations passes AccommodationPublicSchema validation', async () => {
+        const res = await app.request(`${base}/${VALID_UUID}`, {
+            headers: { 'user-agent': 'vitest' }
+        });
+
+        expect(res.status).toBe(200);
+
+        const body = await res.json();
+        expect(body).toHaveProperty('success', true);
+        expect(body).toHaveProperty('data');
+
+        const validation = validateResponseAgainstSchema({
+            responseData: body.data,
+            schema: AccommodationPublicSchema
+        });
+
+        if (!validation.success) {
+            throw new Error(
+                `AccommodationPublicSchema validation failed:\n${validation.errors.join('\n')}`
+            );
+        }
+
+        expect(validation.success).toBe(true);
+    });
+
+    it('validated data preserves all relation fields', async () => {
+        const res = await app.request(`${base}/${VALID_UUID}`, {
+            headers: { 'user-agent': 'vitest' }
+        });
+        const body = await res.json();
+
+        const validation = validateResponseAgainstSchema({
+            responseData: body.data,
+            schema: AccommodationPublicSchema
+        });
+
+        expect(validation.success).toBe(true);
+
+        const parsed = validation.data as Record<string, unknown>;
+        expect(parsed).toHaveProperty('owner');
+        expect(parsed).toHaveProperty('amenities');
+        expect(parsed).toHaveProperty('features');
+        expect(parsed).toHaveProperty('faqs');
+        expect(parsed).toHaveProperty('destination');
+    });
+});
