@@ -109,7 +109,7 @@ export interface CardLocation {
  *   name: 'Cabaña Río Verde',
  *   summary: 'Hermosa cabaña frente al río.',
  *   type: 'cabin',
- *   featuredImage: '/images/cabin.jpg',
+ *   featuredImage: { url: '/images/cabin.jpg', caption: 'Vista del río' },
  *   location: { city: 'Concepción del Uruguay', state: 'Entre Ríos' },
  *   price: { amount: 1500000, currency: 'ARS', period: 'noche' },
  *   averageRating: 4.7,
@@ -129,8 +129,12 @@ export interface AccommodationCardData {
     readonly summary: string;
     /** Accommodation type slug (e.g. `'hotel'`, `'cabin'`, `'apartment'`). */
     readonly type: string;
-    /** Absolute or root-relative URL for the hero/featured image. */
-    readonly featuredImage: string;
+    /**
+     * Featured image with Cloudinary-transformed URL and optional caption.
+     * Components should use `featuredImage.url` as `src` and prefer
+     * `featuredImage.caption ?? name` as `alt` text for accessibility.
+     */
+    readonly featuredImage: { readonly url: string; readonly caption?: string };
     /** City and state displayed in the location row. */
     readonly location: CardLocation;
     /** Optional nightly/weekly price. Absent when pricing is not published. */
@@ -199,7 +203,7 @@ export interface DestinationCoordinates {
  *   slug: 'concepcion-del-uruguay',
  *   name: 'Concepción del Uruguay',
  *   summary: 'Ciudad histórica a orillas del río Uruguay.',
- *   featuredImage: '/images/cdu.jpg',
+ *   featuredImage: { url: '/images/cdu.jpg', caption: 'Vista aérea del río' },
  *   accommodationsCount: 48,
  *   isFeatured: true,
  *   path: 'concepcion-del-uruguay',
@@ -216,8 +220,12 @@ export interface DestinationCardData {
     readonly name: string;
     /** Short description shown on the card. */
     readonly summary: string;
-    /** Absolute or root-relative URL for the featured/hero image. */
-    readonly featuredImage: string;
+    /**
+     * Featured image with Cloudinary-transformed URL and optional caption.
+     * Components should use `featuredImage.url` as `src` and prefer
+     * `featuredImage.caption ?? name` as `alt` text for accessibility.
+     */
+    readonly featuredImage: { readonly url: string; readonly caption?: string };
     /** Total number of published accommodations in this destination. */
     readonly accommodationsCount: number;
     /** Whether this destination appears in featured/promoted slots. */
@@ -281,7 +289,7 @@ export interface EventLocation {
  *   slug: 'festival-cosquin-rock-2026',
  *   name: 'Cosquín Rock 2026',
  *   summary: 'El festival de rock más importante de Argentina.',
- *   featuredImage: '/images/cosquin-rock.jpg',
+ *   featuredImage: { url: '/images/cosquin-rock.jpg', caption: 'Escenario principal' },
  *   category: 'music',
  *   date: { start: '2026-02-14T18:00:00Z', end: '2026-02-15T02:00:00Z' },
  *   isFeatured: true,
@@ -296,8 +304,12 @@ export interface EventCardData {
     readonly name: string;
     /** Short description shown on the card. */
     readonly summary: string;
-    /** Absolute or root-relative URL for the featured/hero image. */
-    readonly featuredImage: string;
+    /**
+     * Featured image with Cloudinary-transformed URL and optional caption.
+     * Components should use `featuredImage.url` as `src` and prefer
+     * `featuredImage.caption ?? name` as `alt` text for accessibility.
+     */
+    readonly featuredImage: { readonly url: string; readonly caption?: string };
     /** Event category slug (e.g. `'music'`, `'cultural'`, `'gastronomy'`). */
     readonly category: string;
     /** Start and optional end date-time for the event. */
@@ -321,7 +333,7 @@ export interface EventCardData {
  *   slug: 'mejores-cabanas-entre-rios',
  *   title: 'Las 10 mejores cabañas de Entre Ríos',
  *   summary: 'Descubrí los rincones más hermosos del litoral.',
- *   featuredImage: '/images/cabanas-er.jpg',
+ *   featuredImage: { url: '/images/cabanas-er.jpg', caption: 'Cabaña a orillas del río' },
  *   category: 'travel',
  *   publishedAt: '2026-03-01T10:00:00Z',
  *   readingTimeMinutes: 7,
@@ -337,8 +349,12 @@ export interface ArticleCardData {
     readonly title: string;
     /** Short excerpt or summary shown on the card. */
     readonly summary: string;
-    /** Absolute or root-relative URL for the featured/thumbnail image. */
-    readonly featuredImage: string;
+    /**
+     * Featured image with Cloudinary-transformed URL and optional caption.
+     * Components should use `featuredImage.url` as `src` and prefer
+     * `featuredImage.caption ?? title` as `alt` text for accessibility.
+     */
+    readonly featuredImage: { readonly url: string; readonly caption?: string };
     /** Post category slug (e.g. `'travel'`, `'gastronomy'`, `'tips'`). */
     readonly category: string;
     /** ISO 8601 publish date-time string. */

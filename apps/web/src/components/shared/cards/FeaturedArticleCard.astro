@@ -41,7 +41,7 @@ const articleUrl = buildUrl({ locale, path: `/publicaciones/${data.slug}/` });
 const categoryColor = getPostCategoryColor({ category: data.category });
 const categoryLabel = getPostCategoryLabel({ category: data.category, t });
 const categoryEmoji = getPostCategoryEmoji({ category: data.category });
-const hasImage = Boolean(data.featuredImage);
+const hasImage = Boolean(data.featuredImage?.url);
 
 const { visible: visibleTags } = truncateTags({ tags: data.tags ?? [], maxVisible: 3 });
 const { text: excerpt } = truncateExcerpt({ text: data.summary, variant: 'featured' });
@@ -84,8 +84,8 @@ const mutedColorScheme = getMutedColorScheme();
             </div>
             {hasImage && (
                 <img
-                    src={data.featuredImage}
-                    alt={data.title}
+                    src={data.featuredImage?.url}
+                    alt={data.featuredImage?.caption ?? data.title}
                     loading="lazy"
                     class="featured-card__img"
                     width="800"

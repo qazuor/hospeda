@@ -224,8 +224,11 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                                         >
                                             {/* Background image */}
                                             <img
-                                                src={destination.featuredImage}
-                                                alt={destination.name}
+                                                src={destination.featuredImage.url}
+                                                alt={
+                                                    destination.featuredImage.caption ??
+                                                    destination.name
+                                                }
                                                 className={styles.cardImage}
                                                 loading="lazy"
                                                 draggable={false}

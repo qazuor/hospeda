@@ -137,8 +137,13 @@ describe('AccommodationCard.astro', () => {
             expect(src).toContain('loading="lazy"');
         });
 
-        it('should set alt to data.name', () => {
-            expect(src).toContain('alt={data.name}');
+        it('should prefer caption over name as alt text (caption wins when present)', () => {
+            // Caption from API media.featuredImage.caption is used first; name is the fallback.
+            expect(src).toContain('data.featuredImage.caption ?? data.name');
+        });
+
+        it('should use data.featuredImage.url as the image src', () => {
+            expect(src).toContain('data.featuredImage.url');
         });
 
         it('should have width and height on the card image', () => {

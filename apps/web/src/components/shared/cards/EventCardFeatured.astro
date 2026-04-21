@@ -247,8 +247,8 @@ function getCategoryLabel(category: string, loc: SupportedLocale): string {
  * SVG placeholder path.
  */
 const hasRealImage =
-  Boolean(data.featuredImage) &&
-  !data.featuredImage.includes('placeholder');
+  Boolean(data.featuredImage.url) &&
+  !data.featuredImage.url.includes('placeholder');
 
 /**
  * Semi-transparent version of the category color used for the badge overlay.
@@ -291,7 +291,7 @@ const badgeBgSolid = categoryColor.bg.replace('/ 0.15)', '/ 0.85)');
       <!-- Real image on top; when it loads it covers the fallback -->
       {hasRealImage && (
         <Image
-          src={data.featuredImage}
+          src={data.featuredImage.url}
           alt=""
           width={600}
           height={260}

@@ -76,8 +76,8 @@ const baseUrl = buildUrl({ locale, path: 'destinos' });
 							<a href={buildUrl({ locale, path: `destinos/${card.slug}` })} class="dest-card" data-reveal="up" style={`transition-delay: ${Math.min(i, 8) * 80}ms`}>
 								<div class="dest-card__image-wrapper">
 									<img
-										src={card.featuredImage || '/assets/images/placeholder-destination.svg'}
-										alt={card.name}
+										src={card.featuredImage.url || '/assets/images/placeholder-destination.svg'}
+										alt={card.featuredImage.caption ?? card.name}
 										loading="lazy"
 										class="dest-card__img"
 									/>

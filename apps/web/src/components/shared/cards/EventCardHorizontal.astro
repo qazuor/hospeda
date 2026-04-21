@@ -172,7 +172,7 @@ const dateLabel = buildDateLabel();
 const timeLabel = buildTimeLabel();
 
 /** Whether the URL is a known placeholder or invalid for direct rendering. */
-const showImage = Boolean(data.featuredImage) && !data.featuredImage?.includes("placeholder");
+const showImage = Boolean(data.featuredImage.url) && !data.featuredImage.url.includes("placeholder");
 
 /** Location label: "Venue Name, City" or just "City". */
 const locationLabel = data.location
@@ -251,7 +251,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
             {
                 showImage && (
                     <img
-                        src={data.featuredImage}
+                        src={data.featuredImage.url}
                         alt=""
                         loading="lazy"
                         class="event-card-h__photo"

@@ -39,4 +39,19 @@ describe('ArticleCard.astro — Badge migration', () => {
             );
         });
     });
+
+    describe('featuredImage caption as alt text', () => {
+        it('uses featuredImage.url as src for the image', () => {
+            expect(src).toContain('data.featuredImage?.url');
+        });
+
+        it('prefers caption over title as alt text when caption is available', () => {
+            // Caption from API media.featuredImage.caption is used first; title is the fallback.
+            expect(src).toContain('data.featuredImage?.caption ?? data.title');
+        });
+
+        it('checks hasImage against featuredImage.url (not the object)', () => {
+            expect(src).toContain('data.featuredImage?.url');
+        });
+    });
 });

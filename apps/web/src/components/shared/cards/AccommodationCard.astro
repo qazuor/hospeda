@@ -55,10 +55,10 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 	<a href={detailUrl} class="acc-card__link" aria-label={data.name}>
 		<!-- IMAGE AREA -->
 		<div class="acc-card__image-area">
-			{data.featuredImage && !data.featuredImage.includes('placeholder') ? (
+			{data.featuredImage.url && !data.featuredImage.url.includes('placeholder') ? (
 				<Image
-					src={data.featuredImage}
-					alt={data.name}
+					src={data.featuredImage.url}
+					alt={data.featuredImage.caption ?? data.name}
 					width={432}
 					height={220}
 					format="webp"
@@ -70,8 +70,8 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 				/>
 			) : (
 				<img
-					src={data.featuredImage || '/assets/images/placeholder-accommodation.svg'}
-					alt={data.name}
+					src={data.featuredImage.url || '/assets/images/placeholder-accommodation.svg'}
+					alt={data.featuredImage.caption ?? data.name}
 					loading="lazy"
 					decoding="async"
 					class="acc-card__img"

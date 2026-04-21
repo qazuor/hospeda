@@ -80,8 +80,13 @@ export interface ArticleCardBaseProps {
     readonly title: string;
     /** Short excerpt or summary. */
     readonly summary: string;
-    /** Optional featured image URL. Falls back to placeholder when absent. */
-    readonly featuredImage?: string;
+    /**
+     * Optional featured image with URL and optional caption.
+     * Components should use `featuredImage.url` as `src` and prefer
+     * `featuredImage.caption ?? title` as `alt` text for accessibility.
+     * Falls back to a placeholder when absent.
+     */
+    readonly featuredImage?: { readonly url: string; readonly caption?: string };
     /** Article category slug. */
     readonly category: string;
     /** ISO 8601 publish date-time string. */

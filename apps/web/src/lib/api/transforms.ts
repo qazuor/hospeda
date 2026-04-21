@@ -21,7 +21,12 @@ import type {
 } from '@/data/types';
 import { getInitialsFromName } from '../avatar-utils';
 import { webLogger } from '../logger';
-import { extractFeaturedImageUrl, extractGalleryItems, extractGalleryUrls } from '../media';
+import {
+    extractFeaturedImage,
+    extractFeaturedImageUrl,
+    extractGalleryItems,
+    extractGalleryUrls
+} from '../media';
 
 // Re-export types from canonical source for backward compatibility
 export type {
@@ -103,7 +108,7 @@ export function toAccommodationCardProps({
     const city = String(locationObj?.city || destinationObj?.name || '');
     const state = String(locationObj?.state || '');
 
-    const { featuredImageUrl } = processEntityImages({
+    const { featuredImage } = processEntityImages({
         item,
         entity: 'accommodation',
         id: String(item.id || ''),
@@ -117,7 +122,7 @@ export function toAccommodationCardProps({
         name: String(item.name || ''),
         summary: String(item.summary || item.description || ''),
         type: String(item.type || item.accommodationType || ''),
-        featuredImage: featuredImageUrl,
+        featuredImage,
         averageRating: Number(item.averageRating || 0),
         reviewsCount: Number(item.reviewsCount || item.ratingCount || 0),
         location: { city, state },
@@ -146,14 +151,14 @@ export function toAccommodationCardProps({
 export function toAccommodationDetailedProps({
     item
 }: { readonly item: Record<string, unknown> }): AccommodationDetailedCardData {
-    const { featuredImageUrl, galleryUrls } = processEntityImages({
+    const { featuredImage, galleryUrls } = processEntityImages({
         item,
         entity: 'accommodation-detailed',
         id: String(item.id || ''),
         extract: true,
         fallback: '/images/placeholder-accommodation.svg'
     });
-    const images = galleryUrls.length > 0 ? galleryUrls : [featuredImageUrl];
+    const images = galleryUrls.length > 0 ? galleryUrls : [featuredImage.url];
 
     const locationObj = item.location as Record<string, unknown> | undefined;
     const extraInfo = item.extraInfo as Record<string, unknown> | undefined;
@@ -197,7 +202,7 @@ export function toAccommodationDetailedProps({
 export function toDestinationCardProps({
     item
 }: { readonly item: Record<string, unknown> }): DestinationCardData {
-    const { featuredImageUrl } = processEntityImages({
+    const { featuredImage } = processEntityImages({
         item,
         entity: 'destination',
         id: String(item.slug || ''),
@@ -222,7 +227,7 @@ export function toDestinationCardProps({
         slug: String(item.slug || ''),
         name: String(item.name || 'Sin nombre'),
         summary: String(item.summary || item.description || ''),
-        featuredImage: featuredImageUrl,
+        featuredImage,
         accommodationsCount: Number(item.accommodationsCount || 0),
         isFeatured: Boolean(item.isFeatured),
         path: String(item.path || item.slug || ''),
@@ -252,7 +257,7 @@ export function toDestinationCardProps({
 export function toEventCardProps({
     item
 }: { readonly item: Record<string, unknown> }): EventCardData {
-    const { featuredImageUrl } = processEntityImages({
+    const { featuredImage } = processEntityImages({
         item,
         entity: 'event',
         id: String(item.slug || ''),
@@ -267,7 +272,7 @@ export function toEventCardProps({
         slug: String(item.slug || ''),
         name: String(item.name || ''),
         summary: String(item.summary || item.description || ''),
-        featuredImage: featuredImageUrl,
+        featuredImage,
         category: String(item.category || ''),
         date: {
             start: String(dateObj?.start || item.startDate || ''),
@@ -309,7 +314,7 @@ export function toArticleCardProps({
           ? String(authorObj.image)
           : undefined;
 
-    const { featuredImageUrl } = processEntityImages({
+    const { featuredImage } = processEntityImages({
         item,
         entity: 'post',
         id: String(item.slug || ''),
@@ -321,7 +326,7 @@ export function toArticleCardProps({
         slug: String(item.slug || ''),
         title: String(item.title || ''),
         summary: String(item.summary || item.content || ''),
-        featuredImage: featuredImageUrl,
+        featuredImage,
         category: String(item.category || ''),
         publishedAt: String(item.publishedAt || item.createdAt || ''),
         readingTimeMinutes: Number(item.readingTimeMinutes || 0),
@@ -504,19 +509,23 @@ interface EntityMediaShape {
 
 /**
  * Result returned by {@link processEntityImages} when called with
- * `extract: true`.  Carries the resolved `featuredImageUrl` and the
- * `galleryUrls` array alongside the original item so call-sites can
- * destructure instead of calling `extractFeaturedImageUrl` /
+ * `extract: true`.  Carries the resolved `featuredImage` object (url + optional
+ * caption) and the `galleryUrls` array alongside the original item so
+ * call-sites can destructure instead of calling `extractFeaturedImage` /
  * `extractGalleryUrls` separately.
+ *
+ * The `caption` field on `featuredImage` is populated when the API stores the
+ * image as a structured `{ url, caption }` object.  Components should prefer
+ * `featuredImage.caption` over the entity name as `alt` text for accessibility.
  */
 export interface ProcessEntityImagesResult<T extends Record<string, unknown>> {
     /** The original item, unchanged (identity). */
     readonly item: T;
     /**
-     * Resolved featured image URL.  Falls back to `fallback` when no image
-     * is found on the entity.
+     * Resolved featured image with URL and optional caption.
+     * Falls back to `{ url: fallback }` when no image is found on the entity.
      */
-    readonly featuredImageUrl: string;
+    readonly featuredImage: { readonly url: string; readonly caption?: string };
     /**
      * Resolved gallery URL list.  Empty array when the entity has no gallery.
      */
@@ -613,7 +622,7 @@ export function processEntityImages<T extends Record<string, unknown>>({
 
     return {
         item,
-        featuredImageUrl: extractFeaturedImageUrl(item, fallback),
+        featuredImage: extractFeaturedImage(item, { fallback }),
         galleryUrls: extractGalleryUrls(item)
     };
 }

@@ -38,6 +38,36 @@ describe('toAccommodationCardProps', () => {
         expect(result.location.city).toBe('Colón');
     });
 
+    it('featuredImage should be an object with url and optional caption', () => {
+        const item = {
+            media: {
+                featuredImage: { url: 'https://example.com/hotel.jpg', caption: 'Vista del lobby' }
+            }
+        };
+        const result = toAccommodationCardProps({ item });
+        expect(result.featuredImage).toEqual({
+            url: 'https://example.com/hotel.jpg',
+            caption: 'Vista del lobby'
+        });
+    });
+
+    it('featuredImage.caption should be undefined when no caption on API media', () => {
+        const item = {
+            media: {
+                featuredImage: { url: 'https://example.com/hotel.jpg' }
+            }
+        };
+        const result = toAccommodationCardProps({ item });
+        expect(result.featuredImage.url).toBe('https://example.com/hotel.jpg');
+        expect(result.featuredImage.caption).toBeUndefined();
+    });
+
+    it('featuredImage.url should be fallback placeholder when no media found', () => {
+        const result = toAccommodationCardProps({ item: {} });
+        expect(result.featuredImage.url).toBe('/images/placeholder-accommodation.svg');
+        expect(result.featuredImage.caption).toBeUndefined();
+    });
+
     it('should handle missing fields with defaults', () => {
         const result = toAccommodationCardProps({ item: {} });
 
@@ -95,6 +125,22 @@ describe('toDestinationCardProps', () => {
         expect(result.name).toBeTruthy(); // Falls back to 'Sin nombre' or similar
         expect(result.accommodationsCount).toBe(0);
     });
+
+    it('featuredImage should carry caption from API media', () => {
+        const item = {
+            slug: 'colon',
+            name: 'Colón',
+            media: {
+                featuredImage: {
+                    url: 'https://example.com/colon.jpg',
+                    caption: 'Río Uruguay al atardecer'
+                }
+            }
+        };
+        const result = toDestinationCardProps({ item });
+        expect(result.featuredImage.url).toBe('https://example.com/colon.jpg');
+        expect(result.featuredImage.caption).toBe('Río Uruguay al atardecer');
+    });
 });
 
 describe('toEventCardProps', () => {
@@ -122,6 +168,22 @@ describe('toEventCardProps', () => {
         expect(result.name).toBe('');
         expect(result.isFeatured).toBe(false);
     });
+
+    it('featuredImage should carry caption from API media', () => {
+        const item = {
+            slug: 'evento',
+            name: 'Evento Test',
+            media: {
+                featuredImage: {
+                    url: 'https://example.com/evento.jpg',
+                    caption: 'Escenario principal'
+                }
+            }
+        };
+        const result = toEventCardProps({ item });
+        expect(result.featuredImage.url).toBe('https://example.com/evento.jpg');
+        expect(result.featuredImage.caption).toBe('Escenario principal');
+    });
 });
 
 describe('toArticleCardProps', () => {
@@ -146,6 +208,28 @@ describe('toArticleCardProps', () => {
     it('should handle missing author', () => {
         const result = toArticleCardProps({ item: {} });
         expect(result.authorName).toBe('');
+    });
+
+    it('featuredImage should carry caption from API media', () => {
+        const item = {
+            slug: 'post',
+            title: 'Test Post',
+            media: {
+                featuredImage: {
+                    url: 'https://example.com/post.jpg',
+                    caption: 'Foto de portada'
+                }
+            }
+        };
+        const result = toArticleCardProps({ item });
+        expect(result.featuredImage.url).toBe('https://example.com/post.jpg');
+        expect(result.featuredImage.caption).toBe('Foto de portada');
+    });
+
+    it('featuredImage.url should be fallback placeholder when no media found', () => {
+        const result = toArticleCardProps({ item: {} });
+        expect(result.featuredImage.url).toBe('/images/placeholder-post.svg');
+        expect(result.featuredImage.caption).toBeUndefined();
     });
 });
 
