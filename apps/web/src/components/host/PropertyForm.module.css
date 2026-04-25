@@ -82,7 +82,9 @@
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* ---------------------------------------------------------------------------
@@ -138,8 +140,8 @@
     border-radius: var(--radius-button, 8px);
     cursor: pointer;
     min-height: 44px;
-    transition: background-color var(--duration-normal, 0.4s) ease,
-                color var(--duration-normal, 0.4s) ease;
+    transition: background-color var(--duration-normal, 0.4s) ease, color
+        var(--duration-normal, 0.4s) ease;
     border: none;
 }
 
@@ -224,7 +226,7 @@
 }
 
 .labelRequired::after {
-    content: ' *';
+    content: " *";
     color: var(--destructive, oklch(0.55 0.22 25));
 }
 
@@ -240,8 +242,8 @@
     border: 1px solid var(--border, oklch(0.8 0 0));
     border-radius: var(--radius-button, 8px);
     min-height: 44px;
-    transition: border-color var(--duration-normal, 0.4s) ease,
-                box-shadow var(--duration-normal, 0.4s) ease;
+    transition: border-color var(--duration-normal, 0.4s) ease, box-shadow
+        var(--duration-normal, 0.4s) ease;
     appearance: none;
 }
 
@@ -303,8 +305,8 @@
     border-radius: var(--radius-button, 8px);
     min-height: 44px;
     text-align: center;
-    transition: border-color var(--duration-normal, 0.4s) ease,
-                box-shadow var(--duration-normal, 0.4s) ease;
+    transition: border-color var(--duration-normal, 0.4s) ease, box-shadow
+        var(--duration-normal, 0.4s) ease;
 }
 
 .numberInput:focus {
@@ -348,9 +350,8 @@
     color: var(--foreground, oklch(0.15 0 0));
     cursor: pointer;
     min-height: 44px;
-    transition: background-color var(--duration-normal, 0.4s) ease,
-                border-color var(--duration-normal, 0.4s) ease,
-                color var(--duration-normal, 0.4s) ease;
+    transition: background-color var(--duration-normal, 0.4s) ease, border-color
+        var(--duration-normal, 0.4s) ease, color var(--duration-normal, 0.4s) ease;
     text-align: left;
     word-break: break-word;
 }
@@ -531,8 +532,8 @@
     cursor: pointer;
     min-height: 44px;
     border: none;
-    transition: background-color var(--duration-normal, 0.4s) ease,
-                opacity var(--duration-normal, 0.4s) ease;
+    transition: background-color var(--duration-normal, 0.4s) ease, opacity
+        var(--duration-normal, 0.4s) ease;
 }
 
 .saveDraftBtn {

@@ -86,7 +86,6 @@
     font-size: 0.7rem;
     line-height: 1;
     flex-shrink: 0;
-    aria-hidden: true;
 }
 
 .incompleteBadge {

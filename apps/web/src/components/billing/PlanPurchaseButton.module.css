@@ -27,9 +27,8 @@
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color var(--duration-normal, 0.4s) ease,
-                opacity var(--duration-normal, 0.4s) ease,
-                transform 0.15s ease;
+    transition: background-color var(--duration-normal, 0.4s) ease, opacity
+        var(--duration-normal, 0.4s) ease, transform 0.15s ease;
     text-align: center;
     min-height: 48px; /* WCAG AA touch target */
 }
