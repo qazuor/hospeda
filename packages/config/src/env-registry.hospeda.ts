@@ -183,6 +183,19 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'cache'
     },
+    {
+        name: 'HOSPEDA_RATE_LIMIT_BACKEND',
+        description:
+            'Storage backend for the sliding-window per-user rate limiter. "memory" uses an in-process Map (single-instance dev/staging). "redis" uses Redis sorted sets for distributed multi-instance deployments. Falls back to in-memory when Redis is unavailable.',
+        type: 'enum',
+        required: false,
+        secret: false,
+        defaultValue: 'memory',
+        exampleValue: 'redis',
+        enumValues: ['memory', 'redis'] as const,
+        apps: ['api'],
+        category: 'cache'
+    },
 
     // -------------------------------------------------------------------------
     // Billing
@@ -449,6 +462,30 @@ export const HOSPEDA_ENV_VARS = [
         exampleValue: '10',
         apps: ['api', 'seed'],
         category: 'integrations'
+    },
+
+    // -------------------------------------------------------------------------
+    // Messaging
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_MESSAGING_BLOCKED_WORDS',
+        description: 'Comma-separated list of blocked words for conversation content moderation',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'spam,scam,phishing',
+        apps: ['api'],
+        category: 'messaging'
+    },
+    {
+        name: 'HOSPEDA_MESSAGING_BLOCKED_DOMAINS',
+        description: 'Comma-separated list of email domains blocked from initiating conversations',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'mailinator.com,guerrillamail.com',
+        apps: ['api'],
+        category: 'messaging'
     },
 
     // -------------------------------------------------------------------------

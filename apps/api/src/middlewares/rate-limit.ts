@@ -682,11 +682,8 @@ export function clearSlidingWindowStore(): void {
  * Abstract store contract for the sliding-window rate limiter.
  *
  * The in-memory implementation is the default. A Redis implementation using
- * sorted sets (ZADD / ZREMRANGEBYSCORE / ZCARD) can satisfy this interface for
- * multi-instance deployments without changing the middleware code.
- *
- * TODO(SPEC-079-redis): Implement `RedisSlidingWindowStore` when production
- * multi-instance traffic is observed. Mount via `HOSPEDA_RATE_LIMIT_BACKEND=redis`.
+ * sorted sets (ZADD / ZREMRANGEBYSCORE / ZCARD) satisfies this interface for
+ * multi-instance deployments. Select via `HOSPEDA_RATE_LIMIT_BACKEND=redis`.
  */
 export interface SlidingWindowStore {
     /**
@@ -705,6 +702,180 @@ export interface SlidingWindowStore {
     /** Returns the timestamp (ms) of the oldest request inside the window, or undefined. */
     oldestInWindow(key: string, windowMs: number): Promise<number | undefined>;
 }
+
+// ─── Redis Sliding-Window Store ───────────────────────────────────────────────
+
+/**
+ * Key prefix namespace for sliding-window sorted sets in Redis.
+ * Concatenated with the caller-supplied `keyPrefix` and user identity to form
+ * the full Redis key, e.g. `rl:slide:upload:protected:user-uuid`.
+ */
+const REDIS_SW_NAMESPACE = 'rl:slide:';
+
+/**
+ * Redis sorted-set implementation of {@link SlidingWindowStore}.
+ *
+ * Each key stores a sorted set where every member is a unique request token
+ * (epoch-ms + random suffix to allow duplicate timestamps) and the score is
+ * the request timestamp in epoch milliseconds.
+ *
+ * Operations performed per request (sequential individual commands):
+ *   1. ZREMRANGEBYSCORE — prune entries older than the window (O(log N + M))
+ *   2. ZADD             — record the new request (O(log N))
+ *   3. ZCARD            — count remaining entries (O(1))
+ *   4. EXPIRE           — refresh TTL (O(1))
+ *
+ * ### Fail-open behaviour
+ * If Redis is unavailable (connection error, timeout, or `getRedisClient()`
+ * returns `undefined`), every operation falls back to the in-memory store and
+ * logs a warning. The rate limit is NOT enforced from Redis in that case, but
+ * the API request is NEVER blocked solely because of a Redis failure.
+ */
+export class RedisSlidingWindowStore implements SlidingWindowStore {
+    /**
+     * Records a new request and returns the count within the window.
+     * Uses sequential ZREMRANGEBYSCORE -> ZADD -> ZCARD -> EXPIRE commands.
+     *
+     * @param key - Store key (already includes keyPrefix + identity).
+     * @param windowMs - Sliding window width in milliseconds.
+     * @returns Number of requests in [now - windowMs, now] after recording.
+     */
+    async record(key: string, windowMs: number): Promise<number> {
+        const redisKey = `${REDIS_SW_NAMESPACE}${key}`;
+        const now = Date.now();
+        const cutoff = now - windowMs;
+        // TTL = window + 10 s buffer to handle clock skew
+        const ttlSeconds = Math.ceil(windowMs / 1000) + 10;
+        // Unique member: timestamp + 6-char random suffix prevents collision on same ms
+        const member = `${now}-${Math.random().toString(36).slice(2, 8)}`;
+
+        try {
+            const redis = await getRedisClient();
+            if (!redis) {
+                apiLogger.warn(
+                    { key },
+                    'RedisSlidingWindowStore.record: Redis unavailable, using in-memory fallback'
+                );
+                return inMemorySlidingWindowStore.record(key, windowMs);
+            }
+
+            await redis.zremrangebyscore(redisKey, '-inf', cutoff);
+            await redis.zadd(redisKey, now, member);
+            const count = await redis.zcard(redisKey);
+            await redis.expire(redisKey, ttlSeconds);
+
+            return count;
+        } catch (error) {
+            apiLogger.warn(
+                { error, key },
+                'RedisSlidingWindowStore.record: unexpected error, using in-memory fallback'
+            );
+            return inMemorySlidingWindowStore.record(key, windowMs);
+        }
+    }
+
+    /**
+     * Returns the count of requests within the window without recording a new one.
+     * Uses ZREMRANGEBYSCORE (prune expired) then ZCARD (count active).
+     *
+     * @param key - Store key.
+     * @param windowMs - Sliding window width in milliseconds.
+     * @returns Number of requests in [now - windowMs, now].
+     */
+    async count(key: string, windowMs: number): Promise<number> {
+        const redisKey = `${REDIS_SW_NAMESPACE}${key}`;
+        const now = Date.now();
+        const cutoff = now - windowMs;
+
+        try {
+            const redis = await getRedisClient();
+            if (!redis) {
+                apiLogger.warn(
+                    { key },
+                    'RedisSlidingWindowStore.count: Redis unavailable, using in-memory fallback'
+                );
+                return inMemorySlidingWindowStore.count(key, windowMs);
+            }
+
+            await redis.zremrangebyscore(redisKey, '-inf', cutoff);
+            const count = await redis.zcard(redisKey);
+            return count;
+        } catch (error) {
+            apiLogger.warn(
+                { error, key },
+                'RedisSlidingWindowStore.count: unexpected error, using in-memory fallback'
+            );
+            return inMemorySlidingWindowStore.count(key, windowMs);
+        }
+    }
+
+    /**
+     * Returns the timestamp (ms) of the oldest request inside the window, or undefined.
+     * Uses ZRANGEBYSCORE with LIMIT 0 1 to fetch only the lowest-score member.
+     *
+     * @param key - Store key.
+     * @param windowMs - Sliding window width in milliseconds.
+     * @returns Oldest request timestamp in ms, or undefined if no entries in window.
+     */
+    async oldestInWindow(key: string, windowMs: number): Promise<number | undefined> {
+        const redisKey = `${REDIS_SW_NAMESPACE}${key}`;
+        const now = Date.now();
+        const cutoff = now - windowMs;
+
+        try {
+            const redis = await getRedisClient();
+            if (!redis) {
+                return inMemorySlidingWindowStore.oldestInWindow(key, windowMs);
+            }
+
+            const members = await redis.zrangebyscore(redisKey, cutoff, '+inf', 'LIMIT', 0, 1);
+            if (!members || members.length === 0) {
+                return undefined;
+            }
+
+            // Member format: "<timestamp>-<random>". Extract the timestamp prefix.
+            const member = members[0];
+            if (!member) return undefined;
+            const dashIdx = member.indexOf('-');
+            if (dashIdx === -1) return undefined;
+            const ts = Number(member.slice(0, dashIdx));
+            return Number.isFinite(ts) ? ts : undefined;
+        } catch (error) {
+            apiLogger.warn(
+                { error, key },
+                'RedisSlidingWindowStore.oldestInWindow: unexpected error, using in-memory fallback'
+            );
+            return inMemorySlidingWindowStore.oldestInWindow(key, windowMs);
+        }
+    }
+}
+
+/**
+ * Singleton Redis sliding-window store instance.
+ * Created lazily on first use; shared across all middleware instances that
+ * select the Redis backend.
+ */
+let redisSlidingWindowStoreInstance: RedisSlidingWindowStore | undefined;
+
+/**
+ * Returns the singleton {@link RedisSlidingWindowStore} instance.
+ * Creates it on first call.
+ */
+function getRedisSlidingWindowStore(): RedisSlidingWindowStore {
+    if (!redisSlidingWindowStoreInstance) {
+        redisSlidingWindowStoreInstance = new RedisSlidingWindowStore();
+    }
+    return redisSlidingWindowStoreInstance;
+}
+
+/**
+ * Resets the Redis sliding-window store singleton. For testing only.
+ */
+export function resetRedisSlidingWindowStore(): void {
+    redisSlidingWindowStoreInstance = undefined;
+}
+
+// ─── In-memory Sliding-Window Store ──────────────────────────────────────────
 
 /** In-memory implementation of {@link SlidingWindowStore}. */
 const inMemorySlidingWindowStore: SlidingWindowStore = {
@@ -736,6 +907,24 @@ const inMemorySlidingWindowStore: SlidingWindowStore = {
 };
 
 /**
+ * Resolves the default {@link SlidingWindowStore} based on the env var
+ * `HOSPEDA_RATE_LIMIT_BACKEND`.
+ *
+ * - `'redis'` → {@link RedisSlidingWindowStore} (with automatic fail-open fallback
+ *   to in-memory when Redis is unavailable).
+ * - `'memory'` (default) → in-process {@link inMemorySlidingWindowStore}.
+ *
+ * Called lazily inside `createSlidingWindowPerUserRateLimit` so that the env is
+ * already validated before this runs.
+ */
+function resolveDefaultSlidingWindowStore(): SlidingWindowStore {
+    if (env.HOSPEDA_RATE_LIMIT_BACKEND === 'redis') {
+        return getRedisSlidingWindowStore();
+    }
+    return inMemorySlidingWindowStore;
+}
+
+/**
  * Factory that creates a Hono middleware enforcing a per-user sliding-window
  * rate limit on the decorated endpoint.
  *
@@ -761,23 +950,24 @@ const inMemorySlidingWindowStore: SlidingWindowStore = {
  *   window is full.
  * - Continues normally and sets informational headers on allowed requests.
  *
- * ### Limitations (single-instance)
- * The default backend (`inMemorySlidingWindowStore`) is process-local. When the
- * API runs across multiple Vercel / Fluid Compute instances each instance holds
- * its own counter, so the effective per-user limit scales with instance count.
- *
- * TODO(SPEC-079-redis): swap `store` for a Redis sorted-set implementation when
- * multi-instance traffic is observed. The `SlidingWindowStore` interface above
- * is the contract for that backend.
+ * ### Backend selection
+ * When `store` is omitted the backend is selected from `HOSPEDA_RATE_LIMIT_BACKEND`:
+ * - `'redis'` → {@link RedisSlidingWindowStore} with fail-open fallback to in-memory.
+ * - `'memory'` (default) → process-local in-memory store.
+ * Passing an explicit `store` overrides the env-based selection entirely, which is
+ * useful for tests and custom backends.
  *
  * @param opts - Configuration: windowMs, max, optional keyPrefix.
- * @param store - Optional storage backend (defaults to in-memory).
+ * @param store - Optional storage backend. When omitted, selected from env.
  * @returns A Hono `MiddlewareHandler`.
  */
 export function createSlidingWindowPerUserRateLimit(
     opts: SlidingWindowPerUserOptions,
-    store: SlidingWindowStore = inMemorySlidingWindowStore
+    store?: SlidingWindowStore
 ): (c: Context, next: Next) => Promise<Response | undefined> {
+    // Resolve the store once at factory-creation time (not per request) so the
+    // env lookup is only performed once and the same store instance is reused.
+    const resolvedStore = store ?? resolveDefaultSlidingWindowStore();
     const { windowMs, max, keyPrefix = 'sw' } = opts;
 
     return async (c: Context, next: Next): Promise<Response | undefined> => {
@@ -799,11 +989,11 @@ export function createSlidingWindowPerUserRateLimit(
         const storeKey = `${keyPrefix}:${identity}`;
 
         // ── Check current count BEFORE recording ──────────────────────────────
-        const currentCount = await store.count(storeKey, windowMs);
+        const currentCount = await resolvedStore.count(storeKey, windowMs);
 
         if (currentCount >= max) {
             // Calculate Retry-After from the oldest timestamp in the window
-            const oldest = await store.oldestInWindow(storeKey, windowMs);
+            const oldest = await resolvedStore.oldestInWindow(storeKey, windowMs);
             const retryAfterMs = oldest !== undefined ? windowMs - (Date.now() - oldest) : windowMs;
             const retryAfterSec = Math.max(1, Math.ceil(retryAfterMs / 1000));
             const resetEpochSec = Math.ceil((Date.now() + retryAfterMs) / 1000);
@@ -842,7 +1032,7 @@ export function createSlidingWindowPerUserRateLimit(
         }
 
         // ── Record request and set informational headers ──────────────────────
-        const newCount = await store.record(storeKey, windowMs);
+        const newCount = await resolvedStore.record(storeKey, windowMs);
         const remaining = Math.max(0, max - newCount);
         const resetEpochSec = Math.ceil((Date.now() + windowMs) / 1000);
 

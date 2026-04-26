@@ -189,6 +189,8 @@ const API_SCHEMA_KEYS = new Set<string>([
     'HOSPEDA_SENTRY_RELEASE',
     'HOSPEDA_SENTRY_PROJECT',
     'HOSPEDA_REDIS_URL',
+    // Rate limit backend selection (SPEC-079)
+    'HOSPEDA_RATE_LIMIT_BACKEND',
     // Cloudinary / Media
     'HOSPEDA_CLOUDINARY_CLOUD_NAME',
     'HOSPEDA_CLOUDINARY_API_KEY',
@@ -263,7 +265,12 @@ const API_KNOWN_GAPS = new Set<string>([
 
     // Feedback vars registered but validated via feedback section schema, not ApiEnvSchema.
     'HOSPEDA_FEEDBACK_ENABLED',
-    'HOSPEDA_FEEDBACK_FALLBACK_EMAIL'
+    'HOSPEDA_FEEDBACK_FALLBACK_EMAIL',
+
+    // Messaging moderation vars registered but not yet validated in ApiEnvSchema.
+    // Track as TODO: add to ApiEnvSchema once messaging service validation is stable.
+    'HOSPEDA_MESSAGING_BLOCKED_WORDS',
+    'HOSPEDA_MESSAGING_BLOCKED_DOMAINS'
 ]);
 
 /**

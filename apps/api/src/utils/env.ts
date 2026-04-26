@@ -320,7 +320,15 @@ const ApiEnvSchema = z
         HOSPEDA_AUTH_LOCKOUT_WINDOW_MS: z.coerce.number().int().positive().default(900000),
 
         // Infrastructure
-        HOSPEDA_REDIS_URL: z.string().optional()
+        HOSPEDA_REDIS_URL: z.string().optional(),
+
+        /**
+         * Storage backend for the sliding-window per-user rate limiter (SPEC-079).
+         * - 'memory': in-process Map (default, suitable for single-instance dev/staging)
+         * - 'redis': Redis sorted sets via ioredis (recommended for multi-instance production)
+         * Falls back to in-memory automatically when 'redis' is selected but Redis is unavailable.
+         */
+        HOSPEDA_RATE_LIMIT_BACKEND: z.enum(['memory', 'redis']).default('memory')
     })
     .superRefine((data, ctx) => {
         if (
