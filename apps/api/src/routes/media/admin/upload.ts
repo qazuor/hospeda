@@ -40,6 +40,7 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 import { Sentry } from '../../../lib/sentry';
 import { incrementDomainCounter } from '../../../middlewares/metrics';
+import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env.js';
@@ -576,10 +577,16 @@ export const adminUploadMediaRoute = createAdminRoute({
         //       `successStatusCode` above.
         return parsedResponse.data;
     },
-    // SPEC-078-GAPS T-033 / GAP-078-068: interim per-route rate limit on
-    // the upload endpoint until billing-tier-aware limits land.
-    // TODO(SPEC-079): replace interim rate limit with billing-tier-aware limits
+    // SPEC-079: per-user sliding-window rate limit — 30 uploads per 1-minute
+    // window for admin users (bulk-upload use case). Replaces the interim
+    // IP-based fixed-window limit from SPEC-078-GAPS T-033 / GAP-078-068.
     options: {
-        customRateLimit: { requests: 10, windowMs: 60000 }
+        middlewares: [
+            createSlidingWindowPerUserRateLimit({
+                windowMs: 60_000,
+                max: 30,
+                keyPrefix: 'upload:admin'
+            })
+        ]
     }
 });

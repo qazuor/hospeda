@@ -22,6 +22,7 @@ import { UploadResponseDataSchema } from '@repo/schemas';
 import type { Context } from 'hono';
 import { Sentry } from '../../../lib/sentry';
 import { incrementDomainCounter } from '../../../middlewares/metrics';
+import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -255,10 +256,16 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
         //       `successStatusCode` above.
         return parsedResponse.data;
     },
-    // SPEC-078-GAPS T-033 / GAP-078-068: interim per-route rate limit on
-    // the avatar upload endpoint until billing-tier-aware limits land.
-    // TODO(SPEC-079): replace interim rate limit with billing-tier-aware limits
+    // SPEC-079: per-user sliding-window rate limit — 10 uploads per 1-minute
+    // window for authenticated users. Replaces the interim IP-based fixed-window
+    // limit from SPEC-078-GAPS T-033 / GAP-078-068.
     options: {
-        customRateLimit: { requests: 10, windowMs: 60000 }
+        middlewares: [
+            createSlidingWindowPerUserRateLimit({
+                windowMs: 60_000,
+                max: 10,
+                keyPrefix: 'upload:protected'
+            })
+        ]
     }
 });

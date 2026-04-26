@@ -27,6 +27,7 @@ import {
 import type { Context, MiddlewareHandler } from 'hono';
 import { Sentry } from '../../../lib/sentry';
 import { incrementDomainCounter } from '../../../middlewares/metrics';
+import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -166,11 +167,19 @@ export const adminDeleteMediaRoute = createAdminRoute({
     requestQuery: DeleteMediaQuerySchema.shape,
     responseSchema: DeleteMediaResponseSchema,
     options: {
-        // Pre-validation hardening (GAP-078-034 / 035 / 173). Must run before
-        // OpenAPI Zod validation so traversal failures get a 422 instead of the
-        // generic 400 from the global default hook, and so env-mismatch yields
-        // a 403 before the provider availability check.
-        middlewares: [adminDeleteMediaPreValidation]
+        // SPEC-079: per-user sliding-window rate limit — 60 deletes per 1-minute
+        // window for admin users. Applied before pre-validation so abuse is
+        // rejected early without spending query/parse budget.
+        // Pre-validation hardening (GAP-078-034 / 035 / 173) runs after the rate
+        // limit check; traversal failures still surface with 422, env-mismatch with 403.
+        middlewares: [
+            createSlidingWindowPerUserRateLimit({
+                windowMs: 60_000,
+                max: 60,
+                keyPrefix: 'delete:admin'
+            }),
+            adminDeleteMediaPreValidation
+        ]
     },
     handler: async (
         ctx: Context,

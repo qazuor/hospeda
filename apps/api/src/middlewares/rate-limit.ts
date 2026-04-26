@@ -595,3 +595,262 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
     // Continue to next middleware
     await next();
 };
+
+// ─── Sliding-Window Per-User Rate Limiter ─────────────────────────────────────
+
+/**
+ * Options for the per-user sliding-window rate limiter.
+ *
+ * @property windowMs - Width of the sliding window in milliseconds (e.g. 60_000 for 1 min).
+ * @property max - Maximum number of requests allowed inside the window.
+ * @property keyPrefix - Unique prefix for this limiter instance (avoids key collisions
+ *   between different protected endpoints). Defaults to `"sw"`.
+ */
+export interface SlidingWindowPerUserOptions {
+    readonly windowMs: number;
+    readonly max: number;
+    readonly keyPrefix?: string;
+}
+
+/**
+ * In-memory store for per-user sliding-window rate limiting.
+ *
+ * Each value is an array of request timestamps (epoch ms) recorded during the
+ * current window. Timestamps older than `windowMs` are pruned on every check so
+ * the array never grows without bound during a session, and the periodic cleanup
+ * sweep below removes stale keys that have had no recent activity.
+ *
+ * NOTE: This store is PROCESS-LOCAL. When the API runs across multiple instances
+ * (Vercel / Fluid Compute) each instance maintains its own counters, so the
+ * effective per-user limit is `max * instanceCount`.
+ *
+ * TODO(SPEC-079-redis): Replace the in-memory backend with a Redis sorted-set
+ * implementation (ZADD / ZREMRANGEBYSCORE / ZCARD) when multi-instance traffic
+ * is observed. The `SlidingWindowStore` interface below is the contract for that
+ * backend. Selection via `HOSPEDA_RATE_LIMIT_BACKEND=redis`.
+ */
+const slidingWindowMemoryStore = new Map<string, number[]>();
+
+/** Interval in ms between cleanup sweeps of the sliding-window store. */
+const SW_CLEANUP_INTERVAL_MS = 60_000; // 1 minute
+
+/**
+ * Removes entries whose entire timestamp array is older than `maxAgeMs`.
+ * Called by the periodic sweep and exported for test use.
+ *
+ * @param maxAgeMs - Entries untouched for longer than this are deleted.
+ */
+export function cleanupSlidingWindowEntries(maxAgeMs: number): void {
+    const now = Date.now();
+    for (const [key, timestamps] of slidingWindowMemoryStore.entries()) {
+        if (timestamps.length === 0 || now - (timestamps[timestamps.length - 1] ?? 0) > maxAgeMs) {
+            slidingWindowMemoryStore.delete(key);
+        }
+    }
+}
+
+/** Handle for the sliding-window cleanup interval (undefined in test env). */
+let swCleanupInterval: ReturnType<typeof setInterval> | undefined;
+
+// pre-validation: must use process.env directly (module-level, before validateApiEnv() runs)
+if (process.env.NODE_ENV !== 'test') {
+    swCleanupInterval = setInterval(
+        () => cleanupSlidingWindowEntries(SW_CLEANUP_INTERVAL_MS * 10),
+        SW_CLEANUP_INTERVAL_MS
+    );
+    swCleanupInterval.unref();
+}
+
+/**
+ * Stops the sliding-window cleanup interval. Call during graceful shutdown.
+ */
+export function stopSlidingWindowCleanupInterval(): void {
+    if (swCleanupInterval) {
+        clearInterval(swCleanupInterval);
+        swCleanupInterval = undefined;
+    }
+}
+
+/**
+ * Clears the entire sliding-window in-memory store. Useful for test isolation.
+ */
+export function clearSlidingWindowStore(): void {
+    slidingWindowMemoryStore.clear();
+}
+
+/**
+ * Abstract store contract for the sliding-window rate limiter.
+ *
+ * The in-memory implementation is the default. A Redis implementation using
+ * sorted sets (ZADD / ZREMRANGEBYSCORE / ZCARD) can satisfy this interface for
+ * multi-instance deployments without changing the middleware code.
+ *
+ * TODO(SPEC-079-redis): Implement `RedisSlidingWindowStore` when production
+ * multi-instance traffic is observed. Mount via `HOSPEDA_RATE_LIMIT_BACKEND=redis`.
+ */
+export interface SlidingWindowStore {
+    /**
+     * Records a new request timestamp for `key` and returns the number of
+     * requests recorded inside the `[now - windowMs, now]` window (after
+     * pruning expired entries).
+     */
+    record(key: string, windowMs: number): Promise<number>;
+
+    /**
+     * Returns the number of requests recorded inside the window without
+     * adding a new entry.
+     */
+    count(key: string, windowMs: number): Promise<number>;
+
+    /** Returns the timestamp (ms) of the oldest request inside the window, or undefined. */
+    oldestInWindow(key: string, windowMs: number): Promise<number | undefined>;
+}
+
+/** In-memory implementation of {@link SlidingWindowStore}. */
+const inMemorySlidingWindowStore: SlidingWindowStore = {
+    async record(key: string, windowMs: number): Promise<number> {
+        const now = Date.now();
+        const cutoff = now - windowMs;
+        const existing = slidingWindowMemoryStore.get(key) ?? [];
+        // Prune timestamps outside the window
+        const pruned = existing.filter((ts) => ts > cutoff);
+        pruned.push(now);
+        slidingWindowMemoryStore.set(key, pruned);
+        return pruned.length;
+    },
+
+    async count(key: string, windowMs: number): Promise<number> {
+        const now = Date.now();
+        const cutoff = now - windowMs;
+        const existing = slidingWindowMemoryStore.get(key) ?? [];
+        return existing.filter((ts) => ts > cutoff).length;
+    },
+
+    async oldestInWindow(key: string, windowMs: number): Promise<number | undefined> {
+        const now = Date.now();
+        const cutoff = now - windowMs;
+        const existing = slidingWindowMemoryStore.get(key) ?? [];
+        const inWindow = existing.filter((ts) => ts > cutoff);
+        return inWindow[0];
+    }
+};
+
+/**
+ * Factory that creates a Hono middleware enforcing a per-user sliding-window
+ * rate limit on the decorated endpoint.
+ *
+ * Usage:
+ * ```ts
+ * import { createSlidingWindowPerUserRateLimit } from '../middlewares/rate-limit';
+ *
+ * export const adminUploadRoute = createAdminRoute({
+ *   // ...
+ *   options: {
+ *     middlewares: [
+ *       createSlidingWindowPerUserRateLimit({ windowMs: 60_000, max: 30 })
+ *     ]
+ *   }
+ * });
+ * ```
+ *
+ * ### Behaviour
+ * - Extracts the authenticated user ID from the Hono context via `c.get('actor')`.
+ *   Falls back to the client IP when no actor is available (should not happen on
+ *   authenticated endpoints, but prevents a hard crash).
+ * - Returns HTTP 429 with `Retry-After` and `X-RateLimit-*` headers when the
+ *   window is full.
+ * - Continues normally and sets informational headers on allowed requests.
+ *
+ * ### Limitations (single-instance)
+ * The default backend (`inMemorySlidingWindowStore`) is process-local. When the
+ * API runs across multiple Vercel / Fluid Compute instances each instance holds
+ * its own counter, so the effective per-user limit scales with instance count.
+ *
+ * TODO(SPEC-079-redis): swap `store` for a Redis sorted-set implementation when
+ * multi-instance traffic is observed. The `SlidingWindowStore` interface above
+ * is the contract for that backend.
+ *
+ * @param opts - Configuration: windowMs, max, optional keyPrefix.
+ * @param store - Optional storage backend (defaults to in-memory).
+ * @returns A Hono `MiddlewareHandler`.
+ */
+export function createSlidingWindowPerUserRateLimit(
+    opts: SlidingWindowPerUserOptions,
+    store: SlidingWindowStore = inMemorySlidingWindowStore
+): (c: Context, next: Next) => Promise<Response | undefined> {
+    const { windowMs, max, keyPrefix = 'sw' } = opts;
+
+    return async (c: Context, next: Next): Promise<Response | undefined> => {
+        // Skip in test environment unless explicitly testing
+        if (env.NODE_ENV === 'test' && !env.HOSPEDA_TESTING_RATE_LIMIT) {
+            await next();
+            return undefined;
+        }
+
+        // ── Extract identity ──────────────────────────────────────────────────
+        // Prefer actor.id (authenticated user) so the limit is per-user, not
+        // per-IP. Fall back to IP for belt-and-suspenders safety.
+        const actor = c.get('actor') as { id?: string } | undefined;
+        const identity =
+            actor?.id && actor.id !== '00000000-0000-4000-8000-000000000000'
+                ? actor.id
+                : getClientIp({ c });
+
+        const storeKey = `${keyPrefix}:${identity}`;
+
+        // ── Check current count BEFORE recording ──────────────────────────────
+        const currentCount = await store.count(storeKey, windowMs);
+
+        if (currentCount >= max) {
+            // Calculate Retry-After from the oldest timestamp in the window
+            const oldest = await store.oldestInWindow(storeKey, windowMs);
+            const retryAfterMs = oldest !== undefined ? windowMs - (Date.now() - oldest) : windowMs;
+            const retryAfterSec = Math.max(1, Math.ceil(retryAfterMs / 1000));
+            const resetEpochSec = Math.ceil((Date.now() + retryAfterMs) / 1000);
+
+            apiLogger.warn(
+                {
+                    event: 'rate_limit.exceeded',
+                    identity,
+                    path: c.req.path,
+                    keyPrefix,
+                    count: currentCount,
+                    max
+                },
+                'Per-user sliding-window rate limit exceeded'
+            );
+
+            const responseBody = {
+                success: false,
+                error: {
+                    code: 'RATE_LIMIT_EXCEEDED',
+                    message: 'Too many requests. Please try again later.'
+                }
+            };
+
+            const headers = new Headers();
+            headers.set('Content-Type', 'application/json');
+            headers.set('Retry-After', retryAfterSec.toString());
+            headers.set('X-RateLimit-Limit', max.toString());
+            headers.set('X-RateLimit-Remaining', '0');
+            headers.set('X-RateLimit-Reset', resetEpochSec.toString());
+
+            return new Response(JSON.stringify(responseBody), {
+                status: 429,
+                headers
+            });
+        }
+
+        // ── Record request and set informational headers ──────────────────────
+        const newCount = await store.record(storeKey, windowMs);
+        const remaining = Math.max(0, max - newCount);
+        const resetEpochSec = Math.ceil((Date.now() + windowMs) / 1000);
+
+        c.header('X-RateLimit-Limit', max.toString());
+        c.header('X-RateLimit-Remaining', remaining.toString());
+        c.header('X-RateLimit-Reset', resetEpochSec.toString());
+
+        await next();
+        return undefined;
+    };
+}
