@@ -14,7 +14,8 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getAddonBySlug } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
-import { withTransaction } from '@repo/db';
+import { billingSubscriptionEvents, withTransaction } from '@repo/db';
+import { BILLING_EVENT_TYPES } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env';
@@ -221,19 +222,59 @@ export async function handleSubscriptionCancellationAddons(
             const currentRetryCount = existingMetadata.revocationRetryCount;
             const retryCount = typeof currentRetryCount === 'number' ? currentRetryCount + 1 : 1;
 
+            // ── T-046: set addonCancellationIncomplete flag in purchase metadata ─
+            // ── T-047: insert compensating ADDON_REVOCATION_FAILED event ──────────
+            // Both ops run inside a single transaction. Failure is non-fatal: the
+            // function logs + continues so the main loop can process remaining addons
+            // and the outer caller still receives the error throw at the end.
             try {
                 await withTransaction(async (tx) => {
+                    // T-046: flag the purchase as having an incomplete cancellation so
+                    // the reconciliation cron can identify and retry it operationally.
                     await tx
                         .update(billingAddonPurchases)
                         .set({
                             metadata: {
                                 ...existingMetadata,
                                 revocationRetryCount: retryCount,
-                                lastRevocationAttempt: new Date().toISOString()
+                                lastRevocationAttempt: new Date().toISOString(),
+                                // T-046: operational flag for reconciliation tooling
+                                addonCancellationIncomplete: true
                             },
                             updatedAt: new Date()
                         })
                         .where(eq(billingAddonPurchases.id, purchaseId));
+
+                    // T-047: insert a compensating event for observability and recovery.
+                    // The event is non-rethrowing: the main error path (HTTP 500) is
+                    // preserved by the outer `failed.length > 0` check. The event row
+                    // is advisory only and does NOT affect the webhook retry logic.
+                    //
+                    // subscriptionId is used as the FK for billing_subscription_events.
+                    // If subscriptionId is null (addon not linked to a subscription),
+                    // skip the insert — billing_subscription_events.subscription_id is NOT NULL.
+                    if (subscriptionId) {
+                        // Classify the failure as retryable (transient) vs non-retryable
+                        // (e.g. "not found" / "already revoked" type errors).
+                        const retryable =
+                            !errorMessage.toLowerCase().includes('not found') &&
+                            !errorMessage.toLowerCase().includes('already revoked') &&
+                            !errorMessage.toLowerCase().includes('does not exist');
+
+                        await tx.insert(billingSubscriptionEvents).values({
+                            subscriptionId,
+                            eventType: BILLING_EVENT_TYPES.ADDON_REVOCATION_FAILED,
+                            triggerSource: 'webhook',
+                            metadata: {
+                                addonPurchaseId: purchaseId,
+                                addonSlug,
+                                errorMessage,
+                                timestamp: new Date().toISOString(),
+                                retryable,
+                                retryCount
+                            }
+                        });
+                    }
                 }, db);
             } catch (metaErr) {
                 apiLogger.warn(
@@ -242,7 +283,7 @@ export async function handleSubscriptionCancellationAddons(
                         addonSlug,
                         error: metaErr instanceof Error ? metaErr.message : String(metaErr)
                     },
-                    'Failed to update retry metadata on addon purchase (non-fatal)'
+                    'Failed to update retry metadata / insert revocation-failed event on addon purchase (non-fatal)'
                 );
             }
 

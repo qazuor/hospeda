@@ -40,7 +40,17 @@ export const BILLING_EVENT_TYPES = {
     /** Fired when a trial subscription is blocked due to expiry (idempotency dedup guard) */
     TRIAL_BLOCKED: 'TRIAL_BLOCKED',
     /** Fired when the reactivation audit-log insert fails; used by Sentry and reconciliation jobs */
-    REACTIVATION_AUDIT_FAILED: 'REACTIVATION_AUDIT_FAILED'
+    REACTIVATION_AUDIT_FAILED: 'REACTIVATION_AUDIT_FAILED',
+    /**
+     * Fired when a QZPay addon revocation fails during subscription cancellation cleanup.
+     *
+     * Inserted as a non-rethrowing side-effect so the main error path (HTTP 500 to
+     * MercadoPago) is not affected. The event records the purchase ID, error message,
+     * whether the failure is retryable, and a timestamp for operational observability.
+     *
+     * @see SPEC-064 T-047
+     */
+    ADDON_REVOCATION_FAILED: 'ADDON_REVOCATION_FAILED'
 } as const;
 
 /**

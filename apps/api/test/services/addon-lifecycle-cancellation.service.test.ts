@@ -33,7 +33,20 @@ vi.mock('@repo/db', () => ({
     withTransaction: vi.fn(
         async (callback: (tx: unknown) => Promise<unknown>, existingTx?: unknown) =>
             callback(existingTx)
-    )
+    ),
+    // T-047: billingSubscriptionEvents table stub for INSERT assertions
+    billingSubscriptionEvents: {
+        subscriptionId: 'subscription_id',
+        eventType: 'event_type',
+        triggerSource: 'trigger_source',
+        metadata: 'metadata'
+    }
+}));
+
+vi.mock('@repo/service-core', () => ({
+    BILLING_EVENT_TYPES: {
+        ADDON_REVOCATION_FAILED: 'ADDON_REVOCATION_FAILED'
+    }
 }));
 
 vi.mock('@repo/db/schemas/billing', () => ({
@@ -172,7 +185,7 @@ const THREE_REVOCATION_OK = {
 
 /**
  * Creates a minimal mock DB that simulates Drizzle's fluent query builder for
- * SELECT and UPDATE chains.
+ * SELECT, UPDATE, and INSERT chains.
  *
  * @param activePurchases - Rows returned by the SELECT WHERE clause.
  */
@@ -187,13 +200,19 @@ function createMockDb(activePurchases: unknown[]) {
     const mockSelectFrom = vi.fn(() => ({ where: mockSelectWhere }));
     const mockSelect = vi.fn(() => ({ from: mockSelectFrom }));
 
+    // T-047: mock INSERT chain (insert().values())
+    const mockInsertValues = vi.fn().mockResolvedValue(undefined);
+    const mockInsert = vi.fn(() => ({ values: mockInsertValues }));
+
     return {
         select: mockSelect,
         update: mockUpdate,
+        insert: mockInsert,
         // Expose internals for assertion
         _mockUpdateWhere: mockUpdateWhere,
         _mockUpdateSet: mockUpdateSet,
-        _mockSelectWhere: mockSelectWhere
+        _mockSelectWhere: mockSelectWhere,
+        _mockInsertValues: mockInsertValues
     };
 }
 
@@ -1211,6 +1230,288 @@ describe('handleSubscriptionCancellationAddons', () => {
             // The service calls eq(billingAddonPurchases.status, 'active') in the update WHERE
             const activeStatusEqCall = eqCalls.find((call) => call[1] === 'active');
             expect(activeStatusEqCall).toBeDefined();
+        });
+    });
+
+    // =========================================================================
+    // T-046: addonCancellationIncomplete flag in purchase metadata on failure
+    // =========================================================================
+    describe('T-046: addonCancellationIncomplete flag written to purchase metadata on failure', () => {
+        it('should set addonCancellationIncomplete=true in metadata when revocation fails', async () => {
+            // Arrange
+            vi.mocked(revokeAddonForSubscriptionCancellation).mockRejectedValueOnce(
+                new Error('QZPay unreachable')
+            );
+
+            const db = createMockDb([PURCHASE_ENT]);
+
+            // Act
+            try {
+                await handleSubscriptionCancellationAddons({
+                    subscriptionId: SUBSCRIPTION_ID,
+                    customerId: CUSTOMER_ID,
+                    billing: mockBilling,
+                    db: db as unknown as Parameters<
+                        typeof handleSubscriptionCancellationAddons
+                    >[0]['db']
+                });
+            } catch {
+                // expected throw
+            }
+
+            // Assert — the metadata update includes addonCancellationIncomplete=true
+            const setPayload = db._mockUpdateSet.mock.calls[0]?.[0] as
+                | Record<string, unknown>
+                | undefined;
+            const meta = setPayload?.metadata as Record<string, unknown> | undefined;
+            expect(meta?.addonCancellationIncomplete).toBe(true);
+        });
+
+        it('should preserve existing metadata fields alongside addonCancellationIncomplete', async () => {
+            // Arrange
+            vi.mocked(revokeAddonForSubscriptionCancellation).mockRejectedValueOnce(
+                new Error('error')
+            );
+
+            const purchaseWithMeta = {
+                ...PURCHASE_ENT,
+                metadata: { customField: 'keep-me', revocationRetryCount: 1 }
+            };
+            const db = createMockDb([purchaseWithMeta]);
+
+            // Act
+            try {
+                await handleSubscriptionCancellationAddons({
+                    subscriptionId: SUBSCRIPTION_ID,
+                    customerId: CUSTOMER_ID,
+                    billing: mockBilling,
+                    db: db as unknown as Parameters<
+                        typeof handleSubscriptionCancellationAddons
+                    >[0]['db']
+                });
+            } catch {
+                // expected throw
+            }
+
+            // Assert — both existing and new fields are present
+            const setPayload = db._mockUpdateSet.mock.calls[0]?.[0] as
+                | Record<string, unknown>
+                | undefined;
+            const meta = setPayload?.metadata as Record<string, unknown> | undefined;
+            expect(meta?.customField).toBe('keep-me');
+            expect(meta?.revocationRetryCount).toBe(2);
+            expect(meta?.addonCancellationIncomplete).toBe(true);
+        });
+
+        it('should NOT set addonCancellationIncomplete when revocation succeeds', async () => {
+            // Arrange
+            vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValueOnce(
+                ENT_REVOCATION_OK
+            );
+
+            const db = createMockDb([PURCHASE_ENT]);
+
+            // Act
+            await handleSubscriptionCancellationAddons({
+                subscriptionId: SUBSCRIPTION_ID,
+                customerId: CUSTOMER_ID,
+                billing: mockBilling,
+                db: db as unknown as Parameters<
+                    typeof handleSubscriptionCancellationAddons
+                >[0]['db']
+            });
+
+            // Assert — update was called with status='canceled' but no addonCancellationIncomplete
+            expect(db.update).toHaveBeenCalledOnce();
+            const setPayload = db._mockUpdateSet.mock.calls[0]?.[0] as
+                | Record<string, unknown>
+                | undefined;
+            expect(setPayload?.status).toBe('canceled');
+            expect(
+                (setPayload?.metadata as Record<string, unknown> | undefined)
+                    ?.addonCancellationIncomplete
+            ).toBeUndefined();
+        });
+    });
+
+    // =========================================================================
+    // T-047: ADDON_REVOCATION_FAILED compensating event inserted on failure
+    // =========================================================================
+    describe('T-047: ADDON_REVOCATION_FAILED compensating event inserted on failure', () => {
+        it('should insert a billing_subscription_events row with ADDON_REVOCATION_FAILED eventType', async () => {
+            // Arrange
+            vi.mocked(revokeAddonForSubscriptionCancellation).mockRejectedValueOnce(
+                new Error('QZPay timeout')
+            );
+
+            const db = createMockDb([PURCHASE_ENT]);
+
+            // Act
+            try {
+                await handleSubscriptionCancellationAddons({
+                    subscriptionId: SUBSCRIPTION_ID,
+                    customerId: CUSTOMER_ID,
+                    billing: mockBilling,
+                    db: db as unknown as Parameters<
+                        typeof handleSubscriptionCancellationAddons
+                    >[0]['db']
+                });
+            } catch {
+                // expected throw
+            }
+
+            // Assert — insert was called at least once
+            expect(db.insert).toHaveBeenCalled();
+        });
+
+        it('should include addonPurchaseId and errorMessage in the event metadata', async () => {
+            // Arrange
+            const failureError = new Error('QZPay rate limited');
+            vi.mocked(revokeAddonForSubscriptionCancellation).mockRejectedValueOnce(failureError);
+
+            const db = createMockDb([PURCHASE_ENT]);
+
+            // Act
+            try {
+                await handleSubscriptionCancellationAddons({
+                    subscriptionId: SUBSCRIPTION_ID,
+                    customerId: CUSTOMER_ID,
+                    billing: mockBilling,
+                    db: db as unknown as Parameters<
+                        typeof handleSubscriptionCancellationAddons
+                    >[0]['db']
+                });
+            } catch {
+                // expected throw
+            }
+
+            // Assert — insert values contain the correct metadata
+            const insertPayload = db._mockInsertValues.mock.calls[0]?.[0] as
+                | Record<string, unknown>
+                | undefined;
+            const meta = insertPayload?.metadata as Record<string, unknown> | undefined;
+            expect(meta?.addonPurchaseId).toBe(PURCHASE_ENT.id);
+            expect(meta?.errorMessage).toBe(failureError.message);
+            expect(typeof meta?.timestamp).toBe('string');
+            expect(typeof meta?.retryable).toBe('boolean');
+        });
+
+        it('should mark the event as retryable=false for "not found" errors', async () => {
+            // Arrange
+            vi.mocked(revokeAddonForSubscriptionCancellation).mockRejectedValueOnce(
+                new Error('Addon not found in QZPay')
+            );
+
+            const db = createMockDb([PURCHASE_ENT]);
+
+            // Act
+            try {
+                await handleSubscriptionCancellationAddons({
+                    subscriptionId: SUBSCRIPTION_ID,
+                    customerId: CUSTOMER_ID,
+                    billing: mockBilling,
+                    db: db as unknown as Parameters<
+                        typeof handleSubscriptionCancellationAddons
+                    >[0]['db']
+                });
+            } catch {
+                // expected throw
+            }
+
+            // Assert — retryable=false for "not found" errors
+            const insertPayload = db._mockInsertValues.mock.calls[0]?.[0] as
+                | Record<string, unknown>
+                | undefined;
+            const meta = insertPayload?.metadata as Record<string, unknown> | undefined;
+            expect(meta?.retryable).toBe(false);
+        });
+
+        it('should mark the event as retryable=true for transient network errors', async () => {
+            // Arrange
+            vi.mocked(revokeAddonForSubscriptionCancellation).mockRejectedValueOnce(
+                new Error('Network error: connection reset')
+            );
+
+            const db = createMockDb([PURCHASE_ENT]);
+
+            // Act
+            try {
+                await handleSubscriptionCancellationAddons({
+                    subscriptionId: SUBSCRIPTION_ID,
+                    customerId: CUSTOMER_ID,
+                    billing: mockBilling,
+                    db: db as unknown as Parameters<
+                        typeof handleSubscriptionCancellationAddons
+                    >[0]['db']
+                });
+            } catch {
+                // expected throw
+            }
+
+            // Assert — retryable=true for transient errors
+            const insertPayload = db._mockInsertValues.mock.calls[0]?.[0] as
+                | Record<string, unknown>
+                | undefined;
+            const meta = insertPayload?.metadata as Record<string, unknown> | undefined;
+            expect(meta?.retryable).toBe(true);
+        });
+
+        it('should NOT insert the event if the transaction insert itself fails (non-fatal: outer error propagation unaffected)', async () => {
+            // Arrange: revocation fails + the withTransaction mock throws on the inner insert
+            vi.mocked(revokeAddonForSubscriptionCancellation).mockRejectedValueOnce(
+                new Error('QZPay error')
+            );
+
+            const db = createMockDb([PURCHASE_ENT]);
+            // Make insert().values() throw to simulate DB unavailability
+            db._mockInsertValues.mockRejectedValueOnce(new Error('DB unavailable'));
+
+            // Act & Assert — outer throw (failed.length > 0) still propagates
+            await expect(
+                handleSubscriptionCancellationAddons({
+                    subscriptionId: SUBSCRIPTION_ID,
+                    customerId: CUSTOMER_ID,
+                    billing: mockBilling,
+                    db: db as unknown as Parameters<
+                        typeof handleSubscriptionCancellationAddons
+                    >[0]['db']
+                })
+            ).rejects.toThrow();
+
+            // Assert — the warn log for the failed inner operation was emitted
+            expect(vi.mocked(apiLogger.warn)).toHaveBeenCalledWith(
+                expect.objectContaining({ purchaseId: PURCHASE_ENT.id }),
+                expect.stringContaining('non-fatal')
+            );
+        });
+
+        it('should insert the ADDON_REVOCATION_FAILED event with triggerSource=webhook', async () => {
+            // Arrange
+            vi.mocked(revokeAddonForSubscriptionCancellation).mockRejectedValueOnce(
+                new Error('error')
+            );
+
+            const db = createMockDb([PURCHASE_ENT]);
+
+            // Act
+            try {
+                await handleSubscriptionCancellationAddons({
+                    subscriptionId: SUBSCRIPTION_ID,
+                    customerId: CUSTOMER_ID,
+                    billing: mockBilling,
+                    db: db as unknown as Parameters<
+                        typeof handleSubscriptionCancellationAddons
+                    >[0]['db']
+                });
+            } catch {
+                // expected throw
+            }
+
+            // Assert — triggerSource is 'webhook'
+            const insertPayload = db._mockInsertValues.mock.calls[0]?.[0] as
+                | Record<string, unknown>
+                | undefined;
+            expect(insertPayload?.triggerSource).toBe('webhook');
         });
     });
 
