@@ -1,76 +1,66 @@
 ---
 /**
  * @file suscriptores/planes/index.astro
- * @description Owner pricing page showing owner + complex plan cards.
- * Uses hardcoded fallback data until the plans API endpoint is connected.
+ * @description Owner pricing page showing owner plan cards.
+ * Reads pricing directly from @repo/billing config (single source of truth).
  * @route /{lang}/suscriptores/planes/
- * @rendering SSG + ISR 24h
+ * @rendering SSG (prerender=true) — billing config lives in code; price changes
+ *   ship via deploy and SSG regenerates automatically. See ADR-XXX.
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import type { GetStaticPaths } from 'astro';
+import { ALL_PLANS } from '@repo/billing';
 
 export const prerender = true;
 
-export const getStaticPaths = (() => {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}) satisfies GetStaticPaths;
-
-const { lang } = Astro.params;
-const locale = lang as SupportedLocale;
+const lang = (Astro.params.lang ?? 'es') as SupportedLocale;
+const locale = lang;
 const { t } = createTranslations(locale);
 
-const ownerPlans = [
-	{
-		planId: 'owner-basico',
-		name: t('pricing.owner.basic.name', 'Básico'),
-		price: 0,
-		period: t('pricing.owner.period', '/mes'),
-		description: t('pricing.owner.basic.desc', 'Empezá a publicar gratis'),
-		features: [
-			t('pricing.owner.basic.f1', '1 propiedad'),
-			t('pricing.owner.basic.f2', 'Fotos limitadas (5)'),
-			t('pricing.owner.basic.f3', 'Contacto por email'),
-			t('pricing.owner.basic.f4', 'Estadísticas básicas'),
-		],
-		highlighted: false,
-	},
-	{
-		planId: 'owner-pro',
-		name: t('pricing.owner.pro.name', 'Profesional'),
-		price: 4990,
-		period: t('pricing.owner.period', '/mes'),
-		description: t('pricing.owner.pro.desc', 'Para propietarios activos'),
-		features: [
-			t('pricing.owner.pro.f1', 'Hasta 5 propiedades'),
-			t('pricing.owner.pro.f2', 'Fotos ilimitadas'),
-			t('pricing.owner.pro.f3', 'WhatsApp + email'),
-			t('pricing.owner.pro.f4', 'Estadísticas avanzadas'),
-			t('pricing.owner.pro.f5', 'Destacar publicación'),
-		],
-		highlighted: true,
-	},
-	{
-		planId: 'owner-premium',
-		name: t('pricing.owner.premium.name', 'Premium'),
-		price: 9990,
-		period: t('pricing.owner.period', '/mes'),
-		description: t('pricing.owner.premium.desc', 'Máxima visibilidad'),
-		features: [
-			t('pricing.owner.premium.f1', 'Propiedades ilimitadas'),
-			t('pricing.owner.premium.f2', 'Todo lo del plan Profesional'),
-			t('pricing.owner.premium.f3', 'Posición destacada'),
-			t('pricing.owner.premium.f4', 'Soporte prioritario'),
-			t('pricing.owner.premium.f5', 'Badge verificado'),
-		],
-		highlighted: false,
-	},
-] as const;
+// Read owner plans straight from the billing config. This is the same source
+// every other consumer (checkout, entitlements, admin viewer) reads from, so
+// what we display here is what gets charged.
+const ownerPlans = ALL_PLANS
+	.filter((plan) => plan.category === 'owner' && plan.isActive)
+	.slice()
+	.sort((a, b) => a.sortOrder - b.sortOrder);
+
+// ─── Price formatting ──────────────────────────────────────────────────────
+
+/**
+ * Format ARS cents to a locale-aware currency string.
+ * e.g. 3_500_000 → "$ 35.000" for es-AR
+ */
+function formatPriceArs(cents: number, displayLocale: string): string {
+	const pesos = cents / 100;
+	try {
+		return new Intl.NumberFormat(displayLocale, {
+			style: 'currency',
+			currency: 'ARS',
+			maximumFractionDigits: 0,
+			minimumFractionDigits: 0,
+		}).format(pesos);
+	} catch {
+		return `$${pesos.toLocaleString('es-AR')}`;
+	}
+}
+
+// Map locale param to BCP47 tag for Intl
+const BCP47_MAP: Record<SupportedLocale, string> = {
+	es: 'es-AR',
+	en: 'en-AR',
+	pt: 'pt-BR',
+};
+const intlLocale = BCP47_MAP[locale] ?? 'es-AR';
+
+// Highlighted plan is the second one (owner-pro / index 1) by convention
+const highlightedSlug = ownerPlans[1]?.slug ?? 'owner-pro';
 
 const ctaText = t('pricing.cta', 'Empezar');
+const periodLabel = t('pricing.owner.period', '/mes');
 ---
 
 <MarketingLayout
@@ -91,33 +81,46 @@ const ctaText = t('pricing.cta', 'Empezar');
 	<section class="pricing-cards section">
 		<div class="pricing-cards__container">
 			<div class="pricing-cards__grid">
-				{ownerPlans.map((plan, i) => (
-					<div class:list={['pricing-card', { 'pricing-card--highlighted': plan.highlighted }]} data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
-						<h3 class="pricing-card__name">{plan.name}</h3>
-						<p class="pricing-card__desc">{plan.description}</p>
-						<div class="pricing-card__price">
-							<span class="pricing-card__amount">
-								{plan.price === 0 ? t('pricing.free', 'Gratis') : `$${plan.price.toLocaleString('es-AR')}`}
-							</span>
-							{plan.price > 0 && <span class="pricing-card__period">{plan.period}</span>}
+				{ownerPlans.map((plan, i) => {
+					const isHighlighted = plan.slug === highlightedSlug;
+					const formattedPrice = plan.monthlyPriceArs === 0
+						? t('pricing.free', 'Gratis')
+						: formatPriceArs(plan.monthlyPriceArs, intlLocale);
+
+					return (
+						<div
+							class:list={['pricing-card', { 'pricing-card--highlighted': isHighlighted }]}
+							data-reveal="up"
+							style={`transition-delay: ${i * 100}ms`}
+						>
+							<h3 class="pricing-card__name">{plan.name}</h3>
+							<p class="pricing-card__desc">{plan.description}</p>
+							<div class="pricing-card__price">
+								<span class="pricing-card__amount">
+									{formattedPrice}
+								</span>
+								{plan.monthlyPriceArs > 0 && (
+									<span class="pricing-card__period">{periodLabel}</span>
+								)}
+							</div>
+							{plan.hasTrial && plan.trialDays > 0 && (
+								<p class="pricing-card__trial">
+									{t('pricing.trial', `${plan.trialDays} días gratis`)}
+								</p>
+							)}
+							<div class="pricing-card__btn-wrapper">
+								<PlanPurchaseButton
+									client:load
+									planId={plan.slug}
+									price={plan.monthlyPriceArs}
+									currency="ARS"
+									ctaText={ctaText}
+									locale={locale}
+								/>
+							</div>
 						</div>
-						<ul class="pricing-card__features">
-							{plan.features.map((f) => (
-								<li class="pricing-card__feature">✓ {f}</li>
-							))}
-						</ul>
-						<div class="pricing-card__btn-wrapper">
-							<PlanPurchaseButton
-								client:load
-								planId={plan.planId}
-								price={plan.price}
-								currency="ARS"
-								ctaText={ctaText}
-								locale={locale}
-							/>
-						</div>
-					</div>
-				))}
+					);
+				})}
 			</div>
 		</div>
 	</section>
@@ -198,7 +201,7 @@ const ctaText = t('pricing.cta', 'Empezar');
 		margin: 0 0 var(--space-4);
 	}
 
-	.pricing-card__price { margin-bottom: var(--space-6); }
+	.pricing-card__price { margin-bottom: var(--space-4); }
 
 	.pricing-card__amount {
 		font-family: var(--font-heading);
@@ -211,31 +214,20 @@ const ctaText = t('pricing.cta', 'Empezar');
 		font-family: var(--font-sans);
 		font-size: var(--text-body-sm);
 		color: var(--muted-foreground);
+		margin-left: var(--space-1);
 	}
 
-	.pricing-card__features {
-		list-style: none;
-		padding: 0;
-		margin: 0 0 var(--space-6);
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
-		flex: 1;
-	}
-
-	.pricing-card__feature {
+	.pricing-card__trial {
 		font-family: var(--font-sans);
 		font-size: var(--text-body-sm);
-		color: var(--foreground);
+		color: var(--brand-accent);
+		margin: 0 0 var(--space-6);
 	}
 
 	.pricing-card__btn-wrapper {
 		display: flex;
 		justify-content: center;
-	}
-
-	.pricing-card__btn {
-		width: 100%;
+		margin-top: auto;
 	}
 
 	@media (max-width: 768px) {

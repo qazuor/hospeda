@@ -495,6 +495,56 @@ export const statsApi = {
     }
 };
 
+// --- Plans ---
+
+/**
+ * Public plan item returned by GET /api/v1/public/plans.
+ * Monetary values are in ARS cents (integer). Divide by 100 to get pesos.
+ */
+export interface PlanPublicItem {
+    readonly slug: string;
+    readonly name: string;
+    readonly description: string;
+    readonly category: 'owner' | 'complex' | 'tourist';
+    readonly monthlyPriceArs: number;
+    readonly annualPriceArs: number | null;
+    readonly monthlyPriceUsdRef: number;
+    readonly hasTrial: boolean;
+    readonly trialDays: number;
+    readonly isDefault: boolean;
+    readonly sortOrder: number;
+    readonly isActive: boolean;
+    readonly entitlements: readonly string[];
+    readonly limits: ReadonlyArray<{
+        readonly key: string;
+        readonly value: number;
+        readonly name: string;
+        readonly description: string;
+    }>;
+}
+
+/** Public plans API endpoints */
+export const plansApi = {
+    /**
+     * List all active billing plans.
+     * Returns pricing in ARS cents, trial info, entitlements, and limits.
+     * Data is sourced from billing configuration (canonical source of truth).
+     *
+     * @returns Array of active plan definitions
+     *
+     * @example
+     * ```ts
+     * const result = await plansApi.list();
+     * if (result.ok) {
+     *   const ownerPlans = result.data.filter(p => p.category === 'owner');
+     * }
+     * ```
+     */
+    list(): Promise<ApiResult<readonly PlanPublicItem[]>> {
+        return apiClient.get({ path: `${BASE}/plans` });
+    }
+};
+
 // --- Contact ---
 
 /** Contact form API endpoints */

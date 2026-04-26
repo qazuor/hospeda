@@ -7,7 +7,6 @@
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { DataTable } from '@/components/table/DataTable';
 import type { DataTableColumn } from '@/components/table/DataTable';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
     type CreatePlanPayload,
@@ -22,7 +21,6 @@ import {
 } from '@/features/billing-plans';
 import { useTranslations } from '@/hooks/use-translations';
 import { ALL_PLANS } from '@repo/billing';
-import { AddIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
@@ -38,7 +36,8 @@ function BillingPlansPage() {
     const [pageSize, setPageSize] = useState(20);
     const [categoryFilter, setCategoryFilter] = useState<PlanCategory>('all');
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [editingPlan, setEditingPlan] = useState<PlanDefinition | null>(null);
+    // Plans are read-only; editingPlan stays null but kept for PlanDialog props compat.
+    const [editingPlan] = useState<PlanDefinition | null>(null);
 
     // Fetch plans from API
     // NOTE: Currently using static data from @repo/billing as fallback
@@ -74,26 +73,21 @@ function BillingPlansPage() {
               return plan.category === categoryFilter;
           });
 
+    // Plan write operations are intentionally disabled.
+    // Plans are managed as code in packages/billing/src/config/plans.config.ts
+    // (single source of truth). See ADR-021. Create/edit/delete are stubs that
+    // surface a clear message instead of hitting nonexistent endpoints.
     const handleCreateNew = () => {
-        setEditingPlan(null);
-        setDialogOpen(true);
+        alert(t('admin-billing.plans.apiRequired'));
     };
 
-    const handleEdit = (plan: PlanDefinition) => {
-        setEditingPlan(plan);
-        setDialogOpen(true);
+    const handleEdit = (_plan: PlanDefinition) => {
+        alert(t('admin-billing.plans.apiRequired'));
     };
 
-    const handleSubmit = async (payload: CreatePlanPayload) => {
-        if (editingPlan) {
-            const planWithId = editingPlan as PlanDefinition & { id?: string };
-            await updateMutation.mutateAsync({
-                id: planWithId.id || editingPlan.slug,
-                ...payload
-            });
-        } else {
-            await createMutation.mutateAsync(payload);
-        }
+    const handleSubmit = async (_payload: CreatePlanPayload) => {
+        // No-op. Dialog never opens for write operations.
+        alert(t('admin-billing.plans.apiRequired'));
     };
 
     const handleToggleActive = (id: string, isActive: boolean) => {
@@ -197,16 +191,14 @@ function BillingPlansPage() {
                     </div>
                 </div>
 
-                {!hasApiData && !isLoading && (
-                    <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
-                        <CardContent className="py-4">
-                            <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                                <strong>{t('admin-billing.plans.noteLabel')}</strong>{' '}
-                                {t('admin-billing.plans.apiUnavailable')}
-                            </p>
-                        </CardContent>
-                    </Card>
-                )}
+                <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
+                    <CardContent className="py-4">
+                        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                            <strong>{t('admin-billing.plans.noteLabel')}</strong>{' '}
+                            {t('admin-billing.plans.apiUnavailable')}
+                        </p>
+                    </CardContent>
+                </Card>
 
                 <PlansTable
                     plans={filteredPlans}
@@ -245,7 +237,7 @@ interface PlansTableProps {
     onPageChange: (page: number) => void;
     onPageSizeChange: (pageSize: number) => void;
     onCategoryFilterChange: (filter: PlanCategory) => void;
-    onCreateNew: () => void;
+    onCreateNew?: () => void;
 }
 
 function PlansTable({
@@ -258,14 +250,13 @@ function PlansTable({
     categoryFilter,
     onPageChange,
     onPageSizeChange,
-    onCategoryFilterChange,
-    onCreateNew
+    onCategoryFilterChange
 }: PlansTableProps) {
     const { t } = useTranslations();
 
     return (
         <div className="space-y-4">
-            {/* Filters */}
+            {/* Filters — Create button intentionally omitted: plans are read-only */}
             <div className="flex items-center justify-between gap-4">
                 <div className="flex gap-2">
                     <select
@@ -279,11 +270,6 @@ function PlansTable({
                         <option value="tourist">{t('admin-billing.plans.categoryTourist')}</option>
                     </select>
                 </div>
-
-                <Button onClick={onCreateNew}>
-                    <AddIcon className="mr-2 h-4 w-4" />
-                    {t('admin-billing.plans.createPlan')}
-                </Button>
             </div>
 
             {/* Table */}
