@@ -2,6 +2,7 @@
     "epic": "SPEC-044-GAPS",
     "title": "SPEC-044 Addon Purchase Schema Cleanup - Gap Remediation",
     "created": "2026-03-17",
+    "updated_at": "2026-04-25",
     "status": "pending",
     "total_tasks": 49,
     "phases": [
