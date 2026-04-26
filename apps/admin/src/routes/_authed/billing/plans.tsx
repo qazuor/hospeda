@@ -75,7 +75,7 @@ function BillingPlansPage() {
 
     // Plan write operations are intentionally disabled.
     // Plans are managed as code in packages/billing/src/config/plans.config.ts
-    // (single source of truth). See ADR-021. Create/edit/delete are stubs that
+    // (single source of truth). See ADR-020. Create/edit/delete are stubs that
     // surface a clear message instead of hitting nonexistent endpoints.
     const handleCreateNew = () => {
         alert(t('admin-billing.plans.apiRequired'));
