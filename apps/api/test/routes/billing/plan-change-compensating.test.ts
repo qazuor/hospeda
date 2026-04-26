@@ -247,7 +247,7 @@ describe('BILLING_EVENT_TYPES constant', () => {
 // unit: Compensating event on local transaction failure
 // ============================================================================
 
-describe('IT-6 — handlePlanChange: compensating event on local transaction failure', () => {
+describe('unit: handlePlanChange: compensating event on local transaction failure', () => {
     const OLD_PLAN_ID = 'plan_basico';
     const NEW_PLAN_ID = 'plan_pro';
     const SUBSCRIPTION_ID = 'sub_test_001';

@@ -375,16 +375,27 @@ The only protection is that `retryWebhookEvent` checks `billingWebhookEvents.sta
 
 **Proposed Solution**:
 ```typescript
-// At the top of the cron handler:
-const lockAcquired = await db.execute(sql`SELECT pg_try_advisory_lock(${WEBHOOK_RETRY_LOCK_ID})`);
-if (!lockAcquired.rows[0].pg_try_advisory_lock === false) {
-    logger.info('webhook-retry: another instance is running, skipping');
-    return;
-}
-// Remove false claim from docstring
+// At the top of the cron handler (use transaction-scoped lock, NOT session-scoped):
+// SPEC-064 mandates pg_try_advisory_xact_lock (auto-releases on tx commit/rollback).
+// pg_try_advisory_lock (session-scoped) is incompatible with Neon connection pooling.
+// See ADR-019 and apps/api/docs/advisory-locks.md.
+await withTransaction(async (tx) => {
+    const lockResult = await tx.execute(
+        sql`SELECT pg_try_advisory_xact_lock(${WEBHOOK_RETRY_LOCK_ID}) as acquired`
+    );
+    if (!lockResult.rows[0]?.acquired) {
+        logger.info('webhook-retry: another instance is running, skipping');
+        return { status: 'skipped' };
+    }
+    // ... cron body — lock auto-releases on tx commit or rollback
+});
+// Remove false idempotency claim from docstring
 ```
 
 **Action**: Fix inline. Update docstring. No new SPEC needed.
+**Note (SPEC-064)**: The proposed solution was updated to use `pg_try_advisory_xact_lock` inside
+`withTransaction` instead of the session-scoped `pg_try_advisory_lock`. The session-scoped variant
+is incompatible with Neon transaction pooling (ADR-019).
 
 ---
 

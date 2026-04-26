@@ -91,12 +91,9 @@ export const billingAddonPurchases = pgTable(
          * When `true`, the reconciliation phase of the `addon-expiry` cron job will retry
          * the entitlement removal and clear this flag on success.
          *
-         * Set to `true` exclusively by {@link AddonExpirationService.expireAddon} when
+         * Set to `true` exclusively by `AddonExpirationService.expireAddon` when
          * `AddonEntitlementService.removeAddonEntitlements` throws or returns a failure result
          * after the `billing_addon_purchases` row has already been updated to `status='expired'`.
-         *
-         * NOTE: This column is TypeScript-schema-only. Apply the column to a live database with:
-         * `ALTER TABLE billing_addon_purchases ADD COLUMN IF NOT EXISTS entitlement_removal_pending BOOLEAN NOT NULL DEFAULT false;`
          */
         entitlementRemovalPending: boolean('entitlement_removal_pending').notNull().default(false),
         /**
@@ -109,9 +106,6 @@ export const billingAddonPurchases = pgTable(
          *
          * Reset to `false` once the reconciliation job succeeds, or cleared to `false` on
          * the next successful activation.
-         *
-         * NOTE: This column is TypeScript-schema-only. Apply the column to a live database with:
-         * `ALTER TABLE billing_addon_purchases ADD COLUMN IF NOT EXISTS needs_entitlement_sync BOOLEAN NOT NULL DEFAULT false;`
          */
         needsEntitlementSync: boolean('needs_entitlement_sync').default(false).notNull(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

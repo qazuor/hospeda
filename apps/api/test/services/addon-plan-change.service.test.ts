@@ -1620,12 +1620,12 @@ describe('unit: dedup guard — in-memory Map blocks second call within window',
     });
 });
 
-// ─── IT-5b: Dedup survives server restart (DB-backed) ─────────────────────────
+// ─── unit: Dedup survives server restart (DB-backed) ─────────────────────────
 //
 // The in-memory Map is cleared on server restart. The DB-backed dedup (Step 0d)
 // must still block a second call if the ADDON_RECALC_COMPLETED event was written.
 
-describe('IT-5b: dedup guard — DB-backed dedup survives in-memory Map clear', () => {
+describe('unit: dedup guard — DB-backed dedup survives in-memory Map clear', () => {
     let billing: QZPayBilling;
 
     const RESTART_CUSTOMER_ID = 'cus_test_it5b_restart';
@@ -1661,7 +1661,7 @@ describe('IT-5b: dedup guard — DB-backed dedup survives in-memory Map clear', 
         vi.restoreAllMocks();
     });
 
-    it('IT-5b: should block second call via DB dedup when in-memory Map is cleared (simulated restart)', async () => {
+    it('unit: should block second call via DB dedup when in-memory Map is cleared (simulated restart)', async () => {
         // Arrange — simulate a prior successful recalculation that wrote the DB event.
         // The in-memory Map is empty (simulating server restart after the first call).
         // The DB dedup check (Step 0d) finds the ADDON_RECALC_COMPLETED event.
@@ -1697,7 +1697,7 @@ describe('IT-5b: dedup guard — DB-backed dedup survives in-memory Map clear', 
         expect(mockTxInsertValues).not.toHaveBeenCalled();
     });
 
-    it('IT-5b: should run recalculation when DB dedup event is outside the 5-minute window', async () => {
+    it('unit: should run recalculation when DB dedup event is outside the 5-minute window', async () => {
         // Arrange — DB dedup check returns empty (no recent event within window)
         // simulating a prior event that has aged out.
         mockTxLimit

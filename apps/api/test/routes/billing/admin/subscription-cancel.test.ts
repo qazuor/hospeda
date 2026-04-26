@@ -967,7 +967,7 @@ describe('AC-2.3 — subscriptionCancelRoute: registration and param/body schema
 // failure, so the revokedAddonPurchaseIds can be recovered for reconciliation.
 // ---------------------------------------------------------------------------
 
-describe('IT-3 — compensating event on Phase 2 failure', () => {
+describe('unit: compensating event on Phase 2 failure', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
