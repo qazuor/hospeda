@@ -20,9 +20,11 @@ import { BillingIntervalEnum } from '@repo/schemas';
 import { PlanChangeRequestSchema, PlanChangeResponseSchema } from '@repo/schemas';
 import { BILLING_EVENT_TYPES, withServiceTransaction } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
+import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { clearEntitlementCache } from '../../middlewares/entitlement';
 import { handlePlanChangeAddonRecalculation } from '../../services/addon-plan-change.service';
+import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { type SimpleRouteInterface, createSimpleRoute } from '../../utils/route-factory';
@@ -106,6 +108,8 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             message: 'No billing account found'
         });
     }
+
+    const actor = getActorFromContext(c);
 
     // Parse and validate request body
     const body = await c.req.json();
@@ -306,6 +310,17 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
 
         // Clear entitlement cache to reflect plan change immediately
         clearEntitlementCache(billingCustomerId);
+
+        // SPEC-064 T-051: Audit log for billing plan change.
+        // Use actor.id (authenticated user) for cross-audit traceability;
+        // resourceId carries the subscription ID which links back to the customer.
+        auditLog({
+            auditEvent: AuditEventType.BILLING_MUTATION,
+            actorId: actor.id,
+            action: 'update',
+            resourceType: 'subscription_plan',
+            resourceId: result.subscription.id
+        });
 
         return response;
     } catch (error) {

@@ -29,6 +29,7 @@ import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { clearEntitlementCache } from '../../middlewares/entitlement';
 import { AddonService } from '../../services/addon.service';
+import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { createProtectedRoute } from '../../utils/route-factory';
@@ -215,6 +216,15 @@ export const purchaseAddonRoute = createProtectedRoute({
             });
         }
 
+        // SPEC-064 T-051: Audit log for billing purchase initiation.
+        auditLog({
+            auditEvent: AuditEventType.BILLING_MUTATION,
+            actorId: actor.id,
+            action: 'create',
+            resourceType: 'addon_purchase',
+            resourceId: `${billingCustomerId}:${params.slug}`
+        });
+
         return result.data;
     }
 });
@@ -371,6 +381,15 @@ export const cancelAddonRoute = createProtectedRoute({
 
         // Clear entitlement cache so the cancellation is reflected immediately
         clearEntitlementCache(billingCustomerId);
+
+        // SPEC-064 T-051: Audit log for billing addon cancellation.
+        auditLog({
+            auditEvent: AuditEventType.BILLING_MUTATION,
+            actorId: actor.id,
+            action: 'delete',
+            resourceType: 'addon_purchase',
+            resourceId: params.id as string
+        });
 
         return null;
     }

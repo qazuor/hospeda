@@ -36,6 +36,14 @@
 
 import { createWebhookRouter } from '@qazuor/qzpay-hono';
 import { Hono } from 'hono';
+import {
+    // TODO(SPEC-079): Once rate-limit.ts is extended by SPEC-079 to support
+    // per-route webhook overrides natively, replace this usage with the updated
+    // factory. For now we use createPerRouteRateLimitMiddleware directly, which
+    // is intentionally NOT importing from rate-limit.ts to avoid colliding with
+    // SPEC-079 edits in flight.
+    createPerRouteRateLimitMiddleware
+} from '../../../middlewares/rate-limit';
 import { webhookSignatureMiddleware } from '../../../middlewares/webhook-signature';
 import type { AppOpenAPI } from '../../../types';
 import { apiLogger } from '../../../utils/logger';
@@ -44,6 +52,19 @@ import { handleWebhookError, handleWebhookEvent } from './event-handler';
 import { handlePaymentCreated, handlePaymentUpdated } from './payment-handler';
 import { handleSubscriptionUpdated } from './subscription-handler';
 import { getWebhookDependencies } from './utils';
+
+/**
+ * Conservative per-route rate limit for the MercadoPago webhook endpoint.
+ *
+ * Applied ON TOP of the global webhook bucket (100 req/min) as a defence-in-depth
+ * layer. MercadoPago sends at most a few dozen events per minute in normal
+ * operation; 100 req/min per IP is a reasonable ceiling that blocks flood attacks
+ * while never throttling legitimate IPN traffic.
+ *
+ * SPEC-064 T-049/T-050.
+ */
+const WEBHOOK_RATE_LIMIT_REQUESTS = 100;
+const WEBHOOK_RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
 
 /**
  * Create MercadoPago webhook router.
@@ -79,9 +100,18 @@ function createMercadoPagoWebhookRouter(): AppOpenAPI | null {
             onError: handleWebhookError
         });
 
-        // Wrap in an outer Hono app so the signature middleware runs BEFORE
-        // any route handler registered by createWebhookRouter.
+        // Wrap in an outer Hono app so middleware runs BEFORE any route
+        // handler registered by createWebhookRouter. Order matters:
+        //   1. Per-route rate limit (SPEC-064 T-049/T-050) — blocks floods early
+        //   2. Signature verification (SPEC-064 T-036/T-037/T-038) — validates HMAC
         const securedRouter = new Hono();
+        securedRouter.use(
+            '*',
+            createPerRouteRateLimitMiddleware({
+                requests: WEBHOOK_RATE_LIMIT_REQUESTS,
+                windowMs: WEBHOOK_RATE_LIMIT_WINDOW_MS
+            })
+        );
         securedRouter.use('*', webhookSignatureMiddleware);
         securedRouter.route('/', webhookRouter as unknown as Hono);
 
