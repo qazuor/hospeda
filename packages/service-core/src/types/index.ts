@@ -37,6 +37,25 @@ export interface ServiceContext<THookState = Record<string, unknown>> extends Qu
      * Initialized to {} by each public method before calling hooks.
      */
     hookState?: THookState;
+    /**
+     * Pagination parameters extracted from the search/count input before the
+     * pagination keys are stripped from `params`.
+     *
+     * Set by `BaseCrudRead.search()` and `BaseCrudRead.count()` before calling
+     * `_executeSearch` / `_executeCount`. Services that need `page` and
+     * `pageSize` inside those hooks MUST read them from `ctx.pagination`
+     * instead of from `params`. See SPEC-088.
+     */
+    pagination?: {
+        /** Current page number (1-based). */
+        page?: number;
+        /** Number of items per page. */
+        pageSize?: number;
+        /** Field to sort by. */
+        sortBy?: string;
+        /** Sort direction. */
+        sortOrder?: 'asc' | 'desc';
+    };
 }
 
 /**

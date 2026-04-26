@@ -48,7 +48,9 @@ describe('UserService.count', () => {
         const result = await service.count(admin, searchParams);
         expectSuccess(result);
         expect(result.data).toEqual({ count: 42 });
-        expect(asMock(userModelMock.count)).toHaveBeenCalledWith(searchParams);
+        // SPEC-088: page/pageSize/sortOrder are stripped from params before _executeCount,
+        // so model.count receives only the filter fields.
+        expect(asMock(userModelMock.count)).toHaveBeenCalledWith({ role: RoleEnum.USER });
     });
 
     it('should return the count if actor is super admin', async () => {
@@ -62,7 +64,8 @@ describe('UserService.count', () => {
         const result = await service.count(superAdmin, searchParams);
         expectSuccess(result);
         expect(result.data).toEqual({ count: 7 });
-        expect(asMock(userModelMock.count)).toHaveBeenCalledWith(searchParams);
+        // SPEC-088: page/pageSize/sortOrder are stripped from params before _executeCount.
+        expect(asMock(userModelMock.count)).toHaveBeenCalledWith({ role: RoleEnum.USER });
     });
 
     it('should return FORBIDDEN if actor is not admin or super admin', async () => {

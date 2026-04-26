@@ -17,6 +17,43 @@ import {
 import { BaseCrudHooks } from './base.crud.hooks';
 
 /**
+ * Pagination and sort keys that are part of base query infrastructure and must
+ * never be forwarded to the WHERE-clause builder in `_executeSearch` or
+ * `_executeCount` hooks. These keys are valid at the transport layer (query
+ * string) but have no corresponding column on any entity table.
+ *
+ * Used by {@link stripPaginationKeys} which is called inside {@link BaseCrudRead.search}
+ * and {@link BaseCrudRead.count} before invoking the lifecycle hooks.
+ */
+const PAGINATION_SORT_KEYS = ['page', 'pageSize', 'sortBy', 'sortOrder'] as const;
+
+/**
+ * Returns a shallow clone of `params` with the four pagination/sort keys
+ * (`page`, `pageSize`, `sortBy`, `sortOrder`) removed.
+ *
+ * The operation is idempotent and non-mutating: it always returns a new object
+ * regardless of whether the keys were present in the input.
+ *
+ * @param params - Any search/count parameter object (validated against TSearchSchema).
+ * @returns A new object with the reserved keys omitted.
+ *
+ * @example
+ * ```ts
+ * stripPaginationKeys({ slug: 'foo', page: 1, pageSize: 10, sortBy: 'createdAt', sortOrder: 'desc' })
+ * // → { slug: 'foo' }
+ * ```
+ */
+function stripPaginationKeys<T extends Record<string, unknown>>(
+    params: T
+): Omit<T, 'page' | 'pageSize' | 'sortBy' | 'sortOrder'> {
+    const clone = { ...params };
+    for (const key of PAGINATION_SORT_KEYS) {
+        delete (clone as Record<string, unknown>)[key];
+    }
+    return clone as Omit<T, 'page' | 'pageSize' | 'sortBy' | 'sortOrder'>;
+}
+
+/**
  * Abstract base class providing all read/query operations for CRUD services.
  *
  * Includes the following public API methods:
@@ -320,13 +357,35 @@ export abstract class BaseCrudRead<
                     ? await this.normalizers.search(validParams, validActor)
                     : validParams;
 
+                // Extract pagination/sort values BEFORE stripping, so they are
+                // available to subclasses via ctx.pagination. This satisfies
+                // AC-088-03 (pagination reaches hooks via explicit channel, not params).
+                const rawParams = normalizedParams as Record<string, unknown>;
+                const paginationCtx = {
+                    page: typeof rawParams.page === 'number' ? rawParams.page : undefined,
+                    pageSize:
+                        typeof rawParams.pageSize === 'number' ? rawParams.pageSize : undefined,
+                    sortBy: typeof rawParams.sortBy === 'string' ? rawParams.sortBy : undefined,
+                    sortOrder:
+                        rawParams.sortOrder === 'asc' || rawParams.sortOrder === 'desc'
+                            ? rawParams.sortOrder
+                            : undefined
+                } satisfies NonNullable<ServiceContext['pagination']>;
+                const searchCtx: ServiceContext = { ...execCtx, pagination: paginationCtx };
+
+                // Strip pagination/sort keys before invoking hooks so that
+                // subclasses never receive them in _executeSearch params.
+                // This prevents unknown-column errors in buildWhereClause.
+                // See SPEC-088 for full context.
+                const strippedParams = stripPaginationKeys(rawParams) as z.infer<TSearchSchema>;
+
                 const processedParams = await this._beforeSearch(
-                    normalizedParams,
+                    strippedParams,
                     validActor,
-                    execCtx
+                    searchCtx
                 );
-                const result = await this._executeSearch(processedParams, validActor, execCtx);
-                return this._afterSearch(result, validActor, execCtx);
+                const result = await this._executeSearch(processedParams, validActor, searchCtx);
+                return this._afterSearch(result, validActor, searchCtx);
             }
         });
     }
@@ -554,9 +613,41 @@ export abstract class BaseCrudRead<
             ctx: resolvedCtx,
             execute: async (validParams, validActor, execCtx) => {
                 await this._canCount(validActor);
-                const processedParams = await this._beforeCount(validParams, validActor, execCtx);
-                const result = await this._executeCount(processedParams, validActor, execCtx);
-                return this._afterCount(result, validActor, execCtx);
+
+                // Extract pagination/sort values BEFORE stripping (see SPEC-088 AC-088-03).
+                const rawCountParams = validParams as Record<string, unknown>;
+                const countPaginationCtx = {
+                    page: typeof rawCountParams.page === 'number' ? rawCountParams.page : undefined,
+                    pageSize:
+                        typeof rawCountParams.pageSize === 'number'
+                            ? rawCountParams.pageSize
+                            : undefined,
+                    sortBy:
+                        typeof rawCountParams.sortBy === 'string'
+                            ? rawCountParams.sortBy
+                            : undefined,
+                    sortOrder:
+                        rawCountParams.sortOrder === 'asc' || rawCountParams.sortOrder === 'desc'
+                            ? rawCountParams.sortOrder
+                            : undefined
+                } satisfies NonNullable<ServiceContext['pagination']>;
+                const countCtx: ServiceContext = { ...execCtx, pagination: countPaginationCtx };
+
+                // Strip pagination/sort keys before invoking hooks so that
+                // subclasses never receive them in _executeCount params.
+                // This prevents unknown-column errors in buildWhereClause.
+                // See SPEC-088 for full context.
+                const strippedParams = stripPaginationKeys(
+                    rawCountParams
+                ) as z.infer<TSearchSchema>;
+
+                const processedParams = await this._beforeCount(
+                    strippedParams,
+                    validActor,
+                    countCtx
+                );
+                const result = await this._executeCount(processedParams, validActor, countCtx);
+                return this._afterCount(result, validActor, countCtx);
             }
         });
     }

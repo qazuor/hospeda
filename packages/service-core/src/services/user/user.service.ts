@@ -593,11 +593,18 @@ export class UserService extends BaseCrudService<
 
     /**
      * Executes a search for users.
-     * @param params - The validated and processed search parameters (filters, pagination, etc.)
-     * @returns Paginated list of users matching the criteria
+     *
+     * Reads pagination from `ctx.pagination` (set by BaseCrudRead.search before
+     * stripping those keys from `params`). See SPEC-088.
+     *
+     * @param params - The validated and processed search parameters (filters only — pagination
+     *   keys have been stripped by the base class).
+     * @param _actor - The actor performing the search.
+     * @param ctx - Service execution context carrying pagination via `ctx.pagination`.
+     * @returns Paginated list of users matching the criteria.
      */
-    protected async _executeSearch(params: UserSearch, _actor: Actor, _ctx: ServiceContext) {
-        const { page, pageSize } = params;
+    protected async _executeSearch(params: UserSearch, _actor: Actor, ctx: ServiceContext) {
+        const { page, pageSize } = ctx.pagination ?? {};
         return this.model.findAll(params, { page, pageSize });
     }
 

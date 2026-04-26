@@ -60,10 +60,12 @@ describe('UserService.search', () => {
         const result = await service.search(admin, searchParams);
         expectSuccess(result);
         expect(result.data?.items?.length).toBe(2);
-        expect(asMock(userModelMock.findAll)).toHaveBeenCalledWith(searchParams, {
-            page: 1,
-            pageSize: 10
-        });
+        // SPEC-088: page/pageSize/sortOrder are stripped from the first arg (WHERE)
+        // and forwarded via ctx.pagination to the second arg of model.findAll.
+        expect(asMock(userModelMock.findAll)).toHaveBeenCalledWith(
+            { role: RoleEnum.USER },
+            { page: 1, pageSize: 10 }
+        );
     });
 
     it('should return a paginated list of users matching filters (super admin)', async () => {
@@ -77,10 +79,12 @@ describe('UserService.search', () => {
         const result = await service.search(superAdmin, searchParams);
         expectSuccess(result);
         expect(result.data?.items?.length).toBe(2);
-        expect(asMock(userModelMock.findAll)).toHaveBeenCalledWith(searchParams, {
-            page: 1,
-            pageSize: 10
-        });
+        // SPEC-088: page/pageSize/sortOrder are stripped from the first arg (WHERE)
+        // and forwarded via ctx.pagination to the second arg of model.findAll.
+        expect(asMock(userModelMock.findAll)).toHaveBeenCalledWith(
+            { role: RoleEnum.USER },
+            { page: 1, pageSize: 10 }
+        );
     });
 
     it('should return FORBIDDEN if actor is not admin or super admin', async () => {
@@ -158,9 +162,8 @@ describe('UserService.search', () => {
         const searchParams = { page: 1, pageSize: 10, sortOrder: 'asc' as const };
         await serviceWithNorm.search(admin, searchParams);
         expect(normalizer).toHaveBeenCalledWith(searchParams, admin);
-        expect(asMock(userModelMock.findAll)).toHaveBeenCalledWith(searchParams, {
-            page: 1,
-            pageSize: 10
-        });
+        // SPEC-088: after normalization, page/pageSize/sortOrder are stripped from the WHERE arg
+        // and delivered to the pagination arg via ctx.pagination.
+        expect(asMock(userModelMock.findAll)).toHaveBeenCalledWith({}, { page: 1, pageSize: 10 });
     });
 });
