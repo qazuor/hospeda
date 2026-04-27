@@ -1,6 +1,19 @@
-import { EventLocationModel, EventModel, eventLocations, or, safeIlike } from '@repo/db';
-import type { EventLocation, EventLocationSearchInput } from '@repo/schemas';
 import {
+    DestinationModel,
+    EventLocationModel,
+    EventModel,
+    eventLocations,
+    or,
+    safeIlike
+} from '@repo/db';
+import type {
+    EventLocation,
+    EventLocationCreateInput,
+    EventLocationSearchInput,
+    EventLocationUpdateInput
+} from '@repo/schemas';
+import {
+    DestinationTypeEnum,
     EventLocationAdminSearchSchema,
     EventLocationCreateInputSchema,
     EventLocationSearchInputSchema,
@@ -66,11 +79,67 @@ export class EventLocationService extends BaseCrudService<
         update: normalizeUpdateInput
     };
 
+    /**
+     * Destination model used directly in lifecycle hooks to validate that
+     * `destinationId` resolves to a destination of type `CITY` (SPEC-095).
+     */
+    private readonly _destinationModel: DestinationModel;
+
     constructor(ctx: ServiceConfig, model?: EventLocationModel) {
         super(ctx, EventLocationService.ENTITY_NAME);
         this.model = model ?? new EventLocationModel();
+        this._destinationModel = new DestinationModel();
         /** Uses default _executeAdminSearch() - all filter fields map directly to table columns. */
         this.adminSearchSchema = EventLocationAdminSearchSchema;
+    }
+
+    /**
+     * SPEC-095: enforce that `destinationId` resolves to a destination of
+     * type `CITY`. Province- or higher-level destinations are too coarse;
+     * neighborhood-/town-level destinations should resolve up to the CITY
+     * ancestor before being assigned.
+     */
+    private async _assertDestinationIsCity(destinationId: string | undefined): Promise<void> {
+        if (!destinationId) return;
+        const destination = await this._destinationModel.findById(destinationId);
+        if (!destination) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                `Destination ${destinationId} does not exist`
+            );
+        }
+        if (destination.destinationType !== DestinationTypeEnum.CITY) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'destinationId must reference a destination of type CITY'
+            );
+        }
+    }
+
+    /**
+     * Validates the destination FK before creating an event location.
+     */
+    protected async _beforeCreate(
+        data: EventLocationCreateInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Partial<EventLocation>> {
+        await this._assertDestinationIsCity(data.destinationId);
+        return {};
+    }
+
+    /**
+     * Validates the destination FK if it is part of an update payload.
+     */
+    protected async _beforeUpdate(
+        data: EventLocationUpdateInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Partial<EventLocation>> {
+        if (data.destinationId) {
+            await this._assertDestinationIsCity(data.destinationId);
+        }
+        return data as Partial<EventLocation>;
     }
 
     /**

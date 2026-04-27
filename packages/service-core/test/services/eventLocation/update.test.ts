@@ -1,5 +1,5 @@
 import { EventLocationModel } from '@repo/db';
-import { PermissionEnum } from '@repo/schemas';
+import { DestinationTypeEnum, PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventLocationService } from '../../../src/services/eventLocation/eventLocation.service';
 import { createActor } from '../../factories/actorFactory';
@@ -21,6 +21,12 @@ describe('EventLocationService.update', () => {
         model = new EventLocationModel();
         loggerMock = createLoggerMock();
         service = new EventLocationService({ logger: loggerMock }, model);
+        // SPEC-095: stub the private destination model so _assertDestinationIsCity
+        // resolves a CITY destination without hitting the real DB.
+        // @ts-expect-error: override for test
+        service._destinationModel = {
+            findById: vi.fn().mockResolvedValue({ destinationType: DestinationTypeEnum.CITY })
+        };
         vi.clearAllMocks();
     });
 
@@ -106,5 +112,21 @@ describe('EventLocationService.update', () => {
         vi.spyOn(model, 'update').mockResolvedValue({ ...fullEntity, ...input });
         const result = await service.update(actorWithPerm, fullEntity.id, input);
         expect(result.data?.placeName).toBe(updateInput.placeName);
+    });
+
+    // SPEC-095: destinationType=CITY enforcement
+    it('returns VALIDATION_ERROR when destinationId references a non-CITY destination', async () => {
+        vi.spyOn(model, 'findById').mockResolvedValue(fullEntity);
+        // @ts-expect-error: override for test
+        service._destinationModel = {
+            findById: vi.fn().mockResolvedValue({ destinationType: DestinationTypeEnum.PROVINCE })
+        };
+        const input = { destinationId: '11111111-1111-4111-8111-111111111111' };
+        const updateSpy = vi.spyOn(model, 'update');
+        const result = await service.update(actorWithPerm, fullEntity.id, input);
+        expect(result.error).toBeTruthy();
+        expect(result.error?.code).toBe('VALIDATION_ERROR');
+        expect(result.error?.message).toMatch(/CITY/);
+        expect(updateSpy).not.toHaveBeenCalled();
     });
 });

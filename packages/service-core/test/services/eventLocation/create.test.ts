@@ -1,5 +1,5 @@
 import { EventLocationModel } from '@repo/db';
-import { PermissionEnum } from '@repo/schemas';
+import { DestinationTypeEnum, PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventLocationService } from '../../../src/services/eventLocation/eventLocation.service';
 import { createActor } from '../../factories/actorFactory';
@@ -31,6 +31,12 @@ describe('EventLocationService.create', () => {
         model = new EventLocationModel();
         loggerMock = createLoggerMock();
         service = new EventLocationService({ logger: loggerMock }, model);
+        // SPEC-095: stub the private destination model so _assertDestinationIsCity
+        // resolves a CITY destination without hitting the real DB.
+        // @ts-expect-error: override for test
+        service._destinationModel = {
+            findById: vi.fn().mockResolvedValue({ destinationType: DestinationTypeEnum.CITY })
+        };
         vi.clearAllMocks();
     });
 
@@ -103,5 +109,29 @@ describe('EventLocationService.create', () => {
         expect(result.error).toBeTruthy();
         expect(result.error?.code).toBe('VALIDATION_ERROR');
         expect(result.data).toBeUndefined();
+    });
+
+    // SPEC-095: destinationType=CITY enforcement
+    it('returns VALIDATION_ERROR when destinationId references a non-CITY destination', async () => {
+        // @ts-expect-error: override for test
+        service._destinationModel = {
+            findById: vi.fn().mockResolvedValue({ destinationType: DestinationTypeEnum.PROVINCE })
+        };
+        const createSpy = vi.spyOn(model, 'create');
+        const result = await service.create(actorWithPerm, validInput);
+        expect(result.error).toBeTruthy();
+        expect(result.error?.code).toBe('VALIDATION_ERROR');
+        expect(result.error?.message).toMatch(/CITY/);
+        expect(createSpy).not.toHaveBeenCalled();
+    });
+
+    it('returns VALIDATION_ERROR when destinationId does not exist', async () => {
+        // @ts-expect-error: override for test
+        service._destinationModel = {
+            findById: vi.fn().mockResolvedValue(null)
+        };
+        const result = await service.create(actorWithPerm, validInput);
+        expect(result.error).toBeTruthy();
+        expect(result.error?.code).toBe('VALIDATION_ERROR');
     });
 });
