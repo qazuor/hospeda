@@ -38,8 +38,8 @@ app.openapi(authStatusOpenAPIRoute, (c) => {
             userId: user?.id,
             actor: {
                 id: actor.id,
-                role: actor.role,
-                permissions: actor.permissions
+                role: actor.role as string,
+                permissions: [...actor.permissions] as string[]
             }
         },
         metadata: {

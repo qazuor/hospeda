@@ -43,8 +43,8 @@ async function fetchOwner(ownerId: string) {
         .where(eq(users.id, ownerId))
         .limit(1);
 
-    if (rows.length === 0) return null;
     const row = rows[0];
+    if (!row) return null;
     const name =
         row.displayName ?? ([row.firstName, row.lastName].filter(Boolean).join(' ') || 'Unknown');
     return { id: row.id, name, image: row.image, createdAt: row.createdAt.toISOString() };

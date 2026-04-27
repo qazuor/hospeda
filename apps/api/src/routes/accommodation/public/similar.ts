@@ -26,7 +26,7 @@ export const publicGetSimilarRoute = createPublicRoute({
     requestQuery: {
         limit: z.coerce.number().int().min(1).max(12).default(6).optional()
     },
-    responseSchema: z.array(z.record(z.unknown())),
+    responseSchema: z.array(z.record(z.string(), z.unknown())),
     handler: async (
         _ctx: Context,
         params: Record<string, unknown>,
@@ -56,11 +56,12 @@ export const publicGetSimilarRoute = createPublicRoute({
             .where(eq(accommodations.id, id))
             .limit(1);
 
-        if (current.length === 0) {
+        const source = current[0];
+        if (!source) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
         }
 
-        const { type, destinationId } = current[0];
+        const { type, destinationId } = source;
 
         // Build OR condition: same type OR same destination
         const similarityConditions = [];
