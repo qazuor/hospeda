@@ -976,7 +976,7 @@
             "id": "T-029",
             "title": "Tests for list() search OR logic fix",
             "description": "Add/update tests verifying list() now uses OR logic for search.\n\nTest cases:\n- Search term matches name column -> item returned\n- Search term matches description column -> item returned (was broken with AND)\n- Search term matches neither -> item not returned\n- Empty search term -> no search filter applied\n- Service with no searchable columns -> no search applied\n\nFile: `packages/service-core/test/base/crud/list.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-028"],
             "blocks": [],
@@ -1003,8 +1003,8 @@
             },
             "timestamps": {
                 "created": "2026-03-20T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T00:36:39.000Z",
+                "completed": "2026-04-27T00:36:39.000Z"
             }
         },
         {
@@ -2373,7 +2373,7 @@
             "id": "T-068",
             "title": "[GAP-005] Add missing schema unit tests (CONFIGURATION_ERROR enum, tag admin-search, review admin-search)",
             "description": "GAP found in audit. Three schema test files are missing:\n\n1. packages/schemas/test/enums/service-error-code.test.ts - Verify CONFIGURATION_ERROR exists\n2. packages/schemas/test/entities/tag/admin-search.test.ts - Verify nameContains removed, color accepted\n3. packages/schemas/test/entities/accommodation-review/admin-search.test.ts - Verify 'false' coerces correctly\n\nThese are quick tests (~20-30 lines each).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-064"],
@@ -2400,18 +2400,19 @@
             },
             "timestamps": {
                 "created": "2026-03-20T18:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T00:36:39.000Z",
+                "completed": "2026-04-27T00:36:39.000Z"
             }
         }
     ],
     "summary": {
         "total": 68,
-        "pending": 2,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 66,
+        "completed": 68,
         "blocked": 0,
         "averageComplexity": 1.9
     },
-    "updated_at": "2026-04-25"
+    "updated_at": "2026-04-27",
+    "status": "completed"
 }

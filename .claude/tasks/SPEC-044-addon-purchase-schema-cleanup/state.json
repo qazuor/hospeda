@@ -42,7 +42,11 @@
             ],
             "tags": ["database", "schema", "drizzle"],
             "phase": "setup",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -70,11 +74,18 @@
                     "title": "Verify partial index WHERE clauses use literal values (hand-edit if $1 placeholders)",
                     "completed": true
                 },
-                { "title": "Append UPDATE status data migration at end of file", "completed": true }
+                {
+                    "title": "Append UPDATE status data migration at end of file",
+                    "completed": true
+                }
             ],
             "tags": ["database", "migration", "drizzle-kit"],
             "phase": "setup",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -113,7 +124,11 @@
             ],
             "tags": ["api", "service", "spelling"],
             "phase": "core",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -137,11 +152,18 @@
                     "title": "Add isNull(deletedAt) to cancelUserAddon() lookup WHERE (~line 247)",
                     "completed": true
                 },
-                { "title": "Ensure isNull is imported from drizzle-orm", "completed": true }
+                {
+                    "title": "Ensure isNull is imported from drizzle-orm",
+                    "completed": true
+                }
             ],
             "tags": ["api", "service", "soft-delete"],
             "phase": "core",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -172,7 +194,11 @@
             ],
             "tags": ["api", "service", "soft-delete"],
             "phase": "core",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -192,11 +218,18 @@
                     "title": "Add isNull(deletedAt) to getCustomerAddonAdjustments() WHERE (~line 525)",
                     "completed": true
                 },
-                { "title": "Ensure isNull is imported from drizzle-orm", "completed": true }
+                {
+                    "title": "Ensure isNull is imported from drizzle-orm",
+                    "completed": true
+                }
             ],
             "tags": ["api", "service", "soft-delete"],
             "phase": "core",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -231,7 +264,11 @@
             ],
             "tags": ["api", "route", "admin", "soft-delete", "spelling"],
             "phase": "core",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -258,7 +295,11 @@
             ],
             "tags": ["api", "route", "soft-delete"],
             "phase": "core",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -285,7 +326,11 @@
             ],
             "tags": ["api", "schema", "zod", "spelling"],
             "phase": "core",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -301,12 +346,22 @@
             "blockedBy": ["T-001", "T-003", "T-004", "T-005", "T-006", "T-007", "T-008", "T-009"],
             "blocks": ["T-011"],
             "subtasks": [
-                { "title": "Run pnpm typecheck", "completed": true },
-                { "title": "Verify zero errors in apps/api and packages/db", "completed": true }
+                {
+                    "title": "Run pnpm typecheck",
+                    "completed": true
+                },
+                {
+                    "title": "Verify zero errors in apps/api and packages/db",
+                    "completed": true
+                }
             ],
             "tags": ["validation", "typecheck"],
             "phase": "core",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -333,7 +388,11 @@
             ],
             "tags": ["admin", "frontend", "types", "spelling"],
             "phase": "integration",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -364,7 +423,11 @@
             ],
             "tags": ["admin", "frontend", "component", "spelling"],
             "phase": "integration",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -387,7 +450,11 @@
             ],
             "tags": ["admin", "frontend", "component", "spelling"],
             "phase": "integration",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -418,7 +485,11 @@
             ],
             "tags": ["admin", "frontend", "route", "spelling"],
             "phase": "integration",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -461,7 +532,11 @@
             ],
             "tags": ["i18n", "locales", "spelling"],
             "phase": "integration",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -492,7 +567,11 @@
             ],
             "tags": ["test", "mock", "spelling"],
             "phase": "testing",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -531,7 +610,11 @@
             ],
             "tags": ["test", "spelling", "assertions"],
             "phase": "testing",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -570,7 +653,11 @@
             ],
             "tags": ["test", "soft-delete", "unit-test"],
             "phase": "testing",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -597,7 +684,11 @@
             ],
             "tags": ["test", "spelling", "unit-test"],
             "phase": "testing",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -613,9 +704,18 @@
             "blockedBy": ["T-002", "T-008", "T-015", "T-017", "T-018", "T-019"],
             "blocks": ["T-021"],
             "subtasks": [
-                { "title": "Run pnpm typecheck - zero errors", "completed": true },
-                { "title": "Run pnpm lint - zero errors", "completed": true },
-                { "title": "Run pnpm test - all pass, coverage OK", "completed": true },
+                {
+                    "title": "Run pnpm typecheck - zero errors",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm lint - zero errors",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm test - all pass, coverage OK",
+                    "completed": true
+                },
                 {
                     "title": "Grep: zero cancelledAt/cancelled_at in TS files (except docs)",
                     "completed": true
@@ -631,7 +731,11 @@
             ],
             "tags": ["validation", "typecheck", "lint", "test", "grep"],
             "phase": "validation",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
                 "started": "2026-03-16T22:00:00.000Z",
@@ -642,34 +746,54 @@
             "id": "T-021",
             "title": "Apply migration to dev database and verify",
             "description": "Apply the migration to the development database:\n\n1. Run `pnpm db:migrate`.\n2. Verify columns: `SELECT column_name FROM information_schema.columns WHERE table_name = 'billing_addon_purchases' ORDER BY ordinal_position;`\n   - `deleted_at` must exist (nullable timestamptz)\n   - `canceled_at` must exist (not `cancelled_at`)\n3. Verify no British status remains: `SELECT COUNT(*) FROM billing_addon_purchases WHERE status = 'cancelled';` → must return 0.\n4. Verify existing data preserved: `SELECT COUNT(*) FROM billing_addon_purchases WHERE canceled_at IS NOT NULL;` → should match pre-migration count of rows with cancellation timestamps.\n\nThis is the final step. After verification, update spec status from 'draft' to 'completed'.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-020"],
             "blocks": [],
             "subtasks": [
-                { "title": "Run pnpm db:migrate", "completed": false },
-                { "title": "Verify deleted_at and canceled_at columns exist", "completed": false },
-                { "title": "Verify zero rows with status = 'cancelled'", "completed": false },
-                { "title": "Verify existing canceled_at timestamps preserved", "completed": false },
-                { "title": "Update spec status to completed", "completed": false }
+                {
+                    "title": "Run pnpm db:migrate",
+                    "completed": false
+                },
+                {
+                    "title": "Verify deleted_at and canceled_at columns exist",
+                    "completed": false
+                },
+                {
+                    "title": "Verify zero rows with status = 'cancelled'",
+                    "completed": false
+                },
+                {
+                    "title": "Verify existing canceled_at timestamps preserved",
+                    "completed": false
+                },
+                {
+                    "title": "Update spec status to completed",
+                    "completed": false
+                }
             ],
             "tags": ["database", "migration", "verification"],
             "phase": "validation",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-03-16T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T00:33:20.000Z",
+                "completed": "2026-04-27T00:33:20.000Z"
             }
         }
     ],
     "summary": {
         "total": 21,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 20,
+        "completed": 21,
         "blocked": 0,
         "averageComplexity": 2.0
     },
-    "updated_at": "2026-04-25"
+    "updated_at": "2026-04-27",
+    "status": "completed"
 }
