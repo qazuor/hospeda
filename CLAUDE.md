@@ -194,6 +194,8 @@ Common biome errors that block commits:
 - Minimize client-side JavaScript
 - Use `client:*` directives wisely (prefer `client:idle` or `client:visible`)
 - i18n for all user-facing text
+- **Styling**: vanilla CSS / CSS Modules (`*.module.css` colocated with the component). Do NOT use Tailwind utility classes here — Tailwind is admin-only.
+- Forms: native HTML + small custom hooks (NOT React Hook Form — that's admin-only)
 
 ### Admin (TanStack Start)
 
@@ -201,6 +203,8 @@ Common biome errors that block commits:
 - TanStack Query for server state
 - Shadcn UI components for consistent UI
 - Better Auth authentication with `beforeLoad` guards
+- **Styling**: Tailwind CSS v4 utility classes. Do NOT use CSS Modules here.
+- Forms: React Hook Form + Zod
 
 ## Environment Configuration
 
@@ -239,7 +243,8 @@ API_PORT=3001
 | Forms | React Hook Form + Zod (admin), native HTML (web) | Formik |
 | Tables | TanStack Table | ag-grid |
 | Data fetching | TanStack Query (admin) | SWR, axios |
-| Styling | Tailwind CSS v4 | CSS modules, styled-components |
+| Styling (Admin) | Tailwind CSS v4 | CSS modules, styled-components, vanilla CSS |
+| Styling (Web) | Vanilla CSS / CSS Modules (`*.module.css`) | Tailwind utility classes, styled-components |
 | Testing | Vitest + testing-library | Jest, Mocha |
 | Lint/Format | Biome | ESLint, Prettier |
 | Logging | `@repo/logger` | console.log in apps |

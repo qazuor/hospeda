@@ -59,9 +59,24 @@ Consistency across a monorepo with 15+ packages requires strict dependency gover
 
 ### Styling
 
-- **Use**: Tailwind CSS v4
-- **Never**: CSS modules, styled-components, emotion, Sass
-- **Reason**: Utility-first, consistent design tokens, dark mode support
+The styling stack differs by app. **Choose based on which app you're touching:**
+
+#### Admin (`apps/admin`)
+
+- **Use**: Tailwind CSS v4 utility classes (with `class-variance-authority` for variants)
+- **Never**: CSS modules, vanilla CSS files, styled-components, emotion, Sass
+- **Reason**: Utility-first, consistent design tokens, dark mode support, fits the Shadcn UI ecosystem
+
+#### Web (`apps/web`)
+
+- **Use**: Vanilla CSS via Astro scoped `<style>` blocks + CSS Modules (`*.module.css`) for React islands. All values come from CSS custom properties defined in `global.css` (the design-token layer).
+- **Never**: Tailwind utility classes, styled-components, emotion, Sass
+- **Reason**: Astro-native scoping, smaller payload for content-heavy public pages, fully tokenized via CSS variables (theming without code changes). See `apps/web/CLAUDE.md` → Styling Rules for the full convention.
+
+#### Shared
+
+- **Always reference design tokens** through `var(--token)` (web) or Tailwind theme tokens (admin) — never hardcode colors, spacing, or radii.
+- **`@repo/tailwind-config`** is the source of truth for admin tokens; web's `global.css` is the source for web tokens. Keep semantic names aligned across both.
 
 ### Testing
 

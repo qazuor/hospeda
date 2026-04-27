@@ -514,6 +514,8 @@ describe('AccommodationCard', () => {
 
 ## Styling
 
+This app uses **Tailwind CSS v4** utility classes (with `class-variance-authority` for component variants). Do NOT use CSS Modules or vanilla CSS files here — that pattern belongs to `apps/web` only.
+
 Use Tailwind CSS with class variance authority:
 
 ```tsx
