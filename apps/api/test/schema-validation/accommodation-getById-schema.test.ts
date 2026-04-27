@@ -3,6 +3,10 @@
  * returns data conforming to AccommodationPublicSchema when relations
  * are populated.
  *
+ * Post SPEC-095: the heavy `destination` relation projection has been
+ * replaced by a lightweight `cityDestination` ref projection on the
+ * response, and `location` carries postal address only.
+ *
  * @module test/schema-validation/accommodation-getById-schema
  */
 
@@ -47,7 +51,7 @@ const ACCOMMODATION_WITH_RELATIONS = {
     ownerId: '33333333-3333-4333-8333-333333333333',
     destinationId: '22222222-2222-4222-8222-222222222222',
     media: VALID_MEDIA,
-    location: { city: 'Concepcion del Uruguay', country: 'Argentina' },
+    location: { street: 'Av. Costanera', number: '123' },
     averageRating: 4.5,
     reviewsCount: 42,
     visibility: 'PUBLIC',
@@ -102,27 +106,17 @@ const ACCOMMODATION_WITH_RELATIONS = {
             category: null
         }
     ],
-    // Relation: destination (DestinationPublicSchema)
-    destination: {
+    // Relation: cityDestination (CityDestinationRefSchema — SPEC-095 lightweight projection)
+    cityDestination: {
         id: '22222222-2222-4222-8222-222222222222',
         slug: 'concepcion-del-uruguay',
         name: 'Concepcion del Uruguay',
         summary: 'A beautiful city in Entre Rios province of Argentina.',
-        description:
-            'Concepcion del Uruguay is a city located on the banks of the Uruguay River in the province of Entre Rios.',
-        isFeatured: true,
         destinationType: 'CITY',
         level: 4,
         path: '/argentina/litoral/entre-rios/concepcion-del-uruguay',
-        media: VALID_MEDIA,
-        location: { city: 'Concepcion del Uruguay', country: 'Argentina' },
-        averageRating: 4.2,
-        reviewsCount: 10,
-        accommodationsCount: 50,
-        visibility: 'PUBLIC',
-        seo: VALID_SEO,
-        tags: [],
-        attractions: []
+        pathIds:
+            '99999999-9999-4999-8999-999999999991,99999999-9999-4999-8999-999999999992,99999999-9999-4999-8999-999999999993,22222222-2222-4222-8222-222222222222'
     }
 };
 
@@ -184,6 +178,9 @@ describe('GAP-031: Accommodation getById schema validation', () => {
         expect(parsed).toHaveProperty('amenities');
         expect(parsed).toHaveProperty('features');
         expect(parsed).toHaveProperty('faqs');
-        expect(parsed).toHaveProperty('destination');
+        expect(parsed).toHaveProperty('cityDestination');
+        expect((parsed.cityDestination as { destinationType?: string })?.destinationType).toBe(
+            'CITY'
+        );
     });
 });

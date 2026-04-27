@@ -3,6 +3,12 @@
  * returns data conforming to EventPublicSchema when relations
  * are populated.
  *
+ * Post SPEC-095: the embedded `location` relation projects via
+ * EventLocationPublicSchema, which carries only `id`, `slug`,
+ * `destinationId`, `placeName`, `coordinates`, plus an optional
+ * `cityDestination` projection. Geographic context (city/state/
+ * country/neighborhood) is no longer on the eventLocation row.
+ *
  * @module test/schema-validation/event-getById-schema
  */
 
@@ -65,16 +71,24 @@ const EVENT_WITH_RELATIONS = {
         contactInfo: { mobilePhone: '+5493442000000' },
         socialNetworks: {}
     },
-    // Relation: location (EventLocationPublicSchema)
+    // Relation: location (EventLocationPublicSchema, post SPEC-095)
     location: {
         id: '22222222-2222-4222-8222-222222222222',
         slug: 'test-venue',
-        city: 'Concepcion del Uruguay',
-        state: 'Entre Rios',
-        country: 'Argentina',
-        neighborhood: 'Centro',
+        destinationId: '44444444-4444-4444-8444-444444444444',
         placeName: 'Teatro Municipal',
-        coordinates: { lat: '-32.4847', long: '-58.2322' }
+        coordinates: { lat: '-32.4847', long: '-58.2322' },
+        cityDestination: {
+            id: '44444444-4444-4444-8444-444444444444',
+            slug: 'concepcion-del-uruguay',
+            name: 'Concepcion del Uruguay',
+            summary: 'A beautiful city in Entre Rios province of Argentina.',
+            destinationType: 'CITY',
+            level: 4,
+            path: '/argentina/litoral/entre-rios/concepcion-del-uruguay',
+            pathIds:
+                '99999999-9999-4999-8999-999999999991,99999999-9999-4999-8999-999999999992,99999999-9999-4999-8999-999999999993,44444444-4444-4444-8444-444444444444'
+        }
     }
 };
 
@@ -133,5 +147,15 @@ describe('GAP-031: Event getById schema validation', () => {
         const parsed = validation.data as Record<string, unknown>;
         expect(parsed).toHaveProperty('organizer');
         expect(parsed).toHaveProperty('location');
+
+        const location = parsed.location as Record<string, unknown> | undefined;
+        expect(location).toBeDefined();
+        expect(location).toHaveProperty('cityDestination');
+        expect(location).toHaveProperty('destinationId');
+        // SPEC-095: stripped legacy fields must not appear on the projection.
+        expect(location).not.toHaveProperty('city');
+        expect(location).not.toHaveProperty('state');
+        expect(location).not.toHaveProperty('country');
+        expect(location).not.toHaveProperty('neighborhood');
     });
 });
