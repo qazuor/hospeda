@@ -256,3 +256,15 @@ Razon comun de promocion: cada uno requiere trabajo multi-archivo y/o decisiones
 
 **Fecha:** 2026-04-20
 
+### GAP-095-01 — Renombrar `accommodation.location` y `event_locations.*` a `address`
+
+- **Severidad:** LOW (P3)
+- **Contexto:** Tras SPEC-095 (destination-relationship-cleanup), el JSONB `location` de accommodations y eventLocations queda con un shape que ya no es "ubicacion geografica" (city/state/country se derivan de la relacion `cityDestination`). Lo que persiste es solo direccion postal del edificio (street, number, floor, apartment, coordinates).
+- **Razon de postergacion:** El refactor de naming toca todos los reads en cards, JSON-LD, forms, transforms, tests. Es trabajo de polish puro, sin cambio funcional. SPEC-095 ya hace el refactor estructural; agregar el rename infla el blast radius sin valor pre-beta.
+- **Considerar en:** PR de cleanup de naming general, o cuando se toque proximo el modulo de accommodation/eventLocation por otra razon.
+- **Cambios necesarios cuando se haga:**
+  - Schemas: rename `AccommodationLocationSchema` -> `AccommodationAddressSchema`, mismo para Event.
+  - DB: rename column `accommodations.location` -> `accommodations.address`. Migration/push.
+  - Service, transforms, cards (Astro + JSON-LD), forms: actualizar reads.
+  - Tests: actualizar fixtures.
+- **Fecha:** 2026-04-27
