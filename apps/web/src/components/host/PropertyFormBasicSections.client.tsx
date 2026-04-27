@@ -6,12 +6,13 @@
  * Extracted from PropertyFormSections.client.tsx to stay under 500 lines.
  * Sections 4-8 live in PropertyFormSections.client.tsx.
  *
- * Location note: `location.city` is written to form state but is not part of
- * BaseLocationSchema (only FullLocationSchema). For MVP it may be silently
- * dropped by the API. Documented in T-010 report.
+ * Section 2 uses {@link CityDestinationPicker} to pick the destination at city
+ * level. The selected destinationId is the canonical "where" for the
+ * accommodation; the rest of the address is captured by optional postal fields.
  */
 
 import { AccommodationTypeEnum } from '@repo/schemas';
+import { CityDestinationPicker } from '../form/CityDestinationPicker.client';
 import styles from './PropertyForm.module.css';
 import type { SectionContentProps } from './PropertyFormSections.client';
 
@@ -194,99 +195,58 @@ export function Section1BasicData({
 
 /**
  * Section 2 renderer — location fields.
- * Fields: country (required), state, city (may be silently dropped by API),
- * zipCode, lat/long coordinates. Leaflet not installed — plain text inputs only.
+ *
+ * Replaces the old free-text city/state/country/zipCode fields with a single
+ * {@link CityDestinationPicker} that writes a CITY-typed `destinationId` to
+ * form state. Coordinates remain manual lat/long inputs until the map
+ * component is wired in.
  */
-export function Section2Location({ form, onFieldChange, onBlur, t }: SectionContentProps) {
+export function Section2Location({
+    form,
+    onFieldChange,
+    onBlur,
+    getError,
+    locale,
+    t
+}: SectionContentProps) {
     type LocationValues = {
-        country?: string;
-        state?: string;
-        city?: string;
-        zipCode?: string;
         coordinates?: { lat?: string; long?: string };
     };
     const location = (form.values.location ?? {}) as LocationValues;
     const coords = location.coordinates ?? {};
 
-    function setLocation(field: string, value: unknown): void {
-        onFieldChange(`location.${field}`, value);
-    }
-
     function setCoord(field: 'lat' | 'long', value: string): void {
         onFieldChange(`location.coordinates.${field}`, value);
     }
 
+    const destinationId = (form.values as { destinationId?: string }).destinationId ?? undefined;
+    const cityDisplayName = (form.values as { _cityDisplayName?: string })._cityDisplayName ?? '';
+    const destinationError = getError('destinationId');
+
+    const cityValue = destinationId ? { id: destinationId, name: cityDisplayName } : null;
+
+    function handleCitySelect(id: string, name: string): void {
+        onFieldChange('destinationId', id);
+        onFieldChange('_cityDisplayName', name);
+    }
+
     return (
         <div className={styles.fieldGroup}>
-            <div className={styles.fieldRow}>
-                <div className={styles.field}>
-                    <label
-                        className={`${styles.label} ${styles.labelRequired}`}
-                        htmlFor="field-country"
-                    >
-                        {t('host.form.sections.ubicacion.fields.country', 'País')}
-                    </label>
-                    <input
-                        id="field-country"
-                        type="text"
-                        className={styles.input}
-                        value={location.country ?? ''}
-                        onChange={(e) => setLocation('country', e.target.value)}
-                        onBlur={onBlur}
-                        aria-required="true"
-                    />
-                </div>
-                <div className={styles.field}>
-                    <label
-                        className={styles.label}
-                        htmlFor="field-state"
-                    >
-                        {t('host.form.sections.ubicacion.fields.state', 'Provincia')}
-                    </label>
-                    <input
-                        id="field-state"
-                        type="text"
-                        className={styles.input}
-                        value={location.state ?? ''}
-                        onChange={(e) => setLocation('state', e.target.value)}
-                        onBlur={onBlur}
-                    />
-                </div>
-            </div>
-
-            <div className={styles.fieldRow}>
-                <div className={styles.field}>
-                    <label
-                        className={styles.label}
-                        htmlFor="field-city"
-                    >
-                        {t('host.form.sections.ubicacion.fields.city', 'Ciudad')}
-                    </label>
-                    <input
-                        id="field-city"
-                        type="text"
-                        className={styles.input}
-                        value={(location as { city?: string }).city ?? ''}
-                        onChange={(e) => setLocation('city', e.target.value)}
-                        onBlur={onBlur}
-                    />
-                </div>
-                <div className={styles.field}>
-                    <label
-                        className={styles.label}
-                        htmlFor="field-postalCode"
-                    >
-                        {t('host.form.sections.ubicacion.fields.postalCode', 'Código postal')}
-                    </label>
-                    <input
-                        id="field-postalCode"
-                        type="text"
-                        className={styles.input}
-                        value={location.zipCode ?? ''}
-                        onChange={(e) => setLocation('zipCode', e.target.value)}
-                        onBlur={onBlur}
-                    />
-                </div>
+            <div className={styles.field}>
+                <label
+                    className={`${styles.label} ${styles.labelRequired}`}
+                    htmlFor="field-city-destination"
+                >
+                    {t('host.form.sections.ubicacion.fields.city', 'Ciudad')}
+                </label>
+                <CityDestinationPicker
+                    inputId="field-city-destination"
+                    locale={locale}
+                    value={cityValue}
+                    onSelect={handleCitySelect}
+                    error={destinationError}
+                    required
+                />
             </div>
 
             <div className={styles.fieldRow}>

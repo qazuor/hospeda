@@ -82,7 +82,7 @@ const completeFormData = {
     name: 'Casa del Río',
     summary: 'Una hermosa casa a orillas del río Uruguay con vista panorámica',
     type: 'HOUSE' as const,
-    location: { country: 'Argentina' },
+    destinationId: '00000000-0000-4000-8000-000000000001',
     extraInfo: { capacity: 6, bedrooms: 3, bathrooms: 2, minNights: 1 },
     media: {
         gallery: [{ url: 'https://cdn.example.com/img.jpg', moderationState: 'PENDING' as const }]

@@ -31,11 +31,16 @@ export type PropertyFormSectionKey =
     | 'publicar';
 
 /**
- * Flattened representation of form data for easy field access.
- * Maps the nested AccommodationCreateInput shape to a flat structure
- * suitable for section-level completion tracking.
+ * Form-internal representation of accommodation data.
+ *
+ * Extends {@link AccommodationCreateInput} with a display-only
+ * `_cityDisplayName` field used to repopulate the city destination picker
+ * when resuming a draft or editing. The field is stripped by Zod on submit.
  */
-export type AccommodationFormData = AccommodationCreateInput;
+export type AccommodationFormData = AccommodationCreateInput & {
+    /** Display name of the selected city destination (form-only). */
+    readonly _cityDisplayName?: string;
+};
 
 /** Props for the usePropertyForm hook. */
 export type UsePropertyFormProps = {
@@ -118,20 +123,21 @@ export const PROPERTY_FORM_SECTIONS: readonly PropertyFormSectionKey[] = [
  * Maps each section to the dot-paths of its required fields.
  * Field names are derived from the actual AccommodationCreateInputSchema shape.
  *
- * Mapping corrections vs. task spec:
- * - 'shortDescription' → 'summary' (actual field name)
- * - 'address' / 'city' / 'country' / 'latitude' / 'longitude' → nested under 'location'
+ * Mapping notes:
+ * - 'shortDescription' → 'summary'
+ * - 'ubicacion' requires `destinationId` (a CITY-typed destination); free-text
+ *   country/state/city were dropped in SPEC-095
  * - 'maxGuests' → 'extraInfo.capacity'
  * - 'bedrooms' / 'bathrooms' → 'extraInfo.bedrooms' / 'extraInfo.bathrooms'
  * - 'images' → 'media.gallery' (array with at least 1 entry)
  * - 'pricePerNight' / 'currency' → 'price.price' / 'price.currency'
- * - 'contactEmail' → 'contactInfo.mobilePhone' (actual required contact field)
+ * - 'contactEmail' → 'contactInfo.mobilePhone'
  * - 'amenities' and 'publicar' sections are optional/review — always complete
  */
 export const SECTION_REQUIRED_FIELDS: Readonly<Record<PropertyFormSectionKey, readonly string[]>> =
     {
         'datos-basicos': ['name', 'summary', 'type'],
-        ubicacion: ['location.country'],
+        ubicacion: ['destinationId'],
         capacidad: ['extraInfo.capacity', 'extraInfo.bedrooms', 'extraInfo.bathrooms'],
         amenities: [],
         fotos: ['media.gallery'],

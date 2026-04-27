@@ -141,7 +141,7 @@ const completeFormData = {
     name: 'Casa del Río',
     summary: 'Una hermosa casa a orillas del río Uruguay con vista panorámica',
     type: 'HOUSE' as const,
-    location: { country: 'Argentina' },
+    destinationId: '00000000-0000-4000-8000-000000000001',
     extraInfo: { capacity: 6, bedrooms: 3, bathrooms: 2, minNights: 1 },
     media: {
         gallery: [{ url: 'https://cdn.example.com/img.jpg', moderationState: 'PENDING' as const }]
@@ -257,14 +257,17 @@ describe('PropertyForm — integration', () => {
             expect(nameInput).toBeInTheDocument();
         });
 
-        it('reflects location.country value from initialData when location section is opened', async () => {
+        it('reflects pre-filled city name in the destination picker when location section is opened', async () => {
             // Arrange
             vi.stubGlobal('fetch', buildFetchMock({ ok: true, body: {} }));
 
             render(
                 <PropertyForm
                     {...defaultProps}
-                    initialData={completeFormData}
+                    initialData={{
+                        ...completeFormData,
+                        _cityDisplayName: 'Concepción del Uruguay'
+                    }}
                 />
             );
 
@@ -282,9 +285,9 @@ describe('PropertyForm — integration', () => {
                 });
             }
 
-            // Assert — country field shows Argentina
-            const countryInput = screen.queryByDisplayValue('Argentina');
-            expect(countryInput).toBeInTheDocument();
+            // Assert — city picker shows the pre-filled display name
+            const cityInput = screen.queryByDisplayValue('Concepción del Uruguay');
+            expect(cityInput).toBeInTheDocument();
         });
 
         it('reflects price.price value from initialData when price section is opened', async () => {
@@ -763,14 +766,17 @@ describe('PropertyForm — integration', () => {
             expect(screen.getByRole('form')).toBeInTheDocument();
         });
 
-        it('location section renders plain country input as fallback (no Leaflet map)', async () => {
+        it('location section renders the city picker with the pre-filled destination', async () => {
             // Arrange
             vi.stubGlobal('fetch', buildFetchMock({ ok: true, body: {} }));
 
             render(
                 <PropertyForm
                     {...defaultProps}
-                    initialData={{ ...completeFormData, location: { country: 'Uruguay' } }}
+                    initialData={{
+                        ...completeFormData,
+                        _cityDisplayName: 'Colonia del Sacramento'
+                    }}
                 />
             );
 
@@ -788,15 +794,13 @@ describe('PropertyForm — integration', () => {
                 });
             }
 
-            // Assert — country input rendered (plain text fallback is active)
-            // The form renders an input for location.country in the location section
+            // Assert — city picker shows the pre-filled display name
             await waitFor(
                 () => {
-                    const countryInput = screen.queryByDisplayValue('Uruguay');
-                    if (countryInput) {
-                        expect(countryInput).toBeInTheDocument();
+                    const cityInput = screen.queryByDisplayValue('Colonia del Sacramento');
+                    if (cityInput) {
+                        expect(cityInput).toBeInTheDocument();
                     } else {
-                        // If section is not open (no toggle found), the form itself is present
                         expect(screen.getByRole('form')).toBeInTheDocument();
                     }
                 },
