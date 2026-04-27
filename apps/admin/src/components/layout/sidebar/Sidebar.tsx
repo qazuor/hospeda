@@ -6,8 +6,10 @@
  */
 
 import { useSidebarContext } from '@/contexts/sidebar-context';
+import { useUnreadCount } from '@/features/conversations/hooks/useUnreadCount';
 import { useTranslations } from '@/hooks/use-translations';
 import { filterByPermissions, useCurrentSidebarConfig } from '@/lib/sections';
+import type { SidebarItem as SidebarItemType } from '@/lib/sections/types';
 import { cn } from '@/lib/utils';
 import type { TranslationKey } from '@repo/i18n';
 import { CloseIcon } from '@repo/icons';
@@ -35,8 +37,23 @@ export function Sidebar({ userPermissions, className }: SidebarProps) {
         return null;
     }
 
+    // Poll unread conversation count for the sidebar badge
+    const { data: unreadData } = useUnreadCount();
+    const unreadCount = unreadData?.count ?? 0;
+
     // Filter items by permissions
-    const filteredItems = filterByPermissions(config.items, userPermissions);
+    const rawFilteredItems = filterByPermissions(config.items, userPermissions);
+
+    // Inject the dynamic unread-count badge into the conversations-inbox item
+    const filteredItems: SidebarItemType[] = rawFilteredItems.map((item) => {
+        if (item.id === 'conversations-inbox' && item.type === 'link') {
+            return {
+                ...item,
+                badge: { count: unreadCount, label: `${unreadCount} unread messages` }
+            };
+        }
+        return item;
+    });
 
     const sidebarTitle = config.titleKey ? t(config.titleKey as TranslationKey) : config.title;
 

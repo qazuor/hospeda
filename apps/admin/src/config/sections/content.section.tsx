@@ -10,6 +10,7 @@ import { createSection, sidebar } from '@/lib/sections';
 import {
     AccommodationIcon,
     AddIcon,
+    ChatIcon,
     CheckCircleIcon,
     ContentIcon,
     DestinationIcon,
@@ -33,7 +34,9 @@ export const contentSection = createSection({
         PermissionEnum.EVENT_VIEW_ALL,
         PermissionEnum.ATTRACTION_VIEW,
         PermissionEnum.AMENITY_VIEW,
-        PermissionEnum.FEATURE_VIEW
+        PermissionEnum.FEATURE_VIEW,
+        PermissionEnum.CONVERSATION_VIEW_OWN,
+        PermissionEnum.CONVERSATION_VIEW_ALL
     ],
     routes: [
         '/accommodations',
@@ -49,7 +52,9 @@ export const contentSection = createSection({
         '/content/accommodation-amenities',
         '/content/accommodation-amenities/**',
         '/content/accommodation-features',
-        '/content/accommodation-features/**'
+        '/content/accommodation-features/**',
+        '/conversations',
+        '/conversations/**'
     ],
     defaultRoute: '/accommodations',
     sidebar: {
@@ -204,6 +209,15 @@ export const contentSection = createSection({
                     )
                 ],
                 <EventIcon className="h-4 w-4" />
+            ),
+            sidebar.separator(),
+            // Conversations inbox — badge count injected dynamically by Sidebar.tsx via useUnreadCount
+            sidebar.link(
+                'conversations-inbox',
+                'Mensajes',
+                '/conversations',
+                <ChatIcon className="h-4 w-4" />,
+                [PermissionEnum.CONVERSATION_VIEW_OWN, PermissionEnum.CONVERSATION_VIEW_ALL]
             )
         ]
     }

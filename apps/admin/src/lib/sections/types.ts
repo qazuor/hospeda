@@ -18,6 +18,16 @@ import type { ReactNode } from 'react';
 export type SidebarItemType = 'link' | 'action' | 'separator' | 'group';
 
 /**
+ * Badge configuration for sidebar items showing dynamic counts.
+ */
+export interface SidebarItemBadge {
+    /** The count to display. Badge is hidden when 0. */
+    count: number;
+    /** Optional accessible label (e.g. "X unread messages") */
+    label?: string;
+}
+
+/**
  * Single sidebar item configuration
  */
 export interface SidebarItem {
@@ -39,6 +49,8 @@ export interface SidebarItem {
     permissions?: string[];
     /** Whether the group is expanded by default */
     defaultExpanded?: boolean;
+    /** Optional badge showing a dynamic count (e.g. unread messages) */
+    badge?: SidebarItemBadge;
 }
 
 /**

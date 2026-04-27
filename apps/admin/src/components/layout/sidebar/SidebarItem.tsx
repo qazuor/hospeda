@@ -34,6 +34,7 @@ export function SidebarItem({ item, onClick, className }: SidebarItemProps) {
 
     // Render link item
     if (item.type === 'link' && item.href) {
+        const badgeCount = item.badge?.count ?? 0;
         return (
             <Link
                 to={item.href}
@@ -53,6 +54,14 @@ export function SidebarItem({ item, onClick, className }: SidebarItemProps) {
             >
                 {item.icon && <span className="flex-shrink-0">{item.icon}</span>}
                 <span className="truncate">{displayLabel}</span>
+                {badgeCount > 0 && (
+                    <span
+                        className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 font-semibold text-destructive-foreground text-xs"
+                        aria-label={item.badge?.label ?? `${badgeCount} unread messages`}
+                    >
+                        {badgeCount > 99 ? '99+' : badgeCount}
+                    </span>
+                )}
             </Link>
         );
     }
