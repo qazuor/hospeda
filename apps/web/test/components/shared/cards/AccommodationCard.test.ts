@@ -168,8 +168,8 @@ describe('AccommodationCard.astro', () => {
             expect(src).toContain('LocationIcon');
         });
 
-        it('should display city from data.location', () => {
-            expect(src).toContain('data.location.city');
+        it('should prefer cityName from cityDestination over legacy location.city (SPEC-095)', () => {
+            expect(src).toContain('data.cityName ?? data.location.city');
         });
 
         it('should conditionally render price when formattedPrice exists', () => {

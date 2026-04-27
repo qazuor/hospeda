@@ -153,9 +153,12 @@ describe('EventCard.astro', () => {
             expect(src).toContain('LocationIcon');
         });
 
-        it('should display venue name and city when location exists', () => {
+        it('should display venue name when location exists', () => {
             expect(src).toContain('data.location.name');
-            expect(src).toContain('data.location.city');
+        });
+
+        it('should prefer cityName from cityDestination over legacy location.city (SPEC-095)', () => {
+            expect(src).toContain('data.cityName ?? data.location.city');
         });
 
         it('should render summary text', () => {
