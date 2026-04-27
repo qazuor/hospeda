@@ -957,7 +957,7 @@ const PARSE_STRIP_CONFIGS: readonly ParseStripConfig[] = [
             lifecycleState: LIFECYCLE_MOCK,
             id: UUID1,
             slug: 'test-location',
-            city: 'Concepcion del Uruguay'
+            destinationId: UUID2
         },
         sensitiveFields: STANDARD_SENSITIVE_FIELDS
     },

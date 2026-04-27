@@ -35,8 +35,8 @@ describe('EventLocation CRUD Schemas', () => {
 
             const result = EventLocationCreateInputSchema.parse(createData);
             expect(result).toBeDefined();
-            expect(result.state).toBe(createData.state);
-            expect(result.country).toBe(createData.country);
+            expect(result.destinationId).toBe(createData.destinationId);
+            expect(result.placeName).toBe(createData.placeName);
         });
 
         it('should reject create input with auto-generated fields', () => {
@@ -92,7 +92,6 @@ describe('EventLocation CRUD Schemas', () => {
             } = validData;
             const updateData = {
                 street: baseData.street,
-                city: baseData.city,
                 placeName: baseData.placeName
             };
 
@@ -100,7 +99,6 @@ describe('EventLocation CRUD Schemas', () => {
 
             const result = EventLocationUpdateInputSchema.parse(updateData);
             expect(result.street).toBe(updateData.street);
-            expect(result.city).toBe(updateData.city);
             expect(result.placeName).toBe(updateData.placeName);
         });
 
@@ -113,14 +111,14 @@ describe('EventLocation CRUD Schemas', () => {
         it('should validate partial update input', () => {
             const updateData = {
                 street: 'Updated Street',
-                city: 'Updated City'
+                placeName: 'Updated Venue'
             };
 
             expect(() => EventLocationUpdateInputSchema.parse(updateData)).not.toThrow();
 
             const result = EventLocationUpdateInputSchema.parse(updateData);
             expect(result.street).toBe('Updated Street');
-            expect(result.city).toBe('Updated City');
+            expect(result.placeName).toBe('Updated Venue');
         });
 
         it('should reject update input with auto-generated fields', () => {

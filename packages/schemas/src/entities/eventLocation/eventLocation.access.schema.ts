@@ -7,26 +7,24 @@ import { EventLocationSchema } from './eventLocation.schema.js';
  * Contains only the minimum data safe to expose to unauthenticated users.
  * Used for public listing and detail pages.
  *
- * Available fields in EventLocationSchema:
- * - From BaseLocationSchema: state, zipCode, country, coordinates
- * - Direct: id, slug, street, number, floor, apartment, neighborhood, city, department, placeName
- * - From BaseAuditFields: createdAt, updatedAt, createdById, updatedById, deletedAt, deletedById
- * - From BaseLifecycleFields: lifecycleState
- * - From BaseAdminFields: adminInfo
+ * Available fields in EventLocationSchema (post SPEC-095):
+ * - Identifiers: id, slug
+ * - Postal address: street, number, floor, apartment, placeName, coordinates
+ * - Destination FK: destinationId (geographic context derived via cityDestination relation)
+ * - Audit: createdAt, updatedAt, createdById, updatedById, deletedAt, deletedById
+ * - Lifecycle: lifecycleState
+ * - Admin: adminInfo
  */
 export const EventLocationPublicSchema = EventLocationSchema.pick({
     // Identification
     id: true,
     slug: true,
 
-    // Location (public safe)
-    city: true,
-    state: true,
-    country: true,
-    neighborhood: true,
-    placeName: true,
+    // Destination FK — geographic context comes from the cityDestination projection.
+    destinationId: true,
 
-    // Coordinates (public safe for maps)
+    // Postal address (public-safe)
+    placeName: true,
     coordinates: true
 });
 
@@ -44,20 +42,15 @@ export const EventLocationProtectedSchema = EventLocationSchema.pick({
     // All public fields
     id: true,
     slug: true,
-    city: true,
-    state: true,
-    country: true,
-    neighborhood: true,
+    destinationId: true,
     placeName: true,
     coordinates: true,
 
-    // Full address (authenticated users)
+    // Full postal address (authenticated users)
     street: true,
     number: true,
     floor: true,
     apartment: true,
-    department: true,
-    zipCode: true,
 
     // Lifecycle (for owners)
     lifecycleState: true,

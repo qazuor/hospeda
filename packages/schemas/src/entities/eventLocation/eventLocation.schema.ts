@@ -3,15 +3,21 @@ import {
     BaseAdminFields,
     BaseAuditFields,
     BaseLifecycleFields,
-    BaseLocationSchema,
     EventLocationIdSchema
 } from '../../common/index.js';
+import { EventLocationAddressSchema } from './eventLocation.address.schema.js';
 
 /**
  * Event Location schema definition using Zod for validation.
- * Represents the location details for an event.
+ *
+ * Represents the venue of an event. Geographic context (city, state, country)
+ * is derived from the `destinationId` FK to a destination of type CITY — this
+ * schema only carries the postal address of the venue plus its identifying
+ * `placeName` (e.g. "Teatro Municipal").
+ *
+ * @see SPEC-095 — destination relationship cleanup.
  */
-export const EventLocationSchema = BaseLocationSchema.extend({
+export const EventLocationSchema = z.object({
     // Base fields
     id: EventLocationIdSchema,
     slug: z
@@ -26,47 +32,8 @@ export const EventLocationSchema = BaseLocationSchema.extend({
     ...BaseAuditFields,
     ...BaseLifecycleFields,
     ...BaseAdminFields,
-    street: z
-        .string()
-        .min(2, { message: 'zodError.eventLocation.street.min' })
-        .max(50, { message: 'zodError.eventLocation.street.max' })
-        .nullish(),
-    number: z
-        .string()
-        .min(1, { message: 'zodError.eventLocation.number.min' })
-        .max(10, { message: 'zodError.eventLocation.number.max' })
-        .nullish(),
-    floor: z
-        .string()
-        .min(1, { message: 'zodError.eventLocation.floor.min' })
-        .max(10, { message: 'zodError.eventLocation.floor.max' })
-        .nullish(),
-    apartment: z
-        .string()
-        .min(1, { message: 'zodError.eventLocation.apartment.min' })
-        .max(10, { message: 'zodError.eventLocation.apartment.max' })
-        .nullish(),
-    neighborhood: z
-        .string()
-        .min(2, { message: 'zodError.eventLocation.neighborhood.min' })
-        .max(50, { message: 'zodError.eventLocation.neighborhood.max' })
-        .nullish(),
-    city: z
-        .string({
-            message: 'zodError.eventLocation.city.required'
-        })
-        .min(2, { message: 'zodError.eventLocation.city.min' })
-        .max(50, { message: 'zodError.eventLocation.city.max' }),
-    department: z
-        .string()
-        .min(2, { message: 'zodError.eventLocation.department.min' })
-        .max(50, { message: 'zodError.eventLocation.department.max' })
-        .nullish(),
-    placeName: z
-        .string()
-        .min(2, { message: 'zodError.eventLocation.placeName.min' })
-        .max(100, { message: 'zodError.eventLocation.placeName.max' })
-        .nullish()
+    // Postal address + destinationId FK (SPEC-095)
+    ...EventLocationAddressSchema.shape
 });
 
 export type EventLocation = z.infer<typeof EventLocationSchema>;

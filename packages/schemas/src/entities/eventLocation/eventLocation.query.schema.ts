@@ -27,11 +27,12 @@ import { EventLocationSchema } from './eventLocation.schema.js';
 export const EventLocationFiltersSchema = z.object({
     // Basic filters
     name: z.string().optional(),
-    city: z.string().optional(),
+
+    // Destination FK filter (SPEC-095): geographic context lives on the destination relation.
+    destinationId: z.string().uuid().optional(),
 
     // Address filters
     streetAddress: z.string().optional(),
-    zipCode: z.string().optional(),
 
     // Capacity filters
     minCapacity: z.number().int().min(0).optional(),
@@ -79,11 +80,12 @@ export type EventLocationFilters = z.infer<typeof EventLocationFiltersSchema>;
 export const EventLocationSearchSchema = BaseSearchSchema.extend({
     // Basic filters (flattened from EventLocationFiltersSchema)
     name: z.string().optional(),
-    city: z.string().optional(),
+
+    // Destination FK filter (SPEC-095): geographic context lives on the destination relation.
+    destinationId: z.string().uuid().optional(),
 
     // Address filters
     streetAddress: z.string().optional(),
-    zipCode: z.string().optional(),
 
     // Capacity filters
     minCapacity: z.number().int().min(0).optional(),
@@ -126,10 +128,7 @@ export const EventLocationListItemSchema = EventLocationSchema.pick({
     placeName: true,
     street: true,
     number: true,
-    city: true,
-    state: true,
-    country: true,
-    zipCode: true,
+    destinationId: true,
     coordinates: true,
     createdAt: true,
     updatedAt: true
@@ -173,9 +172,7 @@ export const EventLocationSummarySchema = EventLocationSchema.pick({
     id: true,
     placeName: true,
     street: true,
-    city: true,
-    state: true,
-    country: true,
+    destinationId: true,
     coordinates: true
 });
 export type EventLocationSummary = z.infer<typeof EventLocationSummarySchema>;

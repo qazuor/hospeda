@@ -19,7 +19,7 @@ describe('EventLocation Query Schemas', () => {
 
         it('should validate filters with multiple fields', () => {
             const filters = {
-                city: 'New York',
+                destinationId: '11111111-1111-4111-8111-111111111111',
                 isActive: true,
                 isVerified: true
             };
@@ -27,35 +27,35 @@ describe('EventLocation Query Schemas', () => {
             expect(() => EventLocationFiltersSchema.parse(filters)).not.toThrow();
 
             const result = EventLocationFiltersSchema.parse(filters);
-            expect(result.city).toBe('New York');
+            expect(result.destinationId).toBe('11111111-1111-4111-8111-111111111111');
             expect(result.isActive).toBe(true);
             expect(result.isVerified).toBe(true);
         });
 
         it('should validate filters with partial fields', () => {
             const filters = {
-                city: 'New York',
+                destinationId: '11111111-1111-4111-8111-111111111111',
                 name: 'park'
             };
 
             expect(() => EventLocationFiltersSchema.parse(filters)).not.toThrow();
 
             const result = EventLocationFiltersSchema.parse(filters);
-            expect(result.city).toBe('New York');
+            expect(result.destinationId).toBe('11111111-1111-4111-8111-111111111111');
             expect(result.name).toBe('park');
         });
 
-        it('should allow filters with empty strings (no minimum length validation)', () => {
+        it('should allow filters with empty name (no minimum length validation)', () => {
             const filters = {
-                city: ''
+                name: ''
             };
 
             expect(() => EventLocationFiltersSchema.parse(filters)).not.toThrow();
         });
 
-        it('should reject filters with invalid types', () => {
+        it('should reject filters with invalid destinationId (not a UUID)', () => {
             const filters = {
-                city: 123 // Should be string
+                destinationId: 'not-a-uuid'
             };
 
             expect(() => EventLocationFiltersSchema.parse(filters)).toThrow(ZodError);
@@ -71,21 +71,21 @@ describe('EventLocation Query Schemas', () => {
 
         it('should validate search input with filters', () => {
             const searchInput = {
-                city: 'New York',
+                destinationId: '11111111-1111-4111-8111-111111111111',
                 name: 'central'
             };
 
             expect(() => EventLocationSearchInputSchema.parse(searchInput)).not.toThrow();
 
             const result = EventLocationSearchInputSchema.parse(searchInput);
-            expect(result.city).toBe('New York');
+            expect(result.destinationId).toBe('11111111-1111-4111-8111-111111111111');
             expect(result.name).toBe('central');
         });
 
         it('should validate search input with q parameter', () => {
             const searchInput = {
                 q: 'search text',
-                city: 'New York',
+                destinationId: '11111111-1111-4111-8111-111111111111',
                 page: 2,
                 pageSize: 20
             };
@@ -173,7 +173,7 @@ describe('EventLocation Query Schemas', () => {
             const listInput = {
                 page: 3,
                 pageSize: 25,
-                city: 'Los Angeles'
+                destinationId: '22222222-2222-4222-8222-222222222222'
             };
 
             expect(() => EventLocationListInputSchema.parse(listInput)).not.toThrow();
@@ -181,7 +181,7 @@ describe('EventLocation Query Schemas', () => {
             const result = EventLocationListInputSchema.parse(listInput);
             expect(result.page).toBe(3);
             expect(result.pageSize).toBe(25);
-            expect(result.city).toBe('Los Angeles');
+            expect(result.destinationId).toBe('22222222-2222-4222-8222-222222222222');
         });
 
         it('should reject list input with invalid page', () => {

@@ -9,7 +9,12 @@ import {
 } from './common.fixtures.js';
 
 /**
- * EventLocation fixtures for testing
+ * EventLocation fixtures for testing.
+ *
+ * Post SPEC-095: geographic context (city, state, country) is removed from
+ * eventLocation. Geography lives on the destination relation accessed via
+ * `destinationId`. Fixtures only generate the postal-address fields plus the
+ * required FK.
  */
 
 /**
@@ -29,12 +34,10 @@ const createValidSlug = () => {
 };
 
 /**
- * Create base location fields directly (not nested)
+ * Create the postal-address + destinationId block (SPEC-095).
  */
-const createDirectLocationFields = () => ({
-    state: faker.location.state().slice(0, 50),
-    zipCode: faker.location.zipCode().slice(0, 20),
-    country: faker.location.country().slice(0, 50),
+const createAddressFields = () => ({
+    destinationId: faker.string.uuid(),
     coordinates: {
         lat: faker.location.latitude().toString(),
         long: faker.location.longitude().toString()
@@ -49,9 +52,6 @@ const createEventLocationEntityFields = () => ({
     number: faker.location.buildingNumber().slice(0, 10),
     floor: faker.number.int({ min: 1, max: 20 }).toString(),
     apartment: faker.string.alphanumeric(5),
-    neighborhood: faker.location.county().slice(0, 50),
-    city: faker.location.city().slice(0, 50),
-    department: faker.location.state().slice(0, 50),
     placeName: faker.company.name().slice(0, 100)
 });
 
@@ -61,17 +61,16 @@ export const createValidEventLocation = () => ({
     ...createBaseAuditFields(),
     ...createEventLocationEntityFields(),
     ...createBaseLifecycleFields(),
-    ...createDirectLocationFields(),
+    ...createAddressFields(),
     ...createBaseAdminFields()
 });
 
 export const createMinimalEventLocation = () => ({
     ...createBaseIdFields(),
     slug: createValidSlug(),
-    city: faker.location.city().slice(0, 50),
     ...createBaseAuditFields(),
     ...createBaseLifecycleFields(),
-    ...createDirectLocationFields()
+    ...createAddressFields()
 });
 
 export const createComplexEventLocation = () => ({
@@ -80,9 +79,6 @@ export const createComplexEventLocation = () => ({
     number: faker.location.buildingNumber(),
     floor: '5',
     apartment: 'A',
-    neighborhood: faker.location.county(),
-    city: faker.location.city(),
-    department: faker.location.state(),
     placeName: faker.company.name()
 });
 
@@ -95,9 +91,6 @@ export const createInvalidEventLocation = () => ({
     number: createTooLongString(20),
     floor: createTooLongString(20),
     apartment: createTooLongString(20),
-    neighborhood: createTooLongString(100),
-    city: createTooLongString(100),
-    department: createTooLongString(100),
     placeName: createTooLongString(200)
 });
 
@@ -108,15 +101,13 @@ export const createEventLocationEdgeCases = () => [
     // With all optional fields
     createComplexEventLocation(),
 
-    // With undefined optional strings (should be valid) - city is required so not undefined
+    // With undefined optional strings (postal address fields)
     {
         ...createMinimalEventLocation(),
         street: undefined,
         number: undefined,
         floor: undefined,
         apartment: undefined,
-        neighborhood: undefined,
-        department: undefined,
         placeName: undefined
     },
 
@@ -128,9 +119,6 @@ export const createEventLocationEdgeCases = () => [
         number: '1',
         floor: '1',
         apartment: '1',
-        neighborhood: 'AB',
-        city: 'AB',
-        department: 'AB',
         placeName: 'AB'
     },
 
@@ -142,9 +130,6 @@ export const createEventLocationEdgeCases = () => [
         number: '1'.repeat(10),
         floor: '1'.repeat(10),
         apartment: 'A'.repeat(10),
-        neighborhood: 'A'.repeat(50),
-        city: 'A'.repeat(50),
-        department: 'A'.repeat(50),
         placeName: 'A'.repeat(100)
     }
 ];
@@ -154,9 +139,6 @@ export const createEventLocationInvalidCases = () => [
     {
         ...createMinimalEventLocation(),
         street: createTooShortString(),
-        neighborhood: createTooShortString(),
-        city: createTooShortString(),
-        department: createTooShortString(),
         placeName: createTooShortString()
     },
 
@@ -167,9 +149,6 @@ export const createEventLocationInvalidCases = () => [
         number: createTooLongString(20),
         floor: createTooLongString(20),
         apartment: createTooLongString(20),
-        neighborhood: createTooLongString(60),
-        city: createTooLongString(60),
-        department: createTooLongString(60),
         placeName: createTooLongString(120)
     },
 
@@ -177,5 +156,11 @@ export const createEventLocationInvalidCases = () => [
     {
         ...createMinimalEventLocation(),
         coordinates: createInvalidCoordinates()
-    }
+    },
+
+    // Missing required destinationId
+    (() => {
+        const { destinationId: _id, ...rest } = createMinimalEventLocation();
+        return rest;
+    })()
 ];

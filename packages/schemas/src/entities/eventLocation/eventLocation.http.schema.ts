@@ -21,9 +21,10 @@ export const EventLocationSearchHttpSchema = BaseHttpSearchSchema.extend({
     name: z.string().optional(),
     description: z.string().optional(),
     street: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    country: z.string().optional(),
+    placeName: z.string().optional(),
+
+    // Destination FK filter (SPEC-095): geographic context lives on the destination relation.
+    destinationId: z.string().uuid().optional(),
 
     // Geographic filters with HTTP coercion
     latitude: z.coerce.number().min(-90).max(90).optional(),
@@ -43,8 +44,7 @@ export const EventLocationSearchHttpSchema = BaseHttpSearchSchema.extend({
     hasCatering: createBooleanQueryParam('Filter locations with catering services'),
 
     // Array filters
-    cities: createArrayQueryParam('Filter by multiple cities'),
-    countries: createArrayQueryParam('Filter by multiple countries'),
+    destinationIds: createArrayQueryParam('Filter by multiple destination IDs'),
     venueTypes: createArrayQueryParam('Filter by venue types')
 });
 
@@ -64,14 +64,14 @@ export const EventLocationCreateHttpSchema = z.object({
         .optional(), // Auto-generated from name if not provided
     description: z.string().min(10).max(500).optional(),
 
-    // Address information
+    // Destination FK (SPEC-095): geographic context lives on the destination relation.
+    destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+
+    // Postal address information
+    placeName: z.string().min(2).max(100).optional(),
     street: z.string().min(2).max(50).optional(),
     number: z.string().min(1).max(10).optional(),
     floor: z.string().max(10).optional(),
-    city: z.string().min(2).max(50),
-    state: z.string().min(2).max(50).optional(),
-    country: z.string().length(2), // ISO country code
-    zipCode: z.string().min(3).max(10).optional(),
 
     // Geographic coordinates
     latitude: z.coerce.number().min(-90).max(90),
@@ -141,7 +141,7 @@ export const httpToDomainEventLocationSearch = (
 
         // Text search filters (only available fields)
         name: httpParams.name,
-        city: httpParams.city,
+        destinationId: httpParams.destinationId,
 
         // Geographic filters
         latitude: httpParams.latitude,
@@ -190,18 +190,15 @@ export const httpToDomainEventLocationCreate = (
         // Required fields
         slug: httpData.slug || generateSlug(httpData.name),
 
-        // Required fields from BaseLocationSchema
-        state: httpData.state || '', // Default if not provided
-        country: httpData.country,
-        zipCode: httpData.zipCode || '', // Required zipCode
+        // Destination FK — geographic context lives in the destination relation (SPEC-095).
+        destinationId: httpData.destinationId,
 
-        // Optional fields
+        // Postal address fields
         street: httpData.street,
         number: httpData.number,
         floor: httpData.floor,
         apartment: undefined, // Not in HTTP schema but in domain
-        neighborhood: undefined, // Not in HTTP schema but in domain
-        city: httpData.city,
+        placeName: httpData.placeName,
 
         // Coordinates
         coordinates:
@@ -229,13 +226,11 @@ export const httpToDomainEventLocationUpdate = (
 ): EventLocationUpdateInput => {
     return {
         // Optional fields that can be updated
-        state: httpData.state,
-        country: httpData.country,
-        zipCode: httpData.zipCode,
+        destinationId: httpData.destinationId,
         street: httpData.street,
         number: httpData.number,
         floor: httpData.floor,
-        city: httpData.city,
+        placeName: httpData.placeName,
 
         // Coordinates
         coordinates:

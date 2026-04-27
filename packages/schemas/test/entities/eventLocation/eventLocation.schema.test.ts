@@ -20,8 +20,7 @@ describe('EventLocationSchema', () => {
             const result = EventLocationSchema.parse(validData);
             expect(result).toBeDefined();
             expect(result.id).toBe(validData.id);
-            expect(result.state).toBe(validData.state);
-            expect(result.country).toBe(validData.country);
+            expect(result.destinationId).toBe(validData.destinationId);
         });
 
         it('should validate minimal required event location data', () => {
@@ -40,10 +39,8 @@ describe('EventLocationSchema', () => {
             expect(result.number).toBeDefined();
             expect(result.floor).toBeDefined();
             expect(result.apartment).toBeDefined();
-            expect(result.neighborhood).toBeDefined();
-            expect(result.city).toBeDefined();
-            expect(result.department).toBeDefined();
             expect(result.placeName).toBeDefined();
+            expect(result.destinationId).toBeDefined();
         });
 
         it('should validate event location edge cases', () => {
@@ -94,9 +91,6 @@ describe('EventLocationSchema', () => {
                 number: undefined,
                 floor: undefined,
                 apartment: undefined,
-                neighborhood: undefined,
-                // city is required, so not setting it to undefined
-                department: undefined,
                 placeName: undefined
             };
 
@@ -151,32 +145,11 @@ describe('EventLocationSchema', () => {
             ).toThrow(ZodError);
         });
 
-        it('should validate city field constraints', () => {
+        it('should validate destinationId is required', () => {
             const baseData = createMinimalEventLocation();
+            const { destinationId, ...withoutDestination } = baseData;
 
-            // Valid city
-            expect(() =>
-                EventLocationSchema.parse({
-                    ...baseData,
-                    city: 'New York'
-                })
-            ).not.toThrow();
-
-            // Too short city
-            expect(() =>
-                EventLocationSchema.parse({
-                    ...baseData,
-                    city: 'A'
-                })
-            ).toThrow(ZodError);
-
-            // Too long city
-            expect(() =>
-                EventLocationSchema.parse({
-                    ...baseData,
-                    city: 'A'.repeat(60)
-                })
-            ).toThrow(ZodError);
+            expect(() => EventLocationSchema.parse(withoutDestination)).toThrow(ZodError);
         });
 
         it('should validate placeName field constraints', () => {
@@ -219,14 +192,14 @@ describe('EventLocationSchema', () => {
             expect(typeof result.updatedAt).toBe('object'); // Date
             expect(typeof result.lifecycleState).toBe('string');
 
+            // Required FK
+            expect(typeof result.destinationId).toBe('string');
+
             // Optional fields
             if (result.street) expect(typeof result.street).toBe('string');
             if (result.number) expect(typeof result.number).toBe('string');
             if (result.floor) expect(typeof result.floor).toBe('string');
             if (result.apartment) expect(typeof result.apartment).toBe('string');
-            if (result.neighborhood) expect(typeof result.neighborhood).toBe('string');
-            if (result.city) expect(typeof result.city).toBe('string');
-            if (result.department) expect(typeof result.department).toBe('string');
             if (result.placeName) expect(typeof result.placeName).toBe('string');
         });
     });
