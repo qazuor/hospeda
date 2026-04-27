@@ -1,5 +1,9 @@
 import type { AccommodationModel } from '@repo/db';
-import { AccommodationUpdateInputSchema, ServiceErrorCode } from '@repo/schemas';
+import {
+    AccommodationUpdateInputSchema,
+    DestinationTypeEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { z } from 'zod';
 import { ZodError } from 'zod';
@@ -48,6 +52,12 @@ describe('AccommodationService.update', () => {
     beforeEach(() => {
         model = createMockBaseModel();
         service = new AccommodationService({ logger: mockLogger }, model as AccommodationModel);
+        // SPEC-095: stub the private destination model so _assertDestinationIsCity
+        // resolves a CITY destination without hitting the real DB.
+        // @ts-expect-error: override for test
+        service._destinationModel = {
+            findById: vi.fn().mockResolvedValue({ destinationType: DestinationTypeEnum.CITY })
+        };
         vi.clearAllMocks();
     });
 
@@ -130,5 +140,24 @@ describe('AccommodationService.update', () => {
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
         expect(result.data).toBeUndefined();
+    });
+
+    // SPEC-095: destinationType=CITY enforcement on update
+    it('should return VALIDATION_ERROR when changing destinationId to a non-CITY destination', async () => {
+        const actor = createAdminActor();
+        const id = 'mock-id';
+        const existing = { ...createNewAccommodationInput(), id };
+        (model.findById as Mock).mockResolvedValue(existing);
+        // @ts-expect-error: override for test
+        service._destinationModel = {
+            findById: vi.fn().mockResolvedValue({ destinationType: DestinationTypeEnum.PROVINCE })
+        };
+        const result = await service.update(actor, id, {
+            destinationId: '11111111-1111-4111-8111-111111111111'
+        });
+        expect(result.error).toBeDefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(result.error?.message).toMatch(/CITY/);
+        expect(model.update).not.toHaveBeenCalled();
     });
 });

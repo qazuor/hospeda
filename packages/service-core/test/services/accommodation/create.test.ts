@@ -1,5 +1,5 @@
 import type { AccommodationModel } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
+import { DestinationTypeEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as helpers from '../../../src/services/accommodation/accommodation.helpers';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
@@ -25,6 +25,12 @@ describe('AccommodationService.create', () => {
         // @ts-expect-error: override for test
         service.destinationService = {
             updateAccommodationsCount: vi.fn().mockResolvedValue(undefined)
+        };
+        // SPEC-095: stub the private destination model so _assertDestinationIsCity
+        // resolves a CITY destination without hitting the real DB.
+        // @ts-expect-error: override for test
+        service._destinationModel = {
+            findById: vi.fn().mockResolvedValue({ destinationType: DestinationTypeEnum.CITY })
         };
         vi.clearAllMocks();
     });
@@ -102,6 +108,43 @@ describe('AccommodationService.create', () => {
         // Assert
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+        expect(result.data).toBeUndefined();
+    });
+
+    // SPEC-095: destinationType=CITY enforcement
+    it('should return VALIDATION_ERROR if destinationId references a non-CITY destination', async () => {
+        const actor = createAdminActor();
+        const input = createMockAccommodationCreateInput({
+            reviewsCount: 0,
+            averageRating: 0,
+            tags: []
+        });
+        // @ts-expect-error: override for test
+        service._destinationModel = {
+            findById: vi.fn().mockResolvedValue({ destinationType: DestinationTypeEnum.PROVINCE })
+        };
+        const result = await service.create(actor, input);
+        expect(result.error).toBeDefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(result.error?.message).toMatch(/CITY/);
+        expect(result.data).toBeUndefined();
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('should return VALIDATION_ERROR if destinationId does not exist', async () => {
+        const actor = createAdminActor();
+        const input = createMockAccommodationCreateInput({
+            reviewsCount: 0,
+            averageRating: 0,
+            tags: []
+        });
+        // @ts-expect-error: override for test
+        service._destinationModel = {
+            findById: vi.fn().mockResolvedValue(null)
+        };
+        const result = await service.create(actor, input);
+        expect(result.error).toBeDefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
         expect(result.data).toBeUndefined();
     });
 });

@@ -53,6 +53,7 @@ import {
     type AccommodationUpdateInput,
     AccommodationUpdateInputSchema,
     type CountResponse,
+    DestinationTypeEnum,
     type EntityFilters,
     type IdOrSlugParams,
     IdOrSlugParamsSchema,
@@ -356,6 +357,8 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<Partial<Accommodation>> {
+        await this._assertDestinationIsCity(data.destinationId);
+
         // Only generate a slug if one is not already provided
         if (!data.slug) {
             const slug = await generateSlug(data.type as string, data.name as string);
@@ -363,6 +366,32 @@ export class AccommodationService extends BaseCrudService<
         }
         // If slug is provided, return empty object to avoid overwriting
         return {};
+    }
+
+    /**
+     * SPEC-095: enforce that an accommodation can only reference a destination
+     * of type `CITY`. Province- or higher-level destinations are too coarse;
+     * neighborhood- or town-level destinations should resolve up to their CITY
+     * ancestor before being assigned.
+     *
+     * @throws ServiceError(VALIDATION_ERROR) if the destination is missing or
+     * not a CITY.
+     */
+    private async _assertDestinationIsCity(destinationId: string | undefined): Promise<void> {
+        if (!destinationId) return;
+        const destination = await this._destinationModel.findById(destinationId);
+        if (!destination) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                `Destination ${destinationId} does not exist`
+            );
+        }
+        if (destination.destinationType !== DestinationTypeEnum.CITY) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'destinationId must reference a destination of type CITY'
+            );
+        }
     }
 
     /**
@@ -431,6 +460,11 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<Partial<Accommodation>> {
+        // SPEC-095: when destinationId is being changed, validate it is a CITY.
+        if (data.destinationId) {
+            await this._assertDestinationIsCity(data.destinationId);
+        }
+
         // Store the incoming lifecycleState (target state) so _afterUpdate can read it.
         // We cannot retrieve the PREVIOUS state here because the entity ID is not available
         // in _beforeUpdate parameters. The idempotency guard in _afterUpdate handles this.
