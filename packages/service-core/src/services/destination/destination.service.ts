@@ -1,4 +1,4 @@
-import { AccommodationModel, DestinationModel } from '@repo/db';
+import { AccommodationModel, DestinationModel, buildSearchCondition } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
@@ -211,6 +211,7 @@ export class DestinationService extends BaseCrudService<
     private extractImplementedFilters(params: DestinationSearchInput): {
         page: number;
         pageSize: number;
+        q?: string;
         country?: string;
         state?: string;
         city?: string;
@@ -225,6 +226,7 @@ export class DestinationService extends BaseCrudService<
             pageSize = 10,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
+            q,
             country,
             state,
             city,
@@ -234,7 +236,6 @@ export class DestinationService extends BaseCrudService<
             destinationType,
             level,
             // Unimplemented filters — warn and drop.
-            q,
             latitude,
             longitude,
             radius,
@@ -248,7 +249,6 @@ export class DestinationService extends BaseCrudService<
         } = params;
 
         const unimplemented: Record<string, unknown> = {};
-        if (q !== undefined) unimplemented.q = q;
         if (latitude !== undefined) unimplemented.latitude = latitude;
         if (longitude !== undefined) unimplemented.longitude = longitude;
         if (radius !== undefined) unimplemented.radius = radius;
@@ -270,6 +270,7 @@ export class DestinationService extends BaseCrudService<
         return {
             page,
             pageSize,
+            q,
             country,
             state,
             city,
@@ -293,8 +294,7 @@ export class DestinationService extends BaseCrudService<
         _ctx: ServiceContext
     ) {
         const {
-            page,
-            pageSize,
+            q,
             country,
             state,
             city,
@@ -304,6 +304,12 @@ export class DestinationService extends BaseCrudService<
             destinationType,
             level
         } = this.extractImplementedFilters(params);
+
+        // SPEC-088: pagination is stripped from params by BaseCrudRead.search and
+        // forwarded via ctx.pagination instead. Fall back to extractImplementedFilters
+        // defaults if the caller provided no explicit pagination.
+        const page = _ctx.pagination?.page ?? 1;
+        const pageSize = _ctx.pagination?.pageSize ?? 10;
 
         // Build where clause from the subset of filters that map to real columns.
         // Note: country/state/city are not direct columns (stored in location jsonb)
@@ -318,6 +324,15 @@ export class DestinationService extends BaseCrudService<
         if (destinationType) where.destinationType = destinationType;
         if (level !== undefined) where.level = level;
 
+        // Build optional ILIKE search condition over getSearchableColumns()
+        // (name + description). Used by the city autocomplete picker.
+        const trimmedQ = q?.trim();
+        const searchCondition =
+            trimmedQ && trimmedQ.length > 0
+                ? buildSearchCondition(trimmedQ, this.getSearchableColumns(), this.model.getTable())
+                : undefined;
+        const additionalConditions = searchCondition ? [searchCondition] : undefined;
+
         // Special handling for ancestorId (requires LIKE query on pathIds)
         if (ancestorId) {
             const descendants = await this.model.findDescendants(ancestorId, {
@@ -331,13 +346,23 @@ export class DestinationService extends BaseCrudService<
             if (level !== undefined) {
                 filtered = filtered.filter((d) => d.level === level);
             }
+            if (trimmedQ && trimmedQ.length > 0) {
+                const needle = trimmedQ.toLowerCase();
+                filtered = filtered.filter(
+                    (d) =>
+                        d.name?.toLowerCase().includes(needle) ||
+                        d.description?.toLowerCase().includes(needle)
+                );
+            }
             // Manual pagination
             const total = filtered.length;
             const items = filtered.slice((page - 1) * pageSize, page * pageSize);
             return { items, total };
         }
 
-        return this.model.findAll(where, { page, pageSize });
+        return additionalConditions
+            ? this.model.findAll(where, { page, pageSize }, additionalConditions)
+            : this.model.findAll(where, { page, pageSize });
     }
 
     /**
