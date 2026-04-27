@@ -201,13 +201,16 @@ Seguir `.claude/specs/SPEC-091-mvp-blockers/staging-runbook.md`. No saltar pasos
 
 ### 11. Schema gaps menores
 
-#### `location.city` ✅ DONE (2026-04-27)
+#### `location.city` ✅ SUPERSEDED by SPEC-095 (2026-04-27)
 
-- [x] `city` agregado como campo opcional a `BaseLocationSchema` (additive, sin
-  breaking changes). El DB column ya era `jsonb<FullLocationType>`, así que la
-  asimetría era solo a nivel Zod. Ahora el host onboarding payload persiste
-  city y los cards (`AccommodationCard`, `PropertyCard`) lo leen sin caer en
-  fallbacks. `FullLocationSchema` mantiene su `city` required vía override.
+- [x] El hotfix inicial (commit `7d19f59c`) que agregó `city` opcional a
+  `BaseLocationSchema` fue revertido como parte de SPEC-095
+  (Destination Relationship Cleanup). La solución estructural reemplaza el
+  string libre por una FK a un destino del portal de tipo `CITY`, con
+  validación service-level y proyección `cityDestination` en el response.
+- [x] Los cards y JSON-LD ahora leen city de `cityDestination.name` (derivado
+  vía transforms en el web app), no de `location.city`.
+- Track de implementación: `.claude/specs/SPEC-095-destination-relationship-cleanup/spec.md`
 
 #### `amenityIds` no está en `AccommodationCreateInput` (post-beta)
 
