@@ -38,6 +38,10 @@ import {
     checkCanDeleteEventLocation,
     checkCanUpdateEventLocation
 } from './eventLocation.permissions';
+import {
+    projectEventLocationCityDestination,
+    projectEventLocationCityDestinationList
+} from './eventLocation.projections';
 
 /**
  * Service for managing event locations. Implements business logic, permissions, and hooks for EventLocation entities.
@@ -151,6 +155,43 @@ export class EventLocationService extends BaseCrudService<
             await this._assertDestinationIsCity(data.destinationId);
         }
         return data as Partial<EventLocation>;
+    }
+
+    /**
+     * SPEC-095: project the eager-loaded destination relation into a
+     * lightweight `cityDestination` field so the API response-schema parse
+     * picks it up.
+     */
+    protected override async _afterGetByField(
+        entity: EventLocation | null,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<EventLocation | null> {
+        return projectEventLocationCityDestination(entity);
+    }
+
+    protected override async _afterList(
+        result: PaginatedListOutput<EventLocation>,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<PaginatedListOutput<EventLocation>> {
+        if (!result?.items) return result;
+        return {
+            ...result,
+            items: projectEventLocationCityDestinationList(result.items)
+        };
+    }
+
+    protected override async _afterSearch(
+        result: PaginatedListOutput<EventLocation>,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<PaginatedListOutput<EventLocation>> {
+        if (!result?.items) return result;
+        return {
+            ...result,
+            items: projectEventLocationCityDestinationList(result.items)
+        };
     }
 
     /**
