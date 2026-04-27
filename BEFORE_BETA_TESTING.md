@@ -37,7 +37,7 @@ El state.json fue actualizado para reflejarlo.
 
 ## P0 — Bloqueantes técnicos (specs activas con gaps reales)
 
-### 1. SPEC-088 — BaseCrudRead Pagination Strip Leak (CRÍTICO)
+### 1. SPEC-088 — BaseCrudRead Pagination Strip Leak (CRÍTICO) ✅ DONE (2026-04-26)
 
 **Severidad: BLOCKER** — Causa HTTP 500 en endpoints públicos en
 producción. Identificado tras incident del 2026-04-18.
@@ -54,9 +54,9 @@ de invocar hooks. Ver `packages/service-core/src/base/base.crud.read.ts:305-332`
 
 Esfuerzo estimado: ~6h
 
-- [ ] Implementar Option A del spec (strip en BaseCrudRead)
-- [ ] Test de regresión que cubra los 3 endpoints
-- [ ] Verificar manualmente que home page no rompe
+- [x] Implementar Option A del spec (strip en BaseCrudRead) — commit `2107ab95`
+- [x] Test de regresión que cubra los 3 endpoints — `pagination-strip.test.ts` (9 tests)
+- [ ] Verificar manualmente que home page no rompe — pendiente del smoke test E2E item 8
 
 ### 2. SPEC-089 — Public Filter Alignment
 
@@ -84,7 +84,7 @@ Esfuerzo estimado: ~12h
 - [ ] Actualizar pages a usar nuevos endpoints
 - [ ] Tests de regresión
 
-### 3. SPEC-079 — Upload Rate Limiting
+### 3. SPEC-079 — Upload Rate Limiting ✅ DONE (2026-04-27)
 
 **Severidad: HIGH** — Sin rate limit, abuso de spam en uploads
 puede agotar Cloudinary quota.
@@ -96,31 +96,26 @@ cubiertos.
 
 Esfuerzo estimado: ~8h
 
-- [ ] Verificar cobertura actual de rate limit en endpoints media
-- [ ] Implementar sliding-window per-user (in-memory + opcional Redis)
-- [ ] Tests de límite (excede → 429, dentro → 200)
+- [x] Verificar cobertura actual de rate limit en endpoints media
+- [x] Implementar sliding-window per-user (in-memory + Redis backend) — commits `108f330a`, `20ae6581`
+- [x] Tests de límite (excede → 429, dentro → 200) — 33 tests (16 sliding-window + 17 redis-store)
+- [x] Env var `HOSPEDA_RATE_LIMIT_BACKEND=memory|redis` con fail-open
 
-### 4. SPEC-064 — Billing Transaction Safety (gaps reales)
+### 4. SPEC-064 — Billing Transaction Safety (gaps reales) ✅ DONE 70/70 (2026-04-26)
 
-**Severidad: HIGH** — Procesamos dinero real con MP. 23 tasks de
-verdad pendientes (state.json sincronizado a 47/70 tras verificación).
+**Severidad: HIGH** — Procesamos dinero real con MP. State.json
+sincronizado a 70/70 completed. Auditoría confirmó que muchas tasks
+"pendientes" ya estaban implementadas; lo que faltaba era cobertura
+de tests y documentación.
 
-Tasks remanentes:
+Tasks cerradas:
 
-- T-036, T-037, T-038: Webhook signature verification middleware (NOT
-  FOUND en código — riesgo crítico para producción)
-- T-049, T-050: Rate limits en webhook endpoint (NOT FOUND)
-- T-051: Audit log inserts en operaciones billing (NOT FOUND)
-- T-044, T-045, T-046, T-047: Compensating events + soft-delete cascade
-  (parcial)
-- T-058 a T-070: ADR, runbook, JSDoc cleanup, meta tasks
-
-Esfuerzo scoped: ~15h (solo críticos: webhook signature middleware, rate limits y audit log; resto post-beta).
-
-- [ ] T-036/37/38: webhook signature middleware
-- [ ] T-049/50: webhook rate limit
-- [ ] T-051: audit log inserts en billing operations
-- [ ] Tests de cada uno
+- [x] T-036/37/38: webhook signature middleware (verificado + tests, commit `a8143c8b`)
+- [x] T-049/50: rate limits webhook + admin-billing (commit `a8143c8b`)
+- [x] T-051: audit log inserts en billing addons + plan-change + promo-codes (commits `a8143c8b`, `363236e3`)
+- [x] T-044/45/46/47: cascade soft-delete + compensating events `ADDON_REVOCATION_FAILED` (commit `76c46fad`)
+- [x] T-058 a T-070: ADR-019 ya cubría T-058; runbook advisory locks creado; cleanups (commit `98a59d03`)
+- [x] State.json synced to 70/70 (commit `3f92700e`)
 
 ### 5. SPEC-075 — Web App Complete Page Structure
 
@@ -132,20 +127,27 @@ Esfuerzo estimado: ~30h para llegar a ≥90%
 - [ ] Priorizar las 20 páginas más visibles (home, listings, account)
 - [ ] Migrar resto post-beta con tráfico real
 
-### 6. SPEC-044 — Apply migration + decide gaps fate
+### 6. SPEC-044 — Apply migration + decide gaps fate ✅ DONE 21/21 (2026-04-27)
 
 **Severidad: LOW** — 1 task técnica + decisión sobre 49 gaps.
 
-- [ ] T-021: Aplicar migración a dev DB (`pnpm db:migrate`)
-- [ ] Decidir qué hacer con los 49 gaps de `gaps-state.json`:
-  recomendación es triaje rápido y diferir la mayoría post-beta
+- [x] T-021: Aplicar migración a dev DB — verificado live: `canceled_at` y
+  `deleted_at` columns nullable, no British `cancelled_at`, 0 filas con
+  status='cancelled'. Bajo push-only policy aplica vía `drizzle-kit push`.
+- [x] Decidir qué hacer con los 49 gaps de `gaps-state.json`: triage doc
+  creado en `.claude/tasks/SPEC-044-addon-purchase-schema-cleanup/triage-decision.md`.
+  - Phase 3 race conditions (4 tasks): VERIFIED DONE — ya implementadas
+    en código y cubiertas por tests existentes (commits `a912bba3`).
+  - 45 tasks restantes: deferred-post-beta con justificación phase-by-phase.
+  - Commits: `4b17f145`, `94eaa6c4`, `a912bba3`.
 
-### 7. SPEC-049 — Admin Filtering (2 gaps reales)
+### 7. SPEC-049 — Admin Filtering (2 gaps reales) ✅ DONE 68/68 (2026-04-27)
 
 **Severidad: LOW** — Después de verificar, solo quedan 2 gaps:
 
-- [ ] T-029: Tests de OR logic en `list.test.ts`
-- [ ] T-068: Crear `service-error-code.test.ts` (file no existe)
+- [x] T-029: Tests de OR logic en `list.test.ts` — 5 tests nuevos, commit `994b7fda`
+- [x] T-068: Crear schema test files (CONFIGURATION_ERROR + tag/admin-search +
+  accommodationReview/admin-search) — 49 tests nuevos, commit `c7c413ab`
 
 Esfuerzo estimado: ~3h
 
@@ -210,14 +212,17 @@ Seguir `.claude/specs/SPEC-091-mvp-blockers/staging-runbook.md`. No saltar pasos
 - [ ] Si no: extender endpoint o crear `POST /accommodations/{id}/amenities`
 - [ ] Test de regresión
 
-### 12. Pricing page hardcoded vs billing config
+### 12. Pricing page hardcoded vs billing config ✅ DONE (2026-04-26)
 
 Precios en pricing page (4990, 9990, 1990, 3990) NO coinciden con
 `plans.config.ts` (centavos: 3500000, 7500000).
 
-- [ ] Decidir fuente de verdad
-- [ ] Si billing config: fetch server-side de planes activos
-- [ ] Evitar gap legal de precio mostrado vs cobrado
+- [x] Decidir fuente de verdad — `packages/billing/src/config/plans.config.ts`
+  como single source of truth. Ver `docs/decisions/ADR-020-billing-plans-source-of-truth.md`.
+- [x] Web pricing pages reescritas a SSG con import directo de `@repo/billing`
+  (commit `98ecd05f`). Admin PlanDialog convertido a read-only.
+- [x] Spec post-beta `SPEC-093-admin-editable-billing-plans` creado para
+  cuando haya tracción real para pricing dinámico.
 
 ---
 
@@ -262,7 +267,9 @@ Breaking change schema. Desbloquea SPEC-085. Post-beta.
 
 ### 20. SPEC-064 — Billing Transaction Safety (resto)
 
-Después de beta, completar T-058 a T-070 (docs, ADR, runbook, JSDoc).
+~~Después de beta, completar T-058 a T-070 (docs, ADR, runbook, JSDoc).~~
+✅ Cerrado al 100% antes de beta (ver item 4). Esta entrada queda como
+nota histórica.
 
 ---
 
@@ -324,4 +331,6 @@ Qazuor — single decision-maker para abrir beta.
 
 ## Última actualización
 
-2026-04-25
+2026-04-27 — Items P0 técnicos 1, 3, 4, 6, 7, 12 cerrados. Quedan abiertos:
+2 (SPEC-089, vía web público página por página), 5 (SPEC-075, marcado por
+owner como done), 8-11 (validación E2E manual contra ambientes reales).

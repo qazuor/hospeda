@@ -3,11 +3,12 @@
 ## Metadata
 
 - **ID**: SPEC-044
-- **Status**: in-progress
+- **Status**: completed (2026-04-27)
 - **Created**: 2026-03-16
-- **Updated**: 2026-04-08
+- **Updated**: 2026-04-27 (21/21 tasks completed; 49 gap tasks deferred-post-beta with Phase 3 verified done — see triage-decision.md)
 - **Priority**: high
 - **Effort**: medium (2-3 days)
+- **Closing commits**: `94eaa6c4`, `4b17f145`, `a912bba3`
 - **Origin**: SPEC-038 gaps GAP-038-45 and GAP-038-25
 - **Related**: SPEC-038 (Addon Entitlements Architecture Fix)
 

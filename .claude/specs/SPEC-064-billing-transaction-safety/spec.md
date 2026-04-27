@@ -1,11 +1,12 @@
 # SPEC-064: Billing Transaction Safety
 
-> **Status**: draft
+> **Status**: completed (2026-04-26)
 > **Priority**: P1
 > **Complexity**: High
 > **Origin**: SPEC-053 gaps (GAP-066)
 > **Created**: 2026-04-01
-> **Updated**: 2026-04-04 (revision 6: exhaustive external verification pass; see Revision History)
+> **Updated**: 2026-04-26 (70/70 tasks completed)
+> **Closing commits**: `a8143c8b`, `76c46fad`, `363236e3`, `98a59d03`, `3f92700e`
 > **Depends on**: SPEC-058 (DrizzleClient type, QueryContext), SPEC-059 Phases 1-3 (ServiceContext, withServiceTransaction patterns), SPEC-061 (integration testing infrastructure)
 > **Risk**: HIGH (financial-critical code)
 

@@ -3,9 +3,14 @@ spec-id: SPEC-049
 title: "Admin List Filtering: adminList() Method for BaseCrudService"
 type: bugfix
 complexity: high
-status: in-progress
+status: completed
 created: 2026-03-20T04:30:00.000Z
 approved: 2026-03-20T04:30:00.000Z
+completed: 2026-04-27T00:00:00.000Z
+closing_commits:
+  - 994b7fda  # test(service-core): assert list() forwards OR-logic search conditions
+  - c7c413ab  # test(schemas): add CONFIGURATION_ERROR, tag and review admin-search tests
+  - 94eaa6c4  # chore(tasks): mark SPEC-044 (21/21) and SPEC-049 (68/68) completed
 ---
 
 # SPEC-049: Admin List Filtering - adminList() Method for BaseCrudService

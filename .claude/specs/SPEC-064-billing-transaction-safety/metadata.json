@@ -4,9 +4,10 @@
     "complexity": "high",
     "type": "bugfix",
     "tags": ["billing", "transactions", "advisory-locks", "safety", "database"],
-    "status": "draft",
+    "status": "completed",
     "priority": "P1",
     "risk": "HIGH",
     "created": "2026-04-01",
-    "updated": "2026-04-04"
+    "updated": "2026-04-04",
+    "updated_at": "2026-04-27"
 }
