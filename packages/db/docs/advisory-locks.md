@@ -9,6 +9,9 @@ All PostgreSQL advisory locks used in the Hospeda platform. Lock IDs must be uni
 | 43001 | `apps/api/src/cron/jobs/addon-expiry.job.ts` | Prevent overlapping addon expiry cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-064 |
 | hash-derived | `apps/api/src/services/addon-plan-change.service.ts` | Per-customer addon recalculation serialization | `pg_advisory_xact_lock` (blocking) | SPEC-064 |
 | 43010 | `apps/api/src/cron/jobs/archive-expired-promotions.job.ts` | Prevent overlapping promotion archive cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-063 |
+| 43020 | `apps/api/src/cron/jobs/conversation-notification-dispatch.job.ts` | Prevent overlapping conversation notification dispatch (5-min cron) | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-085 |
+| 43021 | `apps/api/src/cron/jobs/conversation-token-reminder.job.ts` | Prevent overlapping conversation token reminder dispatch (day15/day25, daily cron) | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-085 |
+| 43022 | `apps/api/src/cron/jobs/conversation-token-cleanup.job.ts` | Prevent overlapping expired conversation access token cleanup (daily cron) | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-085 |
 
 ## Rules
 

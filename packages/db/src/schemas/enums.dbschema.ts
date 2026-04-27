@@ -5,6 +5,7 @@ import {
     AuthProviderEnum,
     BillingIntervalEnum,
     ClientTypeEnum,
+    ConversationStatusEnum,
     DestinationTypeEnum,
     EntityPermissionReasonEnum,
     EntityTypeEnum,
@@ -13,7 +14,10 @@ import {
     ExchangeRateTypeEnum,
     InvoiceStatusEnum,
     LifecycleStatusEnum,
+    MessageSenderTypeEnum,
+    MessageStatusEnum,
     ModerationStatusEnum,
+    NotificationRecipientSideEnum,
     OwnerPromotionDiscountTypeEnum,
     PaymentStatusEnum,
     PermissionCategoryEnum,
@@ -146,3 +150,20 @@ export const PaymentStatusPgEnum = pgEnum('payment_status_enum', enumToTuple(Pay
 export const InvoiceStatusPgEnum = pgEnum('invoice_status_enum', enumToTuple(InvoiceStatusEnum));
 
 export const RefundStatusPgEnum = pgEnum('refund_status_enum', enumToTuple(RefundStatusEnum));
+
+export const ConversationStatusPgEnum = pgEnum(
+    'conversation_status_enum',
+    enumToTuple(ConversationStatusEnum)
+);
+
+export const MessageStatusPgEnum = pgEnum('message_status_enum', enumToTuple(MessageStatusEnum));
+
+export const MessageSenderTypePgEnum = pgEnum(
+    'message_sender_type_enum',
+    enumToTuple(MessageSenderTypeEnum)
+);
+
+export const NotificationRecipientSidePgEnum = pgEnum(
+    'notification_recipient_side_enum',
+    enumToTuple(NotificationRecipientSideEnum)
+);
