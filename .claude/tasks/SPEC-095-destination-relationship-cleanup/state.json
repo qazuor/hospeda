@@ -389,21 +389,21 @@
             "id": "T-015",
             "title": "Update transforms.ts to derive cityName, cityPath, cityDestinationSlug from cityDestination",
             "description": "Update `apps/web/src/lib/api/transforms.ts` \u2014 and any sibling transform files for events \u2014 to read from `cityDestination` instead of `location.city`.\n\nFiles to modify:\n- `apps/web/src/lib/api/transforms.ts` \u2014 `transformAccommodation` and `transformEvent` (or equivalents)\n\nFor each transform, derive:\n- `cityName: string` from `cityDestination.name`\n- `cityPath: string` from `cityDestination.path` (for SEO link to /destinos)\n- `cityDestinationSlug: string` from `cityDestination.slug`\n\nDefensive fallback: if `cityDestination` is null/undefined (should not happen post-migration), return empty strings and log a warning via `@repo/logger`.\n\nAll derived values are computed once in the transform \u2014 components receive flat string props.\n\nAcceptance:\n- `location.city` is never read in the transform function bodies\n- `transformAccommodation` returns an object with `cityName`, `cityPath`, `cityDestinationSlug`\n- Same for `transformEvent`\n\nTest requirements:\n- Unit test: transform with valid cityDestination \u2192 correct cityName/cityPath/cityDestinationSlug\n- Unit test: transform with null cityDestination \u2192 empty strings + warning log",
-            "status": "pending",
+            "status": "completed",
             "phase": "integration",
             "complexity": 2,
             "blockedBy": ["T-013", "T-014", "T-014.5", "T-014.6"],
             "blocks": ["T-016", "T-017", "T-018", "T-019", "T-020"],
             "tags": ["web", "transforms"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T12:35:00.000Z",
+                "completed": "2026-04-27T12:45:00.000Z"
             }
         },
         {
@@ -842,7 +842,7 @@
         }
     ],
     "progress": {
-        "completed": 16,
+        "completed": 17,
         "total": 37
     }
 }
