@@ -494,21 +494,21 @@
             "id": "T-020",
             "title": "Add destinationType filter to /destinations public list route",
             "description": "The `/api/v1/public/destinations` GET route currently has NO `destinationType` filter \u2014 confirmed by reading `apps/api/src/routes/destination/public/list.ts`. This is real new scope, not a verification task.\n\nFiles to modify:\n- `apps/api/src/routes/destination/public/list.ts` \u2014 add `destinationType` to the route query schema and wire the filter into the service call\n- `packages/schemas/src/entities/destination/destination.http.schema.ts` \u2014 add optional `destinationType: DestinationTypeEnum` field to `DestinationListQuerySchema` (or public list variant)\n- Destination service list method \u2014 accept and apply the new filter to the WHERE clause\n\nAcceptance:\n- `GET /api/v1/public/destinations?destinationType=CITY` returns only CITY destinations\n- `GET /api/v1/public/destinations?destinationType=CITY&search=concep` returns filtered results matching both criteria\n- Without `destinationType` param, behavior is unchanged (all types returned)\n- Unknown query params still rejected (existing validation behavior preserved)\n\nTest requirements:\n- Route test: GET with destinationType=CITY returns only CITY results\n- Route test: GET without destinationType returns mixed results\n- Route test: GET with invalid destinationType value \u2192 400 validation error",
-            "status": "pending",
+            "status": "completed",
             "phase": "integration",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-021"],
             "tags": ["api", "destination"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T13:05:00.000Z",
+                "completed": "2026-04-27T13:15:00.000Z"
             }
         },
         {
@@ -842,7 +842,7 @@
         }
     ],
     "progress": {
-        "completed": 21,
+        "completed": 22,
         "total": 37
     }
 }
