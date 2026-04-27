@@ -151,6 +151,19 @@ export interface AccommodationCardData {
     readonly amenities?: readonly CardAmenityFeature[];
     /** Optional list of extra feature items (pet-friendly, eco-certified, …). */
     readonly features?: readonly CardAmenityFeature[];
+    /**
+     * SPEC-095: City name derived from `cityDestination.name`. Empty string if
+     * the API response did not carry a `cityDestination` projection.
+     */
+    readonly cityName?: string;
+    /**
+     * SPEC-095: Materialized destination path (e.g.
+     * `/argentina/litoral/entre-rios/concepcion-del-uruguay`) used for SEO
+     * breadcrumbs and `/destinos` deep links.
+     */
+    readonly cityPath?: string;
+    /** SPEC-095: Slug of the city destination, used for `/destinos/{slug}` links. */
+    readonly cityDestinationSlug?: string;
 }
 
 /**
@@ -318,6 +331,16 @@ export interface EventCardData {
     readonly isFeatured: boolean;
     /** Optional venue location. Absent for online/virtual events. */
     readonly location?: EventLocation;
+    /**
+     * SPEC-095: City name derived from `eventLocation.cityDestination.name`.
+     * Empty string when the API response did not carry a `cityDestination`
+     * projection or when the event has no eventLocation.
+     */
+    readonly cityName?: string;
+    /** SPEC-095: Materialized destination path for SEO breadcrumbs. */
+    readonly cityPath?: string;
+    /** SPEC-095: Slug of the city destination, used for `/destinos/{slug}` links. */
+    readonly cityDestinationSlug?: string;
 }
 
 /**

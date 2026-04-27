@@ -596,3 +596,59 @@ describe('toAccommodationDetailPageProps', () => {
         });
     });
 });
+
+describe('deriveCityFields integration (SPEC-095)', () => {
+    const cityDestination = {
+        id: 'a3bb189e-8bf9-4a1e-9adf-6e8c4d3b2a01',
+        slug: 'concepcion-del-uruguay',
+        name: 'Concepción del Uruguay',
+        path: '/argentina/litoral/entre-rios/concepcion-del-uruguay'
+    };
+
+    it('toAccommodationCardProps reads cityName from cityDestination projection', () => {
+        const result = toAccommodationCardProps({
+            item: { id: '1', slug: 's', name: 'n', cityDestination }
+        });
+        expect(result.cityName).toBe('Concepción del Uruguay');
+        expect(result.cityPath).toBe('/argentina/litoral/entre-rios/concepcion-del-uruguay');
+        expect(result.cityDestinationSlug).toBe('concepcion-del-uruguay');
+        expect(result.location.city).toBe('Concepción del Uruguay');
+    });
+
+    it('toAccommodationCardProps falls back to legacy destination.name', () => {
+        const result = toAccommodationCardProps({
+            item: { id: '1', slug: 's', name: 'n', destination: { name: 'Colón' } }
+        });
+        expect(result.cityName).toBe('Colón');
+    });
+
+    it('toAccommodationCardProps returns empty city fields when no source is present', () => {
+        const result = toAccommodationCardProps({
+            item: { id: '1', slug: 's', name: 'n' }
+        });
+        expect(result.cityName).toBe('');
+        expect(result.cityPath).toBe('');
+        expect(result.cityDestinationSlug).toBe('');
+    });
+
+    it('toEventCardProps reads cityName from event.location.cityDestination', () => {
+        const result = toEventCardProps({
+            item: {
+                slug: 'evt',
+                name: 'Festival',
+                location: { placeName: 'Anfiteatro', cityDestination }
+            }
+        });
+        expect(result.cityName).toBe('Concepción del Uruguay');
+        expect(result.cityPath).toBe('/argentina/litoral/entre-rios/concepcion-del-uruguay');
+        expect(result.location?.city).toBe('Concepción del Uruguay');
+    });
+
+    it('toEventCardProps returns empty cityName when location is absent', () => {
+        const result = toEventCardProps({
+            item: { slug: 'evt', name: 'Festival' }
+        });
+        expect(result.cityName).toBe('');
+        expect(result.location).toBeUndefined();
+    });
+});

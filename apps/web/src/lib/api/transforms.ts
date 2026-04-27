@@ -62,6 +62,66 @@ export interface AccommodationDetailedCardData {
     readonly isFeatured: boolean;
 }
 
+// --- Helper: derive city fields from cityDestination (SPEC-095) ---
+
+/**
+ * Derives flat city fields from an API entity's `cityDestination` projection.
+ * Falls back to the legacy `destination`/`location.city` shape when the API
+ * response predates SPEC-095 so older fixtures keep rendering during the
+ * migration window. After re-seeding, the legacy branches should be unreachable
+ * — a `webLogger.warn` records the fallback so we can spot lingering payloads.
+ *
+ * @param item - Raw API entity carrying either `cityDestination`, `destination`,
+ * or `location.city`.
+ * @returns `{ cityName, cityPath, cityDestinationSlug }` — empty strings when
+ * none of the sources are present.
+ */
+function deriveCityFields(source: Record<string, unknown> | undefined): {
+    readonly cityName: string;
+    readonly cityPath: string;
+    readonly cityDestinationSlug: string;
+} {
+    if (!source) return { cityName: '', cityPath: '', cityDestinationSlug: '' };
+
+    const cityDestination = source.cityDestination as
+        | { name?: unknown; path?: unknown; slug?: unknown }
+        | undefined;
+
+    if (cityDestination?.name) {
+        return {
+            cityName: String(cityDestination.name ?? ''),
+            cityPath: String(cityDestination.path ?? ''),
+            cityDestinationSlug: String(cityDestination.slug ?? '')
+        };
+    }
+
+    const legacyDestination = source.destination as
+        | { name?: unknown; path?: unknown; slug?: unknown }
+        | undefined;
+    const legacyLocation = source.location as { city?: unknown } | undefined;
+    const legacyInlineCity = (source as { city?: unknown }).city;
+    const legacyCityName = String(
+        legacyDestination?.name || legacyLocation?.city || legacyInlineCity || ''
+    );
+
+    if (legacyCityName) {
+        webLogger.warn(
+            'transforms.deriveCityFields: cityDestination missing, using legacy fallback',
+            {
+                entityId: String((source as { id?: unknown }).id ?? ''),
+                entitySlug: String((source as { slug?: unknown }).slug ?? '')
+            }
+        );
+        return {
+            cityName: legacyCityName,
+            cityPath: String(legacyDestination?.path ?? ''),
+            cityDestinationSlug: String(legacyDestination?.slug ?? '')
+        };
+    }
+
+    return { cityName: '', cityPath: '', cityDestinationSlug: '' };
+}
+
 // --- Helper: extract relation items (amenities / features) ---
 
 /**
@@ -104,8 +164,8 @@ export function toAccommodationCardProps({
         | undefined;
 
     const locationObj = item.location as Record<string, unknown> | undefined;
-    const destinationObj = item.destination as Record<string, unknown> | undefined;
-    const city = String(locationObj?.city || destinationObj?.name || '');
+    const { cityName, cityPath, cityDestinationSlug } = deriveCityFields(item);
+    const city = cityName;
     const state = String(locationObj?.state || '');
 
     const { featuredImage } = processEntityImages({
@@ -137,7 +197,10 @@ export function toAccommodationCardProps({
                   }
                 : undefined,
         amenities: extractRelationItems(item.amenities, 'amenity'),
-        features: extractRelationItems(item.features, 'feature')
+        features: extractRelationItems(item.features, 'feature'),
+        cityName,
+        cityPath,
+        cityDestinationSlug
     };
 }
 
@@ -166,6 +229,8 @@ export function toAccommodationDetailedProps({
         | { amount?: number; price?: number; currency?: string }
         | undefined;
 
+    const { cityName } = deriveCityFields(item);
+
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
@@ -173,7 +238,7 @@ export function toAccommodationDetailedProps({
         type: String(item.type || item.accommodationType || ''),
         images,
         location: {
-            city: locationObj?.city ? String(locationObj.city) : undefined,
+            city: cityName || undefined,
             state: locationObj?.state ? String(locationObj.state) : undefined
         },
         capacity: extraInfo?.capacity ? Number(extraInfo.capacity) : undefined,
@@ -267,6 +332,7 @@ export function toEventCardProps({
 
     const dateObj = item.date as { start?: string; end?: string } | undefined;
     const locationObj = item.location as Record<string, unknown> | undefined;
+    const { cityName, cityPath, cityDestinationSlug } = deriveCityFields(locationObj);
 
     return {
         slug: String(item.slug || ''),
@@ -286,9 +352,12 @@ export function toEventCardProps({
         location: locationObj
             ? {
                   name: String(locationObj.placeName || locationObj.name || ''),
-                  city: String(locationObj.city || '')
+                  city: cityName
               }
-            : undefined
+            : undefined,
+        cityName,
+        cityPath,
+        cityDestinationSlug
     };
 }
 
@@ -386,7 +455,11 @@ export function toAccommodationDetailPageProps({
 }: { readonly item: Record<string, unknown> }): AccommodationDetailData {
     const mediaObj = item.media as { images?: string[]; videos?: string[] } | undefined;
     const locationObj = item.location as Record<string, unknown> | undefined;
-    const destinationObj = item.destination as Record<string, unknown> | undefined;
+    // SPEC-095: prefer the `cityDestination` projection from the API; fall back
+    // to the legacy heavy `destination` relation while older payloads still circulate.
+    const cityDestinationObj = item.cityDestination as Record<string, unknown> | undefined;
+    const destinationObj =
+        cityDestinationObj ?? (item.destination as Record<string, unknown> | undefined);
     const priceObj = item.price as Record<string, unknown> | null | undefined;
     const extraInfoObj = item.extraInfo as Record<string, unknown> | null | undefined;
     const seoObj = item.seo as Record<string, unknown> | null | undefined;
