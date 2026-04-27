@@ -99,6 +99,10 @@ import {
     checkCanUpdate,
     checkCanView
 } from './accommodation.permissions';
+import {
+    projectAccommodationCityDestination,
+    projectAccommodationCityDestinationList
+} from './accommodation.projections';
 import type { AccommodationHookState } from './accommodation.types';
 
 /** Entity-specific filter fields for accommodation admin search. */
@@ -229,6 +233,49 @@ export class AccommodationService extends BaseCrudService<
         this._userModel = userModel ?? new UserModel();
     }
 
+    // --- Read Projection Hooks (SPEC-095) ---
+    /**
+     * Projects the eager-loaded destination relation into the lightweight
+     * `cityDestination` field expected by the public/admin response schemas.
+     */
+    protected override async _afterGetByField(
+        entity: Accommodation | null,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Accommodation | null> {
+        return projectAccommodationCityDestination(entity);
+    }
+
+    /**
+     * Projects every item in a list result with `cityDestination` (SPEC-095).
+     */
+    protected override async _afterList(
+        result: PaginatedListOutput<Accommodation>,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<PaginatedListOutput<Accommodation>> {
+        if (!result?.items) return result;
+        return {
+            ...result,
+            items: projectAccommodationCityDestinationList(result.items)
+        };
+    }
+
+    /**
+     * Projects every item in a search result with `cityDestination` (SPEC-095).
+     */
+    protected override async _afterSearch(
+        result: PaginatedListOutput<Accommodation>,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<PaginatedListOutput<Accommodation>> {
+        if (!result?.items) return result;
+        return {
+            ...result,
+            items: projectAccommodationCityDestinationList(result.items)
+        };
+    }
+
     // --- Permissions Hooks ---
     /**
      * @inheritdoc
@@ -339,11 +386,18 @@ export class AccommodationService extends BaseCrudService<
             extraConditions.push(sql`(${accommodations.price}->>'price')::numeric <= ${maxPrice}`);
         }
 
-        return super._executeAdminSearch({
+        const result = await super._executeAdminSearch({
             ...rest,
             entityFilters: simpleFilters,
             extraConditions
         });
+
+        if (!result?.items) return result;
+
+        return {
+            ...result,
+            items: projectAccommodationCityDestinationList(result.items)
+        };
     }
 
     // --- Lifecycle Hooks ---
