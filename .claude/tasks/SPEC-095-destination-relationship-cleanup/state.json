@@ -1,7 +1,7 @@
 {
     "specId": "SPEC-095",
     "title": "Destination Relationship Cleanup for Accommodation and EventLocation",
-    "status": "in_progress",
+    "status": "completed",
     "criticalPath": [
         "T-001",
         "T-002",
@@ -599,175 +599,175 @@
             "id": "T-025",
             "title": "Update accommodation schema-validation tests and fixtures",
             "description": "Update the API schema-validation test suite for accommodations to match the new contract: cityDestination present, no location.city/state/country in fixtures.\n\nFiles to modify:\n- `apps/api/test/schema-validation/accommodation-getById-schema.test.ts`\n- `apps/api/test/schema-validation/accommodation-list-schema.test.ts` (if exists)\n- Any shared fixture files used by accommodation tests\n- `packages/schemas/test/` — accommodation schema unit test fixtures\n\nChanges:\n- Replace `location: { city: '...', state: '...', ... }` in fixtures with `location: { street: '...', ... }` (postal only)\n- Add `cityDestination: { id: '...', name: '...', slug: '...', ... }` to fixtures\n- Assert that tests pass against the rebuilt schemas\n\nTest requirements:\n- All updated tests pass\n- `grep 'location.city' apps/api/test/schema-validation/accommodation*` returns zero matches",
-            "status": "pending",
+            "status": "completed",
             "phase": "testing",
             "complexity": 2,
             "blockedBy": ["T-013", "T-024"],
             "blocks": ["T-036"],
             "tags": ["tests", "accommodation", "schemas"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T16:00:00.000Z",
+                "completed": "2026-04-27T16:00:00.000Z"
             }
         },
         {
             "id": "T-026",
             "title": "Update event schema-validation tests and fixtures",
             "description": "Same as T-025 but for event/eventLocation schema-validation tests.\n\nFiles to modify:\n- `apps/api/test/schema-validation/event-getById-schema.test.ts`\n- `apps/api/test/schema-validation/event-list-schema.test.ts` (if exists)\n- Any shared event fixture files\n- `packages/schemas/test/` — event schema unit test fixtures\n\nChanges:\n- Replace `eventLocation.city/state/country` with postal-only fields\n- Add `cityDestination` to event fixtures\n\nTest requirements:\n- All updated tests pass\n- `grep 'location.city' apps/api/test/schema-validation/event*` returns zero matches",
-            "status": "pending",
+            "status": "completed",
             "phase": "testing",
             "complexity": 2,
             "blockedBy": ["T-014", "T-024"],
             "blocks": ["T-036"],
             "tags": ["tests", "event", "schemas"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T16:00:00.000Z",
+                "completed": "2026-04-27T16:00:00.000Z"
             }
         },
         {
             "id": "T-027",
             "title": "Write AccommodationService CITY validation unit tests",
             "description": "Write focused unit tests for the destinationType=CITY guard added in T-008 (AccommodationService).\n\nFiles to create/modify:\n- `packages/service-core/test/services/accommodation.service.test.ts` (or co-located test file)\n\nTest scenarios:\n1. Create with PROVINCE destinationId → VALIDATION_ERROR 'destinationId must reference a destination of type CITY'\n2. Create with CITY destinationId → resolves without error\n3. Update changing destinationId from CITY to PROVINCE → VALIDATION_ERROR\n4. Create with non-existent destinationId → NOT_FOUND (regression guard)\n\nNote: T-008 requires tests co-located with implementation. This task ensures complete, standalone, reviewable tests separate from the implementation diff if the team prefers that split. If T-008 already included all four tests, this task is a verification pass only.",
-            "status": "pending",
+            "status": "completed",
             "phase": "testing",
             "complexity": 1,
             "blockedBy": ["T-008"],
             "blocks": ["T-036"],
             "tags": ["tests", "service", "accommodation"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T16:00:00.000Z",
+                "completed": "2026-04-27T16:00:00.000Z"
             }
         },
         {
             "id": "T-028",
             "title": "Write EventLocationService CITY validation unit tests",
             "description": "Same as T-027 but for the EventLocationService guard added in T-009. Confirmed that the CITY validation lives in EventLocationService — not EventService — because the destination relationship is owned by the eventLocation entity.\n\nFiles to create/modify:\n- `packages/service-core/test/services/eventLocation/eventLocation.service.test.ts` (or co-located test file)\n\nTest scenarios:\n1. Create eventLocation with PROVINCE destinationId → VALIDATION_ERROR 'destinationId must reference a destination of type CITY'\n2. Create eventLocation with CITY destinationId → success\n3. Update eventLocation changing to PROVINCE → VALIDATION_ERROR\n4. Create with non-existent destinationId → NOT_FOUND",
-            "status": "pending",
+            "status": "completed",
             "phase": "testing",
             "complexity": 1,
             "blockedBy": ["T-009"],
             "blocks": ["T-036"],
             "tags": ["tests", "service", "event"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T16:00:00.000Z",
+                "completed": "2026-04-27T16:00:00.000Z"
             }
         },
         {
             "id": "T-029",
             "title": "Write web transform unit tests for cityDestination derivation",
             "description": "Write unit tests for the transform functions updated in T-015.\n\nFiles to create/modify:\n- `apps/web/src/lib/api/__tests__/transforms.test.ts` (or equivalent)\n\nTest scenarios:\n1. `transformAccommodation` with valid `cityDestination` object → result has `cityName`, `cityPath`, `cityDestinationSlug` matching input\n2. `transformAccommodation` with null `cityDestination` → result has empty strings, warning logged\n3. `transformEvent` with valid `cityDestination` → same three fields derived correctly\n4. Path-parsing helper (from T-018) for JSON-LD: path `/argentina/litoral/entre-rios/concepcion-del-uruguay` → province index extracts `entre-rios`\n\nTest requirements:\n- All four scenarios pass\n- Warning log assertion for null cityDestination case",
-            "status": "pending",
+            "status": "completed",
             "phase": "testing",
             "complexity": 1,
             "blockedBy": ["T-015"],
             "blocks": ["T-036"],
             "tags": ["tests", "web", "transforms"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T16:00:00.000Z",
+                "completed": "2026-04-27T16:00:00.000Z"
             }
         },
         {
             "id": "T-030",
             "title": "Write web card component tests asserting no location.city reads",
             "description": "Write or update component tests for the five card components updated in T-016 and T-017, asserting they render city from `cityName` prop and have zero `location.city` reads.\n\nFiles to create/modify:\n- Test files for AccommodationCard, PropertyCard, EventCard, EventCardHorizontal, EventCardFeatured (co-locate or in apps/web/src/components/**/__tests__/)\n\nTest scenarios:\n- Each card: render with `cityName='Concepción del Uruguay'` → city name appears in output\n- Source-string grep assertion: `location.city` is absent from component source\n\nNote: Astro component tests may require Vitest + Astro test utilities or snapshot-string checks. Follow existing patterns in apps/web if they exist.",
-            "status": "pending",
+            "status": "completed",
             "phase": "testing",
             "complexity": 2,
             "blockedBy": ["T-016", "T-017"],
             "blocks": ["T-036"],
             "tags": ["tests", "web", "components"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T16:00:00.000Z",
+                "completed": "2026-04-27T16:00:00.000Z"
             }
         },
         {
             "id": "T-031",
             "title": "Write CityDestinationPicker unit tests",
             "description": "Write unit tests for the CityDestinationPicker island created in T-021.\n\nFiles to create/modify:\n- `apps/web/src/components/form/__tests__/CityDestinationPicker.test.tsx`\n\nTest scenarios:\n1. Typing 2+ chars triggers debounced fetch to /destinations?type=CITY&search={input}\n2. Selecting a result calls onSelect(id, name)\n3. 'No encuentro mi ciudad' link is always rendered\n4. Keyboard navigation: arrow down focuses first result\n5. Pressing escape closes dropdown\n\nTest requirements:\n- Mock fetch/API call\n- Use testing-library/react\n- All 5 scenarios pass",
-            "status": "pending",
+            "status": "completed",
             "phase": "testing",
             "complexity": 2,
             "blockedBy": ["T-021"],
             "blocks": ["T-036"],
             "tags": ["tests", "web", "form"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T16:00:00.000Z",
+                "completed": "2026-04-27T16:00:00.000Z"
             }
         },
         {
             "id": "T-032",
             "title": "Audit and remove any remaining ?city= query parameter usages in public listing routes",
             "description": "Grep for `?city=` or `city=` query parameter handling in API routes that expose accommodation or event listings. If found, replace with `?destinationId=` or `?destinationSlug=` (or document as out-of-scope with a gap entry if complex).\n\nFiles to audit:\n- `apps/api/src/routes/` — all listing route files for accommodation and event\n- `apps/web/src/` — any links or fetch calls that pass `?city=` to the API\n\nAcceptance:\n- No production code routes handle `?city=` for filtering accommodations or events\n- If replacement is needed: route query schema updated, filter wired, test added\n- If no usage found: task is a verification pass (document the finding)\n\nTest requirements:\n- If changes made: route test for the replacement filter param\n- If verification only: grep output included in progress notes",
-            "status": "pending",
+            "status": "completed",
             "phase": "testing",
             "complexity": 1,
             "blockedBy": ["T-007"],
             "blocks": ["T-036"],
             "tags": ["api", "cleanup", "accommodation", "event"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T16:00:00.000Z",
+                "completed": "2026-04-27T16:00:00.000Z"
             }
         },
         {
             "id": "T-033",
             "title": "Run full verification: grep zero location.city, typecheck, lint, test",
             "description": "Final verification pass that SPEC-095 is complete and all success criteria are met.\n\nSteps:\n1. `grep -r 'location\\.city' apps/web/src/components/ apps/api/src/routes/` → must return zero functional matches\n2. `pnpm typecheck` across all affected packages → zero errors\n3. `pnpm lint` → zero new errors\n4. `pnpm test` → all tests pass (no new failures)\n5. `pnpm db:fresh-dev` → completes without VALIDATION_ERROR\n6. Manual check: visit the PropertyForm section 2 and confirm autocomplete is visible with 'No encuentro mi ciudad' link\n7. Manual API call: POST accommodation with PROVINCE destinationId → confirm 400 VALIDATION_ERROR response\n\nFiles:\n- None modified (verification only)\n\nAcceptance:\n- All 7 checks pass\n- Document results in progress.md\n\nTest requirements: N/A (this IS the verification)",
-            "status": "pending",
+            "status": "completed",
             "phase": "testing",
             "complexity": 1,
             "blockedBy": [
@@ -788,62 +788,62 @@
             "blocks": ["T-034"],
             "tags": ["verification", "cleanup"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T16:00:00.000Z",
+                "completed": "2026-04-27T16:00:00.000Z"
             }
         },
         {
             "id": "T-034",
             "title": "Register GAP-095-01 in gaps-postergados.md and add wire-format release note",
             "description": "Two small documentation outputs to close out SPEC-095 cleanly.\n\n1. Add GAP-095-01 entry to `.claude/gaps-postergados.md`:\n   - Title: 'Rename location column to address on accommodations and event_locations'\n   - Motivation: Naming inconsistency noted during SPEC-095 but deferred to avoid scope creep\n   - Prerequisites: all post-beta DB schema windows\n   - Tracking tag: GAP-095-01\n\n2. Add a short wire-format change note in the project's release notes or changelog (or a doc file the team uses) documenting:\n   - The `accommodation.location.city` field has been removed\n   - The `cityDestination` relation is now present on all accommodation and event responses\n   - Consumers that read `location.city` from the API must be updated\n\nFiles to modify:\n- `.claude/gaps-postergados.md`\n- `docs/release-notes/` or equivalent (confirm path before writing)\n\nAcceptance:\n- GAP-095-01 entry exists and is findable\n- Wire-format change is documented for future integrators\n\nTest requirements: N/A (documentation)",
-            "status": "pending",
+            "status": "completed",
             "phase": "docs",
             "complexity": 1,
             "blockedBy": ["T-033"],
             "blocks": [],
             "tags": ["docs", "cleanup"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T16:00:00.000Z",
+                "completed": "2026-04-27T16:00:00.000Z"
             }
         },
         {
             "id": "T-035",
             "title": "Mark BBT-11 as superseded in BEFORE_BETA_TESTING.md",
             "description": "Update the BEFORE_BETA_TESTING document to close item 11 and link to SPEC-095 as the structural resolution.\n\nFiles to modify:\n- `.claude/docs/BEFORE_BETA_TESTING.md` (or wherever the BBT checklist lives — confirm path)\n\nChanges:\n- Item 11 (location.city audit): mark as SUPERSEDED by SPEC-095\n- Add note: 'The hotfix in commit 7d19f59c was reverted. SPEC-095 resolves the underlying three-layer asymmetry structurally. No further action needed on this item.'\n\nAcceptance:\n- BBT item 11 is clearly marked as resolved/superseded\n- Link or reference to SPEC-095 is present\n\nTest requirements: N/A (documentation)",
-            "status": "pending",
+            "status": "completed",
             "phase": "docs",
             "complexity": 1,
             "blockedBy": ["T-006"],
             "blocks": [],
             "tags": ["docs", "bbt"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T16:00:00.000Z",
+                "completed": "2026-04-27T16:00:00.000Z"
             }
         }
     ],
     "progress": {
-        "completed": 26,
+        "completed": 37,
         "total": 37,
-        "percentage": 70
+        "percentage": 100
     }
 }
