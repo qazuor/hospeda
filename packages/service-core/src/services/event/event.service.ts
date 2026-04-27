@@ -691,13 +691,10 @@ export class EventService extends BaseCrudService<
                     $lte: futureDate
                 };
 
-                // Add location filters if provided
-                if (validatedInput.city) {
-                    filters['location.city'] = validatedInput.city;
-                }
-                if (validatedInput.country) {
-                    filters['location.country'] = validatedInput.country;
-                }
+                // SPEC-095: city/country filters removed — geographic context now derives
+                // from the eventLocation.destinationId FK. These input fields are kept on
+                // UpcomingEventsSchema for backwards compatibility but are no longer used
+                // server-side.
 
                 // Add category filter if provided
                 if (validatedInput.category) {

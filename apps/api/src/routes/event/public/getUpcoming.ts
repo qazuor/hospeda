@@ -28,12 +28,12 @@ export const publicGetUpcomingEventsRoute = createPublicListRoute({
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
+        // SPEC-095: city/country filters dropped from the public upcoming-events
+        // endpoint — geographic context lives on `eventLocation.destinationId`.
         const input: EventUpcomingInput = {
             page: page ?? 1,
             pageSize: pageSize ?? 20,
             daysAhead: (query?.daysAhead as number) ?? 30,
-            city: query?.city as string | undefined,
-            country: query?.country as string | undefined,
             category: query?.category as EventUpcomingInput['category'],
             maxPrice: query?.maxPrice as number | undefined
         };

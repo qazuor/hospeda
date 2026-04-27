@@ -393,10 +393,12 @@ export const eventsApi = {
         return apiClient.get({ path: `${BASE}/events/${id}` });
     },
 
-    /** Get upcoming events */
+    /**
+     * Get upcoming events. SPEC-095 removed the legacy `city` filter — the
+     * geographic dimension now lives on `eventLocation.destinationId`.
+     */
     getUpcoming(params?: {
         daysAhead?: number;
-        city?: string;
         page?: number;
         pageSize?: number;
     }): Promise<ApiResult<PaginatedResponse<EventPublic>>> {
@@ -542,6 +544,103 @@ export const plansApi = {
      */
     list(): Promise<ApiResult<readonly PlanPublicItem[]>> {
         return apiClient.get({ path: `${BASE}/plans` });
+    }
+};
+
+// --- Conversations (Public) ---
+
+/** Message item returned by guest thread endpoint */
+export interface GuestMessageItem {
+    readonly id: string;
+    readonly body: string;
+    readonly senderType: 'guest' | 'owner' | 'system';
+    readonly createdAt: string;
+}
+
+/** Conversation data returned by guest thread endpoint */
+export interface GuestConversationData {
+    readonly id: string;
+    readonly status: string;
+    readonly accommodationName: string;
+    readonly ownerName: string;
+    readonly lastReadAtByOwner: string | null;
+    readonly createdAt: string;
+}
+
+/** Response shape for GET /public/conversations/guest/:token */
+export interface GuestThreadResponse {
+    readonly conversation: GuestConversationData;
+    readonly messages: readonly GuestMessageItem[];
+    readonly hasMore: boolean;
+}
+
+/** Public conversations API endpoints (anonymous guest flows) */
+export const publicConversationsApi = {
+    /**
+     * Initiate a new conversation as an anonymous guest.
+     *
+     * @param params - Guest info and accommodation ID + message
+     * @returns Status of the initiation (pending_verification | resent | conflict)
+     */
+    initiate(params: {
+        readonly accommodationId: string;
+        readonly guestName: string;
+        readonly guestEmail: string;
+        readonly guestPhone?: string;
+        readonly message: string;
+    }): Promise<
+        ApiResult<{
+            readonly status: 'pending_verification' | 'resent' | 'conflict';
+            readonly conversationId?: string;
+        }>
+    > {
+        return apiClient.post({ path: `${BASE}/conversations/initiate`, body: params });
+    },
+
+    /**
+     * Request an access link to an existing conversation by email.
+     * Always returns 200 with sent_if_exists (anti-enumeration).
+     *
+     * @param params - Email address to send the link to
+     */
+    requestAccess(params: {
+        readonly email: string;
+    }): Promise<ApiResult<{ readonly status: 'sent_if_exists' }>> {
+        return apiClient.post({ path: `${BASE}/conversations/request-access`, body: params });
+    },
+
+    /**
+     * Fetch an anonymous guest's conversation thread using a secure token.
+     *
+     * @param params - Token string and optional cursor/limit for pagination
+     */
+    getGuestThread(params: {
+        readonly token: string;
+        readonly cursor?: string;
+        readonly limit?: number;
+    }): Promise<ApiResult<GuestThreadResponse>> {
+        const { token, ...rest } = params;
+        return apiClient.get({
+            path: `${BASE}/conversations/guest/${token}`,
+            params: rest as Record<string, unknown>
+        });
+    },
+
+    /**
+     * Send a reply message as an anonymous guest.
+     *
+     * @param params - Token, message body
+     * @returns The created message
+     */
+    sendGuestMessage(params: {
+        readonly token: string;
+        readonly body: string;
+    }): Promise<ApiResult<GuestMessageItem>> {
+        const { token, body } = params;
+        return apiClient.post({
+            path: `${BASE}/conversations/guest/${token}/messages`,
+            body: { body }
+        });
     }
 };
 
