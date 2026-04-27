@@ -58,31 +58,21 @@ Esfuerzo estimado: ~6h
 - [x] Test de regresión que cubra los 3 endpoints — `pagination-strip.test.ts` (9 tests)
 - [ ] Verificar manualmente que home page no rompe — pendiente del smoke test E2E item 8
 
-### 2. SPEC-089 — Public Filter Alignment
+### 2. SPEC-089 — Public Filter Alignment ✅ DONE (2026-04-27)
 
-**Severidad: BLOCKER** — Detail pages tiran error porque la API
-rechaza filtros que la página manda.
+**Severidad: BLOCKER** — Detail pages tiraban error porque la API
+rechazaba filtros que la página mandaba.
 
-Problemas:
-
-- Accommodation detail `/[lang]/alojamientos/[slug].astro:55` llama
-  `accommodationsApi.list({ ownerId, pageSize })` y la API rechaza
-  el filtro `ownerId`
-- Events detail tiene TODO sin resolver con `destinationId`
-- Posts `destinationId` → ya resuelto inline a `relatedDestinationId`
-
-Decisiones del spec:
-
-- Endpoint nuevo `/api/v1/public/users/:id/accommodations` para listar
-  propiedades por owner
-- FK `destination_id` en `event_locations` para alinear filtro de events
-
-Esfuerzo estimado: ~12h
-
-- [ ] Crear endpoint público `/users/:id/accommodations`
-- [ ] Migration agregando `destination_id` a `event_locations`
-- [ ] Actualizar pages a usar nuevos endpoints
-- [ ] Tests de regresión
+- [x] Crear endpoint público `/api/v1/public/users/:id/accommodations`
+  (10 tests integración) — commit `4eaf7316b`
+- [x] FK `destination_id` en `event_locations` ya cubierto por SPEC-095;
+  agregado `destinationId` a `EventSearchHttpSchema` y resolver
+  service-side via subquery con strip de `filterParams` para no leakear
+  al WHERE clause (7 tests service-core + 6 tests api)
+- [x] Pages migradas: `alojamientos/[slug].astro:61` usa
+  `accommodationsApi.listByOwner`; `destinos/[slug]/eventos/index.astro`
+  reescrita de TODO placeholder a SSR list con paginación y empty state
+- [x] Posts `destinationId` ya estaba resuelto inline (2026-04-18)
 
 ### 3. SPEC-079 — Upload Rate Limiting ✅ DONE (2026-04-27)
 
@@ -117,14 +107,13 @@ Tasks cerradas:
 - [x] T-058 a T-070: ADR-019 ya cubría T-058; runbook advisory locks creado; cleanups (commit `98a59d03`)
 - [x] State.json synced to 70/70 (commit `3f92700e`)
 
-### 5. SPEC-075 — Web App Complete Page Structure
+### 5. SPEC-075 — Web App Complete Page Structure ✅ DEFERRED POST-BETA
 
-**Severidad: MEDIUM** — 8/66 tasks done, 12% completado. Layouts
-base implementados; faltan migrar 54 páginas al sistema nuevo.
+**Severidad: MEDIUM** — 8/66 tasks done. Layouts base implementados;
+las 54 páginas restantes no son bloqueantes para abrir beta. Owner
+decidió completar post-beta con tráfico real informando prioridades.
 
-Esfuerzo estimado: ~30h para llegar a ≥90%
-
-- [ ] Priorizar las 20 páginas más visibles (home, listings, account)
+- [x] Decisión: deferred-post-beta (2026-04-27)
 - [ ] Migrar resto post-beta con tráfico real
 
 ### 6. SPEC-044 — Apply migration + decide gaps fate ✅ DONE 21/21 (2026-04-27)
@@ -349,6 +338,9 @@ Qazuor — single decision-maker para abrir beta.
 
 ## Última actualización
 
-2026-04-27 — Items P0 técnicos 1, 3, 4, 6, 7, 12 cerrados. Quedan abiertos:
-2 (SPEC-089, vía web público página por página), 5 (SPEC-075, marcado por
-owner como done), 8-11 (validación E2E manual contra ambientes reales).
+2026-04-27 — **Todos los P0 técnicos cerrados.** Items 1-7, 11a, 12 con
+check; item 5 (SPEC-075) deferido post-beta por decisión del owner.
+SPEC-089 cerró el último bloqueante de código (commit `4eaf7316b`).
+Quedan abiertos solo los items 8-10 de validación E2E manual (smoke
+test host onboarding, runbook MP staging, transacción real prod) y el
+item 11b (`amenityIds` → SPEC-094 a crear, deferred-post-beta).
