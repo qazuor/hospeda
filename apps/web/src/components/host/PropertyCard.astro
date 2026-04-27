@@ -66,15 +66,14 @@ const statusInfo = STATUS_MAP[lifecycleState] ?? {
     variant: 'amber' as BadgeVariant
 };
 
-/** Location string: "city, country" — show only available parts. */
-const locationParts: string[] = [];
-if (property.location?.city) {
-    locationParts.push(property.location.city);
-}
-if (property.location?.country) {
-    locationParts.push(property.location.country);
-}
-const locationText = locationParts.join(', ');
+/**
+ * Location string: derived from the `cityDestination` projection (SPEC-095).
+ * The legacy `location.city`/`location.country` fields no longer exist on the
+ * accommodation schema — geographic context now lives on the destination
+ * relationship.
+ */
+const cityDestination = (property as { cityDestination?: { name?: string } }).cityDestination;
+const locationText = cityDestination?.name ?? '';
 
 /** Price display: show only if both price and currency are available. */
 const hasPrice = property.price?.price != null && property.price?.currency != null;

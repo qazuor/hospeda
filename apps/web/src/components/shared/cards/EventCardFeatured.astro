@@ -350,7 +350,7 @@ const badgeBgSolid = categoryColor.bg.replace('/ 0.15)', '/ 0.85)');
       {data.location && (
         <span class="event-card-featured__location">
           <LocationIcon size={13} weight="fill" aria-hidden="true" />
-          <span>{data.location.name ? `${data.location.name}, ${data.location.city}` : data.location.city}</span>
+          <span>{data.location.name ? `${data.location.name}, ${data.cityName ?? data.location.city}` : (data.cityName ?? data.location.city)}</span>
         </span>
       )}
 

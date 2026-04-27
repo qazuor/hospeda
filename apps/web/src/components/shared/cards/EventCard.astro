@@ -101,7 +101,7 @@ const endDate = data.date.end ? formatDate({ date: data.date.end, locale }) : nu
     {data.location && (
       <p class="event-card__meta event-card__meta--location">
         <LocationIcon size={14} weight="regular" aria-hidden="true" />
-        <span>{data.location.name}, {data.location.city}</span>
+        <span>{data.location.name}, {data.cityName ?? data.location.city}</span>
       </p>
     )}
 

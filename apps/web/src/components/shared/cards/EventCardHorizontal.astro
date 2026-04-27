@@ -174,12 +174,13 @@ const timeLabel = buildTimeLabel();
 /** Whether the URL is a known placeholder or invalid for direct rendering. */
 const showImage = Boolean(data.featuredImage.url) && !data.featuredImage.url.includes("placeholder");
 
-/** Location label: "Venue Name, City" or just "City". */
+/** Location label: "Venue Name, City" or just "City" (SPEC-095: prefer flat cityName). */
+const cityLabel = data.cityName ?? data.location?.city ?? '';
 const locationLabel = data.location
     ? data.location.name
-        ? `${data.location.name}, ${data.location.city}`
-        : data.location.city
-    : null;
+        ? `${data.location.name}, ${cityLabel}`
+        : cityLabel
+    : cityLabel || null;
 
 /** Inline style for the date block background (category color as solid token). */
 const dateBlockStyle = `background-color: ${categoryColors.text}; color: var(--primary-foreground);`;

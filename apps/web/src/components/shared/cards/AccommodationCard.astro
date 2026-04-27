@@ -131,7 +131,7 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 				</span>
 				<div class="acc-card__location-bar">
 					<LocationIcon size={12} weight="fill" aria-hidden="true" />
-					<span>{data.location.city}</span>
+					<span>{data.cityName ?? data.location.city}</span>
 				</div>
 			</div>
 
