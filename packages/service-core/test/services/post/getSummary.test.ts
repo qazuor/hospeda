@@ -57,11 +57,7 @@ describe('PostService.getSummary', () => {
             authorId: post.authorId,
             summary: post.summary
         });
-        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
-            { id: post.id },
-            expect.any(Object),
-            undefined
-        );
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: post.id }, undefined);
     });
 
     it('should return NOT_FOUND if post does not exist', async () => {
@@ -69,11 +65,7 @@ describe('PostService.getSummary', () => {
         asMock(modelMock.findOneWithRelations).mockResolvedValue(null);
         const result = await service.getSummary(actor, input);
         assertions.expectNotFoundError(result);
-        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
-            { id: post.id },
-            expect.any(Object),
-            undefined
-        );
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: post.id }, undefined);
     });
 
     it('should return FORBIDDEN if actor cannot view', async () => {
@@ -84,11 +76,7 @@ describe('PostService.getSummary', () => {
         });
         const result = await service.getSummary(actor, input);
         expectForbiddenError(result);
-        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
-            { id: post.id },
-            expect.any(Object),
-            undefined
-        );
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: post.id }, undefined);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
@@ -96,11 +84,7 @@ describe('PostService.getSummary', () => {
         asMock(modelMock.findOneWithRelations).mockRejectedValue(new Error('DB error'));
         const result = await service.getSummary(actor, input);
         expectInternalError(result);
-        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
-            { id: post.id },
-            expect.any(Object),
-            undefined
-        );
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: post.id }, undefined);
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {

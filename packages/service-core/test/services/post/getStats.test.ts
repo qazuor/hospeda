@@ -45,11 +45,7 @@ describe('PostService.getStats', () => {
             comments: post.comments ?? 0,
             shares: post.shares ?? 0
         });
-        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
-            { id: post.id },
-            expect.any(Object),
-            undefined
-        );
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: post.id }, undefined);
     });
 
     it('should return NOT_FOUND if post does not exist', async () => {
@@ -57,11 +53,7 @@ describe('PostService.getStats', () => {
         asMock(modelMock.findOneWithRelations).mockResolvedValue(null);
         const result = await service.getStats(actor, input);
         assertions.expectNotFoundError(result);
-        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
-            { id: post.id },
-            expect.any(Object),
-            undefined
-        );
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: post.id }, undefined);
     });
 
     it('should return FORBIDDEN if actor cannot view', async () => {
@@ -72,11 +64,7 @@ describe('PostService.getStats', () => {
         });
         const result = await service.getStats(actor, input);
         assertions.expectForbiddenError(result);
-        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
-            { id: post.id },
-            expect.any(Object),
-            undefined
-        );
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: post.id }, undefined);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
@@ -84,11 +72,7 @@ describe('PostService.getStats', () => {
         asMock(modelMock.findOneWithRelations).mockRejectedValue(new Error('DB error'));
         const result = await service.getStats(actor, input);
         expectInternalError(result);
-        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
-            { id: post.id },
-            expect.any(Object),
-            undefined
-        );
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: post.id }, undefined);
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {

@@ -1,4 +1,4 @@
-import type { BaseModel } from '@repo/db';
+import type { BaseModel, DrizzleClient } from '@repo/db';
 /**
  * @fileoverview
  * Test suite for the `getById` method of BaseService and its derivatives.
@@ -359,7 +359,7 @@ describe('SPEC-066: getByField relation loading', () => {
 
     it('should pass tx to findOne when getDefaultGetByIdRelations returns undefined and ctx has tx (GAP-002)', async () => {
         // Arrange
-        const mockTx = {} as unknown;
+        const mockTx = {} as unknown as DrizzleClient;
         class ServiceWithNoRelations extends TestService {
             protected override getDefaultListRelations(): ListRelationsConfig {
                 return undefined;
