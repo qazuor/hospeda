@@ -1,6 +1,9 @@
 // Base schema
 export * from './eventLocation.schema.js';
 
+// Address (postal-only) shape — SPEC-095
+export * from './eventLocation.address.schema.js';
+
 // CRUD schemas
 export * from './eventLocation.crud.schema.js';
 
