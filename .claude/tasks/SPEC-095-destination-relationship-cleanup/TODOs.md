@@ -1,6 +1,6 @@
 # TODOs: Destination Relationship Cleanup
 
-Spec: SPEC-095 | Status: in_progress | Progress: 17/37
+Spec: SPEC-095 | Status: in_progress | Progress: 21/37
 
 ---
 
@@ -61,10 +61,10 @@ T-004 and T-005 cover Phase 1 entity schema migration (mapped to `core` phase). 
 ## Phase 3 - Web App (8 tasks)
 
 - [x] T-015: Update transforms.ts to derive cityName, cityPath, cityDestinationSlug from cityDestination (complexity: 2) [blocked by T-013, T-014, T-014.5, T-014.6]
-- [ ] T-016: Update AccommodationCard and PropertyCard to read cityName from props (complexity: 1) [blocked by T-015]
-- [ ] T-017: Update EventCard, EventCardHorizontal, EventCardFeatured to read cityName from props (complexity: 1) [blocked by T-015]
-- [ ] T-018: Update LodgingBusinessJsonLd to build address from cityDestination data (complexity: 2) [blocked by T-015]
-- [ ] T-019: Update EventJsonLd to build location address from cityDestination data (complexity: 2) [blocked by T-015]
+- [x] T-016: Update AccommodationCard and PropertyCard to read cityName from props (complexity: 1) [blocked by T-015]
+- [x] T-017: Update EventCard, EventCardHorizontal, EventCardFeatured to read cityName from props (complexity: 1) [blocked by T-015]
+- [x] T-018: Update LodgingBusinessJsonLd to build address from cityDestination data (complexity: 2) [blocked by T-015]
+- [x] T-019: Update EventJsonLd to build location address from cityDestination data (complexity: 2) [blocked by T-015]
 - [ ] T-020: Add type=CITY filter support to /destinations GET endpoint (complexity: 2) [no blocking deps]
 - [ ] T-021: Create CityDestinationPicker island component (complexity: 3) [blocked by T-020]
 - [ ] T-022: Replace city free-text input with CityDestinationPicker in PropertyFormBasicSections (complexity: 2) [blocked by T-021]

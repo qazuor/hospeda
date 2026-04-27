@@ -410,84 +410,84 @@
             "id": "T-016",
             "title": "Update AccommodationCard and PropertyCard to read cityName from props",
             "description": "Replace all reads of `data.location.city` with the flat `cityName` prop derived by the transform (T-015) in the accommodation card components.\n\nFiles to modify:\n- `apps/web/src/components/accommodation/AccommodationCard.astro` (~line 134)\n- `apps/web/src/components/accommodation/PropertyCard.astro` (~line 72)\n\nAcceptance:\n- `grep 'location.city' apps/web/src/components/accommodation/` returns zero matches\n- Card renders city name correctly from `cityName` prop\n- TypeScript props interface updated to include `cityName: string` (and remove city from location type if typed)\n\nTest requirements:\n- Component render test (or Astro source-string assertion): cityName appears in rendered output\n- No reference to `location.city` in component source",
-            "status": "pending",
+            "status": "completed",
             "phase": "integration",
             "complexity": 1,
             "blockedBy": ["T-015"],
             "blocks": ["T-033"],
             "tags": ["web", "components", "accommodation"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T12:45:00.000Z",
+                "completed": "2026-04-27T12:50:00.000Z"
             }
         },
         {
             "id": "T-017",
             "title": "Update EventCard, EventCardHorizontal, EventCardFeatured to read cityName from props",
             "description": "Replace all reads of `data.location.city` (or `eventLocation.city`) with the flat `cityName` prop in the event card components.\n\nFiles to modify:\n- `apps/web/src/components/event/EventCard.astro`\n- `apps/web/src/components/event/EventCardHorizontal.astro`\n- `apps/web/src/components/event/EventCardFeatured.astro`\n\nAcceptance:\n- `grep 'location.city' apps/web/src/components/event/` returns zero matches\n- All three cards render city correctly from `cityName` prop\n\nTest requirements:\n- Component source assertion: no `location.city` reference\n- Spot-check: cityName appears in rendered markup",
-            "status": "pending",
+            "status": "completed",
             "phase": "integration",
             "complexity": 1,
             "blockedBy": ["T-015"],
             "blocks": ["T-033"],
             "tags": ["web", "components", "event"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T12:50:00.000Z",
+                "completed": "2026-04-27T12:53:00.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "Update LodgingBusinessJsonLd to build address from cityDestination data",
             "description": "Rewrite the `LodgingBusinessJsonLd` component (or function) to derive addressLocality, addressRegion, and addressCountry from the transform-provided props instead of `location.city`.\n\nFiles to modify:\n- `apps/web/src/components/seo/LodgingBusinessJsonLd.astro` (or .tsx)\n\nDerivation logic:\n- `addressLocality` = `cityName` prop\n- `addressRegion` = parse `cityPath` by splitting on `/` and picking known index (document assumption: index 2 is province for Argentine paths like `/argentina/litoral/entre-rios/concepcion-del-uruguay`). Add a comment explaining the coupling.\n- `addressCountry` = `AR` for MVP (hardcoded, documented in comment as acceptable until multi-country support needed)\n\nAcceptance:\n- JSON-LD output contains correct addressLocality, addressRegion, addressCountry\n- Zero reads of `location.city` in the component\n\nTest requirements:\n- Unit test of the path-parsing helper (extract one small pure function for testability)\n- Snapshot test or assertion: JSON-LD script tag contains expected address fields",
-            "status": "pending",
+            "status": "completed",
             "phase": "integration",
             "complexity": 2,
             "blockedBy": ["T-015"],
             "blocks": ["T-033"],
             "tags": ["web", "components", "seo"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T12:53:00.000Z",
+                "completed": "2026-04-27T13:00:00.000Z"
             }
         },
         {
             "id": "T-019",
             "title": "Update EventJsonLd to build location address from cityDestination data",
             "description": "Rewrite `EventJsonLd` component to derive the venue address from transform props, same logic as T-018.\n\nFiles to modify:\n- `apps/web/src/components/seo/EventJsonLd.astro` (or .tsx)\n\nSame derivation logic as T-018 (addressLocality from cityName, addressRegion from cityPath parsing, addressCountry hardcoded AR).\n\nAcceptance:\n- Zero reads of `location.city` or `eventLocation.city` in component\n- JSON-LD event location contains addressLocality = city name\n\nTest requirements:\n- Assertion: JSON-LD script tag contains correct location address\n- No `location.city` in source",
-            "status": "pending",
+            "status": "completed",
             "phase": "integration",
             "complexity": 2,
             "blockedBy": ["T-015"],
             "blocks": ["T-033"],
             "tags": ["web", "components", "seo", "event"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T13:00:00.000Z",
+                "completed": "2026-04-27T13:05:00.000Z"
             }
         },
         {
@@ -842,7 +842,7 @@
         }
     ],
     "progress": {
-        "completed": 17,
+        "completed": 21,
         "total": 37
     }
 }
