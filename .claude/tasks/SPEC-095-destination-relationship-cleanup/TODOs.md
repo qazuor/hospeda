@@ -1,6 +1,6 @@
 # TODOs: Destination Relationship Cleanup
 
-Spec: SPEC-095 | Status: in_progress | Progress: 6/35
+Spec: SPEC-095 | Status: in_progress | Progress: 16/37
 
 ---
 
@@ -28,12 +28,12 @@ Length: 12 hops (longest sequential chain). All web component work (T-016 throug
 
 ## Phase 0 - Schema Foundation (6 tasks)
 
-- [ ] T-001: Create AccommodationLocationSchema (postal address only) (complexity: 1)
-- [ ] T-002: Create EventLocationAddressSchema (postal address only) (complexity: 1)
-- [ ] T-003: Create CityDestinationRefSchema (relation projection) (complexity: 1)
-- [ ] T-004: Replace BaseLocationFields with AccommodationLocationFields in AccommodationSchema (complexity: 2) [blocked by T-001, T-006]
-- [ ] T-005: Restructure EventLocationSchema to use new address fields (complexity: 2) [blocked by T-002, T-006]
-- [ ] T-006: Revert BBT-11 hotfix (city field on BaseLocationSchema) (complexity: 1)
+- [x] T-001: Create AccommodationLocationSchema (postal address only) (complexity: 1)
+- [x] T-002: Create EventLocationAddressSchema (postal address only) (complexity: 1)
+- [x] T-003: Create CityDestinationRefSchema (relation projection) (complexity: 1)
+- [x] T-004: Replace BaseLocationFields with AccommodationLocationFields in AccommodationSchema (complexity: 2) [blocked by T-001, T-006]
+- [x] T-005: Restructure EventLocationSchema to use new address fields (complexity: 2) [blocked by T-002, T-006]
+- [x] T-006: Revert BBT-11 hotfix (city field on BaseLocationSchema) (complexity: 1)
 
 ---
 
@@ -43,22 +43,24 @@ T-004 and T-005 cover Phase 1 entity schema migration (mapped to `core` phase). 
 
 ---
 
-## Phase 2 - DB and Service (8 tasks)
+## Phase 2 - DB and Service (10 tasks)
 
-- [ ] T-007: Update DB column types for accommodation and event_location JSONB (complexity: 2) [blocked by T-004, T-005]
-- [ ] T-008: Add CITY destinationType validation to AccommodationService (create + update) (complexity: 2) [blocked by T-007]
-- [ ] T-009: Add CITY destinationType validation to EventService (create + update) (complexity: 2) [blocked by T-007]
-- [ ] T-010: Eager-load cityDestination in AccommodationService list and search (complexity: 2) [blocked by T-003, T-008]
-- [ ] T-011: Eager-load cityDestination in AccommodationService getById, getBySlug, adminList (complexity: 2) [blocked by T-010]
-- [ ] T-012: Eager-load cityDestination in EventService response methods (complexity: 2) [blocked by T-003, T-009]
-- [ ] T-013: Update accommodation API response schemas to include cityDestination (complexity: 2) [blocked by T-003, T-004, T-010, T-011]
-- [ ] T-014: Update event API response schemas to include cityDestination (complexity: 2) [blocked by T-003, T-005, T-012]
+- [x] T-007: Update DB column types for accommodation and event_location JSONB (complexity: 2) [blocked by T-004, T-005]
+- [x] T-008: Add CITY destinationType validation to AccommodationService (create + update) (complexity: 2) [blocked by T-007]
+- [x] T-009: Add CITY destinationType validation to EventLocationService (create + update) (complexity: 2) [blocked by T-007]
+- [x] T-010: Eager-load cityDestination in AccommodationService list and search (complexity: 2) [blocked by T-003, T-008]
+- [x] T-011: Eager-load cityDestination in AccommodationService getById, getBySlug, adminList (complexity: 2) [blocked by T-010]
+- [x] T-012: Eager-load cityDestination in EventLocationService response methods (complexity: 2) [blocked by T-003, T-009]
+- [x] T-013: Update accommodation API response schemas to include cityDestination (complexity: 2) [blocked by T-003, T-004, T-010, T-011]
+- [x] T-014: Update event API response schemas to include cityDestination (complexity: 2) [blocked by T-003, T-005, T-012]
+- [x] T-014.5: Project cityDestination in AccommodationService read hooks (mapping bridge) (complexity: 2) [blocked by T-014]
+- [x] T-014.6: Project cityDestination in EventLocationService read hooks (mapping bridge) (complexity: 2) [blocked by T-014]
 
 ---
 
 ## Phase 3 - Web App (8 tasks)
 
-- [ ] T-015: Update transforms.ts to derive cityName, cityPath, cityDestinationSlug from cityDestination (complexity: 2) [blocked by T-013, T-014]
+- [ ] T-015: Update transforms.ts to derive cityName, cityPath, cityDestinationSlug from cityDestination (complexity: 2) [blocked by T-013, T-014, T-014.5, T-014.6]
 - [ ] T-016: Update AccommodationCard and PropertyCard to read cityName from props (complexity: 1) [blocked by T-015]
 - [ ] T-017: Update EventCard, EventCardHorizontal, EventCardFeatured to read cityName from props (complexity: 1) [blocked by T-015]
 - [ ] T-018: Update LodgingBusinessJsonLd to build address from cityDestination data (complexity: 2) [blocked by T-015]

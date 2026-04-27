@@ -179,168 +179,210 @@
             "id": "T-007",
             "title": "Update DB column types for accommodation and event_location JSONB",
             "description": "Update the Drizzle schema files to reflect the new postal-address-only types in the JSONB location column, and add `destinationId` to event_locations.\n\nFiles to modify:\n- `packages/db/src/schemas/accommodations.dbschema.ts` \u2014 change `$type<FullLocationType>()` to `$type<AccommodationLocationType>()`\n- `packages/db/src/schemas/event_locations.dbschema.ts` \u2014 change location JSONB type to `$type<EventLocationAddressType>()`, add `destinationId: uuid().references(() => destinations.id).notNull()`\n\nAfter schema change:\n1. Run `pnpm db:fresh-dev` (push-only, no numbered migration needed per project policy)\n2. Run `packages/db/scripts/apply-postgres-extras.sh` to re-apply triggers/views/CHECKs\n\nAcceptance:\n- `drizzle-kit push` completes without error\n- `apply-postgres-extras.sh` completes without error\n- DB column introspection shows event_locations.destination_id FK to destinations\n\nTest requirements:\n- Introspection/schema test: verify event_locations has destinationId column (if applicable per project testing standard for push-only)\n- No data migration needed (no production data)",
-            "status": "pending",
+            "status": "completed",
             "phase": "core",
             "complexity": 2,
             "blockedBy": ["T-004", "T-005"],
             "blocks": ["T-008", "T-009"],
             "tags": ["db", "accommodation", "event"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T05:00:00.000Z",
+                "completed": "2026-04-27T05:30:00.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "Add CITY destinationType validation to AccommodationService (create + update)",
             "description": "Implement the `destinationType === CITY` guard in `AccommodationService._beforeCreate` and `AccommodationService._beforeUpdate`. Load the destination from `DestinationModel` (or `DestinationService`) and reject with `ServiceError(VALIDATION_ERROR)` if the type is not CITY.\n\nFiles to modify:\n- `packages/service-core/src/services/accommodation.service.ts` (or equivalent path)\n\nAcceptance:\n- `_beforeCreate` with PROVINCE destinationId \u2192 throws VALIDATION_ERROR with message 'destinationId must reference a destination of type CITY'\n- `_beforeCreate` with CITY destinationId \u2192 no error, create proceeds\n- `_beforeUpdate` with non-CITY destinationId \u2192 same rejection\n- destinationId pointing to non-existent destination \u2192 NOT_FOUND (existing behavior preserved)\n\nTest requirements (co-located with implementation):\n- Test: create with PROVINCE dest \u2192 VALIDATION_ERROR\n- Test: create with CITY dest \u2192 success\n- Test: update changing to PROVINCE dest \u2192 VALIDATION_ERROR\n- Use mocked DestinationModel to avoid DB in unit test",
-            "status": "pending",
+            "status": "completed",
             "phase": "core",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-010", "T-025"],
             "tags": ["service", "accommodation", "validation"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T05:30:00.000Z",
+                "completed": "2026-04-27T06:00:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Add CITY destinationType validation to EventLocationService (create + update)",
             "description": "Implement the `destinationType === CITY` guard in `EventLocationService._beforeCreate` and `EventLocationService._beforeUpdate`. The destination relationship for events lives entirely on the eventLocation entity \u2014 EventService only holds a `locationId` FK and does NOT carry destinationId directly.\n\nFiles to modify:\n- `packages/service-core/src/services/eventLocation/eventLocation.service.ts` \u2014 add guard in `_beforeCreate` and `_beforeUpdate`\n\nLoad the destination from `DestinationModel` (or `DestinationService`) and reject with `ServiceError(VALIDATION_ERROR)` if the type is not CITY.\n\nAcceptance:\n- `_beforeCreate` with PROVINCE destinationId \u2192 VALIDATION_ERROR 'destinationId must reference a destination of type CITY'\n- `_beforeCreate` with CITY destinationId \u2192 no error, create proceeds\n- `_beforeUpdate` with non-CITY destinationId \u2192 same rejection\n- Non-existent destinationId \u2192 NOT_FOUND (existing behavior preserved)\n\nTest requirements:\n- Test: create with PROVINCE dest \u2192 VALIDATION_ERROR\n- Test: create with CITY dest \u2192 success\n- Test: update to PROVINCE dest \u2192 VALIDATION_ERROR\n- Use mocked DestinationModel to avoid DB in unit test",
-            "status": "pending",
+            "status": "completed",
             "phase": "core",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-010", "T-025"],
             "tags": ["service", "event", "validation"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T06:00:00.000Z",
+                "completed": "2026-04-27T06:30:00.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "Eager-load cityDestination in AccommodationService list and search",
             "description": "Add the destination relation to the default relation set used by `AccommodationService.list` and `AccommodationService.search`. Project the result to `CityDestinationRefSchema` in the response transformer.\n\nFiles to modify:\n- `packages/service-core/src/services/accommodation.service.ts` \u2014 update `getDefaultListRelations` (or equivalent) to include destination\n- Response transformer that maps model rows to public/admin shape \u2014 add `cityDestination` field by parsing with `CityDestinationRefSchema`\n\nAcceptance:\n- `list` and `search` responses include `cityDestination` on each item\n- `cityDestination` fields match CityDestinationRefSchema shape (id, slug, name, summary, destinationType, level, path, pathIds)\n- No extra destination fields (media, reviewsCount) in the response\n\nTest requirements:\n- Integration/unit test: list returns array where each item has `cityDestination.name`\n- Test: cityDestination contains only the 8 permitted fields",
-            "status": "pending",
+            "status": "completed",
             "phase": "core",
             "complexity": 2,
             "blockedBy": ["T-003", "T-008"],
             "blocks": ["T-013", "T-015"],
             "tags": ["service", "accommodation"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T06:30:00.000Z",
+                "completed": "2026-04-27T07:00:00.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "Eager-load cityDestination in AccommodationService getById, getBySlug, adminList",
             "description": "Extend the eager-loading done in T-010 to the single-entity and admin list queries.\n\nFiles to modify:\n- `packages/service-core/src/services/accommodation.service.ts` \u2014 update `getDefaultGetByIdRelations` (or equivalent) to include destination\n- Admin list relation set (if different from public list)\n\nAcceptance:\n- `getById` and `getBySlug` responses include `cityDestination`\n- `adminList` response includes `cityDestination` on each item\n\nTest requirements:\n- Test: getById response has `cityDestination` with correct fields\n- Test: getBySlug response has `cityDestination`\n- Test: adminList response items have `cityDestination`",
-            "status": "pending",
+            "status": "completed",
             "phase": "core",
             "complexity": 2,
             "blockedBy": ["T-010"],
             "blocks": ["T-013", "T-015"],
             "tags": ["service", "accommodation"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T07:00:00.000Z",
+                "completed": "2026-04-27T07:30:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Eager-load cityDestination in EventLocationService response methods",
             "description": "Add destination eager-loading and `cityDestination` projection to the EventLocationService response methods. The destination is a relation of eventLocation, NOT of EventService. EventService exposes events with an embedded eventLocation \u2014 the eager-load must happen on the eventLocation side so that every route returning an event with its eventLocation already has `cityDestination` populated.\n\nFiles to modify:\n- `packages/service-core/src/services/eventLocation/eventLocation.service.ts` \u2014 update `getDefaultListRelations` and `getDefaultGetByIdRelations` (or equivalents) to include the destination relation\n- Response transformer for eventLocation shape \u2014 add `cityDestination` field projected via `CityDestinationRefSchema`\n- Verify: any route that returns an event with eventLocation embedded (e.g. EventService.getById with relations) must be confirmed to receive the already-loaded cityDestination from eventLocation \u2014 no additional join needed at the EventService level if the relation is correctly loaded on eventLocation\n\nAcceptance:\n- EventLocationService list/getById responses include `cityDestination`\n- All event API responses that embed eventLocation include `cityDestination`\n- Shape matches CityDestinationRefSchema (id, slug, name, summary, destinationType, level, path, pathIds)\n- No extra destination fields (media, reviewsCount) in the response\n\nTest requirements:\n- Test: eventLocation list response items have `cityDestination.name`\n- Test: eventLocation getById response has `cityDestination`\n- Test: event getById response (with embedded eventLocation) has `eventLocation.cityDestination`",
-            "status": "pending",
+            "status": "completed",
             "phase": "core",
             "complexity": 2,
             "blockedBy": ["T-003", "T-009"],
             "blocks": ["T-013", "T-015"],
             "tags": ["service", "event"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T07:30:00.000Z",
+                "completed": "2026-04-27T08:00:00.000Z"
             }
         },
         {
             "id": "T-013",
             "title": "Update accommodation API response schemas to include cityDestination",
             "description": "Add `cityDestination: CityDestinationRefSchema` as a required field and update `location` to the new `AccommodationLocationSchema` shape in all accommodation response schemas.\n\nFiles to modify:\n- `packages/schemas/src/entities/accommodation/accommodation.http.schema.ts` \u2014 AccommodationPublicSchema, AccommodationProtectedSchema, AccommodationAdminSchema (and list variants)\n- Any response-envelope types that pick from accommodation fields\n\nAcceptance:\n- All three response schemas expose `cityDestination: CityDestinationRefSchema` (required)\n- `location` in response schemas matches AccommodationLocationSchema (no city/state/country)\n- OpenAPI doc generated at /reference shows new shape with no orphaned city references\n\nTest requirements:\n- Schema test: parse valid AccommodationPublicSchema with cityDestination \u2014 succeeds\n- Schema test: parse without cityDestination \u2014 fails (required field)\n- Schema test: parse with location.city \u2014 fails (extra key rejected by strict) or stripped (document behavior)",
-            "status": "pending",
+            "status": "completed",
             "phase": "core",
             "complexity": 2,
             "blockedBy": ["T-003", "T-004", "T-010", "T-011"],
             "blocks": ["T-015", "T-026"],
             "tags": ["schemas", "api", "accommodation"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T08:00:00.000Z",
+                "completed": "2026-04-27T10:00:00.000Z"
             }
         },
         {
             "id": "T-014",
             "title": "Update event API response schemas to include cityDestination",
             "description": "Same as T-013 but for event/eventLocation response schemas.\n\nFiles to modify:\n- `packages/schemas/src/entities/event/event.http.schema.ts` \u2014 EventPublicSchema, EventAdminSchema, EventLocationPublicSchema, etc.\n- Any response-envelope types for event\n\nAcceptance:\n- All event response schemas expose `cityDestination: CityDestinationRefSchema` (required)\n- `location` on eventLocation matches EventLocationAddressSchema (no city/state/country)\n\nTest requirements:\n- Schema test: parse valid EventPublicSchema with cityDestination \u2014 succeeds\n- Schema test: parse without cityDestination \u2014 fails",
-            "status": "pending",
+            "status": "completed",
             "phase": "core",
             "complexity": 2,
             "blockedBy": ["T-003", "T-005", "T-012"],
             "blocks": ["T-015", "T-026"],
             "tags": ["schemas", "api", "event"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T10:00:00.000Z",
+                "completed": "2026-04-27T11:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-014.5",
+            "title": "Project cityDestination in AccommodationService read hooks (mapping bridge)",
+            "description": "Add a small mapping helper that projects the eager-loaded destination relation into the lightweight cityDestination field expected by the public/protected/admin response schemas. Override _afterGetByField, _afterList, _afterSearch, and post-process _executeAdminSearch in AccommodationService to apply the projection on every canonical read path.\n\nFiles to create:\n- packages/service-core/src/services/accommodation/accommodation.projections.ts\n- packages/service-core/test/services/accommodation/accommodation.projections.test.ts\n\nFiles to modify:\n- packages/service-core/src/services/accommodation/accommodation.service.ts",
+            "status": "completed",
+            "phase": "core",
+            "complexity": 2,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-015"],
+            "tags": ["service", "accommodation", "projection"],
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-04-27T11:30:00.000Z",
+                "started": "2026-04-27T11:30:00.000Z",
+                "completed": "2026-04-27T12:25:00.000Z"
+            }
+        },
+        {
+            "id": "T-014.6",
+            "title": "Project cityDestination in EventLocationService read hooks (mapping bridge)",
+            "description": "Mirror T-014.5 for EventLocationService. Add the projection helper and override _afterGetByField, _afterList, _afterSearch so events embedding their location receive the cityDestination projection on every canonical read.\n\nFiles to create:\n- packages/service-core/src/services/eventLocation/eventLocation.projections.ts\n- packages/service-core/test/services/eventLocation/eventLocation.projections.test.ts\n\nFiles to modify:\n- packages/service-core/src/services/eventLocation/eventLocation.service.ts",
+            "status": "completed",
+            "phase": "core",
+            "complexity": 2,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-015"],
+            "tags": ["service", "event", "projection"],
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-04-27T11:30:00.000Z",
+                "started": "2026-04-27T12:25:00.000Z",
+                "completed": "2026-04-27T12:35:00.000Z"
             }
         },
         {
@@ -350,7 +392,7 @@
             "status": "pending",
             "phase": "integration",
             "complexity": 2,
-            "blockedBy": ["T-013", "T-014"],
+            "blockedBy": ["T-013", "T-014", "T-014.5", "T-014.6"],
             "blocks": ["T-016", "T-017", "T-018", "T-019", "T-020"],
             "tags": ["web", "transforms"],
             "qualityGate": {
@@ -800,7 +842,7 @@
         }
     ],
     "progress": {
-        "completed": 6,
-        "total": 35
+        "completed": 16,
+        "total": 37
     }
 }
