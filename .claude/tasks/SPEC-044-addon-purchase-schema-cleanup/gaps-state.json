@@ -141,7 +141,9 @@
                     "complexity": 2,
                     "effort_minutes": 20,
                     "depends_on": [],
-                    "status": "pending"
+                    "status": "completed",
+                    "completed_at": "2026-04-27T01:03:44.000Z",
+                    "completion_note": "Already implemented in code (verified 2026-04-27); covered by existing tests in addon-expiration.service.test.ts (32 tests), addon-concurrent-cancellation.test.ts (12 race tests) and addon-user-addons-atomicity.test.ts."
                 },
                 {
                     "id": "GAPS-P3-T002",
@@ -152,7 +154,9 @@
                     "complexity": 2,
                     "effort_minutes": 20,
                     "depends_on": [],
-                    "status": "pending"
+                    "status": "completed",
+                    "completed_at": "2026-04-27T01:03:44.000Z",
+                    "completion_note": "Already implemented in code (verified 2026-04-27); covered by existing tests in addon-expiration.service.test.ts (32 tests), addon-concurrent-cancellation.test.ts (12 race tests) and addon-user-addons-atomicity.test.ts."
                 },
                 {
                     "id": "GAPS-P3-T003",
@@ -163,7 +167,9 @@
                     "complexity": 2,
                     "effort_minutes": 20,
                     "depends_on": [],
-                    "status": "pending"
+                    "status": "completed",
+                    "completed_at": "2026-04-27T01:03:44.000Z",
+                    "completion_note": "Already implemented in code (verified 2026-04-27); covered by existing tests in addon-expiration.service.test.ts (32 tests), addon-concurrent-cancellation.test.ts (12 race tests) and addon-user-addons-atomicity.test.ts."
                 },
                 {
                     "id": "GAPS-P3-T004",
@@ -174,7 +180,9 @@
                     "complexity": 1.5,
                     "effort_minutes": 15,
                     "depends_on": ["GAPS-P3-T003"],
-                    "status": "pending"
+                    "status": "completed",
+                    "completed_at": "2026-04-27T01:03:44.000Z",
+                    "completion_note": "Already implemented in code (verified 2026-04-27); covered by existing tests in addon-expiration.service.test.ts (32 tests), addon-concurrent-cancellation.test.ts (12 race tests) and addon-user-addons-atomicity.test.ts."
                 }
             ]
         },
@@ -666,5 +674,5 @@
             ]
         }
     ],
-    "triage_decision": "See triage-decision.md. Phase 3 (race conditions) flagged as owner-review. All other phases deferred post-beta."
+    "triage_decision": "See triage-decision.md. Phase 3 (race conditions) verified DONE on 2026-04-27. All other phases deferred post-beta."
 }

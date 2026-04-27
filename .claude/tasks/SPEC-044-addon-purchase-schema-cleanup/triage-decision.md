@@ -13,9 +13,11 @@ deferred and why.
 - **Done in this session**: T-021 (apply migration to dev DB) — verified via
   direct SQL: `canceled_at` and `deleted_at` columns exist nullable, no
   British `cancelled_at`, zero rows with legacy `status = 'cancelled'`.
-- **Critical-keep flagged for owner review**: 4 tasks in Phase 3
-  (race conditions in addon cancel/expire). See "Owner-decision items" below.
-- **Deferred to post-beta**: the remaining 45 tasks.
+- **Critical race condition tasks (Phase 3, 4 tasks)**: VERIFIED DONE on
+  2026-04-27 by direct code audit. All four were already implemented and
+  covered by existing tests. See per-phase breakdown below.
+- **Deferred to post-beta**: the remaining 45 tasks (Phases 1, 2, 4-8 minus
+  the items already covered above).
 
 ## Phase-by-phase breakdown
 
@@ -36,23 +38,23 @@ All four are defensive validation hardening on already-working paths
 annualPriceArs check). No incident traceable to their absence; safe to
 ship beta without them.
 
-### Phase 3 — Race Condition & Resilience Fixes (75 min, 4 tasks) — OWNER DECISION
+### Phase 3 — Race Condition & Resilience Fixes (75 min, 4 tasks) — VERIFIED DONE (2026-04-27)
 
-These four touch the billing money path. Each is a small change but the
-underlying risk is real (concurrent cancel/expire writes against the same
-purchase row). Recommendation: review before beta launch and decide
-whether to ship them now or accept the risk for the beta cohort size.
+A direct code audit on 2026-04-27 found all four tasks already implemented
+in production code, more robustly than the spec required. Marked as
+`completed` in gaps-state.json. Test coverage exists:
 
-| Task | Effort | Risk if unfixed |
-|------|--------|-----------------|
-| T001 harden cancelUserAddon WHERE clause | 20 min | Two simultaneous cancel requests can both succeed; second one writes inconsistent state. |
-| T002 harden expireAddon WHERE clause | 20 min | Cron expiry can race with manual cancel and double-process. |
-| T003 wrap entitlement removal in try/catch in expireAddon | 20 min | Today a partial failure leaves an addon in inconsistent state with no compensating event. (Note: T-046/T-047 of SPEC-064 already addressed compensating events for the cancellation path; expiry may benefit from the same pattern.) |
-| T004 ensure status update always executes after entitlement removal in expireAddon | 15 min | Status drift if the entitlement remove succeeds but the status update is skipped. |
+| Task | Implementation | Coverage |
+|------|----------------|----------|
+| T001 harden `cancelUserAddon` WHERE clause | `apps/api/src/services/addon.user-addons.ts:168-173` — WHERE includes `status = 'active'` and `isNull(deletedAt)`; rowCount checked with structured warning when 0 rows are affected | `addon-concurrent-cancellation.test.ts` (12 tests including "exactly one wins", "no double revocation", "no orphaned state") and `addon-user-addons-atomicity.test.ts` |
+| T002 harden `expireAddon` WHERE clause | `addon-expiration.service.ts:228-234` — same WHERE guards plus rowCount check; idempotent path for already-expired purchases at line 144 | `addon-expiration.service.test.ts` "should be idempotent — return success for already expired add-on" and "should return INVALID_STATUS for non-active status" |
+| T003 wrap entitlement removal in try/catch in `expireAddon` | `addon-expiration.service.ts:180-214` — full try/catch around `removeAddonEntitlements`; both `success: false` and thrown exceptions handled with structured warnings | `addon-expiration.service.test.ts` "should handle entitlement removal failure" + "should handle AddonEntitlementService throwing exception" |
+| T004 ensure status update always executes after entitlement removal | `addon-expiration.service.ts:220-234` — UPDATE runs unconditionally after the catch with `entitlementRemovalPending` flag set when removal failed, enabling the addon-expiry cron reconciliation phase to retry | Same suite verifies `entitlementRemovalPending: true` is written on failure (lines 480 + 956) |
 
-**Mitigating factor**: beta cohort is small (~5-10 users). Real-world
-contention probability is low. Still worth a 75-minute follow-up before
-opening beta to a wider audience.
+The implementation goes beyond what the spec asked for (the
+`entitlementRemovalPending` reconciliation flag and the idempotent path
+for already-expired records were not part of the original task, but
+strengthen the contract). 32/32 tests pass in `addon-expiration.service.test.ts`.
 
 ### Phase 4 — Admin Route & Pagination Fixes (255 min, 6 tasks) — DEFERRED
 
@@ -94,16 +96,12 @@ Defer until post-beta and tackle as its own spec.
 | T006 update UsageTrackingService tests for T005 | 25 min | DEFER | Depends on T005. |
 | T007 ADDON_PURCHASE email template | 30 min | DEFER | New feature. Beta can launch without addon purchase emails. |
 
-## Owner-decision items (please review before opening beta)
+## Owner-decision items (resolved)
 
-The four Phase 3 race condition tasks total **75 minutes of work** and
-touch the billing money path. They are individually small but
-collectively meaningful for a system that handles real charges.
-
-If you choose to ship them, treat them as a single follow-up commit
-under `fix(billing): harden addon cancel/expire race conditions
-(SPEC-044 GAPS-P3)`. If you choose to defer, plan them into the first
-post-beta hardening sprint.
+The four Phase 3 race condition tasks were the only items flagged as
+owner-decision when this triage was first written. The 2026-04-27 audit
+confirmed they are already implemented in production code and covered by
+existing tests, so no additional follow-up is required before beta.
 
 ## How to revisit
 
