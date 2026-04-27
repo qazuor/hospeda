@@ -2,8 +2,8 @@
     "epic": "SPEC-044-GAPS",
     "title": "SPEC-044 Addon Purchase Schema Cleanup - Gap Remediation",
     "created": "2026-03-17",
-    "updated_at": "2026-04-25",
-    "status": "pending",
+    "updated_at": "2026-04-27",
+    "status": "deferred-post-beta",
     "total_tasks": 49,
     "phases": [
         {
@@ -665,5 +665,6 @@
                 }
             ]
         }
-    ]
+    ],
+    "triage_decision": "See triage-decision.md. Phase 3 (race conditions) flagged as owner-review. All other phases deferred post-beta."
 }
