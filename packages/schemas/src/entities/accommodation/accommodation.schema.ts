@@ -9,7 +9,6 @@ import {
     UserIdSchema
 } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
-import { BaseLocationFields } from '../../common/location.schema.js';
 import { BaseMediaFields } from '../../common/media.schema.js';
 import { BaseModerationFields } from '../../common/moderation.schema.js';
 import { BaseReviewFields } from '../../common/review.schema.js';
@@ -17,6 +16,7 @@ import { BaseSeoFields } from '../../common/seo.schema.js';
 import { TagsFields } from '../../common/tags.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { AccommodationTypeEnumSchema } from '../../enums/index.js';
+import { AccommodationLocationFields } from './accommodation.location.schema.js';
 import { AccommodationIaDataSchema } from './subtypes/accommodation.ia.schema.js';
 import { AccommodationPriceSchema } from './subtypes/accommodation.price.schema.js';
 import { AccommodationRatingSchema } from './subtypes/accommodation.rating.schema.js';
@@ -58,7 +58,7 @@ export const AccommodationSchema = z.object({
     ...BaseReviewFields,
     ...BaseSeoFields,
     ...BaseContactFields,
-    ...BaseLocationFields,
+    ...AccommodationLocationFields,
     ...BaseMediaFields,
     ...BaseAdminFields,
 

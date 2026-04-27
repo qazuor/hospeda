@@ -220,11 +220,9 @@ export const httpToDomainAccommodationCreate = (
 
     // ✅ COMPLETED: Proper nested object structures
 
-    // Location mapping from flat HTTP fields to nested domain structure (BaseLocationSchema)
+    // Location mapping from flat HTTP fields to AccommodationLocationSchema (postal address only).
+    // Geographic context (city, state, country) is derived from the destination relation.
     location: {
-        state: '', // Default empty - would need additional HTTP field or geocoding
-        zipCode: '', // Default empty - would need additional HTTP field
-        country: '', // Default empty - would need additional HTTP field
         coordinates: {
             lat: httpData.latitude.toString(),
             long: httpData.longitude.toString()
@@ -264,13 +262,11 @@ export const httpToDomainAccommodationUpdate = (
 
     // ✅ COMPLETED: Nested object mappings for location, price, extraInfo
 
-    // Location mapping (only if coordinates are provided)
+    // Location mapping (only if coordinates are provided). Postal address only;
+    // geographic context comes from the destination relation.
     ...(httpData.latitude !== undefined && httpData.longitude !== undefined
         ? {
               location: {
-                  state: '', // Would need additional HTTP fields
-                  zipCode: '', // Would need additional HTTP fields
-                  country: '', // Would need additional HTTP fields
                   coordinates: {
                       lat: httpData.latitude?.toString() || '',
                       long: httpData.longitude?.toString() || ''
