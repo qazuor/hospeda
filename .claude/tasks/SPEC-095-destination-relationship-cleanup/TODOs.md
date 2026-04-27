@@ -1,6 +1,6 @@
 # TODOs: Destination Relationship Cleanup
 
-Spec: SPEC-095 | Status: pending | Progress: 0/35
+Spec: SPEC-095 | Status: in_progress | Progress: 6/35
 
 ---
 

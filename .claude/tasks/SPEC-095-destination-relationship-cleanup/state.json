@@ -1,7 +1,7 @@
 {
     "specId": "SPEC-095",
     "title": "Destination Relationship Cleanup for Accommodation and EventLocation",
-    "status": "pending",
+    "status": "in_progress",
     "criticalPath": [
         "T-001",
         "T-002",
@@ -52,133 +52,133 @@
         {
             "id": "T-001",
             "title": "Create AccommodationLocationSchema (postal address only)",
-            "description": "Create a new file `packages/schemas/src/entities/accommodation/accommodation.location.schema.ts` that defines a Zod schema for the postal address portion of an accommodation location — with no geographic fields (city, state, country, zipCode, neighborhood, department).\n\nFiles to create/modify:\n- `packages/schemas/src/entities/accommodation/accommodation.location.schema.ts` (create)\n\nShape:\n- coordinates: optional CoordinatesSchema\n- street: optional string 2-50\n- number: optional string 1-10\n- floor: optional string 1-10\n- apartment: optional string 1-10\n\nExports:\n- `AccommodationLocationSchema` (Zod object)\n- `AccommodationLocationType` (inferred TypeScript type)\n- `AccommodationLocationFields` (spread helper for AccommodationSchema composition)\n\nTest requirements:\n- Unit test: parse a valid object — succeeds\n- Unit test: parse object with city field — succeeds (passthrough) or stripped (strict), document the choice\n- Unit test: export shape has no city/state/country keys",
-            "status": "pending",
+            "description": "Create a new file `packages/schemas/src/entities/accommodation/accommodation.location.schema.ts` that defines a Zod schema for the postal address portion of an accommodation location \u2014 with no geographic fields (city, state, country, zipCode, neighborhood, department).\n\nFiles to create/modify:\n- `packages/schemas/src/entities/accommodation/accommodation.location.schema.ts` (create)\n\nShape:\n- coordinates: optional CoordinatesSchema\n- street: optional string 2-50\n- number: optional string 1-10\n- floor: optional string 1-10\n- apartment: optional string 1-10\n\nExports:\n- `AccommodationLocationSchema` (Zod object)\n- `AccommodationLocationType` (inferred TypeScript type)\n- `AccommodationLocationFields` (spread helper for AccommodationSchema composition)\n\nTest requirements:\n- Unit test: parse a valid object \u2014 succeeds\n- Unit test: parse object with city field \u2014 succeeds (passthrough) or stripped (strict), document the choice\n- Unit test: export shape has no city/state/country keys",
+            "status": "completed",
             "phase": "core",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-004"],
             "tags": ["schemas", "accommodation"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T00:55:00.000Z",
+                "completed": "2026-04-27T01:50:00.000Z"
             }
         },
         {
             "id": "T-002",
             "title": "Create EventLocationAddressSchema (postal address only)",
-            "description": "Create a new schema that defines the postal address fields for eventLocations, removing city/state/country/neighborhood/department.\n\nFiles to create/modify:\n- `packages/schemas/src/entities/event/event-location.address.schema.ts` (create, or inline in existing event-location.schema.ts)\n\nShape:\n- coordinates: optional\n- street: optional string (existing constraints)\n- number: optional string\n- floor: optional string\n- apartment: optional string\n- placeName: optional string (existing constraints)\n- destinationId: UUID required FK\n\nExports:\n- `EventLocationAddressSchema`\n- `EventLocationAddressType`\n- `EventLocationAddressFields`\n\nTest requirements:\n- Parse valid address — succeeds\n- Parse address with city key — stripped or rejected consistently\n- destinationId missing — fails with required error",
-            "status": "pending",
+            "description": "Create a new schema that defines the postal address fields for eventLocations, removing city/state/country/neighborhood/department.\n\nFiles to create/modify:\n- `packages/schemas/src/entities/event/event-location.address.schema.ts` (create, or inline in existing event-location.schema.ts)\n\nShape:\n- coordinates: optional\n- street: optional string (existing constraints)\n- number: optional string\n- floor: optional string\n- apartment: optional string\n- placeName: optional string (existing constraints)\n- destinationId: UUID required FK\n\nExports:\n- `EventLocationAddressSchema`\n- `EventLocationAddressType`\n- `EventLocationAddressFields`\n\nTest requirements:\n- Parse valid address \u2014 succeeds\n- Parse address with city key \u2014 stripped or rejected consistently\n- destinationId missing \u2014 fails with required error",
+            "status": "completed",
             "phase": "core",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-005"],
             "tags": ["schemas", "event"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T00:55:00.000Z",
+                "completed": "2026-04-27T01:50:00.000Z"
             }
         },
         {
             "id": "T-003",
             "title": "Create CityDestinationRefSchema (relation projection)",
-            "description": "Create a lightweight destination reference schema used as the `cityDestination` field in API responses. This projection avoids sending heavy fields (media, reviewsCount, attractions) while giving the frontend enough data to render city name, breadcrumb, and SEO links.\n\nFiles to create/modify:\n- `packages/schemas/src/entities/destination/destination.refs.schema.ts` (create, or add to existing destination.schema.ts if size permits)\n\nShape — pick from DestinationSchema:\n- id (UUID)\n- slug (string)\n- name (string)\n- summary (optional string)\n- destinationType (DestinationTypeEnum)\n- level (number)\n- path (string)\n- pathIds (array of UUIDs)\n\nExports:\n- `CityDestinationRefSchema`\n- `CityDestinationRef` (inferred type)\n\nTest requirements:\n- Parse a valid CITY destination subset — succeeds\n- Parse an object missing `path` — fails\n- Type assertion: `CityDestinationRef` has no `media` or `reviewsCount` keys",
-            "status": "pending",
+            "description": "Create a lightweight destination reference schema used as the `cityDestination` field in API responses. This projection avoids sending heavy fields (media, reviewsCount, attractions) while giving the frontend enough data to render city name, breadcrumb, and SEO links.\n\nFiles to create/modify:\n- `packages/schemas/src/entities/destination/destination.refs.schema.ts` (create, or add to existing destination.schema.ts if size permits)\n\nShape \u2014 pick from DestinationSchema:\n- id (UUID)\n- slug (string)\n- name (string)\n- summary (optional string)\n- destinationType (DestinationTypeEnum)\n- level (number)\n- path (string)\n- pathIds (array of UUIDs)\n\nExports:\n- `CityDestinationRefSchema`\n- `CityDestinationRef` (inferred type)\n\nTest requirements:\n- Parse a valid CITY destination subset \u2014 succeeds\n- Parse an object missing `path` \u2014 fails\n- Type assertion: `CityDestinationRef` has no `media` or `reviewsCount` keys",
+            "status": "completed",
             "phase": "core",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-010", "T-013"],
             "tags": ["schemas", "destination"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T00:55:00.000Z",
+                "completed": "2026-04-27T01:50:00.000Z"
             }
         },
         {
             "id": "T-004",
             "title": "Replace BaseLocationFields with AccommodationLocationFields in AccommodationSchema",
-            "description": "Update `packages/schemas/src/entities/accommodation/accommodation.schema.ts` to import and spread `AccommodationLocationFields` (from T-001) instead of `BaseLocationFields`. Remove the city/state/country/zipCode mappings from the HTTP schema flatten/unflatten transforms.\n\nFiles to modify:\n- `packages/schemas/src/entities/accommodation/accommodation.schema.ts`\n- `packages/schemas/src/entities/accommodation/accommodation.http.schema.ts` (~line 223 flat→nested location mapping)\n- `packages/schemas/src/entities/accommodation/accommodation.crud.schema.ts` (if it references location fields)\n\nAcceptance:\n- `accommodation.location.city` is a TypeScript error after change\n- `accommodation.destinationId` remains required\n- HTTP schema flat→nested mapping no longer includes city/state/country\n\nTest requirements:\n- Existing accommodation schema tests updated: fixtures drop city/state/country from location block\n- TypeScript typecheck passes with no `city` on `AccommodationLocationType`",
-            "status": "pending",
+            "description": "Update `packages/schemas/src/entities/accommodation/accommodation.schema.ts` to import and spread `AccommodationLocationFields` (from T-001) instead of `BaseLocationFields`. Remove the city/state/country/zipCode mappings from the HTTP schema flatten/unflatten transforms.\n\nFiles to modify:\n- `packages/schemas/src/entities/accommodation/accommodation.schema.ts`\n- `packages/schemas/src/entities/accommodation/accommodation.http.schema.ts` (~line 223 flat\u2192nested location mapping)\n- `packages/schemas/src/entities/accommodation/accommodation.crud.schema.ts` (if it references location fields)\n\nAcceptance:\n- `accommodation.location.city` is a TypeScript error after change\n- `accommodation.destinationId` remains required\n- HTTP schema flat\u2192nested mapping no longer includes city/state/country\n\nTest requirements:\n- Existing accommodation schema tests updated: fixtures drop city/state/country from location block\n- TypeScript typecheck passes with no `city` on `AccommodationLocationType`",
+            "status": "completed",
             "phase": "core",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-007", "T-013"],
             "tags": ["schemas", "accommodation"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T00:55:00.000Z",
+                "completed": "2026-04-27T01:50:00.000Z"
             }
         },
         {
             "id": "T-005",
             "title": "Restructure EventLocationSchema to use new address fields",
             "description": "Rewrite `EventLocationSchema` in `packages/schemas/src/entities/event/event-location.schema.ts` to:\n- Remove city, state, country, zipCode, neighborhood, department fields\n- Add `destinationId` (UUID, required)\n- Keep id, slug, placeName, street, number, floor, apartment, coordinates, audit, lifecycle, admin fields\n\nFiles to modify:\n- `packages/schemas/src/entities/event/event-location.schema.ts`\n- Downstream event schemas that extend or reference EventLocationSchema: EventSchema, EventPublicSchema, EventAdminSchema (audit for override references to removed fields)\n\nAcceptance:\n- `eventLocation.city` is a TypeScript error\n- `eventLocation.destinationId` is required string (UUID)\n- All event schema tests pass with updated fixtures (no eventLocation.city/state/country)\n\nTest requirements:\n- Update test fixtures in `packages/schemas/test/` to remove city/state/country from event location shapes\n- Add test: EventLocationSchema with destinationId missing fails",
-            "status": "pending",
+            "status": "completed",
             "phase": "core",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-007", "T-013"],
             "tags": ["schemas", "event"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T00:55:00.000Z",
+                "completed": "2026-04-27T01:50:00.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Revert BBT-11 hotfix (city field on BaseLocationSchema)",
-            "description": "Remove the `city` field added in commit `7d19f59c` from `BaseLocationSchema`. That additive hotfix is now superseded by the structural fix in this spec — accommodation and eventLocation no longer inherit from BaseLocation for their geographic context.\n\nFiles to modify:\n- `packages/schemas/src/common/location.schema.ts` — remove the `city` optional field block\n- `.claude/docs/BEFORE_BETA_TESTING.md` or equivalent BBT document — update item 11 to note that the structural fix in SPEC-095 supersedes this hotfix\n\nAcceptance:\n- `BaseLocationSchema` shape is exactly: state, zipCode, country, coordinates (pre-hotfix shape)\n- `city` does not appear on BaseLocationSchema or BaseLocationType\n- Any remaining callers of BaseLocationSchema (user.location, destination.location) are NOT broken by this revert — they do not need city\n\nTest requirements:\n- BaseLocationSchema unit test: city key not in schema shape\n- Run grep `BaseLocationSchema` to audit all consumers compile cleanly",
-            "status": "pending",
+            "description": "Remove the `city` field added in commit `7d19f59c` from `BaseLocationSchema`. That additive hotfix is now superseded by the structural fix in this spec \u2014 accommodation and eventLocation no longer inherit from BaseLocation for their geographic context.\n\nFiles to modify:\n- `packages/schemas/src/common/location.schema.ts` \u2014 remove the `city` optional field block\n- `.claude/docs/BEFORE_BETA_TESTING.md` or equivalent BBT document \u2014 update item 11 to note that the structural fix in SPEC-095 supersedes this hotfix\n\nAcceptance:\n- `BaseLocationSchema` shape is exactly: state, zipCode, country, coordinates (pre-hotfix shape)\n- `city` does not appear on BaseLocationSchema or BaseLocationType\n- Any remaining callers of BaseLocationSchema (user.location, destination.location) are NOT broken by this revert \u2014 they do not need city\n\nTest requirements:\n- BaseLocationSchema unit test: city key not in schema shape\n- Run grep `BaseLocationSchema` to audit all consumers compile cleanly",
+            "status": "completed",
             "phase": "core",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-004", "T-005"],
             "tags": ["schemas", "cleanup"],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-27T00:55:00.000Z",
+                "completed": "2026-04-27T01:50:00.000Z"
             }
         },
         {
             "id": "T-007",
             "title": "Update DB column types for accommodation and event_location JSONB",
-            "description": "Update the Drizzle schema files to reflect the new postal-address-only types in the JSONB location column, and add `destinationId` to event_locations.\n\nFiles to modify:\n- `packages/db/src/schemas/accommodations.dbschema.ts` — change `$type<FullLocationType>()` to `$type<AccommodationLocationType>()`\n- `packages/db/src/schemas/event_locations.dbschema.ts` — change location JSONB type to `$type<EventLocationAddressType>()`, add `destinationId: uuid().references(() => destinations.id).notNull()`\n\nAfter schema change:\n1. Run `pnpm db:fresh-dev` (push-only, no numbered migration needed per project policy)\n2. Run `packages/db/scripts/apply-postgres-extras.sh` to re-apply triggers/views/CHECKs\n\nAcceptance:\n- `drizzle-kit push` completes without error\n- `apply-postgres-extras.sh` completes without error\n- DB column introspection shows event_locations.destination_id FK to destinations\n\nTest requirements:\n- Introspection/schema test: verify event_locations has destinationId column (if applicable per project testing standard for push-only)\n- No data migration needed (no production data)",
+            "description": "Update the Drizzle schema files to reflect the new postal-address-only types in the JSONB location column, and add `destinationId` to event_locations.\n\nFiles to modify:\n- `packages/db/src/schemas/accommodations.dbschema.ts` \u2014 change `$type<FullLocationType>()` to `$type<AccommodationLocationType>()`\n- `packages/db/src/schemas/event_locations.dbschema.ts` \u2014 change location JSONB type to `$type<EventLocationAddressType>()`, add `destinationId: uuid().references(() => destinations.id).notNull()`\n\nAfter schema change:\n1. Run `pnpm db:fresh-dev` (push-only, no numbered migration needed per project policy)\n2. Run `packages/db/scripts/apply-postgres-extras.sh` to re-apply triggers/views/CHECKs\n\nAcceptance:\n- `drizzle-kit push` completes without error\n- `apply-postgres-extras.sh` completes without error\n- DB column introspection shows event_locations.destination_id FK to destinations\n\nTest requirements:\n- Introspection/schema test: verify event_locations has destinationId column (if applicable per project testing standard for push-only)\n- No data migration needed (no production data)",
             "status": "pending",
             "phase": "core",
             "complexity": 2,
@@ -199,7 +199,7 @@
         {
             "id": "T-008",
             "title": "Add CITY destinationType validation to AccommodationService (create + update)",
-            "description": "Implement the `destinationType === CITY` guard in `AccommodationService._beforeCreate` and `AccommodationService._beforeUpdate`. Load the destination from `DestinationModel` (or `DestinationService`) and reject with `ServiceError(VALIDATION_ERROR)` if the type is not CITY.\n\nFiles to modify:\n- `packages/service-core/src/services/accommodation.service.ts` (or equivalent path)\n\nAcceptance:\n- `_beforeCreate` with PROVINCE destinationId → throws VALIDATION_ERROR with message 'destinationId must reference a destination of type CITY'\n- `_beforeCreate` with CITY destinationId → no error, create proceeds\n- `_beforeUpdate` with non-CITY destinationId → same rejection\n- destinationId pointing to non-existent destination → NOT_FOUND (existing behavior preserved)\n\nTest requirements (co-located with implementation):\n- Test: create with PROVINCE dest → VALIDATION_ERROR\n- Test: create with CITY dest → success\n- Test: update changing to PROVINCE dest → VALIDATION_ERROR\n- Use mocked DestinationModel to avoid DB in unit test",
+            "description": "Implement the `destinationType === CITY` guard in `AccommodationService._beforeCreate` and `AccommodationService._beforeUpdate`. Load the destination from `DestinationModel` (or `DestinationService`) and reject with `ServiceError(VALIDATION_ERROR)` if the type is not CITY.\n\nFiles to modify:\n- `packages/service-core/src/services/accommodation.service.ts` (or equivalent path)\n\nAcceptance:\n- `_beforeCreate` with PROVINCE destinationId \u2192 throws VALIDATION_ERROR with message 'destinationId must reference a destination of type CITY'\n- `_beforeCreate` with CITY destinationId \u2192 no error, create proceeds\n- `_beforeUpdate` with non-CITY destinationId \u2192 same rejection\n- destinationId pointing to non-existent destination \u2192 NOT_FOUND (existing behavior preserved)\n\nTest requirements (co-located with implementation):\n- Test: create with PROVINCE dest \u2192 VALIDATION_ERROR\n- Test: create with CITY dest \u2192 success\n- Test: update changing to PROVINCE dest \u2192 VALIDATION_ERROR\n- Use mocked DestinationModel to avoid DB in unit test",
             "status": "pending",
             "phase": "core",
             "complexity": 2,
@@ -220,7 +220,7 @@
         {
             "id": "T-009",
             "title": "Add CITY destinationType validation to EventLocationService (create + update)",
-            "description": "Implement the `destinationType === CITY` guard in `EventLocationService._beforeCreate` and `EventLocationService._beforeUpdate`. The destination relationship for events lives entirely on the eventLocation entity — EventService only holds a `locationId` FK and does NOT carry destinationId directly.\n\nFiles to modify:\n- `packages/service-core/src/services/eventLocation/eventLocation.service.ts` — add guard in `_beforeCreate` and `_beforeUpdate`\n\nLoad the destination from `DestinationModel` (or `DestinationService`) and reject with `ServiceError(VALIDATION_ERROR)` if the type is not CITY.\n\nAcceptance:\n- `_beforeCreate` with PROVINCE destinationId → VALIDATION_ERROR 'destinationId must reference a destination of type CITY'\n- `_beforeCreate` with CITY destinationId → no error, create proceeds\n- `_beforeUpdate` with non-CITY destinationId → same rejection\n- Non-existent destinationId → NOT_FOUND (existing behavior preserved)\n\nTest requirements:\n- Test: create with PROVINCE dest → VALIDATION_ERROR\n- Test: create with CITY dest → success\n- Test: update to PROVINCE dest → VALIDATION_ERROR\n- Use mocked DestinationModel to avoid DB in unit test",
+            "description": "Implement the `destinationType === CITY` guard in `EventLocationService._beforeCreate` and `EventLocationService._beforeUpdate`. The destination relationship for events lives entirely on the eventLocation entity \u2014 EventService only holds a `locationId` FK and does NOT carry destinationId directly.\n\nFiles to modify:\n- `packages/service-core/src/services/eventLocation/eventLocation.service.ts` \u2014 add guard in `_beforeCreate` and `_beforeUpdate`\n\nLoad the destination from `DestinationModel` (or `DestinationService`) and reject with `ServiceError(VALIDATION_ERROR)` if the type is not CITY.\n\nAcceptance:\n- `_beforeCreate` with PROVINCE destinationId \u2192 VALIDATION_ERROR 'destinationId must reference a destination of type CITY'\n- `_beforeCreate` with CITY destinationId \u2192 no error, create proceeds\n- `_beforeUpdate` with non-CITY destinationId \u2192 same rejection\n- Non-existent destinationId \u2192 NOT_FOUND (existing behavior preserved)\n\nTest requirements:\n- Test: create with PROVINCE dest \u2192 VALIDATION_ERROR\n- Test: create with CITY dest \u2192 success\n- Test: update to PROVINCE dest \u2192 VALIDATION_ERROR\n- Use mocked DestinationModel to avoid DB in unit test",
             "status": "pending",
             "phase": "core",
             "complexity": 2,
@@ -241,7 +241,7 @@
         {
             "id": "T-010",
             "title": "Eager-load cityDestination in AccommodationService list and search",
-            "description": "Add the destination relation to the default relation set used by `AccommodationService.list` and `AccommodationService.search`. Project the result to `CityDestinationRefSchema` in the response transformer.\n\nFiles to modify:\n- `packages/service-core/src/services/accommodation.service.ts` — update `getDefaultListRelations` (or equivalent) to include destination\n- Response transformer that maps model rows to public/admin shape — add `cityDestination` field by parsing with `CityDestinationRefSchema`\n\nAcceptance:\n- `list` and `search` responses include `cityDestination` on each item\n- `cityDestination` fields match CityDestinationRefSchema shape (id, slug, name, summary, destinationType, level, path, pathIds)\n- No extra destination fields (media, reviewsCount) in the response\n\nTest requirements:\n- Integration/unit test: list returns array where each item has `cityDestination.name`\n- Test: cityDestination contains only the 8 permitted fields",
+            "description": "Add the destination relation to the default relation set used by `AccommodationService.list` and `AccommodationService.search`. Project the result to `CityDestinationRefSchema` in the response transformer.\n\nFiles to modify:\n- `packages/service-core/src/services/accommodation.service.ts` \u2014 update `getDefaultListRelations` (or equivalent) to include destination\n- Response transformer that maps model rows to public/admin shape \u2014 add `cityDestination` field by parsing with `CityDestinationRefSchema`\n\nAcceptance:\n- `list` and `search` responses include `cityDestination` on each item\n- `cityDestination` fields match CityDestinationRefSchema shape (id, slug, name, summary, destinationType, level, path, pathIds)\n- No extra destination fields (media, reviewsCount) in the response\n\nTest requirements:\n- Integration/unit test: list returns array where each item has `cityDestination.name`\n- Test: cityDestination contains only the 8 permitted fields",
             "status": "pending",
             "phase": "core",
             "complexity": 2,
@@ -262,7 +262,7 @@
         {
             "id": "T-011",
             "title": "Eager-load cityDestination in AccommodationService getById, getBySlug, adminList",
-            "description": "Extend the eager-loading done in T-010 to the single-entity and admin list queries.\n\nFiles to modify:\n- `packages/service-core/src/services/accommodation.service.ts` — update `getDefaultGetByIdRelations` (or equivalent) to include destination\n- Admin list relation set (if different from public list)\n\nAcceptance:\n- `getById` and `getBySlug` responses include `cityDestination`\n- `adminList` response includes `cityDestination` on each item\n\nTest requirements:\n- Test: getById response has `cityDestination` with correct fields\n- Test: getBySlug response has `cityDestination`\n- Test: adminList response items have `cityDestination`",
+            "description": "Extend the eager-loading done in T-010 to the single-entity and admin list queries.\n\nFiles to modify:\n- `packages/service-core/src/services/accommodation.service.ts` \u2014 update `getDefaultGetByIdRelations` (or equivalent) to include destination\n- Admin list relation set (if different from public list)\n\nAcceptance:\n- `getById` and `getBySlug` responses include `cityDestination`\n- `adminList` response includes `cityDestination` on each item\n\nTest requirements:\n- Test: getById response has `cityDestination` with correct fields\n- Test: getBySlug response has `cityDestination`\n- Test: adminList response items have `cityDestination`",
             "status": "pending",
             "phase": "core",
             "complexity": 2,
@@ -283,7 +283,7 @@
         {
             "id": "T-012",
             "title": "Eager-load cityDestination in EventLocationService response methods",
-            "description": "Add destination eager-loading and `cityDestination` projection to the EventLocationService response methods. The destination is a relation of eventLocation, NOT of EventService. EventService exposes events with an embedded eventLocation — the eager-load must happen on the eventLocation side so that every route returning an event with its eventLocation already has `cityDestination` populated.\n\nFiles to modify:\n- `packages/service-core/src/services/eventLocation/eventLocation.service.ts` — update `getDefaultListRelations` and `getDefaultGetByIdRelations` (or equivalents) to include the destination relation\n- Response transformer for eventLocation shape — add `cityDestination` field projected via `CityDestinationRefSchema`\n- Verify: any route that returns an event with eventLocation embedded (e.g. EventService.getById with relations) must be confirmed to receive the already-loaded cityDestination from eventLocation — no additional join needed at the EventService level if the relation is correctly loaded on eventLocation\n\nAcceptance:\n- EventLocationService list/getById responses include `cityDestination`\n- All event API responses that embed eventLocation include `cityDestination`\n- Shape matches CityDestinationRefSchema (id, slug, name, summary, destinationType, level, path, pathIds)\n- No extra destination fields (media, reviewsCount) in the response\n\nTest requirements:\n- Test: eventLocation list response items have `cityDestination.name`\n- Test: eventLocation getById response has `cityDestination`\n- Test: event getById response (with embedded eventLocation) has `eventLocation.cityDestination`",
+            "description": "Add destination eager-loading and `cityDestination` projection to the EventLocationService response methods. The destination is a relation of eventLocation, NOT of EventService. EventService exposes events with an embedded eventLocation \u2014 the eager-load must happen on the eventLocation side so that every route returning an event with its eventLocation already has `cityDestination` populated.\n\nFiles to modify:\n- `packages/service-core/src/services/eventLocation/eventLocation.service.ts` \u2014 update `getDefaultListRelations` and `getDefaultGetByIdRelations` (or equivalents) to include the destination relation\n- Response transformer for eventLocation shape \u2014 add `cityDestination` field projected via `CityDestinationRefSchema`\n- Verify: any route that returns an event with eventLocation embedded (e.g. EventService.getById with relations) must be confirmed to receive the already-loaded cityDestination from eventLocation \u2014 no additional join needed at the EventService level if the relation is correctly loaded on eventLocation\n\nAcceptance:\n- EventLocationService list/getById responses include `cityDestination`\n- All event API responses that embed eventLocation include `cityDestination`\n- Shape matches CityDestinationRefSchema (id, slug, name, summary, destinationType, level, path, pathIds)\n- No extra destination fields (media, reviewsCount) in the response\n\nTest requirements:\n- Test: eventLocation list response items have `cityDestination.name`\n- Test: eventLocation getById response has `cityDestination`\n- Test: event getById response (with embedded eventLocation) has `eventLocation.cityDestination`",
             "status": "pending",
             "phase": "core",
             "complexity": 2,
@@ -304,7 +304,7 @@
         {
             "id": "T-013",
             "title": "Update accommodation API response schemas to include cityDestination",
-            "description": "Add `cityDestination: CityDestinationRefSchema` as a required field and update `location` to the new `AccommodationLocationSchema` shape in all accommodation response schemas.\n\nFiles to modify:\n- `packages/schemas/src/entities/accommodation/accommodation.http.schema.ts` — AccommodationPublicSchema, AccommodationProtectedSchema, AccommodationAdminSchema (and list variants)\n- Any response-envelope types that pick from accommodation fields\n\nAcceptance:\n- All three response schemas expose `cityDestination: CityDestinationRefSchema` (required)\n- `location` in response schemas matches AccommodationLocationSchema (no city/state/country)\n- OpenAPI doc generated at /reference shows new shape with no orphaned city references\n\nTest requirements:\n- Schema test: parse valid AccommodationPublicSchema with cityDestination — succeeds\n- Schema test: parse without cityDestination — fails (required field)\n- Schema test: parse with location.city — fails (extra key rejected by strict) or stripped (document behavior)",
+            "description": "Add `cityDestination: CityDestinationRefSchema` as a required field and update `location` to the new `AccommodationLocationSchema` shape in all accommodation response schemas.\n\nFiles to modify:\n- `packages/schemas/src/entities/accommodation/accommodation.http.schema.ts` \u2014 AccommodationPublicSchema, AccommodationProtectedSchema, AccommodationAdminSchema (and list variants)\n- Any response-envelope types that pick from accommodation fields\n\nAcceptance:\n- All three response schemas expose `cityDestination: CityDestinationRefSchema` (required)\n- `location` in response schemas matches AccommodationLocationSchema (no city/state/country)\n- OpenAPI doc generated at /reference shows new shape with no orphaned city references\n\nTest requirements:\n- Schema test: parse valid AccommodationPublicSchema with cityDestination \u2014 succeeds\n- Schema test: parse without cityDestination \u2014 fails (required field)\n- Schema test: parse with location.city \u2014 fails (extra key rejected by strict) or stripped (document behavior)",
             "status": "pending",
             "phase": "core",
             "complexity": 2,
@@ -325,7 +325,7 @@
         {
             "id": "T-014",
             "title": "Update event API response schemas to include cityDestination",
-            "description": "Same as T-013 but for event/eventLocation response schemas.\n\nFiles to modify:\n- `packages/schemas/src/entities/event/event.http.schema.ts` — EventPublicSchema, EventAdminSchema, EventLocationPublicSchema, etc.\n- Any response-envelope types for event\n\nAcceptance:\n- All event response schemas expose `cityDestination: CityDestinationRefSchema` (required)\n- `location` on eventLocation matches EventLocationAddressSchema (no city/state/country)\n\nTest requirements:\n- Schema test: parse valid EventPublicSchema with cityDestination — succeeds\n- Schema test: parse without cityDestination — fails",
+            "description": "Same as T-013 but for event/eventLocation response schemas.\n\nFiles to modify:\n- `packages/schemas/src/entities/event/event.http.schema.ts` \u2014 EventPublicSchema, EventAdminSchema, EventLocationPublicSchema, etc.\n- Any response-envelope types for event\n\nAcceptance:\n- All event response schemas expose `cityDestination: CityDestinationRefSchema` (required)\n- `location` on eventLocation matches EventLocationAddressSchema (no city/state/country)\n\nTest requirements:\n- Schema test: parse valid EventPublicSchema with cityDestination \u2014 succeeds\n- Schema test: parse without cityDestination \u2014 fails",
             "status": "pending",
             "phase": "core",
             "complexity": 2,
@@ -346,7 +346,7 @@
         {
             "id": "T-015",
             "title": "Update transforms.ts to derive cityName, cityPath, cityDestinationSlug from cityDestination",
-            "description": "Update `apps/web/src/lib/api/transforms.ts` — and any sibling transform files for events — to read from `cityDestination` instead of `location.city`.\n\nFiles to modify:\n- `apps/web/src/lib/api/transforms.ts` — `transformAccommodation` and `transformEvent` (or equivalents)\n\nFor each transform, derive:\n- `cityName: string` from `cityDestination.name`\n- `cityPath: string` from `cityDestination.path` (for SEO link to /destinos)\n- `cityDestinationSlug: string` from `cityDestination.slug`\n\nDefensive fallback: if `cityDestination` is null/undefined (should not happen post-migration), return empty strings and log a warning via `@repo/logger`.\n\nAll derived values are computed once in the transform — components receive flat string props.\n\nAcceptance:\n- `location.city` is never read in the transform function bodies\n- `transformAccommodation` returns an object with `cityName`, `cityPath`, `cityDestinationSlug`\n- Same for `transformEvent`\n\nTest requirements:\n- Unit test: transform with valid cityDestination → correct cityName/cityPath/cityDestinationSlug\n- Unit test: transform with null cityDestination → empty strings + warning log",
+            "description": "Update `apps/web/src/lib/api/transforms.ts` \u2014 and any sibling transform files for events \u2014 to read from `cityDestination` instead of `location.city`.\n\nFiles to modify:\n- `apps/web/src/lib/api/transforms.ts` \u2014 `transformAccommodation` and `transformEvent` (or equivalents)\n\nFor each transform, derive:\n- `cityName: string` from `cityDestination.name`\n- `cityPath: string` from `cityDestination.path` (for SEO link to /destinos)\n- `cityDestinationSlug: string` from `cityDestination.slug`\n\nDefensive fallback: if `cityDestination` is null/undefined (should not happen post-migration), return empty strings and log a warning via `@repo/logger`.\n\nAll derived values are computed once in the transform \u2014 components receive flat string props.\n\nAcceptance:\n- `location.city` is never read in the transform function bodies\n- `transformAccommodation` returns an object with `cityName`, `cityPath`, `cityDestinationSlug`\n- Same for `transformEvent`\n\nTest requirements:\n- Unit test: transform with valid cityDestination \u2192 correct cityName/cityPath/cityDestinationSlug\n- Unit test: transform with null cityDestination \u2192 empty strings + warning log",
             "status": "pending",
             "phase": "integration",
             "complexity": 2,
@@ -451,7 +451,7 @@
         {
             "id": "T-020",
             "title": "Add destinationType filter to /destinations public list route",
-            "description": "The `/api/v1/public/destinations` GET route currently has NO `destinationType` filter — confirmed by reading `apps/api/src/routes/destination/public/list.ts`. This is real new scope, not a verification task.\n\nFiles to modify:\n- `apps/api/src/routes/destination/public/list.ts` — add `destinationType` to the route query schema and wire the filter into the service call\n- `packages/schemas/src/entities/destination/destination.http.schema.ts` — add optional `destinationType: DestinationTypeEnum` field to `DestinationListQuerySchema` (or public list variant)\n- Destination service list method — accept and apply the new filter to the WHERE clause\n\nAcceptance:\n- `GET /api/v1/public/destinations?destinationType=CITY` returns only CITY destinations\n- `GET /api/v1/public/destinations?destinationType=CITY&search=concep` returns filtered results matching both criteria\n- Without `destinationType` param, behavior is unchanged (all types returned)\n- Unknown query params still rejected (existing validation behavior preserved)\n\nTest requirements:\n- Route test: GET with destinationType=CITY returns only CITY results\n- Route test: GET without destinationType returns mixed results\n- Route test: GET with invalid destinationType value → 400 validation error",
+            "description": "The `/api/v1/public/destinations` GET route currently has NO `destinationType` filter \u2014 confirmed by reading `apps/api/src/routes/destination/public/list.ts`. This is real new scope, not a verification task.\n\nFiles to modify:\n- `apps/api/src/routes/destination/public/list.ts` \u2014 add `destinationType` to the route query schema and wire the filter into the service call\n- `packages/schemas/src/entities/destination/destination.http.schema.ts` \u2014 add optional `destinationType: DestinationTypeEnum` field to `DestinationListQuerySchema` (or public list variant)\n- Destination service list method \u2014 accept and apply the new filter to the WHERE clause\n\nAcceptance:\n- `GET /api/v1/public/destinations?destinationType=CITY` returns only CITY destinations\n- `GET /api/v1/public/destinations?destinationType=CITY&search=concep` returns filtered results matching both criteria\n- Without `destinationType` param, behavior is unchanged (all types returned)\n- Unknown query params still rejected (existing validation behavior preserved)\n\nTest requirements:\n- Route test: GET with destinationType=CITY returns only CITY results\n- Route test: GET without destinationType returns mixed results\n- Route test: GET with invalid destinationType value \u2192 400 validation error",
             "status": "pending",
             "phase": "integration",
             "complexity": 2,
@@ -514,7 +514,7 @@
         {
             "id": "T-023",
             "title": "Audit accommodation seed files for non-CITY destinationId references",
-            "description": "Read-only audit of all accommodation seed JSON files to identify any that reference a destinationId pointing to a non-CITY destination. Produce a written report (as a comment or inline note) listing:\n- Seed file path\n- Current destinationId value\n- Destination type it resolves to\n- Suggested CITY destinationId replacement (from destinations seed)\n\nFiles to audit:\n- `packages/seed/src/data/accommodation/*.json` (all files)\n- `packages/seed/src/data/event_location/` or equivalent event location seeds\n- `packages/seed/src/data/destination/` — cross-reference to find which destinationIds are CITY type\n\nAcceptance:\n- List of all seed files with their destinationId and current type\n- Explicit call-out of any files that need to be remapped\n- No code changes in this task — output is a remediation list for T-024\n\nTest requirements: N/A (audit task). Output documented as a comment in the seed directory or as a note in the progress file.",
+            "description": "Read-only audit of all accommodation seed JSON files to identify any that reference a destinationId pointing to a non-CITY destination. Produce a written report (as a comment or inline note) listing:\n- Seed file path\n- Current destinationId value\n- Destination type it resolves to\n- Suggested CITY destinationId replacement (from destinations seed)\n\nFiles to audit:\n- `packages/seed/src/data/accommodation/*.json` (all files)\n- `packages/seed/src/data/event_location/` or equivalent event location seeds\n- `packages/seed/src/data/destination/` \u2014 cross-reference to find which destinationIds are CITY type\n\nAcceptance:\n- List of all seed files with their destinationId and current type\n- Explicit call-out of any files that need to be remapped\n- No code changes in this task \u2014 output is a remediation list for T-024\n\nTest requirements: N/A (audit task). Output documented as a comment in the seed directory or as a note in the progress file.",
             "status": "pending",
             "phase": "testing",
             "complexity": 1,
@@ -535,7 +535,7 @@
         {
             "id": "T-024",
             "title": "Re-seed accommodations and event locations with valid CITY destinationIds",
-            "description": "Update all seed JSON files that have non-CITY destinationId (identified in T-023 audit) to point to the appropriate CITY destination. Also strip city/state/country from the location block of each seed JSON (the new schema rejects unknown keys in strict mode, or they are semantically wrong).\n\nFiles to modify:\n- `packages/seed/src/data/accommodation/*.json` — all files needing destinationId reassignment or location field cleanup\n- Event location seed equivalents\n\nAfter edits, run:\n- `pnpm db:fresh-dev` — must complete without any VALIDATION_ERROR\n- Verify all accommodations have `cityDestination` resolvable (spot-check via API or DB query)\n\nAcceptance:\n- `pnpm db:fresh-dev` completes with zero VALIDATION_ERROR from accommodation or event service\n- All seeded accommodations have a destinationId of type CITY\n- Location blocks in seed JSONs contain no city/state/country/zipCode/neighborhood/department\n- Re-run is idempotent (fresh + seed produces the same result every time)\n\nTest requirements:\n- Run `pnpm db:fresh-dev` in CI as smoke test\n- Spot-check: query DB and confirm all accommodation.destinationId types are CITY",
+            "description": "Update all seed JSON files that have non-CITY destinationId (identified in T-023 audit) to point to the appropriate CITY destination. Also strip city/state/country from the location block of each seed JSON (the new schema rejects unknown keys in strict mode, or they are semantically wrong).\n\nFiles to modify:\n- `packages/seed/src/data/accommodation/*.json` \u2014 all files needing destinationId reassignment or location field cleanup\n- Event location seed equivalents\n\nAfter edits, run:\n- `pnpm db:fresh-dev` \u2014 must complete without any VALIDATION_ERROR\n- Verify all accommodations have `cityDestination` resolvable (spot-check via API or DB query)\n\nAcceptance:\n- `pnpm db:fresh-dev` completes with zero VALIDATION_ERROR from accommodation or event service\n- All seeded accommodations have a destinationId of type CITY\n- Location blocks in seed JSONs contain no city/state/country/zipCode/neighborhood/department\n- Re-run is idempotent (fresh + seed produces the same result every time)\n\nTest requirements:\n- Run `pnpm db:fresh-dev` in CI as smoke test\n- Spot-check: query DB and confirm all accommodation.destinationId types are CITY",
             "status": "pending",
             "phase": "testing",
             "complexity": 2,
@@ -556,7 +556,7 @@
         {
             "id": "T-025",
             "title": "Update accommodation schema-validation tests and fixtures",
-            "description": "Update the API schema-validation test suite for accommodations to match the new contract: cityDestination present, no location.city/state/country in fixtures.\n\nFiles to modify:\n- `apps/api/test/schema-validation/accommodation-getById-schema.test.ts`\n- `apps/api/test/schema-validation/accommodation-list-schema.test.ts` (if exists)\n- Any shared fixture files used by accommodation tests\n- `packages/schemas/test/` — accommodation schema unit test fixtures\n\nChanges:\n- Replace `location: { city: '...', state: '...', ... }` in fixtures with `location: { street: '...', ... }` (postal only)\n- Add `cityDestination: { id: '...', name: '...', slug: '...', ... }` to fixtures\n- Assert that tests pass against the rebuilt schemas\n\nTest requirements:\n- All updated tests pass\n- `grep 'location.city' apps/api/test/schema-validation/accommodation*` returns zero matches",
+            "description": "Update the API schema-validation test suite for accommodations to match the new contract: cityDestination present, no location.city/state/country in fixtures.\n\nFiles to modify:\n- `apps/api/test/schema-validation/accommodation-getById-schema.test.ts`\n- `apps/api/test/schema-validation/accommodation-list-schema.test.ts` (if exists)\n- Any shared fixture files used by accommodation tests\n- `packages/schemas/test/` \u2014 accommodation schema unit test fixtures\n\nChanges:\n- Replace `location: { city: '...', state: '...', ... }` in fixtures with `location: { street: '...', ... }` (postal only)\n- Add `cityDestination: { id: '...', name: '...', slug: '...', ... }` to fixtures\n- Assert that tests pass against the rebuilt schemas\n\nTest requirements:\n- All updated tests pass\n- `grep 'location.city' apps/api/test/schema-validation/accommodation*` returns zero matches",
             "status": "pending",
             "phase": "testing",
             "complexity": 2,
@@ -577,7 +577,7 @@
         {
             "id": "T-026",
             "title": "Update event schema-validation tests and fixtures",
-            "description": "Same as T-025 but for event/eventLocation schema-validation tests.\n\nFiles to modify:\n- `apps/api/test/schema-validation/event-getById-schema.test.ts`\n- `apps/api/test/schema-validation/event-list-schema.test.ts` (if exists)\n- Any shared event fixture files\n- `packages/schemas/test/` — event schema unit test fixtures\n\nChanges:\n- Replace `eventLocation.city/state/country` with postal-only fields\n- Add `cityDestination` to event fixtures\n\nTest requirements:\n- All updated tests pass\n- `grep 'location.city' apps/api/test/schema-validation/event*` returns zero matches",
+            "description": "Same as T-025 but for event/eventLocation schema-validation tests.\n\nFiles to modify:\n- `apps/api/test/schema-validation/event-getById-schema.test.ts`\n- `apps/api/test/schema-validation/event-list-schema.test.ts` (if exists)\n- Any shared event fixture files\n- `packages/schemas/test/` \u2014 event schema unit test fixtures\n\nChanges:\n- Replace `eventLocation.city/state/country` with postal-only fields\n- Add `cityDestination` to event fixtures\n\nTest requirements:\n- All updated tests pass\n- `grep 'location.city' apps/api/test/schema-validation/event*` returns zero matches",
             "status": "pending",
             "phase": "testing",
             "complexity": 2,
@@ -598,7 +598,7 @@
         {
             "id": "T-027",
             "title": "Write AccommodationService CITY validation unit tests",
-            "description": "Write focused unit tests for the destinationType=CITY guard added in T-008 (AccommodationService).\n\nFiles to create/modify:\n- `packages/service-core/test/services/accommodation.service.test.ts` (or co-located test file)\n\nTest scenarios:\n1. Create with PROVINCE destinationId → VALIDATION_ERROR 'destinationId must reference a destination of type CITY'\n2. Create with CITY destinationId → resolves without error\n3. Update changing destinationId from CITY to PROVINCE → VALIDATION_ERROR\n4. Create with non-existent destinationId → NOT_FOUND (regression guard)\n\nNote: T-008 requires tests co-located with implementation. This task ensures complete, standalone, reviewable tests separate from the implementation diff if the team prefers that split. If T-008 already included all four tests, this task is a verification pass only.",
+            "description": "Write focused unit tests for the destinationType=CITY guard added in T-008 (AccommodationService).\n\nFiles to create/modify:\n- `packages/service-core/test/services/accommodation.service.test.ts` (or co-located test file)\n\nTest scenarios:\n1. Create with PROVINCE destinationId \u2192 VALIDATION_ERROR 'destinationId must reference a destination of type CITY'\n2. Create with CITY destinationId \u2192 resolves without error\n3. Update changing destinationId from CITY to PROVINCE \u2192 VALIDATION_ERROR\n4. Create with non-existent destinationId \u2192 NOT_FOUND (regression guard)\n\nNote: T-008 requires tests co-located with implementation. This task ensures complete, standalone, reviewable tests separate from the implementation diff if the team prefers that split. If T-008 already included all four tests, this task is a verification pass only.",
             "status": "pending",
             "phase": "testing",
             "complexity": 1,
@@ -619,7 +619,7 @@
         {
             "id": "T-028",
             "title": "Write EventLocationService CITY validation unit tests",
-            "description": "Same as T-027 but for the EventLocationService guard added in T-009. Confirmed that the CITY validation lives in EventLocationService — not EventService — because the destination relationship is owned by the eventLocation entity.\n\nFiles to create/modify:\n- `packages/service-core/test/services/eventLocation/eventLocation.service.test.ts` (or co-located test file)\n\nTest scenarios:\n1. Create eventLocation with PROVINCE destinationId → VALIDATION_ERROR 'destinationId must reference a destination of type CITY'\n2. Create eventLocation with CITY destinationId → success\n3. Update eventLocation changing to PROVINCE → VALIDATION_ERROR\n4. Create with non-existent destinationId → NOT_FOUND",
+            "description": "Same as T-027 but for the EventLocationService guard added in T-009. Confirmed that the CITY validation lives in EventLocationService \u2014 not EventService \u2014 because the destination relationship is owned by the eventLocation entity.\n\nFiles to create/modify:\n- `packages/service-core/test/services/eventLocation/eventLocation.service.test.ts` (or co-located test file)\n\nTest scenarios:\n1. Create eventLocation with PROVINCE destinationId \u2192 VALIDATION_ERROR 'destinationId must reference a destination of type CITY'\n2. Create eventLocation with CITY destinationId \u2192 success\n3. Update eventLocation changing to PROVINCE \u2192 VALIDATION_ERROR\n4. Create with non-existent destinationId \u2192 NOT_FOUND",
             "status": "pending",
             "phase": "testing",
             "complexity": 1,
@@ -640,7 +640,7 @@
         {
             "id": "T-029",
             "title": "Write web transform unit tests for cityDestination derivation",
-            "description": "Write unit tests for the transform functions updated in T-015.\n\nFiles to create/modify:\n- `apps/web/src/lib/api/__tests__/transforms.test.ts` (or equivalent)\n\nTest scenarios:\n1. `transformAccommodation` with valid `cityDestination` object → result has `cityName`, `cityPath`, `cityDestinationSlug` matching input\n2. `transformAccommodation` with null `cityDestination` → result has empty strings, warning logged\n3. `transformEvent` with valid `cityDestination` → same three fields derived correctly\n4. Path-parsing helper (from T-018) for JSON-LD: path `/argentina/litoral/entre-rios/concepcion-del-uruguay` → province index extracts `entre-rios`\n\nTest requirements:\n- All four scenarios pass\n- Warning log assertion for null cityDestination case",
+            "description": "Write unit tests for the transform functions updated in T-015.\n\nFiles to create/modify:\n- `apps/web/src/lib/api/__tests__/transforms.test.ts` (or equivalent)\n\nTest scenarios:\n1. `transformAccommodation` with valid `cityDestination` object \u2192 result has `cityName`, `cityPath`, `cityDestinationSlug` matching input\n2. `transformAccommodation` with null `cityDestination` \u2192 result has empty strings, warning logged\n3. `transformEvent` with valid `cityDestination` \u2192 same three fields derived correctly\n4. Path-parsing helper (from T-018) for JSON-LD: path `/argentina/litoral/entre-rios/concepcion-del-uruguay` \u2192 province index extracts `entre-rios`\n\nTest requirements:\n- All four scenarios pass\n- Warning log assertion for null cityDestination case",
             "status": "pending",
             "phase": "testing",
             "complexity": 1,
@@ -661,7 +661,7 @@
         {
             "id": "T-030",
             "title": "Write web card component tests asserting no location.city reads",
-            "description": "Write or update component tests for the five card components updated in T-016 and T-017, asserting they render city from `cityName` prop and have zero `location.city` reads.\n\nFiles to create/modify:\n- Test files for AccommodationCard, PropertyCard, EventCard, EventCardHorizontal, EventCardFeatured (co-locate or in apps/web/src/components/**/__tests__/)\n\nTest scenarios:\n- Each card: render with `cityName='Concepción del Uruguay'` → city name appears in output\n- Source-string grep assertion: `location.city` is absent from component source\n\nNote: Astro component tests may require Vitest + Astro test utilities or snapshot-string checks. Follow existing patterns in apps/web if they exist.",
+            "description": "Write or update component tests for the five card components updated in T-016 and T-017, asserting they render city from `cityName` prop and have zero `location.city` reads.\n\nFiles to create/modify:\n- Test files for AccommodationCard, PropertyCard, EventCard, EventCardHorizontal, EventCardFeatured (co-locate or in apps/web/src/components/**/__tests__/)\n\nTest scenarios:\n- Each card: render with `cityName='Concepci\u00f3n del Uruguay'` \u2192 city name appears in output\n- Source-string grep assertion: `location.city` is absent from component source\n\nNote: Astro component tests may require Vitest + Astro test utilities or snapshot-string checks. Follow existing patterns in apps/web if they exist.",
             "status": "pending",
             "phase": "testing",
             "complexity": 2,
@@ -703,7 +703,7 @@
         {
             "id": "T-032",
             "title": "Audit and remove any remaining ?city= query parameter usages in public listing routes",
-            "description": "Grep for `?city=` or `city=` query parameter handling in API routes that expose accommodation or event listings. If found, replace with `?destinationId=` or `?destinationSlug=` (or document as out-of-scope with a gap entry if complex).\n\nFiles to audit:\n- `apps/api/src/routes/` — all listing route files for accommodation and event\n- `apps/web/src/` — any links or fetch calls that pass `?city=` to the API\n\nAcceptance:\n- No production code routes handle `?city=` for filtering accommodations or events\n- If replacement is needed: route query schema updated, filter wired, test added\n- If no usage found: task is a verification pass (document the finding)\n\nTest requirements:\n- If changes made: route test for the replacement filter param\n- If verification only: grep output included in progress notes",
+            "description": "Grep for `?city=` or `city=` query parameter handling in API routes that expose accommodation or event listings. If found, replace with `?destinationId=` or `?destinationSlug=` (or document as out-of-scope with a gap entry if complex).\n\nFiles to audit:\n- `apps/api/src/routes/` \u2014 all listing route files for accommodation and event\n- `apps/web/src/` \u2014 any links or fetch calls that pass `?city=` to the API\n\nAcceptance:\n- No production code routes handle `?city=` for filtering accommodations or events\n- If replacement is needed: route query schema updated, filter wired, test added\n- If no usage found: task is a verification pass (document the finding)\n\nTest requirements:\n- If changes made: route test for the replacement filter param\n- If verification only: grep output included in progress notes",
             "status": "pending",
             "phase": "testing",
             "complexity": 1,
@@ -724,7 +724,7 @@
         {
             "id": "T-033",
             "title": "Run full verification: grep zero location.city, typecheck, lint, test",
-            "description": "Final verification pass that SPEC-095 is complete and all success criteria are met.\n\nSteps:\n1. `grep -r 'location\\.city' apps/web/src/components/ apps/api/src/routes/` → must return zero functional matches\n2. `pnpm typecheck` across all affected packages → zero errors\n3. `pnpm lint` → zero new errors\n4. `pnpm test` → all tests pass (no new failures)\n5. `pnpm db:fresh-dev` → completes without VALIDATION_ERROR\n6. Manual check: visit the PropertyForm section 2 and confirm autocomplete is visible with 'No encuentro mi ciudad' link\n7. Manual API call: POST accommodation with PROVINCE destinationId → confirm 400 VALIDATION_ERROR response\n\nFiles:\n- None modified (verification only)\n\nAcceptance:\n- All 7 checks pass\n- Document results in progress.md\n\nTest requirements: N/A (this IS the verification)",
+            "description": "Final verification pass that SPEC-095 is complete and all success criteria are met.\n\nSteps:\n1. `grep -r 'location\\.city' apps/web/src/components/ apps/api/src/routes/` \u2192 must return zero functional matches\n2. `pnpm typecheck` across all affected packages \u2192 zero errors\n3. `pnpm lint` \u2192 zero new errors\n4. `pnpm test` \u2192 all tests pass (no new failures)\n5. `pnpm db:fresh-dev` \u2192 completes without VALIDATION_ERROR\n6. Manual check: visit the PropertyForm section 2 and confirm autocomplete is visible with 'No encuentro mi ciudad' link\n7. Manual API call: POST accommodation with PROVINCE destinationId \u2192 confirm 400 VALIDATION_ERROR response\n\nFiles:\n- None modified (verification only)\n\nAcceptance:\n- All 7 checks pass\n- Document results in progress.md\n\nTest requirements: N/A (this IS the verification)",
             "status": "pending",
             "phase": "testing",
             "complexity": 1,
@@ -780,7 +780,7 @@
         {
             "id": "T-035",
             "title": "Mark BBT-11 as superseded in BEFORE_BETA_TESTING.md",
-            "description": "Update the BEFORE_BETA_TESTING document to close item 11 and link to SPEC-095 as the structural resolution.\n\nFiles to modify:\n- `.claude/docs/BEFORE_BETA_TESTING.md` (or wherever the BBT checklist lives — confirm path)\n\nChanges:\n- Item 11 (location.city audit): mark as SUPERSEDED by SPEC-095\n- Add note: 'The hotfix in commit 7d19f59c was reverted. SPEC-095 resolves the underlying three-layer asymmetry structurally. No further action needed on this item.'\n\nAcceptance:\n- BBT item 11 is clearly marked as resolved/superseded\n- Link or reference to SPEC-095 is present\n\nTest requirements: N/A (documentation)",
+            "description": "Update the BEFORE_BETA_TESTING document to close item 11 and link to SPEC-095 as the structural resolution.\n\nFiles to modify:\n- `.claude/docs/BEFORE_BETA_TESTING.md` (or wherever the BBT checklist lives \u2014 confirm path)\n\nChanges:\n- Item 11 (location.city audit): mark as SUPERSEDED by SPEC-095\n- Add note: 'The hotfix in commit 7d19f59c was reverted. SPEC-095 resolves the underlying three-layer asymmetry structurally. No further action needed on this item.'\n\nAcceptance:\n- BBT item 11 is clearly marked as resolved/superseded\n- Link or reference to SPEC-095 is present\n\nTest requirements: N/A (documentation)",
             "status": "pending",
             "phase": "docs",
             "complexity": 1,
@@ -798,5 +798,9 @@
                 "completed": null
             }
         }
-    ]
+    ],
+    "progress": {
+        "completed": 6,
+        "total": 35
+    }
 }
