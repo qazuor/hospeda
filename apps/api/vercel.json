@@ -50,6 +50,18 @@
         {
             "path": "/api/v1/cron/page-revalidation",
             "schedule": "0 * * * *"
+        },
+        {
+            "path": "/api/v1/cron/conversation-notification",
+            "schedule": "*/5 * * * *"
+        },
+        {
+            "path": "/api/v1/cron/conversation-token-reminder",
+            "schedule": "0 9 * * *"
+        },
+        {
+            "path": "/api/v1/cron/conversation-token-cleanup",
+            "schedule": "0 3 * * *"
         }
     ],
     "functions": {
