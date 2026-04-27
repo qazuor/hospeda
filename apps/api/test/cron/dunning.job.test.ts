@@ -35,7 +35,7 @@ const {
     const tx = {
         execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
     };
-    const withTx = vi.fn(async <T>(callback: (tx: typeof tx) => Promise<T>) => callback(tx));
+    const withTx = vi.fn(async <T>(callback: (innerTx: typeof tx) => Promise<T>) => callback(tx));
     return {
         mockGetQZPayBilling: vi.fn(),
         mockCreateSubscriptionLifecycle: vi.fn(),

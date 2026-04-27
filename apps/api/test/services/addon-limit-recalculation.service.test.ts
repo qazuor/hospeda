@@ -27,7 +27,7 @@ import { createMockBilling } from '../helpers/mock-factories';
 const { mockTxExecute, mockWithTransaction, mockBillingAddonPurchasesSchema } = vi.hoisted(() => {
     const mockTxExecute = vi.fn().mockResolvedValue({ rows: [] });
     const tx = { execute: mockTxExecute };
-    const mockWithTransaction = vi.fn(async <T>(callback: (tx: typeof tx) => Promise<T>) => {
+    const mockWithTransaction = vi.fn(async <T>(callback: (innerTx: typeof tx) => Promise<T>) => {
         return callback(tx);
     });
 

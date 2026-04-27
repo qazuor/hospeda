@@ -32,7 +32,7 @@ const { mockDbWithTransaction } = vi.hoisted(() => {
         set: vi.fn().mockReturnThis(),
         where: vi.fn().mockResolvedValue(undefined)
     };
-    const withTx = vi.fn(async <T>(callback: (tx: typeof tx) => Promise<T>) => callback(tx));
+    const withTx = vi.fn(async <T>(callback: (innerTx: typeof tx) => Promise<T>) => callback(tx));
     return { mockDbWithTransaction: withTx };
 });
 
