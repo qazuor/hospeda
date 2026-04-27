@@ -130,7 +130,11 @@ export const httpToDomainDestinationSearch = (
     minAccommodations: httpParams.minAccommodations,
     maxAccommodations: httpParams.maxAccommodations,
     minRating: httpParams.minRating,
-    tags: httpParams.tags
+    tags: httpParams.tags,
+    // SPEC-095: forward destinationType so the public list endpoint can
+    // filter by hierarchy level (e.g. ?destinationType=CITY for the property
+    // form's city autocomplete).
+    destinationType: httpParams.destinationType
 
     // Note: hasAttractions, climate, bestSeason exist in HTTP schema but
     // may not exist in domain search schema - these are handled by the service layer
