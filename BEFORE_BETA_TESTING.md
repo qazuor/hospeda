@@ -217,7 +217,9 @@ ningún endpoint que los exponga. Implementarlo requiere:
 - [ ] Test de regresión cubriendo create + update.
 
 Diferido post-beta: el alojamiento se publica sin amenities asociadas hasta
-que se cierre este gap. Tracker: SPEC-094 (a crear).
+que se cierre este gap. Tracker:
+`.claude/specs/SPEC-094-accommodation-amenities-sync/spec.md` (status: draft,
+sin tasks generadas — se atomizan cuando arranque la ventana post-beta).
 
 ### 12. Pricing page hardcoded vs billing config ✅ DONE (2026-04-26)
 
