@@ -28,18 +28,19 @@ let eventCountCache: { readonly map: Map<string, number>; readonly expiresAt: nu
 /** Mutex flag to prevent concurrent cache rebuilds under load */
 let eventCountCacheRefreshing = false;
 
-/** Type guard for event location structure */
-interface EventLocation {
-    readonly city?: string;
+/** Subset of the embedded EventLocation projection we read for counting. */
+interface EventLocationProjection {
+    readonly destinationId?: string;
 }
 
-/** Type guard for destination location structure */
-interface DestinationLocation {
-    readonly city?: string;
-}
-
-/** Build or return cached event-by-city count map */
-async function getEventsByCity(
+/**
+ * Build or return cached event-count map keyed by `destinationId`.
+ *
+ * Post SPEC-095 the event location no longer carries a flat `city` string;
+ * the geographic dimension is the FK `destinationId` to a CITY destination,
+ * so destination cards count events by joining on that id.
+ */
+async function getEventCountsByDestination(
     actor: Parameters<InstanceType<typeof import('@repo/service-core').EventService>['search']>[0]
 ): Promise<Map<string, number>> {
     const now = Date.now();
@@ -70,10 +71,11 @@ async function getEventsByCity(
             const items = batch.data?.items ?? [];
 
             for (const evt of items) {
-                const evtLocation = (evt as { readonly location?: EventLocation }).location;
-                const city = evtLocation?.city?.toLowerCase()?.trim();
-                if (city) {
-                    map.set(city, (map.get(city) ?? 0) + 1);
+                const evtLocation = (evt as { readonly location?: EventLocationProjection })
+                    .location;
+                const destinationId = evtLocation?.destinationId;
+                if (destinationId) {
+                    map.set(destinationId, (map.get(destinationId) ?? 0) + 1);
                 }
             }
 
@@ -137,19 +139,13 @@ export const publicListDestinationsRoute = createPublicListRoute({
             }
         }
 
-        // Enrich with eventsCount when requested (uses cached city-count map)
+        // Enrich with eventsCount when requested (cached map keyed by destinationId)
         if (safeQuery.includeEventCount && items.length > 0) {
             try {
-                const eventsByCity = await getEventsByCity(actor);
+                const eventsByDestination = await getEventCountsByDestination(actor);
                 items = items.map((item) => {
-                    const dest = item as {
-                        readonly name?: string;
-                        readonly location?: DestinationLocation;
-                    };
-                    const destCity = dest.location?.city?.toLowerCase()?.trim();
-                    const destName = (dest.name ?? '').toLowerCase().trim();
-                    const count =
-                        eventsByCity.get(destCity ?? '') ?? eventsByCity.get(destName) ?? 0;
+                    const dest = item as { readonly id?: string };
+                    const count = dest.id ? (eventsByDestination.get(dest.id) ?? 0) : 0;
                     return { ...item, eventsCount: count };
                 });
             } catch {
