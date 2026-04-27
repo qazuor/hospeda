@@ -56,7 +56,8 @@ export const namespaces = [
     'validation',
     'revalidation',
     'api',
-    'host'
+    'host',
+    'conversations'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -122,6 +123,7 @@ import billingEs from './locales/es/billing.json';
 import blogEs from './locales/es/blog.json';
 import commonEs from './locales/es/common.json';
 import contactEs from './locales/es/contact.json';
+import conversationsEs from './locales/es/conversations.json';
 import destinationEs from './locales/es/destination.json';
 import errorEs from './locales/es/error.json';
 import eventEs from './locales/es/event.json';
@@ -163,6 +165,7 @@ import billingEn from './locales/en/billing.json';
 import blogEn from './locales/en/blog.json';
 import commonEn from './locales/en/common.json';
 import contactEn from './locales/en/contact.json';
+import conversationsEn from './locales/en/conversations.json';
 import destinationEn from './locales/en/destination.json';
 import errorEn from './locales/en/error.json';
 import eventEn from './locales/en/event.json';
@@ -204,6 +207,7 @@ import billingPt from './locales/pt/billing.json';
 import blogPt from './locales/pt/blog.json';
 import commonPt from './locales/pt/common.json';
 import contactPt from './locales/pt/contact.json';
+import conversationsPt from './locales/pt/conversations.json';
 import destinationPt from './locales/pt/destination.json';
 import errorPt from './locales/pt/error.json';
 import eventPt from './locales/pt/event.json';
@@ -266,6 +270,7 @@ const rawTranslations = {
         'admin-entities': adminEntitiesEs,
         'admin-filters': adminFiltersEs,
         'admin-tabs': adminTabsEs,
+        conversations: conversationsEs,
         validation: validationEs,
         revalidation: revalidationEs
     },
@@ -307,6 +312,7 @@ const rawTranslations = {
         'admin-entities': adminEntitiesEn,
         'admin-filters': adminFiltersEn,
         'admin-tabs': adminTabsEn,
+        conversations: conversationsEn,
         validation: validationEn,
         revalidation: revalidationEn
     },
@@ -348,6 +354,7 @@ const rawTranslations = {
         'admin-entities': adminEntitiesPt,
         'admin-filters': adminFiltersPt,
         'admin-tabs': adminTabsPt,
+        conversations: conversationsPt,
         validation: validationPt,
         revalidation: revalidationPt
     }

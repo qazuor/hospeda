@@ -1,0 +1,126 @@
+{
+    "actions": {
+        "archive": "Archivar",
+        "block": "Bloquear",
+        "close": "Cerrar conversación",
+        "deleteConversation": "Eliminar conversación",
+        "reopen": "Reabrir",
+        "reply": "Responder",
+        "requestAccess": "Solicitar acceso",
+        "unarchive": "Desarchivar",
+        "viewConversation": "Ver conversación"
+    },
+    "email": {
+        "newMessage": {
+            "subject": "Nuevo mensaje de {senderName} — Hospeda"
+        },
+        "newMessageAnon": {
+            "subject": "Consulta anónima sobre {accommodationName} — Hospeda"
+        },
+        "tokenExpiringDay15": {
+            "subject": "Tu acceso a la conversación vence en 15 días — Hospeda"
+        },
+        "tokenExpiringDay25": {
+            "subject": "Tu acceso a la conversación vence en 5 días — Hospeda"
+        },
+        "verify": {
+            "subject": "Verificá tu email para continuar la conversación — Hospeda"
+        }
+    },
+    "empty": {
+        "guestInbox": "No tenés conversaciones activas. Escribile a un anfitrión para empezar.",
+        "ownerInbox": "No tenés mensajes de huéspedes todavía."
+    },
+    "dialogs": {
+        "blockDescription": "Bloquear esta conversación impedirá que el huésped envíe nuevos mensajes.",
+        "blockReasonPlaceholder": "Motivo del bloqueo (opcional)...",
+        "deleteDescription": "Esta acción eliminará la conversación y todos sus mensajes. No se puede deshacer."
+    },
+    "errors": {
+        "accommodationDeleted": "El alojamiento ya no está disponible.",
+        "blockFailed": "No se pudo bloquear la conversación.",
+        "blockReasonTooLong": "El motivo del bloqueo no puede superar los 1000 caracteres.",
+        "conversationBlocked": "Esta conversación fue bloqueada.",
+        "conversationDuplicate": "Ya existe una conversación activa para este alojamiento.",
+        "conversationNotFound": "No se encontró la conversación.",
+        "deleteFailed": "No se pudo eliminar la conversación.",
+        "messageContentBlocked": "Tu mensaje contiene contenido no permitido.",
+        "messageRequired": "El mensaje no puede estar vacío.",
+        "messageSendFailed": "No se pudo enviar el mensaje.",
+        "messageTooLong": "El mensaje supera el límite de {maxLength} caracteres.",
+        "rateLimitExceeded": "Enviaste demasiados mensajes. Esperá un momento antes de volver a intentarlo.",
+        "tokenExpired": "El enlace de acceso expiró. Solicitá uno nuevo.",
+        "tokenRevoked": "El enlace de acceso fue revocado.",
+        "verificationExpired": "El código de verificación expiró. Solicitá uno nuevo.",
+        "verificationInvalid": "El código de verificación no es válido."
+    },
+    "filters": {
+        "all": "Todos",
+        "clear": "Limpiar filtros",
+        "guestEmail": "Email del huésped",
+        "guestEmailPlaceholder": "Filtrar por email...",
+        "status": "Estado"
+    },
+    "form": {
+        "charCount": "{current}/{max} caracteres",
+        "email": "Email",
+        "emailPlaceholder": "tu@email.com",
+        "message": "Mensaje",
+        "messagePlaceholder": "Escribí tu consulta aquí...",
+        "name": "Nombre",
+        "namePlaceholder": "Tu nombre completo",
+        "phone": "Teléfono (opcional)",
+        "phonePlaceholder": "+54 11 1234-5678",
+        "requestAccessBody": "Ingresá tu email y te enviaremos un enlace para acceder a tu conversación.",
+        "requestAccessEmailLabel": "Email",
+        "requestAccessSent": "Si existe una conversación asociada a ese email, te enviamos el enlace de acceso. Revisá tu casilla.",
+        "requestAccessSubmit": "Enviar enlace",
+        "requestAccessTitle": "Acceder a tu conversación",
+        "requestNewLinkCta": "Solicitar un nuevo enlace",
+        "submit": "Enviar mensaje",
+        "verifyExpiredBody": "El enlace de verificación expiró o ya fue utilizado. Podés solicitar uno nuevo ingresando tu email.",
+        "verifyExpiredTitle": "Enlace expirado",
+        "viewExisting": "Ver conversación existente"
+    },
+    "inbox": {
+        "accommodation": "Alojamiento",
+        "guest": "Huésped",
+        "guestInboxTitle": "Mis consultas",
+        "lastActivity": "Última actividad",
+        "lastMessage": "Último mensaje",
+        "noSubject": "Sin asunto",
+        "ownerInboxTitle": "Mensajes de huéspedes",
+        "status": "Estado",
+        "title": "Bandeja de entrada",
+        "unreadCount": "{count} sin leer"
+    },
+    "senderLabels": {
+        "guest": "Huésped",
+        "owner": "Anfitrión"
+    },
+    "notifications": {
+        "conversationArchived": "Conversación archivada.",
+        "conversationBlocked": "Conversación bloqueada.",
+        "conversationClosed": "Conversación cerrada.",
+        "messageSent": "Tu mensaje fue enviado correctamente.",
+        "verificationSent": "Te enviamos un email de verificación. Revisá tu casilla."
+    },
+    "status": {
+        "blocked": "Bloqueada",
+        "closed": "Cerrada",
+        "open": "Abierta",
+        "pendingGuest": "Esperando respuesta del huésped",
+        "pendingOwner": "Esperando respuesta del anfitrión",
+        "pendingVerification": "Pendiente de verificación"
+    },
+    "thread": {
+        "newest": "Ver los más nuevos",
+        "older": "Cargar mensajes anteriores",
+        "readByGuest": "Leído por el huésped",
+        "readByOwner": "Leído por el anfitrión",
+        "replyPlaceholder": "Escribí tu respuesta...",
+        "send": "Enviar",
+        "systemMessage": "Mensaje del sistema",
+        "title": "Conversación con {senderName}"
+    }
+}

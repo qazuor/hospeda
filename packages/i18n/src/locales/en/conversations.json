@@ -1,0 +1,126 @@
+{
+    "actions": {
+        "archive": "Archive",
+        "block": "Block",
+        "close": "Close conversation",
+        "deleteConversation": "Delete conversation",
+        "reopen": "Reopen",
+        "reply": "Reply",
+        "requestAccess": "Request access",
+        "unarchive": "Unarchive",
+        "viewConversation": "View conversation"
+    },
+    "dialogs": {
+        "blockDescription": "Blocking this conversation will prevent the guest from sending new messages.",
+        "blockReasonPlaceholder": "Block reason (optional)...",
+        "deleteDescription": "This action will permanently delete the conversation and all its messages. This cannot be undone."
+    },
+    "email": {
+        "newMessage": {
+            "subject": "New message from {senderName} — Hospeda"
+        },
+        "newMessageAnon": {
+            "subject": "Anonymous inquiry about {accommodationName} — Hospeda"
+        },
+        "tokenExpiringDay15": {
+            "subject": "Your conversation access expires in 15 days — Hospeda"
+        },
+        "tokenExpiringDay25": {
+            "subject": "Your conversation access expires in 5 days — Hospeda"
+        },
+        "verify": {
+            "subject": "Verify your email to continue the conversation — Hospeda"
+        }
+    },
+    "empty": {
+        "guestInbox": "You have no active conversations. Message a host to get started.",
+        "ownerInbox": "You have no guest messages yet."
+    },
+    "errors": {
+        "accommodationDeleted": "This accommodation is no longer available.",
+        "blockFailed": "Failed to block the conversation.",
+        "blockReasonTooLong": "Block reason cannot exceed 1000 characters.",
+        "conversationBlocked": "This conversation has been blocked.",
+        "conversationDuplicate": "An active conversation already exists for this accommodation.",
+        "conversationNotFound": "Conversation not found.",
+        "deleteFailed": "Failed to delete the conversation.",
+        "messageContentBlocked": "Your message contains content that is not allowed.",
+        "messageRequired": "Message cannot be empty.",
+        "messageSendFailed": "Failed to send message.",
+        "messageTooLong": "Your message exceeds the limit of {maxLength} characters.",
+        "rateLimitExceeded": "You have sent too many messages. Please wait a moment before trying again.",
+        "tokenExpired": "The access link has expired. Request a new one.",
+        "tokenRevoked": "The access link has been revoked.",
+        "verificationExpired": "The verification code has expired. Request a new one.",
+        "verificationInvalid": "The verification code is not valid."
+    },
+    "filters": {
+        "all": "All",
+        "clear": "Clear filters",
+        "guestEmail": "Guest email",
+        "guestEmailPlaceholder": "Filter by email...",
+        "status": "Status"
+    },
+    "form": {
+        "charCount": "{current}/{max} characters",
+        "email": "Email",
+        "emailPlaceholder": "your@email.com",
+        "message": "Message",
+        "messagePlaceholder": "Write your inquiry here...",
+        "name": "Name",
+        "namePlaceholder": "Your full name",
+        "phone": "Phone (optional)",
+        "phonePlaceholder": "+1 555 123 4567",
+        "requestAccessBody": "Enter your email and we will send you a link to access your conversation.",
+        "requestAccessEmailLabel": "Email",
+        "requestAccessSent": "If a conversation is associated with that email, we sent the access link. Check your inbox.",
+        "requestAccessSubmit": "Send link",
+        "requestAccessTitle": "Access your conversation",
+        "requestNewLinkCta": "Request a new link",
+        "submit": "Send message",
+        "verifyExpiredBody": "The verification link has expired or has already been used. You can request a new one by entering your email.",
+        "verifyExpiredTitle": "Expired link",
+        "viewExisting": "View existing conversation"
+    },
+    "inbox": {
+        "accommodation": "Accommodation",
+        "guest": "Guest",
+        "guestInboxTitle": "My inquiries",
+        "lastActivity": "Last activity",
+        "lastMessage": "Last message",
+        "noSubject": "No subject",
+        "ownerInboxTitle": "Guest messages",
+        "status": "Status",
+        "title": "Inbox",
+        "unreadCount": "{count} unread"
+    },
+    "notifications": {
+        "conversationArchived": "Conversation archived.",
+        "conversationBlocked": "Conversation blocked.",
+        "conversationClosed": "Conversation closed.",
+        "messageSent": "Your message was sent successfully.",
+        "verificationSent": "We sent you a verification email. Please check your inbox."
+    },
+    "senderLabels": {
+        "guest": "Guest",
+        "owner": "Host"
+    },
+    "status": {
+        "blocked": "Blocked",
+        "closed": "Closed",
+        "open": "Open",
+        "pendingGuest": "Waiting for guest reply",
+        "pendingOwner": "Waiting for host reply",
+        "pendingVerification": "Pending verification"
+    },
+    "thread": {
+        "newest": "View newest",
+        "older": "Load older messages",
+        "readByGuest": "Read by guest",
+        "readByOwner": "Read by host",
+        "replyPlaceholder": "Write your reply...",
+        "send": "Send",
+        "systemMessage": "System message",
+        "title": "Conversation with {senderName}"
+    }
+}
