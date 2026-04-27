@@ -737,7 +737,7 @@ export enum PermissionEnum {
     // CONVERSATION: Permissions related to guest-owner in-platform messaging (SPEC-085)
     CONVERSATION_VIEW_OWN = 'conversation.view.own', // Allows viewing conversations the actor is a participant of (guest or owner).
     CONVERSATION_VIEW_ANY = 'conversation.view.any', // Allows viewing any individual conversation regardless of participant.
-    CONVERSATION_VIEW_ALL = 'conversation.view.all', // Allows listing all conversations across all accommodations (admin inbox).
+    CONVERSATION_VIEW_ALL = 'conversation.viewAll', // Allows listing all conversations across all accommodations (admin inbox).
     CONVERSATION_REPLY_OWN = 'conversation.reply.own', // Allows sending a reply in a conversation the actor participates in.
     CONVERSATION_REPLY_ANY = 'conversation.reply.any', // Allows sending a reply in any conversation (admin impersonation / support).
     CONVERSATION_UPDATE_STATUS_OWN = 'conversation.updateStatus.own', // Allows closing or re-opening conversations the actor owns.

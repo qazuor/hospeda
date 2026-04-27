@@ -80,6 +80,7 @@ import type {
 import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
 import { hasPermission } from '../../utils/permission';
+import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
 import { generateSlug } from './accommodation.helpers';
 import {
@@ -197,6 +198,7 @@ export class AccommodationService extends BaseCrudService<
     };
 
     private destinationService: DestinationService;
+    private conversationService: ConversationService;
     private readonly _destinationModel: DestinationModel;
 
     /**
@@ -228,6 +230,12 @@ export class AccommodationService extends BaseCrudService<
         this.model = model ?? new AccommodationModel();
         this.adminSearchSchema = AccommodationAdminSearchSchema;
         this.destinationService = new DestinationService(ctx);
+        this.conversationService = new ConversationService(ctx, {
+            // Internal use only: closeAllForAccommodation does not need JWT signing
+            // or mailer dispatch — it just runs an UPDATE + schedule cancellation.
+            authSecret: 'internal-system-actor-no-jwt-signing-needed-here-32',
+            siteUrl: ''
+        });
         this._destinationModel = new DestinationModel();
         this.mediaProvider = mediaProvider ?? null;
         this._userModel = userModel ?? new UserModel();
@@ -704,6 +712,7 @@ export class AccommodationService extends BaseCrudService<
                 slug: entity.slug,
                 type: entity.type
             };
+            ctx.hookState.deletedEntityId = id;
         }
         return id;
     }
@@ -714,6 +723,23 @@ export class AccommodationService extends BaseCrudService<
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<CountResponse> {
         const deleted = ctx.hookState?.deletedEntity;
+        const deletedId = ctx.hookState?.deletedEntityId;
+
+        // SPEC-085 AC-008-01: cascade close all conversations attached to the
+        // soft-deleted accommodation so guests cannot reply on a stale thread.
+        // Best-effort: a failure here logs but does not block the accommodation
+        // soft-delete itself.
+        if (deletedId && ctx?.tx) {
+            try {
+                await this.conversationService.closeAllForAccommodation(deletedId, ctx.tx);
+            } catch (error) {
+                this.logger.warn(
+                    { error, accommodationId: deletedId },
+                    'closeAllForAccommodation failed (non-blocking)'
+                );
+            }
+        }
+
         if (deleted?.destinationId) {
             await this.destinationService.updateAccommodationsCount(deleted.destinationId, ctx);
         }

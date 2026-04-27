@@ -23,6 +23,7 @@ export * from './contact-preference.enum.js';
 export * from './contact-preference.schema.js';
 
 export * from './conversation-status.enum.js';
+export * from './conversation-status.schema.js';
 
 export * from './currency.enum.js';
 export * from './currency.schema.js';
@@ -52,13 +53,16 @@ export * from './lifecycle-state.enum.js';
 export * from './lifecycle-state.schema.js';
 
 export * from './message-sender-type.enum.js';
+export * from './message-sender-type.schema.js';
 
 export * from './message-status.enum.js';
+export * from './message-status.schema.js';
 
 export * from './moderation-status.enum.js';
 export * from './moderation-status.schema.js';
 
 export * from './notification-recipient-side.enum.js';
+export * from './notification-recipient-side.schema.js';
 
 export * from './owner-promotion-discount-type.enum.js';
 export * from './owner-promotion-discount-type.schema.js';

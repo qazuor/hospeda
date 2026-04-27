@@ -940,8 +940,8 @@ export class ConversationService extends BaseService {
      *
      * Side effects:
      * - `BLOCKED` → cancels all active notification schedules.
-     * - `CLOSED` → TODO (T-008): append SYSTEM message via `MessageService`.
-     *   Inject `MessageService` via constructor once T-008 ships.
+     * - `CLOSED` → appends a SYSTEM message to the thread (best-effort; logged
+     *   but non-blocking on failure).
      *
      * @param actor - Actor performing the transition.
      * @param input - `{ conversationId, status, blockReason? }`.
@@ -1041,10 +1041,23 @@ export class ConversationService extends BaseService {
                     });
                 }
 
-                // TODO (T-008): On CLOSED, append a SYSTEM message via MessageService.
-                // Inject MessageService via constructor once T-008 is merged to avoid
-                // a circular dependency. Example:
-                //   await this.messageService?.appendSystem(conversationId, 'Conversation closed by owner');
+                // On CLOSED: append a SYSTEM message to the thread so both sides see
+                // the closure event in the conversation log (AC-003-05). Best-effort:
+                // a failure here logs but does not roll back the status change, since
+                // the status update is the load-bearing side effect.
+                if (validated.status === ConversationStatusEnum.CLOSED) {
+                    try {
+                        await this.messageService.createSystemMessage(this._buildSystemActor(), {
+                            conversationId: validated.conversationId,
+                            body: 'Conversation closed.'
+                        });
+                    } catch (error) {
+                        this.logger.error(
+                            { conversationId: validated.conversationId, error },
+                            'Failed to append CLOSED SYSTEM message; status change preserved'
+                        );
+                    }
+                }
 
                 return updated;
             }

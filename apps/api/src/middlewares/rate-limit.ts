@@ -321,7 +321,8 @@ export const createPerRouteRateLimitMiddleware = ({
                 success: false,
                 error: {
                     code: 'RATE_LIMIT_EXCEEDED',
-                    message: 'Too many requests to this endpoint. Please try again later.'
+                    message: 'Too many requests to this endpoint. Please try again later.',
+                    reason: 'RATE_LIMIT_EXCEEDED'
                 }
             };
 
@@ -541,7 +542,8 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
             success: false,
             error: {
                 code: 'RATE_LIMIT_EXCEEDED',
-                message: config.message
+                message: config.message,
+                reason: 'RATE_LIMIT_EXCEEDED'
             }
         };
 
