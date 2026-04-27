@@ -1,5 +1,6 @@
 // Core schemas
 export * from './destination.schema.js'; // Main entity schema
+export * from './destination.refs.schema.js'; // Lightweight relation projections (SPEC-095)
 
 // CRUD operations
 export * from './destination.crud.schema.js'; // Create, Update, Delete, Restore schemas
