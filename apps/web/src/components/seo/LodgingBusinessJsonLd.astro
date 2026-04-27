@@ -3,6 +3,13 @@
  * @file LodgingBusinessJsonLd.astro
  * @description LodgingBusiness JSON-LD component for accommodations.
  * Generates schema.org LodgingBusiness structured data.
+ *
+ * SPEC-095: callers MUST derive `address.addressLocality`,
+ * `address.addressRegion`, and `address.addressCountry` from the accommodation's
+ * `cityDestination` projection — this component does not read the legacy
+ * `location.city`/`location.state`/`location.country` fields. Use
+ * `parseCityPathToAddress({ cityName, cityPath })` from
+ * `@/lib/seo/address-from-city` to build the address shape.
  */
 
 import JsonLd from './JsonLd.astro';

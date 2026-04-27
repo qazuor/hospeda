@@ -3,6 +3,13 @@
  * @file EventJsonLd.astro
  * @description Event JSON-LD component for events.
  * Generates schema.org Event structured data.
+ *
+ * SPEC-095: callers building the venue address MUST derive locality/region/
+ * country from the event's `eventLocation.cityDestination` projection — this
+ * component does not read the legacy `location.city`. Use
+ * `parseCityPathToAddress({ cityName, cityPath })` from
+ * `@/lib/seo/address-from-city` and pass the `formatted` address string to
+ * the `location.address` prop.
  */
 
 import JsonLd from './JsonLd.astro';
