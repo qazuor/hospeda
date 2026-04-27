@@ -1,10 +1,6 @@
 import { z } from 'zod';
 import { AmenityAdminSchema, AmenityProtectedSchema } from '../amenity/amenity.access.schema.js';
-import {
-    DestinationAdminSchema,
-    DestinationProtectedSchema,
-    DestinationPublicSchema
-} from '../destination/destination.access.schema.js';
+import { CityDestinationRefSchema } from '../destination/destination.refs.schema.js';
 import { FeatureAdminSchema, FeatureProtectedSchema } from '../feature/feature.access.schema.js';
 import { UserAdminSchema, UserProtectedSchema } from '../user/user.access.schema.js';
 import { AccommodationSchema } from './accommodation.schema.js';
@@ -103,8 +99,12 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
             })
         )
         .optional(),
-    /** Destination data from destinations table JOIN (public tier). */
-    destination: DestinationPublicSchema.optional()
+    /**
+     * City projection of the linked destination (SPEC-095). Replaces the
+     * geographic context that used to live inside `location` and the heavy
+     * `destination` relation projection.
+     */
+    cityDestination: CityDestinationRefSchema.optional()
 });
 
 export type AccommodationPublic = z.infer<typeof AccommodationPublicSchema>;
@@ -155,8 +155,8 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
 }).extend({
     /** Owner data from users table JOIN (protected tier). */
     owner: UserProtectedSchema.optional(),
-    /** Destination data from destinations table JOIN (protected tier). */
-    destination: DestinationProtectedSchema.optional(),
+    /** City projection of the linked destination (SPEC-095). */
+    cityDestination: CityDestinationRefSchema.optional(),
     /** Amenities with junction table data from r_accommodation_amenity (protected tier). */
     amenities: z.array(AmenityProtectedSchema).optional(),
     /** Features with junction table data from r_accommodation_feature (protected tier). */
@@ -176,8 +176,8 @@ export type AccommodationProtected = z.infer<typeof AccommodationProtectedSchema
 export const AccommodationAdminSchema = AccommodationSchema.extend({
     /** Owner data from users table JOIN (admin tier). */
     owner: UserAdminSchema.optional(),
-    /** Destination data from destinations table JOIN (admin tier). */
-    destination: DestinationAdminSchema.optional(),
+    /** City projection of the linked destination (SPEC-095). */
+    cityDestination: CityDestinationRefSchema.optional(),
     /** Amenities with junction table data from r_accommodation_amenity (admin tier). */
     amenities: z.array(AmenityAdminSchema).optional(),
     /** Features with junction table data from r_accommodation_feature (admin tier). */

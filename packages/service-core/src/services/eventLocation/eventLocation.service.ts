@@ -58,8 +58,19 @@ export class EventLocationService extends BaseCrudService<
     protected readonly updateSchema = EventLocationUpdateInputSchema;
     protected readonly searchSchema = EventLocationSearchInputSchema;
 
+    /**
+     * Eager-load the destination relation so responses can project a
+     * `cityDestination` field without an N+1 lookup (SPEC-095).
+     */
     protected getDefaultListRelations() {
-        return undefined;
+        return { destination: true };
+    }
+
+    /**
+     * Same destination eager-load for getById/getBySlug.
+     */
+    protected override getDefaultGetByIdRelations() {
+        return { destination: true };
     }
 
     /**

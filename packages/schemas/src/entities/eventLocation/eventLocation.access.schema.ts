@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import { CityDestinationRefSchema } from '../destination/destination.refs.schema.js';
 import { EventLocationSchema } from './eventLocation.schema.js';
 
 /**
@@ -26,6 +27,9 @@ export const EventLocationPublicSchema = EventLocationSchema.pick({
     // Postal address (public-safe)
     placeName: true,
     coordinates: true
+}).extend({
+    /** City projection of the linked destination (SPEC-095). */
+    cityDestination: CityDestinationRefSchema.optional()
 });
 
 export type EventLocationPublic = z.infer<typeof EventLocationPublicSchema>;
@@ -58,6 +62,9 @@ export const EventLocationProtectedSchema = EventLocationSchema.pick({
     // Basic audit (created/updated dates)
     createdAt: true,
     updatedAt: true
+}).extend({
+    /** City projection of the linked destination (SPEC-095). */
+    cityDestination: CityDestinationRefSchema.optional()
 });
 
 export type EventLocationProtected = z.infer<typeof EventLocationProtectedSchema>;
@@ -68,8 +75,11 @@ export type EventLocationProtected = z.infer<typeof EventLocationProtectedSchema
  * Contains ALL fields including sensitive admin-only data.
  * Used for admin dashboard, moderation, and management.
  *
- * This is essentially the full schema.
+ * This is essentially the full schema plus the cityDestination projection.
  */
-export const EventLocationAdminSchema = EventLocationSchema;
+export const EventLocationAdminSchema = EventLocationSchema.extend({
+    /** City projection of the linked destination (SPEC-095). */
+    cityDestination: CityDestinationRefSchema.optional()
+});
 
 export type EventLocationAdmin = z.infer<typeof EventLocationAdminSchema>;
