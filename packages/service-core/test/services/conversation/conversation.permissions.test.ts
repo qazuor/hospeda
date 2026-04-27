@@ -188,19 +188,20 @@ describe('checkCanViewConversation', () => {
 
 describe('checkCanReplyConversation', () => {
     describe('when conversation is CLOSED', () => {
-        it('should throw FORBIDDEN with CONVERSATION_BLOCKED reason regardless of permissions', () => {
+        it('should NOT throw — CLOSED is intentionally permitted so that a guest message auto-reopens the conversation via the state machine in MessageService.computeNextStatus (AC-003-06). Only BLOCKED is terminal at the permission layer.', () => {
             // Arrange
             const actor = createActor({
                 id: USER_ID,
-                role: RoleEnum.ADMIN,
-                permissions: [PermissionEnum.CONVERSATION_REPLY_ANY]
+                role: RoleEnum.USER,
+                permissions: [PermissionEnum.CONVERSATION_REPLY_OWN]
             });
-            const conversation = makeConversation({ status: 'CLOSED' });
+            const conversation = makeConversation({
+                status: 'CLOSED',
+                userId: USER_ID
+            });
 
-            // Act & Assert
-            expect(() => checkCanReplyConversation(actor, conversation, [])).toThrow(
-                expect.objectContaining({ code: 'FORBIDDEN', reason: 'CONVERSATION_BLOCKED' })
-            );
+            // Act & Assert — must NOT throw; state machine in MessageService handles transition.
+            expect(() => checkCanReplyConversation(actor, conversation, [])).not.toThrow();
         });
     });
 

@@ -1,4 +1,5 @@
 export * from './accommodation/accommodation.service';
+export * from './conversation/index.js';
 export * from './accommodationReview/accommodationReview.service';
 export * from './amenity/amenity.service';
 export * from './attraction/attraction.service';

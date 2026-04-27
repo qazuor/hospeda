@@ -5,8 +5,7 @@
  *
  * All external dependencies are mocked:
  * - `@repo/db`: getDb() returns a chainable query builder mock
- * - `@repo/email`: createEmailClient / sendEmail are no-ops
- * - `@repo/notifications`: ConversationVerify is a stub component
+ * - `mailer` dep: a vi.fn() stub that records sendVerificationEmail calls
  * - `jose`: SignJWT / jwtVerify are controlled via vitest mocks
  * - `transaction.js`: withServiceTransaction passes a fake ctx.tx to the callback
  * - Model instances: injected via constructor DI
@@ -46,29 +45,27 @@ vi.mock('../../../src/utils/transaction.js', () => ({
     )
 }));
 
-vi.mock('@repo/email', () => ({
-    createEmailClient: vi.fn().mockReturnValue({}),
-    sendEmail: vi.fn().mockResolvedValue({ success: true })
-}));
-
-vi.mock('@repo/notifications', () => ({
-    ConversationVerify: vi.fn()
-}));
-
-vi.mock('react', () => ({
-    default: {
-        createElement: vi.fn().mockReturnValue(null)
+vi.mock('jose', () => {
+    /** Minimal JWTExpired class for testing the expired-token path. */
+    class JWTExpiredError extends Error {
+        readonly code = 'ERR_JWT_EXPIRED';
+        constructor(message: string) {
+            super(message);
+            this.name = 'JWTExpired';
+        }
     }
-}));
-
-vi.mock('jose', () => ({
-    SignJWT: vi.fn().mockImplementation(() => ({
-        setProtectedHeader: vi.fn().mockReturnThis(),
-        setExpirationTime: vi.fn().mockReturnThis(),
-        sign: vi.fn().mockResolvedValue('mock.jwt.token')
-    })),
-    jwtVerify: vi.fn()
-}));
+    return {
+        SignJWT: vi.fn().mockImplementation(() => ({
+            setProtectedHeader: vi.fn().mockReturnThis(),
+            setExpirationTime: vi.fn().mockReturnThis(),
+            sign: vi.fn().mockResolvedValue('mock.jwt.token')
+        })),
+        jwtVerify: vi.fn(),
+        errors: {
+            JWTExpired: JWTExpiredError
+        }
+    };
+});
 
 // @repo/db mock: getDb returns a chainable query builder that tests can override
 vi.mock('@repo/db', async (importOriginal) => {
@@ -97,6 +94,7 @@ import * as jose from 'jose';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AccessTokenService } from '../../../src/services/conversation/access-token.service.js';
 import { ConversationService } from '../../../src/services/conversation/conversation.service.js';
+import type { MessageService } from '../../../src/services/conversation/message.service.js';
 import type { NotificationScheduleService } from '../../../src/services/conversation/notification-schedule.service.js';
 import { createActor } from '../../factories/actorFactory.js';
 import { expectForbiddenError, expectSuccess } from '../../helpers/assertions.js';
@@ -147,10 +145,15 @@ const FORBIDDEN_ACTOR = createActor({
 const CONVERSATION_ID = crypto.randomUUID();
 const ACCOMMODATION_ID = crypto.randomUUID();
 
+const mockMailer = {
+    sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
+    sendAccessLinkEmail: vi.fn().mockResolvedValue(undefined)
+};
+
 const SERVICE_DEPS = {
     authSecret: 'test-secret-must-be-at-least-32-chars-long!!',
     siteUrl: 'https://test.hospeda.com',
-    resendApiKey: 'test-resend-key'
+    mailer: mockMailer
 } as const;
 
 function makeConversation(overrides: Partial<SelectConversation> = {}): SelectConversation {
@@ -243,6 +246,8 @@ function makeUpdateChainMock(resolvedValue: unknown[]) {
 // Test suite
 // ---------------------------------------------------------------------------
 
+const MESSAGE_ID = crypto.randomUUID();
+
 describe('ConversationService', () => {
     let service: ConversationService;
     let conversationModelMock: ConversationModel;
@@ -250,6 +255,7 @@ describe('ConversationService', () => {
     let accommodationModelMock: AccommodationModel;
     let accessTokenServiceMock: AccessTokenService;
     let notificationScheduleMock: NotificationScheduleService;
+    let messageServiceMock: MessageService;
     let mockGetDb: Mock;
 
     beforeEach(async () => {
@@ -278,6 +284,10 @@ describe('ConversationService', () => {
             cancelAllForConversation: vi.fn().mockResolvedValue({ data: { count: 0 } })
         } as unknown as NotificationScheduleService;
 
+        messageServiceMock = {
+            createMessage: vi.fn().mockResolvedValue({ data: { id: MESSAGE_ID } })
+        } as unknown as MessageService;
+
         // getDb mock
         const dbModule = await import('@repo/db');
         mockGetDb = dbModule.getDb as unknown as Mock;
@@ -290,7 +300,8 @@ describe('ConversationService', () => {
             messageModelMock,
             accommodationModelMock,
             accessTokenServiceMock,
-            notificationScheduleMock
+            notificationScheduleMock,
+            messageServiceMock
         );
     });
 
@@ -424,7 +435,7 @@ describe('ConversationService', () => {
     // =========================================================================
 
     describe('initiateAuthenticated', () => {
-        it('should create a new PENDING_OWNER conversation and return isNew=true', async () => {
+        it('should create a new PENDING_OWNER conversation and return isNew=true with messageId', async () => {
             // Arrange
             const accommodationMock = makeAccommodation();
             asMock(accommodationModelMock.findById).mockResolvedValue(accommodationMock);
@@ -435,11 +446,11 @@ describe('ConversationService', () => {
                 status: 'PENDING_OWNER',
                 userId: ACTOR.id
             });
+            const newMsgId = crypto.randomUUID();
+            const insertedMessage = { id: newMsgId };
 
-            // Override withServiceTransaction for this test so the insert chain is complete:
-            // insert(conversations).values({}).returning() → [newConv]
-            // insert(messages).values({}) → [] (no returning)
-            // update(conversations).set({}).where() → []
+            // Override withServiceTransaction: insert(conversations) → [newConv],
+            // insert(messages) → [insertedMessage], update(conversations) → []
             const { withServiceTransaction } = await import('../../../src/utils/transaction.js');
 
             let insertCallCount = 0;
@@ -449,16 +460,18 @@ describe('ConversationService', () => {
                         insert: vi.fn().mockImplementation(() => {
                             insertCallCount++;
                             if (insertCallCount === 1) {
-                                // First insert: conversations → needs .values().returning()
+                                // First insert: conversations → .returning() → [newConv]
                                 return {
                                     values: vi.fn().mockReturnValue({
                                         returning: vi.fn().mockResolvedValue([newConv])
                                     })
                                 };
                             }
-                            // Second insert: messages → needs .values() only (no returning)
+                            // Second insert: messages → .returning() → [insertedMessage]
                             return {
-                                values: vi.fn().mockResolvedValue([])
+                                values: vi.fn().mockReturnValue({
+                                    returning: vi.fn().mockResolvedValue([insertedMessage])
+                                })
                             };
                         }),
                         update: vi.fn().mockReturnValue({
@@ -481,9 +494,10 @@ describe('ConversationService', () => {
             expectSuccess(result);
             expect(result.data?.isNew).toBe(true);
             expect(result.data?.conversationId).toBe(CONVERSATION_ID);
+            expect(result.data?.messageId).toBe(newMsgId);
         });
 
-        it('should return isNew=false when an existing conversation is found', async () => {
+        it('should return isNew=false with messageId when an existing conversation is found', async () => {
             // Arrange
             const accommodationMock = makeAccommodation();
             asMock(accommodationModelMock.findById).mockResolvedValue(accommodationMock);
@@ -496,6 +510,10 @@ describe('ConversationService', () => {
             asMock(conversationModelMock.findByUserIdAndAccommodationId).mockResolvedValue(
                 existingConv
             );
+            // MessageService.createMessage returns a message id
+            asMock(messageServiceMock.createMessage).mockResolvedValue({
+                data: { id: MESSAGE_ID }
+            });
 
             // Act
             const result = await service.initiateAuthenticated(ACTOR, {
@@ -507,6 +525,8 @@ describe('ConversationService', () => {
             expectSuccess(result);
             expect(result.data?.isNew).toBe(false);
             expect(result.data?.conversationId).toBe(CONVERSATION_ID);
+            expect(result.data?.messageId).toBe(MESSAGE_ID);
+            expect(messageServiceMock.createMessage).toHaveBeenCalledOnce();
         });
 
         it('should throw NOT_FOUND when accommodation is deleted', async () => {
@@ -604,9 +624,27 @@ describe('ConversationService', () => {
             expect(notificationScheduleMock.upsertForMessage).not.toHaveBeenCalled();
         });
 
-        it('should throw UNAUTHORIZED when JWT is invalid or expired', async () => {
-            // Arrange
-            asMock(jose.jwtVerify).mockRejectedValue(new Error('JWTExpired'));
+        it('should return VERIFICATION_TOKEN_EXPIRED when JWT is expired (AC-002-03)', async () => {
+            // Arrange — throw a JWTExpired error (matches jose's error class via instanceof)
+            // biome-ignore lint/suspicious/noExplicitAny: accessing mocked jose.errors for test
+            const JWTExpiredCtor = (jose as any).errors.JWTExpired;
+            asMock(jose.jwtVerify).mockRejectedValue(new JWTExpiredCtor('Token expired'));
+
+            // Act
+            const result = await service.verifyEmailToken(ACTOR, {
+                verificationToken: 'expired.jwt.token'
+            });
+
+            // Assert
+            expect(result.error?.code).toBe('UNAUTHORIZED');
+            expect((result.error as unknown as { reason?: string })?.reason).toBe(
+                'VERIFICATION_TOKEN_EXPIRED'
+            );
+        });
+
+        it('should return VERIFICATION_TOKEN_INVALID when JWT has bad signature (AC-002-04)', async () => {
+            // Arrange — throw a generic (non-expiry) error
+            asMock(jose.jwtVerify).mockRejectedValue(new Error('Invalid signature'));
 
             // Act
             const result = await service.verifyEmailToken(ACTOR, {
@@ -616,11 +654,11 @@ describe('ConversationService', () => {
             // Assert
             expect(result.error?.code).toBe('UNAUTHORIZED');
             expect((result.error as unknown as { reason?: string })?.reason).toBe(
-                'VERIFICATION_INVALID'
+                'VERIFICATION_TOKEN_INVALID'
             );
         });
 
-        it('should throw UNAUTHORIZED when JWT payload is missing conversationId', async () => {
+        it('should return VERIFICATION_TOKEN_INVALID when JWT payload is missing conversationId', async () => {
             // Arrange
             asMock(jose.jwtVerify).mockResolvedValue({
                 payload: { email: 'ana@example.com' } // no conversationId
@@ -634,7 +672,7 @@ describe('ConversationService', () => {
             // Assert
             expect(result.error?.code).toBe('UNAUTHORIZED');
             expect((result.error as unknown as { reason?: string })?.reason).toBe(
-                'VERIFICATION_INVALID'
+                'VERIFICATION_TOKEN_INVALID'
             );
         });
     });
@@ -801,10 +839,14 @@ describe('ConversationService', () => {
             expect(result.data?.status).toBe('CLOSED');
         });
 
-        it('should reject CLOSED → OPEN (invalid transition) with ALREADY_EXISTS', async () => {
-            // Arrange
+        it('should allow CLOSED → OPEN reopen by owner/admin (AC-003-04)', async () => {
+            // Arrange — gap 1 fix: CLOSED → OPEN is now a valid transition
             const conversation = makeConversation({ status: 'CLOSED' });
             asMock(conversationModelMock.findById).mockResolvedValue(conversation);
+
+            const updatedConv = makeConversation({ status: 'OPEN' });
+            const updateChain = makeUpdateChainMock([updatedConv]);
+            mockGetDb.mockReturnValue({ update: updateChain.update });
 
             // Act
             const result = await service.updateStatus(
@@ -816,8 +858,9 @@ describe('ConversationService', () => {
                 []
             );
 
-            // Assert
-            expect(result.error?.code).toBe('ALREADY_EXISTS');
+            // Assert — transition must succeed (previously rejected, now allowed per AC-003-04)
+            expectSuccess(result);
+            expect(result.data?.status).toBe('OPEN');
         });
 
         it('should reject BLOCKED → OPEN (blocked is terminal) with ALREADY_EXISTS', async () => {
@@ -944,14 +987,14 @@ describe('ConversationService', () => {
     // =========================================================================
 
     describe('sendVerificationEmail', () => {
-        it('should skip email and log warning when resendApiKey is absent', async () => {
+        it('should skip email and log warning when mailer is absent', async () => {
             // Arrange
-            const serviceNoKey = new ConversationService(
+            const serviceNoMailer = new ConversationService(
                 { logger: createLoggerMock() },
                 {
                     authSecret: SERVICE_DEPS.authSecret,
                     siteUrl: SERVICE_DEPS.siteUrl
-                    // resendApiKey deliberately absent
+                    // mailer deliberately absent
                 },
                 conversationModelMock,
                 messageModelMock,
@@ -960,10 +1003,8 @@ describe('ConversationService', () => {
                 notificationScheduleMock
             );
 
-            const { sendEmail } = await import('@repo/email');
-
             // Act
-            await serviceNoKey.sendVerificationEmail(
+            await serviceNoMailer.sendVerificationEmail(
                 CONVERSATION_ID,
                 'guest@example.com',
                 'Guest',
@@ -971,13 +1012,13 @@ describe('ConversationService', () => {
                 'es'
             );
 
-            // Assert — email was NOT sent
-            expect(sendEmail).not.toHaveBeenCalled();
+            // Assert — mailer was NOT invoked
+            expect(mockMailer.sendVerificationEmail).not.toHaveBeenCalled();
         });
 
-        it('should sign a JWT and call sendEmail when resendApiKey is present', async () => {
+        it('should sign a JWT and call mailer.sendVerificationEmail when mailer is present', async () => {
             // Arrange
-            const { sendEmail } = await import('@repo/email');
+            mockMailer.sendVerificationEmail.mockClear();
 
             // Act
             await service.sendVerificationEmail(
@@ -988,9 +1029,69 @@ describe('ConversationService', () => {
                 'es'
             );
 
-            // Assert — JWT signed and email sent
+            // Assert — JWT signed and mailer invoked
             expect(jose.SignJWT).toHaveBeenCalledOnce();
-            expect(sendEmail).toHaveBeenCalledOnce();
+            expect(mockMailer.sendVerificationEmail).toHaveBeenCalledOnce();
+            expect(mockMailer.sendVerificationEmail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    conversationId: CONVERSATION_ID,
+                    recipientEmail: 'guest@example.com',
+                    guestName: 'Guest',
+                    accommodationName: 'Posada del Sol',
+                    locale: 'es'
+                })
+            );
+        });
+    });
+
+    // =========================================================================
+    // requestAccessByEmail (gap 5 — AC-004-04)
+    // =========================================================================
+
+    describe('requestAccessByEmail', () => {
+        it('should generate token and call mailer.sendAccessLinkEmail when email matches a verified conversation', async () => {
+            // Arrange
+            const verifiedConv = makeConversation({
+                id: CONVERSATION_ID,
+                anonymousEmail: 'ana@example.com',
+                anonymousName: 'Ana García',
+                anonymousEmailVerified: true,
+                locale: 'es',
+                accommodationId: ACCOMMODATION_ID
+            });
+
+            const selectChain = makeSelectChainMock([verifiedConv]);
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(accessTokenServiceMock.generateToken).mockResolvedValue({
+                data: { rawToken: 'magic-token-32chars00000000000000' }
+            });
+            mockGetDb.mockReturnValue({ select: selectChain.select });
+
+            // Act
+            await service.requestAccessByEmail('ana@example.com');
+
+            // Assert — access token generated and mailer called
+            expect(accessTokenServiceMock.generateToken).toHaveBeenCalledOnce();
+            expect(mockMailer.sendAccessLinkEmail).toHaveBeenCalledOnce();
+            expect(mockMailer.sendAccessLinkEmail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    conversationId: CONVERSATION_ID,
+                    recipientEmail: 'ana@example.com'
+                })
+            );
+        });
+
+        it('should NOT call mailer when no verified conversation is found (anti-enumeration)', async () => {
+            // Arrange — empty result set
+            const selectChain = makeSelectChainMock([]);
+            mockGetDb.mockReturnValue({ select: selectChain.select });
+
+            // Act
+            await service.requestAccessByEmail('unknown@example.com');
+
+            // Assert — mailer never invoked
+            expect(mockMailer.sendAccessLinkEmail).not.toHaveBeenCalled();
+            expect(accessTokenServiceMock.generateToken).not.toHaveBeenCalled();
         });
     });
 });
