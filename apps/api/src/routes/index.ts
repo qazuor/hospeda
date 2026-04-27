@@ -85,6 +85,11 @@ import { adminWebhookRouter } from './webhooks/admin';
 import { ApiInfoSchema } from '@repo/schemas';
 import { pastDueGraceMiddleware } from '../middlewares/past-due-grace.middleware';
 import { createSimpleRoute } from '../utils/route-factory';
+import {
+    adminConversationsRouter,
+    protectedConversationRoutes,
+    publicConversationsRouter
+} from './conversations';
 
 const rootRoute = createSimpleRoute({
     method: 'get',
@@ -161,6 +166,13 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public', contactRoutes);
         app.route('/api/v1/public/feedback', publicFeedbackRoutes);
 
+        // Conversations (guest-owner messaging — SPEC-085)
+        // Public:    /api/v1/public/conversations/*
+        // Protected: /api/v1/protected/conversations/*
+        // Admin:     /api/v1/admin/conversations/*   (T-011)
+        app.route('/api/v1/public/conversations', publicConversationsRouter);
+        app.route('/api/v1/protected/conversations', protectedConversationRoutes);
+
         // Platform statistics
         app.route('/api/v1/public/stats', publicStatsRoutes);
 
@@ -233,6 +245,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Admin cron job management
         app.route('/api/v1/admin/cron', adminCronRoutes);
+
+        // Conversations admin (SPEC-085 T-011)
+        app.route('/api/v1/admin/conversations', adminConversationsRouter);
 
         // Exchange rates admin (admin-only management routes)
         app.route('/api/v1/admin/exchange-rates', adminExchangeRateRoutes);

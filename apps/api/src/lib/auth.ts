@@ -11,7 +11,7 @@
  * @module auth
  */
 
-import { asc, eq, getDb } from '@repo/db';
+import { and, asc, conversations, eq, getDb, isNull } from '@repo/db';
 import { accounts, sessions, users, verifications } from '@repo/db';
 import { createEmailClient, sendEmail } from '@repo/email';
 import { ResetPasswordTemplate } from '@repo/email';
@@ -471,6 +471,56 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                                     error: error instanceof Error ? error.message : String(error)
                                 },
                                 'Failed to sync billing customer on user creation'
+                            );
+                        }
+
+                        // Anonymous conversation linking (non-blocking)
+                        // Links all verified anonymous conversations where anonymousEmail matches
+                        // the newly registered user's email, setting userId on each unlinked row.
+                        try {
+                            const db = getDb();
+                            const pendingConversations = await db
+                                .select({ id: conversations.id })
+                                .from(conversations)
+                                .where(
+                                    and(
+                                        eq(conversations.anonymousEmail, user.email),
+                                        eq(conversations.anonymousEmailVerified, true),
+                                        isNull(conversations.userId),
+                                        isNull(conversations.deletedAt)
+                                    )
+                                );
+
+                            for (const conv of pendingConversations) {
+                                // Race guard: only update when userId is still null
+                                await db
+                                    .update(conversations)
+                                    .set({ userId: user.id })
+                                    .where(
+                                        and(
+                                            eq(conversations.id, conv.id),
+                                            isNull(conversations.userId)
+                                        )
+                                    );
+                            }
+
+                            if (pendingConversations.length > 0) {
+                                logger.info(
+                                    {
+                                        userId: user.id,
+                                        linkedCount: pendingConversations.length
+                                    },
+                                    'Linked anonymous conversations to new user'
+                                );
+                            }
+                        } catch (err) {
+                            // Registration MUST NOT fail because of this. Log and continue.
+                            logger.error(
+                                {
+                                    err,
+                                    userId: user.id
+                                },
+                                'Failed to link anonymous conversations on user registration'
                             );
                         }
                     }

@@ -1,0 +1,139 @@
+/**
+ * GET /api/v1/protected/conversations/:id
+ *
+ * Returns a conversation thread for the authenticated guest.
+ * Updates `lastReadAtByGuest` and cancels pending notification schedules.
+ *
+ * Ownership check: returns 404 (not 403) when the conversation belongs to a
+ * different user to avoid ID enumeration attacks.
+ */
+
+import { PermissionEnum, RoleEnum, ServiceErrorCode, ThreadQuerySchema } from '@repo/schemas';
+import { ConversationService } from '@repo/service-core';
+import { getActorFromContext } from '../../../utils/actor';
+import { createRouter } from '../../../utils/create-app';
+import { env } from '../../../utils/env';
+import { apiLogger } from '../../../utils/logger';
+import {
+    createErrorResponse,
+    createResponse,
+    handleRouteError
+} from '../../../utils/response-helpers';
+
+/** System-level actor used for service calls that require thread-read permissions. */
+const SYSTEM_ACTOR = {
+    id: '00000000-0000-0000-0000-000000000001',
+    role: RoleEnum.ADMIN,
+    permissions: [
+        PermissionEnum.CONVERSATION_VIEW_OWN,
+        PermissionEnum.CONVERSATION_VIEW_ANY,
+        PermissionEnum.CONVERSATION_REPLY_OWN,
+        PermissionEnum.CONVERSATION_REPLY_ANY
+    ] as readonly PermissionEnum[],
+    _isSystemActor: true
+} as const;
+
+const router = createRouter();
+
+/**
+ * GET /:id
+ * Returns the conversation thread and updates the guest read receipt.
+ * Returns 404 for both non-existent conversations AND conversations owned
+ * by other users (anti-enumeration pattern).
+ */
+router.get('/:id', async (c) => {
+    try {
+        const conversationId = c.req.param('id');
+        const rawQuery = Object.fromEntries(new URL(c.req.url).searchParams.entries());
+        const parseResult = ThreadQuerySchema.safeParse(rawQuery);
+
+        if (!parseResult.success) {
+            return createErrorResponse(
+                {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: 'Invalid query parameters',
+                    details: parseResult.error.issues.map((issue) => ({
+                        field: issue.path.join('.'),
+                        message: issue.message
+                    }))
+                },
+                c,
+                400
+            );
+        }
+
+        const query = parseResult.data;
+        const actor = getActorFromContext(c);
+
+        const conversationSvc = new ConversationService(
+            { logger: apiLogger },
+            {
+                authSecret: env.HOSPEDA_BETTER_AUTH_SECRET,
+                siteUrl: env.HOSPEDA_SITE_URL
+            }
+        );
+
+        // Fetch thread via service. The service updates lastReadAtByGuest and
+        // cancels notification schedules for the GUEST side.
+        // We pass an empty ownerAccommodationIds array since this is a guest route.
+        const cursor = query.cursor ? new Date(query.cursor) : undefined;
+        const result = await conversationSvc.getThread(
+            SYSTEM_ACTOR,
+            {
+                conversationId,
+                actorSide: 'GUEST',
+                cursor,
+                limit: query.limit
+            },
+            [] // Guest route: no owner accommodation IDs needed
+        );
+
+        if (result.error) {
+            // NOT_FOUND → 404 regardless of cause (anti-enumeration)
+            if (result.error.code === ServiceErrorCode.NOT_FOUND) {
+                return createErrorResponse(
+                    {
+                        code: result.error.code,
+                        message: 'Conversation not found',
+                        reason: 'CONVERSATION_NOT_FOUND'
+                    },
+                    c,
+                    404
+                );
+            }
+            return createErrorResponse(
+                {
+                    code: result.error.code,
+                    message: result.error.message
+                },
+                c,
+                400
+            );
+        }
+
+        const { conversation, messages, hasMore } = result.data;
+
+        // Ownership check: guest must be the conversation owner (anti-enumeration: 404)
+        if (conversation.userId !== actor.id) {
+            return createErrorResponse(
+                {
+                    code: ServiceErrorCode.NOT_FOUND,
+                    message: 'Conversation not found',
+                    reason: 'CONVERSATION_NOT_FOUND'
+                },
+                c,
+                404
+            );
+        }
+
+        // Build nextCursor from the oldest message's createdAt when there are older pages
+        const nextCursor =
+            hasMore && messages.length > 0 ? (messages[0]?.createdAt?.toISOString() ?? null) : null;
+
+        return createResponse({ conversation, messages, nextCursor }, c, 200);
+    } catch (error) {
+        return handleRouteError(error, c);
+    }
+});
+
+export { router as threadProtectedConversationRoute };

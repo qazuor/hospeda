@@ -596,6 +596,124 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
     await next();
 };
 
+// ─── Keyed Rate Limit Middleware ──────────────────────────────────────────────
+
+import { createHash } from 'node:crypto';
+
+/**
+ * Options for the email-keyed (or any-key-keyed) rate limit middleware.
+ *
+ * @property requests - Maximum requests allowed in the window.
+ * @property windowMs - Window duration in milliseconds.
+ * @property keyPrefix - Unique prefix to avoid key collisions across different routes.
+ * @property keyExtractor - Returns the raw key for the current request (e.g. email address).
+ *   Return `null` to SKIP this limiter for the current request (IP limiter still applies upstream).
+ *   The raw key is normalised with `SHA-256` before being stored, so no PII is persisted.
+ */
+export interface KeyedRateLimitOptions {
+    readonly requests: number;
+    readonly windowMs: number;
+    readonly keyPrefix: string;
+    readonly keyExtractor: (c: Context) => string | null;
+}
+
+/**
+ * Creates a keyed rate-limit middleware that limits requests per an arbitrary
+ * key extracted from the request context (e.g. the guest's email address).
+ *
+ * Behaviour:
+ * - `keyExtractor` returns `null` → middleware is a no-op for this request.
+ * - The raw key is hashed with SHA-256 before writing to the store, ensuring
+ *   that email addresses (PII) are never persisted in plaintext.
+ * - Final Redis/memory key: `ratelimit:{keyPrefix}:{sha256hex(rawKey)}`.
+ * - On limit exceeded: returns HTTP 429 with `Retry-After` header and a JSON
+ *   body containing `{ success: false, error: { code: 'RATE_LIMIT_EXCEEDED', reason: 'RATE_LIMIT_EXCEEDED' } }`.
+ *
+ * @param options - Rate-limit configuration.
+ * @returns Hono middleware handler.
+ *
+ * @example
+ * ```ts
+ * const emailLimiter = createKeyedRateLimitMiddleware({
+ *   requests: 5,
+ *   windowMs: 60 * 60 * 1000, // 1 hour
+ *   keyPrefix: 'conv:initiate:email',
+ *   keyExtractor: (c) => (c.req.valid('json').email ?? '').toLowerCase().trim() || null,
+ * });
+ * ```
+ */
+export const createKeyedRateLimitMiddleware = (
+    options: KeyedRateLimitOptions
+): ((c: Context, next: Next) => Promise<Response | undefined>) => {
+    const { requests, windowMs, keyPrefix, keyExtractor } = options;
+
+    return async (c: Context, next: Next): Promise<Response | undefined> => {
+        // Skip in test environment unless explicitly testing
+        if (env.NODE_ENV === 'test' && !env.HOSPEDA_TESTING_RATE_LIMIT) {
+            await next();
+            return undefined;
+        }
+
+        // Extract the raw key; null means skip this limiter
+        const rawKey = keyExtractor(c);
+        if (rawKey === null) {
+            await next();
+            return undefined;
+        }
+
+        // Hash the raw key so PII is never stored in plaintext
+        const keyHash = createHash('sha256').update(rawKey).digest('hex');
+        const storeKey = `ratelimit:${keyPrefix}:${keyHash}`;
+
+        const store = getStore();
+        const now = Date.now();
+        const windowStart = Math.floor(now / windowMs) * windowMs;
+        const resetTime = windowStart + windowMs;
+
+        const currentData = await store.get(storeKey);
+        let count = 0;
+
+        if (currentData && currentData.windowStart === windowStart) {
+            count = currentData.count;
+        }
+
+        if (count >= requests) {
+            const retryAfterSec = Math.ceil((resetTime - now) / 1000);
+            const responseBody = {
+                success: false,
+                error: {
+                    code: 'RATE_LIMIT_EXCEEDED',
+                    message: 'Too many requests. Please try again later.',
+                    reason: 'RATE_LIMIT_EXCEEDED'
+                }
+            };
+
+            const headers = new Headers();
+            headers.set('Content-Type', 'application/json');
+            headers.set('Retry-After', retryAfterSec.toString());
+            headers.set('X-RateLimit-Limit', requests.toString());
+            headers.set('X-RateLimit-Remaining', '0');
+            headers.set('X-RateLimit-Reset', Math.floor(resetTime / 1000).toString());
+            headers.set('X-RateLimit-Type', 'keyed');
+
+            return new Response(JSON.stringify(responseBody), {
+                status: 429,
+                headers
+            });
+        }
+
+        await store.set(storeKey, { count: count + 1, windowStart }, windowMs);
+
+        c.header('X-RateLimit-Limit', requests.toString());
+        c.header('X-RateLimit-Remaining', (requests - count - 1).toString());
+        c.header('X-RateLimit-Reset', Math.floor(resetTime / 1000).toString());
+        c.header('X-RateLimit-Type', 'keyed');
+
+        await next();
+        return undefined;
+    };
+};
+
 // ─── Sliding-Window Per-User Rate Limiter ─────────────────────────────────────
 
 /**
