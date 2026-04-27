@@ -6,6 +6,7 @@ export enum PermissionCategoryEnum {
     AD_PRICING_CATALOG = 'AD_PRICING_CATALOG',
     ATTRACTION = 'ATTRACTION',
     CLIENT_ACCESS_RIGHT = 'CLIENT_ACCESS_RIGHT',
+    CONVERSATION = 'CONVERSATION',
     CREDIT_NOTE = 'CREDIT_NOTE',
     DESTINATION = 'DESTINATION',
     DESTINATION_REVIEW = 'DESTINATION_REVIEW',
@@ -731,5 +732,17 @@ export enum PermissionEnum {
 
     // MEDIA: Cross-entity media management permissions (Cloudinary-backed uploads/deletes)
     MEDIA_UPLOAD = 'media.upload', // Allows uploading media files via /admin/media/upload or /protected/media/upload. Entity-specific permission is enforced by the handler based on request body (target + role).
-    MEDIA_DELETE = 'media.delete' // Allows deleting media files via /admin/media. Entity-specific permission is enforced by the handler based on publicId path.
+    MEDIA_DELETE = 'media.delete', // Allows deleting media files via /admin/media. Entity-specific permission is enforced by the handler based on publicId path.
+
+    // CONVERSATION: Permissions related to guest-owner in-platform messaging (SPEC-085)
+    CONVERSATION_VIEW_OWN = 'conversation.view.own', // Allows viewing conversations the actor is a participant of (guest or owner).
+    CONVERSATION_VIEW_ANY = 'conversation.view.any', // Allows viewing any individual conversation regardless of participant.
+    CONVERSATION_VIEW_ALL = 'conversation.view.all', // Allows listing all conversations across all accommodations (admin inbox).
+    CONVERSATION_REPLY_OWN = 'conversation.reply.own', // Allows sending a reply in a conversation the actor participates in.
+    CONVERSATION_REPLY_ANY = 'conversation.reply.any', // Allows sending a reply in any conversation (admin impersonation / support).
+    CONVERSATION_UPDATE_STATUS_OWN = 'conversation.updateStatus.own', // Allows closing or re-opening conversations the actor owns.
+    CONVERSATION_UPDATE_STATUS_ANY = 'conversation.updateStatus.any', // Allows changing the status of any conversation (admin moderation).
+    CONVERSATION_BLOCK_OWN = 'conversation.block.own', // Allows blocking a conversation the actor (owner) is a participant of.
+    CONVERSATION_BLOCK_ANY = 'conversation.block.any', // Allows blocking any conversation (admin abuse prevention).
+    CONVERSATION_DELETE_ANY = 'conversation.delete.any' // Allows soft-deleting any conversation (admin only; no self-service delete in MVP).
 }
