@@ -1,0 +1,84 @@
+---
+/**
+ * @file guest/messages/verify-expired.astro
+ * @description Static error page shown when a verification link has expired or is invalid.
+ * @route /{lang}/guest/messages/verify-expired/
+ * @rendering SSG (static, no dynamic data needed)
+ */
+
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = true;
+
+// prerender needs all supported locales
+export function getStaticPaths() {
+    return [
+        { params: { lang: 'es' } },
+        { params: { lang: 'en' } },
+        { params: { lang: 'pt' } }
+    ];
+}
+
+const locale = (Astro.params.lang ?? 'es') as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const requestAccessUrl = buildUrl({ locale, path: 'guest/messages/request-access' });
+const pageTitle = t('conversations.form.verifyExpiredTitle');
+---
+
+<BaseLayout locale={locale} title={pageTitle} description={t('conversations.form.verifyExpiredBody')}>
+    <section class="verify-expired section">
+        <div class="verify-expired__container section__container">
+            <h1 class="verify-expired__title">{pageTitle}</h1>
+            <p class="verify-expired__body">{t('conversations.form.verifyExpiredBody')}</p>
+            <a href={requestAccessUrl} class="verify-expired__cta">
+                {t('conversations.form.requestNewLinkCta')}
+            </a>
+        </div>
+    </section>
+</BaseLayout>
+
+<style>
+    .verify-expired {
+        padding: var(--space-section-sm, 60px) 0;
+    }
+
+    .verify-expired__container {
+        max-width: 480px;
+    }
+
+    .verify-expired__title {
+        font-family: var(--font-heading);
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--foreground);
+        margin: 0 0 var(--space-3, 12px);
+    }
+
+    .verify-expired__body {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--muted-foreground);
+        margin: 0 0 var(--space-5, 20px);
+    }
+
+    .verify-expired__cta {
+        display: inline-block;
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: white;
+        background-color: var(--accent);
+        border-radius: var(--radius-button, 8px);
+        padding: var(--space-3, 12px) var(--space-4, 16px);
+        text-decoration: none;
+        transition: background-color var(--duration-fast, 0.2s) ease;
+    }
+
+    .verify-expired__cta:hover {
+        background-color: oklch(from var(--accent) calc(l - 0.05) c h);
+    }
+</style>

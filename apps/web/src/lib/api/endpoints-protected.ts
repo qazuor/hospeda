@@ -710,6 +710,154 @@ export const tagsApi = {
     }
 };
 
+// --- Conversations (Protected) ---
+
+/** Message item in a protected conversation thread */
+export interface ConversationMessageItem {
+    readonly id: string;
+    readonly body: string;
+    readonly senderType: 'guest' | 'owner' | 'system';
+    readonly createdAt: string;
+}
+
+/** Conversation summary for inbox list */
+export interface ConversationInboxItem {
+    readonly id: string;
+    readonly accommodationId: string;
+    readonly accommodationName: string;
+    readonly lastMessageExcerpt: string | null;
+    readonly unreadCount: number;
+    readonly lastActivityAt: string;
+    readonly status: string;
+    readonly archivedByGuest: boolean;
+}
+
+/** Full conversation detail for thread view */
+export interface ConversationDetail {
+    readonly id: string;
+    readonly accommodationId: string;
+    readonly accommodationName: string;
+    readonly ownerName: string;
+    readonly status: string;
+    readonly lastReadAtByOwner: string | null;
+    readonly archivedByGuest: boolean;
+    readonly createdAt: string;
+}
+
+/** Thread response for protected conversation detail */
+export interface ConversationThreadResponse {
+    readonly conversation: ConversationDetail;
+    readonly messages: readonly ConversationMessageItem[];
+    readonly hasMore: boolean;
+}
+
+/** Protected conversations API endpoints (require auth session) */
+export const protectedConversationsApi = {
+    /**
+     * Initiate a new conversation as an authenticated user.
+     *
+     * @param params - Accommodation ID and initial message
+     * @returns Conversation ID, new flag, and message ID
+     */
+    initiate(params: {
+        readonly accommodationId: string;
+        readonly message: string;
+    }): Promise<
+        ApiResult<{
+            readonly conversationId: string;
+            readonly isNew: boolean;
+            readonly messageId: string;
+        }>
+    > {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/conversations/initiate`,
+            body: params
+        });
+    },
+
+    /**
+     * List all conversations in the authenticated user's inbox.
+     *
+     * @param params - Optional pagination and archive filter
+     */
+    list(params?: {
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly archivedByGuest?: boolean;
+    }): Promise<
+        ApiResult<{
+            readonly items: readonly ConversationInboxItem[];
+            readonly pagination: {
+                readonly page: number;
+                readonly pageSize: number;
+                readonly total: number;
+                readonly totalPages: number;
+            };
+        }>
+    > {
+        return apiClient.getProtected({ path: `${PROTECTED}/conversations`, params });
+    },
+
+    /**
+     * Get a conversation thread by ID.
+     *
+     * @param params - Conversation ID and optional cursor/limit
+     */
+    getThread(params: {
+        readonly id: string;
+        readonly cursor?: string;
+        readonly limit?: number;
+    }): Promise<ApiResult<ConversationThreadResponse>> {
+        const { id, ...rest } = params;
+        return apiClient.getProtected({
+            path: `${PROTECTED}/conversations/${id}`,
+            params: rest as Record<string, unknown>
+        });
+    },
+
+    /**
+     * Send a reply to a conversation.
+     *
+     * @param params - Conversation ID and message body
+     * @returns The created message
+     */
+    sendMessage(params: {
+        readonly id: string;
+        readonly body: string;
+    }): Promise<ApiResult<ConversationMessageItem>> {
+        const { id, body } = params;
+        return apiClient.postProtected({
+            path: `${PROTECTED}/conversations/${id}/messages`,
+            body: { body }
+        });
+    },
+
+    /**
+     * Archive or unarchive a conversation.
+     *
+     * @param params - Conversation ID and archived flag
+     */
+    setArchived(params: {
+        readonly id: string;
+        readonly archived: boolean;
+    }): Promise<ApiResult<{ readonly success: boolean }>> {
+        const { id, archived } = params;
+        return apiClient.patch({
+            path: `${PROTECTED}/conversations/${id}/archive`,
+            body: { archived }
+        });
+    },
+
+    /**
+     * Get the count of unread messages for the authenticated user.
+     *
+     * @returns Unread message count
+     */
+    getUnreadCount(): Promise<ApiResult<{ readonly count: number }>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/conversations/unread-count` });
+    }
+};
+
 // --- Accommodation Contact (Protected) ---
 
 /** Contact info returned by the protected endpoint. */

@@ -1,0 +1,292 @@
+---
+/**
+ * @file guest/messages/[token].astro
+ * @description Anonymous guest conversation thread page accessed via secure token.
+ * @route /{lang}/guest/messages/{token}/
+ * @rendering SSR (on-demand, no auth required)
+ */
+
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { ConversationReply } from '@/components/account/ConversationReply.client';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { publicConversationsApi } from '@/lib/api/endpoints';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const { token } = Astro.params;
+if (!token) return new Response(null, { status: 404 });
+
+// Cursor for older messages pagination
+const cursor = Astro.url.searchParams.get('cursor') ?? undefined;
+const result = await publicConversationsApi.getGuestThread({ token, cursor, limit: 50 });
+
+// Handle token errors
+if (!result.ok) {
+    const reason = (result.error as { reason?: string })?.reason
+        ?? String(result.error?.code ?? '');
+    const isRevoked = reason === 'TOKEN_REVOKED';
+    const expiredUrl = buildUrl({ locale, path: 'guest/messages/verify-expired' });
+    const requestAccessUrl = buildUrl({ locale, path: 'guest/messages/request-access' });
+
+    return new Response(
+        `<!DOCTYPE html>
+<html lang="${locale}">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${isRevoked ? t('conversations.errors.tokenRevoked') : t('conversations.errors.tokenExpired')}</title>
+</head>
+<body>
+<p>${isRevoked ? t('conversations.errors.tokenRevoked') : t('conversations.errors.tokenExpired')}</p>
+<a href="${requestAccessUrl}">${t('conversations.form.requestNewLinkCta')}</a>
+</body>
+</html>`,
+        {
+            status: 401,
+            headers: {
+                'Content-Type': 'text/html; charset=utf-8',
+                Location: expiredUrl
+            }
+        }
+    );
+}
+
+const { conversation, messages, hasMore } = result.data;
+
+const closedStatuses = ['CLOSED', 'BLOCKED'];
+const canReply = !closedStatuses.includes(conversation.status.toUpperCase());
+
+let showOwnerReadReceipt = false;
+if (conversation.lastReadAtByOwner) {
+    const lastGuestMsg = [...messages].reverse().find((m) => m.senderType === 'guest');
+    if (lastGuestMsg) {
+        showOwnerReadReceipt =
+            new Date(conversation.lastReadAtByOwner) >= new Date(lastGuestMsg.createdAt);
+    }
+}
+
+function formatDate(dateStr: string): string {
+    return new Date(dateStr).toLocaleString(
+        locale === 'pt' ? 'pt-BR' : locale === 'en' ? 'en-US' : 'es-AR',
+        { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }
+    );
+}
+
+const pageTitle = t('conversations.thread.title', undefined, {
+    senderName: conversation.ownerName
+});
+
+const oldestMessage = messages[0];
+const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
+---
+
+<BaseLayout locale={locale} title={pageTitle} description={pageTitle}>
+    <div class="guest-thread section">
+        <div class="guest-thread__container section__container">
+            <div class="guest-thread__header">
+                <h1 class="guest-thread__title">{pageTitle}</h1>
+                <span class="guest-thread__accommodation">{conversation.accommodationName}</span>
+            </div>
+
+            {olderCursor && (
+                <div class="guest-thread__load-older">
+                    <a
+                        href={buildUrl({ locale, path: `guest/messages/${token}` }) +
+                            `?cursor=${encodeURIComponent(olderCursor)}`}
+                        class="guest-thread__older-link"
+                    >
+                        {t('conversations.thread.older')}
+                    </a>
+                </div>
+            )}
+
+            <ol class="guest-thread__messages" aria-label={pageTitle}>
+                {messages.map((msg) => (
+                    <li
+                        class:list={[
+                            'guest-thread__message',
+                            `guest-thread__message--${msg.senderType}`
+                        ]}
+                    >
+                        <div class="guest-thread__bubble">
+                            <p class="guest-thread__body">{msg.body}</p>
+                            <time
+                                datetime={msg.createdAt}
+                                class="guest-thread__timestamp"
+                            >
+                                {formatDate(msg.createdAt)}
+                            </time>
+                        </div>
+                    </li>
+                ))}
+            </ol>
+
+            {showOwnerReadReceipt && (
+                <p class="guest-thread__read-receipt">
+                    {t('conversations.thread.readByOwner')}
+                    {' '}
+                    <time datetime={conversation.lastReadAtByOwner ?? ''}>
+                        {formatDate(conversation.lastReadAtByOwner ?? '')}
+                    </time>
+                </p>
+            )}
+
+            {canReply ? (
+                <ConversationReply
+                    client:visible
+                    mode="guest"
+                    token={token}
+                    locale={locale}
+                />
+            ) : (
+                <p class="guest-thread__closed-notice">
+                    {conversation.status === 'BLOCKED'
+                        ? t('conversations.errors.conversationBlocked')
+                        : t('conversations.status.closed')}
+                </p>
+            )}
+        </div>
+    </div>
+</BaseLayout>
+
+<style>
+    .guest-thread {
+        padding: var(--space-section-sm, 60px) 0;
+    }
+
+    .guest-thread__container {
+        max-width: 720px;
+    }
+
+    .guest-thread__header {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 4px);
+        margin-bottom: var(--space-5, 20px);
+    }
+
+    .guest-thread__title {
+        font-family: var(--font-heading);
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--foreground);
+        margin: 0;
+    }
+
+    .guest-thread__accommodation {
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        color: var(--muted-foreground);
+    }
+
+    .guest-thread__load-older {
+        text-align: center;
+        margin-bottom: var(--space-3, 12px);
+    }
+
+    .guest-thread__older-link {
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        color: var(--primary);
+        text-decoration: underline;
+    }
+
+    .guest-thread__messages {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 var(--space-4, 16px);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 12px);
+    }
+
+    .guest-thread__message {
+        display: flex;
+    }
+
+    .guest-thread__message--guest {
+        justify-content: flex-end;
+    }
+
+    .guest-thread__message--owner,
+    .guest-thread__message--system {
+        justify-content: flex-start;
+    }
+
+    .guest-thread__bubble {
+        max-width: 75%;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 4px);
+    }
+
+    .guest-thread__message--guest .guest-thread__bubble {
+        background-color: var(--primary);
+        color: white;
+        border-radius: var(--radius-organic-sm, 0px 75px);
+        padding: var(--space-3, 12px) var(--space-4, 16px);
+    }
+
+    .guest-thread__message--owner .guest-thread__bubble {
+        background-color: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-organic-alt, 100px 0px);
+        padding: var(--space-3, 12px) var(--space-4, 16px);
+    }
+
+    .guest-thread__message--system .guest-thread__bubble {
+        background-color: var(--muted);
+        border-radius: var(--radius-button, 8px);
+        padding: var(--space-2, 8px) var(--space-3, 12px);
+    }
+
+    .guest-thread__body {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .guest-thread__message--guest .guest-thread__body {
+        color: white;
+    }
+
+    .guest-thread__message--owner .guest-thread__body,
+    .guest-thread__message--system .guest-thread__body {
+        color: var(--foreground);
+    }
+
+    .guest-thread__timestamp {
+        font-family: var(--font-sans);
+        font-size: 0.72rem;
+        color: var(--muted-foreground);
+        align-self: flex-end;
+    }
+
+    .guest-thread__message--guest .guest-thread__timestamp {
+        color: oklch(from white l c h / 0.75);
+    }
+
+    .guest-thread__read-receipt {
+        font-family: var(--font-sans);
+        font-size: 0.78rem;
+        color: var(--muted-foreground);
+        text-align: right;
+        margin: 0 0 var(--space-2, 8px);
+    }
+
+    .guest-thread__closed-notice {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--muted-foreground);
+        text-align: center;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-button, 8px);
+        padding: var(--space-3, 12px);
+        margin: 0;
+    }
+</style>

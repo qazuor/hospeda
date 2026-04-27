@@ -1,0 +1,181 @@
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 4px);
+}
+
+.label {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--foreground);
+}
+
+.required {
+    color: var(--destructive, #e74c3c);
+}
+
+.input,
+.textarea {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--foreground);
+    background-color: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button, 8px);
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    width: 100%;
+    transition: border-color var(--duration-fast, 0.2s) ease;
+}
+
+.input:focus,
+.textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px oklch(from var(--primary) l c h / 0.15);
+}
+
+.textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.textareaError {
+    border-color: var(--destructive, #e74c3c);
+}
+
+.textareaError:focus {
+    border-color: var(--destructive, #e74c3c);
+    box-shadow: 0 0 0 2px oklch(from var(--destructive, #e74c3c) l c h / 0.15);
+}
+
+.charCount {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+    text-align: right;
+}
+
+.charCountOver {
+    color: var(--destructive, #e74c3c);
+    font-weight: 600;
+}
+
+.fieldError {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    color: var(--destructive, #e74c3c);
+    margin: 0;
+}
+
+.submitButton {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: white;
+    background-color: var(--accent);
+    border: none;
+    border-radius: var(--radius-button, 8px);
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    cursor: pointer;
+    width: 100%;
+    transition: background-color var(--duration-fast, 0.2s) ease,
+                opacity var(--duration-fast, 0.2s) ease;
+}
+
+.submitButton:hover:not(:disabled) {
+    background-color: oklch(from var(--accent) calc(l - 0.05) c h);
+}
+
+.submitButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.successNotice {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--foreground);
+    background-color: oklch(from var(--primary) l c h / 0.1);
+    border: 1px solid oklch(from var(--primary) l c h / 0.3);
+    border-radius: var(--radius-button, 8px);
+    padding: var(--space-3, 12px);
+    margin: 0;
+}
+
+.errorNotice {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--destructive, #e74c3c);
+    background-color: oklch(from var(--destructive, #e74c3c) l c h / 0.08);
+    border: 1px solid oklch(from var(--destructive, #e74c3c) l c h / 0.25);
+    border-radius: var(--radius-button, 8px);
+    padding: var(--space-3, 12px);
+    margin: 0;
+}
+
+.duplicateNotice {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--foreground);
+    background-color: oklch(from var(--accent) l c h / 0.08);
+    border: 1px solid oklch(from var(--accent) l c h / 0.25);
+    border-radius: var(--radius-button, 8px);
+    padding: var(--space-3, 12px);
+}
+
+.duplicateNotice p {
+    margin: 0;
+}
+
+.requestAccessSent {
+    font-style: italic;
+    color: var(--muted-foreground);
+}
+
+.secondaryButton {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--primary);
+    background: transparent;
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-button, 8px);
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    cursor: pointer;
+    align-self: flex-start;
+    transition: background-color var(--duration-fast, 0.2s) ease;
+}
+
+.secondaryButton:hover {
+    background-color: oklch(from var(--primary) l c h / 0.08);
+}
+
+.viewExistingLink {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: underline;
+    transition: color var(--duration-fast, 0.2s) ease;
+}
+
+.viewExistingLink:hover {
+    color: oklch(from var(--primary) calc(l - 0.05) c h);
+}

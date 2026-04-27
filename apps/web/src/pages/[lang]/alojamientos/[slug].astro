@@ -23,7 +23,8 @@ import LocationSection from '@/components/accommodation/LocationSection.astro';
 import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
 import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
 import OwnerCard from '@/components/accommodation/OwnerCard.astro';
-import { OwnerContact } from '@/components/accommodation/OwnerContact.client';
+import { ContactHost } from '@/components/accommodation/ContactHost.client';
+import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
 import EventCard from '@/components/shared/cards/EventCard.astro';
@@ -44,9 +45,14 @@ if (!slug) return new Response(null, { status: 404 });
 const result = await accommodationsApi.getBySlug({ slug });
 if (!result.ok || !result.data) return new Response(null, { status: 404 });
 
-const accommodation = toAccommodationDetailPageProps({
-    item: result.data as Record<string, unknown>
-});
+const rawAccommodation = result.data as Record<string, unknown>;
+const accommodation = toAccommodationDetailPageProps({ item: rawAccommodation });
+
+// Extract lifecycle fields directly from raw API response (not in AccommodationDetailData)
+const accommodationLifecycleState = String(rawAccommodation.lifecycleState ?? 'ACTIVE');
+const accommodationDeletedAt = rawAccommodation.deletedAt
+    ? String(rawAccommodation.deletedAt)
+    : null;
 
 // --- Parallel secondary fetches with graceful degradation ---
 const [similarResult, ownerPropsResult, postsResult, eventsResult, reviewsResult] =
@@ -85,6 +91,29 @@ const eventItems = extractItems(eventsResult);
 
 // --- Auth ---
 const userId = Astro.locals.user?.id ?? null;
+const currentUser = Astro.locals.user
+    ? {
+          id: Astro.locals.user.id,
+          name: (Astro.locals.user as { name?: string | null }).name ?? null,
+          email: (Astro.locals.user as { email?: string | null }).email ?? null
+      }
+    : null;
+
+// Look up existing conversation for authenticated user (graceful degradation)
+let existingConversationId: string | null = null;
+if (userId) {
+    try {
+        const convResult = await protectedConversationsApi.list({ page: 1, pageSize: 50 });
+        if (convResult.ok) {
+            const match = convResult.data.items.find(
+                (c) => c.accommodationId === accommodation.id
+            );
+            existingConversationId = match?.id ?? null;
+        }
+    } catch {
+        // Graceful degradation: show form if lookup fails
+    }
+}
 
 // --- SEO ---
 const seoTitle = accommodation.seo?.title ?? `${accommodation.name} | Hospeda`;
@@ -206,14 +235,17 @@ const jsonLd: Record<string, unknown> = {
         <div class="acc-sidebar">
             <PricingSidebar price={accommodation.price} lang={locale} />
             <OwnerCard owner={accommodation.owner} accommodationId={accommodation.id} userId={userId} lang={locale}>
-                {userId && (
-                    <OwnerContact
-                        client:idle
-                        userId={userId}
-                        accommodationId={accommodation.id}
-                        locale={locale}
-                    />
-                )}
+                <ContactHost
+                    client:idle
+                    accommodation={{
+                        id: accommodation.id,
+                        lifecycleState: accommodationLifecycleState,
+                        deletedAt: accommodationDeletedAt
+                    }}
+                    currentUser={currentUser}
+                    existingConversationId={existingConversationId}
+                    locale={locale}
+                />
             </OwnerCard>
         </div>
     </Fragment>

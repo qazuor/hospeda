@@ -7,7 +7,6 @@ import type { AccommodationOwnerData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getInitialsFromName } from '@/lib/avatar-utils';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { getMediaUrl } from '@repo/media';
 
 interface Props {
@@ -17,7 +16,7 @@ interface Props {
   readonly lang: string;
 }
 
-const { owner, accommodationId, userId, lang } = Astro.props;
+const { owner, accommodationId: _accommodationId, userId: _userId, lang } = Astro.props;
 const { t } = createTranslations(lang as SupportedLocale);
 
 const initials = getInitialsFromName(owner.name);
@@ -54,23 +53,10 @@ const ownerAvatarUrl = owner.image
   </div>
 
   <div class="owner-card__contact" id="contact">
-    {userId ? (
-      <div class="owner-card__island-placeholder">
-        <!-- OwnerContact React island will be rendered here by the page orchestrator -->
-        <slot />
-      </div>
-    ) : (
-      <div class="owner-card__register-cta-wrapper">
-        <GradientButton
-          href={`/${lang}/auth/signin`}
-          label={t('accommodations.detail.owner.registerToContact')}
-          variant="outline-primary"
-          size="sm"
-          shape="rounded"
-          class="owner-card__register-cta"
-        />
-      </div>
-    )}
+    <div class="owner-card__island-placeholder">
+      <!-- ContactHost React island will be rendered here by the page orchestrator -->
+      <slot />
+    </div>
   </div>
 </div>
 

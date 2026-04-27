@@ -1,0 +1,219 @@
+---
+/**
+ * @file guest/messages/request-access.astro
+ * @description Static page for anonymous guests to request a new access link.
+ * Anti-enumeration: shows the same confirmation regardless of whether the email
+ * has an associated conversation.
+ * @route /{lang}/guest/messages/request-access/
+ * @rendering SSR (on-demand)
+ */
+
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const pageTitle = t('conversations.form.requestAccessTitle');
+const pageDescription = t('conversations.form.requestAccessBody');
+---
+
+<BaseLayout locale={locale} title={pageTitle} description={pageDescription}>
+    <section class="request-access section">
+        <div class="request-access__container section__container">
+            <h1 class="request-access__title">{pageTitle}</h1>
+            <p class="request-access__body">{pageDescription}</p>
+
+            <form
+                class="request-access__form"
+                id="request-access-form"
+                novalidate
+            >
+                <div class="request-access__field">
+                    <label
+                        for="request-access-email"
+                        class="request-access__label"
+                    >
+                        {t('conversations.form.requestAccessEmailLabel')}
+                        <span aria-hidden="true" class="request-access__required"> *</span>
+                    </label>
+                    <input
+                        id="request-access-email"
+                        type="email"
+                        required
+                        name="email"
+                        autocomplete="email"
+                        placeholder={t('conversations.form.emailPlaceholder')}
+                        class="request-access__input"
+                        aria-describedby="request-access-hint"
+                    />
+                </div>
+
+                <div id="request-access-notice" aria-live="polite" class="request-access__notice" hidden></div>
+                <div id="request-access-error" role="alert" class="request-access__error" hidden></div>
+
+                <button type="submit" class="request-access__submit">
+                    {t('conversations.form.requestAccessSubmit')}
+                </button>
+            </form>
+        </div>
+    </section>
+</BaseLayout>
+
+<script define:vars={{ sentMessage: t('conversations.form.requestAccessSent') }}>
+    const form = document.getElementById('request-access-form');
+    const notice = document.getElementById('request-access-notice');
+    const errorEl = document.getElementById('request-access-error');
+
+    if (form && notice && errorEl) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const emailInput = form.querySelector('input[name="email"]');
+            if (!emailInput || !(emailInput instanceof HTMLInputElement)) return;
+
+            const email = emailInput.value.trim();
+            if (!email) return;
+
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn instanceof HTMLButtonElement) {
+                submitBtn.disabled = true;
+            }
+
+            try {
+                await fetch('/api/v1/public/conversations/request-access', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+
+                // Anti-enumeration: always show same confirmation
+                notice.textContent = sentMessage;
+                notice.removeAttribute('hidden');
+                errorEl.setAttribute('hidden', '');
+                form.reset();
+            } catch {
+                // Still show the same confirmation — do not leak info on network error
+                notice.textContent = sentMessage;
+                notice.removeAttribute('hidden');
+                errorEl.setAttribute('hidden', '');
+            } finally {
+                if (submitBtn instanceof HTMLButtonElement) {
+                    submitBtn.disabled = false;
+                }
+            }
+        });
+    }
+</script>
+
+<style>
+    .request-access {
+        padding: var(--space-section-sm, 60px) 0;
+    }
+
+    .request-access__container {
+        max-width: 480px;
+    }
+
+    .request-access__title {
+        font-family: var(--font-heading);
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--foreground);
+        margin: 0 0 var(--space-3, 12px);
+    }
+
+    .request-access__body {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--muted-foreground);
+        margin: 0 0 var(--space-5, 20px);
+    }
+
+    .request-access__form {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 12px);
+    }
+
+    .request-access__field {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 4px);
+    }
+
+    .request-access__label {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--foreground);
+    }
+
+    .request-access__required {
+        color: var(--destructive, #e74c3c);
+    }
+
+    .request-access__input {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--foreground);
+        background-color: var(--background);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-button, 8px);
+        padding: var(--space-2, 8px) var(--space-3, 12px);
+        width: 100%;
+        transition: border-color var(--duration-fast, 0.2s) ease;
+    }
+
+    .request-access__input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px oklch(from var(--primary) l c h / 0.15);
+    }
+
+    .request-access__notice {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--foreground);
+        background-color: oklch(from var(--primary) l c h / 0.1);
+        border: 1px solid oklch(from var(--primary) l c h / 0.3);
+        border-radius: var(--radius-button, 8px);
+        padding: var(--space-3, 12px);
+    }
+
+    .request-access__error {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--destructive, #e74c3c);
+        background-color: oklch(from var(--destructive, #e74c3c) l c h / 0.08);
+        border: 1px solid oklch(from var(--destructive, #e74c3c) l c h / 0.25);
+        border-radius: var(--radius-button, 8px);
+        padding: var(--space-3, 12px);
+    }
+
+    .request-access__submit {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: white;
+        background-color: var(--accent);
+        border: none;
+        border-radius: var(--radius-button, 8px);
+        padding: var(--space-3, 12px) var(--space-4, 16px);
+        cursor: pointer;
+        align-self: flex-start;
+        transition: background-color var(--duration-fast, 0.2s) ease,
+                    opacity var(--duration-fast, 0.2s) ease;
+    }
+
+    .request-access__submit:hover:not(:disabled) {
+        background-color: oklch(from var(--accent) calc(l - 0.05) c h);
+    }
+
+    .request-access__submit:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+</style>
