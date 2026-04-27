@@ -27,9 +27,6 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2847",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.187",
             "long": "-58.7362"
@@ -37,9 +34,7 @@
         "street": "Calle Sarmiento",
         "number": "1300",
         "floor": "1",
-        "apartment": "A",
-        "city": "San José",
-        "neighborhood": "Barrio Residencial"
+        "apartment": "A"
     },
     "media": {
         "featuredImage": {

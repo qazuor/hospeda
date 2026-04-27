@@ -26,17 +26,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.4825",
             "long": "-58.2295"
         },
         "street": "Camino a Estancia S/N",
-        "number": "S/N",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Zona Rural Remota"
+        "number": "S/N"
     },
     "media": {
         "featuredImage": {

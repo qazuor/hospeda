@@ -21,17 +21,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3206",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.0592",
             "long": "-58.0997"
         },
         "street": "Calle Las Colonias",
-        "number": "120",
-        "city": "Liebig",
-        "neighborhood": "Centro Histórico"
+        "number": "120"
     },
     "media": {
         "featuredImage": {

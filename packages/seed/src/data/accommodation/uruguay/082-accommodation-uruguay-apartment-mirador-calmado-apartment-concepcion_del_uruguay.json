@@ -22,9 +22,6 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.4807",
             "long": "-58.239"
@@ -32,9 +29,7 @@
         "street": "Calle 3 de Febrero",
         "number": "1200",
         "floor": "5",
-        "apartment": "F",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Barrio Residencial"
+        "apartment": "F"
     },
     "media": {
         "featuredImage": {

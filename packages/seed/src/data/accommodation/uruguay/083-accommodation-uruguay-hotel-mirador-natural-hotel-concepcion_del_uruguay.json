@@ -27,17 +27,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.4912",
             "long": "-58.2256"
         },
         "street": "Avenida Costanera",
-        "number": "1500",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Zona Costanera"
+        "number": "1500"
     },
     "media": {
         "featuredImage": {

@@ -21,17 +21,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.4839",
             "long": "-58.2254"
         },
         "street": "Calle del Puerto",
-        "number": "180",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Zona Costanera"
+        "number": "180"
     },
     "media": {
         "featuredImage": {

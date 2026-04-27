@@ -26,17 +26,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2840",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.2267",
             "long": "-58.1517"
         },
         "street": "Camino Rural F",
-        "number": "S/N",
-        "city": "Colón",
-        "neighborhood": "Zona Arbolada"
+        "number": "S/N"
     },
     "media": {
         "featuredImage": {

@@ -24,17 +24,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3206",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.008",
             "long": "-57.9029"
         },
         "street": "Calle Los Robles",
-        "number": "50",
-        "city": "Federación",
-        "neighborhood": "Barrio Residencial"
+        "number": "50"
     },
     "media": {
         "featuredImage": {

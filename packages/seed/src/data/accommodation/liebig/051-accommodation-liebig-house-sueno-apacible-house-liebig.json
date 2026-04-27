@@ -22,17 +22,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3206",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.0542",
             "long": "-58.1069"
         },
         "street": "Calle Los Ciruelos",
-        "number": "88",
-        "city": "Liebig",
-        "neighborhood": "Barrio Residencial"
+        "number": "88"
     },
     "media": {
         "featuredImage": {

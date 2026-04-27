@@ -21,17 +21,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2845",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.3569",
             "long": "-58.2976"
         },
         "street": "Calle Los Tilos",
-        "number": "88",
-        "city": "Ubajay",
-        "neighborhood": "Barrio Residencial"
+        "number": "88"
     },
     "media": {
         "featuredImage": {

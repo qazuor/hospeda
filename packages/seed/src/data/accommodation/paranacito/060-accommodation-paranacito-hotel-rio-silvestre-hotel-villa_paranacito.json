@@ -27,17 +27,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2826",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-33.7069",
             "long": "-58.6588"
         },
         "street": "Avenida Costanera S/N",
-        "number": "S/N",
-        "city": "Paranacito",
-        "neighborhood": "Zona Ribereña"
+        "number": "S/N"
     },
     "media": {
         "featuredImage": {

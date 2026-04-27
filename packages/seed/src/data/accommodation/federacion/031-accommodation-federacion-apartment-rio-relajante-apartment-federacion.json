@@ -22,9 +22,6 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3206",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.0246",
             "long": "-57.9007"
@@ -32,9 +29,7 @@
         "street": "Calle Paraná",
         "number": "800",
         "floor": "2",
-        "apartment": "C",
-        "city": "Federación",
-        "neighborhood": "Zona Costanera"
+        "apartment": "C"
     },
     "media": {
         "featuredImage": {

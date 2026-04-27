@@ -21,17 +21,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2826",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-33.7065",
             "long": "-58.6487"
         },
         "street": "Camino al Sol S/N",
-        "number": "S/N",
-        "city": "Paranacito",
-        "neighborhood": "Zona Rural"
+        "number": "S/N"
     },
     "media": {
         "featuredImage": {

@@ -27,17 +27,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.4834",
             "long": "-58.2344"
         },
         "street": "Calle Artigas",
-        "number": "50",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Zona Costanera"
+        "number": "50"
     },
     "media": {
         "featuredImage": {

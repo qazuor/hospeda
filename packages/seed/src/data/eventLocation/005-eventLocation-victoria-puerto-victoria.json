@@ -2,17 +2,13 @@
     "$schema": "../../schemas/eventLocation.schema.json",
     "id": "005-eventLocation-victoria-puerto-victoria",
     "slug": "puerto-victoria",
-    "state": "Entre Ríos",
-    "city": "Victoria",
-    "country": "Argentina",
-    "zipCode": "3153",
+    "destinationId": "023-destination-victoria",
+    "placeName": "Puerto de Victoria",
     "street": "Costanera",
     "number": "s/n",
-    "neighborhood": "Puerto",
     "coordinates": {
         "lat": "-32.6167",
         "long": "-60.1500"
     },
-    "placeName": "Puerto de Victoria",
     "lifecycleState": "ACTIVE"
 }

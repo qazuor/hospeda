@@ -22,17 +22,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.4807",
             "long": "-58.2224"
         },
         "street": "Calle Los Naranjos",
-        "number": "25",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Barrio Tradicional"
+        "number": "25"
     },
     "media": {
         "featuredImage": {

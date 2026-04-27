@@ -21,17 +21,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2840",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.232",
             "long": "-58.1554"
         },
         "street": "Calle Mitre",
-        "number": "980",
-        "city": "Colón",
-        "neighborhood": "Centro"
+        "number": "980"
     },
     "media": {
         "featuredImage": {

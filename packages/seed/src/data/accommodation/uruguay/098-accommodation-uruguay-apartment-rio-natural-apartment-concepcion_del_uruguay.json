@@ -25,9 +25,6 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.4826",
             "long": "-58.2352"
@@ -35,9 +32,7 @@
         "street": "Calle Los Ceibos",
         "number": "120",
         "floor": "2",
-        "apartment": "C",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Zona Costanera"
+        "apartment": "C"
     },
     "media": {
         "featuredImage": {

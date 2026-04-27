@@ -25,17 +25,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2847",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.2013",
             "long": "-58.7382"
         },
         "street": "Calle Entre Ríos",
-        "number": "550",
-        "city": "San José",
-        "neighborhood": "Centro"
+        "number": "550"
     },
     "media": {
         "featuredImage": {

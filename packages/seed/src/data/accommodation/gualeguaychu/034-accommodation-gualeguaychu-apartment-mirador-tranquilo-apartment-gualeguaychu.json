@@ -25,9 +25,6 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2820",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-33.0015",
             "long": "-58.5228"
@@ -35,9 +32,7 @@
         "street": "Calle Jujuy",
         "number": "800",
         "floor": "4",
-        "apartment": "B",
-        "city": "Gualeguaychú",
-        "neighborhood": "Barrio Residencial"
+        "apartment": "B"
     },
     "media": {
         "featuredImage": {

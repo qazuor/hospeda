@@ -27,17 +27,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.4913",
             "long": "-58.2296"
         },
         "street": "Calle de la Constitución",
-        "number": "350",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Centro Histórico"
+        "number": "350"
     },
     "media": {
         "featuredImage": {

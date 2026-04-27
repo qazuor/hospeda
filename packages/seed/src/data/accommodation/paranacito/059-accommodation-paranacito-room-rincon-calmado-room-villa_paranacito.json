@@ -24,17 +24,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2826",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-33.7068",
             "long": "-58.6493"
         },
         "street": "Calle Los Jacarandás",
-        "number": "45",
-        "city": "Paranacito",
-        "neighborhood": "Barrio Residencial Tranquilo"
+        "number": "45"
     },
     "media": {
         "featuredImage": {

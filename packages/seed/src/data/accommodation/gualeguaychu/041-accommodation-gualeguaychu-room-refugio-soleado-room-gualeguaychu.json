@@ -21,17 +21,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2820",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-33.002",
             "long": "-58.5148"
         },
         "street": "Calle Los Jazmines",
-        "number": "350",
-        "city": "Gualeguaychú",
-        "neighborhood": "Barrio Residencial"
+        "number": "350"
     },
     "media": {
         "featuredImage": {

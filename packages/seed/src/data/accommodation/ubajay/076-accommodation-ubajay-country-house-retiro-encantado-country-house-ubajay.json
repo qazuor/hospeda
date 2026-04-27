@@ -24,17 +24,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2845",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.3559",
             "long": "-58.2965"
         },
         "street": "Camino Rural Este S/N",
-        "number": "S/N",
-        "city": "Ubajay",
-        "neighborhood": "Zona Rural"
+        "number": "S/N"
     },
     "media": {
         "featuredImage": {

@@ -22,17 +22,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3206",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.044",
             "long": "-58.0936"
         },
         "street": "Camino al Arroyo S/N",
-        "number": "S/N",
-        "city": "Liebig",
-        "neighborhood": "Zona Rural"
+        "number": "S/N"
     },
     "media": {
         "featuredImage": {

@@ -21,17 +21,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2847",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.1999",
             "long": "-58.7505"
         },
         "street": "Calle Los Ceibos",
-        "number": "250",
-        "city": "San José",
-        "neighborhood": "Barrio Residencial"
+        "number": "250"
     },
     "media": {
         "featuredImage": {

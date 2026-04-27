@@ -24,17 +24,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2820",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-33.0198",
             "long": "-58.5196"
         },
         "street": "Calle Los Tilos",
-        "number": "110",
-        "city": "Gualeguaychú",
-        "neighborhood": "Barrio Residencial"
+        "number": "110"
     },
     "media": {
         "featuredImage": {

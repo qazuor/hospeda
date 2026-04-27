@@ -21,9 +21,6 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.4764",
             "long": "-58.2284"
@@ -31,9 +28,7 @@
         "street": "Calle Galarza",
         "number": "1050",
         "floor": "3",
-        "apartment": "D",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Barrio Centro Este"
+        "apartment": "D"
     },
     "media": {
         "featuredImage": {

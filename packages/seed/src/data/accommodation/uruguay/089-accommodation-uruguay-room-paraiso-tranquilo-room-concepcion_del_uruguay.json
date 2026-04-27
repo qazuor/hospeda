@@ -26,17 +26,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.4815",
             "long": "-58.2405"
         },
         "street": "Calle Los Paraísos",
-        "number": "305",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Barrio Residencial Tranquilo"
+        "number": "305"
     },
     "media": {
         "featuredImage": {

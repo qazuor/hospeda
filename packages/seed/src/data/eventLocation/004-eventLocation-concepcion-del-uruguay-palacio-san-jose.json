@@ -2,17 +2,13 @@
     "$schema": "../../schemas/eventLocation.schema.json",
     "id": "004-eventLocation-concepcion-del-uruguay-palacio-san-jose",
     "slug": "palacio-san-jose",
-    "state": "Entre Ríos",
-    "city": "Concepción del Uruguay",
-    "country": "Argentina",
-    "zipCode": "3260",
+    "destinationId": "011-destination-concepcion-del-uruguay",
+    "placeName": "Palacio San José",
     "street": "8 de Junio",
     "number": "114",
-    "neighborhood": "Centro",
     "coordinates": {
         "lat": "-32.4833",
         "long": "-58.2333"
     },
-    "placeName": "Palacio San José",
     "lifecycleState": "ACTIVE"
 }

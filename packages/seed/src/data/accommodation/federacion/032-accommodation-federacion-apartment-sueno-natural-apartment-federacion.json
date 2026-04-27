@@ -26,9 +26,6 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3206",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.0127",
             "long": "-57.9001"
@@ -36,9 +33,7 @@
         "street": "Calle Los Sauces",
         "number": "30",
         "floor": "1",
-        "apartment": "B",
-        "city": "Federación",
-        "neighborhood": "Barrio Residencial"
+        "apartment": "B"
     },
     "media": {
         "featuredImage": {

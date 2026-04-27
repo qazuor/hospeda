@@ -21,17 +21,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2826",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-33.7059",
             "long": "-58.6604"
         },
         "street": "Camino Costero S/N",
-        "number": "S/N",
-        "city": "Paranacito",
-        "neighborhood": "Zona de Delta"
+        "number": "S/N"
     },
     "media": {
         "featuredImage": {

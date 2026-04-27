@@ -26,17 +26,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3206",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.0151",
             "long": "-57.8941"
         },
         "street": "Calle Los Ceibos",
-        "number": "125",
-        "city": "Federación",
-        "neighborhood": "Barrio Residencial"
+        "number": "125"
     },
     "media": {
         "featuredImage": {

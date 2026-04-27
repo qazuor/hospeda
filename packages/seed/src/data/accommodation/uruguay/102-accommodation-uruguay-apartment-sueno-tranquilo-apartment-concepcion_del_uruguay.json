@@ -24,9 +24,6 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.488",
             "long": "-58.2337"
@@ -34,9 +31,7 @@
         "street": "Calle Los Sauces",
         "number": "789",
         "floor": "2",
-        "apartment": "A",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Barrio Residencial"
+        "apartment": "A"
     },
     "media": {
         "featuredImage": {

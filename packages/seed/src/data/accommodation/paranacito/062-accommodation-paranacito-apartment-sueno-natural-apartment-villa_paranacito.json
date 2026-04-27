@@ -24,9 +24,6 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2826",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-33.6998",
             "long": "-58.648"
@@ -34,9 +31,7 @@
         "street": "Calle Los Álamos",
         "number": "80",
         "floor": "1",
-        "apartment": "B",
-        "city": "Paranacito",
-        "neighborhood": "Barrio Residencial"
+        "apartment": "B"
     },
     "media": {
         "featuredImage": {

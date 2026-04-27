@@ -26,17 +26,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.474",
             "long": "-58.231"
         },
         "street": "Calle Eva Perón",
-        "number": "680",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Centro"
+        "number": "680"
     },
     "media": {
         "featuredImage": {

@@ -26,17 +26,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3206",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.0159",
             "long": "-57.9015"
         },
         "street": "Calle Los Jacarandás",
-        "number": "745",
-        "city": "Federación",
-        "neighborhood": "Barrio Termal"
+        "number": "745"
     },
     "media": {
         "featuredImage": {

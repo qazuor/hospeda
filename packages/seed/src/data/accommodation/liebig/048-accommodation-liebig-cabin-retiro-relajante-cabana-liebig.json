@@ -22,17 +22,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3206",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.0494",
             "long": "-58.1027"
         },
         "street": "Calle Los Pescadores",
-        "number": "50",
-        "city": "Liebig",
-        "neighborhood": "Barrio Ribereño"
+        "number": "50"
     },
     "media": {
         "featuredImage": {

@@ -24,17 +24,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2826",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-33.707",
             "long": "-58.6477"
         },
         "street": "Calle Principal",
-        "number": "150",
-        "city": "Paranacito",
-        "neighborhood": "Centro"
+        "number": "150"
     },
     "media": {
         "featuredImage": {

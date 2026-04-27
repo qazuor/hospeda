@@ -26,17 +26,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2826",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-33.707",
             "long": "-58.6549"
         },
         "street": "Calle Los Cerezos",
-        "number": "50",
-        "city": "Paranacito",
-        "neighborhood": "Barrio Residencial"
+        "number": "50"
     },
     "media": {
         "featuredImage": {

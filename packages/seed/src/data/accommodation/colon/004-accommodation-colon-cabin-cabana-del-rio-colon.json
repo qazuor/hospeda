@@ -27,17 +27,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2840",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.228",
             "long": "-58.159"
         },
         "street": "Calle Los Sauces",
-        "number": "258",
-        "city": "Colón",
-        "neighborhood": "Zona Costanera"
+        "number": "258"
     },
     "media": {
         "featuredImage": {

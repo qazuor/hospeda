@@ -25,9 +25,6 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3206",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.0441",
             "long": "-58.1031"
@@ -35,9 +32,7 @@
         "street": "Calle Los Álamos",
         "number": "40",
         "floor": "1",
-        "apartment": "A",
-        "city": "Liebig",
-        "neighborhood": "Barrio Residencial"
+        "apartment": "A"
     },
     "media": {
         "featuredImage": {

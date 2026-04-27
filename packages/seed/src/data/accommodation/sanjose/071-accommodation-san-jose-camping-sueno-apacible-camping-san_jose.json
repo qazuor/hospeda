@@ -22,17 +22,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2847",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.1911",
             "long": "-58.7414"
         },
         "street": "Camino al Arroyo S/N",
-        "number": "S/N",
-        "city": "San José",
-        "neighborhood": "Zona Rural"
+        "number": "S/N"
     },
     "media": {
         "featuredImage": {

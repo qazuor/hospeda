@@ -21,9 +21,6 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.478",
             "long": "-58.2317"
@@ -31,9 +28,7 @@
         "street": "Calle 9 de Julio",
         "number": "870",
         "floor": "1",
-        "apartment": "B",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Centro"
+        "apartment": "B"
     },
     "media": {
         "featuredImage": {

@@ -21,17 +21,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2845",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.3648",
             "long": "-58.2945"
         },
         "street": "Calle Los Fresnos",
-        "number": "120",
-        "city": "Ubajay",
-        "neighborhood": "Barrio Residencial Tranquilo"
+        "number": "120"
     },
     "media": {
         "featuredImage": {

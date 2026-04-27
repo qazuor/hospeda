@@ -27,17 +27,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2847",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.2018",
             "long": "-58.7519"
         },
         "street": "Calle Los Nogales",
-        "number": "80",
-        "city": "San José",
-        "neighborhood": "Barrio Residencial"
+        "number": "80"
     },
     "media": {
         "featuredImage": {

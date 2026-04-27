@@ -2,7 +2,7 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "eventLocation.schema.json",
     "title": "EventLocation Seed Schema",
-    "description": "JSON schema for EventLocation entity seeds",
+    "description": "JSON schema for EventLocation entity seeds (post SPEC-095). Geographic context (city/state/country) lives on the related destination, not on the event location row.",
     "type": "object",
     "properties": {
         "$schema": {
@@ -16,17 +16,9 @@
             "type": "string",
             "description": "URL-friendly slug for the location"
         },
-        "state": {
+        "destinationId": {
             "type": "string",
-            "description": "Location state"
-        },
-        "zipCode": {
-            "type": "string",
-            "description": "Location zip code"
-        },
-        "country": {
-            "type": "string",
-            "description": "Location country"
+            "description": "FK to a destination of type CITY (resolved at seed time)"
         },
         "coordinates": {
             "type": "object",
@@ -51,14 +43,6 @@
             "type": "string",
             "description": "Street number"
         },
-        "city": {
-            "type": "string",
-            "description": "City name"
-        },
-        "neighborhood": {
-            "type": "string",
-            "description": "Neighborhood name"
-        },
         "floor": {
             "type": "string",
             "description": "Floor number"
@@ -66,10 +50,6 @@
         "apartment": {
             "type": "string",
             "description": "Apartment number"
-        },
-        "department": {
-            "type": "string",
-            "description": "Department name"
         },
         "placeName": {
             "type": "string",
@@ -81,6 +61,6 @@
             "description": "Lifecycle state of the event location"
         }
     },
-    "required": ["id", "state", "zipCode", "country", "city", "lifecycleState"],
+    "required": ["id", "destinationId", "lifecycleState"],
     "additionalProperties": false
 }

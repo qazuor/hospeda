@@ -22,9 +22,6 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2840",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.217",
             "long": "-58.1462"
@@ -32,9 +29,7 @@
         "street": "Calle 12 de Abril",
         "number": "550",
         "floor": "2",
-        "apartment": "C",
-        "city": "Colón",
-        "neighborhood": "Centro"
+        "apartment": "C"
     },
     "media": {
         "featuredImage": {

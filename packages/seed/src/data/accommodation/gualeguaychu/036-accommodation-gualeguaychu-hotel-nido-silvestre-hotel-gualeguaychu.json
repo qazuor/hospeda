@@ -21,17 +21,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2820",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-33.0075",
             "long": "-58.5127"
         },
         "street": "Avenida Parque Sur",
-        "number": "1500",
-        "city": "Gualeguaychú",
-        "neighborhood": "Zona Parque"
+        "number": "1500"
     },
     "media": {
         "featuredImage": {

@@ -26,9 +26,6 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2845",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.3681",
             "long": "-58.2906"
@@ -36,9 +33,7 @@
         "street": "Calle Los Lapachos",
         "number": "180",
         "floor": "2",
-        "apartment": "D",
-        "city": "Ubajay",
-        "neighborhood": "Barrio Residencial"
+        "apartment": "D"
     },
     "media": {
         "featuredImage": {

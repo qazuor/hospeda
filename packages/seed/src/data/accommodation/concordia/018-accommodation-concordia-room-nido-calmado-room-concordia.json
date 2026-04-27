@@ -25,17 +25,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3200",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.3898",
             "long": "-58.0203"
         },
         "street": "Calle Los Álamos",
-        "number": "180",
-        "city": "Concordia",
-        "neighborhood": "Barrio Residencial Tranquilo"
+        "number": "180"
     },
     "media": {
         "featuredImage": {

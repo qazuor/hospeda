@@ -22,17 +22,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2840",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.2302",
             "long": "-58.1523"
         },
         "street": "Calle Los Girasoles",
-        "number": "320",
-        "city": "Colón",
-        "neighborhood": "Barrio Residencial"
+        "number": "320"
     },
     "media": {
         "featuredImage": {

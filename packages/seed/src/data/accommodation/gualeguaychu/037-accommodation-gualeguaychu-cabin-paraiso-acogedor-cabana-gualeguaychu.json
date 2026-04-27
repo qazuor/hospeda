@@ -24,17 +24,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2820",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-33.013",
             "long": "-58.5259"
         },
         "street": "Camino a la Playa S/N",
-        "number": "S/N",
-        "city": "Gualeguaychú",
-        "neighborhood": "Zona Periurbana"
+        "number": "S/N"
     },
     "media": {
         "featuredImage": {

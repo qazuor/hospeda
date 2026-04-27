@@ -21,17 +21,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2826",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-33.7014",
             "long": "-58.6602"
         },
         "street": "Camino Rural Delta S/N",
-        "number": "S/N",
-        "city": "Paranacito",
-        "neighborhood": "Zona Rural Delta"
+        "number": "S/N"
     },
     "media": {
         "featuredImage": {

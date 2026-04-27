@@ -23,17 +23,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2820",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-33.0149",
             "long": "-58.5242"
         },
         "street": "Calle Alberdi",
-        "number": "478",
-        "city": "Gualeguaychú",
-        "neighborhood": "Centro"
+        "number": "478"
     },
     "media": {
         "featuredImage": {

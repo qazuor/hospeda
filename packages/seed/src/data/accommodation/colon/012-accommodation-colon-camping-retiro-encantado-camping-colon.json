@@ -26,17 +26,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2840",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.2323",
             "long": "-58.144"
         },
         "street": "Camino a La Balsa",
-        "number": "Km 3.5",
-        "city": "Colón",
-        "neighborhood": "Zona Rural"
+        "number": "Km 3.5"
     },
     "media": {
         "featuredImage": {

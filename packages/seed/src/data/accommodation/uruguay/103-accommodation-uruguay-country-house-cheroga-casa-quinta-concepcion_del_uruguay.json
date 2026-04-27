@@ -1,0 +1,237 @@
+{
+    "id": "103-accommodation-uruguay-country-house-cheroga-casa-quinta-concepcion_del_uruguay",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "cheroga-casa-quinta-concepcion-del-uruguay",
+    "name": "Cheroga Casa Quinta",
+    "summary": "Casa quinta moderna y elegante dentro de un gran parque rodeado de naturaleza, a minutos del centro de Concepción del Uruguay.",
+    "type": "COUNTRY_HOUSE",
+    "description": "Cheroga Casa Quinta es una propiedad moderna y elegante ubicada dentro de un amplio parque rodeado de naturaleza, a pocos minutos del centro de Concepción del Uruguay. Diseñada para el relax, reuniones familiares y eventos especiales, ofrece espacios cuidadosamente pensados y ambientados con confort y buen gusto.\n\nLa casa cuenta con una cocina moderna y amplia, espacios de estar luminosos y cómodos, y un entorno exterior que es su mayor atractivo: un gran parque con jardines, pileta, cancha de fútbol, cancha de tejo playero, reposeras, sillones con almohadones, y un sillón gigante ideal para fotos. Cada rincón está pensado para disfrutar al aire libre.\n\nAdemás del alojamiento, Cheroga ofrece servicios para días de campo, fiestas infantiles, cumpleaños de 15, casamientos y eventos corporativos, con atención personalizada para cada ocasión. Un lugar donde la comodidad se encuentra con la naturaleza entrerriana.",
+    "ownerId": "super-admin-user",
+    "destinationId": "011-destination-concepcion-del-uruguay",
+    "isFeatured": true,
+    "contactInfo": {
+        "personalEmail": "info@cherogacasaquinta.com",
+        "mobilePhone": "+543442453797",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "info@cherogacasaquinta.com",
+        "website": "https://www.cherogacasaquinta.com"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/cheroga.cdelu",
+        "instagram": "https://instagram.com/cheroga.cdelu",
+        "whatsapp": "https://wa.me/message/CWFRH6N5FURTC1"
+    },
+    "price": {
+        "price": 45000,
+        "currency": "ARS"
+    },
+    "location": {
+        "coordinates": {
+            "lat": "-32.4864074",
+            "long": "-58.3603116"
+        },
+        "street": "Ruta Provincial N°39, KM 142",
+        "number": "Lote 19"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/aerea-3-1.jpg?fit=1200%2C674&ssl=1",
+            "caption": "Cheroga Casa Quinta - Vista aérea",
+            "description": "Vista panorámica aérea de Cheroga Casa Quinta y su amplio parque",
+            "moderationState": "APPROVED"
+        },
+        "gallery": [
+            {
+                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/aerea-3-1.jpg?fit=1200%2C674&ssl=1",
+                "caption": "Vista aérea",
+                "description": "Vista panorámica aérea de la propiedad y su parque",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/frente_casa-8-1.jpg?fit=1200%2C801&ssl=1",
+                "caption": "Frente de la casa",
+                "description": "Fachada principal de Cheroga Casa Quinta",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/pileta-10.jpg?fit=1200%2C674&ssl=1",
+                "caption": "Pileta",
+                "description": "Vista aérea de la pileta rodeada de parque",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/reposeras-5-1.jpg?fit=1200%2C801&ssl=1",
+                "caption": "Reposeras y parque",
+                "description": "Zona de descanso con reposeras y almohadones",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/parque-12.jpg?fit=1200%2C675&ssl=1",
+                "caption": "Atardecer en el parque",
+                "description": "Atardecer desde el parque de Cheroga",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/futbol-1.jpg?fit=1200%2C801&ssl=1",
+                "caption": "Cancha de fútbol",
+                "description": "Cancha de fútbol en el predio",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/jenga-4.jpg?fit=713%2C1069&ssl=1",
+                "caption": "Jenga gigante",
+                "description": "Juego de Jenga gigante para disfrutar en familia",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/tejo-3.jpg?fit=624%2C935&ssl=1",
+                "caption": "Cancha de tejo",
+                "description": "Cancha de tejo playero",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/fot-19.jpg?fit=1200%2C757&ssl=1",
+                "caption": "Eventos y decoración",
+                "description": "Decoración para eventos especiales en Cheroga",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/amanecer_anochecer-3.jpg?fit=774%2C648&ssl=1",
+                "caption": "Amanecer en Cheroga",
+                "description": "Amanecer espectacular desde la quinta",
+                "moderationState": "APPROVED"
+            }
+        ]
+    },
+    "schedule": {
+        "earlyCheckinAccepted": true,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": true,
+        "selfCheckin": false,
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "11:00"
+    },
+    "extraInfo": {
+        "capacity": 12,
+        "minNights": 1,
+        "maxNights": 15,
+        "bedrooms": 3,
+        "beds": 6,
+        "bathrooms": 2,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Ideal para eventos y reuniones familiares",
+            "Cancha de fútbol y tejo playero",
+            "Se realizan días de campo, casamientos y fiestas",
+            "Atención personalizada para cada evento",
+            "Gran parque con múltiples espacios al aire libre"
+        ]
+    },
+    "seo": {
+        "title": "Cheroga Casa Quinta - Alojamiento en Concepción del Uruguay",
+        "description": "Casa quinta moderna con amplio parque, pileta y espacios para eventos en Concepción del Uruguay. Ideal para familias y reuniones.",
+        "keywords": [
+            "casa quinta",
+            "concepción del uruguay",
+            "entre ríos",
+            "alojamiento",
+            "eventos",
+            "pileta",
+            "parque",
+            "naturaleza",
+            "familia",
+            "casamientos"
+        ]
+    },
+    "featureIds": [
+        "030-feature-full_rental",
+        "004-feature-natural_environment",
+        "012-feature-family_suitable",
+        "015-feature-ideal_for_groups",
+        "018-feature-modern_style",
+        "025-feature-wifi_full_property",
+        "039-feature-perimeter_fence",
+        "044-feature-tourist_info_available",
+        "059-feature-event_suitable",
+        "060-feature-wedding_suitable",
+        "035-feature-private_grill",
+        "010-feature-paved_access"
+    ],
+    "amenityIds": [
+        "001-amenity-connectivity-wifi",
+        "002-amenity-climate-control-air-conditioning",
+        "003-amenity-climate-control-heating",
+        "004-amenity-kitchen-full-kitchen",
+        "005-amenity-kitchen-refrigerator-freezer",
+        "006-amenity-kitchen-microwave",
+        "007-amenity-kitchen-coffee-maker",
+        "009-amenity-kitchen-utensils",
+        "010-amenity-bed-and-bath-bed-linens",
+        "011-amenity-bed-and-bath-towels",
+        "013-amenity-connectivity-smart-tv",
+        "014-amenity-outdoors-bbq-grill",
+        "015-amenity-outdoors-pool",
+        "017-amenity-general-appliances-parking",
+        "018-amenity-bed-and-bath-washer",
+        "027-amenity-outdoors-terrace",
+        "029-amenity-outdoors-private-garden",
+        "030-amenity-outdoors-patio",
+        "031-amenity-outdoors-outdoor-furniture",
+        "033-amenity-outdoors-quincho",
+        "040-amenity-safety-smoke-detector",
+        "042-amenity-safety-first-aid-kit",
+        "043-amenity-safety-fire-extinguisher",
+        "052-amenity-entertainment-board-games",
+        "054-amenity-family-friendly-children-games",
+        "061-amenity-general-appliances-outdoor-lighting"
+    ],
+    "faqs": [
+        {
+            "question": "¿Qué tipo de eventos se pueden realizar?",
+            "answer": "Ofrecemos el espacio para días de campo, fiestas infantiles, cumpleaños de 15, casamientos y eventos corporativos, con atención personalizada para cada ocasión.",
+            "category": "services"
+        },
+        {
+            "question": "¿A qué distancia está del centro de la ciudad?",
+            "answer": "Estamos ubicados sobre la Ruta Provincial N°39, KM 142, a pocos minutos en auto del centro de Concepción del Uruguay.",
+            "category": "location"
+        },
+        {
+            "question": "¿Tienen pileta?",
+            "answer": "Sí, contamos con pileta rodeada de parque, reposeras y espacios de descanso al aire libre.",
+            "category": "facilities"
+        },
+        {
+            "question": "¿Se puede hacer asado?",
+            "answer": "Sí, contamos con parrilla y quincho para que disfrutes de un buen asado en familia o con amigos.",
+            "category": "facilities"
+        }
+    ],
+    "iaData": [
+        {
+            "title": "Escapada familiar en la naturaleza entrerriana",
+            "content": "Cheroga Casa Quinta es el lugar ideal para una escapada familiar en contacto con la naturaleza. A minutos del centro de Concepción del Uruguay, pero inmerso en un entorno verde y tranquilo, ofrece todo lo necesario para desconectarse de la rutina. Los más chicos disfrutarán de la cancha de fútbol, el Jenga gigante y los amplios espacios verdes, mientras los adultos se relajan junto a la pileta o preparan un asado en el quincho.",
+            "category": "family"
+        },
+        {
+            "title": "El escenario perfecto para tu evento especial",
+            "content": "Con un amplio parque rodeado de naturaleza, una casa moderna y elegante, y atención personalizada, Cheroga es el escenario ideal para casamientos, cumpleaños de 15, eventos corporativos y celebraciones de todo tipo. El atardecer sobre el parque es simplemente mágico y le da un marco único a cualquier celebración.",
+            "category": "events"
+        }
+    ],
+    "tagIds": [
+        "017-tag-familia",
+        "032-tag-relax",
+        "027-tag-naturaleza",
+        "016-tag-entre-rios",
+        "014-tag-ecoturismo"
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0,
+    "moderationState": "APPROVED"
+}

@@ -22,17 +22,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3206",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.0432",
             "long": "-58.1003"
         },
         "street": "Calle Los Sauces",
-        "number": "70",
-        "city": "Liebig",
-        "neighborhood": "Barrio Residencial"
+        "number": "70"
     },
     "media": {
         "featuredImage": {

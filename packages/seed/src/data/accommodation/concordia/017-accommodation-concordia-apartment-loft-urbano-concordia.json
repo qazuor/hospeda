@@ -25,9 +25,6 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3200",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.3918",
             "long": "-58.0181"
@@ -35,9 +32,7 @@
         "street": "Calle Urquiza",
         "number": "568",
         "floor": "3",
-        "apartment": "B",
-        "city": "Concordia",
-        "neighborhood": "Centro"
+        "apartment": "B"
     },
     "media": {
         "featuredImage": {

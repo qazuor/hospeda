@@ -1,0 +1,172 @@
+{
+    "id": "104-accommodation-uruguay-apartment-el-mono-gris-turistico-concepcion_del_uruguay",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "el-mono-gris-turistico-concepcion-del-uruguay",
+    "name": "El Mono Gris Turístico",
+    "summary": "Monoambiente turístico moderno y funcional en pleno centro de Concepción del Uruguay, ideal para parejas y viajeros.",
+    "type": "APARTMENT",
+    "description": "El Mono Gris Turístico es un monoambiente completamente equipado ubicado en el corazón de Concepción del Uruguay. Con un diseño moderno y funcional, este espacio compacto ofrece todo lo necesario para una estadía cómoda: cocina integrada con heladera, microondas y anafe eléctrico, baño privado con ducha, y un cómodo sommier de dos plazas.\n\nEl departamento cuenta con aire acondicionado frío/calor, Smart TV con streaming, Wi-Fi de alta velocidad y ropa de cama y toallas incluidas. Su ubicación céntrica permite acceder caminando a restaurantes, supermercados, la costanera y los principales puntos de interés de la ciudad.\n\nIdeal para parejas, viajeros de negocios o turistas que buscan una base cómoda y accesible para explorar Concepción del Uruguay y la región del Litoral entrerriano. El check-in es autónomo mediante caja de seguridad con código, lo que permite llegar a cualquier hora sin complicaciones.",
+    "ownerId": "040-user-romina-villaverde",
+    "destinationId": "011-destination-concepcion-del-uruguay",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "elmonogris.turistico@gmail.com",
+        "mobilePhone": "+5493442612345",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/elmonogris.turistico",
+        "whatsapp": "https://wa.me/5493442612345"
+    },
+    "price": {
+        "price": 22000,
+        "currency": "ARS"
+    },
+    "location": {
+        "coordinates": {
+            "lat": "-32.4849",
+            "long": "-58.2328"
+        },
+        "street": "Av. Paysandú",
+        "number": "1150",
+        "floor": "2",
+        "apartment": "B"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&h=800&fit=crop",
+            "caption": "El Mono Gris - Living",
+            "description": "Vista del monoambiente moderno y luminoso",
+            "moderationState": "APPROVED"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&h=800&fit=crop",
+                "caption": "Living comedor",
+                "description": "Espacio principal con sommier y living integrado",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1200&h=800&fit=crop",
+                "caption": "Cocina",
+                "description": "Cocina integrada completamente equipada",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=1200&h=800&fit=crop",
+                "caption": "Baño",
+                "description": "Baño privado con ducha",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&h=800&fit=crop",
+                "caption": "Detalle interior",
+                "description": "Detalles del diseño moderno del monoambiente",
+                "moderationState": "APPROVED"
+            }
+        ]
+    },
+    "schedule": {
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "23:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": true,
+        "selfCheckout": true,
+        "checkInTime": "15:00",
+        "checkOutTime": "10:00"
+    },
+    "extraInfo": {
+        "capacity": 2,
+        "minNights": 1,
+        "maxNights": 30,
+        "bedrooms": 1,
+        "beds": 1,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Check-in autónomo con caja de seguridad",
+            "Ubicación céntrica a pasos de todo",
+            "Ideal para estadías cortas y largas",
+            "Ropa de cama y toallas incluidas"
+        ]
+    },
+    "seo": {
+        "title": "El Mono Gris - Monoambiente en Concepción del Uruguay",
+        "description": "Monoambiente turístico moderno en el centro de Concepción del Uruguay. Equipado con WiFi, Smart TV, aire acondicionado y cocina. Ideal para parejas y viajeros.",
+        "keywords": [
+            "monoambiente",
+            "departamento",
+            "concepción del uruguay",
+            "entre ríos",
+            "alojamiento",
+            "centro",
+            "turístico",
+            "pareja"
+        ]
+    },
+    "featureIds": [
+        "006-feature-central_area",
+        "013-feature-couple_suitable",
+        "018-feature-modern_style",
+        "020-feature-minimalist_style",
+        "025-feature-wifi_full_property",
+        "028-feature-autonomous_checkin",
+        "031-feature-room_rental",
+        "010-feature-paved_access"
+    ],
+    "amenityIds": [
+        "001-amenity-connectivity-wifi",
+        "002-amenity-climate-control-air-conditioning",
+        "003-amenity-climate-control-heating",
+        "004-amenity-kitchen-full-kitchen",
+        "005-amenity-kitchen-refrigerator-freezer",
+        "006-amenity-kitchen-microwave",
+        "007-amenity-kitchen-coffee-maker",
+        "008-amenity-kitchen-electric-kettle",
+        "009-amenity-kitchen-utensils",
+        "010-amenity-bed-and-bath-bed-linens",
+        "011-amenity-bed-and-bath-towels",
+        "013-amenity-connectivity-smart-tv",
+        "020-amenity-bed-and-bath-iron",
+        "021-amenity-climate-control-hair-dryer",
+        "022-amenity-climate-control-fan",
+        "070-amenity-bed-and-bath-blackout-curtains"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo es el check-in?",
+            "answer": "El check-in es autónomo. Te enviamos el código de la caja de seguridad por WhatsApp el día de tu llegada para que puedas acceder al departamento a cualquier hora.",
+            "category": "checkin"
+        },
+        {
+            "question": "¿Hay estacionamiento?",
+            "answer": "No contamos con estacionamiento propio, pero hay estacionamiento público pago a media cuadra y estacionamiento en la calle en la zona.",
+            "category": "facilities"
+        },
+        {
+            "question": "¿Está permitido fumar?",
+            "answer": "No, el departamento es 100% libre de humo. Se puede fumar en el balcón del edificio.",
+            "category": "rules"
+        }
+    ],
+    "iaData": [
+        {
+            "title": "Base ideal para explorar Concepción del Uruguay",
+            "content": "El Mono Gris está ubicado en pleno centro de la ciudad, lo que lo convierte en una base perfecta para recorrer Concepción del Uruguay a pie. A pocas cuadras encontrás la costanera, restaurantes, heladerías, el Palacio San José (a minutos en auto) y acceso rápido a las playas del río Uruguay. Todo sin necesidad de auto.",
+            "category": "location"
+        },
+        {
+            "title": "Comodidad para viajeros prácticos",
+            "content": "Con check-in autónomo, Wi-Fi rápido y una cocina completamente equipada, El Mono Gris está pensado para el viajero moderno que valora la independencia y la practicidad. Llegás cuando querés, te instalás sin trámites y tenés todo lo necesario para una estadía cómoda, ya sea por una noche o por un mes.",
+            "category": "information"
+        }
+    ],
+    "tagIds": ["032-tag-relax", "016-tag-entre-rios", "030-tag-playa-rio"],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0,
+    "moderationState": "APPROVED"
+}

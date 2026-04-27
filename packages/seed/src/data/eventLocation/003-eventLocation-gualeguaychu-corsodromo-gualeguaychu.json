@@ -2,17 +2,13 @@
     "$schema": "../../schemas/eventLocation.schema.json",
     "id": "003-eventLocation-gualeguaychu-corsodromo-gualeguaychu",
     "slug": "corsodromo-gualeguaychu",
-    "state": "Entre Ríos",
-    "city": "Gualeguaychú",
-    "country": "Argentina",
-    "zipCode": "2840",
+    "destinationId": "005-destination-gualeguaychu",
+    "placeName": "Corsódromo de Gualeguaychú",
     "street": "Av. Costanera",
     "number": "1050",
-    "neighborhood": "Centro",
     "coordinates": {
         "lat": "-33.0089",
         "long": "-58.5133"
     },
-    "placeName": "Corsódromo de Gualeguaychú",
     "lifecycleState": "ACTIVE"
 }

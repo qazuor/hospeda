@@ -26,17 +26,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.4819",
             "long": "-58.238"
         },
         "street": "Calle Los Robles",
-        "number": "112",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Barrio Residencial"
+        "number": "112"
     },
     "media": {
         "featuredImage": {

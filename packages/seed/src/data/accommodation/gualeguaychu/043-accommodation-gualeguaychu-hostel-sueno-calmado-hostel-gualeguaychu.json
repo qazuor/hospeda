@@ -27,17 +27,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2820",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-33.0164",
             "long": "-58.5222"
         },
         "street": "Calle Los Eucaliptus",
-        "number": "80",
-        "city": "Gualeguaychú",
-        "neighborhood": "Barrio Residencial"
+        "number": "80"
     },
     "media": {
         "featuredImage": {

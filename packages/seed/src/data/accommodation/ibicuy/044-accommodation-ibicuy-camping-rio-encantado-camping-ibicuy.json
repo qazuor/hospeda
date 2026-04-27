@@ -24,17 +24,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2826",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-33.7732",
             "long": "-58.8313"
         },
         "street": "Camino a Isla S/N",
-        "number": "S/N",
-        "city": "Ibicuy",
-        "neighborhood": "Zona de Delta"
+        "number": "S/N"
     },
     "media": {
         "featuredImage": {

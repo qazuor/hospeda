@@ -116,7 +116,8 @@
         "019-destination-urdinarrain.json",
         "020-destination-larroque.json",
         "021-destination-gualeguay.json",
-        "022-destination-ceibas.json"
+        "022-destination-ceibas.json",
+        "023-destination-victoria.json"
     ],
     "amenities": [
         "001-amenity-connectivity-wifi.json",

@@ -26,9 +26,6 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2840",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.2185",
             "long": "-58.1465"
@@ -36,9 +33,7 @@
         "street": "Calle San Martín",
         "number": "1230",
         "floor": "1",
-        "apartment": "A",
-        "city": "Colón",
-        "neighborhood": "Barrio Tranquilo"
+        "apartment": "A"
     },
     "media": {
         "featuredImage": {

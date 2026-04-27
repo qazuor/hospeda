@@ -119,7 +119,7 @@
                     "type": "string"
                 }
             },
-            "required": ["state", "zipCode", "country", "street", "number", "city"],
+            "required": [],
             "additionalProperties": false
         },
         "image": {

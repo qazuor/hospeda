@@ -2,17 +2,13 @@
     "$schema": "../../schemas/eventLocation.schema.json",
     "id": "001-eventLocation-colon-anfiteatro-colon",
     "slug": "anfiteatro-municipal-colon",
-    "state": "Entre Ríos",
-    "city": "Colón",
-    "country": "Argentina",
-    "zipCode": "3280",
+    "destinationId": "002-destination-colon",
+    "placeName": "Anfiteatro Municipal de Colón",
     "street": "Av. Costanera General San Martín",
     "number": "s/n",
-    "neighborhood": "Centro",
     "coordinates": {
         "lat": "-32.2208",
         "long": "-58.1431"
     },
-    "placeName": "Anfiteatro Municipal de Colón",
     "lifecycleState": "ACTIVE"
 }

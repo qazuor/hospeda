@@ -25,17 +25,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3200",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.3912",
             "long": "-58.0143"
         },
         "street": "Ruta 015 Km 8",
-        "number": "S/N",
-        "city": "Concordia",
-        "neighborhood": "Zona Lago Salto Grande"
+        "number": "S/N"
     },
     "media": {
         "featuredImage": {

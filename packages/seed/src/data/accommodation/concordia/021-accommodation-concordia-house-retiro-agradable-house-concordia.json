@@ -25,17 +25,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3200",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.398",
             "long": "-58.0218"
         },
         "street": "Calle Las Rosas",
-        "number": "55",
-        "city": "Concordia",
-        "neighborhood": "Barrio Residencial"
+        "number": "55"
     },
     "media": {
         "featuredImage": {

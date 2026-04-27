@@ -26,17 +26,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2847",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.1941",
             "long": "-58.7417"
         },
         "street": "Calle 3 de Febrero",
-        "number": "1100",
-        "city": "San José",
-        "neighborhood": "Centro Ampliado"
+        "number": "1100"
     },
     "media": {
         "featuredImage": {

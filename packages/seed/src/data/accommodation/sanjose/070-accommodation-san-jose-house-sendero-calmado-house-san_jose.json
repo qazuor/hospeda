@@ -21,17 +21,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2847",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.1844",
             "long": "-58.7549"
         },
         "street": "Calle Los Robles",
-        "number": "150",
-        "city": "San José",
-        "neighborhood": "Barrio Residencial"
+        "number": "150"
     },
     "media": {
         "featuredImage": {

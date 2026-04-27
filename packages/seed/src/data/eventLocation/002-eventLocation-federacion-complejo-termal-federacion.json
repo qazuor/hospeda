@@ -2,17 +2,13 @@
     "$schema": "../../schemas/eventLocation.schema.json",
     "id": "002-eventLocation-federacion-complejo-termal-federacion",
     "slug": "complejo-termal-federacion",
-    "state": "Entre Ríos",
-    "city": "Federación",
-    "country": "Argentina",
-    "zipCode": "3086",
+    "destinationId": "004-destination-federacion",
+    "placeName": "Complejo Termal Federación",
     "street": "Av. de los Inmigrantes",
     "number": "1200",
-    "neighborhood": "Costanera",
     "coordinates": {
         "lat": "-31.0061",
         "long": "-57.9000"
     },
-    "placeName": "Complejo Termal Federación",
     "lifecycleState": "ACTIVE"
 }

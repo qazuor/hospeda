@@ -26,9 +26,6 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3200",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.3884",
             "long": "-58.0221"
@@ -36,9 +33,7 @@
         "street": "Calle Los Fresnos",
         "number": "150",
         "floor": "3",
-        "apartment": "D",
-        "city": "Concordia",
-        "neighborhood": "Barrio Residencial"
+        "apartment": "D"
     },
     "media": {
         "featuredImage": {

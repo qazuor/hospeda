@@ -27,17 +27,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3228",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-30.7521",
             "long": "-58.0429"
         },
         "street": "Ruta Provincial 3",
-        "number": "Km 5",
-        "city": "Chajarí",
-        "neighborhood": "Zona Rural"
+        "number": "Km 5"
     },
     "media": {
         "featuredImage": {

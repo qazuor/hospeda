@@ -2,17 +2,13 @@
     "$schema": "../../schemas/eventLocation.schema.json",
     "id": "006-eventLocation-concordia-teatro-pedro-barbero",
     "slug": "teatro-pedro-barbero",
-    "state": "Entre Ríos",
-    "city": "Concordia",
-    "country": "Argentina",
-    "zipCode": "3200",
+    "destinationId": "003-destination-concordia",
+    "placeName": "Teatro Municipal Pedro Barbero",
     "street": "San Lorenzo",
     "number": "47",
-    "neighborhood": "Centro",
     "coordinates": {
         "lat": "-31.3928",
         "long": "-58.0217"
     },
-    "placeName": "Teatro Municipal Pedro Barbero",
     "lifecycleState": "ACTIVE"
 }

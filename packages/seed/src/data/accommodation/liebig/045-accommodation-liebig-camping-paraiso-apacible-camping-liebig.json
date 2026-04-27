@@ -26,17 +26,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3206",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.0419",
             "long": "-58.1013"
         },
         "street": "Ribera del Uruguay S/N",
-        "number": "S/N",
-        "city": "Liebig",
-        "neighborhood": "Zona de Camping"
+        "number": "S/N"
     },
     "media": {
         "featuredImage": {

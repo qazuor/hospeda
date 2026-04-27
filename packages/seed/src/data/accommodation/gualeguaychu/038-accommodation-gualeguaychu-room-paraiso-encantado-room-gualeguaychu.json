@@ -21,17 +21,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2820",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-33.004",
             "long": "-58.5129"
         },
         "street": "Calle Los Ceibos",
-        "number": "220",
-        "city": "Gualeguaychú",
-        "neighborhood": "Barrio Residencial"
+        "number": "220"
     },
     "media": {
         "featuredImage": {

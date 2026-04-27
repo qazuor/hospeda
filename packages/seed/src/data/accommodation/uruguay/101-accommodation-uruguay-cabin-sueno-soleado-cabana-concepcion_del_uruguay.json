@@ -25,17 +25,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.4832",
             "long": "-58.2287"
         },
         "street": "Camino Vecinal Sur S/N",
-        "number": "S/N",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Zona Periurbana"
+        "number": "S/N"
     },
     "media": {
         "featuredImage": {

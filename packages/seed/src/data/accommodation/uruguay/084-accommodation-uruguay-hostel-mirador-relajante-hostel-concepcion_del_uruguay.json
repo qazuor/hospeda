@@ -21,17 +21,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.4802",
             "long": "-58.2374"
         },
         "street": "Calle Los Alerces",
-        "number": "45",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Barrio Céntrico Tranquilo"
+        "number": "45"
     },
     "media": {
         "featuredImage": {

@@ -26,17 +26,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3200",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-31.3841",
             "long": "-58.0269"
         },
         "street": "Calle Las Acacias",
-        "number": "210",
-        "city": "Concordia",
-        "neighborhood": "Barrio Residencial"
+        "number": "210"
     },
     "media": {
         "featuredImage": {

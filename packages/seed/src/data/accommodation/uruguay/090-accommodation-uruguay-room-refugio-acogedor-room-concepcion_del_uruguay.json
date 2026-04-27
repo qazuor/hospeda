@@ -21,17 +21,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.482",
             "long": "-58.2247"
         },
         "street": "Calle Los Rosales",
-        "number": "50",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Barrio Tradicional"
+        "number": "50"
     },
     "media": {
         "featuredImage": {

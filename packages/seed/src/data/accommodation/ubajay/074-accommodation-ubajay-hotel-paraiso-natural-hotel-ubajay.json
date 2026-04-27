@@ -27,17 +27,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2845",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.3554",
             "long": "-58.3014"
         },
         "street": "Avenida Las Palmeras",
-        "number": "150",
-        "city": "Ubajay",
-        "neighborhood": "Zona Residencial"
+        "number": "150"
     },
     "media": {
         "featuredImage": {

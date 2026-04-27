@@ -21,17 +21,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "3260",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.4906",
             "long": "-58.2309"
         },
         "street": "Camino al Ñandubay S/N",
-        "number": "S/N",
-        "city": "Concepción del Uruguay",
-        "neighborhood": "Zona Rural"
+        "number": "S/N"
     },
     "media": {
         "featuredImage": {

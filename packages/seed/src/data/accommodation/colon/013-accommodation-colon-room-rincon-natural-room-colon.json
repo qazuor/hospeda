@@ -26,17 +26,12 @@
         "currency": "ARS"
     },
     "location": {
-        "state": "Entre Ríos",
-        "zipCode": "2840",
-        "country": "Argentina",
         "coordinates": {
             "lat": "-32.2137",
             "long": "-58.141"
         },
         "street": "Calle Los Ceibos",
-        "number": "450",
-        "city": "Colón",
-        "neighborhood": "Barrio Residencial"
+        "number": "450"
     },
     "media": {
         "featuredImage": {
