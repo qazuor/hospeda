@@ -44,12 +44,15 @@ const ACCOMMODATION_WITH_RELATIONS = {
     description:
         'This is a long enough description for schema validation. It needs to pass the minimum character requirements set in the Zod schema.',
     isFeatured: true,
+    ownerId: '33333333-3333-4333-8333-333333333333',
     destinationId: '22222222-2222-4222-8222-222222222222',
     media: VALID_MEDIA,
     location: { city: 'Concepcion del Uruguay', country: 'Argentina' },
     averageRating: 4.5,
     reviewsCount: 42,
     visibility: 'PUBLIC',
+    moderationState: 'APPROVED',
+    lifecycleState: 'ACTIVE',
     seo: VALID_SEO,
     price: { price: 150, currency: 'ARS' },
     tags: [],
@@ -60,6 +63,9 @@ const ACCOMMODATION_WITH_RELATIONS = {
         bathrooms: 1
     },
     createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+    createdById: '33333333-3333-4333-8333-333333333333',
+    updatedById: '33333333-3333-4333-8333-333333333333',
     // Relation: owner (public tier uses inline object, not UserPublicSchema)
     owner: {
         id: '33333333-3333-4333-8333-333333333333',
@@ -130,7 +136,7 @@ describe('GAP-031: Accommodation getById schema validation', () => {
         // Override the mock getById to return relation-populated data
         vi.spyOn(AccommodationService.prototype, 'getById').mockResolvedValue({
             data: ACCOMMODATION_WITH_RELATIONS
-        });
+        } as never);
 
         app = initApp();
     });

@@ -41,7 +41,14 @@ const EVENT_WITH_RELATIONS = {
     pricing: { isFree: false, price: 50, currency: 'ARS' },
     locationId: '22222222-2222-4222-8222-222222222222',
     organizerId: '33333333-3333-4333-8333-333333333333',
+    authorId: '33333333-3333-4333-8333-333333333333',
     visibility: 'PUBLIC',
+    moderationState: 'APPROVED',
+    lifecycleState: 'ACTIVE',
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+    createdById: '33333333-3333-4333-8333-333333333333',
+    updatedById: '33333333-3333-4333-8333-333333333333',
     seo: {
         title: 'Test Event SEO Title Long Enough Here',
         description:
@@ -80,7 +87,7 @@ describe('GAP-031: Event getById schema validation', () => {
 
         vi.spyOn(EventService.prototype, 'getById').mockResolvedValue({
             data: EVENT_WITH_RELATIONS
-        });
+        } as never);
 
         app = initApp();
     });

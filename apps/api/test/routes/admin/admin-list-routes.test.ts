@@ -414,6 +414,9 @@ describe('Admin List Routes (adminList)', () => {
             it(`${route.entity}: response items conform to ${route.entity}AdminSchema`, async () => {
                 // Arrange
                 const schema = adminSchemaMap[route.entity];
+                if (!schema) {
+                    throw new Error(`No admin schema mapped for entity: ${route.entity}`);
+                }
                 const actor = createFullAdminActor();
                 const reqOpts = createAuthenticatedRequest(actor);
 

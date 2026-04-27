@@ -56,10 +56,14 @@ const POST_WITH_RELATIONS = {
     relatedAccommodationId: '44444444-4444-4444-8444-444444444444',
     relatedEventId: '55555555-5555-4555-8555-555555555555',
     visibility: 'PUBLIC',
+    moderationState: 'APPROVED',
+    lifecycleState: 'ACTIVE',
     seo: VALID_SEO,
     tags: [],
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
+    createdById: '22222222-2222-4222-8222-222222222222',
+    updatedById: '22222222-2222-4222-8222-222222222222',
     // Relation: author (UserPublicSchema)
     author: {
         id: '22222222-2222-4222-8222-222222222222',
@@ -142,7 +146,7 @@ describe('GAP-031: Post getById schema validation', () => {
 
         vi.spyOn(PostService.prototype, 'getById').mockResolvedValue({
             data: POST_WITH_RELATIONS
-        });
+        } as never);
 
         app = initApp();
     });

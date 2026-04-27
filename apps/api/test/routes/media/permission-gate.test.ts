@@ -43,17 +43,19 @@ describe('validateEntityMediaPermission (unit)', () => {
         });
 
         it('allows actor with UPDATE_OWN when they are the owner', () => {
-            const actor = makeActor([PermissionEnum.ACCOMMODATION_UPDATE_OWN], 'owner-1');
+            const ownerId = crypto.randomUUID();
+            const actor = makeActor([PermissionEnum.ACCOMMODATION_UPDATE_OWN], ownerId);
             const result = validateEntityMediaPermission({
                 actor,
                 entityType: 'accommodation',
-                entity: { ownerId: 'owner-1' }
+                entity: { ownerId }
             });
             expect(result).toEqual({ allowed: true });
         });
 
         it('rejects actor with UPDATE_OWN when they are NOT the owner', () => {
-            const actor = makeActor([PermissionEnum.ACCOMMODATION_UPDATE_OWN], 'owner-1');
+            const ownerId = crypto.randomUUID();
+            const actor = makeActor([PermissionEnum.ACCOMMODATION_UPDATE_OWN], ownerId);
             const result = validateEntityMediaPermission({
                 actor,
                 entityType: 'accommodation',

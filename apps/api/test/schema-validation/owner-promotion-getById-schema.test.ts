@@ -38,7 +38,13 @@ const OWNER_PROMOTION_WITH_RELATIONS = {
     minNights: 2,
     validFrom: '2024-01-01T00:00:00.000Z',
     validUntil: '2024-03-31T00:00:00.000Z',
+    ownerId: '33333333-3333-4333-8333-333333333333',
+    currentRedemptions: 0,
     lifecycleState: LifecycleStatusEnum.ACTIVE,
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+    createdById: '33333333-3333-4333-8333-333333333333',
+    updatedById: '33333333-3333-4333-8333-333333333333',
     // Relation: owner (UserPublicSchema)
     owner: {
         id: '33333333-3333-4333-8333-333333333333',
@@ -75,7 +81,7 @@ describe('GAP-031: OwnerPromotion getById schema validation', () => {
         // Override mock getById to return relation-populated data
         vi.spyOn(OwnerPromotionService.prototype, 'getById').mockResolvedValue({
             data: OWNER_PROMOTION_WITH_RELATIONS
-        });
+        } as never);
 
         app = initApp();
     });
