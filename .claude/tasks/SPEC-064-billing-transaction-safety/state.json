@@ -1,8 +1,8 @@
 {
     "specId": "SPEC-064",
     "specName": "Billing Transaction Safety — Gap Remediation",
-    "status": "in-progress",
-    "updated_at": "2026-04-25",
+    "status": "completed",
+    "updated_at": "2026-04-26",
     "tasks": [
         {
             "id": "T-001",
@@ -1374,7 +1374,7 @@
             "id": "T-036",
             "title": "Create webhook signature verification middleware",
             "description": "File: apps/api/src/middlewares/webhook-signature.ts (create new)\n\nCreate webhook signature verification middleware that verifies the signature Hospeda-side before QZPay delegation.\n\nVerify:\n- Middleware signature follows Hono middleware pattern\n- pnpm typecheck passes",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-008"],
             "blocks": ["T-037"],
@@ -1405,15 +1405,15 @@
             },
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-26T06:41:55.000Z",
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
             "id": "T-037",
             "title": "Add timestamp replay protection to webhook middleware",
             "description": "File: apps/api/src/middlewares/webhook-signature.ts\n\nAdd timestamp replay protection: reject webhooks older than 5 minutes.\n\nWrite tests verifying:\n- Recent webhooks are accepted\n- Old webhooks (>5 min) are rejected\n- Missing timestamp header is rejected\n\nVerify:\n- pnpm typecheck passes\n- Tests pass",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-036"],
             "blocks": ["T-038"],
@@ -1444,15 +1444,15 @@
             },
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-26T06:41:55.000Z",
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
             "id": "T-038",
             "title": "Wire webhook security middleware into mercadopago router",
             "description": "File: apps/api/src/routes/billing/mercadopago/router.ts (or relevant webhook router)\n\nWire the webhook security middleware into the MercadoPago webhook router.\n\nWrite integration test verifying:\n- Middleware is invoked on webhook requests\n- Invalid signatures are rejected before handler\n\nVerify:\n- pnpm typecheck passes\n- Integration test passes",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-037"],
             "blocks": [],
@@ -1479,8 +1479,8 @@
             },
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-26T06:41:55.000Z",
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
@@ -1682,7 +1682,7 @@
             "id": "T-044",
             "title": "Add cascade soft-delete to local billing tables in billing-customer-sync.ts",
             "description": "File: packages/service-core/src/services/billing/customer/billing-customer-sync.ts (or relevant file)\n\nAdd cascade soft-delete to local billing tables when a customer is deleted: subscriptions, addon purchases, promo code usage.\n\nVerify:\n- pnpm typecheck passes\n- Cascade covers all dependent tables",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-003"],
             "blocks": ["T-045"],
@@ -1714,14 +1714,14 @@
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
                 "started": "2026-04-18T15:00:00.000Z",
-                "completed": "2026-04-18T16:30:00.000Z"
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
             "id": "T-045",
             "title": "Clear entitlementRemovalPending flag when subscription deleted",
             "description": "File: packages/service-core/src/services/billing/customer/billing-customer-sync.ts\n\nClear entitlementRemovalPending flag when subscription is soft-deleted during customer deletion cascade. Update JSDoc.\n\nWrite tests verifying:\n- Flag is cleared on subscription deletion\n- JSDoc is updated\n\nVerify:\n- pnpm typecheck passes\n- Tests pass",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-044"],
             "blocks": [],
@@ -1753,14 +1753,14 @@
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
                 "started": "2026-04-18T15:00:00.000Z",
-                "completed": "2026-04-18T16:30:00.000Z"
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
             "id": "T-046",
             "title": "Add addonCancellationIncomplete metadata flag on partial failure",
             "description": "File: packages/service-core/src/services/billing/addon/addon-lifecycle-cancellation.service.ts\n\nAdd addonCancellationIncomplete metadata flag on partial failure during addon cancellation.\n\nVerify:\n- pnpm typecheck passes\n- Flag is set correctly on partial failure",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-047"],
@@ -1788,14 +1788,14 @@
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
                 "started": "2026-04-18T15:00:00.000Z",
-                "completed": "2026-04-18T16:30:00.000Z"
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
             "id": "T-047",
             "title": "Insert compensating event for failed addon revocations",
             "description": "File: packages/service-core/src/services/billing/addon/addon-lifecycle-cancellation.service.ts\n\nInsert compensating event (ADDON_REVOCATION_FAILED) for failed addon revocations to enable manual recovery.\n\nWrite tests verifying:\n- Compensating event is inserted on revocation failure\n- Event metadata contains failure details\n\nVerify:\n- pnpm typecheck passes\n- Tests pass",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-046"],
             "blocks": [],
@@ -1827,7 +1827,7 @@
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
                 "started": "2026-04-18T15:00:00.000Z",
-                "completed": "2026-04-18T16:30:00.000Z"
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
@@ -1873,7 +1873,7 @@
             "id": "T-049",
             "title": "Add custom rate limit 5 req/min per IP for promo validation endpoint",
             "description": "Files: apps/api/src/middlewares/rate-limit.ts, apps/api/src/routes/billing/promo-codes.ts\n\nAdd custom rate limit of 5 req/min per IP for the promo validation endpoint.\n\nWrite test verifying:\n- 5th request within 1 minute succeeds\n- 6th request within 1 minute is rejected\n\nVerify:\n- pnpm typecheck passes\n- Test passes",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008"],
             "blocks": ["T-050"],
@@ -1912,7 +1912,7 @@
             "id": "T-050",
             "title": "Add admin-billing rate limit category 50 req/min",
             "description": "File: apps/api/src/middlewares/rate-limit.ts\n\nAdd admin-billing rate limit category of 50 req/min. Apply to admin billing routes.\n\nWrite test verifying:\n- Rate limit is applied to admin billing routes\n- 50 requests per minute are allowed\n\nVerify:\n- pnpm typecheck passes\n- Test passes",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-049"],
             "blocks": [],
@@ -1951,7 +1951,7 @@
             "id": "T-051",
             "title": "Add audit log INSERT for promo-code create/update/delete mutations",
             "description": "File: packages/service-core/src/services/billing/promo-code/promo-code.crud.ts\n\nAdd audit log INSERT in billing_audit_logs for create/update/delete promo code mutations. Record admin ID, previous/new values, timestamp.\n\nWrite tests verifying:\n- Create mutation generates audit log\n- Update mutation generates audit log with previous/new values\n- Delete mutation generates audit log\n\nVerify:\n- pnpm typecheck passes\n- Tests pass",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-008"],
             "blocks": [],
@@ -2240,7 +2240,7 @@
             "id": "T-058",
             "title": "Create ADR documenting READ COMMITTED + FOR UPDATE design decision",
             "description": "Create ADR in docs/decisions/ documenting the accepted design decision to use READ COMMITTED isolation level with FOR UPDATE row locks for billing transactions, rather than SERIALIZABLE.\n\nCover:\n- Why READ COMMITTED is sufficient\n- How FOR UPDATE provides needed guarantees\n- Trade-offs vs SERIALIZABLE\n- Performance implications",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": [],
@@ -2264,14 +2264,14 @@
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
                 "started": "2026-04-18T17:00:00.000Z",
-                "completed": "2026-04-18T18:00:00.000Z"
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
             "id": "T-059",
             "title": "Add JSDoc to validatePromoCode documenting best-effort validation",
             "description": "File: packages/service-core/src/services/billing/promo-code/promo-code.validation.ts\n\nAdd JSDoc to validatePromoCode documenting it as best-effort (no lock). Note that authority is the re-check in redemption.ts:357 which holds a lock.\n\nVerify:\n- JSDoc is clear and accurate",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -2295,14 +2295,14 @@
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
                 "started": "2026-04-18T17:00:00.000Z",
-                "completed": "2026-04-18T18:00:00.000Z"
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
             "id": "T-060",
             "title": "Create operational runbook for advisory locks",
             "description": "Create apps/api/docs/runbook-advisory-locks.md with:\n- Diagnostic queries (pg_locks, pg_stat_activity)\n- Recovery procedure for stuck locks\n- pg_terminate_backend guidance\n- Alert thresholds and monitoring recommendations",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -2334,14 +2334,14 @@
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
                 "started": "2026-04-18T17:00:00.000Z",
-                "completed": "2026-04-18T18:00:00.000Z"
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
             "id": "T-061",
             "title": "Complete advisory lock registry in apps/api/docs/advisory-locks.md",
             "description": "Complete the advisory lock registry document. Add entries for lock IDs 1001, 1002, 1003. Annotate 43010 as planned (SPEC-063).\n\nVerify:\n- All active lock IDs are documented\n- Each entry has owner file and purpose",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-018", "T-019", "T-020"],
             "blocks": [],
@@ -2369,14 +2369,14 @@
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
                 "started": "2026-04-18T17:00:00.000Z",
-                "completed": "2026-04-18T18:00:00.000Z"
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
             "id": "T-062",
             "title": "Convert sequential queries to Promise.all in billing-metrics.service.ts",
             "description": "File: packages/service-core/src/services/billing/metrics/billing-metrics.service.ts (or relevant file)\n\nConvert sequential independent queries to Promise.all for performance.\n\nWrite test verifying:\n- Results are identical to sequential execution\n- No race conditions\n\nVerify:\n- pnpm typecheck passes\n- Test passes",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": [],
@@ -2408,14 +2408,14 @@
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
                 "started": "2026-04-18T17:00:00.000Z",
-                "completed": "2026-04-18T18:00:00.000Z"
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
             "id": "T-063",
             "title": "Wrap retention mark+purge in withTransaction in notification-retention.service.ts",
             "description": "File: packages/service-core/src/services/billing/notification/notification-retention.service.ts\n\nWrap the retention mark and purge operations in withTransaction to ensure atomicity.\n\nWrite test verifying:\n- Mark and purge happen atomically\n- Failure in purge rolls back mark\n\nVerify:\n- pnpm typecheck passes\n- Test passes",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": [],
@@ -2443,14 +2443,14 @@
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
                 "started": "2026-04-18T17:00:00.000Z",
-                "completed": "2026-04-18T18:00:00.000Z"
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
             "id": "T-064",
             "title": "Capture Date.now() at function entry in addon-plan-change.service.ts",
             "description": "File: apps/api/src/services/addon-plan-change.service.ts\n\nCapture Date.now() at function entry to use consistent timestamp throughout the function execution, avoiding clock drift between multiple Date.now() calls.\n\nVerify:\n- pnpm typecheck passes",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -2478,14 +2478,14 @@
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
                 "started": "2026-04-18T17:00:00.000Z",
-                "completed": "2026-04-18T18:00:00.000Z"
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
             "id": "T-065",
             "title": "Add ctx param to processExpiredAddonsBatch and forward to findExpiredAddons",
             "description": "File: packages/service-core/src/services/billing/addon/addon-expiration.batch.ts (or relevant file)\n\nAdd ctx parameter to processExpiredAddonsBatch. Forward ctx to findExpiredAddons call.\n\nWrite test verifying:\n- ctx is forwarded to findExpiredAddons\n- Backward compat when no ctx provided\n\nVerify:\n- pnpm typecheck passes\n- Test passes",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": [],
@@ -2517,14 +2517,14 @@
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
                 "started": "2026-04-18T17:00:00.000Z",
-                "completed": "2026-04-18T18:00:00.000Z"
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
             "id": "T-066",
             "title": "Remove dead code minAmount in promo-code.validation.ts",
             "description": "File: packages/service-core/src/services/billing/promo-code/promo-code.validation.ts (around lines 125-126)\n\nRemove dead code minAmount that is defined but never used.\n\nWrite test confirming:\n- Removal doesn't break any validation logic\n- All existing tests still pass\n\nVerify:\n- pnpm typecheck passes\n- Tests pass",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -2552,14 +2552,14 @@
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
                 "started": "2026-04-18T17:00:00.000Z",
-                "completed": "2026-04-18T18:00:00.000Z"
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
             "id": "T-067",
             "title": "Delete stale JSDoc on entitlementRemovalPending/needsEntitlementSync",
             "description": "File: packages/db/src/schemas/billing/billing_addon_purchase.dbschema.ts\n\nDelete stale/outdated JSDoc comments on entitlementRemovalPending and needsEntitlementSync columns.\n\nVerify:\n- pnpm typecheck passes",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -2587,14 +2587,14 @@
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
                 "started": "2026-04-18T17:00:00.000Z",
-                "completed": "2026-04-18T18:00:00.000Z"
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
             "id": "T-068",
             "title": "Update task state.json to reflect implemented phases",
             "description": "Update this state.json file to reflect all completed phases and tasks at the end of implementation.\n\nVerify:\n- All completed tasks are marked as completed\n- Status timestamps are accurate",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -2622,14 +2622,14 @@
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
                 "started": "2026-04-18T17:00:00.000Z",
-                "completed": "2026-04-18T18:00:00.000Z"
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
             "id": "T-069",
             "title": "Rename mock tests: remove IT-* labels and add unit: prefix",
             "description": "Rename mock tests in addon-plan-change.advisory-lock.test.ts and other test files: remove IT-* labels, add 'unit:' prefix. Document SPEC-061 blocker for integration test infrastructure.\n\nVerify:\n- Test names follow convention\n- All renamed tests still pass\n- SPEC-061 blocker is documented",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -2661,14 +2661,14 @@
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
                 "started": "2026-04-18T17:00:00.000Z",
-                "completed": "2026-04-18T18:00:00.000Z"
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         },
         {
             "id": "T-070",
             "title": "Batch spec text maintenance: fix stale references and line numbers",
             "description": "Fix multiple stale references in spec/gap documents:\n- GAP-010: Fix stale line numbers\n- GAP-018: Fix stale function names\n- GAP-019: Fix SPEC-067 reference\n- GAP-020: Update Phase 2 status\n- GAP-007: Fix SPEC-063 lock type\n- GAP-071: Fix webhook retry prereqs\n- GAP-073: Clarify tx wrapper\n- GAP-079: Fix test type labels\n- GAP-080: Fix retry strategy\n\nVerify:\n- All references are accurate and current",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": [],
             "blocks": [],
@@ -2720,15 +2720,15 @@
             "timestamps": {
                 "created": "2026-04-18T03:00:00.000Z",
                 "started": "2026-04-18T17:00:00.000Z",
-                "completed": "2026-04-18T18:00:00.000Z"
+                "completed": "2026-04-26T06:41:55.000Z"
             }
         }
     ],
     "summary": {
         "total": 70,
-        "pending": 23,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 47,
+        "completed": 70,
         "blocked": 0,
         "averageComplexity": 1.9,
         "phases": {

@@ -184,4 +184,140 @@ describe('BaseService: list', () => {
             undefined
         );
     });
+
+    /**
+     * Search OR-logic regression tests (SPEC-049 T-029).
+     *
+     * The `list` method must build search conditions across ALL searchable columns
+     * with OR logic (not AND): a row matches if the term hits any one of the columns.
+     * The previous AND behaviour caused matches on `description` to be silently dropped.
+     *
+     * These tests assert the contract between `list()` and `model.findAll`:
+     *   - When search has a term and the service exposes searchable columns,
+     *     `additionalConditions` is forwarded as a non-empty SQL fragment.
+     *   - When search is empty or the service exposes no columns, `additionalConditions`
+     *     is omitted (undefined).
+     *
+     * Per-row OR semantics (e.g. "term matches description -> row returned") live in
+     * the integration tests for `buildSearchCondition` in @repo/db; service-core can
+     * only verify it forwards the right inputs.
+     */
+    describe('search OR logic (SPEC-049 T-029)', () => {
+        // A minimal stand-in for a Drizzle PgTable. buildSearchCondition only checks
+        // that the named columns exist as own properties on the table object; the
+        // values themselves are passed to safeIlike, which the test does not exercise.
+        const tableMockWithNameAndDescription = {
+            name: { name: 'name' },
+            description: { name: 'description' }
+        };
+
+        class ServiceWithSearchableColumns extends TestService {
+            protected override getSearchableColumns(): string[] {
+                return ['name', 'description'];
+            }
+
+            protected override getDefaultListRelations() {
+                return undefined;
+            }
+        }
+
+        const buildModelMock = () => {
+            const m = createBaseModelMock<TestEntity>();
+            asMock(m.findAll).mockResolvedValue({ items: [mockEntity], total: 1 });
+            asMock(m.getTable).mockReturnValue(tableMockWithNameAndDescription);
+            return m;
+        };
+
+        it('should pass an additionalConditions SQL fragment when search term matches name column', async () => {
+            // Arrange
+            const localModelMock: BaseModel<TestEntity> = buildModelMock();
+            const svc = createServiceTestInstance(ServiceWithSearchableColumns, localModelMock);
+
+            // Act
+            await svc.list(mockActor, { page: 1, pageSize: 10, search: 'hello' });
+
+            // Assert — third argument (additionalConditions) is defined; OR logic produces
+            // a single SQL fragment that combines all searchable columns.
+            const additionalConditions = asMock(localModelMock.findAll).mock.calls[0]?.[2];
+            expect(additionalConditions).toBeDefined();
+        });
+
+        it('should pass an additionalConditions SQL fragment when search term matches description column (OR not AND)', async () => {
+            // Arrange — same setup; the OR semantic means the same condition object
+            // covers both name and description matches. The regression this guards against
+            // was AND, which would have required EVERY column to match the term.
+            const localModelMock: BaseModel<TestEntity> = buildModelMock();
+            const svc = createServiceTestInstance(ServiceWithSearchableColumns, localModelMock);
+
+            // Act
+            await svc.list(mockActor, { page: 1, pageSize: 10, search: 'description-only-term' });
+
+            // Assert — additionalConditions is forwarded; the SQL fragment encodes OR over
+            // ['name', 'description'], so a row matching only description satisfies the
+            // condition. (Per-row matching is verified in @repo/db buildSearchCondition tests.)
+            const additionalConditions = asMock(localModelMock.findAll).mock.calls[0]?.[2];
+            expect(additionalConditions).toBeDefined();
+        });
+
+        it('should not forward additionalConditions when search term is empty', async () => {
+            // Arrange
+            const localModelMock: BaseModel<TestEntity> = buildModelMock();
+            const svc = createServiceTestInstance(ServiceWithSearchableColumns, localModelMock);
+
+            // Act
+            await svc.list(mockActor, { page: 1, pageSize: 10, search: '' });
+
+            // Assert — empty search short-circuits, model receives undefined as third arg.
+            expect(localModelMock.findAll).toHaveBeenCalledWith(
+                {},
+                expect.objectContaining({ page: 1, pageSize: 10 }),
+                undefined,
+                undefined
+            );
+        });
+
+        it('should not forward additionalConditions when search term is whitespace only', async () => {
+            // Arrange
+            const localModelMock: BaseModel<TestEntity> = buildModelMock();
+            const svc = createServiceTestInstance(ServiceWithSearchableColumns, localModelMock);
+
+            // Act
+            await svc.list(mockActor, { page: 1, pageSize: 10, search: '   ' });
+
+            // Assert — trimmed empty string is treated as no search.
+            expect(localModelMock.findAll).toHaveBeenCalledWith(
+                {},
+                expect.objectContaining({ page: 1, pageSize: 10 }),
+                undefined,
+                undefined
+            );
+        });
+
+        it('should not forward additionalConditions when service exposes no searchable columns', async () => {
+            // Arrange — explicitly override getSearchableColumns to return an empty array,
+            // overriding the base default (['name']). A search term with no columns to scan
+            // is a no-op.
+            class ServiceWithoutColumns extends TestService {
+                protected override getSearchableColumns(): string[] {
+                    return [];
+                }
+                protected override getDefaultListRelations() {
+                    return undefined;
+                }
+            }
+            const localModelMock: BaseModel<TestEntity> = buildModelMock();
+            const svc = createServiceTestInstance(ServiceWithoutColumns, localModelMock);
+
+            // Act
+            await svc.list(mockActor, { page: 1, pageSize: 10, search: 'anything' });
+
+            // Assert — no columns means buildSearchCondition returns undefined.
+            expect(localModelMock.findAll).toHaveBeenCalledWith(
+                {},
+                expect.objectContaining({ page: 1, pageSize: 10 }),
+                undefined,
+                undefined
+            );
+        });
+    });
 });
