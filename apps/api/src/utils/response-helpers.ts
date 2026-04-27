@@ -57,6 +57,8 @@ export interface ErrorResponse {
         code: string;
         message: string;
         details?: unknown;
+        /** Optional machine-readable reason identifier. Emitted unconditionally. */
+        reason?: string;
     };
     metadata: {
         timestamp: string;
@@ -128,17 +130,28 @@ export const createResponse = <T = unknown>(
 };
 
 /**
- * Helper function to create error responses
- * Standardizes error response format across all endpoints
+ * Helper function to create error responses.
+ *
+ * The `reason` field, when present on the error object, is included
+ * unconditionally in the JSON payload regardless of `HOSPEDA_API_DEBUG_ERRORS`.
+ * It is a machine-readable identifier that clients may use for branching without
+ * requiring debug mode to be enabled.
+ *
+ * Standardizes error response format across all endpoints.
  */
 export const createErrorResponse = (
-    error: { code: string; message: string; details?: unknown },
+    error: { code: string; message: string; details?: unknown; reason?: string },
     c: Context,
     statusCode = 400
 ) => {
     const response: ErrorResponse = {
         success: false,
-        error,
+        error: {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            ...(error.reason !== undefined ? { reason: error.reason } : {})
+        },
         metadata: {
             timestamp: new Date().toISOString(),
             requestId: c.get('requestId') || 'unknown'
@@ -233,7 +246,8 @@ export const handleRouteError = (error: unknown, c: Context) => {
             {
                 code: error.code,
                 message: error.message,
-                details: env.HOSPEDA_API_DEBUG_ERRORS ? error.details : undefined
+                details: env.HOSPEDA_API_DEBUG_ERRORS ? error.details : undefined,
+                reason: error.reason
             },
             c,
             statusCode

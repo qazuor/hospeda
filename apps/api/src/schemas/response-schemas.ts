@@ -22,14 +22,19 @@ export const successResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
     });
 
 /**
- * Base error response schema
+ * Base error response schema.
+ *
+ * The `reason` field carries a machine-readable identifier emitted
+ * unconditionally when a `ServiceError` has a `reason` set. Clients may
+ * branch on this value without enabling debug mode.
  */
 export const errorResponseSchema = z.object({
     success: z.literal(false),
     error: z.object({
         code: z.string(),
         message: z.string(),
-        details: z.unknown().optional()
+        details: z.unknown().optional(),
+        reason: z.string().optional()
     }),
     metadata: z
         .object({
@@ -117,7 +122,10 @@ export type ApiSuccessResponse<T = unknown> = {
 };
 
 /**
- * Error response type
+ * Error response type.
+ *
+ * `reason` is an optional machine-readable identifier emitted unconditionally
+ * when a `ServiceError` carries one. Clients may branch on it without debug mode.
  */
 export type ApiErrorResponse = {
     success: false;
@@ -125,6 +133,7 @@ export type ApiErrorResponse = {
         code: string;
         message: string;
         details?: unknown;
+        reason?: string;
     };
     metadata?: {
         timestamp: string;

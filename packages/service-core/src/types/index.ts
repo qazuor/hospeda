@@ -106,6 +106,12 @@ export type ServiceOutput<T> =
               message: string;
               /** Optional additional details for debugging or context */
               details?: unknown;
+              /**
+               * Optional machine-readable reason identifier.
+               * Carried by `ServiceError.reason` when thrown; propagated to output
+               * by `runWithLoggingAndValidation` and `runWithLogging`.
+               */
+              reason?: string;
           };
       };
 
@@ -172,6 +178,23 @@ export type CanHardDeleteResult = {
 
 /**
  * Custom error class for service errors.
+ *
+ * The optional `reason` field carries a machine-readable identifier that
+ * describes *why* the error occurred beyond the generic `code`. It is emitted
+ * unconditionally in error response payloads (not gated behind
+ * `HOSPEDA_API_DEBUG_ERRORS`) so that clients can branch on it without needing
+ * debug mode enabled.
+ *
+ * @example
+ * ```ts
+ * throw new ServiceError(
+ *   ServiceErrorCode.FORBIDDEN,
+ *   'Anonymous email not yet verified',
+ *   undefined,
+ *   'ANONYMOUS_EMAIL_NOT_VERIFIED'
+ * );
+ * ```
+ *
  * @extends {Error}
  */
 export class ServiceError extends Error {
@@ -180,11 +203,14 @@ export class ServiceError extends Error {
      * @param {ServiceErrorCode} code - The error code
      * @param {string} message - The error message
      * @param {unknown} [details] - Optional additional details for debugging or context
+     * @param {string} [reason] - Optional machine-readable reason identifier emitted
+     *   unconditionally in API error responses
      */
     constructor(
         public code: ServiceErrorCode,
         message: string,
-        public details?: unknown
+        public details?: unknown,
+        public readonly reason?: string
     ) {
         super(message);
         this.name = 'ServiceError';

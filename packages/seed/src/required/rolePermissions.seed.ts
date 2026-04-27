@@ -237,7 +237,19 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
 
         // MEDIA: Cross-entity media management
         PermissionEnum.MEDIA_UPLOAD,
-        PermissionEnum.MEDIA_DELETE
+        PermissionEnum.MEDIA_DELETE,
+
+        // CONVERSATION: All permissions
+        PermissionEnum.CONVERSATION_VIEW_OWN,
+        PermissionEnum.CONVERSATION_VIEW_ANY,
+        PermissionEnum.CONVERSATION_VIEW_ALL,
+        PermissionEnum.CONVERSATION_REPLY_OWN,
+        PermissionEnum.CONVERSATION_REPLY_ANY,
+        PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
+        PermissionEnum.CONVERSATION_UPDATE_STATUS_ANY,
+        PermissionEnum.CONVERSATION_BLOCK_OWN,
+        PermissionEnum.CONVERSATION_BLOCK_ANY,
+        PermissionEnum.CONVERSATION_DELETE_ANY
     ],
 
     [RoleEnum.ADMIN]: [
@@ -443,7 +455,18 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
 
         // MEDIA: Cross-entity media management
         PermissionEnum.MEDIA_UPLOAD,
-        PermissionEnum.MEDIA_DELETE
+        PermissionEnum.MEDIA_DELETE,
+
+        // CONVERSATION: All except CONVERSATION_DELETE_ANY
+        PermissionEnum.CONVERSATION_VIEW_OWN,
+        PermissionEnum.CONVERSATION_VIEW_ANY,
+        PermissionEnum.CONVERSATION_VIEW_ALL,
+        PermissionEnum.CONVERSATION_REPLY_OWN,
+        PermissionEnum.CONVERSATION_REPLY_ANY,
+        PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
+        PermissionEnum.CONVERSATION_UPDATE_STATUS_ANY,
+        PermissionEnum.CONVERSATION_BLOCK_OWN,
+        PermissionEnum.CONVERSATION_BLOCK_ANY
     ],
 
     [RoleEnum.CLIENT_MANAGER]: [
@@ -617,7 +640,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
 
         // MEDIA: Cross-entity media management (HOST uploads images to own accommodations)
         PermissionEnum.MEDIA_UPLOAD,
-        PermissionEnum.MEDIA_DELETE
+        PermissionEnum.MEDIA_DELETE,
+
+        // CONVERSATION: Own-scoped conversation management (owner replies and moderation)
+        PermissionEnum.CONVERSATION_VIEW_OWN,
+        PermissionEnum.CONVERSATION_REPLY_OWN,
+        PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
+        PermissionEnum.CONVERSATION_BLOCK_OWN
     ],
 
     [RoleEnum.USER]: [
