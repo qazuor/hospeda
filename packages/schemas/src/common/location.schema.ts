@@ -52,6 +52,14 @@ export const BaseLocationSchema = z.object({
         .max(50, { message: 'zodError.common.location.country.max' })
         .nullable()
         .optional(),
+    city: z
+        .string({
+            message: 'zodError.common.location.city.required'
+        })
+        .min(2, { message: 'zodError.common.location.city.min' })
+        .max(50, { message: 'zodError.common.location.city.max' })
+        .nullable()
+        .optional(),
     coordinates: CoordinatesSchema.optional()
 });
 export type BaseLocationType = z.infer<typeof BaseLocationSchema>;

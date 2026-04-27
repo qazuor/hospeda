@@ -201,16 +201,31 @@ Seguir `.claude/specs/SPEC-091-mvp-blockers/staging-runbook.md`. No saltar pasos
 
 ### 11. Schema gaps menores
 
-#### `location.city` no está en BaseLocationSchema
+#### `location.city` ✅ DONE (2026-04-27)
 
-- [ ] Decidir: cambiar a `FullLocationFields` o aceptar limitación
-- [ ] Si cambia: regenerar tipos y validar migrate
+- [x] `city` agregado como campo opcional a `BaseLocationSchema` (additive, sin
+  breaking changes). El DB column ya era `jsonb<FullLocationType>`, así que la
+  asimetría era solo a nivel Zod. Ahora el host onboarding payload persiste
+  city y los cards (`AccommodationCard`, `PropertyCard`) lo leen sin caer en
+  fallbacks. `FullLocationSchema` mantiene su `city` required vía override.
 
-#### `amenityIds` no está en `AccommodationCreateInput`
+#### `amenityIds` no está en `AccommodationCreateInput` (post-beta)
 
-- [ ] Verificar si la API persiste amenities desde el publish payload
-- [ ] Si no: extender endpoint o crear `POST /accommodations/{id}/amenities`
-- [ ] Test de regresión
+Confirmado: el payload del frontend (`PropertyForm.client.tsx`) envía
+`amenityIds: selectedAmenityIds` en el PATCH a
+`/api/v1/protected/accommodations/:id`, pero `AccommodationUpdateSchema` no
+incluye ese campo y el API lo descarta silenciosamente. El servicio sí tiene
+`addAmenityToAccommodation` y `removeAmenityFromAccommodation`, pero no hay
+ningún endpoint que los exponga. Implementarlo requiere:
+
+- [ ] Crear endpoint `PUT /api/v1/protected/accommodations/{id}/amenities`
+  con body `{ amenityIds: string[] }` (diff sync: borra los no incluidos,
+  agrega los nuevos).
+- [ ] Frontend: hacer la llamada después del PATCH, con el set selectedAmenityIds.
+- [ ] Test de regresión cubriendo create + update.
+
+Diferido post-beta: el alojamiento se publica sin amenities asociadas hasta
+que se cierre este gap. Tracker: SPEC-094 (a crear).
 
 ### 12. Pricing page hardcoded vs billing config ✅ DONE (2026-04-26)
 
