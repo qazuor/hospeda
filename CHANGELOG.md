@@ -9,11 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **SPEC-095**: `cityDestination` lightweight projection (id, slug, name,
+  summary, destinationType, level, path, pathIds) is now present on every
+  accommodation and event response that previously embedded a heavy
+  `destination` relation. Consumers should read `cityDestination.name` for
+  display and `cityDestination.path` / `cityDestination.slug` for SEO links.
+- **SPEC-095**: `GET /api/v1/public/destinations` accepts a
+  `destinationType=CITY` filter for autocomplete / picker use cases.
+
 ### Changed
+
+- **SPEC-095** (wire-format): `accommodation.location` now carries postal
+  address only (`street`, `number`, `floor`, `apartment`, `coordinates`).
+  Geographic context (`city`, `state`, `country`, `zipCode`, `neighborhood`)
+  is no longer present on this object — read it from the new
+  `cityDestination` projection instead.
+- **SPEC-095** (wire-format): `event.location` (the embedded
+  EventLocationPublic projection) carries `id`, `slug`, `destinationId`,
+  `placeName`, `coordinates`, plus `cityDestination`. Legacy fields `city`,
+  `state`, `country`, `neighborhood` have been removed from the response.
 
 ### Deprecated
 
 ### Removed
+
+- **SPEC-095** (wire-format): Removed the legacy `?city=` and `?country=`
+  query parameters from `GET /api/v1/public/events/upcoming`. Filtering by
+  city is now done by passing a destinationId-aware filter (planned in a
+  follow-up — for now upcoming events return the full set per
+  date/category window).
 
 ### Fixed
 
