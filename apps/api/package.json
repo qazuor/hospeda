@@ -51,6 +51,7 @@
         "drizzle-orm": "^0.44.7",
         "hono": "^4.12.3",
         "hono-rate-limiter": "^0.4.2",
+        "jose": "^6.1.0",
         "ioredis": "^5.4.0",
         "lru-cache": "^11.1.0",
         "mercadopago": "^2.12.0",

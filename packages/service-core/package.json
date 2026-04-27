@@ -45,6 +45,7 @@
         "@repo/schemas": "workspace:*",
         "@repo/utils": "workspace:*",
         "drizzle-orm": "^0.44.7",
+        "jose": "^6.1.0",
         "zod": "^4.0.8"
     }
 }
