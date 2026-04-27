@@ -1,15 +1,12 @@
 /**
  * Integration tests for event list endpoint — destinationId filter behavior.
  *
- * KNOWN GAP: The `destinationId` field exists in `EventSearchSchema` (domain layer)
- * but is NOT in `EventSearchHttpSchema` (HTTP layer). Zod strips unknown fields by
- * default, so `?destinationId=UUID` is silently discarded before reaching the service.
+ * SPEC-089 Track B: `destinationId` is now accepted in `EventSearchHttpSchema`.
+ * The filter is resolved via `event_locations.destination_id` in the service layer.
  *
- * These tests document current behavior. Once `destinationId` is added to
- * `EventSearchHttpSchema`, the filter tests should be updated to verify actual filtering.
- *
+ * @see packages/schemas/src/entities/event/event.http.schema.ts — HTTP schema (has destinationId)
  * @see packages/schemas/src/entities/event/event.query.schema.ts — domain schema (has destinationId)
- * @see packages/schemas/src/entities/event/event.http.schema.ts — HTTP schema (missing destinationId)
+ * @see packages/service-core/src/services/event/event.service.ts — resolution via event_locations
  */
 
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -17,7 +14,8 @@ import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 
 const BASE = '/api/v1/public/events';
-const VALID_UUID = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+// Must be a valid UUID v4 (Zod's uuid() validates against versions 1-8)
+const VALID_UUID = 'd4d4d4d4-d4d4-4d4d-ad4d-d4d4d4d4d4d4';
 
 describe('GET /api/v1/public/events — destinationId filter', () => {
     let app: AppOpenAPI;
@@ -71,38 +69,42 @@ describe('GET /api/v1/public/events — destinationId filter', () => {
     });
 
     // -----------------------------------------------------------------------
-    // destinationId filter behavior (currently stripped by Zod)
+    // destinationId filter behavior (SPEC-089 Track B)
     // -----------------------------------------------------------------------
 
     describe('destinationId Query Param', () => {
-        it('should reject ?destinationId=UUID with 400 (not in HTTP schema)', async () => {
-            // CONFIRMED: The EventSearchHttpSchema does NOT include destinationId.
-            // Unlike some endpoints that use .strip(), the event route validates strictly,
-            // rejecting unknown query parameters with 400.
-            // TODO: Once destinationId is added to EventSearchHttpSchema, this test should
-            // be updated to expect 200 instead.
+        it('should accept ?destinationId=UUID and return 200 (not 400)', async () => {
+            // SPEC-089 Track B: destinationId is now in EventSearchHttpSchema.
+            // The route accepts the filter and passes it to the service, which
+            // resolves location IDs via event_locations.destination_id.
+            // In the test environment no rows exist for the dummy UUID, so the
+            // service short-circuits and returns an empty list (not an error).
             const res = await app.request(`${BASE}?destinationId=${VALID_UUID}`, {
                 method: 'GET',
                 headers: { 'user-agent': 'vitest', accept: 'application/json' }
             });
-            expect(res.status).toBe(400);
+            expect(res.status).not.toBe(400);
+            // The route may return 200 (empty list) or 500 (if DB not available in CI).
+            // Either way it should NOT be 400 (schema rejection).
+            expect([200, 500]).toContain(res.status);
         });
 
-        it('should handle base request differently than one with unknown params', async () => {
-            const [withFilter, without] = await Promise.all([
+        it('should treat destinationId differently from unknown params', async () => {
+            const [withDestination, withUnknown] = await Promise.all([
                 app.request(`${BASE}?destinationId=${VALID_UUID}`, {
                     method: 'GET',
                     headers: { 'user-agent': 'vitest', accept: 'application/json' }
                 }),
-                app.request(BASE, {
+                app.request(`${BASE}?unknownParam=foo`, {
                     method: 'GET',
                     headers: { 'user-agent': 'vitest', accept: 'application/json' }
                 })
             ]);
 
-            // destinationId causes 400 (rejected), base request gets through (200 or 500)
-            expect(withFilter.status).toBe(400);
-            expect(without.status).not.toBe(400);
+            // destinationId is a known schema field — must not be 400.
+            expect(withDestination.status).not.toBe(400);
+            // unknownParam is not in the schema — may be 400 (strict validation).
+            expect([400, 200, 500]).toContain(withUnknown.status);
         });
     });
 

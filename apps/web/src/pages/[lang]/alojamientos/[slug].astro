@@ -58,7 +58,7 @@ const accommodationDeletedAt = rawAccommodation.deletedAt
 const [similarResult, ownerPropsResult, postsResult, eventsResult, reviewsResult] =
     await Promise.allSettled([
         accommodationsApi.getSimilar({ id: accommodation.id, limit: 6 }),
-        accommodationsApi.list({ ownerId: accommodation.owner.id, pageSize: 4 }),
+        accommodationsApi.listByOwner({ userId: accommodation.owner.id, pageSize: 4 }),
         postsApi.list({ destinationId: accommodation.destination.id, pageSize: 4 }),
         eventsApi.list({ destinationId: accommodation.destination.id, pageSize: 4 }),
         accommodationsApi.getReviews({ id: accommodation.id, page: 1, pageSize: 3 })

@@ -70,7 +70,6 @@ export const accommodationsApi = {
         type?: string;
         types?: string;
         isFeatured?: boolean;
-        ownerId?: string;
         destinationId?: string;
         destinationIds?: string;
         includeAmenities?: boolean;
@@ -98,6 +97,40 @@ export const accommodationsApi = {
         includeNoReviews?: boolean;
     }): Promise<ApiResult<PaginatedResponse<AccommodationPublic>>> {
         return apiClient.getList({ path: `${BASE}/accommodations`, params });
+    },
+
+    /**
+     * List accommodations owned by a specific user.
+     *
+     * Hits GET /api/v1/public/users/:userId/accommodations.
+     * The `ownerId` filter is applied server-side — the client only provides
+     * the user UUID via the URL path, not as a query param.
+     * A non-existent user returns an empty paginated list (HTTP 200).
+     *
+     * @param params - User ID and optional pagination
+     * @returns Paginated list of the owner's active accommodations
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationsApi.listByOwner({
+     *   userId: 'user-uuid',
+     *   pageSize: 4
+     * });
+     * ```
+     */
+    listByOwner({
+        userId,
+        page,
+        pageSize
+    }: {
+        readonly userId: string;
+        readonly page?: number;
+        readonly pageSize?: number;
+    }): Promise<ApiResult<PaginatedResponse<AccommodationPublic>>> {
+        return apiClient.getList({
+            path: `${BASE}/users/${userId}/accommodations`,
+            params: { page, pageSize }
+        });
     },
 
     /** Get accommodation by slug */
@@ -379,6 +412,8 @@ export const eventsApi = {
         sortOrder?: 'asc' | 'desc';
         isFeatured?: boolean;
         category?: string;
+        /** Filter events by destination UUID (resolved via event_locations.destination_id). */
+        destinationId?: string;
     }): Promise<ApiResult<PaginatedResponse<EventPublic>>> {
         return apiClient.getList({ path: `${BASE}/events`, params });
     },

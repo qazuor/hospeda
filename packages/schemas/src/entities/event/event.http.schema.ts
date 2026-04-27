@@ -39,6 +39,8 @@ export const EventSearchHttpSchema = BaseHttpSearchSchema.extend({
     // Location filters
     locationId: z.string().uuid().optional(),
     organizerId: z.string().uuid().optional(),
+    /** Filter events by destination UUID (resolved via event_locations.destination_id). */
+    destinationId: z.string().uuid().optional(),
     city: z.string().optional(),
     state: z.string().optional(),
     country: z.string().optional(),
@@ -224,6 +226,7 @@ export const httpToDomainEventSearch = (httpParams: EventSearchHttp): EventSearc
     endDateBefore: httpParams.endDateBefore,
     locationId: httpParams.locationId,
     organizerId: httpParams.organizerId,
+    destinationId: httpParams.destinationId,
     city: httpParams.city,
     state: httpParams.state,
     country: httpParams.country,

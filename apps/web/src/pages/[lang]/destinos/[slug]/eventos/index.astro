@@ -1,16 +1,19 @@
 ---
 /**
  * @file destinos/[slug]/eventos/index.astro
- * @description Events within a destination. Requires destinationId FK (T-015).
+ * @description Events within a destination, filtered via event_locations.destination_id.
  * @route /{lang}/destinos/{slug}/eventos/
  * @rendering SSR + ISR 24h
  */
-// TODO: Requires destinationId FK on events table (T-015)
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import EventCard from '@/components/shared/cards/EventCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
-import { destinationsApi } from '@/lib/api/endpoints';
+import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+import Pagination from '@/components/shared/feedback/Pagination.astro';
+import { destinationsApi, eventsApi } from '@/lib/api/endpoints';
+import { toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -23,11 +26,40 @@ if (!slug) return new Response(null, { status: 404 });
 const destResult = await destinationsApi.getBySlug({ slug });
 if (!destResult.ok) return new Response(null, { status: 404 });
 const dest = destResult.data as Record<string, unknown>;
+const destId = String(dest.id || '');
 const destName = String(dest.name || slug);
+
+const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
+const pageSize = 9;
+
+const result = await eventsApi.list({ destinationId: destId, page, pageSize });
+const hasError = !result.ok;
+const items = result.ok ? result.data.items : [];
+const total = result.ok ? result.data.total : 0;
+const totalPages = result.ok ? Math.ceil(total / pageSize) : 0;
+const cards = items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown> }));
+const baseUrl = buildUrl({ locale, path: `destinos/${slug}/eventos` });
 ---
 
 <ListingLayout locale={locale} title={`${t('events.title', 'Eventos')} en ${destName}`} showFilters={false}>
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('destinations.title', 'Destinos'), path: 'destinos' }, { label: destName, path: `destinos/${slug}` }, { label: t('events.title', 'Eventos') }]} />
-	<ListingPageHeader slot="page-header" locale={locale} tagline={destName} title={t('events.title', 'Eventos')} />
-	<EmptyState locale={locale} variant="empty" message={t('events.withinDestination.comingSoon', 'Eventos para este destino estarán disponibles próximamente.')} actionUrl={buildUrl({ locale, path: 'eventos' })} actionLabel={t('events.viewAll', 'Ver todos los eventos')} />
+	<ListingPageHeader slot="page-header" locale={locale} tagline={destName} title={t('events.title', 'Eventos')} totalCount={total} />
+	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="eventos" />}
+	{!hasError && cards.length === 0 && <EmptyState locale={locale} variant="empty" actionUrl={buildUrl({ locale, path: 'eventos' })} actionLabel={t('events.viewAll', 'Ver todos los eventos')} />}
+	{!hasError && cards.length > 0 && (
+		<div class="events-grid">
+			{cards.map((card, i) => (
+				<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
+					<EventCard data={card} locale={locale} />
+				</div>
+			))}
+		</div>
+	)}
+	{totalPages > 1 && <Pagination slot="pagination" currentPage={page} totalPages={totalPages} baseUrl={baseUrl.slice(0, -1)} locale={locale} />}
 </ListingLayout>
+
+<style>
+	.events-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-card-gap); }
+	@media (max-width: 1024px) { .events-grid { grid-template-columns: repeat(2, 1fr); } }
+	@media (max-width: 640px) { .events-grid { grid-template-columns: 1fr; } }
+</style>

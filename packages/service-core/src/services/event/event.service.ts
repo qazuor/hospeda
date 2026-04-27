@@ -1,4 +1,9 @@
-import { EventModel, events as eventTable } from '@repo/db';
+import {
+    EventModel,
+    eventLocations as eventLocationsTable,
+    events as eventTable,
+    getDb
+} from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
@@ -34,7 +39,7 @@ import {
     VisibilityEnum
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
-import { sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type {
@@ -478,44 +483,115 @@ export class EventService extends BaseCrudService<
     }
 
     /**
+     * Resolves location IDs for a given destination UUID.
+     *
+     * Queries `event_locations` for all active (not soft-deleted) rows whose
+     * `destination_id` matches the supplied UUID and returns their primary keys.
+     * Returns `null` when `destinationId` is undefined (no filter needed) and
+     * returns an empty array when the destination exists but has no locations.
+     *
+     * @param destinationId - The destination UUID to resolve, or undefined.
+     * @returns Array of location UUIDs, or null when the filter should be skipped.
+     */
+    private async _resolveLocationIdsForDestination(
+        destinationId: string | undefined
+    ): Promise<string[] | null> {
+        if (!destinationId) return null;
+
+        const db = getDb();
+        const rows = await db
+            .select({ id: eventLocationsTable.id })
+            .from(eventLocationsTable)
+            .where(
+                and(
+                    eq(eventLocationsTable.destinationId, destinationId),
+                    isNull(eventLocationsTable.deletedAt)
+                )
+            );
+
+        return rows.map((row) => row.id);
+    }
+
+    /**
      * Executes the search for events.
+     *
+     * When `destinationId` is present it is resolved to a list of `event_location` IDs
+     * via `event_locations.destination_id`, then applied as an `inArray` condition on
+     * `events.location_id`. The field is stripped from the plain filter object so it
+     * never leaks into the base `buildWhereClause` (which would look for a non-existent
+     * column on the `events` table).
+     *
      * @param params - The validated search parameters
      * @param _actor - The actor performing the search
      * @returns Paginated list of events matching the criteria
      */
     protected async _executeSearch(params: EventSearchInput, _actor: Actor, _ctx: ServiceContext) {
-        // NOTE: destinationId is stripped — event_locations has no destinationId FK.
-        // Until the DB schema is extended, this filter cannot be applied.
         const {
             page = 1,
             pageSize = 10,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
             q: _q,
-            destinationId: _destinationId,
+            destinationId,
             ...filterParams
         } = params;
-        return this.model.findAll(filterParams, { page, pageSize });
+
+        const locationIds = await this._resolveLocationIdsForDestination(destinationId);
+
+        // No locations exist for this destination — return empty result immediately.
+        if (locationIds !== null && locationIds.length === 0) {
+            return { items: [], total: 0 };
+        }
+
+        const additionalConditions: SQL[] = [];
+        if (locationIds !== null && locationIds.length > 0) {
+            additionalConditions.push(inArray(eventTable.locationId, locationIds));
+        }
+
+        return this.model.findAll(
+            filterParams,
+            { page, pageSize },
+            additionalConditions.length > 0 ? additionalConditions : undefined
+        );
     }
 
     /**
      * Executes the count for events.
+     *
+     * Applies the same `destinationId` → `event_locations` resolution as `_executeSearch`
+     * to ensure `search` and `count` return consistent totals.
+     *
      * @param params - The validated search parameters
      * @param _actor - The actor performing the count
      * @returns Count of events matching the criteria
      */
     protected async _executeCount(params: EventSearchInput, _actor: Actor, _ctx: ServiceContext) {
-        // NOTE: destinationId stripped for same reason as _executeSearch.
         const {
             page: _page,
             pageSize: _pageSize,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
             q: _q,
-            destinationId: _destinationId,
+            destinationId,
             ...filterParams
         } = params;
-        const count = await this.model.count(filterParams);
+
+        const locationIds = await this._resolveLocationIdsForDestination(destinationId);
+
+        // No locations exist for this destination — count is zero.
+        if (locationIds !== null && locationIds.length === 0) {
+            return { count: 0 };
+        }
+
+        const additionalConditions: SQL[] = [];
+        if (locationIds !== null && locationIds.length > 0) {
+            additionalConditions.push(inArray(eventTable.locationId, locationIds));
+        }
+
+        const count = await this.model.count(
+            filterParams,
+            additionalConditions.length > 0 ? { additionalConditions } : undefined
+        );
         return { count };
     }
 

@@ -4,14 +4,18 @@
  */
 import { createRouter } from '../../../utils/create-app';
 import { publicUserBatchRoute } from './batch';
+import { publicGetUserAccommodationsRoute } from './getAccommodations';
 import { publicGetUserByIdRoute } from './getById';
 
 const app = createRouter();
 
-// GET /:id - Get by ID
-app.route('/', publicGetUserByIdRoute);
-
-// POST /batch - Get multiple users
+// GET /batch - Get multiple users (must be registered before /:id to avoid conflict)
 app.route('/', publicUserBatchRoute);
+
+// GET /{id}/accommodations - List accommodations owned by user
+app.route('/', publicGetUserAccommodationsRoute);
+
+// GET /{id} - Get by ID (catch-all — registered last)
+app.route('/', publicGetUserByIdRoute);
 
 export { app as publicUserRoutes };
