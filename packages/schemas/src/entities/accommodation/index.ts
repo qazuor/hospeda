@@ -1,5 +1,6 @@
 // Core schemas
 export * from './accommodation.schema.js'; // Main entity schema
+export * from './accommodation.location.schema.js'; // Postal address shape (SPEC-095)
 // Types are exported inline from their schema files
 
 // CRUD operations
