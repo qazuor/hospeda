@@ -78,11 +78,10 @@ export const createMockAccommodation = (overrides: Partial<Accommodation> = {}):
     // Base visibility fields
     visibility: VisibilityEnum.PUBLIC,
 
-    // Base location fields - simplified
+    // Postal address fields (SPEC-095): geographic context lives on destination relation.
     location: {
-        state: 'Test State',
-        zipCode: '12345',
-        country: 'Test Country'
+        street: 'Test Street',
+        number: '123'
     },
 
     // Base media fields - simplified
@@ -133,11 +132,10 @@ export const createMockAccommodationCreateInput = (
         moderationState: ModerationStatusEnum.APPROVED,
         visibility: VisibilityEnum.PUBLIC,
 
-        // Base location fields - simplified
+        // Postal address fields (SPEC-095): geographic context lives on destination relation.
         location: {
-            state: 'Test State',
-            zipCode: '12345',
-            country: 'Test Country'
+            street: 'Test Street',
+            number: '123'
         },
 
         // Base media fields - simplified

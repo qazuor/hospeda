@@ -16,7 +16,7 @@ describe('EventLocationService.search', () => {
     const searchParams = {
         page: 1,
         pageSize: 10,
-        filters: { city: new EventLocationFactoryBuilder().build().city }
+        filters: { destinationId: new EventLocationFactoryBuilder().build().destinationId }
     };
 
     beforeEach(() => {

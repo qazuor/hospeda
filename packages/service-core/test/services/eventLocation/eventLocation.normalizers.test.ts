@@ -11,9 +11,6 @@ const baseInput = EventLocationFactoryBuilder.create({
     number: ' 123 ',
     floor: ' 2 ',
     apartment: ' B ',
-    neighborhood: ' Downtown ',
-    city: ' CityName ',
-    department: ' Dept ',
     placeName: ' Venue '
 });
 const actor = createActor();
@@ -25,16 +22,13 @@ describe('eventLocation normalizers', () => {
         expect(result.number).toBe('123');
         expect(result.floor).toBe('2');
         expect(result.apartment).toBe('B');
-        expect(result.neighborhood).toBe('Downtown');
-        expect(result.city).toBe('CityName');
-        expect(result.department).toBe('Dept');
         expect(result.placeName).toBe('Venue');
     });
 
     it('normalizeUpdateInput trims only present fields', () => {
-        const partial = { city: ' CityName ', street: ' Main St ' };
+        const partial = { placeName: ' Venue ', street: ' Main St ' };
         const result = normalizeUpdateInput(partial, actor);
-        expect(result.city).toBe('CityName');
+        expect(result.placeName).toBe('Venue');
         expect(result.street).toBe('Main St');
     });
 
@@ -78,12 +72,12 @@ describe('eventLocation normalizers', () => {
     });
 
     it('normalizeUpdateInput ignores unexpected fields', () => {
-        const partial = { city: 'CityName', unexpectedField: 'foo' } as { city: string } & {
+        const partial = { placeName: 'Venue', unexpectedField: 'foo' } as { placeName: string } & {
             unexpectedField: string;
         };
         const result = normalizeUpdateInput(partial, actor);
         expect(
-            (result as { city: string } & { unexpectedField?: string }).unexpectedField
+            (result as { placeName: string } & { unexpectedField?: string }).unexpectedField
         ).toBeUndefined();
     });
 
@@ -94,9 +88,9 @@ describe('eventLocation normalizers', () => {
     });
 
     it('normalizeUpdateInput handles all optional fields as undefined', () => {
-        const partial = { city: undefined, street: undefined };
+        const partial = { placeName: undefined, street: undefined };
         const result = normalizeUpdateInput(partial, actor);
-        expect(result.city).toBeUndefined();
+        expect(result.placeName).toBeUndefined();
         expect(result.street).toBeUndefined();
     });
 });

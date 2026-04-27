@@ -47,23 +47,26 @@ describe('EventLocationService.create', () => {
         expect(result.error?.code).toBe('FORBIDDEN');
     });
 
-    it('fails if required field city is missing', async () => {
+    it('fails if required field destinationId is missing', async () => {
         vi.spyOn(model, 'create').mockImplementation(() => {
             throw new Error('Validation error');
         });
-        let input = { ...validInput };
-        input = { ...input, city: '' };
-        const result = await service.create(actorWithPerm, input);
+        const { destinationId: _drop, ...rest } = validInput;
+        const result = await service.create(actorWithPerm, rest as unknown as typeof validInput);
         expect(result.error).toBeTruthy();
         expect(result.data).toBeUndefined();
     });
 
     it('trims fields with only spaces', async () => {
-        const input = { ...validInput, street: '   ', city: '   ' };
-        vi.spyOn(model, 'create').mockResolvedValue({ ...fullEntity, street: '', city: '' });
+        const input = { ...validInput, street: '   ', placeName: '   ' };
+        vi.spyOn(model, 'create').mockResolvedValue({
+            ...fullEntity,
+            street: '',
+            placeName: ''
+        });
         const result = await service.create(actorWithPerm, input);
         expect(result.data?.street).toBe('');
-        expect(result.data?.city).toBe('');
+        expect(result.data?.placeName).toBe('');
     });
 
     it('fails if model throws error', async () => {

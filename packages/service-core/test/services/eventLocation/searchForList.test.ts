@@ -77,13 +77,13 @@ describe('EventLocationService.searchForList', () => {
         await service.searchForList(actor, {
             page: 1,
             pageSize: 10,
-            sortBy: 'city',
+            sortBy: 'placeName',
             sortOrder: 'asc'
         });
 
         // Assert
         const [, opts] = asMock(model.findAll).mock.calls[0] ?? [];
-        expect(opts).toMatchObject({ sortBy: 'city', sortOrder: 'asc' });
+        expect(opts).toMatchObject({ sortBy: 'placeName', sortOrder: 'asc' });
     });
 
     it('should use default page=1 and pageSize=10 when not provided', async () => {
@@ -98,20 +98,26 @@ describe('EventLocationService.searchForList', () => {
         expect(opts).toMatchObject({ page: 1, pageSize: 10 });
     });
 
-    it('should pass city as additionalCondition (ilike on city column)', async () => {
+    it('should pass destinationId as a where filter (not additionalCondition)', async () => {
         // Arrange
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { page: 1, pageSize: 10, city: 'Buenos Aires' });
+        await service.searchForList(actor, {
+            page: 1,
+            pageSize: 10,
+            destinationId: '11111111-1111-4111-8111-111111111111'
+        });
 
-        // Assert -- city produces one ilike additionalCondition
-        const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
-        expect(Array.isArray(additionalConditions)).toBe(true);
-        expect((additionalConditions as unknown[]).length).toBe(1);
+        // Assert -- destinationId is forwarded as a where filter, no additionalCondition.
+        const [where, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
+        expect((where as Record<string, unknown>).destinationId).toBe(
+            '11111111-1111-4111-8111-111111111111'
+        );
+        expect((additionalConditions as unknown[]).length).toBe(0);
     });
 
-    it('should pass q as additionalCondition (OR across city, placeName, department, neighborhood)', async () => {
+    it('should pass q as additionalCondition (OR across placeName, street)', async () => {
         // Arrange
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
@@ -124,16 +130,24 @@ describe('EventLocationService.searchForList', () => {
         expect((additionalConditions as unknown[]).length).toBe(1);
     });
 
-    it('should produce two additionalConditions when both city and q are given', async () => {
+    it('should still pass destinationId in where when q is also given', async () => {
         // Arrange
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { page: 1, pageSize: 10, city: 'Rosario', q: 'park' });
+        await service.searchForList(actor, {
+            page: 1,
+            pageSize: 10,
+            destinationId: '22222222-2222-4222-8222-222222222222',
+            q: 'park'
+        });
 
-        // Assert -- city + q = 2 conditions
-        const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
-        expect((additionalConditions as unknown[]).length).toBe(2);
+        // Assert -- q is the only additionalCondition; destinationId stays in where.
+        const [where, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
+        expect((where as Record<string, unknown>).destinationId).toBe(
+            '22222222-2222-4222-8222-222222222222'
+        );
+        expect((additionalConditions as unknown[]).length).toBe(1);
     });
 
     it('should not add additionalConditions when no search params provided', async () => {
@@ -148,12 +162,12 @@ describe('EventLocationService.searchForList', () => {
         expect((additionalConditions as unknown[]).length).toBe(0);
     });
 
-    it('should still produce a condition when city contains percent wildcard', async () => {
+    it('should still produce a condition when q contains percent wildcard', async () => {
         // Arrange -- safeIlike must escape % so it is treated as literal
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { page: 1, pageSize: 10, city: 'B.A. 100%' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, q: 'B.A. 100%' });
 
         // Assert -- condition produced despite metacharacter in input
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];

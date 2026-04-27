@@ -54,7 +54,7 @@ export class EventLocationService extends BaseCrudService<
      * Event locations are searched by place name and city.
      */
     protected override getSearchableColumns(): string[] {
-        return ['placeName', 'city'];
+        return ['placeName', 'street'];
     }
 
     protected normalizers: CrudNormalizersFromSchemas<
@@ -136,16 +136,23 @@ export class EventLocationService extends BaseCrudService<
         _ctx: ServiceContext
     ): Promise<PaginatedListOutput<EventLocation>> {
         try {
-            const { page = 1, pageSize = 20, sortBy, sortOrder, q, city, ...otherFilters } = params;
+            const {
+                page = 1,
+                pageSize = 20,
+                sortBy,
+                sortOrder,
+                q,
+                destinationId,
+                ...otherFilters
+            } = params;
             const where: Record<string, unknown> = { ...otherFilters };
-            if (city) where.city = city;
+            if (destinationId) where.destinationId = destinationId;
 
             const additionalConditions: SQL[] = [];
             if (q) {
                 const orCondition = or(
-                    safeIlike(eventLocations.city, q),
                     safeIlike(eventLocations.placeName, q),
-                    safeIlike(eventLocations.department, q)
+                    safeIlike(eventLocations.street, q)
                 );
                 if (orCondition) additionalConditions.push(orCondition);
             }
@@ -170,7 +177,7 @@ export class EventLocationService extends BaseCrudService<
         try {
             const {
                 q,
-                city,
+                destinationId,
                 page: _page,
                 pageSize: _pageSize,
                 sortBy: _sortBy,
@@ -178,14 +185,13 @@ export class EventLocationService extends BaseCrudService<
                 ...otherFilters
             } = params;
             const where: Record<string, unknown> = { ...otherFilters };
-            if (city) where.city = city;
+            if (destinationId) where.destinationId = destinationId;
 
             const additionalConditions: SQL[] = [];
             if (q) {
                 const orCondition = or(
-                    safeIlike(eventLocations.city, q),
                     safeIlike(eventLocations.placeName, q),
-                    safeIlike(eventLocations.department, q)
+                    safeIlike(eventLocations.street, q)
                 );
                 if (orCondition) additionalConditions.push(orCondition);
             }
@@ -212,20 +218,26 @@ export class EventLocationService extends BaseCrudService<
         ctx?: ServiceContext
     ): Promise<{ items: EventLocation[]; total: number }> {
         await this._canSearch(actor);
-        const { page = 1, pageSize = 10, q, city, sortBy, sortOrder, ...otherFilters } = params;
+        const {
+            page = 1,
+            pageSize = 10,
+            q,
+            destinationId,
+            sortBy,
+            sortOrder,
+            ...otherFilters
+        } = params;
 
         const where: Record<string, unknown> = { ...otherFilters };
         const additionalConditions: SQL[] = [];
 
-        if (city) {
-            additionalConditions.push(safeIlike(eventLocations.city, city));
+        if (destinationId) {
+            where.destinationId = destinationId;
         }
         if (q) {
             const orCondition = or(
-                safeIlike(eventLocations.city, q),
                 safeIlike(eventLocations.placeName, q),
-                safeIlike(eventLocations.department, q),
-                safeIlike(eventLocations.neighborhood, q)
+                safeIlike(eventLocations.street, q)
             );
             if (orCondition) additionalConditions.push(orCondition);
         }
@@ -243,18 +255,18 @@ export class EventLocationService extends BaseCrudService<
     }
 
     /**
-     * Find event locations by city.
-     * Returns all locations in the specified city with pagination support.
+     * Find event locations by destination.
+     * Returns all locations under the given destinationId with pagination.
      *
      * @param actor - The actor performing the action
-     * @param city - The city name to filter by
+     * @param destinationId - The destination UUID to filter by
      * @param options - Pagination options (optional)
      * @param ctx - Optional service context (transaction, hook state)
      * @returns ServiceOutput with paginated list of event locations
      */
-    public async findByCity(
+    public async findByDestination(
         actor: Actor,
-        city: string,
+        destinationId: string,
         options?: { page?: number; pageSize?: number },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<PaginatedListOutput<EventLocation>>> {
@@ -264,9 +276,8 @@ export class EventLocationService extends BaseCrudService<
         try {
             const { page = 1, pageSize = 20 } = options || {};
 
-            // Query locations by city
             const result = await this.model.findAll(
-                { city },
+                { destinationId },
                 { page, pageSize },
                 undefined,
                 ctx?.tx
@@ -277,55 +288,11 @@ export class EventLocationService extends BaseCrudService<
             };
         } catch (error) {
             this.logger?.error(
-                `Error finding event locations by city: ${city} - ${error instanceof Error ? error.message : String(error)}`
+                `Error finding event locations by destinationId: ${destinationId} - ${error instanceof Error ? error.message : String(error)}`
             );
             throw new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,
-                'Failed to find event locations by city'
-            );
-        }
-    }
-
-    /**
-     * Find event locations by country.
-     * Returns all locations in the specified country with pagination support.
-     *
-     * @param actor - The actor performing the action
-     * @param country - The country name to filter by
-     * @param options - Pagination options (optional)
-     * @param ctx - Optional service context (transaction, hook state)
-     * @returns ServiceOutput with paginated list of event locations
-     */
-    public async findByCountry(
-        actor: Actor,
-        country: string,
-        options?: { page?: number; pageSize?: number },
-        ctx?: ServiceContext
-    ): Promise<ServiceOutput<PaginatedListOutput<EventLocation>>> {
-        // Check permissions
-        await this._canList(actor);
-
-        try {
-            const { page = 1, pageSize = 20 } = options || {};
-
-            // Query locations by country
-            const result = await this.model.findAll(
-                { country },
-                { page, pageSize },
-                undefined,
-                ctx?.tx
-            );
-
-            return {
-                data: result
-            };
-        } catch (error) {
-            this.logger?.error(
-                `Error finding event locations by country: ${country} - ${error instanceof Error ? error.message : String(error)}`
-            );
-            throw new ServiceError(
-                ServiceErrorCode.INTERNAL_ERROR,
-                'Failed to find event locations by country'
+                'Failed to find event locations by destination'
             );
         }
     }
@@ -347,9 +314,7 @@ export class EventLocationService extends BaseCrudService<
         ServiceOutput<{
             stats: {
                 id: string;
-                city: string | undefined;
-                state: string | undefined;
-                country: string | undefined;
+                destinationId: string;
                 placeName: string | undefined;
                 totalEvents: number;
             };
@@ -379,9 +344,7 @@ export class EventLocationService extends BaseCrudService<
             // Build stats object
             const stats = {
                 id: location.id,
-                city: location.city ?? undefined,
-                state: location.state ?? undefined,
-                country: location.country ?? undefined,
+                destinationId: location.destinationId,
                 placeName: location.placeName ?? undefined,
                 totalEvents
             };

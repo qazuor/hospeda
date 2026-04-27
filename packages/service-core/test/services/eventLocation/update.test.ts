@@ -6,7 +6,7 @@ import { createActor } from '../../factories/actorFactory';
 import { EventLocationFactoryBuilder } from '../../factories/eventLocationFactory';
 import { createLoggerMock } from '../../utils/modelMockFactory';
 
-const updateInput = { city: 'New City', street: 'Main St' };
+const updateInput = { placeName: 'New Venue', street: 'Main St' };
 const fullEntity = EventLocationFactoryBuilder.create();
 const actorWithPerm = createActor({ permissions: [PermissionEnum.EVENT_LOCATION_UPDATE] });
 const actorWithoutPerm = createActor({ permissions: [] });
@@ -29,7 +29,7 @@ describe('EventLocationService.update', () => {
         vi.spyOn(model, 'findById').mockResolvedValue(fullEntity);
         const result = await service.update(actorWithPerm, fullEntity.id, updateInput);
         expect(result.data).toBeTruthy();
-        expect(result.data?.city).toBe('New City');
+        expect(result.data?.placeName).toBe('New Venue');
     });
 
     it('returns error if actor lacks permission', async () => {
@@ -56,9 +56,9 @@ describe('EventLocationService.update', () => {
         expect(result.data).toBeUndefined();
     });
 
-    it('returns VALIDATION_ERROR for invalid input (city empty)', async () => {
+    it('returns VALIDATION_ERROR for invalid input (placeName too short)', async () => {
         vi.spyOn(model, 'findById').mockResolvedValue(fullEntity);
-        const invalidInput = { ...updateInput, city: '' };
+        const invalidInput = { ...updateInput, placeName: 'A' };
         vi.spyOn(model, 'update').mockResolvedValue({ ...fullEntity, ...invalidInput });
         const result = await service.update(actorWithPerm, fullEntity.id, invalidInput);
         expect(result.error).toBeTruthy();
@@ -89,7 +89,7 @@ describe('EventLocationService.update', () => {
         vi.spyOn(model, 'update').mockResolvedValue({ ...fullEntity, ...updateInput });
         const result = await service.update(actorWithPerm, fullEntity.id, input);
         expect(
-            (result.data as typeof updateInput & { unexpectedField?: string })?.unexpectedField
+            (result.data as unknown as { unexpectedField?: string })?.unexpectedField
         ).toBeUndefined();
     });
 
@@ -102,9 +102,9 @@ describe('EventLocationService.update', () => {
 
     it('handles all optional fields as undefined', async () => {
         vi.spyOn(model, 'findById').mockResolvedValue(fullEntity);
-        const input = { city: updateInput.city };
+        const input = { placeName: updateInput.placeName };
         vi.spyOn(model, 'update').mockResolvedValue({ ...fullEntity, ...input });
         const result = await service.update(actorWithPerm, fullEntity.id, input);
-        expect(result.data?.city).toBe(updateInput.city);
+        expect(result.data?.placeName).toBe(updateInput.placeName);
     });
 });

@@ -1,7 +1,7 @@
 import type {
+    AccommodationLocationType,
     AdminInfoType,
     ContactInfo,
-    FullLocationType,
     Media,
     Seo,
     SocialNetwork
@@ -45,7 +45,7 @@ export const accommodations = pgTable(
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         price: jsonb('price').$type<Record<string, unknown>>(),
-        location: jsonb('location').$type<FullLocationType>(),
+        location: jsonb('location').$type<AccommodationLocationType>(),
         media: jsonb('media').$type<Media>(),
         isFeatured: boolean('is_featured').notNull().default(false),
         ownerId: uuid('owner_id')

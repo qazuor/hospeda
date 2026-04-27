@@ -1,4 +1,5 @@
 import type {
+    DestinationIdType,
     EventLocation,
     EventLocationCreateInput,
     EventLocationIdType,
@@ -16,19 +17,14 @@ export class EventLocationFactoryBuilder {
 
     constructor() {
         this.eventLocation = {
-            id: getMockId('feature') as EventLocationIdType, // 'feature' is used for location-like entities
+            id: getMockId('feature') as EventLocationIdType,
             slug: 'test-venue-location',
+            destinationId: getMockId('destination') as DestinationIdType,
             street: 'Main St',
             number: '123',
             floor: '1',
             apartment: 'A',
-            neighborhood: 'Centro',
-            city: 'CityName',
-            department: 'Dept',
             placeName: 'Venue',
-            state: 'State',
-            zipCode: '12345',
-            country: 'Country',
             coordinates: { lat: '1.0', long: '2.0' },
             adminInfo: { favorite: false },
             createdAt: new Date(),
@@ -71,12 +67,12 @@ export const createMockEventLocationCreateInput = (
     overrides: Partial<EventLocationCreateInput> = {}
 ): EventLocationCreateInput => {
     const baseInput = {
+        slug: 'test-venue-location',
+        destinationId: getMockId('destination') as DestinationIdType,
         street: 'Main St',
         number: '123',
-        city: 'CityName',
-        department: 'Dept',
-        country: 'Country',
-        placeName: 'Venue'
+        placeName: 'Venue',
+        lifecycleState: LifecycleStatusEnum.ACTIVE
     };
 
     return {
