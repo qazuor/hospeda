@@ -1,12 +1,19 @@
 # Pre-Beta Test Coverage Checklist
 
 > **Companion document to**: `spec.md` (formal e2e test suite spec for `apps/e2e`)
-> **Status**: draft — pending prioritization (P0 / P1 / post-beta)
+> **Status**: draft — prioritized (P0 / P1 / post-beta)
 > **Scope**: catalog of every feature, dimension, and end-to-end journey that must be covered before opening Hospeda to beta testers.
 > **Created**: 2026-04-27
-> **Total items**: 101 across 20 categories
+> **Last update**: 2026-04-27 — prioritization pass
+> **Total items**: 101 across 20 categories (61 P0, 34 P1, 6 post-beta)
 
 This file is a **coverage map**, not an execution plan. Each item describes WHAT to test and WHO is involved. Steps and acceptance criteria will be expanded in a second pass for items prioritized as P0.
+
+**Priority legend**:
+
+- **P0** — must be covered before opening beta. Failure touches money, security, privacy, or the core flow of the three actors (host publishes, tourist searches, host pays).
+- **P1** — important but tolerable if documented or manually mitigated during beta.
+- **post-beta** — nice-to-have, hardening, or scenarios the beta cohort doesn't stress (low volume).
 
 ---
 
@@ -17,6 +24,7 @@ Each item:
 ```text
 N: title
 users: [actor types involved]
+prioridad: P0 | P1 | post-beta
 categoria: type of functionality
 apps: [apps involved]
 testing: [test type — e2e / manual / semi-manual / automated / integration]
@@ -32,6 +40,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 1: Signup with email/password + verification
 
 - **users**: `[GUEST → USER]`
+- **prioridad**: `P0`
 - **categoria**: auth
 - **apps**: `[web]`
 - **testing**: `[e2e]`
@@ -40,6 +49,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 2: Signin happy path + invalid credentials
 
 - **users**: `[USER, HOST, ADMIN]`
+- **prioridad**: `P0`
 - **categoria**: auth
 - **apps**: `[web, admin]`
 - **testing**: `[e2e + semi-manual]`
@@ -48,6 +58,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 3: Password reset flow
 
 - **users**: `[USER]`
+- **prioridad**: `P0`
 - **categoria**: auth
 - **apps**: `[web]`
 - **testing**: `[e2e]`
@@ -56,6 +67,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 4: Logout and session expiration
 
 - **users**: `[USER, HOST, ADMIN]`
+- **prioridad**: `P0`
 - **categoria**: auth
 - **apps**: `[web, admin]`
 - **testing**: `[semi-manual]`
@@ -64,6 +76,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 5: Cross-app session
 
 - **users**: `[HOST, ADMIN]`
+- **prioridad**: `P1`
 - **categoria**: auth
 - **apps**: `[web, admin]`
 - **testing**: `[manual]`
@@ -72,6 +85,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 6: Account deletion / GDPR
 
 - **users**: `[USER]`
+- **prioridad**: `P1`
 - **categoria**: auth + lifecycle
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -84,6 +98,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 7: IDOR on protected accommodations
 
 - **users**: `[HOST_A, HOST_B]`
+- **prioridad**: `P0`
 - **categoria**: security/authz
 - **apps**: `[api, web]`
 - **testing**: `[e2e + automated]`
@@ -92,6 +107,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 8: Privilege escalation via mass assignment
 
 - **users**: `[USER]`
+- **prioridad**: `P0`
 - **categoria**: security/authz
 - **apps**: `[api]`
 - **testing**: `[automated]`
@@ -100,6 +116,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 9: Access to admin endpoints without permission
 
 - **users**: `[USER, HOST]`
+- **prioridad**: `P0`
 - **categoria**: security/authz
 - **apps**: `[api]`
 - **testing**: `[automated]`
@@ -108,6 +125,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 10: Web app never calls admin endpoints
 
 - **users**: `[—]`
+- **prioridad**: `P1`
 - **categoria**: arch boundary
 - **apps**: `[web]`
 - **testing**: `[automated/grep CI]`
@@ -120,6 +138,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 11: End-to-end publication of a new accommodation
 
 - **users**: `[USER → HOST]`
+- **prioridad**: `P0`
 - **categoria**: lifecycle/onboarding
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -128,6 +147,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 12: Autosave and draft persistence
 
 - **users**: `[USER]`
+- **prioridad**: `P0`
 - **categoria**: onboarding
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -136,6 +156,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 13: Per-section form validations
 
 - **users**: `[USER]`
+- **prioridad**: `P0`
 - **categoria**: forms
 - **apps**: `[web]`
 - **testing**: `[e2e]`
@@ -144,6 +165,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 14: Photo upload to Cloudinary
 
 - **users**: `[HOST]`
+- **prioridad**: `P0`
 - **categoria**: upload
 - **apps**: `[web]`
 - **testing**: `[e2e + manual]`
@@ -152,6 +174,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 15: Editing an already published property
 
 - **users**: `[HOST]`
+- **prioridad**: `P0`
 - **categoria**: lifecycle
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -160,6 +183,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 16: Unpublish / republish / archive
 
 - **users**: `[HOST]`
+- **prioridad**: `P1`
 - **categoria**: lifecycle
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -172,6 +196,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 17: Home page rendering + ISR
 
 - **users**: `[GUEST]`
+- **prioridad**: `P0`
 - **categoria**: content/perf
 - **apps**: `[web]`
 - **testing**: `[e2e + perf]`
@@ -180,6 +205,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 18: Accommodation listings with filters
 
 - **users**: `[GUEST]`
+- **prioridad**: `P0`
 - **categoria**: search
 - **apps**: `[web, api]`
 - **testing**: `[e2e]`
@@ -188,6 +214,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 19: Accommodation detail page
 
 - **users**: `[GUEST]`
+- **prioridad**: `P0`
 - **categoria**: content
 - **apps**: `[web]`
 - **testing**: `[manual + e2e]`
@@ -196,6 +223,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 20: Full-text search and by destination
 
 - **users**: `[GUEST]`
+- **prioridad**: `P1`
 - **categoria**: search
 - **apps**: `[web, api]`
 - **testing**: `[e2e]`
@@ -204,6 +232,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 21: Browse by destination (hierarchy)
 
 - **users**: `[GUEST]`
+- **prioridad**: `P0`
 - **categoria**: content/destinations
 - **apps**: `[web]`
 - **testing**: `[e2e]`
@@ -212,6 +241,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 22: Events by destination and upcoming
 
 - **users**: `[GUEST]`
+- **prioridad**: `P1`
 - **categoria**: content/events
 - **apps**: `[web, api]`
 - **testing**: `[e2e]`
@@ -220,6 +250,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 23: Blog/Posts
 
 - **users**: `[GUEST]`
+- **prioridad**: `P1`
 - **categoria**: content
 - **apps**: `[web]`
 - **testing**: `[e2e]`
@@ -232,6 +263,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 24: Bookmarks
 
 - **users**: `[USER]`
+- **prioridad**: `P1`
 - **categoria**: feature
 - **apps**: `[web]`
 - **testing**: `[e2e]`
@@ -240,6 +272,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 25: Reviews / comments
 
 - **users**: `[USER]`
+- **prioridad**: `P1`
 - **categoria**: feature
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -248,6 +281,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 26: Guest-owner messaging (SPEC-085)
 
 - **users**: `[GUEST/USER + HOST]`
+- **prioridad**: `P0`
 - **categoria**: messaging
 - **apps**: `[web]`
 - **testing**: `[e2e + manual]`
@@ -256,6 +290,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 27: Conversations — states and permissions
 
 - **users**: `[GUEST, HOST]`
+- **prioridad**: `P0`
 - **categoria**: messaging/lifecycle
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -268,6 +303,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 28: Plan selection + MP checkout
 
 - **users**: `[USER]`
+- **prioridad**: `P0`
 - **categoria**: billing
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -276,6 +312,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 29: MP webhook — idempotency + HMAC
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: billing/security
 - **apps**: `[api]`
 - **testing**: `[automated + manual]`
@@ -284,6 +321,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 30: Automatic renewal
 
 - **users**: `[HOST]`
+- **prioridad**: `P0`
 - **categoria**: billing/cron
 - **apps**: `[api]`
 - **testing**: `[manual stage]`
@@ -292,6 +330,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 31: Cancellation + refund
 
 - **users**: `[HOST]`
+- **prioridad**: `P0`
 - **categoria**: billing
 - **apps**: `[web, admin]`
 - **testing**: `[manual]`
@@ -300,6 +339,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 32: Addon purchase
 
 - **users**: `[HOST]`
+- **prioridad**: `P1`
 - **categoria**: billing
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -308,6 +348,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 33: Promo codes
 
 - **users**: `[USER]`
+- **prioridad**: `P1`
 - **categoria**: billing
 - **apps**: `[web]`
 - **testing**: `[e2e]`
@@ -320,6 +361,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 34: Paginated admin accommodations listing
 
 - **users**: `[ADMIN]`
+- **prioridad**: `P0`
 - **categoria**: admin
 - **apps**: `[admin]`
 - **testing**: `[e2e]`
@@ -328,6 +370,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 35: Approve/reject pending accommodation
 
 - **users**: `[ADMIN]`
+- **prioridad**: `P1`
 - **categoria**: lifecycle/moderation
 - **apps**: `[admin]`
 - **testing**: `[manual]`
@@ -336,6 +379,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 36: Soft delete + restore
 
 - **users**: `[ADMIN]`
+- **prioridad**: `P0`
 - **categoria**: lifecycle
 - **apps**: `[admin, api]`
 - **testing**: `[e2e]`
@@ -344,6 +388,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 37: Hard delete
 
 - **users**: `[SUPER_ADMIN]`
+- **prioridad**: `P1`
 - **categoria**: lifecycle
 - **apps**: `[admin]`
 - **testing**: `[manual]`
@@ -352,6 +397,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 38: Batch operations
 
 - **users**: `[ADMIN]`
+- **prioridad**: `P1`
 - **categoria**: admin
 - **apps**: `[admin]`
 - **testing**: `[manual]`
@@ -364,6 +410,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 39: User management — list, search, role assign
 
 - **users**: `[ADMIN]`
+- **prioridad**: `P0`
 - **categoria**: admin
 - **apps**: `[admin]`
 - **testing**: `[manual]`
@@ -372,6 +419,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 40: Billing dashboard admin
 
 - **users**: `[ADMIN]`
+- **prioridad**: `P0`
 - **categoria**: billing/admin
 - **apps**: `[admin]`
 - **testing**: `[manual]`
@@ -380,6 +428,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 41: Sponsorships and promo codes admin
 
 - **users**: `[ADMIN]`
+- **prioridad**: `P1`
 - **categoria**: admin
 - **apps**: `[admin]`
 - **testing**: `[manual]`
@@ -388,6 +437,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 42: Exchange rates admin
 
 - **users**: `[ADMIN]`
+- **prioridad**: `P1`
 - **categoria**: admin/billing
 - **apps**: `[admin, api]`
 - **testing**: `[manual]`
@@ -400,6 +450,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 43: Addon expiration cron
 
 - **users**: `[HOST]`
+- **prioridad**: `P0`
 - **categoria**: cron/billing
 - **apps**: `[api]`
 - **testing**: `[manual + automated]`
@@ -408,6 +459,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 44: Conversation cleanup cron (SPEC-085)
 
 - **users**: `[—]`
+- **prioridad**: `P1`
 - **categoria**: cron/messaging
 - **apps**: `[api]`
 - **testing**: `[automated]`
@@ -416,6 +468,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 45: Host onboarding reminder cron
 
 - **users**: `[USER in draft]`
+- **prioridad**: `P1`
 - **categoria**: cron
 - **apps**: `[api]`
 - **testing**: `[manual]`
@@ -424,6 +477,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 46: Cron secret protection
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: security/cron
 - **apps**: `[api]`
 - **testing**: `[automated]`
@@ -436,6 +490,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 47: SQL injection on filters
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: security/injection
 - **apps**: `[api]`
 - **testing**: `[automated]`
@@ -444,6 +499,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 48: LIKE wildcard injection
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: security/injection
 - **apps**: `[api]`
 - **testing**: `[automated]`
@@ -452,6 +508,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 49: Reflected and stored XSS
 
 - **users**: `[GUEST]`
+- **prioridad**: `P0`
 - **categoria**: security/injection
 - **apps**: `[web, admin]`
 - **testing**: `[manual + automated]`
@@ -460,6 +517,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 50: CSP enforcement
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: security
 - **apps**: `[web, admin]`
 - **testing**: `[automated]`
@@ -468,6 +526,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 51: Rate limit on public endpoints
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: security/perf
 - **apps**: `[api]`
 - **testing**: `[automated]`
@@ -476,6 +535,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 52: Brute force login
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: security/auth
 - **apps**: `[api]`
 - **testing**: `[automated]`
@@ -484,6 +544,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 53: Path traversal in uploads
 
 - **users**: `[HOST]`
+- **prioridad**: `P1`
 - **categoria**: security
 - **apps**: `[api]`
 - **testing**: `[automated]`
@@ -492,6 +553,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 54: CSRF on protected mutations
 
 - **users**: `[USER]`
+- **prioridad**: `P0`
 - **categoria**: security
 - **apps**: `[api]`
 - **testing**: `[automated]`
@@ -504,6 +566,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 55: LCP / Core Web Vitals
 
 - **users**: `[GUEST]`
+- **prioridad**: `P1`
 - **categoria**: perf
 - **apps**: `[web]`
 - **testing**: `[automated]`
@@ -512,6 +575,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 56: Pagination with large datasets
 
 - **users**: `[GUEST]`
+- **prioridad**: `post-beta`
 - **categoria**: perf
 - **apps**: `[api]`
 - **testing**: `[automated with seed +1000 rows]`
@@ -520,6 +584,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 57: ISR cache hit/miss
 
 - **users**: `[GUEST]`
+- **prioridad**: `P1`
 - **categoria**: perf/cache
 - **apps**: `[web]`
 - **testing**: `[manual + log inspection]`
@@ -528,6 +593,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 58: Sentry capturing errors
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: observability
 - **apps**: `[web, admin, api]`
 - **testing**: `[manual]`
@@ -536,6 +602,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 59: Metrics and health checks
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: observability
 - **apps**: `[api]`
 - **testing**: `[automated]`
@@ -548,6 +615,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 60: Language switch es/en/pt
 
 - **users**: `[GUEST]`
+- **prioridad**: `P1`
 - **categoria**: i18n
 - **apps**: `[web]`
 - **testing**: `[e2e]`
@@ -556,6 +624,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 61: URL routing with locales
 
 - **users**: `[GUEST]`
+- **prioridad**: `P1`
 - **categoria**: i18n/seo
 - **apps**: `[web]`
 - **testing**: `[e2e]`
@@ -564,6 +633,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 62: SEO meta tags + structured data
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: seo
 - **apps**: `[web]`
 - **testing**: `[automated]`
@@ -572,6 +642,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 63: Sitemap.xml and robots.txt
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: seo
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -584,6 +655,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 64: Signup email verification
 
 - **users**: `[USER]`
+- **prioridad**: `P0`
 - **categoria**: email/auth
 - **apps**: `[api]`
 - **testing**: `[manual]`
@@ -592,6 +664,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 65: SPEC-085 messaging mailers
 
 - **users**: `[GUEST, HOST]`
+- **prioridad**: `P0`
 - **categoria**: email/messaging
 - **apps**: `[api]`
 - **testing**: `[manual]`
@@ -600,6 +673,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 66: Billing mailers
 
 - **users**: `[HOST]`
+- **prioridad**: `P0`
 - **categoria**: email/billing
 - **apps**: `[api]`
 - **testing**: `[manual]`
@@ -612,6 +686,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 67: Access to soft-deleted resource
 
 - **users**: `[GUEST, USER]`
+- **prioridad**: `P0`
 - **categoria**: lifecycle
 - **apps**: `[web]`
 - **testing**: `[e2e]`
@@ -620,6 +695,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 68: Concurrent edit (host edits while admin edits)
 
 - **users**: `[HOST, ADMIN]`
+- **prioridad**: `P1`
 - **categoria**: concurrency
 - **apps**: `[admin, web]`
 - **testing**: `[manual]`
@@ -628,6 +704,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 69: Network failure mid-form
 
 - **users**: `[USER]`
+- **prioridad**: `P1`
 - **categoria**: resilience
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -636,6 +713,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 70: DB transaction rollback
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: data integrity
 - **apps**: `[api]`
 - **testing**: `[automated]`
@@ -648,6 +726,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 71: Full keyboard navigation
 
 - **users**: `[GUEST, USER, HOST]`
+- **prioridad**: `P1`
 - **categoria**: a11y
 - **apps**: `[web, admin]`
 - **testing**: `[manual + axe-core automated]`
@@ -656,6 +735,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 72: Screen readers
 
 - **users**: `[USER]`
+- **prioridad**: `post-beta`
 - **categoria**: a11y
 - **apps**: `[web, admin]`
 - **testing**: `[manual with NVDA/VoiceOver]`
@@ -664,6 +744,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 73: Color contrast
 
 - **users**: `[—]`
+- **prioridad**: `P1`
 - **categoria**: a11y
 - **apps**: `[web, admin]`
 - **testing**: `[automated axe-core]`
@@ -672,6 +753,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 74: Accessible forms
 
 - **users**: `[USER, HOST]`
+- **prioridad**: `P1`
 - **categoria**: a11y
 - **apps**: `[web, admin]`
 - **testing**: `[manual]`
@@ -680,6 +762,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 75: Reduced motion
 
 - **users**: `[—]`
+- **prioridad**: `post-beta`
 - **categoria**: a11y
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -692,6 +775,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 76: Mobile iOS Safari
 
 - **users**: `[GUEST, USER]`
+- **prioridad**: `P0`
 - **categoria**: compat
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -700,6 +784,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 77: Mobile Android Chrome
 
 - **users**: `[GUEST, HOST]`
+- **prioridad**: `P0`
 - **categoria**: compat
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -708,6 +793,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 78: Desktop Chrome/Firefox/Safari
 
 - **users**: `[ADMIN]`
+- **prioridad**: `P1`
 - **categoria**: compat
 - **apps**: `[admin]`
 - **testing**: `[manual]`
@@ -716,6 +802,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 79: Large screens (>1920px)
 
 - **users**: `[—]`
+- **prioridad**: `post-beta`
 - **categoria**: compat
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -728,6 +815,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 80: Vercel deploy — preview vs prod
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: devops
 - **apps**: `[web, admin, api]`
 - **testing**: `[manual]`
@@ -736,6 +824,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 81: Complete environment variables
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: config
 - **apps**: `[api, web, admin]`
 - **testing**: `[automated]`
@@ -744,6 +833,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 82: Migration apply on clean DB
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: db/devops
 - **apps**: `[api]`
 - **testing**: `[manual]`
@@ -752,6 +842,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 83: DB backup and restore
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: ops/disaster recovery
 - **apps**: `[—]`
 - **testing**: `[manual]`
@@ -760,6 +851,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 84: Deploy rollback
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: devops
 - **apps**: `[web, admin, api]`
 - **testing**: `[manual]`
@@ -768,6 +860,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 85: Healthcheck and readiness
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: ops
 - **apps**: `[api]`
 - **testing**: `[automated]`
@@ -776,6 +869,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 86: Structured logs and correct level
 
 - **users**: `[—]`
+- **prioridad**: `P1`
 - **categoria**: observability
 - **apps**: `[api]`
 - **testing**: `[manual log inspection]`
@@ -788,6 +882,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 87: Audit log completeness
 
 - **users**: `[ADMIN]`
+- **prioridad**: `P1`
 - **categoria**: compliance
 - **apps**: `[api, admin]`
 - **testing**: `[manual + automated]`
@@ -796,6 +891,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 88: GDPR — right of access
 
 - **users**: `[USER]`
+- **prioridad**: `P1`
 - **categoria**: compliance
 - **apps**: `[—]`
 - **testing**: `[manual]`
@@ -804,6 +900,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 89: GDPR — right to be forgotten
 
 - **users**: `[USER]`
+- **prioridad**: `P1`
 - **categoria**: compliance/lifecycle
 - **apps**: `[web, api]`
 - **testing**: `[manual]`
@@ -812,6 +909,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 90: Cookie consent
 
 - **users**: `[GUEST]`
+- **prioridad**: `P0`
 - **categoria**: compliance
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -820,6 +918,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 91: Privacy policy and terms
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: compliance/content
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -828,6 +927,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 92: PII in URLs / referrers
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: privacy
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -840,6 +940,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 93: Seed runs cleanly on fresh DB
 
 - **users**: `[—]`
+- **prioridad**: `P0`
 - **categoria**: data
 - **apps**: `[—]`
 - **testing**: `[automated]`
@@ -848,6 +949,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 94: Seed data makes visual sense
 
 - **users**: `[GUEST]`
+- **prioridad**: `P1`
 - **categoria**: data/qa
 - **apps**: `[web]`
 - **testing**: `[manual]`
@@ -856,6 +958,7 @@ Journey items (#96-101) include extra `implicancias` and `validaciones` blocks b
 ### 95: Seed idempotency
 
 - **users**: `[—]`
+- **prioridad**: `post-beta`
 - **categoria**: data
 - **apps**: `[—]`
 - **testing**: `[automated]`
@@ -870,6 +973,7 @@ These are full flows that cross categories and are the real test that the system
 ### 96: Journey "Host discovers Hospeda and publishes" (the beta star)
 
 - **users**: `[GUEST → USER → HOST]`
+- **prioridad**: `P0`
 - **categoria**: journey/end-to-end
 - **apps**: `[web, api, admin]`
 - **testing**: `[manual end-to-end + perf + SEO]`
@@ -898,6 +1002,7 @@ These are full flows that cross categories and are the real test that the system
 ### 97: Journey "Host trial → pays → renews → buys addon → cancels"
 
 - **users**: `[HOST]`
+- **prioridad**: `P0`
 - **categoria**: journey/billing
 - **apps**: `[web, api]`
 - **testing**: `[manual stage with MP sandbox]`
@@ -925,6 +1030,7 @@ These are full flows that cross categories and are the real test that the system
 ### 98: Journey "Tourist member has real benefits"
 
 - **users**: `[USER with membership]`
+- **prioridad**: `post-beta`
 - **categoria**: journey/entitlements
 - **apps**: `[web, api]`
 - **testing**: `[manual + automated]`
@@ -949,6 +1055,7 @@ These are full flows that cross categories and are the real test that the system
 ### 99: Journey "Tourist searches, expresses interest, contacts host, returns"
 
 - **users**: `[GUEST → USER → guest_in_conversation]`
+- **prioridad**: `P0`
 - **categoria**: journey/booking inquiry
 - **apps**: `[web, api]`
 - **testing**: `[manual]`
@@ -976,6 +1083,7 @@ These are full flows that cross categories and are the real test that the system
 ### 100: Journey "Admin's typical operations day"
 
 - **users**: `[ADMIN]`
+- **prioridad**: `P0`
 - **categoria**: journey/admin
 - **apps**: `[admin, api]`
 - **testing**: `[manual]`
@@ -1001,6 +1109,7 @@ These are full flows that cross categories and are the real test that the system
 ### 101: Journey "Failure recovery — something breaks in prod"
 
 - **users**: `[HOST, ADMIN]`
+- **prioridad**: `P0`
 - **categoria**: journey/incident
 - **apps**: `[web, api]`
 - **testing**: `[manual + chaos]`
@@ -1024,11 +1133,53 @@ These are full flows that cross categories and are the real test that the system
 
 ---
 
+## Priority summary
+
+| Priority | Count | % | Focus |
+|----------|------:|---:|-------|
+| **P0** | **61** | 60% | Must validate / cover before opening beta |
+| P1 | 34 | 34% | Tolerable if documented during beta |
+| post-beta | 6 | 6% | Deferred without guilt |
+
+### P0 items grouped by category
+
+| Category | P0 IDs | Count |
+|----------|--------|------:|
+| A. Auth & session | 1, 2, 3, 4 | 4 |
+| B. Authorization | 7, 8, 9 | 3 |
+| C. Host onboarding | 11, 12, 13, 14, 15 | 5 |
+| D. Public browsing | 17, 18, 19, 21 | 4 |
+| E. User account | 26, 27 | 2 |
+| F. Billing | 28, 29, 30, 31 | 4 |
+| G. Admin moderation | 34, 36 | 2 |
+| H. Admin user/billing | 39, 40 | 2 |
+| I. Crons | 43, 46 | 2 |
+| J. Cross-cutting security | 47, 48, 49, 50, 51, 52, 54 | 7 |
+| K. Performance/observability | 58, 59 | 2 |
+| L. i18n & SEO | 62, 63 | 2 |
+| M. Transactional email | 64, 65, 66 | 3 |
+| N. Edge cases | 67, 70 | 2 |
+| O. Accessibility | — | 0 |
+| P. Browser matrix | 76, 77 | 2 |
+| Q. Operations | 80, 81, 82, 83, 84, 85 | 6 |
+| R. Audit/compliance | 90, 91, 92 | 3 |
+| S. Seed data | 93 | 1 |
+| T. Journeys | 96, 97, 99, 100, 101 | 5 |
+| **Total** | | **61** |
+
+### Recommended attack plan for the 61 P0 items
+
+The P0 set splits naturally into three workstreams by execution mode:
+
+1. **Already implemented — validate only** (~30 items): A1-A4, B7-B9, C13-C14, D17-D19, D21, E26-E27, F28-F29, F31, G34, G36, H39-H40, I43, I46, J47-J52, J54, K58-K59, L62-L63, M64-M66, N67, N70, Q81-Q82, Q85, R92, S93. Mostly automated tests in `apps/e2e` (per `spec.md`) plus integration test extensions.
+2. **Requires additional work** (~15 items): C11 (E2E full publish), C12 (autosave robustness), C15 (ISR refresh confirmation), F30 (renewal with date injection), Q80 (preview-vs-prod env validation), Q83 (DB backup runbook), Q84 (rollback runbook), R90 (cookie consent banner if missing), R91 (legal pages if missing).
+3. **Owner-only manual walkthroughs** (~16 items): P76-P77 (mobile devices), T96-T101 (real-account journeys with MP sandbox and live email).
+
 ## Next steps
 
-- **Prioritization**: classify each item as P0 (no beta without it), P1 (tolerable if documented), or post-beta. This will reduce the executable list to ~30-40 P0 items.
-- **Steps + acceptance criteria**: expand only the P0 items with concrete steps and pass/fail criteria.
-- **Test type assignment**: decide which items become Playwright e2e (in `apps/e2e` per SPEC-092 spec.md), which are integration tests in `apps/api`, which are manual checklist for the beta owner, which are owner-only walkthroughs.
-- **Owner-mode labeling**: tag each P0 item as either "owner manual", "auto-runnable in CI", or "agent-runnable".
+- **Steps + acceptance criteria**: expand only the 61 P0 items with concrete steps and pass/fail criteria. The P1 set keeps brief descriptions until a P1 escalation is justified.
+- **Test type assignment**: tag each P0 with `owner-manual`, `auto-runnable-CI`, or `agent-runnable` so workstreams can be scheduled.
+- **Cross-link to SPEC-092 spec.md**: map P0 items to formal test specs in `apps/e2e` once that package exists.
+- **Cross-link to BBT items 8-10**: journeys T96-T97 partially overlap with `BEFORE_BETA_TESTING.md` items 8 (host onboarding smoke test) and 9 (MP staging runbook).
 
 This file is the source of truth for the coverage map. Updates here precede any work in `apps/e2e`.
