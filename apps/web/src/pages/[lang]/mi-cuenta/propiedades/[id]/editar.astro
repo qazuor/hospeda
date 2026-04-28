@@ -1,56 +1,22 @@
 ---
 /**
  * @file mi-cuenta/propiedades/[id]/editar.astro
- * @description Edit an existing accommodation listing.
+ * @description Server-side redirect to the admin panel edit page.
  *
- * Auth protection: middleware protects /mi-cuenta/* automatically. This page
- * also performs its own in-page guard as a safety net (same pattern as T-014).
+ * The full property editor lives in the admin app (Tailwind, TanStack-based
+ * UI). This page exists only to keep the legacy `/mi-cuenta/propiedades/:id/editar`
+ * URL alive and bounce the user to `/{ADMIN_URL}/accommodations/:id/edit`.
  *
- * Server-side data: fetches the accommodation via
- * GET /api/v1/protected/accommodations/:id (owner-scoped, T-015).
- * If the accommodation is not found or belongs to a different user the endpoint
- * returns a non-ok response and we redirect to /404.
- *
- * The PropertyForm island is mounted in edit mode by passing:
- *   - `accommodationId` — tells the form to use PATCH from the first save
- *   - `initialData`     — pre-fills all sections with the existing values
- *
- * On successful publish PropertyForm redirects to /alojamientos/{slug}.
+ * Auth: /mi-cuenta/* is auto-protected by middleware. The redirect below
+ * happens after the user is known to be authenticated.
  *
  * @route    /[lang]/mi-cuenta/propiedades/[id]/editar/
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
-import type { Accommodation } from '@repo/schemas';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
-import { getApiUrl } from '@/lib/env';
-import { logger } from '@/lib/logger';
-import AccountLayout from '@/layouts/AccountLayout.astro';
-import { PropertyForm } from '@/components/host/PropertyForm.client';
+import { getAdminUrl } from '@/lib/env';
 
 export const prerender = false;
-
-// ---------------------------------------------------------------------------
-// Locale — injected by middleware, always a valid SupportedLocale.
-// ---------------------------------------------------------------------------
-
-const locale = Astro.locals.locale as SupportedLocale;
-
-// ---------------------------------------------------------------------------
-// Auth guard: middleware protects /mi-cuenta/* automatically but this is the
-// safety net for any SSR edge case where middleware did not run.
-// ---------------------------------------------------------------------------
-
-const user = Astro.locals.user;
-if (!user) {
-    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
-}
-
-// ---------------------------------------------------------------------------
-// Path param
-// ---------------------------------------------------------------------------
 
 const { id } = Astro.params;
 
@@ -58,196 +24,6 @@ if (!id) {
     return Astro.redirect('/404');
 }
 
-// ---------------------------------------------------------------------------
-// Server-side fetch: get own accommodation by ID.
-// The protected endpoint returns 404 when:
-//   - the record does not exist
-//   - the actor is not the owner
-// Session cookie is forwarded to authenticate the request.
-// ---------------------------------------------------------------------------
-
-let accommodation: Accommodation | null = null;
-
-try {
-    const apiUrl = getApiUrl();
-    const cookieHeader = Astro.request.headers.get('cookie');
-
-    if (cookieHeader) {
-        const response = await fetch(
-            `${apiUrl}/api/v1/protected/accommodations/${id}`,
-            {
-                headers: {
-                    cookie: cookieHeader,
-                    Accept: 'application/json'
-                }
-            }
-        );
-
-        if (response.ok) {
-            const body = (await response.json()) as { data?: Accommodation | null };
-            accommodation = body.data ?? null;
-        } else if (response.status === 404) {
-            return Astro.redirect('/404');
-        } else {
-            logger.error('[editar] API responded with status', response.status);
-            return Astro.redirect('/404');
-        }
-    } else {
-        // No cookie header: cannot authenticate. Redirect to 404.
-        return Astro.redirect('/404');
-    }
-} catch (err) {
-    logger.error(
-        '[editar] Failed to fetch accommodation',
-        err instanceof Error ? err.message : String(err)
-    );
-    return Astro.redirect('/404');
-}
-
-// Guard: if the fetch returned null we treat it as not found.
-if (!accommodation) {
-    return Astro.redirect('/404');
-}
-
-// ---------------------------------------------------------------------------
-// i18n
-// ---------------------------------------------------------------------------
-
-const { t } = createTranslations(locale);
-
-const pageTitle = t(
-    'host.pages.editar.title',
-    `Editar propiedad — ${accommodation.name}`
-);
-const pageDescription = t(
-    'host.pages.editar.description',
-    'Editá los datos de tu alojamiento.'
-);
-
-const backUrl = buildUrl({ locale, path: 'mi-cuenta/propiedades' });
-
-// PUBLIC_API_URL is safe to pass to the client island.
-const apiUrl = import.meta.env.PUBLIC_API_URL as string;
+const adminUrl = getAdminUrl();
+return Astro.redirect(`${adminUrl}/accommodations/${id}/edit`);
 ---
-
-<AccountLayout locale={locale} title={pageTitle} description={pageDescription} activeSection="propiedades">
-    <!-- Page header -->
-    <div class="edit-page__header">
-        <div class="edit-page__heading">
-            <nav class="edit-page__breadcrumb" aria-label={t('host.pages.editar.breadcrumbLabel', 'Ruta de navegación')}>
-                <a
-                    href={backUrl}
-                    class="edit-page__breadcrumb-link"
-                >
-                    {t('host.properties.list.title', 'Mis propiedades')}
-                </a>
-                <span class="edit-page__breadcrumb-sep" aria-hidden="true">/</span>
-                <span class="edit-page__breadcrumb-current" aria-current="page">
-                    {t('host.pages.editar.breadcrumbCurrent', 'Editar')}
-                </span>
-            </nav>
-
-            <h2 class="edit-page__title">{pageTitle}</h2>
-            <p class="edit-page__subtitle">
-                {t(
-                    'host.pages.editar.subtitle',
-                    'Modificá los datos de tu alojamiento. Los cambios se guardan automáticamente.'
-                )}
-            </p>
-        </div>
-    </div>
-
-    <!-- PropertyForm React island: hydrated immediately because the form
-         requires interactivity from the first user interaction.
-         accommodationId puts the form in edit mode (PATCH instead of POST). -->
-    <div class="edit-page__form">
-        <PropertyForm
-            client:load
-            locale={locale}
-            apiUrl={apiUrl}
-            accommodationId={accommodation.id}
-            initialData={{
-                name: accommodation.name ?? undefined,
-                summary: accommodation.summary ?? undefined,
-                description: accommodation.description ?? undefined,
-                type: accommodation.type ?? undefined,
-                category: accommodation.category ?? undefined,
-                rating: accommodation.rating ?? undefined,
-                isFeatured: accommodation.isFeatured ?? undefined,
-                location: accommodation.location ?? undefined,
-                contactInfo: accommodation.contactInfo ?? undefined,
-                price: accommodation.price ?? undefined,
-                extraInfo: accommodation.extraInfo ?? undefined,
-                media: accommodation.media ?? undefined,
-                tags: accommodation.tags ?? undefined,
-                seoTitle: accommodation.seoTitle ?? undefined,
-                seoDescription: accommodation.seoDescription ?? undefined,
-                seoKeywords: accommodation.seoKeywords ?? undefined
-            }}
-        />
-    </div>
-</AccountLayout>
-
-<style>
-    /* ── Page header ── */
-    .edit-page__header {
-        margin-bottom: var(--space-8, 2rem);
-    }
-
-    .edit-page__heading {
-        display: flex;
-        flex-direction: column;
-        gap: 0.375rem;
-    }
-
-    /* ── Breadcrumb ── */
-    .edit-page__breadcrumb {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2, 0.5rem);
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm, 0.9375rem);
-        color: var(--core-muted-foreground, var(--muted-foreground));
-        margin-bottom: var(--space-3, 0.75rem);
-    }
-
-    .edit-page__breadcrumb-link {
-        color: var(--brand-primary, var(--primary));
-        text-decoration: none;
-        transition: color var(--duration-fast, 150ms) ease;
-    }
-
-    .edit-page__breadcrumb-link:hover {
-        color: var(--brand-accent, var(--accent));
-        text-decoration: underline;
-    }
-
-    .edit-page__breadcrumb-sep {
-        color: var(--border);
-    }
-
-    .edit-page__breadcrumb-current {
-        color: var(--core-muted-foreground, var(--muted-foreground));
-    }
-
-    /* ── Heading ── */
-    .edit-page__title {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: clamp(1.5rem, 3vw, 2rem);
-        color: var(--core-foreground, var(--foreground));
-        margin: 0;
-    }
-
-    .edit-page__subtitle {
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm, 0.9375rem);
-        color: var(--core-muted-foreground, var(--muted-foreground));
-        margin: 0;
-    }
-
-    /* ── Form wrapper ── */
-    .edit-page__form {
-        margin-top: var(--space-6, 1.5rem);
-    }
-</style>

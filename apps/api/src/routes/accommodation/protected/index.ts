@@ -11,6 +11,7 @@ import { protectedAccommodationReviewRoutes } from '../reviews/protected/index.j
 import { addFaqRoute } from './addFaq';
 import { protectedGetContactRoute } from './contact';
 import { protectedCreateAccommodationRoute } from './create';
+import { protectedCreateAccommodationDraftRoute } from './createDraft';
 import { protectedGetOwnAccommodationByIdRoute } from './getById';
 import { getFaqsRoute } from './getFaqs';
 import { protectedListOwnAccommodationsRoute } from './list';
@@ -39,6 +40,9 @@ app.route('/', protectedGetOwnAccommodationByIdRoute);
 
 // POST / - Create accommodation (no ownership check)
 app.route('/', protectedCreateAccommodationRoute);
+
+// POST /draft - Create draft accommodation with minimum required fields
+app.route('/', protectedCreateAccommodationDraftRoute);
 
 // GET /:id/contact - Resolved contact info (auth required, NO ownership)
 app.route('/', protectedGetContactRoute);

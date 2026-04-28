@@ -54,6 +54,25 @@ export function getSiteUrl(): string {
 }
 
 /**
+ * Get the admin panel base URL.
+ *
+ * Used to redirect hosts to the admin app after creating a property draft
+ * and for any other deep link from the public site into the admin panel.
+ * Strips the trailing slash so callers can append paths safely.
+ *
+ * @returns The admin base URL without a trailing slash
+ * @throws {Error} If neither PUBLIC_ADMIN_URL nor HOSPEDA_ADMIN_URL is configured
+ */
+export function getAdminUrl(): string {
+    const env = getEnv();
+    const url = env.PUBLIC_ADMIN_URL ?? env.HOSPEDA_ADMIN_URL;
+    if (!url) {
+        throw new Error('[web2] Neither PUBLIC_ADMIN_URL nor HOSPEDA_ADMIN_URL is configured');
+    }
+    return url.replace(/\/$/, '');
+}
+
+/**
  * Get the deploy version (git hash or release tag).
  *
  * @returns The deploy version string, or undefined if not set

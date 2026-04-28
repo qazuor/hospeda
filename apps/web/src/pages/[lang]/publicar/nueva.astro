@@ -1,16 +1,14 @@
 ---
 /**
  * @file publicar/nueva.astro
- * @description New property creation page. Mounts the PropertyForm island for
- * authenticated hosts to create a new accommodation listing.
+ * @description New property creation page. Mounts the CreatePropertyMiniForm
+ * island so authenticated hosts can spin up a draft accommodation with the
+ * minimum required fields. After the draft is created the host is redirected
+ * to the admin panel edit page to complete the rest of the listing.
  *
- * Auth protection: middleware handles the redirect for `publicar` if it were a
- * PROTECTED_SEGMENT, but since `publicar` is NOT listed in PROTECTED_SEGMENTS this
- * page performs its own in-page auth guard (same safety-net pattern as mi-cuenta).
- *
- * Server-side data: fetches the user's existing DRAFT accommodations to surface a
- * resume-draft banner in PropertyForm. If the fetch fails (endpoint unavailable,
- * network error, etc.) the page still renders — it just omits the existingDraftId.
+ * Auth protection: middleware does NOT auto-protect /publicar/* (it's not in
+ * PROTECTED_SEGMENTS), so this page does its own in-page auth guard, same
+ * pattern as /mi-cuenta/*.
  *
  * @route    /{lang}/publicar/nueva/
  * @rendering SSR (prerender = false — requires authenticated user)
@@ -20,73 +18,21 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { buildUrl } from '@/lib/urls';
-import { getApiUrl } from '@/lib/env';
+import { getAdminUrl } from '@/lib/env';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
-import { PropertyForm } from '@/components/host/PropertyForm.client';
+import { CreatePropertyMiniForm } from '@/components/host/CreatePropertyMiniForm.client';
 
 export const prerender = false;
 
-// ---------------------------------------------------------------------------
-// Locale — injected by middleware, always a valid SupportedLocale.
-// ---------------------------------------------------------------------------
-
 const locale = Astro.locals.locale as SupportedLocale;
 
-// ---------------------------------------------------------------------------
-// Auth guard: middleware does NOT auto-protect /publicar/* routes, so we do it
-// here. Same double-guard pattern used by /mi-cuenta/*.
-// ---------------------------------------------------------------------------
-
+// Auth guard (middleware doesn't cover /publicar/*).
 const user = Astro.locals.user;
 if (!user) {
     return Astro.redirect(
         buildLoginRedirect({ locale, currentUrl: Astro.url.pathname })
     );
 }
-
-// ---------------------------------------------------------------------------
-// Fetch user's existing DRAFT accommodations server-side.
-// Forwards the session cookie so the protected endpoint authenticates the call.
-// Errors are swallowed — the page renders without a draft ID as fallback.
-// ---------------------------------------------------------------------------
-
-let existingDraftId: string | undefined;
-
-try {
-    const apiUrl = getApiUrl();
-    const cookieHeader = Astro.request.headers.get('cookie');
-
-    if (cookieHeader) {
-        const response = await fetch(
-            `${apiUrl}/api/v1/protected/accommodations?lifecycleState=DRAFT&pageSize=1`,
-            {
-                headers: {
-                    cookie: cookieHeader,
-                    Accept: 'application/json'
-                }
-            }
-        );
-
-        if (response.ok) {
-            const body = (await response.json()) as {
-                data?: {
-                    items?: ReadonlyArray<{ readonly id: string }>;
-                };
-            };
-
-            const firstDraft = body.data?.items?.[0];
-            if (firstDraft?.id) {
-                existingDraftId = firstDraft.id;
-            }
-        }
-    }
-} catch {
-    // Swallow fetch errors — graceful degradation: form renders without a draft ID.
-}
-
-// ---------------------------------------------------------------------------
-// i18n
-// ---------------------------------------------------------------------------
 
 const t = createT(locale);
 
@@ -96,8 +42,9 @@ const pageDescription = t(
     'Publicá tu alojamiento en Hospeda y llegá a miles de viajeros.'
 );
 
-// PUBLIC_API_URL is safe to pass to the client island.
+// Public env vars are safe to send to the client island.
 const apiUrl = import.meta.env.PUBLIC_API_URL as string;
+const adminUrl = getAdminUrl();
 ---
 
 <MarketingLayout
@@ -107,7 +54,10 @@ const apiUrl = import.meta.env.PUBLIC_API_URL as string;
 >
     <section class="nueva-hero section section--warm">
         <div class="nueva-hero__container">
-            <nav class="nueva-hero__breadcrumb" aria-label={t('host.pages.nueva.breadcrumbLabel', 'Ruta de navegación')}>
+            <nav
+                class="nueva-hero__breadcrumb"
+                aria-label={t('host.pages.nueva.breadcrumbLabel', 'Ruta de navegación')}
+            >
                 <a
                     href={buildUrl({ locale, path: 'publicar' })}
                     class="nueva-hero__breadcrumb-link"
@@ -124,7 +74,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL as string;
             <p class="nueva-hero__desc">
                 {t(
                     'host.pages.nueva.subtitle',
-                    'Completá los datos de tu alojamiento. Podés guardarlo como borrador en cualquier momento.'
+                    'Empezá con lo esencial. Después completás todos los detalles desde el panel.'
                 )}
             </p>
         </div>
@@ -132,20 +82,17 @@ const apiUrl = import.meta.env.PUBLIC_API_URL as string;
 
     <section class="nueva-form section">
         <div class="nueva-form__container">
-            <!-- PropertyForm React island: hydrated immediately (client:load) because
-                 the form requires interactivity from the first user interaction. -->
-            <PropertyForm
+            <CreatePropertyMiniForm
                 client:load
                 locale={locale}
                 apiUrl={apiUrl}
-                existingDraftId={existingDraftId}
+                adminUrl={adminUrl}
             />
         </div>
     </section>
 </MarketingLayout>
 
 <style>
-    /* ── Hero ──────────────────────────────────────────────────────────────── */
     .nueva-hero__container {
         max-width: var(--container-max);
         margin: 0 auto;
@@ -199,7 +146,6 @@ const apiUrl = import.meta.env.PUBLIC_API_URL as string;
         max-width: 60ch;
     }
 
-    /* ── Form section ──────────────────────────────────────────────────────── */
     .nueva-form__container {
         max-width: var(--container-max);
         margin: 0 auto;

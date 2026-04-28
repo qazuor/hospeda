@@ -1,0 +1,322 @@
+/**
+ * @file CreatePropertyMiniForm.client.tsx
+ * @description Minimum-viable property creation form for hosts.
+ *
+ * Asks only for name, summary, type and a CITY destination, POSTs the result
+ * to `/api/v1/protected/accommodations/draft`, and redirects the host to the
+ * admin panel edit page so they can complete the rest of the listing
+ * (price, photos, amenities, contact, etc.).
+ */
+
+import { CityDestinationPicker } from '@/components/form/CityDestinationPicker.client';
+import type { CityDestinationValue } from '@/components/form/CityDestinationPicker.client';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { AccommodationTypeEnum } from '@repo/schemas';
+import { useId, useState } from 'react';
+import styles from './CreatePropertyMiniForm.module.css';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/** Props for {@link CreatePropertyMiniForm}. */
+export type CreatePropertyMiniFormProps = {
+    /** Active UI locale. */
+    readonly locale: SupportedLocale;
+    /** API base URL for the draft create endpoint. */
+    readonly apiUrl: string;
+    /** Admin panel base URL — host is redirected here on success. */
+    readonly adminUrl: string;
+};
+
+type FieldErrors = Readonly<{
+    name?: string;
+    summary?: string;
+    type?: string;
+    destinationId?: string;
+}>;
+
+type DraftCreateResponse = {
+    readonly data?: {
+        readonly id?: string;
+    };
+    readonly error?: {
+        readonly message?: string;
+    };
+};
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+const ACCOMMODATION_TYPE_VALUES = Object.values(AccommodationTypeEnum);
+
+/**
+ * Minimal create-property form. On submit, POSTs to the draft endpoint and
+ * redirects to the admin edit page on success. Shows inline field errors and
+ * a top-level submit error when the API fails.
+ */
+export function CreatePropertyMiniForm({ locale, apiUrl, adminUrl }: CreatePropertyMiniFormProps) {
+    const { t } = createTranslations(locale);
+
+    const nameId = useId();
+    const summaryId = useId();
+    const typeId = useId();
+
+    const [name, setName] = useState('');
+    const [summary, setSummary] = useState('');
+    const [type, setType] = useState<string>('');
+    const [city, setCity] = useState<CityDestinationValue | null>(null);
+    const [errors, setErrors] = useState<FieldErrors>({});
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    function validate(): FieldErrors {
+        const next: Record<string, string> = {};
+        if (name.trim().length < 3) {
+            next.name = t(
+                'host.miniForm.errors.name',
+                'El nombre debe tener al menos 3 caracteres.'
+            );
+        }
+        if (summary.trim().length < 10) {
+            next.summary = t(
+                'host.miniForm.errors.summary',
+                'La descripción corta debe tener al menos 10 caracteres.'
+            );
+        }
+        if (!type) {
+            next.type = t('host.miniForm.errors.type', 'Elegí el tipo de alojamiento.');
+        }
+        if (!city?.id) {
+            next.destinationId = t(
+                'host.miniForm.errors.destinationId',
+                'Elegí la ciudad donde está tu alojamiento.'
+            );
+        }
+        return next;
+    }
+
+    async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
+        event.preventDefault();
+        if (isSubmitting) return;
+
+        setSubmitError(null);
+        const fieldErrors = validate();
+        setErrors(fieldErrors);
+        if (Object.keys(fieldErrors).length > 0) return;
+
+        setIsSubmitting(true);
+        try {
+            const response = await fetch(
+                `${apiUrl.replace(/\/$/, '')}/api/v1/protected/accommodations/draft`,
+                {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name.trim(),
+                        summary: summary.trim(),
+                        type,
+                        // city.id is guaranteed by validate()
+                        destinationId: city?.id ?? ''
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                let message = t(
+                    'host.miniForm.errors.submit',
+                    'No pudimos crear el alojamiento. Probá de nuevo en un momento.'
+                );
+                try {
+                    const body = (await response.json()) as DraftCreateResponse;
+                    if (body.error?.message) message = body.error.message;
+                } catch {
+                    // Body wasn't JSON; keep the localized fallback message.
+                }
+                setSubmitError(message);
+                return;
+            }
+
+            const body = (await response.json()) as DraftCreateResponse;
+            const id = body.data?.id;
+            if (!id) {
+                setSubmitError(
+                    t(
+                        'host.miniForm.errors.missingId',
+                        'No recibimos el ID del alojamiento creado. Probá de nuevo.'
+                    )
+                );
+                return;
+            }
+
+            window.location.href = `${adminUrl.replace(/\/$/, '')}/accommodations/${id}/edit`;
+        } catch {
+            setSubmitError(
+                t(
+                    'host.miniForm.errors.network',
+                    'No pudimos conectar con el servidor. Verificá tu conexión e intentá de nuevo.'
+                )
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    return (
+        <form
+            className={styles.form}
+            onSubmit={(event) => {
+                void handleSubmit(event);
+            }}
+            noValidate
+        >
+            {/* Name */}
+            <div className={styles.field}>
+                <label
+                    className={styles.label}
+                    htmlFor={nameId}
+                >
+                    {t('host.miniForm.fields.name', 'Nombre del alojamiento')}
+                </label>
+                <input
+                    id={nameId}
+                    className={styles.input}
+                    type="text"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    maxLength={100}
+                    required
+                    aria-invalid={errors.name ? 'true' : 'false'}
+                    aria-describedby={errors.name ? `${nameId}-error` : undefined}
+                />
+                {errors.name && (
+                    <p
+                        id={`${nameId}-error`}
+                        className={styles.error}
+                        role="alert"
+                    >
+                        {errors.name}
+                    </p>
+                )}
+            </div>
+
+            {/* Type */}
+            <div className={styles.field}>
+                <label
+                    className={styles.label}
+                    htmlFor={typeId}
+                >
+                    {t('host.miniForm.fields.type', 'Tipo de alojamiento')}
+                </label>
+                <select
+                    id={typeId}
+                    className={styles.select}
+                    value={type}
+                    onChange={(event) => setType(event.target.value)}
+                    required
+                    aria-invalid={errors.type ? 'true' : 'false'}
+                    aria-describedby={errors.type ? `${typeId}-error` : undefined}
+                >
+                    <option value="">
+                        {t('host.miniForm.fields.typePlaceholder', 'Elegí una opción')}
+                    </option>
+                    {ACCOMMODATION_TYPE_VALUES.map((value) => (
+                        <option
+                            key={value}
+                            value={value}
+                        >
+                            {t(`host.miniForm.types.${value}`, value)}
+                        </option>
+                    ))}
+                </select>
+                {errors.type && (
+                    <p
+                        id={`${typeId}-error`}
+                        className={styles.error}
+                        role="alert"
+                    >
+                        {errors.type}
+                    </p>
+                )}
+            </div>
+
+            {/* City picker */}
+            <div className={styles.field}>
+                <CityDestinationPicker
+                    locale={locale}
+                    value={city}
+                    onSelect={(id, displayName) => setCity({ id, name: displayName })}
+                    error={errors.destinationId ?? null}
+                    required
+                />
+            </div>
+
+            {/* Summary */}
+            <div className={styles.field}>
+                <label
+                    className={styles.label}
+                    htmlFor={summaryId}
+                >
+                    {t('host.miniForm.fields.summary', 'Descripción corta')}
+                </label>
+                <textarea
+                    id={summaryId}
+                    className={styles.textarea}
+                    value={summary}
+                    onChange={(event) => setSummary(event.target.value)}
+                    rows={3}
+                    maxLength={300}
+                    required
+                    aria-invalid={errors.summary ? 'true' : 'false'}
+                    aria-describedby={errors.summary ? `${summaryId}-error` : undefined}
+                />
+                <p className={styles.hint}>
+                    {t(
+                        'host.miniForm.fields.summaryHint',
+                        'Una frase de presentación. Después podés ampliar todo en el panel.'
+                    )}
+                </p>
+                {errors.summary && (
+                    <p
+                        id={`${summaryId}-error`}
+                        className={styles.error}
+                        role="alert"
+                    >
+                        {errors.summary}
+                    </p>
+                )}
+            </div>
+
+            {submitError && (
+                <p
+                    className={styles.submitError}
+                    role="alert"
+                >
+                    {submitError}
+                </p>
+            )}
+
+            <div className={styles.actions}>
+                <button
+                    type="submit"
+                    className={styles.submitBtn}
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting
+                        ? t('host.miniForm.actions.submitting', 'Creando...')
+                        : t('host.miniForm.actions.submit', 'Crear y continuar en el panel')}
+                </button>
+            </div>
+
+            <p className={styles.disclaimer}>
+                {t(
+                    'host.miniForm.disclaimer',
+                    'Vamos a crear un borrador con estos datos. Después te llevamos al panel para completar fotos, precios y demás.'
+                )}
+            </p>
+        </form>
+    );
+}

@@ -111,6 +111,34 @@ export const AccommodationCreateHttpSchema = z.object({
 export type AccommodationCreateHttp = z.infer<typeof AccommodationCreateHttpSchema>;
 
 /**
+ * HTTP-compatible minimal accommodation draft creation schema.
+ *
+ * Used by the public web "create draft" flow where a host fills only the
+ * essentials (name, summary, type, destinationId) and is then redirected
+ * to the admin panel to complete the full listing. The resulting record is
+ * always persisted with `lifecycleState: DRAFT`.
+ */
+export const AccommodationCreateDraftHttpSchema = z.object({
+    name: z
+        .string()
+        .min(3, { message: 'zodError.accommodation.name.min' })
+        .max(100, { message: 'zodError.accommodation.name.max' }),
+    summary: z
+        .string()
+        .min(10, { message: 'zodError.accommodation.summary.min' })
+        .max(300, { message: 'zodError.accommodation.summary.max' }),
+    description: z
+        .string()
+        .min(30, { message: 'zodError.accommodation.description.min' })
+        .max(2000, { message: 'zodError.accommodation.description.max' })
+        .optional(),
+    type: AccommodationTypeEnumSchema,
+    destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+});
+
+export type AccommodationCreateDraftHttp = z.infer<typeof AccommodationCreateDraftHttpSchema>;
+
+/**
  * HTTP-compatible accommodation update schema
  * Handles partial updates via HTTP PATCH requests
  */
@@ -244,6 +272,32 @@ export const httpToDomainAccommodationCreate = (
         smokingAllowed: false, // Default no smoking
         extraInfo: [] // Default empty array
     }
+});
+
+/**
+ * Convert minimal HTTP draft input into a domain create input.
+ *
+ * Used by the protected "create draft" endpoint. The caller (route handler)
+ * is responsible for injecting `ownerId` from the authenticated actor before
+ * passing the result to the service layer. Only the essentials are mapped;
+ * the rest is left for the host to complete in the admin panel.
+ */
+export const httpToDomainAccommodationCreateDraft = (
+    httpData: AccommodationCreateDraftHttp,
+    ownerId: string
+): AccommodationCreateInput => ({
+    name: httpData.name,
+    summary: httpData.summary,
+    description: httpData.description ?? httpData.summary,
+    type: httpData.type,
+    destinationId: httpData.destinationId,
+    ownerId,
+    isFeatured: false,
+    moderationState: ModerationStatusEnum.PENDING,
+    lifecycleState: LifecycleStatusEnum.DRAFT,
+    reviewsCount: 0,
+    averageRating: 0,
+    visibility: VisibilityEnum.PRIVATE
 });
 
 /**
