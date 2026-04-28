@@ -1,0 +1,28 @@
+{
+    "title": "Usamos cookies",
+    "description": "A Hospeda usa cookies para garantir o funcionamento do site e, com o seu consentimento, para analisar como você o utiliza. Os cookies necessários estão sempre ativos.",
+    "categories": {
+        "necessary": {
+            "label": "Necessários",
+            "description": "Cookies indispensáveis para o funcionamento do site: sessão do usuário, preferência de idioma e estado de consentimento. Não podem ser desativados."
+        },
+        "analytics": {
+            "label": "Análise",
+            "description": "Nos ajudam a entender como os visitantes interagem com o site (Sentry para monitoramento de erros). Só são ativados com o seu consentimento."
+        },
+        "marketing": {
+            "label": "Marketing",
+            "description": "Atualmente não utilizamos cookies de marketing ou publicidade. Este campo está reservado para uso futuro."
+        }
+    },
+    "buttons": {
+        "acceptAll": "Aceitar tudo",
+        "rejectAll": "Rejeitar tudo",
+        "customize": "Personalizar",
+        "savePreferences": "Salvar preferências"
+    },
+    "footer": {
+        "preferencesLink": "Preferências de cookies"
+    },
+    "learnMore": "Saiba mais"
+}

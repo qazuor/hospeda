@@ -1,8 +1,15 @@
 import * as Sentry from '@sentry/astro';
+import { getConsent } from './src/lib/cookie-consent';
 
 const dsn = import.meta.env.PUBLIC_SENTRY_DSN;
 
-if (dsn) {
+// Only initialize Sentry when the user has consented to analytics cookies.
+// If no consent cookie exists (first visit), Sentry stays silent until the
+// user accepts and the page reloads or the next navigation picks up the cookie.
+const consent = getConsent();
+const analyticsAllowed = consent?.analytics === true;
+
+if (dsn && analyticsAllowed) {
     Sentry.init({
         dsn,
         environment: import.meta.env.MODE || 'development',

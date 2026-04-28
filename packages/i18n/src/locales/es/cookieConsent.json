@@ -1,0 +1,28 @@
+{
+    "title": "Usamos cookies",
+    "description": "Hospeda utiliza cookies para garantizar el funcionamiento del sitio y, con tu consentimiento, para analizar cómo lo usás. Las cookies necesarias siempre están activas.",
+    "categories": {
+        "necessary": {
+            "label": "Necesarias",
+            "description": "Cookies indispensables para el funcionamiento del sitio: sesión de usuario, preferencia de idioma y estado de consentimiento. No pueden deshabilitarse."
+        },
+        "analytics": {
+            "label": "Análisis",
+            "description": "Nos ayudan a entender cómo los visitantes interactúan con el sitio (Sentry para monitoreo de errores). Solo se activan con tu consentimiento."
+        },
+        "marketing": {
+            "label": "Marketing",
+            "description": "Actualmente no utilizamos cookies de marketing ni publicidad. Este campo está reservado para uso futuro."
+        }
+    },
+    "buttons": {
+        "acceptAll": "Aceptar todo",
+        "rejectAll": "Rechazar todo",
+        "customize": "Personalizar",
+        "savePreferences": "Guardar preferencias"
+    },
+    "footer": {
+        "preferencesLink": "Preferencias de cookies"
+    },
+    "learnMore": "Más información"
+}

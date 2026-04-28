@@ -1,0 +1,28 @@
+{
+    "title": "We use cookies",
+    "description": "Hospeda uses cookies to ensure the site works and, with your consent, to analyze how you use it. Necessary cookies are always active.",
+    "categories": {
+        "necessary": {
+            "label": "Necessary",
+            "description": "Cookies essential for the site to function: user session, language preference, and consent state. These cannot be disabled."
+        },
+        "analytics": {
+            "label": "Analytics",
+            "description": "Help us understand how visitors interact with the site (Sentry for error monitoring). Only activated with your consent."
+        },
+        "marketing": {
+            "label": "Marketing",
+            "description": "We currently do not use marketing or advertising cookies. This field is reserved for future use."
+        }
+    },
+    "buttons": {
+        "acceptAll": "Accept all",
+        "rejectAll": "Reject all",
+        "customize": "Customize",
+        "savePreferences": "Save preferences"
+    },
+    "footer": {
+        "preferencesLink": "Cookie preferences"
+    },
+    "learnMore": "Learn more"
+}

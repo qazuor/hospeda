@@ -1,0 +1,250 @@
+/* CookieConsentBanner.module.css */
+/* Scoped styles for the cookie consent banner React island.
+   ALL values use CSS custom properties from global.css. */
+
+/* ── Banner wrapper (fixed bottom bar) ─────────────────────────────────────── */
+
+.banner {
+    /* Reset <dialog> browser defaults */
+    border: none;
+    margin: 0;
+    max-width: none;
+    max-height: none;
+    width: 100%;
+    /* Custom positioning */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9000;
+    background-color: var(--card, oklch(1 0 0));
+    border-top: 1px solid var(--border, oklch(0.88 0 0));
+    box-shadow: 0 -4px 24px oklch(0 0 0 / 0.1);
+    padding: var(--space-4, 16px) var(--space-container-x, 24px);
+}
+
+/* ── Inner layout ───────────────────────────────────────────────────────────── */
+
+.inner {
+    max-width: var(--container-max, 1350px);
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+}
+
+@media (min-width: 768px) {
+    .inner {
+        flex-direction: row;
+        align-items: flex-end;
+        gap: var(--space-6, 24px);
+    }
+}
+
+/* ── Content area ───────────────────────────────────────────────────────────── */
+
+.content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+}
+
+.title {
+    font-family: var(--font-heading);
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    font-weight: 700;
+    color: var(--foreground);
+    margin: 0;
+    line-height: 1.2;
+}
+
+.description {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    color: var(--muted-foreground);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.learnMore {
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.learnMore:hover {
+    color: var(--primary-hover, var(--primary));
+    opacity: 0.85;
+}
+
+/* ── Actions row ────────────────────────────────────────────────────────────── */
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 8px);
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* ── Button variants ────────────────────────────────────────────────────────── */
+
+.btnPrimary,
+.btnSecondary,
+.btnGhost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    font-weight: 500;
+    border-radius: var(--radius-button, 8px);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color var(--duration-normal, 0.4s) ease, color
+        var(--duration-normal, 0.4s) ease, border-color var(--duration-normal, 0.4s) ease;
+    min-height: 38px;
+    border: 1px solid transparent;
+}
+
+.btnPrimary {
+    background-color: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+.btnPrimary:hover {
+    opacity: 0.9;
+}
+
+.btnSecondary {
+    background-color: transparent;
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btnSecondary:hover {
+    background-color: var(--primary);
+    color: white;
+}
+
+.btnGhost {
+    background-color: transparent;
+    color: var(--muted-foreground);
+    border-color: var(--border, oklch(0.88 0 0));
+}
+
+.btnGhost:hover {
+    background-color: var(--surface-warm, oklch(0.97 0.01 60));
+    color: var(--foreground);
+}
+
+/* ── Category rows (customize view) ────────────────────────────────────────── */
+
+.category {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 4px);
+    padding: var(--space-3, 12px) 0;
+    border-bottom: 1px solid var(--border, oklch(0.88 0 0));
+}
+
+.category:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.categoryHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 12px);
+}
+
+.categoryLabel {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.categoryDesc {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ── Always-on badge (necessary category) ──────────────────────────────────── */
+
+.alwaysOn {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    background-color: oklch(from var(--success, oklch(0.55 0.18 145)) l c h / 0.12);
+    color: var(--success, oklch(0.55 0.18 145));
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.alwaysOn::before {
+    content: "✓ Siempre activa";
+}
+
+/* ── Toggle switch ──────────────────────────────────────────────────────────── */
+
+.toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: 44px;
+    height: 24px;
+    background-color: var(--muted, oklch(0.88 0 0));
+    border-radius: var(--radius-pill, 9999px);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    transition: background-color var(--duration-normal, 0.4s) ease;
+}
+
+.toggle:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.toggleOn {
+    background-color: var(--accent);
+}
+
+.toggleThumb {
+    position: absolute;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform var(--duration-normal, 0.4s) ease;
+    pointer-events: none;
+}
+
+.toggleOn .toggleThumb {
+    transform: translateX(20px);
+}
+
+/* ── Dark mode adjustments ──────────────────────────────────────────────────── */
+
+[data-theme="dark"] .banner {
+    background-color: var(--card);
+    border-top-color: var(--border);
+}
