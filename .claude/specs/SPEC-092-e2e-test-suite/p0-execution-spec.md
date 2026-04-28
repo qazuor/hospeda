@@ -320,44 +320,55 @@ Each P0 item below follows this structure:
 ### 11: End-to-end publication of a new accommodation
 
 > **Mode**: `owner-manual`
-> **Estimated effort**: ~45min for one full walkthrough
+> **Estimated effort**: ~45min for one full walkthrough across web + admin
 > **Source**: checklist item #11
+
+**Architecture note (refactor 2026-04-28, commit `33868e25b`)**: the public web app no longer hosts the full 8-section form. `/publicar/nueva` now renders `CreatePropertyMiniForm` which collects the minimal draft (name, summary, type, city destination) and POSTs to `POST /api/v1/protected/accommodations/draft`. On success the user is redirected to the admin panel (`HOSPEDA_ADMIN_URL`) where the full property edit experience lives. This journey covers BOTH legs.
 
 **Preconditions**:
 
 - User account verified (`emailVerifiedAt` set) but NOT yet HOST.
 - Browser on desktop (run separately on mobile for item #76).
 - Real Cloudinary credentials configured (not test mock).
+- `HOSPEDA_ADMIN_URL` env var set in the web app and reachable for the user.
+- Admin panel accessible to a freshly-promoted HOST user (not just ADMIN — verify the auth boundary on first run).
 
-**Steps**:
+**Steps (web leg — mini-draft creation)**:
 
 1. Navigate to `/es/publicar` → landing page renders with CTA and value proposition → click "Publicar mi alojamiento".
-2. If not signed in → inline signup/signin modal opens without leaving the page → complete auth → return to `/es/publicar/nueva` automatically.
-3. Section 1 (Basic info): fill `name`, `type`, `description` → click "Siguiente" → no validation errors.
-4. Section 2 (Location): select destination from hierarchy picker, fill address → "Siguiente".
-5. Section 3 (Details): fill capacity, bedrooms, bathrooms → "Siguiente".
-6. Section 4 (Amenities): select at least 3 → "Siguiente".
-7. Section 5 (Photos): upload 5 JPG files via drag-and-drop → thumbnails appear within 5s each → "Siguiente".
-8. Section 6 (Pricing): enter nightly rate → "Siguiente".
-9. Section 7 (Availability): mark at least one period → "Siguiente".
-10. Section 8 (Review): review summary, click "Publicar" → loading state → success redirect to `/es/alojamientos/{slug}`.
-11. Confirm in DB: `accommodations.lifecycleState = 'ACTIVE'`, user `role` updated to `HOST`.
-12. Navigate to `/es/mi-cuenta/propiedades` → new property listed.
+2. If not signed in → inline signup/signin opens → complete auth → return to `/es/publicar/nueva` automatically.
+3. Mini form renders with 4 fields: `name`, `summary`, `type`, `cityDestination` (picker).
+4. Fill with realistic data, submit → POST to `/api/v1/protected/accommodations/draft` → 200 OK with the new `accommodationId`.
+5. Server creates the row with `lifecycleState = 'DRAFT'` and assigns `role = HOST` to the user → trial subscription created with `status = 'trialing'`.
+6. Web redirects to `${HOSPEDA_ADMIN_URL}/properties/{id}/edit` (or the documented admin route).
+
+**Steps (admin leg — full edit)**:
+
+7. Admin login is recognized via the same Better Auth session (verify cross-app session policy in item #5).
+8. Property edit screen renders all sections (location detail, amenities, photos, pricing, availability, etc.) prefilled with the draft data.
+9. Upload 5+ photos via the admin uploader → Cloudinary thumbnails render.
+10. Fill remaining sections, click "Publicar" → `lifecycleState` transitions DRAFT → ACTIVE.
+11. Confirm in DB: `accommodations.lifecycleState = 'ACTIVE'`, owner is the original web user.
+12. Back in web `/es/mi-cuenta/propiedades` → new property listed with the badge reflecting ACTIVE state.
+13. Detail page `/es/alojamientos/{slug}` is publicly reachable.
 
 **Acceptance criteria** (all must pass):
 
-- [ ] Every section navigates forward and backward without data loss.
-- [ ] Photo thumbnails render immediately after Cloudinary upload completes.
-- [ ] Final publish sets `lifecycleState = ACTIVE` and assigns HOST role.
-- [ ] Detail page (`/es/alojamientos/{slug}`) is publicly accessible immediately after publication.
-- [ ] Welcome + "property published" email received in real inbox within 2 minutes.
-- [ ] Audit log contains `created_accommodation` and `role_assigned` events for this user.
-- [ ] No Sentry errors during the full flow.
+- [ ] Mini-form submission creates the draft and assigns HOST role atomically (one transaction or compensating cleanup if any step fails).
+- [ ] The 4 mini-form fields are validated (Zod) at the API boundary; missing fields return 400 with field-level errors.
+- [ ] Redirect to admin lands on the right property edit URL — no 404, no admin login challenge for a freshly-promoted HOST.
+- [ ] Photo thumbnails render in admin within 5s of Cloudinary upload.
+- [ ] Final publish in admin sets `lifecycleState = ACTIVE`; the change is visible on the public detail page within ISR window.
+- [ ] Welcome + "property published" emails received in real inbox within 2 minutes.
+- [ ] Audit log contains `created_accommodation_draft`, `role_assigned`, and `accommodation_published` events.
+- [ ] No Sentry errors across both apps during the full flow.
 
 **Notes / gotchas**:
 
-- SPEC-091 defines the 8-section form. If sections differ, update step numbering accordingly.
-- Trial activation (no card required) must happen automatically on publish; verify `billing_subscriptions` row is created with `status = 'trialing'`.
+- SPEC-091 originally defined an 8-section form on the web. That form was replaced 2026-04-28 (commit `33868e25b`) by `CreatePropertyMiniForm.client` + admin handoff. SPEC-091 may need a follow-up amendment.
+- Trial activation must happen on draft creation (mini-form submit), NOT on the admin "Publicar" click — verify `billing_subscriptions` row exists with `status = 'trialing'` after step 5.
+- If the admin panel is on a different subdomain than web, cookie scope must allow the session to be recognized after the redirect (item #5 cross-app session).
+- amenityIds remain a separate gap (SPEC-094) regardless of where the form lives.
 
 ---
 
@@ -367,33 +378,39 @@ Each P0 item below follows this structure:
 > **Estimated effort**: ~20min
 > **Source**: checklist item #12
 
+**Architecture note (refactor 2026-04-28, commit `33868e25b`)**: the original 8-section form autosave (driven by `useAutosave` and `usePropertyForm` hooks) was removed alongside the form. The web mini-form has 4 fields and submits in one shot, so client-side autosave is no longer relevant on the web side. The "draft" semantics now live server-side: `lifecycleState='DRAFT'` on the `accommodations` row is the persistent state. This item validates that DRAFT semantics + admin-side autosave (if implemented) work end-to-end.
+
 **Preconditions**:
 
-- User account with no prior draft in progress.
-- Desktop browser with ability to close and reopen tabs.
+- User account verified, no prior accommodations.
+- Desktop browser with ability to navigate between web and admin.
 
 **Steps**:
 
-1. Navigate to `/es/publicar/nueva` → start filling Section 1 with a distinctive name ("Cabaña Autosave Test").
-2. Fill sections 1 through 4 without completing → after 30s of inactivity or on section transition, autosave triggers → confirm via network tab (PATCH or POST to draft endpoint).
-3. Close the browser tab entirely (do not click "Guardar").
-4. Reopen `/es/publicar` → banner "Continue where you left off" (or equivalent) appears → click to resume.
-5. Verify all filled data from sections 1-4 is intact.
-6. Wait 24 hours (or simulate by fast-forwarding draft `updatedAt` in DB if testing) → return, confirm draft still present.
-7. Complete and publish → draft state cleared from storage.
+1. Navigate to `/es/publicar/nueva` → fill the 4-field mini-form with a distinctive name ("Cabaña Draft Test") → submit.
+2. API returns 200 with `accommodationId`; row created with `lifecycleState='DRAFT'`.
+3. Redirect lands on admin property edit screen → DO NOT complete the admin sections; abandon (close tab).
+4. Wait some time (e.g., 1 hour, then 24 hours, then 7 days) without action.
+5. Return to `/es/mi-cuenta/propiedades` → the DRAFT property is listed with a clear visual marker (e.g., "Borrador" badge).
+6. Click "Continuar" or equivalent CTA → redirect lands back on admin property edit, prefilled with the original 4 fields.
+7. Complete some sections in admin without clicking final "Publicar" → admin-side autosave (if implemented) persists partial fields. Close tab.
+8. Re-open admin edit again → confirm partial admin data is intact.
+9. Click "Publicar" in admin → DRAFT transitions to ACTIVE.
 
 **Acceptance criteria** (all must pass):
 
-- [ ] Autosave fires within 60 seconds of last input change (or on section transition).
-- [ ] Closing and reopening shows the "continue draft" entry point prominently.
-- [ ] All previously entered data restored accurately — no field truncation or type coercion errors.
-- [ ] Draft expires after 30 days (or defined TTL); verify the TTL value is documented.
-- [ ] Publishing clears the draft state so a second attempt starts fresh.
+- [ ] DRAFT accommodation persists indefinitely (or per documented TTL — confirm policy).
+- [ ] Web `/mi-cuenta/propiedades` lists DRAFT properties with a clear visual indicator.
+- [ ] Resume CTA from web lands directly in the admin property edit screen, no re-auth.
+- [ ] Admin-side autosave (if implemented) preserves partial section data across tab close/reopen.
+- [ ] Publishing transitions DRAFT → ACTIVE atomically.
+- [ ] After publish, returning to `/publicar/nueva` starts a fresh mini-form (no leakage from the previous draft).
 
 **Notes / gotchas**:
 
-- Draft storage may be localStorage, sessionStorage, or server-side. Confirm which — if localStorage, test across different browsers and private mode where localStorage is cleared.
-- If server-side draft: verify the draft endpoint requires auth (not publicly accessible via direct ID guessing).
+- Confirm whether admin has autosave on its property edit screen. If not, document as a separate gap (call it SPEC-094-followup or an admin-side ticket).
+- DRAFT TTL policy: should expired drafts be auto-archived after N days? Decide and document. The cleanup cron (item #44, P1) may need to cover this.
+- If web mini-form submission fails halfway (network drop after server creates DRAFT but before redirect lands), the user may have a "ghost" DRAFT they don't know about. Mitigate via the `/mi-cuenta/propiedades` listing.
 
 ---
 
@@ -437,23 +454,26 @@ Each P0 item below follows this structure:
 > **Estimated effort**: ~40s in CI for automated leg; ~10min manual for mobile camera test
 > **Source**: checklist item #14
 
+**Architecture note (refactor 2026-04-28)**: photo upload moved from the deleted `PropertyFormPhotos.client.tsx` to the admin uploader. Tests below refer to the admin photo uploader, NOT the web mini-form (which has no photo upload).
+
 **Preconditions**:
 
 - Real Cloudinary credentials in `HOSPEDA_CLOUDINARY_*` env vars (or test Cloudinary account for CI).
 - 5+ test images: 3 valid JPGs, 1 PNG, 1 WebP, 1 oversized file (>10MB), 1 invalid type (`.txt`).
+- Test HOST account with at least one DRAFT or ACTIVE property, opened in the admin edit screen.
 
 **Part A (automated)**:
 
-1. Navigate to photo upload section of the onboarding form.
-2. Upload 3 valid JPG files sequentially → each shows a thumbnail within 5 seconds → Cloudinary URL stored in draft state.
+1. Navigate to the admin property edit photo section.
+2. Upload 3 valid JPG files sequentially → each shows a thumbnail within 5 seconds → Cloudinary URL stored on the accommodation row.
 3. Upload the `.txt` file → immediate client-side rejection with "invalid file type" error → no network call to Cloudinary.
 4. Upload the oversized JPG → rejection with "file too large" message before or during upload.
 5. Delete thumbnail of photo #2 → thumbnail removed, Cloudinary asset scheduled for deletion.
-6. Reorder photo #3 to position #1 (drag-and-drop) → order persisted in draft.
+6. Reorder photo #3 to position #1 (drag-and-drop) → order persisted to the API.
 
 **Part B (owner-manual, mobile)**:
 
-1. Open `/es/publicar/nueva` on real iOS Safari and Android Chrome.
+1. Open the admin property edit screen on real iOS Safari and Android Chrome.
 2. Reach photo section → tap "Add photos" → native camera/gallery picker opens.
 3. Take a photo with camera → upload → thumbnail appears within 10 seconds on mobile connection.
 4. Verify rate limit (SPEC-079) does not trigger for a normal upload session of 10 photos.
@@ -481,33 +501,38 @@ Each P0 item below follows this structure:
 > **Estimated effort**: ~15min
 > **Source**: checklist item #15
 
+**Architecture note (refactor 2026-04-28)**: web `/mi-cuenta/propiedades/[id]/editar.astro` no longer hosts the edit form — it redirects to the admin panel. All edits happen in admin.
+
 **Preconditions**:
 
 - HOST account with at least one `ACTIVE` accommodation already published.
 - The detail page URL for that accommodation is known.
+- Admin panel reachable at `HOSPEDA_ADMIN_URL`.
 
 **Steps**:
 
-1. Navigate to `/es/mi-cuenta/propiedades` → list of own properties visible.
-2. Click "Edit" on the target property → form loads at `/es/mi-cuenta/propiedades/{id}/editar` with current values pre-populated.
-3. Change the nightly price to a new value (e.g. from 5000 to 7500 ARS).
-4. Save → PATCH request succeeds (200) → success feedback shown.
-5. Navigate to the public detail page `/es/alojamientos/{slug}` → new price appears within 60 seconds (ISR revalidation).
-6. Upload one additional photo via the edit form → thumbnail appears, Cloudinary URL saved.
+1. Navigate to `/es/mi-cuenta/propiedades` (web) → list of own properties visible.
+2. Click "Edit" on the target property → web redirects to `${HOSPEDA_ADMIN_URL}/properties/{id}/edit` → admin edit screen loads with current values pre-populated, no re-auth.
+3. Change the nightly price to a new value (e.g. from 5000 to 7500 ARS) in admin.
+4. Save in admin → PATCH request succeeds (200) → success feedback shown.
+5. Navigate to the public detail page `/es/alojamientos/{slug}` (web) → new price appears within 60 seconds (ISR revalidation).
+6. Upload one additional photo via the admin edit form → thumbnail appears, Cloudinary URL saved.
 7. Save → confirm new photo appears in the public gallery after ISR refresh.
 
 **Acceptance criteria** (all must pass):
 
-- [ ] Edit form pre-populates all existing fields correctly.
-- [ ] Price change persisted in DB immediately after save.
-- [ ] Public detail page reflects the new price within 60 seconds.
-- [ ] New photo appears in the public gallery after ISR refresh.
+- [ ] Web "Edit" CTA on the property card redirects cleanly to the admin URL.
+- [ ] Admin edit form pre-populates all existing fields correctly.
+- [ ] Price change persisted in DB immediately after save in admin.
+- [ ] Public detail page (web) reflects the new price within 60 seconds.
+- [ ] New photo appears in the public gallery (web) after ISR refresh.
 - [ ] No `lifecycleState` change occurs as a side-effect of editing (accommodation stays `ACTIVE`).
 
 **Notes / gotchas**:
 
 - ISR revalidation is triggered via the `/api/v1/admin/revalidation` endpoint. Verify this is called server-side on accommodation update (check the service or route handler).
 - If ISR is not working, the page will still show the old price until the next full rebuild — flag this as a defect.
+- Cross-app session must work for the redirect to land in admin without re-auth (item #5).
 
 ---
 
@@ -2053,34 +2078,39 @@ Each P0 item below follows this structure:
 - Real Cloudinary, Resend, and Better Auth configured.
 - Tester acts as a "first-time cabin owner" with no prior knowledge of the system.
 
+**Architecture note (refactor 2026-04-28, commit `33868e25b`)**: the journey now spans BOTH apps. Web hosts the mini-draft creation (`CreatePropertyMiniForm` with 4 fields); admin hosts the full property edit. The handoff happens via redirect to `${HOSPEDA_ADMIN_URL}` after `POST /api/v1/protected/accommodations/draft` succeeds.
+
 **Steps**:
 
 1. (SEO) Google `site:hospeda.com.ar` → Hospeda pages appear in results; try a realistic query like "alojamiento concepcion del uruguay" → Hospeda appears.
 2. Click the result → land on host landing or home page → LCP < 2.5s on mobile.
 3. Navigate to the "Publicar mi alojamiento" CTA → if not logged in, inline signup appears without leaving the page → complete signup and email verification.
 4. Receive and click email verification link → account activated → return to onboarding form automatically.
-5. Complete the 8-section form with realistic data (name, type, location, description, amenities, 8-10 photos from mobile, pricing, availability).
-6. Photos upload from mobile camera → thumbnails appear within 5 seconds each → rate limiter does not trigger.
-7. Click "Publicar" → trial activates automatically (no card requested) → HOST role assigned → `accommodations.lifecycleState = ACTIVE`.
-8. Redirect to `/es/alojamientos/{slug}` → property visible publicly, JSON-LD present.
-9. Share the link with a friend (different device/session) → friend can access the page without login.
-10. Return to `/es/mi-cuenta/propiedades` → edit price → change visible within 60 seconds on the public detail page via ISR.
-11. (Parallel test) Another browser/incognito: navigate `/es/alojamientos?destination={slug}` → new property appears in results.
+5. (Web mini-draft) Fill the 4-field `CreatePropertyMiniForm`: `name`, `summary`, `type`, `cityDestination` → submit. Trial activates automatically (no card requested) → HOST role assigned → `accommodations.lifecycleState = DRAFT`.
+6. Redirect lands on `${HOSPEDA_ADMIN_URL}/properties/{id}/edit` → admin panel recognizes the session (cross-app cookie) → property edit screen prefilled with mini-form data.
+7. (Admin full edit) Complete the remaining sections in admin: location detail, amenities, 8-10 photos from mobile camera, pricing, availability.
+8. Photos upload from mobile camera in admin → thumbnails appear within 5 seconds each → rate limiter does not trigger.
+9. Click "Publicar" in admin → `lifecycleState = ACTIVE` → published email sent.
+10. Redirect or navigate to `/es/alojamientos/{slug}` (web) → property visible publicly, JSON-LD present.
+11. Share the link with a friend (different device/session) → friend can access the page without login.
+12. Return to `/es/mi-cuenta/propiedades` (web) → edit price by clicking through to admin → change visible within 60 seconds on the public detail page via ISR.
+13. (Parallel test) Another browser/incognito: navigate `/es/alojamientos?destination={slug}` → new property appears in results.
 
 **Acceptance criteria** (all must pass):
 
 - [ ] SEO: Hospeda appears in Google results for relevant queries (manual check).
 - [ ] Inline signup during onboarding has no friction (no separate "register" page required).
 - [ ] Email verification real inbox delivery within 2 minutes.
-- [ ] 8-section form completable in one 40min session with autosave.
-- [ ] Mobile photo upload (10 photos) succeeds without rate-limit block.
-- [ ] Trial subscription created with `status = 'trialing'` on publish.
-- [ ] HOST role assigned; `lifecycleState = ACTIVE`.
-- [ ] Property publicly accessible immediately after publish.
-- [ ] ISR update visible within 60 seconds after price edit.
+- [ ] Mini-form completable in <5min; admin full edit completable in one 30-40min session.
+- [ ] Mobile photo upload (10 photos) succeeds without rate-limit block (admin uploader).
+- [ ] Trial subscription created with `status = 'trialing'` on mini-form submit (NOT on admin publish).
+- [ ] HOST role assigned at mini-form submit; `lifecycleState = DRAFT` then ACTIVE after admin publish.
+- [ ] Web → admin redirect lands on the correct property edit URL with no auth challenge.
+- [ ] Property publicly accessible immediately after admin publish.
+- [ ] ISR update visible within 60 seconds after price edit in admin.
 - [ ] "Welcome" + "Property published" emails received.
-- [ ] Audit log: `created_accommodation`, `role_assigned` events present.
-- [ ] Sentry: 0 errors during the full journey.
+- [ ] Audit log: `created_accommodation_draft`, `role_assigned`, `accommodation_published` events present.
+- [ ] Sentry: 0 errors across both apps during the full journey.
 
 ---
 

@@ -49,30 +49,42 @@ Total estimated: ~14-18 hours of focused execution. Split into sessions so you d
 
 ### C. Host onboarding (LA categoría más sensible)
 
-#### P0 #11: End-to-end publication [~60min]
+#### P0 #11: End-to-end publication [~45min web + admin]
 
-- [ ] Full 8-section form completable in one sitting from a fresh user
-- [ ] Photos uploaded to Cloudinary (5+ pieces) without rate-limit issues
-- [ ] HOST role auto-assigned, accommodation `lifecycleState=ACTIVE`
+> **Refactor 2026-04-28**: web hosts only the 4-field mini-draft (`name`, `summary`, `type`, `cityDestination`); the full edit happens in admin after redirect.
+
+- [ ] Web mini-form (`/publicar/nueva`) submits and creates DRAFT accommodation
+- [ ] Trial activates + HOST role assigned at mini-form submit (NOT at admin publish)
+- [ ] Redirect to `${HOSPEDA_ADMIN_URL}/properties/{id}/edit` lands without re-auth
+- [ ] Admin full edit: photos (5+), amenities, pricing, availability — all sections work
+- [ ] Click "Publicar" in admin → `lifecycleState=ACTIVE`
 - [ ] Detail page renders publicly with JSON-LD valid
 - [ ] Welcome + publication-success emails received
 
 #### P0 #12: Autosave and draft persistence [~15min]
 
-- [ ] Close tab mid-form, reopen 24h later, "Continue draft" banner appears with intact data
-- [ ] Autosave indicator shows idle → saving → saved transitions
+> **Refactor 2026-04-28**: original 8-section form autosave is gone. Web mini-form has only 4 fields and submits in one shot. The "draft" semantics now live server-side: `lifecycleState=DRAFT` is the persistent state. Validate the new behaviour:
+
+- [ ] Mini-form submission creates `lifecycleState=DRAFT` row even if user abandons admin edit
+- [ ] User returning later finds the DRAFT in `/mi-cuenta/propiedades` (web) and can resume in admin
+- [ ] Admin edit screen has its own autosave (validate per admin behaviour)
 
 #### P0 #14: Photo upload Cloudinary (manual mobile leg) [~20min]
 
-- [ ] Upload 5+ photos from real mobile device (camera + gallery)
+> **Refactor 2026-04-28**: photo upload moved from web `PropertyFormPhotos` (deleted) to the admin uploader. Test the admin uploader from a real mobile device.
+
+- [ ] Upload 5+ photos from real mobile device (camera + gallery) using admin uploader
 - [ ] Thumbnails appear immediately
 - [ ] Reorder works on touch
 - [ ] Rate limit doesn't block normal use (<8 uploads/min)
 
 #### P0 #15: Editing published property [~15min]
 
-- [ ] Price change PATCHes successfully
-- [ ] Detail page reflects change in <60s (ISR revalidation)
+> **Refactor 2026-04-28**: web `mi-cuenta/propiedades/[id]/editar.astro` now redirects to admin. Edits happen exclusively in admin.
+
+- [ ] From `/mi-cuenta/propiedades` click edit → redirect lands in admin property edit
+- [ ] Price change PATCHes successfully (in admin)
+- [ ] Detail page reflects change in <60s on the public web (ISR revalidation)
 - [ ] Audit log captures the edit
 
 ### D. Public browsing
@@ -217,18 +229,20 @@ Total estimated: ~14-18 hours of focused execution. Split into sessions so you d
 
 ### T. End-to-end journeys (the highest-value tests)
 
-#### P0 #96: Journey "Host discovers Hospeda and publishes" [~90min]
+#### P0 #96: Journey "Host discovers Hospeda and publishes" [~90min web + admin]
 
-The beta star. Run end-to-end without assistance.
+The beta star. Run end-to-end without assistance. **Refactor 2026-04-28**: spans web (mini-draft) + admin (full edit) with redirect handoff.
 
 - [ ] Google search → Hospeda visible (validate `site:hospeda.com.ar` and target queries)
 - [ ] Landing → CTA `/publicar` with LCP <2.5s mobile
 - [ ] Inline signup, email verification, no friction
-- [ ] 30-40min form completion in one sitting
-- [ ] Trial activates without card; HOST role assigned
-- [ ] Detail page public; can be shared via link
+- [ ] Web mini-form (4 fields) completed in <5min, redirect to admin works
+- [ ] Admin edit screen pre-filled with draft data, no auth challenge after redirect
+- [ ] Full admin edit (photos, amenities, pricing, availability) completable in 30-40min
+- [ ] Trial activates at mini-form submit (NOT at admin publish); HOST role assigned
+- [ ] Detail page public after admin publish; can be shared via link
 - [ ] Tourist searches and finds the property in coherent order
-- [ ] 0 Sentry errors during the full flow
+- [ ] 0 Sentry errors across both apps during the full flow
 
 #### P0 #97: Journey "Host trial → pays → renews → addon → cancels" [~90min staged]
 
