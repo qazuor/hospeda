@@ -1,0 +1,87 @@
+---
+/**
+ * @file legal/cookies/index.astro
+ * @description Cookie policy page with 7 numbered sections and ToC.
+ * @route /{lang}/legal/cookies/
+ * @rendering SSG (prerender)
+ */
+
+import LegalLayout from '@/layouts/LegalLayout.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import type { GetStaticPaths } from 'astro';
+
+export const prerender = true;
+
+export const getStaticPaths = (() => {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}) satisfies GetStaticPaths;
+
+const { lang } = Astro.params;
+const locale = lang as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const sections = [
+	{ id: 'que-son', titleKey: 'cookies.sections.whatAreCookies.title', titleFb: '1. Qué son las cookies', contentKey: 'cookies.sections.whatAreCookies.body', contentFb: 'Las cookies son pequeños archivos de texto que los sitios web almacenan en tu dispositivo cuando los visitás.' },
+	{ id: 'cuales-usamos', titleKey: 'cookies.sections.cookiesWeUse.title', titleFb: '2. Qué cookies utilizamos', contentKey: 'cookies.sections.cookiesWeUse.body', contentFb: 'Hospeda utiliza cookies estrictamente necesarias para el funcionamiento del sitio.' },
+	{ id: 'listado', titleKey: 'cookies.sections.cookieList.title', titleFb: '3. Listado de cookies', contentKey: 'cookies.sections.cookieList.body', contentFb: 'A continuación detallamos las principales cookies que este sitio puede almacenar en tu dispositivo.' },
+	{ id: 'gestionar', titleKey: 'cookies.sections.manageCookies.title', titleFb: '4. Cómo gestionar las cookies', contentKey: 'cookies.sections.manageCookies.body', contentFb: 'Podés gestionar o eliminar las cookies desde la configuración de tu navegador.' },
+	{ id: 'terceros', titleKey: 'cookies.sections.thirdPartyCookies.title', titleFb: '5. Cookies de terceros', contentKey: 'cookies.sections.thirdPartyCookies.body', contentFb: 'Algunos servicios externos que usamos pueden establecer sus propias cookies.' },
+	{ id: 'cambios', titleKey: 'cookies.sections.policyChanges.title', titleFb: '6. Cambios a esta política', contentKey: 'cookies.sections.policyChanges.body', contentFb: 'Podemos actualizar esta Política de Cookies cuando cambie la tecnología que usamos.' },
+	{ id: 'contacto', titleKey: 'cookies.sections.contact.title', titleFb: '7. Contacto', contentKey: 'cookies.sections.contact.body', contentFb: 'Si tenés preguntas sobre el uso de cookies en Hospeda, podés escribirnos a info@hospeda.com.' },
+] as const;
+---
+
+<LegalLayout
+	locale={locale}
+	title={t('cookies.title', 'Política de Cookies')}
+	description={t('cookies.description', 'Política de cookies de Hospeda. Cómo usamos cookies y tecnologías similares.')}
+	lastUpdated="28 de abril de 2026"
+	showToc={true}
+>
+	<Fragment slot="toc">
+		<ol class="toc-list">
+			{sections.map((section, i) => (
+				<li>
+					<a href={`#${section.id}`} class="toc-link">
+						{i + 1}. {t(section.titleKey, section.titleFb)}
+					</a>
+				</li>
+			))}
+		</ol>
+	</Fragment>
+
+	{sections.map((section, i) => (
+		<section id={section.id}>
+			<h2>{i + 1}. {t(section.titleKey, section.titleFb)}</h2>
+			<p>{t(section.contentKey, section.contentFb)}</p>
+		</section>
+	))}
+</LegalLayout>
+
+<style>
+	.toc-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.toc-link {
+		display: block;
+		padding: var(--space-2) var(--space-3);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--muted-foreground);
+		text-decoration: none;
+		border-left: 2px solid transparent;
+		transition: color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+	}
+
+	.toc-link:hover {
+		color: var(--foreground);
+		border-left-color: var(--brand-accent);
+	}
+</style>

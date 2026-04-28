@@ -1,0 +1,36 @@
+{
+    "title": "Cookie Policy - Hospeda",
+    "description": "Learn how Hospeda uses cookies and similar technologies to improve your experience on the site.",
+    "heading": "Cookie Policy",
+    "lastUpdated": "Last updated: April 28, 2026",
+    "sections": {
+        "whatAreCookies": {
+            "title": "1. What are cookies",
+            "body": "Cookies are small text files that websites store on your device when you visit them. They are used to remember preferences, keep sessions active, and gather information about how the site is used. Cookies do not contain personal information on their own and cannot run programs or transmit viruses."
+        },
+        "cookiesWeUse": {
+            "title": "2. What cookies we use",
+            "body": "Hospeda uses strictly necessary cookies for the site to function (such as user session and language preference), which do not require your consent. With your consent, we may use analytics cookies to understand how visitors interact with the site and improve the experience. We do not currently use marketing or advertising cookies."
+        },
+        "cookieList": {
+            "title": "3. Cookie list",
+            "body": "Below we detail the main cookies this site may store on your device: 'hospeda-session' (authenticated session, necessary, browser session duration), 'lang' (language preference, necessary, persistent for 1 year), 'cookie-consent' (your consent status, necessary, persistent for 1 year). We do not use advertising tracking cookies or share data with ad networks."
+        },
+        "manageCookies": {
+            "title": "4. How to manage cookies",
+            "body": "You can manage or delete cookies from your browser settings. Most browsers allow you to reject all cookies, accept only those from specific sites, or delete them when you close the browser. Please note that disabling necessary cookies may affect the proper functioning of the site, including access to your account."
+        },
+        "thirdPartyCookies": {
+            "title": "5. Third-party cookies",
+            "body": "Some external services we use may set their own cookies: Cloudinary (optimized image delivery, no user tracking), Sentry (error monitoring, only with your consent), MercadoPago (payment processing during checkout). These third parties have their own privacy policies and we have no direct control over their cookies."
+        },
+        "policyChanges": {
+            "title": "6. Changes to this policy",
+            "body": "We may update this Cookie Policy when the technology we use or applicable legislation changes. We will publish changes on this page with the date of the last update. We recommend reviewing it periodically."
+        },
+        "contact": {
+            "title": "7. Contact",
+            "body": "If you have questions about the use of cookies on Hospeda, you can write to us at info@hospeda.com or through our contact form."
+        }
+    }
+}

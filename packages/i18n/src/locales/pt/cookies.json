@@ -1,0 +1,36 @@
+{
+    "title": "Política de Cookies - Hospeda",
+    "description": "Saiba como a Hospeda usa cookies e tecnologias similares para melhorar sua experiência no site.",
+    "heading": "Política de Cookies",
+    "lastUpdated": "Última atualização: 28 de abril de 2026",
+    "sections": {
+        "whatAreCookies": {
+            "title": "1. O que são cookies",
+            "body": "Os cookies são pequenos arquivos de texto que os sites armazenam no seu dispositivo quando você os visita. Eles servem para lembrar preferências, manter sessões ativas e coletar informações sobre como o site é usado. Os cookies não contêm informações pessoais por si só e não podem executar programas nem transmitir vírus."
+        },
+        "cookiesWeUse": {
+            "title": "2. Quais cookies utilizamos",
+            "body": "A Hospeda utiliza cookies estritamente necessários para o funcionamento do site (como a sessão do usuário e o idioma preferido), que não precisam do seu consentimento. Com o seu consentimento, podemos usar cookies de análise para entender como os visitantes interagem com o site e melhorar a experiência. Atualmente não usamos cookies de marketing ou publicidade."
+        },
+        "cookieList": {
+            "title": "3. Lista de cookies",
+            "body": "Abaixo detalhamos os principais cookies que este site pode armazenar no seu dispositivo: 'hospeda-session' (sessão autenticada, necessário, duração da sessão do navegador), 'lang' (preferência de idioma, necessário, persistente por 1 ano), 'cookie-consent' (estado do seu consentimento, necessário, persistente por 1 ano). Não utilizamos cookies de rastreamento publicitário nem compartilhamos dados com redes de anúncios."
+        },
+        "manageCookies": {
+            "title": "4. Como gerenciar os cookies",
+            "body": "Você pode gerenciar ou excluir os cookies nas configurações do seu navegador. A maioria dos navegadores permite rejeitar todos os cookies, aceitar apenas os de sites específicos ou excluí-los ao fechar o navegador. Observe que desabilitar os cookies necessários pode afetar o funcionamento correto do site, incluindo o acesso à sua conta."
+        },
+        "thirdPartyCookies": {
+            "title": "5. Cookies de terceiros",
+            "body": "Alguns serviços externos que usamos podem definir seus próprios cookies: Cloudinary (entrega de imagens otimizadas, sem rastreamento de usuários), Sentry (monitoramento de erros, apenas com seu consentimento), MercadoPago (processamento de pagamentos durante o checkout). Esses terceiros têm suas próprias políticas de privacidade e não temos controle direto sobre seus cookies."
+        },
+        "policyChanges": {
+            "title": "6. Alterações nesta política",
+            "body": "Podemos atualizar esta Política de Cookies quando a tecnologia que usamos ou a legislação aplicável mudar. Publicaremos as alterações nesta página com a data da última atualização. Recomendamos revisá-la periodicamente."
+        },
+        "contact": {
+            "title": "7. Contato",
+            "body": "Se você tiver dúvidas sobre o uso de cookies na Hospeda, pode nos escrever para info@hospeda.com ou através do nosso formulário de contato."
+        }
+    }
+}
