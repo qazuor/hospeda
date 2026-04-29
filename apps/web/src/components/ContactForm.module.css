@@ -1,0 +1,176 @@
+/**
+ * @file ContactForm.module.css
+ * @description Styles for the ContactForm React island.
+ */
+
+/* ─── Form layout ───────────────────────────────────────────────────────────── */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+}
+
+@media (max-width: 480px) {
+    .row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ─── Field ─────────────────────────────────────────────────────────────────── */
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.label {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.required {
+    color: var(--brand-accent);
+    margin-left: 0.2rem;
+}
+
+.input,
+.select,
+.textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    background-color: var(--background);
+    color: var(--foreground);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    box-sizing: border-box;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.15);
+}
+
+.input.inputError,
+.select.inputError,
+.textarea.inputError {
+    border-color: var(--error, oklch(0.55 0.2 20));
+}
+
+.select {
+    cursor: pointer;
+}
+
+.textarea {
+    min-height: 140px;
+    resize: vertical;
+}
+
+/* ─── Honeypot ──────────────────────────────────────────────────────────────── */
+
+.honeypot {
+    position: absolute;
+    left: -9999px;
+    top: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+}
+
+/* ─── Error message ─────────────────────────────────────────────────────────── */
+
+.errorMsg {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--error, oklch(0.55 0.2 20));
+    margin: 0;
+}
+
+/* ─── Submit button ─────────────────────────────────────────────────────────── */
+
+.submit {
+    padding: 0.875rem 2rem;
+    background-color: var(--brand-accent);
+    color: var(--foreground-on-accent, #fff);
+    border: none;
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: var(--text-body);
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+    align-self: flex-start;
+}
+
+.submit:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ─── Success state ─────────────────────────────────────────────────────────── */
+
+.success {
+    text-align: center;
+    padding: var(--space-8);
+    background-color: var(--card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+}
+
+.successIcon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: var(--space-4);
+}
+
+.successTitle {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-xl);
+    color: var(--foreground);
+    margin: 0 0 var(--space-2);
+}
+
+.successMsg {
+    font-family: var(--font-sans);
+    color: var(--muted-foreground);
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* ─── Form-level error ──────────────────────────────────────────────────────── */
+
+.formError {
+    padding: var(--space-3) var(--space-4);
+    background-color: oklch(from var(--error, oklch(0.55 0.2 20)) l c h / 0.1);
+    border: 1px solid var(--error, oklch(0.55 0.2 20));
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--error, oklch(0.55 0.2 20));
+    margin: 0;
+}

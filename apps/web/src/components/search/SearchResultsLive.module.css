@@ -1,0 +1,249 @@
+/**
+ * @file SearchResultsLive.module.css
+ * @description Styles for the live search results island.
+ */
+
+/* ─── Form ─────────────────────────────────────────────────────────────────── */
+
+.form {
+    display: flex;
+    gap: var(--space-3);
+    max-width: 600px;
+    margin: 0 auto var(--space-8);
+}
+
+.input {
+    flex: 1;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    background-color: var(--background);
+    color: var(--foreground);
+    transition: border-color var(--duration-fast, 0.15s) ease;
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.15);
+}
+
+.btn {
+    padding: 0.875rem 1.5rem;
+    background-color: var(--brand-accent);
+    color: var(--foreground-on-accent, #fff);
+    border: none;
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: var(--text-body);
+    cursor: pointer;
+    transition: opacity var(--duration-fast, 0.15s) ease;
+    white-space: nowrap;
+}
+
+.btn:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ─── Empty / suggestions ───────────────────────────────────────────────────── */
+
+.suggestions {
+    text-align: center;
+}
+
+.suggestionsTitle {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: var(--text-lg);
+    color: var(--foreground);
+    margin: 0 0 var(--space-4);
+}
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    justify-content: center;
+}
+
+.tag {
+    padding: 0.5rem 1rem;
+    background-color: var(--muted);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--foreground);
+    text-decoration: none;
+    transition: background-color var(--duration-fast, 0.15s) ease;
+    cursor: pointer;
+    border: none;
+}
+
+.tag:hover {
+    background-color: var(--border);
+}
+
+/* ─── Results ───────────────────────────────────────────────────────────────── */
+
+.resultsInfo {
+    font-family: var(--font-sans);
+    color: var(--muted-foreground);
+    margin-bottom: var(--space-6);
+    text-align: center;
+}
+
+.loading {
+    text-align: center;
+    padding: var(--space-8);
+    color: var(--muted-foreground);
+    font-family: var(--font-sans);
+}
+
+.noResults {
+    background-color: var(--card);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-card);
+    padding: var(--space-8);
+    text-align: center;
+    color: var(--muted-foreground);
+    font-family: var(--font-sans);
+}
+
+/* ─── Result groups ─────────────────────────────────────────────────────────── */
+
+.groups {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+}
+
+.group {
+    /* result group container — styled via children */
+}
+
+.groupHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+}
+
+.groupTitle {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: var(--text-xl);
+    color: var(--foreground);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.groupCount {
+    font-size: var(--text-body-sm);
+    font-weight: 400;
+    color: var(--muted-foreground);
+}
+
+.viewAllLink {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--brand-accent);
+    text-decoration: none;
+}
+
+.viewAllLink:hover {
+    text-decoration: underline;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+}
+
+@media (min-width: 640px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ─── Result card ───────────────────────────────────────────────────────────── */
+
+.card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    background-color: var(--card);
+    border-radius: var(--radius-card);
+    padding: var(--space-3);
+    box-shadow: var(--shadow-card);
+    text-decoration: none;
+    transition: box-shadow var(--duration-normal, 0.4s) ease, transform var(--duration-normal, 0.4s)
+        ease;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+}
+
+.cardImage {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-organic-sm, 0px 24px);
+    object-fit: cover;
+    flex-shrink: 0;
+    background-color: var(--muted);
+}
+
+.cardImagePlaceholder {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-organic-sm, 0px 24px);
+    background-color: var(--muted);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted-foreground);
+    font-size: 1.5rem;
+}
+
+.cardContent {
+    flex: 1;
+    min-width: 0;
+}
+
+.cardName {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: var(--text-body);
+    color: var(--foreground);
+    margin: 0 0 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cardMeta {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--muted-foreground);
+    margin: 0;
+    text-transform: capitalize;
+}

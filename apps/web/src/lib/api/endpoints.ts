@@ -468,6 +468,8 @@ export const postsApi = {
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
         category?: string;
+        /** Filter posts by author UUID */
+        authorId?: string;
     }): Promise<ApiResult<PaginatedResponse<PostPublic>>> {
         return apiClient.getList({ path: `${BASE}/posts`, params });
     },
@@ -675,6 +677,96 @@ export const publicConversationsApi = {
         return apiClient.post({
             path: `${BASE}/conversations/guest/${token}/messages`,
             body: { body }
+        });
+    }
+};
+
+// --- Users ---
+
+/** Minimal public profile returned by the user-by-slug endpoint. */
+export interface UserAuthorPublic {
+    readonly id: string;
+    readonly displayName: string | null;
+    readonly slug: string;
+    readonly avatar: string | null;
+    readonly bio: string | null;
+}
+
+/** Public user API endpoints */
+export const usersApi = {
+    /**
+     * Get a minimal public profile for a user by their URL slug.
+     * Used by the author page (/publicaciones/autor/{slug}/).
+     *
+     * @param params - User URL slug
+     * @returns Minimal public profile (id, displayName, slug, avatar, bio)
+     *
+     * @example
+     * ```ts
+     * const result = await usersApi.getBySlug({ slug: 'maria-garcia' });
+     * if (result.ok) {
+     *   console.log(result.data.displayName);
+     * }
+     * ```
+     */
+    getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<UserAuthorPublic>> {
+        return apiClient.get({ path: `${BASE}/users/by-slug/${slug}` });
+    }
+};
+
+// --- Search ---
+
+/** Single search result item across entity groups. */
+export interface PublicSearchResultItem {
+    readonly id: string;
+    readonly slug: string;
+    readonly name: string;
+    readonly coverImage?: string;
+    readonly type?: string;
+    readonly category?: string;
+}
+
+/** A group of search results with count. */
+export interface PublicSearchGroup {
+    readonly items: readonly PublicSearchResultItem[];
+    readonly total: number;
+}
+
+/** Full unified search response. */
+export interface PublicSearchResponse {
+    readonly accommodations: PublicSearchGroup;
+    readonly destinations: PublicSearchGroup;
+    readonly events: PublicSearchGroup;
+    readonly posts: PublicSearchGroup;
+}
+
+/** Public unified search API endpoints */
+export const searchApi = {
+    /**
+     * Unified cross-entity search across accommodations, destinations, events, and posts.
+     * Requires q.length >= 2. Rate-limited at 30 req/min per IP.
+     *
+     * @param params - Search query and optional item limit per group
+     * @returns Groups of matching items per entity type with total counts
+     *
+     * @example
+     * ```ts
+     * const result = await searchApi.search({ q: 'cabaña', limit: 5 });
+     * if (result.ok) {
+     *   console.log(result.data.accommodations.items);
+     * }
+     * ```
+     */
+    search({
+        q,
+        limit
+    }: {
+        readonly q: string;
+        readonly limit?: number;
+    }): Promise<ApiResult<PublicSearchResponse>> {
+        return apiClient.get({
+            path: `${BASE}/search`,
+            params: limit != null ? { q, limit } : { q }
         });
     }
 };

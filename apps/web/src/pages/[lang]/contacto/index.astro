@@ -7,6 +7,7 @@
  */
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import { ContactForm } from '@/components/ContactForm.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { GetStaticPaths } from 'astro';
@@ -36,10 +37,7 @@ const { t } = createTranslations(locale);
 			</p>
 
 			<div class="contact-page__form-area" data-reveal="up">
-				<!-- TODO: ContactForm React island (client:visible) -->
-				<div class="contact-page__placeholder">
-					<p>{t('contact.formPlaceholder', 'El formulario de contacto estará disponible próximamente.')}</p>
-				</div>
+				<ContactForm locale={locale} client:visible />
 			</div>
 
 			<div class="contact-page__info" data-reveal="up">

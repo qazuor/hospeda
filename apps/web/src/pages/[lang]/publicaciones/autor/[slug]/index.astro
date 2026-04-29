@@ -1,15 +1,21 @@
 ---
 /**
  * @file publicaciones/autor/[slug]/index.astro
- * @description Posts by author. Requires user-by-slug endpoint (T-016).
+ * @description Author profile page — shows avatar, bio, and a paginated list
+ * of their published posts. Calls GET /api/v1/public/users/by-slug/{slug} and
+ * GET /api/v1/public/posts?authorId={id}&page={n}.
  * @route /{lang}/publicaciones/autor/{slug}/
- * @rendering SSR + ISR 24h
+ * @rendering SSR (no ISR — user profile may change)
  */
-// TODO: Requires GET /api/v1/public/users/by-slug/{slug} endpoint (T-016)
+
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
-import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import EmptyState from '@/components/EmptyState.astro';
+import Pagination from '@/components/shared/feedback/Pagination.astro';
+import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
+import { usersApi, postsApi } from '@/lib/api/endpoints';
+import { toArticleCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -17,12 +23,186 @@ import { buildUrl } from '@/lib/urls';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { slug } = Astro.params;
+
 if (!slug) return new Response(null, { status: 404 });
-const authorName = slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+// Read ?page= from query string (rewritten by [page].astro)
+const pageParam = Astro.url.searchParams.get('page') ?? '1';
+const page = Math.max(1, Number.parseInt(pageParam, 10) || 1);
+const pageSize = 9;
+
+// Fetch user profile — 404 if not found
+const userResult = await usersApi.getBySlug({ slug });
+if (!userResult.ok) {
+	return new Response(null, { status: 404 });
+}
+
+const author = userResult.data;
+const authorName = author.displayName ?? slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+// Fetch author's posts in parallel (no waterfall)
+const postsResult = await postsApi.list({ authorId: author.id, page, pageSize });
+const rawItems = postsResult.ok ? postsResult.data.items : [];
+const pagination = postsResult.ok ? postsResult.data.pagination : null;
+const totalPages = pagination?.totalPages ?? 1;
+const totalPosts = pagination?.total ?? 0;
+
+const articleCards = rawItems.map((item) =>
+	toArticleCardProps({ item: item as unknown as Record<string, unknown> })
+);
+
+const canonical = `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`;
 ---
 
-<ListingLayout locale={locale} title={`${authorName} - ${t('blog.title', 'Publicaciones')}`} showFilters={false}>
-	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('blog.title', 'Publicaciones'), path: 'publicaciones' }, { label: authorName }]} />
-	<ListingPageHeader slot="page-header" locale={locale} tagline={t('blog.byAuthor.tagline', 'Autor')} title={authorName} />
-	<EmptyState locale={locale} variant="empty" message={t('blog.byAuthor.comingSoon', 'Funcionalidad en desarrollo. Volvé pronto.')} actionUrl={buildUrl({ locale, path: 'publicaciones' })} actionLabel={t('blog.byAuthor.viewAll', 'Ver todas las publicaciones')} />
+<ListingLayout
+	locale={locale}
+	title={`${authorName} - ${t('blog.title', 'Publicaciones')}`}
+	description={author.bio ?? t('blog.byAuthor.description', `Publicaciones de ${authorName}`)}
+	showFilters={false}
+>
+	<Breadcrumbs
+		slot="breadcrumbs"
+		locale={locale}
+		items={[
+			{ label: t('blog.title', 'Publicaciones'), path: 'publicaciones' },
+			{ label: t('blog.details.author', 'Autor') },
+			{ label: authorName },
+		]}
+	/>
+
+	<ListingPageHeader
+		slot="page-header"
+		locale={locale}
+		tagline={t('blog.byAuthor.tagline', 'Autor')}
+		title={authorName}
+	/>
+
+	<!-- Author profile card -->
+	<div class="author-page__profile">
+		{author.avatar && (
+			<img
+				src={author.avatar}
+				alt={authorName}
+				class="author-page__avatar"
+				width={80}
+				height={80}
+				loading="lazy"
+				decoding="async"
+			/>
+		)}
+		<div class="author-page__info">
+			<h2 class="author-page__name">{authorName}</h2>
+			{author.bio && (
+				<p class="author-page__bio">{author.bio}</p>
+			)}
+			{totalPosts > 0 && (
+				<p class="author-page__count">
+					{totalPosts} {totalPosts === 1
+						? t('blog.byAuthor.singlePost', 'publicación')
+						: t('blog.byAuthor.multiplePost', 'publicaciones')}
+				</p>
+			)}
+		</div>
+	</div>
+
+	{articleCards.length > 0 ? (
+		<>
+			<div class="author-page__grid">
+				{articleCards.map((card, i) => (
+					<div data-reveal="up" style={`transition-delay: ${i * 80}ms`}>
+						<ArticleCard data={card} locale={locale} />
+					</div>
+				))}
+			</div>
+
+			{totalPages > 1 && (
+				<Pagination
+					locale={locale}
+					currentPage={page}
+					totalPages={totalPages}
+					baseUrl={buildUrl({ locale, path: `publicaciones/autor/${slug}` })}
+				/>
+			)}
+		</>
+	) : (
+		<EmptyState
+			title={t('blog.byAuthor.emptyTitle', 'Sin publicaciones aún')}
+			description={t('blog.byAuthor.emptyDesc', 'Este autor aún no tiene publicaciones. Volvé pronto.')}
+		>
+			<a href={buildUrl({ locale, path: 'publicaciones' })} class="btn btn--outline">
+				{t('blog.byAuthor.viewAll', 'Ver todas las publicaciones')}
+			</a>
+		</EmptyState>
+	)}
 </ListingLayout>
+
+<style>
+	.author-page__profile {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-5);
+		background-color: var(--card);
+		border-radius: var(--radius-card);
+		padding: var(--space-6);
+		box-shadow: var(--shadow-card);
+		margin-bottom: var(--space-8);
+	}
+
+	.author-page__avatar {
+		width: 80px;
+		height: 80px;
+		border-radius: 50%;
+		object-fit: cover;
+		flex-shrink: 0;
+		border: 3px solid var(--border);
+	}
+
+	.author-page__info {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.author-page__name {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-xl);
+		color: var(--foreground);
+		margin: 0;
+	}
+
+	.author-page__bio {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--muted-foreground);
+		line-height: 1.6;
+		margin: 0;
+	}
+
+	.author-page__count {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--brand-accent);
+		font-weight: 500;
+		margin: 0;
+	}
+
+	.author-page__grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--space-card-gap);
+		margin-bottom: var(--space-8);
+	}
+
+	@media (min-width: 640px) {
+		.author-page__grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.author-page__grid {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+</style>

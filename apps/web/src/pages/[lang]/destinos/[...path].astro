@@ -42,22 +42,30 @@ const destId = String(dest.id || '');
 const featuredImage = String(dest.featuredImage || '/assets/images/placeholder-destination.svg');
 const destType = String(dest.destinationType || '');
 
-// Fetch previews (3 accommodations + 3 events)
+// Fetch previews (3 accommodations + 3 events) and counts — all in parallel
 let accCards: ReturnType<typeof toAccommodationCardProps>[] = [];
 let eventCards: ReturnType<typeof toEventCardProps>[] = [];
+let accCount = 0;
+let eventsCount = 0;
 
 try {
-	const [accResult, eventsResult] = await Promise.all([
+	const [accResult, accCountResult, eventsResult, eventsCountResult] = await Promise.all([
 		accommodationsApi.getByDestination({ destinationId: destId, pageSize: 3 }),
-		eventsApi.list({ pageSize: 3 }),
+		// pageSize=1 to get just the total count from pagination without heavy payload
+		accommodationsApi.getByDestination({ destinationId: destId, pageSize: 1 }),
+		eventsApi.list({ pageSize: 3, destinationId: destId }),
+		eventsApi.list({ pageSize: 1, destinationId: destId }),
 	]);
 
 	accCards = accResult.ok
 		? accResult.data.items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }))
 		: [];
+	accCount = accCountResult.ok ? (accCountResult.data.pagination?.total ?? 0) : 0;
+
 	eventCards = eventsResult.ok
 		? eventsResult.data.items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown> }))
 		: [];
+	eventsCount = eventsCountResult.ok ? (eventsCountResult.data.pagination?.total ?? 0) : 0;
 } catch (err) {
 	console.error('[destinos/detail] Error fetching previews:', err);
 }
@@ -184,10 +192,16 @@ const jsonLd = {
 	<div slot="sidebar" class="dest-sidebar">
 		<div class="dest-sidebar__card">
 			<h3 class="dest-sidebar__card-title">{t('destinations.detail.stats', 'Información')}</h3>
-			<!-- TODO: Counts (accommodations, events, attractions) from API -->
-			<div class="dest-sidebar__placeholder">
-				<p>{t('destinations.detail.statsPlaceholder', 'Estadísticas del destino')}</p>
-			</div>
+			<ul class="dest-sidebar__stat-list">
+				<li class="dest-sidebar__stat-item">
+					<span class="dest-sidebar__stat-label">{t('destinations.detail.accommodationsCount', 'Alojamientos')}</span>
+					<span class="dest-sidebar__stat-value">{accCount}</span>
+				</li>
+				<li class="dest-sidebar__stat-item">
+					<span class="dest-sidebar__stat-label">{t('destinations.detail.eventsCount', 'Eventos')}</span>
+					<span class="dest-sidebar__stat-value">{eventsCount}</span>
+				</li>
+			</ul>
 		</div>
 	</div>
 </DetailLayout>
@@ -213,7 +227,10 @@ const jsonLd = {
 
 	.dest-sidebar__card { background-color: var(--card); border-radius: var(--radius-card); padding: var(--space-6); box-shadow: var(--shadow-card); margin-bottom: var(--space-4); }
 	.dest-sidebar__card-title { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); color: var(--foreground); margin: 0 0 var(--space-4); }
-	.dest-sidebar__placeholder { color: var(--muted-foreground); font-family: var(--font-sans); font-size: var(--text-body-sm); }
+	.dest-sidebar__stat-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+	.dest-sidebar__stat-item { display: flex; align-items: center; justify-content: space-between; }
+	.dest-sidebar__stat-label { font-family: var(--font-sans); font-size: var(--text-body-sm); color: var(--muted-foreground); }
+	.dest-sidebar__stat-value { font-family: var(--font-heading); font-size: var(--text-body); font-weight: 600; color: var(--foreground); }
 
 	@media (max-width: 768px) { .dest-detail__preview-grid { grid-template-columns: 1fr; } }
 </style>

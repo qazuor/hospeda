@@ -9,6 +9,7 @@
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
+import { ShareButtons } from '@/components/ShareButtons.client';
 import { eventsApi } from '@/lib/api/endpoints';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -49,6 +50,8 @@ const eventStatus = isCancelled ? 'EventCancelled' : (isActive && !isCancelled) 
 const categoryColors = getEventCategoryColor({ category: category.toLowerCase() });
 const pastColors = getBadgeStatusColor({ status: 'past' });
 const cancelledColors = getBadgeStatusColor({ status: 'cancelled' });
+
+const canonical = `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`;
 
 const jsonLd = {
 	'@context': 'https://schema.org',
@@ -157,6 +160,11 @@ const jsonLd = {
 				<p>{t('events.detail.mapPlaceholder', 'Mapa interactivo próximamente')}</p>
 			</div>
 		</section>
+
+		<!-- Share buttons -->
+		<div class="event-detail__share">
+			<ShareButtons url={canonical} title={name} locale={locale} client:visible />
+		</div>
 	</div>
 
 	<!-- Sidebar -->
@@ -205,4 +213,5 @@ const jsonLd = {
 	.event-sidebar__free { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); color: var(--foreground); margin: 0; }
 	.event-sidebar__card-title { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); color: var(--foreground); margin: 0 0 var(--space-2); }
 	.event-sidebar__organizer-name { font-family: var(--font-sans); color: var(--muted-foreground); margin: 0; }
+	.event-detail__share { margin-top: var(--space-6); display: flex; justify-content: flex-start; }
 </style>

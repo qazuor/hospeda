@@ -10,6 +10,7 @@ import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import Badge from '@/components/shared/ui/Badge.astro';
+import { ShareButtons } from '@/components/ShareButtons.client';
 import { postsApi } from '@/lib/api/endpoints';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -38,6 +39,7 @@ const featuredImage = String(post.featuredImage || '/assets/images/placeholder-p
 const readingTime = Number(post.readingTimeMinutes || 0);
 const authorObj = post.author as Record<string, unknown> | undefined;
 const authorName = String(authorObj?.displayName || authorObj?.name || '');
+const authorSlug = authorObj?.slug ? String(authorObj.slug) : null;
 const rawAuthorAvatar = String(authorObj?.image || authorObj?.avatarUrl || '');
 // Route Cloudinary-hosted author avatars through the `avatar` preset so a
 // 150x150 face-cropped variant is delivered. Non-Cloudinary URLs pass through
@@ -142,7 +144,16 @@ const jsonLd = {
 						decoding="async"
 					/>
 				) : null}
-				<span class="post-detail__author-name">{authorName}</span>
+				{authorSlug ? (
+					<a
+						href={buildUrl({ locale, path: `publicaciones/autor/${authorSlug}` })}
+						class="post-detail__author-name post-detail__author-link"
+					>
+						{authorName}
+					</a>
+				) : (
+					<span class="post-detail__author-name">{authorName}</span>
+				)}
 			</div>
 		)}
 
@@ -160,9 +171,14 @@ const jsonLd = {
 			</div>
 		)}
 
-		<!-- Share buttons placeholder -->
+		<!-- Share buttons -->
 		<div class="post-detail__share">
-			<!-- TODO: Share buttons component -->
+			<ShareButtons
+				url={`${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`}
+				title={title}
+				locale={locale}
+				client:visible
+			/>
 		</div>
 	</article>
 </DetailLayout>
@@ -182,6 +198,8 @@ const jsonLd = {
 	.post-detail__author { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-8); }
 	.post-detail__author-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
 	.post-detail__author-name { font-family: var(--font-sans); font-weight: 500; color: var(--foreground); }
+	.post-detail__author-link { text-decoration: none; transition: color var(--duration-fast) ease; }
+	.post-detail__author-link:hover { color: var(--brand-accent); text-decoration: underline; }
 
 	.post-detail__content { font-family: var(--font-sans); font-size: var(--text-body-lg); line-height: 1.8; color: var(--foreground); margin-bottom: var(--space-8); }
 	.post-detail__content :global(h2) { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-xl); margin-top: var(--space-8); margin-bottom: var(--space-4); }
@@ -192,4 +210,5 @@ const jsonLd = {
 	.post-detail__tags { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-6); }
 	.post-detail__tag { padding: 0.375rem 0.75rem; background-color: var(--muted); border-radius: var(--radius-pill); font-family: var(--font-sans); font-size: var(--text-body-sm); color: var(--muted-foreground); text-decoration: none; transition: background-color var(--duration-fast) ease; }
 	.post-detail__tag:hover { background-color: var(--border); color: var(--foreground); }
+	.post-detail__share { margin-top: var(--space-6); display: flex; justify-content: flex-start; }
 </style>

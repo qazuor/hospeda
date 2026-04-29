@@ -1,73 +1,75 @@
 ---
 /**
  * @file busqueda/index.astro
- * @description Global search page with grouped results.
+ * @description Global search page. SSR shell: reads ?q= from URL.
+ * - q.length < 2: renders search input + popular tag shortcuts.
+ * - q.length >= 2: fetches from GET /api/v1/public/search?q={q}, renders 4
+ *   grouped sections (Alojamientos, Destinos, Eventos, Publicaciones).
  * @route /{lang}/busqueda/
- * @rendering SSR (no ISR - dynamic)
+ * @rendering SSR (dynamic — always fresh)
  */
-// TODO: Use GET /api/v1/public/search?q={query} when endpoint is created (T-017)
+
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import SearchResultsLive from '@/components/search/SearchResultsLive.client';
+import { searchApi } from '@/lib/api/endpoints';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import type { PublicSearchResponse } from '@/lib/api/endpoints';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
-const q = Astro.url.searchParams.get('q') ?? '';
+const q = (Astro.url.searchParams.get('q') ?? '').trim();
+const hasQuery = q.length >= 2;
+
+// Fetch search results server-side when q is long enough
+let initialResults: PublicSearchResponse | null = null;
+if (hasQuery) {
+	const result = await searchApi.search({ q, limit: 5 });
+	if (result.ok) {
+		initialResults = result.data;
+	}
+}
+
+const popularTags = ['Cabañas', 'Colón', 'Termas', 'Carnaval', 'Eventos', 'Entre Ríos'] as const;
 ---
 
-<DefaultLayout locale={locale} title={q ? `${q} - ${t('search.title', 'Búsqueda')}` : t('search.title', 'Búsqueda')} noindex={true}>
+<DefaultLayout
+	locale={locale}
+	title={q ? `${q} — ${t('search.title', 'Búsqueda')}` : t('search.title', 'Búsqueda')}
+	description={t('search.description', 'Buscá alojamientos, destinos, eventos y publicaciones en el Litoral Entrerriano.')}
+	noindex={true}
+>
 	<div class="search-page">
 		<div class="search-page__container">
 			<h1 class="search-page__title">{t('search.title', 'Búsqueda')}</h1>
 
-			<form class="search-page__form" action={buildUrl({ locale, path: 'busqueda' })} method="get">
-				<input type="text" name="q" value={q} placeholder={t('search.placeholder', 'Buscar alojamientos, destinos, eventos...')} class="search-page__input" autofocus />
-				<GradientButton
-					as="button"
-					type="submit"
-					label={t('search.submit', 'Buscar')}
-					variant="accent"
-					shape="rounded"
-					class="search-page__btn"
-				/>
-			</form>
-
-			{!q && (
-				<div class="search-page__suggestions">
-					<h2 class="search-page__subtitle">{t('search.popular', 'Búsquedas populares')}</h2>
-					<div class="search-page__tags">
-						{['Cabañas', 'Colón', 'Termas', 'Eventos', 'Carnaval'].map((tag) => (
-							<a href={buildUrl({ locale, path: `busqueda?q=${encodeURIComponent(tag)}` })} class="search-page__tag">{tag}</a>
-						))}
-					</div>
-				</div>
-			)}
-
-			{q && (
-				<div class="search-page__results">
-					<p class="search-page__results-info">{t('search.resultsFor', 'Resultados para')}: <strong>{q}</strong></p>
-					<!-- TODO: Grouped results from search API (T-017) -->
-					<div class="search-page__placeholder">
-						<p>{t('search.comingSoon', 'La búsqueda unificada estará disponible próximamente.')}</p>
-					</div>
-				</div>
-			)}
+			<!-- Live island: handles debounced re-fetching client-side -->
+			<SearchResultsLive
+				client:load
+				initialQuery={q}
+				initialResults={initialResults}
+				locale={locale}
+				popularTags={popularTags as unknown as string[]}
+				searchBaseUrl={buildUrl({ locale, path: 'busqueda' })}
+			/>
 		</div>
 	</div>
 </DefaultLayout>
 
 <style>
-	.search-page__container { max-width: var(--container-max); margin: 0 auto; padding: var(--space-section-sm) var(--space-container-x); }
-	.search-page__title { font-family: var(--font-heading); font-weight: 700; font-size: clamp(1.75rem, 4vw, 2.5rem); color: var(--foreground); margin: 0 0 var(--space-6); text-align: center; }
-	.search-page__form { display: flex; gap: var(--space-3); max-width: 600px; margin: 0 auto var(--space-8); }
-	.search-page__input { flex: 1; padding: 0.875rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-button); font-family: var(--font-sans); font-size: var(--text-body); background-color: var(--background); color: var(--foreground); }
-	.search-page__suggestions { text-align: center; }
-	.search-page__subtitle { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); color: var(--foreground); margin: 0 0 var(--space-4); }
-	.search-page__tags { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; }
-	.search-page__tag { padding: 0.5rem 1rem; background-color: var(--muted); border-radius: var(--radius-pill); font-family: var(--font-sans); font-size: var(--text-body-sm); color: var(--foreground); text-decoration: none; }
-	.search-page__tag:hover { background-color: var(--border); }
-	.search-page__results-info { font-family: var(--font-sans); color: var(--muted-foreground); margin-bottom: var(--space-6); text-align: center; }
-	.search-page__placeholder { background-color: var(--card); border: 1px dashed var(--border); border-radius: var(--radius-card); padding: var(--space-8); text-align: center; color: var(--muted-foreground); }
+	.search-page__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: var(--space-section-sm) var(--space-container-x);
+	}
+
+	.search-page__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		color: var(--foreground);
+		margin: 0 0 var(--space-6);
+		text-align: center;
+	}
 </style>
