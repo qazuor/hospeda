@@ -7,7 +7,8 @@
             "status": "in-progress",
             "complexity": "high",
             "path": "SPEC-059-service-layer-transaction-support",
-            "created": "2026-04-13T00:00:00.000Z"
+            "created": "2026-04-13T00:00:00.000Z",
+            "archived": true
         },
         {
             "specId": "SPEC-077",
@@ -15,7 +16,8 @@
             "status": "draft",
             "complexity": "high",
             "path": "SPEC-077-accommodation-detail-page-rebuild",
-            "created": "2026-04-13T14:00:00.000Z"
+            "created": "2026-04-13T14:00:00.000Z",
+            "archived": true
         }
     ]
 }

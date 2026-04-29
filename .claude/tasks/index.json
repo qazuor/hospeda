@@ -34,105 +34,120 @@
             "title": "Interactive CLI Tool for Development Workflows",
             "status": "completed",
             "progress": "29/29",
-            "path": "SPEC-032-interactive-cli-tool"
+            "path": "SPEC-032-interactive-cli-tool",
+            "archived": true
         },
         {
             "specId": "SPEC-036",
             "title": "Unified Zod Validation Error i18n System",
             "status": "completed",
             "progress": "24/24",
-            "path": "SPEC-036-zod-validation-i18n"
+            "path": "SPEC-036-zod-validation-i18n",
+            "archived": true
         },
         {
             "specId": "SPEC-036-gaps",
             "title": "SPEC-036 Gaps Remediation - Zod Validation i18n",
             "status": "pending",
             "progress": "0/29",
-            "path": "SPEC-036-gaps-remediation"
+            "path": "SPEC-036-gaps-remediation",
+            "archived": true
         },
         {
             "specId": "SPEC-026-GAPS",
             "title": "Security Testing Gaps Remediation",
             "status": "pending",
             "progress": "0/34",
-            "path": "SPEC-026-security-testing-gaps"
+            "path": "SPEC-026-security-testing-gaps",
+            "archived": true
         },
         {
             "specId": "SPEC-038",
             "title": "Addon Entitlements Architecture Fix",
             "status": "pending",
             "progress": "0/15",
-            "path": "SPEC-038-addon-entitlements-architecture"
+            "path": "SPEC-038-addon-entitlements-architecture",
+            "archived": true
         },
         {
             "specId": "SPEC-034",
             "title": "On-Demand ISR Revalidation System",
             "status": "completed",
             "progress": "86/86",
-            "path": "SPEC-034-on-demand-isr-revalidation"
+            "path": "SPEC-034-on-demand-isr-revalidation",
+            "archived": true
         },
         {
             "specId": "SPEC-020-GAPS",
-            "title": "SPEC-020 Deployment Readiness \u2014 Gaps Remediation",
+            "title": "SPEC-020 Deployment Readiness — Gaps Remediation",
             "status": "pending",
             "progress": "0/17",
-            "path": "SPEC-020-gaps-remediation"
+            "path": "SPEC-020-gaps-remediation",
+            "archived": true
         },
         {
             "specId": "SPEC-044",
             "title": "Addon Purchase Schema Cleanup",
             "status": "pending",
             "progress": "0/21",
-            "path": "SPEC-044-addon-purchase-schema-cleanup"
+            "path": "SPEC-044-addon-purchase-schema-cleanup",
+            "archived": true
         },
         {
             "specId": "SPEC-042",
             "title": "CSP Nonce/Hash Integration",
             "status": "completed",
             "progress": "20/20",
-            "path": "SPEC-042-csp-nonce-integration"
+            "path": "SPEC-042-csp-nonce-integration",
+            "archived": true
         },
         {
             "specId": "SPEC-043",
             "title": "Addon Lifecycle Events",
             "status": "completed",
             "progress": "26/26",
-            "path": "SPEC-043-addon-lifecycle-events"
+            "path": "SPEC-043-addon-lifecycle-events",
+            "archived": true
         },
         {
             "specId": "SPEC-043-GAPS",
-            "title": "SPEC-043 Addon Lifecycle Events \u2014 Gaps Remediation",
+            "title": "SPEC-043 Addon Lifecycle Events — Gaps Remediation",
             "status": "pending",
             "progress": "0/65",
-            "path": "SPEC-043-gaps-remediation"
+            "path": "SPEC-043-gaps-remediation",
+            "archived": true
         },
         {
             "specId": "SPEC-042-GAPS",
             "title": "CSP Security Gaps Remediation",
             "status": "pending",
             "progress": "0/27",
-            "path": "SPEC-042-gaps-remediation"
+            "path": "SPEC-042-gaps-remediation",
+            "archived": true
         },
         {
             "specId": "SPEC-034-GAPS",
-            "title": "SPEC-034 ISR Revalidation \u2014 Gaps Remediation",
+            "title": "SPEC-034 ISR Revalidation — Gaps Remediation",
             "status": "pending",
             "progress": "0/28",
-            "path": "SPEC-034-gaps-remediation"
+            "path": "SPEC-034-gaps-remediation",
+            "archived": true
         },
         {
             "specId": "SPEC-040",
             "title": "Critical Package Coverage - auth-ui, billing, logger, email",
             "status": "pending",
             "progress": "0/35",
-            "path": "SPEC-040-critical-package-coverage"
+            "path": "SPEC-040-critical-package-coverage",
+            "archived": true
         },
         {
             "specId": "SPEC-041",
             "title": "Admin Integration Tests",
-            "status": "pending",
-            "progress": "0/29",
-            "path": "SPEC-041-admin-integration-tests"
+            "status": "completed",
+            "progress": "29/29",
+            "path": "SPEC-041-admin-integration-tests",
+            "archived": true
         },
         {
             "specId": "SPEC-048",
@@ -146,28 +161,32 @@
             "title": "Admin List Filtering: adminList() Method for BaseCrudService",
             "status": "pending",
             "progress": "0/64",
-            "path": "SPEC-049-admin-list-filtering"
+            "path": "SPEC-049-admin-list-filtering",
+            "archived": true
         },
         {
             "specId": "SPEC-065",
             "title": "Figma to Code: Homepage Production Migration",
             "status": "completed",
             "progress": "66/66",
-            "path": "SPEC-065-figma-to-code-homepage"
+            "path": "SPEC-065-figma-to-code-homepage",
+            "archived": true
         },
         {
             "specId": "SPEC-054",
             "title": "Admin Entity List Filter Bar & Default Filters Indicator",
             "status": "completed",
             "progress": "25/25",
-            "path": "SPEC-054-default-filters-ui-indicator"
+            "path": "SPEC-054-default-filters-ui-indicator",
+            "archived": true
         },
         {
             "specId": "SPEC-058",
             "title": "Align BaseModel Interface with Implementation",
             "status": "pending",
             "progress": "0/18",
-            "path": "SPEC-058-basemodel-interface-alignment"
+            "path": "SPEC-058-basemodel-interface-alignment",
+            "archived": true
         },
         {
             "specId": "SPEC-075",
@@ -178,59 +197,67 @@
         },
         {
             "specId": "SPEC-060-gaps",
-            "title": "SPEC-060 Gap Remediation \u2014 All 56 Gaps",
+            "title": "SPEC-060 Gap Remediation — All 56 Gaps",
             "status": "in-progress",
             "progress": "5/58",
-            "path": "SPEC-060-gaps"
+            "path": "SPEC-060-gaps",
+            "archived": true
         },
         {
             "specId": "SPEC-059",
             "title": "Service-Layer Transaction Support & Concurrency Safety",
             "status": "in-progress",
             "progress": "7/32",
-            "path": "SPEC-059-service-layer-transaction-support"
+            "path": "SPEC-059-service-layer-transaction-support",
+            "archived": true
         },
         {
             "specId": "SPEC-068",
             "title": "Type-Safe list() Options via Generics",
             "status": "completed",
             "progress": "4/4",
-            "path": "SPEC-068-list-execute-search-generics"
+            "path": "SPEC-068-list-execute-search-generics",
+            "archived": true
         },
         {
             "specId": "SPEC-062",
             "title": "Runtime Response Schema Enforcement",
-            "status": "pending",
-            "progress": "0/20",
-            "path": "SPEC-062-runtime-response-validation"
+            "status": "completed",
+            "progress": "20/20",
+            "path": "SPEC-062-runtime-response-validation",
+            "archived": true
         },
         {
             "specId": "SPEC-066",
             "title": "getById Relation Loading Consistency",
             "status": "pending",
             "progress": "0/7",
-            "path": "SPEC-066-getbyid-relation-loading"
+            "path": "SPEC-066-getbyid-relation-loading",
+            "archived": true
         },
         {
             "specId": "SPEC-063",
             "title": "Lifecycle State Standardization",
             "status": "in-progress",
             "progress": "34/63",
-            "path": "SPEC-063-lifecycle-state-standardization"
+            "path": "SPEC-063-lifecycle-state-standardization",
+            "archived": true
         },
         {
             "specId": "SPEC-078",
             "title": "Cloudinary Image Management System",
             "status": "in-progress",
             "progress": "25/25",
-            "path": "SPEC-078-cloudinary-image-management"
+            "path": "SPEC-078-cloudinary-image-management",
+            "archived": true
         },
         {
             "specId": "SPEC-064",
             "title": "Billing Transaction Safety — Advisory Locks and Atomic Operations",
             "status": "pending",
             "progress": "0/35",
-            "path": "SPEC-064-billing-transaction-safety"
+            "path": "SPEC-064-billing-transaction-safety",
+            "archived": true
         }
     ],
     "standalone": {
