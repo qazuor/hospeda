@@ -71,6 +71,7 @@ export const accommodations = pgTable(
         updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' }),
         deletedAt: timestamp('deleted_at', { withTimezone: true }),
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
+        lastWarnedAt: timestamp('last_warned_at', { withTimezone: true }),
         moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
         extraInfo: jsonb('extra_info').$type<Record<string, unknown>>(),
         schedule: jsonb('schedule').$type<Record<string, unknown>>(),

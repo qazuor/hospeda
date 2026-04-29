@@ -76,6 +76,13 @@ export const AccommodationSchema = z.object({
     // Rating breakdown (aggregate of review ratings)
     rating: AccommodationRatingSchema.optional(),
 
+    /**
+     * Timestamp of the last "draft about to be archived" warning email sent to the owner.
+     * Set by the archive-abandoned-drafts cron at the 7-day-before-archive mark.
+     * Null when no warning has been emitted yet.
+     */
+    lastWarnedAt: z.date().nullable().optional(),
+
     // Extra Info
     extraInfo: z
         .object({
