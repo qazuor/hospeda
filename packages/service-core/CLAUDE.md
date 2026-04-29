@@ -412,6 +412,78 @@ describe('AccommodationService', () => {
 });
 ```
 
+## Integration Tests (SPEC-080)
+
+Integration tests verify that `getById()` for the SPEC-066 affected services
+(AccommodationService, PostService, EventService, AccommodationReviewService,
+DestinationReviewService, UserBookmarkService, OwnerPromotionService,
+SponsorshipService, SponsorshipPackageService, PostSponsorshipService) returns
+populated relation objects when connected to a real PostgreSQL database. This
+catches Drizzle schema misconfigurations that mocked unit tests cannot detect:
+missing `relations()` definitions, wrong `validRelationKeys`, incorrect
+`getTableName()` keys, and nested-relation resolution bugs (the GAP-028 case).
+
+### Prerequisites
+
+- Docker running with PostgreSQL: `pnpm db:start`
+- `HOSPEDA_TEST_DATABASE_URL` available; it defaults to the same credentials
+  used by SPEC-061 in CI. The suite has its own global-setup that creates an
+  ephemeral `hospeda_service_integration_test` DB and drops it on teardown,
+  so it does not collide with SPEC-061's `hospeda_integration_test`.
+
+### Commands
+
+```bash
+pnpm test:integration          # run service-core integration tests
+pnpm test:integration:watch    # watch mode
+```
+
+From the repo root, `pnpm test:integration` runs the entire integration
+matrix via turbo, including this package and `@repo/db` (SPEC-061).
+
+### How It Works
+
+1. `test/integration/services/global-setup.ts` provisions the ephemeral
+   database, pushes the Drizzle schema via `drizzle-kit`, and applies
+   `apply-postgres-extras.sh` for triggers and materialized views.
+2. `helpers.ts` exposes `getServiceTestDb()`, `withServiceTestTransaction()`,
+   and per-entity seed helpers (`seedAccommodation`, `seedPost`,
+   `seedEvent`, `seedAccommodationReview`, `seedDestinationReview`,
+   `seedOwnerPromotion`, `seedSponsorshipPackage`, `seedSponsorship`,
+   `seedPostSponsorship`, `seedUserBookmark`).
+3. Each test seeds the required FK chain inside a transaction, calls
+   `service.getById(actor, id, ctx)` against the real DB, asserts both the
+   FK columns and the populated relation objects, and lets the transaction
+   roll back on completion. Pool teardown happens in `afterAll`.
+
+### Assertions and Service Contracts
+
+- `service.getById` THROWS `ServiceError` (code `NOT_FOUND`) when the entity
+  is missing — it does NOT return a `{ data: null, error }` shape. NOT_FOUND
+  tests must use `await expect(...).rejects.toThrow(/not found/i)`.
+- The relations actually loaded are whatever each service returns from its
+  `getDefaultListRelations()` override. SPEC-080 documents the expected set
+  per service, but the test suite asserts the actual set in code. Surfacing
+  a mismatch (e.g., EventService currently loads only `{ organizer, location }`
+  even though it conceptually has `author` and `tags`) is by design.
+
+### Skip Behavior
+
+When `HOSPEDA_TEST_DATABASE_URL` is not set, every test is skipped via
+`it.skipIf(!isServiceTestDbAvailable())`. The exit code stays 0 so local
+dev workflows are not broken when Docker is down.
+
+### Schema Discoveries Worth Knowing
+
+- `post_sponsorships.sponsor` is a `post_sponsors` brand entity with name,
+  type, description, logo, and contact info — NOT a User. PostService
+  resolves `data.sponsorship.sponsor` to that brand record.
+- `EventService.getDefaultListRelations()` returns `{ author, organizer, location }`.
+  `tags` is intentionally excluded because `r_entity_tag` is polymorphic
+  (entityType + entityId composite reference) and Drizzle's relational query
+  API cannot resolve polymorphic relations natively. Callers that need event
+  tags must load them via a separate query.
+
 ## Authorization & Permission Checks
 
 ### 🔥 CRITICAL: Granular Permission Pattern
