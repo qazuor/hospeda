@@ -17,9 +17,11 @@ pnpm db:generate       # Generate migration from schema changes
 pnpm db:studio         # Open Drizzle Studio (visual DB tool)
 
 # Testing
-pnpm test              # Run all tests
-pnpm test:watch        # Watch mode
-pnpm test:coverage     # Coverage report
+pnpm test                       # Run unit tests (mocked DB)
+pnpm test:watch                 # Watch mode (unit)
+pnpm test:coverage              # Coverage report (unit)
+pnpm test:integration           # Integration tests against real PostgreSQL (SPEC-061)
+pnpm test:integration:watch     # Watch mode (integration)
 
 # Code Quality
 pnpm typecheck         # TypeScript validation
@@ -408,6 +410,64 @@ describe('AccommodationModel', () => {
   });
 });
 ```
+
+## Integration Tests (SPEC-061)
+
+Integration tests run against a real PostgreSQL instance to verify transaction
+propagation, constraint enforcement, and query correctness. They live under
+`packages/db/test/integration/` and never run as part of `pnpm test`.
+
+### Prerequisites
+
+- Docker running with PostgreSQL: `pnpm db:start`
+- The infrastructure creates and drops its own database
+  (`hospeda_integration_test`) and never touches your dev or E2E DB.
+
+### Commands
+
+```bash
+pnpm test:integration          # Run all integration tests
+pnpm test:integration:watch    # Watch mode for development
+```
+
+### How it works
+
+1. **Global setup** (`test/integration/global-setup.ts`) creates
+   `hospeda_integration_test`, pushes the Drizzle schema, installs
+   `uuid-ossp`/`pgcrypto`/`unaccent`, then runs `apply-postgres-extras.sh`
+   for triggers and materialized views (non-fatal).
+2. The connection string is exported as `HOSPEDA_TEST_DATABASE_URL` and
+   inherited by Vitest worker forks.
+3. Each test wraps its body in `withTestTransaction(async (tx) => { ... })`
+   from `test/integration/helpers.ts`. The transaction is **always rolled
+   back**, so state stays clean without TRUNCATE overhead.
+4. Tests that need cross-transaction visibility (e.g. concurrent isolation)
+   use `withCleanSlate(async (db) => { ... })`, which TRUNCATEs all user
+   tables before invoking the callback.
+5. Every file calls `closeTestPool()` in `afterAll()` to drain its worker
+   pool.
+6. **Global teardown** drops the test database after the last worker exits.
+
+Tests run in parallel (`maxForks: 3`) because rollback isolation makes that
+safe.
+
+### Helpers
+
+`test/integration/helpers.ts` exports:
+
+- `getTestDb()`, `getTestPool()`: cached Drizzle client and pg.Pool per worker
+- `withTestTransaction(fn)`: rollback-isolated test wrapper
+- `withCleanSlate(fn)`: TRUNCATE-based clean slate for visibility tests
+- `closeTestPool()`: tear down per-worker resources in `afterAll`
+- `testData.user|destination|tag(overrides?)`: minimal NOT NULL-safe factories
+
+### Troubleshooting
+
+- "Cannot connect to PostgreSQL": run `pnpm db:start`.
+- "drizzle-kit push failed": `packages/db/drizzle.config.ts` is invalid or the
+  schema does not compile.
+- Orphaned test DB: setup always drops + recreates, so killed runs self-heal
+  on the next invocation.
 
 ## Query Building Utilities
 

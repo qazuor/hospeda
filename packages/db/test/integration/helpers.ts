@@ -1,52 +1,178 @@
-import { sql } from 'drizzle-orm';
+import { qzpaySchema } from '@qazuor/qzpay-drizzle';
+/**
+ * Shared helpers for database integration tests (SPEC-061).
+ *
+ * Provides:
+ * - {@link getTestPool}: shared pg.Pool per worker process
+ * - {@link getTestDb}: cached Drizzle client connected to the test DB
+ * - {@link withTestTransaction}: runs a callback inside a transaction that
+ *   ALWAYS rolls back (clean state per test, parallel-safe)
+ * - {@link withCleanSlate}: TRUNCATE-based clean slate for tests that need
+ *   cross-transaction visibility
+ * - {@link closeTestPool}: close the pool in afterAll() to prevent hanging
+ *   workers
+ * - {@link testData}: minimal factories (user, destination, tag) for tests
+ *
+ * Connection string is read from `HOSPEDA_TEST_DATABASE_URL`, set by
+ * {@link ./global-setup.ts} after creating the ephemeral
+ * `hospeda_integration_test` database.
+ */
 import { drizzle } from 'drizzle-orm/node-postgres';
-/**
- * Shared helpers for database integration tests.
- *
- * Provides a lightweight test table (created/dropped per suite) and a
- * drizzle client connected to the real PostgreSQL instance.
- *
- * Usage pattern in each test file:
- *   const ctx = await getIntegrationContext();
- *   await createLikeTestTable(ctx.db);
- *   // ... run tests ...
- *   await dropLikeTestTable(ctx.db);
- *   await ctx.pool.end();
- */
-import { integer, pgTable, varchar } from 'drizzle-orm/pg-core';
 import { Pool } from 'pg';
-
-/** Name of the ephemeral integration test table. Prefixed with `_` to distinguish from production tables. */
-export const LIKE_TEST_TABLE = '_like_integration_test';
+import * as hospedaSchema from '../../src/schemas/index.ts';
+import type { DrizzleClient } from '../../src/types.ts';
 
 /**
- * Drizzle table definition for the ephemeral test table.
- * Matches the CREATE TABLE statement in createLikeTestTable().
+ * Combined schema that mirrors `packages/db/src/client.ts` so model and
+ * relational queries used in tests resolve types identically to runtime code.
  */
-export const likeTestItems = pgTable(LIKE_TEST_TABLE, {
-    id: integer('id').primaryKey(),
-    name: varchar('name', { length: 255 })
-});
+const schema = { ...hospedaSchema, ...qzpaySchema };
 
-export type LikeTestDb = ReturnType<typeof drizzle>;
+/**
+ * Sentinel error used to force a transaction rollback without surfacing as a
+ * real failure. Caught only by {@link withTestTransaction}; never exported.
+ */
+class RollbackSignal extends Error {
+    constructor() {
+        super('RollbackSignal');
+        this.name = 'RollbackSignal';
+    }
+}
 
-export interface IntegrationContext {
-    db: LikeTestDb;
-    pool: Pool;
+let pool: Pool | null = null;
+let cachedDb: DrizzleClient | null = null;
+
+/**
+ * Returns the connection string set by global-setup. Throws a clear error if
+ * tests are invoked without going through `pnpm test:integration`.
+ */
+function getTestConnectionString(): string {
+    const url = process.env.HOSPEDA_TEST_DATABASE_URL;
+    if (!url) {
+        throw new Error(
+            'HOSPEDA_TEST_DATABASE_URL is not set. ' +
+                'Run integration tests via "pnpm test:integration", which spawns global-setup.ts to create the test DB.'
+        );
+    }
+    return url;
 }
 
 /**
- * Returns true when HOSPEDA_DATABASE_URL is available in the environment.
- * Tests call this to decide whether to skip via `it.skipIf(!isDbAvailable())`.
+ * Lazy-initialised pg.Pool, one instance per worker process.
+ * `max: 5` keeps the total connection count predictable: 3 workers × 5 = 15
+ * concurrent connections, well under PostgreSQL's default 100.
  */
+export function getTestPool(): Pool {
+    if (!pool) {
+        pool = new Pool({ connectionString: getTestConnectionString(), max: 5 });
+    }
+    return pool;
+}
+
+/**
+ * Returns the cached Drizzle client for the current worker. Created once and
+ * reused so all tests in the worker share the same prepared statement cache.
+ */
+export function getTestDb(): DrizzleClient {
+    if (!cachedDb) {
+        // Object-form API recommended since drizzle-orm v0.35+. The result is
+        // assignable to DrizzleClient (PgDatabase common base).
+        cachedDb = drizzle({ client: getTestPool(), schema }) as unknown as DrizzleClient;
+    }
+    return cachedDb;
+}
+
+/**
+ * Runs a test callback inside a transaction that is ALWAYS rolled back.
+ *
+ * Use this for the vast majority of integration tests. Each test gets a clean
+ * state without TRUNCATE overhead, and parallel workers cannot interfere with
+ * each other thanks to MVCC isolation.
+ *
+ * NOTE: Tests that need cross-transaction visibility (e.g. concurrent isolation
+ * checks) must use {@link withCleanSlate} instead.
+ *
+ * @example
+ * ```ts
+ * it('inserts and finds within tx', async () => {
+ *   await withTestTransaction(async (tx) => {
+ *     await tx.insert(users).values(testData.user());
+ *     const found = await tx.query.users.findMany();
+ *     expect(found.length).toBeGreaterThan(0);
+ *   });
+ * });
+ * ```
+ */
+export async function withTestTransaction(fn: (tx: DrizzleClient) => Promise<void>): Promise<void> {
+    const db = getTestDb();
+    try {
+        await db.transaction(async (tx) => {
+            await fn(tx as unknown as DrizzleClient);
+            throw new RollbackSignal();
+        });
+    } catch (error) {
+        if (error instanceof RollbackSignal) return;
+        throw error;
+    }
+}
+
+/**
+ * Runs a test callback against a clean DB by TRUNCATE-ing all user tables.
+ *
+ * Slower than {@link withTestTransaction} (TRUNCATE acquires ACCESS EXCLUSIVE
+ * locks), so prefer the transaction helper unless the test specifically needs
+ * to observe cross-transaction visibility (e.g. snapshot isolation tests).
+ */
+export async function withCleanSlate(fn: (db: DrizzleClient) => Promise<void>): Promise<void> {
+    const db = getTestDb();
+    const p = getTestPool();
+
+    const result = await p.query<{ tablename: string }>(
+        `SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename`
+    );
+    const tables = result.rows.map((r) => `"${r.tablename}"`);
+    if (tables.length > 0) {
+        await p.query(`TRUNCATE ${tables.join(', ')} RESTART IDENTITY CASCADE`);
+    }
+
+    await fn(db);
+}
+
+/**
+ * Closes the worker-local pool and clears the cached Drizzle client.
+ * Call this from `afterAll()` in every integration test file.
+ */
+export async function closeTestPool(): Promise<void> {
+    cachedDb = null;
+    if (pool) {
+        await pool.end();
+        pool = null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Legacy helpers (pre-SPEC-061)
+// ---------------------------------------------------------------------------
+// These predate the SPEC-061 globalSetup pipeline and are still consumed by
+// `test/migrations/*.test.ts` to introspect the dev database via
+// `HOSPEDA_DATABASE_URL`. Do NOT use them in new tests — prefer
+// `withTestTransaction` + `getTestDb`.
+
+/** Legacy: true when `HOSPEDA_DATABASE_URL` is set (dev DB available). */
 export function isDbAvailable(): boolean {
     return Boolean(process.env.HOSPEDA_DATABASE_URL);
 }
 
+/** Legacy context returned by {@link getIntegrationContext}. */
+export interface IntegrationContext {
+    db: ReturnType<typeof drizzle>;
+    pool: Pool;
+}
+
 /**
- * Creates a Drizzle client connected to the database named in HOSPEDA_DATABASE_URL.
- *
- * @throws {Error} If HOSPEDA_DATABASE_URL is not set.
+ * Legacy: builds a Drizzle client + Pool against `HOSPEDA_DATABASE_URL` for
+ * one-off migration introspection tests. Callers must `await ctx.pool.end()`
+ * in their `afterAll` hook.
  */
 export function getIntegrationContext(): IntegrationContext {
     const connectionString = process.env.HOSPEDA_DATABASE_URL;
@@ -56,29 +182,79 @@ export function getIntegrationContext(): IntegrationContext {
                 'Run `pnpm db:start` and ensure apps/api/.env.local is populated.'
         );
     }
-    const pool = new Pool({ connectionString, max: 3 });
-    const db = drizzle(pool);
-    return { db, pool };
+    const legacyPool = new Pool({ connectionString, max: 3 });
+    const db = drizzle(legacyPool);
+    return { db, pool: legacyPool };
 }
 
 /**
- * Creates the ephemeral integration test table.
- * Drops it first if it already exists to ensure a clean state.
+ * Minimal test data factories. Each factory returns the smallest payload that
+ * satisfies all NOT NULL constraints for an entity. Tests should override only
+ * the fields relevant to the assertion.
+ *
+ * Column shapes are verified against the actual Drizzle schemas in
+ * `packages/db/src/schemas/`. See SPEC-061 review pass 5 for the audit.
  */
-export async function createLikeTestTable(db: LikeTestDb): Promise<void> {
-    await db.execute(sql`DROP TABLE IF EXISTS ${sql.identifier(LIKE_TEST_TABLE)}`);
-    await db.execute(
-        sql`CREATE TABLE ${sql.identifier(LIKE_TEST_TABLE)} (
-            id   INTEGER PRIMARY KEY,
-            name VARCHAR(255)
-        )`
-    );
-}
+export const testData = {
+    /**
+     * Valid `users` row. Required NOT NULL columns without defaults are
+     * `email` (unique) and `displayName`. The Better Auth customisation uses
+     * `displayName`/`firstName`/`lastName` instead of a plain `name`.
+     */
+    user(overrides: Partial<typeof hospedaSchema.users.$inferInsert> = {}) {
+        return {
+            id: crypto.randomUUID(),
+            email: `test-${crypto.randomUUID()}@example.com`,
+            displayName: 'Test User',
+            emailVerified: true,
+            lifecycleState: 'ACTIVE' as const,
+            createdById: null,
+            ...overrides
+        } satisfies typeof hospedaSchema.users.$inferInsert;
+    },
 
-/**
- * Drops the ephemeral integration test table.
- * Safe to call even if the table does not exist.
- */
-export async function dropLikeTestTable(db: LikeTestDb): Promise<void> {
-    await db.execute(sql`DROP TABLE IF EXISTS ${sql.identifier(LIKE_TEST_TABLE)}`);
-}
+    /**
+     * Valid `destinations` row. Includes the JSONB `location` and `media`
+     * shapes (BaseLocationType + Media) that the schema requires.
+     */
+    destination(overrides: Partial<typeof hospedaSchema.destinations.$inferInsert> = {}) {
+        const uid = crypto.randomUUID().slice(0, 8);
+        return {
+            id: crypto.randomUUID(),
+            slug: `test-dest-${uid}`,
+            name: 'Test Destination',
+            destinationType: 'CITY' as const,
+            level: 4,
+            path: `/test/dest-${uid}`,
+            summary: 'Test destination summary',
+            description: 'Test destination description',
+            location: {
+                state: 'Entre Rios',
+                country: 'Argentina',
+                coordinates: { lat: '-32.48', long: '-58.23' }
+            },
+            media: {
+                featuredImage: {
+                    moderationState: 'APPROVED',
+                    url: 'https://example.com/test-destination.jpg'
+                }
+            },
+            lifecycleState: 'ACTIVE' as const,
+            ...overrides
+        } satisfies typeof hospedaSchema.destinations.$inferInsert;
+    },
+
+    /**
+     * Valid `tags` row. `color` has no default in the schema.
+     */
+    tag(overrides: Partial<typeof hospedaSchema.tags.$inferInsert> = {}) {
+        return {
+            id: crypto.randomUUID(),
+            slug: `test-tag-${crypto.randomUUID().slice(0, 8)}`,
+            name: 'Test Tag',
+            color: 'BLUE' as const,
+            lifecycleState: 'ACTIVE' as const,
+            ...overrides
+        } satisfies typeof hospedaSchema.tags.$inferInsert;
+    }
+} as const;

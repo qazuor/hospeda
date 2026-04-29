@@ -25,6 +25,7 @@
         "test": "turbo run test --concurrency=4",
         "test:watch": "turbo run test:watch --concurrency=4",
         "test:coverage": "turbo run test:coverage --concurrency=4",
+        "test:integration": "turbo run test:integration",
         "check": "biome check --write .",
         "typecheck": "turbo run typecheck",
         "typecheck:cli": "tsc --noEmit --project scripts/cli/tsconfig.json",

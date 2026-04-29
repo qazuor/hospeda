@@ -25,7 +25,7 @@ export default defineConfig({
         },
         ui: false,
         include: ['test/**/*.test.ts'],
-        exclude: ['node_modules', 'dist', 'build']
+        exclude: ['node_modules', 'dist', 'build', 'test/integration/**']
         // setupFiles: ['src/test/setupTest.ts']
     }
 });

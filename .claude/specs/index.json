@@ -92,11 +92,12 @@
         {
             "specId": "SPEC-025",
             "title": "Staging Environment Setup & Deployment Pipeline",
-            "status": "draft",
+            "status": "in-progress",
             "complexity": "high",
             "path": "SPEC-025-staging-environment-setup",
             "created": "2026-03-02T00:00:00.000Z",
-            "archived": false
+            "archived": false,
+            "progressNote": "SECRETS.md rewritten + turbo.json globalEnv extended + workflows present; pending SENTRY_ENVIRONMENT plumbing, staging branch, smoke/db scripts, and external Vercel/Neon/Upstash setup gated on Vercel Pro decision."
         },
         {
             "specId": "SPEC-028",
@@ -129,12 +130,14 @@
         {
             "specId": "SPEC-061",
             "title": "DB Integration Testing Infrastructure",
-            "status": "draft",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-061-db-integration-testing",
             "priority": "P2",
             "created": "2026-04-01T00:00:00.000Z",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-04-29T19:30:00.000Z",
+            "archiveNote": "Phase A shipped: vitest.config.integration.ts (globalSetup + maxForks 3), global-setup.ts (create/drop hospeda_integration_test, drizzle-kit push, apply-postgres-extras), helpers.ts (withTestTransaction/withCleanSlate/closeTestPool/getTestDb/testData), tx-propagation.test.ts (10 core tests), CI Postgres service container, root + db package scripts, turbo pipeline, CLAUDE.md docs. 26/26 integration tests pass against real PG. Phase B (model-tx-propagation.test.ts) and Phase C (service-tx via SPEC-059 Phase 4) deferred — Phase B now unblocked since SPEC-058/060 merged; Phase C still gated on SPEC-059. Test 6 uses tags table (not users) to bypass a pre-existing enum-vs-text comparison bug in the delete_entity_bookmarks trigger (manual migration 0014) that's unrelated to SPEC-061."
         },
         {
             "specId": "SPEC-080",
@@ -149,12 +152,14 @@
         {
             "specId": "SPEC-085",
             "title": "Guest-Owner Messaging System (In-Platform)",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-085-guest-owner-messaging",
             "priority": "P1",
             "created": "2026-04-17T00:00:00.000Z",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-04-29T19:30:00.000Z",
+            "archiveNote": "All 15 tasks (T-001..T-015) shipped: DB schemas + manual migrations, Zod schemas, 4 services with tests, public/protected/admin routes, 11 CONVERSATION_* permissions, i18n namespace, vercel.json crons, web + admin UIs. Tracker (state.json/progress.md) was stale; verified by code audit."
         },
         {
             "specId": "SPEC-086",

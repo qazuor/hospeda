@@ -14,6 +14,24 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
+    services:
+      # PostgreSQL service container for SPEC-061 integration tests.
+      # Same image/credentials as docker-compose.yml for parity. The test DB
+      # itself (`hospeda_integration_test`) is created by global-setup.ts.
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: hospeda_user
+          POSTGRES_PASSWORD: hospeda_pass
+          POSTGRES_DB: postgres
+        ports:
+          - 5436:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
       # Database
       HOSPEDA_DATABASE_URL: ${{ secrets.HOSPEDA_DATABASE_URL }}
@@ -125,6 +143,11 @@ jobs:
 
       - name: Run tests with coverage
         run: pnpm test:coverage
+
+      - name: Run DB integration tests (SPEC-061)
+        run: pnpm test:integration
+        env:
+          HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
 
       - name: Verify i18n key sync (GAP-010)
         run: npx tsx scripts/extract-zod-keys.ts --verify

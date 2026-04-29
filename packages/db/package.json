@@ -47,7 +47,8 @@
         "test:watch": "vitest",
         "test:file": "vitest run --passWithNoTests",
         "test:coverage": "vitest run --coverage",
-        "test:integration": "vitest run --config vitest.config.integration.ts --passWithNoTests"
+        "test:integration": "vitest run --config vitest.config.integration.ts",
+        "test:integration:watch": "vitest --config vitest.config.integration.ts"
     },
     "dependencies": {
         "@qazuor/qzpay-core": "^1.2.0",
