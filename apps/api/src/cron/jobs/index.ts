@@ -24,6 +24,7 @@ export { searchIndexRefreshJob } from './search-index-refresh.job.js';
 export { notificationLogPurgeJob } from './notification-log-purge.job.js';
 export { pageRevalidationJob } from './page-revalidation.job.js';
 export { archiveExpiredPromotionsJob } from './archive-expired-promotions.job.js';
+export { archiveAbandonedDraftsJob } from './archive-abandoned-drafts.job.js';
 export { mediaOrphanCleanupJob } from './media-orphan-cleanup.job.js';
 export { conversationNotificationJob } from './conversation-notification.job.js';
 export { conversationTokenReminderJob } from './conversation-token-reminder.job.js';

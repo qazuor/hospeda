@@ -6,6 +6,7 @@
 
 import {
     addonExpiryJob,
+    archiveAbandonedDraftsJob,
     archiveExpiredPromotionsJob,
     conversationNotificationJob,
     conversationTokenCleanupJob,
@@ -37,6 +38,7 @@ export const cronJobs: CronJobDefinition[] = [
     notificationLogPurgeJob,
     pageRevalidationJob,
     archiveExpiredPromotionsJob,
+    archiveAbandonedDraftsJob,
     mediaOrphanCleanupJob,
     conversationNotificationJob,
     conversationTokenReminderJob,
