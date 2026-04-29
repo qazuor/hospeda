@@ -18,6 +18,26 @@
             "path": "SPEC-077-accommodation-detail-page-rebuild",
             "created": "2026-04-13T14:00:00.000Z",
             "archived": true
+        },
+        {
+            "specId": "SPEC-081",
+            "title": "Service Return Type Safety with Relations",
+            "status": "completed",
+            "complexity": "medium",
+            "path": "SPEC-081-service-return-type-safety",
+            "created": "2026-04-13T00:00:00.000Z",
+            "archived": true,
+            "adr": "ADR-022"
+        },
+        {
+            "specId": "SPEC-082",
+            "title": "Soft-Deleted Related Entities Behavior Policy",
+            "status": "completed",
+            "complexity": "medium",
+            "path": "SPEC-082-soft-deleted-related-entities",
+            "created": "2026-04-13T00:00:00.000Z",
+            "archived": true,
+            "adr": "ADR-023"
         }
     ]
 }
