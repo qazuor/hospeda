@@ -36,7 +36,8 @@
         "check:type-casts": "bash scripts/check-type-casts.sh",
         "check:getbyid-tests": "bash scripts/check-getbyid-tests.sh",
         "check:inline-nonce": "bash scripts/check-inline-nonce.sh",
-        "check:guards": "pnpm check:circular && pnpm check:cloudinary-isolation && pnpm check:bare-cloudinary-img && pnpm check:csp-patterns && pnpm check:unsafe-ilike && pnpm check:type-casts && pnpm check:getbyid-tests && pnpm check:inline-nonce",
+        "check:env-registry": "bash scripts/check-env-registry.sh",
+        "check:guards": "pnpm check:circular && pnpm check:cloudinary-isolation && pnpm check:bare-cloudinary-img && pnpm check:csp-patterns && pnpm check:unsafe-ilike && pnpm check:type-casts && pnpm check:getbyid-tests && pnpm check:inline-nonce && pnpm check:env-registry",
         "format:md": "markdownlint-cli2 '**/*.md' --fix",
         "format:md:claude": "markdownlint-cli2 '.claude/**/*.md' --fix",
         "lint:md": "markdownlint-cli2 '**/*.md'",
@@ -68,6 +69,7 @@
         "env:pull": "tsx scripts/env/pull.ts",
         "env:push": "tsx scripts/env/push.ts",
         "env:check": "tsx scripts/env/check.ts",
+        "env:check:registry": "bash scripts/check-env-registry.sh",
         "cli": "tsx scripts/cli.ts",
         "test:cli": "vitest run --config scripts/cli/vitest.config.ts"
     },
