@@ -190,13 +190,14 @@
         {
             "specId": "SPEC-094",
             "title": "Accommodation Amenities Sync Endpoint",
-            "status": "draft",
+            "status": "obsolete",
             "complexity": "small",
             "path": "SPEC-094-accommodation-amenities-sync",
             "priority": "P2",
             "created": "2026-04-27T00:00:00.000Z",
-            "archived": false,
-            "tags": ["deferred-post-beta"]
+            "archived": true,
+            "tags": ["deferred-post-beta", "superseded-by-SPEC-092"],
+            "archiveNote": "Premise invalidated by SPEC-092 refactor (PropertyForm.client.tsx removed, replaced by CreatePropertyMiniForm which delegates amenity assignment to admin panel). Re-evaluate post-beta if a real gap surfaces."
         },
         {
             "specId": "SPEC-009",
