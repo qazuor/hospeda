@@ -6,11 +6,26 @@
  * the existing mocked tests under `test/integration/`.
  */
 import {
+    events,
     type DrizzleClient,
+    accommodationReviews,
     accommodations,
+    destinationReviews,
     destinations,
+    eq,
+    eventLocations,
+    eventOrganizers,
+    ownerPromotions,
+    postSponsors,
+    postSponsorships,
+    posts,
+    rEntityTag,
     schema,
     setDb,
+    sponsorshipLevels,
+    sponsorshipPackages,
+    sponsorships,
+    tags,
     userBookmarks,
     users
 } from '@repo/db';
@@ -224,4 +239,507 @@ export async function seedUserBookmark(
     } as typeof userBookmarks.$inferInsert);
 
     return { userId, bookmarkId };
+}
+
+interface SeedPostOverrides {
+    readonly authorId?: string;
+    readonly postId?: string;
+}
+
+/**
+ * Inserts a User (author) and a Post referencing that author. Used to validate
+ * `PostService.getById()` populates the `author` relation, and as the FK base
+ * for `seedPostSponsorship` (PostSponsorshipService) and the nested
+ * `sponsorship.sponsor` resolution in PostService.
+ */
+export async function seedPost(
+    tx: DrizzleClient,
+    overrides: SeedPostOverrides = {}
+): Promise<{ readonly authorId: string; readonly postId: string }> {
+    const authorId = overrides.authorId ?? crypto.randomUUID();
+    const postId = overrides.postId ?? crypto.randomUUID();
+    const uid = crypto.randomUUID().slice(0, 8);
+
+    await tx.insert(users).values({
+        id: authorId,
+        email: `seed-author-${uid}@example.com`,
+        displayName: 'Seed Author',
+        emailVerified: true,
+        lifecycleState: 'ACTIVE'
+    } as typeof users.$inferInsert);
+
+    await tx.insert(posts).values({
+        id: postId,
+        slug: `seed-post-${uid}`,
+        category: 'GENERAL',
+        title: 'Seed Post',
+        summary: 'Seed post summary',
+        content: 'Seed post content body — long enough to read.',
+        authorId,
+        lifecycleState: 'ACTIVE'
+    } as typeof posts.$inferInsert);
+
+    return { authorId, postId };
+}
+
+interface SeedSponsorshipPackageOverrides {
+    readonly levelId?: string;
+    readonly packageId?: string;
+}
+
+/**
+ * Inserts a SponsorshipLevel and a SponsorshipPackage that references it via
+ * `eventLevelId`. Used to validate `SponsorshipPackageService.getById()`
+ * populates the `eventLevel` relation, and is reused as the FK base for
+ * `seedSponsorship` (SponsorshipService). The level uses target_type=`event`,
+ * tier=`standard`, which is the most generic combination.
+ */
+export async function seedSponsorshipPackage(
+    tx: DrizzleClient,
+    overrides: SeedSponsorshipPackageOverrides = {}
+): Promise<{ readonly levelId: string; readonly packageId: string }> {
+    const levelId = overrides.levelId ?? crypto.randomUUID();
+    const packageId = overrides.packageId ?? crypto.randomUUID();
+    const uid = crypto.randomUUID().slice(0, 8);
+
+    await tx.insert(sponsorshipLevels).values({
+        id: levelId,
+        slug: `seed-level-${uid}`,
+        name: 'Seed Sponsorship Level',
+        targetType: 'event',
+        tier: 'standard',
+        priceAmount: 1000
+    } as typeof sponsorshipLevels.$inferInsert);
+
+    await tx.insert(sponsorshipPackages).values({
+        id: packageId,
+        slug: `seed-pkg-${uid}`,
+        name: 'Seed Sponsorship Package',
+        priceAmount: 5000,
+        includedPosts: 1,
+        includedEvents: 1,
+        eventLevelId: levelId
+    } as typeof sponsorshipPackages.$inferInsert);
+
+    return { levelId, packageId };
+}
+
+interface SeedAccommodationReviewOverrides {
+    readonly userId?: string;
+    readonly destinationId?: string;
+    readonly accommodationId?: string;
+    readonly reviewId?: string;
+}
+
+/**
+ * Inserts the seedAccommodation chain (User + Destination + Accommodation)
+ * plus an AccommodationReview by the same user. Used to validate
+ * `AccommodationReviewService.getById()` populates the `user` and
+ * `accommodation` relations.
+ */
+export async function seedAccommodationReview(
+    tx: DrizzleClient,
+    overrides: SeedAccommodationReviewOverrides = {}
+): Promise<{
+    readonly userId: string;
+    readonly destinationId: string;
+    readonly accommodationId: string;
+    readonly reviewId: string;
+}> {
+    const { userId, destinationId, accommodationId } = await seedAccommodation(tx, {
+        ownerId: overrides.userId,
+        destinationId: overrides.destinationId,
+        accommodationId: overrides.accommodationId
+    });
+    const reviewId = overrides.reviewId ?? crypto.randomUUID();
+
+    await tx.insert(accommodationReviews).values({
+        id: reviewId,
+        accommodationId,
+        userId,
+        title: 'Seed Review',
+        content: 'Seed review content',
+        rating: {
+            cleanliness: 5,
+            hospitality: 5,
+            services: 4,
+            accuracy: 5,
+            communication: 5,
+            location: 4
+        },
+        averageRating: 4.67,
+        lifecycleState: 'ACTIVE'
+    } as typeof accommodationReviews.$inferInsert);
+
+    return { userId, destinationId, accommodationId, reviewId };
+}
+
+interface SeedDestinationReviewOverrides {
+    readonly userId?: string;
+    readonly destinationId?: string;
+    readonly reviewId?: string;
+}
+
+/**
+ * Inserts a User, a Destination, and a DestinationReview tying them together.
+ * Used to validate `DestinationReviewService.getById()` populates the `user`
+ * and `destination` relations.
+ */
+export async function seedDestinationReview(
+    tx: DrizzleClient,
+    overrides: SeedDestinationReviewOverrides = {}
+): Promise<{
+    readonly userId: string;
+    readonly destinationId: string;
+    readonly reviewId: string;
+}> {
+    const userId = overrides.userId ?? crypto.randomUUID();
+    const destinationId = overrides.destinationId ?? crypto.randomUUID();
+    const reviewId = overrides.reviewId ?? crypto.randomUUID();
+    const uid = crypto.randomUUID().slice(0, 8);
+
+    await tx.insert(users).values({
+        id: userId,
+        email: `seed-dest-reviewer-${uid}@example.com`,
+        displayName: 'Destination Reviewer',
+        emailVerified: true,
+        lifecycleState: 'ACTIVE'
+    } as typeof users.$inferInsert);
+
+    await tx.insert(destinations).values({
+        id: destinationId,
+        slug: `seed-dest-rev-${uid}`,
+        name: 'Reviewed Destination',
+        destinationType: 'CITY',
+        level: 4,
+        path: `/seed/dest-rev-${uid}`,
+        summary: 'Seed destination summary',
+        description: 'Seed destination description',
+        location: {
+            state: 'Entre Rios',
+            country: 'Argentina',
+            coordinates: { lat: '-32.48', long: '-58.23' }
+        },
+        media: {
+            featuredImage: {
+                moderationState: 'APPROVED',
+                url: 'https://example.com/seed-destination.jpg'
+            }
+        },
+        lifecycleState: 'ACTIVE'
+    } as typeof destinations.$inferInsert);
+
+    await tx.insert(destinationReviews).values({
+        id: reviewId,
+        userId,
+        destinationId,
+        title: 'Seed Destination Review',
+        content: 'Seed destination review content',
+        rating: {
+            landscape: 5,
+            attractions: 4,
+            accessibility: 4,
+            safety: 4,
+            cleanliness: 5,
+            hospitality: 5,
+            culturalOffer: 4,
+            gastronomy: 5,
+            affordability: 4,
+            nightlife: 3,
+            infrastructure: 4,
+            environmentalCare: 4,
+            wifiAvailability: 5,
+            shopping: 4,
+            beaches: 5,
+            greenSpaces: 5,
+            localEvents: 4,
+            weatherSatisfaction: 5
+        },
+        averageRating: 4.39,
+        lifecycleState: 'ACTIVE'
+    } as typeof destinationReviews.$inferInsert);
+
+    return { userId, destinationId, reviewId };
+}
+
+interface SeedOwnerPromotionOverrides {
+    readonly ownerId?: string;
+    readonly destinationId?: string;
+    readonly accommodationId?: string;
+    readonly promotionId?: string;
+}
+
+/**
+ * Inserts the seedAccommodation chain (owner User + Destination + Accommodation)
+ * plus an OwnerPromotion authored by the owner targeting the accommodation.
+ * Used to validate `OwnerPromotionService.getById()` populates the `owner` and
+ * `accommodation` relations.
+ */
+export async function seedOwnerPromotion(
+    tx: DrizzleClient,
+    overrides: SeedOwnerPromotionOverrides = {}
+): Promise<{
+    readonly ownerId: string;
+    readonly destinationId: string;
+    readonly accommodationId: string;
+    readonly promotionId: string;
+}> {
+    const {
+        userId: ownerId,
+        destinationId,
+        accommodationId
+    } = await seedAccommodation(tx, {
+        ownerId: overrides.ownerId,
+        destinationId: overrides.destinationId,
+        accommodationId: overrides.accommodationId
+    });
+    const promotionId = overrides.promotionId ?? crypto.randomUUID();
+    const uid = crypto.randomUUID().slice(0, 8);
+
+    await tx.insert(ownerPromotions).values({
+        id: promotionId,
+        slug: `seed-promo-${uid}`,
+        ownerId,
+        accommodationId,
+        title: 'Seed Owner Promotion',
+        description: 'Seed promotion description',
+        discountType: 'percentage',
+        discountValue: 15,
+        validFrom: new Date(),
+        lifecycleState: 'ACTIVE'
+    } as typeof ownerPromotions.$inferInsert);
+
+    return { ownerId, destinationId, accommodationId, promotionId };
+}
+
+interface SeedSponsorshipOverrides {
+    readonly sponsorId?: string;
+    readonly levelId?: string;
+    readonly packageId?: string;
+    readonly sponsorshipId?: string;
+}
+
+/**
+ * Inserts the seedSponsorshipPackage chain (Level + Package), a sponsor User,
+ * and a Sponsorship referencing all three. Used to validate
+ * `SponsorshipService.getById()` populates the `sponsorUser`, `level`, and
+ * `package` relations. The targetId is a random UUID with no FK constraint —
+ * the relation we care about is the level/package/user trio.
+ */
+export async function seedSponsorship(
+    tx: DrizzleClient,
+    overrides: SeedSponsorshipOverrides = {}
+): Promise<{
+    readonly sponsorId: string;
+    readonly levelId: string;
+    readonly packageId: string;
+    readonly sponsorshipId: string;
+}> {
+    const { levelId, packageId } = await seedSponsorshipPackage(tx, {
+        levelId: overrides.levelId,
+        packageId: overrides.packageId
+    });
+    const sponsorId = overrides.sponsorId ?? crypto.randomUUID();
+    const sponsorshipId = overrides.sponsorshipId ?? crypto.randomUUID();
+    const uid = crypto.randomUUID().slice(0, 8);
+
+    await tx.insert(users).values({
+        id: sponsorId,
+        email: `seed-sponsor-${uid}@example.com`,
+        displayName: 'Seed Sponsor',
+        emailVerified: true,
+        lifecycleState: 'ACTIVE'
+    } as typeof users.$inferInsert);
+
+    await tx.insert(sponsorships).values({
+        id: sponsorshipId,
+        slug: `seed-sponsorship-${uid}`,
+        sponsorUserId: sponsorId,
+        targetType: 'event',
+        targetId: crypto.randomUUID(),
+        levelId,
+        packageId,
+        sponsorshipStatus: 'pending',
+        lifecycleState: 'ACTIVE',
+        startsAt: new Date()
+    } as typeof sponsorships.$inferInsert);
+
+    return { sponsorId, levelId, packageId, sponsorshipId };
+}
+
+interface SeedPostSponsorshipOverrides {
+    readonly authorId?: string;
+    readonly postId?: string;
+    readonly sponsorId?: string;
+    readonly sponsorshipId?: string;
+    readonly linkPostToSponsorship?: boolean;
+}
+
+/**
+ * Inserts the seedPost chain (author User + Post), a PostSponsor entity, and a
+ * PostSponsorship row tying the post to the sponsor.
+ *
+ * NOTE: PostSponsorship.sponsor points at the `post_sponsors` table — a
+ * brand/advertiser entity with name, logo, and contact info — NOT a user. This
+ * differs from the SPEC-080 original wording ("sponsor User"), which was
+ * inferred before the schema was inspected. The relation that PostService and
+ * PostSponsorshipService load is the PostSponsor record, so seedPostSponsorship
+ * inserts a PostSponsor rather than a second User.
+ *
+ * If `linkPostToSponsorship` is true (default), the inserted Post's
+ * `sponsorshipId` column is updated to point at the new PostSponsorship so
+ * PostService.getById can resolve the nested `sponsorship.sponsor` chain.
+ */
+export async function seedPostSponsorship(
+    tx: DrizzleClient,
+    overrides: SeedPostSponsorshipOverrides = {}
+): Promise<{
+    readonly authorId: string;
+    readonly postId: string;
+    readonly sponsorId: string;
+    readonly sponsorshipId: string;
+}> {
+    const { authorId, postId } = await seedPost(tx, {
+        authorId: overrides.authorId,
+        postId: overrides.postId
+    });
+    const sponsorId = overrides.sponsorId ?? crypto.randomUUID();
+    const sponsorshipId = overrides.sponsorshipId ?? crypto.randomUUID();
+
+    await tx.insert(postSponsors).values({
+        id: sponsorId,
+        name: 'Seed Post Sponsor',
+        type: 'POST_SPONSOR',
+        description: 'Seed sponsor description',
+        lifecycleState: 'ACTIVE'
+    } as typeof postSponsors.$inferInsert);
+
+    await tx.insert(postSponsorships).values({
+        id: sponsorshipId,
+        sponsorId,
+        postId,
+        description: 'Seed post sponsorship',
+        paid: { price: 1000, currency: 'ARS' },
+        lifecycleState: 'ACTIVE'
+    } as typeof postSponsorships.$inferInsert);
+
+    if (overrides.linkPostToSponsorship !== false) {
+        await tx.update(posts).set({ sponsorshipId }).where(eq(posts.id, postId));
+    }
+
+    return { authorId, postId, sponsorId, sponsorshipId };
+}
+
+interface SeedEventOverrides {
+    readonly authorId?: string;
+    readonly destinationId?: string;
+    readonly locationId?: string;
+    readonly organizerId?: string;
+    readonly eventId?: string;
+    readonly tagId?: string;
+}
+
+/**
+ * Inserts the full FK chain to validate `EventService.getById()` populates
+ * `author`, `location`, `organizer`, and `tags` (many-to-many via r_entity_tag).
+ *
+ * Inserts: User (author) + Destination (required by EventLocation.destinationId)
+ * + EventLocation + EventOrganizer + Event + Tag + r_entity_tag link row.
+ */
+export async function seedEvent(
+    tx: DrizzleClient,
+    overrides: SeedEventOverrides = {}
+): Promise<{
+    readonly authorId: string;
+    readonly destinationId: string;
+    readonly locationId: string;
+    readonly organizerId: string;
+    readonly eventId: string;
+    readonly tagId: string;
+}> {
+    const authorId = overrides.authorId ?? crypto.randomUUID();
+    const destinationId = overrides.destinationId ?? crypto.randomUUID();
+    const locationId = overrides.locationId ?? crypto.randomUUID();
+    const organizerId = overrides.organizerId ?? crypto.randomUUID();
+    const eventId = overrides.eventId ?? crypto.randomUUID();
+    const tagId = overrides.tagId ?? crypto.randomUUID();
+    const uid = crypto.randomUUID().slice(0, 8);
+
+    await tx.insert(users).values({
+        id: authorId,
+        email: `seed-event-author-${uid}@example.com`,
+        displayName: 'Event Author',
+        emailVerified: true,
+        lifecycleState: 'ACTIVE'
+    } as typeof users.$inferInsert);
+
+    await tx.insert(destinations).values({
+        id: destinationId,
+        slug: `seed-event-dest-${uid}`,
+        name: 'Event Destination',
+        destinationType: 'CITY',
+        level: 4,
+        path: `/seed/event-dest-${uid}`,
+        summary: 'Event destination summary',
+        description: 'Event destination description',
+        location: {
+            state: 'Entre Rios',
+            country: 'Argentina',
+            coordinates: { lat: '-32.48', long: '-58.23' }
+        },
+        media: {
+            featuredImage: {
+                moderationState: 'APPROVED',
+                url: 'https://example.com/seed-destination.jpg'
+            }
+        },
+        lifecycleState: 'ACTIVE'
+    } as typeof destinations.$inferInsert);
+
+    await tx.insert(eventLocations).values({
+        id: locationId,
+        slug: `seed-event-loc-${uid}`,
+        destinationId,
+        placeName: 'Seed Event Venue',
+        lifecycleState: 'ACTIVE'
+    } as typeof eventLocations.$inferInsert);
+
+    await tx.insert(eventOrganizers).values({
+        id: organizerId,
+        slug: `seed-event-org-${uid}`,
+        name: 'Seed Event Organizer',
+        description: 'Seed organizer description',
+        lifecycleState: 'ACTIVE'
+    } as typeof eventOrganizers.$inferInsert);
+
+    await tx.insert(events).values({
+        id: eventId,
+        slug: `seed-event-${uid}`,
+        name: 'Seed Event',
+        summary: 'Seed event summary',
+        description: 'Seed event description',
+        category: 'OTHER',
+        date: { start: new Date(), isAllDay: false },
+        authorId,
+        locationId,
+        organizerId,
+        destinationId,
+        lifecycleState: 'ACTIVE'
+    } as typeof events.$inferInsert);
+
+    await tx.insert(tags).values({
+        id: tagId,
+        slug: `seed-tag-${uid}`,
+        name: 'Seed Tag',
+        color: 'BLUE',
+        lifecycleState: 'ACTIVE'
+    } as typeof tags.$inferInsert);
+
+    await tx.insert(rEntityTag).values({
+        tagId,
+        entityId: eventId,
+        entityType: 'EVENT'
+    } as typeof rEntityTag.$inferInsert);
+
+    return { authorId, destinationId, locationId, organizerId, eventId, tagId };
 }
