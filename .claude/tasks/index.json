@@ -191,9 +191,20 @@
         {
             "specId": "SPEC-075",
             "title": "Web App Complete Page Structure",
-            "status": "in-progress",
+            "status": "merged",
             "progress": "8/66",
-            "path": "SPEC-075-web-complete-page-structure"
+            "path": "SPEC-075-web-complete-page-structure",
+            "archived": true,
+            "mergedInto": "SPEC-096",
+            "archivedAt": "2026-04-29T00:00:00.000Z"
+        },
+        {
+            "specId": "SPEC-096",
+            "title": "Web App Beta-Readiness",
+            "status": "pending",
+            "progress": "0/70",
+            "path": "SPEC-096-web-beta-readiness",
+            "absorbs": ["SPEC-075"]
         },
         {
             "specId": "SPEC-060-gaps",
@@ -258,6 +269,20 @@
             "progress": "0/35",
             "path": "SPEC-064-billing-transaction-safety",
             "archived": true
+        },
+        {
+            "specId": "SPEC-080",
+            "title": "Service-Layer Integration Tests with Real Database",
+            "status": "completed",
+            "progress": "22/22",
+            "path": "SPEC-080-service-integration-tests"
+        },
+        {
+            "specId": "SPEC-086",
+            "title": "Tag System Refactor (Two Subsystems: PostTag + User-Tag)",
+            "status": "pending",
+            "progress": "0/46",
+            "path": "SPEC-086-tag-system-refactor"
         }
     ],
     "standalone": {
