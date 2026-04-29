@@ -275,7 +275,8 @@
             "title": "Service-Layer Integration Tests with Real Database",
             "status": "completed",
             "progress": "22/22",
-            "path": "SPEC-080-service-integration-tests"
+            "path": "SPEC-080-service-integration-tests",
+            "archived": true
         },
         {
             "specId": "SPEC-086",
