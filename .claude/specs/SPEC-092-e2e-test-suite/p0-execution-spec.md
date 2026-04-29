@@ -323,52 +323,61 @@ Each P0 item below follows this structure:
 > **Estimated effort**: ~45min for one full walkthrough across web + admin
 > **Source**: checklist item #11
 
-**Architecture note (refactor 2026-04-28, commit `33868e25b`)**: the public web app no longer hosts the full 8-section form. `/publicar/nueva` now renders `CreatePropertyMiniForm` which collects the minimal draft (name, summary, type, city destination) and POSTs to `POST /api/v1/protected/accommodations/draft`. On success the user is redirected to the admin panel (`HOSPEDA_ADMIN_URL`) where the full property edit experience lives. This journey covers BOTH legs.
+**Architecture note (refactor 2026-04-28, commit `33868e25b`; atomic-publish redesign 2026-04-29)**: the public web app no longer hosts the full 8-section form. `/publicar/nueva` now renders `CreatePropertyMiniForm` which collects the minimal draft (name, summary, type, city destination) and POSTs to `POST /api/v1/protected/host-onboarding/start`. The endpoint creates the DRAFT but keeps the user as `USER` (no role promotion, no trial). On success the user is redirected to the admin panel (`HOSPEDA_ADMIN_URL`) where the full property edit experience lives. The USER -> HOST promotion and the billing trial are created **atomically when the user first publishes** the accommodation in the admin (`AccommodationService.publish`, "Option C" pattern: external QZPay call first, then short DB transaction with role promotion + lifecycleState flip; compensation cancels the trial if the local transaction fails). This journey covers BOTH legs.
 
 **Preconditions**:
 
-- User account verified (`emailVerifiedAt` set) but NOT yet HOST.
+- User account verified (`emailVerifiedAt` set) and `role = USER` (the new default; HOST promotion happens on first publish).
 - Browser on desktop (run separately on mobile for item #76).
 - Real Cloudinary credentials configured (not test mock).
 - `HOSPEDA_ADMIN_URL` env var set in the web app and reachable for the user.
 - Admin panel accessible to a freshly-promoted HOST user (not just ADMIN — verify the auth boundary on first run).
+- QZPay/MercadoPago billing client configured and reachable (the publish step requires it for trial creation).
 
 **Steps (web leg — mini-draft creation)**:
 
 1. Navigate to `/es/publicar` → landing page renders with CTA and value proposition → click "Publicar mi alojamiento".
 2. If not signed in → inline signup/signin opens → complete auth → return to `/es/publicar/nueva` automatically.
 3. Mini form renders with 4 fields: `name`, `summary`, `type`, `cityDestination` (picker).
-4. Fill with realistic data, submit → POST to `/api/v1/protected/accommodations/draft` → 200 OK with the new `accommodationId`.
-5. Server creates the row with `lifecycleState = 'DRAFT'` and assigns `role = HOST` to the user → trial subscription created with `status = 'trialing'`.
-6. Web redirects to `${HOSPEDA_ADMIN_URL}/properties/{id}/edit` (or the documented admin route).
+4. Fill with realistic data, submit → POST to `/api/v1/protected/host-onboarding/start` → 200 OK with `{ status: 'created', accommodationId, accommodationSlug }`.
+5. Server creates the row with `lifecycleState = 'DRAFT'`, `ownerId = actor.id`, `lastWarnedAt = null`. The user's role stays `USER`. NO billing subscription is created at this step.
+6. Web redirects to `${HOSPEDA_ADMIN_URL}/accommodations/{id}/edit`.
 
-**Steps (admin leg — full edit)**:
+**Steps (admin leg — full edit + atomic first publish)**:
 
 7. Admin login is recognized via the same Better Auth session (verify cross-app session policy in item #5).
 8. Property edit screen renders all sections (location detail, amenities, photos, pricing, availability, etc.) prefilled with the draft data.
 9. Upload 5+ photos via the admin uploader → Cloudinary thumbnails render.
-10. Fill remaining sections, click "Publicar" → `lifecycleState` transitions DRAFT → ACTIVE.
-11. Confirm in DB: `accommodations.lifecycleState = 'ACTIVE'`, owner is the original web user.
+10. Fill remaining sections, click "Publicar". The PATCH endpoint detects `lifecycleState = ACTIVE` and routes to `AccommodationService.publish`, which:
+    a. Calls QZPay to create the trial subscription (8s timeout, outside any DB transaction).
+    b. Opens a short DB transaction: flips `lifecycleState` to ACTIVE AND promotes the owner USER → HOST.
+    c. If the transaction fails after QZPay succeeded, the trial is cancelled as compensation (logged with `[publish] trial subscription cancelled (compensation)`).
+11. Confirm in DB: `accommodations.lifecycleState = 'ACTIVE'`, `users.role = 'HOST'`, and a `billing_subscriptions` row with `status = 'trialing'` exists for the owner.
 12. Back in web `/es/mi-cuenta/propiedades` → new property listed with the badge reflecting ACTIVE state.
 13. Detail page `/es/alojamientos/{slug}` is publicly reachable.
 
 **Acceptance criteria** (all must pass):
 
-- [ ] Mini-form submission creates the draft and assigns HOST role atomically (one transaction or compensating cleanup if any step fails).
+- [ ] `host-onboarding/start` is callable by a fresh `USER` (no `ACCOMMODATION_CREATE` permission required).
+- [ ] Mini-form submission creates the DRAFT but does NOT promote the user to HOST and does NOT create a billing subscription (verify both in DB).
+- [ ] If the user already has an active DRAFT, calling `host-onboarding/start` returns `status = 'resumed'` with the existing `accommodationId` (idempotency).
+- [ ] If the user is already HOST/ADMIN/CLIENT_MANAGER/SUPER_ADMIN, the endpoint returns `status = 'already_host'` and the frontend redirects to the admin panel home.
 - [ ] The 4 mini-form fields are validated (Zod) at the API boundary; missing fields return 400 with field-level errors.
-- [ ] Redirect to admin lands on the right property edit URL — no 404, no admin login challenge for a freshly-promoted HOST.
+- [ ] Redirect to admin lands on the right property edit URL — no 404, no admin login challenge.
 - [ ] Photo thumbnails render in admin within 5s of Cloudinary upload.
-- [ ] Final publish in admin sets `lifecycleState = ACTIVE`; the change is visible on the public detail page within ISR window.
+- [ ] Final publish in admin sets `lifecycleState = ACTIVE`, promotes USER → HOST, and creates a trial `billing_subscriptions` row, all in a single transaction (or trial is cancelled on compensation if the transaction rolls back).
+- [ ] If QZPay times out (>8s) or fails on first publish, the API returns 503 and NO local DB writes happen.
+- [ ] Final publish is visible on the public detail page within ISR window.
 - [ ] Welcome + "property published" emails received in real inbox within 2 minutes.
-- [ ] Audit log contains `created_accommodation_draft`, `role_assigned`, and `accommodation_published` events.
 - [ ] No Sentry errors across both apps during the full flow.
 
 **Notes / gotchas**:
 
 - SPEC-091 originally defined an 8-section form on the web. That form was replaced 2026-04-28 (commit `33868e25b`) by `CreatePropertyMiniForm.client` + admin handoff. SPEC-091 may need a follow-up amendment.
-- Trial activation must happen on draft creation (mini-form submit), NOT on the admin "Publicar" click — verify `billing_subscriptions` row exists with `status = 'trialing'` after step 5.
+- Trial creation now happens on FIRST PUBLISH (in `AccommodationService.publish`), NOT on draft creation. Verify `billing_subscriptions` is empty after step 5 and populated after step 10.
 - If the admin panel is on a different subdomain than web, cookie scope must allow the session to be recognized after the redirect (item #5 cross-app session).
 - amenityIds remain a separate gap (SPEC-094) regardless of where the form lives.
+- Abandoned drafts are auto-archived after 30 days of inactivity by the `archive-abandoned-drafts` cron (warning at 23 days). To test that path use the dry-run mode of the cron and inspect the structured log entries.
 
 ---
 
@@ -378,7 +387,7 @@ Each P0 item below follows this structure:
 > **Estimated effort**: ~20min
 > **Source**: checklist item #12
 
-**Architecture note (refactor 2026-04-28, commit `33868e25b`)**: the original 8-section form autosave (driven by `useAutosave` and `usePropertyForm` hooks) was removed alongside the form. The web mini-form has 4 fields and submits in one shot, so client-side autosave is no longer relevant on the web side. The "draft" semantics now live server-side: `lifecycleState='DRAFT'` on the `accommodations` row is the persistent state. This item validates that DRAFT semantics + admin-side autosave (if implemented) work end-to-end.
+**Architecture note (refactor 2026-04-28, commit `33868e25b`; atomic-publish redesign 2026-04-29)**: the original 8-section form autosave (driven by `useAutosave` and `usePropertyForm` hooks) was removed alongside the form. The web mini-form has 4 fields and submits in one shot, so client-side autosave is no longer relevant on the web side. The "draft" semantics now live server-side: `lifecycleState='DRAFT'` on the `accommodations` row is the persistent state, and there is exactly one active DRAFT per USER at any given time (idempotency: re-calling `host-onboarding/start` returns `status='resumed'` with the existing draft). DRAFTs are auto-archived after 30 days of inactivity by the `archive-abandoned-drafts` cron (with a 7-day-before-archive warning at day 23). This item validates that DRAFT semantics + admin-side autosave (if implemented) work end-to-end.
 
 **Preconditions**:
 
@@ -388,29 +397,33 @@ Each P0 item below follows this structure:
 **Steps**:
 
 1. Navigate to `/es/publicar/nueva` → fill the 4-field mini-form with a distinctive name ("Cabaña Draft Test") → submit.
-2. API returns 200 with `accommodationId`; row created with `lifecycleState='DRAFT'`.
+2. API returns 200 with `{ status: 'created', accommodationId, accommodationSlug }`; row created with `lifecycleState='DRAFT'`, `lastWarnedAt=null`. Owner role still `USER`, `billing_subscriptions` empty.
 3. Redirect lands on admin property edit screen → DO NOT complete the admin sections; abandon (close tab).
-4. Wait some time (e.g., 1 hour, then 24 hours, then 7 days) without action.
-5. Return to `/es/mi-cuenta/propiedades` → the DRAFT property is listed with a clear visual marker (e.g., "Borrador" badge).
-6. Click "Continuar" or equivalent CTA → redirect lands back on admin property edit, prefilled with the original 4 fields.
-7. Complete some sections in admin without clicking final "Publicar" → admin-side autosave (if implemented) persists partial fields. Close tab.
-8. Re-open admin edit again → confirm partial admin data is intact.
-9. Click "Publicar" in admin → DRAFT transitions to ACTIVE.
+4. Wait some time (e.g., 1 hour, then 24 hours).
+5. Return to `/es/publicar/nueva` and resubmit the same form → API returns `{ status: 'resumed', accommodationId: <same id as step 2> }` (idempotency: only one active DRAFT per USER).
+6. Return to `/es/mi-cuenta/propiedades` → the DRAFT property is listed with a clear visual marker (e.g., "Borrador" badge).
+7. Click "Continuar" or equivalent CTA → redirect lands back on admin property edit, prefilled with the original 4 fields.
+8. Complete some sections in admin without clicking final "Publicar" → admin-side autosave (if implemented) persists partial fields. Close tab.
+9. Re-open admin edit again → confirm partial admin data is intact.
+10. Click "Publicar" in admin → atomic flow: trial subscription created, USER → HOST, `lifecycleState` flipped to ACTIVE, all in one short transaction (with QZPay-cancel compensation if the local tx fails). See item #11 for details.
+11. After publish, return to `/es/publicar/nueva` → API returns `{ status: 'already_host', accommodationId: null }` and the frontend redirects to the admin home (no new draft is created).
 
 **Acceptance criteria** (all must pass):
 
-- [ ] DRAFT accommodation persists indefinitely (or per documented TTL — confirm policy).
+- [ ] DRAFT accommodation persists for up to 30 days of inactivity, after which the `archive-abandoned-drafts` cron flips it to ARCHIVED.
+- [ ] At day ~23 of inactivity the cron stamps `last_warned_at` and emits a `draft_abandoned_warning` log entry (and, once the email template is wired, sends the warning email).
+- [ ] Re-submitting the mini-form while an active DRAFT exists returns `status='resumed'` with the same accommodationId (no duplicate drafts).
 - [ ] Web `/mi-cuenta/propiedades` lists DRAFT properties with a clear visual indicator.
 - [ ] Resume CTA from web lands directly in the admin property edit screen, no re-auth.
 - [ ] Admin-side autosave (if implemented) preserves partial section data across tab close/reopen.
-- [ ] Publishing transitions DRAFT → ACTIVE atomically.
-- [ ] After publish, returning to `/publicar/nueva` starts a fresh mini-form (no leakage from the previous draft).
+- [ ] Publishing transitions DRAFT → ACTIVE atomically with role + trial side effects (see item #11).
+- [ ] After publish, calling `host-onboarding/start` returns `already_host` and does NOT create a new DRAFT.
 
 **Notes / gotchas**:
 
 - Confirm whether admin has autosave on its property edit screen. If not, document as a separate gap (call it SPEC-094-followup or an admin-side ticket).
-- DRAFT TTL policy: should expired drafts be auto-archived after N days? Decide and document. The cleanup cron (item #44, P1) may need to cover this.
-- If web mini-form submission fails halfway (network drop after server creates DRAFT but before redirect lands), the user may have a "ghost" DRAFT they don't know about. Mitigate via the `/mi-cuenta/propiedades` listing.
+- DRAFT TTL is 30 days after last edit (`updated_at`). Drafts archived by the cron remain in the DB (soft state) so an owner can request restoration via support; they are NOT hard-deleted.
+- If web mini-form submission fails halfway (network drop after server creates DRAFT but before redirect lands), the user may have a "ghost" DRAFT they don't know about. The idempotency contract on `host-onboarding/start` (returns `resumed` with the existing id) covers this case as long as the user comes back to the same flow.
 
 ---
 
@@ -2078,19 +2091,19 @@ Each P0 item below follows this structure:
 - Real Cloudinary, Resend, and Better Auth configured.
 - Tester acts as a "first-time cabin owner" with no prior knowledge of the system.
 
-**Architecture note (refactor 2026-04-28, commit `33868e25b`)**: the journey now spans BOTH apps. Web hosts the mini-draft creation (`CreatePropertyMiniForm` with 4 fields); admin hosts the full property edit. The handoff happens via redirect to `${HOSPEDA_ADMIN_URL}` after `POST /api/v1/protected/accommodations/draft` succeeds.
+**Architecture note (refactor 2026-04-28, commit `33868e25b`; atomic-publish redesign 2026-04-29)**: the journey now spans BOTH apps. Web hosts the mini-draft creation (`CreatePropertyMiniForm` with 4 fields, posts to `POST /api/v1/protected/host-onboarding/start`); admin hosts the full property edit and the publish action. The signup flow creates the user as `USER` (not HOST) and creates the `billing_customers` row but does NOT auto-start a trial. The USER -> HOST promotion AND the trial subscription are created atomically when the user clicks "Publicar" in admin (`AccommodationService.publish`, "Option C" pattern: external QZPay call first with 8s timeout, then short DB transaction; `cancelTrial` compensation if the local tx fails). The handoff between apps happens via redirect to `${HOSPEDA_ADMIN_URL}/accommodations/{id}/edit` after the `host-onboarding/start` endpoint succeeds.
 
 **Steps**:
 
 1. (SEO) Google `site:hospeda.com.ar` → Hospeda pages appear in results; try a realistic query like "alojamiento concepcion del uruguay" → Hospeda appears.
 2. Click the result → land on host landing or home page → LCP < 2.5s on mobile.
 3. Navigate to the "Publicar mi alojamiento" CTA → if not logged in, inline signup appears without leaving the page → complete signup and email verification.
-4. Receive and click email verification link → account activated → return to onboarding form automatically.
-5. (Web mini-draft) Fill the 4-field `CreatePropertyMiniForm`: `name`, `summary`, `type`, `cityDestination` → submit. Trial activates automatically (no card requested) → HOST role assigned → `accommodations.lifecycleState = DRAFT`.
-6. Redirect lands on `${HOSPEDA_ADMIN_URL}/properties/{id}/edit` → admin panel recognizes the session (cross-app cookie) → property edit screen prefilled with mini-form data.
+4. Receive and click email verification link → account activated → return to onboarding form automatically. Verify: `users.role = 'USER'`, `billing_customers` row exists for the user, `billing_subscriptions` empty.
+5. (Web mini-draft) Fill the 4-field `CreatePropertyMiniForm`: `name`, `summary`, `type`, `cityDestination` → submit. API returns `{ status: 'created', accommodationId, accommodationSlug }`. Owner role still `USER`, `accommodations.lifecycleState = DRAFT`, no trial yet.
+6. Redirect lands on `${HOSPEDA_ADMIN_URL}/accommodations/{id}/edit` → admin panel recognizes the session (cross-app cookie) → property edit screen prefilled with mini-form data.
 7. (Admin full edit) Complete the remaining sections in admin: location detail, amenities, 8-10 photos from mobile camera, pricing, availability.
 8. Photos upload from mobile camera in admin → thumbnails appear within 5 seconds each → rate limiter does not trigger.
-9. Click "Publicar" in admin → `lifecycleState = ACTIVE` → published email sent.
+9. Click "Publicar" in admin → atomic publish: QZPay trial subscription created, owner USER → HOST, `lifecycleState` flipped to ACTIVE. Verify in DB: `users.role = 'HOST'`, `billing_subscriptions.status = 'trialing'`, `accommodations.lifecycleState = 'ACTIVE'`. Published email sent.
 10. Redirect or navigate to `/es/alojamientos/{slug}` (web) → property visible publicly, JSON-LD present.
 11. Share the link with a friend (different device/session) → friend can access the page without login.
 12. Return to `/es/mi-cuenta/propiedades` (web) → edit price by clicking through to admin → change visible within 60 seconds on the public detail page via ISR.
@@ -2103,13 +2116,14 @@ Each P0 item below follows this structure:
 - [ ] Email verification real inbox delivery within 2 minutes.
 - [ ] Mini-form completable in <5min; admin full edit completable in one 30-40min session.
 - [ ] Mobile photo upload (10 photos) succeeds without rate-limit block (admin uploader).
-- [ ] Trial subscription created with `status = 'trialing'` on mini-form submit (NOT on admin publish).
-- [ ] HOST role assigned at mini-form submit; `lifecycleState = DRAFT` then ACTIVE after admin publish.
+- [ ] At signup, the user is created as `USER`, the billing customer is created, but NO trial subscription is created.
+- [ ] At first publish, the trial subscription is created with `status = 'trialing'` AND the user is promoted USER → HOST AND `lifecycleState` is flipped to ACTIVE — all in one short transaction.
+- [ ] If the QZPay trial creation fails (timeout or error), the publish returns 503 and NO local DB writes happen.
+- [ ] If the local transaction fails after the QZPay trial was created, the trial is cancelled as compensation (verify QZPay dashboard or the "trial subscription cancelled (compensation)" log entry).
 - [ ] Web → admin redirect lands on the correct property edit URL with no auth challenge.
 - [ ] Property publicly accessible immediately after admin publish.
 - [ ] ISR update visible within 60 seconds after price edit in admin.
 - [ ] "Welcome" + "Property published" emails received.
-- [ ] Audit log: `created_accommodation_draft`, `role_assigned`, `accommodation_published` events present.
 - [ ] Sentry: 0 errors across both apps during the full journey.
 
 ---
