@@ -48,6 +48,16 @@
             "created": "2026-04-20T00:00:00.000Z",
             "archived": true,
             "adr": "ADR-024"
+        },
+        {
+            "specId": "SPEC-087",
+            "title": "Public Endpoint Response Schema Strip",
+            "status": "completed",
+            "complexity": "medium",
+            "path": "SPEC-087-public-response-schema-strip",
+            "created": "2026-04-29T00:00:00.000Z",
+            "archived": true,
+            "adr": "ADR-025"
         }
     ]
 }
