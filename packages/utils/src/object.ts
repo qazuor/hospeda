@@ -61,10 +61,12 @@ export function deepClone<T>(obj: T): T {
     }
 
     if (obj instanceof Date) {
+        // TYPE-WORKAROUND: deepClone<T> generic cannot narrow Date branch back to T even though TS knows obj is Date here; structural identity preserved.
         return new Date(obj.getTime()) as unknown as T;
     }
 
     if (Array.isArray(obj)) {
+        // TYPE-WORKAROUND: deepClone<T> generic cannot narrow Array branch back to T even though TS knows obj is an array here; element types are preserved by the recursive call.
         return obj.map((item) => deepClone(item)) as unknown as T;
     }
 

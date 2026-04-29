@@ -81,6 +81,7 @@ export class UserModel extends BaseModelImpl<User> {
 
             const total = totalResult[0]?.count ?? 0;
 
+            // DRIZZLE-LIMITATION: Drizzle's select() row type uses branded pgEnum (role, status) and JSONB columns; User entity uses domain enum unions and Zod-validated JSON shapes.
             return { items: items as unknown as User[], total };
         }
 
@@ -89,6 +90,7 @@ export class UserModel extends BaseModelImpl<User> {
         const SAFETY_LIMIT = 100;
         const items =
             (await db.select().from(this.table).where(finalWhereClause).limit(SAFETY_LIMIT)) || [];
+        // DRIZZLE-LIMITATION: Drizzle's select() row type uses branded pgEnum (role, status) and JSONB columns; User entity uses domain enum unions identical at runtime.
         return { items: items as unknown as User[], total: items.length };
     }
 
@@ -240,6 +242,7 @@ export class UserModel extends BaseModelImpl<User> {
         }
 
         const itemsWithCounts: UserWithCounts[] = rows.map((row) => ({
+            // DRIZZLE-LIMITATION: select with leftJoin projects row.user as Drizzle's full users-table row type with branded enums; User domain entity uses unbranded enum unions.
             ...(row.user as unknown as User),
             accommodationsCount: row.accommodationsCount ?? 0,
             eventsCount: row.eventsCount ?? 0,

@@ -33,9 +33,11 @@ const TestimonialsQuerySchema = z.object({
 });
 
 function transformAccommodationReview(review: AccommodationReviewWithUser): TestimonialItem {
+    // TYPE-WORKAROUND: service-core query joins the parent accommodation but the WithUser row type does not declare it; cast extracts the eager-loaded relation without redefining the row type.
     const name =
         (review as unknown as { accommodation?: { name: string } }).accommodation?.name ??
         'Alojamiento';
+    // TYPE-WORKAROUND: same eager-loaded `accommodation` relation as above, accessed for the slug field.
     const slug = (review as unknown as { accommodation?: { slug: string } }).accommodation?.slug;
     const userName = review.user
         ? ((`${review.user.firstName ?? ''} ${review.user.lastName ?? ''}`.trim() ||
@@ -61,8 +63,10 @@ function transformAccommodationReview(review: AccommodationReviewWithUser): Test
 }
 
 function transformDestinationReview(review: DestinationReviewWithUser): TestimonialItem {
+    // TYPE-WORKAROUND: destination relation is eager-loaded by listWithUser but not declared on the row type; cast picks the joined parent for display name.
     const name =
         (review as unknown as { destination?: { name: string } }).destination?.name ?? 'Destino';
+    // TYPE-WORKAROUND: same eager-loaded `destination` relation, accessed for slug.
     const slug = (review as unknown as { destination?: { slug: string } }).destination?.slug;
     const userName = review.user
         ? ((`${review.user.firstName ?? ''} ${review.user.lastName ?? ''}`.trim() ||
@@ -148,12 +152,14 @@ export const publicListTestimonialsRoute = createPublicListRoute({
             })
         ]);
 
+        // TYPE-WORKAROUND: listWithUser returns a Result<T> whose data shape is generic; cast picks the entity-specific `accommodationReviews` array key for downstream transformation.
         const accommodationReviewsRaw =
             (accommodationResult.data as unknown as { accommodationReviews?: unknown[] })
                 ?.accommodationReviews ?? [];
         const accommodationReviews: AccommodationReviewWithUser[] =
             accommodationReviewsRaw as AccommodationReviewWithUser[];
 
+        // TYPE-WORKAROUND: destination listWithUser uses the generic `data` envelope key (vs accommodation's entity-named key); cast picks the matching variant of the union projection.
         const destinationReviewsRaw =
             (destinationResult.data as unknown as { data?: unknown[] })?.data ?? [];
         const destinationReviews: DestinationReviewWithUser[] =

@@ -112,6 +112,7 @@ async function validateBody(c: Context, next: () => Promise<void>): Promise<Resp
         );
     }
 
+    // TYPE-WORKAROUND: storing the Zod-validated body on a non-standard ctx property to pass it to the handler without a ContextVariableMap entry; cast widens to a writable record.
     (c as unknown as Record<string, unknown>)._validatedBody = parseResult.data;
     await next();
     return undefined;
@@ -128,6 +129,7 @@ async function validateBody(c: Context, next: () => Promise<void>): Promise<Resp
  */
 async function handler(c: Context): Promise<Response> {
     try {
+        // TYPE-WORKAROUND: reading the upstream-stored validated body off the ctx; cast aligns the non-standard property with InitiateConversationSchema's parsed output shape.
         const body = (c as unknown as Record<string, unknown>)._validatedBody as {
             accommodationId: string;
             guestName: string;

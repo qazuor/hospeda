@@ -1,5 +1,20 @@
 import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
+
+/**
+ * Runtime validation schema for payment-history records returned by the
+ * billing API. SPEC-039: parsing here surfaces backend shape divergence
+ * as a thrown error rather than silently corrupting the dialog render.
+ */
+const PaymentHistoryRecordSchema = z.object({
+    id: z.string(),
+    createdAt: z.string(),
+    amount: z.number(),
+    status: z.string()
+});
+
+export type PaymentHistoryRecord = z.infer<typeof PaymentHistoryRecordSchema>;
 
 /**
  * Query keys for subscription-related queries
@@ -172,14 +187,14 @@ export const useExtendTrialMutation = () => {
 /**
  * Fetch payment history for a subscription
  */
-async function fetchPaymentHistory(subscriptionId: string) {
+async function fetchPaymentHistory(subscriptionId: string): Promise<PaymentHistoryRecord[]> {
     const params = new URLSearchParams();
     params.append('subscriptionId', subscriptionId);
 
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown>[] }>({
+    const result = await fetchApi<{ success: boolean; data: unknown[] }>({
         path: `/api/v1/protected/billing/payments?${params.toString()}`
     });
-    return result.data.data;
+    return z.array(PaymentHistoryRecordSchema).parse(result.data.data);
 }
 
 /**

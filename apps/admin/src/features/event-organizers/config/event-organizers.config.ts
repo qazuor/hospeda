@@ -21,6 +21,7 @@ export const eventOrganizersConfig: EntityConfig<EventOrganizer> = {
     detailPath: '/events/organizers/[id]',
 
     // Schemas - Use type assertion for Zod version compatibility
+    // TYPE-WORKAROUND: EntityConfig generic narrows the schema to z.ZodSchema<EventOrganizer>, but EventOrganizerListItemSchema carries branded effects from @repo/schemas; structurally compatible, brand-only mismatch.
     listItemSchema: EventOrganizerListItemSchema as unknown as z.ZodSchema<EventOrganizer>,
 
     // Search configuration

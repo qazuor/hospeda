@@ -106,6 +106,7 @@ export abstract class BaseCrudAdmin<
                 }
                 await this.model.update(
                     { id },
+                    // TYPE-WORKAROUND: Partial<TEntity> in generic base class can't be narrowed to a concrete entity's adminInfo shape; runtime payload is structurally correct.
                     {
                         adminInfo: normalized
                     } as unknown as Partial<TEntity>,

@@ -42,6 +42,7 @@ export function configureOpenAPI(app: AppOpenAPI) {
             // an index signature, so we widen via `unknown` before handing
             // it to the post-processor (which only mutates the `paths`
             // sub-tree and is intentionally schema-agnostic).
+            // TYPE-WORKAROUND: OpenAPIObject from @hono/zod-openapi has no index signature, but the post-processor only mutates the `paths` sub-tree and is intentionally schema-agnostic; cast widens the doc shape.
             const annotated = applyMediaMultipartOpenApiOverrides(
                 document as unknown as Record<string, unknown>
             );

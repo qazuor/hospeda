@@ -47,6 +47,7 @@ export class RUserPermissionModel extends BaseModelImpl<UserPermissionAssignment
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
+                // DRIZZLE-LIMITATION: findFirst with `with: { user, permission }` returns nested join shape; UserPermissionAssignment entity uses domain-typed relations and branded PermissionEnum.
                 return result as unknown as UserPermissionAssignment | null;
             }
             const result = await this.findOne(where, tx);

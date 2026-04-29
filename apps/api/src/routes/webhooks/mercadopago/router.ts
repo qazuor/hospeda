@@ -113,10 +113,12 @@ function createMercadoPagoWebhookRouter(): AppOpenAPI | null {
             })
         );
         securedRouter.use('*', webhookSignatureMiddleware);
+        // TYPE-WORKAROUND: webhookRouter from external billing module has its own typed Hono variables; cast aligns it with the local Hono instance signature for mounting.
         securedRouter.route('/', webhookRouter as unknown as Hono);
 
         apiLogger.info('MercadoPago webhook router created successfully');
 
+        // TYPE-WORKAROUND: securedRouter is a plain Hono but route registration here expects AppOpenAPI; webhook router intentionally bypasses OpenAPI doc generation, so cast widens the type.
         return securedRouter as unknown as AppOpenAPI;
     } catch (error) {
         apiLogger.error(

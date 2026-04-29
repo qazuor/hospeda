@@ -111,6 +111,7 @@ export function ReplyForm({ conversationId, status }: ReplyFormProps) {
                         {/* Field validation error */}
                         {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
                             <p className="text-destructive text-xs">
+                                {/* TYPE-WORKAROUND: TanStack Form types errors[0] as unknown; cast narrows to TranslationKey for the i18n t() call. */}
                                 {t(field.state.meta.errors[0] as unknown as TranslationKey)}
                             </p>
                         )}

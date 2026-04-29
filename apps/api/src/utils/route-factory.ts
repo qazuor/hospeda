@@ -223,6 +223,7 @@ const applyRouteMiddlewares = (app: ReturnType<typeof createRouter>, options?: R
             // Route validators and guards read this to determine per-route behavior
             // (e.g. skipValidation). There is no ContextVariableMap entry for this
             // because the value is attached before the typed variables are set.
+            // TYPE-WORKAROUND: routeOptions is stored as a non-standard ctx property (read by validation/cache/auth middlewares) before typed variables are set; cast widens to a writable record since no ContextVariableMap entry exists.
             (c as unknown as Record<string, unknown>).routeOptions = options;
             try {
                 await next();

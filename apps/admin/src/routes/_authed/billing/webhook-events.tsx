@@ -58,7 +58,7 @@ function WebhookEventsPage() {
 
     // Fetch webhook events with filters
     const {
-        data: eventsData = [],
+        data: events = [],
         isLoading: isLoadingEvents,
         isError: isErrorEvents
     } = useWebhookEventsQuery({
@@ -68,15 +68,13 @@ function WebhookEventsPage() {
         startDate,
         endDate
     });
-    const events = eventsData as unknown as WebhookEvent[];
 
     // Fetch dead letter queue
     const {
-        data: deadLetterEventsData = [],
+        data: deadLetterEvents = [],
         isLoading: isLoadingDeadLetter,
         isError: isErrorDeadLetter
     } = useDeadLetterEventsQuery();
-    const deadLetterEvents = deadLetterEventsData as unknown as WebhookEvent[];
 
     // Retry mutation
     const retryMutation = useRetryWebhookEventMutation();

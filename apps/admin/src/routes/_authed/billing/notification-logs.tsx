@@ -58,6 +58,7 @@ function NotificationLogsPage() {
         startDate,
         endDate
     });
+    // TYPE-WORKAROUND: useNotificationLogsQuery returns the raw API envelope shape; cast narrows to NotificationLog[] which matches the runtime payload.
     const notifications = notificationsData as unknown as NotificationLog[];
 
     const filteredNotifications = notifications.filter((notification: NotificationLog) => {

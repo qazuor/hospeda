@@ -18,6 +18,7 @@ export const attractionsConfig: EntityConfig<Attraction> = {
     detailPath: '/content/destination-attractions/[id]',
 
     // Schemas - Use type assertion for Zod version compatibility
+    // TYPE-WORKAROUND: EntityConfig generic narrows the schema to z.ZodSchema<Attraction>, but AttractionListItemSchema carries branded effects from @repo/schemas; structurally compatible, brand-only mismatch.
     listItemSchema: AttractionListItemSchema as unknown as z.ZodSchema<Attraction>,
 
     // Search configuration

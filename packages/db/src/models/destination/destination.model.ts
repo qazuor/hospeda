@@ -84,6 +84,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
+                // DRIZZLE-LIMITATION: findFirst with `with: { ...destination relations, audit users }` returns Drizzle's nested join shape; Destination entity uses domain-mapped relations and unbranded enum types.
                 return result as unknown as Destination | null;
             }
             // Fallback to base findOne if there are no relations

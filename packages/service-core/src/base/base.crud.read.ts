@@ -284,6 +284,7 @@ export abstract class BaseCrudRead<
                 const sortBy = processedOptions.sortBy;
                 if (sortBy) {
                     const table = this.model.getTable();
+                    // TYPE-WORKAROUND: Drizzle table reference object structurally matches Record<string, unknown> for dynamic column lookup; runtime safe via hasOwnProperty.
                     const tableRecord = table as unknown as Record<string, unknown>;
                     if (!Object.prototype.hasOwnProperty.call(tableRecord, sortBy)) {
                         throw new ServiceError(
@@ -469,6 +470,7 @@ export abstract class BaseCrudRead<
 
                 // Validate sort field against actual table columns
                 const table = this.model.getTable();
+                // TYPE-WORKAROUND: Drizzle table reference object structurally matches Record<string, unknown> for dynamic column lookup; runtime safe via hasOwnProperty.
                 const tableRecord = table as unknown as Record<string, unknown>;
                 if (!Object.prototype.hasOwnProperty.call(tableRecord, sortBy)) {
                     throw new ServiceError(

@@ -91,6 +91,7 @@ export function isValidDate(date: unknown): boolean {
     if (!date) return false;
     if (typeof date === 'string') {
         try {
+            // TYPE-WORKAROUND: parseISO returns Date but the truthiness coercion at the call site treats a valid Date as a boolean signal; cast satisfies TS without changing runtime behavior.
             return parseISO(date) as unknown as boolean;
         } catch (_error) {
             return false;

@@ -28,6 +28,7 @@ export const publicGetEventsByAuthorRoute = createPublicListRoute({
         const { authorId } = params as { authorId: string };
         const { page, pageSize } = (query || {}) as { page?: number; pageSize?: number };
         const result = await eventService.getByAuthor(actor, {
+            // TYPE-WORKAROUND: service input expects branded UserId but route params arrive as plain string; cast bypasses brand-narrowing since validation already happened via UserIdSchema upstream.
             authorId: authorId as unknown as never,
             page: page ?? 1,
             pageSize: pageSize ?? 20

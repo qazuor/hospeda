@@ -62,6 +62,7 @@ export class DestinationReviewModel extends BaseModelImpl<DestinationReview> {
                 ]);
 
                 const result = {
+                    // DRIZZLE-LIMITATION: findMany with `with: { user, destination }` returns Drizzle's nested relation shape; DestinationReviewWithRelations from @repo/schemas uses domain-typed relations.
                     items: items as unknown as DestinationReviewWithRelations[],
                     total
                 };
@@ -77,6 +78,7 @@ export class DestinationReviewModel extends BaseModelImpl<DestinationReview> {
             });
 
             const result = {
+                // DRIZZLE-LIMITATION: findMany with `with: { user, destination }` returns Drizzle's nested relation shape; DestinationReviewWithRelations from @repo/schemas uses domain-typed relations.
                 items: items as unknown as DestinationReviewWithRelations[],
                 total: items.length
             };

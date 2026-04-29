@@ -63,6 +63,7 @@ export class EventModel extends BaseModelImpl<Event> {
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
+                // DRIZZLE-LIMITATION: findFirst with `with: { ...event relations, tags }` returns Drizzle's nested join shape; Event entity from @repo/schemas uses domain-mapped relation types.
                 return result as unknown as Event | null;
             }
             const result = await this.findOne(where, tx);

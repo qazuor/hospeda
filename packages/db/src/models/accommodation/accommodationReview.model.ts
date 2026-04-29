@@ -66,6 +66,7 @@ export class AccommodationReviewModel extends BaseModelImpl<AccommodationReview>
                 ]);
 
                 const result = {
+                    // DRIZZLE-LIMITATION: findMany with `with: { user, accommodation }` returns Drizzle's nested relation shape; AccommodationReviewWithRelations from @repo/schemas uses domain-typed relations.
                     items: items as unknown as AccommodationReviewWithRelations[],
                     total
                 };
@@ -81,6 +82,7 @@ export class AccommodationReviewModel extends BaseModelImpl<AccommodationReview>
             });
 
             const result = {
+                // DRIZZLE-LIMITATION: findMany with `with: { user, accommodation }` returns Drizzle's nested relation shape; AccommodationReviewWithRelations from @repo/schemas uses domain-typed relations.
                 items: items as unknown as AccommodationReviewWithRelations[],
                 total: items.length
             };

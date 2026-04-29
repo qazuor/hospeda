@@ -45,6 +45,7 @@ export function Badge({
     className
 }: BadgeProps): ReactElement {
     const hasHref = Boolean(href);
+    // TYPE-WORKAROUND: CSS Modules import is typed as a generic Record<string, string>; cast narrows to BadgeStylesMap to enable typed access to known class keys.
     const stylesMap = styles as unknown as BadgeStylesMap;
 
     const classList = buildBadgeClassList({

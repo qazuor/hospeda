@@ -183,6 +183,7 @@ export class BillingSettingsService {
                 .insert(billingSettings)
                 .values({
                     key: SETTINGS_KEY,
+                    // TYPE-WORKAROUND: BillingSettings JSONB column stores arbitrary key-value pairs; cast to Record<string, unknown> matches DB column shape.
                     value: updatedSettings as unknown as Record<string, unknown>,
                     updatedBy: actorId ?? null,
                     updatedAt: new Date()
@@ -190,6 +191,7 @@ export class BillingSettingsService {
                 .onConflictDoUpdate({
                     target: billingSettings.key,
                     set: {
+                        // TYPE-WORKAROUND: BillingSettings JSONB column stores arbitrary key-value pairs; cast to Record<string, unknown> matches DB column shape.
                         value: updatedSettings as unknown as Record<string, unknown>,
                         updatedBy: actorId ?? null,
                         updatedAt: new Date()
@@ -236,6 +238,7 @@ export class BillingSettingsService {
                 .insert(billingSettings)
                 .values({
                     key: SETTINGS_KEY,
+                    // TYPE-WORKAROUND: BillingSettings JSONB column stores arbitrary key-value pairs; cast to Record<string, unknown> matches DB column shape.
                     value: DEFAULT_SETTINGS as unknown as Record<string, unknown>,
                     updatedBy: actorId ?? null,
                     updatedAt: new Date()
@@ -243,6 +246,7 @@ export class BillingSettingsService {
                 .onConflictDoUpdate({
                     target: billingSettings.key,
                     set: {
+                        // TYPE-WORKAROUND: BillingSettings JSONB column stores arbitrary key-value pairs; cast to Record<string, unknown> matches DB column shape.
                         value: DEFAULT_SETTINGS as unknown as Record<string, unknown>,
                         updatedBy: actorId ?? null,
                         updatedAt: new Date()

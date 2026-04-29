@@ -70,6 +70,7 @@ export const destinationsConfig: EntityConfig<Destination> = {
     detailPath: '/destinations/[id]',
 
     // Schemas - Use type assertion for Zod version compatibility
+    // TYPE-WORKAROUND: EntityConfig generic narrows the schema to z.ZodSchema<Destination>, but DestinationListItemSchema carries branded effects from @repo/schemas; structurally compatible, brand-only mismatch.
     listItemSchema: DestinationListItemSchema as unknown as z.ZodSchema<Destination>,
 
     // Search configuration

@@ -64,20 +64,19 @@ export function SubscriptionDetailsDialog({
 
     const plan = getPlanBySlug(subscription.planSlug);
 
-    // Map API payment data to PaymentHistory interface
-    const paymentHistory: PaymentHistory[] = (
-        (paymentData as unknown as
-            | Array<{ id: string; createdAt: string; amount: number; status: string }>
-            | undefined) ?? []
-    ).map((p) => ({
+    // Map API payment data to PaymentHistory interface.
+    // `paymentData` is already validated by the query hook (SPEC-039), so no
+    // cast is needed here — only a status-string narrowing.
+    const paymentHistory: PaymentHistory[] = (paymentData ?? []).map((p) => ({
         id: p.id,
         date: p.createdAt,
         amount: p.amount / 100,
-        status: (p.status === 'completed'
-            ? 'paid'
-            : p.status === 'pending'
-              ? 'pending'
-              : 'failed') as 'paid' | 'pending' | 'failed'
+        status:
+            p.status === 'completed'
+                ? ('paid' as const)
+                : p.status === 'pending'
+                  ? ('pending' as const)
+                  : ('failed' as const)
     }));
 
     return (

@@ -96,6 +96,7 @@ export const Route = createFileRoute('/_authed')({
  */
 function AuthedLayout() {
     const routeContext = Route.useRouteContext();
+    // TYPE-WORKAROUND: TanStack Router context type can't infer dynamically-loaded auth fields populated in beforeLoad; cast restores the AuthState shape set there.
     const authState = routeContext as unknown as AuthState;
 
     return (

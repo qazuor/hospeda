@@ -78,6 +78,7 @@ type ApiLogger = ILogger & {
  * from the dynamic `[key: string]: unknown` index on `ILogger`. The cast through `unknown`
  * is required since `ILogger` and `ApiLogger` are not directly assignable.
  */
+// TYPE-WORKAROUND: registerLogMethod adds the `permission` method at runtime but TS cannot infer it from ILogger's `[key: string]: unknown` index; cast aligns the ILogger instance with the augmented ApiLogger shape.
 const typedApiLogger = apiLogger as unknown as ApiLogger;
 
 /**

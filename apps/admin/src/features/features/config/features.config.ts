@@ -18,6 +18,7 @@ export const featuresConfig: EntityConfig<Feature> = {
     detailPath: '/content/accommodation-features/[id]',
 
     // Schemas - Use type assertion for Zod version compatibility
+    // TYPE-WORKAROUND: EntityConfig generic narrows the schema to z.ZodSchema<Feature>, but FeatureListItemSchema carries branded effects from @repo/schemas; structurally compatible, brand-only mismatch.
     listItemSchema: FeatureListItemSchema as unknown as z.ZodSchema<Feature>,
 
     // Search configuration

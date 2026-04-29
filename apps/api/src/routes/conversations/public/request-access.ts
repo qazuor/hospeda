@@ -70,6 +70,7 @@ async function validateBody(c: Context, next: () => Promise<void>): Promise<Resp
         return createResponse({ status: 'sent_if_exists' }, c, 200);
     }
 
+    // TYPE-WORKAROUND: storing the Zod-validated body on a non-standard ctx property to pass it to the handler without a ContextVariableMap entry; cast widens to a writable record.
     (c as unknown as Record<string, unknown>)._validatedBody = parseResult.data;
     await next();
     return undefined;
@@ -84,6 +85,7 @@ async function validateBody(c: Context, next: () => Promise<void>): Promise<Resp
  * Whether found or not, the response body and HTTP status are IDENTICAL.
  */
 async function handler(c: Context): Promise<Response> {
+    // TYPE-WORKAROUND: reading the upstream-stored validated body off the ctx; cast aligns the non-standard property with the schema's parsed output shape.
     const body = (c as unknown as Record<string, unknown>)._validatedBody as
         | { email?: string }
         | undefined;

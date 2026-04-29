@@ -47,6 +47,7 @@ const searchSchema = z.object({
 export const Route = createFileRoute('/_authed/conversations/')({
     validateSearch: searchSchema,
     beforeLoad: ({ context }) => {
+        // TYPE-WORKAROUND: TanStack Router context type can't infer dynamically-loaded auth fields populated in the parent beforeLoad; cast restores the AuthState shape set there.
         const authState = context as unknown as AuthState;
 
         const hasViewPermission =

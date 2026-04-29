@@ -88,6 +88,7 @@ export class RAccommodationFeatureModel extends BaseModelImpl<AccommodationFeatu
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
+                // DRIZZLE-LIMITATION: findFirst with `with: { accommodation, feature }` returns nested join shape; AccommodationFeature entity expects domain-mapped relation types.
                 return result as unknown as AccommodationFeature | null;
             }
             const result = await this.findOne(where, tx);

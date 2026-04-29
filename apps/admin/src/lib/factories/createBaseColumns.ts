@@ -272,6 +272,7 @@ export const createAllBaseColumns = <TData extends BaseEntity>(
 
     if (config.featured) {
         // Type assertion needed because TData extends BaseEntity, not necessarily { isFeatured }
+        // TYPE-WORKAROUND: createFeaturedColumn() returns a ColumnConfig keyed on { isFeatured }, but TData is only constrained by BaseEntity; cast aligns the column generic with the calling entity.
         columns.push(createFeaturedColumn() as unknown as ColumnConfig<TData>);
     }
 

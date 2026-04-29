@@ -125,6 +125,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         // Cast needed: @qazuor/qzpay-react depends on qzpay-core@1.1.0
         // while admin uses qzpay-core@1.2.0. The interfaces are compatible
         // but TypeScript sees them as distinct nominal types.
+        // TYPE-WORKAROUND: qzpay-core version skew between @qazuor/qzpay-react (1.1.0) and admin (1.2.0) produces nominally distinct billing types; structurally identical, version-only mismatch.
         return createQZPayBilling({
             storage: adapter,
             defaultCurrency: 'ARS',

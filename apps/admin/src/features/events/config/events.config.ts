@@ -60,6 +60,7 @@ export const eventsConfig: EntityConfig<Event> = {
     basePath: '/events',
     detailPath: '/events/[id]',
     // Schemas - Use type assertion for Zod version compatibility
+    // TYPE-WORKAROUND: EntityConfig generic narrows the schema to z.ZodSchema<Event>, but EventListItemSchema carries branded effects from @repo/schemas; structurally compatible, brand-only mismatch.
     listItemSchema: EventListItemSchema as unknown as z.ZodSchema<Event>,
     searchConfig: {
         minChars: 3,

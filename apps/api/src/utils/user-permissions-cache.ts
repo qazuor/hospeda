@@ -90,6 +90,7 @@ async function queryUserPermissions({
         { page: 1, pageSize: MAX_PERMISSIONS_PAGE_SIZE }
     );
 
+    // TYPE-WORKAROUND: userPermissionModel.findAll returns the base row shape but joined `permission` column is added by the model query; cast extracts the projected enum value.
     return result.items.map((up) => (up as unknown as { permission: PermissionEnum }).permission);
 }
 

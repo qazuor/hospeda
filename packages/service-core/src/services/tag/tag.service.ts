@@ -455,6 +455,7 @@ export class TagService extends BaseCrudRelatedService<
                     validated.entityId,
                     validated.entityType
                 );
+                // TYPE-WORKAROUND: filter(Boolean) narrowing to TagGetForEntityOutput['tags'] schema-derived type isn't tracked by TS; runtime values are non-null Tag rows from the relation join.
                 const tags = relations
                     .map((rel) => rel.tag)
                     .filter(Boolean) as unknown as TagGetForEntityOutput['tags'];

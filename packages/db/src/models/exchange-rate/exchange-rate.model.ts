@@ -118,6 +118,7 @@ export class ExchangeRateModel extends BaseModelImpl<ExchangeRate> {
             .limit(limit)
             .offset(offset);
 
+        // DRIZZLE-LIMITATION: select with subquery join returns row.exchange_rates as joined-table shape with branded enum (PriceCurrencyEnum) columns; ExchangeRate entity uses unbranded domain enum types.
         return results.map((row) => row.exchange_rates) as unknown as ExchangeRate[];
     }
 
@@ -174,6 +175,7 @@ export class ExchangeRateModel extends BaseModelImpl<ExchangeRate> {
             .limit(limit)
             .offset(offset);
 
+        // DRIZZLE-LIMITATION: Drizzle infers branded pgEnum types for fromCurrency/toCurrency/rateType columns; ExchangeRate entity uses domain enum unions (PriceCurrencyEnum, ExchangeRateTypeEnum).
         return results as unknown as ExchangeRate[];
     }
 
@@ -198,6 +200,7 @@ export class ExchangeRateModel extends BaseModelImpl<ExchangeRate> {
             .where(eq(exchangeRates.isManualOverride, true))
             .orderBy(desc(exchangeRates.createdAt));
 
+        // DRIZZLE-LIMITATION: Drizzle infers branded pgEnum types for currency/rate type columns; ExchangeRate entity uses domain enum unions identical at runtime.
         return results as unknown as ExchangeRate[];
     }
 
@@ -266,6 +269,7 @@ export class ExchangeRateModel extends BaseModelImpl<ExchangeRate> {
         ]);
 
         return {
+            // DRIZZLE-LIMITATION: Drizzle infers branded pgEnum types for currency/rate columns; ExchangeRate entity uses domain enum unions identical at runtime.
             items: items as unknown as ExchangeRate[],
             total: Number(totalResult[0]?.count ?? 0)
         };

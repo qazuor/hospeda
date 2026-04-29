@@ -18,6 +18,7 @@ export const amenitiesConfig: EntityConfig<Amenity> = {
     detailPath: '/content/accommodation-amenities/[id]',
 
     // Schemas - Use type assertion for Zod version compatibility
+    // TYPE-WORKAROUND: EntityConfig generic narrows the schema to z.ZodSchema<Amenity>, but AmenityListItemSchema carries branded effects from @repo/schemas; structurally compatible, brand-only mismatch.
     listItemSchema: AmenityListItemSchema as unknown as z.ZodSchema<Amenity>,
 
     // Search configuration

@@ -31,6 +31,7 @@
         "check:circular": "bash scripts/check-circular-deps.sh",
         "check:cloudinary-isolation": "bash scripts/check-cloudinary-isolation.sh",
         "check:bare-cloudinary-img": "bash scripts/check-bare-cloudinary-img.sh",
+        "check:type-casts": "bash scripts/check-type-casts.sh",
         "format:md": "markdownlint-cli2 '**/*.md' --fix",
         "format:md:claude": "markdownlint-cli2 '.claude/**/*.md' --fix",
         "lint:md": "markdownlint-cli2 '**/*.md'",

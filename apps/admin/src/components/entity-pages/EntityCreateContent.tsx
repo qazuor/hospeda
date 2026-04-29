@@ -237,6 +237,7 @@ export function EntityCreateContent({
                     }}
                     disabled={isSaving}
                     entityData={values}
+                    // TYPE-WORKAROUND: userPermissions is typed as PermissionEnum[] upstream but EntityFormSection expects a plain string[]; enums are structurally string-assignable, branded mismatch only.
                     userPermissions={userPermissions as unknown as string[]}
                 />
             );

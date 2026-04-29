@@ -30,6 +30,7 @@ export const publicGetEventsByLocationRoute = createPublicListRoute({
         const { locationId } = params as { locationId: string };
         const { page, pageSize } = (query || {}) as { page?: number; pageSize?: number };
         const result = await eventService.getByLocation(actor, {
+            // TYPE-WORKAROUND: service input expects branded EventLocationId but route params arrive as plain string; cast bypasses brand-narrowing since EventLocationIdSchema already validated upstream.
             locationId: locationId as unknown as never,
             page: page ?? 1,
             pageSize: pageSize ?? 20

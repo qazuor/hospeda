@@ -120,6 +120,7 @@ function createQZPayBillingRouter(): AppOpenAPI {
 
         apiLogger.info('QZPay billing routes created successfully');
 
+        // TYPE-WORKAROUND: createBillingRoutes returns a generic Hono app whose typed variables differ from our AppOpenAPI binding; cast aligns external module's Hono instance with our project-wide OpenAPI app type.
         return routes as unknown as AppOpenAPI;
     } catch (error) {
         apiLogger.error(

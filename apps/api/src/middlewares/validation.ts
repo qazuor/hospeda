@@ -32,6 +32,7 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
             // Route factories attach routeOptions directly on the context object
             // (not through c.set/c.get) as a non-standard property. This pattern
             // is intentional and there is no ContextVariableMap entry for it.
+            // TYPE-WORKAROUND: routeOptions is attached as a non-standard ctx property by route-factory before typed variables are set; cast restores the domain shape since there is no ContextVariableMap entry.
             const routeOptions = (c as unknown as { routeOptions?: { skipValidation?: boolean } })
                 .routeOptions;
             if (routeOptions?.skipValidation || isPublicPath) {

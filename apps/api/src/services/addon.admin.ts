@@ -437,7 +437,7 @@ export class AdminAddonService {
                 }
             }
 
-            // newExpiresAt is assigned inside withTransaction — cast via unknown to inform TS
+            // TYPE-WORKAROUND: newExpiresAt is assigned inside the withTransaction closure so TS treats it as still-undefined in the outer scope; cast informs TS the closure has run and the value is now resolved.
             const expiresAtResolved = newExpiresAt as unknown as Date | null;
             const expiresAtIso: string | null = expiresAtResolved?.toISOString() ?? null;
 

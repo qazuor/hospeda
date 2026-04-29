@@ -338,6 +338,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         const [items, totalResult] = await Promise.all([resultsQuery, totalQuery]);
         const total = Number(totalResult[0]?.count ?? 0);
 
+        // DRIZZLE-LIMITATION: Drizzle's select() returns inferred row type with branded enum/JSONB columns; entity type uses unbranded domain types from @repo/schemas.
         return { items: items as unknown as Accommodation[], total };
     }
 
@@ -509,6 +510,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         const totalResult = await totalQuery;
 
         return {
+            // DRIZZLE-LIMITATION: findMany with `with: { destination, owner }` returns nested relation shape; entity type uses optional summary types narrower than full Drizzle inferred relations.
             items: results as unknown as Array<
                 Accommodation & {
                     destination?: DestinationSummary;
@@ -549,6 +551,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             where: (fields, { eq, ne: neOp, isNull: isNullOp }) => {
                 const clauses: SQL<unknown>[] = [isNullOp(fields.deletedAt)];
                 if (destinationId) clauses.push(eq(fields.destinationId, destinationId));
+                // DRIZZLE-LIMITATION: Domain enum (string union) and Drizzle column's branded pgEnum type differ at TS level but are identical at runtime.
                 if (type) clauses.push(eq(fields.type, type as unknown as typeof fields.type));
                 if (onlyFeatured) clauses.push(eq(fields.isFeatured, true));
                 if (excludeRestricted) clauses.push(neOp(fields.visibility, 'RESTRICTED'));
@@ -563,6 +566,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             limit
         });
 
+        // DRIZZLE-LIMITATION: findMany with `with: { destination, amenities, features }` returns nested join shape; Accommodation entity flattens/renames these relations via schema.
         return results as unknown as Accommodation[];
     }
 
@@ -605,6 +609,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                     with: { destination: true }
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
+                // DRIZZLE-LIMITATION: findFirst with `with: { destination: true }` returns nested relation shape; Accommodation entity type from @repo/schemas differs structurally.
                 return result as unknown as Accommodation | null;
             }
             const result = await this.findOne(where, tx);

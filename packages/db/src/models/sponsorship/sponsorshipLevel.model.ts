@@ -41,6 +41,7 @@ export class SponsorshipLevelModel extends BaseModelImpl<SponsorshipLevel> {
                 .limit(1);
 
             logQuery(this.entityName, 'findBySlug', { slug }, result);
+            // DRIZZLE-LIMITATION: Drizzle's select() row type uses branded pgEnum (targetType) and JSONB columns; SponsorshipLevel entity uses domain enum unions and Zod-validated JSON types.
             return (result[0] as unknown as SponsorshipLevel) ?? null;
         } catch (error) {
             logError(this.entityName, 'findBySlug', { slug }, error as Error);
@@ -106,6 +107,7 @@ export class SponsorshipLevelModel extends BaseModelImpl<SponsorshipLevel> {
                 });
 
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
+                // DRIZZLE-LIMITATION: findFirst with `with: { createdBy, updatedBy, deletedBy }` returns nested user-relation shape; SponsorshipLevel entity types these as optional User domain types.
                 return result as unknown as SponsorshipLevel | null;
             }
 

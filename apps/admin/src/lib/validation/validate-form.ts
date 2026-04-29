@@ -23,6 +23,7 @@ export function extractZodIssueParams({
     readonly issue: ZodIssue;
 }): Record<string, unknown> {
     const params: Record<string, unknown> = {};
+    // TYPE-WORKAROUND: Zod's ZodIssue is a discriminated union; cast to Record<string, unknown> lets us read variant-specific fields (minimum, maximum, etc.) without exhaustive switch on issue.code.
     const raw = issue as unknown as Record<string, unknown>;
 
     if ('minimum' in issue) params.min = raw.minimum;

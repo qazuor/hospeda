@@ -18,6 +18,7 @@ export const sponsorsConfig: EntityConfig<Sponsor> = {
     detailPath: '/sponsors/[id]',
 
     // Schemas - Use type assertion for Zod version compatibility
+    // TYPE-WORKAROUND: EntityConfig generic narrows the schema to z.ZodSchema<Sponsor>, but SponsorListItemSchema carries branded effects from @repo/schemas; structurally compatible, brand-only mismatch.
     listItemSchema: SponsorListItemSchema as unknown as z.ZodSchema<Sponsor>,
 
     // Search configuration

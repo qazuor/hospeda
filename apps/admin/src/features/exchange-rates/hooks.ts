@@ -1,5 +1,7 @@
 import { fetchApi } from '@/lib/api/client';
+import { type ExchangeRate, ExchangeRateSchema } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
 import type {
     ExchangeRateConfigUpdateInput,
     ExchangeRateCreateInput,
@@ -48,9 +50,12 @@ async function fetchRates(filters: ExchangeRateFilters = {}) {
 }
 
 /**
- * Fetch exchange rate history with filters
+ * Fetch exchange rate history with filters.
+ * SPEC-039: response is parsed through ExchangeRateSchema so a backend
+ * shape divergence surfaces as a thrown error instead of silently
+ * corrupting the history table render.
  */
-async function fetchRateHistory(filters: ExchangeRateHistoryFilters = {}) {
+async function fetchRateHistory(filters: ExchangeRateHistoryFilters = {}): Promise<ExchangeRate[]> {
     const params = new URLSearchParams();
 
     for (const [key, value] of Object.entries(filters)) {
@@ -59,10 +64,10 @@ async function fetchRateHistory(filters: ExchangeRateHistoryFilters = {}) {
         }
     }
 
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown>[] }>({
+    const result = await fetchApi<{ success: boolean; data: unknown[] }>({
         path: `/api/v1/admin/exchange-rates/history?${params.toString()}`
     });
-    return result.data.data;
+    return z.array(ExchangeRateSchema).parse(result.data.data);
 }
 
 /**

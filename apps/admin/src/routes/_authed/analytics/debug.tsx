@@ -15,6 +15,7 @@ async function fetchHealth(): Promise<Record<string, unknown>> {
     const result = await fetchApi<{ data?: Record<string, unknown> }>({
         path: '/api/v1/health'
     });
+    // TYPE-WORKAROUND: health endpoint returns either { data: {...} } or the payload at the top level; fallback cast handles the un-enveloped legacy shape.
     return result.data.data ?? (result.data as unknown as Record<string, unknown>);
 }
 
@@ -22,6 +23,7 @@ async function fetchDbHealth(): Promise<Record<string, unknown>> {
     const result = await fetchApi<{ data?: Record<string, unknown> }>({
         path: '/api/v1/health/db'
     });
+    // TYPE-WORKAROUND: health/db endpoint returns either { data: {...} } or the payload at the top level; fallback cast handles the un-enveloped legacy shape.
     return result.data.data ?? (result.data as unknown as Record<string, unknown>);
 }
 

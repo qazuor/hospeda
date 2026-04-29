@@ -36,6 +36,7 @@ export const publicGetEventsByOrganizerRoute = createPublicListRoute({
         const { organizerId } = params as { organizerId: string };
         const { page, pageSize } = (query || {}) as { page?: number; pageSize?: number };
         const result = await eventService.getByOrganizer(actor, {
+            // TYPE-WORKAROUND: service input expects branded EventOrganizerId but route params arrive as plain string; cast bypasses brand-narrowing since the schema already validated upstream.
             organizerId: organizerId as unknown as never,
             page: page ?? 1,
             pageSize: pageSize ?? 20

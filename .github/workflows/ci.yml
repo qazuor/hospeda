@@ -100,6 +100,9 @@ jobs:
       - name: Check bare Cloudinary <img>
         run: bash scripts/check-bare-cloudinary-img.sh
 
+      - name: Check 'as unknown as' type-cast count (SPEC-039)
+        run: bash scripts/check-type-casts.sh
+
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."

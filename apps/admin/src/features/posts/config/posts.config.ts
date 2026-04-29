@@ -82,6 +82,7 @@ export const postsConfig: EntityConfig<Post> = {
     detailPath: '/posts/[id]',
 
     // Schemas
+    // TYPE-WORKAROUND: EntityConfig generic narrows the schema to z.ZodSchema<Post>, but PostListItemWithComputedFieldsSchema carries branded effects from @repo/schemas; structurally compatible, brand-only mismatch.
     listItemSchema: PostListItemWithComputedFieldsSchema as unknown as z.ZodSchema<Post>,
 
     // Search configuration

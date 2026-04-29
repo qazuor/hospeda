@@ -1,5 +1,6 @@
 import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
 
 /**
  * Webhook event types
@@ -16,18 +17,35 @@ export type WebhookEventType =
     | 'invoice.paid'
     | 'invoice.failed';
 
-export interface WebhookEvent {
-    id: string;
-    provider: string;
-    type: WebhookEventType;
-    status: WebhookEventStatus;
-    providerEventId: string;
-    receivedAt: string;
-    processedAt?: string;
-    payload: Record<string, unknown>;
-    errorMessage?: string;
-    retryCount?: number;
-}
+/**
+ * Runtime validation schema for webhook events returned by the admin API.
+ * Used to parse query responses before they reach the UI so a backend
+ * shape divergence surfaces as a thrown error, not a silent crash later
+ * when a missing field is read.
+ */
+const WebhookEventSchema = z.object({
+    id: z.string(),
+    provider: z.string(),
+    type: z.enum([
+        'payment.created',
+        'payment.updated',
+        'subscription.created',
+        'subscription.updated',
+        'subscription.cancelled',
+        'invoice.created',
+        'invoice.paid',
+        'invoice.failed'
+    ]),
+    status: z.enum(['processed', 'failed', 'pending']),
+    providerEventId: z.string(),
+    receivedAt: z.string(),
+    processedAt: z.string().optional(),
+    payload: z.record(z.string(), z.unknown()).default({}),
+    errorMessage: z.string().optional(),
+    retryCount: z.number().optional()
+});
+
+export type WebhookEvent = z.infer<typeof WebhookEventSchema>;
 
 /**
  * Query keys for webhook event queries
@@ -47,7 +65,7 @@ export const webhookEventQueryKeys = {
 /**
  * Fetch webhook events with filters
  */
-async function fetchWebhookEvents(filters: Record<string, unknown> = {}) {
+async function fetchWebhookEvents(filters: Record<string, unknown> = {}): Promise<WebhookEvent[]> {
     const params = new URLSearchParams();
 
     for (const [key, value] of Object.entries(filters)) {
@@ -58,12 +76,12 @@ async function fetchWebhookEvents(filters: Record<string, unknown> = {}) {
 
     const result = await fetchApi<{
         success: boolean;
-        data: { data: Record<string, unknown>[]; total: number; limit: number; offset: number };
+        data: { data: unknown[]; total: number; limit: number; offset: number };
     }>({
         path: `/api/v1/admin/webhooks/events?${params.toString()}`
     });
     // API returns { success, data: { data: [], total, limit, offset } }
-    return result.data.data.data;
+    return z.array(WebhookEventSchema).parse(result.data.data.data);
 }
 
 /**
@@ -79,11 +97,11 @@ async function fetchWebhookEvent(id: string) {
 /**
  * Fetch dead letter queue events
  */
-async function fetchDeadLetterEvents() {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown>[] }>({
+async function fetchDeadLetterEvents(): Promise<WebhookEvent[]> {
+    const result = await fetchApi<{ success: boolean; data: unknown[] }>({
         path: '/api/v1/admin/webhooks/dead-letter'
     });
-    return result.data.data;
+    return z.array(WebhookEventSchema).parse(result.data.data);
 }
 
 /**

@@ -45,6 +45,7 @@ export class RDestinationAttractionModel extends BaseModelImpl<DestinationAttrac
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
+                // DRIZZLE-LIMITATION: findFirst with `with: { destination, attraction, destinationsWithAttraction }` returns nested join shape; DestinationAttractionRelation entity uses domain-mapped relation types.
                 return result as unknown as DestinationAttractionRelation | null;
             }
             const result = await this.findOne(where, tx);

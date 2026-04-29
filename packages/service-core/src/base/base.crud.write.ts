@@ -109,6 +109,7 @@ export abstract class BaseCrudWrite<
                 payload.updatedById = validatedActor.id;
 
                 const entity = await this.model.create(
+                    // TYPE-WORKAROUND: Generic base class cannot narrow Record<string, unknown> payload to concrete Partial<TEntity>; payload is structurally validated upstream by Zod create schema.
                     payload as unknown as Partial<TEntity>,
                     execCtx?.tx
                 );
@@ -174,6 +175,7 @@ export abstract class BaseCrudWrite<
                 const mergedUpdateData = { ...normalizedData, ...processedData };
                 this._validateMediaShape(mergedUpdateData as Record<string, unknown>);
 
+                // TYPE-WORKAROUND: Generic base class cannot narrow merged update payload to concrete Partial<TEntity>; payload is structurally validated upstream by Zod update schema.
                 const payload = {
                     ...mergedUpdateData,
                     updatedById: validActor.id
@@ -202,7 +204,8 @@ export abstract class BaseCrudWrite<
 
                 const finalPayload = hasValidField
                     ? filteredPayload
-                    : ({ updatedById: validActor.id } as unknown as Partial<TEntity>);
+                    : // TYPE-WORKAROUND: Fallback no-op update payload (audit field only) cannot be typed as Partial<TEntity> in the generic base class.
+                      ({ updatedById: validActor.id } as unknown as Partial<TEntity>);
 
                 const updatedEntity = await this.model.update(
                     where as Record<string, unknown>,
@@ -463,6 +466,7 @@ export abstract class BaseCrudWrite<
                 try {
                     updatedEntity = await this.model.update(
                         { id },
+                        // TYPE-WORKAROUND: Generic base class cannot guarantee TEntity has a `visibility` field; concrete services that call updateVisibility do.
                         {
                             visibility: processedVisibility
                         } as unknown as Partial<TEntity>,
@@ -534,6 +538,7 @@ export abstract class BaseCrudWrite<
                 if (isFeatured === validData.isFeatured) return { updated: false };
                 await this.model.update(
                     { id: validData.id },
+                    // TYPE-WORKAROUND: Generic base class cannot guarantee TEntity has an `isFeatured` field; concrete services that call setFeaturedStatus do.
                     {
                         isFeatured: validData.isFeatured
                     } as unknown as Partial<TEntity>,
