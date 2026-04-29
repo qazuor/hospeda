@@ -152,9 +152,10 @@
         {
             "specId": "SPEC-048",
             "title": "Web2 Homepage Componentization & Tokenization",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "82/82",
-            "path": "SPEC-048-web2-homepage-componentization"
+            "path": "SPEC-048-web2-homepage-componentization",
+            "archived": true
         },
         {
             "specId": "SPEC-049",
@@ -257,7 +258,7 @@
         {
             "specId": "SPEC-078",
             "title": "Cloudinary Image Management System",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "25/25",
             "path": "SPEC-078-cloudinary-image-management",
             "archived": true
