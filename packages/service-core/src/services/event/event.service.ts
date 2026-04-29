@@ -89,7 +89,11 @@ export class EventService extends BaseCrudService<
     protected readonly searchSchema = EventSearchInputSchema;
 
     protected getDefaultListRelations() {
-        return { organizer: true, location: true };
+        // `tags` is intentionally excluded: r_entity_tag is polymorphic
+        // (entityType + entityId composite reference) and Drizzle's relational
+        // query API cannot resolve polymorphic relations natively. Tags must
+        // be loaded via a separate query in callers that need them.
+        return { author: true, organizer: true, location: true };
     }
 
     /**

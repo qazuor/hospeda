@@ -37,7 +37,7 @@ describe('EventService.getById', () => {
         expect(result.data).toMatchObject(publicEvent);
         expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
             { id: eventId },
-            { organizer: true, location: true },
+            { author: true, organizer: true, location: true },
             undefined
         );
         expect(modelMock.findOne).not.toHaveBeenCalled();

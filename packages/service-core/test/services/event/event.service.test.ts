@@ -59,6 +59,7 @@ describe('EventService - Relations Support', () => {
 
             // Verify
             expect(relations).toEqual({
+                author: true,
                 organizer: true,
                 location: true
             });
@@ -76,7 +77,7 @@ describe('EventService - Relations Support', () => {
             // Verify
             expect(result.data).toBeDefined();
             expect(mockModel.findAllWithRelations).toHaveBeenCalledWith(
-                { organizer: true, location: true },
+                { author: true, organizer: true, location: true },
                 {},
                 { page: undefined, pageSize: undefined },
                 undefined,
