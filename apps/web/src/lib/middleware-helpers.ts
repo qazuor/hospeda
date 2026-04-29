@@ -332,6 +332,13 @@ export function generateCspNonce(): string {
 /**
  * Builds a Content-Security-Policy header value using nonce-based script/style policy.
  *
+ * SPEC-047: `script-src` and `style-src` deliberately omit `'unsafe-inline'`.
+ * Every inline `<script>` / `<style>` in the web app must carry a
+ * `nonce={cspNonce}` attribute (enforced by `scripts/check-inline-nonce.sh`)
+ * so it participates in CSP integrity. `'strict-dynamic'` on `script-src`
+ * grants nonce-loaded scripts the right to load further scripts they
+ * legitimately need, without falling back to host allowlists.
+ *
  * @param params - Object with nonce, optional API URL, and optional Sentry report URI
  * @returns Formatted CSP directive string
  */

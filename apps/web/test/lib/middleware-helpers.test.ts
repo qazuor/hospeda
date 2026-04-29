@@ -203,4 +203,21 @@ describe('buildCspHeader', () => {
         const header = buildCspHeader({ nonce: 'x' });
         expect(header).not.toContain('unsafe-inline');
     });
+
+    // SPEC-047: lock the script-src shape so a future change cannot regress
+    // the policy back to 'unsafe-inline' or drop strict-dynamic / nonce.
+    it('script-src must have exactly: self + nonce + strict-dynamic (no unsafe-inline, no https:)', () => {
+        const header = buildCspHeader({ nonce: 'abc123' });
+        const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src '));
+        expect(scriptSrc).toBeDefined();
+        expect(scriptSrc).toBe("script-src 'self' 'nonce-abc123' 'strict-dynamic'");
+    });
+
+    it('style-src must use nonce-based policy without unsafe-inline', () => {
+        const header = buildCspHeader({ nonce: 'abc123' });
+        const styleSrc = header.split('; ').find((d) => d.startsWith('style-src '));
+        expect(styleSrc).toBeDefined();
+        expect(styleSrc).toContain("'nonce-abc123'");
+        expect(styleSrc).not.toContain('unsafe-inline');
+    });
 });
