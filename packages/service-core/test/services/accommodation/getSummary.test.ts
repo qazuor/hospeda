@@ -1,9 +1,8 @@
 /**
  * @fileoverview
- * Test suite for the Ac		let accommodation: Accommodation;et accommodation: Accommodation;ommodationService.getSummary method.
- * Ensures robust, type-safe, and homogeneous handling of summary retrieval, validation, permission, and error propagation logic.
- *
- * All test data, comments, and documentation are in English, following project guidelines.
+ * Test suite for the AccommodationService.getSummary method.
+ * Ensures robust, type-safe, and homogeneous handling of summary retrieval,
+ * validation, permission, and error propagation logic.
  */
 import { AccommodationModel } from '@repo/db';
 import type { AccommodationSummaryParamsSchema } from '@repo/schemas';
@@ -76,11 +75,7 @@ describe('AccommodationService.getSummary', () => {
                 reviewsCount: 0
             }
         });
-        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
-            { id: accommodation.id },
-            expect.any(Object),
-            undefined
-        );
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id }, undefined);
         expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodation);
     });
 
@@ -89,11 +84,7 @@ describe('AccommodationService.getSummary', () => {
         asMock(modelMock.findOneWithRelations).mockResolvedValue(null);
         const result = await service.getSummary(actor, input);
         expectNotFoundError(result);
-        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
-            { id: accommodation.id },
-            expect.any(Object),
-            undefined
-        );
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id }, undefined);
     });
 
     it('should return NOT_FOUND if accommodation has no location', async () => {
@@ -105,11 +96,7 @@ describe('AccommodationService.getSummary', () => {
         // When no location, the method logs a warning and returns null in data
         expect(result.data).toEqual({ accommodation: null });
         expect(result.error).toBeUndefined();
-        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
-            { id: accommodation.id },
-            expect.any(Object),
-            undefined
-        );
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id }, undefined);
         expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, noLocation);
     });
 
@@ -122,11 +109,7 @@ describe('AccommodationService.getSummary', () => {
         const result = await service.getSummary(actor, input);
         expectForbiddenError(result);
         expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodation);
-        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
-            { id: accommodation.id },
-            expect.any(Object),
-            undefined
-        );
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id }, undefined);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
@@ -134,11 +117,7 @@ describe('AccommodationService.getSummary', () => {
         asMock(modelMock.findOneWithRelations).mockRejectedValue(new Error('DB error'));
         const result = await service.getSummary(actor, input);
         expectInternalError(result);
-        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
-            { id: accommodation.id },
-            expect.any(Object),
-            undefined
-        );
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id }, undefined);
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {

@@ -58,9 +58,12 @@ describe('AccommodationService.getStats', () => {
         input = { idOrSlug: accommodation.id };
     });
 
+    // Note: `getStats` was refactored to use `model.findOne` directly so it does
+    // not pay the cost of loading the 7 detail relations that the stats payload
+    // immediately discards. The assertions below reflect that flat-read path.
+
     it('should return stats for an accommodation', async () => {
         modelMock.findOne.mockResolvedValue(accommodation);
-        modelMock.findOneWithRelations.mockResolvedValue(accommodation);
         vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
         const result = await service.getStats(actor, input);
         expectSuccess(result);
@@ -75,52 +78,33 @@ describe('AccommodationService.getStats', () => {
                 }
             }
         });
-        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
-            { id: accommodation.id },
-            expect.any(Object),
-            undefined
-        );
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id }, undefined);
         expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodation);
     });
 
     it('should return NOT_FOUND if accommodation does not exist', async () => {
         modelMock.findOne.mockResolvedValue(null);
-        modelMock.findOneWithRelations.mockResolvedValue(null);
         const result = await service.getStats(actor, input);
         expectNotFoundError(result);
-        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
-            { id: accommodation.id },
-            expect.any(Object),
-            undefined
-        );
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id }, undefined);
     });
 
     it('should return FORBIDDEN if actor cannot view', async () => {
         modelMock.findOne.mockResolvedValue(accommodation);
-        modelMock.findOneWithRelations.mockResolvedValue(accommodation);
         vi.spyOn(permissionHelpers, 'checkCanView').mockImplementation(() => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'forbidden');
         });
         const result = await service.getStats(actor, input);
         expectForbiddenError(result);
         expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodation);
-        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
-            { id: accommodation.id },
-            expect.any(Object),
-            undefined
-        );
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id }, undefined);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         modelMock.findOne.mockRejectedValue(new Error('DB error'));
-        modelMock.findOneWithRelations.mockRejectedValue(new Error('DB error'));
         const result = await service.getStats(actor, input);
         expectInternalError(result);
-        expect(modelMock.findOneWithRelations).toHaveBeenCalledWith(
-            { id: accommodation.id },
-            expect.any(Object),
-            undefined
-        );
+        expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id }, undefined);
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {

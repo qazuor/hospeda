@@ -57,8 +57,10 @@ describe('AccommodationService.getById', () => {
                 amenities: true,
                 features: true,
                 reviews: true,
-                faqs: true,
-                tags: true
+                faqs: true
+                // `tags` relation intentionally omitted — Drizzle cannot infer
+                // r_entity_tag (polymorphic entityId+entityType, no direct FK).
+                // Tags are loaded separately when needed.
             },
             undefined
         );

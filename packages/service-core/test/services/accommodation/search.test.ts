@@ -77,10 +77,11 @@ describe('AccommodationService.search', () => {
         const firstEntity = entities[0] as NonNullable<(typeof entities)[0]>;
         expect(firstItem.id).toBe(firstEntity.id);
         expect(result.error).toBeUndefined();
+        // SPEC-088: pagination keys (page, pageSize, sortBy, sortOrder) are stripped
+        // by `BaseCrudRead.search` before invoking `_executeSearch`, so they never
+        // reach the model layer. Only entity filters + the resolved excludeRestricted
+        // flag are forwarded.
         expect(model.searchWithRelations).toHaveBeenCalledWith({
-            page: 1,
-            pageSize: 2,
-            sortOrder: 'asc',
             type: entities[0].type,
             excludeRestricted: false
         });
@@ -162,10 +163,8 @@ describe('AccommodationService.search', () => {
         asMock(model.searchWithRelations).mockResolvedValue(paginated(entities, 99, 10));
         await serviceWithNorm.search(actor, { page: 1, pageSize: 10 });
         expect(normalizer).toHaveBeenCalledWith({ page: 1, pageSize: 10, sortOrder: 'asc' }, actor);
+        // Pagination keys are stripped before reaching the model — see SPEC-088.
         expect(model.searchWithRelations).toHaveBeenCalledWith({
-            page: 99,
-            pageSize: 10,
-            sortOrder: 'asc',
             excludeRestricted: false
         });
     });
