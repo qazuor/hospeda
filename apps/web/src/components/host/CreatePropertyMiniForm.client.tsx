@@ -3,9 +3,18 @@
  * @description Minimum-viable property creation form for hosts.
  *
  * Asks only for name, summary, type and a CITY destination, POSTs the result
- * to `/api/v1/protected/accommodations/draft`, and redirects the host to the
+ * to `/api/v1/protected/host-onboarding/start`, and redirects the host to the
  * admin panel edit page so they can complete the rest of the listing
  * (price, photos, amenities, contact, etc.).
+ *
+ * The endpoint can answer with three terminal states:
+ *  - `created`     -> a fresh DRAFT was inserted, redirect to its edit page.
+ *  - `resumed`     -> the user already had an active DRAFT, redirect to it.
+ *  - `already_host` -> the user is already HOST/ADMIN, redirect to the admin
+ *                      panel home (they can create listings normally there).
+ *
+ * On 503 (billing layer unavailable), the form surfaces a retry-friendly
+ * message instead of a generic error.
  */
 
 import { CityDestinationPicker } from '@/components/form/CityDestinationPicker.client';
@@ -37,12 +46,17 @@ type FieldErrors = Readonly<{
     destinationId?: string;
 }>;
 
-type DraftCreateResponse = {
+type OnboardingStartStatus = 'created' | 'resumed' | 'already_host';
+
+type OnboardingStartResponse = {
     readonly data?: {
-        readonly id?: string;
+        readonly status: OnboardingStartStatus;
+        readonly accommodationId: string | null;
+        readonly accommodationSlug: string | null;
     };
     readonly error?: {
         readonly message?: string;
+        readonly code?: string;
     };
 };
 
@@ -110,7 +124,7 @@ export function CreatePropertyMiniForm({ locale, apiUrl, adminUrl }: CreatePrope
         setIsSubmitting(true);
         try {
             const response = await fetch(
-                `${apiUrl.replace(/\/$/, '')}/api/v1/protected/accommodations/draft`,
+                `${apiUrl.replace(/\/$/, '')}/api/v1/protected/host-onboarding/start`,
                 {
                     method: 'POST',
                     credentials: 'include',
@@ -125,13 +139,24 @@ export function CreatePropertyMiniForm({ locale, apiUrl, adminUrl }: CreatePrope
                 }
             );
 
+            // 503: billing layer unavailable, surface a retry-friendly message
+            if (response.status === 503) {
+                setSubmitError(
+                    t(
+                        'host.miniForm.errors.serviceUnavailable',
+                        'No pudimos contactar al servicio de facturación en este momento. Probá de nuevo en un minuto.'
+                    )
+                );
+                return;
+            }
+
             if (!response.ok) {
                 let message = t(
                     'host.miniForm.errors.submit',
                     'No pudimos crear el alojamiento. Probá de nuevo en un momento.'
                 );
                 try {
-                    const body = (await response.json()) as DraftCreateResponse;
+                    const body = (await response.json()) as OnboardingStartResponse;
                     if (body.error?.message) message = body.error.message;
                 } catch {
                     // Body wasn't JSON; keep the localized fallback message.
@@ -140,9 +165,26 @@ export function CreatePropertyMiniForm({ locale, apiUrl, adminUrl }: CreatePrope
                 return;
             }
 
-            const body = (await response.json()) as DraftCreateResponse;
-            const id = body.data?.id;
-            if (!id) {
+            const body = (await response.json()) as OnboardingStartResponse;
+            const data = body.data;
+            if (!data) {
+                setSubmitError(
+                    t(
+                        'host.miniForm.errors.submit',
+                        'No pudimos crear el alojamiento. Probá de nuevo en un momento.'
+                    )
+                );
+                return;
+            }
+
+            const adminBase = adminUrl.replace(/\/$/, '');
+            // Branch on status: created/resumed go to the edit page, already_host
+            // goes to the admin home where the user creates listings normally.
+            if (data.status === 'already_host') {
+                window.location.href = `${adminBase}/accommodations`;
+                return;
+            }
+            if (!data.accommodationId) {
                 setSubmitError(
                     t(
                         'host.miniForm.errors.missingId',
@@ -151,8 +193,7 @@ export function CreatePropertyMiniForm({ locale, apiUrl, adminUrl }: CreatePrope
                 );
                 return;
             }
-
-            window.location.href = `${adminUrl.replace(/\/$/, '')}/accommodations/${id}/edit`;
+            window.location.href = `${adminBase}/accommodations/${data.accommodationId}/edit`;
         } catch {
             setSubmitError(
                 t(
