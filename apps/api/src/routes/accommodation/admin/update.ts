@@ -11,11 +11,19 @@ import {
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { getQZPayBilling } from '../../../middlewares/billing';
+import { buildAccommodationPublishDeps } from '../../../services/accommodation-publish-deps';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const accommodationService = new AccommodationService({ logger: apiLogger });
+const accommodationService = new AccommodationService(
+    { logger: apiLogger },
+    undefined,
+    null,
+    undefined,
+    buildAccommodationPublishDeps(getQZPayBilling)
+);
 
 /**
  * PUT /api/v1/admin/accommodations/:id
