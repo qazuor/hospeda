@@ -102,6 +102,11 @@ export abstract class BaseCrudRead<
      * `PostProtectedSchema`). Consumers needing typed access to relation fields should use
      * `z.infer<typeof AccessSchema>` from the appropriate access schema.
      *
+     * For service-layer code that needs typed access to relations and where no access schema
+     * exists (e.g., custom service methods, internal hooks), the `WithRelations<TEntity, TRelations>`
+     * utility type from `@repo/service-core` provides an explicit opt-in cast. See ADR-022 for
+     * the full decision and tradeoffs.
+     *
      * @note Returns a NOT_FOUND ServiceError if the entity is not found.
      *
      * @param actor - The user or system performing the action.

@@ -253,6 +253,47 @@ export type BaseSearchType = z.infer<typeof BaseSearchSchema>;
 export type { ListOptions } from './schemas';
 
 /**
+ * Augments a flat entity type with typed relation fields for service-layer
+ * consumers that need autocomplete on populated relations.
+ *
+ * Service methods (`getByField`, `getById`, `list`, ...) return
+ * `ServiceOutput<TEntity | null>` where `TEntity` is the flat database entity
+ * type. At runtime, when `getDefaultGetByIdRelations()` returns a config,
+ * the entity DOES contain nested relation objects (e.g., `destination`,
+ * `owner`), but TypeScript only sees the flat type. See ADR-022.
+ *
+ * The recommended way to consume relation data is via access schemas from
+ * `@repo/schemas` (e.g., `AccommodationPublicSchema`), which validate at the
+ * API boundary. Use `WithRelations` only inside the service layer when an
+ * access schema does not exist and a typed cast is needed in custom service
+ * methods or tests.
+ *
+ * @template TEntity - The flat database entity type (e.g., `Accommodation`).
+ * @template TRelations - An object literal describing the populated relations
+ *   keyed by the relation name. Each value is the related entity type or
+ *   array of related entity types.
+ *
+ * @example
+ * ```ts
+ * import type { WithRelations } from '@repo/service-core';
+ * import type { Accommodation, Destination, User, Amenity } from '@repo/schemas';
+ *
+ * type AccommodationDetail = WithRelations<Accommodation, {
+ *     destination: Destination;
+ *     owner: User;
+ *     amenities: Amenity[];
+ * }>;
+ *
+ * const result = await service.getById(actor, id);
+ * // TYPE-WORKAROUND: service layer is relation-agnostic; cast for typed access
+ * const accommodation = result.data as AccommodationDetail | null;
+ * accommodation?.destination.name; // typed
+ * ```
+ */
+export type WithRelations<TEntity, TRelations extends Record<string, unknown>> = TEntity &
+    TRelations;
+
+/**
  * Parameter type for `_executeAdminSearch()` in BaseCrudRead and service overrides.
  * Contains the assembled query parameters for admin list endpoints.
  */
