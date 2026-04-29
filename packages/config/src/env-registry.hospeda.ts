@@ -43,12 +43,12 @@ export const HOSPEDA_ENV_VARS = [
     },
     {
         name: 'HOSPEDA_ADMIN_URL',
-        description: 'Admin app URL (CORS)',
+        description: 'Admin app URL (CORS, server-side links from web)',
         type: 'url',
         required: false,
         secret: false,
         exampleValue: 'http://localhost:3000',
-        apps: ['api'],
+        apps: ['api', 'web'],
         category: 'core'
     },
 
@@ -330,6 +330,70 @@ export const HOSPEDA_ENV_VARS = [
         enumValues: ['manual', 'vercel', 'node-cron'] as const,
         apps: ['api'],
         category: 'cron'
+    },
+    {
+        name: 'HOSPEDA_REVALIDATION_SECRET',
+        description:
+            'Shared secret for authenticating ISR revalidation requests from the API. Min 32 characters.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'a-secret-string-of-at-least-32-characters',
+        apps: ['api', 'web'],
+        category: 'cron'
+    },
+    {
+        name: 'HOSPEDA_REVALIDATION_CRON_SCHEDULE',
+        description: 'Cron schedule for automatic page revalidation',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: '0 * * * *',
+        exampleValue: '0 * * * *',
+        apps: ['api'],
+        category: 'cron'
+    },
+
+    // -------------------------------------------------------------------------
+    // Addon lifecycle
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_ADDON_LIFECYCLE_ENABLED',
+        description:
+            'Feature flag for addon lifecycle processing (cancellations, plan changes, expiry). Set to "false" to disable side-effects without deploying code.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'true',
+        exampleValue: 'true',
+        apps: ['api'],
+        category: 'billing'
+    },
+
+    // -------------------------------------------------------------------------
+    // Auth lockout (brute-force protection)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_AUTH_LOCKOUT_MAX_ATTEMPTS',
+        description: 'Max failed login attempts before temporary lockout',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '5',
+        exampleValue: '5',
+        apps: ['api'],
+        category: 'auth'
+    },
+    {
+        name: 'HOSPEDA_AUTH_LOCKOUT_WINDOW_MS',
+        description: 'Lockout window in milliseconds (default 900000 = 15 min)',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '900000',
+        exampleValue: '900000',
+        apps: ['api'],
+        category: 'auth'
     },
 
     // -------------------------------------------------------------------------

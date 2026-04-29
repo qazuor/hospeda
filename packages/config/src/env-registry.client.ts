@@ -79,6 +79,17 @@ export const CLIENT_WEB_ENV_VARS = [
         exampleValue: '1.0.0',
         apps: ['web'],
         category: 'client-web'
+    },
+    {
+        name: 'PUBLIC_ADMIN_URL',
+        description:
+            'Admin app URL exposed to the browser. Used by the web app to link to admin pages.',
+        type: 'url',
+        required: false,
+        secret: false,
+        exampleValue: 'http://localhost:3000',
+        apps: ['web'],
+        category: 'client-web'
     }
 ] as const satisfies readonly EnvVarDefinition[];
 
