@@ -14,6 +14,8 @@ import {
     AccommodationAdminSearchSchema,
     type AccommodationByDestinationParams,
     AccommodationByDestinationParamsSchema,
+    type AccommodationCreateDraftHttp,
+    AccommodationCreateDraftHttpSchema,
     type AccommodationCreateInput,
     AccommodationCreateInputSchema,
     type AccommodationFaq,
@@ -63,9 +65,11 @@ import {
     ServiceErrorCode,
     type Success,
     type WithOwnerIdParams,
-    WithOwnerIdParamsSchema
+    WithOwnerIdParamsSchema,
+    httpToDomainAccommodationCreateDraft
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
+import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
@@ -80,6 +84,7 @@ import type {
 import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
 import { hasPermission } from '../../utils/permission';
+import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
 import { generateSlug } from './accommodation.helpers';
@@ -104,7 +109,11 @@ import {
     projectAccommodationCityDestination,
     projectAccommodationCityDestinationList
 } from './accommodation.projections';
-import type { AccommodationHookState } from './accommodation.types';
+import type {
+    AccommodationHookState,
+    AccommodationPublishDeps,
+    HostOnboardingResult
+} from './accommodation.types';
 
 /** Entity-specific filter fields for accommodation admin search. */
 type AccommodationEntityFilters = EntityFilters<typeof AccommodationAdminSearchSchema>;
@@ -122,6 +131,17 @@ export class AccommodationService extends BaseCrudService<
     typeof AccommodationSearchSchema
 > {
     static readonly ENTITY_NAME = 'accommodation';
+    /**
+     * Roles that already imply host-level capabilities. Users holding any of these
+     * skip onboarding (no draft is created for them, no HOST role is auto-assigned
+     * on first publish).
+     */
+    private static readonly PRIVILEGED_ROLES: ReadonlySet<string> = new Set([
+        RoleEnum.HOST,
+        RoleEnum.ADMIN,
+        RoleEnum.CLIENT_MANAGER,
+        RoleEnum.SUPER_ADMIN
+    ]);
     protected readonly entityName = AccommodationService.ENTITY_NAME;
     /**
      * @inheritdoc
@@ -214,17 +234,27 @@ export class AccommodationService extends BaseCrudService<
     private readonly _userModel: UserModel;
 
     /**
+     * Optional billing dependencies required by `publish()`. Wired by the API layer
+     * (apps/api) which has access to TrialService and the QZPay client. Routes that
+     * never publish (e.g. read endpoints) instantiate the service without these.
+     */
+    private readonly _publishDeps: AccommodationPublishDeps | null;
+
+    /**
      * Initializes a new instance of the AccommodationService.
      * @param ctx - The service context, containing the logger.
      * @param model - Optional AccommodationModel instance (for testing/mocking).
      * @param mediaProvider - Optional ImageProvider for Cloudinary cleanup on hard delete.
      * @param userModel - Optional UserModel instance (for testing/mocking).
+     * @param publishDeps - Optional billing dependencies required by `publish()`.
+     *   Required only when calling `publish()`; other methods do not need them.
      */
     constructor(
         ctx: ServiceConfig,
         model?: AccommodationModel,
         mediaProvider?: ImageProvider | null,
-        userModel?: UserModel
+        userModel?: UserModel,
+        publishDeps?: AccommodationPublishDeps | null
     ) {
         super(ctx, AccommodationService.ENTITY_NAME);
         this.model = model ?? new AccommodationModel();
@@ -239,6 +269,7 @@ export class AccommodationService extends BaseCrudService<
         this._destinationModel = new DestinationModel();
         this.mediaProvider = mediaProvider ?? null;
         this._userModel = userModel ?? new UserModel();
+        this._publishDeps = publishDeps ?? null;
     }
 
     // --- Read Projection Hooks (SPEC-095) ---
@@ -586,6 +617,347 @@ export class AccommodationService extends BaseCrudService<
         return entity;
     }
 
+    // --- Host Onboarding ---
+
+    /**
+     * Specialized create entry point for the public host-onboarding flow.
+     *
+     * Unlike the generic `create()` method, this one is callable by any authenticated
+     * `USER` because it does NOT require the `ACCOMMODATION_CREATE` permission. It is
+     * the single back-end seam used by `POST /api/v1/protected/host-onboarding/start`
+     * and intentionally encodes the three terminal states a USER can land in when
+     * trying to publish their first listing:
+     *
+     * - `created`  - no privileged role, no active draft. A fresh DRAFT is inserted
+     *   with `ownerId = actor.id`, `lifecycleState = DRAFT`, `lastWarnedAt = null`.
+     *   The user's role stays `USER`; promotion to `HOST` happens later, atomically,
+     *   when the draft transitions to `ACTIVE` (see `_afterUpdate`).
+     *
+     * - `resumed`  - a non-deleted DRAFT already exists for this owner. The existing
+     *   row is returned and the caller resumes onboarding on it. This is the idempotency
+     *   guarantee: at most one active DRAFT per USER at any given time.
+     *
+     * - `already_host`  - the actor already holds a privileged role (HOST, ADMIN,
+     *   CLIENT_MANAGER, SUPER_ADMIN). No draft is created; the caller is expected to
+     *   redirect the user straight to the admin panel where they can create listings
+     *   through the standard CRUD flow.
+     *
+     * Slug generation and destination validation reuse the same `_beforeCreate` hook
+     * as the generic create flow, so the resulting row is structurally identical to
+     * one that would have been produced by `create()`.
+     *
+     * @param actor - The authenticated user starting onboarding.
+     * @param input - Lean draft input (name, summary, type, destinationId, optional description).
+     * @param ctx - Optional service context. When provided with a transaction, the
+     *   operation participates in the existing transaction.
+     * @returns A `ServiceOutput` containing the discriminated `HostOnboardingResult`.
+     */
+    public async createForOnboarding(
+        actor: Actor,
+        input: AccommodationCreateDraftHttp,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<HostOnboardingResult>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'createForOnboarding',
+            input: { actor, ...input },
+            schema: AccommodationCreateDraftHttpSchema,
+            ctx,
+            execute: async (validatedData, validatedActor, execCtx) => {
+                if (!validatedActor.id) {
+                    throw new ServiceError(
+                        ServiceErrorCode.UNAUTHORIZED,
+                        'Actor must be authenticated to start host onboarding'
+                    );
+                }
+
+                const user = await this._userModel.findById(validatedActor.id, execCtx?.tx);
+                if (user && AccommodationService.PRIVILEGED_ROLES.has(user.role)) {
+                    return { status: 'already_host', accommodation: null };
+                }
+
+                const existingDraft = await this.model.findOne(
+                    {
+                        ownerId: validatedActor.id,
+                        lifecycleState: LifecycleStatusEnum.DRAFT,
+                        deletedAt: null
+                    },
+                    execCtx?.tx
+                );
+                if (existingDraft) {
+                    return { status: 'resumed', accommodation: existingDraft };
+                }
+
+                const domainInput = httpToDomainAccommodationCreateDraft(
+                    validatedData,
+                    validatedActor.id
+                );
+
+                const processedData = await this._beforeCreate(
+                    domainInput,
+                    validatedActor,
+                    execCtx
+                );
+
+                const payload = {
+                    ...domainInput,
+                    ...processedData,
+                    ownerId: validatedActor.id,
+                    lifecycleState: LifecycleStatusEnum.DRAFT,
+                    lastWarnedAt: null,
+                    createdById: validatedActor.id,
+                    updatedById: validatedActor.id
+                } as Partial<Accommodation>;
+
+                const created = await this.model.create(payload, execCtx?.tx);
+                if (!created) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to create onboarding draft accommodation'
+                    );
+                }
+                const after = await this._afterCreate(created, validatedActor, execCtx);
+                return { status: 'created', accommodation: after };
+            }
+        });
+    }
+
+    /**
+     * Intercepts updates that transition the accommodation to `ACTIVE` and routes
+     * them through `publish()` so the trial-subscription orchestration runs
+     * atomically with the lifecycleState flip and the owner role promotion.
+     *
+     * Behaviour matrix:
+     * - `lifecycleState === ACTIVE` AND current state is NOT ACTIVE AND
+     *   `publishDeps` are wired -> apply any non-lifecycle fields via the regular
+     *   update pipeline first, then delegate to `publish()`.
+     * - Anything else -> fall through to the standard `BaseCrudService.update()`
+     *   (including the legacy `_afterUpdate.assignHostRoleIfNeeded` best-effort
+     *   path used by callers that have not wired billing deps, e.g. unit tests
+     *   exercising lifecycle hooks in isolation).
+     *
+     * The `publishDeps` gate keeps this override fully backwards compatible:
+     * service consumers that never wired billing dependencies see the same
+     * behaviour as before this method existed.
+     */
+    public override async update(
+        actor: Actor,
+        id: string,
+        data: AccommodationUpdateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Accommodation>> {
+        const target = (data as { lifecycleState?: unknown }).lifecycleState;
+        if (target === LifecycleStatusEnum.ACTIVE && this._publishDeps) {
+            const current = await this.model.findById(id, ctx?.tx);
+            if (current && current.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
+                const { lifecycleState: _drop, ...restFields } = data as Record<string, unknown>;
+                if (Object.keys(restFields).length > 0) {
+                    const updateResult = await super.update(
+                        actor,
+                        id,
+                        restFields as AccommodationUpdateInput,
+                        ctx
+                    );
+                    if (updateResult.error) return updateResult;
+                }
+                return this.publish(actor, id, ctx);
+            }
+        }
+        return super.update(actor, id, data, ctx);
+    }
+
+    /**
+     * Atomically transitions an accommodation to `ACTIVE` (the "publish" flow),
+     * orchestrating billing trial creation and HOST role promotion when the owner
+     * is publishing for the first time.
+     *
+     * Flow (Option C "external first, then short tx" pattern):
+     *
+     *  1. Fetch the accommodation. Authorize: actor must be the owner OR hold
+     *     `ACCOMMODATION_UPDATE_ANY`.
+     *  2. If already `ACTIVE`, return it idempotently.
+     *  3. Resolve the owner. If the owner already holds a privileged role
+     *     (HOST/ADMIN/CLIENT_MANAGER/SUPER_ADMIN), skip every billing branch
+     *     and just flip lifecycleState to ACTIVE.
+     *  4. Otherwise, ask the billing layer for the owner's publish eligibility
+     *     (`first_publish` / `has_active_sub` / `subscription_required`).
+     *  5. `subscription_required` -> reject with FORBIDDEN.
+     *  6. `first_publish` -> call `startTrial` OUTSIDE any transaction (timeout
+     *     is enforced by the caller-supplied implementation). On failure,
+     *     return `SERVICE_UNAVAILABLE` with no DB writes.
+     *  7. Open a short transaction:
+     *      - update accommodation lifecycleState to ACTIVE
+     *      - if first publish: promote owner USER -> HOST
+     *  8. If the transaction throws AFTER `startTrial` succeeded, compensate
+     *     by calling `cancelTrial(subscriptionId)`. If the cancel itself fails,
+     *     log a CRITICAL inconsistency warning for manual reconciliation.
+     *  9. Schedule revalidation as a best-effort side effect (never rolls back
+     *     the publish on revalidation errors).
+     *
+     * @param actor - The user (or admin) performing the publish.
+     * @param id - The accommodation ID to publish.
+     * @param ctx - Optional service context. When provided with a transaction,
+     *   the fetch-and-validate phase runs inside it; the publish transaction
+     *   itself is always opened independently to keep the boundary short.
+     * @returns The updated `Accommodation` on success, or a `ServiceError` on
+     *   any failure with codes: `NOT_FOUND`, `FORBIDDEN`, `CONFIGURATION_ERROR`,
+     *   `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR`.
+     */
+    public async publish(
+        actor: Actor,
+        id: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Accommodation>> {
+        return this.runWithLoggingAndValidation({
+            methodName: `publish(id=${id})`,
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_, validatedActor, execCtx) => {
+                const accommodation = await this.model.findById(id, execCtx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Accommodation ${id} not found`
+                    );
+                }
+
+                const isOwner = accommodation.ownerId === validatedActor.id;
+                const isAdmin = validatedActor.permissions.includes(
+                    PermissionEnum.ACCOMMODATION_UPDATE_ANY
+                );
+                if (!isOwner && !isAdmin) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: only the owner or an admin can publish this accommodation'
+                    );
+                }
+
+                if (accommodation.lifecycleState === LifecycleStatusEnum.ACTIVE) {
+                    return accommodation;
+                }
+
+                const owner = await this._userModel.findById(accommodation.ownerId, execCtx?.tx);
+                const ownerIsPrivileged =
+                    !!owner && AccommodationService.PRIVILEGED_ROLES.has(owner.role);
+
+                let trialSubscriptionId: string | null = null;
+                let mustPromoteOwner = false;
+
+                if (!ownerIsPrivileged) {
+                    if (!this._publishDeps) {
+                        throw new ServiceError(
+                            ServiceErrorCode.CONFIGURATION_ERROR,
+                            'Publish requires billing dependencies; AccommodationService was instantiated without publishDeps'
+                        );
+                    }
+                    const eligibility = await this._publishDeps.checkEligibility(
+                        accommodation.ownerId,
+                        execCtx
+                    );
+                    if (eligibility === 'subscription_required') {
+                        throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
+                    }
+                    if (eligibility === 'first_publish') {
+                        try {
+                            const result = await this._publishDeps.startTrial({
+                                ownerId: accommodation.ownerId
+                            });
+                            trialSubscriptionId = result.subscriptionId;
+                            mustPromoteOwner = true;
+                        } catch (error) {
+                            this.logger.error(
+                                { error, ownerId: accommodation.ownerId, accommodationId: id },
+                                '[accommodation.publish] Trial subscription creation failed'
+                            );
+                            throw new ServiceError(
+                                ServiceErrorCode.SERVICE_UNAVAILABLE,
+                                'service_unavailable'
+                            );
+                        }
+                    }
+                }
+
+                let updated: Accommodation;
+                try {
+                    updated = await withServiceTransaction(
+                        async (txCtx) => {
+                            const next = await this.model.update(
+                                { id },
+                                {
+                                    lifecycleState: LifecycleStatusEnum.ACTIVE,
+                                    updatedById: validatedActor.id
+                                },
+                                txCtx.tx
+                            );
+                            if (!next) {
+                                throw new ServiceError(
+                                    ServiceErrorCode.INTERNAL_ERROR,
+                                    'Failed to flip accommodation lifecycleState to ACTIVE'
+                                );
+                            }
+                            if (mustPromoteOwner) {
+                                await this._userModel.update(
+                                    { id: accommodation.ownerId },
+                                    { role: RoleEnum.HOST },
+                                    txCtx.tx
+                                );
+                            }
+                            return next;
+                        },
+                        undefined,
+                        { timeoutMs: 5000 }
+                    );
+                } catch (txError) {
+                    if (trialSubscriptionId && this._publishDeps) {
+                        try {
+                            await this._publishDeps.cancelTrial(trialSubscriptionId);
+                            this.logger.warn(
+                                {
+                                    trialSubscriptionId,
+                                    ownerId: accommodation.ownerId,
+                                    accommodationId: id,
+                                    txError
+                                },
+                                '[accommodation.publish] Local tx failed after trial creation; trial cancelled as compensation'
+                            );
+                        } catch (cancelError) {
+                            this.logger.error(
+                                {
+                                    cancelError,
+                                    txError,
+                                    trialSubscriptionId,
+                                    ownerId: accommodation.ownerId,
+                                    accommodationId: id
+                                },
+                                '[accommodation.publish] CRITICAL: trial subscription was created but local tx failed AND cancel compensation also failed; manual reconciliation required'
+                            );
+                        }
+                    }
+                    throw txError;
+                }
+
+                const destinationSlug = updated.destinationId
+                    ? await this._resolveDestinationSlug(updated.destinationId)
+                    : undefined;
+                try {
+                    getRevalidationService()?.scheduleRevalidation({
+                        entityType: 'accommodation',
+                        slug: updated.slug,
+                        destinationSlug,
+                        accommodationType: updated.type?.toLowerCase()
+                    });
+                } catch (error) {
+                    this.logger.warn(
+                        { error, entityType: 'accommodation' },
+                        '[accommodation.publish] Revalidation scheduling failed (non-blocking)'
+                    );
+                }
+
+                return updated;
+            }
+        });
+    }
+
     /**
      * Assigns the `HOST` role to a user if they do not already hold a privileged role.
      *
@@ -599,13 +971,6 @@ export class AccommodationService extends BaseCrudService<
      * @param ctx - Service execution context carrying transaction and hookState.
      */
     private async _assignHostRoleIfNeeded(ownerId: string, ctx: ServiceContext): Promise<void> {
-        const privilegedRoles: ReadonlySet<string> = new Set([
-            RoleEnum.HOST,
-            RoleEnum.ADMIN,
-            RoleEnum.CLIENT_MANAGER,
-            RoleEnum.SUPER_ADMIN
-        ]);
-
         try {
             const user = await this._userModel.findById(ownerId, ctx?.tx);
             if (!user) {
@@ -615,7 +980,7 @@ export class AccommodationService extends BaseCrudService<
                 );
                 return;
             }
-            if (privilegedRoles.has(user.role)) {
+            if (AccommodationService.PRIVILEGED_ROLES.has(user.role)) {
                 // User already has a privileged role — no action required.
                 return;
             }

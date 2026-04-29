@@ -23,7 +23,12 @@ export * from './userBookmark/userBookmark.service';
 export * from './billing';
 
 // HookState types for service consumers
-export type { AccommodationHookState } from './accommodation/accommodation.types';
+export type {
+    AccommodationHookState,
+    AccommodationPublishDeps,
+    HostOnboardingResult,
+    PublishEligibility
+} from './accommodation/accommodation.types';
 export type { AccommodationReviewHookState } from './accommodationReview/accommodationReview.types';
 export type { DestinationHookState } from './destination/destination.types';
 export type { DestinationReviewHookState } from './destinationReview/destinationReview.types';

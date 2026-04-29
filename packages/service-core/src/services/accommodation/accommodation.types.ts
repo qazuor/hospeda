@@ -1,3 +1,75 @@
+import type { Accommodation } from '@repo/schemas';
+import type { ServiceContext } from '../../types';
+
+/**
+ * The actor's current publish eligibility, computed by querying the
+ * billing layer for active or historical subscriptions.
+ *
+ * - `first_publish`: the owner has never had a subscription. The publish flow
+ *   must create a trial subscription before transitioning the accommodation
+ *   to `ACTIVE`.
+ * - `has_active_sub`: the owner has at least one subscription in `trialing`
+ *   or `active` status. The publish flow may proceed without creating a new
+ *   subscription.
+ * - `subscription_required`: the owner has had subscriptions before, but none
+ *   are currently active. The publish flow must reject the request and direct
+ *   the user to the plans page.
+ */
+export type PublishEligibility = 'first_publish' | 'has_active_sub' | 'subscription_required';
+
+/**
+ * External dependencies required by `AccommodationService.publish` to do its
+ * job atomically without violating the "external API call outside the
+ * transaction" rule documented in service-core CLAUDE.md.
+ *
+ * The API layer (`apps/api`) wires these by adapting `TrialService` and the
+ * `QZPayBilling` client. The publish flow then orchestrates them:
+ *
+ *  1. `checkEligibility` runs before any write to determine the branch.
+ *  2. `startTrial` runs OUTSIDE any transaction (it does the HTTP call to
+ *     QZPay and persists the local `billing_subscriptions` row through the
+ *     qzpay-drizzle adapter).
+ *  3. The local DB writes (lifecycleState change, role promotion, audit log)
+ *     run inside `withServiceTransaction`.
+ *  4. If the post-trial transaction fails, `cancelTrial` is invoked as
+ *     compensation against the external QZPay subscription. If compensation
+ *     also fails, the inconsistency is logged for manual reconciliation.
+ *
+ * All three callbacks are optional only at the type level so that consumers
+ * who never call `publish()` can keep instantiating `AccommodationService`
+ * without wiring billing. At runtime, calling `publish()` without these wired
+ * results in `CONFIGURATION_ERROR`.
+ */
+export interface AccommodationPublishDeps {
+    /** Resolves the publish eligibility for a given owner. */
+    checkEligibility: (ownerId: string, ctx?: ServiceContext) => Promise<PublishEligibility>;
+    /**
+     * Creates a new trial subscription for the owner. MUST run outside any
+     * transaction. Returns the QZPay subscription identifier on success.
+     */
+    startTrial: (input: { ownerId: string }) => Promise<{ subscriptionId: string }>;
+    /**
+     * Cancels a previously created trial subscription. Used as compensation
+     * when the post-trial transaction fails.
+     */
+    cancelTrial: (subscriptionId: string) => Promise<void>;
+}
+
+/**
+ * Outcome of `AccommodationService.createForOnboarding`.
+ *
+ * - `created`: a fresh DRAFT was inserted for the actor. The actor's role is still
+ *   `USER`; promotion to `HOST` happens later, when the draft transitions to ACTIVE.
+ * - `resumed`: the actor already had an active DRAFT — that one is returned and the
+ *   caller should resume the onboarding flow on it instead of creating a new one.
+ * - `already_host`: the actor is already `HOST` (or higher). No draft is created;
+ *   the caller is expected to redirect to the admin panel directly.
+ */
+export type HostOnboardingResult =
+    | { status: 'created'; accommodation: Accommodation }
+    | { status: 'resumed'; accommodation: Accommodation }
+    | { status: 'already_host'; accommodation: null };
+
 /**
  * Per-request hook state for AccommodationService lifecycle hooks.
  * Replaces mutable instance fields with request-scoped context.
