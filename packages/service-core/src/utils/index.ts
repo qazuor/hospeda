@@ -2,6 +2,7 @@ export * from './identifier';
 export * from './logging';
 export * from './normalizer';
 export * from './permission';
+export * from './relations';
 export * from './service-logger';
 export * from './transaction';
 export * from './validation';

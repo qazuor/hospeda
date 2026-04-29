@@ -722,9 +722,14 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      *
      * Note on soft-deleted related entities: Drizzle's `findFirst({ with })` loads related
      * records regardless of their `deletedAt` status. No filtering is applied to relations.
-     * This is intentional.. soft-deleted related entities may represent valid historical context
-     * (e.g., "this accommodation was managed by [deleted user]"). Services that need to filter
-     * soft-deleted relations should do so in `_afterGetByField` post-processing hooks.
+     * This is intentional — soft-deleted related entities may represent valid historical context
+     * (e.g., "this accommodation was managed by [deleted user]"). The decision is documented
+     * in ADR-023 and the per-service decisions live in
+     * `packages/service-core/docs/soft-deleted-relations-manifest.md`.
+     *
+     * Services that DO need to hide soft-deleted relations from consumers should call
+     * `filterSoftDeletedRelations` from `@repo/service-core` inside `_afterGetByField`
+     * (single entity) or after `_executeSearch` / `_executeAdminSearch` (lists).
      *
      * @see {@link findWithRelations} for the per-model stub with hardcoded relations.
      *   That method is overridden by 16 subclasses and uses manual relation translation.
@@ -858,7 +863,9 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      *
      * Note on soft-deleted related entities: like `findOneWithRelations`, this method loads
      * related records regardless of their `deletedAt` status. See `findOneWithRelations` JSDoc
-     * for the design rationale.
+     * and ADR-023 for the design rationale, plus the per-service manifest at
+     * `packages/service-core/docs/soft-deleted-relations-manifest.md` for which services
+     * filter relations and which expose them as historical context.
      *
      * @see {@link findWithRelations} for the per-model stub with hardcoded relations.
      * @see {@link findOneWithRelations} for the single-entity equivalent used by `getById`.

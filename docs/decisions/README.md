@@ -14,7 +14,17 @@ This directory contains Architecture Decision Records for the Hospeda platform. 
 | [ADR-006](ADR-006-integer-monetary-values.md) | Integer Storage for Monetary Values | Accepted |
 | [ADR-007](ADR-007-vercel-deployment.md) | Vercel Deployment (migrated from Fly.io) | Accepted |
 | [ADR-008](ADR-008-afip-deferred-v2.md) | Defer AFIP Integration to v2 | Accepted |
+| [ADR-013](ADR-013-deferred-limit-enforcement.md) | Deferred Limit Enforcement | Accepted |
+| [ADR-014](ADR-014-manual-dispute-handling-v1.md) | Manual Dispute Handling for v1 | Accepted |
+| [ADR-015](ADR-015-redis-rate-limiting.md) | Redis Rate Limiting | Accepted |
+| [ADR-016](ADR-016-billing-fail-open.md) | Billing Fail-Open Policy | Accepted |
 | [ADR-017](ADR-017-postgres-specific-features.md) | PostgreSQL-Specific Features via Manual Migrations | Accepted |
+| [ADR-018](ADR-018-transaction-propagation-pattern.md) | Transaction Propagation Pattern | Accepted |
+| [ADR-019](ADR-019-billing-transaction-isolation.md) | Billing Transaction Isolation | Accepted |
+| [ADR-020](ADR-020-billing-plans-source-of-truth.md) | Billing Plans Source of Truth | Accepted |
+| [ADR-021](ADR-021-type-cast-policy.md) | `as unknown as X` Double-Cast Policy | Accepted |
+| [ADR-022](ADR-022-service-return-type-safety-with-relations.md) | Service Return Type Safety with Relations | Accepted |
+| [ADR-023](ADR-023-soft-deleted-related-entities.md) | Soft-Deleted Related Entities Behavior Policy | Accepted |
 
 ## Format
 
