@@ -81,6 +81,124 @@
             "absorbs": ["SPEC-075"]
         },
         {
+            "specId": "SPEC-024",
+            "title": "Credential Rotation & Git History Purge",
+            "status": "draft",
+            "complexity": "medium",
+            "path": "SPEC-024-credential-rotation-and-git-purge",
+            "created": "2026-03-01T00:00:00.000Z",
+            "archived": false
+        },
+        {
+            "specId": "SPEC-025",
+            "title": "Staging Environment Setup & Deployment Pipeline",
+            "status": "draft",
+            "complexity": "high",
+            "path": "SPEC-025-staging-environment-setup",
+            "created": "2026-03-02T00:00:00.000Z",
+            "archived": false
+        },
+        {
+            "specId": "SPEC-028",
+            "title": "IVA/Tax Handling and ARCA Electronic Invoicing",
+            "status": "draft",
+            "complexity": "high",
+            "path": "SPEC-028-iva-tax-handling",
+            "priority": "P1",
+            "archived": false
+        },
+        {
+            "specId": "SPEC-045",
+            "title": "Vite 7 Migration for TanStack Start",
+            "status": "draft",
+            "complexity": "medium",
+            "path": "SPEC-045-vite7-migration",
+            "archived": false
+        },
+        {
+            "specId": "SPEC-046",
+            "title": "CSP Post-Deployment Verification",
+            "status": "draft",
+            "complexity": "medium",
+            "path": "SPEC-046-csp-post-deploy-verification",
+            "priority": "P1",
+            "created": "2026-03-16T00:00:00.000Z",
+            "archived": false,
+            "dependsOn": ["SPEC-042", "SPEC-045"]
+        },
+        {
+            "specId": "SPEC-061",
+            "title": "DB Integration Testing Infrastructure",
+            "status": "draft",
+            "complexity": "high",
+            "path": "SPEC-061-db-integration-testing",
+            "priority": "P2",
+            "created": "2026-04-01T00:00:00.000Z",
+            "archived": false
+        },
+        {
+            "specId": "SPEC-080",
+            "title": "Service-Layer Integration Tests with Real Database",
+            "status": "draft",
+            "complexity": "high",
+            "path": "SPEC-080-service-integration-tests",
+            "priority": "P2",
+            "created": "2026-04-17T00:00:00.000Z",
+            "archived": false
+        },
+        {
+            "specId": "SPEC-085",
+            "title": "Guest-Owner Messaging System (In-Platform)",
+            "status": "in-progress",
+            "complexity": "high",
+            "path": "SPEC-085-guest-owner-messaging",
+            "priority": "P1",
+            "created": "2026-04-17T00:00:00.000Z",
+            "archived": false
+        },
+        {
+            "specId": "SPEC-086",
+            "title": "Tag System Refactor (Types + Scope + Per-User Privacy)",
+            "status": "draft",
+            "complexity": "high",
+            "path": "SPEC-086-tag-system-refactor",
+            "priority": "P2",
+            "archived": false,
+            "breakingChange": true
+        },
+        {
+            "specId": "SPEC-092",
+            "title": "End-to-End Test Suite for Pre-Beta Validation",
+            "status": "draft",
+            "complexity": "high",
+            "path": "SPEC-092-e2e-test-suite",
+            "priority": "P0",
+            "created": "2026-04-26T00:00:00.000Z",
+            "archived": false,
+            "dependsOn": ["SPEC-085"]
+        },
+        {
+            "specId": "SPEC-093",
+            "title": "Admin-Editable Billing Plans",
+            "status": "draft",
+            "complexity": "large",
+            "path": "SPEC-093-admin-editable-billing-plans",
+            "priority": "P2",
+            "created": "2026-04-26T00:00:00.000Z",
+            "archived": false
+        },
+        {
+            "specId": "SPEC-094",
+            "title": "Accommodation Amenities Sync Endpoint",
+            "status": "draft",
+            "complexity": "small",
+            "path": "SPEC-094-accommodation-amenities-sync",
+            "priority": "P2",
+            "created": "2026-04-27T00:00:00.000Z",
+            "archived": false,
+            "tags": ["deferred-post-beta"]
+        },
+        {
             "specId": "SPEC-009",
             "title": "Admin ISR Regeneration",
             "status": "completed",
