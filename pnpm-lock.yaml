@@ -499,6 +499,9 @@ importers:
       '@astrojs/vercel':
         specifier: ^8.2.11
         version: 8.2.11(astro@5.18.0(@netlify/blobs@9.1.2)(@types/node@25.3.3)(@vercel/functions@2.2.13)(db0@0.3.4(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.28.11)(pg@8.16.3)(postgres@3.4.8)))(ioredis@5.10.0)(jiti@2.6.1)(lightningcss@1.31.1)(rollup@4.59.0)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.3)(yaml@2.8.1))(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react@19.1.1)(rollup@4.59.0)
+      '@repo/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
       '@repo/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -1397,9 +1400,15 @@ importers:
       '@types/node':
         specifier: ^20.11.19
         version: 20.19.11
+      '@types/pg':
+        specifier: ^8.15.1
+        version: 8.15.6
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
+      pg:
+        specifier: ^8.11.1
+        version: 8.16.3
       rimraf:
         specifier: ^5.0.5
         version: 5.0.10
