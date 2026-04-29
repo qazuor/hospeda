@@ -147,18 +147,57 @@ describe('AccommodationService.publish', () => {
         });
     });
 
-    describe('privileged owner branch', () => {
-        it('skips billing entirely when the owner is HOST', async () => {
+    describe('billing-exempt owner branch', () => {
+        // ADMIN / SUPER_ADMIN / CLIENT_MANAGER are exempt from the billing
+        // eligibility check (they publish on behalf of the platform without a
+        // subscription). Regular HOST users go through the eligibility flow.
+        it.each([RoleEnum.ADMIN, RoleEnum.SUPER_ADMIN, RoleEnum.CLIENT_MANAGER])(
+            'skips eligibility entirely when the owner is %s',
+            async (role) => {
+                const deps = createPublishDeps();
+                const service = buildService(accommodationModel, userModel, deps);
+                const accommodation = createMockAccommodation({
+                    id: 'acc-exempt',
+                    ownerId: 'admin-owner',
+                    lifecycleState: LifecycleStatusEnum.DRAFT
+                });
+                (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+                asMock(userModel.findById as Mock).mockResolvedValue({
+                    id: 'admin-owner',
+                    role
+                });
+                (accommodationModel.update as Mock).mockResolvedValue({
+                    ...accommodation,
+                    lifecycleState: LifecycleStatusEnum.ACTIVE
+                });
+
+                const actor = createAdminActor({ id: 'admin-actor' });
+                const result = await service.publish(actor, 'acc-exempt');
+
+                expect(result.error).toBeUndefined();
+                expect(deps.checkEligibility).not.toHaveBeenCalled();
+                expect(deps.startTrial).not.toHaveBeenCalled();
+                // Role promotion never happens in publish — promotion is done at
+                // draft creation. The user model should not be touched here.
+                expect(userModel.update).not.toHaveBeenCalled();
+            }
+        );
+    });
+
+    describe('first publish for HOST owner (trial creation)', () => {
+        // The owner is already HOST by the time `publish` runs (promoted at
+        // draft creation). The trial is what gets created here.
+        it('calls startTrial outside tx, then flips lifecycleState inside tx', async () => {
             const deps = createPublishDeps();
             const service = buildService(accommodationModel, userModel, deps);
             const accommodation = createMockAccommodation({
-                id: 'acc-004',
-                ownerId: 'host-001',
+                id: 'acc-005',
+                ownerId: 'host-005',
                 lifecycleState: LifecycleStatusEnum.DRAFT
             });
             (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
             asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'host-001',
+                id: 'host-005',
                 role: RoleEnum.HOST
             });
             (accommodationModel.update as Mock).mockResolvedValue({
@@ -166,49 +205,16 @@ describe('AccommodationService.publish', () => {
                 lifecycleState: LifecycleStatusEnum.ACTIVE
             });
 
-            const actor = createHostActor({ id: 'host-001' });
-            const result = await service.publish(actor, 'acc-004');
-
-            expect(result.error).toBeUndefined();
-            expect(deps.checkEligibility).not.toHaveBeenCalled();
-            expect(deps.startTrial).not.toHaveBeenCalled();
-            // No role promotion needed for already-privileged owner
-            expect(userModel.update).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('first publish (USER -> HOST + trial)', () => {
-        it('calls startTrial outside tx, then updates state and promotes role inside tx', async () => {
-            const deps = createPublishDeps();
-            const service = buildService(accommodationModel, userModel, deps);
-            const accommodation = createMockAccommodation({
-                id: 'acc-005',
-                ownerId: 'user-005',
-                lifecycleState: LifecycleStatusEnum.DRAFT
-            });
-            (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
-            asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'user-005',
-                role: RoleEnum.USER
-            });
-            (accommodationModel.update as Mock).mockResolvedValue({
-                ...accommodation,
-                lifecycleState: LifecycleStatusEnum.ACTIVE
-            });
-
-            const actor = createActor({ id: 'user-005' });
+            const actor = createHostActor({ id: 'host-005' });
             const result = await service.publish(actor, 'acc-005');
 
             expect(result.error).toBeUndefined();
             expect(result.data?.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
-            expect(deps.checkEligibility).toHaveBeenCalledWith('user-005', expect.anything());
-            expect(deps.startTrial).toHaveBeenCalledWith({ ownerId: 'user-005' });
-            // Role promotion happens
-            expect(userModel.update).toHaveBeenCalledWith(
-                { id: 'user-005' },
-                { role: RoleEnum.HOST },
-                expect.anything()
-            );
+            expect(deps.checkEligibility).toHaveBeenCalledWith('host-005', expect.anything());
+            expect(deps.startTrial).toHaveBeenCalledWith({ ownerId: 'host-005' });
+            // Role promotion no longer happens in publish — that's done at
+            // draft creation. The user model stays untouched.
+            expect(userModel.update).not.toHaveBeenCalled();
             // No compensation when tx succeeds
             expect(deps.cancelTrial).not.toHaveBeenCalled();
         });

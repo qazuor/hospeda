@@ -25,10 +25,10 @@
  * @module cron/jobs/archive-abandoned-drafts
  */
 
-import { accommodations, and, eq, isNull, lt, lte, sql, withTransaction } from '@repo/db';
-import { LifecycleStatusEnum } from '@repo/schemas';
+import { accommodations, and, eq, isNull, lt, lte, sql, users, withTransaction } from '@repo/db';
+import { LifecycleStatusEnum, RoleEnum } from '@repo/schemas';
 import * as Sentry from '@sentry/node';
-import { inArray } from 'drizzle-orm';
+import { inArray, ne } from 'drizzle-orm';
 import { apiLogger } from '../../utils/logger.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -65,6 +65,9 @@ type CronTransactionResult =
           readonly dryRun: boolean;
           readonly warned: number;
           readonly archived: number;
+          /** Owners that were demoted HOST -> USER because they no longer have any
+           *  non-archived accommodations. Always 0 in dry-run. */
+          readonly demoted: number;
       };
 
 export const archiveAbandonedDraftsJob: CronJobDefinition = {
@@ -161,7 +164,8 @@ export const archiveAbandonedDraftsJob: CronJobDefinition = {
                         skipped: false,
                         dryRun: true,
                         warned: warningCandidates.length,
-                        archived: archiveCandidates.length
+                        archived: archiveCandidates.length,
+                        demoted: 0
                     };
                 }
 
@@ -187,6 +191,7 @@ export const archiveAbandonedDraftsJob: CronJobDefinition = {
                     }
                 }
 
+                let demoted = 0;
                 if (archiveCandidates.length > 0) {
                     const archiveIds = archiveCandidates.map((row) => row.id);
                     await tx
@@ -204,13 +209,54 @@ export const archiveAbandonedDraftsJob: CronJobDefinition = {
                         count: archiveIds.length,
                         ids: archiveIds
                     });
+
+                    // Demote owners back to USER when their last accommodation
+                    // gets archived. The role promotion happened at draft
+                    // creation (so the owner could access the admin panel) —
+                    // if they end up with zero non-archived listings, the HOST
+                    // role no longer makes sense and we revoke admin access.
+                    // Owners with admin-grade roles (ADMIN/SUPER_ADMIN/
+                    // CLIENT_MANAGER) are NEVER demoted by this job.
+                    const affectedOwnerIds = Array.from(
+                        new Set(archiveCandidates.map((row) => row.ownerId))
+                    );
+                    for (const ownerId of affectedOwnerIds) {
+                        const remaining = await tx
+                            .select({ id: accommodations.id })
+                            .from(accommodations)
+                            .where(
+                                and(
+                                    eq(accommodations.ownerId, ownerId),
+                                    ne(accommodations.lifecycleState, LifecycleStatusEnum.ARCHIVED),
+                                    isNull(accommodations.deletedAt)
+                                )
+                            )
+                            .limit(1);
+                        if (remaining.length > 0) {
+                            continue;
+                        }
+                        const updated = await tx
+                            .update(users)
+                            .set({ role: RoleEnum.USER })
+                            .where(and(eq(users.id, ownerId), eq(users.role, RoleEnum.HOST)))
+                            .returning({ id: users.id });
+                        if (updated.length > 0) {
+                            demoted += 1;
+                            logger.info('Demoted owner HOST -> USER after last draft archived', {
+                                source: LOG_SOURCE,
+                                event: 'owner_demoted',
+                                ownerId
+                            });
+                        }
+                    }
                 }
 
                 return {
                     skipped: false,
                     dryRun: false,
                     warned: warningCandidates.length,
-                    archived: archiveCandidates.length
+                    archived: archiveCandidates.length,
+                    demoted
                 };
             });
 
@@ -249,13 +295,14 @@ export const archiveAbandonedDraftsJob: CronJobDefinition = {
 
             return {
                 success: true,
-                message: `Warned ${result.warned} and archived ${result.archived} abandoned drafts`,
+                message: `Warned ${result.warned}, archived ${result.archived} and demoted ${result.demoted} abandoned-draft owners`,
                 processed,
                 errors: 0,
                 durationMs,
                 details: {
                     warned: result.warned,
-                    archived: result.archived
+                    archived: result.archived,
+                    demoted: result.demoted
                 }
             };
         } catch (error) {

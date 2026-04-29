@@ -133,11 +133,24 @@ export class AccommodationService extends BaseCrudService<
     static readonly ENTITY_NAME = 'accommodation';
     /**
      * Roles that already imply host-level capabilities. Users holding any of these
-     * skip onboarding (no draft is created for them, no HOST role is auto-assigned
-     * on first publish).
+     * skip onboarding (no draft is created for them) and are not auto-promoted on
+     * draft creation. Used by the `already_host` short-circuit in
+     * `createForOnboarding` and by the legacy `_assignHostRoleIfNeeded` hook.
      */
     private static readonly PRIVILEGED_ROLES: ReadonlySet<string> = new Set([
         RoleEnum.HOST,
+        RoleEnum.ADMIN,
+        RoleEnum.CLIENT_MANAGER,
+        RoleEnum.SUPER_ADMIN
+    ]);
+
+    /**
+     * Roles whose accommodations bypass the billing eligibility check on
+     * publish. Regular `HOST` users are NOT in this set — they go through the
+     * trial / subscription flow like any other paying owner. Only true admin
+     * roles publishing on behalf of the platform are exempt from billing.
+     */
+    private static readonly BILLING_EXEMPT_ROLES: ReadonlySet<string> = new Set([
         RoleEnum.ADMIN,
         RoleEnum.CLIENT_MANAGER,
         RoleEnum.SUPER_ADMIN
@@ -629,13 +642,17 @@ export class AccommodationService extends BaseCrudService<
      * trying to publish their first listing:
      *
      * - `created`  - no privileged role, no active draft. A fresh DRAFT is inserted
-     *   with `ownerId = actor.id`, `lifecycleState = DRAFT`, `lastWarnedAt = null`.
-     *   The user's role stays `USER`; promotion to `HOST` happens later, atomically,
-     *   when the draft transitions to `ACTIVE` (see `_afterUpdate`).
+     *   with `ownerId = actor.id`, `lifecycleState = DRAFT`, `lastWarnedAt = null`,
+     *   and the owner is atomically promoted USER -> HOST in the same transaction.
+     *   The promotion is required so the owner can access the admin panel
+     *   (`ACCESS_PANEL_ADMIN` is granted to HOST). The trial subscription is NOT
+     *   created here — it is deferred to the first publish (see `publish()`).
      *
      * - `resumed`  - a non-deleted DRAFT already exists for this owner. The existing
-     *   row is returned and the caller resumes onboarding on it. This is the idempotency
-     *   guarantee: at most one active DRAFT per USER at any given time.
+     *   row is returned and the caller resumes onboarding on it. This is the
+     *   idempotency guarantee: at most one active DRAFT per USER at any given time.
+     *   Defensively re-promotes a `USER` who somehow has an active DRAFT (legacy
+     *   data) so the admin-access invariant is restored.
      *
      * - `already_host`  - the actor already holds a privileged role (HOST, ADMIN,
      *   CLIENT_MANAGER, SUPER_ADMIN). No draft is created; the caller is expected to
@@ -684,6 +701,17 @@ export class AccommodationService extends BaseCrudService<
                     execCtx?.tx
                 );
                 if (existingDraft) {
+                    // Defense-in-depth: legacy data may have a USER who owns
+                    // an active DRAFT but was never promoted. Re-promote so
+                    // the admin panel access gate is satisfied. No-op when the
+                    // user is already HOST (most common path on resume).
+                    if (user && user.role === RoleEnum.USER) {
+                        await this._userModel.update(
+                            { id: validatedActor.id },
+                            { role: RoleEnum.HOST },
+                            execCtx?.tx
+                        );
+                    }
                     return { status: 'resumed', accommodation: existingDraft };
                 }
 
@@ -708,13 +736,38 @@ export class AccommodationService extends BaseCrudService<
                     updatedById: validatedActor.id
                 } as Partial<Accommodation>;
 
-                const created = await this.model.create(payload, execCtx?.tx);
-                if (!created) {
-                    throw new ServiceError(
-                        ServiceErrorCode.INTERNAL_ERROR,
-                        'Failed to create onboarding draft accommodation'
-                    );
-                }
+                // Wrap the draft insert AND the USER -> HOST role promotion in
+                // a single short transaction. Promoting at draft creation
+                // (rather than at first publish) is required so the owner can
+                // access the admin panel right away (`ACCESS_PANEL_ADMIN` is
+                // granted to HOST). The trial subscription is still deferred
+                // to the first publish — see `publish()`.
+                const created = await withServiceTransaction(
+                    async (txCtx) => {
+                        const next = await this.model.create(payload, txCtx.tx);
+                        if (!next) {
+                            throw new ServiceError(
+                                ServiceErrorCode.INTERNAL_ERROR,
+                                'Failed to create onboarding draft accommodation'
+                            );
+                        }
+                        // Promote USER -> HOST. No-op if the user is somehow
+                        // already privileged (the `already_host` short-circuit
+                        // above already returned), defensive against legacy
+                        // role rows.
+                        if (user && user.role === RoleEnum.USER) {
+                            await this._userModel.update(
+                                { id: validatedActor.id },
+                                { role: RoleEnum.HOST },
+                                txCtx.tx
+                            );
+                        }
+                        return next;
+                    },
+                    undefined,
+                    { timeoutMs: 5000 }
+                );
+
                 const after = await this._afterCreate(created, validatedActor, execCtx);
                 return { status: 'created', accommodation: after };
             }
@@ -767,26 +820,31 @@ export class AccommodationService extends BaseCrudService<
 
     /**
      * Atomically transitions an accommodation to `ACTIVE` (the "publish" flow),
-     * orchestrating billing trial creation and HOST role promotion when the owner
-     * is publishing for the first time.
+     * orchestrating billing trial creation when the owner is publishing for the
+     * first time.
+     *
+     * Role promotion (USER -> HOST) is NOT done here — it happens earlier, at
+     * draft creation time in `createForOnboarding`, so the owner can access the
+     * admin panel to complete the listing. By the time `publish` runs, the
+     * owner is already HOST (or higher).
      *
      * Flow (Option C "external first, then short tx" pattern):
      *
      *  1. Fetch the accommodation. Authorize: actor must be the owner OR hold
      *     `ACCOMMODATION_UPDATE_ANY`.
      *  2. If already `ACTIVE`, return it idempotently.
-     *  3. Resolve the owner. If the owner already holds a privileged role
-     *     (HOST/ADMIN/CLIENT_MANAGER/SUPER_ADMIN), skip every billing branch
-     *     and just flip lifecycleState to ACTIVE.
-     *  4. Otherwise, ask the billing layer for the owner's publish eligibility
-     *     (`first_publish` / `has_active_sub` / `subscription_required`).
+     *  3. Resolve the owner. If the owner is billing-exempt (ADMIN/SUPER_ADMIN/
+     *     CLIENT_MANAGER), skip the eligibility check entirely and just flip
+     *     lifecycleState to ACTIVE.
+     *  4. Otherwise (regular HOST), ask the billing layer for the owner's
+     *     publish eligibility (`first_publish` / `has_active_sub` /
+     *     `subscription_required`).
      *  5. `subscription_required` -> reject with FORBIDDEN.
      *  6. `first_publish` -> call `startTrial` OUTSIDE any transaction (timeout
      *     is enforced by the caller-supplied implementation). On failure,
      *     return `SERVICE_UNAVAILABLE` with no DB writes.
      *  7. Open a short transaction:
      *      - update accommodation lifecycleState to ACTIVE
-     *      - if first publish: promote owner USER -> HOST
      *  8. If the transaction throws AFTER `startTrial` succeeded, compensate
      *     by calling `cancelTrial(subscriptionId)`. If the cancel itself fails,
      *     log a CRITICAL inconsistency warning for manual reconciliation.
@@ -837,13 +895,16 @@ export class AccommodationService extends BaseCrudService<
                 }
 
                 const owner = await this._userModel.findById(accommodation.ownerId, execCtx?.tx);
-                const ownerIsPrivileged =
-                    !!owner && AccommodationService.PRIVILEGED_ROLES.has(owner.role);
+                // Owners with admin-grade roles (ADMIN/SUPER_ADMIN/CLIENT_MANAGER)
+                // bypass billing entirely. Regular HOST users — including the
+                // ones promoted from USER at draft creation — go through the
+                // standard eligibility check and trial flow.
+                const ownerIsBillingExempt =
+                    !!owner && AccommodationService.BILLING_EXEMPT_ROLES.has(owner.role);
 
                 let trialSubscriptionId: string | null = null;
-                let mustPromoteOwner = false;
 
-                if (!ownerIsPrivileged) {
+                if (!ownerIsBillingExempt) {
                     if (!this._publishDeps) {
                         throw new ServiceError(
                             ServiceErrorCode.CONFIGURATION_ERROR,
@@ -863,7 +924,6 @@ export class AccommodationService extends BaseCrudService<
                                 ownerId: accommodation.ownerId
                             });
                             trialSubscriptionId = result.subscriptionId;
-                            mustPromoteOwner = true;
                         } catch (error) {
                             this.logger.error(
                                 { error, ownerId: accommodation.ownerId, accommodationId: id },
@@ -893,13 +953,6 @@ export class AccommodationService extends BaseCrudService<
                                 throw new ServiceError(
                                     ServiceErrorCode.INTERNAL_ERROR,
                                     'Failed to flip accommodation lifecycleState to ACTIVE'
-                                );
-                            }
-                            if (mustPromoteOwner) {
-                                await this._userModel.update(
-                                    { id: accommodation.ownerId },
-                                    { role: RoleEnum.HOST },
-                                    txCtx.tx
                                 );
                             }
                             return next;
@@ -1705,6 +1758,7 @@ export class AccommodationService extends BaseCrudService<
                 }
                 await this._canView(actor, accommodation);
                 // FAQs are already loaded via the relation
+                // TYPE-WORKAROUND: Drizzle relation result widens entity type to include the joined `faqs` array which is not part of the base Accommodation type.
                 const faqs = (accommodation as unknown as { faqs?: unknown[] }).faqs ?? [];
                 return { faqs: faqs as AccommodationFaq[] };
             }

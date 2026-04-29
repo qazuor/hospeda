@@ -26,6 +26,17 @@ import { createMockBaseModel } from '../../factories/baseServiceFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
+vi.mock('../../../src/utils/transaction.js', () => ({
+    /**
+     * Drop-in stub for `withServiceTransaction`. Runs the callback synchronously
+     * with a fake context so unit tests do not need a real DB. Integration tests
+     * exercise the real driver.
+     */
+    withServiceTransaction: vi.fn(async (cb: (txCtx: unknown) => Promise<unknown>) => {
+        return cb({ tx: {} as unknown, hookState: {} });
+    })
+}));
+
 const VALID_DRAFT_INPUT = {
     name: 'Casa frente al rio',
     summary: 'Una casa amplia con vista al rio Uruguay y mucho parque',
@@ -106,6 +117,27 @@ describe('AccommodationService.createForOnboarding', () => {
                 expect(result.data.accommodation.id).toBe('acc-001');
             }
             expect(accommodationModel.create).toHaveBeenCalledTimes(1);
+        });
+
+        it('promotes the owner USER -> HOST in the same transaction as the draft insert', async () => {
+            const actor = createActor({ id: 'user-001b' });
+            asMock(userModel.findById as Mock).mockResolvedValue({
+                id: 'user-001b',
+                role: RoleEnum.USER
+            });
+            (accommodationModel.findOne as Mock).mockResolvedValue(null);
+            (accommodationModel.create as Mock).mockResolvedValue(
+                createMockAccommodation({ id: 'acc-001b', ownerId: 'user-001b' })
+            );
+
+            await service.createForOnboarding(actor, VALID_DRAFT_INPUT);
+
+            // The owner is promoted to HOST so they can access the admin panel.
+            expect(userModel.update).toHaveBeenCalledWith(
+                { id: 'user-001b' },
+                { role: RoleEnum.HOST },
+                expect.anything()
+            );
         });
 
         it('forces ownerId to actor.id and lifecycleState to DRAFT (defense in depth)', async () => {
