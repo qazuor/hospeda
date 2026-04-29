@@ -58,6 +58,496 @@
             "created": "2026-04-29T00:00:00.000Z",
             "archived": true,
             "adr": "ADR-025"
+        },
+        {
+            "specId": "SPEC-075",
+            "title": "Web App Complete Page Structure",
+            "status": "merged",
+            "complexity": "high",
+            "path": "SPEC-075-web-complete-page-structure",
+            "created": "2026-04-09T00:00:00.000Z",
+            "archived": true,
+            "mergedInto": "SPEC-096",
+            "archivedAt": "2026-04-29T00:00:00.000Z"
+        },
+        {
+            "specId": "SPEC-096",
+            "title": "Web App Beta-Readiness",
+            "status": "in-progress",
+            "complexity": "high",
+            "path": "SPEC-096-web-beta-readiness",
+            "created": "2026-04-29T00:00:00.000Z",
+            "archived": false,
+            "absorbs": ["SPEC-075"]
+        },
+        {
+            "specId": "SPEC-009",
+            "title": "Admin ISR Regeneration",
+            "status": "completed",
+            "path": "SPEC-009-admin-isr-regeneration",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-018",
+            "title": "Display Weight System",
+            "status": "completed",
+            "path": "SPEC-018-display-weight-system",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-019",
+            "title": "Security Permissions Hardening",
+            "status": "completed",
+            "path": "SPEC-019-security-permissions-hardening",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-020",
+            "title": "Deployment Readiness",
+            "status": "completed",
+            "path": "SPEC-020-deployment-readiness",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-021",
+            "title": "Billing System Fixes",
+            "status": "completed",
+            "path": "SPEC-021-billing-system-fixes",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-022",
+            "title": "Frontend Quality",
+            "status": "completed",
+            "path": "SPEC-022-frontend-quality",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-023",
+            "title": "Pre-existing Errors Cleanup",
+            "status": "completed",
+            "path": "SPEC-023-preexisting-errors-cleanup",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-026",
+            "title": "Security Testing Gaps",
+            "status": "completed",
+            "path": "SPEC-026-security-testing-gaps",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-027",
+            "title": "Webhook Subscription Sync",
+            "status": "completed",
+            "path": "SPEC-027-webhook-subscription-sync",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-030",
+            "title": "Web Pages Migration",
+            "status": "completed",
+            "path": "SPEC-030-web-pages-migration",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-031",
+            "title": "Beta Feedback Form",
+            "status": "completed",
+            "path": "SPEC-031-beta-feedback-form",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-032",
+            "title": "Interactive CLI Tool",
+            "status": "completed",
+            "path": "SPEC-032-interactive-cli-tool",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-033",
+            "title": "Auth UI Package Extraction",
+            "status": "completed",
+            "path": "SPEC-033-auth-ui-package-extraction",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-034",
+            "title": "On-Demand ISR Revalidation",
+            "status": "completed",
+            "path": "SPEC-034-on-demand-isr-revalidation",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-035",
+            "title": "Env Vars Cleanup",
+            "status": "completed",
+            "path": "SPEC-035-env-vars-cleanup",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-036",
+            "title": "Zod Validation i18n",
+            "status": "completed",
+            "path": "SPEC-036-zod-validation-i18n",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-037",
+            "title": "Security Gaps Remediation",
+            "status": "completed",
+            "path": "SPEC-037-security-gaps-remediation",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-038",
+            "title": "Addon Entitlements Architecture",
+            "status": "completed",
+            "path": "SPEC-038-addon-entitlements-architecture",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-039",
+            "title": "Type Safety Double-Cast Policy",
+            "status": "completed",
+            "path": "SPEC-039-type-safety-double-cast",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99",
+            "adr": "ADR-021"
+        },
+        {
+            "specId": "SPEC-040",
+            "title": "Critical Package Coverage",
+            "status": "completed",
+            "path": "SPEC-040-critical-package-coverage",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-041",
+            "title": "Admin Integration Tests",
+            "status": "completed",
+            "path": "SPEC-041-admin-integration-tests",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-042",
+            "title": "CSP Nonce Integration",
+            "status": "completed",
+            "path": "SPEC-042-csp-nonce-integration",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-042-gaps",
+            "title": "SPEC-042 CSP Gaps Remediation",
+            "status": "completed",
+            "path": "SPEC-042-gaps-remediation",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-043",
+            "title": "Addon Lifecycle Events",
+            "status": "completed",
+            "path": "SPEC-043-addon-lifecycle-events",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-043-gaps",
+            "title": "SPEC-043 Addon Lifecycle Gaps Remediation",
+            "status": "completed",
+            "path": "SPEC-043-gaps-remediation",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-044",
+            "title": "Addon Purchase Schema Cleanup",
+            "status": "completed",
+            "path": "SPEC-044-addon-purchase-schema-cleanup",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-047",
+            "title": "CSP Unsafe-Inline Removal",
+            "status": "completed",
+            "path": "SPEC-047-csp-unsafe-inline-removal",
+            "archived": true,
+            "archivedAt": "2026-04-29T03:33:49.000Z",
+            "archivedIn": "d73715f1e"
+        },
+        {
+            "specId": "SPEC-049",
+            "title": "Admin List Filtering (adminList)",
+            "status": "completed",
+            "path": "SPEC-049-admin-list-filtering",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-051",
+            "title": "Admin Permission Hook",
+            "status": "completed",
+            "path": "SPEC-051-admin-permission-hook",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-052",
+            "title": "Type-Safe Entity Filters",
+            "status": "completed",
+            "path": "SPEC-052-type-safe-entity-filters",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-053",
+            "title": "findAllWithRelations Transaction Support",
+            "status": "completed",
+            "path": "SPEC-053-find-all-with-relations-tx",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-054",
+            "title": "Default Filters UI Indicator",
+            "status": "completed",
+            "path": "SPEC-054-default-filters-ui-indicator",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-055",
+            "title": "LIKE Wildcard Escaping (safeIlike)",
+            "status": "completed",
+            "path": "SPEC-055-like-wildcard-escaping",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-056",
+            "title": "Numeric Column Coercion",
+            "status": "completed",
+            "path": "SPEC-056-numeric-column-coercion",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-057",
+            "title": "Admin Response Schema Consistency",
+            "status": "completed",
+            "path": "SPEC-057-admin-response-schema-consistency",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-058",
+            "title": "BaseModel Interface Alignment with Implementation",
+            "status": "completed",
+            "path": "SPEC-058-basemodel-interface-alignment",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-060",
+            "title": "Model Subclass Transaction Propagation",
+            "status": "completed",
+            "path": "SPEC-060-model-subclass-tx-propagation",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-062",
+            "title": "Runtime Response Validation",
+            "status": "completed",
+            "path": "SPEC-062-runtime-response-validation",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-063",
+            "title": "Lifecycle State Standardization",
+            "status": "completed",
+            "path": "SPEC-063-lifecycle-state-standardization",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-064",
+            "title": "Billing Transaction Safety",
+            "status": "completed",
+            "path": "SPEC-064-billing-transaction-safety",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-065",
+            "title": "Figma to Code Homepage",
+            "status": "completed",
+            "path": "SPEC-065-figma-to-code-homepage",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-066",
+            "title": "getById Relation Loading Consistency",
+            "status": "completed",
+            "path": "SPEC-066-getbyid-relation-loading",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-067",
+            "title": "Web Production Hardening",
+            "status": "completed",
+            "path": "SPEC-067-web-production-hardening",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-068",
+            "title": "List/Execute/Search Generics",
+            "status": "completed",
+            "path": "SPEC-068-list-execute-search-generics",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-076",
+            "title": "Multi-Sort Featured First",
+            "status": "completed",
+            "path": "SPEC-076-multi-sort-featured-first",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-078",
+            "title": "Cloudinary Image Management",
+            "status": "completed",
+            "path": "SPEC-078-cloudinary-image-management",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-078-GAPS",
+            "title": "SPEC-078 Cloudinary Gaps Remediation",
+            "status": "completed",
+            "path": "SPEC-078-GAPS",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-079",
+            "title": "Upload Rate Limiting",
+            "status": "completed",
+            "path": "SPEC-079-upload-rate-limiting",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-083",
+            "title": "Service getById Test Alignment",
+            "status": "completed",
+            "path": "SPEC-083-service-getbyid-test-alignment",
+            "archived": true,
+            "archivedAt": "2026-04-29T03:26:50.000Z",
+            "archivedIn": "9b21b0172"
+        },
+        {
+            "specId": "SPEC-088",
+            "title": "BaseCrud Pagination Strip",
+            "status": "completed",
+            "path": "SPEC-088-base-crud-pagination-strip",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-091",
+            "title": "MVP Blockers",
+            "status": "completed",
+            "path": "SPEC-091-mvp-blockers",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-095",
+            "title": "Destination Relationship Cleanup",
+            "status": "completed",
+            "path": "SPEC-095-destination-relationship-cleanup",
+            "archived": true,
+            "archivedAt": "2026-04-29T02:41:12.000Z",
+            "archivedIn": "aabd94a99"
         }
     ]
 }
