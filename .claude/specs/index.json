@@ -38,6 +38,16 @@
             "created": "2026-04-13T00:00:00.000Z",
             "archived": true,
             "adr": "ADR-023"
+        },
+        {
+            "specId": "SPEC-090",
+            "title": "Env-Var Schema SSOT — Eliminate the Manual Key-Mirror in Cross-Validation",
+            "status": "completed",
+            "complexity": "medium",
+            "path": "SPEC-090-env-schema-ssot",
+            "created": "2026-04-20T00:00:00.000Z",
+            "archived": true,
+            "adr": "ADR-024"
         }
     ]
 }

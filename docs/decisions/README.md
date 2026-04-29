@@ -25,6 +25,7 @@ This directory contains Architecture Decision Records for the Hospeda platform. 
 | [ADR-021](ADR-021-type-cast-policy.md) | `as unknown as X` Double-Cast Policy | Accepted |
 | [ADR-022](ADR-022-service-return-type-safety-with-relations.md) | Service Return Type Safety with Relations | Accepted |
 | [ADR-023](ADR-023-soft-deleted-related-entities.md) | Soft-Deleted Related Entities Behavior Policy | Accepted |
+| [ADR-024](ADR-024-env-schema-ssot.md) | Env-Var Schema as Single Source of Truth | Accepted |
 
 ## Format
 
