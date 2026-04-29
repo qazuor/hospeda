@@ -145,7 +145,7 @@ const mutedColorScheme = getMutedColorScheme();
             <a
                 href={entityLink.href}
                 class="article-card__entity-link"
-                onclick="event.stopPropagation();"
+                data-stop-propagation
             >
                 <span aria-hidden="true">{entityIcon}</span>
                 {entityLink.label}

@@ -22,6 +22,7 @@ import Footer from './Footer.astro';
 import SkipToContent from '@/components/shared/navigation/SkipToContent.astro';
 import ScrollToTop from '@/components/shared/navigation/ScrollToTop.astro';
 import NavigationProgress from '@/components/shared/navigation/NavigationProgress.astro';
+import FontsLoader from '@/components/shared/FontsLoader.astro';
 import { CookieConsentBanner } from '@/components/legal/CookieConsentBanner.client';
 import '@/styles/global.css';
 
@@ -56,25 +57,7 @@ const cookiesPolicyUrl = buildUrl({ locale, path: 'legal/cookies' });
 		<link rel="manifest" href="/site.webmanifest" />
 
 		<!-- Google Fonts: Geologica, Roboto, Caveat (non-blocking with preload + swap) -->
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link
-			rel="preload"
-			as="style"
-			href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Geologica:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap"
-		/>
-		<link
-			href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Geologica:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap"
-			rel="stylesheet"
-			media="print"
-			onload="this.media='all'"
-		/>
-		<noscript>
-			<link
-				href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Geologica:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap"
-				rel="stylesheet"
-			/>
-		</noscript>
+		<FontsLoader cspNonce={cspNonce} />
 
 		<!-- Theme FOUC prevention: apply saved theme before first paint -->
 		<script is:inline nonce={cspNonce}>
@@ -132,9 +115,11 @@ const cookiesPolicyUrl = buildUrl({ locale, path: 'legal/cookies' });
 		<script>
 			import { initScrollReveal } from '@/lib/scroll-reveal';
 			import { initImageFallback } from '@/scripts/image-fallback';
+			import { initStopPropagation } from '@/scripts/dom-helpers';
 
-			// Initialize image fallback once (module-level dedup)
+			// Initialize delegated handlers once (module-level dedup)
 			initImageFallback();
+			initStopPropagation();
 
 			function initParallax(): void {
 				if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;

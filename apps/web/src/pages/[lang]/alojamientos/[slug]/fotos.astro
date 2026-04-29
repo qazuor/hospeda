@@ -143,7 +143,7 @@ const jsonLd = {
                             loading="lazy"
                             decoding="async"
                             class="fotos__img"
-                            onerror={item.thumbFallback ? `this.src='${item.thumbFallback}'` : undefined}
+                            data-fallback={item.thumbFallback ?? undefined}
                         />
                         {item.type === 'video' && (
                             <span class="fotos__play" aria-hidden="true">&#9654;</span>

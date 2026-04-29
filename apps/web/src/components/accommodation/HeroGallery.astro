@@ -100,7 +100,7 @@ const viewFullscreenLabel = t('accommodations.detail.gallery.viewFullscreen', un
               alt={item.caption ?? `${accommodation.name} - ${i + 2}`}
               class="hero-gallery__thumb-img"
               loading="lazy"
-              onerror={item.thumbFallback ? `this.src='${item.thumbFallback}'` : undefined}
+              data-fallback={item.thumbFallback ?? undefined}
             />
             {item.type === 'video' && (
               <span class="hero-gallery__play" aria-hidden="true">&#9654;</span>
