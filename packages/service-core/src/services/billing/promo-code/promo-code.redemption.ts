@@ -71,12 +71,19 @@ export async function tryRedeemAtomically(promoCodeId: string): Promise<{
 }> {
     try {
         const result = await withTransaction(async (tx) => {
-            const queryResult = await tx.execute<QZPayBillingPromoCode>(
-                sql`SELECT * FROM ${billingPromoCodes}
-                    WHERE id = ${promoCodeId}
-                    FOR UPDATE`
-            );
-            const lockedPromoCode = queryResult.rows?.[0];
+            // Use Drizzle's typed select with `.for('update')` rather than
+            // a raw `tx.execute(SELECT *)`. Raw execute returns rows with
+            // snake_case column names (`used_count`, `max_uses`) but the
+            // surrounding code accesses camelCase (`usedCount`, `maxUses`),
+            // which silently coerced `currentUsed` to 0 and let every
+            // concurrent caller pass the over-redemption guard. Surfaced by
+            // SPEC-064 IT-7 (`spec-064-billing-concurrency.test.ts`).
+            const lockedRows = await tx
+                .select()
+                .from(billingPromoCodes)
+                .where(eq(billingPromoCodes.id, promoCodeId))
+                .for('update');
+            const lockedPromoCode = lockedRows[0];
 
             if (!lockedPromoCode) {
                 return {
@@ -351,12 +358,16 @@ export async function redeemAndRecordUsage(
         | { success: false; error: { code: string; message: string } }
     > => {
         // Step 1: Acquire a row-level lock to prevent concurrent over-redemption.
-        const lockResult = await tx.execute<QZPayBillingPromoCode>(
-            sql`SELECT * FROM ${billingPromoCodes}
-                WHERE id = ${promoCodeId}
-                FOR UPDATE`
-        );
-        const lockedCode = lockResult.rows?.[0];
+        // Drizzle-typed select instead of raw `tx.execute(SELECT *)`: raw
+        // execute returns snake_case keys (`used_count`, `max_uses`) that
+        // silently coerce camelCase reads to undefined, defeating the guard.
+        // See SPEC-064 IT-7.
+        const lockedCodeRows = await tx
+            .select()
+            .from(billingPromoCodes)
+            .where(eq(billingPromoCodes.id, promoCodeId))
+            .for('update');
+        const lockedCode = lockedCodeRows[0];
 
         if (!lockedCode) {
             return {
@@ -559,13 +570,15 @@ export async function applyPromoCode(
         // Redeem and record usage in a single transaction so that if the
         // purchase fails downstream the usage record is also rolled back.
         const redeemResult = await withTransaction(async (tx) => {
-            // Lock and increment usage count
-            const queryResult = await tx.execute<QZPayBillingPromoCode>(
-                sql`SELECT * FROM ${billingPromoCodes}
-                    WHERE id = ${promoCode.id}
-                    FOR UPDATE`
-            );
-            const lockedPromoCode = queryResult.rows?.[0];
+            // Lock and increment usage count. Drizzle-typed select instead
+            // of raw execute: see SPEC-064 IT-7 note on snake_case vs
+            // camelCase column access.
+            const lockedRows = await tx
+                .select()
+                .from(billingPromoCodes)
+                .where(eq(billingPromoCodes.id, promoCode.id))
+                .for('update');
+            const lockedPromoCode = lockedRows[0];
 
             if (!lockedPromoCode) {
                 return {

@@ -42,6 +42,22 @@ import { tryRedeemAtomically } from '../../src/services/billing/promo-code/promo
 
 const mockWithTransaction = dbModule.withTransaction as ReturnType<typeof vi.fn>;
 
+/**
+ * Mock builder for the `tx.select().from(...).where(...).for('update')`
+ * chain used by tryRedeemAtomically after the SPEC-064 IT-7 fix.
+ */
+function selectForUpdateMock<T>(rows: T[]): { select: ReturnType<typeof vi.fn> } {
+    return {
+        select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                    for: vi.fn().mockResolvedValue(rows)
+                })
+            })
+        })
+    };
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -54,13 +70,9 @@ describe('billing atomicity — tryRedeemAtomically multi-write rollback (SPEC-0
     it('returns failure and does not commit when the UPDATE (second write) throws', async () => {
         // Arrange — first write (SELECT FOR UPDATE via tx.execute) succeeds,
         // second write (UPDATE ... RETURNING via tx.update chain) throws
-        const firstWriteExecute = vi.fn().mockResolvedValue({
-            rows: [{ id: 'pc1', usedCount: 0, maxUses: 10 }]
-        });
-
         mockWithTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
             const tx = {
-                execute: firstWriteExecute,
+                ...selectForUpdateMock([{ id: 'pc1', usedCount: 0, maxUses: 10 }]),
                 update: vi.fn().mockReturnValue({
                     set: vi.fn().mockReturnValue({
                         where: vi.fn().mockReturnValue({
@@ -88,9 +100,7 @@ describe('billing atomicity — tryRedeemAtomically multi-write rollback (SPEC-0
     it('asserts withTransaction was called (atomicity boundary was established)', async () => {
         // Arrange
         mockWithTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-            const tx = {
-                execute: vi.fn().mockResolvedValue({ rows: [] })
-            };
+            const tx = selectForUpdateMock([]);
             return fn(tx);
         });
 
@@ -106,7 +116,7 @@ describe('billing atomicity — tryRedeemAtomically multi-write rollback (SPEC-0
         const updateSpy = vi.fn();
         mockWithTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
             const tx = {
-                execute: vi.fn().mockResolvedValue({ rows: [] }),
+                ...selectForUpdateMock([]),
                 update: updateSpy
             };
             return fn(tx);
@@ -125,9 +135,7 @@ describe('billing atomicity — tryRedeemAtomically multi-write rollback (SPEC-0
         const updateSpy = vi.fn();
         mockWithTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
             const tx = {
-                execute: vi.fn().mockResolvedValue({
-                    rows: [{ id: 'pc1', usedCount: 5, maxUses: 5 }]
-                }),
+                ...selectForUpdateMock([{ id: 'pc1', usedCount: 5, maxUses: 5 }]),
                 update: updateSpy
             };
             return fn(tx);
@@ -159,9 +167,7 @@ describe('billing atomicity — tryRedeemAtomically multi-write rollback (SPEC-0
         });
         mockWithTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
             const tx = {
-                execute: vi.fn().mockResolvedValue({
-                    rows: [{ id: 'pc1', usedCount: 0, maxUses: 10 }]
-                }),
+                ...selectForUpdateMock([{ id: 'pc1', usedCount: 0, maxUses: 10 }]),
                 update: updateSpy
             };
             return fn(tx);

@@ -31,6 +31,23 @@ const mockWithTransaction = dbModule.withTransaction as ReturnType<typeof vi.fn>
 const mockGetDb = dbModule.getDb as ReturnType<typeof vi.fn>;
 const mockGetPromoCodeByCode = promoCrudModule.getPromoCodeByCode as ReturnType<typeof vi.fn>;
 
+/**
+ * Mock builder for the `tx.select().from(...).where(...).for('update')`
+ * chain used by tryRedeemAtomically / redeemAndRecordUsage / applyPromoCode
+ * after the SPEC-064 IT-7 fix. Returns the row array the chain resolves to.
+ */
+function selectForUpdateMock<T>(rows: T[]): { select: ReturnType<typeof vi.fn> } {
+    return {
+        select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                    for: vi.fn().mockResolvedValue(rows)
+                })
+            })
+        })
+    };
+}
+
 describe('promo-code.redemption', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -53,9 +70,7 @@ describe('promo-code.redemption', () => {
             mockWithTransaction.mockImplementation(
                 async (fn: (tx: unknown) => Promise<unknown>) => {
                     const tx = {
-                        execute: vi.fn().mockResolvedValue({
-                            rows: [{ id: 'pc1', usedCount: 0, maxUses: 10 }]
-                        }),
+                        ...selectForUpdateMock([{ id: 'pc1', usedCount: 0, maxUses: 10 }]),
                         update: vi.fn().mockReturnValue({
                             set: vi.fn().mockReturnValue({
                                 where: vi.fn().mockReturnValue({
@@ -80,9 +95,7 @@ describe('promo-code.redemption', () => {
             // Arrange
             mockWithTransaction.mockImplementation(
                 async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = {
-                        execute: vi.fn().mockResolvedValue({ rows: [] })
-                    };
+                    const tx = selectForUpdateMock([]);
                     return fn(tx);
                 }
             );
@@ -99,11 +112,7 @@ describe('promo-code.redemption', () => {
             // Arrange
             mockWithTransaction.mockImplementation(
                 async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = {
-                        execute: vi.fn().mockResolvedValue({
-                            rows: [{ id: 'pc1', usedCount: 5, maxUses: 5 }]
-                        })
-                    };
+                    const tx = selectForUpdateMock([{ id: 'pc1', usedCount: 5, maxUses: 5 }]);
                     return fn(tx);
                 }
             );
@@ -134,9 +143,7 @@ describe('promo-code.redemption', () => {
             mockWithTransaction.mockImplementation(
                 async (fn: (tx: unknown) => Promise<unknown>) => {
                     const tx = {
-                        execute: vi.fn().mockResolvedValue({
-                            rows: [{ id: 'pc1', usedCount: 99, maxUses: null }]
-                        }),
+                        ...selectForUpdateMock([{ id: 'pc1', usedCount: 99, maxUses: null }]),
                         update: vi.fn().mockReturnValue({
                             set: vi.fn().mockReturnValue({
                                 where: vi.fn().mockReturnValue({
@@ -448,9 +455,9 @@ describe('promo-code.redemption', () => {
             mockWithTransaction.mockImplementation(
                 async (fn: (tx: unknown) => Promise<unknown>) => {
                     const tx = {
-                        execute: vi.fn().mockResolvedValue({
-                            rows: [{ id: 'pc1', usedCount: 0, maxUses: null, expiresAt: null }]
-                        }),
+                        ...selectForUpdateMock([
+                            { id: 'pc1', usedCount: 0, maxUses: null, expiresAt: null }
+                        ]),
                         update: vi.fn().mockReturnValue({
                             set: vi.fn().mockReturnValue({
                                 where: vi.fn().mockResolvedValue([])
@@ -492,9 +499,9 @@ describe('promo-code.redemption', () => {
             mockWithTransaction.mockImplementation(
                 async (fn: (tx: unknown) => Promise<unknown>) => {
                     const tx = {
-                        execute: vi.fn().mockResolvedValue({
-                            rows: [{ id: 'pc2', usedCount: 0, maxUses: null, expiresAt: null }]
-                        }),
+                        ...selectForUpdateMock([
+                            { id: 'pc2', usedCount: 0, maxUses: null, expiresAt: null }
+                        ]),
                         update: vi.fn().mockReturnValue({
                             set: vi.fn().mockReturnValue({
                                 where: vi.fn().mockResolvedValue([])
