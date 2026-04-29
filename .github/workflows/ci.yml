@@ -103,6 +103,9 @@ jobs:
       - name: Check 'as unknown as' type-cast count (SPEC-039)
         run: bash scripts/check-type-casts.sh
 
+      - name: Check service getById test pattern (SPEC-083)
+        run: bash scripts/check-getbyid-tests.sh
+
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."
