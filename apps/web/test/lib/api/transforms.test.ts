@@ -431,7 +431,8 @@ describe('toAccommodationDetailPageProps', () => {
                 name: 'WiFi',
                 icon: 'wifi',
                 isOptional: false,
-                additionalCost: null
+                additionalCost: null,
+                displayWeight: 50
             });
         });
 
@@ -443,7 +444,8 @@ describe('toAccommodationDetailPageProps', () => {
                 name: 'Pool',
                 icon: 'pool',
                 hostReWriteName: 'Pileta',
-                comments: 'Heated'
+                comments: 'Heated',
+                displayWeight: 50
             });
         });
 
@@ -650,5 +652,87 @@ describe('deriveCityFields integration (SPEC-095)', () => {
         });
         expect(result.cityName).toBe('');
         expect(result.location).toBeUndefined();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-018: displayWeight ordering
+// ---------------------------------------------------------------------------
+
+describe('SPEC-018 displayWeight ordering', () => {
+    it('toAccommodationCardProps sorts amenities by displayWeight DESC', () => {
+        const result = toAccommodationCardProps({
+            item: {
+                amenities: [
+                    { amenity: { slug: 'soap', name: 'Soap', displayWeight: 10 } },
+                    { amenity: { slug: 'wifi', name: 'WiFi', displayWeight: 90 } },
+                    { amenity: { slug: 'pool', name: 'Pool', displayWeight: 80 } }
+                ]
+            }
+        });
+        const keys = result.amenities?.map((a) => a.key);
+        expect(keys).toEqual(['wifi', 'pool', 'soap']);
+    });
+
+    it('toAccommodationCardProps sorts features by displayWeight DESC', () => {
+        const result = toAccommodationCardProps({
+            item: {
+                features: [
+                    { feature: { slug: 'tv', name: 'TV', displayWeight: 30 } },
+                    { feature: { slug: 'view', name: 'Sea view', displayWeight: 70 } }
+                ]
+            }
+        });
+        const keys = result.features?.map((f) => f.key);
+        expect(keys).toEqual(['view', 'tv']);
+    });
+
+    it('toAccommodationCardProps treats missing displayWeight as 50 default', () => {
+        const result = toAccommodationCardProps({
+            item: {
+                amenities: [
+                    { amenity: { slug: 'low', name: 'Low', displayWeight: 5 } },
+                    { amenity: { slug: 'mid', name: 'Mid' } },
+                    { amenity: { slug: 'high', name: 'High', displayWeight: 95 } }
+                ]
+            }
+        });
+        const keys = result.amenities?.map((a) => a.key);
+        expect(keys).toEqual(['high', 'mid', 'low']);
+    });
+
+    it('toDestinationCardProps sorts attractions by displayWeight DESC', () => {
+        const result = toDestinationCardProps({
+            item: {
+                slug: 'colon',
+                name: 'Colón',
+                attractions: [
+                    { id: 'a1', name: 'Mini', icon: 'Star', displayWeight: 20 },
+                    { id: 'a2', name: 'Top', icon: 'Star', displayWeight: 95 },
+                    { id: 'a3', name: 'Mid', icon: 'Star', displayWeight: 60 }
+                ]
+            }
+        });
+        const ids = result.attractions.map((a) => a.id);
+        expect(ids).toEqual(['a2', 'a3', 'a1']);
+    });
+
+    it('toAccommodationDetailPageProps sorts amenities/features by displayWeight DESC', () => {
+        const result = toAccommodationDetailPageProps({
+            item: {
+                slug: 'casa',
+                name: 'Casa',
+                amenities: [
+                    { amenityId: 'am1', name: 'Soap', displayWeight: 10 },
+                    { amenityId: 'am2', name: 'WiFi', displayWeight: 90 }
+                ],
+                features: [
+                    { featureId: 'f1', name: 'Tv', feature: { displayWeight: 25 } },
+                    { featureId: 'f2', name: 'View', feature: { displayWeight: 80 } }
+                ]
+            }
+        });
+        expect(result.amenities.map((a) => a.amenityId)).toEqual(['am2', 'am1']);
+        expect(result.features.map((f) => f.featureId)).toEqual(['f2', 'f1']);
     });
 });

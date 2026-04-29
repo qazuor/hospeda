@@ -143,7 +143,10 @@ function extractRelationItems(
                 displayWeight: Number(nested?.displayWeight ?? 50)
             };
         })
-        .filter((item) => item.key);
+        .filter((item) => item.key)
+        // SPEC-018: surface higher-weight items first so cards/grids that slice
+        // (e.g. AccommodationCard top-4 amenities) show the most important ones.
+        .sort((a, b) => b.displayWeight - a.displayWeight);
 
     return mapped.length > 0 ? mapped : undefined;
 }
@@ -300,12 +303,16 @@ export function toDestinationCardProps({
         reviewsCount: Number(item.reviewsCount ?? 0),
         eventsCount: Number(item.eventsCount ?? 0),
         attractions:
-            attractions?.map((a) => ({
-                id: a.id,
-                name: a.name,
-                icon: a.icon,
-                displayWeight: a.displayWeight
-            })) ?? [],
+            attractions
+                ?.map((a) => ({
+                    id: a.id,
+                    name: a.name,
+                    icon: a.icon,
+                    displayWeight: a.displayWeight ?? 50
+                }))
+                // SPEC-018: order attractions by displayWeight DESC so consumers
+                // that slice the array surface the most relevant ones first.
+                .sort((a, b) => b.displayWeight - a.displayWeight) ?? [],
         gallery: mediaObj?.gallery?.map((g) => ({ url: g.url ?? '', caption: g.caption })) ?? [],
         coordinates:
             coords?.lat && coords?.long ? { lat: coords.lat, long: coords.long } : undefined,
@@ -544,20 +551,35 @@ export function toAccommodationDetailPageProps({
             image: ownerObj?.image ? String(ownerObj.image) : null,
             createdAt: ownerObj?.createdAt ? String(ownerObj.createdAt) : new Date().toISOString()
         },
-        amenities: (amenitiesArr ?? []).map((a) => ({
-            amenityId: String(a.amenityId || ''),
-            name: String(a.name || ''),
-            icon: a.icon ? String(a.icon) : null,
-            isOptional: Boolean(a.isOptional),
-            additionalCost: a.additionalCost != null ? Number(a.additionalCost) : null
-        })),
-        features: (featuresArr ?? []).map((f) => ({
-            featureId: String(f.featureId || ''),
-            name: String(f.name || ''),
-            icon: f.icon ? String(f.icon) : null,
-            hostReWriteName: f.hostReWriteName ? String(f.hostReWriteName) : null,
-            comments: f.comments ? String(f.comments) : null
-        })),
+        // SPEC-018: extract displayWeight from either the join row or the
+        // nested entity (API shape varies), then order DESC so the detail
+        // page renders the most important amenities/features first.
+        amenities: (amenitiesArr ?? [])
+            .map((a) => {
+                const nestedAmenity = a.amenity as Record<string, unknown> | undefined;
+                return {
+                    amenityId: String(a.amenityId || ''),
+                    name: String(a.name || ''),
+                    icon: a.icon ? String(a.icon) : null,
+                    isOptional: Boolean(a.isOptional),
+                    additionalCost: a.additionalCost != null ? Number(a.additionalCost) : null,
+                    displayWeight: Number(a.displayWeight ?? nestedAmenity?.displayWeight ?? 50)
+                };
+            })
+            .sort((a, b) => b.displayWeight - a.displayWeight),
+        features: (featuresArr ?? [])
+            .map((f) => {
+                const nestedFeature = f.feature as Record<string, unknown> | undefined;
+                return {
+                    featureId: String(f.featureId || ''),
+                    name: String(f.name || ''),
+                    icon: f.icon ? String(f.icon) : null,
+                    hostReWriteName: f.hostReWriteName ? String(f.hostReWriteName) : null,
+                    comments: f.comments ? String(f.comments) : null,
+                    displayWeight: Number(f.displayWeight ?? nestedFeature?.displayWeight ?? 50)
+                };
+            })
+            .sort((a, b) => b.displayWeight - a.displayWeight),
         faqs: (faqsArr ?? []).map((faq) => ({
             id: String(faq.id || ''),
             question: String(faq.question || ''),

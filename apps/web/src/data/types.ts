@@ -48,7 +48,7 @@ export interface CardAmenityFeature {
     readonly label: string;
     /** Optional Phosphor icon name (e.g. `'WifiHigh'`). */
     readonly icon?: string;
-    /** Display priority (lower = higher priority). Defaults to 50. */
+    /** Display priority (higher = more important, range 1-100). Defaults to 50. */
     readonly displayWeight?: number;
 }
 
@@ -405,6 +405,8 @@ export interface DetailAmenity {
     readonly icon: string | null;
     readonly isOptional: boolean;
     readonly additionalCost: number | null;
+    /** Display priority (higher = more important, range 1-100). Defaults to 50. */
+    readonly displayWeight: number;
 }
 
 /** Feature relation from accommodation join. */
@@ -414,6 +416,8 @@ export interface DetailFeature {
     readonly icon: string | null;
     readonly hostReWriteName: string | null;
     readonly comments: string | null;
+    /** Display priority (higher = more important, range 1-100). Defaults to 50. */
+    readonly displayWeight: number;
 }
 
 /** FAQ item from accommodation join. */
