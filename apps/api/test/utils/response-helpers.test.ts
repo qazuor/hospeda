@@ -1,8 +1,10 @@
 /**
  * Unit tests for response helpers.
  *
- * Covers the SPEC-062 runtime response-schema enforcement pieces:
- * - `stripWithSchema`: strip success, no-op (no schema), fallback (parse failure).
+ * Covers the SPEC-062 / SPEC-087 runtime response-schema enforcement pieces:
+ * - `stripWithSchema`: strip success, no-op (no schema), strict throw on
+ *   parse failure (SPEC-087 — drift between handler payload and declared
+ *   responseSchema is treated as a server bug).
  * - `createResponse` threading the `responseSchema` parameter.
  * - `createPaginatedResponse` applying the schema per item and leaving
  *   pagination metadata untouched.
@@ -75,15 +77,13 @@ describe('stripWithSchema', () => {
         expect((result as Record<string, unknown>).adminInfo).toBeUndefined();
     });
 
-    it('falls back to original data and logs a warning on parse failure', () => {
+    it('throws ServiceError(INTERNAL_ERROR) and logs an error on parse failure (SPEC-087 strict mode)', () => {
         const schema = z.object({ id: z.string(), required: z.string() });
         const data = { id: '1' };
 
-        const result = stripWithSchema(data, schema);
-
-        expect(result).toBe(data);
-        expect(apiLogger.warn).toHaveBeenCalledTimes(1);
-        const call = (apiLogger.warn as unknown as { mock: { calls: unknown[][] } }).mock.calls[0];
+        expect(() => stripWithSchema(data, schema)).toThrow(/Response payload does not match/i);
+        expect(apiLogger.error).toHaveBeenCalledTimes(1);
+        const call = (apiLogger.error as unknown as { mock: { calls: unknown[][] } }).mock.calls[0];
         expect(call).toBeDefined();
         const payload = call?.[0] as { message: string; issues: unknown };
         expect(payload.message).toMatch(/stripping failed/i);
@@ -120,16 +120,16 @@ describe('createResponse with responseSchema', () => {
         expect(envelope.data).toEqual(data);
     });
 
-    it('falls back to unstripped data when schema parse fails', () => {
+    it('throws ServiceError when handler payload does not match declared responseSchema (SPEC-087 strict mode)', () => {
         const { ctx, calls } = createMockContext();
         const schema = z.object({ id: z.string(), required: z.string() });
         const data = { id: '1', extra: 'preserved' };
 
-        createResponse(data, ctx, 200, schema);
-
-        const envelope = calls[0]?.body as { data: Record<string, unknown> };
-        expect(envelope.data).toEqual(data);
-        expect(apiLogger.warn).toHaveBeenCalled();
+        expect(() => createResponse(data, ctx, 200, schema)).toThrow(
+            /Response payload does not match/i
+        );
+        expect(calls).toHaveLength(0);
+        expect(apiLogger.error).toHaveBeenCalled();
     });
 });
 
@@ -188,7 +188,7 @@ describe('createPaginatedResponse with responseSchema', () => {
         expect(apiLogger.warn).not.toHaveBeenCalled();
     });
 
-    it('falls back to unstripped item on per-item parse failure and logs a warning', () => {
+    it('throws on first per-item parse failure and prevents response emission (SPEC-087 strict mode)', () => {
         const { ctx, calls } = createMockContext();
         const schema = z.object({ id: z.string(), required: z.string() });
         const items = [
@@ -196,11 +196,10 @@ describe('createPaginatedResponse with responseSchema', () => {
             { id: '2', name: 'kept-as-is' }
         ];
 
-        createPaginatedResponse(items, pagination, ctx, 200, schema);
-
-        const envelope = calls[0]?.body as { data: { items: Record<string, unknown>[] } };
-        expect(envelope.data.items[0]).toEqual({ id: '1', required: 'ok' });
-        expect(envelope.data.items[1]).toEqual({ id: '2', name: 'kept-as-is' });
-        expect(apiLogger.warn).toHaveBeenCalledTimes(1);
+        expect(() => createPaginatedResponse(items, pagination, ctx, 200, schema)).toThrow(
+            /Response payload does not match/i
+        );
+        expect(calls).toHaveLength(0);
+        expect(apiLogger.error).toHaveBeenCalled();
     });
 });

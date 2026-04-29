@@ -1,13 +1,15 @@
 /**
- * SPEC-062 T-019 — safeParse fallback behavior.
+ * SPEC-087 — strict response strip behavior.
  *
  * When the service returns data that does NOT satisfy the declared
  * `responseSchema` (e.g. a missing required field), the response helper must:
- *   1. Log a structured warning describing the schema drift.
- *   2. Fall back to the unstripped data rather than failing the request.
+ *   1. Log a structured error describing the schema drift.
+ *   2. Throw `ServiceError(INTERNAL_ERROR)` so the route returns HTTP 500.
  *
- * This guarantees a schema drift never takes down a live route; it only
- * surfaces the problem in logs so it can be caught and fixed.
+ * Replaces the old "fallback" behavior introduced by SPEC-062 T-019. Under
+ * strict mode a drift between handler payload and declared schema is treated
+ * as a server bug, not a runtime fallback — the caller must never receive
+ * unstripped data, otherwise admin-only fields could leak silently.
  */
 
 import { AccommodationService } from '@repo/service-core';
@@ -20,21 +22,19 @@ const VALID_UUID = '11111111-1111-4111-8111-111111111111';
 
 /**
  * Intentionally invalid payload: misses the required `name` field, so
- * `AccommodationPublicSchema.safeParse()` will return `success: false`.
- * The handler must still respond 200 with the unstripped data.
+ * `AccommodationPublicSchema.safeParse()` returns `success: false`. Under
+ * SPEC-087 strict mode this MUST trigger a 500 response and log an error.
  */
 const INVALID_PAYLOAD = {
     id: VALID_UUID,
     slug: 'broken-payload',
-    // Leaking admin fields that would normally be stripped. Because the
-    // schema parse fails, stripping is skipped and these stay in the body.
-    createdById: 'leaky-id',
+    createdById: 'would-have-leaked',
     adminInfo: { leaked: true }
 };
 
-describe('SPEC-062 T-019 — safeParse fallback preserves availability', () => {
+describe('SPEC-087 — strict response strip', () => {
     let app: ReturnType<typeof initApp>;
-    let warnSpy: ReturnType<typeof vi.spyOn>;
+    let errorSpy: ReturnType<typeof vi.spyOn>;
 
     beforeAll(() => {
         validateApiEnv();
@@ -43,35 +43,38 @@ describe('SPEC-062 T-019 — safeParse fallback preserves availability', () => {
 
     beforeEach(() => {
         vi.restoreAllMocks();
-        warnSpy = vi.spyOn(apiLogger, 'warn');
+        errorSpy = vi.spyOn(apiLogger, 'error');
         vi.spyOn(AccommodationService.prototype, 'getById').mockResolvedValue({
             data: INVALID_PAYLOAD
         } as unknown as Awaited<ReturnType<AccommodationService['getById']>>);
     });
 
-    it('returns 200 with the unstripped data when schema parse fails', async () => {
+    it('returns 500 instead of leaking unstripped data when schema parse fails', async () => {
         const res = await app.request(`/api/v1/public/accommodations/${VALID_UUID}`, {
             headers: { 'user-agent': 'vitest' }
         });
-        expect(res.status).toBe(200);
+        expect(res.status).toBe(500);
 
-        const body = (await res.json()) as { data: Record<string, unknown> };
-        // Fallback: data comes through even though required fields were missing.
-        expect(body.data).toMatchObject({
-            id: VALID_UUID,
-            slug: 'broken-payload',
-            // Fields that would have been stripped on success but leak here.
-            createdById: 'leaky-id',
-            adminInfo: { leaked: true }
-        });
+        const body = (await res.json()) as { success: false; error: { code: string } };
+        expect(body.success).toBe(false);
+        expect(body.error.code).toBe('INTERNAL_ERROR');
     });
 
-    it('logs a structured warning describing the schema drift', async () => {
+    it('does not echo the unstripped payload in the error response body', async () => {
+        const res = await app.request(`/api/v1/public/accommodations/${VALID_UUID}`, {
+            headers: { 'user-agent': 'vitest' }
+        });
+        const text = await res.text();
+        expect(text).not.toContain('would-have-leaked');
+        expect(text).not.toContain('adminInfo');
+    });
+
+    it('logs a structured error describing the schema drift', async () => {
         await app.request(`/api/v1/public/accommodations/${VALID_UUID}`, {
             headers: { 'user-agent': 'vitest' }
         });
 
-        const stripWarnings = warnSpy.mock.calls
+        const stripErrors = errorSpy.mock.calls
             .map((c) => c[0])
             .filter(
                 (arg): arg is { message: string; issues: unknown } =>
@@ -82,8 +85,8 @@ describe('SPEC-062 T-019 — safeParse fallback preserves availability', () => {
                     ((arg as Record<string, unknown>).message as string).includes('stripping')
             );
 
-        expect(stripWarnings.length).toBeGreaterThan(0);
-        const first = stripWarnings[0];
+        expect(stripErrors.length).toBeGreaterThan(0);
+        const first = stripErrors[0];
         expect(first).toBeDefined();
         if (first) {
             expect(first.message).toMatch(/stripping failed/i);

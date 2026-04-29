@@ -69,18 +69,22 @@ export interface ErrorResponse {
 /**
  * Strips a payload down to the fields declared in `responseSchema`.
  *
- * Behavior:
+ * Behavior (strict mode — SPEC-087):
  * - If `responseSchema` is not provided, returns the data unchanged (no-op).
  * - If `responseSchema.safeParse(data)` succeeds, returns the parsed (stripped) data.
- * - If parsing fails, logs a structured warning and returns the original data
- *   as a safe fallback so a schema drift never takes down a live route.
+ * - If parsing fails, logs the structured issues server-side and throws a
+ *   `ServiceError(INTERNAL_ERROR)` so the global error handler returns 500. A
+ *   drift between the declared response contract and the actual handler payload
+ *   is treated as a server bug, not a runtime fallback. The caller never sees
+ *   the unstripped payload, so admin-only fields cannot leak silently.
  *
  * Used by {@link createResponse} and {@link createPaginatedResponse} to enforce
- * tier-appropriate field exposure at runtime (SPEC-062).
+ * tier-appropriate field exposure at runtime (SPEC-062, SPEC-087).
  *
  * @param data - The data to strip
  * @param responseSchema - Optional Zod schema describing the response contract
- * @returns Stripped data on success, original data on failure/no-op
+ * @returns Stripped data on success
+ * @throws ServiceError(INTERNAL_ERROR) when the schema rejects the payload
  */
 export const stripWithSchema = <T>(data: T, responseSchema?: ZodTypeAny): T => {
     if (!responseSchema) {
@@ -92,11 +96,15 @@ export const stripWithSchema = <T>(data: T, responseSchema?: ZodTypeAny): T => {
         return parsed.data as T;
     }
 
-    apiLogger.warn({
-        message: 'Response schema stripping failed — falling back to unstripped data',
+    apiLogger.error({
+        message:
+            'Response schema stripping failed — handler payload does not match declared responseSchema',
         issues: parsed.error.issues
     });
-    return data;
+    throw new ServiceError(
+        ServiceErrorCode.INTERNAL_ERROR,
+        'Response payload does not match declared schema'
+    );
 };
 
 /**
