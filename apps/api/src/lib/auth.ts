@@ -24,7 +24,6 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { admin, createAccessControl } from 'better-auth/plugins';
 import { getQZPayBilling } from '../middlewares/billing';
 import { BillingCustomerSyncService } from '../services/billing-customer-sync';
-import { TrialService } from '../services/trial.service';
 import { env } from '../utils/env';
 
 const logger = createLogger('auth');
@@ -433,7 +432,16 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                             data: {
                                 ...user,
                                 slug,
-                                role: RoleEnum.HOST,
+                                // Sign up as USER. Promotion to HOST happens
+                                // atomically when the user publishes their first
+                                // accommodation through the host-onboarding flow
+                                // (AccommodationService.publish). Creating users
+                                // as HOST here would short-circuit the
+                                // permission check on createForOnboarding and
+                                // also break the first-publish trial
+                                // detection because billing_subscriptions stays
+                                // empty until publish.
+                                role: RoleEnum.USER,
                                 settings: DEFAULT_USER_SETTINGS,
                                 visibility: 'PUBLIC',
                                 lifecycleState: 'ACTIVE'
@@ -446,24 +454,22 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                             'New user created via Better Auth'
                         );
 
-                        // Billing customer sync (non-blocking)
+                        // Billing customer sync (non-blocking).
+                        // We create the billing_customers row eagerly here so
+                        // the first-publish flow has a customer record ready
+                        // when it queries eligibility. We DO NOT auto-start a
+                        // trial here anymore: the trial is created atomically
+                        // by AccommodationService.publish() on the user's first
+                        // publish, alongside the lifecycleState flip and the
+                        // USER -> HOST role promotion.
                         try {
                             const billing = getQZPayBilling();
                             const syncService = new BillingCustomerSyncService(billing);
-                            const customerId = await syncService.ensureCustomerExists({
+                            await syncService.ensureCustomerExists({
                                 userId: user.id,
                                 email: user.email,
                                 name: user.name || undefined
                             });
-
-                            if (customerId && user.role === RoleEnum.HOST) {
-                                const trialService = new TrialService(billing);
-                                await trialService.startTrial({ customerId });
-                                logger.info(
-                                    { userId: user.id, customerId },
-                                    'Trial started for new HOST user'
-                                );
-                            }
                         } catch (error) {
                             logger.error(
                                 {
