@@ -144,12 +144,15 @@
         {
             "specId": "SPEC-080",
             "title": "Service-Layer Integration Tests with Real Database",
-            "status": "draft",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-080-service-integration-tests",
             "priority": "P2",
             "created": "2026-04-17T00:00:00.000Z",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-04-29T20:50:00.000Z",
+            "archivedIn": "e5d2990b8",
+            "archiveNote": "Closed at 22/22 (commit 48401514d). Spec docs and task state removed; integration tests in packages/service-core/test/integration/services/ are the single source of truth. Index entry was not updated by the archive commit (drift fixed 2026-04-30)."
         },
         {
             "specId": "SPEC-085",
@@ -176,13 +179,15 @@
         {
             "specId": "SPEC-092",
             "title": "End-to-End Test Suite for Pre-Beta Validation",
-            "status": "draft",
+            "status": "in-progress",
             "complexity": "high",
             "path": "SPEC-092-e2e-test-suite",
             "priority": "P0",
             "created": "2026-04-26T00:00:00.000Z",
             "archived": false,
-            "dependsOn": ["SPEC-085"]
+            "dependsOn": ["SPEC-085"],
+            "atomizedAt": "2026-04-30T00:00:00.000Z",
+            "atomizationNote": "99 tasks across 9 phases, complexity ceiling 3. 37 E2E + 7 integration + 3 CI scripts + 4 docs. See state.json for DAG."
         },
         {
             "specId": "SPEC-093",
