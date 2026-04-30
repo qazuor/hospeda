@@ -30,7 +30,8 @@ const ERROR_CODE_TO_HTTP: Record<ServiceErrorCode, number> = {
     [ServiceErrorCode.INTERNAL_ERROR]: 500,
     [ServiceErrorCode.NOT_IMPLEMENTED]: 501,
     [ServiceErrorCode.SERVICE_UNAVAILABLE]: 503,
-    [ServiceErrorCode.CONFIGURATION_ERROR]: 500
+    [ServiceErrorCode.CONFIGURATION_ERROR]: 500,
+    [ServiceErrorCode.QUOTA_EXCEEDED]: 429
 };
 
 /**

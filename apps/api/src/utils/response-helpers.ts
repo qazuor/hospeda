@@ -8,7 +8,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import type { ZodTypeAny } from 'zod';
+import type { ZodIssue, ZodTypeAny } from 'zod';
 import { env } from './env';
 import { apiLogger } from './logger';
 
@@ -83,10 +83,11 @@ export interface ErrorResponse {
  *
  * @param data - The data to strip
  * @param responseSchema - Optional Zod schema describing the response contract
+ * @param c - Optional Hono context to enrich diagnostic logs with method, path, requestId
  * @returns Stripped data on success
  * @throws ServiceError(INTERNAL_ERROR) when the schema rejects the payload
  */
-export const stripWithSchema = <T>(data: T, responseSchema?: ZodTypeAny): T => {
+export const stripWithSchema = <T>(data: T, responseSchema?: ZodTypeAny, c?: Context): T => {
     if (!responseSchema) {
         return data;
     }
@@ -96,14 +97,57 @@ export const stripWithSchema = <T>(data: T, responseSchema?: ZodTypeAny): T => {
         return parsed.data as T;
     }
 
-    apiLogger.error({
-        message:
-            'Response schema stripping failed — handler payload does not match declared responseSchema',
-        issues: parsed.error.issues
-    });
+    logStripFailure(parsed.error.issues, c);
     throw new ServiceError(
         ServiceErrorCode.INTERNAL_ERROR,
         'Response payload does not match declared schema'
+    );
+};
+
+/**
+ * Maximum length for the JSON-serialized issue list embedded in the log entry.
+ * Prevents pathological cases (huge payloads, deeply nested arrays) from blowing
+ * up log volume while still providing enough detail to diagnose the drift.
+ */
+const STRIP_FAIL_ISSUES_MAX_BYTES = 4000;
+
+/**
+ * Logs a response-schema strip failure with full diagnostic detail.
+ *
+ * Structured fields are pre-formatted so they survive any logger configuration
+ * (the API logger does not expand nested objects by default — passing the raw
+ * `issues` array would render as `[Object]`). Production log aggregators
+ * receive: a one-line human-readable summary, the full issue list as JSON
+ * (truncated at {@link STRIP_FAIL_ISSUES_MAX_BYTES}), and request metadata
+ * (method, path, requestId) for cross-referencing with traces.
+ */
+const logStripFailure = (issues: readonly ZodIssue[], c?: Context): void => {
+    const summary = issues
+        .slice(0, 5)
+        .map((issue) => {
+            const path = issue.path.length > 0 ? issue.path.map(String).join('.') : '<root>';
+            const expected = 'expected' in issue ? ` expected=${String(issue.expected)}` : '';
+            return `${path}: ${issue.message} (${issue.code}${expected})`;
+        })
+        .join('; ');
+    const issuesJson = JSON.stringify(issues).slice(0, STRIP_FAIL_ISSUES_MAX_BYTES);
+
+    apiLogger.error(
+        {
+            issuesCount: issues.length,
+            summary,
+            issuesJson,
+            method: c?.req.method,
+            path: c?.req.path,
+            requestId: (c?.get('requestId') as string | undefined) ?? 'unknown'
+        },
+        'Response schema stripping failed',
+        // Per-call override: expand the structured payload fully and skip text
+        // truncation so the issuesJson and summary survive in stdout regardless
+        // of the API logger's category-level config (default expandObjectLevels=0
+        // would render the payload as `[Object]`). This is critical so production
+        // log aggregators capture actionable diagnostic data, not opaque markers.
+        { expandObjectLevels: -1, truncateLongText: false }
     );
 };
 
@@ -124,7 +168,7 @@ export const createResponse = <T = unknown>(
     statusCode = 200,
     responseSchema?: ZodTypeAny
 ) => {
-    const stripped = stripWithSchema(data, responseSchema);
+    const stripped = stripWithSchema(data, responseSchema, c);
     const response: ApiResponse<T> = {
         success: true,
         data: stripped,
@@ -189,7 +233,7 @@ export const createPaginatedResponse = (
     responseSchema?: ZodTypeAny
 ) => {
     const strippedItems = responseSchema
-        ? items.map((item) => stripWithSchema(item, responseSchema))
+        ? items.map((item) => stripWithSchema(item, responseSchema, c))
         : items;
 
     const response: ApiResponse<{ items: unknown[]; pagination: PaginationMetadata }> = {
