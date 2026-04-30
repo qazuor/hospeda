@@ -1,0 +1,2469 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-096",
+    "title": "Web App Beta-Readiness",
+    "created": "2026-04-29T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add amenity/feature JOIN to accommodation model search",
+            "description": "REQ-096-01 (T-014 from SPEC-075).\n\nAdd JOIN clauses to `search()` and `searchWithRelations()` in `packages/db/src/models/accommodation/accommodation.model.ts` so that passing `amenities: string[]` and/or `features: string[]` filters applies an INNER JOIN on `r_accommodation_amenity` and `r_accommodation_feature` tables. Intersection semantics: accommodations must match ALL provided IDs. Maintain existing pagination, sorting, and soft-delete behavior.\n\nFiles:\n- `packages/db/src/models/accommodation/accommodation.model.ts`\n\nTests (write first):\n- `packages/db/test/models/accommodation/accommodation-amenity-filter.test.ts`\n- Unit: search with 1 amenity, search with 2 amenities (intersection), search with feature filter, search with both amenity+feature, search with no filter (unchanged behavior).\n- Expect SQL to use JOIN and return only matching rows.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [
+                {
+                    "title": "Add amenities JOIN to search query builder",
+                    "completed": false
+                },
+                {
+                    "title": "Add features JOIN to search query builder",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests for filtered search",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "database", "accommodation"],
+            "phase": "prerequisites",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T18:43:17.342087Z",
+                "completed": "2026-04-29T18:43:17.342087Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Update AccommodationSearchSchema to expose amenities/features params",
+            "description": "REQ-096-01 follow-through.\n\nUpdate `packages/schemas/src/accommodation/search.ts` to declare `amenities` and `features` as optional `z.array(z.string().uuid())` in `AccommodationSearchHttpSchema` and `AccommodationSearchSchema`. Ensure coercion from repeated query params.\n\nFiles:\n- `packages/schemas/src/accommodation/search.ts`\n\nTests:\n- `packages/schemas/test/accommodation/search.schema.test.ts`\n- Validate comma-separated or repeated query params parse correctly.\n- Validate that malformed UUIDs are rejected.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add amenities/features fields to search schema",
+                    "completed": false
+                },
+                {
+                    "title": "Write schema coercion tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "schema", "accommodation"],
+            "phase": "prerequisites",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T18:43:17.342087Z",
+                "completed": "2026-04-29T18:43:17.342087Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add destinationId FK column to events table (migration + schema)",
+            "description": "REQ-096-02 (T-015 from SPEC-075) \u2014 Part 1.\n\nCreate manual migration `packages/db/src/migrations/manual/{timestamp}_event_destination_fk.sql`: add `destination_id UUID NULL` to events, FK constraint, index. Update Drizzle schema `packages/db/src/schemas/event/event.schema.ts`. Chain in apply-postgres-extras.sh.\n\nFiles:\n- `packages/db/src/migrations/manual/{timestamp}_event_destination_fk.sql`\n- `packages/db/src/schemas/event/event.schema.ts`\n- `packages/db/scripts/apply-postgres-extras.sh`\n\nTests:\n- `packages/db/test/migrations/event-destination-fk.test.ts`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-005"],
+            "subtasks": [
+                {
+                    "title": "Write migration SQL file",
+                    "completed": false
+                },
+                {
+                    "title": "Update Drizzle event schema with destinationId",
+                    "completed": false
+                },
+                {
+                    "title": "Chain migration in apply-postgres-extras.sh",
+                    "completed": false
+                },
+                {
+                    "title": "Write migration integration tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "database", "events", "migration"],
+            "phase": "prerequisites",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T18:43:17.342087Z",
+                "completed": "2026-04-29T18:43:17.342087Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add destinationId filter to event search and backfill script",
+            "description": "REQ-096-02 \u2014 Part 2.\n\nUpdate `EventSearchHttpSchema` and `EventSearchSchema` with optional `destinationId: z.string().uuid().optional()`. Update event model search method with WHERE clause. Create backfill script `packages/db/scripts/backfill-event-destinations.ts` using `safeIlike`.\n\nFiles:\n- `packages/schemas/src/event/search.ts`\n- `packages/db/src/models/event/event.model.ts`\n- `packages/db/scripts/backfill-event-destinations.ts`\n\nTests:\n- `packages/db/test/models/event/event-destination-filter.test.ts`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                {
+                    "title": "Update EventSearchSchema with destinationId",
+                    "completed": false
+                },
+                {
+                    "title": "Add WHERE filter to event model search",
+                    "completed": false
+                },
+                {
+                    "title": "Create backfill script",
+                    "completed": false
+                },
+                {
+                    "title": "Write filter and backfill tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "database", "events", "schema"],
+            "phase": "prerequisites",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T18:51:51.916861Z",
+                "completed": "2026-04-29T18:51:51.916861Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add event destinationId to public API event handler",
+            "description": "REQ-096-02 \u2014 Part 3 (API layer).\n\nUpdate `apps/api/src/routes/event/public/` list handler to pass `destinationId` from query params to the event service/model search.\n\nFiles:\n- `apps/api/src/routes/event/public/list.ts`\n\nTests:\n- `apps/api/test/routes/event/public/list.test.ts`\n- Integration test: GET /api/v1/public/events?destinationId={uuid} returns filtered results.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Update public event list route to pass destinationId",
+                    "completed": false
+                },
+                {
+                    "title": "Write integration test for destinationId filtering",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "api", "events"],
+            "phase": "prerequisites",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T18:51:51.916861Z",
+                "completed": "2026-04-29T18:51:51.916861Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create public user-by-slug API endpoint",
+            "description": "REQ-096-03 (T-016 from SPEC-075).\n\nCreate `apps/api/src/routes/user/public/getBySlug.ts`. Response: `{ id, displayName, slug, avatar, bio }` only. 404 on miss or soft-deleted. Rate limit 60 req/min. Register in public user router.\n\nFiles:\n- `apps/api/src/routes/user/public/getBySlug.ts` (NEW)\n- `apps/api/src/routes/user/public/index.ts`\n\nTests:\n- `apps/api/test/routes/user/public/getBySlug.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-044"],
+            "subtasks": [
+                {
+                    "title": "Create getBySlug route file",
+                    "completed": false
+                },
+                {
+                    "title": "Register in public user router",
+                    "completed": false
+                },
+                {
+                    "title": "Write integration tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "api", "users"],
+            "phase": "prerequisites",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T18:43:17.342087Z",
+                "completed": "2026-04-29T18:43:17.342087Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Create unified search Zod schemas (query + response)",
+            "description": "REQ-096-04 (T-017 from SPEC-075) \u2014 Part 1.\n\nCreate `packages/schemas/src/search/query.ts`: `SearchQuerySchema`, `SearchResultItemSchema`, `SearchResponseSchema` with 4 entity groups.\n\nFiles:\n- `packages/schemas/src/search/query.ts` (NEW)\n- `packages/schemas/src/index.ts`\n\nTests:\n- `packages/schemas/test/search/query.schema.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Create search schema file with query + response types",
+                    "completed": false
+                },
+                {
+                    "title": "Re-export from schemas index",
+                    "completed": false
+                },
+                {
+                    "title": "Write schema validation tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "schema", "search"],
+            "phase": "prerequisites",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T18:43:17.342087Z",
+                "completed": "2026-04-29T18:43:17.342087Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create search route skeleton and register in public router [REQ-096-04 split 1/3]",
+            "description": "REQ-096-04 \u2014 Part 2a (route scaffold).\n\nCreate `apps/api/src/routes/search/public/search.ts` with:\n- GET /api/v1/public/search?q={query}&limit={n}\n- Validate with `SearchQuerySchema`; reject q < 2 chars with 400.\n- Stub parallel query body (return empty groups for now).\n- Create `apps/api/src/routes/search/public/index.ts` router.\n- Mount search router in `apps/api/src/routes/index.ts`.\n\nFiles:\n- `apps/api/src/routes/search/public/search.ts` (NEW)\n- `apps/api/src/routes/search/public/index.ts` (NEW)\n- `apps/api/src/routes/index.ts`\n\nTests:\n- Route returns 400 for q < 2 chars.\n- Route returns 200 with empty groups for valid q.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Create search route file with schema validation",
+                    "completed": false
+                },
+                {
+                    "title": "Create search public router and mount in main router",
+                    "completed": false
+                },
+                {
+                    "title": "Write 400 and 200-empty smoke tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "api", "search"],
+            "phase": "prerequisites",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T18:51:51.916861Z",
+                "completed": "2026-04-29T18:51:51.916861Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Implement parallel Promise.all queries with safeIlike in search endpoint [REQ-096-04 split 2/3]",
+            "description": "REQ-096-04 \u2014 Part 2b (query implementation).\n\nIn `apps/api/src/routes/search/public/search.ts`, replace the stub body with:\n- `Promise.all` running 4 entity queries: accommodations, destinations, events, posts \u2014 each using `safeIlike()`, limited to `limit` (default 5).\n- Map each result to `SearchResultItemSchema` shape.\n- Apply rate limit: 30 req/min per IP.\n\nFiles:\n- `apps/api/src/routes/search/public/search.ts`\n\nTests:\n- GET /search?q=co returns 4 non-empty groups when seeded data exists.\n- Each item has id, slug, type, coverImage fields.\n- Verify safeIlike used (no raw ilike).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Implement Promise.all across 4 entity queries",
+                    "completed": false
+                },
+                {
+                    "title": "Apply safeIlike for all entity searches",
+                    "completed": false
+                },
+                {
+                    "title": "Add rate-limit middleware (30 req/min)",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "api", "search"],
+            "phase": "prerequisites",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T18:51:51.916861Z",
+                "completed": "2026-04-29T18:51:51.916861Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Write integration tests for unified search endpoint [REQ-096-04 split 3/3]",
+            "description": "REQ-096-04 \u2014 Part 2c (tests).\n\nWrite full integration test suite in `apps/api/test/routes/search/public/search.test.ts`:\n- GET /search?q=co returns 4 groups with correct structure.\n- GET /search?q=x (1 char) returns 400.\n- All items conform to SearchResultItemSchema.\n- Rate limit: 31st request returns 429.\n- safeIlike injection safety: q containing % or _ does not cause SQL errors.\n\nFiles:\n- `apps/api/test/routes/search/public/search.test.ts` (NEW)\n\nBlocks: T-046 (busqueda page depends on working search endpoint).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-046"],
+            "subtasks": [
+                {
+                    "title": "Write happy-path group structure tests",
+                    "completed": false
+                },
+                {
+                    "title": "Write 400 and rate-limit boundary tests",
+                    "completed": false
+                },
+                {
+                    "title": "Write safeIlike injection safety test",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "api", "search", "testing"],
+            "phase": "prerequisites",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T18:51:51.916861Z",
+                "completed": "2026-04-29T18:51:51.916861Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Update user settings Zod schema to 4-field theme/language separation",
+            "description": "REQ-096-05 \u2014 Part 1.\n\nUpdate `packages/schemas/src/user/preferences.ts`: replace `darkMode` and `language` with `themeWeb`, `themeAdmin`, `languageWeb`, `languageAdmin` enums. Keep `notifications` and `newsletter`.\n\nFiles:\n- `packages/schemas/src/user/preferences.ts`\n\nTests:\n- `packages/schemas/test/user/preferences.schema.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-012", "T-032", "T-040", "T-056"],
+            "subtasks": [
+                {
+                    "title": "Update UserSettingsSchema with 4 new fields",
+                    "completed": false
+                },
+                {
+                    "title": "Write schema tests for valid/invalid values",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "user", "settings"],
+            "phase": "schemas",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T18:43:17.342087Z",
+                "completed": "2026-04-29T18:43:17.342087Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Create DB migration to backfill user settings legacy fields",
+            "description": "REQ-096-05 \u2014 Part 2 (migration).\n\nCreate `packages/db/scripts/backfill-user-settings.ts`: copies `darkMode` \u2192 `themeWeb`+`themeAdmin`, `language` \u2192 `languageWeb`+`languageAdmin`.\n\nFiles:\n- `packages/db/scripts/backfill-user-settings.ts` (NEW)\n\nTests:\n- `packages/db/test/scripts/backfill-user-settings.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-040", "T-056"],
+            "subtasks": [
+                {
+                    "title": "Write backfill script for legacy settings",
+                    "completed": false
+                },
+                {
+                    "title": "Write test verifying field mapping",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "migration", "user"],
+            "phase": "schemas",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:10:16.034820Z",
+                "completed": "2026-04-29T19:10:16.034820Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Create centralized ProfileEditSchema in @repo/schemas",
+            "description": "REQ-096-06.\n\nCreate `packages/schemas/src/user/profile.ts` with `ProfileEditSchema` (strict, E.164 phone, URL-or-empty avatar). Re-export from index.\n\nFiles:\n- `packages/schemas/src/user/profile.ts` (NEW)\n- `packages/schemas/src/index.ts`\n\nTests:\n- `packages/schemas/test/user/profile.schema.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-035", "T-055"],
+            "subtasks": [
+                {
+                    "title": "Create ProfileEditSchema with strict validation",
+                    "completed": false
+                },
+                {
+                    "title": "Re-export from schemas index",
+                    "completed": false
+                },
+                {
+                    "title": "Write schema edge case tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "user", "profile"],
+            "phase": "schemas",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T18:43:17.342087Z",
+                "completed": "2026-04-29T18:43:17.342087Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Create ContactSubmitSchema in @repo/schemas",
+            "description": "REQ-096-07.\n\nCreate `packages/schemas/src/contact/submit.ts` with `ContactSubmitSchema` (conditional accommodationId via superRefine, honeypot website field). Re-export from index.\n\nFiles:\n- `packages/schemas/src/contact/submit.ts` (NEW)\n- `packages/schemas/src/index.ts`\n\nTests:\n- `packages/schemas/test/contact/submit.schema.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-033", "T-049"],
+            "subtasks": [
+                {
+                    "title": "Create ContactSubmitSchema with superRefine validation",
+                    "completed": false
+                },
+                {
+                    "title": "Write tests for conditional accommodationId requirement",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "contact"],
+            "phase": "schemas",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T18:43:17.342087Z",
+                "completed": "2026-04-29T18:43:17.342087Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Create Breadcrumbs component with BreadcrumbList JSON-LD",
+            "description": "REQ-096-08.\n\nCreate `apps/web/src/components/Breadcrumbs.astro`: `<nav role='navigation'>` + `<ol>` + BreadcrumbList JSON-LD in head. Mobile (<640px) truncation to first\u2026last.\n\nFiles:\n- `apps/web/src/components/Breadcrumbs.astro` (NEW)\n\nTests:\n- `apps/web/test/components/Breadcrumbs.test.ts`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-026", "T-029", "T-030", "T-031", "T-064"],
+            "subtasks": [
+                {
+                    "title": "Create Breadcrumbs.astro with accessible markup",
+                    "completed": false
+                },
+                {
+                    "title": "Add BreadcrumbList JSON-LD generation",
+                    "completed": false
+                },
+                {
+                    "title": "Implement mobile truncation",
+                    "completed": false
+                },
+                {
+                    "title": "Write component tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component", "seo", "shared-components"],
+            "phase": "shared-components",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:10:16.034820Z",
+                "completed": "2026-04-29T19:10:16.034820Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Create EmptyState component",
+            "description": "REQ-096-09.\n\nCreate `apps/web/src/components/EmptyState.astro`: icon + title + description + optional CTA slot. Centered, max-width 500px.\n\nFiles:\n- `apps/web/src/components/EmptyState.astro` (NEW)\n\nTests:\n- `apps/web/test/components/EmptyState.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-035", "T-038", "T-039", "T-049", "T-054", "T-064"],
+            "subtasks": [
+                {
+                    "title": "Create EmptyState.astro with slot-based CTA",
+                    "completed": false
+                },
+                {
+                    "title": "Write snapshot tests for with/without action variants",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component", "shared-components"],
+            "phase": "shared-components",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:10:16.034820Z",
+                "completed": "2026-04-29T19:10:16.034820Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Create ShareButtons React island",
+            "description": "REQ-096-10.\n\nCreate `apps/web/src/components/ShareButtons.client.tsx` (`client:visible`): Web Share API on mobile, fallback popover with WhatsApp/Facebook/X/Telegram/Copy on desktop.\n\nFiles:\n- `apps/web/src/components/ShareButtons.client.tsx` (NEW)\n\nTests:\n- `apps/web/test/components/ShareButtons.test.tsx`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-050", "T-064"],
+            "subtasks": [
+                {
+                    "title": "Create ShareButtons island with Web Share API support",
+                    "completed": false
+                },
+                {
+                    "title": "Implement fallback popover with social links",
+                    "completed": false
+                },
+                {
+                    "title": "Implement copy URL with toast",
+                    "completed": false
+                },
+                {
+                    "title": "Write tests for both branches",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component", "shared-components"],
+            "phase": "shared-components",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:10:16.034820Z",
+                "completed": "2026-04-29T19:10:16.034820Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Audit and screenshot all existing FilterSidebar call sites (baseline) [REQ-096-11 split 1/3]",
+            "description": "REQ-096-11 \u2014 Part 1 (visual baseline).\n\nLocate all usages of FilterSidebar in `apps/web/src/`. Take Playwright or Vitest snapshot screenshots of each page that uses it. Store baseline images in `apps/web/test/snapshots/filter-sidebar/`.\n\nCount of call sites, props used, and visual baseline must be documented before any refactor begins.\n\nFiles:\n- `apps/web/test/snapshots/filter-sidebar/` (NEW directory)\n- `apps/web/test/components/FilterSidebar.baseline.test.ts` (NEW)\n\nDone criteria: baseline screenshots committed, test file captures all call sites.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Enumerate all FilterSidebar import sites",
+                    "completed": false
+                },
+                {
+                    "title": "Capture and commit baseline screenshots",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component", "shared-components", "refactor"],
+            "phase": "shared-components",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:10:16.034820Z",
+                "completed": "2026-04-29T19:10:16.034820Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Refactor FilterSidebar to single component with position prop + update all call sites [REQ-096-11 split 2/3]",
+            "description": "REQ-096-11 \u2014 Part 2 (refactor).\n\nRefactor to `apps/web/src/components/FilterSidebar.client.tsx`:\n- Props: `position: 'left' | 'top'`, `filters: FilterConfig[]`.\n- position='left': panel to the left of content (desktop).\n- position='top': horizontal bar above content.\n- Mobile (<768px): 'Filtros' button toggles a drawer (both variants).\n\nUpdate all call sites to use new props.\n\nFiles:\n- `apps/web/src/components/FilterSidebar.client.tsx`\n- All pages using FilterSidebar\n\nDone criteria: all call sites updated, component renders without runtime errors.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-018"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Implement FilterSidebar with position prop",
+                    "completed": false
+                },
+                {
+                    "title": "Implement mobile drawer toggle",
+                    "completed": false
+                },
+                {
+                    "title": "Update all call sites to new API",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component", "shared-components", "refactor"],
+            "phase": "shared-components",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:10:16.034820Z",
+                "completed": "2026-04-29T19:10:16.034820Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Write visual regression snapshot tests for FilterSidebar [REQ-096-11 split 3/3]",
+            "description": "REQ-096-11 \u2014 Part 3 (regression tests).\n\nWrite `apps/web/test/components/FilterSidebar.test.tsx`:\n- Snapshot: consolidated version matches pre-refactor baseline (visual diff <= 1%).\n- Mobile: drawer toggle works.\n- position='left' and position='top' both render correctly.\n\nFiles:\n- `apps/web/test/components/FilterSidebar.test.tsx` (NEW)\n\nBlocks: T-064 (shared-components i18n keys) depends on FilterSidebar being stable.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-019"],
+            "blocks": ["T-064"],
+            "subtasks": [
+                {
+                    "title": "Write snapshot visual regression test against baseline",
+                    "completed": false
+                },
+                {
+                    "title": "Write mobile drawer and position variant tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component", "shared-components", "refactor", "testing"],
+            "phase": "shared-components",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:10:16.034820Z",
+                "completed": "2026-04-29T19:10:16.034820Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Create ErrorBanner component",
+            "description": "REQ-096-12.\n\nCreate `apps/web/src/components/ErrorBanner.astro`: 3 variants (error/warning/info) with palette + icon + optional 'Reintentar' button.\n\nFiles:\n- `apps/web/src/components/ErrorBanner.astro` (NEW)\n\nTests:\n- `apps/web/test/components/ErrorBanner.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-064"],
+            "subtasks": [
+                {
+                    "title": "Create ErrorBanner.astro with 3 variants",
+                    "completed": false
+                },
+                {
+                    "title": "Write snapshot tests for all variants",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component", "shared-components"],
+            "phase": "shared-components",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:10:16.034820Z",
+                "completed": "2026-04-29T19:10:16.034820Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Extract and generalize ImageGallery component",
+            "description": "REQ-096-13.\n\nExtract `apps/web/src/components/ImageGallery.client.tsx` from existing accommodation gallery. Add `variant?: 'detail' | 'cover-plus-grid'`. Visual regression test required.\n\nFiles:\n- `apps/web/src/components/ImageGallery.client.tsx` (NEW)\n- `apps/web/src/components/accommodation/...` (update import)\n\nTests:\n- `apps/web/test/components/ImageGallery.test.tsx`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Take baseline screenshot of accommodation gallery",
+                    "completed": false
+                },
+                {
+                    "title": "Extract gallery logic to shared ImageGallery.client.tsx",
+                    "completed": false
+                },
+                {
+                    "title": "Add cover-plus-grid variant",
+                    "completed": false
+                },
+                {
+                    "title": "Write visual regression tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component", "shared-components"],
+            "phase": "shared-components",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:10:16.034820Z",
+                "completed": "2026-04-29T19:10:16.034820Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Create MapPlaceholder component (interactive map deferred)",
+            "description": "REQ-096-27.\n\nCreate `apps/web/src/components/MapPlaceholder.astro`: 'Ver en Google Maps' link with encoded address. Replace map areas in eventos/[slug] and destinos/[...path].\n\nFiles:\n- `apps/web/src/components/MapPlaceholder.astro` (NEW)\n- `apps/web/src/pages/[lang]/eventos/[slug].astro`\n- `apps/web/src/pages/[lang]/destinos/[...path].astro`\n\nTests:\n- `apps/web/test/components/MapPlaceholder.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-064"],
+            "subtasks": [
+                {
+                    "title": "Create MapPlaceholder.astro with Google Maps link",
+                    "completed": false
+                },
+                {
+                    "title": "Replace map areas in eventos/[slug] and destinos pages",
+                    "completed": false
+                },
+                {
+                    "title": "Write link and encoding tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component", "shared-components"],
+            "phase": "shared-components",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:10:16.034820Z",
+                "completed": "2026-04-29T19:10:16.034820Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Fix Footer broken link (propietarios path)",
+            "description": "REQ-096-14.\n\nIn `apps/web/src/layouts/Footer.astro` ~line 35, change 'Propietarios' link from `/propietarios/` to `suscriptores/propietarios`.\n\nFiles:\n- `apps/web/src/layouts/Footer.astro`\n\nTests:\n- `apps/web/test/layouts/Footer.test.ts`",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-025", "T-062"],
+            "subtasks": [
+                {
+                    "title": "Fix propietarios path in Footer.astro",
+                    "completed": false
+                },
+                {
+                    "title": "Write regression test for footer links",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "navigation", "bugfix"],
+            "phase": "navigation",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T18:27:54.606651Z",
+                "completed": "2026-04-29T18:27:54.606651Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Redesign Footer to 5-column layout with Categorias and search link",
+            "description": "REQ-096-15.\n\nRedesign `apps/web/src/layouts/Footer.astro`: 5 columns on desktop, static Categorias column, /busqueda/ link, mobile accordion.\n\nFiles:\n- `apps/web/src/layouts/Footer.astro`\n\nTests:\n- `apps/web/test/layouts/Footer.test.ts`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-024"],
+            "blocks": ["T-062"],
+            "subtasks": [
+                {
+                    "title": "Add 5-column layout to Footer.astro",
+                    "completed": false
+                },
+                {
+                    "title": "Add static Categorias curated links",
+                    "completed": false
+                },
+                {
+                    "title": "Add mobile collapsible accordion behavior",
+                    "completed": false
+                },
+                {
+                    "title": "Write layout tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "navigation", "layout"],
+            "phase": "navigation",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:19:48.692669Z",
+                "completed": "2026-04-29T19:19:48.692669Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Create UserMenu React island for Header",
+            "description": "REQ-096-16 \u2014 Part 1.\n\nCreate `apps/web/src/components/UserMenu.client.tsx` (`client:load`): unauthenticated shows 'Iniciar sesion'; authenticated shows avatar + dropdown with 6 items.\n\nFiles:\n- `apps/web/src/components/UserMenu.client.tsx` (NEW)\n\nTests:\n- `apps/web/test/components/UserMenu.test.tsx`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-027", "T-062"],
+            "subtasks": [
+                {
+                    "title": "Create UserMenu island with auth state detection",
+                    "completed": false
+                },
+                {
+                    "title": "Implement dropdown with all menu items",
+                    "completed": false
+                },
+                {
+                    "title": "Write tests for auth/unauth states",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "navigation", "auth", "component"],
+            "phase": "navigation",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:19:48.692669Z",
+                "completed": "2026-04-29T19:19:48.692669Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Redesign Header with Publicar CTA and integrate UserMenu",
+            "description": "REQ-096-16 \u2014 Part 2.\n\nRedesign `apps/web/src/layouts/Header.astro`: 'Publicar' CTA visible all widths, hamburger on mobile, 'Mi cuenta' in open hamburger for authenticated users.\n\nFiles:\n- `apps/web/src/layouts/Header.astro`\n\nTests:\n- `apps/web/test/layouts/Header.test.ts`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-026"],
+            "blocks": ["T-062"],
+            "subtasks": [
+                {
+                    "title": "Restructure Header.astro markup",
+                    "completed": false
+                },
+                {
+                    "title": "Add Publicar CTA visible across breakpoints",
+                    "completed": false
+                },
+                {
+                    "title": "Integrate UserMenu island",
+                    "completed": false
+                },
+                {
+                    "title": "Write desktop and mobile tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "navigation", "layout"],
+            "phase": "navigation",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:19:48.692669Z",
+                "completed": "2026-04-29T19:19:48.692669Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Create TagChips component for listing pages",
+            "description": "REQ-096-17.\n\nCreate `apps/web/src/components/TagChips.astro` and add to alojamientos, eventos, publicaciones listing pages.\n\nFiles:\n- `apps/web/src/components/TagChips.astro` (NEW)\n- listing pages (3)\n\nTests:\n- `apps/web/test/components/TagChips.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-062"],
+            "subtasks": [
+                {
+                    "title": "Create TagChips.astro component",
+                    "completed": false
+                },
+                {
+                    "title": "Add to alojamientos, eventos, publicaciones listing pages",
+                    "completed": false
+                },
+                {
+                    "title": "Write link navigation tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "navigation", "component"],
+            "phase": "navigation",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:19:48.692669Z",
+                "completed": "2026-04-29T19:19:48.692669Z"
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Add Breadcrumbs to accommodation pages (detail + type + amenity + feature sub-routes) [REQ-096-19 split 1/3]",
+            "description": "REQ-096-19 \u2014 Part 1 (accommodation section).\n\nAdd `<Breadcrumbs items={...} />` to:\n- `/alojamientos/[slug]/` \u2014 Inicio > Alojamientos > {name}\n- `/alojamientos/tipo/[type]/` \u2014 Inicio > Alojamientos > {type}\n- `/alojamientos/comodidades/[slug]/` \u2014 Inicio > Alojamientos > Comodidades > {name}\n- `/alojamientos/caracteristicas/[slug]/` \u2014 Inicio > Alojamientos > Caracteristicas > {name}\n\nEach page emits BreadcrumbList JSON-LD.\n\nFiles: corresponding astro pages (4).\n\nTests:\n- `apps/web/test/pages/breadcrumbs-accommodation.test.ts`\n- Each page emits valid BreadcrumbList. Path is correct for each page type.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-064", "T-067"],
+            "subtasks": [
+                {
+                    "title": "Add Breadcrumbs to accommodation detail page",
+                    "completed": true
+                },
+                {
+                    "title": "Add Breadcrumbs to alojamientos/tipo and sub-routes",
+                    "completed": true
+                },
+                {
+                    "title": "Write BreadcrumbList JSON-LD tests for accommodation pages",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "navigation", "seo"],
+            "phase": "navigation",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:18:33.441670+00:00",
+                "completed": "2026-04-29T19:19:48.692669Z"
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Add Breadcrumbs to destination and attraction pages [REQ-096-19 split 2/3]",
+            "description": "REQ-096-19 \u2014 Part 2 (destinos section).\n\nAdd `<Breadcrumbs items={...} />` to:\n- `/destinos/[...path]/` \u2014 Inicio > Destinos > {name}\n- `/destinos/{slug}/alojamientos` \u2014 Inicio > Destinos > {name} > Alojamientos\n- `/destinos/{slug}/eventos` \u2014 Inicio > Destinos > {name} > Eventos\n\nEach page emits BreadcrumbList JSON-LD.\n\nFiles: corresponding astro pages (3).\n\nTests:\n- `apps/web/test/pages/breadcrumbs-destinos.test.ts`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-064", "T-067"],
+            "subtasks": [
+                {
+                    "title": "Add Breadcrumbs to destinos/[...path] page",
+                    "completed": true
+                },
+                {
+                    "title": "Add Breadcrumbs to destinos sub-route pages (alojamientos, eventos)",
+                    "completed": true
+                },
+                {
+                    "title": "Write BreadcrumbList JSON-LD tests for destinos pages",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "navigation", "seo"],
+            "phase": "navigation",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:18:33.441670+00:00",
+                "completed": "2026-04-29T19:19:48.692669Z"
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Add Breadcrumbs to event, post and author pages + JSON-LD integration tests [REQ-096-19 split 3/3]",
+            "description": "REQ-096-19 \u2014 Part 3 (eventos + publicaciones section).\n\nAdd `<Breadcrumbs items={...} />` to:\n- `/eventos/[slug]/` \u2014 Inicio > Eventos > {title}\n- `/eventos/categoria/[cat]/` \u2014 Inicio > Eventos > {cat}\n- `/publicaciones/[slug]/` \u2014 Inicio > Publicaciones > {title}\n- `/publicaciones/categoria/[cat]/` \u2014 similar\n- `/publicaciones/etiqueta/[tag]/` \u2014 similar\n- `/publicaciones/autor/[slug]/` \u2014 Inicio > Publicaciones > Autores > {name}\n\nEach page emits BreadcrumbList JSON-LD.\n\nFiles: corresponding astro pages (6).\n\nTests:\n- `apps/web/test/pages/breadcrumbs-events-posts.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-064", "T-067"],
+            "subtasks": [
+                {
+                    "title": "Add Breadcrumbs to eventos detail and category pages",
+                    "completed": true
+                },
+                {
+                    "title": "Add Breadcrumbs to publicaciones detail, category, tag and autor pages",
+                    "completed": true
+                },
+                {
+                    "title": "Write BreadcrumbList JSON-LD integration tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "navigation", "seo"],
+            "phase": "navigation",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:18:33.441670+00:00",
+                "completed": "2026-04-29T19:19:48.692669Z"
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Update API PATCH /protected/users to enforce field-level permission by scope",
+            "description": "REQ-096-05 \u2014 Part 3 (API enforcement).\n\nUpdate protected update handler: only *Web fields allowed from web scope. Admin route allows all 4 fields. Reject unknown fields.\n\nFiles:\n- `apps/api/src/routes/user/protected/update.ts`\n- `apps/api/src/routes/user/admin/update.ts`\n\nTests:\n- `apps/api/test/routes/user/protected/update.test.ts`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-040"],
+            "subtasks": [
+                {
+                    "title": "Add web-scope field filtering to protected update handler",
+                    "completed": false
+                },
+                {
+                    "title": "Verify admin scope allows all fields",
+                    "completed": false
+                },
+                {
+                    "title": "Write permission boundary tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "api", "user", "settings"],
+            "phase": "schemas",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:10:16.034820Z",
+                "completed": "2026-04-29T19:10:16.034820Z"
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Verify or create contact form public API endpoint",
+            "description": "REQ-096-30 \u2014 Part 1 (API layer).\n\nVerify/create POST /api/v1/public/contact: validate with ContactSubmitSchema, honeypot, rate limit 5 req/60s, email notification.\n\nFiles:\n- `apps/api/src/routes/contact/public/submit.ts`\n- `apps/api/src/routes/contact/public/index.ts`\n\nTests:\n- `apps/api/test/routes/contact/public/submit.test.ts`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-049"],
+            "subtasks": [
+                {
+                    "title": "Create/update contact submit route with honeypot logic",
+                    "completed": false
+                },
+                {
+                    "title": "Add email notification on success",
+                    "completed": false
+                },
+                {
+                    "title": "Write integration tests including honeypot and rate limit",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "api", "contact"],
+            "phase": "prerequisites",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:10:16.034820Z",
+                "completed": "2026-04-29T19:10:16.034820Z"
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Create CategoryTiles section on homepage",
+            "description": "REQ-096-18.\n\nCreate `apps/web/src/components/CategoryTiles.astro` and insert into homepage.\n\nFiles:\n- `apps/web/src/components/CategoryTiles.astro` (NEW)\n- `apps/web/src/pages/[lang]/index.astro`\n\nTests:\n- `apps/web/test/components/CategoryTiles.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-062"],
+            "subtasks": [
+                {
+                    "title": "Create CategoryTiles.astro component",
+                    "completed": false
+                },
+                {
+                    "title": "Insert into homepage at correct position",
+                    "completed": false
+                },
+                {
+                    "title": "Write tile rendering and link tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "navigation", "homepage"],
+            "phase": "navigation",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:19:48.692669Z",
+                "completed": "2026-04-29T19:19:48.692669Z"
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Create ProfileEditForm component with Zod validation and pre-population [REQ-096-20 split 1/3]",
+            "description": "REQ-096-20 \u2014 Part 1 (form component).\n\nCreate `apps/web/src/components/account/ProfileEditForm.client.tsx` (`client:load`):\n- Pre-populated from auth session: displayName, firstName, lastName, bio, phone.\n- Inline validation using `ProfileEditSchema` from T-013.\n- Submit calls PATCH /api/v1/protected/users/{id}.\n- Success toast + form reflects saved state. Inline errors on invalid fields.\n\nFiles:\n- `apps/web/src/components/account/ProfileEditForm.client.tsx` (NEW)\n\nTests:\n- `apps/web/test/components/account/ProfileEditForm.test.tsx`\n- Pre-populated. Invalid displayName shows inline error. Success path: PATCH called, toast shown.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-013", "T-016"],
+            "blocks": ["T-036"],
+            "subtasks": [
+                {
+                    "title": "Create ProfileEditForm with field pre-population",
+                    "completed": false
+                },
+                {
+                    "title": "Wire ProfileEditSchema validation and inline errors",
+                    "completed": false
+                },
+                {
+                    "title": "Implement PATCH submit + success toast",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "account", "component"],
+            "phase": "account",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Implement avatar preview + upload on submit in ProfileEditForm [REQ-096-20 split 2/3]",
+            "description": "REQ-096-20 \u2014 Part 2 (avatar upload).\n\nExtend `ProfileEditForm.client.tsx`:\n- File input for avatar: preview before submit using `URL.createObjectURL`.\n- On form submit: upload avatar to Cloudinary first (if changed), then PATCH with new `avatarUrl`.\n- Handle upload errors gracefully with error toast.\n\nFiles:\n- `apps/web/src/components/account/ProfileEditForm.client.tsx`\n\nTests:\n- Avatar preview shows on file select.\n- Upload error shows error toast, PATCH not called.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-035"],
+            "blocks": ["T-037"],
+            "subtasks": [
+                {
+                    "title": "Add avatar file input with preview",
+                    "completed": false
+                },
+                {
+                    "title": "Implement Cloudinary upload on submit",
+                    "completed": false
+                },
+                {
+                    "title": "Handle upload error with toast and abort PATCH",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "account", "component"],
+            "phase": "account",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Wire ProfileEditForm to /mi-cuenta/editar/ page + write tests [REQ-096-20 split 3/3]",
+            "description": "REQ-096-20 \u2014 Part 3 (page wiring + tests).\n\nUpdate `apps/web/src/pages/[lang]/mi-cuenta/editar/index.astro` to mount the ProfileEditForm island. Ensure page guards unauthenticated users (redirect to auth).\n\nWrite full test suite covering avatar preview, validation, PATCH success and failure paths.\n\nFiles:\n- `apps/web/src/pages/[lang]/mi-cuenta/editar/index.astro`\n- `apps/web/test/components/account/ProfileEditForm.test.tsx` (complete suite)\n\nBlocks: T-063 (account i18n keys).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-036"],
+            "blocks": ["T-063"],
+            "subtasks": [
+                {
+                    "title": "Mount ProfileEditForm island in editar page",
+                    "completed": false
+                },
+                {
+                    "title": "Add auth guard redirect on unauthenticated access",
+                    "completed": false
+                },
+                {
+                    "title": "Complete full test suite for avatar + validation + PATCH paths",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "account", "component"],
+            "phase": "account",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Create UserFavoritesList React island for /mi-cuenta/favoritos/",
+            "description": "REQ-096-21.\n\nCreate `apps/web/src/components/account/UserFavoritesList.client.tsx`: 12/page grid, optimistic Quitar, EmptyState CTA.\n\nFiles:\n- `apps/web/src/components/account/UserFavoritesList.client.tsx` (NEW)\n- `apps/web/src/pages/[lang]/mi-cuenta/favoritos/index.astro`\n\nTests:\n- `apps/web/test/components/account/UserFavoritesList.test.tsx`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-016"],
+            "blocks": ["T-063"],
+            "subtasks": [
+                {
+                    "title": "Create UserFavoritesList with API fetch and card grid",
+                    "completed": false
+                },
+                {
+                    "title": "Implement Quitar button with optimistic delete",
+                    "completed": false
+                },
+                {
+                    "title": "Add pagination and EmptyState",
+                    "completed": false
+                },
+                {
+                    "title": "Write island tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "account", "component"],
+            "phase": "account",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Create UserReviewsList React island for /mi-cuenta/resenas/",
+            "description": "REQ-096-22.\n\nCreate `apps/web/src/components/account/UserReviewsList.client.tsx` (`client:visible`): 10/page, entity links, EmptyState, read-only.\n\nFiles:\n- `apps/web/src/components/account/UserReviewsList.client.tsx` (NEW)\n- `apps/web/src/pages/[lang]/mi-cuenta/resenas/index.astro`\n\nTests:\n- `apps/web/test/components/account/UserReviewsList.test.tsx`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-016"],
+            "blocks": ["T-063"],
+            "subtasks": [
+                {
+                    "title": "Create UserReviewsList with review cards",
+                    "completed": false
+                },
+                {
+                    "title": "Add entity links and pagination",
+                    "completed": false
+                },
+                {
+                    "title": "Wire to /mi-cuenta/resenas/ Astro page",
+                    "completed": false
+                },
+                {
+                    "title": "Write island tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "account", "component"],
+            "phase": "account",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Create PreferenceToggles React island for /mi-cuenta/preferencias/",
+            "description": "REQ-096-23.\n\nCreate `apps/web/src/components/account/PreferenceToggles.client.tsx`: web-only fields, auto-save PATCH, optimistic update, CSS variable swap on theme change.\n\nFiles:\n- `apps/web/src/components/account/PreferenceToggles.client.tsx` (NEW)\n- `apps/web/src/pages/[lang]/mi-cuenta/preferencias/index.astro`\n\nTests:\n- `apps/web/test/components/account/PreferenceToggles.test.tsx`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011", "T-012", "T-032"],
+            "blocks": ["T-063"],
+            "subtasks": [
+                {
+                    "title": "Create PreferenceToggles with web-only fields",
+                    "completed": false
+                },
+                {
+                    "title": "Implement auto-save with optimistic update",
+                    "completed": false
+                },
+                {
+                    "title": "Apply CSS variable swap on theme change",
+                    "completed": false
+                },
+                {
+                    "title": "Write tests for field visibility and revert behavior",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "account", "component"],
+            "phase": "account",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Create SubscriptionDashboard layout with plan data display [REQ-096-24 split 1/3]",
+            "description": "REQ-096-24 \u2014 Part 1 (layout + data).\n\nCreate `apps/web/src/components/account/SubscriptionDashboard.client.tsx` (`client:load`):\n- Fetches GET /protected/users/me/subscription and GET /public/plans.\n- Displays: plan name, status, next billing date, payment method (display only), plan features.\n- 'Actualizar plan' link to /suscriptores/planes/.\n- 'Descargar ultima factura' button.\n\nFiles:\n- `apps/web/src/components/account/SubscriptionDashboard.client.tsx` (NEW)\n- `apps/web/src/pages/[lang]/mi-cuenta/suscripcion/index.astro`\n\nTests: plan data displayed. Both API calls made in parallel.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-042"],
+            "subtasks": [
+                {
+                    "title": "Create SubscriptionDashboard with parallel API fetch",
+                    "completed": false
+                },
+                {
+                    "title": "Render plan info, status, billing date and features",
+                    "completed": false
+                },
+                {
+                    "title": "Add Actualizar plan link and Descargar factura button",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "account", "component", "billing"],
+            "phase": "account",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Implement cancel modal + Descargar factura button in SubscriptionDashboard [REQ-096-24 split 2/3]",
+            "description": "REQ-096-24 \u2014 Part 2 (cancel modal).\n\nExtend `SubscriptionDashboard.client.tsx`:\n- 'Cancelar suscripcion' button opens a confirmation modal.\n- Modal: confirmation text + 'Confirmar cancelacion' + 'Volver' buttons.\n- On confirm: call DELETE /protected/users/me/subscription; update UI.\n- Handle API errors with error toast.\n\nFiles:\n- `apps/web/src/components/account/SubscriptionDashboard.client.tsx`\n\nTests: cancel modal shows on button click. Confirm calls DELETE. Error toast on failure.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-041"],
+            "blocks": ["T-043"],
+            "subtasks": [
+                {
+                    "title": "Implement cancel confirmation modal",
+                    "completed": false
+                },
+                {
+                    "title": "Wire cancel confirm to DELETE endpoint",
+                    "completed": false
+                },
+                {
+                    "title": "Handle errors and update UI state after cancel",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "account", "component", "billing"],
+            "phase": "account",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Add role-conditional Mas opciones + write SubscriptionDashboard tests [REQ-096-24 split 3/3]",
+            "description": "REQ-096-24 \u2014 Part 3 (role guard + tests).\n\nExtend `SubscriptionDashboard.client.tsx`:\n- Role >= HOST: show 'Mas opciones (panel admin)' link to ADMIN_URL/billing/settings.\n- Role USER: 'Mas opciones' absent.\n\nWrite full test suite:\n- All plan data displayed. Cancel modal opens. HOST role: 'Mas opciones' visible. USER role: absent.\n\nBlocks: T-063 (account i18n keys).\n\nFiles:\n- `apps/web/src/components/account/SubscriptionDashboard.client.tsx`\n- `apps/web/test/components/account/SubscriptionDashboard.test.tsx` (NEW)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-042"],
+            "blocks": ["T-063"],
+            "subtasks": [
+                {
+                    "title": "Add role-conditional Mas opciones button",
+                    "completed": false
+                },
+                {
+                    "title": "Write role-conditional visibility tests",
+                    "completed": false
+                },
+                {
+                    "title": "Write full cancel modal and plan data tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "account", "component", "billing"],
+            "phase": "account",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-044",
+            "title": "Make /publicaciones/autor/[slug]/ page functional using user-by-slug endpoint",
+            "description": "REQ-096-28.\n\nUpdate autor/[slug] page: SSR calls T-006 endpoint, 404 on miss, renders author data + post list. Re-enable author links in post cards.\n\nFiles:\n- `apps/web/src/pages/[lang]/publicaciones/autor/[slug]/index.astro`\n- `apps/web/src/components/post/PostCard.astro`\n\nTests:\n- `apps/web/test/pages/autor-slug.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Update autor/[slug] page to consume getBySlug endpoint",
+                    "completed": false
+                },
+                {
+                    "title": "Re-enable author links in post cards",
+                    "completed": false
+                },
+                {
+                    "title": "Write 200 and 404 page tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "polish", "posts"],
+            "phase": "polish",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-045",
+            "title": "Add real counts to /destinos/[...path]/ sidebar",
+            "description": "REQ-096-25.\n\nReplace TODO count placeholders in destinos page with real parallel Promise.all calls for accommodation and event counts (pageSize=0 mode).\n\nFiles:\n- `apps/web/src/pages/[lang]/destinos/[...path].astro`\n\nTests:\n- `apps/web/test/pages/destino-detail-counts.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Replace count TODOs with parallel API calls",
+                    "completed": false
+                },
+                {
+                    "title": "Write parallel fetch and render tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "polish", "destinations"],
+            "phase": "polish",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-046",
+            "title": "Create /busqueda/ SSR shell with grouped result rendering [REQ-096-29 split 1/3]",
+            "description": "REQ-096-29 \u2014 Part 1 (SSR shell).\n\nUpdate `apps/web/src/pages/[lang]/busqueda/index.astro`:\n- SSR: if query param present, call search endpoint and render static grouped results (Alojamientos, Destinos, Eventos, Publicaciones) with count and 5 cards + 'Ver todos' link per group.\n- Without query: render search field + popular tags.\n- Add noindex meta tag in head.\n\nFiles:\n- `apps/web/src/pages/[lang]/busqueda/index.astro`\n\nTests:\n- noindex present in head.\n- 'Ver todos' links include correct query param.\n- Popular tags rendered when no query.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-047"],
+            "subtasks": [
+                {
+                    "title": "Render grouped SSR results with count and 5 cards per group",
+                    "completed": false
+                },
+                {
+                    "title": "Add noindex meta and popular tags fallback",
+                    "completed": false
+                },
+                {
+                    "title": "Write noindex and Ver todos link tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "polish", "search"],
+            "phase": "polish",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-047",
+            "title": "Create SearchResults island with debounced live filtering [REQ-096-29 split 2/3]",
+            "description": "REQ-096-29 \u2014 Part 2 (live island).\n\nCreate `apps/web/src/components/SearchResults.client.tsx` (React island, `client:load`):\n- Input field with 300ms debounce.\n- On input >= 2 chars: call GET /api/v1/public/search and update grouped results in-place.\n- Empty state for < 2 chars or zero results.\n- Replaces SSR-rendered results with live updates.\n\nFiles:\n- `apps/web/src/components/SearchResults.client.tsx` (NEW)\n- `apps/web/src/pages/[lang]/busqueda/index.astro` (mount island)\n\nTests:\n- Results update after 300ms debounce.\n- Empty state shows on < 2 chars.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-046"],
+            "blocks": ["T-048"],
+            "subtasks": [
+                {
+                    "title": "Create SearchResults island with debounce hook",
+                    "completed": false
+                },
+                {
+                    "title": "Render live grouped results from search API",
+                    "completed": false
+                },
+                {
+                    "title": "Show empty state on insufficient input",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "polish", "search"],
+            "phase": "polish",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-048",
+            "title": "Write full /busqueda/ page integration tests [REQ-096-29 split 3/3]",
+            "description": "REQ-096-29 \u2014 Part 3 (tests).\n\nWrite `apps/web/test/pages/busqueda.test.ts`:\n- noindex present.\n- 'Ver todos' links to entity listing with query pre-filled.\n- Results update after debounce (mock search API).\n- Empty state on < 2 chars.\n- 0 results from API \u2192 'Sin resultados' message per group.\n\nBlocks: T-064 (shared-component i18n includes SearchResults strings).\n\nFiles:\n- `apps/web/test/pages/busqueda.test.ts` (NEW)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-047"],
+            "blocks": ["T-064"],
+            "subtasks": [
+                {
+                    "title": "Write noindex and Ver todos link tests",
+                    "completed": false
+                },
+                {
+                    "title": "Write debounce and empty-state behavior tests",
+                    "completed": false
+                },
+                {
+                    "title": "Write zero-results message test",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "polish", "search", "testing"],
+            "phase": "polish",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-049",
+            "title": "Create ContactForm React island and wire to /contacto/ page",
+            "description": "REQ-096-30.\n\nCreate `apps/web/src/components/ContactForm.client.tsx` (`client:load`): conditional accommodationId field, honeypot, success state, rate limit error handling.\n\nFiles:\n- `apps/web/src/components/ContactForm.client.tsx` (NEW)\n- `apps/web/src/pages/[lang]/contacto/index.astro`\n\nTests:\n- `apps/web/test/components/ContactForm.test.tsx`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-014", "T-016", "T-033"],
+            "blocks": ["T-064"],
+            "subtasks": [
+                {
+                    "title": "Create ContactForm with conditional accommodationId field",
+                    "completed": false
+                },
+                {
+                    "title": "Add honeypot field and success state",
+                    "completed": false
+                },
+                {
+                    "title": "Wire to /contacto/ page and write tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "polish", "contact"],
+            "phase": "polish",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-050",
+            "title": "Add ShareButtons to event and post detail pages",
+            "description": "REQ-096-26.\n\nReplace share placeholders in eventos/[slug].astro and publicaciones/[slug].astro with `<ShareButtons client:visible />`.\n\nFiles:\n- `apps/web/src/pages/[lang]/eventos/[slug].astro`\n- `apps/web/src/pages/[lang]/publicaciones/[slug].astro`\n\nTests:\n- `apps/web/test/pages/share-buttons-integration.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add ShareButtons to event detail page",
+                    "completed": false
+                },
+                {
+                    "title": "Add ShareButtons to post detail page",
+                    "completed": false
+                },
+                {
+                    "title": "Write canonical URL construction tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "polish", "events", "posts"],
+            "phase": "polish",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-051",
+            "title": "Add AboutPage JSON-LD to /nosotros/ and /beneficios/",
+            "description": "REQ-096-40.\n\nExtend `apps/web/src/lib/jsonld.ts` with `generateAboutPageJsonLd`. Add to nosotros and beneficios pages.\n\nFiles:\n- `apps/web/src/lib/jsonld.ts`\n- `apps/web/src/pages/[lang]/nosotros/index.astro`\n- `apps/web/src/pages/[lang]/beneficios/index.astro`\n\nTests:\n- `apps/web/test/lib/jsonld.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-064", "T-067"],
+            "subtasks": [
+                {
+                    "title": "Add generateAboutPageJsonLd helper",
+                    "completed": false
+                },
+                {
+                    "title": "Add JSON-LD to nosotros and beneficios pages",
+                    "completed": false
+                },
+                {
+                    "title": "Write JSON-LD output tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "seo", "marketing-polish", "json-ld"],
+            "phase": "marketing-polish",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-052",
+            "title": "Add PriceSpecification JSON-LD to pricing pages",
+            "description": "REQ-096-41.\n\nExtend jsonld.ts with `generateOfferJsonLd`. Add Offer + PriceSpecification per plan to suscriptores/turistas and suscriptores/planes pages.\n\nFiles:\n- `apps/web/src/lib/jsonld.ts`\n- `apps/web/src/pages/[lang]/suscriptores/turistas/index.astro`\n- `apps/web/src/pages/[lang]/suscriptores/planes/index.astro`\n\nTests:\n- `apps/web/test/lib/jsonld.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-064", "T-067"],
+            "subtasks": [
+                {
+                    "title": "Add generateOfferJsonLd helper",
+                    "completed": false
+                },
+                {
+                    "title": "Add JSON-LD to turistas and planes pages",
+                    "completed": false
+                },
+                {
+                    "title": "Write Offer/PriceSpecification structure tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "seo", "marketing-polish", "json-ld", "billing"],
+            "phase": "marketing-polish",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-053",
+            "title": "Add FAQPage JSON-LD to legal pages",
+            "description": "REQ-096-42.\n\nExtend jsonld.ts with `generateFaqPageJsonLd` (Article fallback). Add to privacidad, terminos, cookies pages.\n\nFiles:\n- `apps/web/src/lib/jsonld.ts`\n- 3 legal pages\n\nTests:\n- `apps/web/test/lib/jsonld.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-064", "T-067"],
+            "subtasks": [
+                {
+                    "title": "Add generateFaqPageJsonLd helper with Article fallback",
+                    "completed": false
+                },
+                {
+                    "title": "Add JSON-LD to all 3 legal pages",
+                    "completed": false
+                },
+                {
+                    "title": "Write Q/A mapping and fallback tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "seo", "marketing-polish", "json-ld"],
+            "phase": "marketing-polish",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-054",
+            "title": "Add EmptyState fallback to pricing pages when plan data unavailable",
+            "description": "REQ-096-43.\n\nWrap plan grid in suscriptores/turistas and suscriptores/planes with conditional: empty plans \u2192 EmptyState with CTA to /contacto/.\n\nFiles:\n- `apps/web/src/pages/[lang]/suscriptores/turistas/index.astro`\n- `apps/web/src/pages/[lang]/suscriptores/planes/index.astro`\n\nTests:\n- `apps/web/test/pages/pricing-empty-state.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-016"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add conditional EmptyState to turistas page",
+                    "completed": false
+                },
+                {
+                    "title": "Add conditional EmptyState to planes page",
+                    "completed": false
+                },
+                {
+                    "title": "Write empty/non-empty state tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "marketing-polish", "component"],
+            "phase": "marketing-polish",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-055",
+            "title": "Convert admin profile page to editable form",
+            "description": "REQ-096-31.\n\nConvert `apps/admin/src/routes/_authed/me/profile.tsx` to react-hook-form + ProfileEditSchema. PATCH on save.\n\nFiles:\n- `apps/admin/src/routes/_authed/me/profile.tsx`\n\nTests:\n- `apps/admin/test/routes/me/profile.test.tsx`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-013"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Convert profile page to react-hook-form + Zod form",
+                    "completed": false
+                },
+                {
+                    "title": "Add PATCH on save with success toast",
+                    "completed": false
+                },
+                {
+                    "title": "Write form pre-population and validation tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "cross-app", "profile"],
+            "phase": "cross-app",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-056",
+            "title": "Adapt admin settings page to 4-field theme/language schema",
+            "description": "REQ-096-32.\n\nUpdate `apps/admin/src/routes/_authed/me/settings.tsx`: 2 sections Web/Admin + shared notifications. Remove legacy fields. Update hook.\n\nFiles:\n- `apps/admin/src/routes/_authed/me/settings.tsx`\n- `apps/admin/src/hooks/useUpdateUserSettings.ts`\n\nTests:\n- `apps/admin/test/routes/me/settings.test.tsx`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-011", "T-012"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Split settings into Web/Admin sections",
+                    "completed": false
+                },
+                {
+                    "title": "Update hook to use new field names",
+                    "completed": false
+                },
+                {
+                    "title": "Write tests for section rendering and auto-save",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "cross-app", "settings"],
+            "phase": "cross-app",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-057",
+            "title": "Fix ISR exclude regex in astro.config.mjs",
+            "description": "REQ-096-33 (T-013 from SPEC-075).\n\nConsolidated regex: `/^(\\/(?:en|pt))?\\/(?:auth|mi-cuenta|busqueda|feedback)(\\/.*)?$/`. Verify filter sub-routes not excluded.\n\nFiles:\n- `apps/web/astro.config.mjs`\n\nTests:\n- `apps/web/test/config/isr-exclude.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Update astro.config.mjs with consolidated ISR regex",
+                    "completed": false
+                },
+                {
+                    "title": "Write regex matching unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "infrastructure", "isr"],
+            "phase": "infrastructure",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-058",
+            "title": "Create dynamic sitemap endpoint (sitemap-dynamic.xml)",
+            "description": "REQ-096-34 \u2014 Part 1.\n\nCreate `apps/web/src/pages/sitemap-dynamic.xml.ts`: parallel fetch 4 entity types, 3 locale URLs per entity, 24h ISR cache, partial failure handling.\n\nFiles:\n- `apps/web/src/pages/sitemap-dynamic.xml.ts` (NEW)\n\nTests:\n- `apps/web/test/pages/sitemap-dynamic.test.ts`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-059"],
+            "subtasks": [
+                {
+                    "title": "Create sitemap endpoint with parallel entity fetches",
+                    "completed": false
+                },
+                {
+                    "title": "Add partial failure handling",
+                    "completed": false
+                },
+                {
+                    "title": "Write XML structure and partial failure tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "infrastructure", "sitemap", "seo"],
+            "phase": "infrastructure",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-059",
+            "title": "Integrate dynamic sitemap into astro.config.mjs sitemap plugin",
+            "description": "REQ-096-34 \u2014 Part 2.\n\nAdd `customPages: ['https://{domain}/sitemap-dynamic.xml']` to sitemap plugin config.\n\nFiles:\n- `apps/web/astro.config.mjs`\n\nTests:\n- `apps/web/test/config/sitemap-config.test.ts`",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-058"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add customPages entry to sitemap plugin config",
+                    "completed": false
+                },
+                {
+                    "title": "Verify sitemap-index.xml includes both sitemaps",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "infrastructure", "sitemap"],
+            "phase": "infrastructure",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-060",
+            "title": "Fix entity path mapper enum slugs (accommodation types + event categories)",
+            "description": "REQ-096-35 \u2014 Part 1.\n\nFix `entity-path-mapper.ts`: exactly 10 accommodation types, exactly 9 event categories per enums.\n\nFiles:\n- `packages/service-core/src/revalidation/entity-path-mapper.ts`\n\nTests:\n- `packages/service-core/test/revalidation/entity-path-mapper.test.ts`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-061"],
+            "subtasks": [
+                {
+                    "title": "Fix accommodation type slug list to 10 valid enums",
+                    "completed": false
+                },
+                {
+                    "title": "Fix event category slug list to 9 valid enums",
+                    "completed": false
+                },
+                {
+                    "title": "Write enum completeness tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["infrastructure", "revalidation", "service-core"],
+            "phase": "infrastructure",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-061",
+            "title": "Extend entity path mapper with amenity, feature, author, attraction revalidation paths",
+            "description": "REQ-096-35 \u2014 Part 2.\n\nExtend entity-path-mapper.ts: accommodation update clears amenity + feature sub-routes; event update clears destination events; post update clears author; destination update clears attraction paths.\n\nFiles:\n- `packages/service-core/src/revalidation/entity-path-mapper.ts`\n\nTests:\n- `packages/service-core/test/revalidation/entity-path-mapper.test.ts`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-060"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add amenity/feature paths to accommodation revalidation",
+                    "completed": false
+                },
+                {
+                    "title": "Add destination events path to event revalidation",
+                    "completed": false
+                },
+                {
+                    "title": "Add author path to post revalidation",
+                    "completed": false
+                },
+                {
+                    "title": "Add attraction paths to destination revalidation",
+                    "completed": false
+                },
+                {
+                    "title": "Write all 4 new revalidation path tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["infrastructure", "revalidation", "service-core"],
+            "phase": "infrastructure",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T19:45:56.255804Z",
+                "completed": "2026-04-29T19:45:56.255804Z"
+            }
+        },
+        {
+            "id": "T-062",
+            "title": "Add i18n keys for navigation components (Header, Footer, TagChips, CategoryTiles, UserMenu)",
+            "description": "REQ-096-36 \u2014 navigation namespace.\n\nAdd all new strings from navigation components to `packages/i18n/locales/{es,en,pt}/web/navigation.json`.\n\nFiles:\n- `packages/i18n/locales/es/web/navigation.json`\n- `packages/i18n/locales/en/web/navigation.json`\n- `packages/i18n/locales/pt/web/navigation.json`\n\nTests: CI i18n-check must pass.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-024", "T-025", "T-026", "T-027", "T-028", "T-034"],
+            "blocks": ["T-065"],
+            "subtasks": [
+                {
+                    "title": "Add navigation keys to es locale",
+                    "completed": false
+                },
+                {
+                    "title": "Add navigation keys to en locale",
+                    "completed": false
+                },
+                {
+                    "title": "Add navigation keys to pt locale",
+                    "completed": false
+                }
+            ],
+            "tags": ["i18n", "navigation"],
+            "phase": "i18n",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T20:02:37.128908Z",
+                "completed": "2026-04-29T20:02:37.128908Z"
+            }
+        },
+        {
+            "id": "T-063",
+            "title": "Add i18n keys for account islands",
+            "description": "REQ-096-36 \u2014 account namespace.\n\nAdd all strings from account islands to `packages/i18n/locales/{es,en,pt}/web/account.json`.\n\nFiles:\n- `packages/i18n/locales/{es,en,pt}/web/account.json`\n\nTests: CI i18n-check must pass.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-037", "T-038", "T-039", "T-040", "T-043"],
+            "blocks": ["T-065"],
+            "subtasks": [
+                {
+                    "title": "Add account keys to all 3 locales",
+                    "completed": false
+                },
+                {
+                    "title": "Run i18n-check CI to verify parity",
+                    "completed": false
+                }
+            ],
+            "tags": ["i18n", "account"],
+            "phase": "i18n",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T20:02:37.128908Z",
+                "completed": "2026-04-29T20:02:37.128908Z"
+            }
+        },
+        {
+            "id": "T-064",
+            "title": "Add i18n keys for shared components and polish/marketing pages",
+            "description": "REQ-096-36 \u2014 shared components + marketing/legal namespace.\n\nAdd strings for: Breadcrumbs, EmptyState, ErrorBanner, ShareButtons, MapPlaceholder, ContactForm, SearchResults, Marketing EmptyState, Legal pages.\n\nFiles:\n- `packages/i18n/locales/{es,en,pt}/web/shared.json`\n- `packages/i18n/locales/{es,en,pt}/web/contact.json`\n- `packages/i18n/locales/{es,en,pt}/web/search.json`\n\nTests: CI i18n-check must pass.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [
+                "T-015",
+                "T-016",
+                "T-017",
+                "T-020",
+                "T-021",
+                "T-023",
+                "T-029",
+                "T-030",
+                "T-031",
+                "T-048",
+                "T-049",
+                "T-051",
+                "T-052",
+                "T-053"
+            ],
+            "blocks": ["T-065"],
+            "subtasks": [
+                {
+                    "title": "Add shared component keys to all 3 locales",
+                    "completed": false
+                },
+                {
+                    "title": "Add contact/search/marketing keys to all 3 locales",
+                    "completed": false
+                },
+                {
+                    "title": "Run i18n-check to verify no missing keys",
+                    "completed": false
+                }
+            ],
+            "tags": ["i18n", "shared-components", "marketing-polish"],
+            "phase": "i18n",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T20:02:37.128908Z",
+                "completed": "2026-04-29T20:02:37.128908Z"
+            }
+        },
+        {
+            "id": "T-065",
+            "title": "Extend i18n-check CI to enforce all new web namespaces",
+            "description": "REQ-096-36 \u2014 CI enforcement.\n\nExtend `packages/i18n/scripts/check-parity.ts` to cover all web/* namespaces added by this spec. Verify exits non-zero on missing key.\n\nFiles:\n- `packages/i18n/scripts/check-parity.ts`\n\nTests:\n- Run pnpm i18n:check \u2192 exits 0 after all T-062..T-064 keys added.\n- Remove a key intentionally \u2192 exits non-zero.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-062", "T-063", "T-064"],
+            "blocks": ["T-066"],
+            "subtasks": [
+                {
+                    "title": "Extend i18n-check to cover all new web namespaces",
+                    "completed": false
+                },
+                {
+                    "title": "Verify i18n-check exits non-zero on missing key",
+                    "completed": false
+                }
+            ],
+            "tags": ["i18n", "ci"],
+            "phase": "i18n",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T20:02:37.128908Z",
+                "completed": "2026-04-29T20:02:37.128908Z"
+            }
+        },
+        {
+            "id": "T-066",
+            "title": "Run Rich Results Test on 1 representative page per entity type [REQ-096-37 split 1/3]",
+            "description": "REQ-096-37 \u2014 Part 1 (audit).\n\nRun Google Rich Results Test (or structured-data-testing-tool CLI) on 1 page per entity type on staging:\n- 1 accommodation detail page\n- 1 event detail page\n- 1 post detail page\n- 1 destination detail page\n\nDocument all JSON-LD errors and warnings found. Create checklist of gaps to fix in T-067.\n\nFiles:\n- `.claude/tasks/SPEC-096-web-beta-readiness/jsonld-audit-results.md` (NEW)\n\nDone criteria: audit results documented with specific gaps per entity type.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-065"],
+            "blocks": ["T-067"],
+            "subtasks": [
+                {
+                    "title": "Run Rich Results Test on accommodation and event detail pages",
+                    "completed": false
+                },
+                {
+                    "title": "Run Rich Results Test on post and destination detail pages",
+                    "completed": false
+                },
+                {
+                    "title": "Document all gaps in jsonld-audit-results.md",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "seo", "json-ld", "seo-perf"],
+            "phase": "seo-perf",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T20:02:37.128908Z",
+                "completed": "2026-04-29T20:02:37.128908Z"
+            }
+        },
+        {
+            "id": "T-067",
+            "title": "Fix accommodation, event, post and destination JSON-LD gaps [REQ-096-37 split 2/3]",
+            "description": "REQ-096-37 \u2014 Part 2 (fix gaps).\n\nBased on T-066 audit results, fix all identified JSON-LD gaps in `apps/web/src/lib/jsonld.ts` and detail pages:\n- Accommodation: @type mapping from AccommodationTypeEnum (Hotel, Hostel, Motel, Resort, Campground, LodgingBusiness fallback).\n- Event: eventStatus mapping (cancelled\u2192EventCancelled, rescheduled\u2192EventRescheduled, active\u2192EventScheduled).\n- Post: BlogPosting JSON-LD with required fields (author, datePublished, headline).\n- Destination: TouristDestination with name + containedInPlace.\n\nFiles:\n- `apps/web/src/lib/jsonld.ts`\n- Detail page .astro files\n\nTests:\n- `apps/web/test/lib/jsonld-audit.test.ts` (NEW)\n- generateAccommodationJsonLd(type='hotel') \u2192 @type='Hotel'. eventStatus mapping covers all 3 states. BlogPosting has required fields. TouristDestination has name + containedInPlace.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-066", "T-029", "T-030", "T-031", "T-051", "T-052", "T-053"],
+            "blocks": ["T-068"],
+            "subtasks": [
+                {
+                    "title": "Fix accommodation JSON-LD @type mapping from enum",
+                    "completed": false
+                },
+                {
+                    "title": "Fix event eventStatus mapping and post BlogPosting fields",
+                    "completed": false
+                },
+                {
+                    "title": "Fix destination TouristDestination JSON-LD",
+                    "completed": false
+                },
+                {
+                    "title": "Write type mapping unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "seo", "json-ld", "seo-perf"],
+            "phase": "seo-perf",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T20:02:37.128908Z",
+                "completed": "2026-04-29T20:02:37.128908Z"
+            }
+        },
+        {
+            "id": "T-068",
+            "title": "Audit BreadcrumbList and FAQPage JSON-LD integration across detail pages [REQ-096-37 split 3/3]",
+            "description": "REQ-096-37 \u2014 Part 3 (BreadcrumbList + FAQPage audit).\n\nVerify BreadcrumbList JSON-LD is correctly emitted on ALL 13 page types from T-029/T-030/T-031. Verify FAQPage from T-053 passes Rich Results Test. Fix any remaining integration gaps.\n\nRe-run Rich Results Test on 1 fixed page per entity type to confirm pass.\n\nFiles:\n- `apps/web/src/lib/jsonld.ts` (any remaining fixes)\n- Detail pages (targeted fixes only)\n\nTests:\n- `apps/web/test/lib/jsonld-audit.test.ts` (extend with BreadcrumbList assertions)\n- BreadcrumbList present on all 13 page types. FAQPage on legal pages passes validation.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-067"],
+            "blocks": ["T-069"],
+            "subtasks": [
+                {
+                    "title": "Verify BreadcrumbList presence on all 13 page types",
+                    "completed": false
+                },
+                {
+                    "title": "Verify FAQPage passes Rich Results Test on legal pages",
+                    "completed": false
+                },
+                {
+                    "title": "Fix any remaining BreadcrumbList or FAQPage integration gaps",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "seo", "json-ld", "seo-perf"],
+            "phase": "seo-perf",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T20:02:37.128908Z",
+                "completed": "2026-04-29T20:02:37.128908Z"
+            }
+        },
+        {
+            "id": "T-069",
+            "title": "Run Lighthouse audit on 5 representative pages and document results",
+            "description": "REQ-096-38.\n\nRun Lighthouse on staging for: homepage, alojamientos listing, accommodation detail, mi-cuenta, contacto. All 4 categories >= 80. Document in lighthouse-results.md.\n\nFiles:\n- `.claude/tasks/SPEC-096-web-beta-readiness/lighthouse-results.md` (NEW)\n\nTests: Lighthouse CI integration or manual run evidence attached to PR.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-068"],
+            "blocks": ["T-070"],
+            "subtasks": [
+                {
+                    "title": "Run Lighthouse on all 5 pages",
+                    "completed": false
+                },
+                {
+                    "title": "Fix issues for any category below 80",
+                    "completed": false
+                },
+                {
+                    "title": "Document results and rationale for deferred issues",
+                    "completed": false
+                }
+            ],
+            "tags": ["seo", "performance", "audit", "seo-perf"],
+            "phase": "seo-perf",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T20:02:37.128908Z",
+                "completed": "2026-04-29T20:02:37.128908Z"
+            }
+        },
+        {
+            "id": "T-070",
+            "title": "Add E2E test definitions to SPEC-092 task tracker",
+            "description": "REQ-096-39.\n\nAt SPEC-096 closure, add 10 E2E test definitions to SPEC-092 task tracker (E2E-1 through E2E-10 covering full user journeys).\n\nFiles:\n- `.claude/tasks/SPEC-092-*/state.json`\n\nAcceptance: 10 new E2E tasks with status='pending' and phase='e2e-delegation' in SPEC-092.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-069"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Locate SPEC-092 task tracker file",
+                    "completed": false
+                },
+                {
+                    "title": "Add 10 E2E test task entries to SPEC-092",
+                    "completed": false
+                }
+            ],
+            "tags": ["e2e-delegation", "testing"],
+            "phase": "e2e-delegation",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-04-29T00:00:00.000Z",
+                "started": "2026-04-29T20:02:37.128908Z",
+                "completed": "2026-04-29T20:02:37.128908Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 70,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 70,
+        "blocked": 0,
+        "averageComplexity": 2.33
+    }
+}

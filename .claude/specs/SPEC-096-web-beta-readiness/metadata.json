@@ -1,0 +1,23 @@
+{
+    "specId": "SPEC-096",
+    "title": "Web App Beta-Readiness",
+    "type": "feature",
+    "complexity": "high",
+    "status": "in-progress",
+    "created": "2026-04-29T00:00:00.000Z",
+    "approved": "2026-04-29T00:00:00.000Z",
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "web",
+        "beta-readiness",
+        "polish",
+        "navigation",
+        "account-pages",
+        "seo",
+        "i18n",
+        "infrastructure",
+        "absorbs-spec-075"
+    ],
+    "absorbs": ["SPEC-075"]
+}
