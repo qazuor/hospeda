@@ -202,9 +202,10 @@
         {
             "specId": "SPEC-096",
             "title": "Web App Beta-Readiness",
-            "status": "pending",
-            "progress": "0/70",
+            "status": "completed",
+            "progress": "70/70",
             "path": "SPEC-096-web-beta-readiness",
+            "completedAt": "2026-04-29T18:30:00.000Z",
             "absorbs": ["SPEC-075"]
         },
         {

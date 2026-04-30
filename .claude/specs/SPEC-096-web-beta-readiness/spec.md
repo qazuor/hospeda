@@ -1,9 +1,10 @@
 # SPEC-096: Web App Beta-Readiness
 
-> **Status**: in-progress
+> **Status**: COMPLETED — 2026-04-29
 > **Priority**: P0 (critical, beta-blocking)
 > **Complexity**: XL
 > **Origin**: Page-by-page audit of `apps/web` revealed broken navigation, orphan pages, blocked account pages, and infrastructure gaps from SPEC-075. Absorbs all pending work from SPEC-075 (archived 2026-04-29).
+> **Completed**: 2026-04-29 — 70/70 atomic tasks shipped across 26 atomic commits, all quality gates green (typecheck, lint, 38/38 turbo test tasks, web build).
 > **Affected**: `apps/web`, `apps/api`, `apps/admin`, `packages/{db,schemas,service-core,i18n}`
 > **Created**: 2026-04-29
 > **Estimated effort**: ~55 atomic tasks across 11 phases (~3-4 weeks)
