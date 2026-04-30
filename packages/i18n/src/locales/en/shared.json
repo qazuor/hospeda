@@ -1,0 +1,36 @@
+{
+    "emptyState": {
+        "defaultTitle": "No results",
+        "defaultDescription": "Try other filters or search for something different.",
+        "noFavorites": "You don't have favorites yet",
+        "noFavoritesDescription": "Start exploring to save content in your favorites.",
+        "noReviews": "You don't have reviews yet",
+        "noReviewsDescription": "Visit an accommodation or destination to leave your first review.",
+        "noResults": "No results found",
+        "noResultsDescription": "Try other terms or adjust the filters."
+    },
+    "errorBanner": {
+        "errorTitle": "Something went wrong",
+        "errorMessage": "Could not load the information. Please try again.",
+        "warningTitle": "Attention",
+        "warningMessage": "Some data may be outdated.",
+        "infoTitle": "Information",
+        "infoMessage": "This section updates automatically.",
+        "retry": "Retry"
+    },
+    "mapPlaceholder": {
+        "defaultTitle": "Location",
+        "viewOnGoogleMaps": "View on Google Maps",
+        "viewOnGoogleMapsAriaLabel": "View {{address}} on Google Maps"
+    },
+    "share": {
+        "label": "Share",
+        "whatsapp": "Share on WhatsApp",
+        "facebook": "Share on Facebook",
+        "twitter": "Share on X",
+        "telegram": "Share on Telegram",
+        "copyUrl": "Copy link",
+        "linkCopied": "Link copied!",
+        "shareViaDevice": "Share via device"
+    }
+}

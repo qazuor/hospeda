@@ -17,6 +17,21 @@
             "unexpectedResponse": "Resposta inesperada do servidor"
         }
     },
+    "editProfile": {
+        "fields": {
+            "displayName": "Nome de exibição",
+            "firstName": "Nome",
+            "lastName": "Sobrenome",
+            "phone": "Telefone",
+            "bio": "Biografia"
+        },
+        "save": "Salvar alterações",
+        "saving": "Salvando...",
+        "success": "Perfil atualizado com sucesso",
+        "errors": {
+            "saveFailed": "Erro ao salvar o perfil"
+        }
+    },
     "profileEdit": {
         "name": "Nome completo",
         "email": "Endereço de e-mail",
@@ -50,7 +65,39 @@
         "saving": "Salvando...",
         "notificationsSaved": "Preferências de notificação salvas",
         "languageSaved": "Idioma atualizado com sucesso",
-        "errorMessage": "Não foi possível salvar as alterações. Tente novamente."
+        "errorMessage": "Não foi possível salvar as alterações. Tente novamente.",
+        "sections": {
+            "appearance": "Aparência",
+            "notifications": "Notificações",
+            "newsletter": "Newsletter"
+        },
+        "theme": {
+            "label": "Tema",
+            "description": "Escolha o tema visual do site",
+            "light": "Claro",
+            "dark": "Escuro",
+            "system": "Sistema"
+        },
+        "notifications": {
+            "email": {
+                "label": "Notificações por e-mail"
+            },
+            "push": {
+                "label": "Notificações push"
+            },
+            "sms": {
+                "label": "Notificações por SMS"
+            }
+        },
+        "language": {
+            "label": "Idioma do site"
+        },
+        "newsletter": {
+            "label": "Receber newsletter"
+        },
+        "errors": {
+            "fetchFailed": "Erro ao carregar as preferências"
+        }
     },
     "subscription": {
         "loading": "Carregando assinatura...",
@@ -152,7 +199,15 @@
         "deleteError": "Erro ao excluir favorito",
         "loadMore": "Carregar mais",
         "loading": "Carregando...",
-        "fetchError": "Erro ao carregar favoritos"
+        "fetchError": "Erro ao carregar favoritos",
+        "listLabel": "Meus favoritos",
+        "cardType": "Tipo",
+        "removeBtn": "Remover",
+        "removeLabel": "Remover dos favoritos",
+        "errors": {
+            "fetchFailed": "Erro ao carregar favoritos",
+            "removeFailed": "Erro ao remover favorito"
+        }
     },
     "reviews": {
         "tabs": {
@@ -181,7 +236,13 @@
         "contentLabel": "Comentario",
         "ratingEditLabel": "Avaliacao",
         "saving": "Salvando...",
-        "deleting": "Excluindo..."
+        "deleting": "Excluindo...",
+        "total": "Total: {{count}} avaliações",
+        "typeAccommodation": "Acomodação",
+        "typeDestination": "Destino",
+        "errors": {
+            "fetchFailed": "Erro ao carregar avaliações"
+        }
     },
     "pages": {
         "accountLabel": "Minha Conta",
@@ -218,7 +279,9 @@
         },
         "editProfile": {
             "title": "Editar Perfil",
-            "description": "Atualize suas informacoes pessoais e preferencias de conta."
+            "description": "Atualize suas informacoes pessoais e preferencias de conta.",
+            "avatarSection": "Foto do perfil",
+            "personalSection": "Informações pessoais"
         },
         "favorites": {
             "title": "Meus Favoritos",
@@ -245,7 +308,23 @@
             "title": "Minha Assinatura",
             "description": "Gerencie seu plano e assinatura no Hospeda",
             "heading": "Minha Assinatura",
-            "headingDesc": "Gerencie seu plano e preferencias de pagamento"
+            "headingDesc": "Gerencie seu plano e preferencias de pagamento",
+            "loading": "Carregando assinatura...",
+            "emptyTitle": "Sem assinatura ativa",
+            "errorTitle": "Erro ao carregar a assinatura",
+            "statusLabel": "Status",
+            "paymentMethodLabel": "Método de pagamento",
+            "paymentMercadoPago": "MercadoPago",
+            "noBillingDate": "Sem data de faturamento disponível",
+            "actionsLabel": "Ações",
+            "actionsTitle": "Mais opções",
+            "cancelButton": "Cancelar assinatura",
+            "viewPlans": "Ver planos",
+            "upgradeLink": "Melhorar plano",
+            "cancelModal": {
+                "title": "Cancelar assinatura?",
+                "confirm": "Sim, cancelar assinatura"
+            }
         }
     }
 }

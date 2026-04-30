@@ -182,8 +182,8 @@
         "success": {
             "title": "[TODO]",
             "subtitle": "[TODO]",
-            "planDetails": "[TODO]",
-            "amountDetails": "[TODO]",
+            "planDetails": "Plan: {{planName}}",
+            "amountDetails": "Amount: {{amount}}",
             "verifyingStatus": "[TODO]",
             "cta": "[TODO]",
             "pageTitle": "[TODO]"

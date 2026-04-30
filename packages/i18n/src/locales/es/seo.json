@@ -1,0 +1,41 @@
+{
+    "siteName": "Hospeda",
+    "defaultTitle": "Hospeda - Turismo en la costa del Río Uruguay",
+    "defaultDescription": "Encontrá alojamientos, destinos, eventos y experiencias en Concepción del Uruguay y el Litoral argentino.",
+    "titleSeparator": " | ",
+    "openGraph": {
+        "type": "website",
+        "siteName": "Hospeda",
+        "locale": {
+            "es": "es_AR",
+            "en": "en_US",
+            "pt": "pt_BR"
+        }
+    },
+    "pages": {
+        "home": {
+            "title": "Hospeda - Turismo en la costa del Río Uruguay",
+            "description": "Descubrí alojamientos, destinos y eventos en Concepción del Uruguay y la región Litoral."
+        },
+        "accommodations": {
+            "title": "Alojamientos",
+            "description": "Hoteles, cabañas, casas y departamentos para tu próxima estadía en el Litoral."
+        },
+        "destinations": {
+            "title": "Destinos",
+            "description": "Conocé los destinos más lindos de la costa del Río Uruguay."
+        },
+        "events": {
+            "title": "Eventos",
+            "description": "Conciertos, festivales gastronómicos y eventos culturales en la región."
+        },
+        "blog": {
+            "title": "Blog",
+            "description": "Notas, guías y consejos para tus viajes por el Litoral argentino."
+        },
+        "search": {
+            "title": "Búsqueda",
+            "description": "Buscá alojamientos, destinos, eventos y publicaciones en Hospeda."
+        }
+    }
+}

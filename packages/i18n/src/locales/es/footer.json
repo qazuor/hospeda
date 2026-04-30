@@ -40,5 +40,17 @@
     "publications": "Blog",
     "events": "Eventos",
     "accommodations": "Alojamientos",
-    "proprietors": "Propietarios"
+    "proprietors": "Propietarios",
+    "tourists": "Turistas",
+    "search": "Buscar",
+    "navigation": "Navegación del pie de página",
+    "subscribersTitle": "PROPIETARIOS Y TURISTAS",
+    "categoriesTitle": "CATEGORÍAS",
+    "categoryCabins": "Cabañas",
+    "categoryHotels": "Hoteles",
+    "categoryHouses": "Casas",
+    "categoryMusic": "Música",
+    "categoryCulture": "Cultura",
+    "categoryGastronomy": "Gastronomía",
+    "categoryNature": "Naturaleza"
 }

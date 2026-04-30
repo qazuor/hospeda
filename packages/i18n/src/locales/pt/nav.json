@@ -17,12 +17,21 @@
         "merchants": "Para comerciantes"
     },
     "ownerCta": "Publique seu alojamento",
+    "publishCta": "Publique seu alojamento",
     "userMenu": {
+        "signIn": "Entrar",
         "myAccount": "Minha Conta",
+        "editProfile": "Editar perfil",
+        "myProperties": "Meus imóveis",
+        "myMessages": "Minhas mensagens",
+        "myFavorites": "Meus favoritos",
         "favorites": "Favoritos",
         "myReviews": "Minhas Avaliações",
         "preferences": "Preferências",
-        "signOut": "Sair"
+        "signOut": "Sair",
+        "openMenu": "Abrir menu do usuário",
+        "closeMenu": "Fechar menu do usuário",
+        "userMenuLabel": "Menu da conta"
     },
     "mainNavigation": "Navegação principal",
     "openMenu": "Abrir menu de navegação",

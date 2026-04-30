@@ -90,6 +90,10 @@
     "profile": {
         "loadError": "Falha ao carregar perfil",
         "retry": "Tentar novamente",
+        "save": "Salvar alterações",
+        "saving": "Salvando...",
+        "saveSuccess": "Perfil atualizado",
+        "saveError": "Não foi possível salvar o perfil",
         "emailVerified": "Email verificado",
         "emailNotVerified": "Email não verificado",
         "personalInfo": {
@@ -101,7 +105,8 @@
             "birthDate": "Data de nascimento",
             "slug": "Slug",
             "bio": "Biografia",
-            "occupation": "Ocupação"
+            "occupation": "Ocupação",
+            "avatarUrl": "URL do avatar"
         },
         "contactInfo": {
             "title": "Informações de Contato",
@@ -151,6 +156,14 @@
         "retry": "Tentar novamente",
         "settingsSaved": "Configurações salvas",
         "settingsSaveError": "Falha ao salvar configurações",
+        "web": {
+            "title": "Preferências do site",
+            "subtitle": "Tema e idioma para sua visão do site público"
+        },
+        "admin": {
+            "title": "Preferências do painel",
+            "subtitle": "Tema e idioma para o painel de administração"
+        },
         "appearance": {
             "title": "Aparência",
             "subtitle": "Personalize a aparência do painel administrativo",

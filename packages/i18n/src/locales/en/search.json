@@ -1,4 +1,15 @@
 {
+    "label": "Search",
+    "submit": "Search",
+    "loading": "Searching...",
+    "resultsFor": "Results for \"{{query}}\"",
+    "popular": "Popular searches",
+    "groups": {
+        "accommodations": "Accommodations",
+        "destinations": "Destinations",
+        "events": "Events",
+        "posts": "Posts"
+    },
     "fewerAdults": "Fewer adults",
     "moreAdults": "More adults",
     "fewerChildren": "Fewer children",

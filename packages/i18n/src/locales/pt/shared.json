@@ -1,0 +1,36 @@
+{
+    "emptyState": {
+        "defaultTitle": "Sem resultados",
+        "defaultDescription": "Tente outros filtros ou busque algo diferente.",
+        "noFavorites": "Você ainda não tem favoritos",
+        "noFavoritesDescription": "Comece a explorar para salvar conteúdo nos seus favoritos.",
+        "noReviews": "Você ainda não tem avaliações",
+        "noReviewsDescription": "Visite uma acomodação ou destino para deixar sua primeira avaliação.",
+        "noResults": "Não encontramos resultados",
+        "noResultsDescription": "Tente outros termos ou ajuste os filtros."
+    },
+    "errorBanner": {
+        "errorTitle": "Algo deu errado",
+        "errorMessage": "Não foi possível carregar as informações. Tente novamente.",
+        "warningTitle": "Atenção",
+        "warningMessage": "Alguns dados podem estar desatualizados.",
+        "infoTitle": "Informação",
+        "infoMessage": "Esta seção é atualizada automaticamente.",
+        "retry": "Tentar novamente"
+    },
+    "mapPlaceholder": {
+        "defaultTitle": "Localização",
+        "viewOnGoogleMaps": "Ver no Google Maps",
+        "viewOnGoogleMapsAriaLabel": "Ver {{address}} no Google Maps"
+    },
+    "share": {
+        "label": "Compartilhar",
+        "whatsapp": "Compartilhar no WhatsApp",
+        "facebook": "Compartilhar no Facebook",
+        "twitter": "Compartilhar no X",
+        "telegram": "Compartilhar no Telegram",
+        "copyUrl": "Copiar link",
+        "linkCopied": "Link copiado!",
+        "shareViaDevice": "Compartilhar pelo dispositivo"
+    }
+}

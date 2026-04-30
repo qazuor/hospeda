@@ -56,13 +56,17 @@
         "title": "Upcoming events",
         "description": "Don't miss the most important events in the region.",
         "accentSubtitle": "Don't miss out",
-        "emptyState": "No upcoming events at this time"
+        "emptyState": "No upcoming events at this time",
+        "viewAll": "View all events →"
     },
     "latestPosts": {
         "title": "Latest articles",
         "description": "Learn more about Entre Rios and its surroundings.",
         "accentSubtitle": "Our blog",
-        "emptyState": "No articles available at this time"
+        "emptyState": "No articles available at this time",
+        "tagline": "Stay informed, get inspired, discover",
+        "subtitle": "Stories, guides and secrets of the Litoral region to inspire your next adventure.",
+        "viewAll": "View all articles →"
     },
     "testimonials": {
         "title": "What our users say",
@@ -72,7 +76,8 @@
         "nextAriaLabel": "Next testimonial",
         "dotAriaLabel": "Go to testimonial {{index}}",
         "regionAriaLabel": "User testimonials",
-        "starsAriaLabel": "{{rating}} of 5 stars"
+        "starsAriaLabel": "{{rating}} of 5 stars",
+        "tagline": "Testimonials"
     },
     "statistics": {
         "title": "Numbers that speak for themselves",
@@ -82,7 +87,8 @@
         "reviews": "Reviews",
         "experience": "Years of experience",
         "posts": "Publicaciones",
-        "events": "Events & activities"
+        "events": "Events & activities",
+        "subtitle": "The largest tourism community in the Litoral"
     },
     "categories": {
         "title": "Accommodation types",
@@ -113,7 +119,13 @@
         "feature2": {
             "title": "Real-time availability",
             "description": "Check availability and book instantly, without intermediaries or phone calls."
-        }
+        },
+        "accentSubtitle": "About us",
+        "title": "The best accommodations and information for your vacation",
+        "description": "Since 2022, we connect travelers with the best accommodations in Concepción del Uruguay and the Entre Ríos coast. Our team works to help you discover the most authentic corners of the region, with up-to-date information and experiences verified by our community.",
+        "experienceBadge": "2 years of experience",
+        "primaryPhotoAlt": "Accommodations and landscapes of the Argentine Litoral",
+        "travelerPhotoAlt": "Travelers enjoying the Entre Ríos coast"
     },
     "ownerCta": {
         "accentSubtitle": "For property owners",
@@ -135,7 +147,8 @@
         "statsLabel": "viajeros satisfechos"
     },
     "partners": {
-        "title": "Confían en nosotros"
+        "title": "Confían en nosotros",
+        "tagline": "Our partners"
     },
     "page": {
         "title": "Home",
@@ -203,6 +216,10 @@
             "ROOM": "Room",
             "MOTEL": "Motel",
             "RESORT": "Resort"
-        }
+        },
+        "destinationLabel": "Destination",
+        "typeLabel": "Type",
+        "datesLabel": "Dates",
+        "guestsLabel": "Guests"
     }
 }

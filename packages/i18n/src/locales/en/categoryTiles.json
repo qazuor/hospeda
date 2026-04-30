@@ -1,0 +1,47 @@
+{
+    "title": "Explore by category",
+    "tagline": "Discover the best of the Litoral",
+    "subtitle": "Find the accommodation, event or destination you're looking for",
+    "tiles": {
+        "cabins": {
+            "title": "Cabins",
+            "description": "Warm refuges surrounded by nature"
+        },
+        "hotels": {
+            "title": "Hotels",
+            "description": "Comfort and service in the heart of the city"
+        },
+        "houses": {
+            "title": "Houses",
+            "description": "Private spaces ideal for families and groups"
+        },
+        "apartments": {
+            "title": "Apartments",
+            "description": "Urban stays with everything within reach"
+        },
+        "destinations": {
+            "title": "Destinations",
+            "description": "Towns and cities to discover on the coast"
+        },
+        "events": {
+            "title": "Events",
+            "description": "Music, gastronomy, culture and more"
+        },
+        "music": {
+            "title": "Music",
+            "description": "Concerts, festivals and live nights"
+        },
+        "culture": {
+            "title": "Culture",
+            "description": "Museums, fairs and heritage of the Litoral"
+        },
+        "gastronomy": {
+            "title": "Gastronomy",
+            "description": "Typical flavors and culinary experiences"
+        },
+        "nature": {
+            "title": "Nature",
+            "description": "Rivers, parks and trails to reconnect"
+        }
+    }
+}

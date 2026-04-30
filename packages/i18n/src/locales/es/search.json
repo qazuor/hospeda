@@ -1,4 +1,15 @@
 {
+    "label": "Buscar",
+    "submit": "Buscar",
+    "loading": "Buscando...",
+    "resultsFor": "Resultados para \"{{query}}\"",
+    "popular": "Búsquedas populares",
+    "groups": {
+        "accommodations": "Alojamientos",
+        "destinations": "Destinos",
+        "events": "Eventos",
+        "posts": "Publicaciones"
+    },
     "fewerAdults": "Menos adultos",
     "moreAdults": "Más adultos",
     "fewerChildren": "Menos niños",

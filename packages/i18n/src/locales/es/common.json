@@ -62,6 +62,17 @@
     "submit": "Enviar",
     "viewAll": "Ver todo",
     "yes": "Sí",
+    "cancel": "Cancelar",
+    "next": "Siguiente",
+    "prev": "Anterior",
+    "nextPage": "Página siguiente",
+    "prevPage": "Página anterior",
+    "pagination": "Paginación",
+    "noImage": "Sin imagen",
+    "removing": "Eliminando...",
+    "retry": "Reintentar",
+    "saving": "Guardando...",
+    "untitled": "Sin título",
     "carousel": {
         "previousSlide": "Diapositiva anterior",
         "nextSlide": "Siguiente diapositiva"

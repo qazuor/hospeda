@@ -17,6 +17,21 @@
             "unexpectedResponse": "Unexpected server response"
         }
     },
+    "editProfile": {
+        "fields": {
+            "displayName": "Display name",
+            "firstName": "First name",
+            "lastName": "Last name",
+            "phone": "Phone",
+            "bio": "Biography"
+        },
+        "save": "Save changes",
+        "saving": "Saving...",
+        "success": "Profile updated successfully",
+        "errors": {
+            "saveFailed": "Failed to save profile"
+        }
+    },
     "profileEdit": {
         "name": "Full name",
         "email": "Email address",
@@ -50,7 +65,39 @@
         "saving": "Saving...",
         "notificationsSaved": "Notification preferences saved",
         "languageSaved": "Language updated successfully",
-        "errorMessage": "Could not save changes. Please try again."
+        "errorMessage": "Could not save changes. Please try again.",
+        "sections": {
+            "appearance": "Appearance",
+            "notifications": "Notifications",
+            "newsletter": "Newsletter"
+        },
+        "theme": {
+            "label": "Theme",
+            "description": "Choose the visual theme of the site",
+            "light": "Light",
+            "dark": "Dark",
+            "system": "System"
+        },
+        "notifications": {
+            "email": {
+                "label": "Email notifications"
+            },
+            "push": {
+                "label": "Push notifications"
+            },
+            "sms": {
+                "label": "SMS notifications"
+            }
+        },
+        "language": {
+            "label": "Site language"
+        },
+        "newsletter": {
+            "label": "Receive newsletter"
+        },
+        "errors": {
+            "fetchFailed": "Error loading preferences"
+        }
     },
     "subscription": {
         "loading": "Loading subscription...",
@@ -152,7 +199,15 @@
         "deleteError": "Error deleting favorite",
         "loadMore": "Load more",
         "loading": "Loading...",
-        "fetchError": "Error loading favorites"
+        "fetchError": "Error loading favorites",
+        "listLabel": "My favorites",
+        "cardType": "Type",
+        "removeBtn": "Remove",
+        "removeLabel": "Remove from favorites",
+        "errors": {
+            "fetchFailed": "Error loading favorites",
+            "removeFailed": "Error removing favorite"
+        }
     },
     "reviews": {
         "tabs": {
@@ -181,7 +236,13 @@
         "contentLabel": "Comment",
         "ratingEditLabel": "Rating",
         "saving": "Saving...",
-        "deleting": "Deleting..."
+        "deleting": "Deleting...",
+        "total": "Total: {{count}} reviews",
+        "typeAccommodation": "Accommodation",
+        "typeDestination": "Destination",
+        "errors": {
+            "fetchFailed": "Error loading reviews"
+        }
     },
     "pages": {
         "accountLabel": "My Account",
@@ -218,7 +279,9 @@
         },
         "editProfile": {
             "title": "Edit Profile",
-            "description": "Update your personal information and account preferences."
+            "description": "Update your personal information and account preferences.",
+            "avatarSection": "Profile picture",
+            "personalSection": "Personal information"
         },
         "favorites": {
             "title": "My Favorites",
@@ -245,7 +308,23 @@
             "title": "My Subscription",
             "description": "Manage your plan and subscription on Hospeda",
             "heading": "My Subscription",
-            "headingDesc": "Manage your plan and payment preferences"
+            "headingDesc": "Manage your plan and payment preferences",
+            "loading": "Loading subscription...",
+            "emptyTitle": "No active subscription",
+            "errorTitle": "Error loading subscription",
+            "statusLabel": "Status",
+            "paymentMethodLabel": "Payment method",
+            "paymentMercadoPago": "MercadoPago",
+            "noBillingDate": "No billing date available",
+            "actionsLabel": "Actions",
+            "actionsTitle": "More options",
+            "cancelButton": "Cancel subscription",
+            "viewPlans": "View plans",
+            "upgradeLink": "Upgrade plan",
+            "cancelModal": {
+                "title": "Cancel subscription?",
+                "confirm": "Yes, cancel subscription"
+            }
         }
     }
 }

@@ -1,0 +1,41 @@
+{
+    "siteName": "Hospeda",
+    "defaultTitle": "Hospeda - Tourism on the Uruguay River coast",
+    "defaultDescription": "Find accommodations, destinations, events and experiences in Concepción del Uruguay and the Argentine Litoral.",
+    "titleSeparator": " | ",
+    "openGraph": {
+        "type": "website",
+        "siteName": "Hospeda",
+        "locale": {
+            "es": "es_AR",
+            "en": "en_US",
+            "pt": "pt_BR"
+        }
+    },
+    "pages": {
+        "home": {
+            "title": "Hospeda - Tourism on the Uruguay River coast",
+            "description": "Discover accommodations, destinations and events in Concepción del Uruguay and the Litoral region."
+        },
+        "accommodations": {
+            "title": "Accommodations",
+            "description": "Hotels, cabins, houses and apartments for your next stay in the Litoral."
+        },
+        "destinations": {
+            "title": "Destinations",
+            "description": "Discover the most beautiful destinations along the Uruguay River coast."
+        },
+        "events": {
+            "title": "Events",
+            "description": "Concerts, food festivals and cultural events in the region."
+        },
+        "blog": {
+            "title": "Blog",
+            "description": "Articles, guides and tips for your trips through the Argentine Litoral."
+        },
+        "search": {
+            "title": "Search",
+            "description": "Search accommodations, destinations, events and posts on Hospeda."
+        }
+    }
+}

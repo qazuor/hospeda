@@ -1,0 +1,20 @@
+{
+    "home": "Home",
+    "ariaLabel": "Breadcrumb",
+    "sections": {
+        "accommodations": "Accommodations",
+        "destinations": "Destinations",
+        "events": "Events",
+        "blog": "Blog",
+        "search": "Search",
+        "contact": "Contact",
+        "about": "About us",
+        "benefits": "Benefits",
+        "legal": "Legal",
+        "account": "My account",
+        "subscribers": "Subscribers",
+        "owners": "Property owners",
+        "tourists": "Tourists",
+        "pricing": "Pricing"
+    }
+}

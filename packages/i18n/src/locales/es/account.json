@@ -17,6 +17,21 @@
             "unexpectedResponse": "Respuesta inesperada del servidor"
         }
     },
+    "editProfile": {
+        "fields": {
+            "displayName": "Nombre para mostrar",
+            "firstName": "Nombre",
+            "lastName": "Apellido",
+            "phone": "Teléfono",
+            "bio": "Biografía"
+        },
+        "save": "Guardar cambios",
+        "saving": "Guardando...",
+        "success": "Perfil actualizado correctamente",
+        "errors": {
+            "saveFailed": "Error al guardar el perfil"
+        }
+    },
     "profileEdit": {
         "name": "Nombre completo",
         "email": "Correo electrónico",
@@ -50,7 +65,39 @@
         "saving": "Guardando...",
         "notificationsSaved": "Preferencias de notificaciones guardadas",
         "languageSaved": "Idioma actualizado correctamente",
-        "errorMessage": "No se pudieron guardar los cambios. Intentá nuevamente."
+        "errorMessage": "No se pudieron guardar los cambios. Intentá nuevamente.",
+        "sections": {
+            "appearance": "Apariencia",
+            "notifications": "Notificaciones",
+            "newsletter": "Newsletter"
+        },
+        "theme": {
+            "label": "Tema",
+            "description": "Elegí el tema visual del sitio",
+            "light": "Claro",
+            "dark": "Oscuro",
+            "system": "Sistema"
+        },
+        "notifications": {
+            "email": {
+                "label": "Notificaciones por email"
+            },
+            "push": {
+                "label": "Notificaciones push"
+            },
+            "sms": {
+                "label": "Notificaciones por SMS"
+            }
+        },
+        "language": {
+            "label": "Idioma del sitio"
+        },
+        "newsletter": {
+            "label": "Recibir newsletter"
+        },
+        "errors": {
+            "fetchFailed": "Error al cargar las preferencias"
+        }
     },
     "subscription": {
         "loading": "Cargando suscripcion...",
@@ -152,7 +199,15 @@
         "deleteError": "Error al eliminar el favorito",
         "loadMore": "Cargar mas",
         "loading": "Cargando...",
-        "fetchError": "Error al cargar los favoritos"
+        "fetchError": "Error al cargar los favoritos",
+        "listLabel": "Mis favoritos",
+        "cardType": "Tipo",
+        "removeBtn": "Quitar",
+        "removeLabel": "Quitar de favoritos",
+        "errors": {
+            "fetchFailed": "Error al cargar los favoritos",
+            "removeFailed": "Error al quitar el favorito"
+        }
     },
     "reviews": {
         "tabs": {
@@ -181,7 +236,13 @@
         "contentLabel": "Comentario",
         "ratingEditLabel": "Puntuacion",
         "saving": "Guardando...",
-        "deleting": "Eliminando..."
+        "deleting": "Eliminando...",
+        "total": "Total: {{count}} reseñas",
+        "typeAccommodation": "Alojamiento",
+        "typeDestination": "Destino",
+        "errors": {
+            "fetchFailed": "Error al cargar las reseñas"
+        }
     },
     "pages": {
         "accountLabel": "Mi Cuenta",
@@ -218,7 +279,9 @@
         },
         "editProfile": {
             "title": "Editar Perfil",
-            "description": "Actualiza tu informacion personal y preferencias de cuenta."
+            "description": "Actualiza tu informacion personal y preferencias de cuenta.",
+            "avatarSection": "Foto de perfil",
+            "personalSection": "Información personal"
         },
         "favorites": {
             "title": "Mis Favoritos",
@@ -245,7 +308,23 @@
             "title": "Mi Suscripcion",
             "description": "Administra tu plan y suscripcion en Hospeda",
             "heading": "Mi Suscripcion",
-            "headingDesc": "Administra tu plan y preferencias de pago"
+            "headingDesc": "Administra tu plan y preferencias de pago",
+            "loading": "Cargando suscripción...",
+            "emptyTitle": "Sin suscripción activa",
+            "errorTitle": "Error al cargar la suscripción",
+            "statusLabel": "Estado",
+            "paymentMethodLabel": "Método de pago",
+            "paymentMercadoPago": "MercadoPago",
+            "noBillingDate": "No hay fecha de facturación disponible",
+            "actionsLabel": "Acciones",
+            "actionsTitle": "Más opciones",
+            "cancelButton": "Cancelar suscripción",
+            "viewPlans": "Ver planes",
+            "upgradeLink": "Mejorar plan",
+            "cancelModal": {
+                "title": "¿Cancelar suscripción?",
+                "confirm": "Sí, cancelar suscripción"
+            }
         }
     }
 }

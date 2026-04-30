@@ -17,12 +17,21 @@
         "merchants": "Para comercios"
     },
     "ownerCta": "Publica tu alojamiento",
+    "publishCta": "Publica tu alojamiento",
     "userMenu": {
+        "signIn": "Iniciar sesión",
         "myAccount": "Mi Cuenta",
+        "editProfile": "Editar perfil",
+        "myProperties": "Mis propiedades",
+        "myMessages": "Mis mensajes",
+        "myFavorites": "Mis favoritos",
         "favorites": "Favoritos",
         "myReviews": "Mis Reseñas",
         "preferences": "Preferencias",
-        "signOut": "Cerrar sesión"
+        "signOut": "Cerrar sesión",
+        "openMenu": "Abrir menú de usuario",
+        "closeMenu": "Cerrar menú de usuario",
+        "userMenuLabel": "Menú de cuenta"
     },
     "mainNavigation": "Navegación principal",
     "openMenu": "Abrir menú de navegación",

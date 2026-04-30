@@ -32,7 +32,17 @@
             "messageMinLength": "Message must be at least 20 characters"
         },
         "successMessage": "Your message was sent successfully",
-        "errorMessage": "Could not send the message. Please try again."
+        "errorMessage": "Could not send the message. Please try again.",
+        "ariaLabel": "Contact form",
+        "accommodationId": "Accommodation ID",
+        "lastNameError": "Last name must be at least 2 characters",
+        "emailError": "Please enter a valid email address",
+        "errorGeneral": "Something went wrong. Please try again later.",
+        "sending": "Sending...",
+        "successTitle": "Message sent!",
+        "type": "Inquiry type",
+        "typeAccommodation": "Accommodation inquiry",
+        "typeGeneral": "General inquiry"
     },
     "info": {
         "title": "Contact information",

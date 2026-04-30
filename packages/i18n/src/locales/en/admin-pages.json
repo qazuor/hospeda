@@ -90,6 +90,10 @@
     "profile": {
         "loadError": "Failed to load profile",
         "retry": "Retry",
+        "save": "Save changes",
+        "saving": "Saving...",
+        "saveSuccess": "Profile updated",
+        "saveError": "Could not save profile",
         "emailVerified": "Email verified",
         "emailNotVerified": "Email not verified",
         "personalInfo": {
@@ -101,7 +105,8 @@
             "birthDate": "Birth Date",
             "slug": "Slug",
             "bio": "Bio",
-            "occupation": "Occupation"
+            "occupation": "Occupation",
+            "avatarUrl": "Avatar URL"
         },
         "contactInfo": {
             "title": "Contact Information",
@@ -151,6 +156,14 @@
         "retry": "Retry",
         "settingsSaved": "Settings saved",
         "settingsSaveError": "Failed to save settings",
+        "web": {
+            "title": "Website preferences",
+            "subtitle": "Theme and language for your view of the public site"
+        },
+        "admin": {
+            "title": "Admin panel preferences",
+            "subtitle": "Theme and language for the admin panel"
+        },
         "appearance": {
             "title": "Appearance",
             "subtitle": "Customize the look and feel of the admin panel",

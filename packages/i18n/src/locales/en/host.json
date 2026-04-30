@@ -95,7 +95,7 @@
             "publishDisabledHint": "[TODO]"
         },
         "status": {
-            "idle": "",
+            "idle": "Ready",
             "saving": "[TODO]",
             "saved": "[TODO]",
             "error": "[TODO]",

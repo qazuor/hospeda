@@ -1,0 +1,20 @@
+{
+    "home": "Inicio",
+    "ariaLabel": "Migas de pan",
+    "sections": {
+        "accommodations": "Alojamientos",
+        "destinations": "Destinos",
+        "events": "Eventos",
+        "blog": "Blog",
+        "search": "Búsqueda",
+        "contact": "Contacto",
+        "about": "Quiénes somos",
+        "benefits": "Beneficios",
+        "legal": "Legal",
+        "account": "Mi cuenta",
+        "subscribers": "Suscriptores",
+        "owners": "Propietarios",
+        "tourists": "Turistas",
+        "pricing": "Precios"
+    }
+}

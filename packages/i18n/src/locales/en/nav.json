@@ -17,12 +17,21 @@
         "merchants": "For merchants"
     },
     "ownerCta": "List your property",
+    "publishCta": "List your property",
     "userMenu": {
+        "signIn": "Sign in",
         "myAccount": "My Account",
+        "editProfile": "Edit profile",
+        "myProperties": "My properties",
+        "myMessages": "My messages",
+        "myFavorites": "My favorites",
         "favorites": "Favorites",
         "myReviews": "My Reviews",
         "preferences": "Preferences",
-        "signOut": "Sign Out"
+        "signOut": "Sign Out",
+        "openMenu": "Open user menu",
+        "closeMenu": "Close user menu",
+        "userMenuLabel": "Account menu"
     },
     "mainNavigation": "Main navigation",
     "openMenu": "Open navigation menu",

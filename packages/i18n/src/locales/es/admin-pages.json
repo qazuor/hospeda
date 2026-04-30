@@ -90,6 +90,10 @@
     "profile": {
         "loadError": "Error al cargar el perfil",
         "retry": "Reintentar",
+        "save": "Guardar cambios",
+        "saving": "Guardando...",
+        "saveSuccess": "Perfil actualizado",
+        "saveError": "No se pudo guardar el perfil",
         "emailVerified": "Email verificado",
         "emailNotVerified": "Email no verificado",
         "personalInfo": {
@@ -101,7 +105,8 @@
             "birthDate": "Fecha de nacimiento",
             "slug": "Slug",
             "bio": "Biografía",
-            "occupation": "Ocupación"
+            "occupation": "Ocupación",
+            "avatarUrl": "URL del avatar"
         },
         "contactInfo": {
             "title": "Información de Contacto",
@@ -151,6 +156,14 @@
         "retry": "Reintentar",
         "settingsSaved": "Configuración guardada",
         "settingsSaveError": "Error al guardar la configuración",
+        "web": {
+            "title": "Preferencias del sitio web",
+            "subtitle": "Tema e idioma para tu vista del sitio público"
+        },
+        "admin": {
+            "title": "Preferencias del panel",
+            "subtitle": "Tema e idioma para el panel de administración"
+        },
         "appearance": {
             "title": "Apariencia",
             "subtitle": "Personaliza el aspecto del panel de administración",

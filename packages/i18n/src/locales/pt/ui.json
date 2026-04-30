@@ -1,4 +1,5 @@
 {
+    "required": "Obrigatório",
     "saveItem": "Salvar {{name}}",
     "slider": {
         "previousImage": "Imagem anterior",
@@ -24,6 +25,7 @@
         "somethingWentWrong": "Algo deu errado"
     },
     "actions": {
+        "share": "Compartilhar",
         "backTo": "Voltar a",
         "goTo": "Ir a",
         "viewAll": "Ver tudo",

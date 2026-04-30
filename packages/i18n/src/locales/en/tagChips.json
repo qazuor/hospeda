@@ -1,0 +1,9 @@
+{
+    "ariaLabel": {
+        "accommodationTypes": "Accommodation types",
+        "eventCategories": "Event categories",
+        "postCategories": "Blog categories",
+        "destinationTags": "Destination tags",
+        "popularSearches": "Popular searches"
+    }
+}

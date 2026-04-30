@@ -1,0 +1,20 @@
+{
+    "home": "Início",
+    "ariaLabel": "Trilha de navegação",
+    "sections": {
+        "accommodations": "Acomodações",
+        "destinations": "Destinos",
+        "events": "Eventos",
+        "blog": "Blog",
+        "search": "Busca",
+        "contact": "Contato",
+        "about": "Quem somos",
+        "benefits": "Benefícios",
+        "legal": "Legal",
+        "account": "Minha conta",
+        "subscribers": "Assinantes",
+        "owners": "Proprietários",
+        "tourists": "Turistas",
+        "pricing": "Preços"
+    }
+}

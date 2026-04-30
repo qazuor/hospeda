@@ -32,7 +32,17 @@
             "messageMinLength": "El mensaje debe tener al menos 20 caracteres"
         },
         "successMessage": "Tu mensaje fue enviado correctamente",
-        "errorMessage": "No se pudo enviar el mensaje. Intentá nuevamente."
+        "errorMessage": "No se pudo enviar el mensaje. Intentá nuevamente.",
+        "ariaLabel": "Formulario de contacto",
+        "accommodationId": "ID de alojamiento",
+        "lastNameError": "El apellido debe tener al menos 2 caracteres",
+        "emailError": "Por favor ingresá un email válido",
+        "errorGeneral": "Ocurrió un error. Intentá de nuevo más tarde.",
+        "sending": "Enviando...",
+        "successTitle": "¡Mensaje enviado!",
+        "type": "Tipo de consulta",
+        "typeAccommodation": "Consulta sobre alojamiento",
+        "typeGeneral": "Consulta general"
     },
     "info": {
         "title": "Información de contacto",

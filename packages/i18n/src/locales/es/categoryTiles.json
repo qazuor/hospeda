@@ -1,0 +1,47 @@
+{
+    "title": "Explorá por categoría",
+    "tagline": "Descubrí lo mejor del Litoral",
+    "subtitle": "Encontrá el alojamiento, evento o destino que estás buscando",
+    "tiles": {
+        "cabins": {
+            "title": "Cabañas",
+            "description": "Refugios cálidos rodeados de naturaleza"
+        },
+        "hotels": {
+            "title": "Hoteles",
+            "description": "Comodidad y servicio en el corazón de la ciudad"
+        },
+        "houses": {
+            "title": "Casas",
+            "description": "Espacios privados ideales para familias y grupos"
+        },
+        "apartments": {
+            "title": "Departamentos",
+            "description": "Estadías urbanas con todo a mano"
+        },
+        "destinations": {
+            "title": "Destinos",
+            "description": "Pueblos y ciudades para descubrir en la costa"
+        },
+        "events": {
+            "title": "Eventos",
+            "description": "Música, gastronomía, cultura y más"
+        },
+        "music": {
+            "title": "Música",
+            "description": "Conciertos, festivales y noches en vivo"
+        },
+        "culture": {
+            "title": "Cultura",
+            "description": "Museos, ferias y patrimonio del Litoral"
+        },
+        "gastronomy": {
+            "title": "Gastronomía",
+            "description": "Sabores típicos y experiencias culinarias"
+        },
+        "nature": {
+            "title": "Naturaleza",
+            "description": "Ríos, parques y senderos para reconectar"
+        }
+    }
+}
