@@ -1,0 +1,6 @@
+{
+    "name": "Datos incompletos",
+    "description": "Faltan campos importantes que deben ser completados antes de publicar esta entidad.",
+    "color": "YELLOW",
+    "lifecycleState": "ACTIVE"
+}

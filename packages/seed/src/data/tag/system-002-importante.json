@@ -1,0 +1,6 @@
+{
+    "name": "Importante",
+    "description": "Indica que la entidad requiere atención especial por parte del usuario.",
+    "color": "ORANGE",
+    "lifecycleState": "ACTIVE"
+}

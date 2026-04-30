@@ -1,0 +1,6 @@
+{
+    "name": "Publicación bloqueada",
+    "description": "La publicación de esta entidad está bloqueada temporalmente por el equipo de administración.",
+    "color": "RED",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,6 @@
+{
+    "name": "Pendiente",
+    "description": "La entidad aún está incompleta o sin resolver desde la perspectiva del usuario.",
+    "color": "YELLOW",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,6 @@
+{
+    "name": "Mejorar fotos",
+    "description": "Las imágenes existentes son de baja calidad y deben ser reemplazadas o mejoradas.",
+    "color": "YELLOW",
+    "lifecycleState": "ACTIVE"
+}

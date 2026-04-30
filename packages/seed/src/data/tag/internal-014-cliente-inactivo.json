@@ -1,0 +1,6 @@
+{
+    "name": "Cliente inactivo",
+    "description": "Usuario o suscripción sin actividad reciente que requiere seguimiento.",
+    "color": "GREY",
+    "lifecycleState": "ACTIVE"
+}

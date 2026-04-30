@@ -1,4 +1,8 @@
 {
+    "systemUser": [],
+    "internalTags": [],
+    "systemTags": [],
+    "postTags": [],
     "users": ["admin-user.json", "super-admin-user.json"],
     "attractions": [
         "001-attraction-anfiteatro.json",

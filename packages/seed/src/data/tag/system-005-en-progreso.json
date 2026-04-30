@@ -1,0 +1,6 @@
+{
+    "name": "En progreso",
+    "description": "El usuario está trabajando activamente en esta entidad en este momento.",
+    "color": "LIGHT_BLUE",
+    "lifecycleState": "ACTIVE"
+}

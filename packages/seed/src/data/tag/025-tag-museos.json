@@ -1,9 +1,0 @@
-{
-    "$schema": "../../schemas/tag.schema.json",
-    "id": "025-tag-museos",
-    "name": "Museos",
-    "slug": "museos",
-    "color": "PURPLE",
-    "notes": "Espacios de arte y historia",
-    "lifecycleState": "ACTIVE"
-}

@@ -1,0 +1,6 @@
+{
+    "name": "Personalizado",
+    "description": "Etiqueta de uso general cuando ninguna otra categoría del sistema aplica.",
+    "color": "PURPLE",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,6 @@
+{
+    "name": "Alta prioridad",
+    "description": "El usuario asigna alta prioridad a esta entidad en su flujo de trabajo.",
+    "color": "RED",
+    "lifecycleState": "ACTIVE"
+}

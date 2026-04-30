@@ -1,0 +1,6 @@
+{
+    "name": "Cliente potencial",
+    "description": "Lead o posible contacto comercial con potencial de convertirse en cliente.",
+    "color": "CYAN",
+    "lifecycleState": "ACTIVE"
+}

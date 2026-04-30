@@ -1,0 +1,6 @@
+{
+    "name": "Revisar luego",
+    "description": "El usuario quiere volver a revisar esta entidad en otro momento.",
+    "color": "BLUE",
+    "lifecycleState": "ACTIVE"
+}

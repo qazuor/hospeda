@@ -1,0 +1,6 @@
+{
+    "name": "Agregar fotos",
+    "description": "La entidad carece de imágenes o su galería fotográfica está incompleta.",
+    "color": "ORANGE",
+    "lifecycleState": "ACTIVE"
+}

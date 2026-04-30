@@ -1,0 +1,6 @@
+{
+    "name": "Urgente",
+    "description": "La entidad requiere acción rápida por parte del usuario.",
+    "color": "RED",
+    "lifecycleState": "ACTIVE"
+}

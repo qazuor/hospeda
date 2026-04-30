@@ -1,0 +1,6 @@
+{
+    "name": "Revisar contenido",
+    "description": "El contenido de esta entidad requiere revisión manual por parte del equipo de administración.",
+    "color": "ORANGE",
+    "lifecycleState": "ACTIVE"
+}

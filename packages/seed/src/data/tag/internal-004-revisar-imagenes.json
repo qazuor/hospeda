@@ -1,0 +1,6 @@
+{
+    "name": "Revisar imágenes",
+    "description": "Las imágenes son incorrectas, están ausentes, son repetidas o no representan adecuadamente la entidad.",
+    "color": "ORANGE",
+    "lifecycleState": "ACTIVE"
+}

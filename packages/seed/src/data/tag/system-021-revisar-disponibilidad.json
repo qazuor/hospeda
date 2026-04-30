@@ -1,0 +1,6 @@
+{
+    "name": "Revisar disponibilidad",
+    "description": "El calendario, la capacidad o las fechas disponibles de esta entidad deben ser verificados.",
+    "color": "YELLOW",
+    "lifecycleState": "ACTIVE"
+}

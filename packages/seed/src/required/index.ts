@@ -13,10 +13,14 @@ import { seedDestinations } from './destinations.seed.js';
 import { seedExchangeRateConfig } from './exchangeRateConfig.seed.js';
 import { seedExchangeRates } from './exchangeRates.seed.js';
 import { seedFeatures } from './features.seed.js';
+import { seedInternalTags } from './internalTags.seed.js';
+import { seedPostTags } from './postTags.seed.js';
 import { seedRevalidationConfig } from './revalidationConfig.seed.js';
 import { seedRolePermissions } from './rolePermissions.seed.js';
 import { seedSponsorshipLevels } from './sponsorshipLevels.seed.js';
 import { seedSponsorshipPackages } from './sponsorshipPackages.seed.js';
+import { seedSystemTags } from './systemTags.seed.js';
+import { seedSystemUser } from './systemUser.seed.js';
 import { seedUsers } from './users.seed.js';
 
 /**
@@ -24,6 +28,7 @@ import { seedUsers } from './users.seed.js';
  *
  * Required seeds contain core system data that is essential for the application
  * to function properly. This includes:
+ * - System user (SPEC-086 R-1) — must run first; referenced as assignedById by tags
  * - Users (excluding super admin)
  * - Role permissions
  * - Amenities and features
@@ -35,6 +40,7 @@ import { seedUsers } from './users.seed.js';
  * - Revalidation configuration per entity type
  *
  * The seeds are executed in a specific order to ensure that:
+ * - System user exists before any seed that needs assignedById
  * - Dependencies are available before they're needed
  * - ID mappings are established for relationship building
  * - The super admin actor is available for all operations
@@ -46,22 +52,26 @@ import { seedUsers } from './users.seed.js';
  * ```typescript
  * await runRequiredSeeds(seedContext);
  * // Executes in order:
- * // 1. Users (excluding super admin)
- * // 2. Role permissions
- * // 3. Amenities
- * // 4. Features
- * // 5. Attractions
- * // 6. Destinations with attractions
- * // 7. Sponsorship levels
- * // 8. Sponsorship packages
- * // 9. Billing entitlements
- * // 10. Billing limits
- * // 11. Billing plans
- * // 12. Billing add-ons
- * // 13. Billing promo codes
- * // 14. Exchange rate config
- * // 15. Exchange rates
- * // 16. Revalidation config
+ * // 1. System user (SPEC-086 R-1, non-loginable, used as assignedById)
+ * // 2. INTERNAL tags (SPEC-086 R-2)
+ * // 3. SYSTEM tags (SPEC-086 R-3)
+ * // 4. PostTags (SPEC-086 R-4)
+ * // 5. Users (excluding super admin)
+ * // 6. Role permissions
+ * // 7. Amenities
+ * // 8. Features
+ * // 9. Attractions
+ * // 10. Destinations with attractions
+ * // 11. Sponsorship levels
+ * // 12. Sponsorship packages
+ * // 13. Billing entitlements
+ * // 14. Billing limits
+ * // 15. Billing plans
+ * // 16. Billing add-ons
+ * // 17. Billing promo codes
+ * // 18. Exchange rate config
+ * // 19. Exchange rates
+ * // 20. Revalidation config
  * ```
  *
  * @throws {Error} When seeding fails and continueOnError is false
@@ -73,53 +83,69 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
     logger.info(`${STATUS_ICONS.Seed}  INITIALIZING REQUIRED DATA LOAD`);
 
     try {
+        // 1. Seed the reserved system user — must be first because downstream seeds
+        //    (INTERNAL tags, SYSTEM tags, PostTags) reference SYSTEM_USER_ID as assignedById.
+        await seedSystemUser();
+
+        // 2. Seed INTERNAL tags (SPEC-086 R-2) — admin-only operational labels.
+        //    Must run after system user (createdById = SYSTEM_USER_ID).
+        await seedInternalTags();
+
+        // 3. Seed SYSTEM tags (SPEC-086 R-3) — platform-wide organizational tags.
+        //    Must run after system user (createdById = SYSTEM_USER_ID).
+        await seedSystemTags();
+
+        // 4. Seed PostTags (SPEC-086 R-4) — public SEO-driven blog post taxonomy.
+        //    Must run after system user (createdById = SYSTEM_USER_ID).
+        await seedPostTags();
+
         // Super admin already loaded in main context
-        // 1. Load remaining users (excluding super admin)
+        // 5. Load remaining users (excluding super admin)
         await seedUsers(context);
 
-        // 2. Load role permissions (after users to have the actor)
+        // 3. Load role permissions (after users to have the actor)
         await seedRolePermissions();
 
-        // 3. Load amenities (before attractions to have ID mapping)
+        // 4. Load amenities (before attractions to have ID mapping)
         await seedAmenities(context);
 
-        // 4. Load features (before attractions to have ID mapping)
+        // 5. Load features (before attractions to have ID mapping)
         await seedFeatures(context);
 
-        // 5. Load attractions (before destinations to have ID mapping)
+        // 6. Load attractions (before destinations to have ID mapping)
         await seedAttractions(context);
 
-        // 6. Load destinations (uses ID mapping for relationships)
+        // 7. Load destinations (uses ID mapping for relationships)
         await seedDestinations(context);
 
-        // 7. Load sponsorship levels (before packages to have ID mapping)
+        // 8. Load sponsorship levels (before packages to have ID mapping)
         await seedSponsorshipLevels(context);
 
-        // 8. Load sponsorship packages (uses ID mapping for eventLevelId)
+        // 9. Load sponsorship packages (uses ID mapping for eventLevelId)
         await seedSponsorshipPackages(context);
 
-        // 9. Load billing entitlements (before plans to have entitlements available)
+        // 10. Load billing entitlements (before plans to have entitlements available)
         await seedBillingEntitlements(context);
 
-        // 10. Load billing limits (before plans to have limit definitions available)
+        // 11. Load billing limits (before plans to have limit definitions available)
         await seedBillingLimits(context);
 
-        // 11. Load billing plans (uses entitlements and limits)
+        // 12. Load billing plans (uses entitlements and limits)
         await seedBillingPlans(context);
 
-        // 12. Load billing add-ons (after plans, uses entitlements and limits)
+        // 13. Load billing add-ons (after plans, uses entitlements and limits)
         await seedBillingAddons(context);
 
-        // 13. Load billing promo codes (default discount codes)
+        // 14. Load billing promo codes (default discount codes)
         await seedBillingPromoCodes(context);
 
-        // 14. Load exchange rate config (before rates to have config available)
+        // 15. Load exchange rate config (before rates to have config available)
         await seedExchangeRateConfig(context);
 
-        // 15. Load exchange rates (initial reference rates)
+        // 16. Load exchange rates (initial reference rates)
         await seedExchangeRates(context);
 
-        // 16. Load revalidation config (per-entity-type ISR configuration)
+        // 17. Load revalidation config (per-entity-type ISR configuration)
         await seedRevalidationConfig(context);
 
         logger.info(`${separator}`);

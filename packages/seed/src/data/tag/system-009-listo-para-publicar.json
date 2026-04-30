@@ -1,0 +1,6 @@
+{
+    "name": "Listo para publicar",
+    "description": "El usuario considera que el contenido está terminado y puede publicarse.",
+    "color": "GREEN",
+    "lifecycleState": "ACTIVE"
+}

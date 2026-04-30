@@ -1,0 +1,7 @@
+{
+    "name": "Itinerarios",
+    "slug": "itinerarios",
+    "description": "Rutas y recorridos sugeridos para organizar el viaje.",
+    "color": "GREEN",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,6 @@
+{
+    "name": "Revisar legal",
+    "description": "El texto, los permisos, los derechos de imagen o los datos sensibles requieren revisión legal.",
+    "color": "RED",
+    "lifecycleState": "ACTIVE"
+}

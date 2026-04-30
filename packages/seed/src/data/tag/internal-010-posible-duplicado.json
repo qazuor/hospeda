@@ -1,0 +1,6 @@
+{
+    "name": "Posible duplicado",
+    "description": "Esta entidad podría ser una entrada duplicada de otra ya existente en el sistema.",
+    "color": "ORANGE",
+    "lifecycleState": "ACTIVE"
+}

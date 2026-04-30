@@ -6,14 +6,17 @@ import { seedAccommodationReviews } from './accommodationReviews.seed.js';
 import { seedAccommodations } from './accommodations.seed.js';
 import { seedBookmarks } from './bookmarks.seed.js';
 import { seedDestinationReviews } from './destinationReviews.seed.js';
+import { seedEntityTagAssignments } from './entityTagAssignments.seed.js';
 import { seedEventLocations } from './eventLocations.seed.js';
 import { seedEventOrganizers } from './eventOrganizers.seed.js';
 import { seedEvents } from './events.seed.js';
 import { seedPostSponsors } from './postSponsors.seed.js';
 import { seedPostSponsorships } from './postSponsorships.seed.js';
+import { seedPostTagAssignments } from './postTagAssignments.seed.js';
 import { seedPosts } from './posts.seed.js';
 import { seedTagRelations } from './tagRelations.seed.js';
 import { seedTags } from './tags.seed.js';
+import { seedUserTags } from './userTags.seed.js';
 import { seedUsers } from './users.seed.js';
 
 /**
@@ -78,6 +81,15 @@ export async function runExampleSeeds(context: SeedContext): Promise<void> {
         context.actor = oldContextActor;
         await seedTags(context);
         await seedTagRelations(context);
+
+        // E-1: USER tags for HOST / EDITOR / ADMIN test users
+        await seedUserTags();
+
+        // E-2: PostTag assignments for test posts
+        await seedPostTagAssignments();
+
+        // E-3: Entity-tag assignments per actor (HOST, EDITOR, ADMIN)
+        await seedEntityTagAssignments();
 
         logger.success({ msg: `${STATUS_ICONS.Success} Example data load completed.` });
     } catch (error) {

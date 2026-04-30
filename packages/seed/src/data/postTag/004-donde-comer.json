@@ -1,0 +1,7 @@
+{
+    "name": "Dónde comer",
+    "slug": "donde-comer",
+    "description": "Recomendaciones gastronómicas y de restaurantes en el destino.",
+    "color": "ORANGE",
+    "lifecycleState": "ACTIVE"
+}

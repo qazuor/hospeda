@@ -1,0 +1,7 @@
+{
+    "name": "Guía de viaje",
+    "slug": "guia-de-viaje",
+    "description": "Publicaciones con guías prácticas de viaje para el visitante.",
+    "color": "BLUE",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,6 @@
+{
+    "name": "Revisar ubicación",
+    "description": "Las coordenadas, la ciudad o la dirección registradas son sospechosas y deben ser validadas.",
+    "color": "ORANGE",
+    "lifecycleState": "ACTIVE"
+}

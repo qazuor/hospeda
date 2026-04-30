@@ -1,0 +1,6 @@
+{
+    "name": "Contactar",
+    "description": "El usuario necesita ponerse en contacto con alguien relacionado con esta entidad.",
+    "color": "BLUE",
+    "lifecycleState": "ACTIVE"
+}

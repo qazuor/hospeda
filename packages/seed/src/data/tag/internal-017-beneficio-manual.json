@@ -1,0 +1,6 @@
+{
+    "name": "Beneficio manual",
+    "description": "El acceso o mejora fue otorgado manualmente por un administrador fuera del flujo estándar.",
+    "color": "PURPLE",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,6 @@
+{
+    "name": "Completado",
+    "description": "La entidad ya fue revisada o finalizada por el usuario.",
+    "color": "GREEN",
+    "lifecycleState": "ACTIVE"
+}

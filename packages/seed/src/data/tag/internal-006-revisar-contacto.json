@@ -1,0 +1,6 @@
+{
+    "name": "Revisar contacto",
+    "description": "El teléfono, email, WhatsApp o enlaces de redes sociales deben ser validados.",
+    "color": "ORANGE",
+    "lifecycleState": "ACTIVE"
+}

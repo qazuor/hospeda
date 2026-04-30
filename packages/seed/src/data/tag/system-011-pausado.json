@@ -1,0 +1,6 @@
+{
+    "name": "Pausado",
+    "description": "La entidad fue detenida temporalmente y no está activa en este momento.",
+    "color": "ORANGE",
+    "lifecycleState": "ACTIVE"
+}

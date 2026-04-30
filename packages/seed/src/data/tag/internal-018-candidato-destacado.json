@@ -1,0 +1,6 @@
+{
+    "name": "Candidato destacado",
+    "description": "Esta entidad es candidata a ser destacada en la plataforma por su calidad o relevancia.",
+    "color": "LIGHT_BLUE",
+    "lifecycleState": "ACTIVE"
+}

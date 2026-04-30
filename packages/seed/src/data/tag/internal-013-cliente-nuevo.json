@@ -1,0 +1,6 @@
+{
+    "name": "Cliente nuevo",
+    "description": "Cuenta o propietario incorporado recientemente a la plataforma.",
+    "color": "LIGHT_GREEN",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,6 @@
+{
+    "name": "Para destacar",
+    "description": "El usuario considera esta entidad candidata a ser destacada en su panel.",
+    "color": "LIGHT_BLUE",
+    "lifecycleState": "ACTIVE"
+}

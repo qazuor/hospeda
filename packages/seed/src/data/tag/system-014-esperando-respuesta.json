@@ -1,0 +1,6 @@
+{
+    "name": "Esperando respuesta",
+    "description": "Se está aguardando una respuesta externa para poder avanzar con esta entidad.",
+    "color": "YELLOW",
+    "lifecycleState": "ACTIVE"
+}

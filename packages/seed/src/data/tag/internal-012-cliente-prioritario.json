@@ -1,0 +1,6 @@
+{
+    "name": "Cliente prioritario",
+    "description": "Este cliente recibe tratamiento comercial preferencial por parte del equipo.",
+    "color": "PURPLE",
+    "lifecycleState": "ACTIVE"
+}

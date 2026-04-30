@@ -1,0 +1,6 @@
+{
+    "name": "Cliente activo",
+    "description": "Cliente con actividad reciente en la plataforma.",
+    "color": "GREEN",
+    "lifecycleState": "ACTIVE"
+}

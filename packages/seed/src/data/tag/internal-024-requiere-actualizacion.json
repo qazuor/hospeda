@@ -1,0 +1,6 @@
+{
+    "name": "Requiere actualización",
+    "description": "La información de esta entidad podría estar desactualizada y debe ser revisada.",
+    "color": "YELLOW",
+    "lifecycleState": "ACTIVE"
+}

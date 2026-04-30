@@ -1,0 +1,6 @@
+{
+    "name": "Contenido sospechoso",
+    "description": "El texto, las imágenes o los datos parecen falsos o problemáticos y requieren revisión.",
+    "color": "RED",
+    "lifecycleState": "ACTIVE"
+}

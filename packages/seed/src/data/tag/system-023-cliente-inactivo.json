@@ -1,0 +1,6 @@
+{
+    "name": "Cliente inactivo",
+    "description": "Cliente sin movimiento reciente en la plataforma según el criterio del usuario.",
+    "color": "GREY",
+    "lifecycleState": "ACTIVE"
+}

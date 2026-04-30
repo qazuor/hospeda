@@ -1,0 +1,6 @@
+{
+    "name": "Validar datos",
+    "description": "El usuario quiere confirmar o verificar la información de esta entidad.",
+    "color": "ORANGE",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,6 @@
+{
+    "name": "Riesgo de baja",
+    "description": "Usuario o suscripción con alta probabilidad de abandonar la plataforma.",
+    "color": "RED",
+    "lifecycleState": "ACTIVE"
+}

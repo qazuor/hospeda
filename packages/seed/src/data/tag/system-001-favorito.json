@@ -1,0 +1,6 @@
+{
+    "name": "Favorito",
+    "description": "Marca una entidad importante para el usuario que la aplica.",
+    "color": "YELLOW",
+    "lifecycleState": "ACTIVE"
+}

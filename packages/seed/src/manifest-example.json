@@ -36,7 +36,8 @@
         "036-user-gonzalo-reyes.json",
         "037-user-rosario-navarro.json",
         "038-user-tomas-lara.json",
-        "039-user-cristina-romero.json"
+        "039-user-cristina-romero.json",
+        "040-user-romina-villaverde.json"
     ],
     "accommodations": [
         "chajari/001-accommodation-chajari-cabin-retiro-soleado-cabana-chajari.json",
@@ -140,53 +141,11 @@
         "uruguay/099-accommodation-uruguay-hotel-rio-soleado-hotel-concepcion_del_uruguay.json",
         "uruguay/100-accommodation-uruguay-camping-sendero-maravilloso-camping-concepcion_del_uruguay.json",
         "uruguay/101-accommodation-uruguay-cabin-sueno-soleado-cabana-concepcion_del_uruguay.json",
-        "uruguay/102-accommodation-uruguay-apartment-sueno-tranquilo-apartment-concepcion_del_uruguay.json"
+        "uruguay/102-accommodation-uruguay-apartment-sueno-tranquilo-apartment-concepcion_del_uruguay.json",
+        "uruguay/103-accommodation-uruguay-country-house-cheroga-casa-quinta-concepcion_del_uruguay.json",
+        "uruguay/104-accommodation-uruguay-apartment-el-mono-gris-turistico-concepcion_del_uruguay.json"
     ],
-    "tags": [
-        "001-tag-aguas-termales.json",
-        "002-tag-arquitectura.json",
-        "003-tag-artesanias.json",
-        "004-tag-astronomia.json",
-        "005-tag-aventura.json",
-        "006-tag-aventura-extrema.json",
-        "007-tag-camping.json",
-        "008-tag-ciclismo.json",
-        "009-tag-citricultura.json",
-        "010-tag-compras.json",
-        "011-tag-cultura.json",
-        "012-tag-delta.json",
-        "013-tag-deportes.json",
-        "014-tag-deportes-acuaticos.json",
-        "015-tag-ecoturismo.json",
-        "016-tag-entre-rios.json",
-        "017-tag-familia.json",
-        "018-tag-festivales.json",
-        "019-tag-fotograf-a.json",
-        "020-tag-gastronomia.json",
-        "021-tag-golf.json",
-        "022-tag-historia.json",
-        "023-tag-invierno.json",
-        "024-tag-kayak.json",
-        "025-tag-museos.json",
-        "026-tag-musica.json",
-        "027-tag-naturaleza.json",
-        "028-tag-observacion-fauna.json",
-        "029-tag-pareja.json",
-        "030-tag-pesca.json",
-        "031-tag-playas.json",
-        "032-tag-relax.json",
-        "033-tag-rio-parana.json",
-        "034-tag-seguridad.json",
-        "035-tag-senderismo.json",
-        "036-tag-spa.json",
-        "037-tag-teatro.json",
-        "038-tag-termas.json",
-        "039-tag-turismo.json",
-        "040-tag-verano.json",
-        "041-tag-vida-nocturna.json",
-        "042-tag-vinos.json",
-        "043-tag-yoga.json"
-    ],
+    "tags": [],
     "posts": [
         "001-tourism-destinos-imperdibles-entre-rios.json",
         "002-gastronomy-gastronomia-entrerriana-sabores-autenticos.json",
@@ -418,5 +377,8 @@
         "078-bookmark-admin-user-user-005-user-miguel-torres.json",
         "079-bookmark-admin-user-user-009-user-sofia-morales.json",
         "080-bookmark-admin-user-user-033-user-alejandra-cortes.json"
-    ]
+    ],
+    "userTags": [],
+    "postTagAssignments": [],
+    "entityTagAssignments": []
 }

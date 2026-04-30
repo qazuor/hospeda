@@ -1,0 +1,7 @@
+{
+    "name": "Mapa turístico",
+    "slug": "mapa-turistico",
+    "description": "Contenido geográfico y de orientación de rutas turísticas.",
+    "color": "CYAN",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,9 +1,0 @@
-{
-    "$schema": "../../schemas/tag.schema.json",
-    "id": "030-tag-pesca",
-    "name": "Pesca",
-    "slug": "pesca",
-    "color": "BLUE",
-    "notes": "Actividades de pesca deportiva y recreativa",
-    "lifecycleState": "DRAFT"
-}

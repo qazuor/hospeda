@@ -1,0 +1,6 @@
+{
+    "name": "Publicado",
+    "description": "El usuario marcó la entidad como publicada o activa.",
+    "color": "GREEN",
+    "lifecycleState": "ACTIVE"
+}

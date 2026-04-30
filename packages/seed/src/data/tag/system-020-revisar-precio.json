@@ -1,0 +1,6 @@
+{
+    "name": "Revisar precio",
+    "description": "El precio, la tarifa o las condiciones económicas de esta entidad deben ser revisados.",
+    "color": "YELLOW",
+    "lifecycleState": "ACTIVE"
+}

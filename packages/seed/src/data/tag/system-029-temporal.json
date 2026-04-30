@@ -1,0 +1,6 @@
+{
+    "name": "Temporal",
+    "description": "Marca temporal no definitiva aplicada por el usuario para uso transitorio.",
+    "color": "GREY",
+    "lifecycleState": "ACTIVE"
+}

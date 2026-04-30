@@ -1,0 +1,6 @@
+{
+    "name": "Pendiente de aprobación",
+    "description": "La entidad fue creada pero todavía no fue aprobada por el equipo de administración.",
+    "color": "YELLOW",
+    "lifecycleState": "ACTIVE"
+}

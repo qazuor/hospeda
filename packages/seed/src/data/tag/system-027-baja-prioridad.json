@@ -1,0 +1,6 @@
+{
+    "name": "Baja prioridad",
+    "description": "El usuario considera esta entidad de baja prioridad dentro de su flujo de trabajo.",
+    "color": "GREY",
+    "lifecycleState": "ACTIVE"
+}

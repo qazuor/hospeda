@@ -1,0 +1,6 @@
+{
+    "name": "Aprobado manualmente",
+    "description": "La entidad fue revisada y aprobada de forma explícita por un administrador.",
+    "color": "GREEN",
+    "lifecycleState": "ACTIVE"
+}

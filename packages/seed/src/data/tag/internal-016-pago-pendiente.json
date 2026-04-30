@@ -1,0 +1,6 @@
+{
+    "name": "Pago pendiente",
+    "description": "Existe una deuda, vencimiento o renovación pendiente de pago para esta entidad.",
+    "color": "RED",
+    "lifecycleState": "ACTIVE"
+}

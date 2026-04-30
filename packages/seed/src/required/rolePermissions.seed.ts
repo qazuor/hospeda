@@ -184,10 +184,32 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.THEME_EDIT,
         PermissionEnum.HOMEPAGE_LAYOUT_CONFIGURE,
 
-        // TAG: All permissions
-        PermissionEnum.TAG_CREATE,
-        PermissionEnum.TAG_UPDATE,
-        PermissionEnum.TAG_DELETE,
+        // TAG: All granular permissions per SPEC-086 (D-017)
+        PermissionEnum.TAG_INTERNAL_UPDATE,
+        PermissionEnum.TAG_INTERNAL_DELETE,
+        PermissionEnum.TAG_INTERNAL_VIEW,
+        PermissionEnum.TAG_INTERNAL_ASSIGN,
+        PermissionEnum.TAG_SYSTEM_CREATE,
+        PermissionEnum.TAG_SYSTEM_UPDATE,
+        PermissionEnum.TAG_SYSTEM_DELETE,
+        PermissionEnum.TAG_SYSTEM_VIEW,
+        PermissionEnum.TAG_USER_CREATE,
+        PermissionEnum.TAG_USER_UPDATE_OWN,
+        PermissionEnum.TAG_USER_DELETE_OWN,
+        PermissionEnum.TAG_USER_VIEW_OWN,
+        PermissionEnum.TAG_USER_DELETE_ANY,
+        PermissionEnum.TAG_VIEW_ALL_USER_TAGS,
+        PermissionEnum.TAG_VIEW_ALL_ASSIGNMENTS,
+        PermissionEnum.TAG_ASSIGN_VIEW,
+        PermissionEnum.TAG_ASSIGN_ADD,
+        PermissionEnum.TAG_ASSIGN_REMOVE,
+
+        // POST_TAG: SEO blog taxonomy permissions (SPEC-086)
+        PermissionEnum.POST_TAG_VIEW,
+        PermissionEnum.POST_TAG_CREATE,
+        PermissionEnum.POST_TAG_UPDATE,
+        PermissionEnum.POST_TAG_DELETE,
+        PermissionEnum.POST_TAG_ASSIGN,
 
         // METRICS: All permissions
         PermissionEnum.METRICS_RESET,
@@ -414,10 +436,28 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.THEME_EDIT,
         PermissionEnum.HOMEPAGE_LAYOUT_CONFIGURE,
 
-        // TAG: All permissions
-        PermissionEnum.TAG_CREATE,
-        PermissionEnum.TAG_UPDATE,
-        PermissionEnum.TAG_DELETE,
+        // TAG: Granular permissions per SPEC-086 (D-017) — admin manages SYSTEM/INTERNAL,
+        // moderates user tags but cannot hard-delete arbitrary user tags by default.
+        PermissionEnum.TAG_INTERNAL_UPDATE,
+        PermissionEnum.TAG_INTERNAL_DELETE,
+        PermissionEnum.TAG_INTERNAL_VIEW,
+        PermissionEnum.TAG_INTERNAL_ASSIGN,
+        PermissionEnum.TAG_SYSTEM_CREATE,
+        PermissionEnum.TAG_SYSTEM_UPDATE,
+        PermissionEnum.TAG_SYSTEM_DELETE,
+        PermissionEnum.TAG_SYSTEM_VIEW,
+        PermissionEnum.TAG_VIEW_ALL_USER_TAGS,
+        PermissionEnum.TAG_VIEW_ALL_ASSIGNMENTS,
+        PermissionEnum.TAG_ASSIGN_VIEW,
+        PermissionEnum.TAG_ASSIGN_ADD,
+        PermissionEnum.TAG_ASSIGN_REMOVE,
+
+        // POST_TAG: SEO blog taxonomy permissions (SPEC-086)
+        PermissionEnum.POST_TAG_VIEW,
+        PermissionEnum.POST_TAG_CREATE,
+        PermissionEnum.POST_TAG_UPDATE,
+        PermissionEnum.POST_TAG_DELETE,
+        PermissionEnum.POST_TAG_ASSIGN,
 
         // METRICS: All permissions
         PermissionEnum.METRICS_RESET,
@@ -557,10 +597,24 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCESS_API_ADMIN,
         PermissionEnum.ACCESS_API_PUBLIC,
 
-        // TAG: All permissions
-        PermissionEnum.TAG_CREATE,
-        PermissionEnum.TAG_UPDATE,
-        PermissionEnum.TAG_DELETE,
+        // TAG: Editor scope per SPEC-086 (D-017)
+        // Editors manage SYSTEM tags (read-only), own USER tags, can assign visible
+        // tags, and fully manage POST_TAG SEO blog taxonomy.
+        PermissionEnum.TAG_SYSTEM_VIEW,
+        PermissionEnum.TAG_USER_CREATE,
+        PermissionEnum.TAG_USER_UPDATE_OWN,
+        PermissionEnum.TAG_USER_DELETE_OWN,
+        PermissionEnum.TAG_USER_VIEW_OWN,
+        PermissionEnum.TAG_ASSIGN_VIEW,
+        PermissionEnum.TAG_ASSIGN_ADD,
+        PermissionEnum.TAG_ASSIGN_REMOVE,
+
+        // POST_TAG: SEO blog taxonomy permissions (SPEC-086)
+        PermissionEnum.POST_TAG_VIEW,
+        PermissionEnum.POST_TAG_CREATE,
+        PermissionEnum.POST_TAG_UPDATE,
+        PermissionEnum.POST_TAG_DELETE,
+        PermissionEnum.POST_TAG_ASSIGN,
 
         // MEDIA: Cross-entity media management
         PermissionEnum.MEDIA_UPLOAD,
@@ -642,6 +696,17 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.MEDIA_UPLOAD,
         PermissionEnum.MEDIA_DELETE,
 
+        // TAG: Host scope per SPEC-086 (D-017) — manages own USER tags, can view
+        // SYSTEM tags (apply but not manage), and assigns tags to own entities.
+        PermissionEnum.TAG_SYSTEM_VIEW,
+        PermissionEnum.TAG_USER_CREATE,
+        PermissionEnum.TAG_USER_UPDATE_OWN,
+        PermissionEnum.TAG_USER_DELETE_OWN,
+        PermissionEnum.TAG_USER_VIEW_OWN,
+        PermissionEnum.TAG_ASSIGN_VIEW,
+        PermissionEnum.TAG_ASSIGN_ADD,
+        PermissionEnum.TAG_ASSIGN_REMOVE,
+
         // CONVERSATION: Own-scoped conversation management (owner replies and moderation)
         PermissionEnum.CONVERSATION_VIEW_OWN,
         PermissionEnum.CONVERSATION_REPLY_OWN,
@@ -695,7 +760,11 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
     [RoleEnum.GUEST]: [
         // ACCESS: Public API only
         PermissionEnum.ACCESS_API_PUBLIC
-    ]
+    ],
+
+    // SYSTEM role: non-loginable reserved account (SPEC-086 D-005).
+    // Has no permissions — used only as assignedById for automated operations.
+    [RoleEnum.SYSTEM]: []
 } as const;
 
 /**
