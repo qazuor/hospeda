@@ -74,8 +74,8 @@
     font-family: var(--font-sans);
     font-size: 0.9375rem;
     line-height: 1.5;
-    transition: border-color var(--duration-normal, 0.4s) ease,
-        box-shadow var(--duration-normal, 0.4s) ease;
+    transition: border-color var(--duration-normal, 0.4s) ease, box-shadow
+        var(--duration-normal, 0.4s) ease;
     outline: none;
     box-sizing: border-box;
 }
@@ -176,8 +176,8 @@
     font-size: 0.875rem;
     color: var(--foreground);
     cursor: pointer;
-    transition: background-color var(--duration-normal, 0.4s) ease,
-        border-color var(--duration-normal, 0.4s) ease;
+    transition: background-color var(--duration-normal, 0.4s) ease, border-color
+        var(--duration-normal, 0.4s) ease;
 }
 
 .avatarUploadBtn:hover {

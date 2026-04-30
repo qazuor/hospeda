@@ -59,8 +59,8 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: box-shadow var(--duration-normal, 0.4s) ease,
-        transform var(--duration-normal, 0.4s) ease;
+    transition: box-shadow var(--duration-normal, 0.4s) ease, transform var(--duration-normal, 0.4s)
+        ease;
 }
 
 .card:hover {
@@ -69,7 +69,7 @@
 }
 
 .cardImage {
-    aspect-ratio: 16/9;
+    aspect-ratio: 16 / 9;
     overflow: hidden;
     background-color: var(--surface-warm);
 }
@@ -152,8 +152,8 @@
     font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color var(--duration-normal, 0.4s) ease,
-        opacity var(--duration-normal, 0.4s) ease;
+    transition: background-color var(--duration-normal, 0.4s) ease, opacity
+        var(--duration-normal, 0.4s) ease;
 }
 
 .removeBtn:hover:not(:disabled) {
@@ -183,8 +183,8 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
     cursor: pointer;
-    transition: background-color var(--duration-normal, 0.4s) ease,
-        border-color var(--duration-normal, 0.4s) ease;
+    transition: background-color var(--duration-normal, 0.4s) ease, border-color
+        var(--duration-normal, 0.4s) ease;
 }
 
 .pageBtn:hover:not(:disabled) {

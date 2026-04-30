@@ -57,13 +57,13 @@
 .badgeActive {
     background-color: oklch(from var(--success, oklch(0.55 0.18 145)) l c h / 0.15);
     color: var(--success, oklch(0.55 0.18 145));
-    border: 1px solid oklch(from var(--success, oklch(0.55 0.18 145)) l c h / 0.30);
+    border: 1px solid oklch(from var(--success, oklch(0.55 0.18 145)) l c h / 0.3);
 }
 
 .badgeTrial {
     background-color: oklch(from var(--accent, oklch(0.65 0.22 60)) l c h / 0.15);
     color: var(--accent, oklch(0.65 0.22 60));
-    border: 1px solid oklch(from var(--accent, oklch(0.65 0.22 60)) l c h / 0.30);
+    border: 1px solid oklch(from var(--accent, oklch(0.65 0.22 60)) l c h / 0.3);
 }
 
 .badgeCancelled {
@@ -239,8 +239,8 @@
     border-radius: var(--radius-button, 8px);
     cursor: pointer;
     text-decoration: none;
-    transition: background-color var(--duration-normal, 0.4s) ease,
-        color var(--duration-normal, 0.4s) ease;
+    transition: background-color var(--duration-normal, 0.4s) ease, color
+        var(--duration-normal, 0.4s) ease;
     min-height: 40px;
     white-space: nowrap;
 }
@@ -269,8 +269,8 @@
     border-radius: var(--radius-button, 8px);
     cursor: pointer;
     text-decoration: none;
-    transition: background-color var(--duration-normal, 0.4s) ease,
-        color var(--duration-normal, 0.4s) ease;
+    transition: background-color var(--duration-normal, 0.4s) ease, color
+        var(--duration-normal, 0.4s) ease;
     min-height: 40px;
     white-space: nowrap;
 }
@@ -299,8 +299,8 @@
     border-radius: var(--radius-button, 8px);
     cursor: pointer;
     text-decoration: none;
-    transition: background-color var(--duration-normal, 0.4s) ease,
-        color var(--duration-normal, 0.4s) ease;
+    transition: background-color var(--duration-normal, 0.4s) ease, color
+        var(--duration-normal, 0.4s) ease;
     min-height: 40px;
     white-space: nowrap;
 }

@@ -39,8 +39,8 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-button, 8px);
     padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
-    transition: border-color var(--duration-fast, 150ms) ease,
-        box-shadow var(--duration-fast, 150ms) ease;
+    transition: border-color var(--duration-fast, 150ms) ease, box-shadow
+        var(--duration-fast, 150ms) ease;
 }
 
 .input:focus,
@@ -51,9 +51,9 @@
     box-shadow: 0 0 0 3px oklch(from var(--accent) l c h / 0.2);
 }
 
-.input[aria-invalid='true'],
-.select[aria-invalid='true'],
-.textarea[aria-invalid='true'] {
+.input[aria-invalid="true"],
+.select[aria-invalid="true"],
+.textarea[aria-invalid="true"] {
     border-color: var(--destructive, oklch(0.55 0.22 25));
 }
 
@@ -103,8 +103,8 @@
     border-radius: var(--radius-button, 8px);
     padding: var(--space-3, 0.75rem) var(--space-6, 1.5rem);
     cursor: pointer;
-    transition: background-color var(--duration-slow, 0.5s) ease,
-        transform var(--duration-fast, 150ms) ease;
+    transition: background-color var(--duration-slow, 0.5s) ease, transform
+        var(--duration-fast, 150ms) ease;
 }
 
 .submitBtn:hover:not(:disabled) {

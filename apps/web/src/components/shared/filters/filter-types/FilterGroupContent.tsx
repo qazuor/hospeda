@@ -7,8 +7,8 @@
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import styles from './FilterGroupContent.module.css';
 import { DualRangeFilter } from './DualRangeFilter';
+import styles from './FilterGroupContent.module.css';
 import { IconChipsFilter } from './IconChipsFilter';
 import { SelectSearchFilter } from './SelectSearchFilter';
 import { StarsFilter } from './StarsFilter';

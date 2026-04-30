@@ -71,8 +71,8 @@
     padding: var(--space-2, 8px) var(--space-4, 16px);
     cursor: pointer;
     align-self: flex-end;
-    transition: background-color var(--duration-fast, 0.2s) ease,
-                opacity var(--duration-fast, 0.2s) ease;
+    transition: background-color var(--duration-fast, 0.2s) ease, opacity var(--duration-fast, 0.2s)
+        ease;
 }
 
 .submitButton:hover:not(:disabled) {

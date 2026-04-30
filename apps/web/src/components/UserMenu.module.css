@@ -19,8 +19,7 @@
     border: 1px solid oklch(from var(--core-foreground) l c h / 0.2);
     color: var(--core-foreground);
     background-color: transparent;
-    transition: background-color var(--duration-normal) ease,
-        color var(--duration-normal) ease;
+    transition: background-color var(--duration-normal) ease, color var(--duration-normal) ease;
     white-space: nowrap;
 }
 
@@ -144,8 +143,7 @@
     font-family: var(--font-sans);
     color: oklch(from var(--core-foreground) l c h / 0.85);
     text-decoration: none;
-    transition: background-color var(--duration-fast) ease,
-        color var(--duration-fast) ease;
+    transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
 }
 
 .menuItem:hover {
