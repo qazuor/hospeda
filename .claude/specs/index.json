@@ -78,7 +78,8 @@
             "path": "SPEC-096-web-beta-readiness",
             "created": "2026-04-29T00:00:00.000Z",
             "completedAt": "2026-04-29T18:30:00.000Z",
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-04-29T18:45:00.000Z",
             "absorbs": ["SPEC-075"]
         },
         {
