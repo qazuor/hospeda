@@ -62,8 +62,8 @@ export const createMockUserBookmarkCreateInput = (
         userId: string;
         entityId: string;
         entityType: EntityTypeEnum;
-        name?: string;
-        description?: string;
+        name?: string | null;
+        description?: string | null;
     }> = {}
 ) => {
     return {
