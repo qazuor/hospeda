@@ -3,8 +3,8 @@
     "title": "Tag System Refactor (Two Subsystems: PostTag + User-Tag)",
     "version": "1.0",
     "createdAt": "2026-04-29T00:00:00.000Z",
-    "updatedAt": "2026-04-30T04:30:00.000Z",
-    "status": "pending",
+    "updatedAt": "2026-04-30T00:00:00.000Z",
+    "status": "in-progress",
     "decompositionPasses": 2,
     "criticalPath": [
         "T-001",
@@ -456,7 +456,7 @@
             "id": "T-019",
             "title": "Implement TagService quota enforcement with advisory lock",
             "description": "Add USER tag quota check protected by PostgreSQL advisory lock to `TagService.create()`.\n\n**Files to modify:**\n- `packages/service-core/src/services/tag/tag.service.ts`:\n  - Add `getUserTagQuota()` private method: reads `HOSPEDA_TAG_USER_QUOTA_PER_USER` env var; parseInt; falls back to 50 if NaN or unset (AC-F17)\n  - In `create()` for `type = USER`:\n    1. Begin transaction\n    2. Acquire advisory lock: `await db.execute(sql\\`SELECT pg_advisory_xact_lock(hashtext(${ownerId}))\\`)` (pattern from D-010/SPEC-064)\n    3. Count active USER tags for owner: `TagModel.countActiveByOwner(ownerId)`\n    4. If count >= quota \u2192 rollback and return `Result` with error code QUOTA_EXCEEDED (AC-F09)\n    5. Insert tag row\n    6. Commit\n  - Advisory lock is auto-released at transaction end\n\n**Testing requirements:**\n- File: `packages/service-core/src/__tests__/services/tag/tag.service.quota.test.ts`\n- Test AC-F09: create 50 tags for user, attempt 51st \u2192 quota error, count still 50\n- Test AC-F17: set env var to 5, create 5 tags, attempt 6th \u2192 quota error\n- Test AC-F10 (concurrent race): two simultaneous creates at quota boundary \u2192 exactly quota tags created (advisory lock prevents both succeeding)\n- References: AC-F09, AC-F10, AC-F17, D-010, D-021\n\n**Acceptance criteria for this task:**\n- Advisory lock pattern matches SPEC-064 implementation exactly\n- Quota fallback to 50 when env var unset\n- No tag is created when quota exceeded \u2014 no partial insert",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-018"],
             "blocks": ["T-021"],
@@ -464,21 +464,21 @@
             "tags": ["backend", "service", "user-tag", "concurrency"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-29T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-30T04:39:41.000Z",
+                "completed": "2026-04-30T04:39:41.000Z"
             }
         },
         {
             "id": "T-020",
             "title": "Implement TagService picker visibility and entity-tag scoping",
             "description": "Add picker visibility scoping and per-user entity-tag visibility to `TagService`.\n\n**Files to modify:**\n- `packages/service-core/src/services/tag/tag.service.ts`:\n  - `getPickerTags(actor, query?)`: Returns tags for the picker based on D-006:\n    - Anonymous: throw UNAUTHORIZED\n    - Authenticated user (no `TAG_INTERNAL_VIEW`): SYSTEM (ACTIVE) + actor's USER (ACTIVE)\n    - Admin with `TAG_INTERNAL_VIEW`: INTERNAL + SYSTEM + actor's USER (all ACTIVE)\n    - Apply name search via `safeIlike` if `query` provided (D-014)\n    - Delegates to `TagModel.findPickerTags()`\n  - `getTagsForEntity(entityId, entityType, actor)`: Returns tags per D-007:\n    - Anonymous: return empty array (no user-tag for anonymous)\n    - Authenticated user: filter `r_entity_tag` WHERE `assignedById = actor.id`\n    - Admin with `TAG_VIEW_ALL_ASSIGNMENTS`: return all assignments with `assignedById` populated\n    - Delegates to `REntityTagModel.findByEntityAndActor()` or `.findByEntityAll()`\n  - `getPopularTags()`: updated to count DISTINCT entityId-based counts (not raw row count)\n\n**Testing requirements:**\n- File: `packages/service-core/src/__tests__/services/tag/tag.service.visibility.test.ts`\n- Assert: regular user picker excludes INTERNAL tags (AC-F07); user A cannot see user B's assignments on entity X (AC-F05); admin with `TAG_VIEW_ALL_ASSIGNMENTS` sees all (AC-F06)\n- References: AC-F05, AC-F06, AC-F07, D-006, D-007\n\n**Acceptance criteria for this task:**\n- `getPickerTags` is gated on auth state \u2014 anonymous gets error\n- Entity tag list returns only actor's assignments by default\n- Admin attribution view requires explicit `TAG_VIEW_ALL_ASSIGNMENTS` permission check",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-015", "T-016"],
             "blocks": ["T-021"],
@@ -486,21 +486,21 @@
             "tags": ["backend", "service", "user-tag"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-29T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-30T04:39:41.000Z",
+                "completed": "2026-04-30T04:39:41.000Z"
             }
         },
         {
             "id": "T-021",
             "title": "Implement TagService entity-access check and assignedById injection on assign",
             "description": "Add entity-access pre-check (D-009) and `assignedById` injection to `TagService.assignTag()`.\n\n**Files to modify:**\n- `packages/service-core/src/services/tag/tag.service.ts`:\n  - `assignTag({ tagId, entityId, entityType, actor })` method:\n    1. Verify tag exists; if not \u2192 `Result` NOT_FOUND\n    2. Check actor's picker visibility (D-008): tag type must be in actor's picker; if not \u2192 `Result` FORBIDDEN (AC-F07, AC-F05)\n    3. Check entity access (D-009): call `EntityAccessRegistry.canView(entityType, entityId, actor)`; if false \u2192 `Result` FORBIDDEN (AC-F08)\n    4. Inject `assignedById = actor.id` (never allow caller to pass arbitrary `assignedById` from outside)\n    5. Insert into `r_entity_tag` with 4-column PK `(tagId, entityId, entityType, actor.id)`\n    6. Duplicate assignment (same actor applies same tag to same entity) should be idempotent (upsert or check existing)\n  - Create `packages/service-core/src/services/tag/entity-access-registry.ts`:\n    - Simple registry mapping `EntityTypeEnum` \u2192 `canView(entityId, actorId) => Promise<boolean>`\n    - Stub implementations for now that return `true` (actual entity service integration is follow-up for each entity type)\n    - Log a warning when entity type has no registered checker\n  - `removeAssignment({ tagId, entityId, entityType, actor })`: validates actor owns the assignment (`assignedById = actor.id`) before deleting\n\n**Testing requirements:**\n- File: `packages/service-core/src/__tests__/services/tag/tag.service.assign.test.ts`\n- Assert: assigning INTERNAL tag as regular user \u2192 FORBIDDEN (AC-F07); assigning to inaccessible entity \u2192 FORBIDDEN (AC-F08); two users assign same SYSTEM tag \u2192 two rows (AC-F04)\n- References: AC-F04, AC-F07, AC-F08, D-008, D-009\n\n**Acceptance criteria for this task:**\n- `assignedById` always injected from `actor.id`, not from request body\n- Both D-008 (picker visibility) and D-009 (entity access) checks happen before DB write\n- AC-F04 scenario (two users, same SYSTEM tag, same entity) creates 2 rows",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-018", "T-019", "T-020"],
             "blocks": ["T-025", "T-026", "T-027", "T-028"],
@@ -508,14 +508,14 @@
             "tags": ["backend", "service", "user-tag"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-29T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-30T05:05:54.000Z",
+                "completed": "2026-04-30T05:05:54.000Z"
             }
         },
         {
@@ -544,7 +544,7 @@
             "id": "T-023",
             "title": "Implement TagService user-tag CRUD for own tags (USER type)",
             "description": "Implement the user-facing USER tag CRUD operations in `TagService`: list own, create (wraps quota logic), update own, get impact.\n\n**Files to modify:**\n- `packages/service-core/src/services/tag/tag.service.ts`:\n  - `listOwnTags(actor, query?)`: Returns all USER tags WHERE `ownerId = actor.id` (all lifecycle states per D-022); apply name search if provided; used by user tag manager\n  - `createUserTag(input, actor)`: wires through type invariant check (T-018) + quota+advisory lock (T-019); sets `ownerId = actor.id` and `type = USER` automatically\n  - `updateOwnTag(tagId, input, actor)`: validates `ownerId = actor.id`; only `name`, `color`, `icon`, `description`, `lifecycleState` patchable; `type` is immutable\n  - `getOwnTagImpactCount(tagId, actor)`: count `r_entity_tag` WHERE `tagId = tagId AND assignedById = actor.id` (user only sees their own assignments)\n  - `getQuotaStatus(actor)`: returns `{ used: number, limit: number }` for the quota indicator bar in the user manager UI (AC-003-03)\n\n**Testing requirements:**\n- File: `packages/service-core/src/__tests__/services/tag/tag.service.user-crud.test.ts`\n- Assert: `listOwnTags` returns ACTIVE + INACTIVE + ARCHIVED (D-022); `updateOwnTag` with different `ownerId` tag \u2192 FORBIDDEN; `getQuotaStatus` returns correct `used` count\n- References: AC-003-01 through AC-003-04, D-022\n\n**Acceptance criteria for this task:**\n- User cannot update another user's tag (ownerId check)\n- `listOwnTags` returns all lifecycle states (not just ACTIVE) \u2014 user manager shows history\n- `type` field is NOT patchable via `updateOwnTag`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-018", "T-019", "T-020"],
             "blocks": ["T-028"],
@@ -552,14 +552,14 @@
             "tags": ["backend", "service", "user-tag"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-29T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-30T05:05:54.000Z",
+                "completed": "2026-04-30T05:05:54.000Z"
             }
         },
         {
@@ -589,7 +589,7 @@
             "id": "T-025",
             "title": "Create admin API routes for INTERNAL and SYSTEM user-tags",
             "description": "Implement admin routes for INTERNAL and SYSTEM user-tag CRUD under `/api/v1/admin/tags`.\n\n**Files to create:**\n- `apps/api/src/routes/tag/user-tag/admin/internal.ts`:\n  - `GET /api/v1/admin/tags/internal` \u2014 list INTERNAL; requires `TAG_INTERNAL_VIEW`\n  - `POST /api/v1/admin/tags/internal` \u2014 create; requires `TAG_INTERNAL_CREATE`\n  - `GET /api/v1/admin/tags/internal/:id` \u2014 get one; requires `TAG_INTERNAL_VIEW`\n  - `PATCH /api/v1/admin/tags/internal/:id` \u2014 update; requires `TAG_INTERNAL_UPDATE`\n  - `GET /api/v1/admin/tags/internal/:id/impact` \u2014 impact count; requires `TAG_INTERNAL_VIEW`\n  - `DELETE /api/v1/admin/tags/internal/:id` \u2014 hard delete; requires `TAG_INTERNAL_DELETE`\n- `apps/api/src/routes/tag/user-tag/admin/system.ts`:\n  - Same CRUD pattern for SYSTEM type; permissions use `TAG_SYSTEM_*`\n- `apps/api/src/routes/tag/user-tag/admin/index.ts`:\n  - Mount internal.ts and system.ts sub-routers\n  - `GET /api/v1/admin/tags/:id/impact` \u2014 shared impact count endpoint (works for INTERNAL and SYSTEM)\n- Wire into `apps/api/src/routes/index.ts`\n\n**Testing requirements:**\n- File: `apps/api/test/routes/tag/admin-internal.test.ts`\n- Assert: POST internal without `TAG_INTERNAL_CREATE` \u2192 403; GET internal returns only INTERNAL-type tags; PATCH does not allow `type` change; DELETE with `TAG_INTERNAL_DELETE` removes tag and assignments\n- References: AC-004-01, AC-004-02, D-020\n\n**Acceptance criteria for this task:**\n- INTERNAL routes never return SYSTEM or USER tags\n- SYSTEM routes never return INTERNAL or USER tags\n- `type` field not patchable via PATCH",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-003", "T-013", "T-021", "T-022"],
             "blocks": ["T-029", "T-042"],
@@ -605,13 +605,14 @@
                 "created": "2026-04-29T00:00:00.000Z",
                 "started": null,
                 "completed": null
-            }
+            },
+            "completedAt": "2026-04-30T00:00:00.000Z"
         },
         {
             "id": "T-026",
             "title": "Create admin API routes for USER tag moderation and cross-user attribution",
             "description": "Implement super-admin moderation routes for USER tags and entity attribution view.\n\n**Files to create:**\n- `apps/api/src/routes/tag/user-tag/admin/user-moderation.ts`:\n  - `GET /api/v1/admin/tags/user` \u2014 list ALL USER tags across all owners; requires `TAG_VIEW_ALL_USER_TAGS`; paginated\n  - `DELETE /api/v1/admin/tags/user/:id` \u2014 delete any USER tag; requires `TAG_USER_DELETE_ANY`\n  - NO PATCH/UPDATE endpoint \u2014 moderation is delete-only per D-012\n- `apps/api/src/routes/tag/user-tag/admin/entity-attribution.ts`:\n  - `GET /api/v1/admin/entities/:type/:id/tags` \u2014 all assignments on entity with attribution; requires `TAG_VIEW_ALL_ASSIGNMENTS`; response includes `assignedById` and assigning user identifier\n- Mount both in admin index router\n\n**Testing requirements:**\n- File: `apps/api/test/routes/tag/admin-user-moderation.test.ts`\n- Assert: GET /admin/tags/user without `TAG_VIEW_ALL_USER_TAGS` \u2192 403; DELETE /admin/tags/user/:id without `TAG_USER_DELETE_ANY` \u2192 403; GET /admin/entities/:type/:id/tags returns all assignments with attribution (AC-F06); no PATCH route exists (D-012)\n- References: AC-F06, AC-007-01, AC-007-02, AC-008-01, AC-008-02, D-012, D-020\n\n**Acceptance criteria for this task:**\n- No PATCH route \u2014 405 if attempted\n- `TAG_VIEW_ALL_ASSIGNMENTS` required for entity attribution view\n- Response includes assigning user identifier on each assignment row",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-021", "T-022"],
             "blocks": ["T-029", "T-042"],
@@ -627,13 +628,14 @@
                 "created": "2026-04-29T00:00:00.000Z",
                 "started": null,
                 "completed": null
-            }
+            },
+            "completedAt": "2026-04-30T00:00:00.000Z"
         },
         {
             "id": "T-027",
             "title": "Create admin API routes for own USER tag CRUD",
             "description": "Per D-024, user-tag routes live entirely under /admin/* (no /protected/* tier). Implement own-tag CRUD for any admin-panel user.\n\n**Files to create:**\n- `apps/api/src/routes/admin/tags/own/index.ts`\n- list.ts (GET /admin/tags/own, TAG_USER_VIEW_OWN, scoped to actor)\n- create.ts (POST /admin/tags/own, TAG_USER_CREATE)\n- update.ts (PATCH /admin/tags/own/:id, TAG_USER_UPDATE_OWN, owner check)\n- impact.ts (GET /admin/tags/own/:id/impact, TAG_USER_VIEW_OWN, owner check)\n- delete.ts (DELETE /admin/tags/own/:id, TAG_USER_DELETE_OWN, owner check)\n\n**Testing:**\n- File: `apps/api/test/routes/admin/tags/own.test.ts`\n- Cover: list returns only actor own tags, owner check on update/delete, impact count returned\n- References: AC-F09, D-024, US-001, US-003",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-003", "T-013", "T-021", "T-022", "T-023"],
             "blocks": ["T-032", "T-042"],
@@ -649,13 +651,14 @@
                 "created": "2026-04-29T00:00:00.000Z",
                 "started": null,
                 "completed": null
-            }
+            },
+            "completedAt": "2026-04-30T00:00:00.000Z"
         },
         {
             "id": "T-028",
             "title": "Create admin API routes for entity tag assignment",
             "description": "Per D-024, entity assignment routes live under /admin/* not /protected/*. Implement assign/unassign with per-actor scoping.\n\n**Files to create:**\n- list-own.ts (GET /admin/entities/:type/:id/tags/own, TAG_ASSIGN_VIEW, returns only actor assignments per D-007)\n- list-all.ts (GET /admin/entities/:type/:id/tags, TAG_VIEW_ALL_ASSIGNMENTS, super-admin attribution view)\n- add.ts (POST /admin/entities/:type/:id/tags, TAG_ASSIGN_ADD; service enforces D-008 visible-tag + D-009 entity-access)\n- remove.ts (DELETE /admin/entities/:type/:id/tags/:tagId, TAG_ASSIGN_REMOVE, only own assignment)\n\n**Testing:**\n- File: `apps/api/test/routes/admin/entities/tags.test.ts`\n- Cover: per-user attribution scoping; super-admin attribution view; INTERNAL blocked for non-admin (403); inaccessible entity (403); cannot remove other user assignment\n- References: AC-F04, AC-F05, AC-F06, AC-F07, AC-F08, D-007, D-008, D-009, US-002, US-007",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-003", "T-013", "T-021", "T-023"],
             "blocks": ["T-033", "T-042"],
@@ -671,13 +674,14 @@
                 "created": "2026-04-29T00:00:00.000Z",
                 "started": null,
                 "completed": null
-            }
+            },
+            "completedAt": "2026-04-30T00:00:00.000Z"
         },
         {
             "id": "T-029",
             "title": "Create Admin UI: PostTag management section",
             "description": "Implement the PostTag management section in the TanStack Start admin dashboard.\n\n**Files to create:**\n- `apps/admin/src/routes/_authed/tags/post-tags/index.tsx` \u2014 PostTag list page with CRUD table\n- `apps/admin/src/routes/_authed/tags/post-tags/new.tsx` \u2014 create form\n- `apps/admin/src/routes/_authed/tags/post-tags/$id/edit.tsx` \u2014 edit form\n- `apps/admin/src/components/tags/PostTagForm.tsx` \u2014 shared form component (name, slug, color picker, description, lifecycleState)\n- `apps/admin/src/components/tags/PostTagDeleteDialog.tsx` \u2014 two-step delete with impact count display (D-011)\n- `apps/admin/src/hooks/use-post-tags.ts` \u2014 TanStack Query hooks for PostTag CRUD\n\n**Styling:** Tailwind CSS v4 utility classes (admin convention). Shadcn UI components.\n\n**Key UX:** Delete flow calls `GET /impact` first, shows count in dialog, then calls `DELETE` on confirm.\n\n**Testing requirements:**\n- File: `apps/admin/src/components/tags/__tests__/PostTagDeleteDialog.test.tsx`\n- Assert: dialog shows impact count from API; confirm button calls DELETE; cancel does not\n- References: D-011, AC-005-01, AC-005-02, AC-005-03\n\n**Acceptance criteria for this task:**\n- Impact count shown before delete confirmation\n- Slug field auto-generates from name but is user-editable\n- Form validates slug format (lowercase, URL-safe) client-side",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-024"],
             "blocks": ["T-043"],
@@ -685,14 +689,14 @@
             "tags": ["frontend", "admin", "post-tag"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-29T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-30T05:05:54.000Z",
+                "completed": "2026-04-30T05:05:54.000Z"
             }
         },
         {
@@ -787,7 +791,7 @@
             "id": "T-034",
             "title": "Implement public PostTag-filtered post listing in web app",
             "description": "Verify and align the public PostTag-filtered post listing (`/blog?tag=gastronomia`) with the new PostTag subsystem.\n\n**Files to modify:**\n- `apps/web/src/pages/[lang]/publicaciones/index.astro` \u2014 verify `tag` query param is consumed and passed to `GET /public/posts/tags` + post list filter; update API endpoint references to new routes\n- `apps/web/src/lib/api/endpoints.ts` \u2014 add/update `PUBLIC_POST_TAGS`, `PUBLIC_POSTS_BY_TAG` endpoint constants\n- Verify `apps/web/src/pages/[lang]/publicaciones/[slug].astro` displays PostTags for the post (from `r_post_post_tag`)\n\n**Key behaviors to implement/verify:**\n- `/publicaciones?tag=gastronomia` \u2192 filters by PostTag slug\n- Non-existent slug returns empty list or 404 (AC-F14)\n- Only ACTIVE PostTags linked to a post are shown on post detail\n- INTERNAL user-tags NEVER appear on any public page (they are a different subsystem)\n\n**Testing requirements:**\n- File: `apps/web/src/__tests__/pages/publicaciones.tag-filter.test.ts`\n- Assert: `?tag=gastronomia` with ACTIVE PostTag returns matching posts; `?tag=spam` (unknown slug) returns empty or 404; INTERNAL user-tag slug never appears as URL filter (different subsystem)\n- References: AC-F13, AC-F14, AC-006-01, AC-006-02, AC-006-03\n\n**Acceptance criteria for this task:**\n- Public URL filter works for ACTIVE PostTag slugs\n- No leak of INTERNAL user-tag names in any public response\n- Endpoint uses new route `/api/v1/public/posts/tags`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-024"],
             "blocks": ["T-044"],
@@ -795,14 +799,14 @@
             "tags": ["frontend", "web", "post-tag", "public"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-29T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-30T05:05:54.000Z",
+                "completed": "2026-04-30T05:05:54.000Z"
             }
         },
         {
@@ -853,7 +857,7 @@
             "id": "T-037",
             "title": "Implement required seeds R-2 and R-3: INTERNAL and SYSTEM user-tags",
             "description": "Seed the baseline INTERNAL and SYSTEM user-tag sets.\n\n**Source of truth for content:** `.claude/specs/SPEC-086-tag-system-refactor/tag-seeds.md`. Read that document for the canonical list of tag names, target entity types, suggested colors, and applier types. The doc currently defines 19 INTERNAL tags (Spam, Reportado, Verificado, Necesita revisi\u00f3n, Bloqueado, Demo/Test, Cliente VIP, Sospechoso, KYC pendiente, Trial expirado, Recuperaci\u00f3n, Riesgo churn, Chargeback, Reembolso pendiente, Cobro fallido, Editorial pendiente, Foto baja calidad, Lenguaje ofensivo, Plagio sospechoso) and 20 SYSTEM tags (Rom\u00e1ntico, Aventura, Relax, Trabajo remoto, Lujoso, Econ\u00f3mico, Eco-friendly, Familiar, Para grupos, Para parejas, Apto mascotas, Para ni\u00f1os, Mejor en verano, Mejor en invierno, Al aire libre, Imperdible, Recomendado por locales, Gratuito, Pago, Reserva previa). If `tag-seeds.md` is updated, update this seed implementation to match \u2014 that doc is the single source of truth.\n\n**Files to create:**\n- `packages/seed/src/data/tag/internal-NNN-{slug}.json` \u2014 one JSON per INTERNAL tag from tag-seeds.md\n- `packages/seed/src/data/tag/system-NNN-{slug}.json` \u2014 one JSON per SYSTEM tag from tag-seeds.md\n- `packages/seed/src/required/internalTags.seed.ts`:\n  - Reads internal-*.json files\n  - Inserts each with `type = TagTypeEnum.INTERNAL`, `ownerId = NULL`, `lifecycleState = ACTIVE`, `createdById = SYSTEM_USER_ID`, `description` from JSON\n  - Idempotent: upsert/check existence by `(type, name)`\n- `packages/seed/src/required/systemTags.seed.ts`:\n  - Reads system-*.json files\n  - Inserts each with `type = TagTypeEnum.SYSTEM`, `ownerId = NULL`, `lifecycleState = ACTIVE`, `createdById = SYSTEM_USER_ID`, `description` from JSON\n  - Idempotent: upsert/check existence by `(type, name)`\n\n**Files to modify:**\n- `packages/seed/src/manifest-required.json` \u2014 add both seeds after `systemUser` (order: systemUser \u2192 internalTags \u2192 systemTags)\n\n**Testing requirements:**\n- File: `packages/seed/src/__tests__/required/internalTags.seed.test.ts`\n- Assert: all INTERNAL tags from tag-seeds.md present after seed; all SYSTEM tags present; no `slug` column on any (D-002); `ownerId = NULL`; `createdById = SYSTEM_USER_ID`; double-run is safe (idempotent)\n- Test the count matches tag-seeds.md (currently 19 INTERNAL + 20 SYSTEM \u2014 update assertion if doc changes)\n- References: AC-F20, R-2, R-3, tag-seeds.md\n\n**Acceptance criteria for this task:**\n- Content matches `tag-seeds.md` exactly\n- No `slug` field in seed data (removed from user-tag system per D-002)\n- `createdById = SYSTEM_USER_ID` on all rows\n- Idempotent",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-036"],
             "blocks": ["T-041"],
@@ -861,21 +865,21 @@
             "tags": ["seeds", "backend"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-29T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-30T04:39:41.000Z",
+                "completed": "2026-04-30T04:39:41.000Z"
             }
         },
         {
             "id": "T-038",
             "title": "Delete obsolete 43 tag JSONs and create new tag/postTag JSONs from tag-seeds.md",
             "description": "Reclassification simplified: per tag-seeds.md, the existing 43 files are obsolete and replaced wholesale by 25 INTERNAL + 30 SYSTEM + 34 PostTag JSONs.\n\n**Files to delete:**\n- All 43 files in `packages/seed/src/data/tag/*.json`\n\n**Directories to create:**\n- `packages/seed/src/data/postTag/` (new)\n\n**Files to create per tag-seeds.md:**\n- 25 internal-NNN-{slug}.json under data/tag/\n- 30 system-NNN-{slug}.json under data/tag/\n- 34 NNN-{slug}.json under data/postTag/\n\n**Each JSON contains:**\n- INTERNAL/SYSTEM: { name, description, color, lifecycleState: ACTIVE } \u2014 no slug per D-002\n- PostTag: { name, slug, description, color, lifecycleState: ACTIVE }\n- description: single-sentence Spanish from Use case column\n- color: from TagColorPgEnum per implementer\n\n**Source of truth:** `.claude/specs/SPEC-086-tag-system-refactor/tag-seeds.md`\n\n**Testing:**\n- `packages/seed/src/__tests__/data/tag-files.test.ts`\n- Assert 25/30/34 file counts, JSON shape per schema, names unique within type\n- References: tag-seeds.md, R-2, R-3, R-4",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-036"],
             "blocks": ["T-039"],
@@ -883,21 +887,21 @@
             "tags": ["seeds", "backend", "data-migration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-29T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-30T04:39:41.000Z",
+                "completed": "2026-04-30T04:39:41.000Z"
             }
         },
         {
             "id": "T-039",
             "title": "Implement required seed R-4: PostTags from tag-seeds.md",
             "description": "Seed the 34 PostTags defined in tag-seeds.md.\n\n**Source of truth:** `.claude/specs/SPEC-086-tag-system-refactor/tag-seeds.md` \u00a7 POST_TAG (34).\n\n**Files to create:**\n- `packages/seed/src/required/postTags.seed.ts` \u2014 reads `packages/seed/src/data/postTag/*.json`, inserts each with createdById: SYSTEM_USER_ID, idempotent upsert by slug\n\n**Files to modify:**\n- `packages/seed/src/manifest-required.json` \u2014 register postTags after systemUser\n\n**Testing:**\n- `packages/seed/src/__tests__/required/postTags.seed.test.ts`\n- Assert 34 PostTags present, slugs unique, double-run safe, content matches tag-seeds.md\n- References: AC-F20, R-4, tag-seeds.md",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-038"],
             "blocks": ["T-041"],
@@ -905,14 +909,14 @@
             "tags": ["seeds", "backend"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-04-29T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-30T05:05:54.000Z",
+                "completed": "2026-04-30T05:05:54.000Z"
             }
         },
         {
@@ -1071,8 +1075,8 @@
         }
     ],
     "summary": {
-        "completed": 22,
-        "pending": 24,
+        "completed": 32,
+        "pending": 14,
         "inProgress": 0
     }
 }
