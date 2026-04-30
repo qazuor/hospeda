@@ -259,6 +259,36 @@ export const featuresApi = {
     }
 };
 
+// --- Attractions ---
+
+/** Public attraction API endpoints */
+export const attractionsApi = {
+    /** Get attraction by slug */
+    getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.get({ path: `${BASE}/attractions/by-slug/${slug}` });
+    }
+};
+
+// --- Event Locations ---
+
+/** Public event location API endpoints */
+export const eventLocationsApi = {
+    /** Get event location by slug */
+    getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.get({ path: `${BASE}/event-locations/slug/${slug}` });
+    }
+};
+
+// --- Tags ---
+
+/** Public tag API endpoints */
+export const tagsApi = {
+    /** Get tag by slug */
+    getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.get({ path: `${BASE}/tags/by-slug/${slug}` });
+    }
+};
+
 // --- Destinations ---
 
 /** Public destination API endpoints */
