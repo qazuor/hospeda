@@ -1,19 +1,23 @@
 # Deployment Documentation
 
+> **Important**: For environment variables, secrets, and per-service onboarding, ALWAYS refer to [`secrets.md`](./secrets.md) (canonical). For first-time production setup, follow [`first-time-setup.md`](./first-time-setup.md).
+
+**Last Updated**: 2026-04-30
+
 ## Introduction
 
-Hospeda is a modern tourism accommodation platform built as a monorepo application with multiple services deployed across cloud-native infrastructure. This document covers the deployment strategy, architecture, and operational considerations.
+Hospeda is a tourism accommodation platform built as a TurboRepo monorepo with three deployable apps and supporting managed services.
 
 ### Platform Components
 
-1. **Web App** .. Public-facing website for browsing and booking accommodations
-2. **Admin Dashboard** .. Internal tool for managing listings, bookings, and operations
-3. **API Server** .. Backend services handling business logic and data
+1. **Web App** (`apps/web`) — Public-facing Astro + React 19 site for browsing and booking.
+2. **Admin Dashboard** (`apps/admin`) — Internal TanStack Start tool for managing listings, bookings, and operations.
+3. **API Server** (`apps/api`) — Hono REST API serving both apps.
 
 ### Technology Stack
 
 | Layer | Technology | Purpose |
-|-------|-----------|---------|
+|-------|------------|---------|
 | Frontend (Web) | Astro + React 19 | SSR public website |
 | Frontend (Admin) | TanStack Start + React 19 | SSR admin dashboard |
 | Backend (API) | Hono (Node.js) | REST API server |
@@ -22,7 +26,7 @@ Hospeda is a modern tourism accommodation platform built as a monorepo applicati
 | Authentication | Better Auth | User authentication |
 | Payments | Mercado Pago | Payment processing |
 | Storage | Cloudinary | Image hosting and CDN |
-| Hosting | Vercel | Application hosting (all three apps) |
+| Hosting | Vercel | All three apps |
 
 ## Architecture
 
@@ -34,23 +38,23 @@ graph TB
     end
 
     subgraph "Edge Layer - Vercel"
-        Web[Web App<br/>Astro + React<br/>:4321]
-        Admin[Admin Dashboard<br/>TanStack Start<br/>:3000]
+        Web[Web App<br/>Astro + React]
+        Admin[Admin Dashboard<br/>TanStack Start]
     end
 
     subgraph "Application Layer - Vercel (serverless)"
-        API[API Server<br/>Hono<br/>:3001]
+        API[API Server<br/>Hono]
     end
 
     subgraph "Data Layer"
-        DB[(Neon PostgreSQL<br/>Database)]
-        Redis[(Redis Cache<br/>Optional)]
+        DB[(Neon PostgreSQL)]
+        Redis[(Redis<br/>Required in prod)]
     end
 
     subgraph "External Services"
-        BetterAuth[Better Auth<br/>Authentication]
-        MercadoPago[Mercado Pago<br/>Payments]
-        Cloudinary[Cloudinary<br/>Image Storage]
+        BetterAuth[Better Auth]
+        MercadoPago[Mercado Pago]
+        Cloudinary[Cloudinary]
     end
 
     Browser -->|HTTPS| Web
@@ -58,7 +62,7 @@ graph TB
     Web -->|API Calls| API
     Admin -->|API Calls| API
     API --> DB
-    API -.->|Optional| Redis
+    API --> Redis
     API --> BetterAuth
     API --> MercadoPago
     API --> Cloudinary
@@ -68,15 +72,6 @@ graph TB
 
 ## Deployment Strategy
 
-### Monorepo Architecture
-
-Hospeda uses a **TurboRepo monorepo** structure that enables:
-
-- **Shared Dependencies**: Common packages used across applications
-- **Coordinated Deployments**: Deploy all services or individual apps
-- **Code Reusability**: Shared schemas, utilities, and business logic
-- **Type Safety**: End-to-end type safety from database to frontend
-
 ### Multi-Cloud Deployment
 
 | Service | Platform | Purpose |
@@ -85,297 +80,165 @@ Hospeda uses a **TurboRepo monorepo** structure that enables:
 | Admin | Vercel | Administration dashboard |
 | API | Vercel (serverless) | Backend API server |
 | Database | Neon | Serverless PostgreSQL |
-| Auth | Better Auth | Authentication service |
+| Auth | Better Auth | Authentication |
 | Payments | Mercado Pago | Payment processing |
+| Image CDN | Cloudinary | Image hosting and delivery |
 
 ### Core Principles
 
-1. **Continuous Deployment** .. Automated deployments on code merge
-2. **Progressive Delivery** .. Deploy to staging before production
-3. **Zero-Downtime Deployments** .. Atomic deployment strategy
-4. **Rollback Capability** .. Instant rollback if issues detected
-5. **Infrastructure as Code** .. Configuration in version control
-6. **Observability First** .. Comprehensive monitoring and logging
+1. **Continuous Deployment** — Automated deployments via GitHub Actions on merge.
+2. **Progressive Delivery** — `staging` branch deploys to staging before `main` deploys to production.
+3. **Zero-Downtime Deployments** — Vercel atomic deployments.
+4. **Rollback Capability** — Instant rollback via `vercel rollback` or dashboard promotion.
+5. **Observability First** — Sentry, Vercel Analytics, Neon monitoring.
 
-## Deployment Platforms
+### Deployment Triggers
 
-### Vercel (Web, Admin, API)
-
-**Features Used:**
-
-- Serverless functions for API
-- SSR/SSG for frontend applications
-- Global edge network for low-latency delivery
-- Automatic SSL/TLS certificates
-- Preview deployments for pull requests
-- Atomic deployments with instant rollback
-- Environment variable management
-
-**Deployment Triggers:**
-
-- **Production**: Push to `main` branch
-- **Preview**: Pull requests to `main`
-- **Manual**: Triggered via Vercel CLI or dashboard
-
-### Neon (Database)
-
-**Features Used:**
-
-- Serverless PostgreSQL with automatic scaling
-- Built-in connection pooling (Pgbouncer)
-- Database branching for development
-- Automatic daily backups with 7-day retention
-- Point-in-time recovery
-- Query performance monitoring
-
-**Database Branches:**
-
-- `main`: Production database
-- `staging`: Staging environment database
-- `dev`: Development database
-
-### External Services
-
-- **Better Auth**: OAuth providers, email/password auth, session management, webhooks
-- **Mercado Pago**: Credit/debit card payments, installment plans, refunds, webhooks
-- **Cloudinary**: Image uploads, automatic optimization, responsive images, global CDN
-
-## Deployment Flow
-
-```mermaid
-graph LR
-    subgraph "Development"
-        Dev[Local Development]
-        Test[Run Tests]
-        Build[Build Apps]
-    end
-
-    subgraph "Quality Gates"
-        TypeCheck[Type Check]
-        Lint[Lint Code]
-        Coverage[Coverage Check]
-    end
-
-    subgraph "Staging"
-        StagingDeploy[Deploy to Staging]
-        StagingTest[Staging Tests]
-        Review[Manual Review]
-    end
-
-    subgraph "Production"
-        ProdDeploy[Deploy to Production]
-        Smoke[Smoke Tests]
-        Monitor[Monitor]
-    end
-
-    Dev --> Test --> Build
-    Build --> TypeCheck --> Lint --> Coverage
-    Coverage --> StagingDeploy
-    StagingDeploy --> StagingTest --> Review
-    Review --> ProdDeploy
-    ProdDeploy --> Smoke --> Monitor
-```
-
-### Stages
-
-1. **Local Development**: Feature development, unit tests, local testing
-2. **Quality Gates (CI)**: Type checking, linting, unit tests, coverage >= 90%, security audit
-3. **Staging**: Deploy on merge to `develop`, run integration tests, manual QA
-4. **Production**: Deploy on merge to `main`, run smoke tests, monitor error rates
-
-### Safety Measures
-
-- Atomic deployments (zero downtime)
-- Automatic rollback on health check failure
-- Database migration validation
-- Post-deployment monitoring (15 minutes)
+- **Production**: Push/merge to `main` → `cd-production.yml` runs `vercel --prod`.
+- **Staging**: Push/merge to `staging` → `cd-staging.yml` runs preview deploy.
+- **Preview**: Pull requests to `main` → automatic Vercel preview.
+- **Manual**: `pnpm deploy:api`, `pnpm deploy:web`, `pnpm deploy:admin`, `pnpm deploy:all`.
 
 ## Environment Strategy
 
-### Environment Tiers
+Three deployment tiers. The full per-environment matrix lives in [`environments.md`](./environments.md). Quick reference:
 
-| Environment | Trigger | Database | External Services | Rate Limiting |
-|-------------|---------|----------|-------------------|---------------|
-| Development | Local | Local Docker | Mock/sandbox | None |
-| Staging | Merge to `develop` | Staging Neon branch | Sandbox mode | Relaxed |
-| Production | Merge to `main` | Production Neon | Production mode | Strict |
+| Tier | Branch | API URL | Web URL | Admin URL |
+|------|--------|---------|---------|-----------|
+| Development | local | `http://localhost:3001` | `http://localhost:4321` | `http://localhost:3000` |
+| Staging | `staging` | `https://api.staging.hospeda.ar` | `https://staging.hospeda.ar` | `https://admin.staging.hospeda.ar` |
+| Production | `main` | `https://api.hospeda.ar` | `https://hospeda.ar` | `https://admin.hospeda.ar` |
 
-### Environment Variables
-
-```env
-# Development
-NODE_ENV=development
-HOSPEDA_API_URL=http://localhost:3001
-HOSPEDA_SITE_URL=http://localhost:4321
-HOSPEDA_DATABASE_URL=postgresql://localhost:5432/hospeda_dev
-
-# Staging
-NODE_ENV=staging
-HOSPEDA_API_URL=https://api-staging.hospeda.com
-HOSPEDA_SITE_URL=https://staging.hospeda.com
-
-# Production
-NODE_ENV=production
-HOSPEDA_API_URL=https://api.hospeda.com
-HOSPEDA_SITE_URL=https://hospeda.com
-```
-
-### Environment Isolation
-
-- Separate databases for dev, staging, production
-- Separate Better Auth applications per environment
-- Separate payment credentials per environment
-- Unique API keys per environment
-- Different domain names per environment
+For environment variable definitions, prefix conventions, and how to add new variables, see [`environments.md`](./environments.md). For per-secret values and how to obtain them, see [`secrets.md`](./secrets.md).
 
 ## Rollback Procedures
 
 ### Application Rollback (Vercel)
 
 ```bash
-# List recent deployments
-vercel ls
-
-# Rollback to previous deployment
-vercel rollback
-
-# Rollback to specific deployment
-vercel rollback <deployment-url>
-
-# Or promote a specific deployment via Vercel dashboard
+vercel ls                          # List recent deployments
+vercel rollback                    # Rollback to previous deployment
+vercel rollback <deployment-url>   # Rollback to a specific deployment
 ```
+
+You can also promote a previous deployment via the Vercel dashboard (instant, no rebuild).
 
 ### Database Rollback
 
-```bash
-pnpm db:rollback
-pnpm db:rollback --to=<migration-name>
-```
+Hospeda uses `drizzle-kit push` (no numbered migration files). To revert a schema change, push a corrective schema and re-run `packages/db/scripts/apply-postgres-extras.sh`. For data recovery, use Neon point-in-time recovery from the Neon console.
 
 ## Monitoring and Health Checks
 
 ### Health Check Endpoints
 
 ```bash
-# API
-curl https://api.hospeda.com/health
-# Expected: {"status": "healthy", "timestamp": "..."}
-
-# Web
-curl https://hospeda.com/api/health
-
-# Admin
-curl https://admin.hospeda.com/api/health
+curl https://api.hospeda.ar/health          # API
+curl https://hospeda.ar/api/health          # Web
+curl https://admin.hospeda.ar/api/health    # Admin
 ```
 
 ### Monitoring Tools
 
-- **Vercel Analytics**: Frontend and API performance metrics
-- **Neon Console**: Database performance and connection pool monitoring
-- **Sentry**: Error tracking and alerting
-- **LogTail**: Centralized log viewing
+- **Vercel Analytics** — Frontend and API performance metrics.
+- **Vercel Logs** — Real-time function logs and deployment logs (built-in).
+- **Neon Console** — Database performance and connection pool monitoring.
+- **Sentry** — Error tracking and alerting (requires source maps upload in production).
+- **BetterStack** — Uptime monitoring and public status page (free tier, 10 monitors).
 
-### Alerting
+### Alerting Thresholds
 
 | Trigger | Threshold | Action |
 |---------|-----------|--------|
 | Error rate | > 5% for 5 minutes | Investigate immediately |
 | Response time p95 | > 1000ms for 5 minutes | Investigate |
-| CPU usage | > 80% for 10 minutes | Scale up |
-| Health check failures | 2 consecutive | Auto-rollback |
+| Health check failures | 2 consecutive | Auto-rollback candidate |
 
 ### Service Status Pages
 
 - Vercel: <https://www.vercel-status.com/>
 - Neon: <https://neonstatus.com/>
 
-## Security Considerations
+## Security
 
-### Secret Management
+For secret management policy, rotation cadence, and incident response, see:
 
-- Never commit secrets to version control
-- Use Vercel Environment Variables for production (encrypted at rest)
-- Use `.env.local` for development (gitignored)
-- Rotate secrets regularly
-- Use different secrets per environment
+- [`./secrets.md`](./secrets.md) — Per-secret reference (canonical).
+- [`./rotation-schedule.md`](./rotation-schedule.md) — Secret rotation runbook and schedule.
+- [`../security/README.md`](../security/README.md) — Cross-cutting security guidelines (CORS, headers, rate limiting, DDoS).
 
-### Network Security
+Critical points:
 
-- HTTPS enforced on all endpoints
-- CORS properly configured (whitelist origins)
-- Rate limiting per endpoint and per user
-- Security headers (CSP, HSTS, X-Frame-Options)
-- DDoS protection via Cloudflare
-
-See [Security Documentation](../security/README.md) for detailed security guidelines.
+- HTTPS enforced on all endpoints; HSTS configured.
+- CORS whitelisted to known app origins (`HOSPEDA_SITE_URL`, `HOSPEDA_ADMIN_URL`).
+- Rate limiting requires Redis in production (`HOSPEDA_REDIS_URL`).
+- Sentry source maps must be uploaded for readable stack traces.
 
 ## Disaster Recovery
 
 ### Backup Strategy
 
-- **Automatic**: Daily backups via Neon (7-day staging, 30-day production)
-- **Manual**: `pg_dump $HOSPEDA_DATABASE_URL > backup-$(date +%Y%m%d).sql`
+- **Automatic** — Neon daily backups (7-day staging retention, 30-day production retention).
+- **Manual** — `pg_dump $HOSPEDA_DATABASE_URL > backup-$(date +%Y%m%d).sql`.
 
 ### Recovery Targets
 
-- **RTO (Recovery Time Objective)**: 1 hour
-- **RPO (Recovery Point Objective)**: 24 hours
+- **RTO** (Recovery Time Objective): 1 hour.
+- **RPO** (Recovery Point Objective): 24 hours.
 
 ### Recovery Procedures
 
-1. **Database Failure**: Restore from Neon backup or point-in-time recovery
-2. **Application Failure**: Rollback deployment via Vercel
-3. **External Service Failure**: Graceful degradation
-4. **Complete Infrastructure Failure**: Migrate to backup provider
+1. **Database failure** — Restore from Neon backup or use point-in-time recovery from the Neon console.
+2. **Application failure** — Rollback the affected app via `vercel rollback` or dashboard promotion.
+3. **External service failure** — Graceful degradation; see app-specific deployment docs for fallback behavior.
+4. **Complete infrastructure failure** — Follow [`first-time-setup.md`](./first-time-setup.md) on a backup provider.
 
 ## Common Commands
 
-### Development
-
 ```bash
-pnpm dev                # Start all services locally
-pnpm test               # Run unit tests
+# Local development
+pnpm dev                # Start all apps
+pnpm test               # Run tests
 pnpm typecheck          # Type checking
 pnpm lint               # Code linting
+
+# Database
+pnpm db:start           # Start Postgres + Redis (Docker)
+pnpm db:fresh-dev       # Reset + push schema + seed
+pnpm db:studio          # Open Drizzle Studio
+
+# Environment sync
+pnpm env:check          # Validate local env against registry
+pnpm env:pull           # Pull from Vercel
+pnpm env:push           # Push to Vercel
+
+# Manual deployment (CI/CD is preferred)
+pnpm deploy:api         # Deploy API to production
+pnpm deploy:web         # Deploy web to production
+pnpm deploy:admin       # Deploy admin to production
+pnpm deploy:all         # Deploy all three sequentially
+
+# Vercel
+vercel logs --prod      # View production logs
+vercel ls               # List recent deployments
 ```
 
-### Database
+## Documents in This Folder
 
-```bash
-pnpm db:generate        # Generate migration
-pnpm db:migrate         # Run migrations
-pnpm db:rollback        # Rollback migration
-pnpm db:studio          # Open database studio
-pnpm db:seed            # Seed database
-pnpm db:fresh           # Reset + migrate + seed
-```
+- **[`first-time-setup.md`](./first-time-setup.md)** — Master "from zero to deployed" runbook for setting up production from scratch.
+- **[`environments.md`](./environments.md)** — Environment tiers, prefix conventions, and pointers to env-var registries.
+- **[`secrets.md`](./secrets.md)** — Canonical per-secret reference (every variable, where to set it, how to obtain credentials).
+- **[`rotation-schedule.md`](./rotation-schedule.md)** — Secret rotation runbook and cadence.
+- **[`ci-cd.md`](./ci-cd.md)** — GitHub Actions CI/CD workflows (`ci.yml`, `cd-staging.yml`, `cd-production.yml`).
+- **[`checklist.md`](./checklist.md)** — General pre/post-deployment checklist for all apps.
+- **[`billing-checklist.md`](./billing-checklist.md)** — Pre-deployment checklist for billing/MercadoPago changes.
 
-### Deployment
+## Per-App Deployment Guides
 
-```bash
-# Deploy individual apps via Vercel CLI
-cd apps/api && vercel --prod
-cd apps/web && vercel --prod
-cd apps/admin && vercel --prod
+- **[API Deployment](./apps/api.md)** — Hono serverless config, cron setup, Redis, Sentry source maps.
+- **[Web Deployment](./apps/web.md)** — Astro build, ISR/SSR routing, `PUBLIC_*` env mirroring.
+- **[Admin Deployment](./apps/admin.md)** — TanStack Start build, Vite client bundle, `VITE_*` env mirroring.
 
-# View logs
-vercel logs --prod
-```
-
-## Quick Links
-
-### Core Documentation
-
-- **[Environment Configuration](./environments.md)** .. Environment variables and configuration
-- **[API Deployment](../../apps/api/docs/development/deployment.md)** .. Hono API deployment to Vercel
-- **[Web Deployment](../../apps/web/docs/deployment.md)** .. Astro web app deployment to Vercel
-- **[Admin Deployment](../../apps/admin/docs/development/deployment.md)** .. TanStack Start admin deployment to Vercel
-
-### Specialized Guides
-
-- **[CI/CD Pipeline](./ci-cd.md)** .. Automated deployment workflows
-
-### External Documentation
+## External Documentation
 
 - [Vercel Documentation](https://vercel.com/docs)
 - [Neon Documentation](https://neon.tech/docs)
@@ -394,33 +257,30 @@ vercel logs --prod
 
 ### Database
 
-- [ ] Migrations tested in staging
-- [ ] Backup created
-- [ ] Rollback plan documented
-- [ ] Database connection tested
+- [ ] Schema changes tested in staging via `db:fresh-dev`
+- [ ] `apply-postgres-extras.sh` executed if triggers/materialized views/CHECK constraints changed
+- [ ] Backup verified (Neon daily backup or manual `pg_dump`)
 
 ### Configuration
 
-- [ ] Environment variables configured
-- [ ] Secrets stored securely
-- [ ] API keys validated
-- [ ] CORS settings verified
-- [ ] Rate limiting configured
+- [ ] `pnpm env:check --ci` passes for the target environment
+- [ ] New secrets registered in [`secrets.md`](./secrets.md)
+- [ ] CORS origins verified
 
 ### External Services
 
-- [ ] Better Auth authentication working
-- [ ] Mercado Pago integration tested
+- [ ] Better Auth configured for the target environment
+- [ ] Mercado Pago tokens correct for the environment (`APP_USR-*` for prod, `TEST-*` for staging)
 - [ ] Cloudinary uploads working
+- [ ] Resend `HOSPEDA_RESEND_API_KEY` set if transactional email is in scope
 
 ### Monitoring
 
-- [ ] Health check endpoints working
-- [ ] Logging configured
-- [ ] Error tracking enabled (Sentry)
-- [ ] Alerts configured
+- [ ] Health check endpoints reachable
+- [ ] Sentry DSN configured and source maps uploaded
+- [ ] Alerts wired
 
 ### Communication
 
-- [ ] Team notified of deployment
+- [ ] Team notified of deployment window
 - [ ] Rollback plan communicated

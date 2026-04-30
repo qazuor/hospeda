@@ -1,1010 +1,216 @@
-# Environment Configuration
+# Deployment Environments
 
-## Table of Contents
+Thin orientation document for Hospeda's deployment environments (development, staging, production). This file is intentionally short and points at the canonical sources of truth instead of duplicating them.
 
-- [Overview](#overview)
-- [Environment Tiers](#environment-tiers)
-- [Environment Variables Reference](#environment-variables-reference)
-- [Configuration by Environment](#configuration-by-environment)
-- [Secret Management](#secret-management)
-- [Configuration Validation](#configuration-validation)
-- [Best Practices](#best-practices)
-
-## Overview
-
-Hospeda uses environment-specific configuration to manage different deployment tiers (development, staging, production). This document provides a comprehensive reference for all environment variables and configuration strategies.
-
-### Configuration Philosophy
-
-- **Environment Isolation**: Each environment is completely isolated with separate credentials
-- **Secure by Default**: Secrets are never committed to version control
-- **Type Safety**: Environment variables are validated at runtime
-- **Documentation First**: All variables are documented and validated
-
-### Configuration Sources
-
-1. **`.env.example`** - Template with all available variables (committed to git)
-2. **`.env.local`** - Local development overrides (gitignored)
-3. **Platform Variables** - Environment-specific secrets (Vercel)
-4. **Runtime Configuration** - Validated and typed configuration objects
-
-## Environment Tiers
-
-### Development (dev)
-
-**Purpose**: Local development and experimentation
-
-**Characteristics:**
-
-- Local development servers (hot reload enabled)
-- Debug logging enabled
-- Local or development database
-- Relaxed security settings
-- Mock external services (optional)
-- No rate limiting
-
-**Access:**
-
-- Developers: Full access
-- QA: Read access
-- Stakeholders: No access
-
-### Staging (staging)
-
-**Purpose**: Pre-production testing and QA validation
-
-**Characteristics:**
-
-- Production-like configuration
-- Staging database (separate from production)
-- Real external services (sandbox/test mode)
-- Full monitoring enabled
-- Relaxed rate limiting
-- Test data and accounts
-
-**Access:**
-
-- Developers: Full access
-- QA: Full access
-- Stakeholders: Read access
-- Clients: Preview access
-
-### Production (production)
-
-**Purpose**: Live production environment serving real users
-
-**Characteristics:**
-
-- Optimized production builds
-- Production database with backups
-- Real external services (production mode)
-- Full monitoring and alerting
-- Strict rate limiting and security
-- Real user data
-
-**Access:**
-
-- Developers: Limited access (read-only logs)
-- DevOps: Full access
-- QA: No direct access (monitoring only)
-- Stakeholders: Dashboard access
-
-## Environment Variables Reference
-
-### General Configuration
-
-#### NODE_ENV
-
-**Description**: Node.js environment mode
-
-**Values:**
-
-- `development` - Local development
-- `staging` - Staging environment
-- `production` - Production environment
-
-**Required**: Yes (all environments)
-
-**Example:**
-
-```env
-NODE_ENV=production
-```
-
-**Usage:**
-
-```typescript
-if (process.env.NODE_ENV === 'production') {
-  // Production-only code
-}
-```
-
-#### HOSPEDA_API_URL
-
-**Description**: Backend API server URL
-
-**Format**: URL with protocol and port (if needed)
-
-**Required**: Yes (all environments)
-
-**Examples:**
-
-```env
-# Development
-HOSPEDA_API_URL=http://localhost:3001
-
-# Staging
-HOSPEDA_API_URL=https://api-staging.hospeda.com
-
-# Production
-HOSPEDA_API_URL=https://api.hospeda.com
-```
-
-#### HOSPEDA_SITE_URL
-
-**Description**: Public website URL (Web app)
-
-**Format**: URL with protocol
-
-**Required**: Yes (all environments)
-
-**Examples:**
-
-```env
-# Development
-HOSPEDA_SITE_URL=http://localhost:4321
-
-# Staging
-HOSPEDA_SITE_URL=https://staging.hospeda.com
-
-# Production
-HOSPEDA_SITE_URL=https://hospeda.com
-```
-
-#### HOSPEDA_ADMIN_URL
-
-**Description**: Admin dashboard URL
-
-**Format**: URL with protocol
-
-**Required**: Yes (admin app)
-
-**Examples:**
-
-```env
-# Development
-HOSPEDA_ADMIN_URL=http://localhost:3000
-
-# Staging
-HOSPEDA_ADMIN_URL=https://admin-staging.hospeda.com
-
-# Production
-HOSPEDA_ADMIN_URL=https://admin.hospeda.com
-```
-
-### Authentication (Better Auth)
-
-#### HOSPEDA_BETTER_AUTH_URL
-
-**Description**: Better Auth publishable key (client-side)
-
-**Format**: `pk_test_*` or `pk_live_*`
-
-**Required**: Yes (all environments)
-
-**Security**: Public (safe to expose in client code)
-
-**Example:**
-
-```env
-HOSPEDA_BETTER_AUTH_URL=YOUR_TEST_PUBLISHABLE_HERE
-```
-
-**Usage:**
-
-```typescript
-import { Better AuthProvider } from '@repo/auth-ui';
-
-<Better AuthProvider publishableKey={import.meta.env.HOSPEDA_BETTER_AUTH_URL}>
-  {/* App */}
-</Better AuthProvider>
-```
-
-#### HOSPEDA_BETTER_AUTH_SECRET
-
-**Description**: Better Auth secret key (server-side)
-
-**Format**: `sk_test_*` or `sk_live_*`
-
-**Required**: Yes (API)
-
-**Security**: Secret (never expose in client code)
-
-**Example:**
-
-```env
-HOSPEDA_BETTER_AUTH_SECRET=YOUR_TEST_SECRET_HERE
-```
-
-**Usage:**
-
-```typescript
-import { authClient } from '@repo/auth-ui';
-
-const client = authClient({
-  secretKey: process.env.HOSPEDA_BETTER_AUTH_SECRET,
-});
-```
-
-#### HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET
-
-**Description**: Better Auth webhook signing secret
-
-**Format**: `whsec_*`
-
-**Required**: Yes (API for webhooks)
-
-**Security**: Secret
-
-**Example:**
-
-```env
-HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET=whsec_example789ghi
-```
-
-**Usage:**
-
-```typescript
-import { Webhook } from 'svix';
-
-const webhook = new Webhook(process.env.HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET);
-webhook.verify(payload, headers);
-```
-
-### Database (Neon PostgreSQL)
-
-#### HOSPEDA_DATABASE_URL
-
-**Description**: PostgreSQL connection string
-
-**Format**: `postgresql://[user]:[password]@[host]:[port]/[database]?[options]`
-
-**Required**: Yes (API, database operations)
-
-**Security**: Secret (contains credentials)
-
-**Example:**
-
-```env
-HOSPEDA_DATABASE_URL=postgresql://user:password@ep-example.us-east-2.aws.neon.tech/hospeda?sslmode=require
-```
-
-**Usage:**
-
-```typescript
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-
-const client = postgres(process.env.HOSPEDA_DATABASE_URL);
-export const db = drizzle(client);
-```
-
-**Notes:**
-
-- Use separate databases for each environment
-- Include `?sslmode=require` for secure connections
-- Neon provides connection pooling by default (`?pooled=true`)
-
-### API Configuration
-
-#### API_LOG_LEVEL
-
-**Description**: Logging verbosity level
-
-**Values:**
-
-- `error` - Only errors
-- `warn` - Warnings and errors
-- `info` - General information (default)
-- `debug` - Detailed debug information
-
-**Required**: No (defaults to `info`)
-
-**Example:**
-
-```env
-# Development
-API_LOG_LEVEL=debug
-
-# Production
-API_LOG_LEVEL=info
-```
-
-#### API_CORS_ORIGINS
-
-**Description**: Allowed CORS origins (comma-separated)
-
-**Format**: Comma-separated URLs
-
-**Required**: Yes (API)
-
-**Example:**
-
-```env
-API_CORS_ORIGINS=https://hospeda.com,https://admin.hospeda.com
-```
-
-**Usage:**
-
-```typescript
-import { cors } from 'hono/cors';
-
-app.use('*', cors({
-  origin: process.env.API_CORS_ORIGINS.split(','),
-  credentials: true,
-}));
-```
-
-#### API_CACHE_DEFAULT_MAX_AGE
-
-**Description**: Default cache TTL in seconds
-
-**Format**: Number (seconds)
-
-**Required**: No (defaults to `300` - 5 minutes)
-
-**Example:**
-
-```env
-API_CACHE_DEFAULT_MAX_AGE=300
-```
-
-#### API_COMPRESSION_ENABLED
-
-**Description**: Enable response compression
-
-**Values**: `true` or `false`
-
-**Required**: No (defaults to `true`)
-
-**Example:**
-
-```env
-API_COMPRESSION_ENABLED=true
-```
-
-#### API_RATE_LIMIT_MAX_REQUESTS
-
-**Description**: Maximum requests per window
-
-**Format**: Number
-
-**Required**: No (defaults to `100`)
-
-**Example:**
-
-```env
-# Development (relaxed)
-API_RATE_LIMIT_MAX_REQUESTS=1000
-
-# Production (strict)
-API_RATE_LIMIT_MAX_REQUESTS=100
-```
-
-#### API_RATE_LIMIT_WINDOW_MS
-
-**Description**: Rate limit window in milliseconds
-
-**Format**: Number (milliseconds)
-
-**Required**: No (defaults to `60000` - 1 minute)
-
-**Example:**
-
-```env
-API_RATE_LIMIT_WINDOW_MS=60000
-```
-
-#### API_SECURITY_HEADERS_ENABLED
-
-**Description**: Enable security headers
-
-**Values**: `true` or `false`
-
-**Required**: No (defaults to `true`)
-
-**Example:**
-
-```env
-API_SECURITY_HEADERS_ENABLED=true
-```
-
-#### API_VALIDATION_AUTH_ENABLED
-
-**Description**: Enable request validation
-
-**Values**: `true` or `false`
-
-**Required**: No (defaults to `true`)
-
-**Example:**
-
-```env
-API_VALIDATION_AUTH_ENABLED=true
-```
-
-#### API_METRICS_ENABLED
-
-**Description**: Enable metrics collection
-
-**Values**: `true` or `false`
-
-**Required**: No (defaults to `true`)
-
-**Example:**
-
-```env
-API_METRICS_ENABLED=true
-```
-
-### Optional Services
-
-#### HOSPEDA_REDIS_URL
-
-**Description**: Redis connection URL (for caching)
-
-**Format**: `redis://[user]:[password]@[host]:[port]`
-
-**Required**: No (optional caching layer)
-
-**Security**: Secret (contains credentials)
-
-**Example:**
-
-```env
-HOSPEDA_REDIS_URL=redis://default:password@redis.example.com:6379
-```
-
-**Usage:**
-
-```typescript
-import { Redis } from 'ioredis';
-
-const redis = new Redis(process.env.HOSPEDA_REDIS_URL);
-```
-
-#### LINEAR_API_KEY
-
-**Description**: Linear API key for project management integration
-
-**Format**: `lin_api_*`
-
-**Required**: No (optional)
-
-**Security**: Secret
-
-**Example:**
-
-```env
-LINEAR_API_KEY=lin_api_example123
-```
-
-#### REPLICATE_API_TOKEN
-
-**Description**: Replicate AI API token
-
-**Format**: `r8_*`
-
-**Required**: No (optional AI features)
-
-**Security**: Secret
-
-**Example:**
-
-```env
-REPLICATE_API_TOKEN=r8_example456
-```
-
-### Payment Integration (Mercado Pago)
-
-#### HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN
-
-**Description**: Mercado Pago access token
-
-**Format**: Varies by environment
-
-**Required**: Yes (payment processing)
-
-**Security**: Secret
-
-**Example:**
-
-```env
-# Test/Staging
-HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=TEST-123456789-example
-
-# Production
-HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=APP-123456789-example
-```
-
-#### HOSPEDA_MERCADO_PAGO_PUBLIC_KEY
-
-**Description**: Mercado Pago public key (client-side)
-
-**Format**: Varies by environment
-
-**Required**: Yes (client-side payment forms)
-
-**Security**: Public
-
-**Example:**
-
-```env
-HOSPEDA_MERCADO_PAGO_PUBLIC_KEY=APP-123456789-example-public
-```
-
-### Image Storage (Cloudinary)
-
-#### CLOUDINARY_CLOUD_NAME
-
-**Description**: Cloudinary cloud name
-
-**Format**: String
-
-**Required**: Yes (image uploads)
-
-**Security**: Public
-
-**Example:**
-
-```env
-CLOUDINARY_CLOUD_NAME=hospeda-cloud
-```
-
-#### CLOUDINARY_API_KEY
-
-**Description**: Cloudinary API key
-
-**Format**: String
-
-**Required**: Yes (server-side uploads)
-
-**Security**: Secret
-
-**Example:**
-
-```env
-CLOUDINARY_API_KEY=123456789012345
-```
-
-#### CLOUDINARY_API_SECRET
-
-**Description**: Cloudinary API secret
-
-**Format**: String
-
-**Required**: Yes (server-side uploads)
-
-**Security**: Secret
-
-**Example:**
-
-```env
-CLOUDINARY_API_SECRET=abcdefghijklmnopqrstuvwxyz
-```
-
-### Error Tracking (Sentry)
-
-#### HOSPEDA_SENTRY_DSN
-
-**Description**: Sentry Data Source Name (API server-side)
-
-**Format**: URL
-
-**Required**: No (recommended for production)
-
-**Security**: Public (no sensitive data)
-
-**Note**: For the web app use `PUBLIC_SENTRY_DSN`, for the admin app use `VITE_SENTRY_DSN`.
-
-**Example:**
-
-```env
-HOSPEDA_SENTRY_DSN=https://example123@o123456.ingest.sentry.io/123456
-```
-
-## Configuration by Environment
-
-### Development Environment
-
-**File**: `.env.local` (gitignored)
-
-```env
-# General
-NODE_ENV=development
-
-# URLs
-HOSPEDA_API_URL=http://localhost:3001
-HOSPEDA_SITE_URL=http://localhost:4321
-HOSPEDA_ADMIN_URL=http://localhost:3000
-
-# Database (local or development)
-HOSPEDA_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hospeda_dev
-
-# Better Auth (development application)
-HOSPEDA_BETTER_AUTH_URL=pk_test_dev123
-HOSPEDA_BETTER_AUTH_SECRET=sk_test_dev456
-HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET=whsec_dev789
-
-# API Configuration (relaxed for development)
-API_LOG_LEVEL=debug
-API_CORS_ORIGINS=http://localhost:4321,http://localhost:3000
-API_RATE_LIMIT_MAX_REQUESTS=1000
-API_VALIDATION_AUTH_ENABLED=true
-
-# Optional Services (can be disabled in development)
-# HOSPEDA_REDIS_URL=redis://localhost:6379
-
-# Mercado Pago (test credentials)
-HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=TEST-123456-example
-HOSPEDA_MERCADO_PAGO_PUBLIC_KEY=TEST-public-key
-
-# Cloudinary (development folder/account)
-CLOUDINARY_CLOUD_NAME=hospeda-dev
-CLOUDINARY_API_KEY=dev-api-key
-CLOUDINARY_API_SECRET=dev-api-secret
-
-# Sentry (optional in development)
-# HOSPEDA_SENTRY_DSN=https://...
-```
-
-### Staging Environment
-
-**Platform**: Vercel (Web/Admin/API)
-
-**Configuration Method**: Platform environment variables
-
-```env
-# General
-NODE_ENV=staging
-
-# URLs
-HOSPEDA_API_URL=https://api-staging.hospeda.com
-HOSPEDA_SITE_URL=https://staging.hospeda.com
-HOSPEDA_ADMIN_URL=https://admin-staging.hospeda.com
-
-# Database (staging Neon database)
-HOSPEDA_DATABASE_URL=postgresql://user:pass@staging-db.neon.tech/hospeda_staging
-
-# Better Auth (staging application)
-HOSPEDA_BETTER_AUTH_URL=YOUR_TEST_PUBLISHABLE_HERE
-HOSPEDA_BETTER_AUTH_SECRET=YOUR_TEST_SECRET_HERE
-HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET=whsec_staging789
-
-# API Configuration
-API_LOG_LEVEL=info
-API_CORS_ORIGINS=https://staging.hospeda.com,https://admin-staging.hospeda.com
-API_CACHE_DEFAULT_MAX_AGE=300
-API_COMPRESSION_ENABLED=true
-API_RATE_LIMIT_MAX_REQUESTS=500
-API_RATE_LIMIT_WINDOW_MS=60000
-API_SECURITY_HEADERS_ENABLED=true
-API_VALIDATION_AUTH_ENABLED=true
-API_METRICS_ENABLED=true
-
-# Optional Services
-HOSPEDA_REDIS_URL=redis://staging-redis.example.com:6379
-
-# Mercado Pago (sandbox credentials)
-HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=TEST-staging-token
-HOSPEDA_MERCADO_PAGO_PUBLIC_KEY=TEST-staging-public
-
-# Cloudinary (staging folder/account)
-CLOUDINARY_CLOUD_NAME=hospeda-staging
-CLOUDINARY_API_KEY=staging-api-key
-CLOUDINARY_API_SECRET=staging-api-secret
-
-# Sentry
-HOSPEDA_SENTRY_DSN=https://staging-sentry-dsn
-```
-
-### Production Environment
-
-**Platform**: Vercel (Web/Admin/API)
-
-**Configuration Method**: Platform environment variables + Secrets
-
-```env
-# General
-NODE_ENV=production
-
-# URLs
-HOSPEDA_API_URL=https://api.hospeda.com
-HOSPEDA_SITE_URL=https://hospeda.com
-HOSPEDA_ADMIN_URL=https://admin.hospeda.com
-
-# Database (production Neon database)
-HOSPEDA_DATABASE_URL=postgresql://user:pass@prod-db.neon.tech/hospeda_production
-
-# Better Auth (production application)
-HOSPEDA_BETTER_AUTH_URL=pk_live_prod123
-HOSPEDA_BETTER_AUTH_SECRET=sk_live_prod456
-HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET=whsec_prod789
-
-# API Configuration (strict security)
-API_LOG_LEVEL=info
-API_CORS_ORIGINS=https://hospeda.com,https://admin.hospeda.com
-API_CACHE_DEFAULT_MAX_AGE=300
-API_COMPRESSION_ENABLED=true
-API_RATE_LIMIT_MAX_REQUESTS=100
-API_RATE_LIMIT_WINDOW_MS=60000
-API_SECURITY_HEADERS_ENABLED=true
-API_VALIDATION_AUTH_ENABLED=true
-API_METRICS_ENABLED=true
-
-# Optional Services
-HOSPEDA_REDIS_URL=redis://prod-redis.example.com:6379
-
-# Mercado Pago (production credentials)
-HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=APP-production-token
-HOSPEDA_MERCADO_PAGO_PUBLIC_KEY=APP-production-public
-
-# Cloudinary (production account)
-CLOUDINARY_CLOUD_NAME=hospeda-prod
-CLOUDINARY_API_KEY=prod-api-key
-CLOUDINARY_API_SECRET=prod-api-secret
-
-# Sentry
-HOSPEDA_SENTRY_DSN=https://prod-sentry-dsn
-```
-
-## Secret Management
-
-### Development Secrets
-
-**Storage**: `.env.local` file (gitignored)
-
-**Process:**
-
-1. Copy `.env.example` to `.env.local`
-2. Fill in development values
-3. Never commit `.env.local` to git
-
-**Example:**
-
-```bash
-cp .env.example .env.local
-nano .env.local  # Edit with your values
-```
-
-### Staging Secrets
-
-**Storage**: Platform environment variables
-
-#### Staging Secrets Vercel (Web/Admin)
-
-```bash
-# Set environment variable for staging
-vercel env add HOSPEDA_DATABASE_URL staging
-
-# Or via Vercel dashboard:
-# Project Settings → Environment Variables → Add
-```
-
-#### Project Settings Vercel (API)
-
-```bash
-# Set secret for API (staging environment)
-vercel env add HOSPEDA_DATABASE_URL preview
-
-# List environment variables
-vercel env ls
-```
-
-### Production Secrets
-
-**Storage**: Platform environment variables (encrypted)
-
-#### Production Secrets Vercel (Web/Admin/API)
-
-```bash
-# Set production environment variable
-vercel env add HOSPEDA_DATABASE_URL production
-
-# Use Vercel dashboard for sensitive values
-# Project Settings → Environment Variables → Add
-```
-
-### Secret Rotation
-
-**Schedule**: Rotate secrets every 90 days (production)
-
-**Process:**
-
-1. Generate new secret/credentials
-2. Update in platform secret storage
-3. Deploy applications
-4. Verify functionality
-5. Revoke old secret/credentials
-
-**Critical Secrets (rotate immediately if compromised):**
-
-- Database credentials
-- Better Auth secret keys
-- Mercado Pago tokens
-- Cloudinary API secrets
-
-## Configuration Validation
-
-### Runtime Validation
-
-**Purpose**: Ensure all required environment variables are present and valid
-
-**Implementation** (`packages/config/src/env.ts`):
-
-```typescript
-import { z } from 'zod';
-
-const envSchema = z.object({
-  // General
-  NODE_ENV: z.enum(['development', 'staging', 'production']),
-
-  // URLs
-  HOSPEDA_API_URL: z.string().url(),
-  HOSPEDA_SITE_URL: z.string().url(),
-  HOSPEDA_ADMIN_URL: z.string().url().optional(),
-
-  // Database
-  HOSPEDA_DATABASE_URL: z.string().startsWith('postgresql://'),
-
-  // Better Auth
-  HOSPEDA_BETTER_AUTH_URL: z.string().startsWith('pk_'),
-  HOSPEDA_BETTER_AUTH_SECRET: z.string().startsWith('sk_'),
-  HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET: z.string().startsWith('whsec_').optional(),
-
-  // API Configuration
-  API_LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
-  API_CORS_ORIGINS: z.string(),
-  API_CACHE_DEFAULT_MAX_AGE: z.coerce.number().default(300),
-  API_COMPRESSION_ENABLED: z.coerce.boolean().default(true),
-  API_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
-  API_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
-  API_SECURITY_HEADERS_ENABLED: z.coerce.boolean().default(true),
-  API_VALIDATION_AUTH_ENABLED: z.coerce.boolean().default(true),
-  API_METRICS_ENABLED: z.coerce.boolean().default(true),
-
-  // Optional Services
-  HOSPEDA_REDIS_URL: z.string().startsWith('redis://').optional(),
-  LINEAR_API_KEY: z.string().optional(),
-  REPLICATE_API_TOKEN: z.string().optional(),
-
-  // Mercado Pago
-  HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: z.string(),
-  HOSPEDA_MERCADO_PAGO_PUBLIC_KEY: z.string(),
-
-  // Cloudinary
-  CLOUDINARY_CLOUD_NAME: z.string(),
-  CLOUDINARY_API_KEY: z.string(),
-  CLOUDINARY_API_SECRET: z.string(),
-
-  // Sentry
-  HOSPEDA_SENTRY_DSN: z.string().url().optional(),
-});
-
-export type Env = z.infer<typeof envSchema>;
-
-export function validateEnv(): Env {
-  try {
-    return envSchema.parse(process.env);
-  } catch (error) {
-    console.error('❌ Environment validation failed:');
-    console.error(error);
-    process.exit(1);
-  }
-}
-
-// Validate on import
-export const env = validateEnv();
-```
-
-**Usage:**
-
-```typescript
-import { env } from '@repo/config';
-
-// Type-safe access to environment variables
-const dbUrl = env.HOSPEDA_DATABASE_URL;
-const logLevel = env.API_LOG_LEVEL;
-```
-
-### Startup Validation
-
-**API Server** (`apps/api/src/index.ts`):
-
-```typescript
-import { env } from '@repo/config';
-
-// Environment is validated on import
-console.log('✅ Environment validated successfully');
-console.log(`📊 Running in ${env.NODE_ENV} mode`);
-
-// Start server
-app.listen(3001);
-```
-
-## Best Practices
-
-### Security
-
-1. **Never Commit Secrets**
-   - Use `.gitignore` for `.env.local`
-   - Use `.env.example` as template (no actual values)
-   - Use platform secret storage for staging/production
-
-1. **Principle of Least Privilege**
-   - Grant minimum necessary permissions
-   - Use separate credentials per environment
-   - Rotate secrets regularly
-
-1. **Audit Secret Access**
-   - Log secret changes
-   - Monitor unauthorized access
-   - Review access permissions regularly
-
-### Organization
-
-1. **Naming Convention**
-   - Prefix all variables with `HOSPEDA_`
-   - Use consistent naming (SCREAMING_SNAKE_CASE)
-   - Group by category (API, AUTH, DATABASE, etc.)
-
-1. **Documentation**
-   - Document all variables in `.env.example`
-   - Include format and example values
-   - Note which variables are required vs optional
-
-1. **Validation**
-   - Validate all environment variables at startup
-   - Use Zod schemas for type safety
-   - Fail fast on missing/invalid variables
-
-### Development
-
-1. **Local Development**
-   - Use `.env.local` for overrides
-   - Never use production credentials locally
-   - Use mock services when possible
-
-1. **Environment Parity**
-   - Keep staging as close to production as possible
-   - Use same configuration structure across environments
-   - Test with production-like data in staging
-
-1. **Hot Reload**
-   - Restart development server after changing `.env.local`
-   - Use `dotenv-cli` for environment variable injection
-   - Validate changes before committing
-
-### Deployment
-
-1. **Pre-Deployment**
-   - Verify all required variables are set
-   - Check for deprecated variables
-   - Validate variable formats
-
-1. **Post-Deployment**
-   - Verify application starts successfully
-   - Check logs for configuration warnings
-   - Test external service connections
-
-1. **Rollback Plan**
-   - Keep previous variable values documented
-   - Have rollback procedure for credential changes
-   - Test rollback in staging first
+**Last Updated**: 2026-04-30
 
 ---
 
-**Document Version**: 1.0.0
-**Last Updated**: 2024-01-15
-**Maintained By**: DevOps Team
-**Next Review**: 2024-02-15
+## Canonical Sources
+
+Do not duplicate env var definitions in this file. The authoritative sources are:
+
+| Source | Purpose |
+|--------|---------|
+| [`./secrets.md`](./secrets.md) | Per-secret reference: GitHub Actions, Vercel (API/Web/Admin), `.env.local`, Docker. Includes generation steps and troubleshooting. |
+| `packages/config/src/env-registry.hospeda.ts` | Server-side `HOSPEDA_*` registry (type, required, secret, apps that consume it). |
+| `packages/config/src/env-registry.api-config.ts` | API middleware `API_*` registry (CORS, rate limiting, security, cache, etc.). |
+| `packages/config/src/env-registry.client.ts` | Client-side `PUBLIC_*` (web) and `VITE_*` (admin) registries. |
+| `packages/config/src/env-registry.docker-system.ts` | Docker Compose `POSTGRES_*` / `REDIS_*` registry. |
+| `apps/{api,web,admin}/.env.example` | Per-app templates. |
+| [`docs/guides/environment-variables.md`](../guides/environment-variables.md) | User-facing developer guide for adding and managing env vars. |
+
+If you need to know the exact name, type, or required status of a variable, read the registry. If you need to set it on Vercel or in GitHub, read [`secrets.md`](./secrets.md).
+
+---
+
+## Environments at a Glance
+
+Three deployment tiers, all deployed to Vercel via GitHub Actions.
+
+| Tier | Branch | Deployment | API URL | Web URL | Admin URL |
+|------|--------|------------|---------|---------|-----------|
+| **Development** | local | `pnpm dev` | `http://localhost:3001` | `http://localhost:4321` | `http://localhost:3000` |
+| **Staging** | `staging` | `cd-staging.yml` (preview deploy with alias) | `https://api.staging.hospeda.ar` | `https://staging.hospeda.ar` | `https://admin.staging.hospeda.ar` |
+| **Production** | `main` | `cd-production.yml` (`--prod`) | `https://api.hospeda.ar` | `https://hospeda.ar` | `https://admin.hospeda.ar` |
+
+Domain is `.ar` (Argentina market). Staging uses the **nested subdomain pattern** under `staging.hospeda.ar` so a single wildcard certificate (`*.staging.hospeda.ar`) covers all three apps. The exact hostnames live in the `staging` GitHub Environment as `HOSPEDA_API_URL` and `HOSPEDA_SITE_URL` variables and the production ones live in the `production` GitHub Environment.
+
+### What changes between environments
+
+Conceptual differences only — exact values come from the registry plus per-environment GitHub Secrets/Vercel env vars.
+
+| Concern | Development | Staging | Production |
+|---------|-------------|---------|------------|
+| `NODE_ENV` | `development` | `production` | `production` |
+| Database | Local Docker Postgres (`hospeda` DB) | Staging Postgres (separate DB) | Production Postgres (separate DB) |
+| Redis | Optional (in-memory fallback) | Required | **Required** — API refuses to start without it |
+| `HOSPEDA_CRON_SECRET` | Optional | Optional | **Required** — without it all 6 cron jobs silently fail |
+| MercadoPago tokens | `TEST-*` sandbox | `TEST-*` sandbox | `APP_USR-*` live |
+| OAuth redirect URIs | localhost | `*.staging.hospeda.ar` | `hospeda.ar` |
+| `API_LOG_LEVEL` | `debug` | `info` | `warn` |
+| `API_LOG_USE_COLORS` | `true` | `false` | `false` |
+| `API_SECURITY_CSRF_ENABLED` | `false` | `true` | `true` |
+| `API_RATE_LIMIT_TRUST_PROXY` | `false` | `true` | `true` (required on Vercel) |
+| `HOSPEDA_CRON_ADAPTER` | `manual` | `vercel` | `vercel` |
+| Sentry DSNs | Unset | Set | Set |
+| Source maps upload | No | Optional | **Required** for readable stack traces |
+
+The full per-environment differences table lives in [`docs/guides/environment-variables.md`](../guides/environment-variables.md#environment-differences).
+
+---
+
+## Domain Pattern
+
+Production and staging follow a parallel naming pattern so that DNS records, OAuth clients, and CORS configuration mirror each other 1:1.
+
+| Tier | Web (apex) | API | Admin |
+|------|------------|-----|-------|
+| **Production** | `hospeda.ar` | `api.hospeda.ar` | `admin.hospeda.ar` |
+| **Staging** | `staging.hospeda.ar` | `api.staging.hospeda.ar` | `admin.staging.hospeda.ar` |
+
+### Why nested subdomains for staging
+
+- A single wildcard certificate `*.staging.hospeda.ar` covers all three staging hosts. Vercel's automatic Let's Encrypt provisioning handles renewal.
+- The pattern mirrors production exactly (`api.<root>`, `admin.<root>`), so OAuth callback URLs, CORS allowlists, and Better Auth `trustedOrigins` only differ by the inserted `staging.` segment.
+- DNS-clean: a single `staging` zone holds three records instead of three sibling subdomains under the apex.
+
+### DNS records required
+
+All records point at Vercel. Use one of:
+
+- **Vercel-managed nameservers** (recommended for the apex): set the registrar's nameservers to the four addresses Vercel provides under Project → Settings → Domains. Vercel then resolves all subdomains automatically once each domain is added to its corresponding project.
+- **Registrar-managed records**: add the following at the registrar:
+
+    | Record | Type | Value |
+    |--------|------|-------|
+    | `hospeda.ar` (apex) | `A` | `76.76.21.21` (Vercel) |
+    | `www.hospeda.ar` | `CNAME` | `cname.vercel-dns.com` |
+    | `api.hospeda.ar` | `CNAME` | `cname.vercel-dns.com` |
+    | `admin.hospeda.ar` | `CNAME` | `cname.vercel-dns.com` |
+    | `staging.hospeda.ar` | `CNAME` | `cname.vercel-dns.com` |
+    | `api.staging.hospeda.ar` | `CNAME` | `cname.vercel-dns.com` |
+    | `admin.staging.hospeda.ar` | `CNAME` | `cname.vercel-dns.com` |
+
+After adding each domain to its Vercel project, Vercel auto-provisions the SSL certificate (apex + wildcards) within ~5 minutes.
+
+---
+
+## Prefix Conventions
+
+Every environment variable in the monorepo uses one of these prefixes. The prefix dictates **where** the value can be read.
+
+| Prefix | Visibility | Consumed by | Notes |
+|--------|------------|-------------|-------|
+| `HOSPEDA_*` | Server-side only | `apps/api`, `packages/seed`, `packages/db` (via dotenv) | Default prefix for every project-owned variable. |
+| `API_*` | Server-side only | `apps/api` middleware config | Reserved for HTTP/middleware concerns (CORS, cache, rate limit, security, validation, metrics). |
+| `PUBLIC_*` | **Client-side** (Astro SSR + browser) | `apps/web` | Bundled into client JS. **Never** put secrets here. |
+| `VITE_*` | **Client-side** (bundled by Vite) | `apps/admin` | Bundled into client JS. **Never** put secrets here. |
+| `POSTGRES_*` | Docker Compose only | `docker/.env` | Local PostgreSQL container config. |
+| `REDIS_*` | Docker Compose only | `docker/.env` | Local Redis container config. |
+
+### Platform exceptions
+
+`NODE_ENV`, `CI`, `VERCEL`, `VERCEL_GIT_COMMIT_SHA`, `TEST_DB_URL`, and `TEST_DB_NAME` are platform/system variables and do not follow the project's prefix rules. They are set by Node, the CI runner, or Vercel and are documented in the registry under their literal names. See [`environment-variables.md`](../guides/environment-variables.md#platform-naming-exceptions) for rationale.
+
+### Server vs. client mapping
+
+The CD pipeline (and Vercel project settings) map a single `HOSPEDA_*` value to its client-side equivalents at deploy time:
+
+- `HOSPEDA_API_URL` → `PUBLIC_API_URL` (web), `VITE_API_URL` (admin)
+- `HOSPEDA_SITE_URL` → `PUBLIC_SITE_URL` (web)
+- `HOSPEDA_BETTER_AUTH_URL` → `VITE_BETTER_AUTH_URL` (admin), used directly by web for SSR auth
+
+Set the `HOSPEDA_*` form in GitHub/Vercel; the client-side mirror is configured per-app on Vercel.
+
+---
+
+## Workflow: env:check, env:pull, env:push
+
+Three pnpm scripts manage synchronisation between local `.env.local` files and Vercel project settings. All require a valid Vercel token (`vercel login`) and each app must be linked via `vercel link`.
+
+### `pnpm env:check`
+
+Audits all three apps against Vercel for every environment target (`development`, `preview`, `production`) and reports:
+
+- Variables in `.env.example` but missing from Vercel (gaps)
+- Variables in Vercel but undocumented in `.env.example`
+
+```bash
+pnpm env:check            # Interactive
+pnpm env:check --ci       # Non-interactive, exits 1 on missing required vars
+pnpm env:check --verbose  # Show all variables, including OK ones
+```
+
+This script runs in `cd-staging.yml` and `cd-production.yml` **before every deploy** (see GAP-078-230). A missing or misnamed variable fails the build before it reaches preview/production traffic.
+
+### `pnpm env:pull`
+
+Fetches variables from a Vercel project and writes them into the local `.env.local`. Shows a per-variable diff and asks for confirmation. Use this after teammates push new vars to Vercel.
+
+### `pnpm env:push`
+
+Reads the local `.env.local` and pushes new or changed variables to the linked Vercel project. Shows a per-variable diff and asks for confirmation. Use this after adding a new var locally.
+
+Source code: `scripts/env/{check,pull,push}.ts`. Full reference: [`environment-variables.md`](../guides/environment-variables.md#vercel-sync-tools).
+
+---
+
+## Adding a New Environment Variable
+
+The full checklist is in [`docs/guides/environment-variables.md`](../guides/environment-variables.md#adding-a-new-environment-variable). Summary:
+
+1. Add to the appropriate registry file in `packages/config/src/env-registry.*.ts`.
+2. Add to the consuming app's Zod schema (`apps/{app}/src/utils/env.ts`).
+3. Add to `apps/{app}/.env.example` with a comment.
+4. Add a safe value to `apps/{app}/.env.test` if relevant for tests.
+5. If it must invalidate the Turbo cache, add it to `globalEnv` in `turbo.json`.
+6. Set the value in Vercel for each environment target (or run `pnpm env:push`).
+7. Run `pnpm env:check` to confirm sync.
+
+---
+
+## Legacy Env Var Mappings
+
+Older code referenced unprefixed variable names (e.g. `CRON_SECRET`, `DATABASE_URL`). The current policy:
+
+- **All new code must use `HOSPEDA_*` names exclusively.** No exceptions for env reads in source.
+- **No runtime aliasing.** The repo does not maintain a code-level fallback table that maps old names to new ones at runtime. If you find legacy references, treat them as bugs and migrate them.
+- **SPEC-035 cleanup.** The renaming was driven by the SPEC-035 effort. If you encounter a variable name not present in any registry, consult `.claude/specs/SPEC-035-env-vars-cleanup/spec.md` for the historical mapping from old names to new ones.
+- **Platform exceptions only.** `NODE_ENV`, `CI`, `VERCEL`, `VERCEL_GIT_COMMIT_SHA` keep their platform-defined names — the project does not control them. Document the reason at any call site that reads them.
+
+If you migrate an old call site, update the registry and the relevant app's `.env.example` and `.env.test` in the same change.
+
+---
+
+## Per-App Deployment Guides
+
+Each app owns its detailed deployment runbook:
+
+- **API** — [`./apps/api.md`](./apps/api.md). Vercel serverless config, cold start considerations, cron setup, Redis requirement, Sentry source maps for the API.
+- **Admin** — [`./apps/admin.md`](./apps/admin.md). TanStack Start build, Vite client bundle, `VITE_*` mirror of `HOSPEDA_*` vars, Sentry source maps for the admin SPA.
+- **Web** — [`./apps/web.md`](./apps/web.md). Astro build, ISR/SSR routing, `PUBLIC_*` mirror of `HOSPEDA_*` vars, image optimization, Sentry source maps for the web app.
+
+For the secret reference itself (every variable, where to set it, how to obtain credentials), use [`./secrets.md`](./secrets.md).
+
+---
+
+## Security Notes
+
+The full security policy is in [`environment-variables.md`](../guides/environment-variables.md#security) and [`secrets.md`](./secrets.md#9-security-notes). Critical points:
+
+- `.env`, `.env.local`, `.env.*.local` are gitignored. Only `.env.example` and `.env.test` are committed.
+- Anything with `PUBLIC_*` or `VITE_*` is bundled into the client and visible to every browser. **Never put secrets there.**
+- Production secrets live exclusively in Vercel project settings and the `production` GitHub Environment. They are never stored in the repository.
+- `HOSPEDA_BETTER_AUTH_SECRET` and `HOSPEDA_CRON_SECRET` require at least 32 characters. Generate with `openssl rand -base64 32`.
+- MercadoPago: production tokens start with `APP_USR-`, sandbox with `TEST-`. Never use a production token in staging.
+- Rotate secrets immediately if compromised: change at the source, update Vercel, run `pnpm env:pull`, and purge from git history.
+
+---
+
+## Related Documentation
+
+- [`environment-variables.md`](../guides/environment-variables.md) — Developer guide for managing env vars (per-app strategy, test env files, troubleshooting).
+- [`./secrets.md`](./secrets.md) — Authoritative per-secret reference and how-to-obtain instructions.
+- [`docs/decisions/`](../decisions/README.md) — Architecture decision records, including any deployment-related ADRs.
+- [Hospeda root CLAUDE.md](../../CLAUDE.md) — Project-wide guidelines, including the env prefix policy.

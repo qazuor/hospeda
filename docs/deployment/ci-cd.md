@@ -1557,8 +1557,8 @@ For critical secrets like database URLs:
 ```
 HOSPEDA_DATABASE_URL          # Production DB
 HOSPEDA_BETTER_AUTH_SECRET      # Production Better Auth
-HOSPEDA_API_URL               # https://api.hospeda.com
-HOSPEDA_SITE_URL              # https://hospeda.com
+HOSPEDA_API_URL               # https://api.hospeda.ar
+HOSPEDA_SITE_URL              # https://hospeda.ar
 ```
 
 **Staging** (staging branch):
@@ -1566,8 +1566,8 @@ HOSPEDA_SITE_URL              # https://hospeda.com
 ```
 HOSPEDA_DEV_DATABASE_URL      # Staging DB
 HOSPEDA_DEV_BETTER_AUTH_SECRET  # Staging Better Auth
-HOSPEDA_DEV_API_URL           # https://staging-api.hospeda.com
-HOSPEDA_DEV_SITE_URL          # https://staging.hospeda.com
+HOSPEDA_DEV_API_URL           # https://api.staging.hospeda.ar
+HOSPEDA_DEV_SITE_URL          # https://staging.hospeda.ar
 ```
 
 **Development** (local):
@@ -2577,6 +2577,6 @@ git commit -m "feat(db): add User model with CRUD operations"
 
 ---
 
-**Last Updated**: 2024-01-15
+**Last Updated**: 2026-04-30
 **Version**: 1.0.0
 **Maintained By**: Tech Lead
