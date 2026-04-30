@@ -1,9 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock @repo/db before importing the module under test
+// Mock @repo/db before importing the module under test.
+// Includes all tables and helpers referenced by validatePromoCode and its
+// internal helpers (checkUserRedemptionLimitExceeded,
+// checkUserHasExistingPlanSubscription).
 vi.mock('@repo/db', () => ({
-    billingPromoCodeUsage: { id: 'id', customerId: 'customerId' },
+    billingPromoCodeUsage: { id: 'id', customerId: 'customerId', promoCodeId: 'promoCodeId' },
+    billingPromoCodes: { id: 'id', maxPerCustomer: 'maxPerCustomer' },
+    billingSubscriptions: { id: 'id', customerId: 'customerId', planId: 'planId' },
     eq: vi.fn((_col: unknown, _val: unknown) => ({ _type: 'eq', _col, _val })),
+    count: vi.fn(() => ({ _type: 'count' })),
+    sql: Object.assign(
+        vi.fn((_strings: unknown, ..._values: unknown[]) => ({ _type: 'sql' })),
+        { raw: vi.fn((s: string) => ({ _type: 'sql.raw', s })) }
+    ),
     getDb: vi.fn()
 }));
 
@@ -261,7 +271,7 @@ describe('validatePromoCode', () => {
             expect(result.valid).toBe(true);
         });
 
-        it('should not call getDb nor tx when newCustomersOnly is false', async () => {
+        it('should not call getDb when ctx.tx is provided (newCustomersOnly is false)', async () => {
             // Arrange
             mockGetPromoCodeByCode.mockResolvedValue({
                 success: true,
@@ -272,11 +282,13 @@ describe('validatePromoCode', () => {
             const ctx = { tx: txMock as unknown as import('@repo/db').DrizzleClient };
 
             // Act
-            await validatePromoCode('SAVE10', { userId: 'u1' }, ctx);
+            const result = await validatePromoCode('SAVE10', { userId: 'u1' }, ctx);
 
-            // Assert: no DB access at all for the newCustomersOnly check
-            expect(txMock.select).not.toHaveBeenCalled();
+            // Assert: getDb() is never called because ctx.tx is used.
+            // checkUserRedemptionLimitExceeded always runs for any userId and uses
+            // ctx.tx (not getDb). The newCustomersOnly check is skipped when false.
             expect(mockGetDb).not.toHaveBeenCalled();
+            expect(result.valid).toBe(true);
         });
     });
 

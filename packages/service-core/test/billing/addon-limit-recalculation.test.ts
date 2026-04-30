@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// vi.hoisted() runs before vi.mock() factories so variables declared here can
+// be safely referenced inside mock factories without temporal dead zone issues.
+const { execRef } = vi.hoisted(() => {
+    // execRef.fn is replaced per-test to control what tx.execute() returns.
+    const execRef = { fn: vi.fn().mockResolvedValue({ rows: [] }) };
+    return { execRef };
+});
+
 // Mock external dependencies before importing the module under test
 vi.mock('@repo/billing', () => ({
     getAddonBySlug: vi.fn(),
@@ -14,10 +22,38 @@ vi.mock('@repo/db/schemas/billing', () => ({
     }
 }));
 
+// Mock @repo/db to provide withTransaction and sql.
+// withTransaction calls the callback with a proxy tx whose execute() method
+// delegates to execRef.fn, which each test configures via setExecResult().
+vi.mock('@repo/db', () => ({
+    sql: Object.assign(
+        vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+            type: 'sql',
+            strings,
+            values
+        })),
+        { raw: vi.fn((s: string) => ({ type: 'sql.raw', s })) }
+    ),
+    withTransaction: vi.fn(async (fn: (tx: Record<string, unknown>) => Promise<unknown>) => {
+        const tx: Record<string, unknown> = {
+            execute: vi.fn((..._args: unknown[]) => execRef.fn(..._args))
+        };
+        return fn(tx);
+    })
+}));
+
 vi.mock('drizzle-orm', () => ({
     and: vi.fn((...args: unknown[]) => args),
     eq: vi.fn((col: unknown, val: unknown) => ({ col, val })),
-    isNull: vi.fn((col: unknown) => ({ col, isNull: true }))
+    isNull: vi.fn((col: unknown) => ({ col, isNull: true })),
+    // Needed by @repo/db schema files that call relations() at module load time
+    relations: vi.fn(() => ({})),
+    many: vi.fn(() => ({})),
+    one: vi.fn(() => ({})),
+    sql: Object.assign(
+        vi.fn((_strings: unknown, ..._values: unknown[]) => ({ type: 'sql' })),
+        { raw: vi.fn((s: string) => ({ type: 'sql.raw', s })) }
+    )
 }));
 
 import { getAddonBySlug, getPlanBySlug } from '@repo/billing';
@@ -26,15 +62,20 @@ import { recalculateAddonLimitsForCustomer } from '../../src/services/billing/ad
 const mockGetAddonBySlug = getAddonBySlug as ReturnType<typeof vi.fn>;
 const mockGetPlanBySlug = getPlanBySlug as ReturnType<typeof vi.fn>;
 
-/** Build a minimal mock DrizzleClient for select queries */
-function buildMockDb(purchases: unknown[]) {
-    return {
-        select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-                where: vi.fn().mockResolvedValue(purchases)
-            })
-        })
-    };
+/**
+ * Configure what tx.execute() returns for the current test.
+ * The service uses tx.execute() inside withTransaction to query
+ * billing_addon_purchases with FOR UPDATE.
+ */
+function setExecResult(purchases: unknown[]): void {
+    execRef.fn = vi.fn().mockResolvedValue({ rows: purchases });
+}
+
+/**
+ * Configure tx.execute() to reject with the given error.
+ */
+function setExecError(error: Error): void {
+    execRef.fn = vi.fn().mockRejectedValue(error);
 }
 
 /** Build a minimal mock QZPay billing client */
@@ -56,14 +97,19 @@ function buildMockBilling(
     };
 }
 
+/** Minimal stub for the db parameter (service ignores it; withTransaction is used instead) */
+const stubDb = {} as never;
+
 describe('recalculateAddonLimitsForCustomer', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // Default: no purchases
+        setExecResult([]);
     });
 
     it('should return failed outcome when customer has no subscriptions', async () => {
         // Arrange
-        const db = buildMockDb([]);
+        setExecResult([]);
         const billing = buildMockBilling([]);
 
         // Act
@@ -71,7 +117,7 @@ describe('recalculateAddonLimitsForCustomer', () => {
             customerId: 'cust-1',
             limitKey: 'max_accommodations',
             billing: billing as never,
-            db: db as never
+            db: stubDb
         });
 
         // Assert
@@ -81,7 +127,7 @@ describe('recalculateAddonLimitsForCustomer', () => {
 
     it('should return failed outcome when customer has no active subscription', async () => {
         // Arrange
-        const db = buildMockDb([]);
+        setExecResult([]);
         const billing = buildMockBilling([{ status: 'cancelled', planId: 'starter' }]);
 
         // Act
@@ -89,7 +135,7 @@ describe('recalculateAddonLimitsForCustomer', () => {
             customerId: 'cust-1',
             limitKey: 'max_accommodations',
             billing: billing as never,
-            db: db as never
+            db: stubDb
         });
 
         // Assert
@@ -99,7 +145,7 @@ describe('recalculateAddonLimitsForCustomer', () => {
 
     it('should return failed outcome when plan is not found in canonical config', async () => {
         // Arrange
-        const db = buildMockDb([]);
+        setExecResult([]);
         const billing = buildMockBilling([{ status: 'active', planId: 'unknown-plan' }]);
         mockGetPlanBySlug.mockReturnValue(undefined);
 
@@ -108,7 +154,7 @@ describe('recalculateAddonLimitsForCustomer', () => {
             customerId: 'cust-1',
             limitKey: 'max_accommodations',
             billing: billing as never,
-            db: db as never
+            db: stubDb
         });
 
         // Assert
@@ -118,7 +164,7 @@ describe('recalculateAddonLimitsForCustomer', () => {
 
     it('should return skipped outcome when base plan has unlimited (-1) for the limitKey', async () => {
         // Arrange
-        const db = buildMockDb([]);
+        setExecResult([]);
         const billing = buildMockBilling([{ status: 'active', planId: 'enterprise' }]);
         mockGetPlanBySlug.mockReturnValue({
             limits: [{ key: 'max_accommodations', value: -1 }]
@@ -129,7 +175,7 @@ describe('recalculateAddonLimitsForCustomer', () => {
             customerId: 'cust-1',
             limitKey: 'max_accommodations',
             billing: billing as never,
-            db: db as never
+            db: stubDb
         });
 
         // Assert
@@ -148,7 +194,7 @@ describe('recalculateAddonLimitsForCustomer', () => {
                 limitAdjustments: [{ limitKey: 'max_accommodations', increase: 10 }]
             }
         ];
-        const db = buildMockDb(purchases);
+        setExecResult(purchases);
         const billing = buildMockBilling([{ status: 'active', planId: 'starter' }], {
             setFn: mockSet
         });
@@ -162,7 +208,7 @@ describe('recalculateAddonLimitsForCustomer', () => {
             customerId: 'cust-1',
             limitKey: 'max_accommodations',
             billing: billing as never,
-            db: db as never
+            db: stubDb
         });
 
         // Assert
@@ -189,7 +235,7 @@ describe('recalculateAddonLimitsForCustomer', () => {
                 limitAdjustments: []
             }
         ];
-        const db = buildMockDb(purchases);
+        setExecResult(purchases);
         const billing = buildMockBilling([{ status: 'active', planId: 'starter' }], {
             removeBySourceFn: mockRemoveBySource
         });
@@ -203,7 +249,7 @@ describe('recalculateAddonLimitsForCustomer', () => {
             customerId: 'cust-1',
             limitKey: 'max_accommodations',
             billing: billing as never,
-            db: db as never
+            db: stubDb
         });
 
         // Assert
@@ -213,14 +259,8 @@ describe('recalculateAddonLimitsForCustomer', () => {
     });
 
     it('should return failed outcome when an unexpected error is thrown', async () => {
-        // Arrange
-        const db = {
-            select: vi.fn().mockReturnValue({
-                from: vi.fn().mockReturnValue({
-                    where: vi.fn().mockRejectedValue(new Error('unexpected db crash'))
-                })
-            })
-        };
+        // Arrange — tx.execute() rejects to simulate a DB crash
+        setExecError(new Error('unexpected db crash'));
         const billing = buildMockBilling([]);
 
         // Act
@@ -228,7 +268,7 @@ describe('recalculateAddonLimitsForCustomer', () => {
             customerId: 'cust-1',
             limitKey: 'max_accommodations',
             billing: billing as never,
-            db: db as never
+            db: stubDb
         });
 
         // Assert
@@ -239,7 +279,7 @@ describe('recalculateAddonLimitsForCustomer', () => {
     it('should handle trialing subscription as active', async () => {
         // Arrange
         const mockSet = vi.fn().mockResolvedValue(undefined);
-        const db = buildMockDb([]);
+        setExecResult([]);
         const billing = buildMockBilling([{ status: 'trialing', planId: 'starter' }], {
             setFn: mockSet
         });
@@ -252,7 +292,7 @@ describe('recalculateAddonLimitsForCustomer', () => {
             customerId: 'cust-1',
             limitKey: 'max_accommodations',
             billing: billing as never,
-            db: db as never
+            db: stubDb
         });
 
         // Assert — no addons, so removeBySource is called but outcome is still success

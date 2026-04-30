@@ -24,7 +24,9 @@ describe('EventLocationService.list', () => {
     });
 
     it('should return a paginated list of event locations (success)', async () => {
-        asMock(model.findAll).mockResolvedValue(paginated);
+        // EventLocationService.getDefaultListRelations() returns { destination: true },
+        // so list uses findAllWithRelations instead of findAll.
+        asMock(model.findAllWithRelations).mockResolvedValue(paginated);
         const result = await service.list(actor, {});
         expectSuccess(result);
         expect(result.data?.items).toHaveLength(1);
@@ -38,7 +40,9 @@ describe('EventLocationService.list', () => {
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        asMock(model.findAll).mockRejectedValue(new Error('DB error'));
+        // EventLocationService.getDefaultListRelations() returns { destination: true },
+        // so list uses findAllWithRelations instead of findAll.
+        asMock(model.findAllWithRelations).mockRejectedValue(new Error('DB error'));
         const result = await service.list(actor, {});
         expectInternalError(result);
     });

@@ -22,7 +22,7 @@
 
 import { EventModel, REntityTagModel, TagModel } from '@repo/db';
 import type { AccommodationModel, DestinationModel } from '@repo/db';
-import { PermissionEnum } from '@repo/schemas';
+import { DestinationTypeEnum, PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as accommodationHelpers from '../../src/services/accommodation/accommodation.helpers';
 import { AccommodationService } from '../../src/services/accommodation/accommodation.service';
@@ -97,10 +97,15 @@ describe('AccommodationService — revalidation hooks', () => {
         service.destinationService = {
             updateAccommodationsCount: vi.fn().mockResolvedValue(undefined)
         };
-        // Prevent _destinationModel from calling the real DB in _resolveDestinationSlug.
+        // Prevent _destinationModel from calling the real DB in _resolveDestinationSlug
+        // and _assertDestinationIsCity. Must include destinationType: CITY so the
+        // CITY validation in _beforeCreate does not reject the input.
         // @ts-expect-error: private field override for test isolation
         service._destinationModel = {
-            findById: vi.fn().mockResolvedValue({ slug: 'mock-destination' })
+            findById: vi.fn().mockResolvedValue({
+                slug: 'mock-destination',
+                destinationType: DestinationTypeEnum.CITY
+            })
         };
     });
 

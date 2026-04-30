@@ -1,11 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// vi.hoisted() runs before the vi.mock() factories, so variables declared here
+// can be safely referenced inside mock factories (no temporal dead zone issue).
+const { getDbRef } = vi.hoisted(() => {
+    const getDbFn = vi.fn();
+    return { getDbRef: getDbFn };
+});
+
 vi.mock('@repo/db', () => ({
     billingNotificationLog: {
         createdAt: 'createdAt',
         expiredAt: 'expiredAt'
     },
-    getDb: vi.fn(),
+    getDb: getDbRef,
     and: vi.fn((...args: unknown[]) => ({ type: 'and', args })),
     isNotNull: vi.fn((col: unknown) => ({ type: 'isNotNull', col })),
     isNull: vi.fn((col: unknown) => ({ type: 'isNull', col })),
@@ -18,11 +25,47 @@ vi.mock('@repo/db', () => ({
         {
             raw: vi.fn((s: string) => ({ type: 'sql.raw', s }))
         }
-    )
+    ),
+    // withTransaction is used by withServiceTransaction (transaction.ts) when
+    // runRetentionPolicy is called without a caller-provided ctx. The mock
+    // executes the callback with a proxy tx that forwards update/delete calls
+    // to whatever getDbRef() currently returns, so tests that configure
+    // mockGetDb keep working without modification.
+    withTransaction: vi.fn(async (fn: (tx: Record<string, unknown>) => Promise<unknown>) => {
+        const proxyTx: Record<string, unknown> = {
+            // withServiceTransaction calls tx.execute() to set statement_timeout.
+            execute: vi.fn().mockResolvedValue(undefined)
+        };
+        // Forward any other method (update, delete, insert, select…) to the
+        // db returned by getDb() at the time of the call, so that
+        // mockGetDb.mockReturnValue(...) / mockGetDb.mockImplementation(...)
+        // set up in each test is respected.
+        const handler: ProxyHandler<Record<string, unknown>> = {
+            get(target, prop: string | symbol) {
+                if (prop in target) return target[prop as string];
+                return (...args: unknown[]) => {
+                    const db = (getDbRef() ?? {}) as Record<string, unknown>;
+                    const method = db[prop as string];
+                    if (typeof method === 'function') {
+                        return (method as (...a: unknown[]) => unknown).apply(db, args);
+                    }
+                    return undefined;
+                };
+            }
+        };
+        return fn(new Proxy(proxyTx, handler));
+    })
 }));
 
 vi.mock('drizzle-orm', () => ({
-    lt: vi.fn((col: unknown, val: unknown) => ({ type: 'lt', col, val }))
+    lt: vi.fn((col: unknown, val: unknown) => ({ type: 'lt', col, val })),
+    // sql is used by withServiceTransaction to issue SET LOCAL statement_timeout.
+    // The proxy tx stub's execute() method handles the actual call; sql just
+    // needs to be a callable that returns a token-like object.
+    sql: Object.assign(
+        vi.fn((_strings: unknown, ..._values: unknown[]) => ({ type: 'sql' })),
+        { raw: vi.fn((s: string) => ({ type: 'sql.raw', s })) }
+    )
 }));
 
 import * as dbModule from '@repo/db';

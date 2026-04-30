@@ -23,20 +23,22 @@ describe('EventLocationService.getByName', () => {
     });
 
     it('should return an event location by name (success)', async () => {
-        asMock(model.findOne).mockResolvedValue(entity);
+        // EventLocationService.getDefaultGetByIdRelations() returns { destination: true },
+        // so getByField uses findOneWithRelations instead of findOne.
+        asMock(model.findOneWithRelations).mockResolvedValue(entity);
         const result = await service.getByName(actor, venueName);
         expectSuccess(result);
         expect(result.data).toEqual(entity);
     });
 
     it('should return NOT_FOUND error if event location does not exist', async () => {
-        asMock(model.findOne).mockResolvedValue(null);
+        asMock(model.findOneWithRelations).mockResolvedValue(null);
         const result = await service.getByName(actor, venueName);
         expectNotFoundError(result);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        asMock(model.findOne).mockRejectedValue(new Error('DB error'));
+        asMock(model.findOneWithRelations).mockRejectedValue(new Error('DB error'));
         const result = await service.getByName(actor, venueName);
         expectInternalError(result);
     });

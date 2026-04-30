@@ -99,9 +99,27 @@ vi.mock('@repo/db', () => ({
         createdAt: 'createdAt',
         livemode: 'livemode'
     },
+    // billingAuditLogs is referenced by createPromoCode, updatePromoCode, and
+    // deletePromoCode to record an audit entry after each mutation.
+    billingAuditLogs: { id: 'id' },
     eq: vi.fn((col: unknown, val: unknown) => ({ _eq: { col, val } })),
     getDb: vi.fn(),
-    // Unused by the 3 functions under test but required for the module to load
+    // withTransaction is called when no ctx is provided (or when options.tx is
+    // supplied without ctx). The mock forwards the callback to getDb() when
+    // existingTx is absent, matching the real implementation signature:
+    //   withTransaction(callback, existingTx?)
+    withTransaction: vi.fn(
+        async (callback: (tx: unknown) => Promise<unknown>, existingTx?: unknown) => {
+            if (existingTx) {
+                return callback(existingTx);
+            }
+            // Fall back to getDb() as the real impl would.
+            // The getDb mock is configured per-test to return a db stub.
+            const { getDb: _getDb } = await import('@repo/db');
+            return callback((_getDb as () => unknown)());
+        }
+    ),
+    // Unused by the functions under test but required for the module to load
     and: vi.fn(),
     count: vi.fn(),
     desc: vi.fn(),
@@ -185,8 +203,9 @@ describe('promo-code.crud — ctx threading (first 3 functions)', () => {
             // Act
             const result = await createPromoCode(baseInput, {}, ctx);
 
-            // Assert — ctx.tx.insert was called, getDb() was NOT
-            expect(mockTx.insert).toHaveBeenCalledOnce();
+            // Assert — ctx.tx.insert was called for the promo code row AND the
+            // audit log (2 INSERTs per create), getDb() was NOT called.
+            expect(mockTx.insert).toHaveBeenCalledTimes(2);
             expect(mockGetDb).not.toHaveBeenCalled();
             expect(result.success).toBe(true);
         });
@@ -201,9 +220,10 @@ describe('promo-code.crud — ctx threading (first 3 functions)', () => {
             // Act
             const result = await createPromoCode(baseInput);
 
-            // Assert — getDb() was called, tx was not involved
+            // Assert — getDb() obtained the db client; insert was called twice
+            // (promo code row + audit log).
             expect(mockGetDb).toHaveBeenCalledOnce();
-            expect(fakeDb.insert).toHaveBeenCalledOnce();
+            expect(fakeDb.insert).toHaveBeenCalledTimes(2);
             expect(result.success).toBe(true);
         });
 
@@ -223,8 +243,8 @@ describe('promo-code.crud — ctx threading (first 3 functions)', () => {
                 ctx
             );
 
-            // Assert — ctx.tx wins
-            expect(ctxTx.insert).toHaveBeenCalledOnce();
+            // Assert — ctx.tx wins; insert called twice (promo code + audit log)
+            expect(ctxTx.insert).toHaveBeenCalledTimes(2);
             expect(optionsTx.insert).not.toHaveBeenCalled();
             expect(mockGetDb).not.toHaveBeenCalled();
         });
@@ -240,8 +260,9 @@ describe('promo-code.crud — ctx threading (first 3 functions)', () => {
                 tx: optionsTx as unknown as import('@repo/db').DrizzleClient
             });
 
-            // Assert — options.tx is used, getDb() is NOT
-            expect(optionsTx.insert).toHaveBeenCalledOnce();
+            // Assert — options.tx is used (insert called twice: promo code + audit log),
+            // getDb() is NOT called.
+            expect(optionsTx.insert).toHaveBeenCalledTimes(2);
             expect(mockGetDb).not.toHaveBeenCalled();
         });
     });
@@ -323,15 +344,19 @@ describe('promo-code.crud — ctx threading (first 3 functions)', () => {
             const chain = makeChain([dbRow]);
             const mockTx = {
                 select: vi.fn().mockReturnValue(chain),
-                update: vi.fn().mockReturnValue(chain)
+                update: vi.fn().mockReturnValue(chain),
+                // insert is needed for the audit log written after the UPDATE.
+                insert: vi.fn().mockReturnValue(chain)
             };
             const ctx = { tx: mockTx as unknown as import('@repo/db').DrizzleClient };
 
             // Act
             const result = await updatePromoCode('row-id-1', { isActive: false }, ctx);
 
-            // Assert — ctx.tx.update was called, getDb() was NOT
+            // Assert — ctx.tx.update was called (promo code row), insert was
+            // called (audit log), getDb() was NOT called.
             expect(mockTx.update).toHaveBeenCalledOnce();
+            expect(mockTx.insert).toHaveBeenCalledOnce();
             expect(mockGetDb).not.toHaveBeenCalled();
             expect(result.success).toBe(true);
         });
@@ -342,16 +367,20 @@ describe('promo-code.crud — ctx threading (first 3 functions)', () => {
             const chain = makeChain([dbRow]);
             const fakeDb = {
                 select: vi.fn().mockReturnValue(chain),
-                update: vi.fn().mockReturnValue(chain)
+                update: vi.fn().mockReturnValue(chain),
+                // insert is needed for the audit log written after the UPDATE.
+                insert: vi.fn().mockReturnValue(chain)
             };
             mockGetDb.mockReturnValue(fakeDb);
 
             // Act
             const result = await updatePromoCode('row-id-1', { isActive: false });
 
-            // Assert — getDb() was called, ctx.tx was not involved
+            // Assert — getDb() was called, ctx.tx was not involved.
+            // update = 1 (promo code), insert = 1 (audit log).
             expect(mockGetDb).toHaveBeenCalledOnce();
             expect(fakeDb.update).toHaveBeenCalledOnce();
+            expect(fakeDb.insert).toHaveBeenCalledOnce();
             expect(result.success).toBe(true);
         });
 
@@ -361,7 +390,9 @@ describe('promo-code.crud — ctx threading (first 3 functions)', () => {
             const chain = makeChain([dbRow]);
             const mockTx = {
                 select: vi.fn().mockReturnValue(chain),
-                update: vi.fn().mockReturnValue(chain)
+                update: vi.fn().mockReturnValue(chain),
+                // insert is needed for the audit log written after the UPDATE.
+                insert: vi.fn().mockReturnValue(chain)
             };
             const ctx = { tx: mockTx as unknown as import('@repo/db').DrizzleClient };
 
@@ -372,9 +403,11 @@ describe('promo-code.crud — ctx threading (first 3 functions)', () => {
                 ctx
             );
 
-            // Assert — select (pre-fetch) and update both went through ctx.tx
+            // Assert — select (pre-fetch) and update both went through ctx.tx,
+            // plus one insert for the audit log.
             expect(mockTx.select).toHaveBeenCalledOnce();
             expect(mockTx.update).toHaveBeenCalledOnce();
+            expect(mockTx.insert).toHaveBeenCalledOnce();
             expect(mockGetDb).not.toHaveBeenCalled();
             expect(result.success).toBe(true);
         });
@@ -407,15 +440,19 @@ describe('promo-code.crud — ctx threading (first 3 functions)', () => {
             const dbRow = makeDbRow();
             const chain = makeChain([dbRow]);
             const mockTx = {
-                update: vi.fn().mockReturnValue(chain)
+                update: vi.fn().mockReturnValue(chain),
+                // insert is needed for the audit log written after the UPDATE.
+                insert: vi.fn().mockReturnValue(chain)
             };
             const ctx = { tx: mockTx as unknown as import('@repo/db').DrizzleClient };
 
             // Act
             const result = await deletePromoCode('row-id-1', ctx);
 
-            // Assert — ctx.tx.update was called, getDb() was NOT
+            // Assert — ctx.tx.update was called (soft delete), insert was called
+            // (audit log), getDb() was NOT called.
             expect(mockTx.update).toHaveBeenCalledOnce();
+            expect(mockTx.insert).toHaveBeenCalledOnce();
             expect(mockGetDb).not.toHaveBeenCalled();
             expect(result.success).toBe(true);
         });
@@ -424,15 +461,20 @@ describe('promo-code.crud — ctx threading (first 3 functions)', () => {
             // Arrange
             const dbRow = makeDbRow();
             const chain = makeChain([dbRow]);
-            const fakeDb = { update: vi.fn().mockReturnValue(chain) };
+            const fakeDb = {
+                update: vi.fn().mockReturnValue(chain),
+                // insert is needed for the audit log written after the soft-delete UPDATE.
+                insert: vi.fn().mockReturnValue(chain)
+            };
             mockGetDb.mockReturnValue(fakeDb);
 
             // Act
             const result = await deletePromoCode('row-id-1');
 
-            // Assert — getDb() was called, ctx.tx was not involved
+            // Assert — getDb() was called, update (soft delete) + insert (audit log).
             expect(mockGetDb).toHaveBeenCalledOnce();
             expect(fakeDb.update).toHaveBeenCalledOnce();
+            expect(fakeDb.insert).toHaveBeenCalledOnce();
             expect(result.success).toBe(true);
         });
 
