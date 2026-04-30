@@ -779,6 +779,87 @@ specific failure modes deterministically.
 
 ---
 
+## E2E from SPEC-096
+
+> **Origin**: SPEC-096 (web beta readiness) — REQ-096-39.
+> **Source task**: SPEC-096 T-070.
+> **Status**: Pending — defined here as additional E2E test definitions to be authored after the core SPEC-092 catalog. Each entry below should be promoted to a full test card (with Actors / Tags / Preconditions / Steps / Asserts) when scheduled.
+> **Tracking note**: SPEC-092 does not currently have a `state.json` task tracker. When tasks are generated for SPEC-092, these 10 entries MUST be appended as tasks T-100 through T-109 (or the next free range), each with `complexity: 3`, `phase: "spec-096-e2e"`, `tags: ["e2e", "from-spec-096"]`, `status: "pending"`, `blockedBy: []`.
+
+The following 10 cross-app E2E flows from SPEC-096 REQ-096-39 are added to the SPEC-092 scope. They cover the web beta readiness journeys not already covered by the existing P0/P1 catalog and must be authored as part of the SPEC-092 implementation.
+
+### E2E-1: Anonymous browse → search → results → entity detail → contact form
+
+- **Tags**: `@p0 @guest @discovery @cross-app @from-spec-096`
+- **Description**: Anonymous browse → search → results → entity detail → contact form.
+- **Detailed steps**: Visit web home as anonymous user, perform a search (free text + at least one filter), navigate to a results page, click into an entity detail page, open the contact form, and submit it (or assert the form is reachable and validates).
+- **Source**: SPEC-096 REQ-096-39 #1.
+
+### E2E-2: Signup → onboarding → publish → mi-cuenta/propiedades visible
+
+- **Tags**: `@p0 @host @onboarding @cross-app @from-spec-096`
+- **Description**: Signup → onboarding → publish → `mi-cuenta/propiedades` visible.
+- **Detailed steps**: Sign up a new user on web, complete the host onboarding flow, publish a listing, then navigate to `/mi-cuenta/propiedades` and assert the published listing is visible.
+- **Source**: SPEC-096 REQ-096-39 #2.
+
+### E2E-3: Authenticated favorite toggle round-trip on accommodation
+
+- **Tags**: `@p0 @guest @favorites @cross-app @from-spec-096`
+- **Description**: Authenticated favorite toggle on accommodation → `/mi-cuenta/favoritos` shows it → remove → empty state.
+- **Detailed steps**: As an authenticated guest, toggle the favorite control on an accommodation detail page, navigate to `/mi-cuenta/favoritos` and assert the accommodation appears, remove it from favorites, and assert the empty state is rendered.
+- **Source**: SPEC-096 REQ-096-39 #3.
+
+### E2E-4: Authenticated review submission and visibility
+
+- **Tags**: `@p0 @guest @reviews @cross-app @from-spec-096`
+- **Description**: Authenticated review submission → `/mi-cuenta/resenas` shows it → click entity → detail.
+- **Detailed steps**: As an authenticated guest, submit a review on an entity, navigate to `/mi-cuenta/resenas`, assert the new review appears, click through to the reviewed entity, and assert the entity detail page loads.
+- **Source**: SPEC-096 REQ-096-39 #4.
+
+### E2E-5: Profile edit on web → admin reflects changes
+
+- **Tags**: `@p0 @profile @cross-app @from-spec-096`
+- **Description**: Profile edit on web → save → admin `/me/profile` reflects changes.
+- **Detailed steps**: As an authenticated user, edit profile fields on the web app, save, then open the admin app at `/me/profile` (same user) and assert the edited fields are reflected.
+- **Source**: SPEC-096 REQ-096-39 #5.
+
+### E2E-6: Profile edit on admin → web reflects changes
+
+- **Tags**: `@p0 @profile @cross-app @from-spec-096`
+- **Description**: Profile edit on admin → save → web `/mi-cuenta/editar` reflects changes.
+- **Detailed steps**: As an authenticated user with admin access, edit profile fields in the admin app, save, then open the web app at `/mi-cuenta/editar` (same user) and assert the edited fields are reflected.
+- **Source**: SPEC-096 REQ-096-39 #6.
+
+### E2E-7: Theme toggle isolation between web and admin
+
+- **Tags**: `@p1 @theme @cross-app @from-spec-096`
+- **Description**: Theme toggle in web → admin `themeAdmin` unchanged.
+- **Detailed steps**: Toggle the theme in the web app for an authenticated user, then verify in the admin app that the user's `themeAdmin` preference (and admin UI theme) is unchanged. Confirms the two theme preferences are independent.
+- **Source**: SPEC-096 REQ-096-39 #7.
+
+### E2E-8: Subscription cancel flow
+
+- **Tags**: `@p0 @host @billing @cross-app @from-spec-096`
+- **Description**: Subscription cancel flow → status update → email sent.
+- **Detailed steps**: As an active host, initiate the subscription cancel flow, complete it, and assert (a) `billing_subscriptions.status` transitions to the canceled state and (b) a cancellation email is captured by Mailpit.
+- **Source**: SPEC-096 REQ-096-39 #8.
+
+### E2E-9: 404 on broken link — regression of audit
+
+- **Tags**: `@p0 @web @regression @from-spec-096`
+- **Description**: 404 on broken link → 0 broken links exist (regression of audit).
+- **Detailed steps**: Hit a known-bad URL and assert the web app returns 404 with the proper page. Then run the broken-link audit (or a deterministic subset thereof) against the web app and assert 0 broken internal links remain. Acts as a regression for the broken-links sweep.
+- **Source**: SPEC-096 REQ-096-39 #9.
+
+### E2E-10: Filter sub-route ISR cache hit
+
+- **Tags**: `@p1 @web @performance @isr @from-spec-096`
+- **Description**: Filter sub-route → ISR cache hit on second visit.
+- **Detailed steps**: Visit a filter sub-route on the web app for the first time (cold), then revisit the same route within the ISR window and assert that the second visit is served from the ISR cache (e.g., via response header inspection or measurable response time delta).
+- **Source**: SPEC-096 REQ-096-39 #10.
+
+---
+
 ## Architecture Decisions
 
 ### A. Package layout — dedicated `apps/e2e/`
