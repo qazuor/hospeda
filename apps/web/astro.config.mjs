@@ -65,12 +65,13 @@ export default defineConfig({
         isr: {
             expiration: 86400,
             bypassToken: process.env.HOSPEDA_REVALIDATION_SECRET,
-            exclude: [
-                /^(\/(?:en|pt))?\/mi-cuenta(\/.*)?$/,
-                /^(\/(?:en|pt))?\/auth(\/.*)?$/,
-                /^(\/(?:en|pt))?\/busqueda(\/.*)?$/,
-                /^(\/(?:en|pt))?\/feedback(\/.*)?$/
-            ]
+            // Exclude SSR-only routes from ISR caching.
+            // Pattern breakdown:
+            //   (\/(?:en|pt))?  - optional locale prefix for /en/ or /pt/ (es has no prefix)
+            //   \/(auth|mi-cuenta|busqueda|feedback)  - route segment requiring fresh SSR
+            //   (\/.*)?$        - optional sub-paths under that segment
+            // This keeps listing pages like /alojamientos/tipo/cabin/ in the ISR cache.
+            exclude: [/^(\/(?:en|pt))?\/(auth|mi-cuenta|busqueda|feedback)(\/.*)?$/]
         },
         imageService: true
     }),
@@ -115,7 +116,10 @@ export default defineConfig({
             filter: (page) => {
                 const excludePatterns = ['/auth/', '/mi-cuenta/', '/busqueda/', '/feedback/'];
                 return !excludePatterns.some((pattern) => page.includes(pattern));
-            }
+            },
+            // Include the dynamic sitemap (published entities × 3 locales) so
+            // sitemap-index.xml lists it alongside the statically-generated sitemap.
+            customPages: [`${HOSPEDA_SITE_URL.replace(/\/$/, '')}/sitemap-dynamic.xml`]
         })
     ],
     vite: {

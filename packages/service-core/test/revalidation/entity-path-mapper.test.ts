@@ -401,6 +401,245 @@ describe('getAffectedPaths — locale handling', () => {
 });
 
 // ---------------------------------------------------------------------------
+// T-061: accommodation amenity + feature sub-routes
+// ---------------------------------------------------------------------------
+
+describe('getAffectedPaths — accommodation amenity and feature sub-routes (T-061)', () => {
+    it('includes amenity filter pages for all provided amenitySlugs across all locales', () => {
+        const paths = getAffectedPaths({
+            entityType: 'accommodation',
+            slug: 'hotel-test',
+            amenitySlugs: ['wifi', 'piscina']
+        });
+        expect(paths).toContain('/alojamientos/comodidades/wifi/');
+        expect(paths).toContain('/alojamientos/comodidades/piscina/');
+        expect(paths).toContain('/en/alojamientos/comodidades/wifi/');
+        expect(paths).toContain('/pt/alojamientos/comodidades/piscina/');
+    });
+
+    it('includes feature filter pages for all provided featureSlugs across all locales', () => {
+        const paths = getAffectedPaths({
+            entityType: 'accommodation',
+            slug: 'hotel-test',
+            featureSlugs: ['vista-al-mar', 'jardín-privado']
+        });
+        expect(paths).toContain('/alojamientos/caracteristicas/vista-al-mar/');
+        expect(paths).toContain('/alojamientos/caracteristicas/jardín-privado/');
+        expect(paths).toContain('/en/alojamientos/caracteristicas/vista-al-mar/');
+        expect(paths).toContain('/pt/alojamientos/caracteristicas/jardín-privado/');
+    });
+
+    it('does not include amenity or feature pages when those arrays are absent', () => {
+        const paths = getAffectedPaths({ entityType: 'accommodation', slug: 'hotel-test' });
+        expect(paths.some((p) => p.includes('/comodidades/'))).toBe(false);
+        expect(paths.some((p) => p.includes('/caracteristicas/'))).toBe(false);
+    });
+
+    it('handles a single amenitySlug correctly', () => {
+        const paths = getAffectedPaths({
+            entityType: 'accommodation',
+            amenitySlugs: ['estacionamiento']
+        });
+        expect(paths).toContain('/alojamientos/comodidades/estacionamiento/');
+        expect(paths).toContain('/en/alojamientos/comodidades/estacionamiento/');
+    });
+
+    it('combines amenitySlugs + featureSlugs + accommodationType + destinationSlug', () => {
+        const paths = getAffectedPaths({
+            entityType: 'accommodation',
+            slug: 'complejo-norte',
+            accommodationType: 'resort',
+            destinationSlug: 'concordia',
+            amenitySlugs: ['spa'],
+            featureSlugs: ['pileta-climatizada']
+        });
+        expect(paths).toContain('/alojamientos/complejo-norte/');
+        expect(paths).toContain('/alojamientos/tipo/resort/');
+        expect(paths).toContain('/destinos/concordia/');
+        expect(paths).toContain('/alojamientos/comodidades/spa/');
+        expect(paths).toContain('/alojamientos/caracteristicas/pileta-climatizada/');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// T-061: destination sub-routes (accommodations, events, attractions)
+// ---------------------------------------------------------------------------
+
+describe('getAffectedPaths — destination sub-routes (T-061)', () => {
+    it('includes /destinos/{slug}/alojamientos/ sub-route when slug provided', () => {
+        const paths = getAffectedPaths({ entityType: 'destination', slug: 'concordia' });
+        expect(paths).toContain('/destinos/concordia/alojamientos/');
+        expect(paths).toContain('/en/destinos/concordia/alojamientos/');
+        expect(paths).toContain('/pt/destinos/concordia/alojamientos/');
+    });
+
+    it('includes /destinos/{slug}/eventos/ sub-route when slug provided', () => {
+        const paths = getAffectedPaths({ entityType: 'destination', slug: 'gualeguaychu' });
+        expect(paths).toContain('/destinos/gualeguaychu/eventos/');
+        expect(paths).toContain('/en/destinos/gualeguaychu/eventos/');
+        expect(paths).toContain('/pt/destinos/gualeguaychu/eventos/');
+    });
+
+    it('includes attraction pages for all provided attractionSlugs across all locales', () => {
+        const paths = getAffectedPaths({
+            entityType: 'destination',
+            slug: 'concordia',
+            attractionSlugs: ['termas-federacion', 'costanera-concepcion']
+        });
+        expect(paths).toContain('/destinos/atraccion/termas-federacion/');
+        expect(paths).toContain('/destinos/atraccion/costanera-concepcion/');
+        expect(paths).toContain('/en/destinos/atraccion/termas-federacion/');
+        expect(paths).toContain('/pt/destinos/atraccion/costanera-concepcion/');
+    });
+
+    it('does not include attraction pages when attractionSlugs is absent', () => {
+        const paths = getAffectedPaths({ entityType: 'destination', slug: 'concordia' });
+        expect(paths.some((p) => p.includes('/atraccion/'))).toBe(false);
+    });
+
+    it('handles attractionSlugs without a destination slug', () => {
+        const paths = getAffectedPaths({
+            entityType: 'destination',
+            attractionSlugs: ['plaza-san-martin']
+        });
+        expect(paths).toContain('/destinos/atraccion/plaza-san-martin/');
+        expect(paths).toContain('/en/destinos/atraccion/plaza-san-martin/');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// T-061: event location + destination events sub-route
+// ---------------------------------------------------------------------------
+
+describe('getAffectedPaths — event location and destination events sub-route (T-061)', () => {
+    it('includes location sub-route when locationSlug provided', () => {
+        const paths = getAffectedPaths({
+            entityType: 'event',
+            slug: 'festival-verano',
+            locationSlug: 'anfiteatro-municipal'
+        });
+        expect(paths).toContain('/eventos/en/anfiteatro-municipal/');
+        expect(paths).toContain('/en/eventos/en/anfiteatro-municipal/');
+        expect(paths).toContain('/pt/eventos/en/anfiteatro-municipal/');
+    });
+
+    it("includes destination's events sub-route when destinationSlug provided", () => {
+        const paths = getAffectedPaths({
+            entityType: 'event',
+            slug: 'carnaval-2026',
+            destinationSlug: 'gualeguaychu'
+        });
+        expect(paths).toContain('/destinos/gualeguaychu/eventos/');
+        expect(paths).toContain('/en/destinos/gualeguaychu/eventos/');
+        expect(paths).toContain('/pt/destinos/gualeguaychu/eventos/');
+    });
+
+    it('does not include location or destination sub-routes when absent', () => {
+        const paths = getAffectedPaths({ entityType: 'event', slug: 'simple-event' });
+        expect(paths.some((p) => p.includes('/eventos/en/'))).toBe(false);
+        expect(paths.some((p) => p.includes('/destinos/') && p.includes('/eventos/'))).toBe(false);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// T-061: post author sub-route
+// ---------------------------------------------------------------------------
+
+describe('getAffectedPaths — post author sub-route (T-061)', () => {
+    it('includes author sub-route when authorSlug provided', () => {
+        const paths = getAffectedPaths({
+            entityType: 'post',
+            slug: 'guia-litoral',
+            authorSlug: 'maria-gonzalez'
+        });
+        expect(paths).toContain('/publicaciones/autor/maria-gonzalez/');
+        expect(paths).toContain('/en/publicaciones/autor/maria-gonzalez/');
+        expect(paths).toContain('/pt/publicaciones/autor/maria-gonzalez/');
+    });
+
+    it('does not include author sub-route when authorSlug is absent', () => {
+        const paths = getAffectedPaths({ entityType: 'post', slug: 'guia-litoral' });
+        expect(paths.some((p) => p.includes('/autor/'))).toBe(false);
+    });
+
+    it('includes category sub-route when category provided', () => {
+        const paths = getAffectedPaths({
+            entityType: 'post',
+            slug: 'guia-litoral',
+            category: 'turismo'
+        });
+        expect(paths).toContain('/publicaciones/categoria/turismo/');
+        expect(paths).toContain('/en/publicaciones/categoria/turismo/');
+        expect(paths).toContain('/pt/publicaciones/categoria/turismo/');
+    });
+
+    it('combines authorSlug + category + tagSlugs correctly', () => {
+        const paths = getAffectedPaths({
+            entityType: 'post',
+            slug: 'articulo-completo',
+            authorSlug: 'juan-perez',
+            category: 'gastronomia',
+            tagSlugs: ['parrilla', 'viajes']
+        });
+        expect(paths).toContain('/publicaciones/autor/juan-perez/');
+        expect(paths).toContain('/publicaciones/categoria/gastronomia/');
+        expect(paths).toContain('/publicaciones/etiqueta/parrilla/');
+        expect(paths).toContain('/publicaciones/etiqueta/viajes/');
+        expect(paths).toContain('/publicaciones/articulo-completo/');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// T-060: exact slug list validation
+// ---------------------------------------------------------------------------
+
+describe('ACCOMMODATION_TYPE_SLUGS — exact enum match (T-060)', () => {
+    it('contains exactly the 10 valid AccommodationTypeEnum slugs', () => {
+        const expected = [
+            'apartment',
+            'house',
+            'country-house',
+            'cabin',
+            'hotel',
+            'hostel',
+            'camping',
+            'room',
+            'motel',
+            'resort'
+        ] as const;
+        expect([...ACCOMMODATION_TYPE_SLUGS].sort()).toEqual([...expected].sort());
+    });
+
+    it('does not contain stale slugs estancia or posada', () => {
+        expect(ACCOMMODATION_TYPE_SLUGS).not.toContain('estancia');
+        expect(ACCOMMODATION_TYPE_SLUGS).not.toContain('posada');
+    });
+});
+
+describe('EVENT_CATEGORY_SLUGS — exact enum match (T-060)', () => {
+    it('contains exactly the 9 valid EventCategoryEnum slugs', () => {
+        const expected = [
+            'music',
+            'culture',
+            'sports',
+            'gastronomy',
+            'festival',
+            'nature',
+            'theater',
+            'workshop',
+            'other'
+        ] as const;
+        expect([...EVENT_CATEGORY_SLUGS].sort()).toEqual([...expected].sort());
+    });
+
+    it('does not contain stale slugs fair, sport, or cultural', () => {
+        expect(EVENT_CATEGORY_SLUGS).not.toContain('fair');
+        expect(EVENT_CATEGORY_SLUGS).not.toContain('sport');
+        expect(EVENT_CATEGORY_SLUGS).not.toContain('cultural');
+    });
+});
+
+// ---------------------------------------------------------------------------
 // deduplication
 // ---------------------------------------------------------------------------
 
