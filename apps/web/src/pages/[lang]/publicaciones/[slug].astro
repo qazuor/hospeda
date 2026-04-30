@@ -49,11 +49,12 @@ const rawAuthorAvatar = String(authorObj?.image || authorObj?.avatarUrl || '');
 const authorAvatar = rawAuthorAvatar
 	? getMediaUrl(rawAuthorAvatar, { preset: 'avatar' })
 	: '';
-const tags = Array.isArray(post.tags) ? post.tags.map((tag: unknown) => {
-	if (typeof tag === 'string') return { name: tag, slug: tag };
-	const t = tag as Record<string, unknown>;
-	return { name: String(t.name || t.tagName || ''), slug: String(t.slug || '') };
-}) : [];
+// SPEC-086 D-024: user-tags are an internal subsystem with no public web UI.
+// The `post.tags` field from the API contains user-tags (no slug — D-002).
+// PostTags (public SEO taxonomy) are a separate subsystem not yet returned
+// in the post detail API response. Do NOT render user-tags as public links.
+// This array is kept for future postTags support when the API includes them.
+const postTags: readonly { readonly name: string; readonly slug: string }[] = [];
 const categoryColors = getPostCategoryColor(category.toLowerCase());
 
 const jsonLd = {
@@ -175,11 +176,14 @@ const breadcrumbItems = [
 		<!-- Content (TipTap) -->
 		<div class="post-detail__content" set:html={String(post.contentHtml || post.content || summary)} />
 
-		<!-- Tags -->
-		{tags.length > 0 && (
+		<!-- PostTags (SPEC-086: public SEO taxonomy — rendered as clickable chips) -->
+		{postTags.length > 0 && (
 			<div class="post-detail__tags">
-				{tags.map((tag: { name: string; slug: string }) => (
-					<a href={buildUrl({ locale, path: `publicaciones/etiqueta/${tag.slug}` })} class="post-detail__tag">
+				{postTags.map((tag: { readonly name: string; readonly slug: string }) => (
+					<a
+						href={buildUrl({ locale, path: `publicaciones/etiqueta/${tag.slug}` })}
+						class="post-detail__tag"
+					>
 						#{tag.name}
 					</a>
 				))}

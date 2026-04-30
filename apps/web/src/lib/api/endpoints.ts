@@ -279,13 +279,63 @@ export const eventLocationsApi = {
     }
 };
 
-// --- Tags ---
+// --- Tags (user-tags: internal/system/user taxonomy) ---
 
 /** Public tag API endpoints */
 export const tagsApi = {
     /** Get tag by slug */
     getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.get({ path: `${BASE}/tags/by-slug/${slug}` });
+    }
+};
+
+// --- PostTags (public SEO taxonomy for blog posts — SPEC-086) ---
+
+/**
+ * Public PostTag item returned by GET /api/v1/public/posts/tags.
+ * PostTags are the public SEO taxonomy for blog posts.
+ * Completely separate from the user-tag subsystem (no slug on user-tags).
+ */
+export interface PostTagPublicItem {
+    readonly id: string;
+    readonly name: string;
+    readonly slug: string;
+    readonly color: string;
+    readonly icon: string | null | undefined;
+    readonly lifecycleState: string;
+    readonly description?: string | null;
+    /** Only present when ?withCounts=true */
+    readonly usageCount?: number;
+}
+
+/**
+ * Public PostTag API endpoints (SPEC-086 — SEO taxonomy for blog posts).
+ * These tags are completely separate from the user-tag subsystem.
+ * Tags are managed by admins and linked to posts via r_post_post_tag.
+ */
+export const postTagsApi = {
+    /**
+     * List all ACTIVE PostTags.
+     * Cache-Control: public, max-age=600 (set by the API).
+     *
+     * @param params - Optional params including withCounts flag
+     * @returns Array of active PostTag items (with optional usageCount)
+     *
+     * @example
+     * ```ts
+     * const result = await postTagsApi.list({ withCounts: true });
+     * if (result.ok) {
+     *   const tagSlugs = result.data.map(t => t.slug);
+     * }
+     * ```
+     */
+    list(params?: {
+        readonly withCounts?: boolean;
+    }): Promise<ApiResult<readonly PostTagPublicItem[]>> {
+        return apiClient.get({
+            path: `${BASE}/posts/tags`,
+            params: params?.withCounts ? { withCounts: 'true' } : undefined
+        });
     }
 };
 
@@ -500,6 +550,14 @@ export const postsApi = {
         category?: string;
         /** Filter posts by author UUID */
         authorId?: string;
+        /**
+         * Filter posts by PostTag UUID(s).
+         * Pass a single UUID or a comma-separated list.
+         * Use postTagsApi.list() to resolve a slug → ID before calling this.
+         *
+         * @see SPEC-086 D-001, AC-F13
+         */
+        tags?: string;
     }): Promise<ApiResult<PaginatedResponse<PostPublic>>> {
         return apiClient.getList({ path: `${BASE}/posts`, params });
     },
