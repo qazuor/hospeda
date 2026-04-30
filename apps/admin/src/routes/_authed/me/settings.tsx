@@ -1,9 +1,10 @@
 /**
  * My Settings Page Route
  *
- * Displays and manages user settings and preferences.
- * Includes theme, language, notifications, and account settings.
- * All changes auto-save via PATCH to the user API endpoint.
+ * Two theme/language sections (Web and Admin) plus shared notifications.
+ * Submits to the admin user PATCH endpoint via `useUpdateUserSettings`,
+ * which now accepts `themeWeb`, `themeAdmin`, `languageWeb`, `languageAdmin`,
+ * `notifications`, and `newsletter` (SPEC-096 / REQ-096-32, T-056).
  */
 
 import { MainPageLayout } from '@/components/layout/MainPageLayout';
@@ -13,7 +14,12 @@ import { Switch } from '@/components/ui/switch';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { useFlashyToast } from '@/hooks/use-flashy-toast';
 import { useTranslations } from '@/hooks/use-translations';
-import { useUpdateUserSettings, useUserProfile } from '@/hooks/use-user-profile';
+import {
+    type AdminUserSettingsPatch,
+    useUpdateUserSettings,
+    useUserProfile
+} from '@/hooks/use-user-profile';
+import type { TranslationKey } from '@repo/i18n';
 import {
     BellIcon,
     GlobeIcon,
@@ -24,24 +30,22 @@ import {
     ShieldIcon,
     SunIcon
 } from '@repo/icons';
-import type { UserSettings } from '@repo/schemas';
+import type { LanguageEnum, ThemeEnum, UserSettings } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
+
+type TranslateFn = (key: TranslationKey, params?: Record<string, unknown>) => string;
 
 export const Route = createFileRoute('/_authed/me/settings')({
     component: MySettingsPage
 });
 
-/**
- * Resolves the current theme label from the darkMode setting.
- *
- * @param darkMode - The darkMode setting value
- * @returns 'system' | 'light' | 'dark'
- */
-function resolveTheme(darkMode: boolean | undefined): 'system' | 'light' | 'dark' {
-    if (darkMode === undefined) return 'system';
-    return darkMode ? 'dark' : 'light';
-}
+const DEFAULT_NOTIFICATIONS = {
+    enabled: true,
+    allowEmails: true,
+    allowSms: false,
+    allowPush: false
+} as const satisfies UserSettings['notifications'];
 
 function MySettingsPage() {
     const { t } = useTranslations();
@@ -52,23 +56,35 @@ function MySettingsPage() {
     const { success: toastSuccess, error: toastError } = useFlashyToast();
 
     const settings = profile?.settings as UserSettings | undefined;
-    const currentTheme = resolveTheme(settings?.darkMode);
-    const currentLanguage = settings?.language ?? 'es';
-    const notifications = settings?.notifications ?? {
-        enabled: true,
-        allowEmails: true,
-        allowSms: false,
-        allowPush: false
-    };
+
+    // Resolve current values, falling back to legacy fields when the new
+    // per-surface fields haven't been backfilled yet.
+    const currentThemeWeb: ThemeEnum =
+        settings?.themeWeb ??
+        (settings?.darkMode === true ? 'dark' : settings?.darkMode === false ? 'light' : 'system');
+    const currentThemeAdmin: ThemeEnum =
+        settings?.themeAdmin ??
+        (settings?.darkMode === true ? 'dark' : settings?.darkMode === false ? 'light' : 'system');
+    const currentLanguageWeb: LanguageEnum =
+        settings?.languageWeb ?? (settings?.language as LanguageEnum | undefined) ?? 'es';
+    const currentLanguageAdmin: LanguageEnum =
+        settings?.languageAdmin ?? (settings?.language as LanguageEnum | undefined) ?? 'es';
+
+    const notifications = settings?.notifications ?? { ...DEFAULT_NOTIFICATIONS };
 
     const saveSettings = useCallback(
-        (partial: Partial<UserSettings>) => {
-            // Merge with current settings to send a complete object
-            // (the API schema requires notifications to be present)
-            const merged: UserSettings = {
-                darkMode: settings?.darkMode,
-                language: currentLanguage,
+        (partial: Partial<AdminUserSettingsPatch>) => {
+            // Always send the full per-surface shape so the server has a
+            // complete object — none of the four surface fields are required
+            // individually, but we forward the current values for the keys we
+            // are not changing this round.
+            const merged: AdminUserSettingsPatch = {
+                themeWeb: currentThemeWeb,
+                themeAdmin: currentThemeAdmin,
+                languageWeb: currentLanguageWeb,
+                languageAdmin: currentLanguageAdmin,
                 notifications,
+                newsletter: settings?.newsletter ?? false,
                 ...partial
             };
             mutation.mutate(merged, {
@@ -80,21 +96,34 @@ function MySettingsPage() {
                 }
             });
         },
-        [mutation, toastSuccess, toastError, settings?.darkMode, currentLanguage, notifications, t]
+        [
+            mutation,
+            toastSuccess,
+            toastError,
+            currentThemeWeb,
+            currentThemeAdmin,
+            currentLanguageWeb,
+            currentLanguageAdmin,
+            notifications,
+            settings?.newsletter,
+            t
+        ]
     );
 
-    const handleThemeChange = useCallback(
-        (theme: 'system' | 'light' | 'dark') => {
-            const darkMode = theme === 'system' ? undefined : theme === 'dark';
-            saveSettings({ darkMode });
-        },
+    const handleThemeWeb = useCallback(
+        (value: ThemeEnum) => saveSettings({ themeWeb: value }),
         [saveSettings]
     );
-
-    const handleLanguageChange = useCallback(
-        (language: string) => {
-            saveSettings({ language });
-        },
+    const handleThemeAdmin = useCallback(
+        (value: ThemeEnum) => saveSettings({ themeAdmin: value }),
+        [saveSettings]
+    );
+    const handleLanguageWeb = useCallback(
+        (value: LanguageEnum) => saveSettings({ languageWeb: value }),
+        [saveSettings]
+    );
+    const handleLanguageAdmin = useCallback(
+        (value: LanguageEnum) => saveSettings({ languageAdmin: value }),
         [saveSettings]
     );
 
@@ -159,7 +188,7 @@ function MySettingsPage() {
     return (
         <MainPageLayout title={t('ui.pages.mySettings')}>
             <div className="mx-auto max-w-4xl space-y-6">
-                {/* Appearance settings */}
+                {/* Web preferences */}
                 <Card>
                     <CardHeader>
                         <div className="flex items-center gap-3">
@@ -168,49 +197,37 @@ function MySettingsPage() {
                             </div>
                             <div>
                                 <CardTitle className="text-lg">
-                                    {t('admin-pages.settings.appearance.title')}
+                                    {t('admin-pages.settings.web.title')}
                                 </CardTitle>
                                 <p className="text-muted-foreground text-sm">
-                                    {t('admin-pages.settings.appearance.subtitle')}
+                                    {t('admin-pages.settings.web.subtitle')}
                                 </p>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-4">
-                            <div>
-                                <span className="mb-2 block font-medium text-muted-foreground text-xs uppercase">
-                                    {t('admin-pages.settings.appearance.themePreference')}
-                                </span>
-                                <div className="flex flex-wrap gap-3">
-                                    <ThemeButton
-                                        icon={<MonitorIcon className="h-5 w-5" />}
-                                        label={t('admin-pages.settings.appearance.system')}
-                                        active={currentTheme === 'system'}
-                                        disabled={isSaving}
-                                        onClick={() => handleThemeChange('system')}
-                                    />
-                                    <ThemeButton
-                                        icon={<SunIcon className="h-5 w-5" />}
-                                        label={t('admin-pages.settings.appearance.light')}
-                                        active={currentTheme === 'light'}
-                                        disabled={isSaving}
-                                        onClick={() => handleThemeChange('light')}
-                                    />
-                                    <ThemeButton
-                                        icon={<MoonIcon className="h-5 w-5" />}
-                                        label={t('admin-pages.settings.appearance.dark')}
-                                        active={currentTheme === 'dark'}
-                                        disabled={isSaving}
-                                        onClick={() => handleThemeChange('dark')}
-                                    />
-                                </div>
-                            </div>
+                        <div className="space-y-6">
+                            <ThemePicker
+                                label={t('admin-pages.settings.appearance.themePreference')}
+                                value={currentThemeWeb}
+                                onChange={handleThemeWeb}
+                                disabled={isSaving}
+                                idPrefix="web-theme"
+                                t={t}
+                            />
+                            <LanguagePicker
+                                label={t('admin-pages.settings.language.interfaceLanguage')}
+                                value={currentLanguageWeb}
+                                onChange={handleLanguageWeb}
+                                disabled={isSaving}
+                                idPrefix="web-lang"
+                                t={t}
+                            />
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Language settings */}
+                {/* Admin preferences */}
                 <Card>
                     <CardHeader>
                         <div className="flex items-center gap-3">
@@ -219,44 +236,32 @@ function MySettingsPage() {
                             </div>
                             <div>
                                 <CardTitle className="text-lg">
-                                    {t('admin-pages.settings.language.title')}
+                                    {t('admin-pages.settings.admin.title')}
                                 </CardTitle>
                                 <p className="text-muted-foreground text-sm">
-                                    {t('admin-pages.settings.language.subtitle')}
+                                    {t('admin-pages.settings.admin.subtitle')}
                                 </p>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-4">
-                            <div>
-                                <span className="mb-2 block font-medium text-muted-foreground text-xs uppercase">
-                                    {t('admin-pages.settings.language.interfaceLanguage')}
-                                </span>
-                                <div className="flex flex-wrap gap-3">
-                                    <LanguageButton
-                                        label={t('admin-pages.settings.language.es')}
-                                        code="es"
-                                        active={currentLanguage === 'es'}
-                                        disabled={isSaving}
-                                        onClick={() => handleLanguageChange('es')}
-                                    />
-                                    <LanguageButton
-                                        label={t('admin-pages.settings.language.en')}
-                                        code="en"
-                                        active={currentLanguage === 'en'}
-                                        disabled={isSaving}
-                                        onClick={() => handleLanguageChange('en')}
-                                    />
-                                    <LanguageButton
-                                        label={t('admin-pages.settings.language.pt')}
-                                        code="pt"
-                                        active={currentLanguage === 'pt'}
-                                        disabled={isSaving}
-                                        onClick={() => handleLanguageChange('pt')}
-                                    />
-                                </div>
-                            </div>
+                        <div className="space-y-6">
+                            <ThemePicker
+                                label={t('admin-pages.settings.appearance.themePreference')}
+                                value={currentThemeAdmin}
+                                onChange={handleThemeAdmin}
+                                disabled={isSaving}
+                                idPrefix="admin-theme"
+                                t={t}
+                            />
+                            <LanguagePicker
+                                label={t('admin-pages.settings.language.interfaceLanguage')}
+                                value={currentLanguageAdmin}
+                                onChange={handleLanguageAdmin}
+                                disabled={isSaving}
+                                idPrefix="admin-lang"
+                                t={t}
+                            />
 
                             <div>
                                 <span className="mb-2 block font-medium text-muted-foreground text-xs uppercase">
@@ -279,7 +284,7 @@ function MySettingsPage() {
                     </CardContent>
                 </Card>
 
-                {/* Notification settings */}
+                {/* Notifications (shared) */}
                 <Card>
                     <CardHeader>
                         <div className="flex items-center gap-3">
@@ -338,7 +343,7 @@ function MySettingsPage() {
                     </CardContent>
                 </Card>
 
-                {/* Account & security settings */}
+                {/* Account & security info */}
                 <Card>
                     <CardHeader>
                         <div className="flex items-center gap-3">
@@ -384,6 +389,100 @@ function MySettingsPage() {
                 </Card>
             </div>
         </MainPageLayout>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Pickers
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ThemePickerProps {
+    readonly label: string;
+    readonly value: ThemeEnum;
+    readonly onChange: (value: ThemeEnum) => void;
+    readonly disabled: boolean;
+    readonly idPrefix: string;
+    readonly t: TranslateFn;
+}
+
+function ThemePicker({ label, value, onChange, disabled, idPrefix, t }: ThemePickerProps) {
+    return (
+        <div>
+            <span className="mb-2 block font-medium text-muted-foreground text-xs uppercase">
+                {label}
+            </span>
+            <div
+                className="flex flex-wrap gap-3"
+                aria-labelledby={`${idPrefix}-label`}
+            >
+                <ThemeButton
+                    icon={<MonitorIcon className="h-5 w-5" />}
+                    label={t('admin-pages.settings.appearance.system')}
+                    active={value === 'system'}
+                    disabled={disabled}
+                    onClick={() => onChange('system')}
+                />
+                <ThemeButton
+                    icon={<SunIcon className="h-5 w-5" />}
+                    label={t('admin-pages.settings.appearance.light')}
+                    active={value === 'light'}
+                    disabled={disabled}
+                    onClick={() => onChange('light')}
+                />
+                <ThemeButton
+                    icon={<MoonIcon className="h-5 w-5" />}
+                    label={t('admin-pages.settings.appearance.dark')}
+                    active={value === 'dark'}
+                    disabled={disabled}
+                    onClick={() => onChange('dark')}
+                />
+            </div>
+        </div>
+    );
+}
+
+interface LanguagePickerProps {
+    readonly label: string;
+    readonly value: LanguageEnum;
+    readonly onChange: (value: LanguageEnum) => void;
+    readonly disabled: boolean;
+    readonly idPrefix: string;
+    readonly t: TranslateFn;
+}
+
+function LanguagePicker({ label, value, onChange, disabled, idPrefix, t }: LanguagePickerProps) {
+    return (
+        <div>
+            <span className="mb-2 block font-medium text-muted-foreground text-xs uppercase">
+                {label}
+            </span>
+            <div
+                className="flex flex-wrap gap-3"
+                aria-labelledby={`${idPrefix}-label`}
+            >
+                <LanguageButton
+                    label={t('admin-pages.settings.language.es')}
+                    code="es"
+                    active={value === 'es'}
+                    disabled={disabled}
+                    onClick={() => onChange('es')}
+                />
+                <LanguageButton
+                    label={t('admin-pages.settings.language.en')}
+                    code="en"
+                    active={value === 'en'}
+                    disabled={disabled}
+                    onClick={() => onChange('en')}
+                />
+                <LanguageButton
+                    label={t('admin-pages.settings.language.pt')}
+                    code="pt"
+                    active={value === 'pt'}
+                    disabled={disabled}
+                    onClick={() => onChange('pt')}
+                />
+            </div>
+        </div>
     );
 }
 

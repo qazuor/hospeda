@@ -1,90 +1,97 @@
 /**
  * My Profile Page Route
  *
- * Displays the current user's profile information fetched from
- * the protected API endpoint. All sections are read-only.
+ * Editable profile form (SPEC-096 / REQ-096-31, T-055).
+ *
+ * Validates input against `ProfileEditSchema` from `@repo/schemas` and
+ * submits via `useUpdateUserProfile`, which PATCHes
+ * `/api/v1/admin/users/{id}` mapping flat profile-edit fields onto the
+ * nested user shape (top-level for displayName/firstName/lastName/phone,
+ * `profile.bio` and `profile.avatarUrl`).
  */
 
 import { MainPageLayout } from '@/components/layout/MainPageLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useUserDisplayName, useUserInitials } from '@/hooks/use-auth';
 import { useAuthContext } from '@/hooks/use-auth-context';
+import { useFlashyToast } from '@/hooks/use-flashy-toast';
 import { useTranslations } from '@/hooks/use-translations';
-import { useUserProfile } from '@/hooks/use-user-profile';
-import {
-    FacebookIcon,
-    InstagramIcon,
-    LocationIcon,
-    MailIcon,
-    ShieldIcon,
-    UserIcon,
-    WebIcon
-} from '@repo/icons';
+import { useUpdateUserProfile, useUserProfile } from '@/hooks/use-user-profile';
+import { LoaderIcon, MailIcon, ShieldIcon, UserIcon } from '@repo/icons';
 import { getMediaUrl } from '@repo/media';
+import { type ProfileEditInput, ProfileEditSchema, type UserProtected } from '@repo/schemas';
+import { useForm } from '@tanstack/react-form';
 import { createFileRoute } from '@tanstack/react-router';
-
-import {
-    ProfileField,
-    ProfileSection,
-    SocialLink
-} from '@/features/user-profile/components/profile-components';
 
 export const Route = createFileRoute('/_authed/me/profile')({
     component: MyProfilePage
 });
 
+/**
+ * Build initial form values from the loaded profile, falling back to
+ * empty strings so the form is fully controlled.
+ */
+function buildInitialValues(profile: UserProtected | undefined): ProfileEditInput {
+    return {
+        displayName: profile?.displayName ?? '',
+        firstName: profile?.firstName ?? '',
+        lastName: profile?.lastName ?? '',
+        bio: profile?.profile?.bio ?? '',
+        avatarUrl: profile?.profile?.avatar ?? '',
+        phone: profile?.phone ?? ''
+    };
+}
+
 function MyProfilePage() {
-    const { t, tPlural } = useTranslations();
+    const { t } = useTranslations();
     const { user: authUser } = useAuthContext();
     const displayName = useUserDisplayName();
     const initials = useUserInitials();
+    const { success: toastSuccess, error: toastError } = useFlashyToast();
 
-    const { data: profile, isLoading, error, refetch } = useUserProfile({ userId: authUser?.id });
+    const userId = authUser?.id;
+    const { data: profile, isLoading, error, refetch } = useUserProfile({ userId });
 
-    // Loading state
+    const updateMutation = useUpdateUserProfile({ userId });
+
+    const form = useForm({
+        defaultValues: buildInitialValues(profile),
+        onSubmit: async ({ value }) => {
+            const parsed = ProfileEditSchema.safeParse(value);
+            if (!parsed.success) {
+                toastError(t('admin-pages.profile.saveError'));
+                return;
+            }
+            try {
+                await updateMutation.mutateAsync(parsed.data);
+                toastSuccess(t('admin-pages.profile.saveSuccess'));
+            } catch {
+                toastError(t('admin-pages.profile.saveError'));
+            }
+        }
+    });
+
     if (isLoading) {
         return (
             <MainPageLayout title={t('ui.pages.myProfile')}>
                 <div className="mx-auto max-w-4xl space-y-6">
-                    {/* Header skeleton */}
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
-                                <div className="h-20 w-20 animate-pulse rounded-full bg-muted" />
-                                <div className="flex-1 space-y-3">
-                                    <div className="h-7 w-48 animate-pulse rounded bg-muted" />
-                                    <div className="h-4 w-64 animate-pulse rounded bg-muted" />
-                                    <div className="flex gap-2">
-                                        <div className="h-6 w-20 animate-pulse rounded bg-muted" />
-                                        <div className="h-6 w-24 animate-pulse rounded bg-muted" />
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    {/* Section skeletons */}
-                    <div className="grid gap-6 md:grid-cols-2">
-                        {[1, 2, 3, 4].map((i) => (
-                            <Card key={i}>
-                                <CardContent className="pt-6">
-                                    <div className="space-y-4">
-                                        <div className="h-5 w-32 animate-pulse rounded bg-muted" />
-                                        <div className="h-4 w-48 animate-pulse rounded bg-muted" />
-                                        <div className="h-4 w-40 animate-pulse rounded bg-muted" />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+                    {[1, 2, 3].map((i) => (
+                        <div
+                            key={`skeleton-${String(i)}`}
+                            className="h-48 animate-pulse rounded-lg bg-muted"
+                        />
+                    ))}
                 </div>
             </MainPageLayout>
         );
     }
 
-    // Error state
     if (error) {
         return (
             <MainPageLayout title={t('ui.pages.myProfile')}>
@@ -108,11 +115,12 @@ function MyProfilePage() {
         );
     }
 
-    const avatarUrl = authUser?.avatar ?? profile?.avatarUrl;
+    const avatarUrl = authUser?.avatar ?? profile?.profile?.avatar;
     const email = authUser?.email ?? profile?.email;
     const emailVerified = authUser?.emailVerified ?? false;
     const role = authUser?.role ?? profile?.role;
-    const permissions = authUser?.permissions ?? profile?.permissions ?? [];
+
+    const isSaving = updateMutation.isPending;
 
     return (
         <MainPageLayout title={t('ui.pages.myProfile')}>
@@ -121,7 +129,6 @@ function MyProfilePage() {
                 <Card>
                     <CardContent className="pt-6">
                         <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
-                            {/* Avatar */}
                             <Avatar className="h-20 w-20 flex-shrink-0">
                                 {avatarUrl ? (
                                     <AvatarImage
@@ -136,7 +143,6 @@ function MyProfilePage() {
                                 </AvatarFallback>
                             </Avatar>
 
-                            {/* Info */}
                             <div className="flex-1 space-y-3 text-center sm:text-left">
                                 <div>
                                     <h2 className="mb-1 font-bold text-2xl">{displayName}</h2>
@@ -144,7 +150,6 @@ function MyProfilePage() {
                                         <p className="text-muted-foreground text-sm">{email}</p>
                                     )}
                                 </div>
-
                                 <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
                                     {role && (
                                         <Badge
@@ -176,188 +181,287 @@ function MyProfilePage() {
                     </CardContent>
                 </Card>
 
-                {/* Profile sections grid */}
-                <div className="grid gap-6 md:grid-cols-2">
-                    {/* Personal info */}
-                    <ProfileSection
-                        title={t('admin-pages.profile.personalInfo.title')}
-                        subtitle={t('admin-pages.profile.personalInfo.subtitle')}
-                        icon={<UserIcon className="h-5 w-5 text-blue-500" />}
-                        iconColorClass="bg-blue-500/10 dark:bg-blue-400/10"
-                    >
-                        <ProfileField
-                            label={t('admin-pages.profile.personalInfo.displayName')}
-                            value={profile?.displayName}
-                        />
-                        <ProfileField
-                            label={t('admin-pages.profile.personalInfo.firstName')}
-                            value={profile?.firstName}
-                        />
-                        <ProfileField
-                            label={t('admin-pages.profile.personalInfo.lastName')}
-                            value={profile?.lastName}
-                        />
-                        <ProfileField
-                            label={t('admin-pages.profile.personalInfo.birthDate')}
-                            value={profile?.birthDate?.toString()}
-                            type="date"
-                        />
-                        <ProfileField
-                            label={t('admin-pages.profile.personalInfo.slug')}
-                            value={profile?.slug}
-                        />
-                        <ProfileField
-                            label={t('admin-pages.profile.personalInfo.bio')}
-                            value={profile?.profile?.bio}
-                        />
-                        <ProfileField
-                            label={t('admin-pages.profile.personalInfo.occupation')}
-                            value={profile?.profile?.occupation}
-                        />
-                    </ProfileSection>
-
-                    {/* Contact info */}
-                    <ProfileSection
-                        title={t('admin-pages.profile.contactInfo.title')}
-                        subtitle={t('admin-pages.profile.contactInfo.subtitle')}
-                        icon={<MailIcon className="h-5 w-5 text-green-500 dark:text-green-400" />}
-                        iconColorClass="bg-green-500/10 dark:bg-green-400/10"
-                    >
-                        <ProfileField
-                            label={t('admin-pages.profile.contactInfo.email')}
-                            value={email}
-                            type="email"
-                        />
-                        <ProfileField
-                            label={t('admin-pages.profile.contactInfo.phone')}
-                            value={profile?.phone}
-                        />
-                        <ProfileField
-                            label={t('admin-pages.profile.contactInfo.phoneSecondary')}
-                            value={profile?.phoneSecondary}
-                        />
-                        <ProfileField
-                            label={t('admin-pages.profile.contactInfo.website')}
-                            value={profile?.website}
-                            type="url"
-                        />
-                    </ProfileSection>
-
-                    {/* Location */}
-                    <ProfileSection
-                        title={t('admin-pages.profile.location.title')}
-                        subtitle={t('admin-pages.profile.location.subtitle')}
-                        icon={
-                            <LocationIcon className="h-5 w-5 text-purple-500 dark:text-purple-400" />
-                        }
-                        iconColorClass="bg-purple-500/10 dark:bg-purple-400/10"
-                    >
-                        <ProfileField
-                            label={t('admin-pages.profile.location.addressLine1')}
-                            value={profile?.addressLine1}
-                        />
-                        <ProfileField
-                            label={t('admin-pages.profile.location.addressLine2')}
-                            value={profile?.addressLine2}
-                        />
-                        <ProfileField
-                            label={t('admin-pages.profile.location.city')}
-                            value={profile?.city}
-                        />
-                        <ProfileField
-                            label={t('admin-pages.profile.location.province')}
-                            value={profile?.province}
-                        />
-                        <ProfileField
-                            label={t('admin-pages.profile.location.country')}
-                            value={profile?.country}
-                        />
-                        <ProfileField
-                            label={t('admin-pages.profile.location.postalCode')}
-                            value={profile?.postalCode}
-                        />
-                    </ProfileSection>
-
-                    {/* Social Networks */}
-                    <ProfileSection
-                        title={t('admin-pages.profile.social.title')}
-                        subtitle={t('admin-pages.profile.social.subtitle')}
-                        icon={<WebIcon className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />}
-                        iconColorClass="bg-indigo-500/10 dark:bg-indigo-400/10"
-                    >
-                        <SocialLink
-                            label={t('admin-pages.profile.social.facebook')}
-                            url={profile?.facebookUrl}
-                            icon={<FacebookIcon className="h-4 w-4" />}
-                        />
-                        <SocialLink
-                            label={t('admin-pages.profile.social.instagram')}
-                            url={profile?.instagramUrl}
-                            icon={<InstagramIcon className="h-4 w-4" />}
-                        />
-                        <SocialLink
-                            label={t('admin-pages.profile.social.twitter')}
-                            url={profile?.twitterUrl}
-                            icon={<WebIcon className="h-4 w-4" />}
-                        />
-                        <SocialLink
-                            label={t('admin-pages.profile.social.linkedin')}
-                            url={profile?.linkedinUrl}
-                            icon={<WebIcon className="h-4 w-4" />}
-                        />
-                        <SocialLink
-                            label={t('admin-pages.profile.social.youtube')}
-                            url={profile?.youtubeUrl}
-                            icon={<WebIcon className="h-4 w-4" />}
-                        />
-                    </ProfileSection>
-                </div>
-
-                {/* Account Security */}
-                <ProfileSection
-                    title={t('admin-pages.profile.security.title')}
-                    subtitle={t('admin-pages.profile.security.subtitle')}
-                    icon={<ShieldIcon className="h-5 w-5 text-amber-500 dark:text-amber-400" />}
-                    iconColorClass="bg-amber-500/10 dark:bg-amber-400/10"
+                {/* Profile edit form */}
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        form.handleSubmit();
+                    }}
+                    className="space-y-6"
                 >
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        <div>
-                            <span className="mb-1 block font-medium text-muted-foreground text-xs uppercase">
-                                {t('admin-pages.profile.security.emailVerified')}
-                            </span>
-                            {emailVerified ? (
-                                <Badge
-                                    variant="outline"
-                                    className="border-green-300 text-green-700 dark:border-green-700 dark:text-green-400"
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 dark:bg-blue-400/10">
+                                    <UserIcon className="h-5 w-5 text-blue-500" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-lg">
+                                        {t('admin-pages.profile.personalInfo.title')}
+                                    </CardTitle>
+                                    <p className="text-muted-foreground text-sm">
+                                        {t('admin-pages.profile.personalInfo.subtitle')}
+                                    </p>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <form.Field
+                                    name="displayName"
+                                    validators={{
+                                        onBlur: ({ value }) => {
+                                            const r =
+                                                ProfileEditSchema.shape.displayName.safeParse(
+                                                    value
+                                                );
+                                            return r.success
+                                                ? undefined
+                                                : r.error.issues[0]?.message;
+                                        }
+                                    }}
                                 >
-                                    {t('admin-pages.profile.security.verified')}
-                                </Badge>
-                            ) : (
-                                <Badge
-                                    variant="outline"
-                                    className="border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-400"
+                                    {(field) => (
+                                        <div>
+                                            <Label htmlFor="displayName">
+                                                {t('admin-pages.profile.personalInfo.displayName')}{' '}
+                                                <span className="text-destructive">*</span>
+                                            </Label>
+                                            <Input
+                                                id="displayName"
+                                                value={field.state.value}
+                                                onChange={(e) => field.handleChange(e.target.value)}
+                                                onBlur={field.handleBlur}
+                                                disabled={isSaving}
+                                            />
+                                            {field.state.meta.errors?.[0] && (
+                                                <p className="mt-1 text-destructive text-xs">
+                                                    {String(field.state.meta.errors[0])}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </form.Field>
+
+                                <form.Field
+                                    name="firstName"
+                                    validators={{
+                                        onBlur: ({ value }) => {
+                                            const r =
+                                                ProfileEditSchema.shape.firstName.safeParse(value);
+                                            return r.success
+                                                ? undefined
+                                                : r.error.issues[0]?.message;
+                                        }
+                                    }}
                                 >
-                                    {t('admin-pages.profile.security.notVerified')}
-                                </Badge>
-                            )}
-                        </div>
-                        <ProfileField
-                            label={t('admin-pages.profile.security.role')}
-                            value={role}
-                        />
-                        <ProfileField
-                            label={t('admin-pages.profile.security.permissions')}
-                            value={tPlural(
-                                'admin-pages.profile.security.permissionsCount',
-                                permissions.length
-                            )}
-                        />
-                        <ProfileField
-                            label={t('admin-pages.profile.security.authProvider')}
-                            value={t('admin-pages.profile.security.authProviderName')}
-                        />
+                                    {(field) => (
+                                        <div>
+                                            <Label htmlFor="firstName">
+                                                {t('admin-pages.profile.personalInfo.firstName')}{' '}
+                                                <span className="text-destructive">*</span>
+                                            </Label>
+                                            <Input
+                                                id="firstName"
+                                                value={field.state.value}
+                                                onChange={(e) => field.handleChange(e.target.value)}
+                                                onBlur={field.handleBlur}
+                                                disabled={isSaving}
+                                            />
+                                            {field.state.meta.errors?.[0] && (
+                                                <p className="mt-1 text-destructive text-xs">
+                                                    {String(field.state.meta.errors[0])}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </form.Field>
+
+                                <form.Field
+                                    name="lastName"
+                                    validators={{
+                                        onBlur: ({ value }) => {
+                                            const r =
+                                                ProfileEditSchema.shape.lastName.safeParse(value);
+                                            return r.success
+                                                ? undefined
+                                                : r.error.issues[0]?.message;
+                                        }
+                                    }}
+                                >
+                                    {(field) => (
+                                        <div>
+                                            <Label htmlFor="lastName">
+                                                {t('admin-pages.profile.personalInfo.lastName')}{' '}
+                                                <span className="text-destructive">*</span>
+                                            </Label>
+                                            <Input
+                                                id="lastName"
+                                                value={field.state.value}
+                                                onChange={(e) => field.handleChange(e.target.value)}
+                                                onBlur={field.handleBlur}
+                                                disabled={isSaving}
+                                            />
+                                            {field.state.meta.errors?.[0] && (
+                                                <p className="mt-1 text-destructive text-xs">
+                                                    {String(field.state.meta.errors[0])}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </form.Field>
+
+                                <form.Field
+                                    name="phone"
+                                    validators={{
+                                        onBlur: ({ value }) => {
+                                            const r =
+                                                ProfileEditSchema.shape.phone.safeParse(value);
+                                            return r.success
+                                                ? undefined
+                                                : r.error.issues[0]?.message;
+                                        }
+                                    }}
+                                >
+                                    {(field) => (
+                                        <div>
+                                            <Label htmlFor="phone">
+                                                {t('admin-pages.profile.contactInfo.phone')}
+                                            </Label>
+                                            <Input
+                                                id="phone"
+                                                type="tel"
+                                                placeholder="+541134567890"
+                                                value={field.state.value ?? ''}
+                                                onChange={(e) => field.handleChange(e.target.value)}
+                                                onBlur={field.handleBlur}
+                                                disabled={isSaving}
+                                            />
+                                            {field.state.meta.errors?.[0] && (
+                                                <p className="mt-1 text-destructive text-xs">
+                                                    {String(field.state.meta.errors[0])}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </form.Field>
+                            </div>
+
+                            <form.Field
+                                name="avatarUrl"
+                                validators={{
+                                    onBlur: ({ value }) => {
+                                        const r =
+                                            ProfileEditSchema.shape.avatarUrl.safeParse(value);
+                                        return r.success ? undefined : r.error.issues[0]?.message;
+                                    }
+                                }}
+                            >
+                                {(field) => (
+                                    <div className="mt-4">
+                                        <Label htmlFor="avatarUrl">
+                                            {t('admin-pages.profile.personalInfo.avatarUrl')}
+                                        </Label>
+                                        <Input
+                                            id="avatarUrl"
+                                            type="url"
+                                            placeholder="https://..."
+                                            value={field.state.value ?? ''}
+                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            onBlur={field.handleBlur}
+                                            disabled={isSaving}
+                                        />
+                                        {field.state.meta.errors?.[0] && (
+                                            <p className="mt-1 text-destructive text-xs">
+                                                {String(field.state.meta.errors[0])}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                            </form.Field>
+
+                            <form.Field
+                                name="bio"
+                                validators={{
+                                    onBlur: ({ value }) => {
+                                        const r = ProfileEditSchema.shape.bio.safeParse(value);
+                                        return r.success ? undefined : r.error.issues[0]?.message;
+                                    }
+                                }}
+                            >
+                                {(field) => (
+                                    <div className="mt-4">
+                                        <Label htmlFor="bio">
+                                            {t('admin-pages.profile.personalInfo.bio')}
+                                        </Label>
+                                        <Textarea
+                                            id="bio"
+                                            rows={4}
+                                            value={field.state.value ?? ''}
+                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            onBlur={field.handleBlur}
+                                            disabled={isSaving}
+                                        />
+                                        {field.state.meta.errors?.[0] && (
+                                            <p className="mt-1 text-destructive text-xs">
+                                                {String(field.state.meta.errors[0])}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                            </form.Field>
+                        </CardContent>
+                    </Card>
+
+                    {/* Read-only contact / security */}
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10 dark:bg-green-400/10">
+                                    <MailIcon className="h-5 w-5 text-green-500 dark:text-green-400" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-lg">
+                                        {t('admin-pages.profile.contactInfo.title')}
+                                    </CardTitle>
+                                    <p className="text-muted-foreground text-sm">
+                                        {t('admin-pages.profile.contactInfo.subtitle')}
+                                    </p>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <div>
+                                    <span className="mb-1 block font-medium text-muted-foreground text-xs uppercase">
+                                        {t('admin-pages.profile.contactInfo.email')}
+                                    </span>
+                                    <p className="text-sm">{email ?? '—'}</p>
+                                </div>
+                                <div>
+                                    <span className="mb-1 block font-medium text-muted-foreground text-xs uppercase">
+                                        {t('admin-pages.profile.security.role')}
+                                    </span>
+                                    <p className="text-sm">{role ?? '—'}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Submit row */}
+                    <div className="flex justify-end gap-3">
+                        <Button
+                            type="submit"
+                            disabled={isSaving}
+                        >
+                            {isSaving && <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />}
+                            {isSaving
+                                ? t('admin-pages.profile.saving')
+                                : t('admin-pages.profile.save')}
+                        </Button>
                     </div>
-                </ProfileSection>
+                </form>
             </div>
         </MainPageLayout>
     );
