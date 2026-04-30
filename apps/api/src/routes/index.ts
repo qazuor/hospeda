@@ -40,7 +40,6 @@ import {
 import { adminFeatureRoutes, protectedFeatureRoutes, publicFeatureRoutes } from './feature';
 import { protectedHostOnboardingRoutes } from './host-onboarding';
 import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
-import { adminTagRoutes, publicTagRoutes } from './tag';
 import {
     adminPostTagAssignmentRoutes,
     adminPostTagCrudRoutes,
@@ -163,7 +162,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/amenities', publicAmenityRoutes);
         app.route('/api/v1/public/features', publicFeatureRoutes);
         app.route('/api/v1/public/attractions', publicAttractionRoutes);
-        app.route('/api/v1/public/tags', publicTagRoutes);
 
         // PostTag public listing (SPEC-086 — public SEO taxonomy for blog posts)
         // GET /api/v1/public/posts/tags (+ ?withCounts=true)
@@ -274,9 +272,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/tags/own', adminOwnTagRoutes);
         app.route('/api/v1/admin/tags/user', adminUserTagModerationRoutes);
 
-        // Existing legacy tags admin (unchanged — catches /admin/tags/* not already matched above)
-        app.route('/api/v1/admin/tags', adminTagRoutes);
-
         // Entity tag assignment + attribution (SPEC-086 T-026, T-028)
         // Mounted at /admin/entities. More-specific paths in the sub-router itself
         // handle ordering: GET /:type/:id/tags/own vs GET /:type/:id/tags.
@@ -334,6 +329,27 @@ export const setupRoutes = (app: AppOpenAPI) => {
             apiLogger.warn('⚠️ MercadoPago webhook routes not registered - billing not configured');
         }
         app.route('/api/v1/webhooks', webhookHealthRoutes);
+
+        // SPEC-092 T-036: QZPay test-only control endpoint.
+        // Mounted ONLY when both env gates are open. Accidental enablement
+        // in prod would still hit no-ops because the underlying control
+        // module checks the same gate, but we double-gate at the router
+        // for defense in depth.
+        if (
+            env.NODE_ENV !== 'production' &&
+            process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED === 'true'
+        ) {
+            // Static import — registerRoutes is called from an async context
+            // but the function itself is synchronous. Importing statically
+            // keeps the module graph intact for tsup builds.
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const { createQZPayTestControlRoutes } =
+                require('./test/qzpay-control.js') as typeof import('./test/qzpay-control.js');
+            app.route('/api/v1/test/qzpay-control', createQZPayTestControlRoutes());
+            apiLogger.warn(
+                '⚠️ QZPay test-control endpoint mounted at /api/v1/test/qzpay-control (test-only)'
+            );
+        }
     } catch (error) {
         apiLogger.debug('❌ Failed to register routes:', String(error));
         throw error;

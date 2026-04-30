@@ -179,6 +179,53 @@ export function createDbMock() {
             }
         },
 
+        // SPEC-086 — Mock PostTagModel (separate subsystem from user-tags)
+        PostTagModel: class MockPostTagModel {
+            async findById(_id: string) {
+                return null;
+            }
+            async findAll(_filters: unknown) {
+                return { items: [], total: 0 };
+            }
+            async findBySlug(_slug: string) {
+                return null;
+            }
+            async findActive() {
+                return [];
+            }
+            async findActiveWithCounts() {
+                return [];
+            }
+            async getImpactCount(_id: string) {
+                return 0;
+            }
+            async create(_data: unknown) {
+                return { id: 'post_tag_mock_id', createdAt: new Date() };
+            }
+            async update(_id: string, _data: unknown) {
+                return { id: _id, updatedAt: new Date() };
+            }
+            async delete(_id: string) {
+                return { id: _id };
+            }
+        },
+
+        // SPEC-086 — Mock RPostPostTagModel (post→postTag join)
+        RPostPostTagModel: class MockRPostPostTagModel {
+            async setTagsForPost(_postId: string, _postTagIds: string[]) {
+                return undefined;
+            }
+            async removeTagFromPost(_postId: string, _postTagId: string) {
+                return undefined;
+            }
+            async findByPostId(_postId: string) {
+                return [];
+            }
+            async findPostsByPostTagId(_postTagId: string) {
+                return [];
+            }
+        },
+
         // Mock RRolePermissionModel (used by role-permissions-cache.ts)
         RRolePermissionModel: class MockRRolePermissionModel {
             async findAll(_filters: unknown, _opts?: unknown) {

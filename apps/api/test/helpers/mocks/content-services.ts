@@ -237,6 +237,74 @@ export class TagService {
 }
 
 /**
+ * Mock PostTagService - returns predictable happy-path data.
+ * SPEC-086 — public, SEO-driven blog post categorization (separate from user-tags).
+ */
+export class PostTagService {
+    async listAdmin(_actor: unknown, _query?: Record<string, unknown>) {
+        return { data: { items: [], total: 0 } };
+    }
+
+    async listPublic(_withCounts?: boolean) {
+        return { data: { items: [] } };
+    }
+
+    async findById(_actor: unknown, params: { id: string }) {
+        return {
+            data: {
+                id: params.id,
+                name: 'Mock PostTag',
+                slug: 'mock-post-tag',
+                color: 'BLUE',
+                lifecycleState: 'ACTIVE',
+                createdAt: '2024-01-01T00:00:00.000Z',
+                updatedAt: '2024-01-01T00:00:00.000Z'
+            }
+        };
+    }
+
+    async create(_actor: unknown, body: Record<string, unknown>) {
+        return {
+            data: {
+                id: 'post_tag_mock_id',
+                name: String(body.name || 'Mock PostTag'),
+                slug: String(body.slug || 'mock-post-tag'),
+                color: String(body.color || 'BLUE'),
+                lifecycleState: 'ACTIVE',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            }
+        };
+    }
+
+    async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+        return {
+            data: {
+                id: params.id,
+                name: (params.data as Record<string, unknown>).name || 'Updated PostTag',
+                updatedAt: new Date().toISOString()
+            }
+        };
+    }
+
+    async delete(_actor: unknown, params: { id: string }) {
+        return { data: { id: params.id, deleted: true } };
+    }
+
+    async getImpactCount(_actor: unknown, _params: { id: string }) {
+        return { data: { count: 0 } };
+    }
+
+    async setTagsForPost(_actor: unknown, _params: { postId: string; postTagIds: string[] }) {
+        return { data: { postId: _params.postId, postTagIds: _params.postTagIds } };
+    }
+
+    async removeTagFromPost(_actor: unknown, _params: { postId: string; postTagId: string }) {
+        return { data: { removed: true } };
+    }
+}
+
+/**
  * Mock PostSponsorService - returns predictable happy-path data.
  */
 export class PostSponsorService {

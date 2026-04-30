@@ -68,7 +68,6 @@ const ALL_ENTITY_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.AMENITY_VIEW,
     PermissionEnum.FEATURE_VIEW,
     PermissionEnum.ATTRACTION_VIEW,
-    PermissionEnum.TAG_VIEW,
     PermissionEnum.EVENT_LOCATION_VIEW,
     PermissionEnum.EVENT_ORGANIZER_VIEW,
     PermissionEnum.POST_SPONSOR_VIEW,
@@ -149,11 +148,6 @@ const ADMIN_LIST_ROUTES: readonly AdminListRouteEntry[] = [
         entity: 'Attraction',
         path: '/api/v1/admin/attractions',
         permission: PermissionEnum.ATTRACTION_VIEW
-    },
-    {
-        entity: 'Tag',
-        path: '/api/v1/admin/tags',
-        permission: PermissionEnum.TAG_VIEW
     },
     {
         entity: 'EventLocation',

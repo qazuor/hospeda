@@ -200,9 +200,8 @@ vi.mock('@repo/db/schemas', () => ({
 // Pure utility functions (no side effects) are passed through from the real module.
 vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
-    const { PostService, TagService, PostSponsorService, ServiceError } = await import(
-        './helpers/mocks/content-services'
-    );
+    const { PostService, TagService, PostTagService, PostSponsorService, ServiceError } =
+        await import('./helpers/mocks/content-services');
 
     const { AccommodationService, AmenityService, AccommodationReviewService } = await import(
         './helpers/mocks/accommodation-services'
@@ -278,6 +277,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         ServiceError,
         PostService,
         TagService,
+        PostTagService,
         PostSponsorService,
         AccommodationService,
         AmenityService,

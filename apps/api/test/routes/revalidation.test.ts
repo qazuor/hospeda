@@ -49,9 +49,8 @@ const mockRevalidateService = {
 };
 
 vi.mock('@repo/service-core', async () => {
-    const { PostService, TagService, PostSponsorService, ServiceError } = await import(
-        '../helpers/mocks/content-services'
-    );
+    const { PostService, TagService, PostTagService, PostSponsorService, ServiceError } =
+        await import('../helpers/mocks/content-services');
     const { AccommodationService, AmenityService, AccommodationReviewService } = await import(
         '../helpers/mocks/accommodation-services'
     );
@@ -117,6 +116,7 @@ vi.mock('@repo/service-core', async () => {
         ServiceError,
         PostService,
         TagService,
+        PostTagService,
         PostSponsorService,
         AccommodationService,
         AmenityService,
