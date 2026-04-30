@@ -46,6 +46,13 @@ import {
     adminPostTagCrudRoutes,
     publicPostTagRoutes
 } from './tag/post-tag/index.js';
+import {
+    adminEntityTagRoutes,
+    adminInternalTagRoutes,
+    adminOwnTagRoutes,
+    adminSystemTagRoutes,
+    adminUserTagModerationRoutes
+} from './tag/user-tag/index.js';
 
 import {
     adminOwnerPromotionRoutes,
@@ -257,7 +264,23 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/amenities', adminAmenityRoutes);
         app.route('/api/v1/admin/features', adminFeatureRoutes);
         app.route('/api/v1/admin/attractions', adminAttractionRoutes);
+
+        // User-tag admin routes (SPEC-086 T-025..T-028)
+        // IMPORTANT mounting order: more-specific prefixes MUST be registered BEFORE
+        // the generic /admin/tags router. If /admin/tags is mounted first, Hono
+        // would match GET /admin/tags/internal as GET /admin/tags/:id with id='internal'.
+        app.route('/api/v1/admin/tags/internal', adminInternalTagRoutes);
+        app.route('/api/v1/admin/tags/system', adminSystemTagRoutes);
+        app.route('/api/v1/admin/tags/own', adminOwnTagRoutes);
+        app.route('/api/v1/admin/tags/user', adminUserTagModerationRoutes);
+
+        // Existing legacy tags admin (unchanged — catches /admin/tags/* not already matched above)
         app.route('/api/v1/admin/tags', adminTagRoutes);
+
+        // Entity tag assignment + attribution (SPEC-086 T-026, T-028)
+        // Mounted at /admin/entities. More-specific paths in the sub-router itself
+        // handle ordering: GET /:type/:id/tags/own vs GET /:type/:id/tags.
+        app.route('/api/v1/admin/entities', adminEntityTagRoutes);
         app.route('/api/v1/admin/event-locations', adminEventLocationRoutes);
         app.route('/api/v1/admin/event-organizers', adminEventOrganizerRoutes);
         app.route('/api/v1/admin/post-sponsors', adminPostSponsorRoutes);
