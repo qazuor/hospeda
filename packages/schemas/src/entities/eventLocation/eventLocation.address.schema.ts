@@ -18,7 +18,7 @@ import { CoordinatesSchema } from '../../common/location.schema.js';
  */
 export const EventLocationAddressSchema = z.object({
     destinationId: DestinationIdSchema,
-    coordinates: CoordinatesSchema.optional(),
+    coordinates: CoordinatesSchema.nullish(),
     street: z
         .string({ message: 'zodError.eventLocation.street.required' })
         .min(2, { message: 'zodError.eventLocation.street.min' })

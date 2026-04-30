@@ -143,55 +143,51 @@ export const PostListItemWithRelationsSchema = PostListItemSchema.extend({
     author: z
         .object({
             id: z.string().uuid(),
-            displayName: z.string().optional(),
-            firstName: z.string().optional(),
-            lastName: z.string().optional(),
-            email: z.string().email().optional(),
-            avatar: z.string().optional()
+            displayName: z.string().nullish(),
+            firstName: z.string().nullish(),
+            lastName: z.string().nullish(),
+            email: z.string().email().nullish(),
+            // DB column is `image` on users; alias kept for backward compat.
+            avatar: z.string().nullish(),
+            image: z.string().nullish()
         })
-        .nullable()
-        .optional(),
+        .nullish(),
     relatedAccommodation: z
         .object({
             id: z.string().uuid(),
-            name: z.string().optional(),
-            slug: z.string().optional()
+            name: z.string().nullish(),
+            slug: z.string().nullish()
         })
-        .nullable()
-        .optional(),
+        .nullish(),
     relatedDestination: z
         .object({
             id: z.string().uuid(),
-            name: z.string().optional(),
-            slug: z.string().optional()
+            name: z.string().nullish(),
+            slug: z.string().nullish()
         })
-        .nullable()
-        .optional(),
+        .nullish(),
     relatedEvent: z
         .object({
             id: z.string().uuid(),
-            name: z.string().optional(),
-            slug: z.string().optional()
+            name: z.string().nullish(),
+            slug: z.string().nullish()
         })
-        .nullable()
-        .optional(),
+        .nullish(),
     sponsorship: z
         .object({
             id: z.string().uuid(),
-            message: z.string().optional(),
-            isHighlighted: z.boolean().optional(),
+            message: z.string().nullish(),
+            isHighlighted: z.boolean().nullish(),
             sponsor: z
                 .object({
                     id: z.string().uuid(),
                     name: z.string(),
-                    type: z.string().optional(),
-                    description: z.string().optional()
+                    type: z.string().nullish(),
+                    description: z.string().nullish()
                 })
-                .nullable()
-                .optional()
+                .nullish()
         })
-        .nullable()
-        .optional()
+        .nullish()
 });
 export type PostListItemWithRelations = z.infer<typeof PostListItemWithRelationsSchema>;
 

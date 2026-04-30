@@ -41,10 +41,10 @@ const PostSponsorshipPublicRelationSchema = z.object({
     postId: z.string().uuid(),
     sponsorId: z.string().uuid(),
     description: z.string(),
-    message: z.string().optional(),
+    message: z.string().nullish(),
     isHighlighted: z.boolean(),
-    fromDate: z.date().optional(),
-    toDate: z.date().optional()
+    fromDate: z.date().nullish(),
+    toDate: z.date().nullish()
 });
 
 /**
@@ -57,11 +57,11 @@ const PostSponsorshipProtectedRelationSchema = PostSponsorshipPublicRelationSche
             price: z.number(),
             currency: z.string()
         })
-        .optional(),
-    paidAt: z.date().optional(),
-    lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional(),
-    createdAt: z.date().optional(),
-    updatedAt: z.date().optional()
+        .nullish(),
+    paidAt: z.date().nullish(),
+    lifecycleState: z.nativeEnum(LifecycleStatusEnum).nullish(),
+    createdAt: z.date().nullish(),
+    updatedAt: z.date().nullish()
 });
 
 /**

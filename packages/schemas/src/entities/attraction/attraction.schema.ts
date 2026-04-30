@@ -41,14 +41,16 @@ export const AttractionSchema = z.object({
             message: 'zodError.attraction.description.required'
         })
         .min(10, { message: 'zodError.attraction.description.min' })
-        .max(500, { message: 'zodError.attraction.description.max' }),
+        .max(500, { message: 'zodError.attraction.description.max' })
+        .nullish(),
 
     icon: z
         .string({
             message: 'zodError.attraction.icon.required'
         })
         .min(1, { message: 'zodError.attraction.icon.min' })
-        .max(100, { message: 'zodError.attraction.icon.max' }),
+        .max(100, { message: 'zodError.attraction.icon.max' })
+        .nullish(),
 
     destinationId: DestinationIdSchema.nullish(),
 

@@ -12,11 +12,14 @@ import { UserSettingsSchema } from './user.settings.schema.js';
  */
 export const UserPublicSchema = z.object({
     id: UserIdSchema,
-    displayName: z.string().min(2).max(50).optional(),
-    firstName: z.string().min(2).max(50).optional(),
-    lastName: z.string().min(2).max(50).optional(),
+    displayName: z.string().min(2).max(50).nullish(),
+    firstName: z.string().min(2).max(50).nullish(),
+    lastName: z.string().min(2).max(50).nullish(),
     slug: z.string().min(1),
-    avatarUrl: z.string().url().optional(),
+    // DB column is `image` on users. `avatarUrl` is kept as legacy alias for
+    // consumers; the service may project either. Both nullable.
+    avatarUrl: z.string().url().nullish(),
+    image: z.string().url().nullish(),
     role: RoleEnumSchema
 });
 
@@ -33,7 +36,7 @@ export const UserProtectedSchema = UserPublicSchema.extend({
     website: z.string().url().optional(),
 
     // Personal information
-    birthDate: z.date().optional(),
+    birthDate: z.date().nullish(),
 
     // Location
     addressLine1: z.string().optional(),
@@ -65,8 +68,8 @@ export const UserProtectedSchema = UserPublicSchema.extend({
  */
 export const UserAdminSchema = UserProtectedSchema.extend({
     // Authentication
-    authProvider: AuthProviderEnumSchema.optional(),
-    authProviderUserId: z.string().min(1).optional(),
+    authProvider: AuthProviderEnumSchema.nullish(),
+    authProviderUserId: z.string().min(1).nullish(),
 
     // Lifecycle
     lifecycleState: z.string(),
