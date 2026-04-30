@@ -14,7 +14,6 @@ import { apiLogger } from '../../../../../utils/logger';
 import { createAdminRoute } from '../../../../../utils/route-factory';
 
 const tagService = new TagService({ logger: apiLogger });
-const tagModel = new TagModel();
 
 /** Path parameter schema for tag ID */
 const TagIdSchema = z
@@ -50,6 +49,7 @@ export const adminUpdateSystemTagRoute = createAdminRoute({
         const input = body as z.infer<typeof TagUpdateInputSchema>;
 
         // Verify tag exists and is SYSTEM
+        const tagModel = new TagModel();
         const tag = await tagModel.findById(id);
         if (!tag) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Tag not found: ${id}`);

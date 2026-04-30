@@ -18,8 +18,6 @@ const TagIdSchema = z
     .string({ message: 'zodError.common.id.required' })
     .uuid({ message: 'zodError.common.id.invalidUuid' });
 
-const tagModel = new TagModel();
-
 /**
  * GET /api/v1/admin/tags/internal/:id
  * Get INTERNAL tag by ID — Admin endpoint
@@ -51,6 +49,7 @@ export const adminGetInternalTagByIdRoute = createAdminRoute({
 
         apiLogger.debug(`[adminGetInternalTagById] actor=${actor.id} tagId=${id}`);
 
+        const tagModel = new TagModel();
         const tag = await tagModel.findById(id);
 
         if (!tag) {
