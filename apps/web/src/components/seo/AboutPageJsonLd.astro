@@ -1,0 +1,44 @@
+---
+/**
+ * @file AboutPageJsonLd.astro
+ * @description AboutPage JSON-LD component for marketing pages such as
+ * `/{lang}/nosotros/` and `/{lang}/beneficios/`. Generates schema.org
+ * `AboutPage` structured data so search engines understand these as
+ * editorial about-the-company pages rather than generic content pages.
+ *
+ * SPEC-096 / REQ-096-40.
+ */
+
+import JsonLd from './JsonLd.astro';
+
+/** Props interface for AboutPageJsonLd component. */
+interface Props {
+  /** Page title (matches the `<h1>` and HTML `<title>`). */
+  readonly title: string;
+  /** Short description summarising the page content. */
+  readonly description: string;
+  /** Canonical URL of the page (absolute). */
+  readonly url: string;
+  /** BCP47 language tag of the page content (e.g., `es-AR`, `en-US`). */
+  readonly inLanguage: string;
+  /** Optional representative image URL. */
+  readonly image?: string;
+}
+
+const { title, description, url, inLanguage, image } = Astro.props;
+
+const structuredData: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'AboutPage',
+  name: title,
+  description,
+  url,
+  inLanguage
+};
+
+if (image) {
+  structuredData.image = image;
+}
+---
+
+<JsonLd data={structuredData} />

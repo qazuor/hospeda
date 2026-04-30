@@ -10,11 +10,19 @@
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 import { ALL_PLANS } from '@repo/billing';
+import type { GetStaticPaths } from 'astro';
 
 export const prerender = true;
+
+export const getStaticPaths = (() => {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}) satisfies GetStaticPaths;
 
 const lang = (Astro.params.lang ?? 'es') as SupportedLocale;
 const locale = lang;
@@ -61,6 +69,21 @@ const highlightedSlug = ownerPlans[1]?.slug ?? 'owner-pro';
 
 const ctaText = t('pricing.cta', 'Empezar');
 const periodLabel = t('pricing.owner.period', '/mes');
+
+// Build absolute URL for each plan (used by JSON-LD Offer entries).
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const planPageUrl = `${siteOrigin}${buildUrl({ locale, path: 'suscriptores/planes' })}`;
+
+const jsonLdPlans = ownerPlans.map((plan) => ({
+	name: plan.name,
+	description: plan.description,
+	priceCurrency: 'ARS',
+	// schema.org `price` expects major currency units (pesos), not cents.
+	price: plan.monthlyPriceArs / 100,
+	url: planPageUrl
+}));
+
+const hasPlans = ownerPlans.length > 0;
 ---
 
 <MarketingLayout
@@ -68,6 +91,8 @@ const periodLabel = t('pricing.owner.period', '/mes');
 	title={t('pricing.owner.title', 'Planes para propietarios')}
 	description={t('pricing.owner.description', 'Publicá tu alojamiento con el plan que mejor se adapte a tu negocio.')}
 >
+	{hasPlans && <PriceSpecificationJsonLd slot="head-extra" plans={jsonLdPlans} />}
+
 	<section class="pricing-hero section section--warm">
 		<div class="pricing-hero__container" data-reveal="up">
 			<p class="pricing-hero__tagline">{t('pricing.owner.tagline', 'Planes y precios')}</p>
@@ -80,6 +105,15 @@ const periodLabel = t('pricing.owner.period', '/mes');
 
 	<section class="pricing-cards section">
 		<div class="pricing-cards__container">
+			{!hasPlans ? (
+				<EmptyState
+					locale={locale}
+					variant="empty"
+					message={t('pricing.owner.empty', 'Planes no disponibles en este momento.')}
+					actionUrl={buildUrl({ locale, path: 'contacto' })}
+					actionLabel={t('pricing.empty.contact', 'Contactanos')}
+				/>
+			) : (
 			<div class="pricing-cards__grid">
 				{ownerPlans.map((plan, i) => {
 					const isHighlighted = plan.slug === highlightedSlug;
@@ -122,6 +156,7 @@ const periodLabel = t('pricing.owner.period', '/mes');
 					);
 				})}
 			</div>
+			)}
 		</div>
 	</section>
 </MarketingLayout>

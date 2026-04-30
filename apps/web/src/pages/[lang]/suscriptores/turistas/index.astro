@@ -10,11 +10,19 @@
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 import { ALL_PLANS } from '@repo/billing';
+import type { GetStaticPaths } from 'astro';
 
 export const prerender = true;
+
+export const getStaticPaths = (() => {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}) satisfies GetStaticPaths;
 
 const lang = (Astro.params.lang ?? 'es') as SupportedLocale;
 const locale = lang;
@@ -60,6 +68,21 @@ const highlightedSlug = touristPlans[1]?.slug ?? 'tourist-plus';
 
 const ctaText = t('pricing.cta', 'Empezar');
 const periodLabel = t('pricing.tourist.period', '/mes');
+
+// Build absolute URL for each plan (used by JSON-LD Offer entries).
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const planPageUrl = `${siteOrigin}${buildUrl({ locale, path: 'suscriptores/turistas' })}`;
+
+const jsonLdPlans = touristPlans.map((plan) => ({
+	name: plan.name,
+	description: plan.description,
+	priceCurrency: 'ARS',
+	// schema.org `price` expects major currency units (pesos), not cents.
+	price: plan.monthlyPriceArs / 100,
+	url: planPageUrl
+}));
+
+const hasPlans = touristPlans.length > 0;
 ---
 
 <MarketingLayout
@@ -67,6 +90,8 @@ const periodLabel = t('pricing.tourist.period', '/mes');
 	title={t('pricing.tourist.title', 'Planes para turistas')}
 	description={t('pricing.tourist.description', 'Elegí el plan ideal para tu próximo viaje al Litoral.')}
 >
+	{hasPlans && <PriceSpecificationJsonLd slot="head-extra" plans={jsonLdPlans} />}
+
 	<section class="pricing-hero section section--warm">
 		<div class="pricing-hero__container" data-reveal="up">
 			<p class="pricing-hero__tagline">{t('pricing.tourist.tagline', 'Planes y precios')}</p>
@@ -79,43 +104,53 @@ const periodLabel = t('pricing.tourist.period', '/mes');
 
 	<section class="pricing-cards section">
 		<div class="pricing-cards__container">
-			<div class="pricing-cards__grid">
-				{touristPlans.map((plan, i) => {
-					const isHighlighted = plan.slug === highlightedSlug;
-					const formattedPrice = plan.monthlyPriceArs === 0
-						? t('pricing.free', 'Gratis')
-						: formatPriceArs(plan.monthlyPriceArs, intlLocale);
+			{!hasPlans ? (
+				<EmptyState
+					locale={locale}
+					variant="empty"
+					message={t('pricing.tourist.empty', 'Planes no disponibles en este momento.')}
+					actionUrl={buildUrl({ locale, path: 'contacto' })}
+					actionLabel={t('pricing.empty.contact', 'Contactanos')}
+				/>
+			) : (
+				<div class="pricing-cards__grid">
+					{touristPlans.map((plan, i) => {
+						const isHighlighted = plan.slug === highlightedSlug;
+						const formattedPrice = plan.monthlyPriceArs === 0
+							? t('pricing.free', 'Gratis')
+							: formatPriceArs(plan.monthlyPriceArs, intlLocale);
 
-					return (
-						<div
-							class:list={['pricing-card', { 'pricing-card--highlighted': isHighlighted }]}
-							data-reveal="up"
-							style={`transition-delay: ${i * 100}ms`}
-						>
-							<h3 class="pricing-card__name">{plan.name}</h3>
-							<p class="pricing-card__desc">{plan.description}</p>
-							<div class="pricing-card__price">
-								<span class="pricing-card__amount">
-									{formattedPrice}
-								</span>
-								{plan.monthlyPriceArs > 0 && (
-									<span class="pricing-card__period">{periodLabel}</span>
-								)}
+						return (
+							<div
+								class:list={['pricing-card', { 'pricing-card--highlighted': isHighlighted }]}
+								data-reveal="up"
+								style={`transition-delay: ${i * 100}ms`}
+							>
+								<h3 class="pricing-card__name">{plan.name}</h3>
+								<p class="pricing-card__desc">{plan.description}</p>
+								<div class="pricing-card__price">
+									<span class="pricing-card__amount">
+										{formattedPrice}
+									</span>
+									{plan.monthlyPriceArs > 0 && (
+										<span class="pricing-card__period">{periodLabel}</span>
+									)}
+								</div>
+								<div class="pricing-card__btn-wrapper">
+									<PlanPurchaseButton
+										client:load
+										planId={plan.slug}
+										price={plan.monthlyPriceArs}
+										currency="ARS"
+										ctaText={ctaText}
+										locale={locale}
+									/>
+								</div>
 							</div>
-							<div class="pricing-card__btn-wrapper">
-								<PlanPurchaseButton
-									client:load
-									planId={plan.slug}
-									price={plan.monthlyPriceArs}
-									currency="ARS"
-									ctaText={ctaText}
-									locale={locale}
-								/>
-							</div>
-						</div>
-					);
-				})}
-			</div>
+						);
+					})}
+				</div>
+			)}
 		</div>
 	</section>
 </MarketingLayout>

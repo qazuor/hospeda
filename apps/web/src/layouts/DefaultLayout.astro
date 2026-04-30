@@ -44,6 +44,7 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 		canonical={canonicalUrl}
 		noindex={noindex}
 	/>
+	<slot name="head-extra" slot="head" />
 
 	<slot />
 </BaseLayout>

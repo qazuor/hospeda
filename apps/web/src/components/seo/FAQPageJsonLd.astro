@@ -1,0 +1,43 @@
+---
+/**
+ * @file FAQPageJsonLd.astro
+ * @description FAQPage JSON-LD component for legal pages where each
+ * numbered section behaves as a question-and-answer pair. Renders a single
+ * schema.org `FAQPage` block with a `mainEntity` array of `Question` items.
+ *
+ * SPEC-096 / REQ-096-42.
+ */
+
+import JsonLd from './JsonLd.astro';
+
+/** Single FAQ section (heading + body). */
+export interface FAQSection {
+  /** Section title — used as the FAQ question. */
+  readonly heading: string;
+  /** Section body text — used as the answer. */
+  readonly body: string;
+}
+
+/** Props interface for FAQPageJsonLd component. */
+interface Props {
+  /** Sections to render as Q/A pairs. Order is preserved. */
+  readonly sections: ReadonlyArray<FAQSection>;
+}
+
+const { sections } = Astro.props;
+
+const structuredData: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: sections.map((section) => ({
+    '@type': 'Question',
+    name: section.heading,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: section.body
+    }
+  }))
+};
+---
+
+<JsonLd data={structuredData} />

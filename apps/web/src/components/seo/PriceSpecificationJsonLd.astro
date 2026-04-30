@@ -1,0 +1,58 @@
+---
+/**
+ * @file PriceSpecificationJsonLd.astro
+ * @description Generates one schema.org `Offer` JSON-LD block per pricing
+ * plan, with a nested `priceSpecification` describing the recurring monthly
+ * price. Used by the tourist and owner pricing pages so each plan is
+ * machine-readable as a distinct commercial offer.
+ *
+ * SPEC-096 / REQ-096-41.
+ */
+
+import JsonLd from './JsonLd.astro';
+
+/** Single plan to render as an Offer. */
+export interface PriceSpecificationPlan {
+  /** Plan display name (e.g., "Tourist Plus"). */
+  readonly name: string;
+  /** Short description of the plan. */
+  readonly description: string;
+  /** ISO 4217 currency code (e.g., `ARS`). */
+  readonly priceCurrency: string;
+  /** Price in major units (e.g., pesos, not centavos). */
+  readonly price: number;
+  /** Canonical URL where the plan can be purchased. */
+  readonly url: string;
+}
+
+/** Props interface for PriceSpecificationJsonLd component. */
+interface Props {
+  /** Array of plans to render. One `<script>` is emitted per plan. */
+  readonly plans: ReadonlyArray<PriceSpecificationPlan>;
+}
+
+const { plans } = Astro.props;
+
+const offers = plans.map((plan) => ({
+  '@context': 'https://schema.org',
+  '@type': 'Offer',
+  name: plan.name,
+  description: plan.description,
+  url: plan.url,
+  price: plan.price,
+  priceCurrency: plan.priceCurrency,
+  priceSpecification: {
+    '@type': 'UnitPriceSpecification',
+    price: plan.price,
+    priceCurrency: plan.priceCurrency,
+    unitCode: 'MON',
+    referenceQuantity: {
+      '@type': 'QuantitativeValue',
+      value: 1,
+      unitCode: 'MON'
+    }
+  }
+}));
+---
+
+{offers.map((offer) => <JsonLd data={offer} />)}

@@ -8,6 +8,7 @@
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import AboutPageJsonLd from '@/components/seo/AboutPageJsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -22,13 +23,32 @@ export const getStaticPaths = (() => {
 const { lang } = Astro.params;
 const locale = lang as SupportedLocale;
 const { t } = createTranslations(locale);
+
+const aboutTitle = t('about.title', 'Quiénes somos');
+const aboutDescription = t(
+	'about.description',
+	'Conocé la historia y misión de Hospeda, tu portal de turismo en el Litoral Entrerriano.'
+);
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://hospeda.com.ar').href;
+const inLanguageMap: Record<SupportedLocale, string> = {
+	es: 'es-AR',
+	en: 'en-US',
+	pt: 'pt-BR'
+};
 ---
 
 <DefaultLayout
 	locale={locale}
-	title={t('about.title', 'Quiénes somos')}
-	description={t('about.description', 'Conocé la historia y misión de Hospeda, tu portal de turismo en el Litoral Entrerriano.')}
+	title={aboutTitle}
+	description={aboutDescription}
 >
+	<AboutPageJsonLd
+		slot="head-extra"
+		title={aboutTitle}
+		description={aboutDescription}
+		url={canonicalUrl}
+		inLanguage={inLanguageMap[locale]}
+	/>
 	<!-- Hero -->
 	<section class="about-hero section section--warm">
 		<div class="about-hero__container" data-reveal="up">

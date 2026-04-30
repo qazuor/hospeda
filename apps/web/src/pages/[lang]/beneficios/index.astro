@@ -8,6 +8,7 @@
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import AboutPageJsonLd from '@/components/seo/AboutPageJsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -38,13 +39,32 @@ const ownerBenefits = [
 	{ titleKey: 'benefits.owner.4.title', titleFb: 'Estadísticas detalladas', descKey: 'benefits.owner.4.desc', descFb: 'Accedé a métricas de visitas, consultas y rendimiento de tu publicación.' },
 	{ titleKey: 'benefits.owner.5.title', titleFb: 'Soporte dedicado', descKey: 'benefits.owner.5.desc', descFb: 'Equipo de soporte disponible para ayudarte con cualquier consulta.' },
 ] as const;
+
+const benefitsTitle = t('benefits.title', 'Beneficios');
+const benefitsDescription = t(
+	'benefits.description',
+	'Descubrí los beneficios de usar Hospeda como viajero o propietario.'
+);
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://hospeda.com.ar').href;
+const inLanguageMap: Record<SupportedLocale, string> = {
+	es: 'es-AR',
+	en: 'en-US',
+	pt: 'pt-BR'
+};
 ---
 
 <MarketingLayout
 	locale={locale}
-	title={t('benefits.title', 'Beneficios')}
-	description={t('benefits.description', 'Descubrí los beneficios de usar Hospeda como viajero o propietario.')}
+	title={benefitsTitle}
+	description={benefitsDescription}
 >
+	<AboutPageJsonLd
+		slot="head-extra"
+		title={benefitsTitle}
+		description={benefitsDescription}
+		url={canonicalUrl}
+		inLanguage={inLanguageMap[locale]}
+	/>
 	<!-- Tourist Benefits -->
 	<section class="benefits-section section">
 		<div class="benefits-section__container">

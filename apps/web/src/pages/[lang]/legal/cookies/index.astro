@@ -7,6 +7,7 @@
  */
 
 import LegalLayout from '@/layouts/LegalLayout.astro';
+import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { GetStaticPaths } from 'astro';
@@ -30,6 +31,11 @@ const sections = [
 	{ id: 'cambios', titleKey: 'cookies.sections.policyChanges.title', titleFb: '6. Cambios a esta política', contentKey: 'cookies.sections.policyChanges.body', contentFb: 'Podemos actualizar esta Política de Cookies cuando cambie la tecnología que usamos.' },
 	{ id: 'contacto', titleKey: 'cookies.sections.contact.title', titleFb: '7. Contacto', contentKey: 'cookies.sections.contact.body', contentFb: 'Si tenés preguntas sobre el uso de cookies en Hospeda, podés escribirnos a info@hospeda.com.' },
 ] as const;
+
+const faqSections = sections.map((section) => ({
+	heading: t(section.titleKey, section.titleFb),
+	body: t(section.contentKey, section.contentFb)
+}));
 ---
 
 <LegalLayout
@@ -39,6 +45,7 @@ const sections = [
 	lastUpdated="28 de abril de 2026"
 	showToc={true}
 >
+	<FAQPageJsonLd slot="head-extra" sections={faqSections} />
 	<Fragment slot="toc">
 		<ol class="toc-list">
 			{sections.map((section, i) => (
