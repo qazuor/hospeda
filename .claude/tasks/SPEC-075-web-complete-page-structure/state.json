@@ -1,0 +1,1232 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-075",
+    "title": "Web App Complete Page Structure",
+    "created": "2026-04-09T22:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create ErrorLayout",
+            "description": "Standalone layout for 404/500 pages. File: src/layouts/ErrorLayout.astro",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-009"],
+            "subtasks": [],
+            "tags": ["layout", "astro"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": "2026-04-09T22:30:00.000Z",
+                "completed": "2026-04-09T23:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Create DefaultLayout",
+            "description": "BaseLayout wrapper for standard pages. File: src/layouts/DefaultLayout.astro",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-010", "T-031", "T-045", "T-046", "T-047", "T-050"],
+            "subtasks": [],
+            "tags": ["layout", "astro"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": "2026-04-09T22:30:00.000Z",
+                "completed": "2026-04-09T23:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Create ListingLayout",
+            "description": "Layout with optional filter sidebar and pagination. File: src/layouts/ListingLayout.astro",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [
+                "T-026",
+                "T-028",
+                "T-029",
+                "T-030",
+                "T-033",
+                "T-034",
+                "T-036",
+                "T-038",
+                "T-039",
+                "T-040",
+                "T-042",
+                "T-043",
+                "T-044"
+            ],
+            "subtasks": [],
+            "tags": ["layout", "astro", "responsive"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": "2026-04-09T22:30:00.000Z",
+                "completed": "2026-04-09T23:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Create DetailLayout",
+            "description": "Two-column layout with optional breadcrumbs and sidebar. File: src/layouts/DetailLayout.astro",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-027", "T-032", "T-035", "T-037", "T-041"],
+            "subtasks": [],
+            "tags": ["layout", "astro", "responsive"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": "2026-04-09T22:30:00.000Z",
+                "completed": "2026-04-09T23:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Create AccountLayout",
+            "description": "Two-panel layout with persistent sidebar nav. File: src/layouts/AccountLayout.astro",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-012", "T-051", "T-052", "T-053", "T-054", "T-055"],
+            "subtasks": [],
+            "tags": ["layout", "astro", "responsive", "a11y"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": "2026-04-09T22:30:00.000Z",
+                "completed": "2026-04-09T23:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create MarketingLayout",
+            "description": "Full-width layout for marketing pages. File: src/layouts/MarketingLayout.astro",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-056", "T-057", "T-058", "T-059"],
+            "subtasks": [],
+            "tags": ["layout", "astro"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": "2026-04-09T22:30:00.000Z",
+                "completed": "2026-04-09T23:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Create LegalLayout",
+            "description": "Prose layout with ToC sidebar. File: src/layouts/LegalLayout.astro",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-048", "T-049"],
+            "subtasks": [],
+            "tags": ["layout", "astro", "responsive"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": "2026-04-09T22:30:00.000Z",
+                "completed": "2026-04-09T23:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create AuthLayout",
+            "description": "Standalone centered card layout for auth pages. File: src/layouts/AuthLayout.astro",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-011"],
+            "subtasks": [],
+            "tags": ["layout", "astro"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": "2026-04-09T22:30:00.000Z",
+                "completed": "2026-04-09T23:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Migrate error pages to ErrorLayout",
+            "description": "Migrate 404.astro and 500.astro to use ErrorLayout",
+            "status": "in-progress",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["migration", "astro"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": "2026-04-09T23:00:00.000Z",
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Migrate homepage to DefaultLayout",
+            "description": "Migrate [lang]/index.astro to use DefaultLayout",
+            "status": "in-progress",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["migration", "astro"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": "2026-04-09T23:00:00.000Z",
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Migrate auth pages to AuthLayout",
+            "description": "Migrate 5 auth pages (signin, signup, forgot-password, reset-password, verify-email) to AuthLayout",
+            "status": "in-progress",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["migration", "astro"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": "2026-04-09T23:00:00.000Z",
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Migrate mi-cuenta to AccountLayout",
+            "description": "Migrate mi-cuenta/index.astro to AccountLayout (activeSection='mi-cuenta')",
+            "status": "in-progress",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["migration", "astro"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": "2026-04-09T23:00:00.000Z",
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Fix ISR exclude regex",
+            "description": "Update astro.config.mjs ISR exclude patterns to only exclude auth, account, search, feedback",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["infrastructure", "isr"],
+            "phase": "prerequisites",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Add amenity/feature JOIN filtering in accommodation model",
+            "description": "Add JOIN on r_accommodation_amenity and r_accommodation_feature tables in search() and searchWithRelations() methods",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": [],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["database", "model", "prerequisite"],
+            "phase": "prerequisites",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Add destinationId FK to events table",
+            "description": "DB migration + backfill + schema/handler/model updates for destinationId on events",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": [],
+            "blocks": ["T-034"],
+            "subtasks": [],
+            "tags": ["database", "migration", "prerequisite"],
+            "phase": "prerequisites",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Create user-by-slug public endpoint",
+            "description": "GET /api/v1/public/users/by-slug/{slug} returning public profile fields",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-044"],
+            "subtasks": [],
+            "tags": ["api", "endpoint", "prerequisite"],
+            "phase": "prerequisites",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Create global search endpoint",
+            "description": "GET /api/v1/public/search?q={query} querying all 4 entity types in parallel",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": [],
+            "blocks": ["T-045"],
+            "subtasks": [],
+            "tags": ["api", "endpoint", "prerequisite"],
+            "phase": "prerequisites",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Create Breadcrumbs visual component",
+            "description": "Visual breadcrumb trail component at src/components/shared/Breadcrumbs.astro",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-027", "T-032", "T-035", "T-037"],
+            "subtasks": [],
+            "tags": ["component", "astro", "a11y"],
+            "phase": "shared-components",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Create FilterSidebar component",
+            "description": "Collapsible filter panel with mobile toggle, active filter chips, sort dropdown",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": [],
+            "blocks": [
+                "T-026",
+                "T-028",
+                "T-029",
+                "T-030",
+                "T-033",
+                "T-034",
+                "T-036",
+                "T-038",
+                "T-039",
+                "T-040",
+                "T-042",
+                "T-043",
+                "T-044"
+            ],
+            "subtasks": [],
+            "tags": ["component", "react-island", "a11y", "responsive"],
+            "phase": "shared-components",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Create EmptyState component",
+            "description": "Component shown when no results match filters or collection is empty",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-026", "T-036", "T-040"],
+            "subtasks": [],
+            "tags": ["component", "astro"],
+            "phase": "shared-components",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Create ImageGallery component",
+            "description": "Lightbox gallery with focus trap and keyboard navigation",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": [],
+            "blocks": ["T-027", "T-032"],
+            "subtasks": [],
+            "tags": ["component", "react-island", "a11y"],
+            "phase": "shared-components",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Create MapView island",
+            "description": "Interactive map component for detail pages",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-027", "T-032", "T-037"],
+            "subtasks": [],
+            "tags": ["component", "react-island", "a11y"],
+            "phase": "shared-components",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Create ReviewListIsland",
+            "description": "Astro wrapper with server:defer (or client:visible fallback) + React review list",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-027"],
+            "subtasks": [],
+            "tags": ["component", "react-island", "server-island"],
+            "phase": "shared-components",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Create ErrorBanner component",
+            "description": "User-visible error banner for failed API calls with retry button",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["component", "astro"],
+            "phase": "shared-components",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Create listing page header component",
+            "description": "Reusable header area with decorative tagline, bold title, and result count for listing pages",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-026", "T-036", "T-040"],
+            "subtasks": [],
+            "tags": ["component", "astro"],
+            "phase": "shared-components",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Accommodations listing page",
+            "description": "/{lang}/alojamientos/ with ListingLayout, filters, AccommodationCard grid, ItemList JSON-LD, pagination",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-003", "T-019", "T-020", "T-025"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "seo", "accommodations"],
+            "phase": "core-accommodations",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Accommodation detail page",
+            "description": "/{lang}/alojamientos/[slug]/ with DetailLayout, all sections, LodgingBusiness JSON-LD",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-004", "T-018", "T-021", "T-022", "T-023"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "seo", "accommodations"],
+            "phase": "core-accommodations",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Accommodations by type sub-route",
+            "description": "/{lang}/alojamientos/tipo/[type]/ filtered by AccommodationTypeEnum",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "accommodations"],
+            "phase": "core-accommodations",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Accommodations by amenity sub-route",
+            "description": "/{lang}/alojamientos/comodidades/[slug]/ with amenity slug resolution",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-014", "T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "accommodations"],
+            "phase": "core-accommodations",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Accommodations by feature sub-route",
+            "description": "/{lang}/alojamientos/caracteristicas/[slug]/ using dedicated feature endpoint",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "accommodations"],
+            "phase": "core-accommodations",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Destinations listing page",
+            "description": "/{lang}/destinos/ with DefaultLayout, DestinationCard grid",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "destinations"],
+            "phase": "core-destinations",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Destination detail page (catch-all)",
+            "description": "/{lang}/destinos/[...path]/ with hierarchical path resolution, TouristDestination JSON-LD",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-004", "T-018", "T-021", "T-022"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "seo", "destinations"],
+            "phase": "core-destinations",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Accommodations within destination",
+            "description": "/{lang}/destinos/[slug]/alojamientos/ listing page",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "destinations", "accommodations"],
+            "phase": "core-destinations",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Events within destination",
+            "description": "/{lang}/destinos/[slug]/eventos/ - BLOCKED by T-015 (destinationId FK)",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-015", "T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "destinations", "events"],
+            "phase": "core-destinations",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Destinations by attraction",
+            "description": "/{lang}/destinos/atraccion/[slug]/ detail page",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-018"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "destinations"],
+            "phase": "core-destinations",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Events listing page",
+            "description": "/{lang}/eventos/ with timeframe tabs, category filters, EventCard grid",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-003", "T-019", "T-020", "T-025"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "events"],
+            "phase": "core-events",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Event detail page",
+            "description": "/{lang}/eventos/[slug]/ with Event JSON-LD and EventStatus mapping",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-004", "T-018", "T-022"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "seo", "events"],
+            "phase": "core-events",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Events by category sub-route",
+            "description": "/{lang}/eventos/categoria/[category]/ filtered by EventCategoryEnum",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "events"],
+            "phase": "core-events",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Events by location sub-route",
+            "description": "/{lang}/eventos/en/[slug]/ with location slug resolution",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "events"],
+            "phase": "core-events",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Posts listing page",
+            "description": "/{lang}/publicaciones/ with category filters, PostCard grid",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-003", "T-019", "T-020", "T-025"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "posts"],
+            "phase": "core-posts",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Post detail page",
+            "description": "/{lang}/publicaciones/[slug]/ with BlogPosting JSON-LD",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-004", "T-018"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "seo", "posts"],
+            "phase": "core-posts",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Posts by category sub-route",
+            "description": "/{lang}/publicaciones/categoria/[category]/",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "posts"],
+            "phase": "core-posts",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Posts by tag sub-route",
+            "description": "/{lang}/publicaciones/etiqueta/[tag]/ with tag slug resolution",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "posts"],
+            "phase": "core-posts",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-044",
+            "title": "Posts by author sub-route",
+            "description": "/{lang}/publicaciones/autor/[slug]/ - BLOCKED by T-016 (user-by-slug endpoint)",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-016", "T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "posts"],
+            "phase": "core-posts",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-045",
+            "title": "Global search page",
+            "description": "/{lang}/busqueda/ with grouped results - BLOCKED by T-017 (search endpoint)",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-002", "T-017"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "search"],
+            "phase": "content",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-046",
+            "title": "Contact page",
+            "description": "/{lang}/contacto/ with ContactForm React island, SSG prerender",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "react-island", "prerender"],
+            "phase": "content",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-047",
+            "title": "About us page",
+            "description": "/{lang}/nosotros/ with hero, mission, values, regional section, SSG prerender",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "prerender"],
+            "phase": "content",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-048",
+            "title": "Privacy policy page",
+            "description": "/{lang}/legal/privacidad/ with LegalLayout, ToC, SSG prerender",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "prerender", "legal"],
+            "phase": "content",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-049",
+            "title": "Terms and conditions page",
+            "description": "/{lang}/legal/terminos/ with LegalLayout, ToC, SSG prerender",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "prerender", "legal"],
+            "phase": "content",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-050",
+            "title": "Feedback page",
+            "description": "/{lang}/feedback/ with multi-step form, multipart upload, Linear integration",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "react-island", "feedback"],
+            "phase": "content",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-051",
+            "title": "Edit profile page",
+            "description": "/{lang}/mi-cuenta/editar/ with ProfileEditForm island",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "react-island", "account"],
+            "phase": "account",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-052",
+            "title": "Favorites page",
+            "description": "/{lang}/mi-cuenta/favoritos/ with UserFavoritesList island",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "react-island", "account"],
+            "phase": "account",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-053",
+            "title": "Reviews page",
+            "description": "/{lang}/mi-cuenta/resenas/ with UserReviewsList island",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "react-island", "account"],
+            "phase": "account",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-054",
+            "title": "Subscription page",
+            "description": "/{lang}/mi-cuenta/suscripcion/ with SubscriptionDashboard island",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "react-island", "account"],
+            "phase": "account",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-055",
+            "title": "Preferences page",
+            "description": "/{lang}/mi-cuenta/preferencias/ with PreferenceToggles island",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "react-island", "account"],
+            "phase": "account",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-056",
+            "title": "Property owners landing page",
+            "description": "/{lang}/suscriptores/propietarios/ with MarketingLayout, FAQPage JSON-LD, SSG",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "prerender", "marketing", "seo"],
+            "phase": "marketing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-057",
+            "title": "Benefits page",
+            "description": "/{lang}/beneficios/ with 10 benefits (5 tourist + 5 owner), SSG",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "prerender", "marketing"],
+            "phase": "marketing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-058",
+            "title": "Tourist pricing page",
+            "description": "/{lang}/suscriptores/turistas/ with plan cards from API, hardcoded fallback",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "marketing", "billing"],
+            "phase": "marketing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-059",
+            "title": "Owner pricing page",
+            "description": "/{lang}/suscriptores/planes/ with owner+complex plan cards",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["page", "astro", "marketing", "billing"],
+            "phase": "marketing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-060",
+            "title": "Pagination rewrite files - accommodations",
+            "description": "4 pagination rewrite files for accommodation routes",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["infrastructure", "pagination", "astro"],
+            "phase": "infrastructure",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-061",
+            "title": "Pagination rewrite files - destinations",
+            "description": "3 pagination rewrite files for destination routes",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["infrastructure", "pagination", "astro"],
+            "phase": "infrastructure",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-062",
+            "title": "Pagination rewrite files - events",
+            "description": "3 pagination rewrite files for event routes",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["infrastructure", "pagination", "astro"],
+            "phase": "infrastructure",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-063",
+            "title": "Pagination rewrite files - posts",
+            "description": "4 pagination rewrite files for post routes",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["infrastructure", "pagination", "astro"],
+            "phase": "infrastructure",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-064",
+            "title": "Update entity path mapper",
+            "description": "Fix stale data + add new revalidation paths for all new URL patterns",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["infrastructure", "revalidation"],
+            "phase": "infrastructure",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-065",
+            "title": "Update header and footer navigation",
+            "description": "Add search icon/link and account indicator to header",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["infrastructure", "navigation"],
+            "phase": "infrastructure",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-066",
+            "title": "Dynamic sitemap endpoint",
+            "description": "Create sitemap-dynamic.xml.ts for SSR/ISR pages + update sitemap config exclusions",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["infrastructure", "seo", "sitemap"],
+            "phase": "infrastructure",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-09T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 66,
+        "pending": 54,
+        "inProgress": 4,
+        "completed": 8,
+        "blocked": 0,
+        "averageComplexity": 2.9
+    }
+}
