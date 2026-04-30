@@ -7,7 +7,7 @@ import type {
     UserSummary
 } from '@repo/schemas';
 import type { AnyColumn, SQL } from 'drizzle-orm';
-import { and, asc, count, desc, eq, exists, gte, inArray, isNull, ne, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gte, inArray, isNull, ne, or, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 import { rAccommodationAmenity } from '../../schemas/accommodation/r_accommodation_amenity.dbschema.ts';
@@ -98,6 +98,50 @@ export function buildAccommodationOrderBy(params: {
 
     orderBy.push(desc(accommodations.id));
     return orderBy;
+}
+
+/**
+ * Build a WHERE clause that restricts accommodations to those that have ALL
+ * of the provided amenity IDs (set intersection).
+ *
+ * Uses a correlated subquery:
+ *   accommodation.id IN (
+ *     SELECT accommodation_id FROM r_accommodation_amenity
+ *     WHERE amenity_id IN (...ids)
+ *     GROUP BY accommodation_id
+ *     HAVING COUNT(DISTINCT amenity_id) = N
+ *   )
+ *
+ * When a single ID is provided the HAVING clause is `= 1`, which is
+ * equivalent to a plain EXISTS but keeps the implementation uniform.
+ */
+function buildAmenityIntersectionClause(amenityIds: readonly string[]): SQL<unknown> {
+    const n = amenityIds.length;
+    return sql<unknown>`${accommodations.id} IN (
+        SELECT ${rAccommodationAmenity.accommodationId}
+        FROM ${rAccommodationAmenity}
+        WHERE ${inArray(rAccommodationAmenity.amenityId, amenityIds as string[])}
+        GROUP BY ${rAccommodationAmenity.accommodationId}
+        HAVING COUNT(DISTINCT ${rAccommodationAmenity.amenityId}) = ${n}
+    )`;
+}
+
+/**
+ * Build a WHERE clause that restricts accommodations to those that have ALL
+ * of the provided feature IDs (set intersection).
+ *
+ * Uses the same GROUP BY / HAVING COUNT(DISTINCT ...) = N pattern as
+ * {@link buildAmenityIntersectionClause}.
+ */
+function buildFeatureIntersectionClause(featureIds: readonly string[]): SQL<unknown> {
+    const n = featureIds.length;
+    return sql<unknown>`${accommodations.id} IN (
+        SELECT ${rAccommodationFeature.accommodationId}
+        FROM ${rAccommodationFeature}
+        WHERE ${inArray(rAccommodationFeature.featureId, featureIds as string[])}
+        GROUP BY ${rAccommodationFeature.accommodationId}
+        HAVING COUNT(DISTINCT ${rAccommodationFeature.featureId}) = ${n}
+    )`;
 }
 
 export class AccommodationModel extends BaseModelImpl<Accommodation> {
@@ -275,34 +319,12 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             whereClauses.push(gte(accommodations.averageRating, params.minRating));
         }
         if (params.amenities && params.amenities.length > 0) {
-            whereClauses.push(
-                exists(
-                    db
-                        .select({ one: sql`1` })
-                        .from(rAccommodationAmenity)
-                        .where(
-                            and(
-                                eq(rAccommodationAmenity.accommodationId, accommodations.id),
-                                inArray(rAccommodationAmenity.amenityId, params.amenities)
-                            )
-                        )
-                )
-            );
+            // Intersection semantics: accommodation must have ALL provided amenity IDs.
+            whereClauses.push(buildAmenityIntersectionClause(params.amenities));
         }
         if (params.features && params.features.length > 0) {
-            whereClauses.push(
-                exists(
-                    db
-                        .select({ one: sql`1` })
-                        .from(rAccommodationFeature)
-                        .where(
-                            and(
-                                eq(rAccommodationFeature.accommodationId, accommodations.id),
-                                inArray(rAccommodationFeature.featureId, params.features)
-                            )
-                        )
-                )
-            );
+            // Intersection semantics: accommodation must have ALL provided feature IDs.
+            whereClauses.push(buildFeatureIntersectionClause(params.features));
         }
         if (params.q) {
             whereClauses.push(
@@ -418,34 +440,12 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             whereClauses.push(gte(accommodations.averageRating, params.minRating));
         }
         if (params.amenities && params.amenities.length > 0) {
-            whereClauses.push(
-                exists(
-                    db
-                        .select({ one: sql`1` })
-                        .from(rAccommodationAmenity)
-                        .where(
-                            and(
-                                eq(rAccommodationAmenity.accommodationId, accommodations.id),
-                                inArray(rAccommodationAmenity.amenityId, params.amenities)
-                            )
-                        )
-                )
-            );
+            // Intersection semantics: accommodation must have ALL provided amenity IDs.
+            whereClauses.push(buildAmenityIntersectionClause(params.amenities));
         }
         if (params.features && params.features.length > 0) {
-            whereClauses.push(
-                exists(
-                    db
-                        .select({ one: sql`1` })
-                        .from(rAccommodationFeature)
-                        .where(
-                            and(
-                                eq(rAccommodationFeature.accommodationId, accommodations.id),
-                                inArray(rAccommodationFeature.featureId, params.features)
-                            )
-                        )
-                )
-            );
+            // Intersection semantics: accommodation must have ALL provided feature IDs.
+            whereClauses.push(buildFeatureIntersectionClause(params.features));
         }
         if (params.q) {
             whereClauses.push(
