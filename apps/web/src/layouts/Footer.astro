@@ -1,10 +1,14 @@
 ---
 /**
  * @file Footer.astro
- * @description Site footer matching Figma design. Layout:
+ * @description Site footer with 5-column navigation layout on desktop.
+ * Layout:
  * - Wave SVG decoration overlapping the previous section
- * - TOP ROW (flex): LEFT_BLOCK (logo + description + social) + RIGHT_BLOCK (newsletter card + nav grid)
+ * - TOP ROW (flex): LEFT_BLOCK (logo + description + social) + RIGHT_BLOCK (newsletter card + 5-col nav grid)
  * - BOTTOM BAR: contact info left, copyright right
+ * - Mobile (<768px): nav columns collapse into <details><summary> accordion
+ *
+ * Columns: Explorar | Categorías | Destinos | Propietarios & Turistas | Hospeda
  *
  * Rendering: Static (no client JavaScript).
  */
@@ -26,13 +30,24 @@ const { t } = createTranslations(locale);
 
 const currentYear = new Date().getFullYear();
 
-/** EXPLORAR column */
+/** EXPLORAR column — top-level sections + search */
 const exploreLinks = [
     { label: t("footer.accommodations"), href: buildUrl({ locale, path: "/alojamientos/" }) },
     { label: t("footer.destinations"), href: buildUrl({ locale, path: "/destinos/" }) },
     { label: t("footer.events"), href: buildUrl({ locale, path: "/eventos/" }) },
     { label: t("footer.publications"), href: buildUrl({ locale, path: "/publicaciones/" }) },
-    { label: t("footer.proprietors"), href: buildUrl({ locale, path: "/propietarios/" }) },
+    { label: t("footer.search", "Buscar"), href: buildUrl({ locale, path: "/busqueda/" }) },
+] as const;
+
+/** CATEGORÍAS column — curated accommodation types and event categories */
+const categoryLinks = [
+    { label: t("footer.categoryCabins", "Cabañas"), href: buildUrl({ locale, path: "/alojamientos/tipo/cabin/" }) },
+    { label: t("footer.categoryHotels", "Hoteles"), href: buildUrl({ locale, path: "/alojamientos/tipo/hotel/" }) },
+    { label: t("footer.categoryHouses", "Casas"), href: buildUrl({ locale, path: "/alojamientos/tipo/house/" }) },
+    { label: t("footer.categoryMusic", "Música"), href: buildUrl({ locale, path: "/eventos/categoria/music/" }) },
+    { label: t("footer.categoryCulture", "Cultura"), href: buildUrl({ locale, path: "/eventos/categoria/culture/" }) },
+    { label: t("footer.categoryGastronomy", "Gastronomía"), href: buildUrl({ locale, path: "/eventos/categoria/gastronomy/" }) },
+    { label: t("footer.categoryNature", "Naturaleza"), href: buildUrl({ locale, path: "/eventos/categoria/nature/" }) },
 ] as const;
 
 /** DESTINOS column */
@@ -43,8 +58,8 @@ const destinationLinks = [
     { label: t("footer.destinationSanJose"), href: buildUrl({ locale, path: "/destinos/san-jose/" }) },
 ] as const;
 
-/** PROPIETARIOS column */
-const ownerLinks = [
+/** PROPIETARIOS & TURISTAS column */
+const subscriberLinks = [
     { label: t("footer.listProperty"), href: buildUrl({ locale, path: "/suscriptores/propietarios/" }) },
     { label: t("footer.ownerPlans"), href: buildUrl({ locale, path: "/suscriptores/planes/" }) },
     { label: t("footer.touristPlans"), href: buildUrl({ locale, path: "/suscriptores/turistas/" }) },
@@ -128,10 +143,13 @@ const cookiePreferencesLabel = t("cookieConsent.footer.preferencesLink", "Prefer
                     </div>
                 </div>
 
-                <!-- Navigation columns -->
+                <!-- Navigation columns: 5 columns on desktop, accordion on mobile -->
                 <nav class="footer__nav" aria-label={t("footer.navigation", "Footer navigation")}>
-                    <div class="footer__nav-col">
-                        <h4 class="footer__nav-heading">{t("footer.exploreTitle")}</h4>
+                    <!-- Column 1: Explorar -->
+                    <details class="footer__nav-col footer__nav-col--accordion" open>
+                        <summary class="footer__nav-heading footer__nav-summary">
+                            {t("footer.exploreTitle")}
+                        </summary>
                         <ul class="footer__nav-list">
                             {
                                 exploreLinks.map(({ label, href }) => (
@@ -143,10 +161,31 @@ const cookiePreferencesLabel = t("cookieConsent.footer.preferencesLink", "Prefer
                                 ))
                             }
                         </ul>
-                    </div>
+                    </details>
 
-                    <div class="footer__nav-col">
-                        <h4 class="footer__nav-heading">{t("footer.destinationsTitle")}</h4>
+                    <!-- Column 2: Categorías -->
+                    <details class="footer__nav-col footer__nav-col--accordion">
+                        <summary class="footer__nav-heading footer__nav-summary">
+                            {t("footer.categoriesTitle", "Categorías")}
+                        </summary>
+                        <ul class="footer__nav-list">
+                            {
+                                categoryLinks.map(({ label, href }) => (
+                                    <li>
+                                        <a href={href} class="footer__nav-link">
+                                            {label}
+                                        </a>
+                                    </li>
+                                ))
+                            }
+                        </ul>
+                    </details>
+
+                    <!-- Column 3: Destinos -->
+                    <details class="footer__nav-col footer__nav-col--accordion">
+                        <summary class="footer__nav-heading footer__nav-summary">
+                            {t("footer.destinationsTitle")}
+                        </summary>
                         <ul class="footer__nav-list">
                             {
                                 destinationLinks.map(({ label, href }) => (
@@ -158,13 +197,16 @@ const cookiePreferencesLabel = t("cookieConsent.footer.preferencesLink", "Prefer
                                 ))
                             }
                         </ul>
-                    </div>
+                    </details>
 
-                    <div class="footer__nav-col">
-                        <h4 class="footer__nav-heading">{t("footer.ownersTitle")}</h4>
+                    <!-- Column 4: Propietarios & Turistas -->
+                    <details class="footer__nav-col footer__nav-col--accordion">
+                        <summary class="footer__nav-heading footer__nav-summary">
+                            {t("footer.subscribersTitle", "Propietarios & Turistas")}
+                        </summary>
                         <ul class="footer__nav-list">
                             {
-                                ownerLinks.map(({ label, href }) => (
+                                subscriberLinks.map(({ label, href }) => (
                                     <li>
                                         <a href={href} class="footer__nav-link">
                                             {label}
@@ -173,10 +215,13 @@ const cookiePreferencesLabel = t("cookieConsent.footer.preferencesLink", "Prefer
                                 ))
                             }
                         </ul>
-                    </div>
+                    </details>
 
-                    <div class="footer__nav-col">
-                        <h4 class="footer__nav-heading">{t("footer.hospedaTitle")}</h4>
+                    <!-- Column 5: Hospeda -->
+                    <details class="footer__nav-col footer__nav-col--accordion">
+                        <summary class="footer__nav-heading footer__nav-summary">
+                            {t("footer.hospedaTitle")}
+                        </summary>
                         <ul class="footer__nav-list">
                             {
                                 companyLinks.map(({ label, href }) => (
@@ -188,7 +233,7 @@ const cookiePreferencesLabel = t("cookieConsent.footer.preferencesLink", "Prefer
                                 ))
                             }
                         </ul>
-                    </div>
+                    </details>
                 </nav>
             </div>
         </div>
@@ -412,12 +457,47 @@ const cookiePreferencesLabel = t("cookieConsent.footer.preferencesLink", "Prefer
         padding-left: 0;
     }
 
+    /* Accordion: <details> used as the column container on mobile */
+    .footer__nav-col--accordion {
+        border-bottom: 1px solid var(--footer-border);
+        padding-bottom: 8px;
+    }
+
+    /* Summary acts as the column heading on mobile */
+    .footer__nav-summary {
+        cursor: pointer;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+    }
+
+    /* Remove default marker */
+    .footer__nav-summary::-webkit-details-marker,
+    .footer__nav-summary::marker {
+        display: none;
+    }
+
+    /* Chevron indicator via ::after */
+    .footer__nav-summary::after {
+        content: "▾";
+        font-size: 0.75rem;
+        color: var(--footer-fg-muted);
+        transition: transform var(--duration-normal) ease;
+        flex-shrink: 0;
+    }
+
+    .footer__nav-col--accordion[open] .footer__nav-summary::after {
+        transform: rotate(180deg);
+    }
+
     .footer__nav-heading {
         font-family: var(--font-heading);
         font-size: clamp(1rem, 2vw, 1.25rem);
         font-weight: 700;
         color: var(--footer-link);
-        margin-bottom: 12px;
+        margin-bottom: 0;
         line-height: 1.2;
     }
 
@@ -426,6 +506,7 @@ const cookiePreferencesLabel = t("cookieConsent.footer.preferencesLink", "Prefer
         flex-direction: column;
         gap: 10px;
         list-style: none;
+        padding-top: 8px;
     }
 
     .footer__nav-link {
@@ -535,14 +616,46 @@ const cookiePreferencesLabel = t("cookieConsent.footer.preferencesLink", "Prefer
     }
 
     /* ========================================================
-       Responsive: desktop (1024px+)
+       Responsive: tablet (768px+) — accordion collapses into static columns
        ======================================================== */
     @media (min-width: 768px) {
+        /* Reset accordion behaviour on tablet+ */
+        .footer__nav-col--accordion {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .footer__nav-summary {
+            cursor: default;
+            pointer-events: none;
+            padding: 0;
+        }
+
+        .footer__nav-summary::after {
+            display: none;
+        }
+
+        /* Always show list content on tablet+ */
+        .footer__nav-col--accordion:not([open]) .footer__nav-list {
+            display: flex;
+        }
+
+        .footer__nav-heading {
+            margin-bottom: 12px;
+        }
+
+        .footer__nav-list {
+            padding-top: 0;
+        }
+
         .footer__nav {
             grid-template-columns: repeat(3, 1fr);
         }
     }
 
+    /* ========================================================
+       Responsive: desktop (1024px+) — full 5-column layout
+       ======================================================== */
     @media (min-width: 1024px) {
         .footer__top .footer__container {
             gap: 64px;
@@ -554,8 +667,8 @@ const cookiePreferencesLabel = t("cookieConsent.footer.preferencesLink", "Prefer
         }
 
         .footer__nav {
-            grid-template-columns: repeat(4, 1fr);
-            column-gap: 46px;
+            grid-template-columns: repeat(5, 1fr);
+            column-gap: 32px;
             row-gap: 19px;
             padding-left: 48px;
         }

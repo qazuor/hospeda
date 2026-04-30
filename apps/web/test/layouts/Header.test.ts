@@ -1,0 +1,229 @@
+/**
+ * @file Header.test.ts
+ * @description Source-based unit tests for the redesigned Header.astro (REQ-096-16).
+ *
+ * Astro components cannot be rendered in Vitest / jsdom so we assert on
+ * the source text to verify structure, semantics, and the REQ-096-16
+ * requirements: nav items, Publicar CTA visibility, UserMenu island wiring,
+ * and mobile hamburger behaviour.
+ */
+
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+const src = readFileSync(resolve(__dirname, '../../src/layouts/Header.astro'), 'utf8');
+
+// ─── File structure ───────────────────────────────────────────────────────────
+
+describe('Header.astro — file structure', () => {
+    it('has a JSDoc file header', () => {
+        expect(src).toContain('@file Header.astro');
+    });
+
+    it('defines a Props interface with locale', () => {
+        expect(src).toContain('interface Props');
+        expect(src).toContain('readonly locale: SupportedLocale');
+    });
+
+    it('imports UserMenu from UserMenu.client', () => {
+        expect(src).toContain('UserMenu.client');
+    });
+
+    it('imports buildUrl from @/lib/urls', () => {
+        expect(src).toContain('from "@/lib/urls"');
+    });
+});
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+
+describe('Header.astro — navigation', () => {
+    it('defines the 5 expected nav links', () => {
+        expect(src).toContain('nav.accommodations');
+        expect(src).toContain('nav.destinations');
+        expect(src).toContain('nav.events');
+        expect(src).toContain('nav.blog');
+        expect(src).toContain('nav.contact');
+    });
+
+    it('builds URLs with buildUrl for all nav links', () => {
+        expect(src).toContain('buildUrl({ locale, path: "/alojamientos/" })');
+        expect(src).toContain('buildUrl({ locale, path: "/destinos/" })');
+        expect(src).toContain('buildUrl({ locale, path: "/eventos/" })');
+        expect(src).toContain('buildUrl({ locale, path: "/publicaciones/" })');
+        expect(src).toContain('buildUrl({ locale, path: "/contacto/" })');
+    });
+
+    it('renders a <nav> element with aria-label', () => {
+        expect(src).toContain('<nav');
+        expect(src).toContain('nav.mainNavigation');
+    });
+
+    it('marks the active link with aria-current="page"', () => {
+        expect(src).toContain("aria-current={isActive ? 'page' : undefined}");
+    });
+
+    it('hides desktop nav below 1025px via CSS', () => {
+        expect(src).toContain('min-width: 1025px');
+        expect(src).toContain('.header__nav');
+    });
+});
+
+// ─── "Publicar" CTA ───────────────────────────────────────────────────────────
+
+describe('Header.astro — Publicar CTA', () => {
+    it('includes a Publicar CTA button', () => {
+        expect(src).toContain('nav.publishCta');
+    });
+
+    it('links CTA to /publicar/', () => {
+        expect(src).toContain('buildUrl({ locale, path: "/publicar/" })');
+    });
+
+    it('does NOT hide the CTA under 1200px (no display:none at 1200px breakpoint for .header__cta)', () => {
+        // The old header hid .header__cta under 1200px.
+        // REQ-096-16: "Publicar" MUST be visible at all viewport widths.
+        // Verify there is no .header__cta rule inside a max-width: 1199px / 1200px query.
+        const ctaBlock = src.slice(src.indexOf('.header__cta'));
+        // Should NOT contain display: none in any context for the CTA class
+        expect(ctaBlock).not.toContain('display: none !important');
+    });
+
+    it('renders the CTA outside the hamburger-only area (within header__right)', () => {
+        // CTA and hamburger must both be inside .header__right
+        const rightBlock = src.slice(src.indexOf('header__right'));
+        expect(rightBlock).toContain('header__cta');
+        expect(rightBlock).toContain('header__hamburger');
+    });
+});
+
+// ─── Search icon ─────────────────────────────────────────────────────────────
+
+describe('Header.astro — search icon', () => {
+    it('renders a search icon link', () => {
+        expect(src).toContain('SearchIcon');
+    });
+
+    it('links search icon to /busqueda/', () => {
+        expect(src).toContain('buildUrl({ locale, path: "busqueda" })');
+    });
+});
+
+// ─── UserMenu island ──────────────────────────────────────────────────────────
+
+describe('Header.astro — UserMenu island', () => {
+    it('uses client:load directive for UserMenu', () => {
+        expect(src).toContain('client:load');
+    });
+
+    it('passes user prop to UserMenu', () => {
+        expect(src).toContain('user={userMenuUser}');
+    });
+
+    it('passes locale prop to UserMenu', () => {
+        expect(src).toContain('locale={locale}');
+    });
+
+    it('reads Astro.locals.user for auth state', () => {
+        expect(src).toContain('Astro.locals.user');
+    });
+
+    it('builds userMenuUser from server session data', () => {
+        expect(src).toContain('userMenuUser');
+    });
+
+    it('sets userMenuUser to null when no session', () => {
+        expect(src).toContain('null');
+        // null is the unauthenticated state
+        expect(src).toContain('serverUser\n    ?');
+    });
+});
+
+// ─── Mobile hamburger ─────────────────────────────────────────────────────────
+
+describe('Header.astro — mobile hamburger', () => {
+    it('renders a hamburger button', () => {
+        expect(src).toContain('HamburgerIcon');
+    });
+
+    it('wires hamburger with data-mobile-toggle', () => {
+        expect(src).toContain('"mobile-toggle"');
+    });
+
+    it('hides hamburger on desktop (≥1025px) via CSS', () => {
+        expect(src).toContain('max-width: 1024px');
+        expect(src).toContain('.header__hamburger');
+    });
+
+    it('hides hamburger when mobile menu is open', () => {
+        expect(src).toContain('[data-mobile-menu-open]');
+    });
+
+    it('uses MobileMenuIsland with server:defer', () => {
+        expect(src).toContain('MobileMenuIsland');
+        expect(src).toContain('server:defer');
+    });
+});
+
+// ─── Accessibility ────────────────────────────────────────────────────────────
+
+describe('Header.astro — accessibility', () => {
+    it('header element has role="banner"', () => {
+        expect(src).toContain('role="banner"');
+    });
+
+    it('logo link has aria-label', () => {
+        expect(src).toContain('nav.goHome');
+    });
+
+    it('hamburger button has ariaLabel', () => {
+        expect(src).toContain('nav.openMenu');
+    });
+
+    it('search icon has ariaLabel', () => {
+        expect(src).toContain('nav.search');
+    });
+});
+
+// ─── Hero/scroll behavior ─────────────────────────────────────────────────────
+
+describe('Header.astro — hero and scroll behavior', () => {
+    it('applies header--hero class for homepage', () => {
+        expect(src).toContain('header--hero');
+        expect(src).toContain('isHero');
+    });
+
+    it('has a scroll handler script for navbar--scrolled class', () => {
+        expect(src).toContain('navbar--scrolled');
+        expect(src).toContain('initHeaderScroll');
+    });
+
+    it('uses astro:page-load event for View Transitions compatibility', () => {
+        expect(src).toContain('astro:page-load');
+    });
+});
+
+// ─── Styling ─────────────────────────────────────────────────────────────────
+
+describe('Header.astro — styling', () => {
+    it('uses CSS custom properties for colors (no hardcoded colors)', () => {
+        expect(src).toContain('var(--core-card)');
+        expect(src).toContain('var(--brand-primary)');
+    });
+
+    it('uses var(--font-decorative) for logo text', () => {
+        expect(src).toContain('var(--font-decorative)');
+    });
+
+    it('uses var(--font-sans) for nav links', () => {
+        expect(src).toContain('var(--font-sans)');
+    });
+
+    it('uses var(--radius-pill) for CTA button', () => {
+        expect(src).toContain('var(--radius-pill)');
+    });
+
+    it('uses position: sticky for the header', () => {
+        expect(src).toContain('position: sticky');
+    });
+});

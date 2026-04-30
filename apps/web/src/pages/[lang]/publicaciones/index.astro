@@ -13,6 +13,7 @@ import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
+import TagChips from '@/components/TagChips.astro';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import { postsApi } from '@/lib/api/endpoints';
 import { toArticleCardProps } from '@/lib/api/transforms';
@@ -71,6 +72,18 @@ const sortOptions = [
 ] as const;
 
 const baseUrl = buildUrl({ locale, path: 'publicaciones' });
+
+/** Quick-filter chips: top post categories */
+const postCategoryChips = [
+    { label: t('blog.categories.culture', 'Cultura'), href: buildUrl({ locale, path: '/publicaciones/categoria/CULTURE/' }) },
+    { label: t('blog.categories.gastronomy', 'Gastronomía'), href: buildUrl({ locale, path: '/publicaciones/categoria/GASTRONOMY/' }) },
+    { label: t('blog.categories.nature', 'Naturaleza'), href: buildUrl({ locale, path: '/publicaciones/categoria/NATURE/' }) },
+    { label: t('blog.categories.tourism', 'Turismo'), href: buildUrl({ locale, path: '/publicaciones/categoria/TOURISM/' }) },
+    { label: t('blog.categories.history', 'Historia'), href: buildUrl({ locale, path: '/publicaciones/categoria/HISTORY/' }) },
+    { label: t('blog.categories.events', 'Eventos'), href: buildUrl({ locale, path: '/publicaciones/categoria/EVENTS/' }) },
+    { label: t('blog.categories.carnival', 'Carnaval'), href: buildUrl({ locale, path: '/publicaciones/categoria/CARNIVAL/' }) },
+    { label: t('blog.categories.tips', 'Consejos'), href: buildUrl({ locale, path: '/publicaciones/categoria/TIPS/' }) },
+] as const;
 ---
 
 <ListingLayout
@@ -101,6 +114,11 @@ const baseUrl = buildUrl({ locale, path: 'publicaciones' });
 		filters={filterGroups}
 		sortOptions={sortOptions}
 		defaultSort="publishedAt"
+	/>
+
+	<TagChips
+		chips={postCategoryChips}
+		ariaLabel={t('blog.categoryChips.ariaLabel', 'Filtrar por categoría de publicación')}
 	/>
 
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="publicaciones" />}

@@ -1,0 +1,197 @@
+/**
+ * Styles for the UserMenu island.
+ * All values reference CSS custom properties from global.css — never hardcoded.
+ */
+
+/* ── Sign-in link (unauthenticated state) ─────────────────────────────────── */
+
+.signinLink {
+    display: inline-flex;
+    height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    padding-inline: 1.25rem;
+    border-radius: var(--radius-pill);
+    font-size: var(--text-body-sm);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    text-decoration: none;
+    border: 1px solid oklch(from var(--core-foreground) l c h / 0.2);
+    color: var(--core-foreground);
+    background-color: transparent;
+    transition: background-color var(--duration-normal) ease,
+        color var(--duration-normal) ease;
+    white-space: nowrap;
+}
+
+.signinLink:hover {
+    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+}
+
+.signinLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* ── Wrapper (authenticated state) ─────────────────────────────────────────── */
+
+.wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+/* ── Trigger button ─────────────────────────────────────────────────────────── */
+
+.trigger {
+    display: inline-flex;
+    height: 2.5rem;
+    align-items: center;
+    gap: 0.5rem;
+    padding-inline: 0.625rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid oklch(from var(--core-foreground) l c h / 0.2);
+    background-color: transparent;
+    color: var(--core-foreground);
+    font-size: var(--text-body-sm);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--duration-normal) ease;
+}
+
+.trigger:hover {
+    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+}
+
+.trigger:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* ── Avatar / initials ──────────────────────────────────────────────────────── */
+
+.avatar {
+    width: 1.625rem;
+    height: 1.625rem;
+    border-radius: var(--radius-pill);
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.initials {
+    display: flex;
+    width: 1.625rem;
+    height: 1.625rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-pill);
+    background-color: var(--accent);
+    color: #fff;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* ── Display name ───────────────────────────────────────────────────────────── */
+
+.displayName {
+    display: none;
+    max-width: 8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+    .displayName {
+        display: inline;
+    }
+}
+
+/* ── Dropdown menu ──────────────────────────────────────────────────────────── */
+
+.menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    z-index: var(--z-dropdown, 100);
+    min-width: 15rem;
+    border-radius: var(--radius-card);
+    border: 1px solid var(--border);
+    background-color: var(--core-card);
+    padding-block: 0.375rem;
+    box-shadow: var(--shadow-card);
+    animation: menuFadeIn 0.15s ease;
+}
+
+@keyframes menuFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── Menu items ─────────────────────────────────────────────────────────────── */
+
+.menuItem {
+    display: block;
+    padding: 0.5625rem 1rem;
+    font-size: var(--text-body-sm);
+    font-family: var(--font-sans);
+    color: oklch(from var(--core-foreground) l c h / 0.85);
+    text-decoration: none;
+    transition: background-color var(--duration-fast) ease,
+        color var(--duration-fast) ease;
+}
+
+.menuItem:hover {
+    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+    color: var(--core-foreground);
+}
+
+.menuItem:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: -2px;
+}
+
+.menuItemLast {
+    /* Preserves visual grouping before the divider */
+    margin-bottom: 0.125rem;
+}
+
+/* ── Divider ────────────────────────────────────────────────────────────────── */
+
+.divider {
+    margin-block: 0.25rem;
+    border: none;
+    border-top: 1px solid var(--border);
+}
+
+/* ── Sign-out button ────────────────────────────────────────────────────────── */
+
+.signOutButton {
+    display: block;
+    width: 100%;
+    padding: 0.5625rem 1rem;
+    text-align: left;
+    font-size: var(--text-body-sm);
+    font-family: var(--font-sans);
+    color: var(--destructive);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease;
+}
+
+.signOutButton:hover {
+    background-color: oklch(from var(--destructive) l c h / 0.08);
+}
+
+.signOutButton:focus-visible {
+    outline: 2px solid var(--destructive);
+    outline-offset: -2px;
+}

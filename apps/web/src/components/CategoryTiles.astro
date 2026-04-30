@@ -1,0 +1,244 @@
+---
+/**
+ * @file CategoryTiles.astro
+ * @description Visual grid of category tiles for the homepage "Explorá por categoría" section.
+ * Each tile links to a filtered listing page and displays an optional icon or image,
+ * a bold title, and a short description.
+ *
+ * Responsive grid: 1 col mobile → 2 col tablet → 3-4 col desktop.
+ * Rendering: Static (no client JavaScript).
+ */
+
+interface TileItem {
+    /** Tile heading. */
+    readonly title: string;
+    /** Short descriptive text shown below the title. */
+    readonly description: string;
+    /** Target URL for the tile link. */
+    readonly href: string;
+    /**
+     * Optional icon component reference.
+     * Must be a valid Astro/React component accepting `size` and `weight` props.
+     */
+    // biome-ignore lint/suspicious/noExplicitAny: icon component type is intentionally flexible
+    readonly icon?: any;
+    /** Optional image URL shown as a background or tile thumbnail. */
+    readonly image?: string;
+}
+
+interface Props {
+    /** Array of tiles to render. */
+    readonly tiles: ReadonlyArray<TileItem>;
+    /** Section heading (localised by caller). */
+    readonly sectionTitle: string;
+    /** Optional section tagline rendered above the heading. */
+    readonly sectionTagline?: string;
+}
+
+const { tiles, sectionTitle, sectionTagline } = Astro.props;
+---
+
+<section class="category-tiles section">
+    <div class="category-tiles__container section__container">
+        {sectionTagline && (
+            <p class="category-tiles__tagline">{sectionTagline}</p>
+        )}
+        <h2 class="category-tiles__title">{sectionTitle}</h2>
+
+        <div class="category-tiles__grid">
+            {tiles.map(({ title, description, href, icon: Icon, image }, i) => (
+                <a
+                    href={href}
+                    class="category-tiles__tile"
+                    data-reveal="up"
+                    style={`transition-delay: ${Math.min(i, 6) * 80}ms`}
+                >
+                    {/* Visual area: image or icon */}
+                    <div class="category-tiles__visual" aria-hidden="true">
+                        {image && (
+                            <img
+                                src={image}
+                                alt=""
+                                class="category-tiles__image"
+                                loading="lazy"
+                                aria-hidden="true"
+                            />
+                        )}
+                        {!image && Icon && (
+                            <div class="category-tiles__icon-wrapper">
+                                <Icon size={36} weight="duotone" aria-hidden="true" />
+                            </div>
+                        )}
+                        {!image && !Icon && (
+                            <div class="category-tiles__icon-placeholder" aria-hidden="true" />
+                        )}
+                    </div>
+
+                    {/* Text content */}
+                    <div class="category-tiles__content">
+                        <h3 class="category-tiles__tile-title">{title}</h3>
+                        <p class="category-tiles__tile-desc">{description}</p>
+                    </div>
+                </a>
+            ))}
+        </div>
+    </div>
+</section>
+
+<style>
+    /* ========================================================
+       Category Tiles Section
+       ======================================================== */
+    .category-tiles {
+        background-color: var(--surface-warm);
+        padding-block: var(--space-section, 120px);
+    }
+
+    .category-tiles__container {
+        max-width: var(--container-max);
+        margin-inline: auto;
+        padding-inline: var(--space-container-x);
+    }
+
+    /* Section tagline */
+    .category-tiles__tagline {
+        font-family: var(--font-decorative);
+        font-size: clamp(1rem, 2.5vw, 1.25rem);
+        color: var(--accent);
+        text-align: center;
+        margin-bottom: var(--space-2, 8px);
+        line-height: 1.3;
+    }
+
+    /* Section heading */
+    .category-tiles__title {
+        font-family: var(--font-heading);
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        font-weight: 700;
+        color: var(--foreground);
+        text-align: center;
+        margin-bottom: var(--space-10, 40px);
+        line-height: 1.2;
+    }
+
+    /* ========================================================
+       Grid: 1 → 2 → 3-4 columns
+       ======================================================== */
+    .category-tiles__grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-card-gap, 30px);
+    }
+
+    @media (min-width: 640px) {
+        .category-tiles__grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .category-tiles__grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (min-width: 1280px) {
+        .category-tiles__grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+
+    /* ========================================================
+       Individual Tile
+       ======================================================== */
+    .category-tiles__tile {
+        display: flex;
+        flex-direction: column;
+        border-radius: var(--radius-card, 24px);
+        background-color: var(--card);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+        transition:
+            box-shadow var(--duration-normal) ease,
+            transform var(--duration-normal) ease;
+    }
+
+    .category-tiles__tile:hover {
+        box-shadow: var(--shadow-card-hover);
+        transform: translateY(-4px);
+    }
+
+    .category-tiles__tile:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+    }
+
+    /* ========================================================
+       Visual area (image / icon)
+       ======================================================== */
+    .category-tiles__visual {
+        position: relative;
+        height: 140px;
+        background-color: oklch(from var(--primary) l c h / 0.08);
+        overflow: hidden;
+        border-radius: var(--radius-organic, 0px 100px) var(--radius-organic, 0px 100px) 0 0;
+    }
+
+    .category-tiles__image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform var(--duration-normal) ease;
+    }
+
+    .category-tiles__tile:hover .category-tiles__image {
+        transform: scale(1.06);
+    }
+
+    .category-tiles__icon-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--primary);
+    }
+
+    .category-tiles__icon-placeholder {
+        height: 100%;
+        background: linear-gradient(
+            135deg,
+            oklch(from var(--accent) l c h / 0.15) 0%,
+            oklch(from var(--primary) l c h / 0.12) 100%
+        );
+    }
+
+    /* ========================================================
+       Text content
+       ======================================================== */
+    .category-tiles__content {
+        padding: var(--space-5, 20px);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2, 8px);
+        flex: 1;
+    }
+
+    .category-tiles__tile-title {
+        font-family: var(--font-heading);
+        font-size: clamp(1rem, 2.5vw, 1.125rem);
+        font-weight: 700;
+        color: var(--foreground);
+        line-height: 1.3;
+        margin: 0;
+    }
+
+    .category-tiles__tile-desc {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--muted-foreground);
+        line-height: 1.5;
+        margin: 0;
+    }
+</style>

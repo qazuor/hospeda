@@ -5,6 +5,7 @@
  * Renders all 10 content sections in alternating bg-background / bg-surface-warm order.
  */
 import AboutUsSection from "@/components/sections/AboutUsSection.astro";
+import CategoryTiles from "@/components/CategoryTiles.astro";
 import CtaOwnersSection from "@/components/sections/CtaOwnersSection.astro";
 import DestinationsSection from "@/components/sections/DestinationsSection.astro";
 import FeaturedAccommodationsSection from "@/components/sections/FeaturedAccommodationsSection.astro";
@@ -17,7 +18,9 @@ import TestimonialsSection from "@/components/sections/TestimonialsSection.astro
 import type { StatItemData } from "@/data/types";
 import DefaultLayout from "@/layouts/DefaultLayout.astro";
 import { destinationsApi, statsApi } from "@/lib/api/endpoints";
+import { createTranslations } from "@/lib/i18n";
 import type { SupportedLocale } from "@/lib/i18n";
+import { buildUrl } from "@/lib/urls";
 import type { GetStaticPaths } from "astro";
 
 export const prerender = true;
@@ -28,6 +31,7 @@ export const getStaticPaths = (() => {
 
 const { lang } = Astro.params;
 const locale = lang as SupportedLocale;
+const { t } = createTranslations(locale);
 
 // Fetch city destinations for the search bar (SSG — fetched at build time)
 const destinationsResult = await destinationsApi.list({
@@ -60,6 +64,45 @@ const platformStats: readonly StatItemData[] = statsResult.ok
           { icon: "CalendarDotsIcon", value: statsResult.data.events, labelKey: "home.statistics.events" },
       ]
     : [];
+
+/** Category tiles for the "Explorá por categoría" section. */
+const categoryTiles = [
+    {
+        title: t("home.categoryTiles.cabins.title", "Cabañas"),
+        description: t("home.categoryTiles.cabins.description", "Rodeate de naturaleza en las mejores cabañas del Litoral"),
+        href: buildUrl({ locale, path: "/alojamientos/tipo/cabin/" }),
+    },
+    {
+        title: t("home.categoryTiles.hotels.title", "Hoteles"),
+        description: t("home.categoryTiles.hotels.description", "Comodidad y servicio premium en el corazón de la ciudad"),
+        href: buildUrl({ locale, path: "/alojamientos/tipo/hotel/" }),
+    },
+    {
+        title: t("home.categoryTiles.houses.title", "Casas"),
+        description: t("home.categoryTiles.houses.description", "Sentite como en casa con todo el espacio que necesitás"),
+        href: buildUrl({ locale, path: "/alojamientos/tipo/house/" }),
+    },
+    {
+        title: t("home.categoryTiles.music.title", "Música"),
+        description: t("home.categoryTiles.music.description", "Festivales y shows en vivo para todos los gustos"),
+        href: buildUrl({ locale, path: "/eventos/categoria/music/" }),
+    },
+    {
+        title: t("home.categoryTiles.culture.title", "Cultura"),
+        description: t("home.categoryTiles.culture.description", "Arte, historia y patrimonio del Litoral Entrerriano"),
+        href: buildUrl({ locale, path: "/eventos/categoria/culture/" }),
+    },
+    {
+        title: t("home.categoryTiles.gastronomy.title", "Gastronomía"),
+        description: t("home.categoryTiles.gastronomy.description", "Sabores únicos de la cocina regional y nacional"),
+        href: buildUrl({ locale, path: "/eventos/categoria/gastronomy/" }),
+    },
+    {
+        title: t("home.categoryTiles.posts.title", "Artículos"),
+        description: t("home.categoryTiles.posts.description", "Historias, consejos e inspiración para tu próximo viaje"),
+        href: buildUrl({ locale, path: "/publicaciones/" }),
+    },
+] as const;
 ---
 
 <DefaultLayout
@@ -74,10 +117,17 @@ const platformStats: readonly StatItemData[] = statsResult.ok
     <!-- 2. Featured Accommodations -->
     <FeaturedAccommodationsSection locale={locale} />
 
-    <!-- 3. Destinations -->
+    <!-- 3. Category Tiles -->
+    <CategoryTiles
+        tiles={categoryTiles}
+        sectionTitle={t("home.categoryTiles.sectionTitle", "Explorá por categoría")}
+        sectionTagline={t("home.categoryTiles.sectionTagline", "Para cada gusto")}
+    />
+
+    <!-- 4. Destinations -->
     <DestinationsSection locale={locale} />
 
-    <!-- 4. Next Events -->
+    <!-- 5. Next Events -->
     <NextEventsSection locale={locale} />
 
     <!-- 5. About Us -->

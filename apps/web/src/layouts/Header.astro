@@ -1,14 +1,23 @@
 ---
 /**
  * @file Header.astro
- * @description Site header matching Figma node 560:408.
- * White bg, 110px height, logo (icon + wordmark) + nav links (uppercase + dividers) + user area.
+ * @description Site header — REQ-096-16 redesign.
+ *
+ * Layout: logo | nav (Alojamientos, Destinos, Eventos, Publicaciones, Contacto)
+ *         | search icon | "Publicar" CTA | UserMenu island
+ *
+ * Desktop (≥1025px): full nav visible.
+ * Mobile (<1025px): nav collapses into hamburger.
+ *   "Publicar" CTA and search icon remain visible outside the hamburger at ALL widths.
+ *
+ * Auth: reads Astro.locals.user (parsed by middleware for server-island and
+ * protected routes). Passes user data as prop to UserMenu React island.
  */
 
 import { getImage, Image } from "astro:assets";
 import { BuildingIcon, HamburgerIcon, SearchIcon } from "@repo/icons";
 import MobileMenuIsland from "@/components/shared/navigation/MobileMenuIsland.astro";
-import AuthSection from '@/components/shared/navigation/AuthSection.astro';
+import { UserMenu } from "@/components/UserMenu.client";
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import IconButton from '@/components/shared/ui/IconButton.astro';
 import { createTranslations } from "@/lib/i18n";
@@ -24,7 +33,6 @@ const { locale } = Astro.props;
 const { t } = createTranslations(locale);
 
 // Pre-optimize logo for the mobile menu island (receives a plain string URL).
-// The desktop header uses <Image> directly; this covers the mobile path.
 let mobileLogoSrc = logoSrc.src;
 try {
     const optimizedLogo = await getImage({ src: logoSrc, width: 100, format: 'webp' });
@@ -46,11 +54,28 @@ const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.h
 /** Current pathname used to highlight the active nav link. */
 const currentPath = Astro.url.pathname;
 
-/** Hide the auth button when the user is already on an auth page to avoid redundancy. */
-const isAuthPage = currentPath.includes('/auth/');
-
 /** True when the page has a hero (homepage only). Header is transparent only on hero pages. */
 const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pathname);
+
+/** Resolve auth state for the UserMenu island. Middleware populates locals.user for
+ * server island requests and protected/auth routes. On other SSR routes it may be null. */
+const serverUser = Astro.locals.user ?? null;
+
+/** Build UserMenu user prop from server session data, or null when unauthenticated. */
+const userMenuUser = serverUser
+    ? {
+          id: serverUser.id ?? '',
+          displayName: serverUser.name ?? serverUser.email ?? 'Usuario',
+          avatarUrl: ('avatarUrl' in serverUser && typeof serverUser.avatarUrl === 'string')
+              ? serverUser.avatarUrl
+              : ('image' in serverUser && typeof serverUser.image === 'string')
+                  ? serverUser.image
+                  : undefined,
+          slug: ('slug' in serverUser && typeof serverUser.slug === 'string')
+              ? serverUser.slug
+              : undefined,
+      }
+    : null;
 ---
 
 <header data-header class:list={['header', { 'header--hero': isHero }]} role="banner">
@@ -68,7 +93,7 @@ const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pa
             <span class="header__logo-text">Hospeda</span>
         </a>
 
-        <!-- NAVIGATION -->
+        <!-- NAVIGATION (desktop) -->
         <nav class="header__nav" aria-label={t("nav.mainNavigation", "Main navigation")}>
             {
                 navLinks.map((link, i) => {
@@ -89,48 +114,63 @@ const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pa
             }
         </nav>
 
-        <!-- HAMBURGER (Mobile) -->
-        <IconButton
-            ariaLabel={t("nav.openMenu", "Open navigation menu")}
-            variant="ghost"
-            size="md"
-            class="header__hamburger"
-            data={{ "mobile-toggle": "" }}
-            aria={{ expanded: false }}
-        >
-            <HamburgerIcon size={24} aria-hidden="true" />
-        </IconButton>
-
-        <!-- USER AREA (search + owner CTA + auth state via Server Island) -->
+        <!-- RIGHT AREA: search + Publicar (always visible) + UserMenu + hamburger -->
         <div class="header__right">
+            <!-- Search icon — always visible -->
             <IconButton
                 as="a"
                 href={buildUrl({ locale, path: "busqueda" })}
                 ariaLabel={t("nav.search", "Buscar")}
                 variant="ghost"
                 size="md"
+                class="header__search"
             >
                 <SearchIcon size={20} weight="regular" aria-hidden="true" />
             </IconButton>
+
+            <!-- "Publicar" CTA — visible at ALL viewport widths (NOT hidden under 1200px) -->
             <GradientButton
-                href={buildUrl({ locale, path: "/suscriptores/" })}
-                label={t("nav.ownerCta")}
+                href={buildUrl({ locale, path: "/publicar/" })}
+                label={t("nav.publishCta", "Publicar")}
                 variant="accent"
                 size="sm"
                 class="header__cta"
             >
                 <BuildingIcon slot="leading" size={16} weight="regular" />
             </GradientButton>
-            {!isAuthPage && (
-                <AuthSection server:defer locale={locale} variant="scrolled" currentPath={currentPath}>
-                    <span slot="fallback" class="header__auth-skeleton" aria-hidden="true" />
-                </AuthSection>
-            )}
+
+            <!-- UserMenu island — client:load for immediate auth state hydration -->
+            <div class="header__user-menu">
+                <UserMenu
+                    user={userMenuUser}
+                    locale={locale}
+                    client:load
+                />
+            </div>
+
+            <!-- HAMBURGER (Mobile) — collapses nav on small screens -->
+            <IconButton
+                ariaLabel={t("nav.openMenu", "Open navigation menu")}
+                variant="ghost"
+                size="md"
+                class="header__hamburger"
+                data={{ "mobile-toggle": "" }}
+                aria={{ expanded: false }}
+            >
+                <HamburgerIcon size={24} aria-hidden="true" />
+            </IconButton>
         </div>
     </div>
 </header>
 
-<MobileMenuIsland server:defer locale={locale} navItems={mobileNavItems} currentPath={Astro.url.pathname} logoSrc={mobileLogoSrc} homeHref={buildUrl({ locale, path: "/" })} />
+<MobileMenuIsland
+    server:defer
+    locale={locale}
+    navItems={mobileNavItems}
+    currentPath={Astro.url.pathname}
+    logoSrc={mobileLogoSrc}
+    homeHref={buildUrl({ locale, path: "/" })}
+/>
 
 <style>
     /* Header bar — solid by default, transparent only on hero pages */
@@ -268,52 +308,45 @@ const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pa
         flex-shrink: 0;
     }
 
-    /* Right area */
+    /* Right area — always visible, contains search + CTA + UserMenu + hamburger */
     .header__right {
-        display: none;
+        display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         padding: 10px;
         flex-shrink: 0;
     }
 
-    @media (min-width: 1025px) {
-        .header__right {
-            display: flex;
-        }
+    /* Search icon — always visible at all widths */
+    .header__search {
+        flex-shrink: 0;
     }
 
+    /* "Publicar" CTA — always visible at ALL viewport widths (REQ-096-16) */
     .header__cta {
-        display: none !important;
         font-size: var(--text-nav);
         border-radius: var(--radius-pill);
         white-space: nowrap;
         flex-shrink: 0;
     }
 
-    @media (min-width: 1200px) {
-        .header__cta {
-            display: inline-flex !important;
+    /* UserMenu — hidden on mobile (hamburger handles auth in mobile menu) */
+    .header__user-menu {
+        display: none;
+        flex-shrink: 0;
+    }
+
+    @media (min-width: 1025px) {
+        .header__user-menu {
+            display: flex;
+            align-items: center;
         }
     }
 
-    .header__auth-skeleton {
-        display: inline-block;
-        width: 100px;
-        height: 2.5rem;
-        border-radius: var(--radius-pill);
-        background-color: oklch(from var(--core-foreground) l c h / 0.08);
-        animation: pulse 1.5s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
-
-    /* Hamburger (mobile) — display-only rules; aesthetics handled by .btn-icon */
+    /* Hamburger (mobile) */
     .header__hamburger {
         display: none;
+        flex-shrink: 0;
     }
 
     @media (max-width: 1024px) {
@@ -337,6 +370,12 @@ const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pa
         .header__logo-icon {
             width: 40px;
             height: 44px;
+        }
+
+        /* Keep CTA compact on very small screens */
+        .header__cta {
+            font-size: 12px;
+            padding-inline: 0.75rem;
         }
     }
 </style>
