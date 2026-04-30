@@ -236,8 +236,10 @@ describe('PostSchema', () => {
                 tags: [
                     {
                         id: '123e4567-e89b-12d3-a456-426614174002',
+                        // `slug` removed per D-002 (user-tags have no public URL)
+                        type: 'SYSTEM',
+                        ownerId: null,
                         name: 'travel',
-                        slug: 'travel',
                         color: 'BLUE',
                         lifecycleState: 'ACTIVE',
                         createdAt: new Date(),
@@ -247,8 +249,10 @@ describe('PostSchema', () => {
                     },
                     {
                         id: '123e4567-e89b-12d3-a456-426614174004',
+                        // `slug` removed per D-002 (user-tags have no public URL)
+                        type: 'SYSTEM',
+                        ownerId: null,
                         name: 'tips',
-                        slug: 'tips',
                         color: 'GREEN',
                         lifecycleState: 'ACTIVE',
                         createdAt: new Date(),

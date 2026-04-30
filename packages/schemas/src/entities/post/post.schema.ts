@@ -67,7 +67,7 @@ export const PostSchema = z.object({
 
     isFeatured: z.boolean().default(false),
     isFeaturedInWebsite: z.boolean().default(false),
-    expiresAt: z.date().optional(),
+    expiresAt: z.date().nullish(),
 
     // Author
     authorId: UserIdSchema,
@@ -84,16 +84,16 @@ export const PostSchema = z.object({
     shares: z.number().int().min(0).default(0),
 
     // Display fields
-    publishedAt: z.coerce.date().optional(), // Publication date (can be different from createdAt)
+    publishedAt: z.coerce.date().nullish(), // Publication date (can be different from createdAt)
     readingTimeMinutes: z.number().int().min(0).default(5), // Estimated reading time
 
     // Related entities
-    relatedDestinationId: DestinationIdSchema.optional(),
-    relatedAccommodationId: AccommodationIdSchema.optional(),
-    relatedEventId: EventIdSchema.optional(),
+    relatedDestinationId: DestinationIdSchema.nullish(),
+    relatedAccommodationId: AccommodationIdSchema.nullish(),
+    relatedEventId: EventIdSchema.nullish(),
 
     // Sponsorship
-    sponsorshipId: PostSponsorshipIdSchema.optional()
+    sponsorshipId: PostSponsorshipIdSchema.nullish()
 });
 
 /**

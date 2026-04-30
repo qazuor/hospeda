@@ -19,13 +19,22 @@ describe('TagSchema', () => {
             expect(() => TagSchema.parse(validData)).not.toThrow();
 
             const result = TagSchema.parse(validData);
-            expect(result).toMatchObject(validData);
+            expect(result).toMatchObject({
+                id: validData.id,
+                name: validData.name,
+                color: validData.color,
+                type: validData.type
+            });
         });
 
-        it('should validate minimal required tag data', () => {
+        it('should validate minimal required tag data (SYSTEM type)', () => {
             const minimalData = createMinimalTag();
 
             expect(() => TagSchema.parse(minimalData)).not.toThrow();
+
+            const result = TagSchema.parse(minimalData);
+            expect(result.type).toBe('SYSTEM');
+            expect(result.ownerId).toBeNull();
         });
 
         it('should validate complex nested tag', () => {
@@ -35,7 +44,7 @@ describe('TagSchema', () => {
 
             const result = TagSchema.parse(complexData);
             expect(result.icon).toBeDefined();
-            expect(result.notes).toBeDefined();
+            expect(result.description).toBeDefined();
         });
 
         it('should validate system tag', () => {
@@ -44,8 +53,37 @@ describe('TagSchema', () => {
             expect(() => TagSchema.parse(systemTag)).not.toThrow();
 
             const result = TagSchema.parse(systemTag);
-            expect(result.name).toBeDefined();
+            expect(result.type).toBe('SYSTEM');
+            expect(result.ownerId).toBeNull();
             expect(result.color).toBe('GREY');
+        });
+
+        it('should validate USER tag with ownerId', () => {
+            const userTag = {
+                ...createMinimalTag(),
+                type: 'USER' as const,
+                ownerId: '550e8400-e29b-41d4-a716-446655440000'
+            };
+
+            expect(() => TagSchema.parse(userTag)).not.toThrow();
+
+            const result = TagSchema.parse(userTag);
+            expect(result.type).toBe('USER');
+            expect(result.ownerId).toBe('550e8400-e29b-41d4-a716-446655440000');
+        });
+
+        it('should validate INTERNAL tag with null ownerId', () => {
+            const internalTag = {
+                ...createMinimalTag(),
+                type: 'INTERNAL' as const,
+                ownerId: null
+            };
+
+            expect(() => TagSchema.parse(internalTag)).not.toThrow();
+
+            const result = TagSchema.parse(internalTag);
+            expect(result.type).toBe('INTERNAL');
+            expect(result.ownerId).toBeNull();
         });
 
         it('should handle edge cases correctly', () => {
@@ -90,34 +128,35 @@ describe('TagSchema', () => {
             }
         });
 
+        it('should validate all tag types', () => {
+            const types = ['INTERNAL', 'SYSTEM', 'USER'] as const;
+
+            for (const type of types) {
+                const tagData = {
+                    ...createMinimalTag(),
+                    type,
+                    ownerId: type === 'USER' ? '550e8400-e29b-41d4-a716-446655440000' : null
+                };
+
+                expect(
+                    () => TagSchema.parse(tagData),
+                    `Type ${type} should be valid`
+                ).not.toThrow();
+            }
+        });
+
         it('should validate optional fields when present', () => {
             const tagWithOptionals = {
                 ...createMinimalTag(),
-                icon: 'custom-icon',
-                notes: 'This is a detailed note about the tag'
+                icon: 'custom-icon-ok',
+                description: 'This is a description for the tag'
             };
 
             expect(() => TagSchema.parse(tagWithOptionals)).not.toThrow();
 
             const result = TagSchema.parse(tagWithOptionals);
             expect(result.icon).toBe(tagWithOptionals.icon);
-            expect(result.notes).toBe(tagWithOptionals.notes);
-        });
-
-        it('should validate icon constraints', () => {
-            const validIcons = ['icon1', 'custom-icon', 'a'.repeat(100)];
-
-            for (const icon of validIcons) {
-                const tagData = {
-                    ...createMinimalTag(),
-                    icon
-                };
-
-                expect(
-                    () => TagSchema.parse(tagData),
-                    `Icon "${icon}" should be valid`
-                ).not.toThrow();
-            }
+            expect(result.description).toBe(tagWithOptionals.description);
         });
 
         it('should accept null for createdById and updatedById (nullable audit fields)', () => {
@@ -155,24 +194,11 @@ describe('TagSchema', () => {
 
         it('should reject missing required fields', () => {
             const incompleteData = {
-                // Missing required fields: id, slug, name, color, lifecycleState, usageCount, etc.
+                // Missing required fields: id, type, name, color, lifecycleState
                 description: 'Some description'
             };
 
             expect(() => TagSchema.parse(incompleteData)).toThrow(ZodError);
-        });
-
-        it('should reject invalid slug format', () => {
-            const invalidSlugCases = [
-                { ...createMinimalTag(), slug: '' } // empty (too short)
-            ];
-
-            invalidSlugCases.forEach((testCase, index) => {
-                expect(
-                    () => TagSchema.parse(testCase),
-                    `Invalid slug case ${index} should throw`
-                ).toThrow(ZodError);
-            });
         });
 
         it('should reject invalid name length', () => {
@@ -199,6 +225,15 @@ describe('TagSchema', () => {
             expect(() => TagSchema.parse(invalidColor)).toThrow(ZodError);
         });
 
+        it('should reject invalid type', () => {
+            const invalidType = {
+                ...createMinimalTag(),
+                type: 'INVALID_TYPE'
+            };
+
+            expect(() => TagSchema.parse(invalidType)).toThrow(ZodError);
+        });
+
         it('should reject invalid lifecycle state', () => {
             const invalidLifecycleState = {
                 ...createMinimalTag(),
@@ -223,26 +258,12 @@ describe('TagSchema', () => {
             });
         });
 
-        it('should reject invalid notes fields', () => {
-            const invalidNotesCases = [
-                { ...createMinimalTag(), notes: 'AB' }, // too short (min 5)
-                { ...createMinimalTag(), notes: 'a'.repeat(301) }, // too long (max 300)
-                { ...createMinimalTag(), notes: 123 } // not string
-            ];
-
-            invalidNotesCases.forEach((testCase, index) => {
-                expect(
-                    () => TagSchema.parse(testCase),
-                    `Invalid notes case ${index} should throw`
-                ).toThrow(ZodError);
-            });
-        });
-
         it('should reject invalid UUID fields', () => {
             const invalidUuidCases = [
                 { ...createMinimalTag(), id: 'not-uuid' },
                 { ...createMinimalTag(), createdById: 'invalid-uuid' },
-                { ...createMinimalTag(), updatedById: '' }
+                { ...createMinimalTag(), updatedById: '' },
+                { ...createMinimalTag(), type: 'USER', ownerId: 'not-a-uuid' }
             ];
 
             invalidUuidCases.forEach((testCase, index) => {
@@ -266,57 +287,58 @@ describe('TagSchema', () => {
                 ).toThrow(ZodError);
             });
         });
+
+        it('should NOT have a slug field (removed per D-002)', () => {
+            // Parsing with slug should succeed (extra fields are stripped by default)
+            // but the result must not contain slug
+            const tagWithSlug = {
+                ...createMinimalTag(),
+                slug: 'some-slug'
+            };
+
+            // Zod strips unknown fields by default — slug must NOT appear in output
+            const result = TagSchema.parse(tagWithSlug);
+            expect(Object.keys(result)).not.toContain('slug');
+        });
+
+        it('should NOT have a notes field (replaced by description per D-018)', () => {
+            const tagWithNotes = {
+                ...createMinimalTag(),
+                notes: 'some notes'
+            };
+
+            const result = TagSchema.parse(tagWithNotes);
+            expect(Object.keys(result)).not.toContain('notes');
+        });
     });
 
     describe('Field Validation', () => {
-        it('should validate slug pattern correctly', () => {
-            const validSlugs = ['tag', 'featured-tag', 'popular-item', 'new-2024', 'trending-now'];
-
-            for (const slug of validSlugs) {
-                const tagData = {
-                    ...createMinimalTag(),
-                    slug
-                };
-
-                expect(
-                    () => TagSchema.parse(tagData),
-                    `Slug "${slug}" should be valid`
-                ).not.toThrow();
-            }
-        });
-
-        it('should validate notes length limits', () => {
-            const validNotes = [
-                undefined, // optional
-                'Short note',
-                'A'.repeat(300) // max length
+        it('should validate name length limits', () => {
+            const validNames = [
+                'AB', // minimum 2 chars
+                'A'.repeat(50) // maximum 50 chars
             ];
 
-            validNotes.forEach((notes, index) => {
-                const tagData = {
-                    ...createMinimalTag(),
-                    ...(notes !== undefined && { notes })
-                };
+            validNames.forEach((name, index) => {
+                const tagData = { ...createMinimalTag(), name };
 
                 expect(
                     () => TagSchema.parse(tagData),
-                    `Notes case ${index} should be valid`
+                    `Valid name case ${index} should not throw`
                 ).not.toThrow();
             });
 
-            // Test invalid notes (too long)
-            const tooLongNotes = {
-                ...createMinimalTag(),
-                notes: 'A'.repeat(301)
-            };
-
-            expect(() => TagSchema.parse(tooLongNotes)).toThrow(ZodError);
+            // Test invalid name (too long)
+            expect(() => TagSchema.parse({ ...createMinimalTag(), name: 'A'.repeat(51) })).toThrow(
+                ZodError
+            );
         });
 
         it('should validate icon constraints', () => {
             const validIcons = [
                 undefined, // optional
-                'icon1',
+                null, // nullable
+                'ic',
                 'custom-icon',
                 'a'.repeat(100) // max length
             ];
@@ -333,6 +355,21 @@ describe('TagSchema', () => {
                 ).not.toThrow();
             });
         });
+
+        it('should validate description is optional and nullable', () => {
+            const cases = [
+                { ...createMinimalTag() }, // absent
+                { ...createMinimalTag(), description: null }, // null
+                { ...createMinimalTag(), description: 'Some description text' } // present
+            ];
+
+            cases.forEach((tagData, index) => {
+                expect(
+                    () => TagSchema.parse(tagData),
+                    `Description case ${index} should be valid`
+                ).not.toThrow();
+            });
+        });
     });
 
     describe('Type Inference', () => {
@@ -342,19 +379,19 @@ describe('TagSchema', () => {
 
             // Type checks
             expect(typeof result.id).toBe('string');
-            expect(typeof result.slug).toBe('string');
             expect(typeof result.name).toBe('string');
             expect(typeof result.color).toBe('string');
+            expect(typeof result.type).toBe('string');
             expect(typeof result.lifecycleState).toBe('string');
             expect(result.createdAt).toBeInstanceOf(Date);
             expect(result.updatedAt).toBeInstanceOf(Date);
 
             // Optional fields type checks
-            if (result.icon) {
+            if (result.icon !== null && result.icon !== undefined) {
                 expect(typeof result.icon).toBe('string');
             }
-            if (result.notes) {
-                expect(typeof result.notes).toBe('string');
+            if (result.description !== null && result.description !== undefined) {
+                expect(typeof result.description).toBe('string');
             }
         });
     });

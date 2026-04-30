@@ -30,7 +30,7 @@ export const PostSponsorshipSchema = z.object({
         .string()
         .min(5, { message: 'zodError.post.sponsorship.message.min' })
         .max(50, { message: 'zodError.post.sponsorship.message.max' })
-        .optional(),
+        .nullish(),
 
     description: z
         .string()
@@ -45,9 +45,9 @@ export const PostSponsorshipSchema = z.object({
         currency: PriceCurrencyEnumSchema
     }),
 
-    paidAt: z.date().optional(),
-    fromDate: z.date().optional(),
-    toDate: z.date().optional(),
+    paidAt: z.date().nullish(),
+    fromDate: z.date().nullish(),
+    toDate: z.date().nullish(),
     isHighlighted: z.boolean().default(false)
 });
 

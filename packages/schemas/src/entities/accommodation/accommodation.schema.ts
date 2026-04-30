@@ -70,11 +70,11 @@ export const AccommodationSchema = z.object({
     // Optional related data
     iaData: z.array(AccommodationIaDataSchema).optional(),
     faqs: z.array(BaseFaqSchema).optional(),
-    price: AccommodationPriceSchema.optional(),
+    price: AccommodationPriceSchema.nullish(),
     ...TagsFields,
 
     // Rating breakdown (aggregate of review ratings)
-    rating: AccommodationRatingSchema.optional(),
+    rating: AccommodationRatingSchema.nullish(),
 
     /**
      * Timestamp of the last "draft about to be archived" warning email sent to the owner.
@@ -103,6 +103,6 @@ export const AccommodationSchema = z.object({
             smokingAllowed: z.boolean().optional(),
             extraInfo: z.array(z.string()).optional()
         })
-        .optional()
+        .nullish()
 });
 export type Accommodation = z.infer<typeof AccommodationSchema>;

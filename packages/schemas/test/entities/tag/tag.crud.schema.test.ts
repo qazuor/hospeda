@@ -33,7 +33,6 @@ describe('Tag CRUD Schemas', () => {
 
             const result = TagCreateInputSchema.parse(validInput);
             expect(result.name).toBeDefined();
-            expect(result.slug).toBeDefined();
             expect(result.color).toBeDefined();
         });
 
@@ -51,7 +50,7 @@ describe('Tag CRUD Schemas', () => {
         it('should require all mandatory fields', () => {
             const incompleteInput = {
                 name: 'Test Tag'
-                // Missing required fields: slug, color, lifecycleState
+                // Missing required fields: type, color
             };
 
             expect(() => TagCreateInputSchema.parse(incompleteInput)).toThrow(ZodError);
@@ -60,8 +59,8 @@ describe('Tag CRUD Schemas', () => {
         it('should validate optional fields', () => {
             const inputWithOptionals = {
                 ...createTagCreateInput(),
-                icon: 'custom-icon',
-                notes: 'This is a test note for the tag'
+                icon: 'custom-icon-ok',
+                description: 'This is a test description for the tag'
             };
 
             expect(() => TagCreateInputSchema.parse(inputWithOptionals)).not.toThrow();
@@ -112,8 +111,8 @@ describe('Tag CRUD Schemas', () => {
 
         it('should validate optional fields in updates', () => {
             const updateWithOptionals = {
-                icon: 'updated-icon',
-                notes: 'Updated notes for the tag'
+                icon: 'updated-icon-xx',
+                description: 'Updated description for the tag'
             };
 
             expect(() => TagUpdateInputSchema.parse(updateWithOptionals)).not.toThrow();

@@ -1,7 +1,5 @@
 import type {
     AccommodationIdType as AccommodationId,
-    DestinationIdType as DestinationId,
-    EventIdType as EventId,
     PostIdType as PostId,
     UserBookmarkIdType as UserBookmarkId,
     UserIdType as UserId
@@ -80,20 +78,29 @@ export const createMinimalUserBookmarkFixture = (
  * Creates UserBookmark fixtures for different entity types
  */
 export const createUserBookmarkByEntityType = (entityType: EntityTypeEnum): UserBookmarkType => {
-    const entityIds = {
+    const entityIds: Record<EntityTypeEnum, AccommodationId> = {
         [EntityTypeEnum.ACCOMMODATION]: '6ba7b810-9dad-11d1-80b4-00c04fd430c8' as AccommodationId,
-        [EntityTypeEnum.POST]: '6ba7b810-9dad-11d1-80b4-00c04fd430c9' as PostId,
-        [EntityTypeEnum.EVENT]: '6ba7b810-9dad-11d1-80b4-00c04fd430ca' as EventId,
-        [EntityTypeEnum.DESTINATION]: '6ba7b810-9dad-11d1-80b4-00c04fd430cb' as DestinationId,
-        [EntityTypeEnum.USER]: '6ba7b810-9dad-11d1-80b4-00c04fd430cc' as UserId
+        [EntityTypeEnum.POST]: '6ba7b810-9dad-11d1-80b4-00c04fd430c9' as AccommodationId,
+        [EntityTypeEnum.EVENT]: '6ba7b810-9dad-11d1-80b4-00c04fd430ca' as AccommodationId,
+        [EntityTypeEnum.DESTINATION]: '6ba7b810-9dad-11d1-80b4-00c04fd430cb' as AccommodationId,
+        [EntityTypeEnum.USER]: '6ba7b810-9dad-11d1-80b4-00c04fd430cc' as AccommodationId,
+        [EntityTypeEnum.CONVERSATION]: '6ba7b810-9dad-11d1-80b4-00c04fd430cd' as AccommodationId,
+        [EntityTypeEnum.REVIEW]: '6ba7b810-9dad-11d1-80b4-00c04fd430ce' as AccommodationId,
+        [EntityTypeEnum.BILLING_SUBSCRIPTION]:
+            '6ba7b810-9dad-11d1-80b4-00c04fd430cf' as AccommodationId,
+        [EntityTypeEnum.PAYMENT]: '6ba7b810-9dad-11d1-80b4-00c04fd430d0' as AccommodationId
     };
 
-    const names = {
+    const names: Record<EntityTypeEnum, string> = {
         [EntityTypeEnum.ACCOMMODATION]: 'Favorite Hotel',
         [EntityTypeEnum.POST]: 'Interesting Article',
         [EntityTypeEnum.EVENT]: 'Must Attend Event',
         [EntityTypeEnum.DESTINATION]: 'Dream Destination',
-        [EntityTypeEnum.USER]: 'Favorite User'
+        [EntityTypeEnum.USER]: 'Favorite User',
+        [EntityTypeEnum.CONVERSATION]: 'Saved Conversation',
+        [EntityTypeEnum.REVIEW]: 'Helpful Review',
+        [EntityTypeEnum.BILLING_SUBSCRIPTION]: 'Active Subscription',
+        [EntityTypeEnum.PAYMENT]: 'Recent Payment'
     };
 
     return createUserBookmarkFixture({

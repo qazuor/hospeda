@@ -209,15 +209,23 @@ export const createBaseTagsFields = () => ({
 });
 
 /**
- * Creates a complete Tag fixture
+ * Creates a complete Tag fixture (refactored per SPEC-086 D-002, D-018).
+ *
+ * Changes from pre-refactor:
+ * - `slug` removed: user-tags have no public URLs (D-002).
+ * - `notes` removed: replaced by `description` (D-018).
+ * - `type` added: INTERNAL | SYSTEM | USER discriminator.
+ * - `ownerId` added: required for USER tags, null for INTERNAL/SYSTEM.
  */
 export const createTagFixture = () => {
     const deletedAt = faker.helpers.maybe(() => faker.date.recent(), { probability: 0.1 });
     const deletedById = faker.helpers.maybe(() => faker.string.uuid(), { probability: 0.1 });
     const icon = faker.helpers.maybe(() => faker.lorem.word().padEnd(2, 'x'), { probability: 0.6 });
-    const notes = faker.helpers.maybe(() => faker.lorem.paragraph().slice(0, 300), {
+    const description = faker.helpers.maybe(() => faker.lorem.paragraph().slice(0, 300), {
         probability: 0.4
     });
+    const type = faker.helpers.arrayElement(['INTERNAL', 'SYSTEM', 'USER'] as const);
+    const ownerId = type === 'USER' ? faker.string.uuid() : null;
 
     return {
         id: faker.string.uuid(),
@@ -228,8 +236,9 @@ export const createTagFixture = () => {
         ...(deletedAt !== undefined && { deletedAt }),
         ...(deletedById !== undefined && { deletedById }),
         lifecycleState: faker.helpers.arrayElement(['DRAFT', 'ACTIVE', 'ARCHIVED']),
+        type,
+        ownerId,
         name: faker.lorem.word().padEnd(2, 'x'), // Ensure minimum 2 characters
-        slug: faker.helpers.slugify(faker.lorem.word().padEnd(2, 'x')),
         color: faker.helpers.arrayElement([
             'RED',
             'BLUE',
@@ -247,7 +256,7 @@ export const createTagFixture = () => {
             'LIGHT_GREEN'
         ]),
         ...(icon !== undefined && { icon }),
-        ...(notes !== undefined && { notes })
+        ...(description !== undefined && { description })
     };
 };
 

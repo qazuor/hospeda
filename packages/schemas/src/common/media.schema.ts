@@ -152,6 +152,6 @@ export const BaseMediaFields = {
                 )
                 .optional()
         })
-        .optional()
+        .nullish()
 } as const;
 export type BaseMediaFieldsType = typeof BaseMediaFields;

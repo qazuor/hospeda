@@ -69,7 +69,7 @@ export const EventSchema = z.object({
 
     // Event dates and pricing
     date: EventDateSchema,
-    pricing: EventPriceSchema.optional(),
+    pricing: EventPriceSchema.nullish(),
 
     isFeatured: z.boolean().default(false),
 
@@ -83,8 +83,8 @@ export const EventSchema = z.object({
     ...BaseMediaFields,
 
     // Location references
-    locationId: EventLocationIdSchema.optional(),
-    organizerId: EventOrganizerIdSchema.optional()
+    locationId: EventLocationIdSchema.nullish(),
+    organizerId: EventOrganizerIdSchema.nullish()
 });
 
 /**

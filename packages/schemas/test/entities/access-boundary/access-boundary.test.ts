@@ -1509,11 +1509,14 @@ const PARSE_STRIP_CONFIGS: readonly ParseStripConfig[] = [
         adminSchema: TagAdminSchema,
         mockData: {
             id: UUID1,
+            // `slug` removed per D-002 (user-tags have no public URL).
+            // `notes` removed per D-018 (replaced by `description`).
+            type: 'SYSTEM',
+            ownerId: null,
             name: 'Test Tag',
-            slug: 'test-tag',
             color: 'BLUE',
             icon: null,
-            notes: null,
+            description: null,
             lifecycleState: LIFECYCLE_MOCK,
             createdAt: NOW,
             updatedAt: NOW,

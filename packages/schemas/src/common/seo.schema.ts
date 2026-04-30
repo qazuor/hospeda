@@ -32,5 +32,5 @@ export type Seo = z.infer<typeof SeoSchema>;
  * Base SEO fields
  */
 export const BaseSeoFields = {
-    seo: SeoSchema.optional()
+    seo: SeoSchema.nullish()
 } as const;

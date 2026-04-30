@@ -26,12 +26,12 @@ export const AccommodationReviewSchema = z.object({
         .string()
         .min(1, { message: 'error:accommodation.review.title.min_length' })
         .max(200, { message: 'error:accommodation.review.title.max_length' })
-        .optional(),
+        .nullish(),
     content: z
         .string()
         .min(10, { message: 'error:accommodation.review.content.min_length' })
         .max(2000, { message: 'error:accommodation.review.content.max_length' })
-        .optional(),
+        .nullish(),
     rating: AccommodationRatingSchema,
     /**
      * Computed average of all rating sub-fields (cleanliness, hospitality, services,

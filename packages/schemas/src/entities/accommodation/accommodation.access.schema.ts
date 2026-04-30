@@ -53,17 +53,20 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     // Extra Info (public)
     extraInfo: true
 }).extend({
-    /** ISO 8601 creation date (for "Nuevo" badge: < 30 days). */
-    createdAt: z.string().optional(),
+    /** ISO 8601 creation date (for "Nuevo" badge: < 30 days). Accepts Date for raw service output. */
+    createdAt: z.union([z.string(), z.date()]).nullish(),
     /** Public owner data from users table JOIN. No sensitive fields. */
     owner: z
         .object({
             id: z.string().uuid(),
-            name: z.string(),
-            image: z.string().nullable(),
-            createdAt: z.string()
+            name: z.string().nullish(),
+            displayName: z.string().nullish(),
+            firstName: z.string().nullish(),
+            lastName: z.string().nullish(),
+            image: z.string().nullish(),
+            createdAt: z.union([z.string(), z.date()]).nullish()
         })
-        .optional(),
+        .nullish(),
     /** Amenities with junction table data from r_accommodation_amenity. */
     amenities: z
         .array(

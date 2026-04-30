@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import { DestinationSchema } from '../../../src/entities/destination/destination.schema.js';
 import {
-    createBaseAdminFields,
     createBaseAuditFields,
     createBaseLifecycleFields
 } from '../../fixtures/common.fixtures.js';
@@ -227,21 +226,23 @@ describe('DestinationSchema', () => {
                 tags: [
                     {
                         id: faker.string.uuid(),
+                        // `slug` removed per D-002 (user-tags have no public URL)
+                        type: 'SYSTEM',
+                        ownerId: null,
                         name: 'popular',
-                        slug: 'popular',
                         color: 'BLUE',
                         ...createBaseAuditFields(),
-                        ...createBaseLifecycleFields(),
-                        ...createBaseAdminFields()
+                        ...createBaseLifecycleFields()
                     },
                     {
                         id: faker.string.uuid(),
+                        // `slug` removed per D-002 (user-tags have no public URL)
+                        type: 'SYSTEM',
+                        ownerId: null,
                         name: 'scenic',
-                        slug: 'scenic',
                         color: 'GREEN',
                         ...createBaseAuditFields(),
-                        ...createBaseLifecycleFields(),
-                        ...createBaseAdminFields()
+                        ...createBaseLifecycleFields()
                     }
                 ],
                 attractions: []

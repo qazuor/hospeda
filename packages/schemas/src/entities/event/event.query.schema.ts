@@ -237,21 +237,18 @@ export const EventListItemWithRelationsSchema = EventListItemSchema.extend({
     organizer: z
         .object({
             id: z.string().uuid(),
-            name: z.string().optional(),
-            logo: z.string().optional()
+            name: z.string().nullish(),
+            logo: z.string().nullish()
         })
-        .nullable()
-        .optional(),
+        .nullish(),
     location: z
         .object({
             id: z.string().uuid(),
-            placeName: z.string().optional(),
-            city: z.string().optional(),
-            street: z.string().optional(),
-            number: z.string().optional()
+            placeName: z.string().nullish(),
+            street: z.string().nullish(),
+            number: z.string().nullish()
         })
-        .nullable()
-        .optional()
+        .nullish()
 });
 export type EventListItemWithRelations = z.infer<typeof EventListItemWithRelationsSchema>;
 
@@ -295,7 +292,7 @@ export const EventSummarySchema = z.object({
     description: z.string().optional(),
     category: EventCategoryEnumSchema,
     date: EventDateSchema,
-    pricing: EventPriceSchema.optional(),
+    pricing: EventPriceSchema.nullish(),
     isFeatured: z.boolean(),
     createdAt: z.date()
 });

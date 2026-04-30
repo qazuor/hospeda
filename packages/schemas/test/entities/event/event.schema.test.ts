@@ -321,7 +321,9 @@ describe('EventSchema', () => {
                 tags: [
                     {
                         id: faker.string.uuid(),
-                        slug: 'music',
+                        // `slug` removed per D-002 (user-tags have no public URL)
+                        type: 'SYSTEM',
+                        ownerId: null,
                         name: 'Music',
                         color: 'BLUE',
                         lifecycleState: 'ACTIVE',
@@ -332,7 +334,9 @@ describe('EventSchema', () => {
                     },
                     {
                         id: faker.string.uuid(),
-                        slug: 'live',
+                        // `slug` removed per D-002 (user-tags have no public URL)
+                        type: 'SYSTEM',
+                        ownerId: null,
                         name: 'Live',
                         color: 'GREEN',
                         lifecycleState: 'ACTIVE',

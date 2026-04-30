@@ -220,7 +220,9 @@ export const createEventEdgeCases = (): any => ({
     tags: [
         {
             id: faker.string.uuid(),
-            slug: 'tag-a',
+            // `slug` removed per D-002 (user-tags have no public URL)
+            type: 'SYSTEM',
+            ownerId: null,
             name: 'Tag A',
             color: 'BLUE',
             lifecycleState: 'ACTIVE',
@@ -231,7 +233,9 @@ export const createEventEdgeCases = (): any => ({
         },
         {
             id: faker.string.uuid(),
-            slug: 'tag-b',
+            // `slug` removed per D-002 (user-tags have no public URL)
+            type: 'SYSTEM',
+            ownerId: null,
             name: 'Tag B',
             color: 'GREEN',
             lifecycleState: 'ACTIVE',
@@ -260,8 +264,10 @@ export const createLargeEvent = (): any => ({
     },
     tags: Array.from({ length: 5 }, () => ({
         id: faker.string.uuid(),
-        slug: faker.lorem.slug(2),
-        name: faker.lorem.word(),
+        // `slug` removed per D-002 (user-tags have no public URL)
+        type: 'SYSTEM',
+        ownerId: null,
+        name: faker.lorem.word().padEnd(2, 'x'),
         color: faker.helpers.arrayElement(['BLUE', 'GREEN', 'RED', 'YELLOW', 'PURPLE']),
         lifecycleState: 'ACTIVE',
         createdAt: faker.date.past(),

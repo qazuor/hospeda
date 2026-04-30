@@ -186,21 +186,23 @@ export const createDestinationEdgeCases = (): any => ({
     tags: [
         {
             id: faker.string.uuid(),
+            // `slug` removed per D-002 (user-tags have no public URL)
+            type: 'SYSTEM',
+            ownerId: null,
             name: 'ab',
-            slug: 'ab',
             color: 'RED',
             ...createBaseAuditFields(),
-            ...createBaseLifecycleFields(),
-            ...createBaseAdminFields()
+            ...createBaseLifecycleFields()
         },
         {
             id: faker.string.uuid(),
+            // `slug` removed per D-002 (user-tags have no public URL)
+            type: 'SYSTEM',
+            ownerId: null,
             name: 'bc',
-            slug: 'bc',
             color: 'GREEN',
             ...createBaseAuditFields(),
-            ...createBaseLifecycleFields(),
-            ...createBaseAdminFields()
+            ...createBaseLifecycleFields()
         }
     ],
     attractions: [] // Empty array

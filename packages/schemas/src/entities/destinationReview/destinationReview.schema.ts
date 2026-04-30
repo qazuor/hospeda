@@ -31,12 +31,12 @@ export const DestinationReviewSchema = z.object({
         .string()
         .min(1, { message: 'error:destination.review.title.min_length' })
         .max(50, { message: 'error:destination.review.title.max_length' })
-        .optional(),
+        .nullish(),
     content: z
         .string()
         .min(10, { message: 'error:destination.review.content.min_length' })
         .max(500, { message: 'error:destination.review.content.max_length' })
-        .optional(),
+        .nullish(),
     rating: DestinationRatingSchema,
 
     /**

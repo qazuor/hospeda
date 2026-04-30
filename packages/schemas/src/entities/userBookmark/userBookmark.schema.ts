@@ -28,12 +28,12 @@ export const UserBookmarkSchema = z.object({
         .string()
         .min(3, { message: 'zodError.userBookmark.name.min' })
         .max(100, { message: 'zodError.userBookmark.name.max' })
-        .optional(),
+        .nullish(),
     description: z
         .string()
         .min(10, { message: 'zodError.userBookmark.description.min' })
         .max(300, { message: 'zodError.userBookmark.description.max' })
-        .optional()
+        .nullish()
 });
 
 /**

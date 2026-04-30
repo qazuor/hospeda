@@ -78,7 +78,7 @@ export const DestinationSchema = z.object({
     // Attractions (nested objects)
     attractions: z.array(AttractionSchema).optional(),
     reviews: z.array(DestinationReviewSchema).optional(),
-    rating: DestinationRatingSchema.optional()
+    rating: DestinationRatingSchema.nullish()
 });
 
 /**

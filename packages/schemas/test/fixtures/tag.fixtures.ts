@@ -7,6 +7,9 @@ import {
     createTooLongString
 } from './common.fixtures.js';
 
+// UUID used to represent a "SYSTEM" actor in tests (mirrors SYSTEM_USER_ID constant from D-005)
+const TEST_SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000001';
+
 /**
  * Tag fixtures for testing
  */
@@ -24,32 +27,40 @@ export const createTagSummary = () => ({
 });
 
 /**
- * Create tag-specific entity fields
+ * Create tag-specific entity fields (refactored per SPEC-086 D-018).
+ * No `slug` (removed), no `notes` (replaced by `description`), added `type` and `ownerId`.
  */
-const createTagEntityFields = () => ({
-    slug: faker.lorem.slug(2),
-    name: faker.lorem.words({ min: 2, max: 3 }).slice(0, 50), // min 2 chars as per schema
-    color: faker.helpers.arrayElement([
-        'RED',
-        'BLUE',
-        'GREEN',
-        'YELLOW',
-        'ORANGE',
-        'PURPLE',
-        'PINK',
-        'BROWN',
-        'GREY',
-        'WHITE',
-        'CYAN',
-        'MAGENTA',
-        'LIGHT_BLUE',
-        'LIGHT_GREEN'
-    ] as TagColorEnum[]),
-    icon: faker.helpers.maybe(() => faker.lorem.word(), { probability: 0.7 }),
-    notes: faker.helpers.maybe(() => faker.lorem.paragraph().slice(0, 300), {
-        probability: 0.6
-    })
-});
+const createTagEntityFields = () => {
+    const type = faker.helpers.arrayElement(['INTERNAL', 'SYSTEM', 'USER'] as const);
+    const ownerId = type === 'USER' ? faker.string.uuid() : null;
+    return {
+        type,
+        ownerId,
+        name: faker.lorem.words({ min: 2, max: 3 }).slice(0, 50), // min 2 chars as per schema
+        color: faker.helpers.arrayElement([
+            'RED',
+            'BLUE',
+            'GREEN',
+            'YELLOW',
+            'ORANGE',
+            'PURPLE',
+            'PINK',
+            'BROWN',
+            'GREY',
+            'WHITE',
+            'CYAN',
+            'MAGENTA',
+            'LIGHT_BLUE',
+            'LIGHT_GREEN'
+        ] as TagColorEnum[]),
+        icon: faker.helpers.maybe(() => faker.lorem.word({ length: { min: 2, max: 20 } }), {
+            probability: 0.7
+        }),
+        description: faker.helpers.maybe(() => faker.lorem.sentence(), {
+            probability: 0.6
+        })
+    };
+};
 
 export const createValidTag = () => ({
     ...createBaseIdFields(),
@@ -60,7 +71,8 @@ export const createValidTag = () => ({
 
 export const createMinimalTag = () => ({
     id: faker.string.uuid(),
-    slug: faker.lorem.slug(2),
+    type: 'SYSTEM' as const,
+    ownerId: null,
     name: faker.lorem.words({ min: 2, max: 2 }), // min 2 chars as per schema
     color: 'BLUE' as TagColorEnum,
     lifecycleState: 'ACTIVE',
@@ -72,49 +84,50 @@ export const createMinimalTag = () => ({
 
 export const createComplexTag = () => ({
     ...createValidTag(),
-    icon: faker.lorem.word(),
-    notes: faker.lorem.paragraph().slice(0, 300)
+    icon: faker.lorem.word({ length: { min: 2, max: 20 } }),
+    description: faker.lorem.paragraph()
 });
 
 export const createSystemTag = () => ({
     ...createValidTag(),
+    type: 'SYSTEM' as const,
+    ownerId: null,
     name: faker.helpers.arrayElement(['Featured', 'Popular', 'New', 'Trending', 'Recommended']),
     color: 'GREY' as TagColorEnum,
-    icon: faker.lorem.word(),
-    notes: faker.lorem.sentence()
+    icon: faker.lorem.word({ length: { min: 2, max: 20 } }),
+    description: faker.lorem.sentence()
 });
 
 export const createTagEdgeCases = () => [
-    // Minimum length strings
+    // Minimum length name
     {
         ...createMinimalTag(),
-        slug: 'a', // minimum 1 char as per schema
         name: 'AB' // minimum 2 chars as per schema
     },
-    // Maximum length strings
+    // Maximum length name
     {
         ...createMinimalTag(),
-        slug: 'a'.repeat(50), // reasonable length
         name: 'A'.repeat(50), // maximum 50 chars as per schema
-        notes: 'N'.repeat(300) // maximum 300 chars as per schema
+        description: 'N'.repeat(200) // description has no hard limit — test a long one
     },
-    // All optional fields present
+    // All optional fields present (USER tag with ownerId)
     {
         ...createComplexTag(),
-        icon: 'custom-icon',
-        notes: faker.lorem.sentences(3).slice(0, 300)
+        type: 'USER' as const,
+        ownerId: faker.string.uuid(),
+        icon: 'custom-icon-ok',
+        description: faker.lorem.sentences(2)
     }
 ];
 
 export const createInvalidTag = () => ({
-    // Missing required fields
-    slug: '', // empty (too short)
+    // Missing required fields (type missing)
     name: 'A', // too short (min 2 chars)
     color: 'INVALID_COLOR', // invalid enum
     lifecycleState: 'INVALID_STATE', // invalid enum
     // Invalid types
     icon: 123, // not string
-    notes: 456, // not string
+    description: 456, // not string
     // Invalid formats
     id: 'not-uuid',
     createdAt: 'not-date',
@@ -124,11 +137,10 @@ export const createInvalidTag = () => ({
 });
 
 export const createTagWithInvalidFields = () => [
-    // Too long strings
+    // Too long name
     {
         ...createMinimalTag(),
-        name: createTooLongString(51),
-        notes: createTooLongString(301)
+        name: createTooLongString(51)
     },
     // Invalid color
     {
@@ -140,10 +152,15 @@ export const createTagWithInvalidFields = () => [
         ...createMinimalTag(),
         lifecycleState: 'INVALID_LIFECYCLE'
     },
-    // Invalid icon length
+    // Invalid icon length (too short)
     {
         ...createMinimalTag(),
         icon: 'A' // too short (min 2 chars)
+    },
+    // Invalid type
+    {
+        ...createMinimalTag(),
+        type: 'INVALID_TYPE'
     }
 ];
 
@@ -170,17 +187,20 @@ export const createTagsByColor = () => ({
 });
 
 /**
- * Create tags by type for testing filtering
+ * Create tags grouped by tag type for testing filtering (D-002).
  */
 export const createTagsByType = () => ({
-    withIcon: [
-        { ...createValidTag(), icon: 'icon1' },
-        { ...createValidTag(), icon: 'icon2' }
+    INTERNAL: [
+        { ...createMinimalTag(), type: 'INTERNAL' as const, ownerId: null },
+        { ...createMinimalTag(), type: 'INTERNAL' as const, ownerId: null }
     ],
-    withNotes: [
-        { ...createValidTag(), notes: 'Note 1' },
-        { ...createValidTag(), notes: 'Note 2' },
-        { ...createValidTag(), notes: 'Note 3' }
+    SYSTEM: [
+        { ...createMinimalTag(), type: 'SYSTEM' as const, ownerId: null },
+        { ...createMinimalTag(), type: 'SYSTEM' as const, ownerId: null }
+    ],
+    USER: [
+        { ...createMinimalTag(), type: 'USER' as const, ownerId: faker.string.uuid() },
+        { ...createMinimalTag(), type: 'USER' as const, ownerId: faker.string.uuid() }
     ]
 });
 
@@ -207,10 +227,10 @@ export const createTagRelation = (entityType = 'accommodation') => ({
 });
 
 /**
- * Create tag create input for CRUD testing
+ * Create tag create input for CRUD testing (SYSTEM type — no ownerId required).
  */
 export const createTagCreateInput = () => ({
-    slug: faker.lorem.slug(2),
+    type: 'SYSTEM' as const,
     name: faker.lorem.words({ min: 2, max: 3 }).slice(0, 50),
     color: faker.helpers.arrayElement([
         'RED',
@@ -221,20 +241,52 @@ export const createTagCreateInput = () => ({
         'PURPLE'
     ] as TagColorEnum[]),
     lifecycleState: 'ACTIVE',
-    icon: faker.helpers.maybe(() => faker.lorem.word(), { probability: 0.7 }),
-    notes: faker.helpers.maybe(() => faker.lorem.paragraph().slice(0, 300), {
-        probability: 0.6
-    })
+    icon: faker.helpers.maybe(() => faker.lorem.word({ length: { min: 2, max: 20 } }), {
+        probability: 0.7
+    }),
+    description: faker.helpers.maybe(() => faker.lorem.sentence(), { probability: 0.6 })
 });
 
 /**
- * Create tag update input for CRUD testing
+ * Create USER tag create input for CRUD testing — ownerId is required.
+ */
+export const createUserTagCreateInput = (ownerId?: string) => ({
+    type: 'USER' as const,
+    ownerId: ownerId ?? faker.string.uuid(),
+    name: faker.lorem.words({ min: 2, max: 3 }).slice(0, 50),
+    color: faker.helpers.arrayElement(['BLUE', 'GREEN', 'PURPLE'] as TagColorEnum[]),
+    lifecycleState: 'ACTIVE',
+    icon: faker.helpers.maybe(() => faker.lorem.word({ length: { min: 2, max: 20 } }), {
+        probability: 0.5
+    }),
+    description: faker.helpers.maybe(() => faker.lorem.sentence(), { probability: 0.5 })
+});
+
+/**
+ * Create INTERNAL tag create input for CRUD testing — ownerId must be absent/null.
+ */
+export const createInternalTagCreateInput = () => ({
+    type: 'INTERNAL' as const,
+    name: faker.lorem.words({ min: 2, max: 3 }).slice(0, 50),
+    color: faker.helpers.arrayElement(['RED', 'ORANGE'] as TagColorEnum[]),
+    lifecycleState: 'ACTIVE',
+    description: faker.helpers.maybe(() => faker.lorem.sentence(), { probability: 0.5 })
+});
+
+/**
+ * System user ID constant — mirrors SYSTEM_USER_ID from D-005, used in test assignments.
+ */
+export { TEST_SYSTEM_USER_ID };
+
+/**
+ * Create tag update input for CRUD testing.
+ * Note: `type` and `ownerId` are intentionally absent — they are immutable (D-018).
  */
 export const createTagUpdateInput = () => ({
     name: faker.lorem.words({ min: 2, max: 3 }).slice(0, 50),
     color: faker.helpers.arrayElement(['BLUE', 'GREEN', 'PURPLE'] as TagColorEnum[]),
-    icon: faker.lorem.word(),
-    notes: faker.lorem.sentence().slice(0, 300)
+    icon: faker.lorem.word({ length: { min: 2, max: 20 } }),
+    description: faker.lorem.sentence()
 });
 
 /**
