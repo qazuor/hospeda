@@ -1,6 +1,7 @@
 import { relations } from 'drizzle-orm';
 import { index, pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
 import { EntityTypePgEnum } from '../enums.dbschema.ts';
+import { users } from '../user/user.dbschema.ts';
 import { tags } from './tag.dbschema.ts';
 
 export const rEntityTag = pgTable(
@@ -10,14 +11,20 @@ export const rEntityTag = pgTable(
             .notNull()
             .references(() => tags.id, { onDelete: 'cascade' }),
         entityId: uuid('entity_id').notNull(),
-        entityType: EntityTypePgEnum('entity_type').notNull()
+        entityType: EntityTypePgEnum('entity_type').notNull(),
+        assignedById: uuid('assigned_by_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' })
     },
     (table) => ({
-        pk: primaryKey({ columns: [table.tagId, table.entityId, table.entityType] }),
-        entityType_entityId_idx: index('entityType_entityId_idx').on(
+        pk: primaryKey({
+            columns: [table.tagId, table.entityId, table.entityType, table.assignedById]
+        }),
+        r_entity_tag_entity_idx: index('r_entity_tag_entity_idx').on(
             table.entityType,
             table.entityId
         ),
+        r_entity_tag_assigned_by_idx: index('r_entity_tag_assigned_by_idx').on(table.assignedById),
         tagId_idx: index('r_entity_tag_tagId_idx').on(table.tagId)
     })
 );
@@ -26,6 +33,10 @@ export const rEntityTagRelations = relations(rEntityTag, ({ one }) => ({
     tag: one(tags, {
         fields: [rEntityTag.tagId],
         references: [tags.id]
+    }),
+    assignedBy: one(users, {
+        fields: [rEntityTag.assignedById],
+        references: [users.id]
     })
 }));
 
