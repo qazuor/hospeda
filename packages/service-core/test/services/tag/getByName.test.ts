@@ -1,5 +1,5 @@
 import { REntityTagModel, TagModel } from '@repo/db';
-import { TagColorEnum } from '@repo/schemas';
+import { TagColorEnum, TagTypeEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TagService } from '../../../src/services/tag/tag.service';
 import type { Actor } from '../../../src/types';
@@ -14,10 +14,13 @@ describe('TagService.getByName', () => {
     let tagModelMock: TagModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
+
+    // SYSTEM tag — visible to any authenticated actor
     const tag = TagFactoryBuilder.create({
         name: 'TagName',
-        slug: 'tag-name',
-        color: TagColorEnum.BLUE
+        type: TagTypeEnum.SYSTEM,
+        color: TagColorEnum.BLUE,
+        ownerId: null
     });
 
     beforeEach(() => {
@@ -27,7 +30,7 @@ describe('TagService.getByName', () => {
         actor = createActor({ permissions: [] });
     });
 
-    it('should return a tag by name (success)', async () => {
+    it('should return a SYSTEM tag by name (success)', async () => {
         asMock(tagModelMock.findOne).mockResolvedValue(tag);
         const result = await service.getByName(actor, tag.name);
         expectSuccess(result);

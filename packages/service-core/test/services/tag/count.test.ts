@@ -24,7 +24,7 @@ describe('TagService.count', () => {
         tagModelMock = createTypedModelMock(TagModel, ['count']);
         loggerMock = createLoggerMock();
         service = new TagService({ logger: loggerMock }, tagModelMock, new REntityTagModel());
-        actor = createActor({ permissions: [PermissionEnum.TAG_UPDATE] });
+        actor = createActor({ permissions: [PermissionEnum.TAG_SYSTEM_UPDATE] });
     });
 
     it('should return the count of tags (success)', async () => {
@@ -34,7 +34,7 @@ describe('TagService.count', () => {
         expect(result.data?.count).toBe(1);
     });
 
-    it('should succeed even if actor lacks TAG_UPDATE permission (public count)', async () => {
+    it('should succeed even if actor lacks TAG_SYSTEM_UPDATE permission (public count)', async () => {
         actor = createActor({ permissions: [] });
         asMock(tagModelMock.count).mockResolvedValue(1);
         const result = await service.count(actor, countParams);

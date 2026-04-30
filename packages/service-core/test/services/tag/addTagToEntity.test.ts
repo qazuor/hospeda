@@ -32,7 +32,7 @@ describe('TagService.addTagToEntity', () => {
         relModelMock = createTypedModelMock(REntityTagModel, ['findOne', 'create']);
         loggerMock = createLoggerMock();
         service = new TagService({ logger: loggerMock }, tagModelMock, relModelMock);
-        actor = createActor({ permissions: [PermissionEnum.TAG_UPDATE] });
+        actor = createActor({ permissions: [PermissionEnum.TAG_ASSIGN_ADD] });
     });
 
     it('should associate a tag to an entity (success)', async () => {
@@ -43,9 +43,12 @@ describe('TagService.addTagToEntity', () => {
         expectSuccess(result);
     });
 
-    it('should return FORBIDDEN if actor lacks TAG_UPDATE permission', async () => {
-        actor = createActor({ permissions: [] });
-        const result = await service.addTagToEntity(actor, input);
+    it('should return FORBIDDEN if actor lacks TAG_INTERNAL_VIEW for INTERNAL tag', async () => {
+        // INTERNAL tags require TAG_INTERNAL_VIEW — an actor without it gets FORBIDDEN
+        const internalTag = TagFactoryBuilder.createInternalTag({ name: 'Spam' });
+        actor = createActor({ permissions: [] }); // no TAG_INTERNAL_VIEW
+        asMock(tagModelMock.findById).mockResolvedValue(internalTag);
+        const result = await service.addTagToEntity(actor, { ...input, tagId: internalTag.id });
         expectForbiddenError(result);
     });
 

@@ -8,7 +8,11 @@ import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFac
 const asMock = <T>(fn: T) => fn as unknown as import('vitest').Mock;
 
 const mockTag = TagFactoryBuilder.create();
-const mockActor = { id: 'user-1', role: RoleEnum.USER, permissions: [PermissionEnum.TAG_UPDATE] };
+const mockActor = {
+    id: 'user-1',
+    role: RoleEnum.USER,
+    permissions: [PermissionEnum.TAG_ASSIGN_VIEW]
+};
 const baseActor = { id: 'user-2', role: RoleEnum.USER, permissions: [] };
 
 describe('TagService.getEntitiesByTag', () => {
@@ -81,9 +85,12 @@ describe('TagService.getEntitiesByTag', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
-    it('returns FORBIDDEN if actor lacks TAG_UPDATE permission', async () => {
-        asMock(mockModel.findById).mockResolvedValue(mockTag);
-        const params = { tagId: mockTag.id };
+    it('returns FORBIDDEN if actor lacks TAG_INTERNAL_VIEW for INTERNAL tag', async () => {
+        // assertCanViewTag throws FORBIDDEN for INTERNAL tags without TAG_INTERNAL_VIEW
+        const internalTag = TagFactoryBuilder.createInternalTag({ name: 'Spam' });
+        asMock(mockModel.findById).mockResolvedValue(internalTag);
+        const params = { tagId: internalTag.id };
+        // baseActor has no permissions, so lacks TAG_INTERNAL_VIEW
         const result = await service.getEntitiesByTag(baseActor, params);
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
     });

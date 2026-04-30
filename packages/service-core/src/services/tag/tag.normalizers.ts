@@ -2,24 +2,27 @@ import type { TagCreateInput, TagUpdateInput } from '@repo/schemas';
 import { ServiceErrorCode, TagColorEnum } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
-import { generateTagSlug } from './tag.helpers';
 
 /**
  * Normalizes input for creating a tag.
- * - Trims name
- * - Generates slug if not provided (ensures uniqueness)
- * - Validates color
- * - Sanitizes optional fields
+ *
+ * Per SPEC-086 D-002 and D-018:
+ * - `slug` column is removed — user-tags have no public URLs.
+ * - `notes` is removed — replaced by `description`.
+ * - Trims `name`, `icon`, and `description`.
+ * - Validates color against TagColorEnum.
+ * - Defaults lifecycleState to ACTIVE.
+ *
  * @param input - The raw create input.
  * @param _actor - The actor performing the action.
  * @returns Normalized input.
+ * @throws {ServiceError} If color is invalid.
  */
 export const normalizeCreateInput = async (
     input: TagCreateInput,
     _actor: Actor
 ): Promise<TagCreateInput> => {
     const name = input.name.trim();
-    const slug = input.slug?.trim() || (await generateTagSlug(name));
     const color = input.color;
     if (color && !Object.values(TagColorEnum).includes(color)) {
         throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'Invalid tag color');
@@ -27,28 +30,34 @@ export const normalizeCreateInput = async (
     const normalizedLifecycleState = input.lifecycleState || 'ACTIVE';
     return {
         name,
-        slug,
+        type: input.type,
         color,
         lifecycleState: normalizedLifecycleState,
         icon: input.icon?.trim() || undefined,
-        notes: input.notes?.trim() || undefined
+        description: input.description?.trim() || undefined,
+        ownerId: input.ownerId ?? undefined
     };
 };
 
 /**
  * Normalizes input for updating a tag.
- * - Trims updatable string fields
- * - Validates color if present
+ *
+ * Per SPEC-086 D-018:
+ * - `slug` and `notes` fields do not exist in the new schema.
+ * - Trims `name`, `icon`, and `description`.
+ * - Validates color if present.
+ * - `type` is immutable and excluded from update schema (enforced at Zod schema level).
+ *
  * @param input - The raw update input.
  * @param _actor - The actor performing the action.
  * @returns Normalized input.
+ * @throws {ServiceError} If color is invalid.
  */
 export const normalizeUpdateInput = (input: TagUpdateInput, _actor: Actor): TagUpdateInput => {
     const normalized: TagUpdateInput = { ...input };
     if (input.name) normalized.name = input.name.trim();
-    if (input.slug) normalized.slug = input.slug.trim();
     if (input.icon) normalized.icon = input.icon.trim();
-    if (input.notes) normalized.notes = input.notes.trim();
+    if (input.description) normalized.description = input.description.trim();
     if (input.color && !Object.values(TagColorEnum).includes(input.color)) {
         throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'Invalid tag color');
     }

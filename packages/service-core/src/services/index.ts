@@ -18,6 +18,8 @@ export * from './postSponsorship/postSponsorship.service';
 export * from './sponsorship';
 export * from './owner-promotion';
 export * from './tag/tag.service';
+export * from './tag/post-tag.service';
+export * from './tag/post-tag.permissions';
 export * from './user/user.service';
 export * from './userBookmark/userBookmark.service';
 export * from './billing';

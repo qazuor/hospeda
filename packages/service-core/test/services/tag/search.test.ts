@@ -1,5 +1,5 @@
 import { REntityTagModel, TagModel } from '@repo/db';
-import { PermissionEnum, TagColorEnum } from '@repo/schemas';
+import { TagColorEnum, TagTypeEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TagService } from '../../../src/services/tag/tag.service';
 import type { Actor } from '../../../src/types';
@@ -14,7 +14,13 @@ describe('TagService.search', () => {
     let tagModelMock: TagModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
-    const tag = TagFactoryBuilder.create({ name: 'Tag', slug: 'tag', color: TagColorEnum.BLUE });
+
+    const tag = TagFactoryBuilder.create({
+        name: 'Tag',
+        type: TagTypeEnum.SYSTEM,
+        color: TagColorEnum.BLUE,
+        ownerId: null
+    });
     const paginated = { items: [tag], total: 1 };
     const searchParams = {
         page: 1,
@@ -27,10 +33,10 @@ describe('TagService.search', () => {
         tagModelMock = createTypedModelMock(TagModel, ['findAll']);
         loggerMock = createLoggerMock();
         service = new TagService({ logger: loggerMock }, tagModelMock, new REntityTagModel());
-        actor = createActor({ permissions: [PermissionEnum.TAG_UPDATE] });
+        actor = createActor({ permissions: [] });
     });
 
-    it('should return a paginated list of tags (success)', async () => {
+    it('should return a paginated list of tags matching search params (success)', async () => {
         asMock(tagModelMock.findAll).mockResolvedValue(paginated);
         const result = await service.search(actor, searchParams);
         expectSuccess(result);
@@ -38,7 +44,7 @@ describe('TagService.search', () => {
         expect(result.data?.total).toBe(1);
     });
 
-    it('should succeed even if actor lacks TAG_UPDATE permission (public search)', async () => {
+    it('should succeed for any authenticated actor (visibility scoped at service layer)', async () => {
         actor = createActor({ permissions: [] });
         asMock(tagModelMock.findAll).mockResolvedValue(paginated);
         const result = await service.search(actor, searchParams);

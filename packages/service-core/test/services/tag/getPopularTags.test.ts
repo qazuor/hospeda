@@ -1,13 +1,10 @@
 import { REntityTagModel } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TagService } from '../../../src/services/tag/tag.service';
 import type { Actor } from '../../../src/types';
-import { ServiceError } from '../../../src/types';
-import { createActor } from '../../factories/actorFactory';
+import { createActor, createGuestActor } from '../../factories/actorFactory';
 import { TagFactoryBuilder } from '../../factories/tagFactory';
 import {
-    expectForbiddenError,
     expectInternalError,
     expectSuccess,
     expectValidationError
@@ -83,19 +80,18 @@ describe('TagService.getPopularTags', () => {
         expect(result.data?.tags).toEqual([]);
     });
 
-    it('should return FORBIDDEN if actor cannot list', async () => {
-        // Arrange
-        (service as TagService & { _canList: () => void })._canList = () => {
-            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'forbidden');
-        };
+    it('should return UNAUTHORIZED for unauthenticated (guest) actor', async () => {
+        // checkCanListTags requires actor.id. Framework actor validation runs first:
+        // an actor with id: '' gets UNAUTHORIZED before reaching checkCanListTags.
+        const guestActor = createGuestActor();
         // Act
-        const result = await service.getPopularTags(actor, {
+        const result = await service.getPopularTags(guestActor, {
             limit: 10,
             entityType: 'all',
             timeframe: 'all'
         });
-        // Assert
-        expectForbiddenError(result);
+        // Assert — framework actor validation returns UNAUTHORIZED for id: ''
+        expect(result.error?.code).toBe('UNAUTHORIZED');
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {

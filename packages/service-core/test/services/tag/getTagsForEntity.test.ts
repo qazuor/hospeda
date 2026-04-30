@@ -1,12 +1,10 @@
 import { REntityTagModel, TagModel } from '@repo/db';
-import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TagService } from '../../../src/services/tag/tag.service';
 import type { Actor } from '../../../src/types';
-import { createActor } from '../../factories/actorFactory';
+import { createActor, createGuestActor } from '../../factories/actorFactory';
 import { TagFactoryBuilder } from '../../factories/tagFactory';
 import {
-    expectForbiddenError,
     expectInternalError,
     expectSuccess,
     expectValidationError
@@ -26,14 +24,21 @@ describe('TagService.getTagsForEntity', () => {
 
     beforeEach(() => {
         tagModelMock = createTypedModelMock(TagModel, ['findById']);
-        relModelMock = createTypedModelMock(REntityTagModel, ['findAllWithTags']);
+        // getTagsForEntity (T-020) calls findByEntityAndActor for regular users
+        // and findByEntityAll for actors with TAG_VIEW_ALL_ASSIGNMENTS.
+        relModelMock = createTypedModelMock(REntityTagModel, [
+            'findByEntityAndActor',
+            'findByEntityAll'
+        ]);
         loggerMock = createLoggerMock();
         service = new TagService({ logger: loggerMock }, tagModelMock, relModelMock);
-        actor = createActor({ permissions: [PermissionEnum.TAG_UPDATE] });
+        actor = createActor({ permissions: [] });
     });
 
     it('should return tags for an entity (success)', async () => {
-        asMock(relModelMock.findAllWithTags).mockResolvedValue([relation]);
+        // Regular actor (no TAG_VIEW_ALL_ASSIGNMENTS) → findByEntityAndActor is called.
+        // The model returns entity-tag relations; getTagsForEntity maps rel.tag to tags[].
+        asMock(relModelMock.findByEntityAndActor).mockResolvedValue([relation]);
         const result = await service.getTagsForEntity(actor, input);
         expectSuccess(result);
         expect(result.data?.tags).toHaveLength(1);
@@ -41,16 +46,20 @@ describe('TagService.getTagsForEntity', () => {
     });
 
     it('should return an empty array if no tags are found', async () => {
-        asMock(relModelMock.findAllWithTags).mockResolvedValue([]);
+        asMock(relModelMock.findByEntityAndActor).mockResolvedValue([]);
         const result = await service.getTagsForEntity(actor, input);
         expectSuccess(result);
         expect(result.data?.tags).toHaveLength(0);
     });
 
-    it('should return FORBIDDEN if actor lacks TAG_UPDATE permission', async () => {
-        actor = createActor({ permissions: [] });
-        const result = await service.getTagsForEntity(actor, input);
-        expectForbiddenError(result);
+    it('should return empty array for anonymous actor (D-007)', async () => {
+        // Anonymous actors (no id) see nothing from this subsystem (D-007).
+        // The service guards before runWithLoggingAndValidation, returning { data: { tags: [] } }.
+        const guestActor = createGuestActor();
+        const result = await service.getTagsForEntity(guestActor, input);
+        expect(result.error).toBeUndefined();
+        expect(result.data?.tags).toEqual([]);
+        expect(asMock(relModelMock.findByEntityAndActor)).not.toHaveBeenCalled();
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
@@ -62,7 +71,7 @@ describe('TagService.getTagsForEntity', () => {
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        asMock(relModelMock.findAllWithTags).mockRejectedValue(new Error('DB error'));
+        asMock(relModelMock.findByEntityAndActor).mockRejectedValue(new Error('DB error'));
         const result = await service.getTagsForEntity(actor, input);
         expectInternalError(result);
     });

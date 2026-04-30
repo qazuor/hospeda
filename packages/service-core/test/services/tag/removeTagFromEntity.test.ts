@@ -1,5 +1,5 @@
 import { REntityTagModel, TagModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TagService } from '../../../src/services/tag/tag.service';
 import type { Actor } from '../../../src/types';
@@ -33,7 +33,10 @@ describe('TagService.removeTagFromEntity', () => {
         relModelMock = createTypedModelMock(REntityTagModel, ['findOne', 'hardDelete']);
         loggerMock = createLoggerMock();
         service = new TagService({ logger: loggerMock }, tagModelMock, relModelMock);
-        actor = createActor({ permissions: [PermissionEnum.TAG_UPDATE] });
+        // SYSTEM tags are visible to any authenticated actor — no special permission needed
+        actor = createActor({ permissions: [] });
+        // Default: tag is found (SYSTEM tag)
+        asMock(tagModelMock.findById).mockResolvedValue(tag);
     });
 
     it('should remove a tag from an entity (success)', async () => {
@@ -43,9 +46,15 @@ describe('TagService.removeTagFromEntity', () => {
         expectSuccess(result);
     });
 
-    it('should return FORBIDDEN if actor lacks TAG_UPDATE permission', async () => {
-        actor = createActor({ permissions: [] });
-        const result = await service.removeTagFromEntity(actor, input);
+    it('should return FORBIDDEN if actor lacks view permission on INTERNAL tag', async () => {
+        // INTERNAL tags require TAG_INTERNAL_VIEW to view — use INTERNAL tag
+        const internalTag = TagFactoryBuilder.createInternalTag({ name: 'Spam' });
+        actor = createActor({ permissions: [] }); // no TAG_INTERNAL_VIEW
+        asMock(tagModelMock.findById).mockResolvedValue(internalTag);
+        const result = await service.removeTagFromEntity(actor, {
+            ...input,
+            tagId: internalTag.id
+        });
         expectForbiddenError(result);
     });
 
@@ -65,6 +74,7 @@ describe('TagService.removeTagFromEntity', () => {
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
+        asMock(tagModelMock.findById).mockResolvedValue(tag);
         asMock(relModelMock.findOne).mockRejectedValue(new Error('DB error'));
         const result = await service.removeTagFromEntity(actor, input);
         expectInternalError(result);
