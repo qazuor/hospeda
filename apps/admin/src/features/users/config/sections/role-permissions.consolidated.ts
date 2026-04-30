@@ -69,7 +69,8 @@ function getRoleLabel(role: RoleEnum): string {
         [RoleEnum.HOST]: 'Anfitrión',
         [RoleEnum.USER]: 'Usuario',
         [RoleEnum.SPONSOR]: 'Patrocinador',
-        [RoleEnum.GUEST]: 'Invitado'
+        [RoleEnum.GUEST]: 'Invitado',
+        [RoleEnum.SYSTEM]: 'Sistema'
     };
     return labels[role] || role;
 }

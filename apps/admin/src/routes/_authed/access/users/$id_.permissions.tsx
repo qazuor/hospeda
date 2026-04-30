@@ -52,6 +52,10 @@ const ROLE_INFO: Record<RoleEnum, { label: string; description: string }> = {
     [RoleEnum.GUEST]: {
         label: 'Guest',
         description: 'Public visitor, not logged in'
+    },
+    [RoleEnum.SYSTEM]: {
+        label: 'System',
+        description: 'Reserved non-loginable account for automated operations'
     }
 };
 

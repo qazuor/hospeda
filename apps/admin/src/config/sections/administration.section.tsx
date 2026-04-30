@@ -34,7 +34,11 @@ export const administrationSection = createSection({
         PermissionEnum.ACCESS_PERMISSIONS_MANAGE,
         PermissionEnum.AMENITY_CREATE,
         PermissionEnum.FEATURE_CREATE,
-        PermissionEnum.TAG_CREATE,
+        PermissionEnum.POST_TAG_VIEW,
+        PermissionEnum.POST_TAG_CREATE,
+        PermissionEnum.TAG_SYSTEM_VIEW,
+        PermissionEnum.TAG_INTERNAL_VIEW,
+        PermissionEnum.TAG_VIEW_ALL_USER_TAGS,
         PermissionEnum.SEO_MANAGE,
         PermissionEnum.ACCESS_PANEL_ADMIN,
         PermissionEnum.REVALIDATION_CONFIG_VIEW,
@@ -57,7 +61,8 @@ export const administrationSection = createSection({
         '/settings/**',
         '/content/**',
         '/revalidation',
-        '/revalidation/**'
+        '/revalidation/**',
+        '/tags/**'
     ],
     defaultRoute: '/access/users',
     sidebar: {
@@ -118,13 +123,44 @@ export const administrationSection = createSection({
                         '/content/destination-attractions',
                         <ListIcon className="h-4 w-4" />,
                         [PermissionEnum.ATTRACTION_VIEW, PermissionEnum.ATTRACTION_CREATE]
+                    )
+                ],
+                <TagsIcon className="h-4 w-4" />
+            ),
+            sidebar.separator(),
+            // Tags section — PostTags first; T-030 (SYSTEM/INTERNAL) and T-031
+            // (user moderation) will add sibling links inside this same group.
+            sidebar.group(
+                'tags-management',
+                'Gestión de Etiquetas',
+                [
+                    sidebar.link(
+                        'post-tags',
+                        'PostTags (Blog)',
+                        '/tags/post-tags',
+                        <TagsIcon className="h-4 w-4" />,
+                        [PermissionEnum.POST_TAG_VIEW, PermissionEnum.POST_TAG_CREATE]
                     ),
                     sidebar.link(
-                        'tags',
-                        'Etiquetas',
-                        '/settings/tags',
+                        'system-tags',
+                        'Etiquetas de Sistema',
+                        '/tags/system',
                         <TagsIcon className="h-4 w-4" />,
-                        [PermissionEnum.TAG_CREATE]
+                        [PermissionEnum.TAG_SYSTEM_VIEW]
+                    ),
+                    sidebar.link(
+                        'internal-tags',
+                        'Etiquetas Internas',
+                        '/tags/internal',
+                        <TagsIcon className="h-4 w-4" />,
+                        [PermissionEnum.TAG_INTERNAL_VIEW]
+                    ),
+                    sidebar.link(
+                        'user-tag-moderation',
+                        'Moderación de Etiquetas',
+                        '/tags/user-moderation',
+                        <TagsIcon className="h-4 w-4" />,
+                        [PermissionEnum.TAG_VIEW_ALL_USER_TAGS]
                     )
                 ],
                 <TagsIcon className="h-4 w-4" />

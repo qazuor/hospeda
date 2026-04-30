@@ -133,6 +133,14 @@ const ROLE_INFO: Record<RoleEnum, RoleInfo> = {
             'View events',
             'Access public information'
         ]
+    },
+    [RoleEnum.SYSTEM]: {
+        label: 'System',
+        description:
+            'Reserved non-loginable account used as assignedById for automated tag assignments (seeds, cron jobs, webhooks). Not visible in UI.',
+        level: 'low',
+        icon: ShieldIcon,
+        capabilities: ['Used internally for automated operations only']
     }
 };
 

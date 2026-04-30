@@ -1,7 +1,8 @@
 /**
  * Smoke tests for Settings module routes.
  *
- * Covers tag management (4 routes), critical settings, and SEO settings.
+ * Covers critical settings and SEO settings. Tag management lives at
+ * `/tags/*` per SPEC-086 and is covered by separate smoke tests.
  *
  * Verifies that each page renders without crashing.
  * These are NOT functional tests -- they only check that the component
@@ -20,7 +21,7 @@ vi.mock('@tanstack/react-router', () => ({
     }),
     useNavigate: () => vi.fn(),
     useSearch: () => ({ page: 1, pageSize: 20 }),
-    useParams: () => ({ id: 'tag-test-001' }),
+    useParams: () => ({ id: 'settings-test-001' }),
     useLocation: () => ({ pathname: '/settings', search: '', hash: '' }),
     useRouterState: () => ({ location: { pathname: '/settings', search: '', hash: '' } }),
     Link: ({ children, to, ...props }: Record<string, unknown>) => (
@@ -45,82 +46,18 @@ vi.mock('@tanstack/react-router', () => ({
         (routeOptions: { component: React.ComponentType; [key: string]: unknown }) => ({
             options: routeOptions,
             useSearch: vi.fn(() => ({ page: 1, pageSize: 20 })),
-            useParams: vi.fn(() => ({ id: 'tag-test-001' })),
+            useParams: vi.fn(() => ({ id: 'settings-test-001' })),
             useLoaderData: vi.fn(() => null)
         })
 }));
 
 // Import route modules AFTER mocks are set up
 
-import { Route as TagViewRoute } from '@/routes/_authed/settings/tags/$id';
-import { Route as TagEditRoute } from '@/routes/_authed/settings/tags/$id_.edit';
-// Tag routes
-import { Route as TagsListRoute } from '@/routes/_authed/settings/tags/index';
-import { Route as TagNewRoute } from '@/routes/_authed/settings/tags/new';
-
 // Settings pages
 import { Route as CriticalSettingsRoute } from '@/routes/_authed/settings/critical';
 import { Route as SeoSettingsRoute } from '@/routes/_authed/settings/seo';
 
 describe('Settings smoke tests', () => {
-    // --- Tags ---
-
-    it('renders tags list page without crashing', async () => {
-        const Page = TagsListRoute.options.component;
-        if (!Page) throw new Error('Component not found in Route.options');
-
-        renderWithProviders(<Page />);
-
-        await waitFor(
-            () => {
-                expect(document.body.textContent?.length).toBeGreaterThan(0);
-            },
-            { timeout: 5000 }
-        );
-    });
-
-    it('renders tag create page without crashing', async () => {
-        const Page = TagNewRoute.options.component;
-        if (!Page) throw new Error('Component not found in Route.options');
-
-        renderWithProviders(<Page />);
-
-        await waitFor(
-            () => {
-                expect(document.body.textContent?.length).toBeGreaterThan(0);
-            },
-            { timeout: 5000 }
-        );
-    });
-
-    it('renders tag view page without crashing', async () => {
-        const Page = TagViewRoute.options.component;
-        if (!Page) throw new Error('Component not found in Route.options');
-
-        renderWithProviders(<Page />);
-
-        await waitFor(
-            () => {
-                expect(document.body.textContent?.length).toBeGreaterThan(0);
-            },
-            { timeout: 5000 }
-        );
-    });
-
-    it('renders tag edit page without crashing', async () => {
-        const Page = TagEditRoute.options.component;
-        if (!Page) throw new Error('Component not found in Route.options');
-
-        renderWithProviders(<Page />);
-
-        await waitFor(
-            () => {
-                expect(document.body.textContent?.length).toBeGreaterThan(0);
-            },
-            { timeout: 5000 }
-        );
-    });
-
     // --- Critical & SEO ---
 
     it('renders critical settings page without crashing', async () => {

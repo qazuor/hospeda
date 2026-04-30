@@ -190,11 +190,27 @@ export const menuTree: readonly MenuItem[] = [
             },
             {
                 titleKey: 'admin-menu.admin.tags',
-                to: '/settings/tags',
-                permission: [
-                    PermissionEnum.TAG_CREATE,
-                    PermissionEnum.TAG_UPDATE,
-                    PermissionEnum.TAG_DELETE
+                children: [
+                    {
+                        titleKey: 'admin-menu.admin.postTags',
+                        to: '/tags/post-tags',
+                        permission: [PermissionEnum.POST_TAG_VIEW, PermissionEnum.POST_TAG_CREATE]
+                    },
+                    {
+                        titleKey: 'admin-menu.admin.systemTags',
+                        to: '/tags/system',
+                        permission: PermissionEnum.TAG_SYSTEM_VIEW
+                    },
+                    {
+                        titleKey: 'admin-menu.admin.internalTags',
+                        to: '/tags/internal',
+                        permission: PermissionEnum.TAG_INTERNAL_VIEW
+                    },
+                    {
+                        titleKey: 'admin-menu.admin.userTagModeration',
+                        to: '/tags/user-moderation',
+                        permission: PermissionEnum.TAG_VIEW_ALL_USER_TAGS
+                    }
                 ]
             },
             {
