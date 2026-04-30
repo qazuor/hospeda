@@ -91,12 +91,6 @@ export default defineConfig({
             // components (e.g. accommodation cover images kept on <Image> after T-048)
             // can fetch from res.cloudinary.com without a config error.
             { protocol: 'https', hostname: 'res.cloudinary.com' },
-            // TODO: seed/demo data only — remove these when real client images are stored in our CDN
-            { hostname: '*.pexels.com' },
-            { hostname: 'images.pexels.com' },
-            { hostname: '*.unsplash.com' },
-            { hostname: 'images.unsplash.com' },
-            // end TODO
             ...(apiHostname && apiHostname !== 'localhost' ? [{ hostname: apiHostname }] : [])
         ]
     },
