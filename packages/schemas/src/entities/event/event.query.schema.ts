@@ -245,6 +245,11 @@ export const EventListItemWithRelationsSchema = EventListItemSchema.extend({
         .object({
             id: z.string().uuid(),
             placeName: z.string().nullish(),
+            // `city` is no longer a column on event_locations after SPEC-095
+            // (geographic context derives from the destination relation), but
+            // legacy admin views still read it as a fallback label. Kept as
+            // nullish so payloads without it (the new normal) parse fine.
+            city: z.string().nullish(),
             street: z.string().nullish(),
             number: z.string().nullish()
         })

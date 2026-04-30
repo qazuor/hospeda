@@ -51,9 +51,10 @@ export const EventPublicSchema = EventSchema.pick({
     // Tags (public)
     tags: true
 }).extend({
-    // Relation fields — optional so safeParse never strips hydrated data
-    organizer: EventOrganizerPublicSchema.optional(),
-    location: EventLocationPublicSchema.optional()
+    // Relation fields — nullish to accept both undefined (relation not loaded)
+    // and null (relation loaded but FK is null on the row).
+    organizer: EventOrganizerPublicSchema.nullish(),
+    location: EventLocationPublicSchema.nullish()
 });
 
 export type EventPublic = z.infer<typeof EventPublicSchema>;
@@ -97,9 +98,10 @@ export const EventProtectedSchema = EventSchema.pick({
     createdAt: true,
     updatedAt: true
 }).extend({
-    // Relation fields — optional so safeParse never strips hydrated data
-    organizer: EventOrganizerProtectedSchema.optional(),
-    location: EventLocationProtectedSchema.optional()
+    // Relation fields — nullish to accept both undefined (relation not loaded)
+    // and null (relation loaded but FK is null on the row).
+    organizer: EventOrganizerProtectedSchema.nullish(),
+    location: EventLocationProtectedSchema.nullish()
 });
 
 export type EventProtected = z.infer<typeof EventProtectedSchema>;
@@ -113,9 +115,9 @@ export type EventProtected = z.infer<typeof EventProtectedSchema>;
  * This is essentially the full schema.
  */
 export const EventAdminSchema = EventSchema.extend({
-    // Relation fields — optional so safeParse never strips hydrated data
-    organizer: EventOrganizerAdminSchema.optional(),
-    location: EventLocationAdminSchema.optional()
+    // Relation fields — nullish to accept both undefined and null.
+    organizer: EventOrganizerAdminSchema.nullish(),
+    location: EventLocationAdminSchema.nullish()
 });
 
 export type EventAdmin = z.infer<typeof EventAdminSchema>;

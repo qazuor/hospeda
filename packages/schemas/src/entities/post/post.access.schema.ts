@@ -133,20 +133,20 @@ export const PostPublicSchema = PostSchema.pick({
     updatedAt: true
 }).extend({
     /** Full author data when JOIN is performed — public-tier fields only. */
-    author: UserPublicSchema.optional(),
+    author: UserPublicSchema.nullish(),
     /** Full related accommodation when JOIN is performed — public-tier fields only. */
-    relatedAccommodation: AccommodationPublicSchema.optional(),
+    relatedAccommodation: AccommodationPublicSchema.nullish(),
     /** Full related destination when JOIN is performed — public-tier fields only. */
-    relatedDestination: DestinationPublicSchema.optional(),
+    relatedDestination: DestinationPublicSchema.nullish(),
     /** Full related event when JOIN is performed — public-tier fields only. */
-    relatedEvent: EventPublicSchema.optional(),
+    relatedEvent: EventPublicSchema.nullish(),
     /**
      * Sponsorship data with nested sponsor user — public-tier fields only.
      * Inlined to avoid circular import with postSponsorship.access.schema.ts.
      */
     sponsorship: PostSponsorshipPublicRelationSchema.extend({
-        sponsor: UserPublicSchema.optional()
-    }).optional()
+        sponsor: UserPublicSchema.nullish()
+    }).nullish()
 });
 
 export type PostPublic = z.infer<typeof PostPublicSchema>;
@@ -193,20 +193,20 @@ export const PostProtectedSchema = PostSchema.pick({
     sponsorshipId: true
 }).extend({
     /** Full author data when JOIN is performed — protected-tier fields only. */
-    author: UserProtectedSchema.optional(),
+    author: UserProtectedSchema.nullish(),
     /** Full related accommodation when JOIN is performed — protected-tier fields only. */
-    relatedAccommodation: AccommodationProtectedSchema.optional(),
+    relatedAccommodation: AccommodationProtectedSchema.nullish(),
     /** Full related destination when JOIN is performed — protected-tier fields only. */
-    relatedDestination: DestinationProtectedSchema.optional(),
+    relatedDestination: DestinationProtectedSchema.nullish(),
     /** Full related event when JOIN is performed — protected-tier fields only. */
-    relatedEvent: EventProtectedSchema.optional(),
+    relatedEvent: EventProtectedSchema.nullish(),
     /**
      * Sponsorship data with nested sponsor user — protected-tier fields only.
      * Inlined to avoid circular import with postSponsorship.access.schema.ts.
      */
     sponsorship: PostSponsorshipProtectedRelationSchema.extend({
-        sponsor: UserProtectedSchema.optional()
-    }).optional()
+        sponsor: UserProtectedSchema.nullish()
+    }).nullish()
 });
 
 export type PostProtected = z.infer<typeof PostProtectedSchema>;
@@ -222,20 +222,20 @@ export type PostProtected = z.infer<typeof PostProtectedSchema>;
  */
 export const PostAdminSchema = PostSchema.extend({
     /** Full author data when JOIN is performed — admin-tier fields only. */
-    author: UserAdminSchema.optional(),
+    author: UserAdminSchema.nullish(),
     /** Full related accommodation when JOIN is performed — admin-tier fields only. */
-    relatedAccommodation: AccommodationAdminSchema.optional(),
+    relatedAccommodation: AccommodationAdminSchema.nullish(),
     /** Full related destination when JOIN is performed — admin-tier fields only. */
-    relatedDestination: DestinationAdminSchema.optional(),
+    relatedDestination: DestinationAdminSchema.nullish(),
     /** Full related event when JOIN is performed — admin-tier fields only. */
-    relatedEvent: EventAdminSchema.optional(),
+    relatedEvent: EventAdminSchema.nullish(),
     /**
      * Sponsorship data with nested sponsor user — admin-tier fields only.
      * Inlined to avoid circular import with postSponsorship.access.schema.ts.
      */
     sponsorship: PostSponsorshipAdminRelationSchema.extend({
-        sponsor: UserAdminSchema.optional()
-    }).optional()
+        sponsor: UserAdminSchema.nullish()
+    }).nullish()
 });
 
 export type PostAdmin = z.infer<typeof PostAdminSchema>;
