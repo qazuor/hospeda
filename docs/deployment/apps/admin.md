@@ -1414,5 +1414,5 @@ jobs:
 
 ## Related
 
-- [Architecture Overview](../architecture.md)
-- [Development Documentation](./README.md)
+- [Architecture Overview](../../../apps/admin/docs/architecture.md)
+- [Development Documentation](../../../apps/admin/docs/development/README.md)

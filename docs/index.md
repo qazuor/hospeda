@@ -64,9 +64,13 @@ Per-app deployment guides live in each app's `docs/` directory (see [App Documen
 
 - [Deployment Index](deployment/README.md)
 - [Environments](deployment/environments.md)
+- [Secrets](deployment/secrets.md)
 - [CI/CD](deployment/ci-cd.md)
 - [Billing Checklist](deployment/billing-checklist.md)
-- [Deployment Checklist](deployment-checklist.md)
+- [Deployment Checklist](deployment/checklist.md)
+- [API Deployment](deployment/apps/api.md)
+- [Web Deployment](deployment/apps/web.md)
+- [Admin Deployment](deployment/apps/admin.md)
 
 ## Security
 

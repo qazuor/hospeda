@@ -109,7 +109,7 @@ Topics covered in detailed docs:
 - **[Route Factories](./docs/development/route-factories.md)**: Creating type-safe routes
 - **[Authentication](./docs/AUTH_SYSTEM.md)**: Actor system and permissions
 - **[Testing](./docs/development/testing-guide.md)**: Testing strategies and patterns
-- **[Deployment](./docs/development/deployment.md)**: Production setup and monitoring
+- **[Deployment](../../docs/deployment/apps/api.md)**: Production setup and monitoring
 
 For cross-app documentation:
 
