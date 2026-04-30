@@ -31,7 +31,11 @@ const { mockDb, mockGetDb, mockGetQZPayBilling, mockWithTransaction } = vi.hoist
         orderBy: vi.fn(),
         offset: vi.fn(),
         execute: vi.fn(),
-        transaction: vi.fn()
+        transaction: vi.fn(),
+        // Support for Drizzle SELECT ... FOR UPDATE chain used by tryRedeemAtomically
+        // and applyPromoCode (SPEC-064 over-redemption fix):
+        // tx.select().from(table).where(cond).for('update')
+        for: vi.fn()
     };
 
     // withTransaction mock that executes the callback with mockDb as the transaction
@@ -140,7 +144,10 @@ describe('PromoCodeService', () => {
         // Setup default billing mock
         mockGetQZPayBilling.mockReturnValue({});
 
-        // Setup chainable query builder mocks
+        // Setup chainable query builder mocks.
+        // The chain mockDb.select().from().where() is used by both:
+        //  - Regular queries: ...where().limit()   (resolved by mockDb.limit)
+        //  - Locking queries: ...where().for('update') (resolved by mockDb.for)
         mockDb.insert.mockReturnValue(mockDb);
         mockDb.select.mockReturnValue(mockDb);
         mockDb.update.mockReturnValue(mockDb);
@@ -152,6 +159,8 @@ describe('PromoCodeService', () => {
         mockDb.set.mockReturnValue(mockDb);
         mockDb.orderBy.mockReturnValue(mockDb);
         mockDb.offset.mockReturnValue(mockDb);
+        // Default: for('update') returns mockDb so tests can override per-case
+        mockDb.for.mockReturnValue(mockDb);
 
         service = new PromoCodeService();
     });
@@ -734,16 +743,29 @@ describe('PromoCodeService', () => {
     });
 
     describe('apply', () => {
+        /**
+         * applyPromoCode (SPEC-064) replaced raw `tx.execute(SELECT FOR UPDATE)` with
+         * Drizzle typed queries: tx.select().from(table).where(cond).for('update').
+         * The mockDb chain resolves at `.for()` for the lock query and at `.limit()`
+         * for getPromoCodeByCode. After the lock, applyPromoCode does:
+         *   tx.update(...).set(...).where(...)            — no .returning()
+         *   tx.insert(...).values(...)                    — no .returning()
+         * so we don't need to mock `.returning()` for the success path.
+         */
         it('should return error result when billing not configured', async () => {
             // Note: apply() delegates to applyPromoCode() which does not check billing.
             // Billing configuration is validated at the route level, not in this method.
             // Arrange
             mockGetQZPayBilling.mockReturnValue(null);
             const serviceWithoutBilling = new PromoCodeService();
+            // getPromoCodeByCode: select().from().where().limit() — terminal is limit()
             mockDb.limit.mockResolvedValue([mockDbPromoCode]);
-            // Mock atomic redemption to succeed
-            mockDb.execute.mockResolvedValue({ rows: [mockDbPromoCode] });
-            mockDb.returning.mockResolvedValue([{ ...mockDbPromoCode, usedCount: 6 }]);
+            // SELECT ... FOR UPDATE inside withTransaction — terminal is for()
+            mockDb.for.mockResolvedValue([mockDbPromoCode]);
+            // update().set().where() inside withTransaction — where() returns mockDb
+            // (non-Promise), so await resolves immediately to mockDb. No extra setup needed.
+            // insert().values() inside withTransaction — values() returns mockDb
+            // (non-Promise), so await resolves immediately. No extra setup needed.
 
             // Act - apply() works regardless of billing configuration
             const result = await serviceWithoutBilling.apply('WELCOME20', 'checkout_123');
@@ -754,10 +776,12 @@ describe('PromoCodeService', () => {
 
         it('should return success with promo code details', async () => {
             // Arrange
+            // getPromoCodeByCode: select().from().where().limit() — terminal is limit()
             mockDb.limit.mockResolvedValue([mockDbPromoCode]);
-            // Mock the atomic redemption: execute returns locked row (QueryResult format), returning returns updated row
-            mockDb.execute.mockResolvedValue({ rows: [mockDbPromoCode] });
-            mockDb.returning.mockResolvedValue([{ ...mockDbPromoCode, usedCount: 6 }]);
+            // SELECT ... FOR UPDATE inside withTransaction — terminal is for()
+            mockDb.for.mockResolvedValue([mockDbPromoCode]);
+            // update().set().where() and insert().values() use default mockReturnValue(mockDb)
+            // which resolves as a non-Promise when awaited — that is sufficient.
 
             // Act
             const result = await service.apply('WELCOME20', 'checkout_123');
@@ -804,12 +828,15 @@ describe('PromoCodeService', () => {
             // Arrange
             const maxedOutCode = {
                 ...mockDbPromoCode,
-                usedCount: 100, // Equal to maxUses
+                usedCount: 100, // Equal to maxUses — guard will fire
                 maxUses: 100
             };
+            // getPromoCodeByCode: select().from().where().limit() — terminal is limit()
             mockDb.limit.mockResolvedValue([maxedOutCode]);
-            // The atomic redemption will catch this (QueryResult format)
-            mockDb.execute.mockResolvedValue({ rows: [maxedOutCode] });
+            // SELECT ... FOR UPDATE inside withTransaction returns maxed-out row.
+            // applyPromoCode checks currentUsed >= maxUses and returns VALIDATION_ERROR
+            // without ever calling update().
+            mockDb.for.mockResolvedValue([maxedOutCode]);
 
             // Act
             const result = await service.apply('WELCOME20', 'checkout_123');
@@ -824,10 +851,21 @@ describe('PromoCodeService', () => {
     });
 
     describe('tryRedeemAtomically', () => {
+        /**
+         * tryRedeemAtomically (SPEC-064) uses Drizzle typed queries instead of
+         * raw tx.execute():
+         *   1. Lock:      tx.select().from(table).where(cond).for('update') → array
+         *   2. Increment: tx.update(table).set({...}).where(cond).returning() → array
+         *
+         * mockDb.for is the terminal for the SELECT ... FOR UPDATE chain.
+         * mockDb.returning is the terminal for the UPDATE ... RETURNING chain.
+         */
         it('should successfully redeem when under max uses', async () => {
             // Arrange
             const codeUnderLimit = { ...mockDbPromoCode, usedCount: 5, maxUses: 100 };
-            mockDb.execute.mockResolvedValue({ rows: [codeUnderLimit] });
+            // SELECT ... FOR UPDATE returns the code (usedCount < maxUses → proceeds)
+            mockDb.for.mockResolvedValue([codeUnderLimit]);
+            // UPDATE ... RETURNING returns the incremented row
             mockDb.returning.mockResolvedValue([{ ...codeUnderLimit, usedCount: 6 }]);
 
             // Act
@@ -842,7 +880,8 @@ describe('PromoCodeService', () => {
         it('should fail when max uses exceeded', async () => {
             // Arrange
             const maxedOutCode = { ...mockDbPromoCode, usedCount: 100, maxUses: 100 };
-            mockDb.execute.mockResolvedValue({ rows: [maxedOutCode] });
+            // SELECT ... FOR UPDATE returns maxed-out code → guard fires, no update
+            mockDb.for.mockResolvedValue([maxedOutCode]);
 
             // Act
             const result = await service.tryRedeemAtomically('pc_123');
@@ -854,7 +893,8 @@ describe('PromoCodeService', () => {
 
         it('should fail when promo code not found', async () => {
             // Arrange
-            mockDb.execute.mockResolvedValue({ rows: [] });
+            // SELECT ... FOR UPDATE returns empty array → NOT_FOUND
+            mockDb.for.mockResolvedValue([]);
 
             // Act
             const result = await service.tryRedeemAtomically('pc_nonexistent');
@@ -867,7 +907,9 @@ describe('PromoCodeService', () => {
         it('should allow redemption when maxUses is null (unlimited)', async () => {
             // Arrange
             const unlimitedCode = { ...mockDbPromoCode, usedCount: 1000, maxUses: null };
-            mockDb.execute.mockResolvedValue({ rows: [unlimitedCode] });
+            // SELECT ... FOR UPDATE returns unlimited code → no cap check → proceeds
+            mockDb.for.mockResolvedValue([unlimitedCode]);
+            // UPDATE ... RETURNING returns incremented row
             mockDb.returning.mockResolvedValue([{ ...unlimitedCode, usedCount: 1001 }]);
 
             // Act

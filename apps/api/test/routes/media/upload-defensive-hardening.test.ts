@@ -341,9 +341,25 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
     // ── GAP-078-068 — Interim rate limit ────────────────────────────────────
 
     describe('GAP-078-068: interim per-route rate limit (10 req / 60s)', () => {
-        it('returns 429 on the 11th admin upload request inside the 60s window', async () => {
-            // Arrange
-            const actor = createUploadReadyAdminActor();
+        it('returns 429 on the 31st admin upload request inside the 60s window', async () => {
+            // NOTE: SPEC-079 raised the admin upload limit to 30 req / 60s
+            // (up from the GAP-078-068 interim limit of 10) to support bulk-upload
+            // use cases. The protected upload route kept max=10.
+            //
+            // Use a distinct actor ID so the sliding-window store key is isolated
+            // from requests made by other tests in this file (the store is shared
+            // per actor.id and clearRateLimitStore() does not clear the sliding-window
+            // store — only the fixed-window store).
+            const MAX = 30;
+            const actor = createMockAdminActor({
+                id: 'ffffffff-0000-4000-8000-000000000099',
+                permissions: [
+                    PermissionEnum.ACCESS_PANEL_ADMIN,
+                    PermissionEnum.ACCESS_API_ADMIN,
+                    PermissionEnum.MEDIA_UPLOAD,
+                    PermissionEnum.ACCOMMODATION_UPDATE_ANY
+                ]
+            });
             const buildReq = () =>
                 new Request(ADMIN_URL, {
                     method: 'POST',
@@ -351,20 +367,20 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
                     body: buildAdminMultipartBody(buildPngFile())
                 });
 
-            // Act: send 11 requests in immediate succession.
+            // Act: send MAX+1 requests in immediate succession.
             const statuses: number[] = [];
-            for (let i = 0; i < 11; i++) {
+            for (let i = 0; i < MAX + 1; i++) {
                 const res = await app.request(buildReq());
                 statuses.push(res.status);
             }
 
-            // Assert: the first 10 must NOT be rate-limited (status varies
+            // Assert: the first MAX must NOT be rate-limited (status varies
             // depending on validation; what matters is they aren't 429), and
-            // the 11th must be exactly 429.
-            for (let i = 0; i < 10; i++) {
+            // the (MAX+1)th must be exactly 429.
+            for (let i = 0; i < MAX; i++) {
                 expect(statuses[i]).not.toBe(429);
             }
-            expect(statuses[10]).toBe(429);
+            expect(statuses[MAX]).toBe(429);
         });
     });
 });

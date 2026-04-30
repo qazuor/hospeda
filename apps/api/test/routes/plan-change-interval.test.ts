@@ -47,6 +47,37 @@ vi.mock('../../src/utils/route-factory', () => ({
     createAdminRoute: vi.fn((config: { handler: unknown }) => config.handler)
 }));
 
+// Mock dependencies added by SPEC-064 (audit logging, entitlement cache, addon recalculation)
+vi.mock('../../src/middlewares/entitlement', () => ({
+    clearEntitlementCache: vi.fn()
+}));
+
+vi.mock('../../src/utils/audit-logger', () => ({
+    auditLog: vi.fn(),
+    AuditEventType: {
+        BILLING_MUTATION: 'billing.mutation'
+    }
+}));
+
+vi.mock('../../src/services/addon-plan-change.service', () => ({
+    handlePlanChangeAddonRecalculation: vi.fn().mockResolvedValue(undefined)
+}));
+
+// withServiceTransaction wraps the addon-recalc call. Mock it to execute the
+// callback without an actual DB transaction so the test stays unit-level.
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    return {
+        ...actual,
+        withServiceTransaction: vi.fn(async (callback: (ctx: { tx: null }) => Promise<void>) => {
+            await callback({ tx: null });
+        }),
+        BILLING_EVENT_TYPES: {
+            PLAN_CHANGE_LOCAL_FAILED: 'plan_change_local_failed'
+        }
+    };
+});
+
 // ---------------------------------------------------------------------------
 // We need to test the mapBillingIntervalToQZPay function indirectly
 // since it's not exported. We test via handlePlanChange integration.
@@ -72,9 +103,18 @@ function createMockContext(
         body = { newPlanId: 'plan_pro', billingInterval: 'monthly' }
     } = options;
 
+    // handlePlanChange calls getActorFromContext(c) for audit logging (SPEC-064 T-051).
+    // getActorFromContext reads c.get('actor'), so the mock context must include it.
+    const mockActor = {
+        id: '00000000-0000-4000-8000-000000000002',
+        role: 'USER',
+        permissions: []
+    };
+
     const contextStore = new Map<string, unknown>([
         ['billingEnabled', billingEnabled],
-        ['billingCustomerId', billingCustomerId]
+        ['billingCustomerId', billingCustomerId],
+        ['actor', mockActor]
     ]);
 
     return {

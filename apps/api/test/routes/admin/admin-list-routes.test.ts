@@ -75,7 +75,20 @@ const ALL_ENTITY_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.OWNER_PROMOTION_VIEW,
     PermissionEnum.SPONSORSHIP_VIEW,
     PermissionEnum.ACCOMMODATION_REVIEW_VIEW,
-    PermissionEnum.DESTINATION_REVIEW_VIEW
+    PermissionEnum.DESTINATION_REVIEW_VIEW,
+    // Sibling route permissions required by Hono middleware collision:
+    // AccommodationReview routes are nested under the accommodation admin router,
+    // which also registers sibling routes for update/create/delete/restore/hardDelete.
+    // All sibling middleware fires on path resolution so the actor needs all of them.
+    PermissionEnum.ACCOMMODATION_UPDATE_ANY,
+    PermissionEnum.ACCOMMODATION_CREATE,
+    PermissionEnum.ACCOMMODATION_DELETE_ANY,
+    PermissionEnum.ACCOMMODATION_RESTORE_ANY,
+    PermissionEnum.ACCOMMODATION_HARD_DELETE,
+    // Same pattern for DestinationReview nested under destination admin router.
+    PermissionEnum.DESTINATION_CREATE,
+    PermissionEnum.DESTINATION_DELETE,
+    PermissionEnum.DESTINATION_UPDATE
 ] as const;
 
 /**

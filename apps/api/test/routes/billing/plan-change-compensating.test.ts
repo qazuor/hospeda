@@ -129,10 +129,19 @@ function buildContext({
     billingCustomerId?: string | null;
     body?: Record<string, unknown>;
 } = {}): Parameters<typeof handlePlanChange>[0] {
+    // handlePlanChange calls getActorFromContext(c) for audit logging (SPEC-064).
+    // getActorFromContext reads c.get('actor'), so the mock must include it.
+    const mockActor = {
+        id: '00000000-0000-4000-8000-000000000001',
+        role: 'USER',
+        permissions: []
+    };
+
     return {
         get: vi.fn((key: string) => {
             if (key === 'billingEnabled') return billingEnabled;
             if (key === 'billingCustomerId') return billingCustomerId;
+            if (key === 'actor') return mockActor;
             return undefined;
         }),
         req: {

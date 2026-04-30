@@ -132,22 +132,38 @@ function makePromoCode(
 }
 
 /**
+ * Build a chainable Drizzle-style select mock that resolves to the given rows
+ * when `.for('update')` is called at the end of the chain.
+ *
+ * applyPromoCode (SPEC-064) replaced raw `tx.execute(SELECT FOR UPDATE)` with
+ * Drizzle typed queries:
+ *   tx.select().from(table).where(cond).for('update')
+ * The chain must therefore support all four chained calls.
+ */
+function buildSelectForUpdateMock(rows: unknown[]) {
+    const forMock = vi.fn().mockResolvedValue(rows);
+    const whereMock = vi.fn().mockReturnValue({ for: forMock });
+    const fromMock = vi.fn().mockReturnValue({ where: whereMock });
+    return vi.fn().mockReturnValue({ from: fromMock });
+}
+
+/**
  * Configure mockWithTransaction to execute the callback and return success.
  * Simulates a successful atomic redemption (lock + increment + record usage).
+ *
+ * The tx object now mirrors the Drizzle typed-query interface used by
+ * applyPromoCode after the SPEC-064 over-redemption fix.
  */
 function setupSuccessfulRedemption() {
     mockWithTransaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
-        // Create a mock transaction object that supports the operations
-        // used inside applyPromoCode's withTransaction callback
+        // lockedRow returned by SELECT ... FOR UPDATE — usedCount < maxUses so redemption succeeds
+        const lockedRow = { id: 'promo-123', usedCount: 0, maxUses: null };
         const mockTx = {
-            execute: vi.fn().mockResolvedValue({
-                rows: [{ usedCount: 0, maxUses: null }]
-            }),
+            // Drizzle typed select chain: tx.select().from().where().for('update')
+            select: buildSelectForUpdateMock([lockedRow]),
             update: vi.fn().mockReturnValue({
                 set: vi.fn().mockReturnValue({
-                    where: vi.fn().mockReturnValue({
-                        returning: vi.fn().mockResolvedValue([{}])
-                    })
+                    where: vi.fn().mockResolvedValue(undefined)
                 })
             }),
             insert: vi.fn().mockReturnValue({
@@ -163,13 +179,15 @@ function setupSuccessfulRedemption() {
 /**
  * Configure mockWithTransaction to simulate max-uses-exceeded inside
  * the atomic lock path.
+ *
+ * The SELECT ... FOR UPDATE returns a row where usedCount >= maxUses so
+ * applyPromoCode returns VALIDATION_ERROR without incrementing.
  */
 function setupMaxUsesExceeded({ usedCount, maxUses }: { usedCount: number; maxUses: number }) {
     mockWithTransaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+        const lockedRow = { id: 'promo-123', usedCount, maxUses };
         const mockTx = {
-            execute: vi.fn().mockResolvedValue({
-                rows: [{ usedCount, maxUses }]
-            }),
+            select: buildSelectForUpdateMock([lockedRow]),
             update: vi.fn(),
             insert: vi.fn()
         };
@@ -446,10 +464,10 @@ describe('Promo Code Apply Functionality', () => {
             let capturedInsertValues: Record<string, unknown> | null = null;
             mockWithTransaction.mockImplementation(
                 async (callback: (tx: unknown) => Promise<unknown>) => {
+                    // Drizzle typed chain: tx.select().from().where().for('update')
+                    const lockedRow = { id: 'promo-record', usedCount: 0, maxUses: null };
                     const mockTx = {
-                        execute: vi.fn().mockResolvedValue({
-                            rows: [{ usedCount: 0, maxUses: null }]
-                        }),
+                        select: buildSelectForUpdateMock([lockedRow]),
                         update: vi.fn().mockReturnValue({
                             set: vi.fn().mockReturnValue({
                                 where: vi.fn().mockResolvedValue(undefined)
