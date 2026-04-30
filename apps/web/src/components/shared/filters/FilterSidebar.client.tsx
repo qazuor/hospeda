@@ -47,6 +47,18 @@ export interface FilterSidebarProps {
      * for Astro islands where functions cannot be serialized as props).
      */
     readonly onFiltersChange?: (params: URLSearchParams) => void;
+    /**
+     * Layout position of the filter panel on desktop (>=768px).
+     *
+     * - `'left'` (default): static panel to the left of the content grid —
+     *   the parent layout places the sidebar in a CSS grid column.
+     * - `'top'`: horizontal bar above the content area — the wrapper renders
+     *   as a full-width strip with filters scrolling horizontally.
+     *
+     * On mobile (<768px) both variants collapse to the same floating-button +
+     * left-side drawer (existing behavior is always preserved).
+     */
+    readonly position?: 'left' | 'top';
     readonly className?: string;
 }
 
@@ -584,8 +596,10 @@ function SidebarPanel({
  * Every state change triggers a debounced navigation (500ms) via Astro View Transitions.
  *
  * Responsive behavior:
- * - Desktop (>= 768px): static sidebar panel.
- * - Mobile (< 768px): floating trigger button + full-height drawer from the left.
+ * - Desktop (>= 768px): static panel whose layout depends on `position`:
+ *   - `'left'` (default): sidebar column to the left of content (parent grid controls placement).
+ *   - `'top'`: horizontal strip above content (full-width, filters scroll horizontally).
+ * - Mobile (< 768px): floating trigger button + full-height drawer from the left (both positions).
  */
 export function FilterSidebar({
     locale,
@@ -594,6 +608,7 @@ export function FilterSidebar({
     defaultSort = '',
     initialParams,
     onFiltersChange,
+    position = 'left',
     className
 }: FilterSidebarProps) {
     const { t } = createTranslations(locale);
@@ -848,7 +863,15 @@ export function FilterSidebar({
     };
 
     return (
-        <div className={cn(styles.wrapper, className)}>
+        <div
+            className={cn(
+                styles.wrapper,
+                position === 'left' && styles.positionLeft,
+                position === 'top' && styles.positionTop,
+                className
+            )}
+            data-position={position}
+        >
             {/* Desktop sidebar — hidden on mobile via CSS */}
             <div className={cn(styles.sidebar, styles.sidebarDesktop)}>
                 <SidebarPanel {...panelProps} />

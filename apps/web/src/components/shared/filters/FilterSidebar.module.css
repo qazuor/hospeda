@@ -13,6 +13,83 @@
 }
 
 /* ============================================================
+   Position variants
+   Controlled via the `position` prop on FilterSidebar.
+   On mobile (<768px) both variants use the floating drawer —
+   these classes only affect desktop layout.
+   ============================================================ */
+
+/**
+ * position='left' (default)
+ * The wrapper acts as a transparent passthrough (`display:contents`).
+ * Placement is controlled by the parent grid in ListingLayout.astro.
+ * The .sidebar element stacks vertically inside its grid column.
+ */
+.positionLeft {
+    display: contents;
+}
+
+/**
+ * position='top'
+ * The wrapper becomes a full-width horizontal strip.
+ * On desktop the .sidebarDesktop panel lays out its groups in a
+ * horizontal scrolling row instead of a vertical column.
+ */
+@media (min-width: 768px) {
+    .positionTop {
+        display: block;
+        width: 100%;
+    }
+
+    .positionTop .sidebarDesktop {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 0.75rem;
+        overflow-x: auto;
+        max-height: none;
+        border-radius: var(--radius-button);
+        padding: 0.75rem 1rem;
+    }
+
+    .positionTop .sidebar {
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 0.75rem;
+        max-height: none;
+        overflow: visible;
+    }
+
+    .positionTop .sidebarHeader {
+        position: static;
+        border-bottom: none;
+        border-right: 1px solid oklch(from var(--border) l c h / 0.5);
+        padding: 0 1rem 0 0;
+        flex-shrink: 0;
+    }
+
+    .positionTop .sidebarBody {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        overflow: visible;
+        padding: 0;
+    }
+
+    .positionTop .group {
+        border-bottom: none;
+        border-right: 1px solid oklch(from var(--border) l c h / 0.4);
+        padding: 0 0.75rem 0 0;
+        margin: 0;
+        flex-shrink: 0;
+    }
+
+    .positionTop .group:last-of-type {
+        border-right: none;
+    }
+}
+
+/* ============================================================
    Desktop sidebar panel
    ============================================================ */
 
