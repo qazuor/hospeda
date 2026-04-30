@@ -5,17 +5,18 @@ import { hasPermission } from '../../utils';
 
 /**
  * Checks if the actor can view exchange rates.
- * Requires EXCHANGE_RATE_VIEW permission.
- * @param actor - The actor performing the action.
- * @throws {ServiceError} If not permitted.
+ *
+ * Exchange rates are public market data (USD/ARS conversion factors) consumed
+ * by the public web frontend for price display. Read access is therefore open
+ * to guests — no permission required. The admin-specific listing path remains
+ * gated by {@link checkCanAdminList} which preserves the EXCHANGE_RATE_VIEW
+ * requirement for the admin tier.
+ *
+ * @param _actor - The actor performing the action (unused; kept for signature
+ *   parity with other check functions).
  */
-export const checkCanViewExchangeRate = (actor: Actor): void => {
-    if (!hasPermission(actor, PermissionEnum.EXCHANGE_RATE_VIEW)) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'Forbidden: missing EXCHANGE_RATE_VIEW permission'
-        );
-    }
+export const checkCanViewExchangeRate = (_actor: Actor): void => {
+    // Public read — no permission gate.
 };
 
 /**
@@ -95,47 +96,26 @@ export const checkCanFetchExchangeRate = (actor: Actor): void => {
 
 /**
  * Checks if the actor can list exchange rates.
- * Requires EXCHANGE_RATE_VIEW permission.
- * @param actor - The actor performing the action.
- * @throws {ServiceError} If not permitted.
+ * Public market data — no permission gate. See {@link checkCanViewExchangeRate}.
  */
-export const checkCanListExchangeRate = (actor: Actor): void => {
-    if (!hasPermission(actor, PermissionEnum.EXCHANGE_RATE_VIEW)) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'Forbidden: missing EXCHANGE_RATE_VIEW permission'
-        );
-    }
+export const checkCanListExchangeRate = (_actor: Actor): void => {
+    // Public read — no permission gate.
 };
 
 /**
  * Checks if the actor can search exchange rates.
- * Requires EXCHANGE_RATE_VIEW permission.
- * @param actor - The actor performing the action.
- * @throws {ServiceError} If not permitted.
+ * Public market data — no permission gate. See {@link checkCanViewExchangeRate}.
  */
-export const checkCanSearchExchangeRate = (actor: Actor): void => {
-    if (!hasPermission(actor, PermissionEnum.EXCHANGE_RATE_VIEW)) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'Forbidden: missing EXCHANGE_RATE_VIEW permission'
-        );
-    }
+export const checkCanSearchExchangeRate = (_actor: Actor): void => {
+    // Public read — no permission gate.
 };
 
 /**
  * Checks if the actor can count exchange rates.
- * Requires EXCHANGE_RATE_VIEW permission.
- * @param actor - The actor performing the action.
- * @throws {ServiceError} If not permitted.
+ * Public market data — no permission gate. See {@link checkCanViewExchangeRate}.
  */
-export const checkCanCountExchangeRate = (actor: Actor): void => {
-    if (!hasPermission(actor, PermissionEnum.EXCHANGE_RATE_VIEW)) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'Forbidden: missing EXCHANGE_RATE_VIEW permission'
-        );
-    }
+export const checkCanCountExchangeRate = (_actor: Actor): void => {
+    // Public read — no permission gate.
 };
 
 /**

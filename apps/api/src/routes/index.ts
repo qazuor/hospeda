@@ -53,11 +53,7 @@ import {
     adminUserTagModerationRoutes
 } from './tag/user-tag/index.js';
 
-import {
-    adminOwnerPromotionRoutes,
-    protectedOwnerPromotionRoutes,
-    publicOwnerPromotionRoutes
-} from './owner-promotion';
+import { adminOwnerPromotionRoutes, protectedOwnerPromotionRoutes } from './owner-promotion';
 // ─── Entities with admin-only or specialized tiers ──────────────────────────
 import { adminPostSponsorRoutes } from './postSponsor';
 
@@ -83,11 +79,8 @@ import { reportRoutes } from './reports';
 import { revalidationRouter } from './revalidation';
 import { publicSearchRoutes } from './search/public';
 import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorship';
-import { adminSponsorshipLevelRoutes, publicSponsorshipLevelRoutes } from './sponsorship-level';
-import {
-    adminSponsorshipPackageRoutes,
-    publicSponsorshipPackageRoutes
-} from './sponsorship-package';
+import { adminSponsorshipLevelRoutes } from './sponsorship-level';
+import { adminSponsorshipPackageRoutes } from './sponsorship-package';
 import { publicStatsRoutes } from './stats/public';
 import { publicTestimonialRoutes } from './testimonials/public';
 import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
@@ -156,28 +149,27 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/accommodations', publicAccommodationRoutes);
         app.route('/api/v1/public/destinations', publicDestinationRoutes);
         app.route('/api/v1/public/events', publicEventRoutes);
+
+        // PostTag public listing (SPEC-086 — public SEO taxonomy for blog posts).
+        // MUST be mounted BEFORE `/api/v1/public/posts` because Hono matches mount
+        // prefixes in registration order: registering `/posts` first would route
+        // any `/posts/tags` request into the posts router (where it falls into the
+        // `/:id` handler with id="tags" and fails UUID validation with 400).
+        app.route('/api/v1/public/posts/tags', publicPostTagRoutes);
         app.route('/api/v1/public/posts', publicPostRoutes);
 
         // Supporting entities
         app.route('/api/v1/public/amenities', publicAmenityRoutes);
         app.route('/api/v1/public/features', publicFeatureRoutes);
         app.route('/api/v1/public/attractions', publicAttractionRoutes);
-
-        // PostTag public listing (SPEC-086 — public SEO taxonomy for blog posts)
-        // GET /api/v1/public/posts/tags (+ ?withCounts=true)
-        app.route('/api/v1/public/posts/tags', publicPostTagRoutes);
         app.route('/api/v1/public/event-locations', publicEventLocationRoutes);
         app.route('/api/v1/public/event-organizers', publicEventOrganizerRoutes);
 
-        // Owner promotions
-        app.route('/api/v1/public/owner-promotions', publicOwnerPromotionRoutes);
-
-        // Exchange rates (public read-only)
+        // Exchange rates (public read-only — consumed by the web frontend
+        // for USD/ARS price conversion).
         app.route('/api/v1/public/exchange-rates', publicExchangeRateRoutes);
 
         // Other public routes (read-only)
-        app.route('/api/v1/public/sponsorship-levels', publicSponsorshipLevelRoutes);
-        app.route('/api/v1/public/sponsorship-packages', publicSponsorshipPackageRoutes);
         app.route('/api/v1/public/plans', publicBillingRoutes);
         app.route('/api/v1/public', contactRoutes);
         app.route('/api/v1/public/feedback', publicFeedbackRoutes);
