@@ -31,7 +31,9 @@ export const publicGetDestinationSummaryRoute = createPublicRoute({
             destinationId: params.id as string
         });
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
-        return result.data;
+        // Service wraps the value as { summary }; the responseSchema is the
+        // inner DestinationSummarySchema, so unwrap before returning.
+        return result.data?.summary ?? null;
     },
     options: {
         cacheTTL: 600, // Cache for 10 minutes (summary data changes less frequently)

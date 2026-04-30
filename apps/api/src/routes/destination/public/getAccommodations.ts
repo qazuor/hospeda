@@ -34,7 +34,9 @@ export const publicGetDestinationAccommodationsRoute = createPublicRoute({
             pageSize: 100
         });
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
-        return result.data || [];
+        // Service wraps the value as { accommodations: [...] }; the responseSchema
+        // is the bare array, so unwrap before returning.
+        return result.data?.accommodations ?? [];
     },
     options: {
         cacheTTL: 300,

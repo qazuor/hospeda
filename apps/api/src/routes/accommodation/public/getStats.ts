@@ -43,22 +43,9 @@ const getStatsHandler = async (ctx: Context, params: Record<string, unknown>) =>
         return null;
     }
 
-    // Transform service response to match AccommodationStatsSchema
-    const statsResponse = {
-        accommodation: {
-            id,
-            name: accommodationResult.data.name
-        },
-        stats: {
-            total: statsResult.data.stats.total,
-            totalFeatured: statsResult.data.stats.totalFeatured,
-            averagePrice: statsResult.data.stats.averagePrice,
-            averageRating: statsResult.data.stats.averageRating,
-            totalByType: statsResult.data.stats.totalByType
-        }
-    };
-
-    return statsResponse;
+    // Schema is flat (AccommodationStatsSchema = { total, totalFeatured, ... }).
+    // The service wraps in { stats }, so unwrap before returning.
+    return statsResult.data.stats;
 };
 
 /**
