@@ -30,7 +30,7 @@
  * UNION of all sibling permissions.
  */
 
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { EntityTypeEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app.js';
@@ -75,7 +75,11 @@ const ACTOR_ID = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';
 const ENTITY_ID = 'bbbbbbbb-bbbb-4bbb-abbb-bbbbbbbbbbbb';
 const TAG_ID = 'cccccccc-cccc-4ccc-accc-cccccccccccc';
 
-const ENTITY_TYPE = 'accommodation';
+// EntityTypeEnum.ACCOMMODATION resolves to 'ACCOMMODATION' (uppercase). The
+// route schema is strict about casing — using a lowercase literal makes
+// permission checks pass with a 422 schema error and asserts that only
+// validate `not.toBe(403)` would silently pass on the wrong status.
+const ENTITY_TYPE = EntityTypeEnum.ACCOMMODATION;
 const BASE_PATH = `/api/v1/admin/entities/${ENTITY_TYPE}/${ENTITY_ID}`;
 
 const SYSTEM_TAG = {
