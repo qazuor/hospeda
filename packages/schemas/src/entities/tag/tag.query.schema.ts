@@ -5,6 +5,8 @@ import {
     HttpSortingSchema
 } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
+import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
+import { TagTypeSchema } from '../../enums/tag-type.schema.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { TagSchema } from './tag.schema.js';
 
@@ -22,9 +24,23 @@ import { TagSchema } from './tag.schema.js';
 // ============================================================================
 
 /**
- * Tag-specific filters that extend the base search functionality
+ * Tag-specific filters that extend the base search functionality.
+ *
+ * New filters per SPEC-086 refactor (D-002, D-018):
+ * - `type`: filter by INTERNAL / SYSTEM / USER (single value or array).
+ * - `ownerId`: filter by tag owner UUID (useful for listing a user's own USER tags).
+ * - `lifecycleState`: filter by lifecycle state (ACTIVE / INACTIVE / ARCHIVED).
  */
 export const TagFiltersSchema = z.object({
+    // Tag type filter (D-002)
+    type: z.union([TagTypeSchema, z.array(TagTypeSchema)]).optional(),
+
+    // Owner filter — for listing a specific user's USER tags (D-007)
+    ownerId: z.string().uuid().optional(),
+
+    // Lifecycle filter (D-022)
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
+
     // Basic filters
     name: z.string().optional(),
     color: z
@@ -75,6 +91,15 @@ export const TagFiltersSchema = z.object({
  * - Entity-specific filters: Flattened for consistency
  */
 export const TagSearchSchema = BaseSearchSchema.extend({
+    // Tag type filter (D-002) — single value or array
+    type: z.union([TagTypeSchema, z.array(TagTypeSchema)]).optional(),
+
+    // Owner filter — for listing a specific user's USER tags (D-007)
+    ownerId: z.string().uuid().optional(),
+
+    // Lifecycle filter (D-022)
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
+
     // Basic filters (flattened from TagFiltersSchema)
     name: z.string().optional(),
     color: z

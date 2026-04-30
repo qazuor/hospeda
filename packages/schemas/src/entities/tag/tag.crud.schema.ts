@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { TagIdSchema } from '../../common/id.schema.js';
+import { TagIdSchema, UserIdSchema } from '../../common/id.schema.js';
+import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
+import { TagTypeSchema } from '../../enums/tag-type.schema.js';
 import { TagSchema } from './tag.schema.js';
 
 /**
@@ -11,6 +14,11 @@ import { TagSchema } from './tag.schema.js';
  * - Patch (input)
  * - Delete (input/output)
  * - Restore (input/output)
+ *
+ * Design invariants per D-002, D-018 (SPEC-086):
+ * - USER tags require `ownerId`.
+ * - INTERNAL/SYSTEM tags must NOT have `ownerId`.
+ * - `type` is immutable after creation — excluded from all update schemas.
  */
 
 // ============================================================================
@@ -18,22 +26,85 @@ import { TagSchema } from './tag.schema.js';
 // ============================================================================
 
 /**
- * Schema for creating a new tag
- * Omits auto-generated fields like id and audit fields
+ * Base for create input — omits auto-generated fields, type, and ownerId.
+ * The conditional refinement on ownerId is applied at the TagCreateInputSchema level.
  */
-export const TagCreateInputSchema = TagSchema.omit({
+const TagCreateBaseSchema = TagSchema.omit({
     id: true,
     createdAt: true,
     updatedAt: true,
     createdById: true,
     updatedById: true,
     deletedAt: true,
-    deletedById: true
+    deletedById: true,
+    type: true,
+    ownerId: true,
+    lifecycleState: true
+}).extend({
+    /**
+     * Lifecycle state defaults to ACTIVE for new tags.
+     * Can be overridden to DRAFT or ARCHIVED.
+     */
+    lifecycleState: LifecycleStatusEnumSchema.optional().default(LifecycleStatusEnum.ACTIVE)
 });
 
 /**
- * Schema for tag creation response
- * Returns the complete tag object
+ * Schema for creating a new tag.
+ *
+ * Required: `type`, `name`, `color`.
+ * Optional: `icon`, `description`, `lifecycleState` (defaults to ACTIVE).
+ * Conditional (D-002, D-018):
+ * - `ownerId` is **required** when `type === 'USER'`.
+ * - `ownerId` must be **null or absent** when `type` is `'SYSTEM'` or `'INTERNAL'`.
+ *
+ * @example
+ * ```ts
+ * // USER tag — ownerId required
+ * TagCreateInputSchema.parse({ type: 'USER', name: 'Check later', color: 'BLUE', ownerId: '<uuid>' });
+ *
+ * // SYSTEM tag — ownerId must be absent or null
+ * TagCreateInputSchema.parse({ type: 'SYSTEM', name: 'Featured', color: 'GREY' });
+ * ```
+ */
+export const TagCreateInputSchema = TagCreateBaseSchema.extend({
+    /** Tag type tier. Immutable after creation (D-002). */
+    type: TagTypeSchema,
+    /**
+     * UUID of the tag owner. Required for USER tags; must be null/absent for
+     * INTERNAL and SYSTEM tags. Cascade-deleted when the user is deleted (D-004).
+     */
+    ownerId: UserIdSchema.nullable().optional()
+})
+    .refine(
+        (data) => {
+            if (data.type === 'USER') {
+                return data.ownerId != null;
+            }
+            return true;
+        },
+        {
+            message:
+                'ownerId is required for USER tags (D-002). Provide a valid UUID that identifies the tag owner.',
+            path: ['ownerId']
+        }
+    )
+    .refine(
+        (data) => {
+            if (data.type === 'INTERNAL' || data.type === 'SYSTEM') {
+                return data.ownerId == null;
+            }
+            return true;
+        },
+        {
+            message:
+                'ownerId must be null or absent for INTERNAL and SYSTEM tags (D-002). These tag types are not owned by a specific user.',
+            path: ['ownerId']
+        }
+    );
+
+/**
+ * Schema for tag creation response.
+ * Returns the complete tag object.
  */
 export const TagCreateOutputSchema = TagSchema;
 
@@ -42,28 +113,30 @@ export const TagCreateOutputSchema = TagSchema;
 // ============================================================================
 
 /**
- * Schema for updating a tag (PUT - complete replacement)
- * Omits auto-generated fields and makes all fields partial
+ * Schema for updating a tag (PATCH — partial update).
+ *
+ * `type` is **immutable** after creation and is excluded from this schema (D-018).
+ * `ownerId` is also excluded — ownership cannot be transferred.
+ * All remaining fields are patchable: `name`, `color`, `icon`, `description`,
+ * `lifecycleState`.
+ *
+ * @example
+ * ```ts
+ * TagUpdateInputSchema.parse({ name: 'New name', color: 'RED' });
+ * TagUpdateInputSchema.parse({ description: 'Updated description' });
+ * ```
  */
-export const TagUpdateInputSchema = TagSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true
-}).partial();
+export const TagUpdateInputSchema = TagCreateBaseSchema.partial();
 
 /**
- * Schema for partial tag updates (PATCH)
- * Same as update but explicitly named for clarity
+ * Schema for partial tag updates (PATCH).
+ * Alias of TagUpdateInputSchema for clarity.
  */
 export const TagPatchInputSchema = TagUpdateInputSchema;
 
 /**
- * Schema for tag update response
- * Returns the complete updated tag object
+ * Schema for tag update response.
+ * Returns the complete updated tag object.
  */
 export const TagUpdateOutputSchema = TagSchema;
 
@@ -72,8 +145,10 @@ export const TagUpdateOutputSchema = TagSchema;
 // ============================================================================
 
 /**
- * Schema for tag deletion input
- * Requires ID and optional force flag for hard delete
+ * Schema for tag deletion input.
+ *
+ * Tags use hard delete with cascade on `r_entity_tag` (D-011).
+ * The `force` flag is kept for backward compatibility with bulk operation flows.
  */
 export const TagDeleteInputSchema = z.object({
     id: TagIdSchema,
@@ -86,8 +161,8 @@ export const TagDeleteInputSchema = z.object({
 });
 
 /**
- * Schema for tag deletion response
- * Returns success status and deletion timestamp
+ * Schema for tag deletion response.
+ * Returns success status and deletion timestamp.
  */
 export const TagDeleteOutputSchema = z.object({
     success: z
@@ -107,16 +182,16 @@ export const TagDeleteOutputSchema = z.object({
 // ============================================================================
 
 /**
- * Schema for tag restoration input
- * Requires only the tag ID
+ * Schema for tag restoration input.
+ * Requires only the tag ID.
  */
 export const TagRestoreInputSchema = z.object({
     id: TagIdSchema
 });
 
 /**
- * Schema for tag restoration response
- * Returns the complete restored tag object
+ * Schema for tag restoration response.
+ * Returns the complete restored tag object.
  */
 export const TagRestoreOutputSchema = TagSchema;
 
@@ -125,8 +200,8 @@ export const TagRestoreOutputSchema = TagSchema;
 // ============================================================================
 
 /**
- * Schema for tag merge input
- * Requires source tag ID and target tag ID
+ * Schema for tag merge input.
+ * Requires source tag ID and target tag ID.
  */
 export const TagMergeInputSchema = z.object({
     sourceTagId: TagIdSchema,
@@ -140,8 +215,8 @@ export const TagMergeInputSchema = z.object({
 });
 
 /**
- * Schema for tag merge response
- * Returns the target tag and merge statistics
+ * Schema for tag merge response.
+ * Returns the target tag and merge statistics.
  */
 export const TagMergeOutputSchema = z.object({
     success: z
@@ -165,8 +240,8 @@ export const TagMergeOutputSchema = z.object({
 // ============================================================================
 
 /**
- * Schema for bulk tag operations input
- * Requires array of tag IDs and operation type
+ * Schema for bulk tag operations input.
+ * Requires array of tag IDs and operation type.
  */
 export const TagBulkOperationInputSchema = z.object({
     ids: z
@@ -187,8 +262,8 @@ export const TagBulkOperationInputSchema = z.object({
 });
 
 /**
- * Schema for bulk tag operations response
- * Returns operation results for each tag
+ * Schema for bulk tag operations response.
+ * Returns operation results for each tag.
  */
 export const TagBulkOperationOutputSchema = z.object({
     success: z
@@ -215,8 +290,8 @@ export const TagBulkOperationOutputSchema = z.object({
 // ============================================================================
 
 /**
- * Schema for tag cleanup input
- * Removes unused tags based on criteria
+ * Schema for tag cleanup input.
+ * Removes unused tags based on criteria.
  */
 export const TagCleanupInputSchema = z.object({
     removeUnused: z
@@ -249,8 +324,8 @@ export const TagCleanupInputSchema = z.object({
 });
 
 /**
- * Schema for tag cleanup response
- * Returns cleanup statistics
+ * Schema for tag cleanup response.
+ * Returns cleanup statistics.
  */
 export const TagCleanupOutputSchema = z.object({
     success: z
@@ -281,8 +356,8 @@ export const TagCleanupOutputSchema = z.object({
 // ============================================================================
 
 /**
- * Schema for adding a tag to an entity (polymorphic)
- * Requires tagId, entityId, and entityType
+ * Schema for adding a tag to an entity (polymorphic).
+ * Requires tagId, entityId, and entityType.
  */
 export const TagAddToEntityInputSchema = z.object({
     tagId: TagIdSchema,
@@ -299,8 +374,8 @@ export const TagAddToEntityInputSchema = z.object({
 });
 
 /**
- * Schema for adding tag to entity response
- * Returns success status
+ * Schema for adding tag to entity response.
+ * Returns success status.
  */
 export const TagAddToEntityOutputSchema = z.object({
     success: z
@@ -311,8 +386,8 @@ export const TagAddToEntityOutputSchema = z.object({
 });
 
 /**
- * Schema for removing a tag from an entity (polymorphic)
- * Requires tagId, entityId, and entityType
+ * Schema for removing a tag from an entity (polymorphic).
+ * Requires tagId, entityId, and entityType.
  */
 export const TagRemoveFromEntityInputSchema = z.object({
     tagId: TagIdSchema,
@@ -329,8 +404,8 @@ export const TagRemoveFromEntityInputSchema = z.object({
 });
 
 /**
- * Schema for removing tag from entity response
- * Returns success status
+ * Schema for removing tag from entity response.
+ * Returns success status.
  */
 export const TagRemoveFromEntityOutputSchema = z.object({
     success: z
@@ -341,8 +416,8 @@ export const TagRemoveFromEntityOutputSchema = z.object({
 });
 
 /**
- * Schema for getting all tags for a given entity (polymorphic)
- * Requires entityId and entityType
+ * Schema for getting all tags for a given entity (polymorphic).
+ * Requires entityId and entityType.
  */
 export const TagGetForEntityInputSchema = z.object({
     entityId: z
@@ -358,16 +433,16 @@ export const TagGetForEntityInputSchema = z.object({
 });
 
 /**
- * Schema for getting tags for entity response
- * Returns array of tags
+ * Schema for getting tags for entity response.
+ * Returns array of tags.
  */
 export const TagGetForEntityOutputSchema = z.object({
     tags: z.array(TagSchema)
 });
 
 /**
- * Schema for getting all entities associated with a tag
- * Requires tagId, optional entityType filter
+ * Schema for getting all entities associated with a tag.
+ * Requires tagId, optional entityType filter.
  */
 export const TagGetEntitiesByTagInputSchema = z.object({
     tagId: TagIdSchema,
@@ -380,8 +455,8 @@ export const TagGetEntitiesByTagInputSchema = z.object({
 });
 
 /**
- * Schema for getting entities by tag response
- * Returns array of entity references
+ * Schema for getting entities by tag response.
+ * Returns array of entity references.
  */
 export const TagGetEntitiesByTagOutputSchema = z.object({
     entities: z.array(
@@ -401,8 +476,8 @@ export const TagGetEntitiesByTagOutputSchema = z.object({
 });
 
 /**
- * Schema for getting popular tags input
- * Requires limit, optional entityType and timeframe filters
+ * Schema for getting popular tags input.
+ * Requires limit, optional entityType and timeframe filters.
  */
 export const TagGetPopularInputSchema = z.object({
     limit: z
@@ -427,8 +502,8 @@ export const TagGetPopularInputSchema = z.object({
 });
 
 /**
- * Schema for getting popular tags response
- * Returns array of tags with usage counts
+ * Schema for getting popular tags response.
+ * Returns array of tags with usage counts.
  */
 export const TagGetPopularOutputSchema = z.object({
     tags: z.array(TagSchema)
