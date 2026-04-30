@@ -68,7 +68,9 @@ describe('SPEC-061 Phase B — Model transaction propagation', () => {
             await withTestTransaction(async (tx) => {
                 await tx.insert(tags).values(data);
 
-                const found = await tagModel.findOne({ slug: data.slug }, tx);
+                // SPEC-086 D-002: user-tags do not have a slug column. Query
+                // by name (testData.tag generates a unique random name).
+                const found = await tagModel.findOne({ name: data.name }, tx);
                 expect(found?.id).toBe(data.id);
             });
         });

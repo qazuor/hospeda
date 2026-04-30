@@ -245,13 +245,26 @@ export const testData = {
     },
 
     /**
-     * Valid `tags` row. `color` has no default in the schema.
+     * Valid `tags` row aligned with the SPEC-086 schema (D-002, D-018).
+     *
+     * - No `slug` column on user-tags (PostTag has slug, lives in a
+     *   separate table).
+     * - `type` is required and `NOT NULL` — defaults to `'SYSTEM'` so the
+     *   row passes the partial unique index without needing an `ownerId`.
+     * - `ownerId` is `null` for INTERNAL/SYSTEM, required for USER (the
+     *   caller must provide it via overrides for USER-typed fixtures).
+     * - `description` replaces the legacy `notes` column.
+     * - `name` includes a per-call random suffix so concurrent integration
+     *   tests don't collide on the partial unique index
+     *   `tags_system_name_idx` (unique on `name` WHERE type='SYSTEM').
      */
     tag(overrides: Partial<typeof hospedaSchema.tags.$inferInsert> = {}) {
         return {
             id: crypto.randomUUID(),
-            slug: `test-tag-${crypto.randomUUID().slice(0, 8)}`,
-            name: 'Test Tag',
+            name: `Test Tag ${crypto.randomUUID().slice(0, 8)}`,
+            type: 'SYSTEM' as const,
+            ownerId: null,
+            description: null,
             color: 'BLUE' as const,
             lifecycleState: 'ACTIVE' as const,
             ...overrides
