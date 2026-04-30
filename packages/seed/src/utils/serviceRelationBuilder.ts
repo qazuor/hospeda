@@ -1,5 +1,5 @@
 import { ServiceErrorCode } from '@repo/schemas';
-import type { ServiceContext } from '@repo/service-core';
+import type { ServiceConfig } from '@repo/service-core';
 import { errorHistory } from './errorHistory.js';
 import { STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
@@ -7,8 +7,8 @@ import type { SeedContext } from './seedContext.js';
 import { summaryTracker } from './summaryTracker.js';
 
 // Service constructor type - compatible with service constructors
-// biome-ignore lint/suspicious/noExplicitAny: Service constructors have varying signatures
-type ServiceConstructor<T = unknown> = new (ctx: ServiceContext, ...args: any[]) => T;
+// biome-ignore lint/suspicious/noExplicitAny: Service constructors have varying signatures (ctx + optional models)
+type ServiceConstructor<T = unknown> = new (ctx: ServiceConfig, ...args: any[]) => T;
 
 /**
  * Configuration for creating a service-based relation builder

@@ -116,10 +116,7 @@ export const createEntityApi = <TData>({
 
         if (!parseResult.success) {
             adminLogger.error(
-                `[createEntityApi] Zod validation failed for ${endpoint}:`,
-                parseResult.error.issues,
-                'Response data:',
-                data
+                `[createEntityApi] Zod validation failed for ${endpoint}: ${JSON.stringify(parseResult.error.issues)} | Response data: ${JSON.stringify(data)}`
             );
             throw new Error(
                 `API response validation failed for ${endpoint}: ${parseResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ')}`
