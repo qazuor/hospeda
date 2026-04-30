@@ -9,6 +9,8 @@
 // SPONSOR: External business or user that sponsors events/posts. Limited dashboard access.
 // USER: Logged-in user of the public portal, can favorite and review, etc.
 // GUEST: Public user, used for the website (not logged in).
+// SYSTEM: Reserved non-loginable account used as assignedById for automated tag assignments
+//         (seeds, cron jobs, webhooks). Has no granted permissions and cannot authenticate.
 
 export enum RoleEnum {
     SUPER_ADMIN = 'SUPER_ADMIN',
@@ -18,5 +20,6 @@ export enum RoleEnum {
     HOST = 'HOST',
     SPONSOR = 'SPONSOR',
     USER = 'USER',
-    GUEST = 'GUEST'
+    GUEST = 'GUEST',
+    SYSTEM = 'SYSTEM'
 }

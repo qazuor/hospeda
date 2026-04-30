@@ -106,5 +106,8 @@ export * from './subscription-status.schema.js';
 export * from './tag-color.enum.js';
 export * from './tag-color.schema.js';
 
+export * from './tag-type.enum.js';
+export * from './tag-type.schema.js';
+
 export * from './visibility.enum.js';
 export * from './visibility.schema.js';

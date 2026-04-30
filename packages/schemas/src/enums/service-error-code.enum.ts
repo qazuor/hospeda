@@ -22,5 +22,7 @@ export enum ServiceErrorCode {
     /** External service or dependency is not available or not configured */
     SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',
     /** Service method called without required configuration */
-    CONFIGURATION_ERROR = 'CONFIGURATION_ERROR'
+    CONFIGURATION_ERROR = 'CONFIGURATION_ERROR',
+    /** Per-user quota limit exceeded (e.g. USER tag quota) */
+    QUOTA_EXCEEDED = 'QUOTA_EXCEEDED'
 }

@@ -259,12 +259,6 @@ export enum PermissionEnum {
     THEME_EDIT = 'ui.theme.edit', // Allows editing the UI theme.
     HOMEPAGE_LAYOUT_CONFIGURE = 'ui.homepageLayout.configure', // Allows configuring the homepage layout.
 
-    // TAG: Permissions related to tags (categorization, filtering, etc.)
-    TAG_VIEW = 'tag.view', // Allows viewing tag information.
-    TAG_CREATE = 'tag.create', // Allows creating a new tag.
-    TAG_UPDATE = 'tag.update', // Allows updating a tag.
-    TAG_DELETE = 'tag.delete', // Allows deleting a tag.
-
     // CLIENT: Permissions related to client management (billing, subscriptions)
     CLIENT_CREATE = 'client.create', // Allows creating a new client.
     CLIENT_UPDATE = 'client.update', // Allows updating a client.
@@ -744,5 +738,36 @@ export enum PermissionEnum {
     CONVERSATION_UPDATE_STATUS_ANY = 'conversation.updateStatus.any', // Allows changing the status of any conversation (admin moderation).
     CONVERSATION_BLOCK_OWN = 'conversation.block.own', // Allows blocking a conversation the actor (owner) is a participant of.
     CONVERSATION_BLOCK_ANY = 'conversation.block.any', // Allows blocking any conversation (admin abuse prevention).
-    CONVERSATION_DELETE_ANY = 'conversation.delete.any' // Allows soft-deleting any conversation (admin only; no self-service delete in MVP).
+    CONVERSATION_DELETE_ANY = 'conversation.delete.any', // Allows soft-deleting any conversation (admin only; no self-service delete in MVP).
+
+    // Tag System (SPEC-086)
+    // User-Tag permissions (19)
+    // Note: TAG_USER_UPDATE_ANY is intentionally excluded (D-012 — super-admin moderation is delete-only).
+    // Note: TAG_SYSTEM_ASSIGN is intentionally excluded (D-017 — any authenticated user assigns SYSTEM tags via TAG_ASSIGN_ADD).
+    TAG_INTERNAL_CREATE = 'tag.internal.create', // Allows creating INTERNAL tags (operational labels: Spam, Fraud, Urgente).
+    TAG_INTERNAL_UPDATE = 'tag.internal.update', // Allows updating INTERNAL tags.
+    TAG_INTERNAL_DELETE = 'tag.internal.delete', // Allows deleting INTERNAL tags.
+    TAG_INTERNAL_VIEW = 'tag.internal.view', // Allows viewing INTERNAL tags in picker and admin UI.
+    TAG_INTERNAL_ASSIGN = 'tag.internal.assign', // Allows applying INTERNAL tags to entities.
+    TAG_SYSTEM_CREATE = 'tag.system.create', // Allows creating SYSTEM tags (shared organizational tags for all authenticated users).
+    TAG_SYSTEM_UPDATE = 'tag.system.update', // Allows updating SYSTEM tags.
+    TAG_SYSTEM_DELETE = 'tag.system.delete', // Allows deleting SYSTEM tags.
+    TAG_SYSTEM_VIEW = 'tag.system.view', // Allows viewing SYSTEM tags in admin context.
+    TAG_USER_CREATE = 'tag.user.create', // Allows creating own USER tags (subject to per-user quota).
+    TAG_USER_UPDATE_OWN = 'tag.user.updateOwn', // Allows updating own USER tags.
+    TAG_USER_DELETE_OWN = 'tag.user.deleteOwn', // Allows deleting own USER tags.
+    TAG_USER_VIEW_OWN = 'tag.user.viewOwn', // Allows viewing own USER tag pool (all lifecycle states).
+    TAG_USER_DELETE_ANY = 'tag.user.deleteAny', // Allows deleting any user's USER tag (super-admin moderation only).
+    TAG_VIEW_ALL_USER_TAGS = 'tag.viewAllUserTags', // Allows browsing all USER tags across users (super-admin moderation view).
+    TAG_VIEW_ALL_ASSIGNMENTS = 'tag.viewAllAssignments', // Allows viewing all r_entity_tag assignments with assignedById attribution (super-admin).
+    TAG_ASSIGN_VIEW = 'tag.assign.view', // Allows viewing own assignments on any entity.
+    TAG_ASSIGN_ADD = 'tag.assign.add', // Allows applying a visible tag (SYSTEM or own USER) to an accessible entity.
+    TAG_ASSIGN_REMOVE = 'tag.assign.remove', // Allows removing own tag assignment from an entity.
+
+    // PostTag permissions (5)
+    POST_TAG_CREATE = 'postTag.create', // Allows creating PostTags (public blog post categorization).
+    POST_TAG_UPDATE = 'postTag.update', // Allows updating PostTags.
+    POST_TAG_DELETE = 'postTag.delete', // Allows hard-deleting PostTags (shows impact count before deletion).
+    POST_TAG_VIEW = 'postTag.view', // Allows viewing PostTags in admin context (including INACTIVE/ARCHIVED).
+    POST_TAG_ASSIGN = 'postTag.assign' // Allows assigning or unassigning PostTags on a post.
 }

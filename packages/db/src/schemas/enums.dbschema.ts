@@ -34,6 +34,7 @@ import {
     SponsorshipTierEnum,
     SubscriptionStatusEnum,
     TagColorEnum,
+    TagTypeEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { pgEnum } from 'drizzle-orm/pg-core';
@@ -105,6 +106,8 @@ export const ModerationStatusPgEnum = pgEnum(
 );
 
 export const TagColorPgEnum = pgEnum('tag_color_enum', enumToTuple(TagColorEnum));
+
+export const TagTypePgEnum = pgEnum('tag_type', enumToTuple(TagTypeEnum));
 
 export const VisibilityPgEnum = pgEnum('visibility_enum', enumToTuple(VisibilityEnum));
 

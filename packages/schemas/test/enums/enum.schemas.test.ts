@@ -86,7 +86,7 @@ describe('Enum Schemas', () => {
 
     describe('RoleEnumSchema', () => {
         it('should accept all valid roles', () => {
-            const validRoles = ['USER', 'ADMIN', 'SUPER_ADMIN', 'GUEST'];
+            const validRoles = ['USER', 'ADMIN', 'SUPER_ADMIN', 'GUEST', 'SYSTEM'];
 
             for (const role of validRoles) {
                 expect(() => RoleEnumSchema.parse(role)).not.toThrow();
