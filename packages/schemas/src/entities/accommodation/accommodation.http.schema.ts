@@ -66,8 +66,48 @@ export const AccommodationSearchHttpSchema = BaseHttpSearchSchema.extend({
 
     // Array filters with HTTP coercion
     types: createArrayQueryParam('Filter by multiple accommodation types'),
-    amenities: createArrayQueryParam('Filter by required amenity IDs'),
-    features: createArrayQueryParam('Filter by required feature IDs'),
+    /**
+     * Filter by required amenity UUIDs.
+     * Accepts repeated query params (?amenities=uuid1&amenities=uuid2) or
+     * comma-separated values (?amenities=uuid1,uuid2).
+     * Each value must be a valid UUID v4; invalid UUIDs cause a 400 error.
+     */
+    amenities: z
+        .union([
+            // repeated param: Hono passes array directly
+            z.array(z.string().uuid()),
+            // comma-separated string: coerce to array then validate each element
+            z
+                .string()
+                .transform((val) =>
+                    val
+                        .split(',')
+                        .map((s) => s.trim())
+                        .filter((s) => s.length > 0)
+                )
+                .pipe(z.array(z.string().uuid()))
+        ])
+        .optional(),
+    /**
+     * Filter by required feature UUIDs.
+     * Accepts repeated query params (?features=uuid1&features=uuid2) or
+     * comma-separated values (?features=uuid1,uuid2).
+     * Each value must be a valid UUID v4; invalid UUIDs cause a 400 error.
+     */
+    features: z
+        .union([
+            z.array(z.string().uuid()),
+            z
+                .string()
+                .transform((val) =>
+                    val
+                        .split(',')
+                        .map((s) => s.trim())
+                        .filter((s) => s.length > 0)
+                )
+                .pipe(z.array(z.string().uuid()))
+        ])
+        .optional(),
     destinationIds: createArrayQueryParam('Filter by multiple destination IDs'),
 
     // Include relation flags (opt-in for heavier queries)
