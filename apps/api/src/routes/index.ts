@@ -70,6 +70,7 @@ import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
 import { reportRoutes } from './reports';
 import { revalidationRouter } from './revalidation';
+import { publicSearchRoutes } from './search/public';
 import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorship';
 import { adminSponsorshipLevelRoutes, publicSponsorshipLevelRoutes } from './sponsorship-level';
 import {
@@ -173,6 +174,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Admin:     /api/v1/admin/conversations/*   (T-011)
         app.route('/api/v1/public/conversations', publicConversationsRouter);
         app.route('/api/v1/protected/conversations', protectedConversationRoutes);
+
+        // Unified public search (SPEC-096 / REQ-096-04)
+        app.route('/api/v1/public/search', publicSearchRoutes);
 
         // Platform statistics
         app.route('/api/v1/public/stats', publicStatsRoutes);
