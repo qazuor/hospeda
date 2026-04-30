@@ -1,12 +1,13 @@
 ---
 /**
  * @file mi-cuenta/suscripcion/index.astro
- * @description Account subscription page.
+ * @description Account subscription page — renders the SubscriptionDashboard island.
  * @route /{lang}/mi-cuenta/suscripcion/
  * @rendering SSR
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import { SubscriptionDashboard } from '@/components/account/SubscriptionDashboard.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -20,15 +21,22 @@ if (!user) {
 
 const { t } = createTranslations(locale);
 const title = t('account.pages.subscription.title', 'Suscripción');
+
+/** Minimal user shape forwarded to the island (no sensitive fields) */
+const islandUser = {
+	id: user.id,
+	role: (user as { role?: string }).role ?? 'USER',
+};
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="suscripcion">
 	<h2 class="account-section__title">{title}</h2>
 
-	<!-- TODO: SubscriptionDashboard React island (client:load) -->
-	<div class="account-section__placeholder">
-		<p>{t('account.pages.subscription.placeholder', 'Contenido en desarrollo')}</p>
-	</div>
+	<SubscriptionDashboard
+		locale={locale}
+		user={islandUser}
+		client:load
+	/>
 </AccountLayout>
 
 <style>
@@ -38,13 +46,5 @@ const title = t('account.pages.subscription.title', 'Suscripción');
 		font-size: clamp(1.5rem, 3vw, 2rem);
 		color: var(--foreground);
 		margin: 0 0 var(--space-6);
-	}
-	.account-section__placeholder {
-		background-color: var(--card);
-		border: 1px dashed var(--border);
-		border-radius: var(--radius-card);
-		padding: var(--space-8);
-		text-align: center;
-		color: var(--muted-foreground);
 	}
 </style>

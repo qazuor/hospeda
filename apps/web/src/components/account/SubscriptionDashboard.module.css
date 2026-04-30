@@ -1,0 +1,473 @@
+/* SubscriptionDashboard.module.css */
+/* Scoped styles for the SubscriptionDashboard React island. */
+/* ALL values use CSS custom properties from global.css. */
+
+/* ── Root container ────────────────────────────────────────────────────────── */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 24px);
+}
+
+/* ── Plan card ─────────────────────────────────────────────────────────────── */
+
+.planCard {
+    background-color: var(--card, oklch(0.99 0 0));
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-card, 24px);
+    padding: var(--space-6, 24px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+}
+
+.planHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--space-3, 12px);
+}
+
+.planName {
+    font-family: var(--font-heading);
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--foreground, oklch(0.15 0 0));
+    margin: 0;
+}
+
+/* ── Status badge ──────────────────────────────────────────────────────────── */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 4px);
+    padding: 4px var(--space-3, 12px);
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
+
+.badgeActive {
+    background-color: oklch(from var(--success, oklch(0.55 0.18 145)) l c h / 0.15);
+    color: var(--success, oklch(0.55 0.18 145));
+    border: 1px solid oklch(from var(--success, oklch(0.55 0.18 145)) l c h / 0.30);
+}
+
+.badgeTrial {
+    background-color: oklch(from var(--accent, oklch(0.65 0.22 60)) l c h / 0.15);
+    color: var(--accent, oklch(0.65 0.22 60));
+    border: 1px solid oklch(from var(--accent, oklch(0.65 0.22 60)) l c h / 0.30);
+}
+
+.badgeCancelled {
+    background-color: oklch(from var(--muted-foreground, oklch(0.55 0 0)) l c h / 0.12);
+    color: var(--muted-foreground, oklch(0.55 0 0));
+    border: 1px solid oklch(from var(--muted-foreground, oklch(0.55 0 0)) l c h / 0.25);
+}
+
+.badgeExpired {
+    background-color: oklch(from var(--destructive, oklch(0.55 0.22 25)) l c h / 0.12);
+    color: var(--destructive, oklch(0.55 0.22 25));
+    border: 1px solid oklch(from var(--destructive, oklch(0.55 0.22 25)) l c h / 0.25);
+}
+
+.badgePastDue {
+    background-color: oklch(from var(--destructive, oklch(0.55 0.22 25)) l c h / 0.12);
+    color: var(--destructive, oklch(0.55 0.22 25));
+    border: 1px solid oklch(from var(--destructive, oklch(0.55 0.22 25)) l c h / 0.25);
+}
+
+.badgePending {
+    background-color: oklch(from var(--primary, oklch(0.5 0.18 260)) l c h / 0.12);
+    color: var(--primary, oklch(0.5 0.18 260));
+    border: 1px solid oklch(from var(--primary, oklch(0.5 0.18 260)) l c h / 0.25);
+}
+
+/* ── Meta row (billing date + payment method) ──────────────────────────────── */
+
+.metaGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4, 16px);
+}
+
+@media (min-width: 640px) {
+    .metaGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.metaItem {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 4px);
+}
+
+.metaLabel {
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--muted-foreground, oklch(0.55 0 0));
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0;
+}
+
+.metaValue {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--foreground, oklch(0.15 0 0));
+    margin: 0;
+}
+
+/* ── Features list ──────────────────────────────────────────────────────────── */
+
+.featuresCard {
+    background-color: var(--card, oklch(0.99 0 0));
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-card, 24px);
+    padding: var(--space-6, 24px);
+}
+
+.featuresTitle {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--foreground, oklch(0.15 0 0));
+    margin: 0 0 var(--space-4, 16px);
+}
+
+.featuresList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+}
+
+.featureItem {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3, 12px);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--foreground, oklch(0.15 0 0));
+}
+
+.featureCheck {
+    flex-shrink: 0;
+    color: var(--success, oklch(0.55 0.18 145));
+    margin-top: 2px;
+}
+
+/* ── Actions row ───────────────────────────────────────────────────────────── */
+
+.actionsCard {
+    background-color: var(--card, oklch(0.99 0 0));
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-card, 24px);
+    padding: var(--space-6, 24px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+}
+
+.actionsTitle {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--foreground, oklch(0.15 0 0));
+    margin: 0;
+}
+
+.actionsRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 12px);
+    align-items: center;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+
+.btnPrimary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: var(--space-2, 8px) var(--space-5, 20px);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: white;
+    background-color: var(--primary, oklch(0.5 0.18 260));
+    border: none;
+    border-radius: var(--radius-button, 8px);
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity var(--duration-normal, 0.4s) ease;
+    min-height: 40px;
+    white-space: nowrap;
+}
+
+.btnPrimary:hover:not(:disabled) {
+    opacity: 0.85;
+}
+
+.btnPrimary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btnSecondary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: var(--space-2, 8px) var(--space-5, 20px);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--primary, oklch(0.5 0.18 260));
+    background-color: transparent;
+    border: 1px solid var(--primary, oklch(0.5 0.18 260));
+    border-radius: var(--radius-button, 8px);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color var(--duration-normal, 0.4s) ease,
+        color var(--duration-normal, 0.4s) ease;
+    min-height: 40px;
+    white-space: nowrap;
+}
+
+.btnSecondary:hover:not(:disabled) {
+    background-color: var(--primary, oklch(0.5 0.18 260));
+    color: white;
+}
+
+.btnSecondary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btnDanger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: var(--space-2, 8px) var(--space-5, 20px);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--destructive, oklch(0.55 0.22 25));
+    background-color: transparent;
+    border: 1px solid var(--destructive, oklch(0.55 0.22 25));
+    border-radius: var(--radius-button, 8px);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color var(--duration-normal, 0.4s) ease,
+        color var(--duration-normal, 0.4s) ease;
+    min-height: 40px;
+    white-space: nowrap;
+}
+
+.btnDanger:hover:not(:disabled) {
+    background-color: var(--destructive, oklch(0.55 0.22 25));
+    color: white;
+}
+
+.btnDanger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btnAdmin {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: var(--space-2, 8px) var(--space-5, 20px);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--accent, oklch(0.65 0.22 60));
+    background-color: transparent;
+    border: 1px solid var(--accent, oklch(0.65 0.22 60));
+    border-radius: var(--radius-button, 8px);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color var(--duration-normal, 0.4s) ease,
+        color var(--duration-normal, 0.4s) ease;
+    min-height: 40px;
+    white-space: nowrap;
+}
+
+.btnAdmin:hover {
+    background-color: var(--accent, oklch(0.65 0.22 60));
+    color: white;
+}
+
+/* ── Upgrade link ──────────────────────────────────────────────────────────── */
+
+.upgradeLink {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--accent, oklch(0.65 0.22 60));
+    text-decoration: none;
+    transition: opacity var(--duration-normal, 0.4s) ease;
+}
+
+.upgradeLink:hover {
+    opacity: 0.75;
+    text-decoration: underline;
+}
+
+/* ── Confirmation modal ─────────────────────────────────────────────────────── */
+
+.modalBackdrop {
+    position: fixed;
+    inset: 0;
+    background-color: oklch(0 0 0 / 0.5);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4, 16px);
+}
+
+.modal {
+    background-color: var(--card, oklch(0.99 0 0));
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-card, 24px);
+    padding: var(--space-8, 32px);
+    width: 100%;
+    max-width: 440px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 24px);
+}
+
+.modalTitle {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--foreground, oklch(0.15 0 0));
+    margin: 0;
+}
+
+.modalBody {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--muted-foreground, oklch(0.55 0 0));
+    margin: 0;
+    line-height: 1.6;
+}
+
+.modalActions {
+    display: flex;
+    gap: var(--space-3, 12px);
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+/* ── Loading state ──────────────────────────────────────────────────────────── */
+
+.loadingContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-12, 48px) var(--space-6, 24px);
+    gap: var(--space-4, 16px);
+    background-color: var(--card, oklch(0.99 0 0));
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-card, 24px);
+}
+
+.spinner {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border, oklch(0.8 0 0));
+    border-top-color: var(--primary, oklch(0.5 0.18 260));
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loadingText {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--muted-foreground, oklch(0.55 0 0));
+    margin: 0;
+}
+
+/* ── No subscription state ─────────────────────────────────────────────────── */
+
+.emptyContainer {
+    background-color: var(--card, oklch(0.99 0 0));
+    border: 1px dashed var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-card, 24px);
+    padding: var(--space-10, 40px) var(--space-6, 24px);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-5, 20px);
+}
+
+.emptyTitle {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--foreground, oklch(0.15 0 0));
+    margin: 0;
+}
+
+.emptyBody {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--muted-foreground, oklch(0.55 0 0));
+    margin: 0;
+    max-width: 360px;
+}
+
+/* ── Error state ───────────────────────────────────────────────────────────── */
+
+.errorContainer {
+    background-color: oklch(from var(--destructive, oklch(0.55 0.22 25)) l c h / 0.06);
+    border: 1px solid oklch(from var(--destructive, oklch(0.55 0.22 25)) l c h / 0.25);
+    border-radius: var(--radius-card, 24px);
+    padding: var(--space-6, 24px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+}
+
+.errorTitle {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--destructive, oklch(0.55 0.22 25));
+    margin: 0;
+}
+
+.errorBody {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--destructive, oklch(0.55 0.22 25));
+    margin: 0;
+    opacity: 0.85;
+}

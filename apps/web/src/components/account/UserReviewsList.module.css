@@ -1,0 +1,170 @@
+/* UserReviewsList.module.css */
+/* Scoped styles for the UserReviewsList React island. */
+/* ALL values use CSS custom properties from global.css. */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5, 20px);
+}
+
+/* ── Loading / error ───────────────────────────────────────────────────── */
+
+.loadingWrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--space-10, 40px);
+    color: var(--muted-foreground);
+    font-family: var(--font-sans);
+}
+
+.errorWrap {
+    background-color: oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.1);
+    border: 1px solid oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.25);
+    border-radius: var(--radius-card);
+    padding: var(--space-5, 20px);
+    color: var(--destructive, oklch(0.6 0.2 25));
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    text-align: center;
+}
+
+/* ── Review card ───────────────────────────────────────────────────────── */
+
+.card {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: var(--space-5, 20px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+}
+
+.cardHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3, 12px);
+    flex-wrap: wrap;
+}
+
+.entityLink {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--foreground);
+    text-decoration: none;
+    line-height: 1.4;
+}
+
+.entityLink:hover {
+    color: var(--primary);
+}
+
+.entityName {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--foreground);
+    line-height: 1.4;
+}
+
+.cardMeta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    flex-wrap: wrap;
+}
+
+.ratingBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px var(--space-2, 8px);
+    background-color: oklch(from var(--accent) l c h / 0.15);
+    color: var(--accent);
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.dateMeta {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+}
+
+.typeMeta {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+    padding: 2px var(--space-2, 8px);
+    background-color: var(--surface-warm);
+    border-radius: var(--radius-pill, 9999px);
+}
+
+.reviewText {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--foreground);
+    margin: 0;
+    line-height: 1.6;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+}
+
+/* ── Section header ────────────────────────────────────────────────────── */
+
+.sectionTitle {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--foreground);
+    margin: 0;
+    padding-bottom: var(--space-2, 8px);
+    border-bottom: 2px solid var(--border);
+}
+
+/* ── Pagination ────────────────────────────────────────────────────────── */
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-3, 12px);
+}
+
+.pageBtn {
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    background-color: var(--card);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color var(--duration-normal, 0.4s) ease,
+        border-color var(--duration-normal, 0.4s) ease;
+}
+
+.pageBtn:hover:not(:disabled) {
+    background-color: var(--surface-warm);
+    border-color: var(--primary);
+}
+
+.pageBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pageInfo {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+}
