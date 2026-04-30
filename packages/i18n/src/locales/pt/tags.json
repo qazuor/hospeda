@@ -1,0 +1,57 @@
+{
+    "tags": {
+        "type": {
+            "INTERNAL": "Interna",
+            "SYSTEM": "Sistema",
+            "USER": "Usuário"
+        },
+        "lifecycle": {
+            "ACTIVE": "Ativo",
+            "INACTIVE": "Inativo",
+            "ARCHIVED": "Arquivado"
+        },
+        "errors": {
+            "quotaExceeded": "Você atingiu o limite de tags. Remova uma existente para criar uma nova.",
+            "nameConflict": "Já existe uma tag com esse nome. Use um nome diferente.",
+            "internalNotVisible": "Esta tag interna não está visível para a sua conta.",
+            "entityNotAccessible": "Você não tem acesso à entidade selecionada.",
+            "notFound": "Tag não encontrada."
+        },
+        "picker": {
+            "title": "Selecionar tags",
+            "searchPlaceholder": "Pesquisar tags...",
+            "empty": "Nenhuma tag corresponde à sua pesquisa.",
+            "createNew": "Criar nova tag",
+            "quotaReached": "Você atingiu o limite de tags. Remova uma existente para continuar.",
+            "groupSystem": "Tags do sistema",
+            "groupInternal": "Tags internas",
+            "groupUser": "Minhas tags"
+        },
+        "manager": {
+            "title": "Minhas tags",
+            "quotaIndicator": "{{used}} / {{limit}} tags utilizadas",
+            "emptyState": "Você ainda não tem tags. Crie sua primeira tag.",
+            "deleteConfirm": "Tem certeza que deseja excluir esta tag?"
+        },
+        "admin": {
+            "title": "Gerenciamento de tags",
+            "createButton": "Criar tag",
+            "filterByType": "Filtrar por tipo",
+            "filterByLifecycle": "Filtrar por status"
+        },
+        "delete": {
+            "title": "Excluir tag",
+            "confirmButton": "Sim, excluir",
+            "cancelButton": "Cancelar",
+            "impactCount": "Esta ação removerá a tag de {{count}} entidades."
+        }
+    },
+    "postTags": {
+        "admin": {
+            "title": "Tags de publicações",
+            "createButton": "Criar tag de publicação",
+            "slugLabel": "Slug",
+            "duplicateSlugError": "Já existe uma tag de publicação com esse slug. Use um diferente."
+        }
+    }
+}

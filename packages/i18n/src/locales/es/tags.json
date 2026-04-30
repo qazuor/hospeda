@@ -1,0 +1,57 @@
+{
+    "tags": {
+        "type": {
+            "INTERNAL": "Interna",
+            "SYSTEM": "Sistema",
+            "USER": "Usuario"
+        },
+        "lifecycle": {
+            "ACTIVE": "Activo",
+            "INACTIVE": "Inactivo",
+            "ARCHIVED": "Archivado"
+        },
+        "errors": {
+            "quotaExceeded": "Superaste el límite de etiquetas permitidas. Eliminá alguna para poder crear una nueva.",
+            "nameConflict": "Ya existe una etiqueta con ese nombre. Usá un nombre diferente.",
+            "internalNotVisible": "Esta etiqueta interna no es visible para tu cuenta.",
+            "entityNotAccessible": "No tenés acceso a la entidad seleccionada.",
+            "notFound": "Etiqueta no encontrada."
+        },
+        "picker": {
+            "title": "Seleccionar etiquetas",
+            "searchPlaceholder": "Buscar etiquetas...",
+            "empty": "No hay etiquetas que coincidan con tu búsqueda.",
+            "createNew": "Crear nueva etiqueta",
+            "quotaReached": "Alcanzaste el límite de etiquetas. Eliminá alguna para continuar.",
+            "groupSystem": "Etiquetas del sistema",
+            "groupInternal": "Etiquetas internas",
+            "groupUser": "Mis etiquetas"
+        },
+        "manager": {
+            "title": "Mis etiquetas",
+            "quotaIndicator": "{{used}} / {{limit}} etiquetas usadas",
+            "emptyState": "Todavía no tenés etiquetas. Creá tu primera etiqueta.",
+            "deleteConfirm": "¿Seguro que querés eliminar esta etiqueta?"
+        },
+        "admin": {
+            "title": "Gestión de etiquetas",
+            "createButton": "Crear etiqueta",
+            "filterByType": "Filtrar por tipo",
+            "filterByLifecycle": "Filtrar por estado"
+        },
+        "delete": {
+            "title": "Eliminar etiqueta",
+            "confirmButton": "Sí, eliminar",
+            "cancelButton": "Cancelar",
+            "impactCount": "Esta acción eliminará la etiqueta de {{count}} entidades."
+        }
+    },
+    "postTags": {
+        "admin": {
+            "title": "Etiquetas de publicaciones",
+            "createButton": "Crear etiqueta de publicación",
+            "slugLabel": "URL amigable",
+            "duplicateSlugError": "Ya existe una etiqueta de publicación con esa URL. Usá una diferente."
+        }
+    }
+}

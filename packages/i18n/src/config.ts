@@ -58,7 +58,9 @@ export const namespaces = [
     'api',
     'host',
     'conversations',
-    'cookieConsent'
+    'cookieConsent',
+    // Tag system namespaces (admin panel only, per SPEC-086 D-024)
+    'tags'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -141,6 +143,7 @@ import privacyEs from './locales/es/privacy.json';
 import revalidationEs from './locales/es/revalidation.json';
 import reviewEs from './locales/es/review.json';
 import searchEs from './locales/es/search.json';
+import tagsEs from './locales/es/tags.json';
 import termsEs from './locales/es/terms.json';
 import uiEs from './locales/es/ui.json';
 import validationEs from './locales/es/validation.json';
@@ -184,6 +187,7 @@ import privacyEn from './locales/en/privacy.json';
 import revalidationEn from './locales/en/revalidation.json';
 import reviewEn from './locales/en/review.json';
 import searchEn from './locales/en/search.json';
+import tagsEn from './locales/en/tags.json';
 import termsEn from './locales/en/terms.json';
 import uiEn from './locales/en/ui.json';
 import validationEn from './locales/en/validation.json';
@@ -227,6 +231,7 @@ import privacyPt from './locales/pt/privacy.json';
 import revalidationPt from './locales/pt/revalidation.json';
 import reviewPt from './locales/pt/review.json';
 import searchPt from './locales/pt/search.json';
+import tagsPt from './locales/pt/tags.json';
 import termsPt from './locales/pt/terms.json';
 import uiPt from './locales/pt/ui.json';
 import validationPt from './locales/pt/validation.json';
@@ -277,7 +282,8 @@ const rawTranslations = {
         conversations: conversationsEs,
         cookieConsent: cookieConsentEs,
         validation: validationEs,
-        revalidation: revalidationEs
+        revalidation: revalidationEs,
+        tags: tagsEs
     },
     en: {
         about: aboutEn,
@@ -320,7 +326,8 @@ const rawTranslations = {
         conversations: conversationsEn,
         cookieConsent: cookieConsentEn,
         validation: validationEn,
-        revalidation: revalidationEn
+        revalidation: revalidationEn,
+        tags: tagsEn
     },
     pt: {
         about: aboutPt,
@@ -363,7 +370,8 @@ const rawTranslations = {
         conversations: conversationsPt,
         cookieConsent: cookieConsentPt,
         validation: validationPt,
-        revalidation: revalidationPt
+        revalidation: revalidationPt,
+        tags: tagsPt
     }
 };
 
