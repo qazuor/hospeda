@@ -1,0 +1,176 @@
+---
+/**
+ * @file ErrorBanner.astro
+ * @description Colored notification banner for error, warning, and info states.
+ * Uses semantic design tokens for palette. Supports an optional retry URL
+ * or a slot for a custom retry action.
+ *
+ * Icons used:
+ *  - error   → XCircleIcon  (red / destructive palette)
+ *  - warning → AlertTriangleIcon  (yellow / warning palette)
+ *  - info    → InfoIcon  (blue / primary palette)
+ *
+ * @example
+ * ```astro
+ * <!-- With retry URL -->
+ * <ErrorBanner
+ *   variant="error"
+ *   message="No se pudo cargar la información. Intentá de nuevo."
+ *   onRetryUrl="/es/alojamientos/"
+ * />
+ *
+ * <!-- With custom slot action -->
+ * <ErrorBanner variant="warning" message="Algunos datos pueden estar desactualizados.">
+ *   <button onclick="location.reload()">Reintentar</button>
+ * </ErrorBanner>
+ *
+ * <!-- Info, no retry -->
+ * <ErrorBanner variant="info" message="Esta página se actualiza cada 24 horas." />
+ * ```
+ */
+
+import { XCircleIcon } from '@repo/icons';
+import { AlertTriangleIcon } from '@repo/icons';
+import { InfoIcon } from '@repo/icons';
+
+type BannerVariant = 'error' | 'warning' | 'info';
+
+interface Props {
+    /** Visual variant controlling color palette and icon */
+    readonly variant: BannerVariant;
+    /** Banner message text */
+    readonly message: string;
+    /**
+     * If provided, renders a default "Reintentar" link pointing to this URL.
+     * Ignored when slot content is provided.
+     */
+    readonly onRetryUrl?: string;
+}
+
+const { variant, message, onRetryUrl } = Astro.props;
+
+const hasSlot = Astro.slots.has('default');
+const showDefaultRetry = !hasSlot && !!onRetryUrl;
+
+/**
+ * Maps variant to a modifier class name used in BEM-lite styling.
+ */
+const variantClass = `error-banner--${variant}` as const;
+
+/**
+ * Maps variant to an ARIA role for appropriate screen reader announcement.
+ * error/warning → 'alert' (assertive), info → 'status' (polite).
+ */
+const ariaRole = variant === 'info' ? 'status' : 'alert';
+---
+
+<div
+    class:list={['error-banner', variantClass]}
+    role={ariaRole}
+    aria-live={variant === 'info' ? 'polite' : 'assertive'}
+>
+    <span class="error-banner__icon" aria-hidden="true">
+        {variant === 'error' && <XCircleIcon size={20} weight="fill" aria-hidden="true" />}
+        {variant === 'warning' && <AlertTriangleIcon size={20} weight="fill" aria-hidden="true" />}
+        {variant === 'info' && <InfoIcon size={20} weight="fill" aria-hidden="true" />}
+    </span>
+
+    <p class="error-banner__message">{message}</p>
+
+    {hasSlot && (
+        <div class="error-banner__action">
+            <slot />
+        </div>
+    )}
+
+    {showDefaultRetry && (
+        <div class="error-banner__action">
+            <a href={onRetryUrl} class="error-banner__retry-link">
+                Reintentar
+            </a>
+        </div>
+    )}
+</div>
+
+<style>
+    /* ---------- Base ---------- */
+    .error-banner {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 0.875rem 1rem;
+        border-radius: var(--radius-card, 24px);
+        border-left: 4px solid currentColor;
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm, 0.875rem);
+        line-height: 1.5;
+    }
+
+    /* ---------- Error (red / destructive) ---------- */
+    .error-banner--error {
+        background-color: oklch(from var(--destructive) l c h / 0.08);
+        color: var(--destructive);
+        border-color: var(--destructive);
+    }
+
+    /* ---------- Warning (yellow) ---------- */
+    .error-banner--warning {
+        background-color: oklch(from var(--warning) l c h / 0.1);
+        color: var(--warning-foreground);
+        border-color: var(--warning);
+    }
+
+    /* ---------- Info (blue / primary) ---------- */
+    .error-banner--info {
+        background-color: oklch(from var(--info) l c h / 0.08);
+        color: var(--info);
+        border-color: var(--info);
+    }
+
+    /* ---------- Icon ---------- */
+    .error-banner__icon {
+        flex-shrink: 0;
+        margin-top: 0.1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    /* ---------- Message ---------- */
+    .error-banner__message {
+        flex: 1;
+        margin: 0;
+        color: inherit;
+    }
+
+    /* ---------- Action / retry ---------- */
+    .error-banner__action {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .error-banner__retry-link {
+        font-weight: 600;
+        text-decoration: underline;
+        color: inherit;
+        transition: opacity var(--duration-fast, 0.2s) ease;
+        white-space: nowrap;
+    }
+
+    .error-banner__retry-link:hover {
+        opacity: 0.75;
+    }
+
+    .error-banner__retry-link:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 2px;
+        border-radius: 2px;
+    }
+
+    /* ---------- Reduce motion ---------- */
+    @media (prefers-reduced-motion: reduce) {
+        .error-banner__retry-link {
+            transition: none;
+        }
+    }
+</style>

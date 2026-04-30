@@ -1,0 +1,145 @@
+---
+/**
+ * @file MapPlaceholder.astro
+ * @description Static map placeholder card that shows a location title, address
+ * text, and a "Ver en Google Maps" button linking to the encoded address.
+ * Replaces interactive map components (deferred to v1.1) per REQ-096-27.
+ *
+ * Uses card tokens (--radius-card, --shadow-card) for visual consistency
+ * with surrounding content.
+ *
+ * @example
+ * ```astro
+ * <MapPlaceholder
+ *   address="Rivadavia 543, Concepción del Uruguay, Entre Ríos"
+ *   title="Ubicación del evento"
+ * />
+ * ```
+ */
+
+import { MapIcon } from '@repo/icons';
+import { LocationIcon } from '@repo/icons';
+
+interface Props {
+    /** Full address text displayed in the card and used for the Google Maps query */
+    readonly address: string;
+    /** Optional card title. Defaults to "Ubicación" */
+    readonly title?: string;
+}
+
+const { address, title = 'Ubicación' } = Astro.props;
+
+const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(address)}`;
+---
+
+<div class="map-placeholder" aria-label={`${title}: ${address}`}>
+    <div class="map-placeholder__header">
+        <span class="map-placeholder__icon" aria-hidden="true">
+            <MapIcon size={20} weight="duotone" aria-hidden="true" />
+        </span>
+        <h3 class="map-placeholder__title">{title}</h3>
+    </div>
+
+    <div class="map-placeholder__address-row">
+        <LocationIcon size={16} weight="regular" aria-hidden="true" />
+        <p class="map-placeholder__address">{address}</p>
+    </div>
+
+    <a
+        href={mapsUrl}
+        class="map-placeholder__cta"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`Ver ${address} en Google Maps`}
+    >
+        Ver en Google Maps
+    </a>
+</div>
+
+<style>
+    .map-placeholder {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1.5rem;
+        border-radius: var(--radius-card, 24px);
+        background-color: var(--core-card);
+        box-shadow: var(--shadow-card);
+        border: 1px solid var(--border);
+    }
+
+    /* ---------- Header ---------- */
+    .map-placeholder__header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .map-placeholder__icon {
+        display: flex;
+        align-items: center;
+        color: var(--brand-primary);
+        flex-shrink: 0;
+    }
+
+    .map-placeholder__title {
+        font-family: var(--font-heading);
+        font-size: var(--text-h4, 1rem);
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    /* ---------- Address row ---------- */
+    .map-placeholder__address-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        color: var(--core-muted-foreground);
+    }
+
+    .map-placeholder__address {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm, 0.875rem);
+        color: var(--core-muted-foreground);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* ---------- CTA button ---------- */
+    .map-placeholder__cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-button, 8px);
+        background-color: var(--brand-primary);
+        color: var(--primary-foreground, oklch(0.99 0 0));
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm, 0.875rem);
+        font-weight: 600;
+        text-decoration: none;
+        align-self: flex-start;
+        transition:
+            background-color var(--duration-fast, 0.2s) ease,
+            box-shadow var(--duration-fast, 0.2s) ease;
+    }
+
+    .map-placeholder__cta:hover {
+        background-color: oklch(from var(--brand-primary) calc(l - 0.06) c h);
+        box-shadow: 0 2px 8px oklch(from var(--brand-primary) l c h / 0.3);
+    }
+
+    .map-placeholder__cta:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 3px;
+        border-radius: var(--radius-button, 8px);
+    }
+
+    /* ---------- Reduce motion ---------- */
+    @media (prefers-reduced-motion: reduce) {
+        .map-placeholder__cta {
+            transition: none;
+        }
+    }
+</style>

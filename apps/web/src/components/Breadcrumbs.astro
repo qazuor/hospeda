@@ -1,0 +1,199 @@
+---
+/**
+ * @file Breadcrumbs.astro
+ * @description Accessible breadcrumb navigation with BreadcrumbList JSON-LD and
+ * mobile collapse (first … last) when more than 3 items are rendered on narrow viewports.
+ *
+ * @example
+ * ```astro
+ * <Breadcrumbs
+ *   items={[
+ *     { label: 'Inicio', href: '/es/' },
+ *     { label: 'Alojamientos', href: '/es/alojamientos/' },
+ *     { label: 'Casa del Río' },
+ *   ]}
+ * />
+ * ```
+ */
+
+interface BreadcrumbItem {
+    /** Visible label for this breadcrumb level */
+    readonly label: string;
+    /**
+     * Link URL. Omit for the last (current) item.
+     * Should be an absolute or root-relative path.
+     */
+    readonly href?: string;
+}
+
+interface Props {
+    /**
+     * Ordered list of breadcrumb items from root to current page.
+     * The last item must NOT have an href (it is the current page).
+     */
+    readonly items: ReadonlyArray<BreadcrumbItem>;
+    /**
+     * Base URL used to build absolute URLs for JSON-LD.
+     * Defaults to the origin of the current request when available.
+     */
+    readonly siteUrl?: string;
+}
+
+const { items, siteUrl = '' } = Astro.props;
+
+/** Full path tooltip shown via the title attribute on mobile collapsed state */
+const fullPathTitle = items.map((i) => i.label).join(' / ');
+
+/** JSON-LD structured data for Google rich results */
+const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        name: item.label,
+        item: item.href ? `${siteUrl}${item.href}` : undefined,
+    })),
+};
+
+const jsonLdContent = JSON.stringify(jsonLd, null, 0).replace(/</g, '\\u003c');
+
+const hasMany = items.length > 3;
+---
+
+<Fragment>
+    {/* JSON-LD injected into the page head via slot */}
+    <script type="application/ld+json" set:html={jsonLdContent} />
+
+    <nav
+        class="breadcrumbs"
+        role="navigation"
+        aria-label="breadcrumb"
+    >
+        <ol class="breadcrumbs__list" aria-label="breadcrumb">
+            {items.map((item, index) => {
+                const isLast = index === items.length - 1;
+                const isFirst = index === 0;
+                const isMiddle = !isFirst && !isLast;
+
+                return (
+                    <li
+                        class:list={[
+                            'breadcrumbs__item',
+                            isMiddle && hasMany ? 'breadcrumbs__item--hidden-mobile' : '',
+                            isMiddle && hasMany && index === 1 ? 'breadcrumbs__item--ellipsis' : '',
+                        ]}
+                        aria-hidden={isMiddle && hasMany ? 'true' : undefined}
+                    >
+                        {/* Ellipsis placeholder shown on mobile when collapsed */}
+                        {isMiddle && hasMany && index === 1 && (
+                            <span
+                                class="breadcrumbs__ellipsis"
+                                aria-hidden="true"
+                                title={fullPathTitle}
+                            >
+                                &hellip;
+                            </span>
+                        )}
+
+                        {!isLast && item.href ? (
+                            <a href={item.href} class="breadcrumbs__link">
+                                {item.label}
+                            </a>
+                        ) : (
+                            <span
+                                class:list={[
+                                    'breadcrumbs__current',
+                                    isLast ? 'breadcrumbs__current--active' : '',
+                                ]}
+                                aria-current={isLast ? 'page' : undefined}
+                            >
+                                {item.label}
+                            </span>
+                        )}
+
+                        {!isLast && (
+                            <span class="breadcrumbs__separator" aria-hidden="true">/</span>
+                        )}
+                    </li>
+                );
+            })}
+        </ol>
+    </nav>
+</Fragment>
+
+<style>
+    .breadcrumbs {
+        width: 100%;
+    }
+
+    .breadcrumbs__list {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm, 0.875rem);
+        color: var(--core-muted-foreground);
+    }
+
+    .breadcrumbs__item {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    .breadcrumbs__link {
+        color: var(--brand-primary);
+        text-decoration: none;
+        transition: color var(--duration-fast, 0.2s) ease;
+    }
+
+    .breadcrumbs__link:hover {
+        color: var(--brand-accent);
+        text-decoration: underline;
+    }
+
+    .breadcrumbs__link:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+        border-radius: 2px;
+    }
+
+    .breadcrumbs__current {
+        color: var(--core-muted-foreground);
+    }
+
+    .breadcrumbs__current--active {
+        color: var(--core-foreground);
+        font-weight: 500;
+    }
+
+    .breadcrumbs__separator {
+        margin-inline: 0.25rem;
+        color: var(--core-muted-foreground);
+        opacity: 0.5;
+        user-select: none;
+    }
+
+    .breadcrumbs__ellipsis {
+        cursor: default;
+        color: var(--core-muted-foreground);
+        letter-spacing: 0.05em;
+    }
+
+    /* Mobile: collapse middle items when more than 3 breadcrumbs */
+    @media (max-width: 639px) {
+        .breadcrumbs__item--hidden-mobile {
+            display: none;
+        }
+
+        /* Show the first ellipsis placeholder */
+        .breadcrumbs__item--ellipsis {
+            display: flex;
+        }
+    }
+</style>

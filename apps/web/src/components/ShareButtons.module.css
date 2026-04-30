@@ -1,0 +1,177 @@
+/**
+ * ShareButtons.module.css
+ * Styles for the ShareButtons React island.
+ * Uses CSS custom properties from global.css — no hardcoded values.
+ */
+
+.root {
+    position: relative;
+    display: inline-block;
+}
+
+/* ── Trigger button ─────────────────────────────────────────────────────── */
+
+.trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    background: transparent;
+    color: var(--foreground, currentColor);
+    border: 1.5px solid var(--border, oklch(0.87 0.01 264));
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--duration-normal, 0.4s) ease, border-color
+        var(--duration-normal, 0.4s) ease;
+}
+
+.trigger:hover,
+.trigger:focus-visible {
+    background: var(--surface-warm, oklch(0.97 0.01 60));
+    border-color: var(--primary, oklch(0.55 0.17 264));
+    outline: none;
+}
+
+.triggerLabel {
+    font-size: 0.875rem;
+}
+
+/* ── Popover ────────────────────────────────────────────────────────────── */
+
+.popover {
+    position: absolute;
+    bottom: calc(100% + var(--space-2, 8px));
+    right: 0;
+    min-width: 220px;
+    background: var(--card, oklch(1 0 0));
+    border: 1px solid var(--border, oklch(0.87 0.01 264));
+    border-radius: var(--radius-card, 24px);
+    box-shadow: var(--shadow-card, 0 4px 20px oklch(0 0 0 / 0.12));
+    z-index: 100;
+    overflow: hidden;
+    animation: popoverIn 0.15s ease-out;
+}
+
+@keyframes popoverIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ── Popover header ─────────────────────────────────────────────────────── */
+
+.popoverHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    border-bottom: 1px solid var(--border, oklch(0.87 0.01 264));
+}
+
+.popoverTitle {
+    font-family: var(--font-heading, sans-serif);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--foreground, currentColor);
+}
+
+.closeBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: var(--muted-foreground, oklch(0.55 0.01 264));
+    cursor: pointer;
+    transition: background var(--duration-normal, 0.4s) ease;
+}
+
+.closeBtn:hover,
+.closeBtn:focus-visible {
+    background: var(--surface-warm, oklch(0.97 0.01 60));
+    outline: none;
+}
+
+/* ── List ───────────────────────────────────────────────────────────────── */
+
+.list {
+    list-style: none;
+    margin: 0;
+    padding: var(--space-2, 8px) 0;
+}
+
+/* ── Share item (anchor and button) ─────────────────────────────────────── */
+
+.item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    width: 100%;
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    background: transparent;
+    border: none;
+    color: var(--foreground, currentColor);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.875rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background var(--duration-normal, 0.4s) ease;
+    text-align: left;
+}
+
+.item:hover,
+.item:focus-visible {
+    background: var(--surface-warm, oklch(0.97 0.01 60));
+    outline: none;
+}
+
+.itemIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: oklch(from var(--primary, oklch(0.55 0.17 264)) l c h / 0.1);
+    color: var(--primary, oklch(0.55 0.17 264));
+    flex-shrink: 0;
+}
+
+.itemLabel {
+    flex: 1;
+}
+
+/* X (Twitter) icon text */
+.xIcon {
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* Copy button specific */
+.copyBtn {
+    border-top: 1px solid var(--border, oklch(0.87 0.01 264));
+    margin-top: var(--space-1, 4px);
+    padding-top: calc(var(--space-2, 8px) + var(--space-1, 4px));
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+    .popover {
+        right: auto;
+        left: 0;
+        min-width: 200px;
+    }
+}

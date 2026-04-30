@@ -1,0 +1,442 @@
+/**
+ * @file ImageGallery.client.tsx
+ * @description Generalized image gallery React island.
+ *
+ * Supports two variants:
+ * - `detail`:          Mosaic grid (1 large + thumbnails) with full-screen lightbox.
+ * - `cover-plus-grid`: Featured cover image with optional inline grid below.
+ *
+ * Includes keyboard navigation (arrows, Escape) and a lightweight focus trap
+ * when the lightbox is open. No new external dependencies.
+ *
+ * Hydrate with `client:visible` (caller's responsibility).
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, FullscreenIcon } from '@repo/icons';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import styles from './ImageGallery.module.css';
+
+/**
+ * A single image entry for the gallery.
+ */
+export interface GalleryImage {
+    /** Absolute or relative URL of the full-size image */
+    readonly url: string;
+    /** Alt text for accessibility */
+    readonly alt: string;
+    /** Optional caption shown in lightbox */
+    readonly caption?: string;
+}
+
+/**
+ * Props for the ImageGallery component.
+ */
+interface ImageGalleryProps {
+    /** List of images to display */
+    readonly images: ReadonlyArray<GalleryImage>;
+    /**
+     * Display variant.
+     * - `detail` (default): mosaic grid with thumbnails + full-screen lightbox.
+     * - `cover-plus-grid`: featured cover image, optional inline grid below.
+     */
+    readonly variant?: 'detail' | 'cover-plus-grid';
+    /** Locale for i18n strings */
+    readonly locale: SupportedLocale;
+    /** Optional CSS class override on the root element */
+    readonly className?: string;
+}
+
+// ─── Focus Trap ──────────────────────────────────────────────────────────────
+
+const FOCUSABLE_SELECTORS =
+    'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function trapFocus(container: HTMLElement, event: KeyboardEvent): void {
+    const focusable = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS));
+    if (focusable.length === 0) return;
+
+    const first = focusable[0] as HTMLElement;
+    const last = focusable[focusable.length - 1] as HTMLElement;
+
+    if (event.key === 'Tab') {
+        if (event.shiftKey) {
+            if (document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            }
+        } else {
+            if (document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        }
+    }
+}
+
+// ─── Lightbox ────────────────────────────────────────────────────────────────
+
+interface LightboxProps {
+    readonly images: ReadonlyArray<GalleryImage>;
+    readonly initialIndex: number;
+    readonly onClose: () => void;
+    readonly t: (key: string, fallback?: string) => string;
+}
+
+function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
+    const [index, setIndex] = useState(initialIndex);
+    const lightboxRef = useRef<HTMLDialogElement>(null);
+    const closeRef = useRef<HTMLButtonElement>(null);
+
+    const prev = useCallback(() => {
+        setIndex((i) => (i - 1 + images.length) % images.length);
+    }, [images.length]);
+
+    const next = useCallback(() => {
+        setIndex((i) => (i + 1) % images.length);
+    }, [images.length]);
+
+    // Focus close button on mount
+    useEffect(() => {
+        closeRef.current?.focus();
+    }, []);
+
+    // Keyboard navigation + focus trap
+    useEffect(() => {
+        function handleKeyDown(event: KeyboardEvent): void {
+            if (event.key === 'Escape') {
+                onClose();
+                return;
+            }
+            if (event.key === 'ArrowLeft') {
+                prev();
+                return;
+            }
+            if (event.key === 'ArrowRight') {
+                next();
+                return;
+            }
+            if (lightboxRef.current) {
+                trapFocus(lightboxRef.current, event);
+            }
+        }
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [onClose, prev, next]);
+
+    // Prevent body scroll while lightbox is open
+    useEffect(() => {
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = originalOverflow;
+        };
+    }, []);
+
+    const current = images[index];
+
+    return (
+        // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard events handled via document listener in useEffect
+        <dialog
+            ref={lightboxRef}
+            aria-modal="true"
+            aria-label={t('ui.accessibility.openFullscreen', 'Visor de imágenes')}
+            className={styles.lightboxOverlay}
+            open
+            onClick={(e) => {
+                if (e.target === e.currentTarget) onClose();
+            }}
+        >
+            {/* Close */}
+            <button
+                ref={closeRef}
+                type="button"
+                className={styles.lightboxClose}
+                aria-label={t('ui.accessibility.closeLightbox', 'Cerrar visor')}
+                onClick={onClose}
+            >
+                <CloseIcon
+                    size={24}
+                    aria-hidden="true"
+                />
+            </button>
+
+            {/* Counter */}
+            <div
+                className={styles.lightboxCounter}
+                aria-live="polite"
+                aria-atomic="true"
+            >
+                {index + 1} / {images.length}
+            </div>
+
+            {/* Prev */}
+            {images.length > 1 && (
+                <button
+                    type="button"
+                    className={`${styles.lightboxNav} ${styles.lightboxNavPrev}`}
+                    aria-label={t('ui.accessibility.previousImage', 'Imagen anterior')}
+                    onClick={prev}
+                >
+                    <ChevronLeftIcon
+                        size={28}
+                        aria-hidden="true"
+                    />
+                </button>
+            )}
+
+            {/* Image */}
+            <figure className={styles.lightboxFigure}>
+                <img
+                    key={current?.url}
+                    src={current?.url}
+                    alt={current?.alt ?? ''}
+                    className={styles.lightboxImg}
+                />
+                {current?.caption && (
+                    <figcaption className={styles.lightboxCaption}>{current.caption}</figcaption>
+                )}
+            </figure>
+
+            {/* Next */}
+            {images.length > 1 && (
+                <button
+                    type="button"
+                    className={`${styles.lightboxNav} ${styles.lightboxNavNext}`}
+                    aria-label={t('ui.accessibility.nextImage', 'Imagen siguiente')}
+                    onClick={next}
+                >
+                    <ChevronRightIcon
+                        size={28}
+                        aria-hidden="true"
+                    />
+                </button>
+            )}
+
+            {/* Thumbnail strip */}
+            {images.length > 1 && (
+                <ul className={styles.lightboxThumbs}>
+                    {images.map((img, i) => (
+                        <li key={img.url}>
+                            <button
+                                type="button"
+                                aria-label={t(
+                                    'ui.accessibility.goToImage',
+                                    `Ir a imagen ${i + 1}`
+                                ).replace('{{number}}', String(i + 1))}
+                                aria-current={i === index ? 'true' : undefined}
+                                className={`${styles.lightboxThumb} ${i === index ? styles.lightboxThumbActive : ''}`}
+                                onClick={() => setIndex(i)}
+                            >
+                                <img
+                                    src={img.url}
+                                    alt={img.alt}
+                                    className={styles.lightboxThumbImg}
+                                    loading="lazy"
+                                />
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </dialog>
+    );
+}
+
+// ─── Detail variant ──────────────────────────────────────────────────────────
+
+interface DetailVariantProps {
+    readonly images: ReadonlyArray<GalleryImage>;
+    readonly onOpen: (index: number) => void;
+    readonly t: (key: string, fallback?: string) => string;
+}
+
+function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
+    const [featured, ...thumbs] = images;
+    const visibleThumbs = thumbs.slice(0, 3);
+
+    if (!featured) return null;
+
+    return (
+        <div
+            className={`${styles.mosaic} ${visibleThumbs.length > 0 ? styles.mosaicWithThumbs : ''}`}
+        >
+            {/* Featured image */}
+            <button
+                type="button"
+                className={styles.featuredBtn}
+                aria-label={t('ui.accessibility.openFullscreen', 'Ver en pantalla completa')}
+                onClick={() => onOpen(0)}
+            >
+                <img
+                    src={featured.url}
+                    alt={featured.alt}
+                    className={styles.featuredImg}
+                    loading="eager"
+                />
+                <span
+                    className={styles.expandIcon}
+                    aria-hidden="true"
+                >
+                    <FullscreenIcon size={20} />
+                </span>
+            </button>
+
+            {/* Thumbnails */}
+            {visibleThumbs.length > 0 && (
+                <div className={styles.thumbGrid}>
+                    {visibleThumbs.map((img, i) => (
+                        <button
+                            key={img.url}
+                            type="button"
+                            className={styles.thumbBtn}
+                            aria-label={t(
+                                'ui.accessibility.openFullscreen',
+                                'Ver en pantalla completa'
+                            )}
+                            onClick={() => onOpen(i + 1)}
+                        >
+                            <img
+                                src={img.url}
+                                alt={img.alt}
+                                className={styles.thumbImg}
+                                loading="lazy"
+                            />
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Cover-plus-grid variant ─────────────────────────────────────────────────
+
+interface CoverPlusGridVariantProps {
+    readonly images: ReadonlyArray<GalleryImage>;
+    readonly onOpen: (index: number) => void;
+    readonly t: (key: string, fallback?: string) => string;
+}
+
+function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) {
+    const [cover, ...rest] = images;
+
+    if (!cover) return null;
+
+    return (
+        <div className={styles.coverPlusGrid}>
+            {/* Cover image */}
+            <button
+                type="button"
+                className={styles.coverBtn}
+                aria-label={t('ui.accessibility.openFullscreen', 'Ver en pantalla completa')}
+                onClick={() => onOpen(0)}
+            >
+                <img
+                    src={cover.url}
+                    alt={cover.alt}
+                    className={styles.coverImg}
+                    loading="eager"
+                />
+                <span
+                    className={styles.expandIcon}
+                    aria-hidden="true"
+                >
+                    <FullscreenIcon size={20} />
+                </span>
+            </button>
+
+            {/* Inline grid */}
+            {rest.length > 0 && (
+                <div className={styles.inlineGrid}>
+                    {rest.slice(0, 6).map((img, i) => (
+                        <button
+                            key={img.url}
+                            type="button"
+                            className={styles.inlineGridBtn}
+                            aria-label={t(
+                                'ui.accessibility.openFullscreen',
+                                'Ver en pantalla completa'
+                            )}
+                            onClick={() => onOpen(i + 1)}
+                        >
+                            <img
+                                src={img.url}
+                                alt={img.alt}
+                                className={styles.inlineGridImg}
+                                loading="lazy"
+                            />
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Main component ──────────────────────────────────────────────────────────
+
+/**
+ * Generalized image gallery with lightbox support.
+ *
+ * @example
+ * // Detail variant (accommodation — default)
+ * <ImageGallery
+ *   images={[{ url: '/img.jpg', alt: 'Room', caption: 'Suite' }]}
+ *   variant="detail"
+ *   locale="es"
+ *   client:visible
+ * />
+ *
+ * @example
+ * // Cover-plus-grid (posts, destinations)
+ * <ImageGallery
+ *   images={postImages}
+ *   variant="cover-plus-grid"
+ *   locale={locale}
+ *   client:visible
+ * />
+ */
+export function ImageGallery({ images, variant = 'detail', locale, className }: ImageGalleryProps) {
+    const { t } = createTranslations(locale);
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+    const openLightbox = useCallback((index: number): void => {
+        setLightboxIndex(index);
+    }, []);
+
+    const closeLightbox = useCallback((): void => {
+        setLightboxIndex(null);
+    }, []);
+
+    if (images.length === 0) return null;
+
+    return (
+        <div className={`${styles.root}${className ? ` ${className}` : ''}`}>
+            {variant === 'detail' ? (
+                <DetailVariant
+                    images={images}
+                    onOpen={openLightbox}
+                    t={t}
+                />
+            ) : (
+                <CoverPlusGridVariant
+                    images={images}
+                    onOpen={openLightbox}
+                    t={t}
+                />
+            )}
+
+            {lightboxIndex !== null && (
+                <Lightbox
+                    images={images}
+                    initialIndex={lightboxIndex}
+                    onClose={closeLightbox}
+                    t={t}
+                />
+            )}
+        </div>
+    );
+}
