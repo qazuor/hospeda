@@ -41,6 +41,11 @@ import { adminFeatureRoutes, protectedFeatureRoutes, publicFeatureRoutes } from 
 import { protectedHostOnboardingRoutes } from './host-onboarding';
 import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
 import { adminTagRoutes, publicTagRoutes } from './tag';
+import {
+    adminPostTagAssignmentRoutes,
+    adminPostTagCrudRoutes,
+    publicPostTagRoutes
+} from './tag/post-tag/index.js';
 
 import {
     adminOwnerPromotionRoutes,
@@ -152,6 +157,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/features', publicFeatureRoutes);
         app.route('/api/v1/public/attractions', publicAttractionRoutes);
         app.route('/api/v1/public/tags', publicTagRoutes);
+
+        // PostTag public listing (SPEC-086 — public SEO taxonomy for blog posts)
+        // GET /api/v1/public/posts/tags (+ ?withCounts=true)
+        app.route('/api/v1/public/posts/tags', publicPostTagRoutes);
         app.route('/api/v1/public/event-locations', publicEventLocationRoutes);
         app.route('/api/v1/public/event-organizers', publicEventOrganizerRoutes);
 
@@ -232,7 +241,17 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/accommodations', adminAccommodationRoutes);
         app.route('/api/v1/admin/destinations', adminDestinationRoutes);
         app.route('/api/v1/admin/events', adminEventRoutes);
+
+        // PostTag admin routes (SPEC-086 — public SEO taxonomy for blog posts)
+        // IMPORTANT: more-specific prefix /posts/tags MUST be registered BEFORE /posts
+        // to prevent Hono from matching GET /posts/tags as GET /posts/:id with id='tags'.
+        // CRUD: GET /posts/tags, POST /posts/tags, GET /posts/tags/:id, etc.
+        app.route('/api/v1/admin/posts/tags', adminPostTagCrudRoutes);
+        // Core post CRUD
         app.route('/api/v1/admin/posts', adminPostRoutes);
+        // Assignment: POST /posts/:postId/tags, DELETE /posts/:postId/tags/:tagId
+        // Registered after /posts/tags to avoid conflict but fine — assignment paths have /:postId/ prefix
+        app.route('/api/v1/admin/posts', adminPostTagAssignmentRoutes);
 
         // Supporting entities
         app.route('/api/v1/admin/amenities', adminAmenityRoutes);
