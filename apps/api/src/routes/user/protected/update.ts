@@ -3,8 +3,10 @@
  * Allows users to update their own profile
  */
 import {
+    ServiceErrorCode,
     UserIdSchema,
     UserProtectedSchema,
+    UserSettingsWebPatchSchema,
     type UserUpdateInput,
     UserUpdateInputSchema
 } from '@repo/schemas';
@@ -14,6 +16,38 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 import { userCache } from '../../../utils/user-cache';
+
+/**
+ * Admin-only settings keys. See `patch.ts` for full rationale —
+ * SPEC-096 / REQ-096-05 / T-032.
+ */
+const ADMIN_ONLY_SETTINGS_KEYS = ['themeAdmin', 'languageAdmin'] as const;
+
+const validateProtectedSettings = (settings: unknown): void => {
+    if (settings == null || typeof settings !== 'object') {
+        return;
+    }
+    const submittedKeys = Object.keys(settings as Record<string, unknown>);
+
+    const adminLeak = submittedKeys.find((k) =>
+        (ADMIN_ONLY_SETTINGS_KEYS as readonly string[]).includes(k)
+    );
+    if (adminLeak !== undefined) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            `Field '${adminLeak}' is not writable on the protected (web) endpoint`
+        );
+    }
+
+    const result = UserSettingsWebPatchSchema.safeParse(settings);
+    if (!result.success) {
+        throw new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            'Invalid settings payload for the web (protected) endpoint',
+            result.error.flatten()
+        );
+    }
+};
 
 const userService = new UserService({ logger: apiLogger });
 
@@ -42,6 +76,12 @@ export const protectedUpdateUserRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const { id } = params;
         const userData = body as UserUpdateInput;
+
+        // Field-level permissions: web-scoped allowlist on settings.
+        // SPEC-096 / REQ-096-05 / T-032.
+        if (body && Object.prototype.hasOwnProperty.call(body, 'settings')) {
+            validateProtectedSettings((body as { settings?: unknown }).settings);
+        }
 
         const result = await userService.update(actor, id as string, userData);
 

@@ -4,6 +4,9 @@
  * SPEC-089 Track B: `destinationId` is now accepted in `EventSearchHttpSchema`.
  * The filter is resolved via `event_locations.destination_id` in the service layer.
  *
+ * SPEC-096 T-005: additionally tests that invalid (non-UUID) destinationId values
+ * are rejected with 400 by Zod schema validation.
+ *
  * @see packages/schemas/src/entities/event/event.http.schema.ts — HTTP schema (has destinationId)
  * @see packages/schemas/src/entities/event/event.query.schema.ts — domain schema (has destinationId)
  * @see packages/service-core/src/services/event/event.service.ts — resolution via event_locations
@@ -105,6 +108,38 @@ describe('GET /api/v1/public/events — destinationId filter', () => {
             expect(withDestination.status).not.toBe(400);
             // unknownParam is not in the schema — may be 400 (strict validation).
             expect([400, 200, 500]).toContain(withUnknown.status);
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // Invalid destinationId validation (SPEC-096 T-005)
+    // -----------------------------------------------------------------------
+
+    describe('destinationId Validation', () => {
+        it('should return 400 for invalid (non-UUID) destinationId', async () => {
+            // SPEC-096 T-005: Zod validates destinationId as z.string().uuid().
+            // A non-UUID string must be rejected before reaching the service layer.
+            const res = await app.request(`${BASE}?destinationId=not-a-uuid`, {
+                method: 'GET',
+                headers: { 'user-agent': 'vitest', accept: 'application/json' }
+            });
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 for malformed UUID destinationId', async () => {
+            const res = await app.request(`${BASE}?destinationId=12345678-bad-uuid`, {
+                method: 'GET',
+                headers: { 'user-agent': 'vitest', accept: 'application/json' }
+            });
+            expect(res.status).toBe(400);
+        });
+
+        it('should accept a well-formed UUID and not return 400', async () => {
+            const res = await app.request(`${BASE}?destinationId=${VALID_UUID}`, {
+                method: 'GET',
+                headers: { 'user-agent': 'vitest', accept: 'application/json' }
+            });
+            expect(res.status).not.toBe(400);
         });
     });
 
