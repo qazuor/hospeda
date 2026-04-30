@@ -1,6 +1,7 @@
 import type { AdminInfoType, ContactInfo, EventDate, EventPrice, Media, Seo } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { boolean, index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { destinations } from '../destination/destination.dbschema.ts';
 import {
     EventCategoryPgEnum,
     LifecycleStatusPgEnum,
@@ -30,6 +31,12 @@ export const events = pgTable(
             onDelete: 'set null'
         }),
         organizerId: uuid('organizer_id').references(() => eventOrganizers.id, {
+            onDelete: 'set null'
+        }),
+        // Geographic association added in REQ-096-02 (SPEC-096).
+        // Nullable: existing events have no destination; backfilled separately.
+        // ON DELETE SET NULL: a destination removal does not cascade to events.
+        destinationId: uuid('destination_id').references(() => destinations.id, {
             onDelete: 'set null'
         }),
         pricing: jsonb('pricing').$type<EventPrice>(),
@@ -63,7 +70,9 @@ export const events = pgTable(
         // Performance indexes for common query patterns
         events_deletedAt_idx: index('events_deletedAt_idx').on(table.deletedAt),
         events_moderationState_idx: index('events_moderationState_idx').on(table.moderationState),
-        events_authorId_idx: index('events_authorId_idx').on(table.authorId)
+        events_authorId_idx: index('events_authorId_idx').on(table.authorId),
+        // Index for filtering events by destination (REQ-096-02)
+        events_destinationId_idx: index('events_destination_id_idx').on(table.destinationId)
     })
 );
 
@@ -91,6 +100,10 @@ export const eventsRelations = relations(events, ({ one, many }) => ({
     organizer: one(eventOrganizers, {
         fields: [events.organizerId],
         references: [eventOrganizers.id]
+    }),
+    destination: one(destinations, {
+        fields: [events.destinationId],
+        references: [destinations.id]
     }),
     tags: many(rEntityTag)
 }));
