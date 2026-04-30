@@ -186,7 +186,8 @@ vi.mock('@/features/owner-promotions/hooks', () => ({
         error: null
     }),
     useDeleteOwnerPromotionMutation: () => ({ mutate: vi.fn(), isPending: false }),
-    useTogglePromotionActiveMutation: () => ({ mutate: vi.fn(), isPending: false })
+    useTogglePromotionActiveMutation: () => ({ mutate: vi.fn(), isPending: false }),
+    useUpdatePromotionLifecycleMutation: () => ({ mutate: vi.fn(), isPending: false })
 }));
 
 vi.mock('@/features/owner-promotions/types', () => ({}));

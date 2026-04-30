@@ -42,6 +42,11 @@ vi.mock('@/hooks/use-translations', () => ({
     })
 }));
 
+// Mock the unread-count hook (uses TanStack Query, no QueryClient in test).
+vi.mock('@/features/conversations/hooks/useUnreadCount', () => ({
+    useUnreadCount: () => ({ data: { count: 0 } })
+}));
+
 // Controllable sidebar config for useCurrentSidebarConfig
 let mockSidebarConfig: SidebarConfig | undefined = undefined;
 

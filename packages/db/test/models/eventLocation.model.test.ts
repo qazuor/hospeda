@@ -5,7 +5,14 @@ import * as logger from '../../src/utils/logger';
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
-    logError: vi.fn()
+    logError: vi.fn(),
+    logAction: vi.fn(),
+    dbLogger: {
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn()
+    }
 }));
 
 describe('EventLocationModel', () => {
@@ -80,7 +87,8 @@ describe('EventLocationModel', () => {
                             }
                             const qb = {
                                 limit: () => ({
-                                    offset: () => Promise.resolve([{ id: '1', city: 'Rosario' }])
+                                    offset: () =>
+                                        Promise.resolve([{ id: '1', placeName: 'Sala Mayor' }])
                                 }),
                                 $dynamic: () => qb
                             };
@@ -90,7 +98,7 @@ describe('EventLocationModel', () => {
                 })
             });
 
-            const result = await model.findAll({ city: 'Rosario' });
+            const result = await model.findAll({ placeName: 'Sala Mayor' });
 
             expect(result.items).toHaveLength(1);
             expect(logQuery).toHaveBeenCalled();

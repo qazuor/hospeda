@@ -151,6 +151,17 @@ vi.mock('@repo/db', () => ({
         async findAll(_filters: unknown, _opts?: unknown) {
             return { items: [], total: 0 };
         }
+    },
+    UserModel: class MockUserModel {
+        async findById(_id: string) {
+            return null;
+        }
+        async findOne(_filters: unknown) {
+            return null;
+        }
+        async findAll(_filters: unknown, _opts?: unknown) {
+            return { items: [], total: 0 };
+        }
     }
 }));
 
