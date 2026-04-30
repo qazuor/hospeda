@@ -9,6 +9,7 @@
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import Badge from '@/components/shared/ui/Badge.astro';
 import { ShareButtons } from '@/components/ShareButtons.client';
 import { postsApi } from '@/lib/api/endpoints';
@@ -65,7 +66,20 @@ const jsonLd = {
 	datePublished: publishedAt,
 	...(updatedAt ? { dateModified: updatedAt } : {}),
 	...(authorName ? { author: { '@type': 'Person', name: authorName } } : {}),
+	publisher: {
+		'@type': 'Organization',
+		name: 'Hospeda',
+		url: 'https://hospeda.com.ar',
+	},
 };
+
+// --- Breadcrumb JSON-LD (REQ-096-37 / T-068) ---
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const breadcrumbItems = [
+	{ name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
+	{ name: t('blog.title', 'Publicaciones'), url: `${siteOrigin}/${locale}/publicaciones/` },
+	{ name: title, url: `${siteOrigin}${Astro.url.pathname}` },
+];
 ---
 
 <DetailLayout
@@ -76,6 +90,7 @@ const jsonLd = {
 	showSidebar={false}
 >
 	<JsonLd slot="head-extra" data={jsonLd} />
+	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
 
 	<Breadcrumbs
 		slot="breadcrumbs"

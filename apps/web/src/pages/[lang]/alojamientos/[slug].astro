@@ -10,7 +10,9 @@
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
-import HeroGallery from '@/components/accommodation/HeroGallery.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
+import { ImageGallery } from '@/components/ImageGallery.client';
 import DetailHeader from '@/components/accommodation/DetailHeader.astro';
 import QuickFacts from '@/components/accommodation/QuickFacts.astro';
 import Description from '@/components/accommodation/Description.astro';
@@ -115,6 +117,27 @@ if (userId) {
     }
 }
 
+// --- Gallery images for ImageGallery island ---
+// Build a unified GalleryImage[] from galleryItems (preferred) or URL-only images list.
+const galleryImages = (() => {
+    const featured = {
+        url: accommodation.featuredImage || '/images/placeholder-accommodation.svg',
+        alt: accommodation.name
+    };
+    const extras =
+        accommodation.media.galleryItems.length > 0
+            ? accommodation.media.galleryItems.slice(0, 3).map((item) => ({
+                  url: item.url,
+                  alt: item.caption ?? accommodation.name,
+                  caption: item.caption
+              }))
+            : accommodation.media.images.slice(0, 3).map((url) => ({
+                  url,
+                  alt: accommodation.name
+              }));
+    return [featured, ...extras];
+})();
+
 // --- SEO ---
 const seoTitle = accommodation.seo?.title ?? `${accommodation.name} | Hospeda`;
 const seoDescription = accommodation.seo?.description ?? accommodation.summary;
@@ -148,6 +171,23 @@ const jsonLd: Record<string, unknown> = {
         ? { amenityFeature: accommodation.amenities.map((a) => ({ '@type': 'LocationFeatureSpecification', name: a.name, value: true })) }
         : {})
 };
+
+// --- Breadcrumb JSON-LD (REQ-096-37 / T-068) ---
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const breadcrumbItems = [
+    { name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
+    {
+        name: t('accommodations.title', 'Alojamientos'),
+        url: `${siteOrigin}/${locale}/alojamientos/`
+    },
+    { name: accommodation.name, url: `${siteOrigin}${Astro.url.pathname}` }
+];
+
+// --- FAQPage JSON-LD when FAQs exist (REQ-096-37 / T-067) ---
+const faqSections = accommodation.faqs.map((faq) => ({
+    heading: faq.question,
+    body: faq.answer
+}));
 ---
 
 <DetailLayout
@@ -158,6 +198,10 @@ const jsonLd: Record<string, unknown> = {
     showSidebar={true}
 >
     <JsonLd slot="head-extra" data={jsonLd} />
+    <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
+    {faqSections.length > 0 && (
+        <FAQPageJsonLd slot="head-extra" sections={faqSections} />
+    )}
 
     <Breadcrumbs
         slot="breadcrumbs"
@@ -174,7 +218,12 @@ const jsonLd: Record<string, unknown> = {
 
     <!-- Main content -->
     <div class="acc-detail">
-        <HeroGallery accommodation={accommodation} lang={locale} />
+        <ImageGallery
+            images={galleryImages}
+            variant="detail"
+            locale={locale}
+            client:visible
+        />
         <QuickFacts extraInfo={accommodation.extraInfo} lang={locale} />
         <Description summary={accommodation.summary} description={accommodation.description} />
 

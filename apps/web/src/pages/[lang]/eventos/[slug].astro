@@ -9,6 +9,7 @@
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { ShareButtons } from '@/components/ShareButtons.client';
 import { eventsApi } from '@/lib/api/endpoints';
 import { createTranslations } from '@/lib/i18n';
@@ -45,8 +46,18 @@ const isPast = startDate ? new Date(startDate) < new Date() : false;
 const price = event.price as { amount?: number; currency?: string } | undefined;
 const organizerObj = event.organizer as Record<string, unknown> | undefined;
 
-// EventStatus mapping
-const eventStatus = isCancelled ? 'EventCancelled' : (isActive && !isCancelled) ? 'EventScheduled' : 'EventScheduled';
+// EventStatus mapping per schema.org Event docs (REQ-096-37 / T-067):
+//  - cancelled → EventCancelled
+//  - rescheduled → EventRescheduled
+//  - postponed → EventPostponed
+//  - moved online → EventMovedOnline
+//  - everything else (active or unknown) → EventScheduled
+const isRescheduled = Boolean(event.isRescheduled);
+const eventStatus = isCancelled
+	? 'EventCancelled'
+	: isRescheduled
+		? 'EventRescheduled'
+		: 'EventScheduled';
 const categoryColors = getEventCategoryColor({ category: category.toLowerCase() });
 const pastColors = getBadgeStatusColor({ status: 'past' });
 const cancelledColors = getBadgeStatusColor({ status: 'cancelled' });
@@ -71,6 +82,14 @@ const jsonLd = {
 	...(organizerObj ? { organizer: { '@type': 'Organization', name: String(organizerObj.name || '') } } : {}),
 	...(price?.amount ? { offers: { '@type': 'Offer', price: price.amount, priceCurrency: price.currency ?? 'ARS' } } : {}),
 };
+
+// --- Breadcrumb JSON-LD (REQ-096-37 / T-068) ---
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const breadcrumbItems = [
+	{ name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
+	{ name: t('events.title', 'Eventos'), url: `${siteOrigin}/${locale}/eventos/` },
+	{ name, url: `${siteOrigin}${Astro.url.pathname}` },
+];
 ---
 
 <DetailLayout
@@ -81,6 +100,7 @@ const jsonLd = {
 	showSidebar={true}
 >
 	<JsonLd slot="head-extra" data={jsonLd} />
+	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
 
 	<Breadcrumbs
 		slot="breadcrumbs"

@@ -12,6 +12,7 @@ import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import EventCard from '@/components/shared/cards/EventCard.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { destinationsApi, accommodationsApi, eventsApi } from '@/lib/api/endpoints';
 import { toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
@@ -81,14 +82,35 @@ const breadcrumbItems = [
 ];
 
 // TouristDestination JSON-LD
-const jsonLd = {
+const destLocation = dest.location as { lat?: number; lng?: number } | undefined;
+const jsonLd: Record<string, unknown> = {
 	'@context': 'https://schema.org',
 	'@type': 'TouristDestination',
 	name,
 	description,
 	image: featuredImage,
 	url: `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`,
+	...(destLocation?.lat != null && destLocation?.lng != null
+		? {
+			geo: {
+				'@type': 'GeoCoordinates',
+				latitude: destLocation.lat,
+				longitude: destLocation.lng,
+			},
+		}
+		: {}),
 };
+
+// --- Breadcrumb JSON-LD (REQ-096-37 / T-068) ---
+const siteOriginDest = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const breadcrumbJsonLdItems = [
+	{ name: t('nav.home', 'Inicio'), url: `${siteOriginDest}/${locale}/` },
+	{ name: t('destinations.title', 'Destinos'), url: `${siteOriginDest}/${locale}/destinos/` },
+	...pathSegments.map((segment, i) => ({
+		name: segment.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+		url: `${siteOriginDest}/${locale}/destinos/${pathSegments.slice(0, i + 1).join('/')}/`,
+	})),
+];
 ---
 
 <DetailLayout
@@ -99,6 +121,7 @@ const jsonLd = {
 	showSidebar={true}
 >
 	<JsonLd slot="head-extra" data={jsonLd} />
+	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbJsonLdItems} />
 
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={breadcrumbItems} />
 

@@ -13,12 +13,14 @@
         "lint": "biome check .",
         "format": "biome format --write .",
         "typecheck": "tsc --noEmit --project ./tsconfig.json",
+        "lighthouse": "lhci autorun --config=./lighthouserc.json",
         "clean": "rm -rf node_modules dist .astro"
     },
     "dependencies": {
         "@astrojs/react": "^4.2.1",
         "@astrojs/sitemap": "^3.7.0",
         "@astrojs/vercel": "^8.2.11",
+        "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/feedback": "workspace:*",
         "@repo/media": "workspace:*",
