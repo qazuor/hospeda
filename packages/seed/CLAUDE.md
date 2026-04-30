@@ -387,11 +387,15 @@ If `moderationState` is missing from a fixture, `withModerationDefault('APPROVED
 
 ## Notes
 
-- Seeds are meant for development/testing, not production
-- Always backup production data before running seeds
-- Use `--reset` flag carefully - it drops all data
-- Seed data uses realistic values for better testing
-- Example data is deterministic when using same Faker seed
+- The full `pnpm db:seed` script (which expands to `pnpm --filter @repo/seed seed --reset --required --example`) is **dev-only**. It wipes the database (`--reset`) and loads Faker-generated demo content (`--example`), so it must never run against a production or shared staging database.
+- A curated `--required` run that excludes the `users` step IS the documented production day-1 step. The exact command is `pnpm --filter @repo/seed seed --required --exclude=users`. See [`docs/deployment/first-time-setup.md` Phase 4](../../docs/deployment/first-time-setup.md#phase-4-database-initialization) for the full bootstrap procedure, including how to create the first real admin user via Better Auth signup and promote them.
+- The `users` step seeds [`admin-user.json`](src/data/user/required/admin-user.json) and `super-admin-user.json`, both with the well-known `admin@hospeda.com` email. Loading these on prod creates predictable admin credentials and must always be excluded.
+- Always back up production data before running any seed command, even the curated production-safe one.
+- Use `--reset` carefully — it drops all data. Never combine with a production database URL.
+- Seed data uses realistic values for better testing.
+- Example data is deterministic when using the same Faker seed.
+
+**Last Updated**: 2026-04-30
 
 <claude-mem-context>
 # Recent Activity
