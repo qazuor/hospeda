@@ -307,6 +307,245 @@ export const handlers = [
         );
     }),
 
+    // PostTags (admin)
+    http.get(`${API_BASE}/admin/posts/tags`, () => {
+        return HttpResponse.json(mockPaginatedResponse([]));
+    }),
+
+    http.get(`${API_BASE}/admin/posts/tags/:id`, ({ params }) => {
+        if (params.id === 'not-found') {
+            return HttpResponse.json(mockErrorResponse('NOT_FOUND', 'PostTag not found'), {
+                status: 404
+            });
+        }
+        return HttpResponse.json(
+            mockSuccessResponse({
+                id: params.id,
+                name: 'Test PostTag',
+                slug: 'test-post-tag',
+                color: 'BLUE',
+                icon: null,
+                description: null,
+                lifecycleState: 'ACTIVE',
+                createdAt: '2024-01-01T00:00:00.000Z',
+                updatedAt: '2024-01-01T00:00:00.000Z',
+                createdById: null,
+                updatedById: null
+            })
+        );
+    }),
+
+    http.get(`${API_BASE}/admin/posts/tags/:id/impact`, () => {
+        return HttpResponse.json(mockSuccessResponse({ count: 0 }));
+    }),
+
+    http.post(`${API_BASE}/admin/posts/tags`, () => {
+        return HttpResponse.json(
+            mockSuccessResponse({
+                id: 'new-post-tag-id',
+                name: 'New PostTag',
+                slug: 'new-post-tag',
+                color: 'GREEN',
+                icon: null,
+                description: null,
+                lifecycleState: 'ACTIVE',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                createdById: null,
+                updatedById: null
+            }),
+            { status: 201 }
+        );
+    }),
+
+    http.patch(`${API_BASE}/admin/posts/tags/:id`, ({ params }) => {
+        return HttpResponse.json(
+            mockSuccessResponse({
+                id: params.id,
+                name: 'Updated PostTag',
+                slug: 'updated-post-tag',
+                color: 'ORANGE',
+                icon: null,
+                description: null,
+                lifecycleState: 'ACTIVE',
+                createdAt: '2024-01-01T00:00:00.000Z',
+                updatedAt: new Date().toISOString(),
+                createdById: null,
+                updatedById: null
+            })
+        );
+    }),
+
+    http.delete(`${API_BASE}/admin/posts/tags/:id`, () => {
+        return HttpResponse.json({ success: true });
+    }),
+
+    // System tags (admin)
+    http.get(`${API_BASE}/admin/tags/system`, () => {
+        return HttpResponse.json(mockPaginatedResponse([]));
+    }),
+
+    http.get(`${API_BASE}/admin/tags/system/:id`, ({ params }) => {
+        if (params.id === 'not-found') {
+            return HttpResponse.json(mockErrorResponse('NOT_FOUND', 'Tag not found'), {
+                status: 404
+            });
+        }
+        return HttpResponse.json(
+            mockSuccessResponse({
+                id: params.id,
+                name: 'Test System Tag',
+                type: 'SYSTEM',
+                color: 'BLUE',
+                icon: null,
+                description: null,
+                lifecycleState: 'ACTIVE',
+                ownerId: null,
+                createdAt: '2024-01-01T00:00:00.000Z',
+                updatedAt: '2024-01-01T00:00:00.000Z',
+                createdById: null,
+                updatedById: null
+            })
+        );
+    }),
+
+    http.get(`${API_BASE}/admin/tags/system/:id/impact`, () => {
+        return HttpResponse.json(mockSuccessResponse({ count: 0 }));
+    }),
+
+    http.post(`${API_BASE}/admin/tags/system`, () => {
+        return HttpResponse.json(
+            mockSuccessResponse({
+                id: 'new-system-tag-id',
+                name: 'New System Tag',
+                type: 'SYSTEM',
+                color: 'GREEN',
+                icon: null,
+                description: null,
+                lifecycleState: 'ACTIVE',
+                ownerId: null,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                createdById: null,
+                updatedById: null
+            }),
+            { status: 201 }
+        );
+    }),
+
+    http.patch(`${API_BASE}/admin/tags/system/:id`, ({ params }) => {
+        return HttpResponse.json(
+            mockSuccessResponse({
+                id: params.id,
+                name: 'Updated System Tag',
+                type: 'SYSTEM',
+                color: 'ORANGE',
+                icon: null,
+                description: null,
+                lifecycleState: 'ACTIVE',
+                ownerId: null,
+                createdAt: '2024-01-01T00:00:00.000Z',
+                updatedAt: new Date().toISOString(),
+                createdById: null,
+                updatedById: null
+            })
+        );
+    }),
+
+    http.delete(`${API_BASE}/admin/tags/system/:id`, () => {
+        return HttpResponse.json({ success: true });
+    }),
+
+    // Internal tags (admin)
+    http.get(`${API_BASE}/admin/tags/internal`, () => {
+        return HttpResponse.json(mockPaginatedResponse([]));
+    }),
+
+    http.get(`${API_BASE}/admin/tags/internal/:id`, ({ params }) => {
+        if (params.id === 'not-found') {
+            return HttpResponse.json(mockErrorResponse('NOT_FOUND', 'Tag not found'), {
+                status: 404
+            });
+        }
+        return HttpResponse.json(
+            mockSuccessResponse({
+                id: params.id,
+                name: 'Test Internal Tag',
+                type: 'INTERNAL',
+                color: 'PURPLE',
+                icon: null,
+                description: null,
+                lifecycleState: 'ACTIVE',
+                ownerId: null,
+                createdAt: '2024-01-01T00:00:00.000Z',
+                updatedAt: '2024-01-01T00:00:00.000Z',
+                createdById: null,
+                updatedById: null
+            })
+        );
+    }),
+
+    http.get(`${API_BASE}/admin/tags/internal/:id/impact`, () => {
+        return HttpResponse.json(mockSuccessResponse({ count: 0 }));
+    }),
+
+    http.post(`${API_BASE}/admin/tags/internal`, () => {
+        return HttpResponse.json(
+            mockSuccessResponse({
+                id: 'new-internal-tag-id',
+                name: 'New Internal Tag',
+                type: 'INTERNAL',
+                color: 'GREY',
+                icon: null,
+                description: null,
+                lifecycleState: 'ACTIVE',
+                ownerId: null,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                createdById: null,
+                updatedById: null
+            }),
+            { status: 201 }
+        );
+    }),
+
+    http.patch(`${API_BASE}/admin/tags/internal/:id`, ({ params }) => {
+        return HttpResponse.json(
+            mockSuccessResponse({
+                id: params.id,
+                name: 'Updated Internal Tag',
+                type: 'INTERNAL',
+                color: 'CYAN',
+                icon: null,
+                description: null,
+                lifecycleState: 'ACTIVE',
+                ownerId: null,
+                createdAt: '2024-01-01T00:00:00.000Z',
+                updatedAt: new Date().toISOString(),
+                createdById: null,
+                updatedById: null
+            })
+        );
+    }),
+
+    http.delete(`${API_BASE}/admin/tags/internal/:id`, () => {
+        return HttpResponse.json({ success: true });
+    }),
+
+    // User tags moderation (admin)
+    http.get(`${API_BASE}/admin/tags/user`, () => {
+        return HttpResponse.json(mockPaginatedResponse([]));
+    }),
+
+    http.delete(`${API_BASE}/admin/tags/user/:id`, () => {
+        return HttpResponse.json({ success: true });
+    }),
+
+    // Entity attribution (admin)
+    http.get(`${API_BASE}/admin/entities/:type/:id/tags`, () => {
+        return HttpResponse.json(mockSuccessResponse({ assignments: [] }));
+    }),
+
     // Sponsors
     http.get(`${API_BASE}/public/sponsors`, () => {
         return HttpResponse.json(
