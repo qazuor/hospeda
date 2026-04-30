@@ -59,7 +59,7 @@ describe('eventOrganizer permissions', () => {
         const actor: Actor = {
             id: '6',
             role: RoleEnum.ADMIN,
-            permissions: [PermissionEnum.TAG_UPDATE]
+            permissions: [PermissionEnum.TAG_SYSTEM_VIEW]
         };
         expect(() => checkCanCreateEventOrganizer(actor)).toThrow();
         expect(() => checkCanUpdateEventOrganizer(actor)).toThrow();
@@ -69,7 +69,7 @@ describe('eventOrganizer permissions', () => {
         const actor: Actor = {
             id: '7',
             role: RoleEnum.ADMIN,
-            permissions: [PermissionEnum.TAG_UPDATE, PermissionEnum.EVENT_ORGANIZER_MANAGE]
+            permissions: [PermissionEnum.TAG_SYSTEM_VIEW, PermissionEnum.EVENT_ORGANIZER_MANAGE]
         };
         expect(() => checkCanCreateEventOrganizer(actor)).not.toThrow();
         expect(() => checkCanUpdateEventOrganizer(actor)).not.toThrow();

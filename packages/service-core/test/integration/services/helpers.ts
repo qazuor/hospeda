@@ -729,8 +729,8 @@ export async function seedEvent(
 
     await tx.insert(tags).values({
         id: tagId,
-        slug: `seed-tag-${uid}`,
         name: 'Seed Tag',
+        type: 'SYSTEM',
         color: 'BLUE',
         lifecycleState: 'ACTIVE'
     } as typeof tags.$inferInsert);

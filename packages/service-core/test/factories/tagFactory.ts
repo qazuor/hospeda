@@ -1,10 +1,15 @@
 import type { Tag } from '@repo/schemas';
-import { LifecycleStatusEnum, TagColorEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, TagColorEnum, TagTypeEnum } from '@repo/schemas';
 import { getMockId } from './utilsFactory';
 
 /**
  * Builder for Tag test objects.
- * Allows fluent creation of tag test data with sensible defaults.
+ *
+ * Per SPEC-086 D-002 and D-018:
+ * - `slug` removed (user-tags have no public URLs).
+ * - `notes` removed (replaced by `description`).
+ * - `type` is required (INTERNAL / SYSTEM / USER).
+ * - `ownerId` is required for USER tags, must be null for INTERNAL/SYSTEM.
  */
 export class TagFactoryBuilder {
     private tag: Tag;
@@ -13,10 +18,11 @@ export class TagFactoryBuilder {
         this.tag = {
             id: getMockId('tag'),
             name: 'Test Tag',
-            slug: 'test-tag',
+            type: TagTypeEnum.SYSTEM,
             color: TagColorEnum.BLUE,
-            icon: '🏷️',
-            notes: '',
+            icon: undefined,
+            description: undefined,
+            ownerId: null,
             lifecycleState: LifecycleStatusEnum.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -36,7 +42,27 @@ export class TagFactoryBuilder {
         return { ...this.tag };
     }
 
+    /**
+     * Creates a SYSTEM tag (no ownerId).
+     */
     static create(fields: Partial<Tag> = {}): Tag {
         return new TagFactoryBuilder().with(fields).build();
+    }
+
+    /**
+     * Creates a USER tag with the given ownerId.
+     * Automatically sets type to USER.
+     */
+    static createUserTag(ownerId: string, fields: Partial<Tag> = {}): Tag {
+        return new TagFactoryBuilder().with({ type: TagTypeEnum.USER, ownerId, ...fields }).build();
+    }
+
+    /**
+     * Creates an INTERNAL tag (no ownerId, type = INTERNAL).
+     */
+    static createInternalTag(fields: Partial<Tag> = {}): Tag {
+        return new TagFactoryBuilder()
+            .with({ type: TagTypeEnum.INTERNAL, ownerId: null, ...fields })
+            .build();
     }
 }

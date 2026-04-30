@@ -868,7 +868,7 @@ export class DestinationService extends BaseCrudService<
     protected async _afterUpdate(
         entity: Destination,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<DestinationHookState>
     ): Promise<Destination> {
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -880,6 +880,29 @@ export class DestinationService extends BaseCrudService<
                 { error, entityType: 'destination' },
                 'Revalidation scheduling failed (non-blocking)'
             );
+        }
+
+        // SPEC-092 T-020: hierarchy revalidation on reparenting/slug change.
+        // When the destination's path changes (set in _beforeUpdate via
+        // ctx.hookState.pendingPathUpdate), every descendant's URL changes
+        // too — schedule revalidation for each descendant so its detail
+        // page and sub-routes are rebuilt against the new path.
+        const pendingPathUpdate = ctx.hookState?.pendingPathUpdate;
+        if (pendingPathUpdate) {
+            try {
+                const descendants = await this.model.findDescendants(entity.id, {});
+                for (const descendant of descendants) {
+                    getRevalidationService()?.scheduleRevalidation({
+                        entityType: 'destination',
+                        slug: descendant.slug
+                    });
+                }
+            } catch (error) {
+                DestinationService.revalidationLogger.warn(
+                    { error, entityId: entity.id },
+                    'Hierarchy revalidation cascade failed (non-blocking)'
+                );
+            }
         }
         return entity;
     }

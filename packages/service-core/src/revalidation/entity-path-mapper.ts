@@ -220,8 +220,11 @@ export function getAffectedPaths(
 
     switch (event.entityType) {
         case 'accommodation': {
-            // Always revalidate the listing page
+            // Always revalidate the home page (shows featured accommodations)
+            // and the listing page.
+            // SPEC-092 T-018: home revalidation gap fix.
             for (const locale of locales) {
+                paths.add(getLocalizedPath('/', locale));
                 paths.add(getLocalizedPath('/alojamientos/', locale));
             }
             // Detail page if slug provided
@@ -280,6 +283,12 @@ export function getAffectedPaths(
         }
 
         case 'destination': {
+            // Always revalidate the home page (featured destinations) and the listing.
+            // SPEC-092 T-018: home revalidation gap fix.
+            for (const locale of locales) {
+                paths.add(getLocalizedPath('/', locale));
+                paths.add(getLocalizedPath('/destinos/', locale));
+            }
             // Detail page if slug provided
             if (event.slug) {
                 for (const locale of locales) {
@@ -307,8 +316,10 @@ export function getAffectedPaths(
         }
 
         case 'event': {
-            // Always revalidate the events listing page
+            // Always revalidate the home page (featured events) and listing.
+            // SPEC-092 T-018: home revalidation gap fix.
             for (const locale of locales) {
+                paths.add(getLocalizedPath('/', locale));
                 paths.add(getLocalizedPath('/eventos/', locale));
             }
             // Detail page if slug provided
@@ -347,8 +358,10 @@ export function getAffectedPaths(
         }
 
         case 'post': {
-            // Always revalidate the publications listing page
+            // Always revalidate the home page (featured posts) and publications listing.
+            // SPEC-092 T-018: home revalidation gap fix.
             for (const locale of locales) {
+                paths.add(getLocalizedPath('/', locale));
                 paths.add(getLocalizedPath('/publicaciones/', locale));
             }
             // Detail page if slug provided (route: /publicaciones/[slug]/)

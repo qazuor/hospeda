@@ -339,6 +339,89 @@ describe('DestinationService — revalidation hooks', () => {
         expect(result.error).toBeUndefined();
         expect(mockScheduleRevalidation).not.toHaveBeenCalled();
     });
+
+    // SPEC-092 T-021: hierarchy revalidation cascade test
+    it('schedules revalidation for descendants when path changes (slug rename)', async () => {
+        // Arrange: parent destination with 2 descendants. Renaming the slug
+        // forces _beforeUpdate to set pendingPathUpdate, which _afterUpdate
+        // should detect and cascade revalidation to descendants.
+        const actor = createActor({
+            permissions: [PermissionEnum.DESTINATION_UPDATE]
+        });
+        const parentId = 'dest-parent-id';
+        const parent = createMockDestination({
+            id: parentId,
+            slug: 'old-slug',
+            path: '/argentina/old-slug',
+            deletedAt: undefined
+        });
+        const updated = { ...parent, slug: 'new-slug', path: '/argentina/new-slug' };
+        const descendant1 = createMockDestination({
+            id: 'desc-1',
+            slug: 'desc-one',
+            deletedAt: undefined
+        });
+        const descendant2 = createMockDestination({
+            id: 'desc-2',
+            slug: 'desc-two',
+            deletedAt: undefined
+        });
+        asMock(model.findById).mockResolvedValue(parent);
+        // findOne is called by _beforeUpdate to fetch current state
+        asMock(
+            (model as unknown as { findOne: ReturnType<typeof vi.fn> }).findOne
+        ).mockResolvedValue(parent);
+        asMock(model.update).mockResolvedValue(updated);
+        // findDescendants is called from _afterUpdate when pendingPathUpdate is set
+        asMock(
+            (model as unknown as { findDescendants: ReturnType<typeof vi.fn> }).findDescendants
+        ).mockResolvedValue([descendant1, descendant2]);
+
+        // Act
+        const result = await service.update(actor, parentId, { slug: 'new-slug' });
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        // Parent itself revalidated
+        expect(mockScheduleRevalidation).toHaveBeenCalledWith(
+            expect.objectContaining({ entityType: 'destination', slug: 'new-slug' })
+        );
+        // Each descendant revalidated
+        expect(mockScheduleRevalidation).toHaveBeenCalledWith(
+            expect.objectContaining({ entityType: 'destination', slug: 'desc-one' })
+        );
+        expect(mockScheduleRevalidation).toHaveBeenCalledWith(
+            expect.objectContaining({ entityType: 'destination', slug: 'desc-two' })
+        );
+        expect(
+            (model as unknown as { findDescendants: ReturnType<typeof vi.fn> }).findDescendants
+        ).toHaveBeenCalledWith(parentId, expect.any(Object));
+    });
+
+    it('does NOT cascade revalidation when path is unchanged (no pendingPathUpdate)', async () => {
+        // Arrange: update name only, no parent or slug change → no pendingPathUpdate
+        const actor = createActor({
+            permissions: [PermissionEnum.DESTINATION_UPDATE]
+        });
+        const id = 'dest-no-cascade';
+        const existing = createMockDestination({ id, slug: 'test-city', deletedAt: undefined });
+        const updated = { ...existing, name: 'Renamed City' };
+        asMock(model.findById).mockResolvedValue(existing);
+        asMock(model.update).mockResolvedValue(updated);
+        const findDescendants = (model as unknown as { findDescendants: ReturnType<typeof vi.fn> })
+            .findDescendants;
+
+        // Act
+        const result = await service.update(actor, id, { name: 'Renamed City' });
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        // Parent revalidated, but findDescendants should NOT be called
+        expect(mockScheduleRevalidation).toHaveBeenCalledWith(
+            expect.objectContaining({ entityType: 'destination', slug: 'test-city' })
+        );
+        expect(findDescendants).not.toHaveBeenCalled();
+    });
 });
 
 // ===========================================================================
@@ -511,7 +594,7 @@ describe('EventService — revalidation hooks', () => {
 // TagService
 // ===========================================================================
 
-describe('TagService — revalidation hooks', () => {
+describe('TagService — revalidation hooks (SPEC-086)', () => {
     let service: TagService;
     let tagModelMock: TagModel;
 
@@ -520,28 +603,27 @@ describe('TagService — revalidation hooks', () => {
         tagModelMock = createTypedModelMock(TagModel, [
             'create',
             'findById',
-            'findOne',
+            'findByType',
             'update',
-            'softDelete',
-            'hardDelete',
-            'restore'
+            'hardDelete'
         ]);
         service = new TagService({ logger: mockLogger }, tagModelMock, new REntityTagModel());
     });
 
     it('calls scheduleRevalidation with entityType "tag" after _afterCreate', async () => {
-        // Arrange
-        const actor = createActor({ permissions: [PermissionEnum.TAG_CREATE] });
-        const mockTag = TagFactoryBuilder.create({ slug: 'test-tag', name: 'Test Tag' });
-        asMock(tagModelMock.findOne).mockResolvedValue(null); // slug uniqueness check
+        // Arrange — SYSTEM tag, no slug (D-002), uses TAG_SYSTEM_CREATE
+        const actor = createActor({ permissions: [PermissionEnum.TAG_SYSTEM_CREATE] });
+        const mockTag = TagFactoryBuilder.create({ name: 'Test Tag' });
+        asMock(tagModelMock.findByType).mockResolvedValue([]); // no collision
         asMock(tagModelMock.create).mockResolvedValue(mockTag);
 
         // Act
         const result = await service.create(actor, {
             name: mockTag.name,
-            slug: mockTag.slug,
+            type: mockTag.type,
             color: mockTag.color,
-            lifecycleState: mockTag.lifecycleState
+            lifecycleState: mockTag.lifecycleState,
+            ownerId: null
         });
 
         // Assert
@@ -552,11 +634,12 @@ describe('TagService — revalidation hooks', () => {
     });
 
     it('calls scheduleRevalidation with entityType "tag" after _afterUpdate', async () => {
-        // Arrange
-        const actor = createActor({ permissions: [PermissionEnum.TAG_UPDATE] });
-        const mockTag = TagFactoryBuilder.create({ slug: 'test-tag', deletedAt: undefined });
+        // Arrange — SYSTEM tag update uses TAG_SYSTEM_UPDATE
+        const actor = createActor({ permissions: [PermissionEnum.TAG_SYSTEM_UPDATE] });
+        const mockTag = TagFactoryBuilder.create({ deletedAt: undefined });
         const updated = { ...mockTag, name: 'Updated Tag' };
         asMock(tagModelMock.findById).mockResolvedValue(mockTag);
+        asMock(tagModelMock.findByType).mockResolvedValue([]); // no collision
         asMock(tagModelMock.update).mockResolvedValue(updated);
 
         // Act
@@ -569,27 +652,9 @@ describe('TagService — revalidation hooks', () => {
         );
     });
 
-    it('calls scheduleRevalidation with entityType "tag" after _afterSoftDelete', async () => {
-        // Arrange
-        const actor = createActor({ permissions: [PermissionEnum.TAG_DELETE] });
-        const mockTag = TagFactoryBuilder.create({ deletedAt: undefined });
-        asMock(tagModelMock.findById).mockResolvedValue(mockTag);
-        asMock(tagModelMock.softDelete).mockResolvedValue(1);
-
-        // Act
-        const result = await service.softDelete(actor, mockTag.id);
-
-        // Assert
-        expect(result.error).toBeUndefined();
-        expect(mockScheduleRevalidation).toHaveBeenCalledWith(
-            expect.objectContaining({ entityType: 'tag' })
-        );
-    });
-
-    it('calls scheduleRevalidation with entityType "tag" after _afterHardDelete (fire-and-forget)', async () => {
-        // Arrange — explicitly tests the hard-delete path
-        // TAG_HARD_DELETE does not exist; the service reuses TAG_DELETE for hard deletes.
-        const actor = createActor({ permissions: [PermissionEnum.TAG_DELETE] });
+    it('calls scheduleRevalidation with entityType "tag" after _afterHardDelete', async () => {
+        // Arrange — SYSTEM tag hard delete uses TAG_SYSTEM_DELETE (D-011: hard delete only)
+        const actor = createActor({ permissions: [PermissionEnum.TAG_SYSTEM_DELETE] });
         const mockTag = TagFactoryBuilder.create({ deletedAt: undefined });
         asMock(tagModelMock.findById).mockResolvedValue(mockTag);
         asMock(tagModelMock.hardDelete).mockResolvedValue(1);
@@ -604,30 +669,14 @@ describe('TagService — revalidation hooks', () => {
         );
     });
 
-    it('calls scheduleRevalidation with entityType "tag" after restore', async () => {
-        // Arrange — TagService uses TAG_UPDATE permission for restore (no dedicated TAG_RESTORE)
-        const actor = createActor({ permissions: [PermissionEnum.TAG_UPDATE] });
-        const mockTag = TagFactoryBuilder.create({ deletedAt: new Date() });
-        asMock(tagModelMock.findById).mockResolvedValue(mockTag);
-        asMock(tagModelMock.restore).mockResolvedValue(1);
-
-        // Act
-        const result = await service.restore(actor, mockTag.id);
-
-        // Assert
-        expect(result.error).toBeUndefined();
-        expect(mockScheduleRevalidation).toHaveBeenCalledWith(
-            expect.objectContaining({ entityType: 'tag' })
-        );
-    });
-
     it('does NOT throw when getRevalidationService() returns undefined (optional chaining)', async () => {
         // Arrange
         asMock(getRevalidationService).mockReturnValue(undefined);
-        const actor = createActor({ permissions: [PermissionEnum.TAG_UPDATE] });
-        const mockTag = TagFactoryBuilder.create({ slug: 'test-tag', deletedAt: undefined });
+        const actor = createActor({ permissions: [PermissionEnum.TAG_SYSTEM_UPDATE] });
+        const mockTag = TagFactoryBuilder.create({ deletedAt: undefined });
         const updated = { ...mockTag, name: 'Safe Update' };
         asMock(tagModelMock.findById).mockResolvedValue(mockTag);
+        asMock(tagModelMock.findByType).mockResolvedValue([]);
         asMock(tagModelMock.update).mockResolvedValue(updated);
 
         // Act & Assert

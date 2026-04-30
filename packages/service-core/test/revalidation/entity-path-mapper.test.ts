@@ -35,6 +35,14 @@ describe('getAffectedPaths — accommodation', () => {
         expect(paths).toContain('/pt/alojamientos/');
     });
 
+    // SPEC-092 T-019: home page revalidation gap fix
+    it('always includes home / for all locales (SPEC-092 T-018)', () => {
+        const paths = getAffectedPaths({ entityType: 'accommodation', slug: 'hotel-test' });
+        expect(paths).toContain('/');
+        expect(paths).toContain('/en/');
+        expect(paths).toContain('/pt/');
+    });
+
     it('includes detail page for all locales when slug provided', () => {
         const paths = getAffectedPaths({ entityType: 'accommodation', slug: 'hotel-solanas' });
         expect(paths).toContain('/alojamientos/hotel-solanas/');
@@ -140,6 +148,21 @@ describe('getAffectedPaths — destination', () => {
         expect(paths).toContain('/pt/destinos/gualeguaychu/');
     });
 
+    // SPEC-092 T-019: home page revalidation gap fix
+    it('always includes home / for all locales (SPEC-092 T-018)', () => {
+        const paths = getAffectedPaths({ entityType: 'destination', slug: 'gualeguaychu' });
+        expect(paths).toContain('/');
+        expect(paths).toContain('/en/');
+        expect(paths).toContain('/pt/');
+    });
+
+    it('always includes /destinos/ listing for all locales (SPEC-092 T-018)', () => {
+        const paths = getAffectedPaths({ entityType: 'destination', slug: 'gualeguaychu' });
+        expect(paths).toContain('/destinos/');
+        expect(paths).toContain('/en/destinos/');
+        expect(paths).toContain('/pt/destinos/');
+    });
+
     it('always includes /alojamientos/ listing (destination info shown in accommodation cards)', () => {
         const paths = getAffectedPaths({ entityType: 'destination', slug: 'gualeguaychu' });
         expect(paths).toContain('/alojamientos/');
@@ -161,6 +184,14 @@ describe('getAffectedPaths — destination', () => {
 // ---------------------------------------------------------------------------
 
 describe('getAffectedPaths — event', () => {
+    // SPEC-092 T-019: home page revalidation gap fix
+    it('always includes home / for all locales (SPEC-092 T-018)', () => {
+        const paths = getAffectedPaths({ entityType: 'event', slug: 'festival-2026' });
+        expect(paths).toContain('/');
+        expect(paths).toContain('/en/');
+        expect(paths).toContain('/pt/');
+    });
+
     it('always includes /eventos/ listing for all locales', () => {
         const paths = getAffectedPaths({ entityType: 'event', slug: 'festival-2026' });
         expect(paths).toContain('/eventos/');
@@ -226,6 +257,14 @@ describe('getAffectedPaths — event', () => {
 // ---------------------------------------------------------------------------
 
 describe('getAffectedPaths — post', () => {
+    // SPEC-092 T-019: home page revalidation gap fix
+    it('always includes home / for all locales (SPEC-092 T-018)', () => {
+        const paths = getAffectedPaths({ entityType: 'post', slug: 'mi-articulo' });
+        expect(paths).toContain('/');
+        expect(paths).toContain('/en/');
+        expect(paths).toContain('/pt/');
+    });
+
     it('always includes /publicaciones/ listing for all locales', () => {
         const paths = getAffectedPaths({ entityType: 'post', slug: 'mi-articulo' });
         expect(paths).toContain('/publicaciones/');

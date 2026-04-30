@@ -397,7 +397,9 @@ export class PostService extends BaseCrudService<
         checkCanAdminList(actor);
     }
     protected async _afterCreate(entity: Post, _actor: Actor, _ctx: ServiceContext): Promise<Post> {
-        const tagSlugs = entity.tags?.map((t) => t.slug);
+        // User-tags (r_entity_tag) do not have slugs per SPEC-086 D-002.
+        // PostTag slugs live in the separate post_tags system and are not on entity.tags.
+        const tagSlugs: string[] | undefined = undefined;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
@@ -414,7 +416,8 @@ export class PostService extends BaseCrudService<
     }
 
     protected async _afterUpdate(entity: Post, _actor: Actor, _ctx: ServiceContext): Promise<Post> {
-        const tagSlugs = entity.tags?.map((t) => t.slug);
+        // User-tags do not have slugs per SPEC-086 D-002
+        const tagSlugs: string[] | undefined = undefined;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
@@ -435,7 +438,8 @@ export class PostService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<Post> {
-        const tagSlugs = entity.tags?.map((t) => t.slug);
+        // User-tags do not have slugs per SPEC-086 D-002
+        const tagSlugs: string[] | undefined = undefined;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
@@ -460,7 +464,8 @@ export class PostService extends BaseCrudService<
         if (entity && ctx.hookState) {
             ctx.hookState.restoredPost = {
                 slug: entity.slug,
-                tagSlugs: entity.tags?.map((t) => t.slug)
+                // User-tags do not have slugs per SPEC-086 D-002
+                tagSlugs: undefined
             };
         }
         return id;
@@ -496,7 +501,8 @@ export class PostService extends BaseCrudService<
         if (entity && ctx.hookState) {
             ctx.hookState.deletedPost = {
                 slug: entity.slug,
-                tagSlugs: entity.tags?.map((t) => t.slug)
+                // User-tags do not have slugs per SPEC-086 D-002
+                tagSlugs: undefined
             };
         }
         return id;
@@ -532,7 +538,8 @@ export class PostService extends BaseCrudService<
         if (entity && ctx.hookState) {
             ctx.hookState.deletedPost = {
                 slug: entity.slug,
-                tagSlugs: entity.tags?.map((t) => t.slug)
+                // User-tags do not have slugs per SPEC-086 D-002
+                tagSlugs: undefined
             };
             ctx.hookState.deletedEntityId = id;
         }

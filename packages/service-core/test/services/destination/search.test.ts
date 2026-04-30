@@ -187,10 +187,9 @@ describe('DestinationService.search and count', () => {
         // Arrange
         const tag = TagFactoryBuilder.create({
             name: 'beach',
-            slug: 'beach',
             color: TagColorEnum.BLUE,
             icon: 'star',
-            notes: 'Test tag',
+            description: 'Test tag',
             lifecycleState: LifecycleStatusEnum.ACTIVE
         });
         const destinations = [

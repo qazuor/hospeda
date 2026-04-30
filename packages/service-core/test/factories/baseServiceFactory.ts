@@ -14,8 +14,15 @@ export const createMockBaseModel = <
 >(): BaseModel<T> => {
     const mockModel = {
         findById: vi.fn(),
+        findOne: vi.fn(),
         findAll: vi.fn(),
         findAllWithRelations: vi.fn(),
+        findDescendants: vi.fn(),
+        findChildren: vi.fn(),
+        findAncestors: vi.fn(),
+        isDescendant: vi.fn(),
+        updateDescendantPaths: vi.fn(),
+        findByPath: vi.fn(),
         getTableName: vi.fn().mockReturnValue('mock_table'),
         create: vi.fn(),
         update: vi.fn(),
