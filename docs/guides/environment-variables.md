@@ -70,6 +70,7 @@ pnpm env:check
 |----------|------|----------|--------|---------|-------------|
 | `HOSPEDA_BETTER_AUTH_SECRET` | string | yes | yes | - | Session signing secret (min 32 chars) |
 | `HOSPEDA_BETTER_AUTH_URL` | url | yes | no | - | Better Auth endpoint URL |
+| `HOSPEDA_LOCATION_SALT` | string | yes | yes | - | Salt for accommodation location obfuscation (min 32 chars). Generate with `openssl rand -base64 48`. Rotating changes all approximate-location offsets shown to public visitors. |
 | `HOSPEDA_GOOGLE_CLIENT_ID` | string | no | yes | - | Google OAuth client ID |
 | `HOSPEDA_GOOGLE_CLIENT_SECRET` | string | no | yes | - | Google OAuth secret |
 | `HOSPEDA_FACEBOOK_CLIENT_ID` | string | no | yes | - | Facebook OAuth client ID |

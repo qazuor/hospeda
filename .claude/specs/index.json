@@ -681,6 +681,15 @@
             "archived": true,
             "archivedAt": "2026-04-29T02:41:12.000Z",
             "archivedIn": "aabd94a99"
+        },
+        {
+            "specId": "SPEC-097",
+            "title": "Interactive Maps with Privacy-Aware Location for Accommodations and Destinations",
+            "status": "draft",
+            "complexity": "high",
+            "path": "SPEC-097-interactive-maps-privacy-aware-location",
+            "created": "2026-05-01T00:00:00.000Z",
+            "archived": false
         }
     ]
 }
