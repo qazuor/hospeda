@@ -131,6 +131,17 @@ export const HOSPEDA_ENV_VARS = [
         category: 'auth'
     },
     {
+        name: 'HOSPEDA_GEOCODING_USER_AGENT',
+        description:
+            'User-Agent header sent to Photon (Komoot) and Nominatim (OSM) when the admin location picker queries them. Required by Nominatim usage policy; missing or generic values may cause throttling.',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'Hospeda/1.0 (https://hospeda.ar)',
+        apps: ['api'],
+        category: 'auth'
+    },
+    {
         name: 'HOSPEDA_BETTER_AUTH_URL',
         description: 'Better Auth endpoint URL',
         type: 'url',
