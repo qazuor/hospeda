@@ -74,23 +74,22 @@ describe('SPEC-087 — strict response strip', () => {
             headers: { 'user-agent': 'vitest' }
         });
 
-        const stripErrors = errorSpy.mock.calls
-            .map((c) => c[0])
-            .filter(
-                (arg): arg is { message: string; issues: unknown } =>
-                    typeof arg === 'object' &&
-                    arg !== null &&
-                    'message' in arg &&
-                    typeof (arg as Record<string, unknown>).message === 'string' &&
-                    ((arg as Record<string, unknown>).message as string).includes('stripping')
-            );
+        // logStripFailure() emits two args: a structured payload object
+        // ({ issuesCount, summary, issuesJson, method, path, requestId })
+        // and a literal message string ("Response schema stripping failed").
+        const stripErrors = errorSpy.mock.calls.filter((call) => {
+            const message = call[1];
+            return typeof message === 'string' && /stripping failed/i.test(message);
+        });
 
         expect(stripErrors.length).toBeGreaterThan(0);
-        const first = stripErrors[0];
-        expect(first).toBeDefined();
-        if (first) {
-            expect(first.message).toMatch(/stripping failed/i);
-            expect(Array.isArray(first.issues)).toBe(true);
+        const firstCall = stripErrors[0];
+        expect(firstCall).toBeDefined();
+        if (firstCall) {
+            const payload = firstCall[0] as Record<string, unknown>;
+            expect(typeof payload.issuesCount).toBe('number');
+            expect(typeof payload.issuesJson).toBe('string');
+            expect(typeof payload.summary).toBe('string');
         }
     });
 });

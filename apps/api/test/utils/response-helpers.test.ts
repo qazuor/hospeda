@@ -46,6 +46,7 @@ type JsonCall = {
 const createMockContext = (): { ctx: Context; calls: JsonCall[] } => {
     const calls: JsonCall[] = [];
     const ctx = {
+        req: { method: 'GET', path: '/test' },
         get: (key: string) => (key === 'requestId' ? 'req-test-1' : undefined),
         json: (body: unknown, status?: number) => {
             calls.push({ body, status });
@@ -85,9 +86,18 @@ describe('stripWithSchema', () => {
         expect(apiLogger.error).toHaveBeenCalledTimes(1);
         const call = (apiLogger.error as unknown as { mock: { calls: unknown[][] } }).mock.calls[0];
         expect(call).toBeDefined();
-        const payload = call?.[0] as { message: string; issues: unknown };
-        expect(payload.message).toMatch(/stripping failed/i);
-        expect(Array.isArray(payload.issues)).toBe(true);
+        // logStripFailure() emits two args: a structured payload object as first
+        // arg, and the literal message string as second arg.
+        const payload = call?.[0] as {
+            issuesCount: number;
+            summary: string;
+            issuesJson: string;
+        };
+        const message = call?.[1] as string;
+        expect(message).toMatch(/stripping failed/i);
+        expect(typeof payload.issuesCount).toBe('number');
+        expect(payload.issuesCount).toBeGreaterThan(0);
+        expect(typeof payload.issuesJson).toBe('string');
     });
 });
 
