@@ -1282,14 +1282,22 @@ export class AccommodationService extends BaseCrudService<
     protected async _executeSearch(
         params: AccommodationSearchInput,
         actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ) {
         const hasVipAccess =
             actor.entitlements?.has('vip_promotions_access') ||
             hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params
+        // before reaching this hook (SPEC-088) and re-publishes them via
+        // ctx.pagination. Forward them explicitly so the model uses the
+        // caller-provided pageSize instead of falling back to its default of 10.
         return this.model.searchWithRelations({
             ...params,
+            page: ctx.pagination?.page,
+            pageSize: ctx.pagination?.pageSize,
+            sortBy: ctx.pagination?.sortBy,
+            sortOrder: ctx.pagination?.sortOrder,
             excludeRestricted: !hasVipAccess
         });
     }
