@@ -231,6 +231,52 @@ curl "https://api.cloudinary.com/v1_1/$HOSPEDA_CLOUDINARY_CLOUD_NAME/resources/i
 
 Expect a 200 response with a `resources` array.
 
+#### 1.5.b Folder E2E en Cloudinary (SPEC-092)
+
+> **Audiencia**: técnico que prepara CI por primera vez.
+> **Idioma**: castellano (sigue el patrón del checklist post-beta operativo).
+
+**Para qué**. La suite E2E de SPEC-092 sube imágenes reales a Cloudinary cuando los tests están taggeados con `@cloudinary` (ACC-01, ACC-04). Para que NO contaminen los assets de producción ni consuman cuota fuera de control, usamos un patrón de carpetas dedicado.
+
+**Decisión tomada**. Reusamos la **misma cuenta de Cloudinary** del proyecto. NO se crea una sub-cuenta separada. La aislación se hace por carpetas:
+
+```
+hospeda/
+├── prod/        # producción real
+├── preview/     # deploys de preview
+├── test/        # tests viejos
+└── e2e/         # SPEC-092 — gestionado por la suite
+    ├── seed/                  # datos de seed
+    ├── {github-run-id}/       # un folder por run de CI
+    └── local-{timestamp}/     # un folder por run local
+```
+
+**Cómo se setea**. Nada nuevo. Las env vars `HOSPEDA_CLOUDINARY_*` ya configuradas alcanzan. La aislación la maneja el código:
+
+- `apps/e2e/fixtures/cloudinary-client.ts` (`buildE2eFolderRoot`) genera el path `hospeda/e2e/{run-id}/` automáticamente.
+- `packages/media/src/server/cloudinary.provider.ts` acepta `folderRoot` opcional para que la suite use ese prefix en vez del default `hospeda/`.
+
+**Limpieza automática**. Hay un cron job que corre todos los **domingos a las 02:00 UTC** y borra todo lo que haya bajo `hospeda/e2e/` con más de 7 días:
+
+- Archivo: `apps/api/src/cron/jobs/cloudinary-e2e-cleanup.job.ts`
+- Refuses to run when `NODE_ENV=production` (defensa).
+- Si el cron falla por alguna razón, no rompe nada operativo: las uploads de prod usan `hospeda/prod/`, las del cron de cleanup tradicional `hospeda/preview/` y `hospeda/test/`.
+
+**Limpieza manual** (si el cron quedó caído por mucho tiempo).
+
+```bash
+# Borrar TODO bajo hospeda/e2e/ (cuidado: esto es destructivo)
+curl -X DELETE \
+  "https://api.cloudinary.com/v1_1/$HOSPEDA_CLOUDINARY_CLOUD_NAME/resources/image/upload?prefix=hospeda/e2e/" \
+  -u "$HOSPEDA_CLOUDINARY_API_KEY:$HOSPEDA_CLOUDINARY_API_SECRET"
+
+# Verificar que el folder quedó vacío
+curl "https://api.cloudinary.com/v1_1/$HOSPEDA_CLOUDINARY_CLOUD_NAME/resources/image?prefix=hospeda/e2e/" \
+  -u "$HOSPEDA_CLOUDINARY_API_KEY:$HOSPEDA_CLOUDINARY_API_SECRET"
+```
+
+**Cuándo agregar una sub-cuenta dedicada**. Si la cuota de la cuenta de prod queda cerca del límite (alerta mensual), o si querés total aislación legal para auditorías. En ese caso, crear una nueva cuenta `hospeda-e2e` y agregar las env vars `HOSPEDA_CLOUDINARY_*` específicas a los Secrets de GitHub bajo el environment `nightly`. El código no necesita cambios.
+
 ### 1.6 Resend
 
 **What it is**. Transactional email API for welcome emails, password resets, booking confirmations.
@@ -275,6 +321,202 @@ curl -X POST https://api.mercadopago.com/checkout/preferences \
 ```
 
 Expect a 201 response with an `init_point` URL.
+
+#### 1.7.b Cuentas de Prueba para Suite E2E (SPEC-092)
+
+> **Audiencia**: técnico que prepara CI por primera vez. Quien hace este paso es alguien con acceso al panel de Mercado Pago y a los GitHub Secrets del repo.
+> **Idioma**: castellano.
+
+**Para qué**. El test `HOST-02` (el "real-real" de la suite SPEC-092) levanta el checkout de MercadoPago en sandbox, paga con una tarjeta de prueba y verifica que la subscription queda `active`. Para eso CI necesita credenciales sandbox dedicadas, separadas de las que usa el equipo en su laptop.
+
+**Pasos**.
+
+##### 1) Acceder al panel de developers
+
+Ir a [`https://www.mercadopago.com.ar/developers/panel`](https://www.mercadopago.com.ar/developers/panel).
+
+Logueate con la cuenta de Mercado Pago de Hospeda (la que tiene CUIT registrado). Si no la tenés a mano, pedila al admin del proyecto. **No uses tu cuenta personal**, las credenciales tienen que estar atadas a una cuenta corporativa.
+
+##### 2) Crear una application dedicada para E2E
+
+En el panel, andá a **Mis aplicaciones** (sidebar izquierdo) → **Crear aplicación**.
+
+| Campo | Valor |
+|---|---|
+| Nombre | `Hospeda E2E` |
+| Descripción | `Suite E2E SPEC-092 — sandbox testing only` |
+| Productos | Marcá **Pagos online** y **Suscripciones** |
+| Redirect URLs | Dejar vacío (no aplica para E2E) |
+
+Click en **Crear aplicación**. Te lleva a la página de detalle.
+
+##### 3) Crear cuentas de prueba ("Test accounts")
+
+En la pestaña **Cuentas de prueba** (dentro de la application recién creada), click **+ Crear cuenta de prueba**.
+
+Crear DOS cuentas:
+
+**Vendedor (Seller)** — esta es la cuenta cuyas credenciales usa CI:
+
+| Campo | Valor |
+|---|---|
+| Tipo | `Vendedor` |
+| País | `Argentina` |
+| Saldo inicial | `1000000` (un millón ARS, alcanza para la mayoría de tests) |
+| Descripción | `E2E seller — SPEC-092` |
+
+**Comprador (Buyer)** — opcional pero recomendado, para tener un usuario MP de prueba que paga:
+
+| Campo | Valor |
+|---|---|
+| Tipo | `Comprador` |
+| País | `Argentina` |
+| Saldo inicial | `100000` |
+| Descripción | `E2E buyer — SPEC-092` |
+
+##### 4) Capturar credenciales sandbox del Vendedor
+
+Volver a la application **Hospeda E2E** → pestaña **Credenciales** → seleccionar la cuenta **Vendedor** que creaste. Vas a ver:
+
+- `Public Key` (empieza con `TEST-` seguido de UUID)
+- `Access Token` (empieza con `TEST-` seguido de un string largo)
+
+También en **Webhooks** dentro de la misma application:
+
+- Click **+ Configurar notificaciones**.
+- En **URL de producción** poné `https://api.staging.hospeda.ar/api/v1/webhooks/mercadopago/notifications` (o la de tu staging real).
+- En **Eventos** marcá: `Payments` y `Subscriptions`.
+- Después de guardar, te muestra una **clave secreta** (Webhook signing key). Esa es la que necesitás copiar también.
+
+##### 5) Configurar GitHub Secrets
+
+En GitHub: repo → **Settings** → **Secrets and variables** → **Actions** → tab **Secrets**.
+
+Agregar 3 secrets a nivel **repository**:
+
+| Secret name | Valor |
+|---|---|
+| `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN` | El `Access Token` del paso 4 (TEST-…) |
+| `HOSPEDA_MERCADO_PAGO_PUBLIC_KEY` | La `Public Key` del paso 4 (TEST-…) |
+| `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` | La clave secreta del webhook del paso 4 |
+
+> **Importante**. NO scopear estos secrets a un environment específico (no usar `production` ni `staging`). El nightly E2E corre en el environment default y los necesita ahí.
+
+##### 6) Validación
+
+Disparar el workflow `e2e-nightly` manualmente desde GitHub:
+
+1. Repo → **Actions** → **E2E (Nightly)** → **Run workflow** → branch `main` → **Run workflow**.
+2. Esperar 30-35 minutos.
+3. Si HOST-02 pasa, las credenciales están bien.
+
+Si HOST-02 falla con `401 Unauthorized` desde MP, revisar:
+
+- Que el `Access Token` empieza con `TEST-`.
+- Que está copiado COMPLETO (a veces el panel corta visualmente).
+- Que NO tiene espacios al principio o final.
+
+##### 7) Tarjetas de prueba
+
+MP da tarjetas de test que el código ya conoce (`apps/e2e/tests/host/host-02-mp-upgrade.spec.ts`). Para referencia rápida si hay que validar manualmente:
+
+| Tarjeta | Número | CVV | Vencimiento | Resultado |
+|---|---|---|---|---|
+| Visa | `4509 9535 6623 3704` | `123` | `11/30` | Aprobada |
+| Mastercard | `5031 7557 3453 0604` | `123` | `11/30` | Aprobada |
+| Visa rechazada | `4013 5406 8274 6260` | `123` | `11/30` | Rechazada (para tests negativos) |
+
+> **Costo**. Cero. Las cuentas de prueba son gratis y los pagos en sandbox no mueven dinero real.
+
+#### 1.7.c Validación Manual del Webhook MP en Staging (SPEC-092)
+
+> **Audiencia**: persona técnica que ejecuta el checklist pre-release.
+> **Idioma**: castellano.
+> **Cuándo correr**: una vez por release a producción, justo antes del deploy. Documentado también en `checklist-pre-release-manual.es.md` § Validación MercadoPago.
+
+**Por qué hace falta**. La suite E2E nocturna de SPEC-092 simula el webhook entrante de MP haciendo un POST firmado al endpoint de la API. Esto valida nuestro código de verificación de firma + manejo del payload, pero NO valida que MP **realmente alcance** nuestra API por la red. Para cubrir ese hueco hacemos una validación manual una vez por release usando ngrok contra staging.
+
+**Por qué NO está en CI**. Decisión tomada en SPEC-092: ngrok suma flakiness al pipeline (los túneles caen, free tier rate-limita), y la pieza que validaría (network reachability MP → nuestra API) es responsabilidad de MP + DNS, no del código. Hacerlo manual una vez por release es suficiente.
+
+**Pre-requisitos**.
+
+- Cuenta ngrok personal (free tier alcanza). Crear en `https://ngrok.com` si no tenés.
+- Token ngrok configurado localmente: `ngrok config add-authtoken <tu-token>`.
+- Acceso al staging de Hospeda corriendo (`https://api.staging.hospeda.ar`).
+- Acceso al panel MP developers para reconfigurar el webhook URL temporalmente.
+
+**Pasos**.
+
+##### 1) Levantar staging API local apuntando al staging DB
+
+```bash
+# En la carpeta del repo
+HOSPEDA_DATABASE_URL="<URL del staging DB>" \
+HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN="<TEST-… del staging>" \
+HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET="<webhook-secret del staging>" \
+HOSPEDA_MERCADO_PAGO_SANDBOX=true \
+pnpm --filter hospeda-api dev
+```
+
+API queda escuchando en `http://localhost:3001`.
+
+##### 2) Levantar ngrok en una segunda terminal
+
+```bash
+ngrok http 3001
+```
+
+Te muestra una URL pública del estilo `https://abc123-xx-yy-zz.ngrok-free.app`. Copiala.
+
+##### 3) Configurar webhook URL temporal en MP
+
+En el panel MP → application **Hospeda E2E** (o la de staging) → **Webhooks** → **Editar**:
+
+- **URL de producción**: poné la URL ngrok del paso 2 + `/api/v1/webhooks/mercadopago/notifications`. Ejemplo: `https://abc123-xx-yy-zz.ngrok-free.app/api/v1/webhooks/mercadopago/notifications`
+- **Eventos**: `Payments` (al menos)
+- **Guardar**.
+
+> **Importante**. Anotá la URL de webhook que tenía configurada antes para poder restaurarla después.
+
+##### 4) Disparar un payment desde el front de staging
+
+Abrir `https://staging.hospeda.ar` → loguear como host de prueba → ir a Billing → **Upgrade** a un plan pago → completar checkout con tarjeta `4509 9535 6623 3704` (CVV `123`, vence `11/30`).
+
+##### 5) Verificar que el webhook llega
+
+En la terminal de ngrok vas a ver una línea tipo:
+
+```
+POST /api/v1/webhooks/mercadopago/notifications  200 OK
+```
+
+Eso confirma que MP llegó a tu API. Si ves `404` o nada llega, MP no alcanzó tu URL. Revisar:
+
+- Que la URL ngrok en el panel MP es exactamente la que muestra `ngrok` (no se cortó).
+- Que ngrok sigue corriendo (free tier puede caerse después de varias horas).
+
+##### 6) Verificar que el código procesó OK
+
+En la terminal de la API, buscar líneas como:
+
+```
+[INFO] [billing] Webhook payment.updated received id=xxx
+[INFO] [billing] Subscription activated for user xxx
+```
+
+Si aparecen, el código procesó bien.
+
+##### 7) Restaurar la configuración del webhook
+
+**No olvidar**: volver al panel MP y restaurar la URL del webhook anterior (la del paso 1 que anotaste). Si dejás la URL de ngrok, MP va a fallar después porque ngrok ya no está corriendo.
+
+##### 8) Cerrar ngrok y la API local
+
+```
+Ctrl+C en ambas terminales
+```
+
+**Cuándo escalarlo**. Si esta validación falla 2 veces seguidas en releases distintos, sumar ngrok al nightly de CI con un step opcional protegido por `if: github.event_name == 'workflow_dispatch'` para no quemar quota free tier todas las noches.
 
 ### 1.8 Google OAuth
 
