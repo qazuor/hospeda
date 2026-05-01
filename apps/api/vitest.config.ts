@@ -6,6 +6,10 @@ export default defineConfig({
         globals: true,
         environment: 'node',
         setupFiles: ['./test/setup.ts'],
+        // Default 5s is too tight under parallel load (3 forks + concurrent monorepo
+        // packages). A handful of tests cold-import and instantiate Hono apps; bumping
+        // to 15s avoids flakes without masking real hangs.
+        testTimeout: 15000,
         pool: 'forks',
         poolOptions: {
             forks: {
