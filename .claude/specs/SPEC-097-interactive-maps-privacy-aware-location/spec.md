@@ -3,11 +3,37 @@ spec-id: SPEC-097
 title: Interactive Maps with Privacy-Aware Location for Accommodations and Destinations
 type: feature
 complexity: high
-status: draft
+status: in-progress
 created: 2026-05-01
 ---
 
 # SPEC-097: Interactive Maps with Privacy-Aware Location
+
+## Implementation Deviations (2026-05-01)
+
+The implementation deviates from the spec on two intentional points; both are
+documented here so the gap is explicit, not silent technical debt.
+
+1. **`packages/ui-maps/` shared package — NOT created.** The map components
+   live inside each app instead (`apps/web/src/components/maps/*` and
+   `apps/admin/src/features/accommodations/components/{view,edit}/fields/*`).
+   Rationale: web and admin use different styling stacks (CSS Modules + vanilla
+   tokens vs Tailwind v4 + shadcn) and different React versions; sharing only
+   the Leaflet plumbing (~50 LOC) does not justify the cost of a new workspace
+   package + dual styling abstraction. Promotion to a shared package is a
+   straightforward future refactor when a third consumer appears.
+
+2. **Admin geocoding routes consolidated into one file.** The spec listed
+   three files (`autocomplete.ts`, `forward.ts`, `reverse.ts`); the
+   implementation puts the three `createAdminRoute(...)` definitions inside
+   `apps/api/src/routes/geocoding/admin/index.ts`. Functionally identical;
+   matches the convention used by `exchange-rates/admin/index.ts`.
+
+3. **E2E Playwright tests deferred.** The unit + component + integration
+   coverage in this PR exercises every algorithm and contract documented in
+   §15. Visual E2E (`apps/e2e/tests/{accommodation,destination,admin-location}-map.spec.ts`)
+   require running browsers + seeded DB and are scheduled as a follow-up PR
+   alongside the SPEC-092 E2E suite.
 
 ## Part 1 — Functional Specification
 
