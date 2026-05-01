@@ -60,7 +60,9 @@ export const namespaces = [
     'conversations',
     'cookieConsent',
     // Tag system namespaces (admin panel only, per SPEC-086 D-024)
-    'tags'
+    'tags',
+    // Map components (SPEC-097)
+    'maps'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];

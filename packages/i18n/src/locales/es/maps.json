@@ -1,0 +1,11 @@
+{
+    "attribution": "© Colaboradores de OpenStreetMap",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "approximateDisclaimer": "Ubicación aproximada. La dirección exacta se compartirá con la reserva confirmada.",
+    "openInExternalMap": "Abrir en mapa externo",
+    "ariaLabelAccommodation": "Mapa con ubicación aproximada del alojamiento",
+    "ariaLabelDestination": "Mapa con ubicación del destino",
+    "loadingMap": "Cargando mapa…",
+    "markerLabel": "Ubicación"
+}
