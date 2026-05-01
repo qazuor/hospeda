@@ -10,7 +10,7 @@ import { OwnTagRow } from './OwnTagRow';
 const LIFECYCLE_TABS: ReadonlyArray<{ value: string; label: string }> = [
     { value: '', label: 'Todos' },
     { value: 'ACTIVE', label: 'Activos' },
-    { value: 'DRAFT', label: 'Borradores' },
+    { value: 'INACTIVE', label: 'Inactivos' },
     { value: 'ARCHIVED', label: 'Archivados' }
 ] as const;
 

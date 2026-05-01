@@ -216,7 +216,7 @@ export function OwnTagForm(props: OwnTagFormProps) {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value={LifecycleStatusEnum.ACTIVE}>Activo</SelectItem>
-                            <SelectItem value={LifecycleStatusEnum.DRAFT}>Borrador</SelectItem>
+                            <SelectItem value={LifecycleStatusEnum.INACTIVE}>Inactivo</SelectItem>
                             <SelectItem value={LifecycleStatusEnum.ARCHIVED}>Archivado</SelectItem>
                         </SelectContent>
                     </Select>

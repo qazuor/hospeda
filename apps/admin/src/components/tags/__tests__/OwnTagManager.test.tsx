@@ -173,12 +173,12 @@ describe('OwnTagManager', () => {
     });
 
     /**
-     * D-022: List renders ACTIVE, DRAFT, and ARCHIVED tags.
+     * D-022: List renders ACTIVE, INACTIVE, and ARCHIVED tags.
      */
     it('renders tags with different lifecycle states', async () => {
         const tags = [
             mockTag({ id: 'tag-001', name: 'Tag-Activo', lifecycleState: 'ACTIVE' }),
-            mockTag({ id: 'tag-002', name: 'Tag-Borrador', lifecycleState: 'DRAFT' }),
+            mockTag({ id: 'tag-002', name: 'Tag-Inactivo', lifecycleState: 'INACTIVE' }),
             mockTag({ id: 'tag-003', name: 'Tag-Archivado', lifecycleState: 'ARCHIVED' })
         ];
 
@@ -196,12 +196,12 @@ describe('OwnTagManager', () => {
 
         // Tag names are rendered in the name column
         expect(screen.getByText('Tag-Activo')).toBeInTheDocument();
-        expect(screen.getByText('Tag-Borrador')).toBeInTheDocument();
+        expect(screen.getByText('Tag-Inactivo')).toBeInTheDocument();
         expect(screen.getByText('Tag-Archivado')).toBeInTheDocument();
 
         // State badges are rendered with translated labels
         expect(screen.getByText('Activo')).toBeInTheDocument();
-        expect(screen.getByText('Borrador')).toBeInTheDocument();
+        expect(screen.getByText('Inactivo')).toBeInTheDocument();
         expect(screen.getByText('Archivado')).toBeInTheDocument();
     });
 

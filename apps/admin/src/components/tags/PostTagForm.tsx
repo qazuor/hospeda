@@ -32,8 +32,9 @@ const COLOR_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
 
 /** Lifecycle state options for the state select. */
 const STATE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
-    { value: LifecycleStatusEnum.ACTIVE, label: 'Activo' },
     { value: LifecycleStatusEnum.DRAFT, label: 'Borrador' },
+    { value: LifecycleStatusEnum.ACTIVE, label: 'Activo' },
+    { value: LifecycleStatusEnum.INACTIVE, label: 'Inactivo' },
     { value: LifecycleStatusEnum.ARCHIVED, label: 'Archivado' }
 ] as const;
 

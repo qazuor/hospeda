@@ -99,21 +99,22 @@ vi.mock('@/hooks/use-auth-context', () => ({
 
 describe('OwnTagManager — supplemental (T-044)', () => {
     /**
-     * D-022, AC-003-04: All three lifecycle states (ACTIVE / DRAFT / ARCHIVED)
-     * carry distinct CSS badge classes.
+     * D-022, AC-003-04: All three lifecycle states relevant to user-tags
+     * (ACTIVE / INACTIVE / ARCHIVED) carry distinct CSS badge classes.
      *
      * The component renders a state badge via STATE_BADGE map:
      *   ACTIVE   → 'bg-green-100 text-green-800'
-     *   DRAFT    → 'bg-gray-100 text-gray-600'
+     *   INACTIVE → 'bg-gray-100 text-gray-600'
      *   ARCHIVED → 'bg-orange-100 text-orange-700'
      *
-     * This test verifies that each rendered badge element has distinct class
-     * tokens, i.e., they are NOT visually identical.
+     * DRAFT is a valid LifecycleStatusEnum value but does not apply to
+     * user-tags (a user creates a tag and it is immediately ACTIVE; there
+     * is no draft stage). The form select omits DRAFT for user-tags.
      */
-    it('renders state badges with distinct CSS classes for ACTIVE, DRAFT, and ARCHIVED', async () => {
+    it('renders state badges with distinct CSS classes for ACTIVE, INACTIVE, and ARCHIVED', async () => {
         const tags = [
             mockTag({ id: 'tag-active', name: 'Tag-Activo', lifecycleState: 'ACTIVE' }),
-            mockTag({ id: 'tag-draft', name: 'Tag-Borrador', lifecycleState: 'DRAFT' }),
+            mockTag({ id: 'tag-inactive', name: 'Tag-Inactivo', lifecycleState: 'INACTIVE' }),
             mockTag({ id: 'tag-archived', name: 'Tag-Archivado', lifecycleState: 'ARCHIVED' })
         ];
 
@@ -131,19 +132,19 @@ describe('OwnTagManager — supplemental (T-044)', () => {
 
         // Each badge renders the lifecycle label text
         const activeBadge = screen.getByText('Activo');
-        const draftBadge = screen.getByText('Borrador');
+        const inactiveBadge = screen.getByText('Inactivo');
         const archivedBadge = screen.getByText('Archivado');
 
-        // Verify visual distinction: ACTIVE uses green, DRAFT uses gray, ARCHIVED uses orange.
+        // Verify visual distinction: ACTIVE uses green, INACTIVE uses gray, ARCHIVED uses orange.
         // The CSS classes are sourced directly from the STATE_BADGE map in OwnTagRow.tsx.
         expect(activeBadge.className).toContain('bg-green-100');
-        expect(draftBadge.className).toContain('bg-gray-100');
+        expect(inactiveBadge.className).toContain('bg-gray-100');
         expect(archivedBadge.className).toContain('bg-orange-100');
 
         // Confirm the three classes are distinct (no two share the same bg class)
         const bgClasses = [
             activeBadge.className,
-            draftBadge.className,
+            inactiveBadge.className,
             archivedBadge.className
         ].map((c) => c.match(/bg-\S+/)?.[0]);
 
@@ -228,8 +229,8 @@ describe('OwnTagManager — supplemental (T-044)', () => {
     });
 
     /**
-     * D-022: All 8 tags (5 ACTIVE + 2 DRAFT + 1 ARCHIVED) are visible in the
-     * "all" filter view (no filter applied by default).
+     * D-022: All 8 tags (5 ACTIVE + 2 INACTIVE + 1 ARCHIVED) are visible in
+     * the "all" filter view (no filter applied by default).
      *
      * The spec AC-003-04 states: "Manager shows all lifecycle states with distinction."
      * This test validates the count of rendered rows matches the total.
@@ -241,8 +242,8 @@ describe('OwnTagManager — supplemental (T-044)', () => {
             mockTag({ id: 'a3', name: 'Active-3', lifecycleState: 'ACTIVE' }),
             mockTag({ id: 'a4', name: 'Active-4', lifecycleState: 'ACTIVE' }),
             mockTag({ id: 'a5', name: 'Active-5', lifecycleState: 'ACTIVE' }),
-            mockTag({ id: 'd1', name: 'Draft-1', lifecycleState: 'DRAFT' }),
-            mockTag({ id: 'd2', name: 'Draft-2', lifecycleState: 'DRAFT' }),
+            mockTag({ id: 'i1', name: 'Inactive-1', lifecycleState: 'INACTIVE' }),
+            mockTag({ id: 'i2', name: 'Inactive-2', lifecycleState: 'INACTIVE' }),
             mockTag({ id: 'ar1', name: 'Archived-1', lifecycleState: 'ARCHIVED' })
         ];
 
@@ -265,7 +266,7 @@ describe('OwnTagManager — supplemental (T-044)', () => {
 
         // The state badges should all 3 types be present
         expect(screen.getAllByText('Activo').length).toBeGreaterThanOrEqual(1);
-        expect(screen.getAllByText('Borrador').length).toBeGreaterThanOrEqual(1);
+        expect(screen.getAllByText('Inactivo').length).toBeGreaterThanOrEqual(1);
         expect(screen.getAllByText('Archivado').length).toBeGreaterThanOrEqual(1);
     });
 
