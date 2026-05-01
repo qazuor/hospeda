@@ -456,6 +456,23 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             );
         }
 
+        // SPEC-097 — Viewport bbox filter on EXACT coordinates stored under
+        // location.coordinates (JSONB). Public response still returns only
+        // approximateLocation; the precise count happens server-side here.
+        if (
+            params.bboxNorth !== undefined &&
+            params.bboxSouth !== undefined &&
+            params.bboxEast !== undefined &&
+            params.bboxWest !== undefined
+        ) {
+            whereClauses.push(
+                sql`(${accommodations.location}->'coordinates'->>'lat')::numeric BETWEEN ${params.bboxSouth} AND ${params.bboxNorth}`
+            );
+            whereClauses.push(
+                sql`(${accommodations.location}->'coordinates'->>'long')::numeric BETWEEN ${params.bboxWest} AND ${params.bboxEast}`
+            );
+        }
+
         const where = and(...whereClauses);
 
         const orderBy = buildAccommodationOrderBy({
