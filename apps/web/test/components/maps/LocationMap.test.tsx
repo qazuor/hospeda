@@ -56,7 +56,7 @@ describe('LocationMap', () => {
                 mode="approximate"
                 lat={-30.7521}
                 lng={-58.0429}
-                radiusMeters={500}
+                radiusMeters={150}
                 ariaLabel="aprox map"
                 i18nStrings={i18n}
             />
@@ -64,7 +64,7 @@ describe('LocationMap', () => {
 
         expect(screen.getByTestId('circle')).toBeInTheDocument();
         expect(screen.queryByTestId('marker')).not.toBeInTheDocument();
-        expect(screen.getByTestId('circle').dataset.radius).toBe('500');
+        expect(screen.getByTestId('circle').dataset.radius).toBe('150');
         expect(screen.getByText('Ubicación aproximada.')).toBeInTheDocument();
     });
 
@@ -106,7 +106,7 @@ describe('LocationMap', () => {
                 mode="approximate"
                 lat={0}
                 lng={0}
-                radiusMeters={500}
+                radiusMeters={150}
                 ariaLabel="my-label"
                 i18nStrings={i18n}
             />

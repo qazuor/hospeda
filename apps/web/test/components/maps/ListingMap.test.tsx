@@ -72,13 +72,13 @@ describe('ListingMap', () => {
                         id: '1',
                         slug: 'a',
                         name: 'A',
-                        approximateLocation: { lat: -30, lng: -58, radiusMeters: 500 }
+                        approximateLocation: { lat: -30, lng: -58, radiusMeters: 150 }
                     },
                     {
                         id: '2',
                         slug: 'b',
                         name: 'B',
-                        approximateLocation: { lat: -31, lng: -59, radiusMeters: 500 }
+                        approximateLocation: { lat: -31, lng: -59, radiusMeters: 150 }
                     }
                 ]}
                 ariaLabel="map"
@@ -124,7 +124,7 @@ describe('ListingMap', () => {
                         id: '1',
                         slug: 'a',
                         name: 'A',
-                        approximateLocation: { lat: 0, lng: 0, radiusMeters: 500 }
+                        approximateLocation: { lat: 0, lng: 0, radiusMeters: 150 }
                     }
                 ]}
                 ariaLabel="map"
