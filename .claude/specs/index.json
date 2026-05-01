@@ -168,12 +168,14 @@
         },
         {
             "specId": "SPEC-086",
-            "title": "Tag System Refactor (Types + Scope + Per-User Privacy)",
-            "status": "draft",
+            "title": "Tag System Refactor (Two Subsystems: PostTag + User-Tag)",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-086-tag-system-refactor",
             "priority": "P2",
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-04-30T00:00:00.000Z",
+            "archiveNote": "All 46 tasks completed across 24 commits on main. Delivered PostTag + User-Tag subsystems: enums, 24 permissions, DB schema (tags refactor + post_tags + r_post_post_tag), TagService + PostTagService, admin/public API routes, admin UI, web public listings, i18n namespace (es/en/pt), seeds (system user + 25 INTERNAL + 30 SYSTEM + 34 PostTag + examples), integration + cascade + schema tests. Spec/task directories removed; git history is the source of truth.",
             "breakingChange": true
         },
         {
