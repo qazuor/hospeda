@@ -7,5 +7,15 @@
     "ariaLabelAccommodation": "Mapa com localização aproximada da acomodação",
     "ariaLabelDestination": "Mapa com localização do destino",
     "loadingMap": "Carregando mapa…",
-    "markerLabel": "Localização"
+    "markerLabel": "Localização",
+    "viewDetails": "Ver mais",
+    "featuredBadge": "Destaque",
+    "sidebar": {
+        "resultsHeading": "Resultados no mapa",
+        "resultsCount_one": "{{count}} acomodação",
+        "resultsCount_other": "{{count}} acomodações",
+        "emptyState": "Não há acomodações nesta área. Tente ajustar os filtros ou mover o mapa.",
+        "openSheet": "Ver lista",
+        "closeSheet": "Fechar"
+    }
 }

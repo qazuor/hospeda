@@ -7,5 +7,15 @@
     "ariaLabelAccommodation": "Map with approximate location of the accommodation",
     "ariaLabelDestination": "Map with destination location",
     "loadingMap": "Loading map…",
-    "markerLabel": "Location"
+    "markerLabel": "Location",
+    "viewDetails": "View details",
+    "featuredBadge": "Featured",
+    "sidebar": {
+        "resultsHeading": "Map results",
+        "resultsCount_one": "{{count}} accommodation",
+        "resultsCount_other": "{{count}} accommodations",
+        "emptyState": "No accommodations in this area. Try adjusting filters or panning the map.",
+        "openSheet": "View list",
+        "closeSheet": "Close"
+    }
 }
