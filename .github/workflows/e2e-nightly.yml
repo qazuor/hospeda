@@ -1,0 +1,168 @@
+name: E2E (Nightly)
+
+# SPEC-092 T-040: Nightly E2E suite. Runs P0 + P1 + RES + integration
+# tests + CI scripts against MercadoPago sandbox + Cloudinary E2E folder.
+# Target wall-clock: < 35 minutes.
+#
+# Failures trigger an alert via the existing notification channel. Use
+# workflow_dispatch to re-run on demand for pre-release validation.
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # 03:00 UTC daily
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-nightly
+  cancel-in-progress: false
+
+jobs:
+  e2e-full:
+    name: E2E Full Suite (nightly)
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: hospeda_user
+          POSTGRES_PASSWORD: hospeda_pass
+          POSTGRES_DB: hospeda_e2e
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025
+          - 8025:8025
+        env:
+          MP_MAX_MESSAGES: 5000
+          MP_SMTP_AUTH_ACCEPT_ANY: 1
+          MP_SMTP_AUTH_ALLOW_INSECURE: 1
+        options: >-
+          --health-cmd "wget -q --spider http://localhost:8025/api/v1/info"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      HOSPEDA_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e
+      HOSPEDA_E2E_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e
+      HOSPEDA_REDIS_URL: redis://localhost:6380
+      HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET }}
+      HOSPEDA_BETTER_AUTH_URL: http://localhost:3001/api/auth
+      HOSPEDA_API_URL: http://localhost:3001
+      HOSPEDA_SITE_URL: http://localhost:4321
+      HOSPEDA_ADMIN_URL: http://localhost:3000
+      HOSPEDA_MAILER_HOST: localhost
+      HOSPEDA_MAILER_PORT: '1025'
+
+      # Real MP sandbox credentials (HOST-02 uses real checkout flow)
+      HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: ${{ secrets.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN }}
+      HOSPEDA_MERCADO_PAGO_PUBLIC_KEY: ${{ secrets.HOSPEDA_MERCADO_PAGO_PUBLIC_KEY }}
+      HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: ${{ secrets.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET }}
+      HOSPEDA_MERCADO_PAGO_SANDBOX: 'true'
+
+      # Real Cloudinary credentials (E2E folder isolation handled by provider folderRoot option)
+      HOSPEDA_CLOUDINARY_CLOUD_NAME: ${{ secrets.HOSPEDA_CLOUDINARY_CLOUD_NAME }}
+      HOSPEDA_CLOUDINARY_API_KEY: ${{ secrets.HOSPEDA_CLOUDINARY_API_KEY }}
+      HOSPEDA_CLOUDINARY_API_SECRET: ${{ secrets.HOSPEDA_CLOUDINARY_API_SECRET }}
+      HOSPEDA_E2E_RUN_ID: ${{ github.run_id }}
+
+      # Playwright tuning (2 workers per spec — sandbox rate limits)
+      E2E_MODE: nightly
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter hospeda-e2e exec playwright install chromium --with-deps
+
+      - name: Build apps
+        run: pnpm exec turbo run build --filter=hospeda-api --filter=hospeda-admin --filter=hospeda-web
+
+      - name: Apply Postgres extras
+        run: bash packages/db/scripts/apply-postgres-extras.sh "$HOSPEDA_E2E_DATABASE_URL"
+
+      - name: Push Drizzle schema to E2E database
+        run: pnpm --filter @repo/db db:push
+        env:
+          HOSPEDA_DATABASE_URL: ${{ env.HOSPEDA_E2E_DATABASE_URL }}
+
+      - name: Seed E2E database
+        run: pnpm --filter hospeda-e2e e2e:seed
+
+      - name: Run E2E full suite (P0 + P1 + Resilience)
+        run: pnpm --filter hospeda-e2e e2e:test
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+
+      - name: Run integration security tests
+        if: always()
+        run: pnpm --filter hospeda-api test test/integration/security
+        continue-on-error: true
+
+      - name: Run CI scripts (raw-ilike + SEO + sitemap)
+        if: always()
+        run: |
+          bash scripts/ci/check-raw-ilike.sh
+          pnpm exec tsx scripts/ci/seo-validator.ts
+          pnpm exec tsx scripts/ci/sitemap-validator.ts
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-nightly-${{ github.run_id }}
+          path: apps/e2e/playwright-report/
+          retention-days: 30
+
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-nightly-${{ github.run_id }}
+          path: apps/e2e/test-results/
+          retention-days: 14
