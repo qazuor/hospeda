@@ -10,3 +10,16 @@ export {
     getDefaultCurrency,
     type MercadoPagoAdapterConfig
 } from './mercadopago.js';
+
+// SPEC-092 T-036: test-only control surface for E2E failure injection.
+// Gated by HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true; no-op otherwise.
+export {
+    applyTestControl,
+    delayNext,
+    failNext,
+    getRecordedCalls,
+    getTestControlSnapshot,
+    isTestControlEnabled,
+    resetTestControl,
+    type ControllableOperation
+} from './qzpay-test-control.js';
