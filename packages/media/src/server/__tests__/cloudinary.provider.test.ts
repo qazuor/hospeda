@@ -200,6 +200,115 @@ describe('CloudinaryProvider', () => {
                 api_secret: VALID_CONFIG.apiSecret
             });
         });
+
+        // SPEC-092 T-027: folderRoot override for E2E test isolation
+        it('should default folderRoot to hospeda/ when not provided', () => {
+            // Arrange + Act
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+            setupUploadStream(null, MOCK_UPLOAD_RESPONSE);
+
+            // Assert: upload to default-root path succeeds
+            return expect(
+                provider.upload({
+                    file: Buffer.from('img'),
+                    folder: 'hospeda/prod/accommodations/abc-123'
+                })
+            ).resolves.toBeDefined();
+        });
+
+        it('should accept a custom folderRoot ending in /', () => {
+            // Arrange + Act + Assert
+            expect(
+                () =>
+                    new CloudinaryProvider({
+                        ...VALID_CONFIG,
+                        folderRoot: 'hospeda/e2e/run-abc123/'
+                    })
+            ).not.toThrow();
+        });
+
+        it('should throw ConfigurationError when folderRoot does not end with /', () => {
+            expect(
+                () =>
+                    new CloudinaryProvider({
+                        ...VALID_CONFIG,
+                        folderRoot: 'hospeda/e2e'
+                    })
+            ).toThrow(ConfigurationError);
+        });
+
+        it('should throw ConfigurationError when folderRoot contains uppercase letters', () => {
+            expect(
+                () =>
+                    new CloudinaryProvider({
+                        ...VALID_CONFIG,
+                        folderRoot: 'Hospeda/E2E/'
+                    })
+            ).toThrow(ConfigurationError);
+        });
+
+        it('should throw ConfigurationError when folderRoot contains spaces', () => {
+            expect(
+                () =>
+                    new CloudinaryProvider({
+                        ...VALID_CONFIG,
+                        folderRoot: 'hospeda e2e/'
+                    })
+            ).toThrow(ConfigurationError);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // upload() — folderRoot enforcement
+    // -------------------------------------------------------------------------
+
+    describe('upload() folderRoot enforcement', () => {
+        it('should accept upload to a folder under the custom folderRoot', async () => {
+            // Arrange
+            setupUploadStream(null, MOCK_UPLOAD_RESPONSE);
+            const provider = new CloudinaryProvider({
+                ...VALID_CONFIG,
+                folderRoot: 'hospeda/e2e/run-001/'
+            });
+
+            // Act
+            const result = await provider.upload({
+                file: Buffer.from('fake-image'),
+                folder: 'hospeda/e2e/run-001/accommodations/abc-123'
+            });
+
+            // Assert
+            expect(result.publicId).toBeDefined();
+        });
+
+        it('should reject upload to a folder under the default root when custom folderRoot is set', async () => {
+            // Arrange
+            const provider = new CloudinaryProvider({
+                ...VALID_CONFIG,
+                folderRoot: 'hospeda/e2e/run-001/'
+            });
+
+            // Act + Assert: 'hospeda/prod/...' is no longer the configured root
+            await expect(
+                provider.upload({
+                    file: Buffer.from('fake-image'),
+                    folder: 'hospeda/prod/accommodations/abc-123'
+                })
+            ).rejects.toThrow(InvalidFolderError);
+        });
+
+        it('should reject upload outside any hospeda namespace with default folderRoot', async () => {
+            // Arrange
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act + Assert
+            await expect(
+                provider.upload({
+                    file: Buffer.from('fake-image'),
+                    folder: 'attacker/path/'
+                })
+            ).rejects.toThrow(InvalidFolderError);
+        });
     });
 
     // -------------------------------------------------------------------------

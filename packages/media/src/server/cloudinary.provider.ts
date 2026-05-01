@@ -17,6 +17,18 @@ export interface CloudinaryProviderConfig {
     readonly cloudName: string;
     readonly apiKey: string;
     readonly apiSecret: string;
+    /**
+     * Optional folder root prefix that ALL uploads must live under.
+     *
+     * Defaults to `'hospeda/'`. Override only for isolated test runs
+     * (e.g. SPEC-092 E2E uses `'hospeda/e2e/{run-id}/'` so test uploads
+     * never collide with real assets).
+     *
+     * Must end in `/` and contain only URL-safe characters.
+     *
+     * @default 'hospeda/'
+     */
+    readonly folderRoot?: string;
 }
 
 /**
@@ -66,9 +78,16 @@ export class InvalidFolderError extends Error {
 const CLOUD_NAME_REGEX = /^[a-z0-9_-]+$/;
 
 /**
- * Required folder prefix for all uploads through this provider.
+ * Default folder prefix for all uploads when `CloudinaryProviderConfig.folderRoot`
+ * is not set. Override is reserved for isolated test environments (SPEC-092).
  */
-const REQUIRED_FOLDER_PREFIX = 'hospeda/';
+const DEFAULT_FOLDER_ROOT = 'hospeda/';
+
+/**
+ * Validation regex for `folderRoot` overrides. Must end in `/` and only
+ * contain URL-safe characters (lowercase alphanumeric, `_`, `-`, `/`).
+ */
+const FOLDER_ROOT_REGEX = /^[a-z0-9_/-]+\/$/;
 
 /**
  * p-retry configuration for destructive Cloudinary operations.
@@ -128,6 +147,12 @@ function isPermanent4xx(err: unknown): boolean {
  */
 export class CloudinaryProvider implements ImageProvider {
     /**
+     * Folder root prefix enforced on every upload.
+     * Resolved from `CloudinaryProviderConfig.folderRoot` or {@link DEFAULT_FOLDER_ROOT}.
+     */
+    private readonly folderRoot: string;
+
+    /**
      * @internal
      *
      * Direct instantiation is reserved for the canonical access point
@@ -176,6 +201,14 @@ export class CloudinaryProvider implements ImageProvider {
             throw new ConfigurationError('Missing HOSPEDA_CLOUDINARY_API_SECRET');
         }
 
+        const folderRoot = config.folderRoot ?? DEFAULT_FOLDER_ROOT;
+        if (!FOLDER_ROOT_REGEX.test(folderRoot)) {
+            throw new ConfigurationError(
+                `Invalid folderRoot '${folderRoot}': must match ${FOLDER_ROOT_REGEX} (end in '/', URL-safe chars only)`
+            );
+        }
+        this.folderRoot = folderRoot;
+
         cloudinary.config({
             cloud_name: config.cloudName,
             api_key: config.apiKey,
@@ -199,9 +232,9 @@ export class CloudinaryProvider implements ImageProvider {
     async upload(options: UploadOptions): Promise<UploadResult> {
         const { file, folder, publicId, tags, overwrite } = options;
 
-        if (!folder || !folder.startsWith(REQUIRED_FOLDER_PREFIX)) {
+        if (!folder || !folder.startsWith(this.folderRoot)) {
             throw new InvalidFolderError(
-                `Folder must start with '${REQUIRED_FOLDER_PREFIX}' (received: '${folder ?? ''}')`
+                `Folder must start with '${this.folderRoot}' (received: '${folder ?? ''}')`
             );
         }
 
