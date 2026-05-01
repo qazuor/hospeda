@@ -168,6 +168,12 @@ describe('buildCspHeader', () => {
         expect(header).toContain('report-uri https://sentry.io/report');
     });
 
+    it('should allow OpenStreetMap tile hosts in img-src and connect-src (SPEC-097)', () => {
+        const header = buildCspHeader({ nonce: 'x' });
+        expect(header).toContain('https://*.tile.openstreetmap.org');
+        expect(header).toContain('https://*.openstreetmap.org');
+    });
+
     it('should not include report-uri when not provided', () => {
         const header = buildCspHeader({ nonce: 'x' });
         expect(header).not.toContain('report-uri');
