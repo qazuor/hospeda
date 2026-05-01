@@ -164,6 +164,16 @@ export interface AccommodationCardData {
     readonly cityPath?: string;
     /** SPEC-095: Slug of the city destination, used for `/destinos/{slug}` links. */
     readonly cityDestinationSlug?: string;
+    /**
+     * SPEC-097: Privacy-aware obfuscated coordinates for listing maps. Present
+     * only when the accommodation has stored coordinates and the API returns
+     * an obfuscated projection.
+     */
+    readonly approximateLocation?: {
+        readonly lat: number;
+        readonly lng: number;
+        readonly radiusMeters: number;
+    };
 }
 
 /**
@@ -462,6 +472,16 @@ export interface AccommodationDetailData {
     readonly location: {
         readonly lat: number | null;
         readonly lng: number | null;
+    };
+    /**
+     * SPEC-097 — Privacy-aware obfuscated coordinates for accommodation maps.
+     * Present only when the API returns it (anonymous/public visitors).
+     * Owners and admins receive the exact `location` instead.
+     */
+    readonly approximateLocation?: {
+        readonly lat: number;
+        readonly lng: number;
+        readonly radiusMeters: number;
     };
     readonly destination: {
         readonly id: string;

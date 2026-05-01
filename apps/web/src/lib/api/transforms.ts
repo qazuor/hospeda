@@ -203,7 +203,20 @@ export function toAccommodationCardProps({
         features: extractRelationItems(item.features, 'feature'),
         cityName,
         cityPath,
-        cityDestinationSlug
+        cityDestinationSlug,
+        approximateLocation: (() => {
+            const aprox = item.approximateLocation as
+                | { lat?: number; lng?: number; radiusMeters?: number }
+                | undefined;
+            if (!aprox || aprox.lat == null || aprox.lng == null || !aprox.radiusMeters) {
+                return undefined;
+            }
+            return {
+                lat: Number(aprox.lat),
+                lng: Number(aprox.lng),
+                radiusMeters: Number(aprox.radiusMeters)
+            };
+        })()
     };
 }
 
@@ -501,6 +514,19 @@ export function toAccommodationDetailPageProps({
             lat: locationObj?.lat != null ? Number(locationObj.lat) : null,
             lng: locationObj?.lng != null ? Number(locationObj.lng) : null
         },
+        approximateLocation: (() => {
+            const aprox = item.approximateLocation as
+                | { lat?: number; lng?: number; radiusMeters?: number }
+                | undefined;
+            if (!aprox || aprox.lat == null || aprox.lng == null || !aprox.radiusMeters) {
+                return undefined;
+            }
+            return {
+                lat: Number(aprox.lat),
+                lng: Number(aprox.lng),
+                radiusMeters: Number(aprox.radiusMeters)
+            };
+        })(),
         destination: {
             id: String(destinationObj?.id || ''),
             slug: String(destinationObj?.slug || ''),

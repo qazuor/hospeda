@@ -95,6 +95,14 @@ export const accommodationsApi = {
         includeNoPrice?: boolean;
         /** Include accommodations without any reviews/rating. */
         includeNoReviews?: boolean;
+        /** SPEC-097 — viewport bbox (top edge latitude). */
+        bboxNorth?: number;
+        /** SPEC-097 — viewport bbox (bottom edge latitude). */
+        bboxSouth?: number;
+        /** SPEC-097 — viewport bbox (right edge longitude). */
+        bboxEast?: number;
+        /** SPEC-097 — viewport bbox (left edge longitude). */
+        bboxWest?: number;
     }): Promise<ApiResult<PaginatedResponse<AccommodationPublic>>> {
         return apiClient.getList({ path: `${BASE}/accommodations`, params });
     },

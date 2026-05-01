@@ -1,0 +1,36 @@
+.root {
+    position: relative;
+    width: 100%;
+    border-radius: var(--radius-organic-sm, 0px 75px);
+    overflow: hidden;
+    box-shadow: var(--shadow-card, 0 6px 24px rgb(0 0 0 / 0.08));
+    background-color: var(--surface-warm, #faf6f0);
+}
+
+.container {
+    width: 100%;
+    min-height: 400px;
+    height: 100%;
+}
+
+@media (max-width: 768px) {
+    .container {
+        min-height: 300px;
+    }
+}
+
+.disclaimer {
+    margin: 0;
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.875rem;
+    color: var(--muted-foreground, #555);
+    background-color: var(--card, #fff);
+    border-top: 1px solid var(--border, #e5e5e5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .container {
+        scroll-behavior: auto;
+    }
+}
