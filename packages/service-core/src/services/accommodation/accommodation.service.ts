@@ -106,6 +106,8 @@ import {
     checkCanView
 } from './accommodation.permissions';
 import {
+    applyAccommodationLocationPrivacy,
+    applyAccommodationLocationPrivacyList,
     projectAccommodationCityDestination,
     projectAccommodationCityDestinationList
 } from './accommodation.projections';
@@ -285,46 +287,70 @@ export class AccommodationService extends BaseCrudService<
         this._publishDeps = publishDeps ?? null;
     }
 
-    // --- Read Projection Hooks (SPEC-095) ---
+    /**
+     * Reads the location obfuscation salt from the environment. Returns `null`
+     * when missing so callers can gracefully skip privacy projection in unit
+     * tests that mock models without setting up env. Production validates the
+     * salt at startup (see `apps/api/src/utils/env.ts`).
+     */
+    private getLocationSalt(): string | null {
+        const salt = process.env.HOSPEDA_LOCATION_SALT;
+        return salt && salt.length >= 32 ? salt : null;
+    }
+
+    // --- Read Projection Hooks (SPEC-095, SPEC-097) ---
     /**
      * Projects the eager-loaded destination relation into the lightweight
-     * `cityDestination` field expected by the public/admin response schemas.
+     * `cityDestination` field (SPEC-095) and applies privacy-aware location
+     * obfuscation (SPEC-097): always computes `approximateLocation`, and
+     * strips exact `coordinates`/`street`/`number`/`floor`/`apartment` from
+     * `location` when the actor lacks `ACCOMMODATION_LOCATION_EXACT_VIEW`
+     * and is not the owner.
      */
     protected override async _afterGetByField(
         entity: Accommodation | null,
-        _actor: Actor,
+        actor: Actor,
         _ctx: ServiceContext
     ): Promise<Accommodation | null> {
-        return projectAccommodationCityDestination(entity);
+        const withCity = projectAccommodationCityDestination(entity);
+        const salt = this.getLocationSalt();
+        if (!salt) return withCity;
+        return applyAccommodationLocationPrivacy(withCity, { actor, salt });
     }
 
     /**
-     * Projects every item in a list result with `cityDestination` (SPEC-095).
+     * Applies SPEC-095 + SPEC-097 projections to every item in a list result.
      */
     protected override async _afterList(
         result: PaginatedListOutput<Accommodation>,
-        _actor: Actor,
+        actor: Actor,
         _ctx: ServiceContext
     ): Promise<PaginatedListOutput<Accommodation>> {
         if (!result?.items) return result;
+        const withCity = projectAccommodationCityDestinationList(result.items);
+        const salt = this.getLocationSalt();
+        if (!salt) return { ...result, items: withCity };
         return {
             ...result,
-            items: projectAccommodationCityDestinationList(result.items)
+            items: applyAccommodationLocationPrivacyList(withCity, { actor, salt })
         };
     }
 
     /**
-     * Projects every item in a search result with `cityDestination` (SPEC-095).
+     * Applies SPEC-095 + SPEC-097 projections to every item in a search result.
      */
     protected override async _afterSearch(
         result: PaginatedListOutput<Accommodation>,
-        _actor: Actor,
+        actor: Actor,
         _ctx: ServiceContext
     ): Promise<PaginatedListOutput<Accommodation>> {
         if (!result?.items) return result;
+        const withCity = projectAccommodationCityDestinationList(result.items);
+        const salt = this.getLocationSalt();
+        if (!salt) return { ...result, items: withCity };
         return {
             ...result,
-            items: projectAccommodationCityDestinationList(result.items)
+            items: applyAccommodationLocationPrivacyList(withCity, { actor, salt })
         };
     }
 
@@ -1365,11 +1391,11 @@ export class AccommodationService extends BaseCrudService<
                     pageSize
                 };
 
-                await this._afterSearch(adaptedResult, validatedActor, {});
+                const projected = await this._afterSearch(adaptedResult, validatedActor, {});
 
                 // 6. Return in AccommodationSearchResult format
                 return {
-                    data: result.items,
+                    data: projected.items,
                     pagination: {
                         page,
                         pageSize,

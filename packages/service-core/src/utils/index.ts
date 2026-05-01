@@ -1,4 +1,5 @@
 export * from './identifier';
+export * from './location-obfuscation';
 export * from './logging';
 export * from './normalizer';
 export * from './permission';
