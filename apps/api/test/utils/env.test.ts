@@ -31,6 +31,7 @@ const createValidTestEnv = (overrides: Record<string, string | undefined> = {}) 
     HOSPEDA_BETTER_AUTH_SECRET: 'test_better_auth_secret_key_32chars!',
     HOSPEDA_BETTER_AUTH_URL: 'http://localhost:3001/api/auth',
     HOSPEDA_SITE_URL: 'http://localhost:4321',
+    HOSPEDA_LOCATION_SALT: 'test-location-salt-fixed-for-deterministic-tests-32+chars',
     ...overrides
 });
 

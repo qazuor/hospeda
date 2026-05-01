@@ -39,6 +39,8 @@ process.env.HOSPEDA_REVALIDATION_SECRET = 'test_revalidation_secret_key_at_least
 // Trusted origins
 process.env.HOSPEDA_SITE_URL = 'http://localhost:4321';
 process.env.HOSPEDA_ADMIN_URL = 'http://localhost:3000';
+// Location obfuscation salt (required, >= 32 chars)
+process.env.HOSPEDA_LOCATION_SALT = 'test-location-salt-fixed-for-deterministic-tests-32+chars';
 // Disable rate limiting in tests by default.
 // IMPORTANT: z.coerce.boolean() uses Boolean() constructor, so any non-empty
 // string (including 'false') coerces to TRUE. Use empty string '' to get false.

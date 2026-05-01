@@ -76,6 +76,16 @@ export const ApiEnvBaseSchema = z.object({
     /** Better Auth base URL used in auth.ts initialization */
     HOSPEDA_BETTER_AUTH_URL: z.string().url('Must be a valid URL for Better Auth'),
 
+    /**
+     * Server-only secret used to generate deterministic, irreversible offsets for
+     * accommodation location obfuscation (privacy-aware approximate coordinates).
+     * Generated with `openssl rand -base64 48`. Rotating this value changes all
+     * approximate locations shown to public visitors (expected behavior).
+     */
+    HOSPEDA_LOCATION_SALT: z
+        .string()
+        .min(32, 'HOSPEDA_LOCATION_SALT must be at least 32 characters'),
+
     // OAuth providers
     HOSPEDA_GOOGLE_CLIENT_ID: z.string().optional(),
     HOSPEDA_GOOGLE_CLIENT_SECRET: z.string().optional(),
