@@ -70,12 +70,14 @@ describe('ExchangeRateConfigService', () => {
             expect(result.data?.enableAutoFetch).toBe(true);
         });
 
-        it('should return FORBIDDEN error when actor lacks EXCHANGE_RATE_VIEW permission', async () => {
+        it('should allow getConfig without EXCHANGE_RATE_VIEW (public read)', async () => {
+            // Exchange rate config is public market data; admin-only changes are gated separately.
             actor = createActor({ permissions: [] });
+            asMock(modelMock.getConfig).mockResolvedValue(createExchangeRateConfig());
 
             const result = await service.getConfig({ actor });
 
-            expectForbiddenError(result);
+            expectSuccess(result);
         });
 
         it('should return INTERNAL_ERROR when model throws', async () => {

@@ -18,16 +18,10 @@ describe('exchange-rate.permissions', () => {
         expect(() => checkCanViewExchangeRate(actor)).not.toThrow();
     });
 
-    it('checkCanViewExchangeRate throws without EXCHANGE_RATE_VIEW', () => {
-        try {
-            checkCanViewExchangeRate(baseActor);
-            throw new Error('Should have thrown');
-        } catch (err) {
-            expect(err).toBeInstanceOf(ServiceError);
-            if (err instanceof ServiceError) {
-                expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-            }
-        }
+    it('checkCanViewExchangeRate is public (does not throw without EXCHANGE_RATE_VIEW)', () => {
+        // Exchange rates are public market data — view is open to guests.
+        // Admin-tier listing remains gated via checkCanAdminList.
+        expect(() => checkCanViewExchangeRate(baseActor)).not.toThrow();
     });
 
     it('checkCanCreateExchangeRate allows with EXCHANGE_RATE_CREATE', () => {
