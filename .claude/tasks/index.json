@@ -287,13 +287,14 @@
             "title": "Tag System Refactor (Two Subsystems: PostTag + User-Tag)",
             "status": "completed",
             "progress": "46/46",
-            "path": "SPEC-086-tag-system-refactor"
+            "path": "SPEC-086-tag-system-refactor",
+            "archived": true
         },
         {
             "specId": "SPEC-092",
             "title": "End-to-End Test Suite for Pre-Beta Validation",
             "status": "in-progress",
-            "progress": "27/99",
+            "progress": "94/99",
             "path": "SPEC-092-e2e-test-suite"
         }
     ],
