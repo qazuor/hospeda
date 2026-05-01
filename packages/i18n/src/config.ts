@@ -138,6 +138,7 @@ import fieldsEs from './locales/es/fields.json';
 import footerEs from './locales/es/footer.json';
 import homeEs from './locales/es/home.json';
 import hostEs from './locales/es/host.json';
+import mapsEs from './locales/es/maps.json';
 import navEs from './locales/es/nav.json';
 import newsletterEs from './locales/es/newsletter.json';
 import ownersEs from './locales/es/owners.json';
@@ -182,6 +183,7 @@ import fieldsEn from './locales/en/fields.json';
 import footerEn from './locales/en/footer.json';
 import homeEn from './locales/en/home.json';
 import hostEn from './locales/en/host.json';
+import mapsEn from './locales/en/maps.json';
 import navEn from './locales/en/nav.json';
 import newsletterEn from './locales/en/newsletter.json';
 import ownersEn from './locales/en/owners.json';
@@ -226,6 +228,7 @@ import fieldsPt from './locales/pt/fields.json';
 import footerPt from './locales/pt/footer.json';
 import homePt from './locales/pt/home.json';
 import hostPt from './locales/pt/host.json';
+import mapsPt from './locales/pt/maps.json';
 import navPt from './locales/pt/nav.json';
 import newsletterPt from './locales/pt/newsletter.json';
 import ownersPt from './locales/pt/owners.json';
@@ -285,7 +288,8 @@ const rawTranslations = {
         cookieConsent: cookieConsentEs,
         validation: validationEs,
         revalidation: revalidationEs,
-        tags: tagsEs
+        tags: tagsEs,
+        maps: mapsEs
     },
     en: {
         about: aboutEn,
@@ -329,7 +333,8 @@ const rawTranslations = {
         cookieConsent: cookieConsentEn,
         validation: validationEn,
         revalidation: revalidationEn,
-        tags: tagsEn
+        tags: tagsEn,
+        maps: mapsEn
     },
     pt: {
         about: aboutPt,
@@ -373,7 +378,8 @@ const rawTranslations = {
         cookieConsent: cookieConsentPt,
         validation: validationPt,
         revalidation: revalidationPt,
-        tags: tagsPt
+        tags: tagsPt,
+        maps: mapsPt
     }
 };
 
