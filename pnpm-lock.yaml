@@ -488,6 +488,61 @@ importers:
         specifier: ^3.1.3
         version: 3.2.4(@types/debug@4.1.12)(@types/node@22.17.2)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.0.0)(lightningcss@1.31.1)(msw@2.12.7(@types/node@22.17.2)(typescript@5.9.2))(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
 
+  apps/e2e:
+    dependencies:
+      '@repo/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@repo/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@repo/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+      '@repo/schemas':
+        specifier: workspace:*
+        version: link:../../packages/schemas
+      '@repo/seed':
+        specifier: workspace:*
+        version: link:../../packages/seed
+      '@repo/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
+      drizzle-orm:
+        specifier: ^0.44.7
+        version: 0.44.7(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.28.11)(pg@8.16.3)(postgres@3.4.8)
+      pg:
+        specifier: ^8.16.3
+        version: 8.16.3
+      zod:
+        specifier: ^4.0.8
+        version: 4.3.6
+    devDependencies:
+      '@playwright/test':
+        specifier: ^1.56.0
+        version: 1.58.2
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.17.2
+      '@types/pg':
+        specifier: ^8.15.1
+        version: 8.15.6
+      '@vitest/coverage-v8':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4)
+      tsx:
+        specifier: ^4.7.1
+        version: 4.20.4
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.1.3
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.17.2)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.0.0)(lightningcss@1.31.1)(msw@2.12.7(@types/node@22.17.2)(typescript@5.9.3))(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
+
   apps/web:
     dependencies:
       '@astrojs/react':
@@ -534,7 +589,7 @@ importers:
         version: 5.18.0(@netlify/blobs@9.1.2)(@types/node@25.3.3)(@vercel/functions@2.2.13)(db0@0.3.4(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.28.11)(pg@8.16.3)(postgres@3.4.8)))(ioredis@5.10.0)(jiti@2.6.1)(lightningcss@1.31.1)(rollup@4.59.0)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.3)(yaml@2.8.1)
       better-auth:
         specifier: ^1.4.18
-        version: 1.4.18(@tanstack/react-start@1.166.15(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(vite@6.4.1(@types/node@25.3.3)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-kit@0.31.5)(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.28.11)(pg@8.16.3)(postgres@3.4.8))(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(pg@8.16.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)(vitest@3.2.4)
+        version: 1.4.18(@tanstack/react-start@1.166.15(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(vite@7.3.1(@types/node@25.3.3)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-kit@0.31.5)(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.28.11)(pg@8.16.3)(postgres@3.4.8))(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(pg@8.16.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)(vitest@3.2.4)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -652,7 +707,7 @@ importers:
         version: 5.18.0(@netlify/blobs@9.1.2)(@types/node@25.3.3)(@vercel/functions@2.2.13)(db0@0.3.4(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.28.11)(pg@8.16.3)(postgres@3.4.8)))(ioredis@5.10.0)(jiti@2.6.1)(lightningcss@1.31.1)(rollup@4.59.0)(terser@5.43.1)(tsx@4.20.4)(typescript@5.7.3)(yaml@2.8.1)
       better-auth:
         specifier: ^1.4.18
-        version: 1.4.18(@tanstack/react-start@1.166.15(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(vite@7.3.1(@types/node@25.3.3)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-kit@0.31.5)(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.28.11)(pg@8.16.3)(postgres@3.4.8))(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(pg@8.16.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)(vitest@3.2.4)
+        version: 1.4.18(@tanstack/react-start@1.166.15(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(vite@6.4.1(@types/node@25.3.3)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-kit@0.31.5)(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.28.11)(pg@8.16.3)(postgres@3.4.8))(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(pg@8.16.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)(vitest@3.2.4)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -692,7 +747,7 @@ importers:
         version: link:../../packages/typescript-config
       '@tailwindcss/vite':
         specifier: ^4.2.0
-        version: 4.2.1(vite@7.3.1(@types/node@25.3.3)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))
+        version: 4.2.1(vite@6.4.1(@types/node@25.3.3)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))
       '@testing-library/jest-dom':
         specifier: ^6.6.3
         version: 6.7.0
@@ -3480,95 +3535,111 @@ packages:
 
   '@react-email/body@0.0.11':
     resolution: {integrity: sha512-ZSD2SxVSgUjHGrB0Wi+4tu3MEpB4fYSbezsFNEJk2xCWDBkFiOeEsjTmR5dvi+CxTK691hQTQlHv0XWuP7ENTg==}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/button@0.0.19':
     resolution: {integrity: sha512-HYHrhyVGt7rdM/ls6FuuD6XE7fa7bjZTJqB2byn6/oGsfiEZaogY77OtoLL/mrQHjHjZiJadtAMSik9XLcm7+A==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/code-block@0.0.11':
     resolution: {integrity: sha512-4D43p+LIMjDzm66gTDrZch0Flkip5je91mAT7iGs6+SbPyalHgIA+lFQoQwhz/VzHHLxuD0LV6gwmU/WUQ2WEg==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/code-inline@0.0.5':
     resolution: {integrity: sha512-MmAsOzdJpzsnY2cZoPHFPk6uDO/Ncpb4Kh1hAt9UZc1xOW3fIzpe1Pi9y9p6wwUmpaeeDalJxAxH6/fnTquinA==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/column@0.0.13':
     resolution: {integrity: sha512-Lqq17l7ShzJG/d3b1w/+lVO+gp2FM05ZUo/nW0rjxB8xBICXOVv6PqjDnn3FXKssvhO5qAV20lHM6S+spRhEwQ==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/components@0.0.30':
     resolution: {integrity: sha512-JkPcGE/r3WsHMVO4kjkaQzAyXiSPATg5TgzTImypjGHbwrdLaDMVEBZz1SuLV8GexqCnmzo1qmhVHtHq8E7UWg==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/container@0.0.15':
     resolution: {integrity: sha512-Qo2IQo0ru2kZq47REmHW3iXjAQaKu4tpeq/M8m1zHIVwKduL2vYOBQWbC2oDnMtWPmkBjej6XxgtZByxM6cCFg==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/font@0.0.9':
     resolution: {integrity: sha512-4zjq23oT9APXkerqeslPH3OZWuh5X4crHK6nx82mVHV2SrLba8+8dPEnWbaACWTNjOCbcLIzaC9unk7Wq2MIXw==}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/head@0.0.12':
     resolution: {integrity: sha512-X2Ii6dDFMF+D4niNwMAHbTkeCjlYYnMsd7edXOsi0JByxt9wNyZ9EnhFiBoQdqkE+SMDcu8TlNNttMrf5sJeMA==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/heading@0.0.15':
     resolution: {integrity: sha512-xF2GqsvBrp/HbRHWEfOgSfRFX+Q8I5KBEIG5+Lv3Vb2R/NYr0s8A5JhHHGf2pWBMJdbP4B2WHgj/VUrhy8dkIg==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/hr@0.0.11':
     resolution: {integrity: sha512-S1gZHVhwOsd1Iad5IFhpfICwNPMGPJidG/Uysy1AwmspyoAP5a4Iw3OWEpINFdgh9MHladbxcLKO2AJO+cA9Lw==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/html@0.0.11':
     resolution: {integrity: sha512-qJhbOQy5VW5qzU74AimjAR9FRFQfrMa7dn4gkEXKMB/S9xZN8e1yC1uA9C15jkXI/PzmJ0muDIWmFwatm5/+VA==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/img@0.0.11':
     resolution: {integrity: sha512-aGc8Y6U5C3igoMaqAJKsCpkbm1XjguQ09Acd+YcTKwjnC2+0w3yGUJkjWB2vTx4tN8dCqQCXO8FmdJpMfOA9EQ==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/link@0.0.12':
     resolution: {integrity: sha512-vF+xxQk2fGS1CN7UPQDbzvcBGfffr+GjTPNiWM38fhBfsLv6A/YUfaqxWlmL7zLzVmo0K2cvvV9wxlSyNba1aQ==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/markdown@0.0.14':
     resolution: {integrity: sha512-5IsobCyPkb4XwnQO8uFfGcNOxnsg3311GRXhJ3uKv51P7Jxme4ycC/MITnwIZ10w2zx7HIyTiqVzTj4XbuIHbg==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/preview@0.0.12':
     resolution: {integrity: sha512-g/H5fa9PQPDK6WUEG7iTlC19sAktI23qyoiJtMLqQiXFCfWeQMhqjLGKeLSKkfzszqmfJCjZtpSiKtBoOdxp3Q==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
@@ -3596,24 +3667,28 @@ packages:
   '@react-email/row@0.0.12':
     resolution: {integrity: sha512-HkCdnEjvK3o+n0y0tZKXYhIXUNPDx+2vq1dJTmqappVHXS5tXS6W5JOPZr5j+eoZ8gY3PShI2LWj5rWF7ZEtIQ==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/section@0.0.16':
     resolution: {integrity: sha512-FjqF9xQ8FoeUZYKSdt8sMIKvoT9XF8BrzhT3xiFKdEMwYNbsDflcjfErJe3jb7Wj/es/lKTbV5QR1dnLzGpL3w==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/tailwind@1.0.3':
     resolution: {integrity: sha512-VwRft4u/c0KuD6YlGWr+pltfzLzHS6Qt/L0XvdJf6ij6Iz6kKtuc7ZVZp/CJVbGnkUgWl/uiDlJ4FIAF6IzWTQ==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
   '@react-email/text@0.0.11':
     resolution: {integrity: sha512-a7nl/2KLpRHOYx75YbYZpWspUbX1DFY7JIZbOv5x0QU8SvwDbJt+Hm01vG34PffFyYvHEXrc6Qnip2RTjljNjg==}
     engines: {node: '>=18.0.0'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     peerDependencies:
       react: 19.1.1
 
@@ -8829,10 +8904,12 @@ packages:
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   v8-to-istanbul@9.3.0:
@@ -12154,12 +12231,12 @@ snapshots:
       tailwindcss: 4.1.12
       vite: 6.4.1(@types/node@25.3.3)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
 
-  '@tailwindcss/vite@4.2.1(vite@7.3.1(@types/node@25.3.3)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))':
+  '@tailwindcss/vite@4.2.1(vite@6.4.1(@types/node@25.3.3)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))':
     dependencies:
       '@tailwindcss/node': 4.2.1
       '@tailwindcss/oxide': 4.2.1
       tailwindcss: 4.2.1
-      vite: 7.3.1(@types/node@25.3.3)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
+      vite: 6.4.1(@types/node@25.3.3)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
 
   '@tanstack/devtools-event-bus@0.2.1':
     dependencies:
@@ -13263,7 +13340,7 @@ snapshots:
       std-env: 3.10.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@25.3.3)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.0.0)(lightningcss@1.31.1)(msw@2.12.7(@types/node@25.3.3)(typescript@5.7.2))(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.17.2)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.0.0)(lightningcss@1.31.1)(msw@2.12.7(@types/node@22.17.2)(typescript@5.9.3))(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -13367,7 +13444,7 @@ snapshots:
       sirv: 3.0.1
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@25.3.3)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.0.0)(lightningcss@1.31.1)(msw@2.12.7(@types/node@25.3.3)(typescript@5.7.2))(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.17.2)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.0.0)(lightningcss@1.31.1)(msw@2.12.7(@types/node@22.17.2)(typescript@5.9.3))(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
 
   '@vitest/utils@3.2.4':
     dependencies:
@@ -13826,7 +13903,7 @@ snapshots:
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
       solid-js: 1.9.9
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@25.3.3)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.0.0)(lightningcss@1.31.1)(msw@2.12.7(@types/node@25.3.3)(typescript@5.9.3))(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@25.3.3)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.0.0)(lightningcss@1.31.1)(msw@2.12.7(@types/node@25.3.3)(typescript@5.7.3))(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
 
   better-auth@1.4.18(@tanstack/react-start@1.166.15(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(vite@7.3.1(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-kit@0.31.5)(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.28.11)(pg@8.16.3)(postgres@3.4.8))(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(pg@8.16.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)(vitest@3.2.4):
     dependencies:
@@ -13876,7 +13953,7 @@ snapshots:
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
       solid-js: 1.9.9
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@25.3.3)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.0.0)(lightningcss@1.31.1)(msw@2.12.7(@types/node@25.3.3)(typescript@5.7.3))(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@25.3.3)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.0.0)(lightningcss@1.31.1)(msw@2.12.7(@types/node@25.3.3)(typescript@5.9.3))(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
 
   better-call@1.1.8(zod@4.3.6):
     dependencies:

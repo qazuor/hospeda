@@ -27,6 +27,18 @@ fi
 echo "🔍 Running lint-staged..."
 pnpm exec lint-staged
 
+# 1.5. SPEC-092 T-090: detect raw ilike() usage that bypasses safeIlike() (BLOCKING)
+# Only run when at least one staged TypeScript file is touched — keeps non-code
+# commits (.md, .json, fixtures) cheap.
+STAGED_TS_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.tsx?$' || true)
+if [ -n "$STAGED_TS_FILES" ]; then
+  echo "🔍 Checking for unsafe ilike() usage..."
+  if ! bash scripts/check-unsafe-ilike.sh; then
+    echo "❌ Unsafe ilike() detected in staged TypeScript. Replace with safeIlike() from @repo/db."
+    exit 1
+  fi
+fi
+
 # 2. Validate .claude documentation changes
 if [ -n "$STAGED_CLAUDE_FILES" ]; then
   echo "🔍 Validating .claude documentation..."
