@@ -547,7 +547,6 @@ describe('MessageService', () => {
             // Access private method via cast to test it directly
             const svcWithBlocklist = service as unknown as {
                 _validateMessageContent: (body: string) => void;
-                // biome-ignore lint/suspicious/noExplicitAny: test-only cast
                 [key: string]: any;
             };
             // Manually test _validateMessageContent with a known forbidden pattern:
