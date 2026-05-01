@@ -1,0 +1,53 @@
+{
+    "id": "040-user-romina-villaverde",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "romina-villaverde",
+    "lifecycleState": "ACTIVE",
+    "firstName": "Romina",
+    "lastName": "Villaverde",
+    "displayName": "Romina Villaverde",
+    "contactInfo": {
+        "personalEmail": "romina.villaverde@gmail.com",
+        "mobilePhone": "+5493442567123",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "location": {
+        "city": "Concepción del Uruguay",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "3260",
+        "street": "Av. Paysandú",
+        "number": "742",
+        "coordinates": {
+            "lat": "-32.4843",
+            "long": "-58.2310"
+        }
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/romi.villaverde",
+        "facebook": "https://facebook.com/romina.villaverde"
+    },
+    "profile": {
+        "bio": "Anfitriona en Concepción del Uruguay. Ofrezco alojamiento turístico moderno y cómodo para quienes visitan nuestra hermosa ciudad."
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": [],
+    "visibility": "PUBLIC"
+}
