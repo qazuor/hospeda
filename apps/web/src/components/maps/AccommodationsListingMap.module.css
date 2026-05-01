@@ -1,0 +1,49 @@
+/* Split layout for the map view: map pane on the left (60%) + cards sidebar
+ * on the right (40%). On mobile the sidebar collapses into a bottom sheet
+ * triggered by a fixed CTA, so we render only the map pane (full bleed) and
+ * the sidebar component renders its own mobile UI as a portal-style overlay.
+ */
+.split {
+    display: grid;
+    grid-template-columns: minmax(0, 6fr) minmax(0, 4fr);
+    gap: var(--space-4, 16px);
+    height: clamp(560px, calc(100vh - 220px), 820px);
+    width: 100%;
+}
+
+.mapPane {
+    position: relative;
+    min-height: 0;
+    height: 100%;
+}
+
+.mapPane > div {
+    height: 100%;
+}
+
+.sidebarPane {
+    position: relative;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+    .split {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+        height: clamp(520px, calc(100vh - 180px), 760px);
+    }
+}
+
+@media (max-width: 768px) {
+    .split {
+        grid-template-columns: minmax(0, 1fr);
+        height: clamp(440px, calc(100vh - 160px), 700px);
+    }
+
+    .sidebarPane {
+        /* On mobile the sidebar component renders itself as a fixed bottom
+         * sheet, so no in-flow space is needed. */
+        display: contents;
+    }
+}

@@ -13,7 +13,6 @@ import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astr
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
-import { ListingMap } from '@/components/maps/ListingMap.client';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { toDestinationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
@@ -26,8 +25,6 @@ const { t } = createTranslations(locale);
 const url = Astro.url;
 const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
 const pageSize = 12;
-// SPEC-097 — view toggle (list | map)
-const view = url.searchParams.get('view') === 'map' ? 'map' : 'list';
 
 const result = await destinationsApi.list({ page, pageSize, destinationType: 'CITY' });
 
@@ -37,29 +34,8 @@ const total = result.ok ? result.data.total : 0;
 const totalPages = result.ok ? Math.ceil(total / pageSize) : 0;
 const cards = items.map((item) => toDestinationCardProps({ item: item as unknown as Record<string, unknown> }));
 
-// SPEC-097 — destinations with coordinates for map view
-const mapItems = cards
-	.filter((c) => c.coordinates?.lat && c.coordinates?.long)
-	.map((c) => ({
-		id: c.slug,
-		slug: c.slug,
-		name: c.name,
-		thumbnailUrl: c.featuredImage?.url,
-		accommodationsCount: c.accommodationsCount,
-		coordinates: {
-			lat: Number.parseFloat(c.coordinates!.lat),
-			lng: Number.parseFloat(c.coordinates!.long),
-		},
-	}))
-	.filter((item) => Number.isFinite(item.coordinates.lat) && Number.isFinite(item.coordinates.lng));
-
-const LITORAL_CENTER: [number, number] = [-31.8, -58.5];
-const LITORAL_ZOOM = 7;
-const mapCenter: [number, number] = mapItems.length > 0
-	? [mapItems[0].coordinates.lat, mapItems[0].coordinates.lng]
-	: LITORAL_CENTER;
-
 const baseUrl = buildUrl({ locale, path: 'destinos' });
+const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 ---
 
 <DefaultLayout
@@ -97,48 +73,21 @@ const baseUrl = buildUrl({ locale, path: 'destinos' });
 
 				{!hasError && cards.length > 0 && (
 					<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
-						<a
-							href={(() => {
-								const sp = new URLSearchParams(url.searchParams);
-								sp.delete('view');
-								const qs = sp.toString();
-								return qs ? `?${qs}` : '?';
-							})()}
-							class:list={['view-toggle__btn', view === 'list' && 'view-toggle__btn--active']}
+						<span
+							class="view-toggle__btn view-toggle__btn--active"
 							role="tab"
-							aria-selected={view === 'list'}
+							aria-selected="true"
 						>
 							{t('accommodations.viewToggle.list', 'Lista')}
-						</a>
+						</span>
 						<a
-							href={(() => {
-								const sp = new URLSearchParams(url.searchParams);
-								sp.set('view', 'map');
-								return `?${sp.toString()}`;
-							})()}
-							class:list={['view-toggle__btn', view === 'map' && 'view-toggle__btn--active']}
+							href={mapHref}
+							class="view-toggle__btn"
 							role="tab"
-							aria-selected={view === 'map'}
+							aria-selected="false"
 						>
 							{t('accommodations.viewToggle.map', 'Mapa')}
 						</a>
-					</div>
-				)}
-
-				{!hasError && cards.length > 0 && view === 'map' && mapItems.length > 0 && (
-					<div class="dest-listing-map">
-						<ListingMap
-							client:only="react"
-							mode="destination-list"
-							items={mapItems}
-							initialCenter={mapCenter}
-							initialZoom={LITORAL_ZOOM}
-							ariaLabel={t('maps.ariaLabelDestination')}
-							i18nStrings={{
-								attribution: t('maps.attribution'),
-								approximateDisclaimer: t('maps.approximateDisclaimer'),
-							}}
-						/>
 					</div>
 				)}
 
@@ -247,7 +196,7 @@ const baseUrl = buildUrl({ locale, path: 'destinos' });
 	@media (max-width: 768px) { .dest-grid { grid-template-columns: repeat(2, 1fr); } }
 	@media (max-width: 480px) { .dest-grid { grid-template-columns: 1fr; } }
 
-	/* SPEC-097 — view toggle */
+	/* View toggle */
 	.view-toggle {
 		display: inline-flex;
 		gap: var(--space-2, 8px);
@@ -264,20 +213,13 @@ const baseUrl = buildUrl({ locale, path: 'destinos' });
 		color: var(--muted-foreground, #555);
 		text-decoration: none;
 		transition: background-color var(--duration-normal, 0.4s) ease, color var(--duration-normal, 0.4s) ease;
+		cursor: pointer;
 	}
 	.view-toggle__btn:hover { color: var(--foreground); }
 	.view-toggle__btn--active {
 		background-color: var(--accent, #f59e0b);
 		color: white;
 		font-weight: 500;
-	}
-
-	.dest-listing-map {
-		width: 100%;
-		min-height: 480px;
-		margin: 0 0 var(--space-6, 24px);
-	}
-	@media (max-width: 768px) {
-		.dest-listing-map { min-height: 360px; }
+		cursor: default;
 	}
 </style>

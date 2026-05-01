@@ -42,6 +42,17 @@ export interface AccommodationListingItem {
     readonly name: string;
     readonly thumbnailUrl?: string;
     readonly priceLabel?: string;
+    readonly typeLabel?: string;
+    readonly cityName?: string;
+    readonly summary?: string;
+    readonly isFeatured?: boolean;
+    /** Pre-localised "Destacado" / "Featured" label, only used when isFeatured. */
+    readonly featuredLabel?: string;
+    readonly averageRating?: number;
+    readonly reviewsCount?: number;
+    /** Pre-localised label like "12 reseñas" or "1 review". */
+    readonly reviewsLabel?: string;
+    readonly detailHref?: string;
     readonly approximateLocation: { lat: number; lng: number; radiusMeters: number };
 }
 
@@ -51,12 +62,17 @@ export interface DestinationListingItem {
     readonly name: string;
     readonly thumbnailUrl?: string;
     readonly accommodationsCount?: number;
+    /** Pre-localised label like "12 alojamientos". */
+    readonly accommodationsLabel?: string;
+    readonly description?: string;
+    readonly detailHref?: string;
     readonly coordinates: { lat: number; lng: number };
 }
 
 interface ListingMapStrings {
     readonly attribution: string;
     readonly approximateDisclaimer: string;
+    readonly viewDetails?: string;
 }
 
 interface BaseProps {
@@ -170,9 +186,16 @@ export function ListingMap(props: ListingMapProps) {
                             click: () => onMarkerClick?.(item.id)
                         }}
                     >
-                        <Popup>
-                            <strong>{item.name}</strong>
-                            {item.priceLabel ? <div>{item.priceLabel}</div> : null}
+                        <Popup
+                            className={styles.popup}
+                            maxWidth={300}
+                            minWidth={280}
+                            autoPanPadding={[40, 40]}
+                        >
+                            <AccommodationPopupContent
+                                item={item}
+                                viewDetailsLabel={i18nStrings.viewDetails}
+                            />
                         </Popup>
                     </Circle>
                 );
@@ -186,15 +209,20 @@ export function ListingMap(props: ListingMapProps) {
                     click: () => onMarkerClick?.(item.id)
                 }}
             >
-                <Popup>
-                    <strong>{item.name}</strong>
-                    {item.accommodationsCount != null ? (
-                        <div>{item.accommodationsCount} alojamientos</div>
-                    ) : null}
+                <Popup
+                    className={styles.popup}
+                    maxWidth={300}
+                    minWidth={280}
+                    autoPanPadding={[40, 40]}
+                >
+                    <DestinationPopupContent
+                        item={item}
+                        viewDetailsLabel={i18nStrings.viewDetails}
+                    />
                 </Popup>
             </Marker>
         ));
-    }, [props.items, isAccommodationMode, hoveredItemId, onMarkerClick]);
+    }, [props.items, isAccommodationMode, hoveredItemId, onMarkerClick, i18nStrings]);
 
     return (
         <div
@@ -223,6 +251,114 @@ export function ListingMap(props: ListingMapProps) {
             {isAccommodationMode && (
                 <p className={styles.disclaimer}>{i18nStrings.approximateDisclaimer}</p>
             )}
+        </div>
+    );
+}
+
+function AccommodationPopupContent({
+    item,
+    viewDetailsLabel
+}: {
+    item: AccommodationListingItem;
+    viewDetailsLabel?: string;
+}) {
+    const hasRating =
+        typeof item.averageRating === 'number' &&
+        item.averageRating > 0 &&
+        typeof item.reviewsCount === 'number' &&
+        item.reviewsCount > 0;
+    return (
+        <div className={styles.popupCard}>
+            {item.thumbnailUrl ? (
+                <div className={styles.popupImageWrapper}>
+                    <img
+                        src={item.thumbnailUrl}
+                        alt={item.name}
+                        className={styles.popupImage}
+                        loading="lazy"
+                    />
+                    {item.typeLabel ? (
+                        <span className={styles.popupTypeChip}>{item.typeLabel}</span>
+                    ) : null}
+                </div>
+            ) : null}
+            <div className={styles.popupBody}>
+                <div className={styles.popupTitleRow}>
+                    <h3 className={styles.popupTitle}>{item.name}</h3>
+                    {item.isFeatured && item.featuredLabel ? (
+                        <span className={styles.popupFeaturedBadge}>{item.featuredLabel}</span>
+                    ) : null}
+                </div>
+                {item.cityName ? <p className={styles.popupCity}>{item.cityName}</p> : null}
+                {item.summary ? <p className={styles.popupSummary}>{item.summary}</p> : null}
+                <div className={styles.popupMeta}>
+                    {hasRating ? (
+                        <span
+                            className={styles.popupRating}
+                            aria-label={`${item.averageRating?.toFixed(1)} estrellas`}
+                        >
+                            <span aria-hidden="true">★</span>
+                            <span>{item.averageRating?.toFixed(1)}</span>
+                            <span className={styles.popupReviewsCount}>
+                                {item.reviewsLabel ?? `(${item.reviewsCount})`}
+                            </span>
+                        </span>
+                    ) : null}
+                    {item.priceLabel ? (
+                        <span className={styles.popupPrice}>{item.priceLabel}</span>
+                    ) : null}
+                </div>
+                {item.detailHref ? (
+                    <a
+                        href={item.detailHref}
+                        className={styles.popupCta}
+                    >
+                        {viewDetailsLabel ?? 'Ver más'}
+                    </a>
+                ) : null}
+            </div>
+        </div>
+    );
+}
+
+function DestinationPopupContent({
+    item,
+    viewDetailsLabel
+}: {
+    item: DestinationListingItem;
+    viewDetailsLabel?: string;
+}) {
+    return (
+        <div className={styles.popupCard}>
+            {item.thumbnailUrl ? (
+                <div className={styles.popupImageWrapper}>
+                    <img
+                        src={item.thumbnailUrl}
+                        alt={item.name}
+                        className={styles.popupImage}
+                        loading="lazy"
+                    />
+                </div>
+            ) : null}
+            <div className={styles.popupBody}>
+                <h3 className={styles.popupTitle}>{item.name}</h3>
+                {item.description ? <p className={styles.popupCity}>{item.description}</p> : null}
+                {item.accommodationsLabel ? (
+                    <p className={styles.popupCount}>{item.accommodationsLabel}</p>
+                ) : typeof item.accommodationsCount === 'number' ? (
+                    <p className={styles.popupCount}>
+                        {`${item.accommodationsCount} alojamientos`}
+                    </p>
+                ) : null}
+                {item.detailHref ? (
+                    <a
+                        href={item.detailHref}
+                        className={styles.popupCta}
+                    >
+                        {viewDetailsLabel ?? 'Ver más'}
+                    </a>
+                ) : null}
+            </div>
         </div>
     );
 }

@@ -40,7 +40,7 @@ interface UseViewportSearchOutput {
  */
 export function useViewportSearch({
     initialItems,
-    pageSize = 50,
+    pageSize = 100,
     extraParams,
     debounceMs = DEFAULT_DEBOUNCE_MS
 }: UseViewportSearchInput): UseViewportSearchOutput {

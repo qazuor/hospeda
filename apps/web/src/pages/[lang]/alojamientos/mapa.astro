@@ -1,21 +1,19 @@
 ---
 /**
- * @file alojamientos/index.astro
- * @description Accommodations listing page with filter sidebar, card grid,
- * pagination, and ItemList JSON-LD structured data.
- * @route /{lang}/alojamientos/
- * @rendering SSR + ISR 24h
+ * @file alojamientos/mapa.astro
+ * @description Map view of accommodations listing. Full-width Leaflet map
+ * with FilterSidebar and toggle to switch back to list view. Pagination is
+ * replaced by a higher fetch cap (200 items) bounded by viewport bbox.
+ * @route /{lang}/alojamientos/mapa/
+ * @rendering SSR
  */
 
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
-import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
-import Pagination from '@/components/shared/feedback/Pagination.astro';
-import JsonLd from '@/components/seo/JsonLd.astro';
-import TagChips from '@/components/TagChips.astro';
+import { AccommodationsListingMap } from '@/components/maps/AccommodationsListingMap.client';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
 import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi } from '@/lib/api/endpoints';
@@ -28,14 +26,15 @@ import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/ac
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
 
 const locale = Astro.locals.locale as SupportedLocale;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
-// Read pagination and filter params from URL
+// Map view fetches up to MAP_FETCH_CAP items in the current viewport bbox.
+// No traditional pagination — clusters keep rendering manageable.
+const MAP_FETCH_CAP = 100;
+
 const url = Astro.url;
-const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
-const pageSize = 20;
 
-// Extract filter params
+// Extract filter params (same as list view, minus pagination)
 const q = url.searchParams.get('q') ?? undefined;
 const types = url.searchParams.get('types') ?? undefined;
 const destinationIds = url.searchParams.get('destinationIds') ?? undefined;
@@ -68,10 +67,11 @@ const amenities = amenitiesResult.ok ? amenitiesResult.data.items : [];
 const featuresResult = await featuresApi.list({ pageSize: 100, sortBy: 'displayWeight', sortOrder: 'desc' });
 const features = featuresResult.ok ? featuresResult.data.items : [];
 
-// Fetch accommodations
+// Fetch up to MAP_FETCH_CAP accommodations for the initial map view.
+// Subsequent panning will refetch via useViewportSearch with bbox params.
 const result = await accommodationsApi.list({
-	page,
-	pageSize,
+	page: 1,
+	pageSize: MAP_FETCH_CAP,
 	q,
 	types,
 	destinationIds,
@@ -97,33 +97,23 @@ const result = await accommodationsApi.list({
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
-const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 
-// Transform items for cards
 const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }));
 
-// --- Natural language filter summary ---
-// Build catalogs from the fetched data for the summary builder.
-// Destinations, amenities, and features use id→name from the API.
-// The summary module maps these keys to human-readable labels per locale.
+const LITORAL_CENTER: [number, number] = [-31.8, -58.5];
+const LITORAL_ZOOM = 8;
+const firstWithCoords = cards.find((c) => c.approximateLocation);
+const mapCenter: [number, number] = firstWithCoords?.approximateLocation
+	? [firstWithCoords.approximateLocation.lat, firstWithCoords.approximateLocation.lng]
+	: LITORAL_CENTER;
+const mapHasItems = cards.some((c) => c.approximateLocation);
+
+// Filter summary
 const summaryLocale = (locale === 'en' ? 'en' : 'es') as SummaryLocale;
+const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({ key: d.id, label: { es: d.name, en: d.name } }));
+const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({ key: a.id, label: { es: a.name, en: a.name } }));
+const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({ key: f.id, label: { es: f.name, en: f.name } }));
 
-const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({
-	key: d.id,
-	label: { es: d.name, en: d.name }
-}));
-const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({
-	key: a.id,
-	label: { es: a.name, en: a.name }
-}));
-const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({
-	key: f.id,
-	label: { es: f.name, en: f.name }
-}));
-
-// When types are active the API already filters by type, so `total` is the
-// type-specific count (equivalent to `subjectTotal`). Pass it explicitly so the
-// builder can render "hoteles" instead of the generic "hospedajes".
 const typesArray = types?.split(',').filter(Boolean) ?? [];
 const filterSummary = buildAccommodationListingSummary({
 	locale: summaryLocale,
@@ -146,8 +136,6 @@ const filterSummary = buildAccommodationListingSummary({
 	counts: {
 		shown: cards.length,
 		globalTotal: total,
-		// When types are filtered, `total` is already the type-specific count
-		// from the API, so it doubles as `subjectTotal`.
 		subjectTotal: typesArray.length > 0 ? total : undefined,
 	},
 	sort: sortBy ? { key: sortBy, direction: sortOrder ?? 'asc' } : undefined,
@@ -159,20 +147,10 @@ const filterSummary = buildAccommodationListingSummary({
 	},
 });
 
-// Filter configuration for sidebar
-// Order: search → featured (toggle, inline) → type → destination → amenities → features → price → rest
+// Filter sidebar config (same as list view)
 const filterGroups: FilterGroup[] = [
-	{
-		id: 'q',
-		label: t('accommodations.sidebar.search', 'Búsqueda por texto'),
-		type: 'search',
-		placeholder: t('accommodations.sidebar.searchPlaceholder', 'Buscar por nombre o descripción...'),
-	},
-	{
-		id: 'isFeatured',
-		label: t('accommodations.sidebar.featured', 'Solo destacados'),
-		type: 'toggle',
-	},
+	{ id: 'q', label: t('accommodations.sidebar.search', 'Búsqueda por texto'), type: 'search', placeholder: t('accommodations.sidebar.searchPlaceholder', 'Buscar por nombre o descripción...') },
+	{ id: 'isFeatured', label: t('accommodations.sidebar.featured', 'Solo destacados'), type: 'toggle' },
 	{
 		id: 'types',
 		label: t('accommodations.sidebar.type', 'Tipo de Alojamiento'),
@@ -221,38 +199,10 @@ const filterGroups: FilterGroup[] = [
 		includeNullLabel: t('accommodations.sidebar.includeNoPrice', 'Incluir sin precio'),
 		includeNullParam: 'includeNoPrice',
 	},
-	{
-		id: 'minGuests',
-		label: t('accommodations.sidebar.adults', 'Adultos'),
-		type: 'stepper',
-		min: 0,
-		max: 20,
-		defaultValue: 0,
-		suffix: t('accommodations.chips.guests', 'huéspedes'),
-	},
-	{
-		id: 'minRating',
-		label: t('accommodations.sidebar.rating', 'Calificación'),
-		type: 'stars',
-		includeNullLabel: t('accommodations.sidebar.includeNoReviews', 'Incluir sin calificación'),
-		includeNullParam: 'includeNoReviews',
-	},
-	{
-		id: 'minBedrooms',
-		label: t('accommodations.sidebar.bedrooms', 'Dormitorios'),
-		type: 'stepper',
-		min: 0,
-		max: 10,
-		defaultValue: 0,
-	},
-	{
-		id: 'minBathrooms',
-		label: t('accommodations.sidebar.bathrooms', 'Baños'),
-		type: 'stepper',
-		min: 0,
-		max: 10,
-		defaultValue: 0,
-	},
+	{ id: 'minGuests', label: t('accommodations.sidebar.adults', 'Adultos'), type: 'stepper', min: 0, max: 20, defaultValue: 0, suffix: t('accommodations.chips.guests', 'huéspedes') },
+	{ id: 'minRating', label: t('accommodations.sidebar.rating', 'Calificación'), type: 'stars', includeNullLabel: t('accommodations.sidebar.includeNoReviews', 'Incluir sin calificación'), includeNullParam: 'includeNoReviews' },
+	{ id: 'minBedrooms', label: t('accommodations.sidebar.bedrooms', 'Dormitorios'), type: 'stepper', min: 0, max: 10, defaultValue: 0 },
+	{ id: 'minBathrooms', label: t('accommodations.sidebar.bathrooms', 'Baños'), type: 'stepper', min: 0, max: 10, defaultValue: 0 },
 ];
 
 const sortOptions = [
@@ -263,35 +213,7 @@ const sortOptions = [
 	{ value: 'recent', label: t('accommodations.sort.recent', 'Más recientes') },
 ];
 
-// ItemList JSON-LD
-const jsonLd = {
-	'@context': 'https://schema.org',
-	'@type': 'ItemList',
-	name: t('accommodations.title', 'Alojamientos'),
-	numberOfItems: total,
-	itemListElement: cards.map((card, i) => ({
-		'@type': 'ListItem',
-		position: (page - 1) * pageSize + i + 1,
-		url: `${Astro.site ?? Astro.url.origin}${buildUrl({ locale, path: `alojamientos/${card.slug}` })}`,
-		name: card.name,
-	})),
-};
-
-const baseUrl = buildUrl({ locale, path: 'alojamientos' });
-
-/** Quick-filter chips: top accommodation types */
-const typeChips = [
-    { label: getAccommodationTypeLabel({ type: 'CABIN', t }), href: buildUrl({ locale, path: '/alojamientos/tipo/cabin/' }) },
-    { label: getAccommodationTypeLabel({ type: 'HOTEL', t }), href: buildUrl({ locale, path: '/alojamientos/tipo/hotel/' }) },
-    { label: getAccommodationTypeLabel({ type: 'HOUSE', t }), href: buildUrl({ locale, path: '/alojamientos/tipo/house/' }) },
-    { label: getAccommodationTypeLabel({ type: 'COUNTRY_HOUSE', t }), href: buildUrl({ locale, path: '/alojamientos/tipo/country-house/' }) },
-    { label: getAccommodationTypeLabel({ type: 'HOSTEL', t }), href: buildUrl({ locale, path: '/alojamientos/tipo/hostel/' }) },
-    { label: getAccommodationTypeLabel({ type: 'CAMPING', t }), href: buildUrl({ locale, path: '/alojamientos/tipo/camping/' }) },
-    { label: getAccommodationTypeLabel({ type: 'APARTMENT', t }), href: buildUrl({ locale, path: '/alojamientos/tipo/apartment/' }) },
-    { label: getAccommodationTypeLabel({ type: 'RESORT', t }), href: buildUrl({ locale, path: '/alojamientos/tipo/resort/' }) },
-] as const;
-
-// Build initial filter params for the sidebar (avoids hydration flash)
+// Build initial filter params for the sidebar
 const initialParams: Record<string, string> = {};
 if (q) initialParams.q = q;
 if (types) initialParams.types = types;
@@ -308,21 +230,46 @@ if (amenitiesParam) initialParams.amenities = amenitiesParam;
 if (featuresParam) initialParams.features = featuresParam;
 if (includeNoPrice) initialParams.includeNoPrice = 'true';
 if (includeNoReviews) initialParams.includeNoReviews = 'true';
+
+// Build the URL pointing back to the list view, preserving every active filter.
+const listHref = (() => {
+	const sp = new URLSearchParams(url.searchParams);
+	const qs = sp.toString();
+	const base = buildUrl({ locale, path: 'alojamientos' });
+	return qs ? `${base}?${qs}` : base;
+})();
+
+// Build per-id maps for popup enrichment. Resolved on the page so the island
+// stays i18n-agnostic and we don't need to serialize functions.
+const TYPE_KEYS = ['APARTMENT', 'HOUSE', 'COUNTRY_HOUSE', 'CABIN', 'HOTEL', 'HOSTEL', 'CAMPING', 'ROOM', 'RESORT'] as const;
+const typeLabels: Record<string, string> = {};
+for (const key of TYPE_KEYS) {
+	typeLabels[key] = getAccommodationTypeLabel({ type: key, t });
+}
+const detailHrefById: Record<string, string> = {};
+const reviewsLabelById: Record<string, string> = {};
+for (const card of cards) {
+	detailHrefById[card.id] = buildUrl({ locale, path: `alojamientos/${card.slug}` });
+	if (card.reviewsCount > 0) {
+		reviewsLabelById[card.id] = `(${tPlural('review.totalReviews', card.reviewsCount, { count: card.reviewsCount })})`;
+	}
+}
 ---
 
 <ListingLayout
 	locale={locale}
-	title={t('accommodations.title', 'Alojamientos')}
+	title={`${t('accommodations.title', 'Alojamientos')} — ${t('accommodations.viewToggle.map', 'Mapa')}`}
 	description={t('accommodations.description', 'Encontrá los mejores alojamientos del Litoral Entrerriano.')}
 	showFilters={true}
 	filterPosition="left"
 >
-	<JsonLd slot="head-extra" data={jsonLd} />
-
 	<Breadcrumbs
 		slot="breadcrumbs"
 		locale={locale}
-		items={[{ label: t('accommodations.title', 'Alojamientos') }]}
+		items={[
+			{ label: t('accommodations.title', 'Alojamientos'), href: buildUrl({ locale, path: 'alojamientos' }) },
+			{ label: t('accommodations.viewToggle.map', 'Mapa') },
+		]}
 	/>
 
 	<ListingPageHeader
@@ -343,34 +290,23 @@ if (includeNoReviews) initialParams.includeNoReviews = 'true';
 		initialParams={initialParams}
 	/>
 
-	<TagChips
-		chips={typeChips}
-		ariaLabel={t('accommodations.typeChips.ariaLabel', 'Filtrar por tipo de alojamiento')}
-	/>
-
 	{!hasError && cards.length > 0 && (
 		<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
+			<a
+				href={listHref}
+				class="view-toggle__btn"
+				role="tab"
+				aria-selected="false"
+			>
+				{t('accommodations.viewToggle.list', 'Lista')}
+			</a>
 			<span
 				class="view-toggle__btn view-toggle__btn--active"
 				role="tab"
 				aria-selected="true"
 			>
-				{t('accommodations.viewToggle.list', 'Lista')}
-			</span>
-			<a
-				href={(() => {
-					const sp = new URLSearchParams(url.searchParams);
-					sp.delete('page');
-					const qs = sp.toString();
-					const base = buildUrl({ locale, path: 'alojamientos/mapa' });
-					return qs ? `${base}?${qs}` : base;
-				})()}
-				class="view-toggle__btn"
-				role="tab"
-				aria-selected="false"
-			>
 				{t('accommodations.viewToggle.map', 'Mapa')}
-			</a>
+			</span>
 		</div>
 	)}
 
@@ -382,78 +318,42 @@ if (includeNoReviews) initialParams.includeNoReviews = 'true';
 		<EmptyState
 			locale={locale}
 			variant="no-results"
-			actionUrl={baseUrl}
+			actionUrl={buildUrl({ locale, path: 'alojamientos' })}
 		/>
 	)}
 
-	{!hasError && cards.length > 0 && (
-		<div class="acc-grid">
-			{cards.map((card, i) => (
-				<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
-					<AccommodationCard data={card} locale={locale} />
-				</div>
-			))}
+	{!hasError && cards.length > 0 && mapHasItems && (
+		<div class="acc-listing-map">
+			<AccommodationsListingMap
+				client:only="react"
+				initialItems={cards}
+				initialCenter={mapCenter}
+				initialZoom={LITORAL_ZOOM}
+				ariaLabel={t('maps.ariaLabelAccommodation')}
+				typeLabels={typeLabels}
+				detailHrefById={detailHrefById}
+				reviewsLabelById={reviewsLabelById}
+				featuredLabel={t('maps.featuredBadge', 'Destacado')}
+				showSidebar={true}
+				sidebarI18n={{
+					resultsHeading: t('maps.sidebar.resultsHeading', 'Resultados en el mapa'),
+					resultsCountOne: t('maps.sidebar.resultsCount_one', '{{count}} alojamiento'),
+					resultsCountOther: t('maps.sidebar.resultsCount_other', '{{count}} alojamientos'),
+					emptyState: t('maps.sidebar.emptyState', 'No hay alojamientos en esta zona.'),
+					openSheet: t('maps.sidebar.openSheet', 'Ver lista'),
+					closeSheet: t('maps.sidebar.closeSheet', 'Cerrar'),
+				}}
+				i18nStrings={{
+					attribution: t('maps.attribution'),
+					approximateDisclaimer: t('maps.approximateDisclaimer'),
+					viewDetails: t('maps.viewDetails', 'Ver más'),
+				}}
+			/>
 		</div>
-	)}
-
-	{totalPages > 1 && (
-		<Pagination
-			slot="pagination"
-			currentPage={page}
-			totalPages={totalPages}
-			baseUrl={baseUrl.slice(0, -1)}
-			locale={locale}
-			searchParams={(() => {
-				const sp = new URLSearchParams();
-				if (q) sp.set('q', q);
-				if (types) sp.set('types', types);
-				if (destinationIds) sp.set('destinationIds', destinationIds);
-				if (minPrice !== undefined) sp.set('minPrice', String(minPrice));
-				if (maxPrice !== undefined) sp.set('maxPrice', String(maxPrice));
-				if (sortBy) sp.set('sortBy', sortBy);
-				if (sortOrder) sp.set('sortOrder', sortOrder);
-				if (isFeatured) sp.set('isFeatured', 'true');
-				if (minGuests !== undefined) sp.set('minGuests', String(minGuests));
-				if (minBedrooms !== undefined) sp.set('minBedrooms', String(minBedrooms));
-				if (minBathrooms !== undefined) sp.set('minBathrooms', String(minBathrooms));
-				if (minRating !== undefined) sp.set('minRating', String(minRating));
-				if (amenitiesParam) sp.set('amenities', amenitiesParam);
-				if (featuresParam) sp.set('features', featuresParam);
-				if (includeNoPrice) sp.set('includeNoPrice', 'true');
-				if (includeNoReviews) sp.set('includeNoReviews', 'true');
-				return sp;
-			})()}
-		/>
 	)}
 </ListingLayout>
 
-
 <style>
-	/*
-	 * Responsive grid: auto-fill with a 260px minimum so the browser determines
-	 * how many columns fit rather than relying on fixed breakpoints that break
-	 * when the sidebar narrows the available content area.
-	 */
-	.acc-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-		gap: var(--space-card-gap);
-	}
-
-	@media (max-width: 480px) {
-		.acc-grid {
-			grid-template-columns: 1fr;
-		}
-	}
-
-	/* Dim the grid while a filter navigation is in flight */
-	:global([data-filters-loading]) .acc-grid {
-		opacity: 0.4;
-		pointer-events: none;
-		transition: opacity 0.2s ease;
-	}
-
-	/* View toggle (Lista / Mapa) */
 	.view-toggle {
 		display: inline-flex;
 		gap: var(--space-2, 8px);
@@ -480,5 +380,16 @@ if (includeNoReviews) initialParams.includeNoReviews = 'true';
 		color: white;
 		font-weight: 500;
 		cursor: default;
+	}
+
+	.acc-listing-map {
+		width: 100%;
+		min-height: 600px;
+		margin: var(--space-4, 16px) 0 var(--space-6, 24px);
+	}
+	@media (max-width: 768px) {
+		.acc-listing-map {
+			min-height: 480px;
+		}
 	}
 </style>
