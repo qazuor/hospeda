@@ -1378,7 +1378,12 @@ export class AccommodationService extends BaseCrudService<
                     features: processedParams.features,
                     isFeatured: processedParams.isFeatured,
                     isAvailable: processedParams.isAvailable,
-                    excludeRestricted: !hasVipAccess
+                    excludeRestricted: !hasVipAccess,
+                    // SPEC-097 — viewport bbox filter for listing maps
+                    bboxNorth: processedParams.bboxNorth,
+                    bboxSouth: processedParams.bboxSouth,
+                    bboxEast: processedParams.bboxEast,
+                    bboxWest: processedParams.bboxWest
                 };
 
                 const result = await this.model.searchWithRelations(modelParams);
