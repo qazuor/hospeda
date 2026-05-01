@@ -1,9 +1,12 @@
 ---
 /**
  * @file LocationSection.astro
- * @description Location section with destination link and map placeholder.
- * Shows coordinates when available, destination link only when not.
+ * @description Location section for accommodation detail. Renders an
+ * interactive map with a privacy-aware approximate-location circle
+ * (SPEC-097). Falls back to the destination link only when the API does not
+ * supply `approximateLocation` (e.g. accommodations without coords).
  */
+import { LocationMap } from '@/components/maps/LocationMap.client';
 import type { AccommodationDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -11,14 +14,20 @@ import { LocationIcon } from '@repo/icons';
 
 interface Props {
   readonly destination: AccommodationDetailData['destination'];
-  readonly location: AccommodationDetailData['location'];
+  readonly approximateLocation: AccommodationDetailData['approximateLocation'];
+  readonly accommodationName: string;
   readonly lang: string;
 }
 
-const { destination, location, lang } = Astro.props;
-const { t } = createTranslations(lang as SupportedLocale);
+const { destination, approximateLocation, accommodationName, lang } = Astro.props;
+const locale = (lang as SupportedLocale) ?? 'es';
+const { t } = createTranslations(locale);
 
-const hasCoordinates = location.lat != null && location.lng != null;
+const mapStrings = {
+  attribution: t('maps.attribution'),
+  approximateDisclaimer: t('maps.approximateDisclaimer'),
+  markerLabel: accommodationName ?? t('maps.markerLabel'),
+};
 ---
 
 <section class="location-section">
@@ -31,15 +40,22 @@ const hasCoordinates = location.lat != null && location.lng != null;
     </a>
   </div>
 
-  {hasCoordinates && (
+  {approximateLocation ? (
+    <LocationMap
+      client:only="react"
+      mode="approximate"
+      lat={approximateLocation.lat}
+      lng={approximateLocation.lng}
+      radiusMeters={approximateLocation.radiusMeters}
+      ariaLabel={t('maps.ariaLabelAccommodation')}
+      i18nStrings={mapStrings}
+    />
+  ) : (
     <div class="location-section__map-placeholder">
       <div class="location-section__placeholder-content">
         <LocationIcon size="xl" weight="duotone" aria-hidden="true" />
         <p class="location-section__placeholder-text">
           {t('accommodations.detail.locationDetail.mapPlaceholder')}
-        </p>
-        <p class="location-section__coords">
-          {Math.abs(location.lat!).toFixed(4)}° S, {Math.abs(location.lng!).toFixed(4)}° O
         </p>
       </div>
     </div>

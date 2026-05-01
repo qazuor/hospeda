@@ -13,6 +13,7 @@ import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro
 import EventCard from '@/components/shared/cards/EventCard.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import { LocationMap } from '@/components/maps/LocationMap.client';
 import { destinationsApi, accommodationsApi, eventsApi } from '@/lib/api/endpoints';
 import { toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
@@ -82,7 +83,14 @@ const breadcrumbItems = [
 ];
 
 // TouristDestination JSON-LD
-const destLocation = dest.location as { lat?: number; lng?: number } | undefined;
+const destLocation = dest.location as
+	| { coordinates?: { lat?: string; long?: string } }
+	| undefined;
+const destCoords = destLocation?.coordinates;
+const destLat = destCoords?.lat ? Number.parseFloat(destCoords.lat) : null;
+const destLng = destCoords?.long ? Number.parseFloat(destCoords.long) : null;
+const hasDestCoords = Number.isFinite(destLat) && Number.isFinite(destLng);
+
 const jsonLd: Record<string, unknown> = {
 	'@context': 'https://schema.org',
 	'@type': 'TouristDestination',
@@ -90,12 +98,12 @@ const jsonLd: Record<string, unknown> = {
 	description,
 	image: featuredImage,
 	url: `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`,
-	...(destLocation?.lat != null && destLocation?.lng != null
+	...(hasDestCoords
 		? {
 			geo: {
 				'@type': 'GeoCoordinates',
-				latitude: destLocation.lat,
-				longitude: destLocation.lng,
+				latitude: destLat,
+				longitude: destLng,
 			},
 		}
 		: {}),
@@ -163,13 +171,28 @@ const breadcrumbJsonLdItems = [
 		<!-- Description -->
 		<div class="dest-detail__description" set:html={String(dest.contentHtml || description)} />
 
-		<!-- Map placeholder -->
+		<!-- Interactive map (SPEC-097) -->
 		<section class="dest-detail__section">
 			<h2 class="dest-detail__section-title">{t('destinations.detail.location', 'Ubicación')}</h2>
-			<!-- TODO: MapView island (T-022) -->
-			<div class="dest-detail__placeholder">
-				<p>{t('destinations.detail.mapPlaceholder', 'Mapa interactivo próximamente')}</p>
-			</div>
+			{hasDestCoords ? (
+				<LocationMap
+					client:only="react"
+					mode="exact"
+					lat={destLat as number}
+					lng={destLng as number}
+					markerLabel={name}
+					ariaLabel={t('maps.ariaLabelDestination')}
+					i18nStrings={{
+						attribution: t('maps.attribution'),
+						approximateDisclaimer: t('maps.approximateDisclaimer'),
+						markerLabel: name,
+					}}
+				/>
+			) : (
+				<div class="dest-detail__placeholder">
+					<p>{t('destinations.detail.mapPlaceholder', 'Ubicación no disponible')}</p>
+				</div>
+			)}
 		</section>
 
 		<!-- Accommodation preview -->

@@ -240,7 +240,12 @@ const faqSections = accommodation.faqs.map((faq) => ({
         </ReviewPreview>
 
         <FaqAccordion faqs={accommodation.faqs} lang={locale} />
-        <LocationSection destination={accommodation.destination} location={accommodation.location} lang={locale} />
+        <LocationSection
+            destination={accommodation.destination}
+            approximateLocation={accommodation.approximateLocation}
+            accommodationName={accommodation.name}
+            lang={locale}
+        />
     </div>
 
     <!-- Related content carousels (outside two-column grid, full width) -->
