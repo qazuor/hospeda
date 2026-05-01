@@ -85,6 +85,13 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_LOCATION_SALT: z
         .string()
         .min(32, 'HOSPEDA_LOCATION_SALT must be at least 32 characters'),
+    /**
+     * User-Agent header sent to Nominatim and Photon when geocoding addresses
+     * for the admin location picker (SPEC-097, Phase 6). Nominatim's usage
+     * policy requires an identifiable User-Agent; missing or generic values
+     * may result in throttling or banning.
+     */
+    HOSPEDA_GEOCODING_USER_AGENT: z.string().min(1).default('Hospeda/1.0 (https://hospeda.ar)'),
 
     // OAuth providers
     HOSPEDA_GOOGLE_CLIENT_ID: z.string().optional(),
