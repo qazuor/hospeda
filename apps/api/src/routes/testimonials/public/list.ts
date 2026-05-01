@@ -25,12 +25,15 @@ const TestimonialItemSchema = z.object({
     date: z.string().datetime()
 });
 
-const TestimonialsResponseSchema = z.array(TestimonialItemSchema);
-
 const TestimonialsQuerySchema = z.object({
     page: z.coerce.number().min(1).default(1),
     pageSize: z.coerce.number().min(1).max(20).default(6)
 });
+
+function coerceRating(rating: unknown): number {
+    const n = typeof rating === 'string' ? Number(rating) : (rating as number);
+    return Number.isFinite(n) ? n : 0;
+}
 
 function transformAccommodationReview(review: AccommodationReviewWithUser): TestimonialItem {
     // TYPE-WORKAROUND: service-core query joins the parent accommodation but the WithUser row type does not declare it; cast extracts the eager-loaded relation without redefining the row type.
@@ -52,8 +55,9 @@ function transformAccommodationReview(review: AccommodationReviewWithUser): Test
         entityName: name,
         entitySlug: slug,
         userName,
-        avatarUrl: review.user?.avatar,
-        rating: review.averageRating,
+        avatarUrl:
+            review.user?.avatar && review.user.avatar.length > 0 ? review.user.avatar : undefined,
+        rating: coerceRating(review.averageRating),
         comment: review.content ?? review.title ?? '',
         date:
             review.createdAt instanceof Date
@@ -81,8 +85,9 @@ function transformDestinationReview(review: DestinationReviewWithUser): Testimon
         entityName: name,
         entitySlug: slug,
         userName,
-        avatarUrl: review.user?.avatar,
-        rating: review.averageRating,
+        avatarUrl:
+            review.user?.avatar && review.user.avatar.length > 0 ? review.user.avatar : undefined,
+        rating: coerceRating(review.averageRating),
         comment: review.content ?? review.title ?? '',
         date:
             review.createdAt instanceof Date
@@ -134,7 +139,7 @@ export const publicListTestimonialsRoute = createPublicListRoute({
     description: 'Returns a mixed list of recent reviews from accommodations and destinations',
     tags: ['Testimonials'],
     requestQuery: TestimonialsQuerySchema.shape,
-    responseSchema: TestimonialsResponseSchema,
+    responseSchema: TestimonialItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
