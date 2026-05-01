@@ -120,6 +120,17 @@ export const HOSPEDA_ENV_VARS = [
         category: 'auth'
     },
     {
+        name: 'HOSPEDA_LOCATION_SALT',
+        description:
+            'Server-only salt for deterministic accommodation location obfuscation (privacy-aware approximate coordinates). Must be at least 32 characters; rotating changes all approximate locations shown to public visitors.',
+        type: 'string',
+        required: true,
+        secret: true,
+        exampleValue: 'replace-with-32-plus-char-random-string-from-openssl',
+        apps: ['api'],
+        category: 'auth'
+    },
+    {
         name: 'HOSPEDA_BETTER_AUTH_URL',
         description: 'Better Auth endpoint URL',
         type: 'url',
