@@ -10,7 +10,7 @@ import { BaseReviewFields } from '../../common/review.schema.js';
 import { BaseSeoFields } from '../../common/seo.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { DestinationTypeEnumSchema } from '../../enums/destination-type.schema.js';
-import { AttractionSchema } from '../attraction/attraction.schema.js';
+import { AttractionSummarySchema } from '../attraction/attraction.schema.js';
 import { DestinationReviewSchema } from '../destinationReview/destinationReview.schema.js';
 import { TagSchema } from '../tag/tag.schema.js';
 import { DestinationRatingSchema } from './subtypes/destination.rating.schema.js';
@@ -75,8 +75,9 @@ export const DestinationSchema = z.object({
     // Destination-specific fields
     accommodationsCount: z.number().int().min(0).default(0),
 
-    // Attractions (nested objects)
-    attractions: z.array(AttractionSchema).optional(),
+    // Attractions (lightweight summary — destinations only carry attraction
+    // identifiers and display metadata, not the full audit/lifecycle entity).
+    attractions: z.array(AttractionSummarySchema).optional(),
     reviews: z.array(DestinationReviewSchema).optional(),
     rating: DestinationRatingSchema.nullish()
 });
