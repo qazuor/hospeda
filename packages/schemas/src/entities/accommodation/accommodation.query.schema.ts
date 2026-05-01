@@ -104,6 +104,13 @@ export const AccommodationSearchSchema = BaseSearchSchema.extend({
     latitude: z.number().min(-90).max(90).optional(),
     longitude: z.number().min(-180).max(180).optional(),
     radius: z.number().positive().optional(),
+    // SPEC-097 — Viewport bbox filter for listing maps. Backend applies on
+    // EXACT coords server-side so the count is precise; the response payload
+    // still only exposes `approximateLocation` for public visitors.
+    bboxNorth: z.number().min(-90).max(90).optional(),
+    bboxSouth: z.number().min(-90).max(90).optional(),
+    bboxEast: z.number().min(-180).max(180).optional(),
+    bboxWest: z.number().min(-180).max(180).optional(),
     minGuests: z.number().int().min(1).optional(),
     maxGuests: z.number().int().min(1).optional(),
     minBedrooms: z.number().int().min(0).optional(),

@@ -24,6 +24,11 @@ export const AccommodationSearchHttpSchema = BaseHttpSearchSchema.extend({
     latitude: z.coerce.number().min(-90).max(90).optional(),
     longitude: z.coerce.number().min(-180).max(180).optional(),
     radius: z.coerce.number().positive().optional(),
+    // SPEC-097 — Viewport bbox for listing maps
+    bboxNorth: z.coerce.number().min(-90).max(90).optional(),
+    bboxSouth: z.coerce.number().min(-90).max(90).optional(),
+    bboxEast: z.coerce.number().min(-180).max(180).optional(),
+    bboxWest: z.coerce.number().min(-180).max(180).optional(),
 
     // Price filters with HTTP coercion
     minPrice: z.coerce.number().min(0).optional(),
@@ -241,6 +246,10 @@ export const httpToDomainAccommodationSearch = (
     latitude: httpParams.latitude,
     longitude: httpParams.longitude,
     radius: httpParams.radius,
+    bboxNorth: httpParams.bboxNorth,
+    bboxSouth: httpParams.bboxSouth,
+    bboxEast: httpParams.bboxEast,
+    bboxWest: httpParams.bboxWest,
     minGuests: httpParams.minGuests,
     maxGuests: httpParams.maxGuests,
     minBedrooms: httpParams.minBedrooms,
