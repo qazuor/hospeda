@@ -278,15 +278,13 @@ describe('AddonEntitlementService', () => {
             vi.mocked(getDb).mockReturnValue({
                 select: vi.fn().mockReturnThis(),
                 from: vi.fn().mockReturnThis(),
-                where: vi
-                    .fn()
-                    .mockResolvedValue([
-                        {
-                            addonSlug: 'extra-accommodations-5',
-                            id: 'purchase_acc',
-                            status: 'active'
-                        }
-                    ])
+                where: vi.fn().mockResolvedValue([
+                    {
+                        addonSlug: 'extra-accommodations-5',
+                        id: 'purchase_acc',
+                        status: 'active'
+                    }
+                ])
             } as unknown as ReturnType<typeof getDb>);
 
             const result = await service.applyAddonEntitlements({
