@@ -46,7 +46,11 @@ export function buildCspDirectives({
         // admin media rendering via getMediaUrl). blob: is required for AvatarUpload previews
         // using URL.createObjectURL. The explicit res.cloudinary.com entry enforces principle
         // of least privilege even though the current 'https:' blanket already covers it.
-        "img-src 'self' data: blob: https: https://res.cloudinary.com https://*.mlstatic.com",
+        // SPEC-097: explicit OpenStreetMap tile hosts for the admin location
+        // picker (LocationPickerField). The blanket `https:` already covers
+        // them, but the explicit entry future-proofs the directive when the
+        // blanket gets removed.
+        "img-src 'self' data: blob: https: https://res.cloudinary.com https://*.mlstatic.com https://*.tile.openstreetmap.org https://*.openstreetmap.org",
         "connect-src 'self' https://*.sentry.io https://*.vercel.app https://api.mercadopago.com https://sdk.mercadopago.com https://www.mercadopago.com https://api.mercadolibre.com https://api-static.mercadopago.com",
         'frame-src https://www.mercadopago.com',
         "worker-src 'self' blob:",
