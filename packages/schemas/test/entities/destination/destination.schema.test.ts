@@ -177,7 +177,7 @@ describe('DestinationSchema', () => {
                 const result = DestinationSchema.parse(validData);
                 if (result.attractions && result.attractions.length > 0) {
                     expect(result.attractions[0]?.name).toBeDefined();
-                    expect(result.attractions[0]?.destinationId).toBeDefined();
+                    expect(result.attractions[0]?.id).toBeDefined();
                 }
             });
 

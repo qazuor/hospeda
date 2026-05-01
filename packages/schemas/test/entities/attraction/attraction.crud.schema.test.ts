@@ -68,8 +68,8 @@ describe('Attraction CRUD Schemas', () => {
 
         it('should require essential fields', () => {
             const incompleteInput = {
-                name: 'Test Attraction'
-                // Missing description, icon
+                // Missing name (the only truly required field)
+                description: 'A nice place'
             };
 
             expect(() => AttractionCreateInputSchema.parse(incompleteInput)).toThrow(ZodError);
