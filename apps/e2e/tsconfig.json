@@ -1,0 +1,16 @@
+{
+    "extends": "../../packages/typescript-config/app-base.json",
+    "compilerOptions": {
+        "types": ["node"],
+        "module": "ESNext",
+        "moduleResolution": "bundler"
+    },
+    "include": [
+        "tests/**/*",
+        "fixtures/**/*",
+        "seeds/**/*",
+        "support/**/*",
+        "playwright.config.ts"
+    ],
+    "exclude": ["node_modules", "test-results", "playwright-report"]
+}

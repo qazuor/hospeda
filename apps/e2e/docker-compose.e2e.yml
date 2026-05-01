@@ -1,0 +1,66 @@
+name: hospeda-e2e
+
+services:
+    postgres-e2e:
+        image: postgres:15-alpine
+        container_name: hospeda-e2e-postgres
+        restart: 'no'
+        environment:
+            POSTGRES_DB: hospeda_e2e
+            POSTGRES_USER: hospeda_user
+            POSTGRES_PASSWORD: hospeda_pass
+            PGDATA: /var/lib/postgresql/data/pgdata
+        ports:
+            - '${E2E_POSTGRES_PORT:-5433}:5432'
+        volumes:
+            - postgres_e2e_data:/var/lib/postgresql/data
+        networks:
+            - e2e-network
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U hospeda_user -d hospeda_e2e']
+            interval: 5s
+            timeout: 3s
+            retries: 10
+
+    redis-e2e:
+        image: redis:7-alpine
+        container_name: hospeda-e2e-redis
+        restart: 'no'
+        command: redis-server --save '' --appendonly no
+        ports:
+            - '${E2E_REDIS_PORT:-6380}:6379'
+        networks:
+            - e2e-network
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            interval: 5s
+            timeout: 3s
+            retries: 10
+
+    mailpit:
+        image: axllent/mailpit:latest
+        container_name: hospeda-e2e-mailpit
+        restart: 'no'
+        environment:
+            MP_MAX_MESSAGES: 5000
+            MP_SMTP_AUTH_ACCEPT_ANY: 1
+            MP_SMTP_AUTH_ALLOW_INSECURE: 1
+        ports:
+            - '${E2E_MAILPIT_SMTP_PORT:-1025}:1025'
+            - '${E2E_MAILPIT_HTTP_PORT:-8025}:8025'
+        networks:
+            - e2e-network
+        healthcheck:
+            test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:8025/api/v1/info']
+            interval: 5s
+            timeout: 3s
+            retries: 10
+
+volumes:
+    postgres_e2e_data:
+        name: hospeda-e2e-postgres-data
+
+networks:
+    e2e-network:
+        name: hospeda-e2e-network
+        driver: bridge
