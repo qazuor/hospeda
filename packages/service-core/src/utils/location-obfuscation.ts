@@ -16,8 +16,8 @@ export interface ApproximateLocation {
     radiusMeters: number;
 }
 
-const APPROXIMATE_RADIUS_METERS = 500;
-const MAX_OFFSET_METERS = 350;
+const APPROXIMATE_RADIUS_METERS = 150;
+const MAX_OFFSET_METERS = 100;
 const METERS_PER_DEGREE_LATITUDE = 111_111;
 
 /**
@@ -39,8 +39,8 @@ const readFloat01 = (buf: Buffer, offset: number): number => {
  * - Determinism: same `(accommodationId, salt)` always produces the same offset.
  * - Irreversibility: without the salt, the original coordinates cannot be
  *   recovered from the obfuscated ones.
- * - Bounded: offset is at most `MAX_OFFSET_METERS` (350m), and the visual
- *   radius is `APPROXIMATE_RADIUS_METERS` (500m), guaranteeing the real
+ * - Bounded: offset is at most `MAX_OFFSET_METERS` (100m), and the visual
+ *   radius is `APPROXIMATE_RADIUS_METERS` (150m), guaranteeing the real
  *   location falls inside the displayed circle.
  * - Salt rotation invalidates all previous offsets (expected behavior).
  *
@@ -52,7 +52,7 @@ const readFloat01 = (buf: Buffer, offset: number): number => {
  *   accommodationId: 'acc_01HXZ...',
  *   salt: process.env.HOSPEDA_LOCATION_SALT!,
  * });
- * // → { lat: -30.7503, lng: -58.0445, radiusMeters: 500 }
+ * // → { lat: -30.7515, lng: -58.0435, radiusMeters: 150 }
  * ```
  */
 export const obfuscateCoordinates = (args: {

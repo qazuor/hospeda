@@ -79,7 +79,7 @@ describe('AccommodationService — SPEC-097 location privacy', () => {
                 approximateLocation?: { lat: number; lng: number; radiusMeters: number };
             };
             expect(data.approximateLocation).toBeDefined();
-            expect(data.approximateLocation?.radiusMeters).toBe(500);
+            expect(data.approximateLocation?.radiusMeters).toBe(150);
             expect(data.location?.coordinates).toBeUndefined();
             expect(data.location?.street).toBeUndefined();
             expect(data.location?.number).toBeUndefined();

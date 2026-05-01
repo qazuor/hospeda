@@ -95,7 +95,7 @@ describe('obfuscateCoordinates', () => {
         });
 
         expect(result.radiusMeters).toBe(LOCATION_OBFUSCATION_CONSTANTS.APPROXIMATE_RADIUS_METERS);
-        expect(result.radiusMeters).toBe(500);
+        expect(result.radiusMeters).toBe(150);
     });
 
     it('handles equator (lat=0) without dividing by zero or NaN', () => {

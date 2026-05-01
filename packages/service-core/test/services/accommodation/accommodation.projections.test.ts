@@ -108,7 +108,7 @@ describe('projectAccommodationApproximateLocation (SPEC-097)', () => {
         });
 
         expect(result.approximateLocation).toBeDefined();
-        expect(result.approximateLocation?.radiusMeters).toBe(500);
+        expect(result.approximateLocation?.radiusMeters).toBe(150);
         expect(typeof result.approximateLocation?.lat).toBe('number');
         expect(typeof result.approximateLocation?.lng).toBe('number');
     });
