@@ -16,7 +16,7 @@
     "tagIds": ["018-tag-festivales", "011-tag-cultura", "017-tag-familia", "016-tag-entre-rios"],
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1512540427036?w=800&h=600&fit=crop",
+            "url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Mercado Itinerante",
             "description": "Descripción de la imagen del evento Mercado Itinerante",
             "moderationState": "APPROVED"

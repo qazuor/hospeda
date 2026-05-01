@@ -16,7 +16,7 @@
     "tagIds": ["018-tag-festivales", "011-tag-cultura", "017-tag-familia", "016-tag-entre-rios"],
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1633351507667?w=800&h=600&fit=crop",
+            "url": "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Concierto de Jazz",
             "description": "Descripción de la imagen del evento Concierto de Jazz",
             "moderationState": "APPROVED"

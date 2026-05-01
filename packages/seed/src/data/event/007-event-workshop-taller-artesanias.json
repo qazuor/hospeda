@@ -16,7 +16,7 @@
     "tagIds": ["018-tag-festivales", "011-tag-cultura", "017-tag-familia", "016-tag-entre-rios"],
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1544267014220?w=800&h=600&fit=crop",
+            "url": "https://images.unsplash.com/photo-1452860606245-08befc0ff44b?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Taller de Artesanías",
             "description": "Descripción de la imagen del evento Taller de Artesanías",
             "moderationState": "APPROVED"

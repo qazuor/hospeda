@@ -18,7 +18,7 @@
     "tagIds": ["018-tag-festivales", "011-tag-cultura", "017-tag-familia", "016-tag-entre-rios"],
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1514030403714?w=800&h=600&fit=crop",
+            "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Exposición de Arte",
             "description": "Descripción de la imagen del evento Exposición de Arte",
             "moderationState": "APPROVED"

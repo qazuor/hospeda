@@ -16,7 +16,7 @@
     "tagIds": ["018-tag-festivales", "011-tag-cultura", "017-tag-familia", "016-tag-entre-rios"],
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1565528920228?w=800&h=600&fit=crop",
+            "url": "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Caminata Ecológica",
             "description": "Descripción de la imagen del evento Caminata Ecológica",
             "moderationState": "APPROVED"

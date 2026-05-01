@@ -16,7 +16,7 @@
     "tagIds": ["018-tag-festivales", "011-tag-cultura", "017-tag-familia", "016-tag-entre-rios"],
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1666055938295?w=800&h=600&fit=crop",
+            "url": "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Seminario de Historia",
             "description": "Descripción de la imagen del evento Seminario de Historia",
             "moderationState": "APPROVED"

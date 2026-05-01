@@ -18,7 +18,7 @@
     "tagIds": ["018-tag-festivales", "011-tag-cultura", "017-tag-familia", "016-tag-entre-rios"],
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1674759369799?w=800&h=600&fit=crop",
+            "url": "https://images.unsplash.com/photo-1551218808-94e220e084d2?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Torneo de Ajedrez",
             "description": "Descripción de la imagen del evento Torneo de Ajedrez",
             "moderationState": "APPROVED"

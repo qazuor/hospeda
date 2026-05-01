@@ -16,7 +16,7 @@
     "tagIds": ["018-tag-festivales", "011-tag-cultura", "017-tag-familia", "016-tag-entre-rios"],
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1565573552890?w=800&h=600&fit=crop",
+            "url": "https://images.unsplash.com/photo-1568667256549-094345857637?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Picnic Familiar",
             "description": "Descripción de la imagen del evento Picnic Familiar",
             "moderationState": "APPROVED"
