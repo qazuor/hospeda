@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui-wrapped/Badge';
 import { Card } from '@/components/ui-wrapped/Card';
 import type { LocationFieldData } from '@/features/accommodations/types/accommodation-form.types';
 import { useTranslations } from '@/hooks/use-translations';
+import { LocationMapView } from './LocationMapView';
 
 /**
  * Props for LocationViewField component
@@ -110,40 +111,39 @@ export function LocationViewField({
                     </div>
                 </div>
 
-                {/* Coordinates */}
-                {hasCoordinates && (
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
+                {/* Coordinates + embedded map (SPEC-097) */}
+                {hasCoordinates && data.latitude != null && data.longitude != null && (
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
                             <div>
                                 <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
                                     {t('admin-pages.accommodations.location.coordinates')}
                                 </span>
                                 <p className="text-foreground text-sm">
-                                    {data.latitude && data.longitude && (
-                                        <>
-                                            {formatCoordinate(data.latitude, 'lat')},{' '}
-                                            {formatCoordinate(data.longitude, 'lng')}
-                                        </>
-                                    )}
+                                    {formatCoordinate(data.latitude, 'lat')},{' '}
+                                    {formatCoordinate(data.longitude, 'lng')}
                                 </p>
                             </div>
+                            {getMapUrl() && (
+                                <a
+                                    href={getMapUrl() || undefined}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center rounded-md border border-border bg-background px-3 py-1.5 font-medium text-foreground text-xs shadow-sm hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                                >
+                                    <Icon
+                                        name="map-pin"
+                                        className="mr-1 h-3 w-3"
+                                    />
+                                    {t('admin-pages.accommodations.location.viewOnMap')}
+                                </a>
+                            )}
                         </div>
-
-                        {/* Map Link */}
-                        {getMapUrl() && (
-                            <a
-                                href={getMapUrl() || undefined}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center rounded-md border border-border bg-background px-3 py-1.5 font-medium text-foreground text-xs shadow-sm hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                            >
-                                <Icon
-                                    name="map-pin"
-                                    className="mr-1 h-3 w-3"
-                                />
-                                {t('admin-pages.accommodations.location.viewOnMap')}
-                            </a>
-                        )}
+                        <LocationMapView
+                            lat={data.latitude}
+                            lng={data.longitude}
+                            markerLabel={data.address ?? undefined}
+                        />
                     </div>
                 )}
 
