@@ -91,6 +91,12 @@ export default defineConfig({
             // components (e.g. accommodation cover images kept on <Image> after T-048)
             // can fetch from res.cloudinary.com without a config error.
             { protocol: 'https', hostname: 'res.cloudinary.com' },
+            // Public stock photo CDNs used by the seed fixtures.
+            { protocol: 'https', hostname: 'images.pexels.com' },
+            { protocol: 'https', hostname: 'images.unsplash.com' },
+            { protocol: 'https', hostname: 'i0.wp.com' },
+            { protocol: 'https', hostname: 'i1.wp.com' },
+            { protocol: 'https', hostname: 'i2.wp.com' },
             ...(apiHostname && apiHostname !== 'localhost' ? [{ hostname: apiHostname }] : [])
         ]
     },
