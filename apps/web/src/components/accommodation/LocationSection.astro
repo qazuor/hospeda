@@ -31,25 +31,30 @@ const mapStrings = {
 ---
 
 <section class="location-section">
-  <h2 class="location-section__title">{t('accommodations.detail.locationDetail.title')}</h2>
-
-  <div class="location-section__destination">
-    <LocationIcon size="sm" weight="duotone" aria-hidden="true" />
-    <a href={`/${lang}/destinos/${destination.slug}`} class="location-section__link">
-      {destination.name}
-    </a>
-  </div>
+  <header class="location-section__header">
+    <h2 class="location-section__title">
+      {t('accommodations.detail.locationDetail.title')}
+    </h2>
+    <div class="location-section__destination">
+      <LocationIcon size="sm" weight="duotone" aria-hidden="true" />
+      <a href={`/${lang}/destinos/${destination.slug}`} class="location-section__link">
+        {destination.name}
+      </a>
+    </div>
+  </header>
 
   {approximateLocation ? (
-    <LocationMap
-      client:only="react"
-      mode="approximate"
-      lat={approximateLocation.lat}
-      lng={approximateLocation.lng}
-      radiusMeters={approximateLocation.radiusMeters}
-      ariaLabel={t('maps.ariaLabelAccommodation')}
-      i18nStrings={mapStrings}
-    />
+    <div class="location-section__map">
+      <LocationMap
+        client:only="react"
+        mode="approximate"
+        lat={approximateLocation.lat}
+        lng={approximateLocation.lng}
+        radiusMeters={approximateLocation.radiusMeters}
+        ariaLabel={t('maps.ariaLabelAccommodation')}
+        i18nStrings={mapStrings}
+      />
+    </div>
   ) : (
     <div class="location-section__map-placeholder">
       <div class="location-section__placeholder-content">
@@ -63,18 +68,28 @@ const mapStrings = {
 </section>
 
 <style>
+  .location-section {
+    margin-top: var(--space-8, 40px);
+    margin-bottom: var(--space-6, 24px);
+  }
+  .location-section__header {
+    margin-bottom: var(--space-5, 20px);
+  }
   .location-section__title {
     font-family: var(--font-heading);
-    font-size: 1.5rem;
+    font-size: 1.875rem;
     font-weight: 600;
     color: var(--foreground);
-    margin-bottom: var(--space-4, 16px);
+    margin: 0 0 var(--space-2, 8px);
+    line-height: 1.2;
+  }
+  .location-section__map {
+    width: 100%;
   }
   .location-section__destination {
     display: flex;
     align-items: center;
     gap: var(--space-2, 8px);
-    margin-bottom: var(--space-4, 16px);
   }
   .location-section__link {
     font-family: var(--font-sans);

@@ -1,7 +1,10 @@
 .root {
     position: relative;
     width: 100%;
-    border-radius: var(--radius-organic-sm, 0px 75px);
+    /* Symmetric radius keeps text and map content from being clipped at the
+     * organic corners; switched away from --radius-organic-sm (0 75px) so the
+     * disclaimer line is fully readable and the tile edges don't cut off. */
+    border-radius: var(--radius-card, 16px);
     overflow: hidden;
     box-shadow: var(--shadow-card, 0 6px 24px rgb(0 0 0 / 0.08));
     background-color: var(--surface-warm, #faf6f0);
@@ -9,13 +12,19 @@
 
 .container {
     width: 100%;
-    min-height: 400px;
+    min-height: 560px;
     height: 100%;
+}
+
+@media (max-width: 1024px) {
+    .container {
+        min-height: 480px;
+    }
 }
 
 @media (max-width: 768px) {
     .container {
-        min-height: 300px;
+        min-height: 400px;
     }
 }
 
