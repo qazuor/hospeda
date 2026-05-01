@@ -2,6 +2,36 @@ import { z } from 'zod';
 import { isValidLatitude, isValidLongitude } from '../utils/utils.js';
 
 /**
+ * Approximate Location Schema
+ * Privacy-aware obfuscated coordinates for public exposure of accommodation
+ * locations. Computed deterministically server-side from exact coordinates and
+ * a secret salt; the real coordinates are never exposed alongside this object.
+ *
+ * The frontend renders a circle of `radiusMeters` centered on `(lat, lng)`
+ * instead of a precise pin. See `obfuscateCoordinates` in
+ * `@repo/service-core/utils/location-obfuscation` for the algorithm.
+ */
+export const ApproximateLocationSchema = z.object({
+    lat: z
+        .number({ message: 'zodError.common.approximateLocation.lat.required' })
+        .min(-90, { message: 'zodError.common.approximateLocation.lat.min' })
+        .max(90, { message: 'zodError.common.approximateLocation.lat.max' }),
+    lng: z
+        .number({ message: 'zodError.common.approximateLocation.lng.required' })
+        .min(-180, { message: 'zodError.common.approximateLocation.lng.min' })
+        .max(180, { message: 'zodError.common.approximateLocation.lng.max' }),
+    radiusMeters: z
+        .number({
+            message: 'zodError.common.approximateLocation.radiusMeters.required'
+        })
+        .int({ message: 'zodError.common.approximateLocation.radiusMeters.int' })
+        .positive({
+            message: 'zodError.common.approximateLocation.radiusMeters.positive'
+        })
+});
+export type ApproximateLocationType = z.infer<typeof ApproximateLocationSchema>;
+
+/**
  * Coordinates Schema
  * Represents geographic coordinates with latitude and longitude
  */

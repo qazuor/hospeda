@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ApproximateLocationSchema } from '../../common/location.schema.js';
 import { AmenityAdminSchema, AmenityProtectedSchema } from '../amenity/amenity.access.schema.js';
 import { CityDestinationRefSchema } from '../destination/destination.refs.schema.js';
 import { FeatureAdminSchema, FeatureProtectedSchema } from '../feature/feature.access.schema.js';
@@ -107,7 +108,16 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
      * geographic context that used to live inside `location` and the heavy
      * `destination` relation projection.
      */
-    cityDestination: CityDestinationRefSchema.optional()
+    cityDestination: CityDestinationRefSchema.optional(),
+    /**
+     * Privacy-aware obfuscated coordinates (SPEC-097). The frontend renders a
+     * circle of `radiusMeters` centered on `(lat, lng)` instead of a precise
+     * pin. The exact coordinates are never exposed alongside this field — the
+     * service projection strips `location.coordinates`, `location.street`,
+     * `location.number`, `location.floor`, and `location.apartment` from the
+     * public payload.
+     */
+    approximateLocation: ApproximateLocationSchema.optional()
 });
 
 export type AccommodationPublic = z.infer<typeof AccommodationPublicSchema>;
@@ -163,7 +173,9 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     /** Amenities with junction table data from r_accommodation_amenity (protected tier). */
     amenities: z.array(AmenityProtectedSchema).optional(),
     /** Features with junction table data from r_accommodation_feature (protected tier). */
-    features: z.array(FeatureProtectedSchema).optional()
+    features: z.array(FeatureProtectedSchema).optional(),
+    /** SPEC-097 — Approximate location preview ("how a public visitor sees this"). */
+    approximateLocation: ApproximateLocationSchema.optional()
 });
 
 export type AccommodationProtected = z.infer<typeof AccommodationProtectedSchema>;
@@ -184,7 +196,9 @@ export const AccommodationAdminSchema = AccommodationSchema.extend({
     /** Amenities with junction table data from r_accommodation_amenity (admin tier). */
     amenities: z.array(AmenityAdminSchema).optional(),
     /** Features with junction table data from r_accommodation_feature (admin tier). */
-    features: z.array(FeatureAdminSchema).optional()
+    features: z.array(FeatureAdminSchema).optional(),
+    /** SPEC-097 — Approximate location preview ("how a public visitor sees this"). */
+    approximateLocation: ApproximateLocationSchema.optional()
 });
 
 export type AccommodationAdmin = z.infer<typeof AccommodationAdminSchema>;

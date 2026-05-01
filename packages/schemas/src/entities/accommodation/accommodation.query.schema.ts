@@ -5,6 +5,7 @@ import {
     HttpSortingSchema
 } from '../../api/http/base-http.schema.js';
 import { createAverageRatingField } from '../../common/helpers.schema.js';
+import { ApproximateLocationSchema } from '../../common/location.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
 import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
@@ -301,7 +302,9 @@ export const AccommodationSummarySchema = AccommodationSchema.pick({
 }).extend({
     // Explicitly make review fields optional since they might not be present in summary responses
     reviewsCount: z.number().int().min(0).default(0).optional(),
-    averageRating: createAverageRatingField({ optional: true, default: 0 })
+    averageRating: createAverageRatingField({ optional: true, default: 0 }),
+    /** SPEC-097 — Privacy-aware obfuscated coordinates for public listing maps. */
+    approximateLocation: ApproximateLocationSchema.optional()
 });
 // Type: Summary
 export type AccommodationSummary = z.infer<typeof AccommodationSummarySchema>;

@@ -82,6 +82,7 @@ export enum PermissionEnum {
     ACCOMMODATION_VIEW_ALL = 'accommodation.viewAll', // Allows viewing all accommodations (including private).
     ACCOMMODATION_VIEW_PRIVATE = 'accommodation.view.private', // Allows viewing private accommodations.
     ACCOMMODATION_VIEW_DRAFT = 'accommodation.view.draft', // Allows viewing draft accommodations.
+    ACCOMMODATION_LOCATION_EXACT_VIEW = 'accommodation.location.exact.view', // Allows viewing exact coordinates and full address (privacy-sensitive). Public/anonymous users get approximated location only.
     ACCOMMODATION_TAGS_MANAGE = 'accommodation.tags.manage', // Allows managing tags for accommodations.
     ACCOMMODATION_FEATURES_EDIT = 'accommodation.features.edit', // Allows editing accommodation features.
     ACCOMMODATION_AMENITIES_EDIT = 'accommodation.amenities.edit', // Allows editing accommodation amenities.
