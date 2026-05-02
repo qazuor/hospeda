@@ -12,8 +12,15 @@
 
 -- Refresh function: performs a non-blocking concurrent refresh.
 -- CONCURRENTLY requires the UNIQUE index from 0003 to be present at call time.
+-- SECURITY DEFINER allows callers without ownership of search_index (e.g. the
+-- limited gh_refresh role granted EXECUTE in 0021) to trigger a refresh without
+-- needing direct ALTER privileges on the materialized view.
 CREATE OR REPLACE FUNCTION refresh_search_index()
-RETURNS void LANGUAGE plpgsql AS $$
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 BEGIN
   REFRESH MATERIALIZED VIEW CONCURRENTLY search_index;
 END;

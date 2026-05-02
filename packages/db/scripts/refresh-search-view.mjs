@@ -19,7 +19,10 @@ async function main() {
     await client.connect();
     // eslint-disable-next-line no-console -- Script status output
     console.info('Refreshing search_index materialized view…');
-    await client.query('REFRESH MATERIALIZED VIEW CONCURRENTLY search_index;');
+    // Call the SECURITY DEFINER function so the cron role only needs EXECUTE
+    // on this single function (granted via 0021_create_gh_refresh_user.sql),
+    // not ownership of the materialized view.
+    await client.query('SELECT refresh_search_index();');
     await client.end();
     // eslint-disable-next-line no-console -- Script status output
     console.info('Done.');
