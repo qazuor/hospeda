@@ -59,10 +59,10 @@ const accommodationDeletedAt = rawAccommodation.deletedAt
 // --- Parallel secondary fetches with graceful degradation ---
 const [similarResult, ownerPropsResult, postsResult, eventsResult, reviewsResult] =
     await Promise.allSettled([
-        accommodationsApi.getSimilar({ id: accommodation.id, limit: 6 }),
+        accommodationsApi.getSimilar({ id: accommodation.id, limit: 3 }),
         accommodationsApi.listByOwner({ userId: accommodation.owner.id, pageSize: 4 }),
         postsApi.list({ destinationId: accommodation.destination.id, pageSize: 4 }),
-        eventsApi.list({ destinationId: accommodation.destination.id, pageSize: 4 }),
+        eventsApi.list({ destinationId: accommodation.destination.id, pageSize: 3 }),
         accommodationsApi.getReviews({ id: accommodation.id, page: 1, pageSize: 3 })
     ]);
 
@@ -81,7 +81,9 @@ function extractItems(settled: PromiseSettledResult<unknown>): Record<string, un
     return [];
 }
 
-const similarCards = extractItems(similarResult).map((item) => toAccommodationCardProps({ item }));
+const similarCards = extractItems(similarResult)
+    .slice(0, 3)
+    .map((item) => toAccommodationCardProps({ item }));
 const ownerCards = extractItems(ownerPropsResult)
     .filter((item) => String(item.id) !== accommodation.id)
     .map((item) => toAccommodationCardProps({ item }));
@@ -89,7 +91,7 @@ const topReviews = extractItems(reviewsResult);
 
 // Posts and events: pass raw items for lightweight cards
 const postItems = extractItems(postsResult);
-const eventItems = extractItems(eventsResult);
+const eventItems = extractItems(eventsResult).slice(0, 3);
 
 // --- Auth ---
 const userId = Astro.locals.user?.id ?? null;
