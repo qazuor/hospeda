@@ -85,7 +85,8 @@ import { adminSponsorshipPackageRoutes } from './sponsorship-package';
 import { publicStatsRoutes } from './stats/public';
 import { publicTestimonialRoutes } from './testimonials/public';
 import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
-import { protectedUserBookmarkRoutes } from './user-bookmark';
+import { protectedUserBookmarkRoutes, publicUserBookmarkRoutes } from './user-bookmark';
+import { protectedUserBookmarkCollectionRoutes } from './user-bookmark-collection';
 import { createMercadoPagoWebhookRoutes, webhookHealthRoutes } from './webhooks';
 import { adminWebhookRouter } from './webhooks/admin';
 
@@ -191,6 +192,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Testimonials
         app.route('/api/v1/public/testimonials', publicTestimonialRoutes);
 
+        // User bookmarks (public count by entity — no auth required)
+        app.route('/api/v1/public/user-bookmarks', publicUserBookmarkRoutes);
+
         apiLogger.debug('✅ Public routes registered successfully');
 
         // ═══════════════════════════════════════════════════════════════════════
@@ -208,6 +212,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/auth', protectedAuthRoutes);
         app.route('/api/v1/protected/users', protectedUserRoutes);
         app.route('/api/v1/protected/user-bookmarks', protectedUserBookmarkRoutes);
+        app.route(
+            '/api/v1/protected/user-bookmark-collections',
+            protectedUserBookmarkCollectionRoutes
+        );
         app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
         app.route('/api/v1/protected/host-onboarding', protectedHostOnboardingRoutes);
         app.route('/api/v1/protected/destinations', protectedDestinationRoutes);

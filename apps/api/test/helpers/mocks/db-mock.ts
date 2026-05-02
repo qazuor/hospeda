@@ -268,6 +268,25 @@ export function createDbMock() {
             }
         },
 
+        // Mock UserBookmarkCollectionModel
+        UserBookmarkCollectionModel: class MockUserBookmarkCollectionModel {
+            async findById(_id: string) {
+                return null;
+            }
+            async findAll(_filters: unknown) {
+                return { items: [], total: 0 };
+            }
+            async create(_data: unknown) {
+                return { id: 'user_bookmark_collection_mock_id', createdAt: new Date() };
+            }
+            async update(_id: string, _data: unknown) {
+                return { id: _id, updatedAt: new Date() };
+            }
+            async delete(_id: string) {
+                return { id: _id, deletedAt: new Date() };
+            }
+        },
+
         // Mock UserIdentityModel
         UserIdentityModel: class MockUserIdentityModel {
             async findById(_id: string) {

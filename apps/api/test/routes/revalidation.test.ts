@@ -59,7 +59,9 @@ vi.mock('@repo/service-core', async () => {
     const { EventService, EventLocationService, EventOrganizerService } = await import(
         '../helpers/mocks/event-services'
     );
-    const { UserService, UserBookmarkService } = await import('../helpers/mocks/user-services');
+    const { UserService, UserBookmarkService, UserBookmarkCollectionService } = await import(
+        '../helpers/mocks/user-services'
+    );
     const {
         ExchangeRateService,
         ExchangeRateConfigService,
@@ -130,6 +132,7 @@ vi.mock('@repo/service-core', async () => {
         EventOrganizerService,
         UserService,
         UserBookmarkService,
+        UserBookmarkCollectionService,
         ExchangeRateService,
         ExchangeRateConfigService,
         ExchangeRateFetcher,
