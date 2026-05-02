@@ -296,6 +296,13 @@
             "status": "in-progress",
             "progress": "94/99",
             "path": "SPEC-092-e2e-test-suite"
+        },
+        {
+            "specId": "SPEC-098",
+            "title": "Favorites & Collections MVP",
+            "status": "completed",
+            "progress": "110/110",
+            "path": "SPEC-098-favorites-collections-mvp"
         }
     ],
     "standalone": {
