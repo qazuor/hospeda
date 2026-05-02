@@ -29,7 +29,21 @@ export default defineConfig({
                 branches: 60,
                 statements: 70
             },
-            exclude: ['node_modules/', 'dist/', 'test/', '**/*.d.ts', '**/*.config.*', 'scripts/']
+            exclude: [
+                'node_modules/',
+                'dist/',
+                'test/',
+                '**/*.d.ts',
+                '**/*.config.*',
+                'scripts/',
+                // Documentation example components (not production code)
+                'docs/',
+                // Trivial Phosphor wrappers — each file is a single
+                // `createPhosphorIcon(X, 'name')` call. The factory itself
+                // is fully covered by test/phosphor-props.test.tsx, so
+                // adding 400+ identical render tests would be pure noise.
+                'src/icons/**/*.tsx'
+            ]
         }
     }
 });
