@@ -1294,8 +1294,8 @@ export class AccommodationService extends BaseCrudService<
         // caller-provided pageSize instead of falling back to its default of 10.
         return this.model.searchWithRelations({
             ...params,
-            page: ctx.pagination?.page,
-            pageSize: ctx.pagination?.pageSize,
+            page: ctx.pagination?.page ?? 1,
+            pageSize: ctx.pagination?.pageSize ?? 10,
             sortBy: ctx.pagination?.sortBy,
             sortOrder: ctx.pagination?.sortOrder,
             excludeRestricted: !hasVipAccess

@@ -89,10 +89,12 @@ describe('env utilities', () => {
                 PUBLIC_BETTER_AUTH_URL: 'HOSPEDA_BETTER_AUTH_URL'
             });
 
+            // biome-ignore lint/suspicious/noExplicitAny: Vite 7 plugin type has `this: ConfigPluginContext` binding that cannot be invoked from tests; cast to any for invocation.
+            const pluginConfig = plugin.config as any;
             const config =
-                typeof plugin.config === 'function'
-                    ? plugin.config({} as UserConfig, { command: 'build' } as ConfigEnv)
-                    : plugin.config?.handler?.({} as UserConfig, { command: 'build' } as ConfigEnv);
+                typeof pluginConfig === 'function'
+                    ? pluginConfig({} as UserConfig, { command: 'build' } as ConfigEnv)
+                    : pluginConfig?.handler?.({} as UserConfig, { command: 'build' } as ConfigEnv);
             expect(config).toEqual({
                 define: {
                     'import.meta.env.PUBLIC_API_URL': '"https://api.example.com"',
@@ -108,10 +110,12 @@ describe('env utilities', () => {
                 PUBLIC_MISSING: 'MISSING_VAR'
             });
 
+            // biome-ignore lint/suspicious/noExplicitAny: Vite 7 plugin type has `this: ConfigPluginContext` binding that cannot be invoked from tests; cast to any for invocation.
+            const pluginConfig = plugin.config as any;
             const config =
-                typeof plugin.config === 'function'
-                    ? plugin.config({} as UserConfig, { command: 'build' } as ConfigEnv)
-                    : plugin.config?.handler?.({} as UserConfig, { command: 'build' } as ConfigEnv);
+                typeof pluginConfig === 'function'
+                    ? pluginConfig({} as UserConfig, { command: 'build' } as ConfigEnv)
+                    : pluginConfig?.handler?.({} as UserConfig, { command: 'build' } as ConfigEnv);
             expect(config).toEqual({
                 define: {
                     'import.meta.env.PUBLIC_MISSING': '""',
