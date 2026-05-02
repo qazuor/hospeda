@@ -1571,4 +1571,5 @@ function BookingStatus({ status }) {
 
 ---
 
+<!-- markdownlint-disable-next-line MD036 -->
 *Last updated: 2025-01-05*

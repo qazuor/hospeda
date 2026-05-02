@@ -1,5 +1,6 @@
 # Custom Validators Guide - @repo/schemas
 
+<!-- markdownlint-disable-next-line MD036 -->
 **Master custom validation with refinements, transforms, and custom validators**
 
 This guide covers all custom validation patterns available in the `@repo/schemas` package, including built-in utilities, custom refinements, transforms, and how to create your own validators.

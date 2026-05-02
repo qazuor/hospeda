@@ -529,7 +529,7 @@ psql "$DATABASE_URL" -c "COPY accommodations FROM STDIN CSV HEADER" < recovered_
 
 If full database recovery needed:
 
-**Option A: Promote branch to production**
+#### Option A: Promote branch to production
 
 **⚠️  WARNING**: This replaces current production database
 
@@ -541,7 +541,7 @@ If full database recovery needed:
 6. Restart application
 7. Verify functionality
 
-**Option B: Export/Import data**
+#### Option B: Export/Import data
 
 For more control:
 
@@ -817,7 +817,7 @@ SELECT count(*) FROM accommodations WHERE [corruption-condition];
 
 **Step 3**: Identify recovery method
 
-**Option A: Fix data in place**
+#### Option A: Fix data in place
 
 If corruption is simple:
 
@@ -830,7 +830,7 @@ WHERE price_per_night < 0;
 DELETE FROM bookings WHERE check_in > check_out;
 ```
 
-**Option B: Restore from backup**
+#### Option B: Restore from backup
 
 If corruption is complex:
 

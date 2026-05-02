@@ -581,4 +581,5 @@ console.log(`Metrics overhead: ${overhead}ms`);
 
 ---
 
+<!-- markdownlint-disable-next-line MD036 -->
 *The metrics system provides comprehensive monitoring without external dependencies while maintaining high performance. Last updated: 2024-12-19*

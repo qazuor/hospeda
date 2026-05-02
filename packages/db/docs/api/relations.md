@@ -106,7 +106,7 @@ export const productsRelations = relations(products, ({ one, many }) => ({
 
 Each entity has exactly one related entity.
 
-**Example: User ↔ Profile**
+#### Example: User ↔ Profile
 
 ```typescript
 // schemas/user/user.dbschema.ts
@@ -158,7 +158,7 @@ console.log(user?.profile.avatar);
 
 One entity has many related entities.
 
-**Example: Product ↔ Reviews**
+#### Example: Product ↔ Reviews
 
 ```typescript
 // schemas/product/product.dbschema.ts
@@ -224,7 +224,7 @@ console.log(review?.author.name);
 
 Multiple entities relate to multiple entities through a junction table.
 
-**Example: Product ↔ Tags**
+#### Example: Product ↔ Tags
 
 ```typescript
 // schemas/product/product.dbschema.ts
@@ -346,7 +346,7 @@ console.log(product?.tags);  // Direct tag array
 
 Entity relates to itself, typically for hierarchical data.
 
-**Example: Category Tree**
+#### Example: Category Tree
 
 ```typescript
 // schemas/category/category.dbschema.ts
@@ -1120,4 +1120,5 @@ for (const child of electronics?.children || []) {
 
 ---
 
+<!-- markdownlint-disable-next-line MD036 -->
 *Last updated: 2025-11-05*

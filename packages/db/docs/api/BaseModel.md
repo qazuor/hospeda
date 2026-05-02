@@ -2110,4 +2110,5 @@ All methods automatically log queries and errors via the internal logger. Review
 
 ---
 
+<!-- markdownlint-disable-next-line MD036 -->
 *Last updated: 2025-11-05*

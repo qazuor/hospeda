@@ -440,7 +440,7 @@ const productFull = await productModel.findWithRelations(
 
 ### N+1 Query Problem
 
-**❌ Bad: N+1 queries**
+#### Bad: N+1 queries
 
 ```typescript
 // Loads products
@@ -454,7 +454,7 @@ for (const product of products.items) {
 // Total: 1 + N queries
 ```
 
-**✅ Good: Eager loading**
+#### Good: Eager loading
 
 ```typescript
 // Loads products with categories in 1 query
@@ -470,7 +470,7 @@ for (const product of items) {
 
 ### Selective Loading
 
-**❌ Bad: Load all relations**
+#### Bad: Load all relations
 
 ```typescript
 // Loads everything (slow)
@@ -486,7 +486,7 @@ const product = await productModel.findWithRelations(
 );
 ```
 
-**✅ Good: Load only needed relations**
+#### Good: Load only needed relations
 
 ```typescript
 // Loads only category (fast)

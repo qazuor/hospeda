@@ -1020,4 +1020,5 @@ export const logTestRequest = (request: any, response: any) => {
 
 ---
 
+<!-- markdownlint-disable-next-line MD036 -->
 *This testing guide ensures comprehensive coverage and high code quality across the entire API. Last updated: 2024-12-19*

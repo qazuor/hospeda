@@ -469,6 +469,7 @@ You now know how to:
 - ✅ Add relationships between entities
 - ✅ Debug common issues
 
+<!-- markdownlint-disable-next-line MD036 -->
 **Total time: 5 minutes**
 
 For more advanced use cases, see the [Complete Guides](./guides/) and [Examples](./examples/).

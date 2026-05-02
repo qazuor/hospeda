@@ -1077,7 +1077,7 @@ function DependentFieldsForm() {
 
 ### Do's
 
-**✅ Use Zod for validation**
+#### Use Zod for validation
 
 ```tsx
 // ✅ Good - type-safe validation
@@ -1089,7 +1089,7 @@ const schema = z.string().email();
 >
 ```
 
-**✅ Handle all form states**
+#### Handle all form states
 
 ```tsx
 // ✅ Good - user feedback
@@ -1105,14 +1105,14 @@ const schema = z.string().email();
 )}
 ```
 
-**✅ Use field components for consistency**
+#### Use field components for consistency
 
 ```tsx
 // ✅ Good - reusable components
 <FormField field={field} label="Email" type="email" />
 ```
 
-**✅ Debounce async validation**
+#### Debounce async validation
 
 ```tsx
 // ✅ Good - avoid excessive API calls
@@ -1125,7 +1125,7 @@ const schema = z.string().email();
 
 ### Don'ts
 
-**❌ Don't forget preventDefault**
+#### Don't forget preventDefault
 
 ```tsx
 // ❌ Bad - page will reload
@@ -1139,7 +1139,7 @@ const schema = z.string().email();
 }}>
 ```
 
-**❌ Don't mutate form values directly**
+#### Don't mutate form values directly
 
 ```tsx
 // ❌ Bad - doesn't trigger reactivity
@@ -1149,7 +1149,7 @@ form.state.values.email = 'new@email.com';
 form.setFieldValue('email', 'new@email.com');
 ```
 
-**❌ Don't validate on every keystroke for expensive operations**
+#### Don't validate on every keystroke for expensive operations
 
 ```tsx
 // ❌ Bad - validates on every keystroke

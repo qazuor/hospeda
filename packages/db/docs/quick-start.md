@@ -1,5 +1,6 @@
 # Quick Start Guide
 
+<!-- markdownlint-disable-next-line MD036 -->
 **Get productive with @repo/db in 5 minutes**
 
 This guide will walk you through the essentials of using the database layer, from initialization to performing CRUD operations with relations and transactions. By the end, you'll be able to confidently work with models, schemas, and queries.

@@ -602,4 +602,5 @@ const processErrorAsync = async (error: Error, context: RequestContext) => {
 
 ---
 
+<!-- markdownlint-disable-next-line MD036 -->
 *The error handling system ensures consistent, secure, and user-friendly error responses across the entire API. Last updated: 2024-12-19*

@@ -1067,6 +1067,7 @@ pnpm --filter=@repo/icons test --changed
 
 ### Coverage Thresholds
 
+<!-- markdownlint-disable-next-line MD036 -->
 **Hospeda standard: 90% minimum**
 
 ```typescript
@@ -1620,4 +1621,5 @@ pnpm test SearchIcon.test.tsx
 
 ---
 
+<!-- markdownlint-disable-next-line MD036 -->
 *Last updated: 2025-01-05*

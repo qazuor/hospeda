@@ -311,4 +311,5 @@ These resources are living documents and should be updated regularly:
 
 ---
 
+<!-- markdownlint-disable-next-line MD036 -->
 *Last updated: 2025-11-06*
