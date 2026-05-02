@@ -15,6 +15,7 @@ exports[`ENV_REGISTRY > var count per category > should match expected distribut
   "debugging": 2,
   "docker": 5,
   "email": 4,
+  "features": 1,
   "i18n": 2,
   "integrations": 12,
   "messaging": 2,

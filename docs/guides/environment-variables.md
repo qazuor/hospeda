@@ -88,6 +88,12 @@ pnpm env:check
 | `HOSPEDA_RESEND_FROM_NAME` | string | no | no | - | Sender display name |
 | `HOSPEDA_ADMIN_NOTIFICATION_EMAILS` | string | no | no | - | Comma-separated admin emails |
 
+### Features / User limits (HOSPEDA_)
+
+| Variable | Type | Required | Secret | Default | Description |
+|----------|------|----------|--------|---------|-------------|
+| `HOSPEDA_MAX_COLLECTIONS_PER_USER` | number | no | no | `10` | Maximum active collections per user. Soft-deleted excluded. Range 1–10000. |
+
 ### Cron, Integrations, Monitoring (HOSPEDA_)
 
 | Variable | Type | Required | Secret | Default | Description |

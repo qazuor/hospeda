@@ -347,7 +347,15 @@ export const ApiEnvBaseSchema = z.object({
      * - 'redis': Redis sorted sets via ioredis (recommended for multi-instance production)
      * Falls back to in-memory automatically when 'redis' is selected but Redis is unavailable.
      */
-    HOSPEDA_RATE_LIMIT_BACKEND: z.enum(['memory', 'redis']).default('memory')
+    HOSPEDA_RATE_LIMIT_BACKEND: z.enum(['memory', 'redis']).default('memory'),
+
+    /**
+     * Maximum number of active collections (wishlists) a user may have.
+     * Soft-deleted collections are excluded from this count.
+     * Used by `UserBookmarkCollectionService._canCreate` to enforce the limit.
+     * Default: 10. Range: 1–10000.
+     */
+    HOSPEDA_MAX_COLLECTIONS_PER_USER: z.coerce.number().int().min(1).max(10000).default(10)
 });
 
 /**
