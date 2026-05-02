@@ -88,7 +88,7 @@ export function LocationMap(props: LocationMapProps) {
                 center={[lat, lng]}
                 zoom={zoom}
                 maxZoom={maxZoom}
-                scrollWheelZoom={false}
+                scrollWheelZoom={true}
                 className={styles.container}
             >
                 <TileLayer

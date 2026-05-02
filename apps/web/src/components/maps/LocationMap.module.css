@@ -8,6 +8,11 @@
     overflow: hidden;
     box-shadow: var(--shadow-card, 0 6px 24px rgb(0 0 0 / 0.08));
     background-color: var(--surface-warm, #faf6f0);
+    /* Leaflet's internal panes/controls use z-index 400-1000. Without a new
+     * stacking context they paint over the sticky wave header bar. Isolating
+     * here scopes those z-indexes to this subtree. */
+    isolation: isolate;
+    z-index: 0;
 }
 
 .container {
