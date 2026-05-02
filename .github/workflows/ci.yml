@@ -43,8 +43,10 @@ jobs:
       HOSPEDA_API_URL: ${{ secrets.HOSPEDA_API_URL }}
       HOSPEDA_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL }}
 
-      # Admin app (Vite format)
+      # Admin app (Vite format) — required for build-time env validation
       VITE_API_URL: ${{ secrets.HOSPEDA_API_URL }}
+      VITE_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL }}
+      VITE_BETTER_AUTH_URL: ${{ secrets.HOSPEDA_API_URL }}/api/auth
 
       # Web app (Astro PUBLIC_ format)
       PUBLIC_API_URL: ${{ secrets.HOSPEDA_API_URL }}
