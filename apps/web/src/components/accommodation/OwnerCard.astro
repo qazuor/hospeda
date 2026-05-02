@@ -62,28 +62,47 @@ const ownerAvatarUrl = owner.image
 
 <style>
   .owner-card {
+    position: relative;
     background-color: var(--card);
     border-radius: var(--radius-card, 24px);
-    padding: var(--space-5, 20px);
+    padding: var(--space-6, 24px) var(--space-5, 20px) var(--space-5, 20px);
     box-shadow: var(--shadow-card);
+    overflow: hidden;
+    transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+  }
+  .owner-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-accent) 100%);
+  }
+  .owner-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover, var(--shadow-card));
   }
   .owner-card__header {
     display: flex;
     align-items: center;
     gap: var(--space-3, 12px);
     margin-bottom: var(--space-4, 16px);
+    padding-bottom: var(--space-4, 16px);
+    border-bottom: 1px solid var(--border);
   }
-  .owner-card__avatar {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    object-fit: cover;
-    flex-shrink: 0;
-  }
+  .owner-card__avatar,
   .owner-card__avatar-fallback {
     width: 56px;
     height: 56px;
     border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px var(--core-card), 0 0 0 4px oklch(from var(--brand-primary) l c h / 0.25);
+  }
+  .owner-card__avatar {
+    object-fit: cover;
+  }
+  .owner-card__avatar-fallback {
     background-color: var(--primary);
     color: white;
     display: flex;
@@ -92,7 +111,13 @@ const ownerAvatarUrl = owner.image
     font-family: var(--font-heading);
     font-weight: 700;
     font-size: 1.2rem;
-    flex-shrink: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .owner-card,
+    .owner-card:hover {
+      transform: none;
+      transition: none;
+    }
   }
   .owner-card__info {
     display: flex;

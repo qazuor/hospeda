@@ -101,22 +101,42 @@ const hasDiscounts = discountEntries.length > 0;
 
 <style>
   .pricing-sidebar {
+    position: relative;
     background-color: var(--card);
     border-radius: var(--radius-card, 24px);
-    padding: var(--space-5, 20px);
+    padding: var(--space-6, 24px) var(--space-5, 20px) var(--space-5, 20px);
     box-shadow: var(--shadow-card);
+    overflow: hidden;
+    transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+  }
+  .pricing-sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--brand-accent) 0%, var(--brand-secondary) 100%);
+  }
+  .pricing-sidebar:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover, var(--shadow-card));
   }
   .pricing-sidebar__price-block {
     display: flex;
     align-items: baseline;
     gap: var(--space-2, 8px);
     margin-bottom: var(--space-4, 16px);
+    padding-bottom: var(--space-4, 16px);
+    border-bottom: 1px solid var(--border);
   }
   .pricing-sidebar__amount {
     font-family: var(--font-heading);
-    font-size: 2rem;
+    font-size: 2.25rem;
     font-weight: 700;
     color: var(--accent);
+    letter-spacing: -0.02em;
+    line-height: 1.05;
   }
   .pricing-sidebar__period {
     font-family: var(--font-sans);
@@ -139,6 +159,13 @@ const hasDiscounts = discountEntries.length > 0;
   .pricing-sidebar__breakdown-toggle:hover { text-decoration: underline; }
   .pricing-sidebar__breakdown-content {
     padding-top: var(--space-3, 12px);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pricing-sidebar,
+    .pricing-sidebar:hover {
+      transform: none;
+      transition: none;
+    }
   }
   .pricing-sidebar__fee-row,
   .pricing-sidebar__discount-row {
