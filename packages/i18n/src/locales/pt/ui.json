@@ -156,6 +156,17 @@
     "breadcrumbs": {
         "progress": "Progresso"
     },
+    "favorite": {
+        "add": "Adicionar aos favoritos",
+        "loading": "Verificando favorito...",
+        "auth_required": {
+            "message": "Para salvar seus favoritos você precisa de uma conta. É grátis e rápido.",
+            "title": "Faça login para salvar"
+        },
+        "remove": "Remover dos favoritos",
+        "error_generic": "Não foi possível atualizar o favorito. Tente novamente.",
+        "error_limit_reached": "Você atingiu o limite de favoritos. Atualize seu plano para adicionar mais."
+    },
     "filter": {
         "title": "Filtros",
         "apply": "Aplicar filtros",
@@ -176,5 +187,8 @@
         "closeFilters": "Fechar filtros",
         "activeCount": "{{count}} filtro ativo",
         "activeCountPlural": "{{count}} filtros ativos"
+    },
+    "sort": {
+        "most_bookmarked": "Mais salvos"
     }
 }

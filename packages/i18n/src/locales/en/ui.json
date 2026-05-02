@@ -156,6 +156,17 @@
     "breadcrumbs": {
         "progress": "Progress"
     },
+    "favorite": {
+        "add": "Add to favorites",
+        "loading": "Checking favorite...",
+        "auth_required": {
+            "message": "To save your favorites you need an account. It's free and quick.",
+            "title": "Sign in to save"
+        },
+        "remove": "Remove from favorites",
+        "error_generic": "Couldn't update favorite. Try again.",
+        "error_limit_reached": "You've reached your favorites limit. Upgrade your plan to add more."
+    },
     "filter": {
         "title": "Filters",
         "apply": "Apply filters",
@@ -176,5 +187,8 @@
         "closeFilters": "Close filters",
         "activeCount": "{{count}} active filter",
         "activeCountPlural": "{{count}} active filters"
+    },
+    "sort": {
+        "most_bookmarked": "Most saved"
     }
 }

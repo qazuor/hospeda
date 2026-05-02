@@ -22,6 +22,14 @@
         "mountain": "Mountain",
         "city": "City"
     },
+    "sort": {
+        "label": "Sort by",
+        "nameAsc": "Name (A-Z)",
+        "nameDesc": "Name (Z-A)",
+        "newest": "Newest",
+        "mostSaved": "Most saved",
+        "apply": "Apply"
+    },
     "types": {
         "COUNTRY": "Country",
         "REGION": "Region",
@@ -148,6 +156,11 @@
         "noResultsDetail": "We do not have any accommodations listed for this destination yet. Explore other destinations.",
         "pageTitle": "Accommodations in",
         "pageDescription": "Discover the best accommodations in"
+    },
+    "detail": {
+        "bookmark_count": "Saved by {{count}} people",
+        "bookmark_count_one": "Saved by {{count}} person",
+        "bookmark_count_zero": "Be the first to save it"
     },
     "detailPage": {
         "seoDescription": "Discover {name} in {province}. Complete guide with accommodations, events, attractions and how to get there.",

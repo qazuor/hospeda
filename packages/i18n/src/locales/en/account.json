@@ -192,6 +192,38 @@
             "event": "Events",
             "post": "Blog"
         },
+        "collections": {
+            "create": "Create collection",
+            "delete": "Delete collection",
+            "delete_confirm": "Are you sure you want to delete this collection? Bookmarks inside will become uncollected, not deleted.",
+            "edit": "Edit collection",
+            "empty": "You don't have any collections yet",
+            "limit_reached": "You've reached the maximum of {{max}} collections",
+            "move_to": "Move to collection",
+            "no_collection": "Uncollected",
+            "title": "My collections",
+            "usage": "{{current}} of {{max}} collections used",
+            "emptyBookmarks": "This collection has no favorites of the selected type.",
+            "removeFromCollection": "Remove from collection",
+            "removing": "Removing...",
+            "removeError": "Error removing favorite from collection",
+            "fetchError": "Could not load the collection. Please try again later.",
+            "prevPage": "Previous page",
+            "nextPage": "Next page",
+            "pageInfo": "Page {{page}} of {{total}}"
+        },
+        "filter": {
+            "all": "All",
+            "accommodations": "Accommodations",
+            "destinations": "Destinations",
+            "events": "Events",
+            "posts": "Posts",
+            "label": "Filter by type"
+        },
+        "bookmarks": {
+            "count_one": "{{count}} favorite",
+            "count_other": "{{count}} favorites"
+        },
         "empty": "You have no favorites in this category",
         "emptyAction": "Start exploring content to save your favorites",
         "delete": "Delete",
@@ -202,8 +234,17 @@
         "fetchError": "Error loading favorites",
         "listLabel": "My favorites",
         "cardType": "Type",
+        "notes": {
+            "cancel": "Cancel",
+            "placeholder": "Add a personal note...",
+            "save": "Save note"
+        },
         "removeBtn": "Remove",
         "removeLabel": "Remove from favorites",
+        "toast": {
+            "saved": "Saved to favorites",
+            "removed": "Removed from favorites"
+        },
         "errors": {
             "fetchFailed": "Error loading favorites",
             "removeFailed": "Error removing favorite"

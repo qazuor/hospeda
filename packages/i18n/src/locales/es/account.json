@@ -192,6 +192,38 @@
             "event": "Eventos",
             "post": "Blog"
         },
+        "collections": {
+            "create": "Crear colección",
+            "delete": "Borrar colección",
+            "delete_confirm": "¿Seguro que querés borrar esta colección? Los favoritos quedarán sin colección, no se borran.",
+            "edit": "Editar colección",
+            "empty": "Aún no tenés colecciones",
+            "limit_reached": "Ya alcanzaste el máximo de {{max}} colecciones",
+            "move_to": "Mover a colección",
+            "no_collection": "Sin colección",
+            "title": "Mis colecciones",
+            "usage": "{{current}} de {{max}} colecciones usadas",
+            "emptyBookmarks": "Esta colección no tiene favoritos del tipo seleccionado.",
+            "removeFromCollection": "Quitar de colección",
+            "removing": "Quitando...",
+            "removeError": "Error al quitar el favorito de la colección",
+            "fetchError": "No se pudo cargar la colección. Intentá de nuevo más tarde.",
+            "prevPage": "Página anterior",
+            "nextPage": "Página siguiente",
+            "pageInfo": "Página {{page}} de {{total}}"
+        },
+        "filter": {
+            "all": "Todos",
+            "accommodations": "Alojamientos",
+            "destinations": "Destinos",
+            "events": "Eventos",
+            "posts": "Posts",
+            "label": "Filtrar por tipo"
+        },
+        "bookmarks": {
+            "count_one": "{{count}} favorito",
+            "count_other": "{{count}} favoritos"
+        },
         "empty": "No tienes favoritos en esta categoria",
         "emptyAction": "Comienza explorando contenido para guardar tus favoritos",
         "delete": "Eliminar",
@@ -202,8 +234,17 @@
         "fetchError": "Error al cargar los favoritos",
         "listLabel": "Mis favoritos",
         "cardType": "Tipo",
+        "notes": {
+            "cancel": "Cancelar",
+            "placeholder": "Agregá una nota personal...",
+            "save": "Guardar nota"
+        },
         "removeBtn": "Quitar",
         "removeLabel": "Quitar de favoritos",
+        "toast": {
+            "saved": "Guardado en favoritos",
+            "removed": "Eliminado de favoritos"
+        },
         "errors": {
             "fetchFailed": "Error al cargar los favoritos",
             "removeFailed": "Error al quitar el favorito"

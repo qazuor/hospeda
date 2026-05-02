@@ -22,6 +22,14 @@
         "mountain": "Montanha",
         "city": "Cidade"
     },
+    "sort": {
+        "label": "Ordenar por",
+        "nameAsc": "Nome (A-Z)",
+        "nameDesc": "Nome (Z-A)",
+        "newest": "Mais recentes",
+        "mostSaved": "Mais salvos",
+        "apply": "Aplicar"
+    },
     "types": {
         "COUNTRY": "País",
         "REGION": "Região",
@@ -148,6 +156,11 @@
         "noResultsDetail": "Ainda não temos acomodações registradas para este destino. Explore outros destinos.",
         "pageTitle": "Acomodações em",
         "pageDescription": "Descubra as melhores acomodações em"
+    },
+    "detail": {
+        "bookmark_count": "Salvo por {{count}} pessoas",
+        "bookmark_count_one": "Salvo por {{count}} pessoa",
+        "bookmark_count_zero": "Seja o primeiro a salvar"
     },
     "detailPage": {
         "seoDescription": "Descubra {name} em {province}. Guia completo com hospedagens, eventos, atrações e como chegar.",
