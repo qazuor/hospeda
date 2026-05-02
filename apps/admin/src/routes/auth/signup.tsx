@@ -12,6 +12,7 @@ import { type AuthBackgroundImage, getRandomAuthImage } from '../../utils/auth-i
  */
 function AutoRedirect() {
     useEffect(() => {
+        // nosemgrep: javascript.lang.security.detect-eval-with-expression.detect-eval-with-expression
         const timer = setTimeout(() => {
             if (typeof window !== 'undefined') {
                 window.location.href = '/dashboard';

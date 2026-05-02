@@ -71,6 +71,7 @@ export const VerifyEmail = ({
 
                 // Auto-redirect after delay
                 if (redirectDelay > 0 && redirectTo) {
+                    // nosemgrep: javascript.lang.security.detect-eval-with-expression.detect-eval-with-expression
                     setTimeout(() => {
                         if (!cancelled && typeof window !== 'undefined') {
                             window.location.href = redirectTo;

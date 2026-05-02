@@ -783,6 +783,7 @@ export function FilterSidebar({
 
         if (debounceRef.current) clearTimeout(debounceRef.current);
 
+        // nosemgrep: javascript.lang.security.detect-eval-with-expression.detect-eval-with-expression
         debounceRef.current = setTimeout(() => {
             const params = buildParamsRef.current();
 
