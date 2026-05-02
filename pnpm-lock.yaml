@@ -786,7 +786,7 @@ importers:
         specifier: ^16.5.0
         version: 16.6.1
       vite:
-        specifier: ^8.0.10
+        specifier: '>=7.3.2'
         version: 8.0.10(@types/node@25.3.3)(esbuild@0.25.9)(jiti@2.6.1)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.1)
       zod:
         specifier: ^4.0.8
