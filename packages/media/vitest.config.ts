@@ -55,7 +55,13 @@ export default defineConfig({
                 // package's public API design.
                 'src/**/index.ts',
                 // Pure type definitions — no executable code.
-                'src/server/types.ts'
+                'src/server/types.ts',
+                // Test helpers exposed via `@repo/media/test-utils` are not
+                // production code; consumers exercise the relevant branches
+                // indirectly. Direct branch coverage of mock helpers would
+                // be artificial and would tie this config to internals of
+                // tests in other packages.
+                'src/test-utils/**'
             ]
         }
     }
