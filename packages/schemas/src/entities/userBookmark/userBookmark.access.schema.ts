@@ -42,7 +42,8 @@ export type UserBookmarkPublic = z.infer<typeof UserBookmarkPublicSchema>;
  *
  * Contains data for the authenticated owner of the bookmark.
  * Includes the userId so the owning user's own client can verify ownership,
- * the full description, and audit timestamps.
+ * the full description, audit timestamps, and collectionId so the frontend
+ * can split "uncollected" favourites from collection-grouped ones.
  *
  * Extends public fields with ownership and audit data.
  */
@@ -55,6 +56,9 @@ export const UserBookmarkProtectedSchema = UserBookmarkSchema.pick({
 
     // Ownership (visible only to the authenticated owner)
     userId: true,
+
+    // Collection membership — null/undefined = uncollected (loose favourite)
+    collectionId: true,
 
     // Additional bookmark metadata
     description: true,

@@ -29,6 +29,7 @@ export enum PermissionCategoryEnum {
     REVALIDATION = 'REVALIDATION',
     USER = 'USER',
     USER_BOOKMARK = 'USER_BOOKMARK',
+    USER_BOOKMARK_COLLECTION = 'USER_BOOKMARK_COLLECTION',
     CLIENT = 'CLIENT',
     PRODUCT = 'PRODUCT',
     SUBSCRIPTION = 'SUBSCRIPTION',
@@ -618,6 +619,13 @@ export enum PermissionEnum {
     USER_BOOKMARK_RESTORE = 'userBookmark.restore', // Allows restoring a deleted user bookmark.
     USER_BOOKMARK_HARD_DELETE = 'userBookmark.hardDelete', // Allows permanently deleting a user bookmark.
     USER_BOOKMARK_VIEW_ANY = 'userBookmark.viewAny', // Allows viewing any user's bookmarks (admin support).
+
+    // USER_BOOKMARK_COLLECTION: Permissions related to user bookmark collection management
+    USER_BOOKMARK_COLLECTION_CREATE = 'userBookmarkCollection.create', // Allows creating a new user bookmark collection.
+    USER_BOOKMARK_COLLECTION_UPDATE = 'userBookmarkCollection.update', // Allows updating a user bookmark collection.
+    USER_BOOKMARK_COLLECTION_DELETE = 'userBookmarkCollection.delete', // Allows deleting a user bookmark collection (soft delete).
+    USER_BOOKMARK_COLLECTION_VIEW = 'userBookmarkCollection.view', // Allows viewing user bookmark collection information.
+    USER_BOOKMARK_COLLECTION_VIEW_ANY = 'userBookmarkCollection.viewAny', // Allows viewing any user's bookmark collections (admin support).
 
     // BENEFIT_LISTING: Permissions related to benefit listing management
     BENEFIT_LISTING_CREATE = 'benefitListing.create', // Allows creating a new benefit listing.

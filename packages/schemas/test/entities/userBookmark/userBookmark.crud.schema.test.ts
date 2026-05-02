@@ -129,6 +129,32 @@ describe('UserBookmark CRUD Schemas', () => {
             });
             expect(() => UserBookmarkCreateInputSchema.parse(inputWithUnknownField)).toThrow();
         });
+
+        // Regression test: SPEC-098 T-S04 seed fixtures include collectionId.
+        // UserBookmarkCreateInputSchema previously omitted collectionId, causing
+        // `.strict()` to reject any seed/create payload that included the field.
+        it('should accept collectionId as optional UUID at create time', () => {
+            const inputWithCollection = createUserBookmarkInputFixture({
+                collectionId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+            });
+            const result = UserBookmarkCreateInputSchema.safeParse(inputWithCollection);
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept collectionId: null (uncollected bookmark) at create time', () => {
+            const inputWithNullCollection = createUserBookmarkInputFixture({
+                collectionId: null
+            });
+            const result = UserBookmarkCreateInputSchema.safeParse(inputWithNullCollection);
+            expect(result.success).toBe(true);
+        });
+
+        it('should reject collectionId with an invalid UUID value', () => {
+            const inputWithBadCollection = createUserBookmarkInputFixture({
+                collectionId: 'not-a-uuid'
+            });
+            expect(() => UserBookmarkCreateInputSchema.parse(inputWithBadCollection)).toThrow();
+        });
     });
 
     describe('UserBookmarkUpdateInputSchema', () => {

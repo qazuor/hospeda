@@ -23,6 +23,8 @@ export const createUserBookmarkFixture = (
         userId: '550e8400-e29b-41d4-a716-446655440001' as UserId,
         entityId: '6ba7b810-9dad-11d1-80b4-00c04fd430c8' as AccommodationId,
         entityType: EntityTypeEnum.ACCOMMODATION,
+        /** null = uncollected (loose favourite, not assigned to any collection) */
+        collectionId: null,
         name: 'My Favorite Beach House',
         description: 'Beautiful beachfront accommodation with amazing sunset views',
 

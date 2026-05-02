@@ -20,4 +20,5 @@ export * from './sponsorship/index.js';
 export * from './tag/index.js';
 export * from './user/index.js';
 export * from './userBookmark/index.js';
+export * from './userBookmarkCollection/index.js';
 export * from './revalidation/index.js';

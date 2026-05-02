@@ -24,6 +24,20 @@ export const UserBookmarkSchema = z.object({
         .string({ message: 'zodError.userBookmark.entityId.required' })
         .uuid({ message: 'zodError.userBookmark.entityId.invalidUuid' }),
     entityType: EntityTypeEnumSchema,
+    /**
+     * Optional reference to a user bookmark collection.
+     * Null means the bookmark is uncollected (a loose favourite).
+     * Undefined is treated equivalently to null on output — both indicate
+     * the bookmark has not been assigned to any collection.
+     *
+     * Additive field (SPEC-098 T-049c): existing consumers that do not
+     * read this field are unaffected.
+     */
+    collectionId: z
+        .string({ message: 'zodError.userBookmark.collectionId.invalidUuid' })
+        .uuid({ message: 'zodError.userBookmark.collectionId.invalidUuid' })
+        .nullable()
+        .optional(),
     name: z
         .string()
         .min(3, { message: 'zodError.userBookmark.name.min' })

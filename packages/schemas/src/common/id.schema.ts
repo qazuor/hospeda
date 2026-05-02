@@ -195,3 +195,6 @@ export type ServiceListingPlanIdType = z.infer<typeof ServiceListingPlanIdSchema
 
 export const TouristServiceIdSchema = BaseIdSchema;
 export type TouristServiceIdType = z.infer<typeof TouristServiceIdSchema>;
+
+export const UserBookmarkCollectionIdSchema = BaseIdSchema;
+export type UserBookmarkCollectionIdType = z.infer<typeof UserBookmarkCollectionIdSchema>;

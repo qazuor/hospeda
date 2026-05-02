@@ -133,6 +133,88 @@ export const UserBookmarkToggleHttpSchema = z.object({
 export type UserBookmarkToggleHttp = z.infer<typeof UserBookmarkToggleHttpSchema>;
 
 // ============================================================================
+// BULK CHECK SCHEMAS
+// ============================================================================
+
+/** Maximum number of entity IDs accepted per bulk-check request. */
+const MAX_BULK_CHECK_ENTITY_IDS = 100;
+
+/**
+ * Request body schema for the bulk bookmark check endpoint.
+ *
+ * Accepts a single entity type and up to {@link MAX_BULK_CHECK_ENTITY_IDS}
+ * entity UUIDs. The response returns a bookmark-status entry for each ID.
+ *
+ * @example
+ * ```ts
+ * const body: UserBookmarksCheckBulkRequest = {
+ *   entityType: EntityTypeEnum.ACCOMMODATION,
+ *   entityIds: ['uuid-1', 'uuid-2'],
+ * };
+ * ```
+ */
+export const UserBookmarksCheckBulkRequestSchema = z.object({
+    entityType: z.nativeEnum(EntityTypeEnum, {
+        message: 'Invalid entity type'
+    }),
+    entityIds: z
+        .array(z.string().uuid())
+        .min(1, 'At least one entity ID is required')
+        .max(
+            MAX_BULK_CHECK_ENTITY_IDS,
+            `Maximum ${MAX_BULK_CHECK_ENTITY_IDS} entity IDs per request`
+        )
+});
+
+export type UserBookmarksCheckBulkRequest = z.infer<typeof UserBookmarksCheckBulkRequestSchema>;
+
+/**
+ * Per-entity result entry returned by the bulk bookmark check.
+ *
+ * `bookmarkId` is `null` when the entity is not bookmarked by the current user.
+ * It is a plain string (not constrained to UUID format) to match the service
+ * layer's response contract.
+ *
+ * @example
+ * ```ts
+ * const entry: UserBookmarksCheckBulkResultEntry = {
+ *   isBookmarked: true,
+ *   bookmarkId: 'bm_abc123',
+ * };
+ * ```
+ */
+export const UserBookmarksCheckBulkResultEntrySchema = z.object({
+    isBookmarked: z.boolean(),
+    bookmarkId: z.string().nullable()
+});
+
+export type UserBookmarksCheckBulkResultEntry = z.infer<
+    typeof UserBookmarksCheckBulkResultEntrySchema
+>;
+
+/**
+ * Response schema for the bulk bookmark check endpoint.
+ *
+ * Returns a `Record<entityId, UserBookmarksCheckBulkResultEntry>` map so
+ * callers can look up the bookmark status of any requested entity in O(1).
+ *
+ * @example
+ * ```ts
+ * const response: UserBookmarksCheckBulkResponse = {
+ *   checks: {
+ *     'uuid-1': { isBookmarked: true,  bookmarkId: 'bm_abc' },
+ *     'uuid-2': { isBookmarked: false, bookmarkId: null },
+ *   },
+ * };
+ * ```
+ */
+export const UserBookmarksCheckBulkResponseSchema = z.object({
+    checks: z.record(z.string(), UserBookmarksCheckBulkResultEntrySchema)
+});
+
+export type UserBookmarksCheckBulkResponse = z.infer<typeof UserBookmarksCheckBulkResponseSchema>;
+
+// ============================================================================
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 

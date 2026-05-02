@@ -13,8 +13,18 @@ import { UserBookmarkSchema } from './userBookmark.schema.js';
 // ============================================================================
 
 /**
- * Schema for creating a new user bookmark
- * Omits server-generated fields (id, timestamps, audit fields)
+ * Schema for creating a new user bookmark.
+ * Omits server-generated fields (id, timestamps, audit fields).
+ *
+ * `collectionId` is optional at create-time (defaults to null — uncollected).
+ * This allows seed scripts and admin-level callers to set the collection
+ * directly during creation. UI consumers typically use the dedicated
+ * `addBookmarkToCollection` endpoint instead of passing `collectionId` here.
+ *
+ * NOTE (security): the service layer does NOT currently validate that the actor
+ * owns the referenced collection when `collectionId` is provided at create-time.
+ * This is acceptable for seed/admin usage. A future task should add ownership
+ * validation in the HTTP create handler for untrusted callers.
  */
 export const UserBookmarkCreateInputSchema = UserBookmarkSchema.omit({
     id: true,
@@ -79,3 +89,24 @@ export const UserBookmarkGetOutputSchema = z
     })
     .strict();
 export type UserBookmarkGetOutput = z.infer<typeof UserBookmarkGetOutputSchema>;
+
+// ============================================================================
+// NOTES UPDATE SCHEMA (inline notes editor — SPEC-098 T-032/T-034)
+// ============================================================================
+
+/**
+ * Schema for updating only the user-editable note fields on a bookmark.
+ * Strict: no extra fields allowed.
+ * Both fields are optional so the caller can update just one at a time.
+ *
+ * Constraints match the base schema minus the minimum length requirement
+ * (a blank name clears the label; a blank description clears the note).
+ */
+export const UserBookmarkUpdateNotesSchema = z
+    .object({
+        name: z.string().min(1).max(100).optional(),
+        description: z.string().max(300).optional()
+    })
+    .strict();
+
+export type UserBookmarkUpdateNotesInput = z.infer<typeof UserBookmarkUpdateNotesSchema>;
