@@ -2,9 +2,10 @@
 /**
  * @file FeaturedAccommodationsSection.astro
  * @description Homepage featured accommodations section. Displays a left-aligned
- * section header with a "Ver todos" action pill, a uniform-dark badge row for
- * filtering by accommodation type, and a 3-column responsive grid of
- * AccommodationCard components (3×2 layout, 6 cards).
+ * section header with a "Ver todos" action pill, a row of clickable
+ * `AccommodationTypeBadge` chips (per-type colour identity, link to the
+ * filtered listing) and a 3-column responsive grid of AccommodationCard
+ * components (3×2 layout, 6 cards).
  * Background uses `var(--core-background)` per the section alternation rule.
  */
 
@@ -12,13 +13,11 @@ import { AccommodationTypeEnum } from '@repo/schemas';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { getAccommodationTypeColor, getAccommodationTypeLabel } from '@/lib/colors';
 import { accommodationsApi, toAccommodationCardProps } from '@/lib/api';
 import type { AccommodationCardData } from '@/lib/api/transforms';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
-import BadgeRow from '@/components/shared/ui/BadgeRow.astro';
+import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
-import type { BadgeRowItem } from '@/components/shared/ui/BadgeRow.astro';
 import { webLogger } from '@/lib/logger';
 
 interface Props {
@@ -46,14 +45,9 @@ try {
   webLogger.error('API fetch failed', { endpoint: 'accommodations', error: err instanceof Error ? err.message : err });
 }
 
-const typeBadges: BadgeRowItem[] = ACCOMMODATION_TYPES.map((type) => ({
-  label: getAccommodationTypeLabel({ type, t }),
-  href: buildUrl({ locale, path: `/alojamientos/tipo/${type}/` }),
-  colorScheme: getAccommodationTypeColor({ type }),
-}));
-
 const seeAllLabel = t('home.featuredAccommodations.seeAllAction', 'Ver todos los alojamientos →');
 const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
+
 ---
 
 <section class="section accommodations">
@@ -69,8 +63,18 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
       actionHref={seeAllHref}
     />
 
-    <!-- Accommodation type filter badges: uniform dark style per Figma -->
-    <BadgeRow badges={typeBadges} uniformDark={true} />
+    <!-- Accommodation type filter badges: per-type colour identity,
+         clickable links to the filtered listing. -->
+    <div class="accommodations__types" aria-label={t('home.featuredAccommodations.typesLabel', 'Filtrar por tipo')}>
+      {ACCOMMODATION_TYPES.map((type) => (
+        <AccommodationTypeBadge
+          type={type}
+          locale={locale}
+          size="sm"
+          href={buildUrl({ locale, path: `/alojamientos/tipo/${type}/` })}
+        />
+      ))}
+    </div>
 
     <!-- Cards grid: 3 columns (3×2), 6 cards -->
     <div class="grid-cards--3col accommodations__grid">
@@ -95,5 +99,30 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
   }
   .accommodations__card-wrapper {
     height: 100%;
+  }
+  /* Mirrors the BadgeRow ergonomics: centered wrap on desktop, horizontal
+   * scroll snap on narrow viewports so all type pills stay reachable. */
+  .accommodations__types {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+  @media (max-width: 767px) {
+    .accommodations__types {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+      justify-content: flex-start;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 4px;
+      mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
+    }
+    .accommodations__types::-webkit-scrollbar {
+      display: none;
+    }
   }
 </style>

@@ -28,9 +28,18 @@ describe('AccommodationCard.astro', () => {
             expect(src).toContain("from './accommodation-card-icons'");
         });
 
-        it('should import getAccommodationTypeColor from @/lib/colors', () => {
+        it('should import getBadgeStatusColor from @/lib/colors for featured/new pills', () => {
             expect(src).toContain("from '@/lib/colors'");
-            expect(src).toContain('getAccommodationTypeColor');
+            expect(src).toContain('getBadgeStatusColor');
+        });
+
+        it('should import the shared AccommodationTypeBadge', () => {
+            expect(src).toContain("from '@/components/shared/ui/AccommodationTypeBadge.astro'");
+        });
+
+        it('should not import the per-type colour helpers (delegated to the badge)', () => {
+            expect(src).not.toContain('getAccommodationTypeColor');
+            expect(src).not.toContain('getAccommodationTypeLabel');
         });
 
         it('should import formatPrice from @/lib/format-utils', () => {

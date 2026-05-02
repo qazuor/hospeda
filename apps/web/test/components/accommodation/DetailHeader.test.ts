@@ -1,11 +1,11 @@
 /**
  * @file DetailHeader.test.ts
- * @description Source-reading tests for DetailHeader.astro after the Badge
- * migration (Phase 2). Asserts that the inline `<span>` badges have been
- * replaced by the shared Badge primitive, per-type colors via
- * `getAccommodationTypeColor`, and status colors via `getBadgeStatusColor`.
- * The `.detail-header__type-badge` / `.detail-header__status-badge` CSS rules
- * must still exist so compact-mode overrides keep working.
+ * @description Source-reading tests for DetailHeader.astro after the
+ * AccommodationTypeBadge unification. The detail header delegates the type
+ * pill to the shared `AccommodationTypeBadge` component (single source of
+ * truth for type colour + label) while keeping the generic `Badge` primitive
+ * for status pills (featured/new). Compact-mode overrides reach into the
+ * type badge through the `--acc-type-*` custom properties exposed by it.
  */
 
 import { readFileSync } from 'node:fs';
@@ -17,59 +17,67 @@ const src = readFileSync(
     'utf8'
 );
 
-describe('DetailHeader.astro — Badge migration', () => {
+describe('DetailHeader.astro — type badge unification', () => {
     describe('imports', () => {
-        it('imports Badge from Badge.astro', () => {
+        it('imports AccommodationTypeBadge from shared/ui', () => {
+            expect(src).toContain("from '@/components/shared/ui/AccommodationTypeBadge.astro'");
+        });
+
+        it('imports the generic Badge for status pills', () => {
             expect(src).toContain("from '@/components/shared/ui/Badge.astro'");
         });
 
-        it('imports getAccommodationTypeColor and getBadgeStatusColor', () => {
+        it('imports getBadgeStatusColor from @/lib/colors', () => {
             expect(src).toContain("from '@/lib/colors'");
-            expect(src).toContain('getAccommodationTypeColor');
             expect(src).toContain('getBadgeStatusColor');
         });
 
-        it('still imports getAccommodationTypeLabel for the label', () => {
-            expect(src).toContain('getAccommodationTypeLabel');
+        it('no longer imports getAccommodationTypeColor or its solid variant', () => {
+            expect(src).not.toContain('getAccommodationTypeColor');
+            expect(src).not.toContain('getAccommodationTypeColorSolid');
+        });
+
+        it('no longer imports getAccommodationTypeLabel (moved into the badge)', () => {
+            expect(src).not.toContain('getAccommodationTypeLabel');
         });
     });
 
     describe('badge rendering', () => {
-        it('uses the shared Badge primitive', () => {
+        it('renders the shared AccommodationTypeBadge for the type pill', () => {
+            expect(src).toMatch(/<AccommodationTypeBadge[^>]*type=\{accommodation\.type\}/);
+        });
+
+        it('forwards size="sm" to the type badge', () => {
+            expect(src).toMatch(/<AccommodationTypeBadge[\s\S]*?size="sm"/);
+        });
+
+        it('forwards class="detail-header__type-badge" so compact mode can target it', () => {
+            expect(src).toMatch(/<AccommodationTypeBadge[\s\S]*?class="detail-header__type-badge"/);
+        });
+
+        it('still uses the generic Badge primitive for status pills', () => {
             expect(src).toContain('<Badge');
-        });
-
-        it('does not render a `<span class="detail-header__type-badge">`', () => {
-            expect(src).not.toMatch(/<span[^>]*class="detail-header__type-badge"/);
-        });
-
-        it('does not render a `<span class="detail-header__status-badge">`', () => {
-            expect(src).not.toMatch(/<span[^>]*class="detail-header__status-badge"/);
-        });
-
-        it('forwards the class prop to Badge for the type pill', () => {
-            expect(src).toContain('class="detail-header__type-badge"');
-        });
-
-        it('forwards the class prop to Badge for status pills', () => {
             expect(src).toContain('class="detail-header__status-badge"');
+        });
+
+        it('does not render an inline `<span class="detail-header__type-badge">`', () => {
+            expect(src).not.toMatch(/<span[^>]*class="detail-header__type-badge"/);
         });
     });
 
     describe('CSS overrides preserved', () => {
-        it('still defines rules for `.detail-header__type-badge`', () => {
-            // Preserved for compact-mode and typography overrides, even after
-            // the Badge primitive owns the base colors.
-            expect(src).toContain('.detail-header__type-badge');
+        it('still defines compact-mode rules for the status pills', () => {
+            expect(src).toMatch(/wave-header--compact[\s\S]*?detail-header__status-badge/);
         });
 
-        it('still defines rules for `.detail-header__status-badge`', () => {
-            expect(src).toContain('.detail-header__status-badge');
-        });
-
-        it('still defines the compact-mode overrides for badges', () => {
-            expect(src).toContain('.wave-header--compact');
-            expect(src).toMatch(/wave-header--compact[^{]*detail-header__type-badge/);
+        it('compact mode overrides the type badge via custom properties (no !important)', () => {
+            expect(src).toMatch(
+                /wave-header--compact[\s\S]*?detail-header__type-badge[\s\S]*?--acc-type-font-size/
+            );
+            expect(src).toMatch(
+                /wave-header--compact[\s\S]*?detail-header__type-badge[\s\S]*?--acc-type-padding/
+            );
+            expect(src).not.toMatch(/--acc-type-font-size:[^;]*!important/);
         });
     });
 });

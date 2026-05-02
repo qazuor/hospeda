@@ -13,7 +13,8 @@ import {
 	StarIcon,
 } from '@repo/icons';
 import { resolveAmenityIcon } from './accommodation-card-icons';
-import { getAccommodationTypeColor, getAccommodationTypeLabel, getBadgeStatusColor } from '@/lib/colors';
+import { getBadgeStatusColor } from '@/lib/colors';
+import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
 import { formatPrice } from '@/lib/format-utils';
 import { buildUrl } from '@/lib/urls';
 import { createTranslations } from '@/lib/i18n';
@@ -30,6 +31,7 @@ const { data, locale } = Astro.props;
 const { t } = createTranslations(locale);
 
 const detailUrl = buildUrl({ locale, path: `/alojamientos/${data.slug}/` });
+
 const formattedPrice = data.price
 	? formatPrice({ amount: data.price.amount, currency: data.price.currency, locale })
 	: null;
@@ -126,9 +128,7 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		<div class="acc-card__content">
 			<!-- Category + Location row -->
 			<div class="acc-card__category-row">
-				<span class="acc-card__category-badge">
-					{getAccommodationTypeLabel({ type: data.type, t }).toUpperCase()}
-				</span>
+				<AccommodationTypeBadge type={data.type} locale={locale} size="xs" />
 				<div class="acc-card__location-bar">
 					<LocationIcon size={12} weight="fill" aria-hidden="true" />
 					<span>{data.cityName ?? data.location.city}</span>
@@ -377,18 +377,6 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		display: flex;
 		align-items: center;
 		gap: 10px;
-	}
-
-	.acc-card__category-badge {
-		background-color: var(--brand-secondary-foreground);
-		color: var(--primary-foreground);
-		font-family: var(--font-sans);
-		font-weight: 700;
-		font-size: 10px;
-		line-height: 14px;
-		padding: 4px 10px;
-		border-radius: 9999px;
-		white-space: nowrap;
 	}
 
 	.acc-card__location-bar {

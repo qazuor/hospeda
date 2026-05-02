@@ -15,7 +15,8 @@ import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
-import TagChips from '@/components/TagChips.astro';
+import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
+import { AccommodationTypeEnum } from '@repo/schemas';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
 import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi } from '@/lib/api/endpoints';
@@ -279,17 +280,20 @@ const jsonLd = {
 
 const baseUrl = buildUrl({ locale, path: 'alojamientos' });
 
-/** Quick-filter chips: top accommodation types */
-const typeChips = [
-    { label: getAccommodationTypeLabel({ type: 'CABIN', t }), href: buildUrl({ locale, path: '/alojamientos/tipo/cabin/' }) },
-    { label: getAccommodationTypeLabel({ type: 'HOTEL', t }), href: buildUrl({ locale, path: '/alojamientos/tipo/hotel/' }) },
-    { label: getAccommodationTypeLabel({ type: 'HOUSE', t }), href: buildUrl({ locale, path: '/alojamientos/tipo/house/' }) },
-    { label: getAccommodationTypeLabel({ type: 'COUNTRY_HOUSE', t }), href: buildUrl({ locale, path: '/alojamientos/tipo/country-house/' }) },
-    { label: getAccommodationTypeLabel({ type: 'HOSTEL', t }), href: buildUrl({ locale, path: '/alojamientos/tipo/hostel/' }) },
-    { label: getAccommodationTypeLabel({ type: 'CAMPING', t }), href: buildUrl({ locale, path: '/alojamientos/tipo/camping/' }) },
-    { label: getAccommodationTypeLabel({ type: 'APARTMENT', t }), href: buildUrl({ locale, path: '/alojamientos/tipo/apartment/' }) },
-    { label: getAccommodationTypeLabel({ type: 'RESORT', t }), href: buildUrl({ locale, path: '/alojamientos/tipo/resort/' }) },
-] as const;
+/**
+ * Quick-filter type badges shown above the listing grid. Uses the canonical
+ * enum so any new accommodation type is picked up automatically. The slug
+ * for the route is the lowercased enum value with `_` → `-` (e.g.
+ * `COUNTRY_HOUSE` → `country-house`) to match `tipo/[type]/index.astro`.
+ */
+const typeBadges = Object.values(AccommodationTypeEnum).map((value) => {
+    const enumValue = String(value);
+    const slug = enumValue.toLowerCase().replace(/_/g, '-');
+    return {
+        type: enumValue,
+        href: buildUrl({ locale, path: `/alojamientos/tipo/${slug}/` })
+    };
+});
 
 // Build initial filter params for the sidebar (avoids hydration flash)
 const initialParams: Record<string, string> = {};
@@ -343,10 +347,14 @@ if (includeNoReviews) initialParams.includeNoReviews = 'true';
 		initialParams={initialParams}
 	/>
 
-	<TagChips
-		chips={typeChips}
-		ariaLabel={t('accommodations.typeChips.ariaLabel', 'Filtrar por tipo de alojamiento')}
-	/>
+	<nav
+		class="acc-type-badges"
+		aria-label={t('accommodations.typeChips.ariaLabel', 'Filtrar por tipo de alojamiento')}
+	>
+		{typeBadges.map(({ type, href }) => (
+			<AccommodationTypeBadge type={type} locale={locale} size="sm" href={href} />
+		))}
+	</nav>
 
 	{!hasError && cards.length > 0 && (
 		<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
@@ -451,6 +459,31 @@ if (includeNoReviews) initialParams.includeNoReviews = 'true';
 		opacity: 0.4;
 		pointer-events: none;
 		transition: opacity 0.2s ease;
+	}
+
+	/* Quick-filter type badges row above the listing grid.
+	 * Mirrors the home featured-section ergonomics: wrap on desktop,
+	 * horizontal scroll-snap on narrow viewports. */
+	.acc-type-badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-bottom: var(--space-4, 16px);
+	}
+	@media (max-width: 767px) {
+		.acc-type-badges {
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			overflow-y: hidden;
+			scroll-snap-type: x mandatory;
+			-webkit-overflow-scrolling: touch;
+			padding-bottom: 4px;
+			mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
+			-webkit-mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
+		}
+		.acc-type-badges::-webkit-scrollbar {
+			display: none;
+		}
 	}
 
 	/* View toggle (Lista / Mapa) */
