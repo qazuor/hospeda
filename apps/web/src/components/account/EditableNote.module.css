@@ -1,0 +1,187 @@
+/* EditableNote.module.css */
+/* Scoped styles for the inline note editor on bookmark cards. */
+/* ALL values use CSS custom properties from global.css. */
+
+/* ── Read view: note text displayed as a clickable button ─────────────── */
+
+.noteDisplay {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-button, 8px);
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--foreground);
+    cursor: pointer;
+    transition: background-color var(--duration-normal, 0.4s) ease, border-color
+        var(--duration-normal, 0.4s) ease;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.noteDisplay:hover {
+    background-color: oklch(from var(--primary) l c h / 0.06);
+    border-color: oklch(from var(--primary) l c h / 0.2);
+}
+
+.noteDisplay:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* ── Read view: placeholder shown when no note exists ──────────────────── */
+
+.notePlaceholder {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-button, 8px);
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    font-style: italic;
+    transition: background-color var(--duration-normal, 0.4s) ease, border-color
+        var(--duration-normal, 0.4s) ease;
+}
+
+.notePlaceholder:hover {
+    background-color: oklch(from var(--primary) l c h / 0.04);
+    border-color: var(--primary);
+    color: var(--foreground);
+}
+
+.notePlaceholder:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* ── Editing view wrapper ──────────────────────────────────────────────── */
+
+.editorWrap {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+}
+
+/* ── Textarea ──────────────────────────────────────────────────────────── */
+
+.textarea {
+    width: 100%;
+    resize: vertical;
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-button, 8px);
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--foreground);
+    background-color: var(--card);
+    outline: none;
+    box-shadow: 0 0 0 3px oklch(from var(--primary) l c h / 0.15);
+    transition: border-color var(--duration-normal, 0.4s) ease, box-shadow
+        var(--duration-normal, 0.4s) ease;
+    box-sizing: border-box;
+}
+
+.textarea:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ── Footer: char counter + action buttons ─────────────────────────────── */
+
+.editorFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 8px);
+}
+
+.charCount {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+    flex-shrink: 0;
+}
+
+.charCountOver {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--destructive, oklch(0.6 0.2 25));
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.editorActions {
+    display: flex;
+    gap: var(--space-2, 8px);
+}
+
+/* ── Save button ───────────────────────────────────────────────────────── */
+
+.saveBtn {
+    padding: var(--space-1, 4px) var(--space-3, 12px);
+    background-color: var(--primary);
+    color: oklch(1 0 0);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity var(--duration-normal, 0.4s) ease;
+}
+
+.saveBtn:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.saveBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.saveBtn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* ── Cancel button ─────────────────────────────────────────────────────── */
+
+.cancelBtn {
+    padding: var(--space-1, 4px) var(--space-3, 12px);
+    background-color: transparent;
+    color: var(--muted-foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--duration-normal, 0.4s) ease, color
+        var(--duration-normal, 0.4s) ease;
+}
+
+.cancelBtn:hover:not(:disabled) {
+    background-color: var(--surface-warm);
+    color: var(--foreground);
+}
+
+.cancelBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.cancelBtn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}

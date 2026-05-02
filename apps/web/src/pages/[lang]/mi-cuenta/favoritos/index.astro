@@ -1,16 +1,20 @@
 ---
 /**
  * @file mi-cuenta/favoritos/index.astro
- * @description Account favorites page.
+ * @description Account favorites page with collection usage counter.
  * @route /{lang}/mi-cuenta/favoritos/
  * @rendering SSR
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { UserFavoritesList } from '@/components/account/UserFavoritesList.client';
+import { CreateCollectionCTA } from '@/components/account/CreateCollectionCTA.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { getApiUrl } from '@/lib/env';
+import { webLogger } from '@/lib/logger';
+import type { BookmarkCollectionUsage } from '@/lib/api';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;
@@ -22,20 +26,171 @@ if (!user) {
 const { t } = createTranslations(locale);
 const title = t('account.pages.favorites.title', 'Favoritos');
 const apiUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
+
+// ---------------------------------------------------------------------------
+// Server-side fetch: collection usage counter.
+// Non-blocking: on error we skip the counter rather than failing the page.
+// Session cookie is forwarded to authenticate the request.
+// ---------------------------------------------------------------------------
+
+let collectionUsage: BookmarkCollectionUsage | null = null;
+
+try {
+	const cookieHeader = Astro.request.headers.get('cookie');
+
+	if (cookieHeader) {
+		const apiBase = getApiUrl();
+		const response = await fetch(
+			`${apiBase}/api/v1/protected/user-bookmark-collections?page=1&pageSize=1`,
+			{
+				headers: {
+					cookie: cookieHeader,
+					Accept: 'application/json'
+				}
+			}
+		);
+
+		if (response.ok) {
+			const body = (await response.json()) as {
+				data?: { usage?: BookmarkCollectionUsage };
+			};
+			collectionUsage = body.data?.usage ?? null;
+		} else {
+			webLogger.warn('[favoritos] collections usage fetch returned status', response.status);
+		}
+	}
+} catch (err) {
+	webLogger.error('[favoritos] failed to fetch collection usage', err);
+}
+
+const isAtLimit =
+	collectionUsage !== null && collectionUsage.current >= collectionUsage.max;
+
+const usageLabel =
+	collectionUsage !== null
+		? t('account.favorites.collections.usage', '{{current}} / {{max}}', {
+				current: collectionUsage.current,
+				max: collectionUsage.max
+			})
+		: null;
+
+const limitReachedLabel =
+	isAtLimit && collectionUsage
+		? t('account.favorites.collections.limit_reached', 'Límite alcanzado ({{max}})', {
+				max: collectionUsage.max
+			})
+		: null;
+
+const usageRatio =
+	collectionUsage !== null && collectionUsage.max > 0
+		? Math.min(collectionUsage.current / collectionUsage.max, 1)
+		: 0;
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="favoritos">
-	<h2 class="account-section__title">{title}</h2>
+	<div class="favoritos-header">
+		<h2 class="account-section__title">{title}</h2>
+
+		{
+			usageLabel !== null && collectionUsage !== null && (
+				<div
+					class:list={[
+						'collection-usage',
+						{ 'collection-usage--warning': isAtLimit }
+					]}
+					aria-label={limitReachedLabel ?? usageLabel}
+					title={limitReachedLabel ?? usageLabel}
+				>
+					<span class="collection-usage__text">{usageLabel}</span>
+
+					<div
+						class="collection-usage__bar-track"
+						role="progressbar"
+						aria-valuenow={collectionUsage.current}
+						aria-valuemin={0}
+						aria-valuemax={collectionUsage.max}
+					>
+						<div
+							class="collection-usage__bar-fill"
+							style={`width: ${(usageRatio * 100).toFixed(1)}%`}
+						/>
+					</div>
+				</div>
+			)
+		}
+
+		<CreateCollectionCTA
+			client:load
+			locale={locale}
+			isAtLimit={isAtLimit}
+			maxCollections={collectionUsage?.max ?? 0}
+		/>
+	</div>
 
 	<UserFavoritesList client:load locale={locale} apiUrl={apiUrl} />
 </AccountLayout>
 
 <style>
+	.favoritos-header {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+		margin-bottom: var(--space-6);
+	}
+
 	.account-section__title {
 		font-family: var(--font-heading);
 		font-weight: 700;
 		font-size: clamp(1.5rem, 3vw, 2rem);
 		color: var(--foreground);
-		margin: 0 0 var(--space-6);
+		margin: 0;
+		flex: 1 1 auto;
+	}
+
+	/* Collection usage counter */
+	.collection-usage {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		flex-shrink: 0;
+	}
+
+	.collection-usage__text {
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		font-weight: 500;
+		color: var(--muted-foreground);
+		white-space: nowrap;
+	}
+
+	.collection-usage--warning .collection-usage__text {
+		color: var(--color-warning, oklch(0.72 0.15 60));
+	}
+
+	.collection-usage__bar-track {
+		width: 80px;
+		height: 6px;
+		background-color: oklch(from var(--muted-foreground) l c h / 0.15);
+		border-radius: var(--radius-pill);
+		overflow: hidden;
+	}
+
+	.collection-usage__bar-fill {
+		height: 100%;
+		background-color: var(--primary);
+		border-radius: var(--radius-pill);
+		transition: width 0.3s ease;
+	}
+
+	.collection-usage--warning .collection-usage__bar-fill {
+		background-color: var(--color-warning, oklch(0.72 0.15 60));
+	}
+
+	@media (max-width: 480px) {
+		.favoritos-header {
+			flex-direction: column;
+			align-items: flex-start;
+		}
 	}
 </style>

@@ -1,0 +1,59 @@
+/**
+ * CreateCollectionCTA.module.css
+ * Scoped styles for the CreateCollectionCTA React island.
+ * ALL values use CSS custom properties from global.css — no hardcoded values.
+ */
+
+/* ── CTA Button ─────────────────────────────────────────────────────────── */
+
+.ctaBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: opacity var(--duration-normal, 0.4s) ease, background-color
+        var(--duration-normal, 0.4s) ease;
+}
+
+.ctaBtn:hover:not(:disabled) {
+    opacity: 0.88;
+}
+
+.ctaBtn:focus-visible {
+    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
+    outline-offset: 2px;
+}
+
+.ctaBtn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background-color: var(--muted-foreground);
+}
+
+/* ── Plus icon ───────────────────────────────────────────────────────────── */
+
+.ctaIcon {
+    font-size: 1.125rem;
+    line-height: 1;
+    font-weight: 400;
+}
+
+/* ── Limit message ───────────────────────────────────────────────────────── */
+
+.limitMsg {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--color-warning, oklch(0.72 0.15 60));
+    margin: var(--space-1, 4px) 0 0;
+    flex-basis: 100%;
+}
