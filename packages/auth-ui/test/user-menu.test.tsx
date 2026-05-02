@@ -217,6 +217,34 @@ describe('UserMenu', () => {
             expect(profileLink).toHaveAttribute('href', '/profile/');
         });
 
+        it('closes dropdown when Dashboard link is clicked', async () => {
+            // Arrange
+            const user = userEvent.setup();
+            render(<UserMenu {...createProps()} />);
+
+            // Act - open dropdown then click Dashboard
+            await user.click(screen.getByRole('button', { name: /Juan Perez/i }));
+            const dashboardLink = screen.getByText('Dashboard').closest('a');
+            await user.click(dashboardLink as HTMLElement);
+
+            // Assert - dropdown is closed (the panel header user info disappears)
+            expect(screen.queryByText('juan@example.com')).not.toBeInTheDocument();
+        });
+
+        it('closes dropdown when Mi Perfil link is clicked', async () => {
+            // Arrange
+            const user = userEvent.setup();
+            render(<UserMenu {...createProps()} />);
+
+            // Act - open dropdown then click Mi Perfil
+            await user.click(screen.getByRole('button', { name: /Juan Perez/i }));
+            const profileLink = screen.getByText('Mi Perfil').closest('a');
+            await user.click(profileLink as HTMLElement);
+
+            // Assert - dropdown is closed (the panel header user info disappears)
+            expect(screen.queryByText('juan@example.com')).not.toBeInTheDocument();
+        });
+
         it('uses custom dashboardUrl and profileUrl', async () => {
             // Arrange
             const user = userEvent.setup();
