@@ -10,6 +10,7 @@
  * - Mobile: Only the carousel column (map is hidden via CSS)
  */
 
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { ErrorBoundary } from '@/components/shared/ui/ErrorBoundary';
 import type { DestinationCardData } from '@/data/types';
 import { cn } from '@/lib/cn';
@@ -31,6 +32,13 @@ interface DestinationsIslandProps {
     readonly destinations: readonly DestinationCardData[];
     /** Active locale used to build destination URLs and resolve translations. */
     readonly locale: SupportedLocale;
+    /**
+     * Whether the current user is authenticated.
+     * Forwarded to FavoriteButton on each carousel card to decide between
+     * toggle-favorite or showing the auth-required popover.
+     * Defaults to false (guest user).
+     */
+    readonly isAuthenticated?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -68,7 +76,7 @@ function renderStars(rating: number): ReactElement[] {
  *
  * @example
  * ```astro
- * <DestinationsIsland destinations={destinations} locale={locale} client:visible />
+ * <DestinationsIsland destinations={destinations} locale={locale} isAuthenticated={!!user} client:visible />
  * ```
  */
 export function DestinationsIsland(props: DestinationsIslandProps) {
@@ -79,7 +87,11 @@ export function DestinationsIsland(props: DestinationsIslandProps) {
     );
 }
 
-function DestinationsIslandInner({ destinations, locale }: DestinationsIslandProps) {
+function DestinationsIslandInner({
+    destinations,
+    locale,
+    isAuthenticated = false
+}: DestinationsIslandProps) {
     const { t } = createTranslations(locale);
 
     const [activeIndex, setActiveIndex] = useState(0);
@@ -205,6 +217,7 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                                         className={styles.slide}
                                         aria-roledescription="slide"
                                         aria-label={`${i + 1} de ${total}: ${destination.name}`}
+                                        style={{ position: 'relative' }}
                                     >
                                         <a
                                             href={href}
@@ -267,6 +280,17 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                                                 </div>
                                             </div>
                                         </a>
+
+                                        {/* FavoriteButton — outside the <a> to avoid nested interactive elements */}
+                                        <div className={styles.cardActions}>
+                                            <FavoriteButton
+                                                entityId={destination.id}
+                                                entityType="DESTINATION"
+                                                isAuthenticated={isAuthenticated}
+                                                locale={locale}
+                                                variant="compact"
+                                            />
+                                        </div>
                                     </article>
                                 );
                             })}

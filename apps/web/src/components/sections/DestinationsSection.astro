@@ -24,9 +24,15 @@ import { webLogger } from '@/lib/logger';
 interface Props {
     /** Active locale used to resolve translations and build internal URLs. */
     readonly locale: SupportedLocale;
+    /**
+     * Whether the current user is authenticated.
+     * Forwarded to FavoriteButton inside each carousel card.
+     * Defaults to false (guest user).
+     */
+    readonly isAuthenticated?: boolean;
 }
 
-const { locale } = Astro.props;
+const { locale, isAuthenticated = false } = Astro.props;
 const { t } = createTranslations(locale);
 
 // Fetch from API - empty array if unavailable
@@ -68,6 +74,7 @@ const optimizedDestinations = await Promise.all(
             client:visible
             destinations={optimizedDestinations}
             locale={locale}
+            isAuthenticated={isAuthenticated}
         />
     </div>
 </section>

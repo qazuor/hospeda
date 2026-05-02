@@ -10,6 +10,9 @@
  * Emits `onBoundsChange` (debounced 300ms) so the surrounding page can refetch
  * the listing with viewport bbox filters. Highlights an item visually when its
  * id matches `hoveredItemId` (used by sidebar hover sync).
+ *
+ * SPEC-098 T-044: AccommodationPopupContent renders a FavoriteButton in the
+ * top-right corner of the thumbnail image when the item id is available.
  */
 import 'leaflet/dist/leaflet.css';
 
@@ -21,6 +24,8 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Circle, MapContainer, Marker, Popup, TileLayer, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import type { SupportedLocale } from '@/lib/i18n';
 import styles from './ListingMap.module.css';
 
 L.Icon.Default.mergeOptions({
@@ -54,6 +59,22 @@ export interface AccommodationListingItem {
     readonly reviewsLabel?: string;
     readonly detailHref?: string;
     readonly approximateLocation: { lat: number; lng: number; radiusMeters: number };
+    /**
+     * SPEC-098 T-044: Whether the current user has already favorited this item.
+     * Undefined for guests or when the bulk-check was not performed — the
+     * FavoriteButton single-check fallback handles this on mount.
+     */
+    readonly isFavorited?: boolean;
+    /**
+     * SPEC-098 T-044: Bookmark id when the entity is already favorited.
+     * Null when not favorited. Undefined when no bulk-check was performed.
+     */
+    readonly favoriteBookmarkId?: string | null;
+    /**
+     * SPEC-098 T-044: Total public count of users who bookmarked this
+     * accommodation. Used by FavoriteButton's `compact` variant.
+     */
+    readonly bookmarkCount?: number;
 }
 
 export interface DestinationListingItem {
@@ -83,6 +104,17 @@ interface BaseProps {
     readonly onMarkerClick?: (id: string) => void;
     readonly ariaLabel: string;
     readonly i18nStrings: ListingMapStrings;
+    /**
+     * SPEC-098 T-044: Whether the current visitor is authenticated.
+     * Forwarded to FavoriteButton inside each accommodation popup.
+     * Defaults to false (guest) when not provided.
+     */
+    readonly isAuthenticated?: boolean;
+    /**
+     * SPEC-098 T-044: Active locale forwarded to FavoriteButton for aria-labels
+     * and i18n strings. Defaults to 'es'.
+     */
+    readonly locale?: SupportedLocale;
 }
 
 interface AccommodationProps extends BaseProps {
@@ -158,7 +190,9 @@ export function ListingMap(props: ListingMapProps) {
         onBoundsChange,
         onMarkerClick,
         ariaLabel,
-        i18nStrings
+        i18nStrings,
+        isAuthenticated = false,
+        locale = 'es'
     } = props;
 
     const isAccommodationMode = props.mode === 'accommodation-list';
@@ -195,6 +229,8 @@ export function ListingMap(props: ListingMapProps) {
                             <AccommodationPopupContent
                                 item={item}
                                 viewDetailsLabel={i18nStrings.viewDetails}
+                                isAuthenticated={isAuthenticated}
+                                locale={locale}
                             />
                         </Popup>
                     </Circle>
@@ -222,7 +258,15 @@ export function ListingMap(props: ListingMapProps) {
                 </Popup>
             </Marker>
         ));
-    }, [props.items, isAccommodationMode, hoveredItemId, onMarkerClick, i18nStrings]);
+    }, [
+        props.items,
+        isAccommodationMode,
+        hoveredItemId,
+        onMarkerClick,
+        i18nStrings,
+        isAuthenticated,
+        locale
+    ]);
 
     return (
         <div
@@ -257,10 +301,14 @@ export function ListingMap(props: ListingMapProps) {
 
 function AccommodationPopupContent({
     item,
-    viewDetailsLabel
+    viewDetailsLabel,
+    isAuthenticated,
+    locale
 }: {
-    item: AccommodationListingItem;
-    viewDetailsLabel?: string;
+    readonly item: AccommodationListingItem;
+    readonly viewDetailsLabel?: string;
+    readonly isAuthenticated: boolean;
+    readonly locale: SupportedLocale;
 }) {
     const hasRating =
         typeof item.averageRating === 'number' &&
@@ -280,6 +328,18 @@ function AccommodationPopupContent({
                     {item.typeLabel ? (
                         <span className={styles.popupTypeChip}>{item.typeLabel}</span>
                     ) : null}
+                    <div className={styles.popupFavoriteBtn}>
+                        <FavoriteButton
+                            entityId={item.id}
+                            entityType="ACCOMMODATION"
+                            initialIsFavorited={item.isFavorited}
+                            initialBookmarkId={item.favoriteBookmarkId ?? null}
+                            count={item.bookmarkCount}
+                            variant="compact"
+                            locale={locale}
+                            isAuthenticated={isAuthenticated}
+                        />
+                    </div>
                 </div>
             ) : null}
             <div className={styles.popupBody}>

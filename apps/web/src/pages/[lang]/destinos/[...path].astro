@@ -14,16 +14,18 @@ import EventCard from '@/components/shared/cards/EventCard.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { LocationMap } from '@/components/maps/LocationMap.client';
-import { destinationsApi, accommodationsApi, eventsApi } from '@/lib/api/endpoints';
+import { destinationsApi, accommodationsApi, eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
+import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { Image } from 'astro:assets';
 import { LocationIcon } from '@repo/icons';
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 const { path } = Astro.params;
 
 if (!path) return new Response(null, { status: 404 });
@@ -70,6 +72,42 @@ try {
 	eventsCount = eventsCountResult.ok ? (eventsCountResult.data.pagination?.total ?? 0) : 0;
 } catch (err) {
 	console.error('[destinos/detail] Error fetching previews:', err);
+}
+
+// --- Auth ---
+const userId = Astro.locals.user?.id ?? null;
+const isAuthenticated = userId !== null;
+
+// --- Bookmark count + favorite status (graceful degradation) ---
+let bookmarkCount: number | undefined;
+let initialIsFavorited: boolean | undefined;
+let initialBookmarkId: string | null = null;
+
+try {
+	const countResult = await userBookmarksPublicApi.count({
+		entityType: 'DESTINATION',
+		entityId: destId
+	});
+	if (countResult.ok) {
+		bookmarkCount = countResult.data.count;
+	}
+} catch {
+	// Graceful degradation: counter not shown if fetch fails
+}
+
+if (isAuthenticated) {
+	try {
+		const statusResult = await userBookmarksApi.checkStatus({
+			entityId: destId,
+			entityType: 'DESTINATION'
+		});
+		if (statusResult.ok) {
+			initialIsFavorited = statusResult.data.isFavorited;
+			initialBookmarkId = statusResult.data.bookmarkId;
+		}
+	} catch {
+		// Graceful degradation: FavoriteButton hydrates itself on mount
+	}
 }
 
 // Build breadcrumb items from path segments
@@ -134,11 +172,32 @@ const breadcrumbJsonLdItems = [
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={breadcrumbItems} />
 
 	<Fragment slot="page-header">
-		<h1 class="dest-detail__title">{name}</h1>
-		{destType && (
-			<span class="dest-detail__type">
-				<LocationIcon size={16} aria-hidden="true" />
-				{t(`destinations.types.${destType.toLowerCase()}`, destType)}
+		<div class="dest-detail__header-top-row">
+			<div class="dest-detail__header-left">
+				<h1 class="dest-detail__title">{name}</h1>
+				{destType && (
+					<span class="dest-detail__type">
+						<LocationIcon size={16} aria-hidden="true" />
+						{t(`destinations.types.${destType.toLowerCase()}`, destType)}
+					</span>
+				)}
+			</div>
+			<FavoriteButton
+				client:load
+				entityId={destId}
+				entityType="DESTINATION"
+				initialIsFavorited={initialIsFavorited}
+				initialBookmarkId={initialBookmarkId}
+				isAuthenticated={isAuthenticated}
+				variant="standalone"
+				locale={locale}
+				class="dest-detail__favorite-btn"
+			/>
+		</div>
+		{bookmarkCount !== undefined && (
+			<span class="dest-detail__bookmark-count" aria-label={tPlural('destination.detail.bookmark_count', bookmarkCount)}>
+				<span class="dest-detail__bookmark-icon" aria-hidden="true">♥</span>
+				{tPlural('destination.detail.bookmark_count', bookmarkCount)}
 			</span>
 		)}
 	</Fragment>
@@ -256,8 +315,12 @@ const breadcrumbJsonLdItems = [
 	.dest-detail__hero { margin-bottom: var(--space-6); border-radius: var(--radius-card); overflow: hidden; }
 	.dest-detail__hero-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
 
+	.dest-detail__header-top-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+	.dest-detail__header-left { flex: 1; min-width: 0; }
 	.dest-detail__title { font-family: var(--font-heading); font-weight: 700; font-size: clamp(1.75rem, 4vw, 2.5rem); color: var(--foreground); margin: 0 0 var(--space-2); }
 	.dest-detail__type { display: inline-flex; align-items: center; gap: 0.25rem; font-family: var(--font-sans); font-size: var(--text-body-sm); color: var(--muted-foreground); margin-bottom: var(--space-6); }
+	.dest-detail__bookmark-count { display: inline-flex; align-items: center; gap: 0.3em; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 500; color: var(--muted-foreground); margin-bottom: var(--space-4); }
+	.dest-detail__bookmark-icon { font-size: 0.75rem; color: var(--destructive); line-height: 1; }
 
 	.dest-detail__description { font-family: var(--font-sans); line-height: 1.7; color: var(--foreground); margin-bottom: var(--space-8); }
 	.dest-detail__description :global(p) { margin-bottom: var(--space-4); }

@@ -16,6 +16,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import type { AccommodationCardData } from '@/data/types';
 import { useViewportSearch } from '@/hooks/useViewportSearch';
+import type { SupportedLocale } from '@/lib/i18n';
 
 import layoutStyles from './AccommodationsListingMap.module.css';
 import { ListingMap } from './ListingMap.client';
@@ -65,6 +66,17 @@ interface AccommodationsListingMapProps {
     readonly showSidebar?: boolean;
     readonly sidebarI18n?: SidebarI18n;
     readonly extraSearchParams?: Record<string, unknown>;
+    /**
+     * SPEC-098 T-044: Whether the current visitor is authenticated.
+     * Forwarded to each accommodation popup's FavoriteButton.
+     * Defaults to false (guest) when not provided.
+     */
+    readonly isAuthenticated?: boolean;
+    /**
+     * SPEC-098 T-044: Active locale forwarded to FavoriteButton for aria-labels.
+     * Defaults to 'es'.
+     */
+    readonly locale?: SupportedLocale;
 }
 
 export function AccommodationsListingMap({
@@ -79,7 +91,9 @@ export function AccommodationsListingMap({
     featuredLabel,
     showSidebar = false,
     sidebarI18n,
-    extraSearchParams
+    extraSearchParams,
+    isAuthenticated = false,
+    locale = 'es'
 }: AccommodationsListingMapProps) {
     const { items, onBoundsChange } = useViewportSearch({
         initialItems,
@@ -113,7 +127,11 @@ export function AccommodationsListingMap({
                         lat: number;
                         lng: number;
                         radiusMeters: number;
-                    }
+                    },
+                    // SPEC-098 T-044: forward bookmark state for popup FavoriteButton
+                    isFavorited: card.isFavorited,
+                    favoriteBookmarkId: card.favoriteBookmarkId ?? null,
+                    bookmarkCount: card.bookmarkCount
                 })),
         [items, typeLabels, detailHrefById, featuredLabel]
     );
@@ -152,6 +170,8 @@ export function AccommodationsListingMap({
                 onBoundsChange={onBoundsChange}
                 ariaLabel={ariaLabel}
                 i18nStrings={i18nStrings}
+                isAuthenticated={isAuthenticated}
+                locale={locale}
             />
         );
     }
@@ -169,6 +189,8 @@ export function AccommodationsListingMap({
                     onBoundsChange={onBoundsChange}
                     ariaLabel={ariaLabel}
                     i18nStrings={i18nStrings}
+                    isAuthenticated={isAuthenticated}
+                    locale={locale}
                 />
             </div>
             <div className={layoutStyles.sidebarPane}>

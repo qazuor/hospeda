@@ -30,7 +30,8 @@ import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
 import EventCard from '@/components/shared/cards/EventCard.astro';
-import { accommodationsApi, postsApi, eventsApi } from '@/lib/api/endpoints';
+import { accommodationsApi, postsApi, eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
+import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -95,6 +96,7 @@ const eventItems = extractItems(eventsResult).slice(0, 3);
 
 // --- Auth ---
 const userId = Astro.locals.user?.id ?? null;
+const isAuthenticated = userId !== null;
 const currentUser = Astro.locals.user
     ? {
           id: Astro.locals.user.id,
@@ -102,6 +104,38 @@ const currentUser = Astro.locals.user
           email: (Astro.locals.user as { email?: string | null }).email ?? null
       }
     : null;
+
+// --- Bookmark count + favorite status (graceful degradation, never blocks render) ---
+let bookmarkCount: number | undefined;
+let initialIsFavorited: boolean | undefined;
+let initialBookmarkId: string | null = null;
+
+try {
+    const countResult = await userBookmarksPublicApi.count({
+        entityType: 'ACCOMMODATION',
+        entityId: accommodation.id
+    });
+    if (countResult.ok) {
+        bookmarkCount = countResult.data.count;
+    }
+} catch {
+    // Graceful degradation: counter not shown if fetch fails
+}
+
+if (isAuthenticated) {
+    try {
+        const statusResult = await userBookmarksApi.checkStatus({
+            entityId: accommodation.id,
+            entityType: 'ACCOMMODATION'
+        });
+        if (statusResult.ok) {
+            initialIsFavorited = statusResult.data.isFavorited;
+            initialBookmarkId = statusResult.data.bookmarkId;
+        }
+    } catch {
+        // Graceful degradation: FavoriteButton hydrates itself on mount
+    }
+}
 
 // Look up existing conversation for authenticated user (graceful degradation)
 let existingConversationId: string | null = null;
@@ -215,7 +249,15 @@ const faqSections = accommodation.faqs.map((faq) => ({
     />
 
     <Fragment slot="page-header">
-        <DetailHeader accommodation={accommodation} lang={locale} />
+        <DetailHeader
+            accommodation={accommodation}
+            lang={locale}
+            accommodationId={accommodation.id}
+            isAuthenticated={isAuthenticated}
+            initialIsFavorited={initialIsFavorited}
+            initialBookmarkId={initialBookmarkId}
+            bookmarkCount={bookmarkCount}
+        />
     </Fragment>
 
     <!-- Main content -->

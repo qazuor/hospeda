@@ -110,6 +110,17 @@
     backdrop-filter: blur(4px);
 }
 
+/**
+ * SPEC-098 T-044: Wrapper that pins the FavoriteButton to the top-right
+ * corner of the popup thumbnail, above the type chip layer (z-index 2).
+ */
+.popupFavoriteBtn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 2;
+}
+
 .popupBody {
     padding: var(--space-3, 12px) var(--space-4, 16px) var(--space-4, 16px);
     display: flex;

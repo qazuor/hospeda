@@ -1,11 +1,16 @@
 /**
  * @file DetailHeader.test.ts
  * @description Source-reading tests for DetailHeader.astro after the
- * AccommodationTypeBadge unification. The detail header delegates the type
- * pill to the shared `AccommodationTypeBadge` component (single source of
- * truth for type colour + label) while keeping the generic `Badge` primitive
- * for status pills (featured/new). Compact-mode overrides reach into the
- * type badge through the `--acc-type-*` custom properties exposed by it.
+ * AccommodationTypeBadge unification and FavoriteButton/bookmark-count
+ * integration (T-045). The detail header delegates the type pill to the
+ * shared `AccommodationTypeBadge` component (single source of truth for
+ * type colour + label) while keeping the generic `Badge` primitive for
+ * status pills (featured/new). Compact-mode overrides reach into the type
+ * badge through the `--acc-type-*` custom properties exposed by it.
+ *
+ * T-045: FavoriteButton island is placed top-right inside a new
+ * `.detail-header__top-row` wrapper. The public bookmark counter is
+ * rendered inline next to the rating when `bookmarkCount` is defined.
  */
 
 import { readFileSync } from 'node:fs';
@@ -78,6 +83,101 @@ describe('DetailHeader.astro — type badge unification', () => {
                 /wave-header--compact[\s\S]*?detail-header__type-badge[\s\S]*?--acc-type-padding/
             );
             expect(src).not.toMatch(/--acc-type-font-size:[^;]*!important/);
+        });
+    });
+});
+
+describe('DetailHeader.astro — T-045: FavoriteButton + bookmark counter', () => {
+    describe('imports', () => {
+        it('imports FavoriteButton from shared/favorite', () => {
+            expect(src).toContain("from '@/components/shared/favorite/FavoriteButton.client'");
+        });
+
+        it('imports tPlural via createTranslations (destructured)', () => {
+            expect(src).toMatch(/const\s*\{[^}]*tPlural[^}]*\}\s*=\s*createTranslations/);
+        });
+    });
+
+    describe('Props interface', () => {
+        it('declares isAuthenticated prop', () => {
+            expect(src).toContain('isAuthenticated');
+        });
+
+        it('declares accommodationId prop', () => {
+            expect(src).toContain('accommodationId');
+        });
+
+        it('declares initialIsFavorited prop', () => {
+            expect(src).toContain('initialIsFavorited');
+        });
+
+        it('declares initialBookmarkId prop', () => {
+            expect(src).toContain('initialBookmarkId');
+        });
+
+        it('declares bookmarkCount prop', () => {
+            expect(src).toContain('bookmarkCount');
+        });
+    });
+
+    describe('FavoriteButton island', () => {
+        it('renders FavoriteButton with client:load', () => {
+            expect(src).toMatch(/<FavoriteButton[\s\S]*?client:load/);
+        });
+
+        it('passes entityType="ACCOMMODATION" to FavoriteButton', () => {
+            expect(src).toMatch(/<FavoriteButton[\s\S]*?entityType="ACCOMMODATION"/);
+        });
+
+        it('passes entityId from accommodationId prop', () => {
+            expect(src).toMatch(/<FavoriteButton[\s\S]*?entityId=\{accommodationId\}/);
+        });
+
+        it('passes isAuthenticated prop through to FavoriteButton', () => {
+            expect(src).toMatch(/<FavoriteButton[\s\S]*?isAuthenticated=\{isAuthenticated\}/);
+        });
+
+        it('uses standalone variant for detail page', () => {
+            expect(src).toMatch(/<FavoriteButton[\s\S]*?variant="standalone"/);
+        });
+
+        it('positions FavoriteButton inside detail-header__top-row', () => {
+            expect(src).toContain('detail-header__top-row');
+            expect(src).toMatch(
+                /detail-header__top-row[\s\S]*?FavoriteButton|FavoriteButton[\s\S]*?detail-header__top-row/
+            );
+        });
+    });
+
+    describe('Bookmark counter', () => {
+        it('renders detail-header__bookmark-count element', () => {
+            expect(src).toContain('detail-header__bookmark-count');
+        });
+
+        it('uses tPlural with accommodations.detail.bookmark_count key', () => {
+            expect(src).toContain("tPlural('accommodations.detail.bookmark_count'");
+        });
+
+        it('guards counter render with bookmarkCount !== undefined', () => {
+            expect(src).toMatch(/bookmarkCount\s*!==\s*undefined/);
+        });
+
+        it('counter has heart icon element', () => {
+            expect(src).toContain('detail-header__bookmark-icon');
+        });
+    });
+
+    describe('Top-row layout', () => {
+        it('wraps badges and FavoriteButton in detail-header__top-row', () => {
+            expect(src).toMatch(/class="detail-header__top-row"/);
+        });
+
+        it('has CSS for detail-header__top-row', () => {
+            expect(src).toContain('.detail-header__top-row');
+        });
+
+        it('has CSS for detail-header__bookmark-count', () => {
+            expect(src).toContain('.detail-header__bookmark-count');
         });
     });
 });

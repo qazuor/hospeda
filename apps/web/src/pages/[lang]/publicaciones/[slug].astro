@@ -12,7 +12,9 @@ import JsonLd from '@/components/seo/JsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import Badge from '@/components/shared/ui/Badge.astro';
 import { ShareButtons } from '@/components/ShareButtons.client';
-import { postsApi } from '@/lib/api/endpoints';
+import { postsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
+import { userBookmarksApi } from '@/lib/api/endpoints-protected';
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -22,7 +24,7 @@ import { getPostCategoryColor } from '@/lib/colors';
 import { getMediaUrl } from '@repo/media';
 
 const locale = Astro.locals.locale as SupportedLocale;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 const { slug } = Astro.params;
 
 if (!slug) return new Response(null, { status: 404 });
@@ -31,6 +33,7 @@ const result = await postsApi.getBySlug({ slug });
 if (!result.ok) return new Response(null, { status: 404 });
 
 const post = result.data as Record<string, unknown>;
+const postId = String(post.id || '');
 const title = String(post.title || '');
 const summary = String(post.summary || post.excerpt || '');
 const category = String(post.category || '');
@@ -56,6 +59,44 @@ const authorAvatar = rawAuthorAvatar
 // This array is kept for future postTags support when the API includes them.
 const postTags: readonly { readonly name: string; readonly slug: string }[] = [];
 const categoryColors = getPostCategoryColor(category.toLowerCase());
+
+// --- Auth ---
+const userId = Astro.locals.user?.id ?? null;
+const isAuthenticated = userId !== null;
+
+// --- Bookmark count + favorite status (graceful degradation) ---
+let bookmarkCount: number | undefined;
+let initialIsFavorited: boolean | undefined;
+let initialBookmarkId: string | null = null;
+
+if (postId) {
+	try {
+		const countResult = await userBookmarksPublicApi.count({
+			entityType: 'POST',
+			entityId: postId
+		});
+		if (countResult.ok) {
+			bookmarkCount = countResult.data.count;
+		}
+	} catch {
+		// Graceful degradation: counter not shown if fetch fails
+	}
+
+	if (isAuthenticated) {
+		try {
+			const statusResult = await userBookmarksApi.checkStatus({
+				entityId: postId,
+				entityType: 'POST'
+			});
+			if (statusResult.ok) {
+				initialIsFavorited = statusResult.data.isFavorited;
+				initialBookmarkId = statusResult.data.bookmarkId;
+			}
+		} catch {
+			// Graceful degradation: FavoriteButton hydrates itself on mount
+		}
+	}
+}
 
 const jsonLd = {
 	'@context': 'https://schema.org',
@@ -103,7 +144,22 @@ const breadcrumbItems = [
 	/>
 
 	<Fragment slot="page-header">
-		<h1 class="post-detail__title">{title}</h1>
+		<div class="post-detail__header-top-row">
+			<h1 class="post-detail__title">{title}</h1>
+			{postId && (
+				<FavoriteButton
+					client:load
+					entityId={postId}
+					entityType="POST"
+					initialIsFavorited={initialIsFavorited}
+					initialBookmarkId={initialBookmarkId}
+					isAuthenticated={isAuthenticated}
+					variant="standalone"
+					locale={locale}
+					class="post-detail__favorite-btn"
+				/>
+			)}
+		</div>
 		<div class="post-detail__meta">
 			<span class="post-detail__category" style={`background-color: ${categoryColors.bg}; color: ${categoryColors.text};`}>
 				{t(`blog.categories.${category.toLowerCase()}`, category)}
@@ -116,6 +172,12 @@ const breadcrumbItems = [
 			{readingTime > 0 && (
 				<span class="post-detail__reading-time">
 					{readingTime} min {t('blog.detail.readingTime', 'de lectura')}
+				</span>
+			)}
+			{bookmarkCount !== undefined && (
+				<span class="post-detail__bookmark-count" aria-label={tPlural('blog.detail.bookmark_count', bookmarkCount)}>
+					<span class="post-detail__bookmark-icon" aria-hidden="true">♥</span>
+					{tPlural('blog.detail.bookmark_count', bookmarkCount)}
 				</span>
 			)}
 		</div>
@@ -208,9 +270,12 @@ const breadcrumbItems = [
 	.post-detail__cover { margin-bottom: var(--space-6); border-radius: var(--radius-card); overflow: hidden; }
 	.post-detail__cover-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
 
+	.post-detail__header-top-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
 	.post-detail__meta { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-3); }
 	.post-detail__category { padding: 0.25rem 0.75rem; border-radius: var(--radius-pill); font-family: var(--font-sans); font-size: var(--text-body-sm); font-weight: 600; }
 	.post-detail__date, .post-detail__reading-time { font-family: var(--font-sans); font-size: var(--text-body-sm); color: var(--muted-foreground); }
+	.post-detail__bookmark-count { display: inline-flex; align-items: center; gap: 0.3em; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 500; color: var(--muted-foreground); border-left: 1px solid var(--border); padding-left: var(--space-2, 8px); margin-left: var(--space-1, 4px); }
+	.post-detail__bookmark-icon { font-size: 0.75rem; color: var(--destructive); line-height: 1; }
 
 	.post-detail__title { font-family: var(--font-heading); font-weight: 700; font-size: clamp(1.75rem, 4vw, 2.75rem); color: var(--foreground); line-height: 1.2; margin: 0 0 var(--space-4); }
 
