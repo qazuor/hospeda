@@ -24,7 +24,10 @@ describe('TagService.getById', () => {
     });
 
     beforeEach(() => {
-        tagModelMock = createTypedModelMock(TagModel, ['findOne']);
+        // SPEC-083: mock both read methods so we can pin which one is invoked.
+        // TagService.getById uses findOne (no relations), so findOneWithRelations
+        // must remain not.toHaveBeenCalled.
+        tagModelMock = createTypedModelMock(TagModel, ['findOne', 'findOneWithRelations']);
         loggerMock = createLoggerMock();
         service = new TagService({ logger: loggerMock }, tagModelMock, new REntityTagModel());
         actor = createActor({ permissions: [] });
@@ -36,6 +39,8 @@ describe('TagService.getById', () => {
         expectSuccess(result);
         expect(result.data).toEqual(tag);
         expect(tagModelMock.findOne).toHaveBeenCalledWith({ id: tag.id }, undefined);
+        // SPEC-083: pin that the WITH-relations path was NOT taken.
+        expect(tagModelMock.findOneWithRelations).not.toHaveBeenCalled();
     });
 
     it('should return NOT_FOUND error if tag does not exist', async () => {
