@@ -10,6 +10,7 @@
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import DestinationCard from '@/components/shared/cards/DestinationCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
@@ -21,12 +22,31 @@ import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+const isAuthenticated = Boolean(Astro.locals.user);
 
 const url = Astro.url;
 const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
 const pageSize = 12;
 
-const result = await destinationsApi.list({ page, pageSize, destinationType: 'CITY' });
+// SPEC-098 T-052c — sort dropdown wiring.
+// The public destination list endpoint whitelists sortBy via
+// ALLOWED_SORT_FIELDS = { 'name', 'createdAt', 'mostSaved' }. Anything else
+// falls back to the model's default ordering. We default `mostSaved` to
+// descending so the most-saved destinations appear first.
+const ALLOWED_SORT_BY = new Set(['name', 'createdAt', 'mostSaved']);
+const rawSortBy = url.searchParams.get('sortBy') ?? undefined;
+const sortBy = rawSortBy && ALLOWED_SORT_BY.has(rawSortBy) ? rawSortBy : undefined;
+const explicitSortOrder = url.searchParams.get('sortOrder') as 'asc' | 'desc' | null;
+const sortOrder: 'asc' | 'desc' | undefined =
+    explicitSortOrder ?? (sortBy === 'mostSaved' ? 'desc' : sortBy ? 'asc' : undefined);
+
+const result = await destinationsApi.list({
+    page,
+    pageSize,
+    destinationType: 'CITY',
+    sortBy,
+    sortOrder
+});
 
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
@@ -36,6 +56,28 @@ const cards = items.map((item) => toDestinationCardProps({ item: item as unknown
 
 const baseUrl = buildUrl({ locale, path: 'destinos' });
 const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
+
+// Build the value used by the dropdown. We collapse sortBy+sortOrder into a
+// single token so the native <select> can use a single `value` attribute and
+// the form submits one canonical key per option.
+const sortValue =
+    sortBy === 'name'
+        ? sortOrder === 'desc'
+            ? 'name_desc'
+            : 'name_asc'
+        : sortBy === 'createdAt'
+          ? 'createdAt_desc'
+          : sortBy === 'mostSaved'
+            ? 'mostSaved'
+            : '';
+
+const sortOptions: ReadonlyArray<{ readonly value: string; readonly label: string }> = [
+    { value: '', label: t('destinations.sort.label', 'Ordenar por') },
+    { value: 'name_asc', label: t('destinations.sort.nameAsc', 'Nombre (A-Z)') },
+    { value: 'name_desc', label: t('destinations.sort.nameDesc', 'Nombre (Z-A)') },
+    { value: 'createdAt_desc', label: t('destinations.sort.newest', 'Más recientes') },
+    { value: 'mostSaved', label: t('destinations.sort.mostSaved', 'Más guardados') }
+];
 ---
 
 <DefaultLayout
@@ -72,44 +114,75 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 				)}
 
 				{!hasError && cards.length > 0 && (
-					<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
-						<span
-							class="view-toggle__btn view-toggle__btn--active"
-							role="tab"
-							aria-selected="true"
+					<div class="dest-listing__controls">
+						<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
+							<span
+								class="view-toggle__btn view-toggle__btn--active"
+								role="tab"
+								aria-selected="true"
+							>
+								{t('accommodations.viewToggle.list', 'Lista')}
+							</span>
+							<a
+								href={mapHref}
+								class="view-toggle__btn"
+								role="tab"
+								aria-selected="false"
+							>
+								{t('accommodations.viewToggle.map', 'Mapa')}
+							</a>
+						</div>
+
+						{/* SPEC-098 T-052c — Sort dropdown. Native <form> + <select>
+							with no JS so it works without hydrating an island.
+							The select submits the form on change via the inline
+							script below; the form itself just builds a GET URL
+							that reuses Astro's SSR pipeline. */}
+						<form
+							class="dest-sort"
+							method="get"
+							action={buildUrl({ locale, path: 'destinos' })}
+							data-sort-form
 						>
-							{t('accommodations.viewToggle.list', 'Lista')}
-						</span>
-						<a
-							href={mapHref}
-							class="view-toggle__btn"
-							role="tab"
-							aria-selected="false"
-						>
-							{t('accommodations.viewToggle.map', 'Mapa')}
-						</a>
+							<label class="dest-sort__label" for="dest-sort-select">
+								{t('destinations.sort.label', 'Ordenar por')}
+							</label>
+							<select
+								id="dest-sort-select"
+								class="dest-sort__select"
+								name="sort"
+								data-sort-select
+							>
+								{sortOptions.map((opt) => (
+									<option value={opt.value} selected={opt.value === sortValue}>
+										{opt.label}
+									</option>
+								))}
+							</select>
+							{/* Hidden inputs decompose the canonical sort token
+								into the sortBy/sortOrder pair the API expects. */}
+							<input type="hidden" name="sortBy" data-sort-by />
+							<input type="hidden" name="sortOrder" data-sort-order />
+							<noscript>
+								<button class="dest-sort__submit" type="submit">
+									{t('destinations.sort.apply', 'Aplicar')}
+								</button>
+							</noscript>
+						</form>
 					</div>
 				)}
 
 				{!hasError && cards.length > 0 && (
 					<div class="dest-grid">
 						{cards.map((card, i) => (
-							<a href={buildUrl({ locale, path: `destinos/${card.slug}` })} class="dest-card" data-reveal="up" style={`transition-delay: ${Math.min(i, 8) * 80}ms`}>
-								<div class="dest-card__image-wrapper">
-									<img
-										src={card.featuredImage.url || '/assets/images/placeholder-destination.svg'}
-										alt={card.featuredImage.caption ?? card.name}
-										loading="lazy"
-										class="dest-card__img"
-									/>
-								</div>
-								<div class="dest-card__content">
-									<h3 class="dest-card__name">{card.name}</h3>
-									{card.description && (
-										<p class="dest-card__desc">{card.description}</p>
-									)}
-								</div>
-							</a>
+							<div data-reveal="up" style={`transition-delay: ${Math.min(i, 8) * 80}ms`}>
+								<DestinationCard
+									destination={card}
+									locale={locale}
+									variant="grid"
+									isAuthenticated={isAuthenticated}
+								/>
+							</div>
 						))}
 					</div>
 				)}
@@ -145,53 +218,6 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 		gap: var(--space-card-gap);
 	}
 
-	.dest-card {
-		text-decoration: none;
-		color: inherit;
-		background-color: var(--card);
-		border-radius: var(--radius-card);
-		overflow: hidden;
-		box-shadow: var(--shadow-card);
-		transition: box-shadow var(--duration-normal) ease, transform var(--duration-normal) ease;
-	}
-
-	.dest-card:hover {
-		box-shadow: var(--shadow-card-hover);
-		transform: translateY(-4px);
-	}
-
-	.dest-card__image-wrapper { overflow: hidden; }
-
-	.dest-card__img {
-		width: 100%;
-		aspect-ratio: 3/2;
-		object-fit: cover;
-		transition: transform var(--duration-normal) ease;
-	}
-
-	.dest-card:hover .dest-card__img { transform: scale(1.05); }
-
-	.dest-card__content { padding: var(--space-4); }
-
-	.dest-card__name {
-		font-family: var(--font-heading);
-		font-weight: 600;
-		font-size: var(--text-lg);
-		color: var(--foreground);
-		margin: 0 0 var(--space-1);
-	}
-
-	.dest-card__desc {
-		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
-		color: var(--muted-foreground);
-		margin: 0;
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-	}
-
 	@media (max-width: 1024px) { .dest-grid { grid-template-columns: repeat(3, 1fr); } }
 	@media (max-width: 768px) { .dest-grid { grid-template-columns: repeat(2, 1fr); } }
 	@media (max-width: 480px) { .dest-grid { grid-template-columns: 1fr; } }
@@ -201,7 +227,7 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 		display: inline-flex;
 		gap: var(--space-2, 8px);
 		padding: 4px;
-		margin: 0 0 var(--space-4, 16px);
+		margin: 0;
 		background-color: var(--surface-warm, #faf6f0);
 		border-radius: var(--radius-pill, 9999px);
 	}
@@ -222,4 +248,112 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 		font-weight: 500;
 		cursor: default;
 	}
+
+	/* SPEC-098 T-052c — Sort dropdown row.
+	 * Lays the view-toggle and the sort form side-by-side, wrapping on
+	 * narrow viewports so the controls remain reachable. */
+	.dest-listing__controls {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3, 12px);
+		margin: 0 0 var(--space-4, 16px);
+	}
+
+	.dest-sort {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2, 8px);
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		color: var(--muted-foreground, #555);
+	}
+	.dest-sort__label { white-space: nowrap; }
+	.dest-sort__select {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		padding: 0.5rem 2.25rem 0.5rem 0.875rem;
+		border-radius: var(--radius-button, 8px);
+		border: 1px solid var(--border, #e2dccd);
+		background-color: var(--card, #fff);
+		color: var(--foreground);
+		appearance: none;
+		background-image: linear-gradient(45deg, transparent 50%, var(--muted-foreground, #555) 50%),
+			linear-gradient(135deg, var(--muted-foreground, #555) 50%, transparent 50%);
+		background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
+		background-size: 6px 6px, 6px 6px;
+		background-repeat: no-repeat;
+		cursor: pointer;
+		transition: border-color var(--duration-normal, 0.4s) ease;
+	}
+	.dest-sort__select:hover,
+	.dest-sort__select:focus { border-color: var(--accent, #f59e0b); outline: none; }
+	.dest-sort__submit {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		padding: 0.5rem 1rem;
+		border-radius: var(--radius-button, 8px);
+		border: 0;
+		background-color: var(--accent, #f59e0b);
+		color: white;
+		cursor: pointer;
+	}
 </style>
+
+<script>
+	/**
+	 * SPEC-098 T-052c — Sort dropdown wiring.
+	 *
+	 * Maps the canonical sort token from the dropdown into the
+	 * `sortBy`/`sortOrder` pair the public destination list endpoint expects,
+	 * preserves any other existing query params, drops `page` (so a re-sort
+	 * resets pagination), and submits the GET form.
+	 */
+	(() => {
+		const form = document.querySelector('[data-sort-form]') as HTMLFormElement | null;
+		if (!form) return;
+		const select = form.querySelector('[data-sort-select]') as HTMLSelectElement | null;
+		const sortByInput = form.querySelector('[data-sort-by]') as HTMLInputElement | null;
+		const sortOrderInput = form.querySelector('[data-sort-order]') as HTMLInputElement | null;
+		if (!select || !sortByInput || !sortOrderInput) return;
+
+		function tokenToPair(token: string): { sortBy: string; sortOrder: '' | 'asc' | 'desc' } {
+			switch (token) {
+				case 'name_asc':
+					return { sortBy: 'name', sortOrder: 'asc' };
+				case 'name_desc':
+					return { sortBy: 'name', sortOrder: 'desc' };
+				case 'createdAt_desc':
+					return { sortBy: 'createdAt', sortOrder: 'desc' };
+				case 'mostSaved':
+					return { sortBy: 'mostSaved', sortOrder: 'desc' };
+				default:
+					return { sortBy: '', sortOrder: '' };
+			}
+		}
+
+		select.addEventListener('change', () => {
+			const { sortBy, sortOrder } = tokenToPair(select.value);
+			sortByInput.value = sortBy;
+			sortOrderInput.value = sortOrder;
+
+			// Preserve other query params (e.g. future filters), drop `page` and
+			// the synthetic `sort` token that the form would otherwise submit.
+			const url = new URL(window.location.href);
+			url.searchParams.delete('page');
+			url.searchParams.delete('sort');
+			if (sortBy) {
+				url.searchParams.set('sortBy', sortBy);
+			} else {
+				url.searchParams.delete('sortBy');
+			}
+			if (sortOrder) {
+				url.searchParams.set('sortOrder', sortOrder);
+			} else {
+				url.searchParams.delete('sortOrder');
+			}
+			window.location.href = url.toString();
+		});
+	})();
+</script>

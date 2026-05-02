@@ -20,7 +20,9 @@ import { AccommodationTypeEnum } from '@repo/schemas';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
 import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi } from '@/lib/api/endpoints';
+import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
+import { webLogger } from '@/lib/logger';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -43,7 +45,12 @@ const destinationIds = url.searchParams.get('destinationIds') ?? undefined;
 const minPrice = url.searchParams.get('minPrice') ? Number(url.searchParams.get('minPrice')) : undefined;
 const maxPrice = url.searchParams.get('maxPrice') ? Number(url.searchParams.get('maxPrice')) : undefined;
 const sortBy = url.searchParams.get('sortBy') ?? undefined;
-const sortOrder = (url.searchParams.get('sortOrder') as 'asc' | 'desc') ?? undefined;
+// SPEC-098 T-052 — `mostSaved` should default to descending so accommodations
+// with the most active bookmarks appear first. Other fields keep their existing
+// behavior (server-side fallback to `asc`).
+const explicitSortOrder = url.searchParams.get('sortOrder') as 'asc' | 'desc' | null;
+const sortOrder: 'asc' | 'desc' | undefined =
+    explicitSortOrder ?? (sortBy === 'mostSaved' ? 'desc' : undefined);
 const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
 const minGuests = url.searchParams.get('minGuests') ? Number(url.searchParams.get('minGuests')) : undefined;
 const maxGuests = url.searchParams.get('maxGuests') ? Number(url.searchParams.get('maxGuests')) : undefined;
@@ -101,7 +108,50 @@ const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 
 // Transform items for cards
-const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }));
+const baseCards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }));
+
+// SPEC-098 T-041 — Pre-hydrate FavoriteButton state for authenticated users.
+// We issue a single bulk-check request for all the entity IDs on the current
+// page instead of one /check per card. Guests skip this call entirely; their
+// FavoriteButton renders in guest mode (auth-required popover on click).
+//
+// On any failure (network error, 5xx, etc.) we silently degrade — each
+// FavoriteButton can still hydrate itself via its own /check fallback so the
+// page render is never blocked.
+const isAuthenticated = Boolean(Astro.locals.user);
+type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
+let favoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
+if (isAuthenticated && baseCards.length > 0) {
+    try {
+        const bulkResult = await userBookmarksApi.checkBulk({
+            entityType: 'ACCOMMODATION',
+            entityIds: baseCards.map((card) => card.id)
+        });
+        if (bulkResult.ok) {
+            favoriteChecks = bulkResult.data.checks;
+        } else {
+            webLogger.warn(
+                { error: bulkResult.error },
+                'Bulk bookmark check failed; falling back to per-card hydration'
+            );
+        }
+    } catch (error) {
+        webLogger.warn(
+            { error: error instanceof Error ? error.message : String(error) },
+            'Bulk bookmark check threw; falling back to per-card hydration'
+        );
+    }
+}
+
+const cards = baseCards.map((card) => {
+    const entry = favoriteChecks[card.id];
+    if (!entry) return card;
+    return {
+        ...card,
+        isFavorited: entry.isBookmarked,
+        favoriteBookmarkId: entry.bookmarkId
+    };
+});
 
 // --- Natural language filter summary ---
 // Build catalogs from the fetched data for the summary builder.
@@ -262,6 +312,9 @@ const sortOptions = [
 	{ value: 'price_desc', label: t('accommodations.sort.priceDesc', 'Precio: mayor a menor') },
 	{ value: 'rating', label: t('accommodations.sort.rating', 'Mejor valorados') },
 	{ value: 'recent', label: t('accommodations.sort.recent', 'Más recientes') },
+	// SPEC-098 T-052 — orders by total active bookmarks (descending) via the
+	// `mostSaved` synthetic sort field on the public accommodation list endpoint.
+	{ value: 'mostSaved', label: t('ui.sort.most_bookmarked', 'Más guardados') },
 ];
 
 // ItemList JSON-LD
@@ -398,7 +451,7 @@ if (includeNoReviews) initialParams.includeNoReviews = 'true';
 		<div class="acc-grid">
 			{cards.map((card, i) => (
 				<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
-					<AccommodationCard data={card} locale={locale} />
+					<AccommodationCard data={card} locale={locale} isAuthenticated={isAuthenticated} />
 				</div>
 			))}
 		</div>

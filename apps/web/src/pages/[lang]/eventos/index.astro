@@ -30,7 +30,12 @@ const pageSize = 9;
 const q = url.searchParams.get('q') ?? undefined;
 const category = url.searchParams.get('category') ?? undefined;
 const sortBy = url.searchParams.get('sortBy') ?? 'startDate';
-const sortOrder = (url.searchParams.get('sortOrder') as 'asc' | 'desc') ?? 'asc';
+// SPEC-098 T-052a — `mostSaved` should default to descending so events with
+// the most active bookmarks appear first. Other fields keep their existing
+// asc default.
+const explicitSortOrder = url.searchParams.get('sortOrder') as 'asc' | 'desc' | null;
+const sortOrder: 'asc' | 'desc' =
+    explicitSortOrder ?? (sortBy === 'mostSaved' ? 'desc' : 'asc');
 
 const result = await eventsApi.list({ page, pageSize, q, category, sortBy, sortOrder });
 
@@ -67,6 +72,9 @@ const filterGroups = [
 const sortOptions = [
 	{ value: 'startDate', label: t('events.sort.date', 'Fecha') },
 	{ value: 'name', label: t('events.sort.name', 'Nombre') },
+	// SPEC-098 T-052a — orders by total active bookmarks (descending) via the
+	// `mostSaved` synthetic sort field on the public event list endpoint.
+	{ value: 'mostSaved', label: t('ui.sort.most_bookmarked', 'Más guardados') },
 ] as const;
 
 const baseUrl = buildUrl({ locale, path: 'eventos' });

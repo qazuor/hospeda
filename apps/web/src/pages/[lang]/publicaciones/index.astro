@@ -30,6 +30,9 @@ const pageSize = 9;
 const q = url.searchParams.get('q') ?? undefined;
 const category = url.searchParams.get('category') ?? undefined;
 const sortBy = url.searchParams.get('sortBy') ?? 'publishedAt';
+// SPEC-098 T-052b — `mostSaved` defaults to descending so posts with
+// the most active bookmarks appear first. Other fields keep their existing
+// `desc` default (newest-first for `publishedAt`).
 const sortOrder = (url.searchParams.get('sortOrder') as 'asc' | 'desc') ?? 'desc';
 
 const result = await postsApi.list({ page, pageSize, q, category, sortBy, sortOrder });
@@ -69,6 +72,9 @@ const filterGroups = [
 const sortOptions = [
 	{ value: 'publishedAt', label: t('blog.sort.newest', 'Más recientes') },
 	{ value: 'title', label: t('blog.sort.title', 'Título') },
+	// SPEC-098 T-052b — orders by total active bookmarks (descending) via the
+	// `mostSaved` synthetic sort field on the public post list endpoint.
+	{ value: 'mostSaved', label: t('ui.sort.most_bookmarked', 'Más guardados') },
 ] as const;
 
 const baseUrl = buildUrl({ locale, path: 'publicaciones' });

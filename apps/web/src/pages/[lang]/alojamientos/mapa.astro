@@ -28,6 +28,10 @@ import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-su
 const locale = Astro.locals.locale as SupportedLocale;
 const { t, tPlural } = createTranslations(locale);
 
+// SPEC-098 T-044: Pass authentication state to AccommodationsListingMap so
+// the popup FavoriteButton can behave correctly for guests vs. signed-in users.
+const isAuthenticated = !!Astro.locals.user;
+
 // Map view fetches up to MAP_FETCH_CAP items in the current viewport bbox.
 // No traditional pagination — clusters keep rendering manageable.
 const MAP_FETCH_CAP = 100;
@@ -41,7 +45,11 @@ const destinationIds = url.searchParams.get('destinationIds') ?? undefined;
 const minPrice = url.searchParams.get('minPrice') ? Number(url.searchParams.get('minPrice')) : undefined;
 const maxPrice = url.searchParams.get('maxPrice') ? Number(url.searchParams.get('maxPrice')) : undefined;
 const sortBy = url.searchParams.get('sortBy') ?? undefined;
-const sortOrder = (url.searchParams.get('sortOrder') as 'asc' | 'desc') ?? undefined;
+// SPEC-098 T-052 — `mostSaved` defaults to descending so the most-bookmarked
+// accommodations appear first.
+const explicitSortOrder = url.searchParams.get('sortOrder') as 'asc' | 'desc' | null;
+const sortOrder: 'asc' | 'desc' | undefined =
+    explicitSortOrder ?? (sortBy === 'mostSaved' ? 'desc' : undefined);
 const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
 const minGuests = url.searchParams.get('minGuests') ? Number(url.searchParams.get('minGuests')) : undefined;
 const maxGuests = url.searchParams.get('maxGuests') ? Number(url.searchParams.get('maxGuests')) : undefined;
@@ -211,6 +219,9 @@ const sortOptions = [
 	{ value: 'price_desc', label: t('accommodations.sort.priceDesc', 'Precio: mayor a menor') },
 	{ value: 'rating', label: t('accommodations.sort.rating', 'Mejor valorados') },
 	{ value: 'recent', label: t('accommodations.sort.recent', 'Más recientes') },
+	// SPEC-098 T-052 — orders by total active bookmarks (descending) via the
+	// `mostSaved` synthetic sort field on the public accommodation list endpoint.
+	{ value: 'mostSaved', label: t('ui.sort.most_bookmarked', 'Más guardados') },
 ];
 
 // Build initial filter params for the sidebar
@@ -335,6 +346,8 @@ for (const card of cards) {
 				reviewsLabelById={reviewsLabelById}
 				featuredLabel={t('maps.featuredBadge', 'Destacado')}
 				showSidebar={true}
+				isAuthenticated={isAuthenticated}
+				locale={locale}
 				sidebarI18n={{
 					resultsHeading: t('maps.sidebar.resultsHeading', 'Resultados en el mapa'),
 					resultsCountOne: t('maps.sidebar.resultsCount_one', '{{count}} alojamiento'),
