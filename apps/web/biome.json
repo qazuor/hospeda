@@ -19,5 +19,17 @@
                 }
             }
         }
-    }
+    },
+    "overrides": [
+        {
+            "include": ["src/components/account/CollectionPickers.tsx"],
+            "linter": {
+                "rules": {
+                    "a11y": {
+                        "useSemanticElements": "off"
+                    }
+                }
+            }
+        }
+    ]
 }

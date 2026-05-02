@@ -91,6 +91,42 @@ export const userBookmarksApi = {
     },
 
     /**
+     * Bulk-check bookmark status for many entities of the same type in a single request.
+     * Used by listing pages to pre-hydrate FavoriteButton state without
+     * issuing one /check call per card (SPEC-098 T-041).
+     *
+     * @param body - The shared `entityType` and the list of `entityIds` to check (max 100)
+     * @returns A map keyed by entityId with `{ isBookmarked, bookmarkId }` per entry.
+     *
+     * @example
+     * ```ts
+     * const result = await userBookmarksApi.checkBulk({
+     *   entityType: 'ACCOMMODATION',
+     *   entityIds: ['uuid-1', 'uuid-2']
+     * });
+     * if (result.ok) console.log(result.data.checks['uuid-1'].isBookmarked);
+     * ```
+     */
+    checkBulk(body: {
+        readonly entityType: BookmarkEntityType;
+        readonly entityIds: readonly string[];
+    }): Promise<
+        ApiResult<{
+            readonly checks: Readonly<
+                Record<
+                    string,
+                    { readonly isBookmarked: boolean; readonly bookmarkId: string | null }
+                >
+            >;
+        }>
+    > {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/user-bookmarks/check-bulk`,
+            body
+        });
+    },
+
+    /**
      * Toggle a bookmark for an entity.
      * Creates the bookmark if it does not exist, deletes it if it does.
      *
@@ -123,6 +159,32 @@ export const userBookmarksApi = {
      */
     delete({ id }: { readonly id: string }): Promise<ApiResult<{ readonly success: boolean }>> {
         return apiClient.delete({ path: `${PROTECTED}/user-bookmarks/${id}` });
+    },
+
+    /**
+     * Update the name and/or description notes on an existing bookmark.
+     * Only the bookmark owner can call this endpoint.
+     *
+     * @param params - Bookmark ID and the fields to update
+     * @returns The updated bookmark entity
+     *
+     * @example
+     * ```ts
+     * const result = await userBookmarksApi.update({
+     *   id: 'bookmark-uuid',
+     *   input: { name: 'Must revisit', description: 'Great place for summer' }
+     * });
+     * if (result.ok) console.log(result.data.name);
+     * ```
+     */
+    update({
+        id,
+        input
+    }: {
+        readonly id: string;
+        readonly input: { readonly name?: string; readonly description?: string };
+    }): Promise<ApiResult<UserBookmark>> {
+        return apiClient.patch({ path: `${PROTECTED}/user-bookmarks/${id}`, body: input });
     }
 };
 
@@ -926,5 +988,275 @@ export const protectedAccommodationsApi = {
         id
     }: { readonly id: string }): Promise<ApiResult<Record<string, unknown> | null>> {
         return apiClient.getProtected({ path: `${PROTECTED}/accommodations/${id}` });
+    }
+};
+
+// --- User Bookmark Collections (Protected) ---
+
+/** Usage counters for bookmark collections returned by the list endpoint */
+export interface BookmarkCollectionUsage {
+    readonly current: number;
+    readonly max: number;
+}
+
+/** Single bookmark collection item */
+export interface BookmarkCollectionItem {
+    readonly id: string;
+    readonly name: string;
+    readonly description: string | null;
+    readonly color: string | null;
+    readonly icon: string | null;
+    readonly bookmarkCount: number;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+}
+
+/** Input for creating a new bookmark collection */
+export interface CreateBookmarkCollectionInput {
+    readonly name: string;
+    readonly description?: string;
+    readonly color?: string;
+    readonly icon?: string;
+}
+
+/** Input for updating an existing bookmark collection */
+export interface UpdateBookmarkCollectionInput {
+    readonly name?: string;
+    readonly description?: string;
+    readonly color?: string;
+    readonly icon?: string;
+}
+
+/** Response shape from the user-bookmark-collections list endpoint */
+export interface BookmarkCollectionListResponse {
+    readonly items: readonly BookmarkCollectionItem[];
+    readonly total: number;
+    readonly page: number;
+    readonly pageSize: number;
+    readonly usage: BookmarkCollectionUsage;
+}
+
+/** Entity type filter allowed when fetching bookmarks inside a collection */
+type CollectionBookmarkEntityType =
+    | 'ACCOMMODATION'
+    | 'DESTINATION'
+    | 'ATTRACTION'
+    | 'EVENT'
+    | 'POST';
+
+/** Single bookmark row returned inside a collection detail response */
+export interface CollectionBookmarkRow {
+    readonly id: string;
+    readonly entityId: string;
+    readonly entityType: CollectionBookmarkEntityType;
+    readonly name: string | null;
+    readonly description: string | null;
+    readonly createdAt: string;
+}
+
+/** Response shape from the user-bookmark-collections/:id endpoint */
+export interface BookmarkCollectionDetailResponse {
+    readonly collection: BookmarkCollectionItem;
+    readonly bookmarks: {
+        readonly rows: readonly CollectionBookmarkRow[];
+        readonly total: number;
+        readonly page: number;
+        readonly pageSize: number;
+    };
+}
+
+/** Protected user bookmark collections API endpoints */
+export const userBookmarkCollectionsApi = {
+    /**
+     * Get a single bookmark collection by ID with its paginated bookmarks.
+     *
+     * @param params - Collection ID, optional bookmarks pagination and entity type filter
+     * @returns The collection metadata and a paginated list of bookmark rows
+     *
+     * @example
+     * ```ts
+     * const result = await userBookmarkCollectionsApi.getById({
+     *   id: 'col-uuid',
+     *   bookmarksPage: 1,
+     *   bookmarksPageSize: 12
+     * });
+     * if (result.ok) {
+     *   const { collection, bookmarks } = result.data;
+     *   console.log(collection.name, bookmarks.total);
+     * }
+     * ```
+     */
+    getById({
+        id,
+        bookmarksPage,
+        bookmarksPageSize,
+        entityType
+    }: {
+        readonly id: string;
+        readonly bookmarksPage?: number;
+        readonly bookmarksPageSize?: number;
+        readonly entityType?: CollectionBookmarkEntityType;
+    }): Promise<ApiResult<BookmarkCollectionDetailResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/user-bookmark-collections/${id}`,
+            params: {
+                bookmarksPage,
+                bookmarksPageSize,
+                entityType
+            } as Record<string, unknown>
+        });
+    },
+
+    /**
+     * List the authenticated user's bookmark collections.
+     * Includes a `usage` field with `{ current, max }` indicating how many
+     * collections the user has and the plan-level maximum allowed.
+     *
+     * @param params - Optional pagination and bookmark count inclusion
+     * @returns Paginated list of collections with usage counters
+     *
+     * @example
+     * ```ts
+     * const result = await userBookmarkCollectionsApi.list({ page: 1, pageSize: 20 });
+     * if (result.ok) {
+     *   const { usage } = result.data;
+     *   console.log(`${usage.current} / ${usage.max} collections used`);
+     * }
+     * ```
+     */
+    list(params?: {
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly includeBookmarkCount?: boolean;
+    }): Promise<ApiResult<BookmarkCollectionListResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/user-bookmark-collections`,
+            params: params as Record<string, unknown> | undefined
+        });
+    },
+
+    /**
+     * Create a new bookmark collection for the authenticated user.
+     *
+     * @param input - Collection fields: name (required), plus optional description, color, icon
+     * @returns The newly created collection
+     *
+     * @example
+     * ```ts
+     * const result = await userBookmarkCollectionsApi.create({ name: 'Mi lista' });
+     * if (result.ok) console.log(result.data.id);
+     * ```
+     */
+    create(
+        input: CreateBookmarkCollectionInput
+    ): Promise<ApiResult<{ readonly data: BookmarkCollectionItem }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/user-bookmark-collections`,
+            body: input
+        });
+    },
+
+    /**
+     * Update an existing bookmark collection.
+     * Only the collection owner can call this endpoint.
+     *
+     * @param params - Collection ID and the fields to update (all optional)
+     * @returns The updated collection
+     *
+     * @example
+     * ```ts
+     * const result = await userBookmarkCollectionsApi.update({
+     *   id: 'col-uuid',
+     *   input: { name: 'Nuevo nombre' }
+     * });
+     * if (result.ok) console.log(result.data.name);
+     * ```
+     */
+    update({
+        id,
+        input
+    }: {
+        readonly id: string;
+        readonly input: UpdateBookmarkCollectionInput;
+    }): Promise<ApiResult<{ readonly data: BookmarkCollectionItem }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/user-bookmark-collections/${id}`,
+            body: input
+        });
+    },
+
+    /**
+     * Assign a bookmark to a collection.
+     * Corresponds to POST /api/v1/protected/user-bookmark-collections/:collectionId/bookmarks/:bookmarkId
+     *
+     * @param params - Collection ID and bookmark ID to assign
+     * @returns The updated bookmark record wrapped in a `data` key
+     *
+     * @example
+     * ```ts
+     * const result = await userBookmarkCollectionsApi.addBookmark({
+     *   collectionId: 'col-uuid',
+     *   bookmarkId: 'bk-uuid'
+     * });
+     * if (result.ok) console.log(result.data.data.id);
+     * ```
+     */
+    addBookmark({
+        collectionId,
+        bookmarkId
+    }: {
+        readonly collectionId: string;
+        readonly bookmarkId: string;
+    }): Promise<ApiResult<{ readonly data: UserBookmark }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/user-bookmark-collections/${collectionId}/bookmarks/${bookmarkId}`
+        });
+    },
+
+    /**
+     * Remove a bookmark from a collection.
+     * Corresponds to DELETE /api/v1/protected/user-bookmark-collections/:collectionId/bookmarks/:bookmarkId
+     *
+     * @param params - Collection ID and bookmark ID to remove
+     * @returns Whether the removal succeeded
+     *
+     * @example
+     * ```ts
+     * const result = await userBookmarkCollectionsApi.removeBookmark({
+     *   collectionId: 'col-uuid',
+     *   bookmarkId: 'bk-uuid'
+     * });
+     * if (result.ok) console.log(result.data.success);
+     * ```
+     */
+    removeBookmark({
+        collectionId,
+        bookmarkId
+    }: {
+        readonly collectionId: string;
+        readonly bookmarkId: string;
+    }): Promise<ApiResult<{ readonly success: boolean }>> {
+        return apiClient.delete({
+            path: `${PROTECTED}/user-bookmark-collections/${collectionId}/bookmarks/${bookmarkId}`
+        });
+    },
+
+    /**
+     * Delete a bookmark collection by ID.
+     * Only the collection owner can call this endpoint.
+     *
+     * @param params - Collection ID to delete
+     * @returns Whether the deletion succeeded
+     *
+     * @example
+     * ```ts
+     * const result = await userBookmarkCollectionsApi.delete({ id: 'col-uuid' });
+     * if (result.ok) console.log(result.data.success);
+     * ```
+     */
+    delete({ id }: { readonly id: string }): Promise<ApiResult<{ readonly success: boolean }>> {
+        return apiClient.delete({
+            path: `${PROTECTED}/user-bookmark-collections/${id}`
+        });
     }
 };

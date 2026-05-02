@@ -29,6 +29,7 @@ export {
     reviewsApi,
     tagsApi,
     userApi,
+    userBookmarkCollectionsApi,
     userBookmarksApi
 } from './endpoints-protected';
 
@@ -36,6 +37,9 @@ export {
 
 export type {
     AccommodationReviewRating,
+    BookmarkCollectionItem,
+    BookmarkCollectionListResponse,
+    BookmarkCollectionUsage,
     CreateAccommodationReviewBody,
     ExchangeRateConfig,
     ExchangeRateItem,

@@ -18,7 +18,8 @@
             "**/.vinxi/**",
             "**/routeTree.gen.ts",
             "**/*.astro",
-            "**/docs/examples/**"
+            "**/docs/examples/**",
+            "**/mappings/id-mappings.json"
         ]
     },
     "organizeImports": {

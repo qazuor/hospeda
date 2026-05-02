@@ -365,6 +365,10 @@ export const destinationsApi = {
         level?: number;
         ancestorId?: string;
         includeEventCount?: boolean;
+        // SPEC-098 T-052c: public sort whitelist is enforced server-side.
+        // Allowed values: 'name', 'createdAt', 'mostSaved'.
+        sortBy?: string;
+        sortOrder?: 'asc' | 'desc';
     }): Promise<ApiResult<PaginatedResponse<DestinationPublic>>> {
         return apiClient.getList({ path: `${BASE}/destinations`, params });
     },
@@ -863,6 +867,40 @@ export const searchApi = {
         return apiClient.get({
             path: `${BASE}/search`,
             params: limit != null ? { q, limit } : { q }
+        });
+    }
+};
+
+// --- User Bookmarks (Public count — no auth required) ---
+
+/** Public user bookmarks API endpoints (no auth required) */
+export const userBookmarksPublicApi = {
+    /**
+     * Get the total number of users who have bookmarked a specific entity.
+     * Results are cached server-side for 60 seconds.
+     *
+     * @param params - Entity type and entity UUID
+     * @returns The public bookmark count for the entity
+     *
+     * @example
+     * ```ts
+     * const result = await userBookmarksPublicApi.count({
+     *   entityType: 'ACCOMMODATION',
+     *   entityId: 'acc-uuid'
+     * });
+     * if (result.ok) console.log(result.data.count);
+     * ```
+     */
+    count({
+        entityType,
+        entityId
+    }: {
+        readonly entityType: 'ACCOMMODATION' | 'DESTINATION' | 'EVENT' | 'POST' | 'ATTRACTION';
+        readonly entityId: string;
+    }): Promise<ApiResult<{ readonly count: number }>> {
+        return apiClient.get({
+            path: `${BASE}/user-bookmarks/count`,
+            params: { entityType, entityId }
         });
     }
 };
