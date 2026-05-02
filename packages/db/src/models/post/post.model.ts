@@ -1,8 +1,41 @@
 import type { Post } from '@repo/schemas';
-import { eq, sql } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { posts } from '../../schemas/post/post.dbschema.ts';
+import { userBookmarks } from '../../schemas/user/user_bookmark.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
+import { buildWhereClause } from '../../utils/drizzle-helpers.ts';
+import { DbError } from '../../utils/error.ts';
+import { logError, logQuery } from '../../utils/logger.ts';
+
+/**
+ * Synthetic sort field name that orders posts by the number of active
+ * (non-deleted) bookmarks pointing at them. Implemented as a correlated
+ * subquery against `user_bookmarks` filtered by `entity_type = 'POST'` and
+ * `deleted_at IS NULL`. SPEC-098 T-052b (mirrors the accommodation
+ * implementation in T-052 and the events implementation in T-052a).
+ *
+ * Performance depends on the compound index `idx_user_bookmarks_entity_active`
+ * on `(entity_id, entity_type, deleted_at)` (see SPEC-098 T-008 and the
+ * `0019_user_bookmarks_entity_active_index.sql` manual migration).
+ */
+const MOST_SAVED_SORT_FIELD = 'mostSaved';
+
+/**
+ * Build the correlated subquery used as the ORDER BY expression for the
+ * `mostSaved` synthetic sort. NULL counts (i.e. no active bookmarks) are
+ * folded to zero by `COUNT(*)`, so no `NULLS LAST` clause is required.
+ */
+function buildMostSavedOrderExpr(order: 'asc' | 'desc'): SQL {
+    const direction = order === 'desc' ? sql`DESC` : sql`ASC`;
+    return sql`(
+        SELECT COUNT(*) FROM ${userBookmarks}
+        WHERE ${userBookmarks.entityId} = ${posts.id}
+          AND ${userBookmarks.entityType} = 'POST'
+          AND ${userBookmarks.deletedAt} IS NULL
+    ) ${direction}`;
+}
 
 export class PostModel extends BaseModelImpl<Post> {
     protected table = posts;
@@ -29,6 +62,86 @@ export class PostModel extends BaseModelImpl<Post> {
 
     protected getTableName(): string {
         return 'posts';
+    }
+
+    /**
+     * Overrides {@link BaseModelImpl.findAll} to add support for the synthetic
+     * `mostSaved` sort field. When `options.sortBy === 'mostSaved'`, the query
+     * orders rows by the count of active bookmarks via a correlated subquery on
+     * `user_bookmarks` (entity_type='POST' AND deleted_at IS NULL), with a
+     * stable `id DESC` tiebreaker so pagination stays deterministic. All other
+     * sort fields delegate to the base implementation unchanged.
+     *
+     * SPEC-098 T-052b — mirrors the accommodation `mostSaved` mechanism on
+     * the posts listing.
+     */
+    override async findAll(
+        where: Record<string, unknown>,
+        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
+        additionalConditions?: SQL[],
+        tx?: DrizzleClient
+    ): Promise<{ items: Post[]; total: number }> {
+        if (options?.sortBy !== MOST_SAVED_SORT_FIELD) {
+            return super.findAll(where, options, additionalConditions, tx);
+        }
+
+        const db = this.getClient(tx);
+        const safeWhere = where ?? {};
+        const page = options.page ?? 1;
+        const pageSize = options.pageSize ?? 10;
+        const sortOrder: 'asc' | 'desc' = options.sortOrder ?? 'desc';
+        const offset = (page - 1) * pageSize;
+
+        const logContext = { where: safeWhere, page, pageSize, sortBy: MOST_SAVED_SORT_FIELD };
+
+        try {
+            const baseWhereClause = buildWhereClause(safeWhere, this.table);
+
+            const allConditions: SQL[] = [];
+            if (baseWhereClause) allConditions.push(baseWhereClause);
+            if (additionalConditions && additionalConditions.length > 0) {
+                allConditions.push(...additionalConditions);
+            }
+
+            const finalWhereClause =
+                allConditions.length === 0
+                    ? undefined
+                    : allConditions.length === 1
+                      ? allConditions[0]
+                      : and(...allConditions);
+
+            const orderExpr = buildMostSavedOrderExpr(sortOrder);
+            const tieBreaker = desc(posts.id);
+
+            const itemsQuery = db
+                .select()
+                .from(this.table)
+                .where(finalWhereClause)
+                .orderBy(orderExpr, tieBreaker)
+                .limit(pageSize)
+                .offset(offset);
+
+            const [items, total] = await Promise.all([
+                itemsQuery,
+                this.count(safeWhere, {
+                    additionalConditions,
+                    tx
+                })
+            ]);
+
+            // DRIZZLE-LIMITATION: relational query result widens nullable JSONB columns vs the entity type; the projection above already returns the canonical shape.
+            const result = { items: items as unknown as Post[], total };
+            try {
+                logQuery(this.entityName, 'findAll', logContext, result);
+            } catch {}
+            return result;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'findAll', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'findAll', logContext, err.message);
+        }
     }
 
     /** Atomically increment the likes counter by 1 */

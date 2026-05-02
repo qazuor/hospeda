@@ -586,16 +586,28 @@ export class PostService extends BaseCrudService<
      * @param actor - The actor performing the search.
      * @returns A paginated list of posts matching the criteria.
      */
-    protected async _executeSearch(params: PostListInput, _actor: Actor, _ctx: ServiceContext) {
+    protected async _executeSearch(params: PostListInput, _actor: Actor, ctx: ServiceContext) {
         const {
-            page = 1,
-            pageSize = 10,
+            page: _page,
+            pageSize: _pageSize,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
             q: _q,
             ...filterParams
         } = params;
-        return this.model.findAll(filterParams, { page, pageSize });
+
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params
+        // before reaching this hook (SPEC-088) and re-publishes them via
+        // ctx.pagination. Forward them explicitly so model.findAll receives the
+        // caller-provided pagination + sort, including the synthetic
+        // `mostSaved` sort field handled by PostModel.findAll override
+        // (SPEC-098 T-052b).
+        return this.model.findAll(filterParams, {
+            page: ctx.pagination?.page ?? 1,
+            pageSize: ctx.pagination?.pageSize ?? 10,
+            sortBy: ctx.pagination?.sortBy,
+            sortOrder: ctx.pagination?.sortOrder
+        });
     }
 
     /**

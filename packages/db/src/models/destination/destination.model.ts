@@ -18,11 +18,40 @@ import { BaseModelImpl } from '../../base/base.model.ts';
 import { attractions } from '../../schemas/destination/attraction.dbschema.ts';
 import { destinations } from '../../schemas/destination/destination.dbschema.ts';
 import { rDestinationAttraction } from '../../schemas/destination/r_destination_attraction.dbschema.ts';
+import { userBookmarks } from '../../schemas/user/user_bookmark.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
-import { safeIlike } from '../../utils/drizzle-helpers.ts';
+import { buildWhereClause, safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
+
+/**
+ * Synthetic sort field name that orders destinations by the number of active
+ * (non-deleted) bookmarks pointing at them. Implemented as a correlated
+ * subquery against `user_bookmarks` filtered by `entity_type = 'DESTINATION'`
+ * and `deleted_at IS NULL`. SPEC-098 T-052c (mirrors the accommodation/event
+ * implementations from T-052/T-052a).
+ *
+ * Performance depends on the compound index `idx_user_bookmarks_entity_active`
+ * on `(entity_id, entity_type, deleted_at)` (see SPEC-098 T-008 and the
+ * `0019_user_bookmarks_entity_active_index.sql` manual migration).
+ */
+const MOST_SAVED_SORT_FIELD = 'mostSaved';
+
+/**
+ * Build the correlated subquery used as the ORDER BY expression for the
+ * `mostSaved` synthetic sort. NULL counts (i.e. no active bookmarks) are
+ * folded to zero by `COUNT(*)`, so no `NULLS LAST` clause is required.
+ */
+function buildMostSavedOrderExpr(order: 'asc' | 'desc'): SQL {
+    const direction = order === 'desc' ? sql`DESC` : sql`ASC`;
+    return sql`(
+        SELECT COUNT(*) FROM ${userBookmarks}
+        WHERE ${userBookmarks.entityId} = ${destinations.id}
+          AND ${userBookmarks.entityType} = 'DESTINATION'
+          AND ${userBookmarks.deletedAt} IS NULL
+    ) ${direction}`;
+}
 
 export class DestinationModel extends BaseModelImpl<Destination> {
     protected table = destinations;
@@ -49,6 +78,83 @@ export class DestinationModel extends BaseModelImpl<Destination> {
 
     protected getTableName(): string {
         return 'destinations';
+    }
+
+    /**
+     * Overrides {@link BaseModelImpl.findAll} to add support for the synthetic
+     * `mostSaved` sort field. When `options.sortBy === 'mostSaved'`, the query
+     * orders rows by the count of active bookmarks via a correlated subquery on
+     * `user_bookmarks` (entity_type='DESTINATION' AND deleted_at IS NULL), with a
+     * stable `id DESC` tiebreaker so pagination stays deterministic. All other
+     * sort fields delegate to the base implementation unchanged.
+     *
+     * SPEC-098 T-052c — mirrors the accommodation/event `mostSaved` mechanism
+     * on the destinations listing.
+     */
+    override async findAll(
+        where: Record<string, unknown>,
+        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
+        additionalConditions?: SQL[],
+        tx?: DrizzleClient
+    ): Promise<{ items: Destination[]; total: number }> {
+        if (options?.sortBy !== MOST_SAVED_SORT_FIELD) {
+            return super.findAll(where, options, additionalConditions, tx);
+        }
+
+        const db = this.getClient(tx);
+        const safeWhere = where ?? {};
+        const page = options.page ?? 1;
+        const pageSize = options.pageSize ?? 10;
+        const sortOrder: 'asc' | 'desc' = options.sortOrder ?? 'desc';
+        const offset = (page - 1) * pageSize;
+
+        const logContext = { where: safeWhere, page, pageSize, sortBy: MOST_SAVED_SORT_FIELD };
+
+        try {
+            const baseWhereClause = buildWhereClause(safeWhere, this.table);
+
+            const allConditions: SQL[] = [];
+            if (baseWhereClause) allConditions.push(baseWhereClause);
+            if (additionalConditions && additionalConditions.length > 0) {
+                allConditions.push(...additionalConditions);
+            }
+
+            const finalWhereClause =
+                allConditions.length === 0
+                    ? undefined
+                    : allConditions.length === 1
+                      ? allConditions[0]
+                      : and(...allConditions);
+
+            const orderExpr = buildMostSavedOrderExpr(sortOrder);
+            const tieBreaker = desc(destinations.id);
+
+            const itemsQuery = db
+                .select()
+                .from(this.table)
+                .where(finalWhereClause)
+                .orderBy(orderExpr, tieBreaker)
+                .limit(pageSize)
+                .offset(offset);
+
+            const [items, total] = await Promise.all([
+                itemsQuery,
+                this.count(safeWhere, { additionalConditions, tx })
+            ]);
+
+            // DRIZZLE-LIMITATION: relational query result widens nullable JSONB columns vs the entity type; the projection above already returns the canonical shape.
+            const result = { items: items as unknown as Destination[], total };
+            try {
+                logQuery(this.entityName, 'findAll', logContext, result);
+            } catch {}
+            return result;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'findAll', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'findAll', logContext, err.message);
+        }
     }
 
     /**

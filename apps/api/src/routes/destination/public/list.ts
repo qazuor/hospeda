@@ -1,6 +1,13 @@
 /**
  * Public destination list endpoint
- * Returns paginated list of public destinations
+ * Returns paginated list of public destinations.
+ *
+ * Sorting:
+ * - `sortBy`/`sortOrder`: single-column sort whitelisted via {@link sanitizeSortBy}.
+ *   Allowed fields: name, createdAt, mostSaved.
+ * - `mostSaved` is a synthetic field backed by a correlated subquery against
+ *   `user_bookmarks` (entity_type='DESTINATION'). See SPEC-098 T-052c and the
+ *   `DestinationModel.findAll` override for details.
  */
 import {
     DestinationPublicSchema,
@@ -15,6 +22,30 @@ import { extractPaginationParams, getPaginationResponse } from '../../../utils/p
 import { createPublicListRoute } from '../../../utils/route-factory';
 
 const destinationService = new DestinationService({ logger: apiLogger });
+
+/**
+ * Allowed sort fields for the public destination list.
+ *
+ * `mostSaved` is a synthetic field backed by a correlated subquery against
+ * `user_bookmarks`. It depends on the compound index
+ * `idx_user_bookmarks_entity_active` on `(entity_id, entity_type, deleted_at)`
+ * (see SPEC-098 T-008 and `0019_user_bookmarks_entity_active_index.sql`).
+ *
+ * Other fields map directly to destination table columns.
+ */
+const ALLOWED_SORT_FIELDS = new Set(['name', 'createdAt', 'mostSaved']);
+
+/**
+ * Validates the sortBy field against the allowed public sort columns.
+ * Returns undefined if the field is not in the allow-list to prevent
+ * sorting on internal or sensitive columns.
+ */
+function sanitizeSortBy(sortBy: string | undefined): string | undefined {
+    if (sortBy && ALLOWED_SORT_FIELDS.has(sortBy)) {
+        return sortBy;
+    }
+    return undefined;
+}
 
 /**
  * In-memory cache for event counts by city.
@@ -114,8 +145,20 @@ export const publicListDestinationsRoute = createPublicListRoute({
         // This handles all filter fields including hierarchy, location, and boolean coercion.
         const domainParams = httpToDomainDestinationSearch(safeQuery as DestinationSearchHttp);
 
+        // SPEC-098 T-052c: whitelist sortBy to prevent ordering on internal
+        // columns. Defaults to undefined (model uses its own default ordering)
+        // when the field is not allowed. When `mostSaved` is requested without
+        // an explicit order, default to descending so the most-saved items
+        // appear first.
+        const safeSortBy = sanitizeSortBy(domainParams.sortBy);
+        const safeSortOrder = safeSortBy
+            ? (domainParams.sortOrder ?? (safeSortBy === 'mostSaved' ? 'desc' : 'asc'))
+            : undefined;
+
         const result = await destinationService.search(actor, {
             ...domainParams,
+            sortBy: safeSortBy,
+            sortOrder: safeSortOrder,
             page,
             pageSize
         });

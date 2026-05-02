@@ -12,6 +12,7 @@ import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 import { rAccommodationAmenity } from '../../schemas/accommodation/r_accommodation_amenity.dbschema.ts';
 import { rAccommodationFeature } from '../../schemas/accommodation/r_accommodation_feature.dbschema.ts';
+import { userBookmarks } from '../../schemas/user/user_bookmark.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
@@ -48,6 +49,33 @@ function buildSortExpr(column: AnyColumn, order: 'asc' | 'desc', field: string):
         return order === 'desc' ? sql`${column} DESC NULLS LAST` : sql`${column} ASC NULLS LAST`;
     }
     return order === 'desc' ? desc(column) : asc(column);
+}
+
+/**
+ * Synthetic sort field name that orders accommodations by the number of active
+ * (non-deleted) bookmarks pointing at them. Implemented as a correlated subquery
+ * against `user_bookmarks` filtered by `entity_type = 'ACCOMMODATION'` and
+ * `deleted_at IS NULL`. SPEC-098 T-052.
+ *
+ * Performance depends on the compound index `idx_user_bookmarks_entity_active`
+ * on `(entity_id, entity_type, deleted_at)` (see SPEC-098 T-008 and the
+ * `0019_user_bookmarks_entity_active_index.sql` manual migration).
+ */
+const MOST_SAVED_SORT_FIELD = 'mostSaved';
+
+/**
+ * Build the correlated subquery used as the ORDER BY expression for the
+ * `mostSaved` synthetic sort. NULL counts (i.e. no active bookmarks) are folded
+ * to zero by `COUNT(*)`, so no `NULLS LAST` clause is required.
+ */
+function buildMostSavedOrderExpr(order: 'asc' | 'desc'): SQL {
+    const direction = order === 'desc' ? sql`DESC` : sql`ASC`;
+    return sql`(
+        SELECT COUNT(*) FROM ${userBookmarks}
+        WHERE ${userBookmarks.entityId} = ${accommodations.id}
+          AND ${userBookmarks.entityType} = 'ACCOMMODATION'
+          AND ${userBookmarks.deletedAt} IS NULL
+    ) ${direction}`;
 }
 
 /**
@@ -90,6 +118,13 @@ export function buildAccommodationOrderBy(params: {
         : rawSortFields;
 
     for (const sort of sortFields) {
+        // SPEC-098 T-052 — synthetic field backed by a correlated subquery
+        // against `user_bookmarks`. Handled before the column lookup because
+        // `mostSaved` is not a real accommodation column.
+        if (sort.field === MOST_SAVED_SORT_FIELD) {
+            orderBy.push(buildMostSavedOrderExpr(sort.order));
+            continue;
+        }
         const column = accommodations[sort.field as keyof typeof accommodations];
         if (column && typeof column === 'object' && 'name' in column) {
             orderBy.push(buildSortExpr(column as AnyColumn, sort.order, sort.field));

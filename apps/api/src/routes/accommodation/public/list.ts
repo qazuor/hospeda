@@ -40,13 +40,21 @@ import { createPublicListRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
-/** Allowed sort fields for public accommodation list */
+/**
+ * Allowed sort fields for public accommodation list.
+ *
+ * `mostSaved` is a synthetic field backed by a correlated subquery against
+ * `user_bookmarks`. It depends on the compound index
+ * `idx_user_bookmarks_entity_active` on `(entity_id, entity_type, deleted_at)`
+ * (see SPEC-098 T-008 / T-052 and `0019_user_bookmarks_entity_active_index.sql`).
+ */
 const ALLOWED_SORT_FIELDS = new Set([
     'name',
     'createdAt',
     'averageRating',
     'reviewsCount',
-    'isFeatured'
+    'isFeatured',
+    'mostSaved'
 ]);
 
 /**

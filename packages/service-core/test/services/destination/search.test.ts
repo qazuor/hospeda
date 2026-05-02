@@ -245,6 +245,13 @@ describe('DestinationService.search and count', () => {
         (model.findAll as import('vitest').Mock).mockResolvedValue(paginated(entities, 99, 10));
         await serviceWithNorm.search(admin, { page: 1, pageSize: 10 });
         expect(normalizer).toHaveBeenCalledWith({ page: 1, pageSize: 10, sortOrder: 'asc' }, admin);
-        expect(model.findAll).toHaveBeenCalledWith({}, { page: 99, pageSize: 10 });
+        // SPEC-098 T-052c: _executeSearch now forwards sortBy/sortOrder from
+        // ctx.pagination so the model can honor them (including the synthetic
+        // `mostSaved` sort). Both are undefined when callers do not request
+        // an explicit sort, but the keys are still present on the args object.
+        expect(model.findAll).toHaveBeenCalledWith(
+            {},
+            { page: 99, pageSize: 10, sortBy: undefined, sortOrder: 'asc' }
+        );
     });
 });

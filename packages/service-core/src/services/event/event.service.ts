@@ -529,10 +529,10 @@ export class EventService extends BaseCrudService<
      * @param _actor - The actor performing the search
      * @returns Paginated list of events matching the criteria
      */
-    protected async _executeSearch(params: EventSearchInput, _actor: Actor, _ctx: ServiceContext) {
+    protected async _executeSearch(params: EventSearchInput, _actor: Actor, ctx: ServiceContext) {
         const {
-            page = 1,
-            pageSize = 10,
+            page: _page,
+            pageSize: _pageSize,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
             q: _q,
@@ -552,9 +552,20 @@ export class EventService extends BaseCrudService<
             additionalConditions.push(inArray(eventTable.locationId, locationIds));
         }
 
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params
+        // before reaching this hook (SPEC-088) and re-publishes them via
+        // ctx.pagination. Forward them explicitly so model.findAll receives the
+        // caller-provided pagination + sort, including the synthetic
+        // `mostSaved` sort field handled by EventModel.findAll override
+        // (SPEC-098 T-052a).
         return this.model.findAll(
             filterParams,
-            { page, pageSize },
+            {
+                page: ctx.pagination?.page ?? 1,
+                pageSize: ctx.pagination?.pageSize ?? 10,
+                sortBy: ctx.pagination?.sortBy,
+                sortOrder: ctx.pagination?.sortOrder
+            },
             additionalConditions.length > 0 ? additionalConditions : undefined
         );
     }

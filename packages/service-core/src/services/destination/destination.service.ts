@@ -310,6 +310,12 @@ export class DestinationService extends BaseCrudService<
         // defaults if the caller provided no explicit pagination.
         const page = _ctx.pagination?.page ?? 1;
         const pageSize = _ctx.pagination?.pageSize ?? 10;
+        // SPEC-098 T-052c: forward sortBy/sortOrder through the same channel so
+        // the model can honor them (including the synthetic `mostSaved` sort).
+        // Previously these were dropped silently in extractImplementedFilters,
+        // mirroring the same bug fixed in events/posts.
+        const sortBy = _ctx.pagination?.sortBy;
+        const sortOrder = _ctx.pagination?.sortOrder;
 
         // Build where clause from the subset of filters that map to real columns.
         // Note: country/state/city are not direct columns (stored in location jsonb)
@@ -361,8 +367,8 @@ export class DestinationService extends BaseCrudService<
         }
 
         return additionalConditions
-            ? this.model.findAll(where, { page, pageSize }, additionalConditions)
-            : this.model.findAll(where, { page, pageSize });
+            ? this.model.findAll(where, { page, pageSize, sortBy, sortOrder }, additionalConditions)
+            : this.model.findAll(where, { page, pageSize, sortBy, sortOrder });
     }
 
     /**
