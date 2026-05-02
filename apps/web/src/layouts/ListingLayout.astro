@@ -117,10 +117,11 @@ const hasTopFilters = showFilters && filterPosition === 'top';
 		grid-template-columns: 250px 1fr;
 	}
 
-	/* Sidebar: top offset accounts for navbar (~84px) + compact wave header (~96px) */
+	/* Sidebar offset = real navbar height (--navbar-height, published by Header.astro)
+	   + the compact wave header band (~105px: content padding + title + wave overhang). */
 	.listing-sidebar {
 		position: sticky;
-		top: 185px;
+		top: calc(var(--navbar-height, 80px) + 105px);
 		align-self: start;
 	}
 

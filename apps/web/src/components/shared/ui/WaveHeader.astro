@@ -75,8 +75,16 @@ const { paddingTop = '3rem', class: className } = Astro.props;
    */
   function initWaveHeaders(): void {
     const headers = document.querySelectorAll<HTMLElement>('[data-wave-header]');
-    const navbar = document.querySelector<HTMLElement>('.header');
-    const navbarHeight = navbar?.getBoundingClientRect().height ?? 80;
+    // Read navbar height from the CSS var published by Header.astro.
+    // The bar's CSS `top` already uses var(--navbar-height); here we only need
+    // the value to align the IntersectionObserver rootMargin.
+    const readNavbarHeight = (): number => {
+      const raw = getComputedStyle(document.documentElement)
+        .getPropertyValue('--navbar-height')
+        .trim();
+      const parsed = Number.parseInt(raw, 10);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : 80;
+    };
 
     for (const header of headers) {
       const sentinel = header.querySelector<HTMLElement>('[data-wave-sentinel]');
@@ -86,8 +94,7 @@ const { paddingTop = '3rem', class: className } = Astro.props;
       if (header.dataset.waveInitialized === 'true') continue;
       header.dataset.waveInitialized = 'true';
 
-      // Set sticky top dynamically to match actual navbar height
-      bar.style.top = `${navbarHeight}px`;
+      const navbarHeight = readNavbarHeight();
 
       const observer = new IntersectionObserver(
         (entries) => {
@@ -133,7 +140,9 @@ const { paddingTop = '3rem', class: className } = Astro.props;
 
   .wave-header__bar {
     position: sticky;
-    top: 80px; /* fallback, JS overrides with actual navbar height */
+    /* Pin flush against the navbar — the var is published by Header.astro
+       (publishNavbarHeight). 80px is a safe fallback before JS hydrates. */
+    top: var(--navbar-height, 80px);
     z-index: calc(var(--z-nav, 50) - 1);
     /* No background here: breadcrumbs + content have their own warm bg.
        This lets the wave SVG sit on a transparent background so the
@@ -151,11 +160,13 @@ const { paddingTop = '3rem', class: className } = Astro.props;
     padding-bottom: 0.75rem;
     overflow: hidden;
     max-height: 80px;
-    opacity: 1;
     background-color: var(--surface-warm);
+    /* NOTE: no `opacity` transition. The bar wrapper has no background of its
+       own, so fading the breadcrumbs would expose the page behind it during
+       the compact transition. `overflow: hidden` + `max-height: 0` already
+       hide the content cleanly. */
     transition:
       max-height 0.3s ease,
-      opacity 0.2s ease,
       padding 0.3s ease;
   }
 
@@ -187,7 +198,6 @@ const { paddingTop = '3rem', class: className } = Astro.props;
    * ========================================================= */
   .wave-header--compact .wave-header__breadcrumbs {
     max-height: 0;
-    opacity: 0;
     padding-top: 0;
     padding-bottom: 0;
     pointer-events: none;

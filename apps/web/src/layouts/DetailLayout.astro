@@ -102,10 +102,11 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 		min-width: 0; /* Prevent grid blowout */
 	}
 
-	/* Sidebar: top offset accounts for navbar (~84px) + compact wave header (~96px) */
+	/* Sidebar offset = real navbar height (--navbar-height, published by Header.astro)
+	   + the compact wave header band (~105px: content padding + title + wave overhang). */
 	.detail-page__sidebar {
 		position: sticky;
-		top: 185px;
+		top: calc(var(--navbar-height, 80px) + 105px);
 		align-self: start;
 	}
 

@@ -381,17 +381,34 @@ const userMenuUser = serverUser
 </style>
 
 <script>
-    /** Track the scroll handler to remove it on re-init (View Transitions) */
+    /** Track handlers so we can remove them on re-init (View Transitions) */
     let currentScrollHandler: (() => void) | null = null;
+    let currentResizeHandler: (() => void) | null = null;
+
+    /**
+     * Publish the navbar's REAL height as a CSS custom property on <html>.
+     * Consumers (WaveHeader sticky bar, listing sidebar) rely on this so they
+     * stay flush with the navbar across breakpoints — no hardcoded 80px gap.
+     */
+    function publishNavbarHeight(header: Element): void {
+        const height = (header as HTMLElement).getBoundingClientRect().height;
+        if (height > 0) {
+            document.documentElement.style.setProperty('--navbar-height', `${Math.round(height)}px`);
+        }
+    }
 
     function initHeaderScroll(): void {
         const SCROLL_THRESHOLD = 10;
         const header = document.querySelector("[data-header]");
 
-        // Clean up previous listener to prevent accumulation
+        // Clean up previous listeners to prevent accumulation
         if (currentScrollHandler) {
             window.removeEventListener("scroll", currentScrollHandler);
             currentScrollHandler = null;
+        }
+        if (currentResizeHandler) {
+            window.removeEventListener("resize", currentResizeHandler);
+            currentResizeHandler = null;
         }
 
         if (header) {
@@ -399,9 +416,17 @@ const userMenuUser = serverUser
                 header.classList.toggle("navbar--scrolled", window.scrollY > SCROLL_THRESHOLD);
             };
 
+            const updateNavbarHeight = (): void => {
+                publishNavbarHeight(header);
+            };
+
             currentScrollHandler = updateHeader;
+            currentResizeHandler = updateNavbarHeight;
+
             updateHeader();
+            updateNavbarHeight();
             window.addEventListener("scroll", updateHeader, { passive: true });
+            window.addEventListener("resize", updateNavbarHeight, { passive: true });
         }
 
         document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
