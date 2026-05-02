@@ -1,4 +1,4 @@
-import { UserBookmarkModel } from '@repo/db';
+import { UserBookmarkModel, userBookmarks } from '@repo/db';
 import type { UserBookmark } from '@repo/schemas';
 import {
     PermissionEnum,
@@ -13,8 +13,11 @@ import {
     UserBookmarkListByEntityInputSchema,
     type UserBookmarkSearchInput,
     UserBookmarkSearchSchema,
-    UserBookmarkUpdateInputSchema
+    UserBookmarkUpdateInputSchema,
+    type UserBookmarkUpdateNotesInput,
+    UserBookmarkUpdateNotesSchema
 } from '@repo/schemas';
+import { inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
@@ -183,6 +186,78 @@ export class UserBookmarkService extends BaseCrudService<
         });
     }
 
+    /** Schema for checkBookmarksBulk input validation */
+    private static readonly CheckBookmarksBulkSchema = z.object({
+        userId: z.string().uuid(),
+        entityType: z.string().min(1),
+        entityIds: z.array(z.string().uuid()).min(1).max(100)
+    });
+
+    /**
+     * Bulk-check whether a list of entities is bookmarked by a user.
+     * Returns a record keyed by entityId mapping to `{ isBookmarked, bookmarkId }`.
+     * Issues a single SQL query using `entityId IN (...)` for performance.
+     *
+     * @param actor - The actor performing the action (must own the bookmarks
+     * or have USER_BOOKMARK_VIEW_ANY)
+     * @param params - The userId, entityType, and entityIds to check
+     * @param ctx - Optional service context carrying transaction and hookState
+     */
+    public async checkBookmarksBulk(
+        actor: Actor,
+        params: {
+            readonly userId: string;
+            readonly entityType: string;
+            readonly entityIds: readonly string[];
+        },
+        ctx?: ServiceContext
+    ): Promise<
+        ServiceOutput<{
+            checks: Record<string, { isBookmarked: boolean; bookmarkId: string | null }>;
+        }>
+    > {
+        return this.runWithLoggingAndValidation({
+            methodName: 'checkBookmarksBulk',
+            input: { ...params, actor },
+            schema: UserBookmarkService.CheckBookmarksBulkSchema,
+            ctx,
+            execute: async (validated) => {
+                if (actor.id !== validated.userId && !this._hasViewAnyPermission(actor)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'FORBIDDEN: Only owner can check bookmarks'
+                    );
+                }
+
+                const { items } = await this.model.findAll(
+                    {
+                        userId: validated.userId,
+                        entityType: validated.entityType,
+                        deletedAt: null
+                    },
+                    { page: 1, pageSize: validated.entityIds.length },
+                    [inArray(userBookmarks.entityId, [...validated.entityIds])],
+                    ctx?.tx
+                );
+
+                const checks: Record<string, { isBookmarked: boolean; bookmarkId: string | null }> =
+                    {};
+
+                for (const id of validated.entityIds) {
+                    checks[id] = { isBookmarked: false, bookmarkId: null };
+                }
+                for (const bookmark of items) {
+                    checks[bookmark.entityId] = {
+                        isBookmarked: true,
+                        bookmarkId: bookmark.id
+                    };
+                }
+
+                return { checks };
+            }
+        });
+    }
+
     /**
      * Lists all bookmarks for a given user.
      * Accessible by the owner or any actor with USER_BOOKMARK_VIEW_ANY permission.
@@ -307,6 +382,77 @@ export class UserBookmarkService extends BaseCrudService<
                 }
                 const count = await this.model.count({ userId: validated.userId, deletedAt: null });
                 return { count };
+            }
+        });
+    }
+
+    /** Combined schema for updateBookmark input validation */
+    private static readonly UpdateBookmarkSchema = z.object({
+        bookmarkId: z.string().uuid(),
+        input: UserBookmarkUpdateNotesSchema
+    });
+
+    /**
+     * Updates the user-editable note fields (`name` and/or `description`) on a bookmark.
+     *
+     * Permission rules:
+     * - The actor must own the bookmark (actor.id === bookmark.userId), OR
+     * - The actor must hold USER_BOOKMARK_VIEW_ANY (admin override).
+     *
+     * @param actor - The actor performing the action
+     * @param params - bookmarkId and the partial notes input
+     * @param ctx - Optional service context carrying transaction and hookState
+     * @returns The updated UserBookmark entity
+     */
+    public async updateBookmark(
+        actor: Actor,
+        params: {
+            readonly bookmarkId: string;
+            readonly input: UserBookmarkUpdateNotesInput;
+        },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<UserBookmark>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'updateBookmark',
+            input: { bookmarkId: params.bookmarkId, input: params.input, actor },
+            schema: UserBookmarkService.UpdateBookmarkSchema,
+            ctx,
+            execute: async (validated) => {
+                // Fetch the existing bookmark (must exist and not be soft-deleted)
+                const existing = await this.model.findById(validated.bookmarkId, ctx?.tx);
+                if (!existing || existing.deletedAt !== null) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Bookmark ${validated.bookmarkId} not found`
+                    );
+                }
+
+                // Permission check: owner or admin with VIEW_ANY
+                canAccessBookmark(actor, existing);
+
+                // Persist the note field changes
+                const updated = await this.model.update(
+                    { id: validated.bookmarkId },
+                    {
+                        ...(validated.input.name !== undefined
+                            ? { name: validated.input.name }
+                            : {}),
+                        ...(validated.input.description !== undefined
+                            ? { description: validated.input.description }
+                            : {}),
+                        updatedById: actor.id
+                    },
+                    ctx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Bookmark ${validated.bookmarkId} not found after update`
+                    );
+                }
+
+                return updated;
             }
         });
     }
