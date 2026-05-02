@@ -1,0 +1,881 @@
+---
+/**
+ * @file mi-cuenta/favoritos/colecciones/[id].astro
+ * @description Collection detail page. Shows a single bookmark collection with its
+ * paginated bookmarks, header metadata (name, description, color, icon, count),
+ * entity-type filter tabs, and an action button to remove bookmarks from the collection.
+ *
+ * Filters and pagination are driven by URL search params:
+ *   - `?entityType=ACCOMMODATION` — filter by entity type (omit for "All")
+ *   - `?bookmarksPage=N`          — pagination (defaults to 1)
+ *
+ * @route /{lang}/mi-cuenta/favoritos/colecciones/{id}/
+ * @rendering SSR
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { CollectionBookmarkRemoveBtn } from '@/components/account/CollectionBookmarkRemoveBtn.client';
+import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl, buildUrlWithParams } from '@/lib/urls';
+import { webLogger } from '@/lib/logger';
+
+// ---------------------------------------------------------------------------
+// Route params & auth
+// ---------------------------------------------------------------------------
+
+const locale = Astro.locals.locale as SupportedLocale;
+const user = Astro.locals.user;
+
+if (!user) {
+	const returnUrl = Astro.url.pathname;
+	return Astro.redirect(
+		buildUrl({ locale, path: `auth/signin` }) + `?returnUrl=${encodeURIComponent(returnUrl)}`
+	);
+}
+
+const { id } = Astro.params;
+
+if (!id) {
+	return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/favoritos' }));
+}
+
+// ---------------------------------------------------------------------------
+// Query params
+// ---------------------------------------------------------------------------
+
+const rawEntityType = Astro.url.searchParams.get('entityType');
+const rawPage = Astro.url.searchParams.get('bookmarksPage');
+
+/** Valid entity type keys for filtering */
+const VALID_ENTITY_TYPES = ['ACCOMMODATION', 'DESTINATION', 'ATTRACTION', 'EVENT', 'POST'] as const;
+type ValidEntityType = (typeof VALID_ENTITY_TYPES)[number];
+
+function isValidEntityType(val: string | null): val is ValidEntityType {
+	return VALID_ENTITY_TYPES.includes(val as ValidEntityType);
+}
+
+const activeEntityType: ValidEntityType | undefined = isValidEntityType(rawEntityType)
+	? rawEntityType
+	: undefined;
+
+const currentPage = rawPage && /^\d+$/.test(rawPage) ? Math.max(1, parseInt(rawPage, 10)) : 1;
+
+const PAGE_SIZE = 12;
+
+// ---------------------------------------------------------------------------
+// Translations
+// ---------------------------------------------------------------------------
+
+const { t, tPlural } = createTranslations(locale);
+
+// ---------------------------------------------------------------------------
+// Server-side fetch: collection + paginated bookmarks
+// ---------------------------------------------------------------------------
+
+const result = await userBookmarkCollectionsApi.getById({
+	id,
+	bookmarksPage: currentPage,
+	bookmarksPageSize: PAGE_SIZE,
+	entityType: activeEntityType
+});
+
+if (!result.ok) {
+	if (result.error.status === 404) {
+		webLogger.warn('[coleccion-detail] collection not found, redirecting', { id });
+		return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/favoritos' }));
+	}
+	webLogger.error('[coleccion-detail] failed to fetch collection', result.error);
+}
+
+const collectionData = result.ok ? result.data : null;
+const collection = collectionData?.collection ?? null;
+const bookmarksData = collectionData?.bookmarks ?? null;
+
+// ---------------------------------------------------------------------------
+// Pagination helpers
+// ---------------------------------------------------------------------------
+
+const totalPages = bookmarksData ? Math.ceil(bookmarksData.total / PAGE_SIZE) : 0;
+
+/**
+ * Build a URL for a specific page preserving the active entityType filter.
+ */
+function buildPageUrl(page: number): string {
+	const params: Record<string, string> = { bookmarksPage: String(page) };
+	if (activeEntityType) {
+		params.entityType = activeEntityType;
+	}
+	return buildUrlWithParams({
+		locale,
+		path: `mi-cuenta/favoritos/colecciones/${id}`,
+		params
+	});
+}
+
+/**
+ * Build a URL for a specific entity type filter, resetting page to 1.
+ */
+function buildFilterUrl(entityTypeKey: string): string {
+	if (entityTypeKey === 'ALL') {
+		return buildUrl({ locale, path: `mi-cuenta/favoritos/colecciones/${id}` });
+	}
+	return buildUrlWithParams({
+		locale,
+		path: `mi-cuenta/favoritos/colecciones/${id}`,
+		params: { entityType: entityTypeKey }
+	});
+}
+
+// ---------------------------------------------------------------------------
+// Page metadata
+// ---------------------------------------------------------------------------
+
+const pageTitle = collection
+	? t('account.favorites.collections.title', 'Colección') + ' · ' + collection.name
+	: t('account.favorites.collections.title', 'Colección');
+
+const bookmarkCountLabel = collection
+	? tPlural('account.favorites.bookmarks.count', collection.bookmarkCount, {
+			count: collection.bookmarkCount
+		})
+	: null;
+
+// ---------------------------------------------------------------------------
+// Entity type tab config
+// ---------------------------------------------------------------------------
+
+interface EntityTypeTab {
+	readonly key: string;
+	readonly label: string;
+}
+
+const entityTypeTabs: readonly EntityTypeTab[] = [
+	{ key: 'ALL', label: t('account.favorites.filter.all', 'Todos') },
+	{
+		key: 'ACCOMMODATION',
+		label: t('account.favorites.filter.accommodations', 'Alojamientos')
+	},
+	{ key: 'DESTINATION', label: t('account.favorites.filter.destinations', 'Destinos') },
+	{ key: 'EVENT', label: t('account.favorites.filter.events', 'Eventos') },
+	{ key: 'POST', label: t('account.favorites.filter.posts', 'Posts') }
+];
+
+/**
+ * Path segment used to build entity URLs per type.
+ */
+const ENTITY_PATH_SEGMENTS: Readonly<Record<string, string>> = {
+	ACCOMMODATION: 'alojamientos',
+	DESTINATION: 'destinos',
+	EVENT: 'eventos',
+	POST: 'publicaciones',
+	ATTRACTION: 'atracciones'
+};
+
+function resolveEntityHref(entityType: string, entityId: string): string {
+	const segment = ENTITY_PATH_SEGMENTS[entityType] ?? entityType.toLowerCase();
+	return buildUrl({ locale, path: `${segment}/${entityId}` });
+}
+
+// API base URL for the remove-bookmark island
+const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
+---
+
+<AccountLayout locale={locale} title={pageTitle} activeSection="favoritos">
+	<!-- ------------------------------------------------------------------ -->
+	<!-- Breadcrumb                                                           -->
+	<!-- ------------------------------------------------------------------ -->
+	<nav class="coleccion-breadcrumb" aria-label="Breadcrumb">
+		<ol class="coleccion-breadcrumb__list">
+			<li class="coleccion-breadcrumb__item">
+				<a href={buildUrl({ locale, path: '' })} class="coleccion-breadcrumb__link">
+					{t('nav.home', 'Inicio')}
+				</a>
+			</li>
+			<li class="coleccion-breadcrumb__separator" aria-hidden="true">›</li>
+			<li class="coleccion-breadcrumb__item">
+				<a
+					href={buildUrl({ locale, path: 'mi-cuenta/favoritos' })}
+					class="coleccion-breadcrumb__link"
+				>
+					{t('account.nav.favorites', 'Favoritos')}
+				</a>
+			</li>
+			<li class="coleccion-breadcrumb__separator" aria-hidden="true">›</li>
+			<li class="coleccion-breadcrumb__item coleccion-breadcrumb__item--current" aria-current="page">
+				{collection ? collection.name : t('account.favorites.collections.title', 'Colección')}
+			</li>
+		</ol>
+	</nav>
+
+	<!-- ------------------------------------------------------------------ -->
+	<!-- Error state                                                          -->
+	<!-- ------------------------------------------------------------------ -->
+	{
+		!result.ok && result.error.status !== 404 && (
+			<div class="coleccion-error" role="alert">
+				<p class="coleccion-error__message">
+					{t(
+						'account.favorites.collections.fetchError',
+						'No se pudo cargar la colección. Intentá de nuevo más tarde.'
+					)}
+				</p>
+				<a href={buildUrl({ locale, path: 'mi-cuenta/favoritos' })} class="coleccion-error__back">
+					{t('common.back', 'Volver')}
+				</a>
+			</div>
+		)
+	}
+
+	<!-- ------------------------------------------------------------------ -->
+	<!-- Collection header                                                    -->
+	<!-- ------------------------------------------------------------------ -->
+	{
+		collection && (
+			<header class="coleccion-header">
+				<!-- Color swatch + icon -->
+				<div class="coleccion-header__identity">
+					{collection.color && (
+						<span
+							class="coleccion-header__color-swatch"
+							style={`background-color: ${collection.color};`}
+							aria-hidden="true"
+						/>
+					)}
+					{collection.icon && (
+						<span class="coleccion-header__icon" aria-hidden="true">
+							{collection.icon}
+						</span>
+					)}
+				</div>
+
+				<!-- Title area -->
+				<div class="coleccion-header__text">
+					<h1 class="coleccion-header__title">{collection.name}</h1>
+
+					{collection.description && (
+						<p class="coleccion-header__description">{collection.description}</p>
+					)}
+
+					{bookmarkCountLabel && (
+						<span class="coleccion-header__count">{bookmarkCountLabel}</span>
+					)}
+				</div>
+
+				<!-- Action buttons (skeleton — T-051c will wire interactions) -->
+				<div class="coleccion-header__actions">
+					<button
+						type="button"
+						class="coleccion-btn coleccion-btn--secondary"
+						disabled
+						aria-label={t('account.favorites.collections.edit', 'Editar colección')}
+					>
+						{t('account.favorites.collections.edit', 'Editar')}
+					</button>
+					<button
+						type="button"
+						class="coleccion-btn coleccion-btn--danger"
+						disabled
+						aria-label={t('account.favorites.collections.delete', 'Borrar colección')}
+					>
+						{t('account.favorites.collections.delete', 'Borrar')}
+					</button>
+				</div>
+			</header>
+		)
+	}
+
+	<!-- ------------------------------------------------------------------ -->
+	<!-- Body: filter tabs + bookmark grid + pagination                      -->
+	<!-- ------------------------------------------------------------------ -->
+	{
+		collection && (
+			<div class="coleccion-body">
+				<!-- Entity type filter tabs (links — SSR navigation) -->
+				<nav
+					class="coleccion-tabs"
+					aria-label={t('account.favorites.filter.label', 'Filtrar por tipo')}
+				>
+					<ul class="coleccion-tabs__list" role="list">
+						{entityTypeTabs.map((tab) => {
+							const isActive =
+								tab.key === 'ALL' ? !activeEntityType : tab.key === activeEntityType;
+							return (
+								<li class="coleccion-tabs__item">
+									<a
+										href={buildFilterUrl(tab.key)}
+										class:list={[
+											'coleccion-tabs__btn',
+											{ 'coleccion-tabs__btn--active': isActive }
+										]}
+										aria-current={isActive ? 'true' : undefined}
+									>
+										{tab.label}
+									</a>
+								</li>
+							);
+						})}
+					</ul>
+				</nav>
+
+				<!-- Empty state when no bookmarks match the current filter -->
+				{bookmarksData && bookmarksData.rows.length === 0 && (
+					<div class="coleccion-empty" role="status">
+						<p class="coleccion-empty__message">
+							{t(
+								'account.favorites.collections.emptyBookmarks',
+								'Esta colección no tiene favoritos del tipo seleccionado.'
+							)}
+						</p>
+					</div>
+				)}
+
+				<!-- Bookmark grid -->
+				{bookmarksData && bookmarksData.rows.length > 0 && (
+					<ul
+						class="coleccion-grid"
+						aria-label={t('account.favorites.listLabel', 'Mis favoritos')}
+					>
+						{bookmarksData.rows.map((bookmark) => {
+							const href = resolveEntityHref(bookmark.entityType, bookmark.entityId);
+							const typeLabel =
+								entityTypeTabs.find((tab) => tab.key === bookmark.entityType)?.label ??
+								bookmark.entityType;
+							return (
+								<li class="coleccion-card">
+									<!-- Image placeholder (collection detail API does not return imageUrl) -->
+									<div class="coleccion-card__image" aria-hidden="true">
+										<div class="coleccion-card__image-placeholder">{typeLabel}</div>
+									</div>
+
+									<!-- Card body: name + type + optional note -->
+									<div class="coleccion-card__body">
+										<h3 class="coleccion-card__title">
+											<a href={href} class="coleccion-card__link">
+												{bookmark.name ??
+													t('account.favorites.collections.no_collection', 'Sin título')}
+											</a>
+										</h3>
+										<p class="coleccion-card__meta">{typeLabel}</p>
+										{bookmark.description && (
+											<p class="coleccion-card__note">{bookmark.description}</p>
+										)}
+									</div>
+
+									<!-- Footer: remove from collection (React island) -->
+									<div class="coleccion-card__footer">
+										<CollectionBookmarkRemoveBtn
+											client:visible
+											collectionId={id}
+											bookmarkId={bookmark.id}
+											apiBase={apiBase}
+											locale={locale}
+											ariaLabel={`${t('account.favorites.collections.removeFromCollection', 'Quitar de colección')}: ${bookmark.name ?? ''}`}
+										/>
+									</div>
+								</li>
+							);
+						})}
+					</ul>
+				)}
+
+				<!-- Pagination (SSR link-based, no client state) -->
+				{bookmarksData && totalPages > 1 && (
+					<nav
+						class="coleccion-pagination"
+						aria-label={t('account.favorites.filter.label', 'Paginación')}
+					>
+						{currentPage > 1 ? (
+							<a
+								href={buildPageUrl(currentPage - 1)}
+								class="coleccion-pagination__btn"
+								aria-label={t(
+									'account.favorites.collections.prevPage',
+									'Página anterior'
+								)}
+							>
+								{t('account.favorites.collections.prevPage', 'Anterior')}
+							</a>
+						) : (
+							<span
+								class="coleccion-pagination__btn coleccion-pagination__btn--disabled"
+								aria-disabled="true"
+							>
+								{t('account.favorites.collections.prevPage', 'Anterior')}
+							</span>
+						)}
+
+						<span class="coleccion-pagination__info">
+							{t(
+								'account.favorites.collections.pageInfo',
+								'Página {{page}} de {{total}}',
+								{
+									page: currentPage,
+									total: totalPages
+								}
+							)}
+						</span>
+
+						{currentPage < totalPages ? (
+							<a
+								href={buildPageUrl(currentPage + 1)}
+								class="coleccion-pagination__btn"
+								aria-label={t(
+									'account.favorites.collections.nextPage',
+									'Página siguiente'
+								)}
+							>
+								{t('account.favorites.collections.nextPage', 'Siguiente')}
+							</a>
+						) : (
+							<span
+								class="coleccion-pagination__btn coleccion-pagination__btn--disabled"
+								aria-disabled="true"
+							>
+								{t('account.favorites.collections.nextPage', 'Siguiente')}
+							</span>
+						)}
+					</nav>
+				)}
+			</div>
+		)
+	}
+</AccountLayout>
+
+<style>
+	/* ------------------------------------------------------------------ */
+	/* Breadcrumb                                                           */
+	/* ------------------------------------------------------------------ */
+	.coleccion-breadcrumb {
+		margin-bottom: var(--space-5);
+	}
+
+	.coleccion-breadcrumb__list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+	}
+
+	.coleccion-breadcrumb__link {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		color: var(--muted-foreground);
+		text-decoration: none;
+		transition: color var(--duration-fast) ease;
+	}
+
+	.coleccion-breadcrumb__link:hover {
+		color: var(--foreground);
+	}
+
+	.coleccion-breadcrumb__separator {
+		font-size: 0.875rem;
+		color: var(--muted-foreground);
+		user-select: none;
+	}
+
+	.coleccion-breadcrumb__item--current {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--foreground);
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Error state                                                          */
+	/* ------------------------------------------------------------------ */
+	.coleccion-error {
+		padding: var(--space-8);
+		background-color: var(--card);
+		border-radius: var(--radius-card);
+		border: 1px solid var(--border);
+		text-align: center;
+	}
+
+	.coleccion-error__message {
+		font-family: var(--font-sans);
+		color: var(--muted-foreground);
+		margin-bottom: var(--space-4);
+	}
+
+	.coleccion-error__back {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--primary);
+		text-decoration: underline;
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Collection header                                                    */
+	/* ------------------------------------------------------------------ */
+	.coleccion-header {
+		display: flex;
+		align-items: flex-start;
+		flex-wrap: wrap;
+		gap: var(--space-4);
+		margin-bottom: var(--space-6);
+		padding-bottom: var(--space-6);
+		border-bottom: 1px solid var(--border);
+	}
+
+	.coleccion-header__identity {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		flex-shrink: 0;
+	}
+
+	.coleccion-header__color-swatch {
+		display: inline-block;
+		width: 20px;
+		height: 20px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.coleccion-header__icon {
+		font-size: 1.5rem;
+		line-height: 1;
+	}
+
+	.coleccion-header__text {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	.coleccion-header__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.5rem, 3vw, 2rem);
+		color: var(--foreground);
+		margin: 0 0 var(--space-2) 0;
+		line-height: 1.2;
+	}
+
+	.coleccion-header__description {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--muted-foreground);
+		margin: 0 0 var(--space-2) 0;
+		line-height: 1.5;
+	}
+
+	.coleccion-header__count {
+		display: inline-block;
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		font-weight: 500;
+		color: var(--muted-foreground);
+		background-color: var(--muted);
+		padding: 2px var(--space-2);
+		border-radius: var(--radius-pill);
+	}
+
+	.coleccion-header__actions {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		flex-shrink: 0;
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Action buttons                                                       */
+	/* ------------------------------------------------------------------ */
+	.coleccion-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--space-2) var(--space-4);
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		font-weight: 500;
+		border-radius: var(--radius-button);
+		border: 1px solid transparent;
+		cursor: pointer;
+		transition:
+			background-color var(--duration-fast) ease,
+			color var(--duration-fast) ease,
+			border-color var(--duration-fast) ease;
+	}
+
+	.coleccion-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.coleccion-btn--secondary {
+		background-color: var(--card);
+		color: var(--foreground);
+		border-color: var(--border);
+	}
+
+	.coleccion-btn--secondary:not(:disabled):hover {
+		background-color: var(--muted);
+	}
+
+	.coleccion-btn--danger {
+		background-color: transparent;
+		color: oklch(0.55 0.2 25);
+		border-color: oklch(0.55 0.2 25 / 0.4);
+	}
+
+	.coleccion-btn--danger:not(:disabled):hover {
+		background-color: oklch(0.55 0.2 25 / 0.08);
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Body                                                                 */
+	/* ------------------------------------------------------------------ */
+	.coleccion-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-6);
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Filter tabs                                                          */
+	/* ------------------------------------------------------------------ */
+	.coleccion-tabs {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.coleccion-tabs__list {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		min-width: max-content;
+	}
+
+	.coleccion-tabs__btn {
+		display: inline-flex;
+		align-items: center;
+		padding: var(--space-2) var(--space-4);
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		font-weight: 400;
+		color: var(--muted-foreground);
+		background-color: transparent;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-pill);
+		text-decoration: none;
+		white-space: nowrap;
+		transition:
+			background-color var(--duration-fast) ease,
+			color var(--duration-fast) ease,
+			border-color var(--duration-fast) ease;
+	}
+
+	.coleccion-tabs__btn:hover {
+		background-color: var(--muted);
+		color: var(--foreground);
+	}
+
+	.coleccion-tabs__btn--active {
+		background-color: oklch(from var(--primary) l c h / 0.1);
+		color: var(--primary);
+		border-color: oklch(from var(--primary) l c h / 0.3);
+		font-weight: 500;
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Empty state                                                          */
+	/* ------------------------------------------------------------------ */
+	.coleccion-empty {
+		padding: var(--space-12) var(--space-8);
+		background-color: var(--card);
+		border-radius: var(--radius-card);
+		border: 1px dashed var(--border);
+		text-align: center;
+	}
+
+	.coleccion-empty__message {
+		font-family: var(--font-sans);
+		color: var(--muted-foreground);
+		margin: 0;
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Bookmark grid                                                        */
+	/* ------------------------------------------------------------------ */
+	.coleccion-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--space-card-gap);
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	@media (min-width: 640px) {
+		.coleccion-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.coleccion-grid {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Bookmark card                                                        */
+	/* ------------------------------------------------------------------ */
+	.coleccion-card {
+		background-color: var(--card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-card);
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+		transition:
+			box-shadow var(--duration-normal) ease,
+			transform var(--duration-normal) ease;
+	}
+
+	.coleccion-card:hover {
+		box-shadow: var(--shadow-card-hover);
+		transform: translateY(-2px);
+	}
+
+	.coleccion-card__image {
+		aspect-ratio: 16 / 9;
+		overflow: hidden;
+	}
+
+	.coleccion-card__image-placeholder {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: var(--surface-warm);
+		color: var(--muted-foreground);
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+	}
+
+	.coleccion-card__body {
+		padding: var(--space-4);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		flex: 1;
+	}
+
+	.coleccion-card__title {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: 1rem;
+		color: var(--foreground);
+		margin: 0;
+		line-height: 1.4;
+		overflow: hidden;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+	}
+
+	.coleccion-card__link {
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.coleccion-card__link:hover {
+		color: var(--primary);
+	}
+
+	.coleccion-card__meta {
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		color: var(--muted-foreground);
+		margin: 0;
+	}
+
+	.coleccion-card__note {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		color: var(--muted-foreground);
+		margin: 0;
+		font-style: italic;
+		overflow: hidden;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+	}
+
+	.coleccion-card__footer {
+		padding: var(--space-3) var(--space-4);
+		border-top: 1px solid var(--border);
+		display: flex;
+		justify-content: flex-end;
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Pagination                                                           */
+	/* ------------------------------------------------------------------ */
+	.coleccion-pagination {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-4);
+	}
+
+	.coleccion-pagination__btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--space-2) var(--space-4);
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--primary);
+		background-color: var(--card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-button);
+		text-decoration: none;
+		transition:
+			background-color var(--duration-fast) ease,
+			color var(--duration-fast) ease;
+	}
+
+	.coleccion-pagination__btn:not(.coleccion-pagination__btn--disabled):hover {
+		background-color: var(--muted);
+	}
+
+	.coleccion-pagination__btn--disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+		color: var(--muted-foreground);
+	}
+
+	.coleccion-pagination__info {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		color: var(--muted-foreground);
+		white-space: nowrap;
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Responsive                                                           */
+	/* ------------------------------------------------------------------ */
+	@media (max-width: 640px) {
+		.coleccion-header {
+			flex-direction: column;
+		}
+
+		.coleccion-header__actions {
+			width: 100%;
+			justify-content: flex-end;
+		}
+	}
+</style>
