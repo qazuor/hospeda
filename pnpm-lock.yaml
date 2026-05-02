@@ -28,8 +28,7 @@ overrides:
   serialize-javascript: '>=7.0.3'
   prismjs: '>=1.30.0'
   js-yaml: '>=4.1.1'
-  undici: '>=6.23.0'
-  undici@^7.0.0: '>=7.24.0'
+  undici: '>=7.24.0 <8'
   vite@^6.0.0: '>=6.4.2'
   vite@^7.0.0: '>=7.3.2'
   markdown-it: '>=14.1.1'
@@ -8628,9 +8627,9 @@ packages:
   undici-types@7.18.2:
     resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
 
-  undici@8.2.0:
-    resolution: {integrity: sha512-Z+4Hx9GE26Lh9Upwfnc8C7SsrpBPGaM/Gm6kMFtiG7c+5IvQKlXi/t+9x9DrrCh29cww5TSP9YdVaBcnLDs5fQ==}
-    engines: {node: '>=22.19.0'}
+  undici@7.25.0:
+    resolution: {integrity: sha512-xXnp4kTyor2Zq+J1FfPI6Eq3ew5h6Vl0F/8d9XU5zZQf1tX9s2Su1/3PiMmUANFULpmksxkClamIZcaUqryHsQ==}
+    engines: {node: '>=20.18.1'}
 
   unenv@2.0.0-rc.24:
     resolution: {integrity: sha512-i7qRCmY42zmCwnYlh9H2SvLEypEFGye5iRmEMKjcGi7zk9UquigRjFtTLz0TYqr0ZGLZhaMHl/foy1bZR+Cwlw==}
@@ -11383,7 +11382,7 @@ snapshots:
       cookie-signature: 1.2.2
       source-map-support: 0.5.21
       stream-slice: 0.1.2
-      undici: 8.2.0
+      undici: 7.25.0
     optionalDependencies:
       typescript: 5.7.2
 
@@ -13744,7 +13743,7 @@ snapshots:
       parse5: 7.3.0
       parse5-htmlparser2-tree-adapter: 7.1.0
       parse5-parser-stream: 7.1.2
-      undici: 8.2.0
+      undici: 7.25.0
       whatwg-mimetype: 4.0.0
 
   cheerio@1.2.0:
@@ -13758,7 +13757,7 @@ snapshots:
       parse5: 7.3.0
       parse5-htmlparser2-tree-adapter: 7.1.0
       parse5-parser-stream: 7.1.2
-      undici: 8.2.0
+      undici: 7.25.0
       whatwg-mimetype: 4.0.0
     optional: true
 
@@ -17405,7 +17404,7 @@ snapshots:
   undici-types@7.18.2:
     optional: true
 
-  undici@8.2.0: {}
+  undici@7.25.0: {}
 
   unenv@2.0.0-rc.24:
     dependencies:
