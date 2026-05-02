@@ -385,6 +385,9 @@ export class UserBookmarkCollectionModel extends BaseModelImpl<UserBookmarkColle
             ]);
 
             const rows = items.map((item) => ({
+                // DRIZZLE-LIMITATION: groupBy aggregate query returns rows whose
+                // type Drizzle widens to include the SQL aggregate column; the
+                // selected base columns still match UserBookmarkCollection.
                 ...(item as unknown as UserBookmarkCollection),
                 bookmarkCount: Number(item.bookmarkCount)
             }));

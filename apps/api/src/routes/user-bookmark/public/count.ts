@@ -32,8 +32,9 @@ const countBookmarksForEntityHandler = async (
 ) => {
     const actor = getActorFromContext(ctx);
 
-    // query is validated by the route factory via requestQuery schema before
-    // reaching this handler, so these casts are safe.
+    // TYPE-WORKAROUND: query is validated by the route factory's requestQuery
+    // schema before reaching this handler, but Hono's generic Record<string, unknown>
+    // signature loses the parsed Zod shape, requiring this re-narrowing.
     const params = query as unknown as UserBookmarkCountByEntityInput;
 
     const result = await bookmarkService.countBookmarksForEntity(actor, {
