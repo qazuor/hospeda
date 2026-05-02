@@ -14,7 +14,7 @@
 //   HOSPEDA_DATABASE_URL='postgresql://...' node packages/db/scripts/apply-postgres-extras.mjs
 // =============================================================================
 import 'dotenv/config';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pkg from 'pg';

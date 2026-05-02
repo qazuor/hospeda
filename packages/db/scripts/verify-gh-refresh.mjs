@@ -45,7 +45,9 @@ async function main() {
         process.exit(1);
     } catch (err) {
         if (err.code === '42501') {
-            console.info('Security check OK: gh_refresh blocked from SELECT on users (permission denied)');
+            console.info(
+                'Security check OK: gh_refresh blocked from SELECT on users (permission denied)'
+            );
         } else {
             console.warn(`Unexpected error during security check: ${err.message}`);
         }
