@@ -102,6 +102,7 @@ describe('toAccommodationCardProps', () => {
 describe('toDestinationCardProps', () => {
     it('should transform destination data', () => {
         const item = {
+            id: 'e3b0c442-98fc-4c14-9e32-82b3e4b6b6a2',
             slug: 'colon',
             name: 'Colón',
             summary: 'Beautiful city',
@@ -114,13 +115,37 @@ describe('toDestinationCardProps', () => {
 
         const result = toDestinationCardProps({ item });
 
+        expect(result.id).toBe('e3b0c442-98fc-4c14-9e32-82b3e4b6b6a2');
         expect(result.slug).toBe('colon');
         expect(result.name).toBe('Colón');
         expect(result.isFeatured).toBe(true);
     });
 
+    it('should propagate UUID id from API response (T-DC2: required for FavoriteButton entityId)', () => {
+        // The UUID id is required by the bookmark service — sending slug instead
+        // breaks the polymorphic foreign-key conceptual model.
+        const item = {
+            id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+            slug: 'gualeguaychu',
+            name: 'Gualeguaychú'
+        };
+        const result = toDestinationCardProps({ item });
+        expect(result.id).toBe('a1b2c3d4-e5f6-7890-abcd-ef1234567890');
+        // id and slug must remain independent fields
+        expect(result.id).not.toBe(result.slug);
+    });
+
+    it('should return empty string id and NOT throw when API response lacks id', () => {
+        // Backwards-compatible: page still renders, but FavoriteButton will not work
+        const item = { slug: 'no-id-destination', name: 'Sin ID' };
+        const result = toDestinationCardProps({ item });
+        expect(result.id).toBe('');
+        expect(result.slug).toBe('no-id-destination');
+    });
+
     it('should handle missing fields with fallback defaults', () => {
         const result = toDestinationCardProps({ item: {} });
+        expect(result.id).toBe('');
         expect(result.slug).toBe('');
         expect(result.name).toBeTruthy(); // Falls back to 'Sin nombre' or similar
         expect(result.accommodationsCount).toBe(0);
@@ -184,6 +209,46 @@ describe('toEventCardProps', () => {
         expect(result.featuredImage.url).toBe('https://example.com/evento.jpg');
         expect(result.featuredImage.caption).toBe('Escenario principal');
     });
+
+    it('should propagate UUID id from API response (T-EC1: required for FavoriteButton entityId)', () => {
+        // The UUID id is required by the bookmark service — sending slug instead
+        // breaks the polymorphic foreign-key conceptual model.
+        const item = {
+            id: 'c3d4e5f6-a7b8-9012-cdef-3456789012ab',
+            slug: 'festival-litoral-2026',
+            name: 'Festival del Litoral 2026'
+        };
+        const result = toEventCardProps({ item });
+        expect(result.id).toBe('c3d4e5f6-a7b8-9012-cdef-3456789012ab');
+        // id and slug must remain independent fields
+        expect(result.id).not.toBe(result.slug);
+    });
+
+    it('should return empty string id and NOT throw when API response lacks id', () => {
+        // Backwards-compatible: page still renders, but FavoriteButton will not work
+        const item = { slug: 'no-id-event', name: 'Sin ID' };
+        const result = toEventCardProps({ item });
+        expect(result.id).toBe('');
+        expect(result.slug).toBe('no-id-event');
+    });
+
+    it('should include id in the returned object alongside all existing fields', () => {
+        const item = {
+            id: 'f1e2d3c4-b5a6-7890-fedc-ba9876543210',
+            slug: 'carnaval-gualeguaychu',
+            name: 'Carnaval de Gualeguaychú',
+            summary: 'El mayor carnaval del país.',
+            category: 'carnival',
+            date: { start: '2026-02-01T20:00:00Z', end: '2026-03-01T04:00:00Z' },
+            isFeatured: true
+        };
+        const result = toEventCardProps({ item });
+        expect(result.id).toBe('f1e2d3c4-b5a6-7890-fedc-ba9876543210');
+        expect(result.slug).toBe('carnaval-gualeguaychu');
+        expect(result.name).toBe('Carnaval de Gualeguaychú');
+        expect(result.category).toBe('carnival');
+        expect(result.isFeatured).toBe(true);
+    });
 });
 
 describe('toArticleCardProps', () => {
@@ -230,6 +295,50 @@ describe('toArticleCardProps', () => {
         const result = toArticleCardProps({ item: {} });
         expect(result.featuredImage.url).toBe('/images/placeholder-post.svg');
         expect(result.featuredImage.caption).toBeUndefined();
+    });
+
+    it('should propagate UUID id from API response (T-EC2: required for FavoriteButton entityId)', () => {
+        // The UUID id is required by the bookmark service — sending slug instead
+        // breaks the polymorphic foreign-key conceptual model.
+        const item = {
+            id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+            slug: 'mejores-cabanas-entre-rios',
+            title: 'Las 10 mejores cabañas de Entre Ríos'
+        };
+        const result = toArticleCardProps({ item });
+        expect(result.id).toBe('f47ac10b-58cc-4372-a567-0e02b2c3d479');
+        // id and slug must remain independent fields
+        expect(result.id).not.toBe(result.slug);
+    });
+
+    it('should return empty string id and NOT throw when API response lacks id', () => {
+        // Backwards-compatible: page still renders, but FavoriteButton will not work
+        const item = { slug: 'no-id-post', title: 'Sin ID' };
+        const result = toArticleCardProps({ item });
+        expect(result.id).toBe('');
+        expect(result.slug).toBe('no-id-post');
+    });
+
+    it('should include id in the returned object alongside all existing fields', () => {
+        const item = {
+            id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+            slug: 'guia-playas-entre-rios',
+            title: 'Guía de playas de Entre Ríos',
+            summary: 'Las mejores playas del litoral argentino.',
+            category: 'travel',
+            publishedAt: '2026-04-01T09:00:00Z',
+            readingTimeMinutes: 8,
+            authorName: 'Pedro Sánchez',
+            isFeatured: true
+        };
+        const result = toArticleCardProps({ item });
+        expect(result.id).toBe('a1b2c3d4-e5f6-7890-abcd-ef1234567890');
+        expect(result.slug).toBe('guia-playas-entre-rios');
+        expect(result.title).toBe('Guía de playas de Entre Ríos');
+        expect(result.category).toBe('travel');
+        expect(result.isFeatured).toBe(true);
+        expect(result.readingTimeMinutes).toBe(8);
+        expect(result.authorName).toBe('Pedro Sánchez');
     });
 });
 

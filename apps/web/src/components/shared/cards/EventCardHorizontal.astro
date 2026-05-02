@@ -26,6 +26,7 @@ import {
     BooksAndMagazinesIcon,
     EventIcon,
 } from "@repo/icons";
+import { FavoriteButton } from "@/components/shared/favorite/FavoriteButton.client";
 import { buildUrl } from "@/lib/urls";
 import { getEventCategoryColor } from "@/lib/colors";
 import type { EventCardData } from "@/data/types";
@@ -36,7 +37,7 @@ import type { SupportedLocale } from "@/lib/i18n";
  *
  * @example
  * ```astro
- * <EventCardHorizontal data={eventData} locale="es" />
+ * <EventCardHorizontal data={eventData} locale="es" isAuthenticated={false} />
  * ```
  */
 interface Props {
@@ -44,9 +45,15 @@ interface Props {
     readonly data: EventCardData;
     /** Active locale used to build the detail page URL and format date values. */
     readonly locale: SupportedLocale;
+    /**
+     * Whether the current user is authenticated.
+     * Forwarded to FavoriteButton to decide between toggle-favorite or
+     * auth-required popover. Defaults to false (guest user).
+     */
+    readonly isAuthenticated?: boolean;
 }
 
-const { data, locale } = Astro.props;
+const { data, locale, isAuthenticated = false } = Astro.props;
 
 const detailUrl = buildUrl({ locale, path: `/eventos/${data.slug}/` });
 
@@ -190,6 +197,21 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
 ---
 
 <article class="event-card-h">
+    <!-- FavoriteButton island: top-right over photo area, OUTSIDE the <a> link (HTML semantics) -->
+    <div class="event-card-h__fav-wrapper">
+        <FavoriteButton
+            client:load
+            entityId={data.id}
+            entityType="EVENT"
+            initialIsFavorited={data.isFavorited}
+            initialBookmarkId={data.favoriteBookmarkId ?? null}
+            count={data.bookmarkCount}
+            variant="standalone"
+            showCount={true}
+            locale={locale}
+            isAuthenticated={isAuthenticated}
+        />
+    </div>
     <a href={detailUrl} class="event-card-h__link" aria-label={data.name}>
         <!-- Left: event photo layered over placeholder -->
         <div class="event-card-h__photo-wrap" aria-hidden="true">
@@ -358,6 +380,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
 
 <style>
     .event-card-h {
+        position: relative;
         background-color: var(--core-card);
         border-radius: var(--radius-card);
         border: 1px solid oklch(from var(--brand-primary) l c h / 0.15);
@@ -367,6 +390,14 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
             box-shadow var(--duration-normal) ease,
             transform var(--duration-normal) ease;
         height: 100%;
+    }
+
+    /* FavoriteButton: top-right over the photo area, outside <a> link */
+    .event-card-h__fav-wrapper {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 2;
     }
 
     .event-card-h:hover {

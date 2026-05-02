@@ -15,9 +15,19 @@ const src = readFileSync(
 
 describe('AccommodationCard.astro', () => {
     describe('imports', () => {
-        it('should import icons from @repo/icons', () => {
+        it('should import FavoriteButton island from shared/favorite', () => {
+            expect(src).toContain("from '@/components/shared/favorite/FavoriteButton.client'");
+            expect(src).toContain('FavoriteButton');
+        });
+
+        it('should NOT import FavoriteIcon directly (delegated to FavoriteButton island)', () => {
+            // FavoriteIcon is now rendered internally by FavoriteButton — the card
+            // should not import it to avoid shipping a duplicate icon bundle.
+            expect(src).not.toContain('FavoriteIcon');
+        });
+
+        it('should import GalleryIcon, LocationIcon and StarIcon from @repo/icons', () => {
             expect(src).toContain("from '@repo/icons'");
-            expect(src).toContain('FavoriteIcon');
             expect(src).toContain('GalleryIcon');
             expect(src).toContain('LocationIcon');
             expect(src).toContain('StarIcon');
@@ -56,10 +66,6 @@ describe('AccommodationCard.astro', () => {
             expect(src).toContain('AccommodationCardData');
         });
 
-        it('should import AccommodationCardData type', () => {
-            expect(src).toContain('AccommodationCardData');
-        });
-
         it('should import SupportedLocale type', () => {
             expect(src).toContain('SupportedLocale');
         });
@@ -76,6 +82,52 @@ describe('AccommodationCard.astro', () => {
 
         it('should declare locale prop as readonly SupportedLocale', () => {
             expect(src).toContain('readonly locale: SupportedLocale');
+        });
+
+        it('should declare optional isAuthenticated prop', () => {
+            expect(src).toContain('readonly isAuthenticated?: boolean');
+        });
+
+        it('should default isAuthenticated to false', () => {
+            expect(src).toContain('isAuthenticated = false');
+        });
+    });
+
+    describe('FavoriteButton island integration (SPEC-098)', () => {
+        it('should render FavoriteButton with client:load directive', () => {
+            expect(src).toContain('client:load');
+        });
+
+        it('should pass entityId from data.id', () => {
+            expect(src).toContain('entityId={data.id}');
+        });
+
+        it('should pass entityType="ACCOMMODATION"', () => {
+            expect(src).toContain('entityType="ACCOMMODATION"');
+        });
+
+        it('should pass initialIsFavorited from data.isFavorited', () => {
+            expect(src).toContain('initialIsFavorited={data.isFavorited}');
+        });
+
+        it('should pass initialBookmarkId from data.favoriteBookmarkId with null fallback', () => {
+            expect(src).toContain('initialBookmarkId={data.favoriteBookmarkId ?? null}');
+        });
+
+        it('should pass count from data.bookmarkCount', () => {
+            expect(src).toContain('count={data.bookmarkCount}');
+        });
+
+        it('should use standalone variant', () => {
+            expect(src).toContain('variant="standalone"');
+        });
+
+        it('should forward locale to FavoriteButton', () => {
+            expect(src).toContain('locale={locale}');
+        });
+
+        it('should forward isAuthenticated to FavoriteButton', () => {
+            expect(src).toContain('isAuthenticated={isAuthenticated}');
         });
     });
 
@@ -211,20 +263,14 @@ describe('AccommodationCard.astro', () => {
             expect(src).toContain('aria-hidden="true"');
         });
 
-        it('should have button type attribute on favorite button', () => {
-            expect(src).toContain('type="button"');
-        });
-
         it('should have focus-visible style on card link', () => {
             expect(src).toContain('acc-card__link:focus-visible');
         });
 
-        it('should have focus-visible style on favorite button', () => {
+        it('should retain focus-visible CSS for the old fav-btn class (layout stability)', () => {
+            // The .acc-card__fav-btn:focus-visible rule is kept in CSS for graceful
+            // degradation even though the static button is replaced by FavoriteButton.
             expect(src).toContain('acc-card__fav-btn:focus-visible');
-        });
-
-        it('should have i18n aria-label on favorite button', () => {
-            expect(src).toContain("t('ui.saveItem'");
         });
     });
 });

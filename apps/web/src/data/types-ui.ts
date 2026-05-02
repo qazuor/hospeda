@@ -74,6 +74,13 @@ export interface ArticleRelatedEntity {
  * (FeaturedArticleCard, ArticleCard).
  */
 export interface ArticleCardBaseProps {
+    /**
+     * UUID identifier for the article/post.
+     * Required by FavoriteButton as `entityId` — must be a UUID, not a slug.
+     * Optional here because some legacy usage sites may not pass it yet;
+     * FavoriteButton gracefully handles an empty string with a console warning.
+     */
+    readonly id?: string;
     /** URL-safe slug for the article detail page. */
     readonly slug: string;
     /** Display title of the article. */
@@ -105,6 +112,24 @@ export interface ArticleCardBaseProps {
     readonly isPromoted?: boolean;
     /** Optional related entity (destination, accommodation, or event). */
     readonly relatedEntity?: ArticleRelatedEntity;
+    /**
+     * SPEC-098: Whether the current user has already favorited this article/post.
+     * Populated by a bulk-check API call on listing pages. Undefined for guests or
+     * when the bulk-check was not performed.
+     */
+    readonly isFavorited?: boolean;
+    /**
+     * SPEC-098: Bookmark id when the entity is already favorited by the current user.
+     * Required for explicit DELETE flows. Null when not yet favorited.
+     * Undefined when no bulk-check was performed.
+     */
+    readonly favoriteBookmarkId?: string | null;
+    /**
+     * SPEC-098: Total public count of users who have bookmarked this article/post.
+     * Used by FavoriteButton's `pill` variant to render the count badge.
+     * Undefined when not returned by the API endpoint.
+     */
+    readonly bookmarkCount?: number;
 }
 
 // ---------------------------------------------------------------------------

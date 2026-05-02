@@ -216,7 +216,17 @@ export function toAccommodationCardProps({
                 lng: Number(aprox.lng),
                 radiusMeters: Number(aprox.radiusMeters)
             };
-        })()
+        })(),
+        // SPEC-098: pass through favorite/bookmark enrichment when present.
+        // These fields are populated by the listing page after a bulk-check API
+        // call. They are intentionally absent on unenriched responses so
+        // FavoriteButton can fall back to its own single-check on mount.
+        isFavorited: item.isFavorited !== undefined ? Boolean(item.isFavorited) : undefined,
+        favoriteBookmarkId: (() => {
+            if (item.favoriteBookmarkId === undefined) return undefined;
+            return item.favoriteBookmarkId === null ? null : String(item.favoriteBookmarkId);
+        })(),
+        bookmarkCount: item.bookmarkCount !== undefined ? Number(item.bookmarkCount) : undefined
     };
 }
 
@@ -304,7 +314,16 @@ export function toDestinationCardProps({
         | Array<{ id: string; name: string; icon?: string; displayWeight?: number }>
         | undefined;
 
+    const id = String(item.id || '');
+    if (!id) {
+        webLogger.warn(
+            'transforms.toDestinationCardProps: destination has no UUID id — FavoriteButton entityId will be empty',
+            { slug: String(item.slug || '') }
+        );
+    }
+
     return {
+        id,
         slug: String(item.slug || ''),
         name: String(item.name || 'Sin nombre'),
         summary: String(item.summary || item.description || ''),
@@ -354,7 +373,16 @@ export function toEventCardProps({
     const locationObj = item.location as Record<string, unknown> | undefined;
     const { cityName, cityPath, cityDestinationSlug } = deriveCityFields(locationObj);
 
+    const id = String(item.id || '');
+    if (!id) {
+        webLogger.warn(
+            'transforms.toEventCardProps: event has no UUID id — FavoriteButton entityId will be empty',
+            { slug: String(item.slug || '') }
+        );
+    }
+
     return {
+        id,
         slug: String(item.slug || ''),
         name: String(item.name || ''),
         summary: String(item.summary || item.description || ''),
@@ -377,7 +405,15 @@ export function toEventCardProps({
             : undefined,
         cityName,
         cityPath,
-        cityDestinationSlug
+        cityDestinationSlug,
+        isFavorited: item.isFavorited !== undefined ? Boolean(item.isFavorited) : undefined,
+        favoriteBookmarkId:
+            item.favoriteBookmarkId !== undefined
+                ? item.favoriteBookmarkId === null
+                    ? null
+                    : String(item.favoriteBookmarkId)
+                : undefined,
+        bookmarkCount: item.bookmarkCount !== undefined ? Number(item.bookmarkCount) : undefined
     };
 }
 
@@ -390,6 +426,14 @@ export function toEventCardProps({
 export function toArticleCardProps({
     item
 }: { readonly item: Record<string, unknown> }): ArticleCardData {
+    const id = String(item.id || '');
+    if (!id) {
+        webLogger.warn(
+            'transforms.toArticleCardProps: post has no UUID id — FavoriteButton entityId will be empty',
+            { slug: String(item.slug || '') }
+        );
+    }
+
     const authorObj = item.author as Record<string, unknown> | undefined;
     const authorName = String(
         item.authorName ||
@@ -412,6 +456,7 @@ export function toArticleCardProps({
     });
 
     return {
+        id,
         slug: String(item.slug || ''),
         title: String(item.title || ''),
         summary: String(item.summary || item.content || ''),
@@ -422,7 +467,15 @@ export function toArticleCardProps({
         authorName,
         authorAvatar,
         isFeatured: Boolean(item.isFeatured),
-        tags: Array.isArray(item.tags) ? item.tags.map(String) : undefined
+        tags: Array.isArray(item.tags) ? item.tags.map(String) : undefined,
+        isFavorited: item.isFavorited !== undefined ? Boolean(item.isFavorited) : undefined,
+        favoriteBookmarkId:
+            item.favoriteBookmarkId !== undefined
+                ? item.favoriteBookmarkId === null
+                    ? null
+                    : String(item.favoriteBookmarkId)
+                : undefined,
+        bookmarkCount: item.bookmarkCount !== undefined ? Number(item.bookmarkCount) : undefined
     };
 }
 

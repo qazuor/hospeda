@@ -1,0 +1,573 @@
+---
+/**
+ * @file DestinationCard.astro
+ * @description Destination card component mirroring AccommodationCard.astro structure.
+ * Supports two visual variants:
+ * - `grid`: used in the destinations listing page (/destinos).
+ * - `carousel`: used in the homepage DestinationsIsland carousel.
+ *
+ * Features: image with gradient overlay (carousel) or wave separator (grid),
+ * accommodation count badge, star rating, description (truncated), and a
+ * FavoriteButton island in the top-right corner.
+ */
+
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { StarIcon } from '@repo/icons';
+import { buildUrl } from '@/lib/urls';
+import { createTranslations } from '@/lib/i18n';
+import { Image } from 'astro:assets';
+import type { DestinationCardData } from '@/data/types';
+import type { SupportedLocale } from '@/lib/i18n';
+
+/** Visual variant controlling layout and image treatment. */
+export type DestinationCardVariant = 'grid' | 'carousel';
+
+interface Props {
+	/** Destination data produced by toDestinationCardProps() in transforms.ts. */
+	readonly destination: DestinationCardData;
+	/** Active locale used to build destination URL and resolve translations. */
+	readonly locale: SupportedLocale;
+	/**
+	 * Visual variant:
+	 * - `grid` (default): flat card for listing grids with wave separator.
+	 * - `carousel`: full-bleed image with gradient overlay for homepage carousel.
+	 */
+	readonly variant?: DestinationCardVariant;
+	/**
+	 * Whether the current user is authenticated.
+	 * Forwarded to FavoriteButton to decide between toggle-favorite or auth-required popover.
+	 * Defaults to false (guest user).
+	 */
+	readonly isAuthenticated?: boolean;
+}
+
+const {
+	destination,
+	locale,
+	variant = 'grid',
+	isAuthenticated = false,
+} = Astro.props;
+
+const { t, tPlural } = createTranslations(locale);
+
+const detailUrl = buildUrl({ locale, path: `destinos/${destination.slug}` });
+
+const fullStars = Math.floor(destination.averageRating);
+
+const accommodationsLabel = destination.accommodationsCount === 1
+	? t('destination.card.accommodation_singular', 'alojamiento')
+	: t('destination.card.accommodation_plural', 'alojamientos');
+
+const isExternalImage = destination.featuredImage.url.startsWith('http');
+---
+
+<article class={`dest-card dest-card--${variant}`}>
+	<a href={detailUrl} class="dest-card__link" aria-label={destination.name}>
+		<!-- IMAGE AREA -->
+		<div class="dest-card__image-area">
+			{isExternalImage ? (
+				<img
+					src={destination.featuredImage.url || '/assets/images/placeholder-destination.svg'}
+					alt={destination.featuredImage.caption ?? destination.name}
+					loading="lazy"
+					decoding="async"
+					class="dest-card__img"
+					width="432"
+					height="280"
+					data-fallback="/assets/images/placeholder-destination.svg"
+					transition:name={`destination-${destination.slug}`}
+				/>
+			) : (
+				<Image
+					src={destination.featuredImage.url || '/assets/images/placeholder-destination.svg'}
+					alt={destination.featuredImage.caption ?? destination.name}
+					width={432}
+					height={280}
+					format="webp"
+					loading="lazy"
+					decoding="async"
+					class="dest-card__img"
+					data-fallback="/assets/images/placeholder-destination.svg"
+					transition:name={`destination-${destination.slug}`}
+				/>
+			)}
+
+			<!-- Gradient overlay (always present; stronger in carousel variant) -->
+			<div class="dest-card__gradient" aria-hidden="true" />
+
+			{variant === 'grid' && (
+				<!-- Wave separator (grid variant only) -->
+				<div class="dest-card__wave" aria-hidden="true">
+					<svg viewBox="0 0 432 40" preserveAspectRatio="none" fill="var(--core-card, white)">
+						<path d="M0 40V22C72 8 144 0 216 6C288 12 360 24 432 22V40H0Z" />
+					</svg>
+				</div>
+			)}
+
+			<!-- Featured badge -->
+			{destination.isFeatured && (
+				<div class="dest-card__featured-badge">
+					<span>{t('destination.card.badge.featured', 'Destacado')}</span>
+				</div>
+			)}
+
+			<!-- Top-right actions: FavoriteButton island -->
+			<div class="dest-card__actions">
+				<FavoriteButton
+					client:load
+					entityId={destination.id}
+					entityType="DESTINATION"
+					isAuthenticated={isAuthenticated}
+					locale={locale}
+					variant="compact"
+					showCount={true}
+				/>
+			</div>
+
+			{variant === 'carousel' && (
+				<!-- Carousel: content overlaid on image -->
+				<div class="dest-card__overlay-content">
+					<h3 class="dest-card__name dest-card__name--overlay">{destination.name}</h3>
+					<p class="dest-card__count dest-card__count--overlay">
+						{destination.accommodationsCount} {accommodationsLabel}
+					</p>
+					<p class="dest-card__description dest-card__description--overlay">
+						{destination.summary}
+					</p>
+					{destination.averageRating > 0 && (
+						<div
+							class="dest-card__stars"
+							aria-label={`${t('destination.card.rating.label', 'Calificación')}: ${destination.averageRating.toFixed(1)} ${t('destination.card.rating.of5', 'de 5')}`}
+						>
+							{Array.from({ length: 5 }).map((_, i) => (
+								<span class={i < fullStars ? 'dest-card__star--filled' : 'dest-card__star--empty'}>
+									<StarIcon size={14} weight={i < fullStars ? 'fill' : 'regular'} aria-hidden="true" />
+								</span>
+							))}
+							<span class="dest-card__rating-value">{destination.averageRating.toFixed(1)}</span>
+							{destination.reviewsCount > 0 && (
+								<span class="dest-card__reviews-count">
+									({destination.reviewsCount} {t('common.reviews', 'reseñas')})
+								</span>
+							)}
+						</div>
+					)}
+				</div>
+			)}
+		</div>
+
+		{variant === 'grid' && (
+			<!-- CONTENT AREA (grid variant: below the image) -->
+			<div class="dest-card__content">
+				<!-- Accommodation count badge -->
+				<div class="dest-card__count-row">
+					<span class="dest-card__count-badge">
+						{destination.accommodationsCount} {accommodationsLabel}
+					</span>
+					{destination.eventsCount > 0 && (
+						<span class="dest-card__events-badge">
+							{destination.eventsCount} {destination.eventsCount === 1
+								? t('destination.card.event_singular', 'evento')
+								: t('destination.card.event_plural', 'eventos')}
+						</span>
+					)}
+				</div>
+
+				<!-- Name -->
+				<h3 class="dest-card__name">{destination.name}</h3>
+
+				<!-- Description -->
+				<p class="dest-card__description">{destination.summary}</p>
+
+				<!-- Stars + rating row -->
+				{destination.averageRating > 0 && (
+					<div
+						class="dest-card__stars"
+						aria-label={`${t('destination.card.rating.label', 'Calificación')}: ${destination.averageRating.toFixed(1)} ${t('destination.card.rating.of5', 'de 5')}`}
+					>
+						{Array.from({ length: 5 }).map((_, i) => (
+							<span class={i < fullStars ? 'dest-card__star--filled' : 'dest-card__star--empty'}>
+								<StarIcon size={14} weight={i < fullStars ? 'fill' : 'regular'} aria-hidden="true" />
+							</span>
+						))}
+						<span class="dest-card__rating-value">{destination.averageRating.toFixed(1)}</span>
+						{destination.reviewsCount > 0 && (
+							<span class="dest-card__reviews-count">
+								({destination.reviewsCount} {t('common.reviews', 'reseñas')})
+							</span>
+						)}
+					</div>
+				)}
+
+				<!-- Divider -->
+				<div class="dest-card__divider" />
+
+				<!-- CTA row -->
+				<div class="dest-card__cta-row">
+					<span class="dest-card__cta-btn">
+						{t('destination.card.cta', 'Explorar destino')} →
+					</span>
+				</div>
+			</div>
+		)}
+	</a>
+</article>
+
+<style>
+	/* =========================================================================
+	   BASE CARD
+	   ========================================================================= */
+	.dest-card {
+		background-color: var(--core-card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md, 12px);
+		box-shadow: var(--shadow-card);
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		transition: box-shadow 200ms ease-out;
+	}
+
+	.dest-card:hover {
+		box-shadow: var(--shadow-card-hover);
+	}
+
+	/* Carousel variant: no border / background — full bleed */
+	.dest-card--carousel {
+		background-color: transparent;
+		border: none;
+		box-shadow: none;
+	}
+
+	.dest-card--carousel:hover {
+		box-shadow: none;
+	}
+
+	.dest-card__link {
+		text-decoration: none;
+		color: inherit;
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+	}
+
+	.dest-card__link:focus-visible {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: 2px;
+		border-radius: var(--radius-md, 12px);
+	}
+
+	/* =========================================================================
+	   IMAGE AREA
+	   ========================================================================= */
+	.dest-card__image-area {
+		position: relative;
+		height: clamp(180px, 32vw, 280px);
+		overflow: hidden;
+		border-radius: var(--radius-md, 12px) var(--radius-md, 12px) 0 0;
+		background-color: var(--muted);
+	}
+
+	/* Carousel: taller image, rounded all sides */
+	.dest-card--carousel .dest-card__image-area {
+		height: clamp(320px, 50vw, 480px);
+		border-radius: var(--radius-md, 12px);
+	}
+
+	.dest-card__img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform 200ms ease-out;
+	}
+
+	.dest-card:hover .dest-card__img {
+		transform: scale(1.06);
+	}
+
+	/* =========================================================================
+	   GRADIENT OVERLAY
+	   ========================================================================= */
+	.dest-card__gradient {
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(
+			to bottom,
+			oklch(from var(--core-foreground) l c h / 0) 30%,
+			oklch(from var(--core-foreground) l c h / 0.55) 100%
+		);
+		pointer-events: none;
+	}
+
+	/* Stronger gradient in carousel variant to make overlaid text legible */
+	.dest-card--carousel .dest-card__gradient {
+		background: linear-gradient(
+			to bottom,
+			oklch(from var(--core-foreground) l c h / 0) 20%,
+			oklch(from var(--core-foreground) l c h / 0.75) 100%
+		);
+	}
+
+	/* =========================================================================
+	   WAVE SEPARATOR (grid variant only)
+	   ========================================================================= */
+	.dest-card__wave {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		height: 40px;
+		pointer-events: none;
+	}
+
+	.dest-card__wave svg {
+		width: 100%;
+		height: 100%;
+		display: block;
+	}
+
+	@media (max-width: 480px) {
+		.dest-card__wave {
+			display: none;
+		}
+	}
+
+	/* =========================================================================
+	   FEATURED BADGE
+	   ========================================================================= */
+	.dest-card__featured-badge {
+		position: absolute;
+		bottom: 48px;
+		left: 16px;
+		font-family: var(--font-sans);
+		font-weight: 700;
+		font-size: 12px;
+		line-height: 20px;
+		padding: 4px 10px;
+		border-radius: 9999px;
+		background-color: oklch(from var(--brand-accent) l c h / 0.85);
+		color: var(--primary-foreground);
+	}
+
+	/* =========================================================================
+	   TOP-RIGHT ACTIONS (FavoriteButton)
+	   ========================================================================= */
+	.dest-card__actions {
+		position: absolute;
+		top: 12px;
+		right: 12px;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		align-items: center;
+	}
+
+	/* =========================================================================
+	   CAROUSEL OVERLAY CONTENT
+	   ========================================================================= */
+	.dest-card__overlay-content {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		padding: 24px 20px 20px;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+
+	.dest-card__name--overlay {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.125rem, 1vw + 0.875rem, 1.5rem);
+		line-height: 1.25;
+		color: var(--primary-foreground);
+		margin: 0;
+	}
+
+	.dest-card__count--overlay {
+		font-family: var(--font-sans);
+		font-weight: 600;
+		font-size: 13px;
+		line-height: 1.4;
+		color: oklch(from var(--primary-foreground) l c h / 0.85);
+		margin: 0;
+	}
+
+	.dest-card__description--overlay {
+		font-family: var(--font-sans);
+		font-weight: 400;
+		font-size: 13px;
+		line-height: 1.5;
+		color: oklch(from var(--primary-foreground) l c h / 0.75);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		margin: 0;
+	}
+
+	/* =========================================================================
+	   GRID CONTENT AREA
+	   ========================================================================= */
+	.dest-card__content {
+		background-color: var(--core-card);
+		padding: 0 16px 20px;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		flex: 1;
+	}
+
+	/* Count + events badges row */
+	.dest-card__count-row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-wrap: wrap;
+	}
+
+	.dest-card__count-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		background-color: oklch(from var(--brand-primary) l c h / 0.12);
+		color: var(--brand-primary);
+		border-radius: 9999px;
+		font-family: var(--font-sans);
+		font-weight: 600;
+		font-size: 11px;
+		line-height: 1;
+		padding: 4px 10px;
+		white-space: nowrap;
+	}
+
+	.dest-card__events-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		background-color: oklch(from var(--brand-accent) l c h / 0.12);
+		color: var(--brand-accent);
+		border-radius: 9999px;
+		font-family: var(--font-sans);
+		font-weight: 600;
+		font-size: 11px;
+		line-height: 1;
+		padding: 4px 10px;
+		white-space: nowrap;
+	}
+
+	/* Name */
+	.dest-card__name {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1rem, 0.5vw + 0.875rem, 1.25rem);
+		line-height: clamp(1.375rem, 0.5vw + 1.25rem, 1.75rem);
+		color: var(--core-foreground);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		margin: 0;
+	}
+
+	/* Description */
+	.dest-card__description {
+		font-family: var(--font-sans);
+		font-weight: 400;
+		font-size: clamp(0.75rem, 0.2vw + 0.625rem, 0.8125rem);
+		line-height: 20.8px;
+		color: var(--core-muted-foreground);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		margin: 0;
+	}
+
+	/* =========================================================================
+	   STARS & RATING (shared between grid content and carousel overlay)
+	   ========================================================================= */
+	.dest-card__stars {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+	}
+
+	.dest-card__star--filled {
+		color: var(--rating-star);
+		display: inline-flex;
+	}
+
+	.dest-card__star--empty {
+		color: var(--core-muted-foreground);
+		opacity: 0.4;
+		display: inline-flex;
+	}
+
+	/* In overlay context the empty star should contrast on dark background */
+	.dest-card__overlay-content .dest-card__star--empty {
+		color: var(--primary-foreground);
+	}
+
+	.dest-card__rating-value {
+		font-family: var(--font-sans);
+		font-weight: 700;
+		font-size: 13px;
+		line-height: 19.2px;
+		color: var(--core-foreground);
+		margin-left: 4px;
+	}
+
+	.dest-card__overlay-content .dest-card__rating-value {
+		color: var(--primary-foreground);
+	}
+
+	.dest-card__reviews-count {
+		font-family: var(--font-sans);
+		font-weight: 400;
+		font-size: 12px;
+		line-height: 19.2px;
+		color: var(--core-muted-foreground);
+	}
+
+	.dest-card__overlay-content .dest-card__reviews-count {
+		color: oklch(from var(--primary-foreground) l c h / 0.75);
+	}
+
+	/* =========================================================================
+	   DIVIDER + CTA ROW (grid variant only)
+	   ========================================================================= */
+	.dest-card__divider {
+		height: 1px;
+		background-color: var(--border);
+		width: 100%;
+	}
+
+	.dest-card__cta-row {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		padding-top: 4px;
+	}
+
+	.dest-card__cta-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 8px 16px;
+		border-radius: 9999px;
+		font-family: var(--font-sans);
+		font-weight: 500;
+		font-size: 12px;
+		line-height: 19.2px;
+		color: var(--core-foreground);
+		background: linear-gradient(135deg, var(--brand-secondary) 0%, var(--core-background) 100%);
+		white-space: nowrap;
+		transition: opacity 200ms ease-out;
+	}
+
+	.dest-card:hover .dest-card__cta-btn {
+		opacity: 0.85;
+	}
+</style>

@@ -36,6 +36,7 @@ import {
   BooksAndMagazinesIcon,
   EventIcon,
 } from '@repo/icons';
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { buildUrl } from '@/lib/urls';
 import { getEventCategoryColor } from '@/lib/colors';
 import type { EventCardData } from '@/data/types';
@@ -46,7 +47,7 @@ import type { SupportedLocale } from '@/lib/i18n';
  *
  * @example
  * ```astro
- * <EventCardFeatured data={eventData} locale="es" />
+ * <EventCardFeatured data={eventData} locale="es" isAuthenticated={false} />
  * ```
  */
 interface Props {
@@ -54,9 +55,15 @@ interface Props {
   readonly data: EventCardData;
   /** Active locale used to build the detail page URL and format date values. */
   readonly locale: SupportedLocale;
+  /**
+   * Whether the current user is authenticated.
+   * Forwarded to FavoriteButton to decide between toggle-favorite or
+   * auth-required popover. Defaults to false (guest user).
+   */
+  readonly isAuthenticated?: boolean;
 }
 
-const { data, locale } = Astro.props;
+const { data, locale, isAuthenticated = false } = Astro.props;
 
 const detailUrl = buildUrl({ locale, path: `/eventos/${data.slug}/` });
 const categoryColor = getEventCategoryColor({ category: data.category });
@@ -258,6 +265,21 @@ const badgeBgSolid = categoryColor.bg.replace('/ 0.15)', '/ 0.85)');
 ---
 
 <article class="event-card-featured" style={`--category-color: ${categoryColor.text};`}>
+  <!-- FavoriteButton island: top-right over image, OUTSIDE the <a> link (HTML semantics) -->
+  <div class="event-card-featured__fav-wrapper">
+    <FavoriteButton
+      client:load
+      entityId={data.id}
+      entityType="EVENT"
+      initialIsFavorited={data.isFavorited}
+      initialBookmarkId={data.favoriteBookmarkId ?? null}
+      count={data.bookmarkCount}
+      variant="standalone"
+      showCount={true}
+      locale={locale}
+      isAuthenticated={isAuthenticated}
+    />
+  </div>
   <a href={detailUrl} class="event-card-featured__link" aria-label={data.name}>
 
     <!-- Featured accent line (left border decoration) -->
@@ -383,6 +405,16 @@ const badgeBgSolid = categoryColor.bg.replace('/ 0.15)', '/ 0.85)');
   .event-card-featured:hover {
     box-shadow: var(--shadow-card-hover);
     transform: translateY(-3px);
+  }
+
+  /* -------------------------------------------------------------------------
+   * FavoriteButton: top-right over image, outside <a> link
+   * ---------------------------------------------------------------------- */
+  .event-card-featured__fav-wrapper {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 3;
   }
 
   /* -------------------------------------------------------------------------

@@ -6,8 +6,8 @@
  * favorite + photo count, category pill, location bar, amenities, stars, price + CTA.
  */
 
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import {
-	FavoriteIcon,
 	GalleryIcon,
 	LocationIcon,
 	StarIcon,
@@ -25,9 +25,15 @@ import type { SupportedLocale } from '@/lib/i18n';
 interface Props {
 	readonly data: AccommodationCardData;
 	readonly locale: SupportedLocale;
+	/**
+	 * Whether the current user is authenticated.
+	 * Forwarded to FavoriteButton to decide between toggle-favorite or
+	 * auth-required popover. Defaults to false (guest user).
+	 */
+	readonly isAuthenticated?: boolean;
 }
 
-const { data, locale } = Astro.props;
+const { data, locale, isAuthenticated = false } = Astro.props;
 const { t } = createTranslations(locale);
 
 const detailUrl = buildUrl({ locale, path: `/alojamientos/${data.slug}/` });
@@ -112,11 +118,20 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 				</svg>
 			</div>
 
-			<!-- Top right actions -->
+			<!-- Top right actions: FavoriteButton island + photo count -->
 			<div class="acc-card__actions">
-				<button type="button" class="acc-card__fav-btn" aria-label={t('ui.saveItem', 'Save {{name}}', { name: data.name })}>
-					<FavoriteIcon size={16} weight="regular" aria-hidden="true" />
-				</button>
+				<FavoriteButton
+					client:load
+					entityId={data.id}
+					entityType="ACCOMMODATION"
+					initialIsFavorited={data.isFavorited}
+					initialBookmarkId={data.favoriteBookmarkId ?? null}
+					count={data.bookmarkCount}
+					variant="standalone"
+					showCount={true}
+					locale={locale}
+					isAuthenticated={isAuthenticated}
+				/>
 				<div class="acc-card__photo-count">
 					<GalleryIcon size={16} weight="fill" aria-hidden="true" />
 					<span>5</span>

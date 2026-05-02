@@ -20,6 +20,7 @@ import {
     formatReadingTime,
 } from '@/lib/article-card-utils';
 import Badge from '@/components/shared/ui/Badge.astro';
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { getPostCategoryColor, getPostCategoryLabel, getPostCategoryEmoji, getBadgeStatusColor, getMutedColorScheme } from '@/lib/colors';
 
 interface Props {
@@ -29,9 +30,15 @@ interface Props {
     readonly locale: SupportedLocale;
     /** Show the "🔥 Trending" overlay badge on the image. */
     readonly isTrending?: boolean;
+    /**
+     * Whether the current user is authenticated.
+     * Forwarded to FavoriteButton to decide between toggle-favorite or
+     * auth-required popover. Defaults to false (guest user).
+     */
+    readonly isAuthenticated?: boolean;
 }
 
-const { data, locale, isTrending = false } = Astro.props;
+const { data, locale, isTrending = false, isAuthenticated = false } = Astro.props;
 const { t } = createTranslations(locale);
 const trendingColors = getBadgeStatusColor({ status: 'trending' });
 const promotedColors = getBadgeStatusColor({ status: 'promoted' });
@@ -107,6 +114,23 @@ const mutedColorScheme = getMutedColorScheme();
             >
                 {t('articles.promoted', 'Destacado')}
             </span>
+        )}
+        <!-- FavoriteButton island: top-right over image, no wrapping <a> here -->
+        {data.id && (
+            <div class="article-card__fav-wrapper">
+                <FavoriteButton
+                    client:load
+                    entityId={data.id}
+                    entityType="POST"
+                    initialIsFavorited={data.isFavorited}
+                    initialBookmarkId={data.favoriteBookmarkId ?? null}
+                    count={data.bookmarkCount}
+                    variant="standalone"
+                    showCount={true}
+                    locale={locale}
+                    isAuthenticated={isAuthenticated}
+                />
+            </div>
         )}
     </div>
 
@@ -254,6 +278,14 @@ const mutedColorScheme = getMutedColorScheme();
     .article-card__img {
         position: relative;
         z-index: 1;
+    }
+
+    /* FavoriteButton: top-right over image */
+    .article-card__fav-wrapper {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 2;
     }
 
     /* Overlay badges */

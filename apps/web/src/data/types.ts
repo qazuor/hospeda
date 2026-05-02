@@ -174,6 +174,25 @@ export interface AccommodationCardData {
         readonly lng: number;
         readonly radiusMeters: number;
     };
+    /**
+     * SPEC-098: Whether the current user has already favorited this accommodation.
+     * Populated by a bulk-check API call on listing pages. Undefined for guests or
+     * when the bulk-check was not performed (FavoriteButton single-check fallback
+     * handles this case on mount).
+     */
+    readonly isFavorited?: boolean;
+    /**
+     * SPEC-098: Bookmark id when the entity is already favorited by the current user.
+     * Required for explicit DELETE flows. Null when the entity is not yet favorited.
+     * Undefined when no bulk-check was performed.
+     */
+    readonly favoriteBookmarkId?: string | null;
+    /**
+     * SPEC-098: Total public count of users who have bookmarked this accommodation.
+     * Used by FavoriteButton's `pill` variant to render the count badge.
+     * Undefined when not returned by the API endpoint.
+     */
+    readonly bookmarkCount?: number;
 }
 
 /**
@@ -223,6 +242,7 @@ export interface DestinationCoordinates {
  * @example
  * ```ts
  * const card: DestinationCardData = {
+ *   id: 'e3b0c442-98fc-4c14-9e32-82b3e4b6b6a2',
  *   slug: 'concepcion-del-uruguay',
  *   name: 'Concepción del Uruguay',
  *   summary: 'Ciudad histórica a orillas del río Uruguay.',
@@ -237,6 +257,13 @@ export interface DestinationCoordinates {
  * ```
  */
 export interface DestinationCardData {
+    /**
+     * UUID identifier for the destination.
+     * Required by FavoriteButton as `entityId` — must be a UUID, not a slug.
+     * If the API response does not include `id`, the FavoriteButton will not
+     * function correctly (a console warning is logged by the transform).
+     */
+    readonly id: string;
     /** URL-safe slug used to build the destination detail page path. */
     readonly slug: string;
     /** Display name of the destination. */
@@ -309,6 +336,7 @@ export interface EventLocation {
  * @example
  * ```ts
  * const card: EventCardData = {
+ *   id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
  *   slug: 'festival-cosquin-rock-2026',
  *   name: 'Cosquín Rock 2026',
  *   summary: 'El festival de rock más importante de Argentina.',
@@ -321,6 +349,13 @@ export interface EventLocation {
  * ```
  */
 export interface EventCardData {
+    /**
+     * UUID identifier for the event.
+     * Required by FavoriteButton as `entityId` — must be a UUID, not a slug.
+     * If the API response does not include `id`, the FavoriteButton will not
+     * function correctly (a console warning is logged by the transform).
+     */
+    readonly id: string;
     /** URL-safe slug used to build the event detail page path. */
     readonly slug: string;
     /** Display name of the event. */
@@ -351,6 +386,25 @@ export interface EventCardData {
     readonly cityPath?: string;
     /** SPEC-095: Slug of the city destination, used for `/destinos/{slug}` links. */
     readonly cityDestinationSlug?: string;
+    /**
+     * SPEC-098: Whether the current user has already favorited this event.
+     * Populated by a bulk-check API call on listing pages. Undefined for guests or
+     * when the bulk-check was not performed (FavoriteButton single-check fallback
+     * handles this case on mount).
+     */
+    readonly isFavorited?: boolean;
+    /**
+     * SPEC-098: Bookmark id when the entity is already favorited by the current user.
+     * Required for explicit DELETE flows. Null when the entity is not yet favorited.
+     * Undefined when no bulk-check was performed.
+     */
+    readonly favoriteBookmarkId?: string | null;
+    /**
+     * SPEC-098: Total public count of users who have bookmarked this event.
+     * Used by FavoriteButton's `pill` variant to render the count badge.
+     * Undefined when not returned by the API endpoint.
+     */
+    readonly bookmarkCount?: number;
 }
 
 /**
@@ -363,6 +417,7 @@ export interface EventCardData {
  * @example
  * ```ts
  * const card: ArticleCardData = {
+ *   id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
  *   slug: 'mejores-cabanas-entre-rios',
  *   title: 'Las 10 mejores cabañas de Entre Ríos',
  *   summary: 'Descubrí los rincones más hermosos del litoral.',
@@ -376,6 +431,13 @@ export interface EventCardData {
  * ```
  */
 export interface ArticleCardData {
+    /**
+     * UUID identifier for the article/post.
+     * Required by FavoriteButton as `entityId` — must be a UUID, not a slug.
+     * If the API response does not include `id`, the FavoriteButton will not
+     * function correctly (a console warning is logged by the transform).
+     */
+    readonly id: string;
     /** URL-safe slug used to build the post detail page path. */
     readonly slug: string;
     /** Display title of the blog post. */
@@ -402,6 +464,25 @@ export interface ArticleCardData {
     readonly isFeatured: boolean;
     /** Optional list of tag slugs associated with the post. */
     readonly tags?: readonly string[];
+    /**
+     * SPEC-098: Whether the current user has already favorited this article/post.
+     * Populated by a bulk-check API call on listing pages. Undefined for guests or
+     * when the bulk-check was not performed (FavoriteButton single-check fallback
+     * handles this case on mount).
+     */
+    readonly isFavorited?: boolean;
+    /**
+     * SPEC-098: Bookmark id when the entity is already favorited by the current user.
+     * Required for explicit DELETE flows. Null when the entity is not yet favorited.
+     * Undefined when no bulk-check was performed.
+     */
+    readonly favoriteBookmarkId?: string | null;
+    /**
+     * SPEC-098: Total public count of users who have bookmarked this article/post.
+     * Used by FavoriteButton's `pill` variant to render the count badge.
+     * Undefined when not returned by the API endpoint.
+     */
+    readonly bookmarkCount?: number;
 }
 
 // ---------------------------------------------------------------------------

@@ -19,6 +19,11 @@ describe('EventCard.astro', () => {
             expect(src).toContain("import Badge from '../ui/Badge.astro'");
         });
 
+        it('should import FavoriteButton island from shared/favorite', () => {
+            expect(src).toContain("from '@/components/shared/favorite/FavoriteButton.client'");
+            expect(src).toContain('FavoriteButton');
+        });
+
         it('should import CalendarDotsIcon and LocationIcon from @repo/icons', () => {
             expect(src).toContain("from '@repo/icons'");
             expect(src).toContain('CalendarDotsIcon');
@@ -60,6 +65,56 @@ describe('EventCard.astro', () => {
 
         it('should declare locale prop as readonly SupportedLocale', () => {
             expect(src).toContain('readonly locale: SupportedLocale');
+        });
+
+        it('should declare optional isAuthenticated prop', () => {
+            expect(src).toContain('readonly isAuthenticated?: boolean');
+        });
+
+        it('should default isAuthenticated to false', () => {
+            expect(src).toContain('isAuthenticated = false');
+        });
+    });
+
+    describe('FavoriteButton island integration (SPEC-098)', () => {
+        it('should render FavoriteButton with client:load directive', () => {
+            expect(src).toContain('client:load');
+        });
+
+        it('should pass entityId from data.id', () => {
+            expect(src).toContain('entityId={data.id}');
+        });
+
+        it('should pass entityType="EVENT"', () => {
+            expect(src).toContain('entityType="EVENT"');
+        });
+
+        it('should pass initialIsFavorited from data.isFavorited', () => {
+            expect(src).toContain('initialIsFavorited={data.isFavorited}');
+        });
+
+        it('should pass initialBookmarkId from data.favoriteBookmarkId with null fallback', () => {
+            expect(src).toContain('initialBookmarkId={data.favoriteBookmarkId ?? null}');
+        });
+
+        it('should pass count from data.bookmarkCount', () => {
+            expect(src).toContain('count={data.bookmarkCount}');
+        });
+
+        it('should use standalone variant', () => {
+            expect(src).toContain('variant="standalone"');
+        });
+
+        it('should forward locale to FavoriteButton', () => {
+            expect(src).toContain('locale={locale}');
+        });
+
+        it('should forward isAuthenticated to FavoriteButton', () => {
+            expect(src).toContain('isAuthenticated={isAuthenticated}');
+        });
+
+        it('should position FavoriteButton wrapper outside the image <a> link', () => {
+            expect(src).toContain('event-card__fav-wrapper');
         });
     });
 

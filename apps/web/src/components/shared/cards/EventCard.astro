@@ -9,6 +9,7 @@
 import { Image } from 'astro:assets';
 import Badge from '../ui/Badge.astro';
 import { CalendarDotsIcon, LocationIcon } from '@repo/icons';
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { getEventCategoryColor } from '@/lib/colors';
 import { formatDate } from '@/lib/format-utils';
 import { buildUrl } from '@/lib/urls';
@@ -20,7 +21,7 @@ import type { SupportedLocale } from '@/lib/i18n';
  *
  * @example
  * ```astro
- * <EventCard data={eventData} locale="es" />
+ * <EventCard data={eventData} locale="es" isAuthenticated={false} />
  * ```
  */
 interface Props {
@@ -28,9 +29,15 @@ interface Props {
   readonly data: EventCardData;
   /** Active locale used to build the detail page URL and format values. */
   readonly locale: SupportedLocale;
+  /**
+   * Whether the current user is authenticated.
+   * Forwarded to FavoriteButton to decide between toggle-favorite or
+   * auth-required popover. Defaults to false (guest user).
+   */
+  readonly isAuthenticated?: boolean;
 }
 
-const { data, locale } = Astro.props;
+const { data, locale, isAuthenticated = false } = Astro.props;
 
 const categoryColor = getEventCategoryColor({ category: data.category });
 const detailUrl = buildUrl({ locale, path: `/eventos/${data.slug}/` });
@@ -66,6 +73,21 @@ const endDate = data.date.end ? formatDate({ date: data.date.end, locale }) : nu
         />
       )}
     </a>
+    <!-- FavoriteButton island: top-right over image, OUTSIDE the <a> link (HTML semantics) -->
+    <div class="event-card__fav-wrapper">
+      <FavoriteButton
+        client:load
+        entityId={data.id}
+        entityType="EVENT"
+        initialIsFavorited={data.isFavorited}
+        initialBookmarkId={data.favoriteBookmarkId ?? null}
+        count={data.bookmarkCount}
+        variant="standalone"
+        showCount={true}
+        locale={locale}
+        isAuthenticated={isAuthenticated}
+      />
+    </div>
   </div>
 
   <!-- Content area -->
@@ -115,10 +137,19 @@ const endDate = data.date.end ? formatDate({ date: data.date.end, locale }) : nu
 <style>
   .event-card__image {
     aspect-ratio: 16/9;
+    position: relative;
   }
 
   .event-card__img {
     height: 100%;
+  }
+
+  /* FavoriteButton positioned top-right over the image, outside the <a> link */
+  .event-card__fav-wrapper {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1;
   }
 
   .event-card__badge-wrapper {
