@@ -1,0 +1,130 @@
+---
+/**
+ * @file AccommodationTypeBadge.astro
+ * @description Single source of truth for the accommodation-type pill used
+ * across listing cards, detail headers, and any other UI surface that needs
+ * to communicate accommodation type.
+ *
+ * Colour identity per type comes from `getAccommodationTypeColorSolid` (token
+ * hue + chroma with luminance clamped to ≤ 0.6 so the pill stays legible on
+ * any warm/light surface). Label comes from `getAccommodationTypeLabel`
+ * (i18n-aware).
+ *
+ * The component exposes `--acc-type-padding` and `--acc-type-font-size` CSS
+ * custom properties so ancestor scopes (e.g. the wave-header compact mode)
+ * can override the size without `!important`.
+ */
+import {
+    getAccommodationTypeColorSolid,
+    getAccommodationTypeLabel
+} from '@/lib/colors';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    /** Accommodation type from the API (case-insensitive, e.g. `"HOTEL"`). */
+    readonly type: string;
+    /** Active locale for the i18n label. */
+    readonly locale: SupportedLocale;
+    /** Pill density. `xs` matches listing-card density, `sm` the detail header. */
+    readonly size?: 'xs' | 'sm';
+    /** When provided the badge renders as an `<a>` (tap target + hover lift). */
+    readonly href?: string;
+    /** Optional extra class forwarded to the root element (for ancestor-driven overrides). */
+    readonly class?: string;
+}
+
+const { type, locale, size = 'sm', href, class: extraClass } = Astro.props;
+const { t } = createTranslations(locale);
+
+const normalizedType = type.toLowerCase();
+const label = getAccommodationTypeLabel({ type, t });
+const colors = getAccommodationTypeColorSolid({ type: normalizedType });
+
+const classList = [
+    'acc-type-badge',
+    `acc-type-badge--size-${size}`,
+    href ? 'acc-type-badge--interactive' : null,
+    extraClass
+];
+const inlineStyle = `--acc-type-bg: ${colors.bg}; --acc-type-text: ${colors.text};`;
+---
+
+{href ? (
+    <a class:list={classList} style={inlineStyle} href={href}>
+        {label}
+    </a>
+) : (
+    <span class:list={classList} style={inlineStyle}>
+        {label}
+    </span>
+)}
+
+<style>
+    .acc-type-badge {
+        display: inline-flex;
+        align-items: center;
+        background-color: var(--acc-type-bg, var(--brand-accent));
+        color: var(--acc-type-text, var(--core-card));
+        border: none;
+        border-radius: var(--radius-pill, 9999px);
+        font-family: var(--font-sans);
+        font-weight: 700;
+        text-transform: uppercase;
+        white-space: nowrap;
+        box-shadow:
+            0 1px 2px oklch(0 0 0 / 0.08),
+            0 2px 6px oklch(0 0 0 / 0.06);
+        padding: var(--acc-type-padding);
+        font-size: var(--acc-type-font-size);
+        letter-spacing: var(--acc-type-letter-spacing, 0.05em);
+        transition:
+            padding 0.3s ease,
+            font-size 0.3s ease,
+            box-shadow 0.3s ease;
+    }
+    .acc-type-badge--size-xs {
+        --acc-type-padding: 4px 10px;
+        --acc-type-font-size: 0.625rem;
+        --acc-type-letter-spacing: 0.04em;
+        line-height: 1.4;
+    }
+    .acc-type-badge--size-sm {
+        --acc-type-padding: 4px 14px;
+        --acc-type-font-size: 0.7rem;
+    }
+
+    /* Interactive (anchor) variant: tap target, hover/focus affordance.
+     * `display: inline-flex` + `min-height` only when actionable, so the
+     * decorative span variant keeps hugging its content. */
+    a.acc-type-badge {
+        text-decoration: none;
+        cursor: pointer;
+        min-height: 32px;
+        transition:
+            transform 200ms ease-out,
+            filter 200ms ease-out,
+            box-shadow 200ms ease-out,
+            padding 0.3s ease,
+            font-size 0.3s ease;
+    }
+    a.acc-type-badge:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.05);
+        box-shadow:
+            0 2px 4px oklch(0 0 0 / 0.1),
+            0 4px 10px oklch(0 0 0 / 0.08);
+    }
+    a.acc-type-badge:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .acc-type-badge,
+        a.acc-type-badge,
+        a.acc-type-badge:hover {
+            transition: none;
+            transform: none;
+        }
+    }
+</style>

@@ -64,6 +64,32 @@ function scheme({
     };
 }
 
+/**
+ * Creates a ColorScheme with a fully-opaque, contrast-safe background derived
+ * from the token's hue and chroma but with luminance clamped to ≤ 0.6 so the
+ * pill stays clearly visible even on warm/light surfaces. Tokens that are
+ * already darker than 0.6 keep their original luminance untouched.
+ *
+ * Intended for placements where the subtle 0.15 alpha variant is too washed
+ * out — e.g. the accommodation detail header on top of --surface-warm.
+ */
+function schemeSolid({
+    token,
+    textToken = 'card'
+}: {
+    readonly token: string;
+    readonly textToken?: string;
+}): ColorScheme {
+    const cssToken = resolveToken(token);
+    const cssText = resolveToken(textToken);
+    const clampedL = 'min(l, 0.6)';
+    return {
+        bg: `oklch(from var(--${cssToken}) ${clampedL} c h)`,
+        text: `var(--${cssText})`,
+        border: `oklch(from var(--${cssToken}) calc(${clampedL} * 0.7) c h)`
+    };
+}
+
 // ---------------------------------------------------------------------------
 // Accommodation
 // ---------------------------------------------------------------------------
@@ -104,6 +130,47 @@ export function getAccommodationTypeColor({ type }: { readonly type: string }): 
             return scheme({ token: 'info', textToken: 'info-foreground' });
         default:
             return scheme({ token: 'accent' });
+    }
+}
+
+/**
+ * Returns a SOLID color scheme for an accommodation type badge.
+ *
+ * Same semantic mapping as `getAccommodationTypeColor` but with fully-opaque
+ * background and contrasting text. Use it where the default subtle (0.15
+ * alpha) variant disappears against a warm surface — e.g. detail header.
+ *
+ * @param params - Object containing the accommodation type string.
+ * @returns A ColorScheme with solid bg, contrasting text, and matching border.
+ */
+export function getAccommodationTypeColorSolid({
+    type
+}: {
+    readonly type: string;
+}): ColorScheme {
+    switch (type) {
+        case 'hotel':
+            return schemeSolid({ token: 'accent' });
+        case 'cabin':
+            return schemeSolid({ token: 'hospeda-forest' });
+        case 'camping':
+            return schemeSolid({ token: 'hospeda-sand' });
+        case 'apartment':
+            return schemeSolid({ token: 'primary' });
+        case 'country_house':
+            return schemeSolid({ token: 'secondary' });
+        case 'hostel':
+            return schemeSolid({ token: 'hospeda-river' });
+        case 'resort':
+            return schemeSolid({ token: 'hospeda-sky' });
+        case 'house':
+            return schemeSolid({ token: 'muted' });
+        case 'motel':
+            return schemeSolid({ token: 'warning' });
+        case 'room':
+            return schemeSolid({ token: 'info' });
+        default:
+            return schemeSolid({ token: 'accent' });
     }
 }
 
