@@ -61,6 +61,7 @@ async function fetchOwnUserTagsForPicker(search?: string) {
     });
 
     // The own tags endpoint is paginated — normalize to array.
+    // TYPE-WORKAROUND: fetchApi returns the endpoint's success-wrapped envelope but the picker shape is unique to this hook; cast then narrow on raw.data.items below.
     const raw = result.data as unknown as {
         data?: { items?: Tag[] };
         success?: boolean;
@@ -71,6 +72,7 @@ async function fetchOwnUserTagsForPicker(search?: string) {
     }
 
     // Fallback if endpoint returns flat array
+    // TYPE-WORKAROUND: legacy non-paginated shape kept for backward compat; runtime guard above already routes the paginated path.
     return (result.data.data as unknown as Tag[]) ?? [];
 }
 

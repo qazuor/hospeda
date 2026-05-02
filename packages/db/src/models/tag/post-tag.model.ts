@@ -63,6 +63,7 @@ export class PostTagModel extends BaseModelImpl<PostTag> {
                 .limit(1);
 
             logQuery(this.entityName, 'findById', logContext, result);
+            // DRIZZLE-LIMITATION: select(*) returns InferSelect with branded enum columns; cast back to the canonical PostTag type used by services.
             return (result[0] as unknown as PostTag) ?? null;
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
@@ -93,6 +94,7 @@ export class PostTagModel extends BaseModelImpl<PostTag> {
                 .limit(1);
 
             logQuery(this.entityName, 'findBySlug', logContext, result);
+            // DRIZZLE-LIMITATION: select(*) returns InferSelect with branded enum columns; cast back to the canonical PostTag type used by services.
             return (result[0] as unknown as PostTag) ?? null;
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
@@ -122,6 +124,7 @@ export class PostTagModel extends BaseModelImpl<PostTag> {
             additionalConditions.push(
                 eq(
                     postTags.lifecycleState,
+                    // DRIZZLE-LIMITATION: pgEnum branded `_.data` type rejects raw enum strings until cast.
                     query.lifecycleState as unknown as typeof postTags.lifecycleState._.data
                 )
             );
@@ -157,6 +160,7 @@ export class PostTagModel extends BaseModelImpl<PostTag> {
                     and(
                         eq(
                             postTags.lifecycleState,
+                            // DRIZZLE-LIMITATION: pgEnum branded `_.data` type rejects raw 'ACTIVE' string until cast.
                             'ACTIVE' as unknown as typeof postTags.lifecycleState._.data
                         ),
                         isNull(postTags.deletedAt)
@@ -165,6 +169,7 @@ export class PostTagModel extends BaseModelImpl<PostTag> {
                 .orderBy(asc(postTags.name));
 
             logQuery(this.entityName, 'findActive', logContext, result);
+            // DRIZZLE-LIMITATION: select(*) returns InferSelect with branded enum columns; cast back to the canonical PostTag[] used by services.
             return result as unknown as PostTag[];
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
@@ -211,6 +216,7 @@ export class PostTagModel extends BaseModelImpl<PostTag> {
                     and(
                         eq(
                             postTags.lifecycleState,
+                            // DRIZZLE-LIMITATION: pgEnum branded `_.data` type rejects raw 'ACTIVE' string until cast.
                             'ACTIVE' as unknown as typeof postTags.lifecycleState._.data
                         ),
                         isNull(postTags.deletedAt)
@@ -239,6 +245,7 @@ export class PostTagModel extends BaseModelImpl<PostTag> {
             }));
 
             logQuery(this.entityName, 'findActiveWithCounts', logContext, mapped);
+            // DRIZZLE-LIMITATION: explicit projection with COUNT() returns a row shape Drizzle infers without the brand; PostTagWithCount adds the augmented shape.
             return mapped as unknown as PostTagWithCount[];
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));

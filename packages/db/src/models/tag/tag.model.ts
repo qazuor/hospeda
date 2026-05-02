@@ -70,11 +70,13 @@ export class TagModel extends BaseModelImpl<Tag> {
         const logContext = { type, options };
 
         try {
+            // DRIZZLE-LIMITATION: pgEnum columns brand their `_.data` type with the schema name; eq() rejects raw enum strings until cast.
             const conditions: SQL[] = [eq(tags.type, type as unknown as typeof tags.type._.data)];
             if (options?.lifecycleState) {
                 conditions.push(
                     eq(
                         tags.lifecycleState,
+                        // DRIZZLE-LIMITATION: same branded-enum issue as above for lifecycleState.
                         options.lifecycleState as unknown as typeof tags.lifecycleState._.data
                     )
                 );
@@ -88,6 +90,7 @@ export class TagModel extends BaseModelImpl<Tag> {
                 .where(and(...conditions));
 
             logQuery(this.entityName, 'findByType', logContext, result);
+            // DRIZZLE-LIMITATION: select(*) returns InferSelect with branded enum columns; cast back to the canonical Tag type used by services.
             return result as unknown as Tag[];
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
@@ -116,6 +119,7 @@ export class TagModel extends BaseModelImpl<Tag> {
                 .select()
                 .from(tags)
                 .where(
+                    // DRIZZLE-LIMITATION: TagTypeEnum is a TS enum, but tags.type column carries Drizzle's branded `_.data` type; eq() rejects until cast.
                     and(
                         eq(tags.type, TagTypeEnum.USER as unknown as typeof tags.type._.data),
                         eq(tags.ownerId, ownerId),
@@ -124,6 +128,7 @@ export class TagModel extends BaseModelImpl<Tag> {
                 );
 
             logQuery(this.entityName, 'findByOwner', logContext, result);
+            // DRIZZLE-LIMITATION: select(*) returns InferSelect with branded enum columns; cast back to the canonical Tag type used by services.
             return result as unknown as Tag[];
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
@@ -156,11 +161,13 @@ export class TagModel extends BaseModelImpl<Tag> {
                 .select({ total: count() })
                 .from(tags)
                 .where(
+                    // DRIZZLE-LIMITATION: TS enum/string literal vs Drizzle branded enum types; both `tags.type` and `tags.lifecycleState` need the cast.
                     and(
                         eq(tags.type, TagTypeEnum.USER as unknown as typeof tags.type._.data),
                         eq(tags.ownerId, ownerId),
                         eq(
                             tags.lifecycleState,
+                            // DRIZZLE-LIMITATION: pgEnum branded `_.data` type rejects raw 'ACTIVE' string until cast.
                             'ACTIVE' as unknown as typeof tags.lifecycleState._.data
                         ),
                         isNull(tags.deletedAt)
@@ -202,6 +209,7 @@ export class TagModel extends BaseModelImpl<Tag> {
             // Build per-type conditions using SQL OR blocks so we can apply
             // a single name filter across the entire result set.
 
+            // DRIZZLE-LIMITATION: every TagTypeEnum / lifecycle literal needs to be cast to Drizzle's branded `_.data` type; this block has 3 branches that all hit the same brand mismatch.
             // Condition: SYSTEM (ACTIVE)
             const systemCondition: SQL = and(
                 eq(tags.type, TagTypeEnum.SYSTEM as unknown as typeof tags.type._.data),
@@ -209,6 +217,7 @@ export class TagModel extends BaseModelImpl<Tag> {
                 isNull(tags.deletedAt)
             ) as SQL;
 
+            // DRIZZLE-LIMITATION: same branded-enum cast applies to user condition.
             // Condition: actor's own USER (ACTIVE)
             const userCondition: SQL = and(
                 eq(tags.type, TagTypeEnum.USER as unknown as typeof tags.type._.data),
@@ -220,11 +229,13 @@ export class TagModel extends BaseModelImpl<Tag> {
             const orBranches: SQL[] = [systemCondition, userCondition];
 
             if (hasInternalView) {
+                // DRIZZLE-LIMITATION: same branded-enum cast applies to internal condition.
                 // Condition: INTERNAL (ACTIVE) — only for actors with TAG_INTERNAL_VIEW
                 const internalCondition: SQL = and(
                     eq(tags.type, TagTypeEnum.INTERNAL as unknown as typeof tags.type._.data),
                     eq(
                         tags.lifecycleState,
+                        // DRIZZLE-LIMITATION: pgEnum branded `_.data` type rejects raw 'ACTIVE' string until cast.
                         'ACTIVE' as unknown as typeof tags.lifecycleState._.data
                     ),
                     isNull(tags.deletedAt)
@@ -247,6 +258,7 @@ export class TagModel extends BaseModelImpl<Tag> {
                 .where(and(...conditions));
 
             logQuery(this.entityName, 'findPickerTags', logContext, result);
+            // DRIZZLE-LIMITATION: select(*) returns InferSelect with branded enum columns; cast back to the canonical Tag type used by services.
             return result as unknown as Tag[];
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));

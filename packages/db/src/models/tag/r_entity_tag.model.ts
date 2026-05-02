@@ -122,6 +122,7 @@ export class REntityTagModel extends BaseModelImpl<EntityTag> {
                 with: { tag: true }
             });
             logQuery(this.entityName, 'findByEntityAndActor', logContext, result);
+            // DRIZZLE-LIMITATION: relational query result widens the entityType column to the union of all enum literals; EntityTag has the narrowed brand.
             return result as unknown as EntityTag[];
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
@@ -157,6 +158,7 @@ export class REntityTagModel extends BaseModelImpl<EntityTag> {
                 with: { tag: true, assignedBy: true }
             });
             logQuery(this.entityName, 'findByEntityAll', logContext, result);
+            // DRIZZLE-LIMITATION: relational query result widens the entityType column to the union of all enum literals; EntityTag has the narrowed brand.
             return result as unknown as EntityTag[];
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
@@ -270,6 +272,7 @@ export class REntityTagModel extends BaseModelImpl<EntityTag> {
                 .values({
                     tagId: input.tagId,
                     entityId: input.entityId,
+                    // DRIZZLE-LIMITATION: pgEnum branded `_.data` type rejects the EntityType TS enum until cast.
                     entityType: input.entityType as unknown as typeof rEntityTag.entityType._.data,
                     assignedById: input.assignedById
                 })
@@ -280,6 +283,7 @@ export class REntityTagModel extends BaseModelImpl<EntityTag> {
             }
 
             logQuery(this.entityName, 'assign', logContext, result[0]);
+            // DRIZZLE-LIMITATION: returning() infers the column row shape with branded enum types; EntityTag has the narrowed canonical shape.
             return result[0] as unknown as EntityTag;
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));

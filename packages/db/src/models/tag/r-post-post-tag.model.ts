@@ -145,6 +145,7 @@ export class RPostPostTagModel extends BaseModelImpl<SelectRPostPostTag> {
 
             const hydrated = result.map((row) => row.postTag);
             logQuery(this.entityName, 'findByPostId', logContext, hydrated);
+            // DRIZZLE-LIMITATION: relational query produces nested join shape; row.postTag is the canonical PostTag but Drizzle widens it via the join discriminator.
             return hydrated as unknown as PostTag[];
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));

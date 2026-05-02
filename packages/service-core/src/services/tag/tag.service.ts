@@ -937,22 +937,25 @@ export class TagService extends BaseCrudRelatedService<
                         validated.entityType as EntityTypeEnum,
                         execCtx?.tx
                     );
+                    // TYPE-WORKAROUND: relational query result is `Array<{ tag: Tag }>` but Drizzle's inferred type loses the `.tag` projection; cast to extract and narrow.
                     const tags = (relations as unknown as Array<{ tag?: Tag }>)
                         .map((rel) => rel.tag)
+                        // TYPE-WORKAROUND: filter(Boolean) widens the array to (Tag|undefined)[]; the output schema requires Tag[].
                         .filter(Boolean) as unknown as TagGetForEntityOutput['tags'];
                     return { tags };
                 }
 
                 // Regular authenticated user: only own assignments (D-007).
-                // TYPE-WORKAROUND: same Drizzle relational join cast as above.
                 const relations = await this.relatedModel.findByEntityAndActor(
                     validated.entityId,
                     validated.entityType as EntityTypeEnum,
                     actor.id,
                     execCtx?.tx
                 );
+                // TYPE-WORKAROUND: same Drizzle relational join cast as in the admin branch above.
                 const tags = (relations as unknown as Array<{ tag?: Tag }>)
                     .map((rel) => rel.tag)
+                    // TYPE-WORKAROUND: filter(Boolean) widens to (Tag|undefined)[]; output schema requires Tag[].
                     .filter(Boolean) as unknown as TagGetForEntityOutput['tags'];
                 return { tags };
             }
@@ -1410,6 +1413,7 @@ export class TagService extends BaseCrudRelatedService<
                     undefined,
                     execCtx?.tx
                 );
+                // TYPE-WORKAROUND: findAllWithEntities returns the Drizzle relational join shape; we only need the EntityTag fields and filter by actor.
                 const actorAssignments = (allAssignments as unknown as Array<EntityTag>).filter(
                     (row) => (row as EntityTag).assignedById === actor.id
                 );

@@ -137,6 +137,7 @@ export class EventModel extends BaseModelImpl<Event> {
             ]);
 
             const total = Number(totalResult[0]?.count ?? 0);
+            // DRIZZLE-LIMITATION: select(*) and findMany return InferSelect with branded enum columns; cast back to canonical Event[] used by services.
             const result = { items: items as unknown as Event[], total };
 
             try {
@@ -191,6 +192,7 @@ export class EventModel extends BaseModelImpl<Event> {
             ]);
 
             const total = Number(totalResult[0]?.count ?? 0);
+            // DRIZZLE-LIMITATION: select(*) and findMany return InferSelect with branded enum columns; cast back to canonical Event[] used by services.
             const result = { items: items as unknown as Event[], total };
 
             try {

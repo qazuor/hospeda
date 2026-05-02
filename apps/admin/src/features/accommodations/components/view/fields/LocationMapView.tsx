@@ -14,6 +14,7 @@ import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconShadowUrl from 'leaflet/dist/images/marker-shadow.png';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 
+// TYPE-WORKAROUND: Vite asset imports return `{ src: string }` in dev and a bare string in prod build; fall back to the string form when the object shape is absent.
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: (iconRetinaUrl as { src?: string }).src ?? (iconRetinaUrl as unknown as string),
     iconUrl: (iconUrl as { src?: string }).src ?? (iconUrl as unknown as string),

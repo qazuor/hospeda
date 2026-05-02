@@ -77,6 +77,7 @@ export function useViewportSearch({
                     if (result.ok) {
                         const next = result.data.items.map((item) =>
                             toAccommodationCardProps({
+                                // TYPE-WORKAROUND: toAccommodationCardProps expects an opaque record because it accepts shapes from multiple endpoints; the search endpoint payload is structurally compatible.
                                 item: item as unknown as Record<string, unknown>
                             })
                         );

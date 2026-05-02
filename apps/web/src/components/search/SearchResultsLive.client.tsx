@@ -224,6 +224,7 @@ export function SearchResultsLive({
                 if (!res.ok) throw new Error('Search failed');
                 const json = (await res.json()) as { data: PublicSearchResponse };
                 // API wraps in { success, data } envelope
+                // TYPE-WORKAROUND: tolerate both wrapped and unwrapped responses while we migrate the public/search endpoint to the canonical envelope.
                 setResults(json.data ?? (json as unknown as PublicSearchResponse));
                 lastFetchedQuery.current = debouncedQuery;
             })
