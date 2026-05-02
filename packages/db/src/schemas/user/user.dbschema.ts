@@ -38,6 +38,7 @@ import { accounts } from './account.dbschema.ts';
 import { userPermission } from './r_user_permission.dbschema.ts';
 import { sessions } from './session.dbschema.ts';
 import { userBookmarks } from './user_bookmark.dbschema.ts';
+import { userBookmarkCollections } from './user_bookmark_collection.dbschema.ts';
 import { userAuthIdentities } from './user_identity.dbschema.ts';
 
 export const users = pgTable(
@@ -157,6 +158,7 @@ export const usersRelations = relations(users, ({ many }) => ({
     accounts: many(accounts),
     permissions: many(userPermission),
     bookmarks: many(userBookmarks),
+    collections: many(userBookmarkCollections),
     authIdentities: many(userAuthIdentities),
     updatedAccommodations: many(accommodations),
     deletedAccommodations: many(accommodations),
