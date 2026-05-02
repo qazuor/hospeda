@@ -475,6 +475,13 @@ const accommodationWithoutAudit = accommodationSchema.omit({
 });
 ```
 
+## User Bookmark & Collection Schemas (SPEC-098)
+
+The `user/` entity directory contains two related namespaces:
+
+- **`UserBookmark`** (`src/entities/user/user-bookmark.schema.ts` + `.crud.schema.ts` + `.query.schema.ts`): represents a saved favorite. Polymorphic FK (`entityId` + `entityType`) supports ACCOMMODATION, DESTINATION, EVENT, POST, and ATTRACTION. Optional `collectionId` groups bookmarks into a collection.
+- **`UserBookmarkCollection`** (`src/entities/user/user-bookmark-collection.schema.ts` + `.crud.schema.ts`): user-created wislists (max 10 per user by default, env-configurable via `HOSPEDA_MAX_COLLECTIONS_PER_USER`).
+
 ## Destination Hierarchy Schemas
 
 Hierarchy-specific schemas for geographic destination organization.

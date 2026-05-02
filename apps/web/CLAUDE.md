@@ -754,6 +754,12 @@ URL-segment pattern.. page 1 has no segment, page 2+ adds `/page/[page]/`:
 /es/alojamientos/page/2/ ← page 2
 ```
 
+## Reusable Patterns
+
+### FavoriteButton
+
+Shared React island at `src/components/shared/favorite/FavoriteButton.client.tsx`. Used in: AccommodationCard, EventCard, ArticleCard, DestinationCard, LocationMap popup, and detail headers. Exposes `entityType` + `entityId` props for polymorphic use. Includes guest popover and optimistic toggle UX.
+
 ## Common Gotchas
 
 - **Locale param**: Access via `Astro.locals.locale` (validated by middleware), not `Astro.params.lang`

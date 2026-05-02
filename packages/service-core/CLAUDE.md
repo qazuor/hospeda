@@ -816,6 +816,13 @@ export enum PermissionEnum {
 }
 ```
 
+## User Bookmark & Collection Services (SPEC-098)
+
+Two services handle the Favorites/Wishlists feature:
+
+- **`UserBookmarkService`**: manages individual bookmarks (favorites). Enforces plan-based quota via `enforceFavoritesLimit` middleware. Supports polymorphic `entityType` (ACCOMMODATION, DESTINATION, EVENT, POST, ATTRACTION).
+- **`UserBookmarkCollectionService`**: manages user-created collections (wishlists). Enforces a per-user creation cap via `_canCreate` (default 10, configurable via `HOSPEDA_MAX_COLLECTIONS_PER_USER`). Returns `QUOTA_EXCEEDED` with `{ currentCount, maxAllowed }` details when the cap is reached.
+
 ## Destination Hierarchy
 
 `DestinationService` provides hierarchy traversal, path-based lookups, and automatic hierarchy field computation.

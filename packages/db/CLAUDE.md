@@ -584,6 +584,13 @@ export class AccommodationModel extends BaseModel<Accommodation> {
 
 Models follow the repository pattern - they encapsulate all database access for an entity.
 
+## User Bookmark Tables (SPEC-098)
+
+Two tables support the Favorites/Wishlists feature:
+
+- **`user_bookmarks`**: polymorphic favorites (`entityId` + `entityType`). Optional `collectionId` FK (SET NULL on collection soft-delete). Index on `(entityId, entityType, deletedAt)` for "Most saved" sorts. Soft-delete via `deletedAt`.
+- **`user_bookmark_collections`**: user-created wishlists. Max 10 per user (env-configurable). Soft-delete only; hard deletes are not exposed.
+
 ## displayWeight Column Pattern
 
 Entities that need user-controlled display ordering (amenities, features, attractions) use a `displayWeight` column:
