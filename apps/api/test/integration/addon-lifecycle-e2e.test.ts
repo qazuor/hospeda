@@ -18,27 +18,33 @@ import { describe, it } from 'vitest';
 // GAP-043-018: E2E stubs for addon lifecycle flows (real PostgreSQL)
 // =========================================================================
 
-describe.skip('Addon Lifecycle E2E (requires real DB)', () => {
-    describe('Full cancellation flow', () => {
-        it.todo('should cancel subscription and revoke all addons in a single flow');
-        it.todo('should handle partial addon revocation failure and recover on retry');
-        it.todo('should maintain DB constraints during cancellation (CHECK, NOT NULL)');
-    });
+// CI guard requires `describe.skipIf(...)` (see scripts/check-disabled-tests.sh).
+// E2E suite needs a real PostgreSQL connection; skipped automatically when
+// HOSPEDA_TEST_DATABASE_URL is not provided (covered by SPEC-061 infrastructure).
+describe.skipIf(!process.env.HOSPEDA_TEST_DATABASE_URL)(
+    'Addon Lifecycle E2E (requires real DB)',
+    () => {
+        describe('Full cancellation flow', () => {
+            it.todo('should cancel subscription and revoke all addons in a single flow');
+            it.todo('should handle partial addon revocation failure and recover on retry');
+            it.todo('should maintain DB constraints during cancellation (CHECK, NOT NULL)');
+        });
 
-    describe('Full plan change flow', () => {
-        it.todo('should recalculate limits correctly on upgrade');
-        it.todo('should detect downgrade and send notification');
-        it.todo('should handle concurrent plan changes via advisory lock');
-    });
+        describe('Full plan change flow', () => {
+            it.todo('should recalculate limits correctly on upgrade');
+            it.todo('should detect downgrade and send notification');
+            it.todo('should handle concurrent plan changes via advisory lock');
+        });
 
-    describe('Concurrent operations', () => {
-        it.todo('should handle webhook + admin cancel on same subscription atomically');
-        it.todo('should handle cron Phase 4 + webhook on same purchase with SKIP LOCKED');
-    });
+        describe('Concurrent operations', () => {
+            it.todo('should handle webhook + admin cancel on same subscription atomically');
+            it.todo('should handle cron Phase 4 + webhook on same purchase with SKIP LOCKED');
+        });
 
-    describe('Cron job phases', () => {
-        it.todo(
-            'should process expired addons, send notifications, retry orphaned, reconcile split state'
-        );
-    });
-});
+        describe('Cron job phases', () => {
+            it.todo(
+                'should process expired addons, send notifications, retry orphaned, reconcile split state'
+            );
+        });
+    }
+);
