@@ -20,6 +20,7 @@ const ENTITY_FOLDER_MAP: Record<string, string> = {
     postSponsors: 'postSponsor',
     eventOrganizers: 'eventOrganizer',
     eventLocations: 'eventLocation',
+    userBookmarkCollections: 'userBookmarkCollection',
     bookmarks: 'bookmark',
     sponsorshipLevels: 'sponsorshipLevel',
     sponsorshipPackages: 'sponsorshipPackage',

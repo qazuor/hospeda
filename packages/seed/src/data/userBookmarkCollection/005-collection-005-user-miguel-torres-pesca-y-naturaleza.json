@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmarkCollection.schema.json",
+    "id": "005-collection-005-user-miguel-torres-pesca-y-naturaleza",
+    "userId": "005-user-miguel-torres",
+    "name": "Pesca y naturaleza",
+    "description": "Lugares con acceso al río ideales para pescar dorado",
+    "color": "#009688",
+    "icon": "TreeIcon",
+    "lifecycleState": "ACTIVE"
+}

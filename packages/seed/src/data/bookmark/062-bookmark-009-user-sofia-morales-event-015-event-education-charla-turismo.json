@@ -6,5 +6,6 @@
     "entityType": "EVENT",
     "name": "Charla de Turismo",
     "description": "Información útil",
+    "collectionId": "008-collection-009-user-sofia-morales-eventos-del-ano",
     "lifecycleState": "ACTIVE"
 }

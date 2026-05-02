@@ -67,6 +67,21 @@ const preProcessBookmark = async (item: unknown, context: SeedContext) => {
     }
     bookmarkData.entityId = realEntityId;
 
+    // Resolve optional collectionId from seed ID to real database UUID.
+    // The userBookmarkCollections seed registers mappings under the
+    // 'userbookmarkcollections' namespace (lowercased entityName).
+    if (bookmarkData.collectionId !== undefined && bookmarkData.collectionId !== null) {
+        const seedCollectionId = bookmarkData.collectionId as string;
+        const realCollectionId = context.idMapper.getRealId(
+            'userbookmarkcollections',
+            seedCollectionId
+        );
+        if (!realCollectionId) {
+            throw new Error(`No mapping found for collection ID: ${seedCollectionId}`);
+        }
+        bookmarkData.collectionId = realCollectionId;
+    }
+
     if (seedUserId) {
         // Set the actor to be the owner of the accommodation
         const realUserId = context.idMapper.getMappedUserId(seedUserId);

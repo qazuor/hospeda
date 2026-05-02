@@ -1,0 +1,7 @@
+{
+    "$schema": "../../schemas/userBookmarkCollection.schema.json",
+    "id": "016-collection-025-user-mariana-guerrero-proximos-viajes",
+    "userId": "025-user-mariana-guerrero",
+    "name": "Próximos viajes",
+    "lifecycleState": "ACTIVE"
+}

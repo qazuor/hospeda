@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmarkCollection.schema.json",
+    "id": "006-collection-006-user-laura-vega-termales-del-litoral",
+    "userId": "006-user-laura-vega",
+    "name": "Termales del Litoral",
+    "description": "Complejos termales y hoteles con spa en Entre Ríos",
+    "color": "#03A9F4",
+    "icon": "SpaFrontIcon",
+    "lifecycleState": "ACTIVE"
+}

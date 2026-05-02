@@ -1,0 +1,9 @@
+{
+    "$schema": "../../schemas/userBookmarkCollection.schema.json",
+    "id": "004-collection-004-user-ana-rodríguez-lugares-para-volver",
+    "userId": "004-user-ana-rodríguez",
+    "name": "Lugares para volver",
+    "description": "Alojamientos donde ya estuvimos y queremos repetir",
+    "icon": "StarIcon",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmarkCollection.schema.json",
+    "id": "011-collection-015-user-monica-herrera-joyas-escondidas",
+    "userId": "015-user-monica-herrera",
+    "name": "Joyas escondidas",
+    "description": "Lugares poco conocidos lejos del turismo masivo",
+    "color": "#795548",
+    "icon": "MapIcon",
+    "lifecycleState": "ACTIVE"
+}

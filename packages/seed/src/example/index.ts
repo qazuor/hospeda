@@ -16,6 +16,7 @@ import { seedPostTagAssignments } from './postTagAssignments.seed.js';
 import { seedPosts } from './posts.seed.js';
 import { seedTagRelations } from './tagRelations.seed.js';
 import { seedTags } from './tags.seed.js';
+import { seedUserBookmarkCollections } from './userBookmarkCollections.seed.js';
 import { seedUserTags } from './userTags.seed.js';
 import { seedUsers } from './users.seed.js';
 
@@ -77,6 +78,7 @@ export async function runExampleSeeds(context: SeedContext): Promise<void> {
         await seedPostSponsorships(context);
         await seedDestinationReviews(context);
         await seedAccommodationReviews(context);
+        await seedUserBookmarkCollections(context);
         await seedBookmarks(context);
         context.actor = oldContextActor;
         await seedTags(context);

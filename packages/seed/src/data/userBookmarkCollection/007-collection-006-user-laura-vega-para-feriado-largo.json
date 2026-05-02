@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmarkCollection.schema.json",
+    "id": "007-collection-006-user-laura-vega-para-feriado-largo",
+    "userId": "006-user-laura-vega",
+    "name": "Para feriado largo",
+    "description": "Opciones a 3 o 4 horas de Buenos Aires para findes XL",
+    "color": "#FF9800",
+    "icon": "CalendarIcon",
+    "lifecycleState": "ACTIVE"
+}

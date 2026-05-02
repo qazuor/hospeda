@@ -296,6 +296,25 @@
         "005-eventLocation-victoria-puerto-victoria.json",
         "006-eventLocation-concordia-teatro-pedro-barbero.json"
     ],
+    "userBookmarkCollections": [
+        "001-collection-002-user-carlos-martínez-finde-con-amigos.json",
+        "002-collection-002-user-carlos-martínez-escapadas-baratas.json",
+        "003-collection-004-user-ana-rodríguez-luna-de-miel.json",
+        "004-collection-004-user-ana-rodríguez-lugares-para-volver.json",
+        "005-collection-005-user-miguel-torres-pesca-y-naturaleza.json",
+        "006-collection-006-user-laura-vega-termales-del-litoral.json",
+        "007-collection-006-user-laura-vega-para-feriado-largo.json",
+        "008-collection-009-user-sofia-morales-eventos-del-ano.json",
+        "009-collection-011-user-carmen-silva-lectura-de-blog.json",
+        "010-collection-011-user-carmen-silva-por-descubrir.json",
+        "011-collection-015-user-monica-herrera-joyas-escondidas.json",
+        "012-collection-015-user-monica-herrera-recomendaciones-de-mariana.json",
+        "013-collection-020-user-sergio-vargas-trips-work.json",
+        "014-collection-020-user-sergio-vargas-verano-2027.json",
+        "015-collection-025-user-mariana-guerrero-finde-largo-en-colon.json",
+        "016-collection-025-user-mariana-guerrero-proximos-viajes.json",
+        "017-collection-031-user-natalia-vega-ideas-para-luna-de-miel.json"
+    ],
     "bookmarks": [
         "001-bookmark-002-user-carlos-martínez-accommodation-001-accommodation-chajari-cabin-retiro-soleado-cabana-chajari.json",
         "002-bookmark-003-user-usuario-invitado-accommodation-002-accommodation-chajari-cabin-rio-soleado-cabana-chajari.json",

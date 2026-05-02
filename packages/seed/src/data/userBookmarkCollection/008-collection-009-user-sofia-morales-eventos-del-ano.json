@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmarkCollection.schema.json",
+    "id": "008-collection-009-user-sofia-morales-eventos-del-ano",
+    "userId": "009-user-sofia-morales",
+    "name": "Eventos del año",
+    "description": "Festivales, ferias y eventos que no me quiero perder",
+    "color": "#9C27B0",
+    "icon": "EventIcon",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,2 +1,3 @@
 .cloudinary-cache.json
 .cloudinary-cache-*.tmp
+mappings/id-mappings.json

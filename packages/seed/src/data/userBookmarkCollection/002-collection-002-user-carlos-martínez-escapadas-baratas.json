@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmarkCollection.schema.json",
+    "id": "002-collection-002-user-carlos-martínez-escapadas-baratas",
+    "userId": "002-user-carlos-martínez",
+    "name": "Escapadas baratas",
+    "description": "Opciones bajo presupuesto para findes cortos",
+    "color": "#4CAF50",
+    "icon": "DollarSignIcon",
+    "lifecycleState": "ACTIVE"
+}

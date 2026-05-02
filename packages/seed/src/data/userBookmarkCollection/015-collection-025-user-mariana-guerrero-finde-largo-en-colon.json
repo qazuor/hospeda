@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmarkCollection.schema.json",
+    "id": "015-collection-025-user-mariana-guerrero-finde-largo-en-colon",
+    "userId": "025-user-mariana-guerrero",
+    "name": "Finde largo en Colón",
+    "description": "Cabañas y casas para alquilar en Colón con grupo grande",
+    "color": "#FF5722",
+    "icon": "LocationIcon",
+    "lifecycleState": "ACTIVE"
+}

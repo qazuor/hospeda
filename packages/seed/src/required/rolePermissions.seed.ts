@@ -143,6 +143,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_BOOKMARK_RESTORE,
         PermissionEnum.USER_BOOKMARK_HARD_DELETE,
 
+        // USER_BOOKMARK_COLLECTION: Full management including view any
+        PermissionEnum.USER_BOOKMARK_COLLECTION_CREATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_UPDATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_DELETE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW_ANY,
+
         // PUBLIC USER ACTIONS: All permissions
         PermissionEnum.ACCOMMODATION_REVIEW_CREATE,
         PermissionEnum.ACCOMMODATION_REVIEW_UPDATE,
@@ -399,6 +406,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_BOOKMARK_VIEW,
         PermissionEnum.USER_BOOKMARK_RESTORE,
 
+        // USER_BOOKMARK_COLLECTION: Full management including view any
+        PermissionEnum.USER_BOOKMARK_COLLECTION_CREATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_UPDATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_DELETE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW_ANY,
+
         // PUBLIC USER ACTIONS: All permissions
         PermissionEnum.ACCOMMODATION_REVIEW_CREATE,
         PermissionEnum.ACCOMMODATION_REVIEW_UPDATE,
@@ -524,6 +538,12 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_UPDATE_PROFILE,
         PermissionEnum.USER_SETTINGS_UPDATE,
 
+        // USER_BOOKMARK_COLLECTION: Own collections management
+        PermissionEnum.USER_BOOKMARK_COLLECTION_CREATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_UPDATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_DELETE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,
+
         // ACCOMMODATION: View access for client support
         PermissionEnum.ACCOMMODATION_VIEW_ALL,
         PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
@@ -583,6 +603,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_BOOKMARK_VIEW,
         PermissionEnum.USER_BOOKMARK_RESTORE,
         PermissionEnum.USER_BOOKMARK_VIEW_ANY,
+
+        // USER_BOOKMARK_COLLECTION: Own collections + view any (moderator support)
+        PermissionEnum.USER_BOOKMARK_COLLECTION_CREATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_UPDATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_DELETE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW_ANY,
 
         // PUBLIC USER ACTIONS: All permissions
         PermissionEnum.ACCOMMODATION_REVIEW_CREATE,
@@ -666,6 +693,12 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_BOOKMARK_VIEW,
         PermissionEnum.USER_BOOKMARK_RESTORE,
 
+        // USER_BOOKMARK_COLLECTION: Own collections
+        PermissionEnum.USER_BOOKMARK_COLLECTION_CREATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_UPDATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_DELETE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,
+
         // PUBLIC USER ACTIONS: All permissions
         PermissionEnum.ACCOMMODATION_REVIEW_CREATE,
         PermissionEnum.ACCOMMODATION_REVIEW_UPDATE,
@@ -729,6 +762,12 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_BOOKMARK_VIEW,
         PermissionEnum.USER_BOOKMARK_RESTORE,
 
+        // USER_BOOKMARK_COLLECTION: Own collections
+        PermissionEnum.USER_BOOKMARK_COLLECTION_CREATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_UPDATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_DELETE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,
+
         // PUBLIC USER ACTIONS: All permissions
         PermissionEnum.ACCOMMODATION_REVIEW_CREATE,
         PermissionEnum.ACCOMMODATION_REVIEW_UPDATE,
@@ -754,6 +793,12 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.SPONSORSHIP_SOFT_DELETE_OWN,
         PermissionEnum.SPONSORSHIP_RESTORE_OWN,
         PermissionEnum.SPONSORSHIP_UPDATE_VISIBILITY_OWN,
+
+        // USER_BOOKMARK_COLLECTION: Own collections
+        PermissionEnum.USER_BOOKMARK_COLLECTION_CREATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_UPDATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_DELETE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,
 
         // ACCESS: Public API only
         PermissionEnum.ACCESS_API_PUBLIC

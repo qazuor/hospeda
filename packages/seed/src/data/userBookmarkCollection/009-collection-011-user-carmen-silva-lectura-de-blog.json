@@ -1,0 +1,9 @@
+{
+    "$schema": "../../schemas/userBookmarkCollection.schema.json",
+    "id": "009-collection-011-user-carmen-silva-lectura-de-blog",
+    "userId": "011-user-carmen-silva",
+    "name": "Lectura de blog",
+    "description": "Posts guardados para leer con calma el finde",
+    "icon": "BookmarkIcon",
+    "lifecycleState": "ACTIVE"
+}

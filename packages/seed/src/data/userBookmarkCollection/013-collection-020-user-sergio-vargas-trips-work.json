@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmarkCollection.schema.json",
+    "id": "013-collection-020-user-sergio-vargas-trips-work",
+    "userId": "020-user-sergio-vargas",
+    "name": "Trips work",
+    "description": "Hoteles con buen wifi y escritorio para viajes laborales",
+    "color": "#3F51B5",
+    "icon": "BuildingsIcon",
+    "lifecycleState": "ACTIVE"
+}

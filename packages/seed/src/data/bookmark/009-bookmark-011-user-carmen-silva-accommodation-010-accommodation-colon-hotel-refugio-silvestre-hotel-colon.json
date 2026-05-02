@@ -6,5 +6,6 @@
     "entityType": "ACCOMMODATION",
     "name": "refugio-silvestre-hotel",
     "description": "Hotel con ambiente silvestre",
+    "collectionId": "010-collection-011-user-carmen-silva-por-descubrir",
     "lifecycleState": "ACTIVE"
 }

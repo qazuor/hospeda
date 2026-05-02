@@ -1,0 +1,9 @@
+{
+    "$schema": "../../schemas/userBookmarkCollection.schema.json",
+    "id": "010-collection-011-user-carmen-silva-por-descubrir",
+    "userId": "011-user-carmen-silva",
+    "name": "Por descubrir",
+    "color": "#3F51B5",
+    "icon": "CompassIcon",
+    "lifecycleState": "ACTIVE"
+}

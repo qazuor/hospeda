@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmarkCollection.schema.json",
+    "id": "017-collection-031-user-natalia-vega-ideas-para-luna-de-miel",
+    "userId": "031-user-natalia-vega",
+    "name": "Ideas para luna de miel",
+    "description": "Hoteles boutique y cabañas con jacuzzi para la luna de miel",
+    "color": "#E91E63",
+    "icon": "FavoriteIcon",
+    "lifecycleState": "ACTIVE"
+}

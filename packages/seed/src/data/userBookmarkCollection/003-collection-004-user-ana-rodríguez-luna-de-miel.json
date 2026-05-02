@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmarkCollection.schema.json",
+    "id": "003-collection-004-user-ana-rodríguez-luna-de-miel",
+    "userId": "004-user-ana-rodríguez",
+    "name": "Luna de miel",
+    "description": "Cabañas románticas con jacuzzi y vista al río",
+    "color": "#E91E63",
+    "icon": "FavoriteIcon",
+    "lifecycleState": "ACTIVE"
+}

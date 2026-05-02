@@ -1,0 +1,9 @@
+{
+    "$schema": "../../schemas/userBookmarkCollection.schema.json",
+    "id": "014-collection-020-user-sergio-vargas-verano-2027",
+    "userId": "020-user-sergio-vargas",
+    "name": "Verano 2027",
+    "color": "#FFC107",
+    "icon": "SunIcon",
+    "lifecycleState": "ACTIVE"
+}

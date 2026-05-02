@@ -1,0 +1,8 @@
+{
+    "$schema": "../../schemas/userBookmarkCollection.schema.json",
+    "id": "012-collection-015-user-monica-herrera-recomendaciones-de-mariana",
+    "userId": "015-user-monica-herrera",
+    "name": "Recomendaciones de Mariana",
+    "description": "Lugares que me pasó mi amiga Mariana, hay que ir sí o sí",
+    "lifecycleState": "ACTIVE"
+}

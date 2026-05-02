@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmarkCollection.schema.json",
+    "id": "001-collection-002-user-carlos-martínez-finde-con-amigos",
+    "userId": "002-user-carlos-martínez",
+    "name": "Finde con amigos",
+    "description": "Lugares para escapadas grupales económicas en el Litoral",
+    "color": "#FF5722",
+    "icon": "UsersIcon",
+    "lifecycleState": "ACTIVE"
+}
