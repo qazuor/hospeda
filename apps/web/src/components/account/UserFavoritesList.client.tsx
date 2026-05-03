@@ -14,6 +14,11 @@
  *   2. "Mis colecciones" — user's collections fetched once on mount.
  * Collections are entity-agnostic, fetched once, and reused across all tabs.
  *
+ * SPEC-098 wiring closeout: integrates the MoveToCollectionModal as a controlled
+ * sub-component. The "Mover" button on each card opens the modal pre-filled with
+ * the bookmark's current collectionId; on success the local state is updated,
+ * collection counts are refetched, and a confirmation toast is shown.
+ *
  * Fetches GET /api/v1/protected/user-bookmarks?entityType=<activeTab>&page=N&pageSize=M.
  * Renders a 12-per-page grid of cards. The "Quitar" button triggers an optimistic
  * DELETE so the card disappears immediately; on error the item is restored and a
@@ -33,6 +38,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { BookmarkItem, BookmarksApiResponse, DeleteApiResponse } from './BookmarkGrid';
 import { BookmarkGrid, EmptyFavorites } from './BookmarkGrid';
 import { CollectionCard } from './CollectionCard';
+import { MoveToCollectionModal } from './MoveToCollectionModal.client';
+import type { CollectionOption } from './MoveToCollectionModal.client';
 import styles from './UserFavoritesList.module.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -163,6 +170,9 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
     // ── Collections state (fetched once on mount) ──────────────────────────
     const [collections, setCollections] = useState<readonly BookmarkCollectionItem[]>([]);
     const [collectionsLoading, setCollectionsLoading] = useState(true);
+
+    // ── Move-to-collection modal state ─────────────────────────────────────
+    const [bookmarkToMove, setBookmarkToMove] = useState<BookmarkItem | null>(null);
 
     /** Ref to abort inflight tab-switch requests */
     const abortRef = useRef<AbortController | null>(null);
@@ -378,6 +388,83 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
         }
     }
 
+    // ── Move-to-collection handlers ────────────────────────────────────────
+
+    /**
+     * Open the MoveToCollectionModal for a specific bookmark.
+     * The current collection (if any) is read from `bookmark.collectionId`.
+     */
+    function handleMoveOpen(bookmark: BookmarkItem) {
+        setBookmarkToMove(bookmark);
+    }
+
+    /** Close the MoveToCollectionModal without saving. */
+    function handleMoveClose() {
+        setBookmarkToMove(null);
+    }
+
+    /**
+     * Refetch collection counts after a successful move so the
+     * "Mis colecciones" section reflects the new bookmark distribution.
+     */
+    const refetchCollections = useCallback(async (): Promise<void> => {
+        try {
+            const params = new URLSearchParams({
+                page: '1',
+                pageSize: String(COLLECTIONS_PAGE_SIZE),
+                includeBookmarkCount: 'true'
+            });
+            const res = await fetch(`${base}${COLLECTIONS_API_BASE}?${params.toString()}`, {
+                credentials: 'include'
+            });
+            if (!res.ok) return;
+            const body = (await res.json()) as CollectionsApiResponse;
+            if (body.success && body.data && Array.isArray(body.data.items)) {
+                setCollections(body.data.items);
+            }
+        } catch {
+            // Non-critical: refetch is a best-effort sync after a move
+        }
+    }, [base]);
+
+    /**
+     * Called after a successful move. Updates local state, refreshes the
+     * active tab and collection counts, and shows a success toast.
+     */
+    function handleMoveSaved(params: {
+        readonly newCollectionId: string | null;
+        readonly newCollectionName: string | null;
+    }): void {
+        const { newCollectionId, newCollectionName } = params;
+
+        // Update the local copy of the moved bookmark so the uncollected
+        // section reflects the change without a full re-fetch.
+        if (bookmarkToMove) {
+            setBookmarks((prev) =>
+                prev.map((b) =>
+                    b.id === bookmarkToMove.id ? { ...b, collectionId: newCollectionId } : b
+                )
+            );
+        }
+
+        // Sync collection bookmark counts (best-effort).
+        void refetchCollections();
+
+        // Show a confirmation toast.
+        const message =
+            newCollectionId === null || newCollectionName === null
+                ? t(
+                      'account.favorites.collections.moveSuccessUncollected',
+                      'Quitado de la colección'
+                  )
+                : t('account.favorites.collections.moveSuccess', 'Movido a {{name}}', {
+                      name: newCollectionName
+                  });
+        addToast({ type: 'success', message });
+
+        setBookmarkToMove(null);
+    }
+
     // ── Render helpers ────────────────────────────────────────────────────
 
     function tabLabel(tab: TabDefinition): string {
@@ -485,9 +572,15 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                             'account.favorites.errors.saveFailed',
                             'No se pudo guardar la nota'
                         )}
+                        moveBtnLabel={t('account.favorites.collections.move', 'Mover')}
+                        moveBtnAriaLabel={t(
+                            'account.favorites.collections.move_button_aria',
+                            'Mover a colección: {{name}}'
+                        )}
                         onRemove={(bookmark) => {
                             void handleRemove(bookmark);
                         }}
+                        onMove={handleMoveOpen}
                         onPageChange={setPage}
                         onNoteUpdated={handleNoteUpdated}
                     />
@@ -607,6 +700,18 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
 
     // ── Main render ───────────────────────────────────────────────────────
 
+    /**
+     * Build the radio options shown in the MoveToCollectionModal.
+     * Maps the entity-agnostic collections list to the modal's CollectionOption shape.
+     */
+    const moveModalCollections: readonly CollectionOption[] = collections.map((c) => ({
+        id: c.id,
+        name: c.name,
+        color: c.color,
+        icon: c.icon,
+        bookmarkCount: c.bookmarkCount
+    }));
+
     return (
         <div className={styles.root}>
             {/* ── Tab navigation ─────────────────────────────────────── */}
@@ -614,6 +719,19 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
 
             {/* ── Active tab panel ────────────────────────────────────── */}
             {renderTabPanel()}
+
+            {/* ── Move-to-collection modal ────────────────────────────── */}
+            {bookmarkToMove !== null && (
+                <MoveToCollectionModal
+                    isOpen
+                    onClose={handleMoveClose}
+                    onSaved={handleMoveSaved}
+                    locale={locale}
+                    bookmarkId={bookmarkToMove.id}
+                    currentCollectionId={bookmarkToMove.collectionId ?? null}
+                    collections={moveModalCollections}
+                />
+            )}
         </div>
     );
 }

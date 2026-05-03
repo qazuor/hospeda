@@ -34,8 +34,8 @@ export interface BookmarkItem {
     /**
      * ID of the collection this bookmark belongs to.
      * `null` or `undefined` means the bookmark is uncollected.
-     * NOTE: The current API response does not include this field yet.
-     * When the API is extended to expose it, filtering will work automatically.
+     * Used by the parent to pre-select the matching radio option in the
+     * MoveToCollectionModal.
      */
     readonly collectionId?: string | null;
 }
@@ -137,8 +137,17 @@ export interface BookmarkGridProps {
     readonly noteEditButtonLabel: string;
     /** Error message shown via toast when saving a note fails */
     readonly noteSaveErrorMessage: string;
+    /** Visible label for the "Move to collection" action button */
+    readonly moveBtnLabel: string;
+    /** Accessible label template for the move button (must contain {{name}}) */
+    readonly moveBtnAriaLabel: string;
     readonly onRemove: (bookmark: BookmarkItem) => void;
     readonly onPageChange: (page: number) => void;
+    /**
+     * Called when the user clicks the "Mover" button on a card.
+     * The parent opens the MoveToCollectionModal pre-filled for this bookmark.
+     */
+    readonly onMove: (bookmark: BookmarkItem) => void;
     /**
      * Called when a note is successfully saved for a specific bookmark.
      * The parent should update the bookmark's `description` in its local state.
@@ -180,7 +189,10 @@ export function BookmarkGrid({
     noteTextareaLabel,
     noteEditButtonLabel,
     noteSaveErrorMessage,
+    moveBtnLabel,
+    moveBtnAriaLabel,
     onRemove,
+    onMove,
     onPageChange,
     onNoteUpdated
 }: BookmarkGridProps) {
@@ -245,8 +257,21 @@ export function BookmarkGrid({
                                 />
                             </div>
 
-                            {/* Footer with remove button */}
+                            {/* Footer with move + remove buttons */}
                             <div className={styles.cardFooter}>
+                                <button
+                                    type="button"
+                                    className={styles.moveBtn}
+                                    data-testid={`move-bookmark-button-${bookmark.id}`}
+                                    disabled={removingIds.has(bookmark.id)}
+                                    onClick={() => onMove(bookmark)}
+                                    aria-label={moveBtnAriaLabel.replace(
+                                        '{{name}}',
+                                        bookmark.name ?? ''
+                                    )}
+                                >
+                                    {moveBtnLabel}
+                                </button>
                                 <button
                                     type="button"
                                     className={styles.removeBtn}

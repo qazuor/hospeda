@@ -227,6 +227,35 @@
     border-top: 1px solid var(--border);
     display: flex;
     justify-content: flex-end;
+    gap: var(--space-2, 8px);
+}
+
+.moveBtn {
+    padding: var(--space-1, 4px) var(--space-3, 12px);
+    background-color: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--duration-normal, 0.4s) ease, opacity
+        var(--duration-normal, 0.4s) ease;
+}
+
+.moveBtn:hover:not(:disabled) {
+    background-color: oklch(from var(--primary) l c h / 0.08);
+}
+
+.moveBtn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.moveBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .removeBtn {

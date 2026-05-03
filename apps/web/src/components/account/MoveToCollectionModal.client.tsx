@@ -49,9 +49,14 @@ export interface MoveToCollectionModalProps {
     readonly onClose: () => void;
     /**
      * Called after a successful save. Receives the new collection id
-     * (null means "uncollected").
+     * (null means "uncollected") and the collection name (null when uncollected
+     * or when no matching collection is found in `collections`). The name lets
+     * the parent show a toast with the destination collection name.
      */
-    readonly onSaved?: (newCollectionId: string | null) => void;
+    readonly onSaved?: (params: {
+        readonly newCollectionId: string | null;
+        readonly newCollectionName: string | null;
+    }) => void;
     /** Locale for i18n. */
     readonly locale: SupportedLocale;
     /** The bookmark being moved. */
@@ -188,12 +193,16 @@ export function MoveToCollectionModal({
                 }
             }
 
-            onSaved?.(newCollectionId);
+            const newCollectionName =
+                newCollectionId === null
+                    ? null
+                    : (collections.find((c) => c.id === newCollectionId)?.name ?? null);
+            onSaved?.({ newCollectionId, newCollectionName });
             onClose();
         } finally {
             setIsSubmitting(false);
         }
-    }, [selectedValue, currentCollectionId, bookmarkId, onSaved, onClose]);
+    }, [selectedValue, currentCollectionId, bookmarkId, onSaved, onClose, collections]);
 
     // Keyboard: Escape + focus-trap
     useEffect(() => {
@@ -263,7 +272,7 @@ export function MoveToCollectionModal({
         'account.favorites.collections.new_collection',
         '+ Crear nueva colección'
     );
-    const cancelLabel = t('common.form.cancel', 'Cancelar');
+    const cancelLabel = t('common.cancel', 'Cancelar');
     const saveLabel = t('account.favorites.collections.move', 'Mover');
 
     // ── JSX ────────────────────────────────────────────────────────────────
@@ -282,6 +291,7 @@ export function MoveToCollectionModal({
                     className={styles.panel}
                     aria-modal="true"
                     aria-labelledby={MODAL_TITLE_ID}
+                    data-testid="move-bookmark-modal"
                     open
                 >
                     {/* ── Header ──────────────────────────────────────── */}
@@ -296,7 +306,7 @@ export function MoveToCollectionModal({
                             ref={closeBtnRef}
                             type="button"
                             className={styles.closeBtn}
-                            aria-label={t('common.modal.close', 'Cerrar')}
+                            aria-label={t('common.auth.close', 'Cerrar')}
                             onClick={handleClose}
                         >
                             <span aria-hidden="true">&#x2715;</span>
@@ -313,6 +323,7 @@ export function MoveToCollectionModal({
                         >
                             {/* "Sin colección" option — always first */}
                             <label
+                                data-testid="move-bookmark-collection-option-uncollected"
                                 className={`${styles.radioRow}${selectedValue === NO_COLLECTION_VALUE ? ` ${styles.radioRowSelected}` : ''}`}
                             >
                                 <span
@@ -349,6 +360,7 @@ export function MoveToCollectionModal({
                                 return (
                                     <label
                                         key={collection.id}
+                                        data-testid={`move-bookmark-collection-option-${collection.id}`}
                                         className={`${styles.radioRow}${isSelected ? ` ${styles.radioRowSelected}` : ''}`}
                                     >
                                         <span
@@ -440,6 +452,7 @@ export function MoveToCollectionModal({
                             type="button"
                             className={styles.saveBtn}
                             onClick={handleSave}
+                            data-testid="move-bookmark-confirm"
                             disabled={
                                 isSubmitting ||
                                 selectedValue === (currentCollectionId ?? NO_COLLECTION_VALUE)
