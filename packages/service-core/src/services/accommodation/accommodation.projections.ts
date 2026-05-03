@@ -146,3 +146,51 @@ export function applyAccommodationLocationPrivacyList<
 >(entities: T[], args: { actor: Actor | null | undefined; salt: string }): T[] {
     return entities.map((entity) => applyAccommodationLocationPrivacy(entity, args) as T);
 }
+
+/**
+ * Resolves the owner's display avatar URL from the two stored sources:
+ * the dedicated `users.image` column (populated by social login or
+ * upload flows) and the JSONB `users.profile.avatar` field (populated
+ * by seed fixtures and legacy profile editors). Prefer `image` so a
+ * fresh upload wins, fall back to `profile.avatar` so seeded users
+ * still render their pictures, and treat empty strings as null so the
+ * UI falls back to initials instead of an empty <img src="">.
+ *
+ * The original `profile` field is left intact on the entity so any
+ * caller that still depends on it keeps working; the API response
+ * boundary strips it because `UserPublicSchema` does not include
+ * `profile`.
+ */
+function resolveOwnerImage(owner: Record<string, unknown> | undefined | null): string | null {
+    if (!owner) return null;
+    const image = owner.image;
+    if (typeof image === 'string' && image.length > 0) return image;
+    const profile = owner.profile as { avatar?: unknown } | undefined | null;
+    const avatar = profile?.avatar;
+    if (typeof avatar === 'string' && avatar.length > 0) return avatar;
+    return null;
+}
+
+/**
+ * Sets `owner.image` to the resolved avatar (image column → profile.avatar
+ * → null) so the API response carries a concrete URL when one exists.
+ * Idempotent and non-mutating: returns a new entity object only when there
+ * is an owner relation to update.
+ */
+export function projectAccommodationOwnerAvatar<T extends Accommodation>(
+    entity: T | null
+): T | null {
+    if (!entity) return entity;
+    const owner = (entity as { owner?: Record<string, unknown> }).owner;
+    if (!owner) return entity;
+    const resolved = resolveOwnerImage(owner);
+    if (owner.image === resolved) return entity;
+    return { ...entity, owner: { ...owner, image: resolved } } as T;
+}
+
+/**
+ * List variant of {@link projectAccommodationOwnerAvatar}.
+ */
+export function projectAccommodationOwnerAvatarList<T extends Accommodation>(entities: T[]): T[] {
+    return entities.map((entity) => projectAccommodationOwnerAvatar(entity) as T);
+}

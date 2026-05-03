@@ -553,6 +553,11 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                         displayName: true,
                         firstName: true,
                         lastName: true,
+                        // Both sources are loaded so the service-layer
+                        // projectAccommodationOwnerAvatar projection can
+                        // prefer `image` (social login / upload) and fall
+                        // back to `profile.avatar` (seed fixtures).
+                        image: true,
                         profile: true,
                         role: true,
                         lifecycleState: true,

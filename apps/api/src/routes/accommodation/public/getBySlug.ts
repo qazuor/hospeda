@@ -37,6 +37,7 @@ async function fetchOwner(ownerId: string) {
             firstName: users.firstName,
             lastName: users.lastName,
             image: users.image,
+            profile: users.profile,
             createdAt: users.createdAt
         })
         .from(users)
@@ -47,7 +48,13 @@ async function fetchOwner(ownerId: string) {
     if (!row) return null;
     const name =
         row.displayName ?? ([row.firstName, row.lastName].filter(Boolean).join(' ') || 'Unknown');
-    return { id: row.id, name, image: row.image, createdAt: row.createdAt.toISOString() };
+    // Resolve avatar from `users.image` (social login / upload) with a
+    // fallback to `users.profile.avatar` (seed fixtures and legacy profile
+    // editors). Treat empty strings as null so the UI falls back to
+    // initials instead of rendering an empty <img src="">.
+    const profileAvatar = (row.profile as { avatar?: string | null } | null)?.avatar ?? null;
+    const image = row.image || profileAvatar || null;
+    return { id: row.id, name, image, createdAt: row.createdAt.toISOString() };
 }
 
 /**

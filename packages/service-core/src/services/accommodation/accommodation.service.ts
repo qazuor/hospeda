@@ -109,7 +109,9 @@ import {
     applyAccommodationLocationPrivacy,
     applyAccommodationLocationPrivacyList,
     projectAccommodationCityDestination,
-    projectAccommodationCityDestinationList
+    projectAccommodationCityDestinationList,
+    projectAccommodationOwnerAvatar,
+    projectAccommodationOwnerAvatarList
 } from './accommodation.projections';
 import type {
     AccommodationHookState,
@@ -313,9 +315,10 @@ export class AccommodationService extends BaseCrudService<
         _ctx: ServiceContext
     ): Promise<Accommodation | null> {
         const withCity = projectAccommodationCityDestination(entity);
+        const withOwnerAvatar = projectAccommodationOwnerAvatar(withCity);
         const salt = this.getLocationSalt();
-        if (!salt) return withCity;
-        return applyAccommodationLocationPrivacy(withCity, { actor, salt });
+        if (!salt) return withOwnerAvatar;
+        return applyAccommodationLocationPrivacy(withOwnerAvatar, { actor, salt });
     }
 
     /**
@@ -328,11 +331,12 @@ export class AccommodationService extends BaseCrudService<
     ): Promise<PaginatedListOutput<Accommodation>> {
         if (!result?.items) return result;
         const withCity = projectAccommodationCityDestinationList(result.items);
+        const withOwnerAvatar = projectAccommodationOwnerAvatarList(withCity);
         const salt = this.getLocationSalt();
-        if (!salt) return { ...result, items: withCity };
+        if (!salt) return { ...result, items: withOwnerAvatar };
         return {
             ...result,
-            items: applyAccommodationLocationPrivacyList(withCity, { actor, salt })
+            items: applyAccommodationLocationPrivacyList(withOwnerAvatar, { actor, salt })
         };
     }
 
@@ -346,11 +350,12 @@ export class AccommodationService extends BaseCrudService<
     ): Promise<PaginatedListOutput<Accommodation>> {
         if (!result?.items) return result;
         const withCity = projectAccommodationCityDestinationList(result.items);
+        const withOwnerAvatar = projectAccommodationOwnerAvatarList(withCity);
         const salt = this.getLocationSalt();
-        if (!salt) return { ...result, items: withCity };
+        if (!salt) return { ...result, items: withOwnerAvatar };
         return {
             ...result,
-            items: applyAccommodationLocationPrivacyList(withCity, { actor, salt })
+            items: applyAccommodationLocationPrivacyList(withOwnerAvatar, { actor, salt })
         };
     }
 
