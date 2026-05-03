@@ -210,7 +210,17 @@
             "fetchError": "No se pudo cargar la colección. Intentá de nuevo más tarde.",
             "prevPage": "Página anterior",
             "nextPage": "Página siguiente",
-            "pageInfo": "Página {{page}} de {{total}}"
+            "pageInfo": "Página {{page}} de {{total}}",
+            "move": "Mover",
+            "move_button_aria": "Mover a colección: {{name}}",
+            "new_collection": "+ Crear nueva colección",
+            "bookmark_count": "{{count}} alojamientos",
+            "limit_reached_short": "Límite de colecciones alcanzado",
+            "moveSuccess": "Movido a {{name}}",
+            "moveSuccessUncollected": "Quitado de la colección",
+            "moveError": "No se pudo mover el favorito",
+            "deleteSuccess": "Colección borrada correctamente",
+            "deleteError": "No se pudo borrar la colección. Intentá de nuevo."
         },
         "filter": {
             "all": "Todos",

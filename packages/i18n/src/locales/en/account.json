@@ -210,7 +210,17 @@
             "fetchError": "Could not load the collection. Please try again later.",
             "prevPage": "Previous page",
             "nextPage": "Next page",
-            "pageInfo": "Page {{page}} of {{total}}"
+            "pageInfo": "Page {{page}} of {{total}}",
+            "move": "Move",
+            "move_button_aria": "Move to collection: {{name}}",
+            "new_collection": "+ Create new collection",
+            "bookmark_count": "{{count}} accommodations",
+            "limit_reached_short": "Collections limit reached",
+            "moveSuccess": "Moved to {{name}}",
+            "moveSuccessUncollected": "Removed from collection",
+            "moveError": "Could not move favorite",
+            "deleteSuccess": "Collection deleted successfully",
+            "deleteError": "Could not delete the collection. Please try again."
         },
         "filter": {
             "all": "All",

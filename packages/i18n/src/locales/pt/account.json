@@ -210,7 +210,17 @@
             "fetchError": "Não foi possível carregar a coleção. Tente novamente mais tarde.",
             "prevPage": "Página anterior",
             "nextPage": "Próxima página",
-            "pageInfo": "Página {{page}} de {{total}}"
+            "pageInfo": "Página {{page}} de {{total}}",
+            "move": "Mover",
+            "move_button_aria": "Mover para coleção: {{name}}",
+            "new_collection": "+ Criar nova coleção",
+            "bookmark_count": "{{count}} acomodações",
+            "limit_reached_short": "Limite de coleções atingido",
+            "moveSuccess": "Movido para {{name}}",
+            "moveSuccessUncollected": "Removido da coleção",
+            "moveError": "Não foi possível mover o favorito",
+            "deleteSuccess": "Coleção excluída com sucesso",
+            "deleteError": "Não foi possível excluir a coleção. Tente novamente."
         },
         "filter": {
             "all": "Todos",
