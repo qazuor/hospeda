@@ -26,7 +26,8 @@
         }
     },
     "profile": {
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Chajarí, Entre Ríos. Apasionado por el turismo y la hospitalidad."
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Chajarí, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
+        "avatar": "https://images.unsplash.com/photo-1500917293891-ef795e70e1f6?w=150&h=150&fit=crop&crop=face"
     },
     "settings": {
         "theme": "AUTO",

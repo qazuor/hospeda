@@ -30,7 +30,8 @@
         "facebook": "https://facebook.com/romina.villaverde"
     },
     "profile": {
-        "bio": "Anfitriona en Concepción del Uruguay. Ofrezco alojamiento turístico moderno y cómodo para quienes visitan nuestra hermosa ciudad."
+        "bio": "Anfitriona en Concepción del Uruguay. Ofrezco alojamiento turístico moderno y cómodo para quienes visitan nuestra hermosa ciudad.",
+        "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face"
     },
     "settings": {
         "theme": "AUTO",

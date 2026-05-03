@@ -27,7 +27,8 @@
         }
     },
     "profile": {
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Ibicuy, Entre Ríos. Apasionado por el turismo y la hospitalidad."
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Ibicuy, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
+        "avatar": "https://images.unsplash.com/photo-1521119989659-a83eee488004?w=150&h=150&fit=crop&crop=face"
     },
     "settings": {
         "theme": "AUTO",
