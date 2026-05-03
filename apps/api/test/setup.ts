@@ -48,6 +48,12 @@ process.env.HOSPEDA_LOCATION_SALT = 'test-location-salt-fixed-for-deterministic-
 process.env.HOSPEDA_TESTING_RATE_LIMIT = '';
 // Disable origin verification in tests
 process.env.HOSPEDA_TESTING_ORIGIN_VERIFICATION = '';
+// CI sometimes has HOSPEDA_REDIS_URL set as a secret; tests that exercise
+// the Redis path mock the redis client and set this env var explicitly.
+// Strip it here so the validated env starts without Redis (in-memory store)
+// and the per-test setup is fully in control of the store selection.
+// biome-ignore lint/performance/noDelete: required to remove the variable from process so env validation sees it as unset
+delete process.env.HOSPEDA_REDIS_URL;
 
 // Global test setup
 beforeAll(async () => {
