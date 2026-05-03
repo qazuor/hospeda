@@ -72,6 +72,10 @@ describe('Service-layer WHERE-clause leak regression', () => {
         });
 
         it('_executeSearch does not leak page/pageSize/sortBy/sortOrder into WHERE', async () => {
+            // SPEC-088 stripped pagination from the search params and republishes
+            // it via ctx.pagination. The hook reads from ctx, not from params,
+            // so we set both: params still contain the leaked keys (proving the
+            // hook strips them), and ctx carries the caller-provided pagination.
             await (
                 service as unknown as {
                     _executeSearch: (p: unknown, a: Actor, c: unknown) => Promise<unknown>;
@@ -79,13 +83,13 @@ describe('Service-layer WHERE-clause leak regression', () => {
             )._executeSearch(
                 { page: 1, pageSize: 4, sortBy: 'publishedAt', sortOrder: 'desc' },
                 actor,
-                {}
+                { pagination: { page: 1, pageSize: 4, sortBy: 'publishedAt', sortOrder: 'desc' } }
             );
 
             expect(model.findAll).toHaveBeenCalledOnce();
             const [whereArg, pagination] = model.findAll.mock.calls[0] ?? [];
             expectNoForbiddenKeys(whereArg as Record<string, unknown>);
-            expect(pagination).toEqual({ page: 1, pageSize: 4 });
+            expect(pagination).toMatchObject({ page: 1, pageSize: 4 });
         });
 
         it('_executeCount does not leak page/pageSize/sortBy/sortOrder into WHERE', async () => {
@@ -122,13 +126,13 @@ describe('Service-layer WHERE-clause leak regression', () => {
             )._executeSearch(
                 { page: 1, pageSize: 6, sortBy: 'createdAt', sortOrder: 'desc' },
                 actor,
-                {}
+                { pagination: { page: 1, pageSize: 6, sortBy: 'createdAt', sortOrder: 'desc' } }
             );
 
             expect(model.findAll).toHaveBeenCalledOnce();
             const [whereArg, pagination] = model.findAll.mock.calls[0] ?? [];
             expectNoForbiddenKeys(whereArg as Record<string, unknown>);
-            expect(pagination).toEqual({ page: 1, pageSize: 6 });
+            expect(pagination).toMatchObject({ page: 1, pageSize: 6 });
         });
 
         it('_executeCount does not leak page/pageSize/sortBy/sortOrder into WHERE', async () => {
