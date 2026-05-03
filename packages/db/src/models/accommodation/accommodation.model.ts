@@ -531,6 +531,14 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                         name: true,
                         slug: true,
                         summary: true,
+                        // Required by CityDestinationRefSchema (SPEC-095) so the
+                        // service-layer `cityDestination` projection succeeds.
+                        // Without these the safeParse fails silently and cards
+                        // render an empty city badge.
+                        destinationType: true,
+                        level: true,
+                        path: true,
+                        pathIds: true,
                         isFeatured: true,
                         reviewsCount: true,
                         averageRating: true,
