@@ -258,6 +258,7 @@
         "reviewsDetail": {
             "noReviews": "Ainda não há avaliações",
             "viewAll": "Ver todas as {n} avaliações",
+            "breakdownLabel": "Pontuações detalhadas",
             "categories": {
                 "cleanliness": "Limpeza",
                 "hospitality": "Hospitalidade",

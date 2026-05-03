@@ -299,6 +299,7 @@
         "reviewsDetail": {
             "noReviews": "No hay opiniones todavía",
             "viewAll": "Ver las {n} opiniones",
+            "breakdownLabel": "Puntajes desglosados",
             "categories": {
                 "cleanliness": "Limpieza",
                 "hospitality": "Hospitalidad",

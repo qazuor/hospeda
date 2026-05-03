@@ -17,9 +17,12 @@ interface ReviewItem {
   readonly title?: string;
   readonly content?: string;
   readonly averageRating?: number;
+  readonly rating?: Readonly<Record<string, number>>;
   readonly user?: { readonly name: string | null; readonly image: string | null };
   readonly createdAt?: string;
 }
+
+const RATING_CATEGORIES = ['cleanliness', 'hospitality', 'services', 'accuracy', 'communication', 'location'] as const;
 
 interface Props {
   readonly accommodation: AccommodationDetailData;
@@ -85,6 +88,25 @@ const hasReviews = accommodation.reviewsCount > 0;
                 </div>
                 {review.content && (
                   <p class="review-card__content">{review.content}</p>
+                )}
+                {review.rating && (
+                  <ul class="review-card__breakdown" aria-label={t('accommodations.detail.reviewsDetail.breakdownLabel', 'Puntajes desglosados')}>
+                    {RATING_CATEGORIES.map((cat) => {
+                      const value = review.rating?.[cat];
+                      if (value == null) return null;
+                      const label = t(`accommodations.detail.reviewsDetail.categories.${cat}`);
+                      const pct = (value / 5) * 100;
+                      return (
+                        <li class="review-breakdown__item">
+                          <span class="review-breakdown__label">{label}</span>
+                          <span class="review-breakdown__bar" aria-hidden="true">
+                            <span class="review-breakdown__bar-fill" style={`width: ${pct}%`}></span>
+                          </span>
+                          <span class="review-breakdown__value">{value.toFixed(1)}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 )}
               </article>
             );
@@ -198,6 +220,49 @@ const hasReviews = accommodation.reviewsCount > 0;
     -webkit-line-clamp: 4;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+  .review-card__breakdown {
+    list-style: none;
+    margin: var(--space-3, 12px) 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 16px;
+  }
+  @media (max-width: 480px) {
+    .review-card__breakdown {
+      grid-template-columns: 1fr;
+    }
+  }
+  .review-breakdown__item {
+    display: grid;
+    grid-template-columns: minmax(80px, max-content) 1fr auto;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+  .review-breakdown__label {
+    white-space: nowrap;
+  }
+  .review-breakdown__bar {
+    display: block;
+    height: 4px;
+    background-color: var(--border, oklch(0.9 0 0));
+    border-radius: 9999px;
+    overflow: hidden;
+  }
+  .review-breakdown__bar-fill {
+    display: block;
+    height: 100%;
+    background-color: var(--accent);
+    border-radius: 9999px;
+  }
+  .review-breakdown__value {
+    font-weight: 600;
+    color: var(--foreground);
+    font-variant-numeric: tabular-nums;
   }
   .review-preview__view-all {
     margin-top: var(--space-4, 16px);

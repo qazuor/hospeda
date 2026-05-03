@@ -258,6 +258,7 @@
         "reviewsDetail": {
             "noReviews": "No reviews yet",
             "viewAll": "View all {n} reviews",
+            "breakdownLabel": "Detailed scores",
             "categories": {
                 "cleanliness": "Cleanliness",
                 "hospitality": "Hospitality",

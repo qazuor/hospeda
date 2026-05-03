@@ -16,9 +16,19 @@ interface ReviewItem {
     readonly title?: string;
     readonly content?: string;
     readonly averageRating?: number;
+    readonly rating?: Readonly<Record<string, number>>;
     readonly user?: { readonly name: string | null; readonly image: string | null };
     readonly createdAt?: string;
 }
+
+const RATING_CATEGORIES = [
+    'cleanliness',
+    'hospitality',
+    'services',
+    'accuracy',
+    'communication',
+    'location'
+] as const;
 
 interface ReviewsModalProps {
     readonly accommodationId: string;
@@ -181,6 +191,45 @@ export function ReviewsModal({ accommodationId, reviewsCount, locale }: ReviewsM
                                 </div>
                                 {review.content && (
                                     <p className={styles.reviewContent}>{review.content}</p>
+                                )}
+                                {review.rating && (
+                                    <ul
+                                        className={styles.breakdown}
+                                        aria-label={t(
+                                            'accommodations.detail.reviewsDetail.breakdownLabel'
+                                        )}
+                                    >
+                                        {RATING_CATEGORIES.map((cat) => {
+                                            const value = review.rating?.[cat];
+                                            if (value == null) return null;
+                                            const label = t(
+                                                `accommodations.detail.reviewsDetail.categories.${cat}`
+                                            );
+                                            const pct = (value / 5) * 100;
+                                            return (
+                                                <li
+                                                    key={cat}
+                                                    className={styles.breakdownItem}
+                                                >
+                                                    <span className={styles.breakdownLabel}>
+                                                        {label}
+                                                    </span>
+                                                    <span
+                                                        className={styles.breakdownBar}
+                                                        aria-hidden="true"
+                                                    >
+                                                        <span
+                                                            className={styles.breakdownBarFill}
+                                                            style={{ width: `${pct}%` }}
+                                                        />
+                                                    </span>
+                                                    <span className={styles.breakdownValue}>
+                                                        {value.toFixed(1)}
+                                                    </span>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
                                 )}
                             </article>
                         );
