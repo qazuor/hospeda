@@ -117,8 +117,8 @@ describe('favoritos page — collection usage counter (T-UI-CL1)', () => {
 
     describe('styling', () => {
         it('uses CSS custom properties for colors (no hardcoded values)', () => {
-            // Should use var(--primary), var(--muted-foreground), etc.
-            expect(src).toContain('var(--primary)');
+            // Should use var(--brand-primary), var(--core-muted-foreground), etc.
+            expect(src).toContain('var(--brand-primary)');
             expect(src).toContain('var(--muted-foreground)');
         });
 
