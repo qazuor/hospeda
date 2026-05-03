@@ -738,7 +738,10 @@ export async function seedEvent(
     await tx.insert(rEntityTag).values({
         tagId,
         entityId: eventId,
-        entityType: 'EVENT'
+        entityType: 'EVENT',
+        // SPEC-086 made `assigned_by_id` NOT NULL with attribution semantics;
+        // reuse the seeded author as the assigning actor.
+        assignedById: authorId
     } as typeof rEntityTag.$inferInsert);
 
     return { authorId, destinationId, locationId, organizerId, eventId, tagId };
