@@ -1,31 +1,4 @@
 {
-    "field": {
-        "tooSmall": "[PT] El valor es demasiado corto",
-        "tooLarge": "[PT] El valor es demasiado largo",
-        "invalidType": "[PT] Tipo de dato inválido",
-        "required": "[PT] Este campo es requerido",
-        "invalidEnum": "[PT] Valor no permitido",
-        "invalidEmail": "[PT] Debe ser un email válido",
-        "invalidUrl": "[PT] Debe ser una URL válida",
-        "invalidUuid": "[PT] Debe ser un UUID válido",
-        "invalidDate": "[PT] Debe ser una fecha válida",
-        "invalidString": "[PT] Debe ser un texto válido",
-        "invalidNumber": "[PT] Debe ser un número válido",
-        "tooSmallNumber": "[PT] El número es demasiado bajo",
-        "tooLargeNumber": "[PT] El número es demasiado alto",
-        "tooSmallArray": "[PT] Se requieren más elementos",
-        "tooLargeArray": "[PT] Demasiados elementos",
-        "invalidUnion": "[PT] El valor no coincide con ninguno de los formatos permitidos",
-        "invalidKey": "A chave '{{key}}' não é válida neste contexto",
-        "invalidElement": "O elemento na posição {{index}} não é válido",
-        "unrecognizedKeys": "[PT] Se encontraron campos no reconocidos",
-        "custom": "[PT] Error de validación personalizado",
-        "invalidFormat": "[PT] Formato inválido",
-        "notMultipleOf": "[PT] El valor debe ser múltiplo de {{multipleOf}}",
-        "invalidLiteral": "[PT] Se esperaba el valor {{expected}}",
-        "invalidArguments": "[PT] Argumentos inválidos",
-        "invalidReturnType": "[PT] Tipo de retorno inválido"
-    },
     "accommodation": {
         "address": {
             "required": "[PT] La dirección es obligatoria"
@@ -57,6 +30,28 @@
             },
             "minNights": {
                 "required": "[PT] La cantidad mínima de noches es obligatoria"
+            }
+        },
+        "location": {
+            "apartment": {
+                "max": "[PT] El apartment no puede superar los {{max}} caracteres",
+                "min": "[PT] El apartment debe tener al menos {{min}} caracteres",
+                "required": "[PT] El apartment es obligatorio"
+            },
+            "floor": {
+                "max": "[PT] El floor no puede superar los {{max}} caracteres",
+                "min": "[PT] El floor debe tener al menos {{min}} caracteres",
+                "required": "[PT] El floor es obligatorio"
+            },
+            "number": {
+                "max": "[PT] El number no puede superar los {{max}} caracteres",
+                "min": "[PT] El number debe tener al menos {{min}} caracteres",
+                "required": "[PT] El number es obligatorio"
+            },
+            "street": {
+                "max": "[PT] El street no puede superar los {{max}} caracteres",
+                "min": "[PT] El street debe tener al menos {{min}} caracteres",
+                "required": "[PT] El street es obligatorio"
             }
         },
         "name": {
@@ -199,6 +194,17 @@
                     "uuid": "[PT] El destination id debe ser un UUID válido"
                 }
             },
+            "conversation": {
+                "accommodationId": {
+                    "uuid": "[PT] El accommodation id debe ser un UUID válido"
+                },
+                "guestEmail": {
+                    "email": "[PT] El guest email debe ser un email válido"
+                },
+                "ownerId": {
+                    "uuid": "[PT] El owner id debe ser un UUID válido"
+                }
+            },
             "destination": {
                 "level": {
                     "int": "[PT] El nivel debe ser un número entero",
@@ -254,6 +260,9 @@
             "post": {
                 "authorId": {
                     "uuid": "[PT] El author id debe ser un UUID válido"
+                },
+                "relatedAccommodationId": {
+                    "uuid": "[PT] El related accommodation id debe ser un UUID válido"
                 },
                 "relatedDestinationId": {
                     "uuid": "[PT] El related destination id debe ser un UUID válido"
@@ -505,6 +514,7 @@
         "promoCode": {
             "apply": {
                 "amount": {
+                    "int": "[PT] El amount debe ser un número entero",
                     "invalidType": "[PT] El monto tiene un tipo de dato inválido",
                     "min": "[PT] El monto debe tener al menos {{min}} caracteres"
                 },
@@ -525,7 +535,9 @@
                     "min": "[PT] El código debe tener al menos {{min}} caracteres"
                 },
                 "discountValue": {
+                    "int": "[PT] El discount value debe ser un número entero",
                     "invalidType": "[PT] El discount value tiene un tipo de dato inválido",
+                    "max": "[PT] El discount value no puede superar los {{max}} caracteres",
                     "positive": "[PT] El discount value debe ser un número positivo"
                 },
                 "expiryDate": {
@@ -700,6 +712,23 @@
                 "max": "[PT] El notas no puede superar los {{max}} caracteres",
                 "min": "[PT] El notas debe tener al menos {{min}} caracteres",
                 "required": "[PT] El notas es obligatorio"
+            }
+        },
+        "approximateLocation": {
+            "lat": {
+                "max": "[PT] El lat no puede superar los {{max}} caracteres",
+                "min": "[PT] El lat debe tener al menos {{min}} caracteres",
+                "required": "[PT] El lat es obligatorio"
+            },
+            "lng": {
+                "max": "[PT] El lng no puede superar los {{max}} caracteres",
+                "min": "[PT] El lng debe tener al menos {{min}} caracteres",
+                "required": "[PT] El lng es obligatorio"
+            },
+            "radiusMeters": {
+                "int": "[PT] El radius meters debe ser un número entero",
+                "positive": "[PT] El radius meters debe ser positivo",
+                "required": "[PT] El radius meters es obligatorio"
             }
         },
         "checkIn": {
@@ -940,6 +969,19 @@
         },
         "media": {
             "image": {
+                "attribution": {
+                    "license": {
+                        "max": "[PT] El license no puede superar los {{max}} caracteres",
+                        "min": "[PT] El license debe tener al menos {{min}} caracteres"
+                    },
+                    "photographer": {
+                        "max": "[PT] El photographer no puede superar los {{max}} caracteres",
+                        "min": "[PT] El photographer debe tener al menos {{min}} caracteres"
+                    },
+                    "sourceUrl": {
+                        "invalid": "[PT] El source url no es válido"
+                    }
+                },
                 "caption": {
                     "max": "[PT] La leyenda no puede superar los {{max}} caracteres",
                     "min": "[PT] La leyenda debe tener al menos {{min}} caracteres",
@@ -949,6 +991,9 @@
                     "max": "[PT] La descripción no puede superar los {{max}} caracteres",
                     "min": "[PT] La descripción debe tener al menos {{min}} caracteres",
                     "required": "[PT] La descripción es obligatoria"
+                },
+                "publicId": {
+                    "min": "[PT] El public id debe tener al menos {{min}} caracteres"
                 },
                 "url": {
                     "invalid": "[PT] La URL no es válida"
@@ -1091,6 +1136,26 @@
             "invalid": "[PT] El uuid no es válido"
         }
     },
+    "contact": {
+        "accommodationId": {
+            "required": "[PT] El accommodation id es obligatorio"
+        },
+        "email": {
+            "invalid": "[PT] El email no es válido"
+        },
+        "firstName": {
+            "max": "[PT] El first name no puede superar los {{max}} caracteres",
+            "min": "[PT] El first name debe tener al menos {{min}} caracteres"
+        },
+        "lastName": {
+            "max": "[PT] El last name no puede superar los {{max}} caracteres",
+            "min": "[PT] El last name debe tener al menos {{min}} caracteres"
+        },
+        "message": {
+            "max": "[PT] El message no puede superar los {{max}} caracteres",
+            "min": "[PT] El message debe tener al menos {{min}} caracteres"
+        }
+    },
     "dateRange": {
         "createdAfter": {
             "invalidType": "[PT] El created after tiene un tipo de dato inválido"
@@ -1219,6 +1284,9 @@
         "clientType": {
             "invalid": "[PT] El client type no es válido"
         },
+        "conversationStatus": {
+            "invalid": "[PT] El conversation status no es válido"
+        },
         "destinationType": {
             "invalid": "[PT] El destination type no es válido"
         },
@@ -1243,8 +1311,17 @@
         "lifecycleStatus": {
             "invalid": "[PT] El lifecycle status no es válido"
         },
+        "messageSenderType": {
+            "invalid": "[PT] El message sender type no es válido"
+        },
+        "messageStatus": {
+            "invalid": "[PT] El message status no es válido"
+        },
         "moderationStatus": {
             "invalid": "[PT] El moderation status no es válido"
+        },
+        "notificationRecipientSide": {
+            "invalid": "[PT] El notification recipient side no es válido"
         },
         "ownerPromotionDiscountType": {
             "invalid": "[PT] El owner promotion discount type no es válido"
@@ -1293,6 +1370,9 @@
         },
         "tagColor": {
             "invalid": "[PT] El tag color no es válido"
+        },
+        "tagType": {
+            "invalid": "[PT] El tag type no es válido"
         },
         "visibility": {
             "invalid": "[PT] El visibility no es válido"
@@ -1434,7 +1514,8 @@
     "eventLocation": {
         "apartment": {
             "max": "[PT] El apartment no puede superar los {{max}} caracteres",
-            "min": "[PT] El apartment debe tener al menos {{min}} caracteres"
+            "min": "[PT] El apartment debe tener al menos {{min}} caracteres",
+            "required": "[PT] El apartment es obligatorio"
         },
         "city": {
             "max": "[PT] La ciudad no puede superar los {{max}} caracteres",
@@ -1458,7 +1539,8 @@
         },
         "floor": {
             "max": "[PT] El floor no puede superar los {{max}} caracteres",
-            "min": "[PT] El floor debe tener al menos {{min}} caracteres"
+            "min": "[PT] El floor debe tener al menos {{min}} caracteres",
+            "required": "[PT] El floor es obligatorio"
         },
         "neighborhood": {
             "max": "[PT] El neighborhood no puede superar los {{max}} caracteres",
@@ -1466,11 +1548,13 @@
         },
         "number": {
             "max": "[PT] El number no puede superar los {{max}} caracteres",
-            "min": "[PT] El number debe tener al menos {{min}} caracteres"
+            "min": "[PT] El number debe tener al menos {{min}} caracteres",
+            "required": "[PT] El number es obligatorio"
         },
         "placeName": {
             "max": "[PT] El place name no puede superar los {{max}} caracteres",
-            "min": "[PT] El place name debe tener al menos {{min}} caracteres"
+            "min": "[PT] El place name debe tener al menos {{min}} caracteres",
+            "required": "[PT] El place name es obligatorio"
         },
         "slug": {
             "format": "[PT] El formato del slug no es válido",
@@ -1480,7 +1564,8 @@
         },
         "street": {
             "max": "[PT] El street no puede superar los {{max}} caracteres",
-            "min": "[PT] El street debe tener al menos {{min}} caracteres"
+            "min": "[PT] El street debe tener al menos {{min}} caracteres",
+            "required": "[PT] El street es obligatorio"
         }
     },
     "eventOrganizer": {
@@ -1762,6 +1847,33 @@
             "required": "[PT] El slug es obligatorio"
         }
     },
+    "field": {
+        "custom": "[PT] Error de validación personalizado",
+        "invalidArguments": "[PT] Argumentos inválidos",
+        "invalidDate": "[PT] Debe ser una fecha válida",
+        "invalidElement": "O elemento na posição {{index}} não é válido",
+        "invalidEmail": "[PT] Debe ser un email válido",
+        "invalidEnum": "[PT] Valor no permitido",
+        "invalidFormat": "[PT] Formato inválido",
+        "invalidKey": "A chave '{{key}}' não é válida neste contexto",
+        "invalidLiteral": "[PT] Se esperaba el valor {{expected}}",
+        "invalidNumber": "[PT] Debe ser un número válido",
+        "invalidReturnType": "[PT] Tipo de retorno inválido",
+        "invalidString": "[PT] Debe ser un texto válido",
+        "invalidType": "[PT] Tipo de dato inválido",
+        "invalidUnion": "[PT] El valor no coincide con ninguno de los formatos permitidos",
+        "invalidUrl": "[PT] Debe ser una URL válida",
+        "invalidUuid": "[PT] Debe ser un UUID válido",
+        "notMultipleOf": "[PT] El valor debe ser múltiplo de {{multipleOf}}",
+        "required": "[PT] Este campo es requerido",
+        "tooLarge": "[PT] El valor es demasiado largo",
+        "tooLargeArray": "[PT] Demasiados elementos",
+        "tooLargeNumber": "[PT] El número es demasiado alto",
+        "tooSmall": "[PT] El valor es demasiado corto",
+        "tooSmallArray": "[PT] Se requieren más elementos",
+        "tooSmallNumber": "[PT] El número es demasiado bajo",
+        "unrecognizedKeys": "[PT] Se encontraron campos no reconocidos"
+    },
     "health": {
         "database": {
             "connection": {
@@ -1872,6 +1984,17 @@
             "int": "[PT] El current redemptions debe ser un número entero",
             "min": "[PT] El current redemptions debe tener al menos {{min}} caracteres"
         },
+        "delete": {
+            "deletedAt": {
+                "invalidType": "A data de exclusão tem um tipo inválido"
+            },
+            "force": {
+                "invalidType": "O parâmetro force tem um tipo inválido"
+            },
+            "success": {
+                "required": "O resultado da exclusão é obrigatório"
+            }
+        },
         "description": {
             "max": "[PT] La descripción no puede superar los {{max}} caracteres"
         },
@@ -1895,17 +2018,6 @@
             "max": "[PT] El título no puede superar los {{max}} caracteres",
             "min": "[PT] El título debe tener al menos {{min}} caracteres",
             "required": "[PT] El título es obligatorio"
-        },
-        "delete": {
-            "deletedAt": {
-                "invalidType": "A data de exclusão tem um tipo inválido"
-            },
-            "force": {
-                "invalidType": "O parâmetro force tem um tipo inválido"
-            },
-            "success": {
-                "required": "O resultado da exclusão é obrigatório"
-            }
         },
         "validFrom": {
             "required": "[PT] El valid from es obligatorio"
@@ -2158,6 +2270,25 @@
             }
         }
     },
+    "postTag": {
+        "description": {
+            "required": "[PT] El description es obligatorio"
+        },
+        "icon": {
+            "required": "[PT] El icon es obligatorio"
+        },
+        "name": {
+            "min": "[PT] El name debe tener al menos {{min}} caracteres",
+            "required": "[PT] El name es obligatorio"
+        },
+        "slug": {
+            "format": "[PT] El slug debe tener un formato válido",
+            "required": "[PT] El slug es obligatorio"
+        }
+    },
+    "postTags": {
+        "required": "[PT] El post tags es obligatorio"
+    },
     "priceRange": {
         "budgetLevel": {
             "enum": "[PT] El budget level debe ser uno de los valores permitidos"
@@ -2285,6 +2416,17 @@
             "max": "[PT] El coupon discount percent no puede superar los {{max}} caracteres",
             "min": "[PT] El coupon discount percent debe tener al menos {{min}} caracteres"
         },
+        "delete": {
+            "deletedAt": {
+                "invalidType": "A data de exclusão tem um tipo inválido"
+            },
+            "force": {
+                "invalidType": "O parâmetro force tem um tipo inválido"
+            },
+            "success": {
+                "required": "O resultado da exclusão é obrigatório"
+            }
+        },
         "endsAt": {
             "invalid": "[PT] El ends at no es válido"
         },
@@ -2300,17 +2442,6 @@
         },
         "startsAt": {
             "required": "[PT] El starts at es obligatorio"
-        },
-        "delete": {
-            "deletedAt": {
-                "invalidType": "A data de exclusão tem um tipo inválido"
-            },
-            "force": {
-                "invalidType": "O parâmetro force tem um tipo inválido"
-            },
-            "success": {
-                "required": "O resultado da exclusão é obrigatório"
-            }
         },
         "targetId": {
             "required": "[PT] El target id es obligatorio",
@@ -2399,6 +2530,18 @@
                 "required": "[PT] El resultado exitoso es obligatorio"
             }
         },
+        "assign": {
+            "entityId": {
+                "required": "[PT] El entity id es obligatorio",
+                "uuid": "[PT] El entity id debe ser un UUID válido"
+            }
+        },
+        "assignRemove": {
+            "entityId": {
+                "required": "[PT] El entity id es obligatorio",
+                "uuid": "[PT] El entity id debe ser un UUID válido"
+            }
+        },
         "bulkOperation": {
             "force": {
                 "invalidType": "[PT] El valor de forzar debe ser un booleano"
@@ -2466,6 +2609,9 @@
                 "required": "[PT] El resultado exitoso es obligatorio"
             }
         },
+        "description": {
+            "required": "[PT] El description es obligatorio"
+        },
         "getEntitiesByTag": {
             "entityId": {
                 "required": "[PT] El ID de entidad es obligatorio",
@@ -2507,6 +2653,13 @@
             "min": "[PT] El ícono debe tener al menos {{min}} caracteres",
             "required": "[PT] El ícono es obligatorio"
         },
+        "impactCount": {
+            "count": {
+                "int": "[PT] El count debe ser un número entero",
+                "nonnegative": "[PT] El count no es válido (nonnegative)",
+                "required": "[PT] El count es obligatorio"
+            }
+        },
         "merge": {
             "deleteSourceTag": {
                 "invalidType": "[PT] El delete source tag tiene un tipo de dato inválido"
@@ -2524,6 +2677,18 @@
             "max": "[PT] El notas no puede superar los {{max}} caracteres",
             "min": "[PT] El notas debe tener al menos {{min}} caracteres",
             "required": "[PT] El notas es obligatorio"
+        },
+        "pickerQueryContext": {
+            "actorId": {
+                "required": "[PT] El actor id es obligatorio",
+                "uuid": "[PT] El actor id debe ser un UUID válido"
+            },
+            "hasTagInternalView": {
+                "required": "[PT] El has tag internal view es obligatorio"
+            }
+        },
+        "pickerVisibility": {
+            "invalid": "[PT] El picker visibility no es válido"
         },
         "related": {
             "entityType": {
@@ -2603,6 +2768,12 @@
         "image": {
             "invalidUrl": "[PT] La imagen debe ser una URL válida"
         },
+        "imageCaption": {
+            "max": "[PT] El image caption no puede superar los {{max}} caracteres"
+        },
+        "imagePublicId": {
+            "min": "[PT] El image public id debe tener al menos {{min}} caracteres"
+        },
         "lastName": {
             "max": "[PT] El apellido no puede superar los {{max}} caracteres",
             "min": "[PT] El apellido debe tener al menos {{min}} caracteres",
@@ -2643,6 +2814,18 @@
             "bio": {
                 "max": "[PT] La biografía no puede superar los {{max}} caracteres",
                 "min": "[PT] La biografía debe tener al menos {{min}} caracteres"
+            },
+            "displayName": {
+                "max": "[PT] El display name no puede superar los {{max}} caracteres",
+                "min": "[PT] El display name debe tener al menos {{min}} caracteres"
+            },
+            "firstName": {
+                "max": "[PT] El first name no puede superar los {{max}} caracteres",
+                "min": "[PT] El first name debe tener al menos {{min}} caracteres"
+            },
+            "lastName": {
+                "max": "[PT] El last name no puede superar los {{max}} caracteres",
+                "min": "[PT] El apellido debe tener al menos {{min}} caracteres"
             },
             "occupation": {
                 "max": "[PT] El occupation no puede superar los {{max}} caracteres",
@@ -2685,6 +2868,9 @@
         }
     },
     "userBookmark": {
+        "collectionId": {
+            "invalidUuid": "[PT] El ID de colección debe ser un UUID válido"
+        },
         "description": {
             "max": "[PT] La descripción no puede superar los {{max}} caracteres",
             "min": "[PT] La descripción debe tener al menos {{min}} caracteres"
@@ -2700,6 +2886,22 @@
         "userId": {
             "invalidUuid": "[PT] El ID del usuario debe ser un UUID válido",
             "required": "[PT] El ID del usuario es obligatorio"
+        }
+    },
+    "userBookmarkCollection": {
+        "color": {
+            "invalidHex": "[PT] El color debe ser un código hexadecimal válido (por ejemplo, #FF5733)"
+        },
+        "description": {
+            "max": "[PT] La descripción no puede superar los {{max}} caracteres"
+        },
+        "icon": {
+            "max": "[PT] El nombre del ícono no puede superar los {{max}} caracteres"
+        },
+        "name": {
+            "max": "[PT] El nombre no puede superar los {{max}} caracteres",
+            "min": "[PT] El nombre debe tener al menos {{min}} caracteres",
+            "required": "[PT] El nombre es obligatorio"
         }
     },
     "userIdentity": {
