@@ -30,6 +30,37 @@ const RATING_CATEGORIES = [
     'location'
 ] as const;
 
+/**
+ * Avatar with graceful broken-image fallback. Renders the initials behind a
+ * stacked <img>; if the image errors (404, CORS, network) the img is hidden
+ * and the initials become visible.
+ */
+function ReviewAvatar({
+    url,
+    alt,
+    initials
+}: { readonly url: string | null; readonly alt: string; readonly initials: string }) {
+    const [broken, setBroken] = useState(false);
+    return (
+        <div className={styles.avatarWrapper}>
+            {url && !broken && (
+                <img
+                    src={url}
+                    alt={alt}
+                    className={styles.avatar}
+                    onError={() => setBroken(true)}
+                />
+            )}
+            <div
+                className={styles.avatarFallback}
+                aria-hidden={url && !broken ? 'true' : undefined}
+            >
+                {initials}
+            </div>
+        </div>
+    );
+}
+
 interface ReviewsModalProps {
     readonly accommodationId: string;
     readonly reviewsCount: number;
@@ -168,15 +199,11 @@ export function ReviewsModal({ accommodationId, reviewsCount, locale }: ReviewsM
                                 className={styles.reviewCard}
                             >
                                 <div className={styles.reviewHeader}>
-                                    {review.user?.image ? (
-                                        <img
-                                            src={review.user.image}
-                                            alt={userName}
-                                            className={styles.avatar}
-                                        />
-                                    ) : (
-                                        <div className={styles.avatarFallback}>{initials}</div>
-                                    )}
+                                    <ReviewAvatar
+                                        url={review.user?.image ?? null}
+                                        alt={userName}
+                                        initials={initials}
+                                    />
                                     <div className={styles.reviewMeta}>
                                         <span className={styles.reviewName}>{userName}</span>
                                         {dateStr && (

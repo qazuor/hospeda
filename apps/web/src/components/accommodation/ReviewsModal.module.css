@@ -78,17 +78,26 @@
     margin-bottom: var(--space-2, 8px);
 }
 
+.avatarWrapper {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+}
+
 .avatar {
+    position: relative;
+    z-index: 1;
     width: 36px;
     height: 36px;
     border-radius: 50%;
     object-fit: cover;
-    flex-shrink: 0;
+    background-color: var(--brand-primary);
 }
 
 .avatarFallback {
-    width: 36px;
-    height: 36px;
+    position: absolute;
+    inset: 0;
     border-radius: 50%;
     background-color: var(--brand-primary);
     color: var(--primary-foreground);
@@ -98,7 +107,6 @@
     font-family: var(--font-heading);
     font-weight: 700;
     font-size: 0.8rem;
-    flex-shrink: 0;
 }
 
 .reviewMeta {
