@@ -15,6 +15,7 @@
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { CollectionBookmarkRemoveBtn } from '@/components/account/CollectionBookmarkRemoveBtn.client';
+import { CollectionDetailActions } from '@/components/account/CollectionDetailActions.client';
 import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -263,24 +264,24 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 					)}
 				</div>
 
-				<!-- Action buttons (skeleton — T-051c will wire interactions) -->
+				<!--
+					Action buttons (Edit + Delete).
+					Hydrated as a React island so the modal + delete confirmation flow
+					can manage their own state without the rest of the page going client-side.
+				-->
 				<div class="coleccion-header__actions">
-					<button
-						type="button"
-						class="coleccion-btn coleccion-btn--secondary"
-						disabled
-						aria-label={t('account.favorites.collections.edit', 'Editar colección')}
-					>
-						{t('account.favorites.collections.edit', 'Editar')}
-					</button>
-					<button
-						type="button"
-						class="coleccion-btn coleccion-btn--danger"
-						disabled
-						aria-label={t('account.favorites.collections.delete', 'Borrar colección')}
-					>
-						{t('account.favorites.collections.delete', 'Borrar')}
-					</button>
+					<CollectionDetailActions
+						client:load
+						collection={{
+							id: collection.id,
+							name: collection.name,
+							description: collection.description ?? null,
+							color: collection.color ?? null,
+							icon: collection.icon ?? null
+						}}
+						locale={locale}
+						lang={locale}
+					/>
 				</div>
 			</header>
 		)
@@ -581,51 +582,6 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 		align-items: center;
 		gap: var(--space-2);
 		flex-shrink: 0;
-	}
-
-	/* ------------------------------------------------------------------ */
-	/* Action buttons                                                       */
-	/* ------------------------------------------------------------------ */
-	.coleccion-btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: var(--space-2) var(--space-4);
-		font-family: var(--font-sans);
-		font-size: var(--text-body);
-		font-weight: 500;
-		border-radius: var(--radius-button);
-		border: 1px solid transparent;
-		cursor: pointer;
-		transition:
-			background-color var(--duration-fast) ease,
-			color var(--duration-fast) ease,
-			border-color var(--duration-fast) ease;
-	}
-
-	.coleccion-btn:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	.coleccion-btn--secondary {
-		background-color: var(--card);
-		color: var(--foreground);
-		border-color: var(--border);
-	}
-
-	.coleccion-btn--secondary:not(:disabled):hover {
-		background-color: var(--muted);
-	}
-
-	.coleccion-btn--danger {
-		background-color: transparent;
-		color: oklch(0.55 0.2 25);
-		border-color: oklch(0.55 0.2 25 / 0.4);
-	}
-
-	.coleccion-btn--danger:not(:disabled):hover {
-		background-color: oklch(0.55 0.2 25 / 0.08);
 	}
 
 	/* ------------------------------------------------------------------ */

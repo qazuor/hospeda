@@ -95,6 +95,15 @@ export function CollectionDetailActions({
                 return;
             }
 
+            // Show success toast (visible briefly via storage before redirect)
+            addToast({
+                type: 'success',
+                message: t(
+                    'account.favorites.collections.deleteSuccess',
+                    'Colección borrada correctamente'
+                )
+            });
+
             // Redirect to the favorites page on success
             window.location.href = `/${lang}/mi-cuenta/favoritos/`;
         } finally {
@@ -115,6 +124,7 @@ export function CollectionDetailActions({
                 onClick={handleEditOpen}
                 disabled={isDeleting}
                 aria-label={t('account.favorites.collections.edit', 'Editar colección')}
+                data-testid="collection-actions-edit"
             >
                 {editLabel}
             </button>
@@ -126,6 +136,7 @@ export function CollectionDetailActions({
                 disabled={isDeleting}
                 aria-label={t('account.favorites.collections.delete', 'Borrar colección')}
                 aria-busy={isDeleting}
+                data-testid="collection-actions-delete"
             >
                 {deleteLabel}
             </button>
