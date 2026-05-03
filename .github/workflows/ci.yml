@@ -9,6 +9,12 @@ on:
       - main
   workflow_call:
 
+# Cancel in-progress runs for the same PR when a new push arrives.
+# Pushes to main never cancel (we want every commit on main to build).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 # Shared env values used by every job. Secrets are injected per job (jobs
 # that don't need them simply ignore the missing values).
 env:
@@ -24,6 +30,14 @@ env:
   HOSPEDA_CLOUDINARY_CLOUD_NAME: ${{ secrets.HOSPEDA_CLOUDINARY_CLOUD_NAME }}
   HOSPEDA_CLOUDINARY_API_KEY: ${{ secrets.HOSPEDA_CLOUDINARY_API_KEY }}
   HOSPEDA_CLOUDINARY_API_SECRET: ${{ secrets.HOSPEDA_CLOUDINARY_API_SECRET }}
+  # Turbo Remote Cache. When TURBO_TOKEN is set as a repo secret and
+  # TURBO_TEAM as a repo variable, every job restores build, lint, and
+  # typecheck artifacts from Vercel's Remote Cache instead of recomputing
+  # them. Missing values transparently fall back to local cache (no
+  # failure). See docs/guides/ci-cd.md for setup.
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  TURBO_REMOTE_CACHE_SIGNATURE_KEY: ${{ secrets.TURBO_REMOTE_CACHE_SIGNATURE_KEY }}
 
 jobs:
   # ------------------------------------------------------------------
@@ -148,27 +162,54 @@ jobs:
         run: pnpm typecheck
 
   # ------------------------------------------------------------------
-  # Unit tests with coverage. Depends on build for any package that
-  # consumes built artifacts. ~10 min.
+  # Unit tests with coverage. Sharded 4-way using vitest --shard=N/M.
+  # Each shard runs all packages but processes only its slice of test
+  # files, then uploads coverage as a per-shard artifact. The
+  # coverage-check job downloads all shards and merges them per package
+  # before enforcing thresholds. Depends on build for any package that
+  # consumes built artifacts. ~5 min per shard (was ~21 min single).
   # ------------------------------------------------------------------
   test-unit:
-    name: Unit Tests
+    name: Unit Tests (shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
     needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
       - name: Build (turbo cache)
         run: pnpm build
-      - name: Run tests with coverage
-        run: pnpm test:coverage
-      - name: Upload coverage artifacts
+      - name: Run tests with coverage (shard ${{ matrix.shard }}/4)
+        # --force bypasses turbo cache reads. The shard arg is passed via
+        # `--` and is NOT part of the cache key, so without --force a
+        # later shard would receive the previous shard's cached output.
+        # --passWithNoTests is required because some packages have fewer
+        # test files than shards (e.g. @repo/icons has 2 files; shards 3
+        # and 4 receive nothing and would otherwise fail).
+        # --coverage.thresholds.* are zeroed because per-package vitest
+        # thresholds cannot be met by a single shard. The aggregated
+        # threshold check is enforced by the coverage-check job below
+        # against the merged coverage from all shards.
+        run: |
+          pnpm turbo run test:coverage --concurrency=4 --force -- \
+            --shard=${{ matrix.shard }}/4 \
+            --passWithNoTests \
+            --coverage.thresholds.lines=0 \
+            --coverage.thresholds.functions=0 \
+            --coverage.thresholds.branches=0 \
+            --coverage.thresholds.statements=0
+      - name: Upload coverage artifacts (shard ${{ matrix.shard }})
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-summaries
-          path: '**/coverage/coverage-summary.json'
+          name: coverage-shard-${{ matrix.shard }}
+          path: |
+            apps/*/coverage/coverage-final.json
+            packages/*/coverage/coverage-final.json
           if-no-files-found: warn
           retention-days: 7
 
@@ -209,26 +250,36 @@ jobs:
           HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
 
   # ------------------------------------------------------------------
-  # Coverage threshold check. Reads the coverage artifacts produced by
-  # test-unit and enforces per-package floors. ~30s.
+  # Coverage threshold check. Downloads the per-shard raw coverage
+  # artifacts produced by test-unit, merges them per package using
+  # istanbul-lib-coverage, regenerates summaries, and enforces per-
+  # package floors. ~1 min.
   # ------------------------------------------------------------------
   coverage-check:
     name: Coverage Threshold
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     needs: test-unit
     steps:
       - uses: actions/checkout@v4
-      - name: Download coverage artifacts
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Download coverage artifacts (all shards)
         uses: actions/download-artifact@v4
         with:
-          name: coverage-summaries
-          path: coverage-artifacts/
+          pattern: coverage-shard-*
+          path: coverage-shards/
+      - name: Merge coverage from shards
+        run: node scripts/ci/merge-coverage.mjs coverage-shards coverage-merged
       - name: Check coverage threshold
+        env:
+          COVERAGE_DIR: coverage-merged
         run: |
           echo "📊 Checking coverage threshold..."
 
-          COVERAGE_FILES=$(find coverage-artifacts -name 'coverage-summary.json' 2>/dev/null)
+          COVERAGE_FILES=$(find "$COVERAGE_DIR" -name 'coverage-summary.json' 2>/dev/null)
 
           if [ -z "$COVERAGE_FILES" ]; then
             echo "❌ No coverage files found"
