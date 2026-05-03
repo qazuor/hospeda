@@ -90,8 +90,8 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background-color: var(--primary);
-    color: white;
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
     display: flex;
     align-items: center;
     justify-content: center;
