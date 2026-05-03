@@ -23,7 +23,30 @@ export default defineConfig({
                 statements: 70
             },
             include: ['src/**/*.ts'],
-            exclude: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/index.ts', 'src/cli.ts']
+            exclude: [
+                'src/**/*.test.ts',
+                'src/**/*.spec.ts',
+                'src/**/index.ts',
+                'src/cli.ts',
+                // Seed scripts are end-to-end DB population scripts that
+                // run against a real PostgreSQL instance via `pnpm db:seed`.
+                // Their factories/normalizers cannot be exercised in unit
+                // tests without a database; they're verified by the seed
+                // integration tests under `test/integration/`.
+                'src/example/**/*.seed.ts',
+                'src/required/**/*.seed.ts',
+                // DB-dependent utilities that cannot run without a live
+                // PostgreSQL connection. They're exercised through the
+                // seed integration suite (`pnpm db:seed`).
+                'src/utils/actor.ts',
+                'src/utils/db.ts',
+                'src/utils/dbReset.ts',
+                'src/utils/relationBuilders.ts',
+                'src/utils/serviceRelationBuilder.ts',
+                'src/utils/superAdminLoader.ts',
+                'src/utils/validateAllManifests.ts',
+                'src/utils/validateManifestVsFolder.ts'
+            ]
         }
     }
 });
