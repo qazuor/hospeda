@@ -60,6 +60,7 @@ const endDate = data.date.end ? formatDate({ date: data.date.end, locale }) : nu
           loading="lazy"
           class="event-card__img"
           style="border-radius: var(--radius-organic);"
+          data-fallback="/assets/images/placeholder-event.svg"
         />
       ) : (
         <img
@@ -70,6 +71,7 @@ const endDate = data.date.end ? formatDate({ date: data.date.end, locale }) : nu
           style="border-radius: var(--radius-organic);"
           width="400"
           height="225"
+          data-fallback="/assets/images/placeholder-event.svg"
         />
       )}
     </a>

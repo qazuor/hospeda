@@ -158,33 +158,26 @@ const mutedColorScheme = getMutedColorScheme();
             <!-- Author row -->
             <div class="featured-card__author-row">
                 {data.authorName && (
-                    data.authorAvatar && !data.authorAvatar.includes('placeholder') && !data.authorAvatar.endsWith('.svg') ? (
-                        <Image
-                            src={data.authorAvatar}
-                            alt={data.authorName}
-                            class="featured-card__avatar"
-                            loading="lazy"
-                            width={32}
-                            height={32}
-                            format="webp"
-                        />
-                    ) : data.authorAvatar ? (
-                        <img
-                            src={data.authorAvatar}
-                            alt={data.authorName}
-                            class="featured-card__avatar"
-                            loading="lazy"
-                            width="32"
-                            height="32"
-                        />
-                    ) : (
+                    <span class="featured-card__avatar-wrapper">
+                        {data.authorAvatar && !data.authorAvatar.includes('placeholder') && !data.authorAvatar.endsWith('.svg') && (
+                            <Image
+                                src={data.authorAvatar}
+                                alt={data.authorName}
+                                class="featured-card__avatar"
+                                loading="lazy"
+                                width={32}
+                                height={32}
+                                format="webp"
+                                data-hide-on-error
+                            />
+                        )}
                         <span
                             class="featured-card__avatar featured-card__avatar--placeholder"
                             aria-hidden="true"
                         >
                             {data.authorName.charAt(0)}
                         </span>
-                    )
+                    </span>
                 )}
                 {data.authorName && (
                     <span class="featured-card__author-name">{data.authorName}</span>
@@ -399,15 +392,32 @@ const mutedColorScheme = getMutedColorScheme();
         color: var(--core-muted-foreground);
     }
 
+    .featured-card__avatar-wrapper {
+        position: relative;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        display: inline-block;
+    }
+
     .featured-card__avatar {
+        position: relative;
+        z-index: 1;
         width: 32px;
         height: 32px;
         border-radius: 50%;
         object-fit: cover;
-        flex-shrink: 0;
+        background-color: var(--brand-primary);
     }
 
+    /* Placeholder is always rendered behind the <img>; if the image fails to
+       load, image-fallback.ts hides it via data-hide-on-error and the
+       placeholder shows through. */
     .featured-card__avatar--placeholder {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;

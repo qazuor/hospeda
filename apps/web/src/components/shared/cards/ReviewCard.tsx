@@ -22,7 +22,43 @@ import {
 } from '@/lib/colors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { QuotesIcon, StarIcon } from '@repo/icons';
+import { useState } from 'react';
 import styles from './ReviewCard.module.css';
+
+/**
+ * Avatar with initials fallback. The initials span is always rendered as a
+ * sibling so when the <img> fails to load (404, CORS) we hide the broken
+ * <img> via state and the initials show through.
+ */
+function ReviewerAvatar({
+    url,
+    alt,
+    initials
+}: { readonly url: string | null; readonly alt: string; readonly initials: string }) {
+    const [broken, setBroken] = useState(false);
+    const showImg = url && !broken;
+    return (
+        <span className={styles.avatarWrapper}>
+            {showImg && (
+                <img
+                    src={url}
+                    alt={alt}
+                    className={styles.avatar}
+                    width={40}
+                    height={40}
+                    loading="lazy"
+                    onError={() => setBroken(true)}
+                />
+            )}
+            <span
+                className={styles.avatarInitials}
+                aria-hidden={showImg ? 'true' : undefined}
+            >
+                {initials}
+            </span>
+        </span>
+    );
+}
 
 /** Props for the ReviewCard component. */
 interface ReviewCardProps {
@@ -177,23 +213,11 @@ export function ReviewCard({ data, locale, className }: ReviewCardProps) {
 
             {/* Author info */}
             <figcaption className={styles.caption}>
-                {data.reviewerAvatar ? (
-                    <img
-                        src={data.reviewerAvatar}
-                        alt={data.reviewerName}
-                        className={styles.avatar}
-                        width={40}
-                        height={40}
-                        loading="lazy"
-                    />
-                ) : (
-                    <span
-                        className={styles.avatarInitials}
-                        aria-hidden="true"
-                    >
-                        {initials}
-                    </span>
-                )}
+                <ReviewerAvatar
+                    url={data.reviewerAvatar ?? null}
+                    alt={data.reviewerName}
+                    initials={initials}
+                />
                 <div className={styles.authorInfo}>
                     <span className={styles.authorName}>{data.reviewerName}</span>
                     <span className={styles.authorMeta}>

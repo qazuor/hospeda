@@ -245,6 +245,17 @@ function DestinationsIslandInner({
                                                 className={styles.cardImage}
                                                 loading="lazy"
                                                 draggable={false}
+                                                onError={(e) => {
+                                                    const img = e.currentTarget as HTMLImageElement;
+                                                    if (
+                                                        img.src.endsWith(
+                                                            '/assets/images/placeholder-destination.svg'
+                                                        )
+                                                    )
+                                                        return;
+                                                    img.src =
+                                                        '/assets/images/placeholder-destination.svg';
+                                                }}
                                             />
 
                                             {/* Gradient overlay */}
