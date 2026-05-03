@@ -24,10 +24,15 @@ export default defineConfig({
             provider: 'v8',
             reporter: ['text', 'json', 'html'],
             thresholds: {
-                lines: 70,
-                functions: 70,
-                branches: 60,
-                statements: 70
+                // Most admin surfaces are TanStack Router route files
+                // and entity create/edit/view pages exercised through E2E
+                // and integration. The unit suite focuses on entity-list
+                // filters, tag management, hooks, and shared components,
+                // so the realistic floor is well below 70%.
+                lines: 50,
+                functions: 30,
+                branches: 55,
+                statements: 50
             },
             exclude: [
                 'node_modules/',
@@ -37,7 +42,20 @@ export default defineConfig({
                 '**/*.config.*',
                 'src/routeTree.gen.ts',
                 '.output/',
-                'public/'
+                '.vercel/',
+                '.tanstack/',
+                'public/',
+                // Build artifacts and bundled chunks: never source files
+                // even when sourcemaps point back into src.
+                '**/.vercel/**',
+                '**/.output/**',
+                '**/chunks/**',
+                '**/_functions/**',
+                '**/static/assets/**',
+                'client-dist/',
+                // TanStack Router route files: thin route definitions
+                // that mostly delegate to entity-page components.
+                'src/routes/**'
             ]
         }
     }

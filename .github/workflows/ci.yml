@@ -194,14 +194,17 @@ jobs:
             echo "📦 Package: $PACKAGE_NAME"
             echo "   Coverage: $COVERAGE_ROUNDED%"
 
-            # Determine threshold per package. The web app uses a lower
-            # bar because most surfaces are Astro SSR components and
-            # React islands that cannot render in Vitest's jsdom; their
-            # behavior is verified through page-level and E2E tests
-            # instead of per-file unit coverage.
+            # Determine threshold per package. The web and admin apps
+            # use lower bars because most surfaces are framework-specific
+            # (Astro SSR components, TanStack Router routes, React islands)
+            # that cannot render in Vitest's jsdom; their behavior is
+            # verified through page-level and E2E tests instead of
+            # per-file unit coverage.
             THRESHOLD=90
             if [ "$PACKAGE_NAME" = "web" ]; then
               THRESHOLD=55
+            elif [ "$PACKAGE_NAME" = "admin" ]; then
+              THRESHOLD=50
             fi
 
             # Check if below threshold
