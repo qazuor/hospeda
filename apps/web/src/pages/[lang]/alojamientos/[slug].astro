@@ -276,7 +276,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
 
         <ReviewPreview accommodation={accommodation} topReviews={topReviews} lang={locale}>
             <ReviewsModal
-                client:visible
+                client:idle
                 accommodationId={accommodation.id}
                 reviewsCount={accommodation.reviewsCount}
                 locale={locale}
