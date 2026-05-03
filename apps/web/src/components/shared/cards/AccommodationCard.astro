@@ -132,10 +132,12 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 					locale={locale}
 					isAuthenticated={isAuthenticated}
 				/>
-				<div class="acc-card__photo-count">
-					<GalleryIcon size={16} weight="fill" aria-hidden="true" />
-					<span>5</span>
-				</div>
+				{(data.photoCount ?? 0) > 0 && (
+					<div class="acc-card__photo-count">
+						<GalleryIcon size={16} weight="fill" aria-hidden="true" />
+						<span>{data.photoCount}</span>
+					</div>
+				)}
 			</div>
 		</div>
 

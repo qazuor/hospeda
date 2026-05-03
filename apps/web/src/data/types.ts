@@ -193,6 +193,13 @@ export interface AccommodationCardData {
      * Undefined when not returned by the API endpoint.
      */
     readonly bookmarkCount?: number;
+    /**
+     * Total number of photos (gallery + featured fallback). Derived from
+     * `media.gallery.length`; falls back to 1 when only `featuredImage` is
+     * present, and 0 when the accommodation has no media at all so the card
+     * can hide the photo-count badge.
+     */
+    readonly photoCount?: number;
 }
 
 /**

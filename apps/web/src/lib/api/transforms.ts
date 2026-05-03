@@ -171,13 +171,20 @@ export function toAccommodationCardProps({
     const city = cityName;
     const state = String(locationObj?.state || '');
 
-    const { featuredImage } = processEntityImages({
+    const { featuredImage, galleryUrls } = processEntityImages({
         item,
         entity: 'accommodation',
         id: String(item.id || ''),
         extract: true,
         fallback: '/images/placeholder-accommodation.svg'
     });
+
+    // photoCount: prefer gallery length; fall back to 1 if only the featured
+    // image is present (no gallery), or 0 when there is no real media so the
+    // card hides the badge instead of misleading the user.
+    const hasRealFeatured =
+        featuredImage.url.length > 0 && !featuredImage.url.includes('placeholder');
+    const photoCount = galleryUrls.length > 0 ? galleryUrls.length : hasRealFeatured ? 1 : 0;
 
     return {
         id: String(item.id || ''),
@@ -186,6 +193,7 @@ export function toAccommodationCardProps({
         summary: String(item.summary || item.description || ''),
         type: String(item.type || item.accommodationType || ''),
         featuredImage,
+        photoCount,
         averageRating: Number(item.averageRating || 0),
         reviewsCount: Number(item.reviewsCount || item.ratingCount || 0),
         location: { city, state },
