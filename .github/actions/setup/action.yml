@@ -28,3 +28,20 @@ runs:
     - name: Install dependencies
       shell: bash
       run: pnpm install --frozen-lockfile
+
+    # Workaround for npm/cli#4828: pnpm's restored store cache sometimes
+    # omits platform-specific optional dependencies (e.g. @rolldown's
+    # native bindings used by tanstack/start-vite-plugin in the admin
+    # app). The install reports success but later builds fail with
+    # "Cannot find native binding". When that happens, --force fetches
+    # everything from the registry and repopulates the missing bindings.
+    - name: Verify native bindings (npm/cli#4828 workaround)
+      shell: bash
+      run: |
+        binding_path=$(find node_modules/.pnpm -maxdepth 2 -type d -name '@rolldown+binding-*' 2>/dev/null | head -1)
+        if [ -z "$binding_path" ]; then
+          echo "::warning::No @rolldown/binding-* found in pnpm store, reinstalling with --force"
+          pnpm install --frozen-lockfile --force
+        else
+          echo "Found rolldown binding at: $binding_path"
+        fi
