@@ -35,14 +35,14 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/2351836/pexels-photo-2351836.jpeg",
+            "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
             "caption": "Cabaña en la naturaleza",
             "description": "Vista exterior de la cabaña con terraza y entorno natural",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/2351836/pexels-photo-2351836.jpeg",
+                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
                 "caption": "Exterior y terraza",
                 "description": "Cabaña con deck de madera y vistas",
                 "moderationState": "APPROVED"

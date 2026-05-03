@@ -35,14 +35,14 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/5476440/pexels-photo-5476440.jpeg",
+            "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
             "caption": "Área de fogón",
             "description": "Fogón comunitario en el camping",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/5476440/pexels-photo-5476440.jpeg",
+                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
                 "caption": "Fogón",
                 "description": "Zona de fogones comunitarios",
                 "moderationState": "APPROVED"

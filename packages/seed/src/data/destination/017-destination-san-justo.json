@@ -25,13 +25,13 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+            "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
             "caption": "Paisajes rurales de San Justo",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
                 "caption": "Campo entrerriano en San Justo",
                 "moderationState": "APPROVED"
             },

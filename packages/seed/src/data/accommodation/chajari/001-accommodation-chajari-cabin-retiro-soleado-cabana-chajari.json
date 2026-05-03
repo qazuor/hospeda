@@ -36,14 +36,14 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+            "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
             "caption": "Cabaña entre naranjos",
             "description": "Vista exterior de la cabaña rodeada de árboles cítricos",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
                 "caption": "Exterior de la cabaña",
                 "description": "Fachada de la cabaña de madera",
                 "moderationState": "APPROVED"
@@ -85,7 +85,7 @@
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/5997974/pexels-photo-5997974.jpeg",
+                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
                 "caption": "Quincho con asador",
                 "description": "Área exterior para asados y reuniones",
                 "moderationState": "APPROVED"

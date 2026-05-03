@@ -82,7 +82,7 @@ export type UploadSeedImageOutcome =
  * @example
  * ```ts
  * const outcome = await uploadSeedImage({
- *   originalUrl: 'https://images.pexels.com/photos/123/pexels-photo-123.jpeg',
+ *   originalUrl: 'https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg',
  *   entityType: 'accommodations',
  *   entityId: '004-accommodation-colon-cabin',
  *   role: 'featured',

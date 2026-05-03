@@ -14,18 +14,18 @@
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.unsplash.com/photo-1571182662976-32c8996d5d6c?w=800&h=600&fit=crop",
+                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
                 "caption": "Presentación de tango",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.unsplash.com/photo-1526652424804-b3c6ac88f9c1?w=800&h=600&fit=crop",
+                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
                 "caption": "Teatro Municipal",
                 "moderationState": "APPROVED"
             }
         ],
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1564494238164-8b7b2b6e4f2e?w=1200&h=600&fit=crop",
+            "url": "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&h=600&fit=crop",
             "caption": "Festival cultural en Concordia",
             "moderationState": "APPROVED"
         }

@@ -35,14 +35,14 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+            "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
             "caption": "Casa rústica en la naturaleza",
             "description": "Vista exterior de Nido Silvestre Country House",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la casa rústica",
                 "moderationState": "APPROVED"

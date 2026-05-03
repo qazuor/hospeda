@@ -34,14 +34,14 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+            "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
             "caption": "Cabaña luminosa",
             "description": "Vista exterior de la cabaña con ventanas grandes",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la cabaña",
                 "moderationState": "APPROVED"
