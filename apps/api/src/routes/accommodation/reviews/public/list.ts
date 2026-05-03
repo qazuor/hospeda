@@ -95,7 +95,8 @@ export const publicListAccommodationReviewsRoute = createPublicListRoute({
                     displayName: users.displayName,
                     firstName: users.firstName,
                     lastName: users.lastName,
-                    image: users.image
+                    image: users.image,
+                    profile: users.profile
                 })
                 .from(users)
                 .where(inArray(users.id, userIds));
@@ -106,7 +107,16 @@ export const publicListAccommodationReviewsRoute = createPublicListRoute({
                     (u.firstName && u.lastName
                         ? `${u.firstName} ${u.lastName.charAt(0)}.`
                         : (u.firstName ?? null));
-                userMap.set(u.id, { name, image: u.image ?? null });
+                // The dedicated `users.image` column is currently unpopulated
+                // for seeded users; the canonical avatar lives in
+                // `profile.avatar` (see `routes/user/public/getBySlug.ts`).
+                // Prefer `image` when present so social-login data still wins.
+                const profileAvatar =
+                    (u.profile as { avatar?: string | null } | null)?.avatar ?? null;
+                // Treat empty strings as null so the UI falls back to initials
+                // instead of attempting to render an empty <img src="">.
+                const image = u.image || profileAvatar || null;
+                userMap.set(u.id, { name, image });
             }
         }
 
