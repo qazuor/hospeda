@@ -132,12 +132,29 @@ describe('Rate Limit Middleware', () => {
         // Clear the rate limit store to ensure clean state between tests
         await clearRateLimitStore();
 
+        // Freeze Date.now() at a deterministic value so all requests in a
+        // single test fall in the same fixed window. The middleware computes
+        // windowStart = Math.floor(Date.now() / windowMs) * windowMs; without
+        // freezing, a slow CI runner that takes >1s to dispatch the request
+        // loop straddles a boundary, the counter resets, and the test's
+        // post-limit check unexpectedly returns 200. Real wall-clock waits
+        // are only needed for `should reset limits after window expires`,
+        // which advances the mocked clock manually.
+        vi.useFakeTimers({
+            now: new Date('2026-01-01T00:00:00.000Z').getTime(),
+            toFake: ['Date']
+        });
+
         app = new Hono();
         app.use('*', rateLimitMiddleware);
         app.get('/test', (c) => c.json({ message: 'success' }));
         app.post('/test', (c) => c.json({ message: 'posted' }));
         app.put('/test', (c) => c.json({ message: 'updated' }));
         app.delete('/test', (c) => c.json({ message: 'deleted' }));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     describe('Basic Rate Limiting', () => {
@@ -197,8 +214,8 @@ describe('Rate Limit Middleware', () => {
             });
             expect(res1.status).toBe(429);
 
-            // Wait for window to expire (1 second)
-            await new Promise((resolve) => setTimeout(resolve, 1100));
+            // Advance the mocked clock past the window boundary (1 second)
+            vi.setSystemTime(new Date(Date.now() + 1100));
 
             // Should allow requests again
             const res2 = await app.request('/test', {
