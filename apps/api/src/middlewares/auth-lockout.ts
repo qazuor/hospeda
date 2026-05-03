@@ -301,7 +301,12 @@ let activeStore: LockoutStore | undefined;
  */
 function getStore(): LockoutStore {
     if (!activeStore) {
-        const redisUrl = env.HOSPEDA_REDIS_URL;
+        // Read from process.env first so that tests can opt-in to the
+        // Redis path by setting the variable and calling resetLockoutStore()
+        // without having to re-run validateApiEnv(). The validated env value
+        // is the canonical source in production: at startup the two agree,
+        // and downstream code never mutates HOSPEDA_REDIS_URL at runtime.
+        const redisUrl = process.env.HOSPEDA_REDIS_URL ?? env.HOSPEDA_REDIS_URL;
         if (redisUrl) {
             activeStore = createRedisStore();
         } else {

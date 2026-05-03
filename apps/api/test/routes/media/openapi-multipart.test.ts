@@ -27,6 +27,10 @@ interface OpenApiDoc {
 describe('Media routes OpenAPI multipart documentation', () => {
     let doc: OpenApiDoc;
 
+    // initApp() boots the full Hono OpenAPI stack with auth, rate limit,
+    // metrics, validation, and route registration. On CI runners with cold
+    // disk caches and no local DB, the boot can exceed the default 10s
+    // hookTimeout. Bump per-hook to 30s.
     beforeAll(async () => {
         const app: AppOpenAPI = initApp();
         // The docs route flows through the standard middleware stack, which
@@ -43,7 +47,7 @@ describe('Media routes OpenAPI multipart documentation', () => {
         });
         expect(res.status).toBe(200);
         doc = (await res.json()) as OpenApiDoc;
-    });
+    }, 30_000);
 
     it('declares multipart/form-data on POST /api/v1/admin/media/upload', () => {
         const path = doc.paths?.['/api/v1/admin/media/upload'];

@@ -63,6 +63,13 @@ delete process.env.HOSPEDA_REDIS_URL;
 // environment.
 // biome-ignore lint/performance/noDelete: required to remove the variable from process so env validation sees it as unset
 delete process.env.CI;
+// Linear / Feedback integration is loaded eagerly at module init; without
+// a key the feedback route returns null linearIssueId regardless of how the
+// service is mocked. Provide a stable test value so the route's eager guard
+// (`if (!apiKey) return null`) does not short-circuit before the mocked
+// LinearFeedbackService is consulted.
+process.env.HOSPEDA_LINEAR_API_KEY = 'test_linear_api_key_placeholder';
+process.env.HOSPEDA_FEEDBACK_ENABLED = 'true';
 
 // Global test setup
 beforeAll(async () => {
