@@ -760,6 +760,14 @@ URL-segment pattern.. page 1 has no segment, page 2+ adds `/page/[page]/`:
 
 Shared React island at `src/components/shared/favorite/FavoriteButton.client.tsx`. Used in: AccommodationCard, EventCard, ArticleCard, DestinationCard, LocationMap popup, and detail headers. Exposes `entityType` + `entityId` props for polymorphic use. Includes guest popover and optimistic toggle UX.
 
+### MoveToCollectionModal
+
+React island at `src/components/account/MoveToCollectionModal.client.tsx`. Wired into `UserFavoritesList.client.tsx` (favorites page) via a per-card "Mover" button. Controlled modal: parent owns `bookmarkToMove` state, pre-selects the bookmark's current collection, and exposes a radio list of the user's collections plus a "Sin colección" option. On confirm it calls `userBookmarkCollectionsApi.addBookmark` / `removeBookmark` and emits `onSaved({ newCollectionId, newCollectionName })` so the parent can update local state + show a success toast. Test selectors: `data-testid="move-bookmark-button-{bookmarkId}"`, `move-bookmark-modal`, `move-bookmark-collection-option-{id|uncollected}`, `move-bookmark-confirm`.
+
+### CollectionDetailActions
+
+React island at `src/components/account/CollectionDetailActions.client.tsx`. Mounted with `client:load` from `pages/[lang]/mi-cuenta/favoritos/colecciones/[id].astro` to power the Edit + Delete buttons in the collection detail header. Edit reuses `CreateEditCollectionModal` in EDIT mode and reloads the page on save so the header reflects the new name/color/icon. Delete uses `window.confirm()` (MVP) and calls `userBookmarkCollectionsApi.delete`; on success it shows a success toast and redirects to `/{lang}/mi-cuenta/favoritos/`. Test selectors: `data-testid="collection-actions-edit"`, `collection-actions-delete`.
+
 ## Common Gotchas
 
 - **Locale param**: Access via `Astro.locals.locale` (validated by middleware), not `Astro.params.lang`
