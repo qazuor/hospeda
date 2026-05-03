@@ -54,6 +54,15 @@ process.env.HOSPEDA_TESTING_ORIGIN_VERIFICATION = '';
 // and the per-test setup is fully in control of the store selection.
 // biome-ignore lint/performance/noDelete: required to remove the variable from process so env validation sees it as unset
 delete process.env.HOSPEDA_REDIS_URL;
+// GitHub Actions sets CI=true on every runner. Several test-only guards in
+// the API source check for `env.CI !== 'true'` to refuse to enable mock
+// actors / disabled-auth shortcuts when running on a real CI pipeline with
+// production tokens. That guard is correct for live deployments but wrong
+// for the unit-test runner inside CI: there are no production tokens here,
+// only mocks. Strip the variable so the guards see this as a regular test
+// environment.
+// biome-ignore lint/performance/noDelete: required to remove the variable from process so env validation sees it as unset
+delete process.env.CI;
 
 // Global test setup
 beforeAll(async () => {

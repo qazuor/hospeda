@@ -74,9 +74,11 @@ describe('CORS Middleware', () => {
         });
 
         it('should handle wildcard origin configuration', async () => {
-            // Test with custom config instead of dynamic mock
+            // Hono cors refuses to emit `Access-Control-Allow-Origin: *`
+            // when credentials are enabled (the spec forbids the combo).
+            // Pass credentials: false explicitly together with origin: '*'.
             const wildcardApp = new Hono();
-            wildcardApp.use(createCorsMiddleware({ origin: '*' }));
+            wildcardApp.use(createCorsMiddleware({ origin: '*', credentials: false }));
             wildcardApp.get('/test', (c) => c.json({ message: 'success' }));
 
             const res = await wildcardApp.request('/test', {
