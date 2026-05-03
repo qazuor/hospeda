@@ -60,7 +60,7 @@
 }
 
 .entityLink:hover {
-    color: var(--primary);
+    color: var(--brand-primary);
 }
 
 .entityName {
@@ -155,7 +155,7 @@
 
 .pageBtn:hover:not(:disabled) {
     background-color: var(--surface-warm);
-    border-color: var(--primary);
+    border-color: var(--brand-primary);
 }
 
 .pageBtn:disabled {

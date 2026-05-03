@@ -33,7 +33,7 @@
 }
 
 .btn:focus-visible {
-    outline: 3px solid var(--primary);
+    outline: 3px solid var(--brand-primary);
     outline-offset: 2px;
 }
 

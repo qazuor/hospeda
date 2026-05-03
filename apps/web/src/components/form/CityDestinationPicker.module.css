@@ -117,7 +117,7 @@
 }
 
 .notFoundLink:hover {
-    color: var(--primary);
+    color: var(--brand-primary);
 }
 
 .fieldError {

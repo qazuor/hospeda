@@ -192,8 +192,8 @@
 
 .input:focus,
 .textarea:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px oklch(from var(--primary) l c h / 0.15);
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.15);
 }
 
 .input.inputError {
@@ -321,8 +321,8 @@
 }
 
 .iconBtn:hover {
-    border-color: var(--primary);
-    color: var(--primary);
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
     transform: scale(1.05);
 }
 
@@ -332,10 +332,10 @@
 }
 
 .iconBtnSelected {
-    border-color: var(--primary);
-    color: var(--primary);
-    background-color: oklch(from var(--primary) l c h / 0.08);
-    box-shadow: 0 0 0 2px oklch(from var(--primary) l c h / 0.2);
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+    background-color: oklch(from var(--brand-primary) l c h / 0.08);
+    box-shadow: 0 0 0 2px oklch(from var(--brand-primary) l c h / 0.2);
 }
 
 /* "Sin ícono" button: slightly wider to fit the label text */
@@ -373,7 +373,7 @@
 
 .cancelBtn:hover {
     background-color: var(--surface-warm);
-    border-color: var(--primary);
+    border-color: var(--brand-primary);
 }
 
 .cancelBtn:focus-visible {
@@ -383,7 +383,7 @@
 
 .submitBtn {
     padding: var(--space-2, 8px) var(--space-5, 20px);
-    background-color: var(--primary);
+    background-color: var(--brand-primary);
     color: white;
     border: none;
     border-radius: var(--radius-button, 8px);

@@ -29,7 +29,7 @@ interface CollectionCardProps {
 
 // ─── Default color ─────────────────────────────────────────────────────────
 
-const DEFAULT_COLOR = 'var(--primary)';
+const DEFAULT_COLOR = 'var(--brand-primary)';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 

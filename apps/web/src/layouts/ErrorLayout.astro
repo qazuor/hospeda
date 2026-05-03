@@ -94,7 +94,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).hr
 			.err500-subtitle { font-family: var(--font-sans); font-size: 1rem; color: var(--muted-foreground); line-height: 1.6; margin: 0.25rem 0 0; max-width: 44ch; }
 			.err500-actions { display: flex; align-items: center; gap: 0.75rem; margin-top: 1.5rem; flex-wrap: wrap; justify-content: center; }
 			.err500-home-link { display: inline-block; font-family: var(--font-sans); font-size: 0.875rem; color: var(--muted-foreground); text-decoration: none; margin-top: 1rem; transition: color 0.2s ease; }
-			.err500-home-link:hover { color: var(--primary); text-decoration: underline; }
+			.err500-home-link:hover { color: var(--brand-primary); text-decoration: underline; }
 			.err500-dev { width: 100%; max-width: 480px; margin-top: 2rem; text-align: left; }
 			.err500-dev__summary { font-family: var(--font-sans); font-size: 0.875rem; color: var(--muted-foreground); cursor: pointer; user-select: none; padding: 0.5rem; border-radius: var(--radius-button, 8px); }
 			.err500-dev__summary:hover { background-color: oklch(from var(--destructive, #ef4444) l c h / 0.06); }

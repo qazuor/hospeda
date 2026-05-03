@@ -150,12 +150,12 @@
 
 .radioRow:hover {
     background-color: var(--surface-warm);
-    border-color: var(--primary);
+    border-color: var(--brand-primary);
 }
 
 .radioRowSelected {
-    background-color: oklch(from var(--primary) l c h / 0.06);
-    border-color: var(--primary);
+    background-color: oklch(from var(--brand-primary) l c h / 0.06);
+    border-color: var(--brand-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -201,8 +201,8 @@
 
 /* Checked state — driven by the sibling input */
 .radioInput:checked + .radioIndicator {
-    border-color: var(--primary);
-    background-color: var(--primary);
+    border-color: var(--brand-primary);
+    background-color: var(--brand-primary);
     box-shadow: inset 0 0 0 3px var(--background);
 }
 
@@ -266,8 +266,8 @@
     min-width: 22px;
     padding: 0 var(--space-1, 4px);
     height: 20px;
-    background-color: oklch(from var(--primary) l c h / 0.1);
-    color: var(--primary);
+    background-color: oklch(from var(--brand-primary) l c h / 0.1);
+    color: var(--brand-primary);
     border-radius: var(--radius-pill, 9999px);
     font-family: var(--font-sans);
     font-size: 0.75rem;
@@ -286,7 +286,7 @@
     background: none;
     border: 1px dashed var(--border);
     border-radius: var(--radius-button, 8px);
-    color: var(--primary);
+    color: var(--brand-primary);
     font-family: var(--font-sans);
     font-size: 0.9375rem;
     font-weight: 500;
@@ -296,8 +296,8 @@
 }
 
 .newCollectionBtn:hover:not(:disabled) {
-    background-color: oklch(from var(--primary) l c h / 0.06);
-    border-color: var(--primary);
+    background-color: oklch(from var(--brand-primary) l c h / 0.06);
+    border-color: var(--brand-primary);
     border-style: solid;
 }
 
@@ -347,7 +347,7 @@
 
 .cancelBtn:hover {
     background-color: var(--surface-warm);
-    border-color: var(--primary);
+    border-color: var(--brand-primary);
 }
 
 .cancelBtn:focus-visible {
@@ -360,7 +360,7 @@
     align-items: center;
     gap: var(--space-2, 8px);
     padding: var(--space-2, 8px) var(--space-5, 20px);
-    background-color: var(--primary);
+    background-color: var(--brand-primary);
     color: white;
     border: none;
     border-radius: var(--radius-button, 8px);

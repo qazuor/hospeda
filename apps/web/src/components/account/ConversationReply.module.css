@@ -40,8 +40,8 @@
 
 .textarea:focus {
     outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px oklch(from var(--primary) l c h / 0.15);
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 2px oklch(from var(--brand-primary) l c h / 0.15);
 }
 
 .textareaError {
@@ -99,8 +99,8 @@
     font-family: var(--font-sans);
     font-size: 0.85rem;
     color: var(--foreground);
-    background-color: oklch(from var(--primary) l c h / 0.1);
-    border: 1px solid oklch(from var(--primary) l c h / 0.3);
+    background-color: oklch(from var(--brand-primary) l c h / 0.1);
+    border: 1px solid oklch(from var(--brand-primary) l c h / 0.3);
     border-radius: var(--radius-button, 8px);
     padding: var(--space-2, 8px) var(--space-3, 12px);
     margin: 0;

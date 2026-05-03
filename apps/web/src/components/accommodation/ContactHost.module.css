@@ -43,8 +43,8 @@
 .input:focus,
 .textarea:focus {
     outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px oklch(from var(--primary) l c h / 0.15);
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 2px oklch(from var(--brand-primary) l c h / 0.15);
 }
 
 .textarea {
@@ -108,8 +108,8 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
     color: var(--foreground);
-    background-color: oklch(from var(--primary) l c h / 0.1);
-    border: 1px solid oklch(from var(--primary) l c h / 0.3);
+    background-color: oklch(from var(--brand-primary) l c h / 0.1);
+    border: 1px solid oklch(from var(--brand-primary) l c h / 0.3);
     border-radius: var(--radius-button, 8px);
     padding: var(--space-3, 12px);
     margin: 0;
@@ -152,9 +152,9 @@
     font-family: var(--font-sans);
     font-size: 0.8rem;
     font-weight: 500;
-    color: var(--primary);
+    color: var(--brand-primary);
     background: transparent;
-    border: 1px solid var(--primary);
+    border: 1px solid var(--brand-primary);
     border-radius: var(--radius-button, 8px);
     padding: var(--space-2, 8px) var(--space-3, 12px);
     cursor: pointer;
@@ -163,7 +163,7 @@
 }
 
 .secondaryButton:hover {
-    background-color: oklch(from var(--primary) l c h / 0.08);
+    background-color: oklch(from var(--brand-primary) l c h / 0.08);
 }
 
 .viewExistingLink {
@@ -171,11 +171,11 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--primary);
+    color: var(--brand-primary);
     text-decoration: underline;
     transition: color var(--duration-fast, 0.2s) ease;
 }
 
 .viewExistingLink:hover {
-    color: oklch(from var(--primary) calc(l - 0.05) c h);
+    color: oklch(from var(--brand-primary) calc(l - 0.05) c h);
 }

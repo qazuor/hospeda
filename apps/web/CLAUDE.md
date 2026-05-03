@@ -199,8 +199,8 @@ This app uses **semantic CSS** with three layers:
 
 1. **NEVER hardcode colors, spacing, shadows, or radii.** Use CSS custom properties from `global.css` (e.g., `var(--accent)`, `var(--space-6)`)
 2. **NEVER use uniform border-radius on cards/images.** Use organic asymmetric shapes (`var(--radius-organic)`)
-3. **ALWAYS use semantic token names** (`var(--primary)`, `var(--muted-foreground)`), never raw color values
-4. **ALWAYS alternate section backgrounds** between `var(--background)` and `var(--surface-warm)`
+3. **ALWAYS use semantic token names** (`var(--brand-primary)`, `var(--core-muted-foreground)`), never raw color values
+4. **ALWAYS alternate section backgrounds** between `var(--core-background)` and `var(--surface-warm)`
 5. **Dark mode must work automatically.** If you use tokens, it does. If you hardcode, it breaks
 6. **Astro components**: Use scoped `<style>` with BEM-lite class names
 7. **React islands**: Use CSS Modules (`.module.css`) co-located with the component
@@ -209,14 +209,22 @@ This app uses **semantic CSS** with three layers:
 
 ```css
 /* Colors (use as var(--token-name)) */
---background           /* Page background */
---card                 /* Card surfaces */
---surface-warm         /* Peach-tinted sections */
---surface-dark         /* Dark sections, footer */
---accent               /* CTA buttons, highlights (orange) */
---primary              /* Primary brand (blue) */
---foreground           /* Primary text */
---muted-foreground     /* Secondary text */
+/* IMPORTANT: prefixes are deliberate. Aliases like `--primary`, `--accent`,
+ * `--background` etc. DO NOT exist — using them resolves to the CSS initial
+ * value (transparent / inherited) and silently breaks dark mode. The full
+ * list lives in `src/styles/global.css`. */
+--core-background          /* Page background */
+--core-foreground          /* Primary text */
+--core-card                /* Card surfaces */
+--core-muted-foreground    /* Secondary text */
+--surface-warm             /* Peach-tinted sections */
+--surface-dark             /* Dark sections, footer */
+--brand-primary            /* Primary brand (blue) */
+--brand-accent             /* CTA buttons, highlights (orange) */
+--brand-secondary          /* Secondary brand surfaces */
+--brand-tertiary           /* Tertiary brand surfaces (green tint) */
+--primary-foreground       /* Text on brand-primary */
+--accent-foreground        /* Text on brand-accent */
 
 /* Shapes */
 --radius-organic       /* 0px 100px - signature asymmetric radius */
@@ -510,10 +518,10 @@ Use `src/lib/colors.ts` for mapping categories, types, and tags to CSS values (a
 import { getEventCategoryColor, getAccommodationTypeColor } from '@/lib/colors';
 
 const categoryColors = getEventCategoryColor('cultural');
-// { bg: 'oklch(from var(--accent) l c h / 0.15)', text: 'var(--accent)', border: 'oklch(from var(--accent) l c h / 0.30)' }
+// { bg: 'oklch(from var(--brand-accent) l c h / 0.15)', text: 'var(--brand-accent)', border: 'oklch(from var(--brand-accent) l c h / 0.30)' }
 
 const typeColors = getAccommodationTypeColor('hotel');
-// { bg: 'oklch(from var(--primary) l c h / 0.15)', text: 'var(--primary)', border: 'oklch(from var(--primary) l c h / 0.30)' }
+// { bg: 'oklch(from var(--brand-primary) l c h / 0.15)', text: 'var(--brand-primary)', border: 'oklch(from var(--brand-primary) l c h / 0.30)' }
 ```
 
 Apply via inline style: `style={\`background-color: ${colors.bg}; color: ${colors.text};\`}`

@@ -181,7 +181,7 @@ const { tiles, sectionTitle, sectionTagline } = Astro.props;
     .category-tiles__visual {
         position: relative;
         height: 140px;
-        background-color: oklch(from var(--primary) l c h / 0.08);
+        background-color: oklch(from var(--brand-primary) l c h / 0.08);
         overflow: hidden;
         border-radius: var(--radius-organic, 0px 100px) var(--radius-organic, 0px 100px) 0 0;
     }
@@ -202,7 +202,7 @@ const { tiles, sectionTitle, sectionTagline } = Astro.props;
         align-items: center;
         justify-content: center;
         height: 100%;
-        color: var(--primary);
+        color: var(--brand-primary);
     }
 
     .category-tiles__icon-placeholder {
@@ -210,7 +210,7 @@ const { tiles, sectionTitle, sectionTagline } = Astro.props;
         background: linear-gradient(
             135deg,
             oklch(from var(--accent) l c h / 0.15) 0%,
-            oklch(from var(--primary) l c h / 0.12) 100%
+            oklch(from var(--brand-primary) l c h / 0.12) 100%
         );
     }
 
