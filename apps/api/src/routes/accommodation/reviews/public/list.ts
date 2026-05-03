@@ -12,6 +12,7 @@ import {
 import { AccommodationReviewService, ServiceError } from '@repo/service-core';
 import { inArray } from 'drizzle-orm';
 import type { Context } from 'hono';
+import { z } from 'zod';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../../utils/pagination';
@@ -22,6 +23,22 @@ interface PublicUserInfo {
     readonly name: string | null;
     readonly image: string | null;
 }
+
+/**
+ * Response shape for this endpoint: review fields + a deliberately-narrower
+ * user projection (name + image) so we can batch-enrich without exposing the
+ * full UserPublicSchema. The route-factory strips the response against this
+ * schema at runtime (SPEC-087), so it MUST match what the handler returns.
+ */
+const PublicReviewWithUserSchema = AccommodationReviewPublicSchema.omit({
+    user: true,
+    accommodation: true
+}).extend({
+    user: z.object({
+        name: z.string().nullable(),
+        image: z.string().nullable()
+    })
+});
 
 /**
  * GET /api/v1/public/accommodations/:accommodationId/reviews
@@ -37,7 +54,7 @@ export const publicListAccommodationReviewsRoute = createPublicListRoute({
         accommodationId: AccommodationIdSchema
     },
     requestQuery: AccommodationReviewsByAccommodationHttpSchema.shape,
-    responseSchema: AccommodationReviewPublicSchema,
+    responseSchema: PublicReviewWithUserSchema,
     handler: async (ctx: Context, params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
@@ -94,11 +111,10 @@ export const publicListAccommodationReviewsRoute = createPublicListRoute({
         }
 
         // AC-005: strip admin-only fields (lifecycleState, audit fields, adminInfo)
-        // via AccommodationReviewPublicSchema before the response leaves the public
-        // tier. The route factory only uses responseSchema for OpenAPI docs, not
-        // runtime validation, so the strip must happen here. The user relation has
-        // a custom safe shape (PublicUserInfo) that does not match UserPublicSchema,
-        // so it is attached AFTER the strip. Tracked systemically in SPEC-087.
+        // before the response leaves the public tier. The route factory now
+        // strips the final payload against `PublicReviewWithUserSchema` at
+        // runtime (SPEC-087), which already matches the deliberately-narrow
+        // user projection used here.
         const ReviewWithoutRelations = AccommodationReviewPublicSchema.omit({
             user: true,
             accommodation: true
