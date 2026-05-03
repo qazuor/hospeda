@@ -41,7 +41,7 @@
         "admin#build": {
             "dependsOn": ["^build"],
             "inputs": ["$TURBO_DEFAULT$", ".env*"],
-            "outputs": [".output/**", ".tanstack/**", ".vercel/output/**"]
+            "outputs": [".output/**", ".tanstack/**", ".vercel/output/**", "src/routeTree.gen.ts"]
         },
         "lint": {
             "outputs": []
