@@ -1,6 +1,6 @@
 # TODOs: Favorites & Collections MVP
 
-Spec: SPEC-098 | Status: in_progress | Progress: 4/104
+Spec: SPEC-098 | Status: completed | Progress: 110/110
 
 ---
 
@@ -15,176 +15,176 @@ Spec: SPEC-098 | Status: in_progress | Progress: 4/104
 
 ## Phase 1 — Core: DB foundation (10 tasks)
 
-- [ ] T-005: Create user_bookmark_collections Drizzle schema (complexity: 3)
-- [ ] T-006: Add collectionId nullable FK column to user_bookmarks schema (complexity: 2) [blocked by T-005]
-- [ ] T-007: Add Drizzle relations for collections and bookmarks (complexity: 2) [blocked by T-005, T-006]
-- [ ] T-008: Write manual SQL for collection indexes and partial unique constraint (complexity: 2) [blocked by T-005, T-007]
-- [ ] T-009: Write manual SQL for user_bookmarks entity performance index (complexity: 1) [blocked by T-006, T-008]
-- [ ] T-010: Update apply-postgres-extras.sh to include new manual SQL files (complexity: 2) [blocked by T-008, T-009]
-- [ ] T-011a: Create UserBookmarkCollectionModel class skeleton (complexity: 2) [blocked by T-010]
-- [ ] T-011b: Implement CRUD methods on UserBookmarkCollectionModel (complexity: 3) [blocked by T-011a]
-- [ ] T-011c: Implement listByUser method with optional bookmark count on UserBookmarkCollectionModel (complexity: 3) [blocked by T-011b]
-- [ ] T-012: Add checkBookmarksBulk query method to UserBookmarkModel (complexity: 3) [blocked by T-010]
+- [x] T-005: Create user_bookmark_collections Drizzle schema (complexity: 3)
+- [x] T-006: Add collectionId nullable FK column to user_bookmarks schema (complexity: 2) [blocked by T-005]
+- [x] T-007: Add Drizzle relations for collections and bookmarks (complexity: 2) [blocked by T-005, T-006]
+- [x] T-008: Write manual SQL for collection indexes and partial unique constraint (complexity: 2) [blocked by T-005, T-007]
+- [x] T-009: Write manual SQL for user_bookmarks entity performance index (complexity: 1) [blocked by T-006, T-008]
+- [x] T-010: Update apply-postgres-extras.sh to include new manual SQL files (complexity: 2) [blocked by T-008, T-009]
+- [x] T-011a: Create UserBookmarkCollectionModel class skeleton (complexity: 2) [blocked by T-010]
+- [x] T-011b: Implement CRUD methods on UserBookmarkCollectionModel (complexity: 3) [blocked by T-011a]
+- [x] T-011c: Implement listByUser method with optional bookmark count on UserBookmarkCollectionModel (complexity: 3) [blocked by T-011b]
+- [x] T-012: Add checkBookmarksBulk query method to UserBookmarkModel (complexity: 3) [blocked by T-010]
 
 ---
 
 ## Phase 2 — Core: Schemas + Permissions (6 tasks)
 
-- [ ] T-013: Create UserBookmarkCollection base and entity Zod schemas (complexity: 3) [blocked by T-011c]
-- [ ] T-014: Create UserBookmarkCollection CRUD Zod schemas (create, update) (complexity: 2) [blocked by T-013]
-- [ ] T-015: Create UserBookmarkCollection query, http, access, and params schemas (complexity: 3) [blocked by T-013, T-014]
-- [ ] T-016: Add BulkCheckInputSchema and BulkCheckResultSchema to userBookmark http schemas (complexity: 2) [blocked by T-012, T-015]
-- [ ] T-017: Add 5 USER_BOOKMARK_COLLECTION permissions to permission enum (complexity: 1) [blocked by T-016]
-- [ ] T-018: Add role-permission assignments for collection permissions (complexity: 2) [blocked by T-017]
+- [x] T-013: Create UserBookmarkCollection base and entity Zod schemas (complexity: 3) [blocked by T-011c]
+- [x] T-014: Create UserBookmarkCollection CRUD Zod schemas (create, update) (complexity: 2) [blocked by T-013]
+- [x] T-015: Create UserBookmarkCollection query, http, access, and params schemas (complexity: 3) [blocked by T-013, T-014]
+- [x] T-016: Add BulkCheckInputSchema and BulkCheckResultSchema to userBookmark http schemas (complexity: 2) [blocked by T-012, T-015]
+- [x] T-017: Add 5 USER_BOOKMARK_COLLECTION permissions to permission enum (complexity: 1) [blocked by T-016]
+- [x] T-018: Add role-permission assignments for collection permissions (complexity: 2) [blocked by T-017]
 
 ---
 
 ## Phase 3 — Core: Config + Services (10 tasks)
 
-- [ ] T-025: Register HOSPEDA_MAX_COLLECTIONS_PER_USER env var in packages/config (complexity: 2) [no deps — repurposed from old enforceCollectionsLimit middleware task]
-- [ ] T-019: Create UserBookmarkCollectionService skeleton extending BaseCrudService (complexity: 3) [blocked by T-014, T-015, T-017, T-018]
-- [ ] T-020a: Implement countActiveCollections service method (complexity: 2) [blocked by T-019]
-- [ ] T-020b: Implement createCollection service method (complexity: 3) [blocked by T-020a]
-- [ ] T-CL2: Implement _canCreate limit guard in UserBookmarkCollectionService (complexity: 3) [blocked by T-025, T-020a]
-- [ ] T-021: Implement listCollectionsByUser service method (complexity: 3) [blocked by T-019]
-- [ ] T-022a: Implement getCollectionById service method (complexity: 3) [blocked by T-019]
-- [ ] T-022b: Implement updateCollection service method (complexity: 3) [blocked by T-022a]
-- [ ] T-023: Implement deleteCollection service method (complexity: 3) [blocked by T-019]
-- [ ] T-024: Implement addBookmarkToCollection and removeBookmarkFromCollection methods (complexity: 3) [blocked by T-019]
-- [ ] T-034: Add checkBookmarksBulk and updateBookmark methods to UserBookmarkService (complexity: 3) [blocked by T-016]
+- [x] T-025: Register HOSPEDA_MAX_COLLECTIONS_PER_USER env var in packages/config (complexity: 2) [no deps — repurposed from old enforceCollectionsLimit middleware task]
+- [x] T-019: Create UserBookmarkCollectionService skeleton extending BaseCrudService (complexity: 3) [blocked by T-014, T-015, T-017, T-018]
+- [x] T-020a: Implement countActiveCollections service method (complexity: 2) [blocked by T-019]
+- [x] T-020b: Implement createCollection service method (complexity: 3) [blocked by T-020a]
+- [x] T-CL2: Implement _canCreate limit guard in UserBookmarkCollectionService (complexity: 3) [blocked by T-025, T-020a]
+- [x] T-021: Implement listCollectionsByUser service method (complexity: 3) [blocked by T-019]
+- [x] T-022a: Implement getCollectionById service method (complexity: 3) [blocked by T-019]
+- [x] T-022b: Implement updateCollection service method (complexity: 3) [blocked by T-022a]
+- [x] T-023: Implement deleteCollection service method (complexity: 3) [blocked by T-019]
+- [x] T-024: Implement addBookmarkToCollection and removeBookmarkFromCollection methods (complexity: 3) [blocked by T-019]
+- [x] T-034: Add checkBookmarksBulk and updateBookmark methods to UserBookmarkService (complexity: 3) [blocked by T-016]
 
 ---
 
 ## Phase 4 — Core: Routes (9 tasks)
 
-- [ ] T-026: Implement POST /protected/user-bookmark-collections route (complexity: 3) [blocked by T-016]
-- [ ] T-027: Implement GET /protected/user-bookmark-collections (list) route (complexity: 2) [blocked by T-016]
-- [ ] T-CL3: Extend GET /user-bookmark-collections list response with usage block (complexity: 3) [blocked by T-027, T-CL2]
-- [ ] T-028: Create GET /public/user-bookmarks/count endpoint from scratch (complexity: 3) [blocked by T-004]
-- [ ] T-029: Implement GET /protected/user-bookmark-collections/:id route (complexity: 3) [blocked by T-026, T-027]
-- [ ] T-030: Implement PATCH and DELETE /protected/user-bookmark-collections/:id routes (complexity: 3) [blocked by T-029]
-- [ ] T-031: Implement POST and DELETE /user-bookmark-collections/:id/bookmarks/:bookmarkId routes (complexity: 3) [blocked by T-030]
-- [ ] T-032: Implement PATCH /protected/user-bookmarks/:id (notes update) route (complexity: 2) [blocked by T-016]
-- [ ] T-033: Implement POST /protected/user-bookmarks/check-bulk route (complexity: 3) [blocked by T-001, T-016]
+- [x] T-026: Implement POST /protected/user-bookmark-collections route (complexity: 3) [blocked by T-016]
+- [x] T-027: Implement GET /protected/user-bookmark-collections (list) route (complexity: 2) [blocked by T-016]
+- [x] T-CL3: Extend GET /user-bookmark-collections list response with usage block (complexity: 3) [blocked by T-027, T-CL2]
+- [x] T-028: Create GET /public/user-bookmarks/count endpoint from scratch (complexity: 3) [blocked by T-004]
+- [x] T-029: Implement GET /protected/user-bookmark-collections/:id route (complexity: 3) [blocked by T-026, T-027]
+- [x] T-030: Implement PATCH and DELETE /protected/user-bookmark-collections/:id routes (complexity: 3) [blocked by T-029]
+- [x] T-031: Implement POST and DELETE /user-bookmark-collections/:id/bookmarks/:bookmarkId routes (complexity: 3) [blocked by T-030]
+- [x] T-032: Implement PATCH /protected/user-bookmarks/:id (notes update) route (complexity: 2) [blocked by T-016]
+- [x] T-033: Implement POST /protected/user-bookmarks/check-bulk route (complexity: 3) [blocked by T-001, T-016]
 
 ---
 
 ## Phase 5 — Core: i18n (3 tasks)
 
-- [ ] T-035: Add i18n keys to account.json for favorites (es, en, pt) (complexity: 3)
-- [ ] T-036: Add sort.mostSaved i18n key to accommodations.json (es, en, pt) (complexity: 1) [blocked by T-035]
-- [ ] T-i18n-CL: Add collection limit i18n keys to account.json (es, en, pt) (complexity: 1) [blocked by T-035]
+- [x] T-035: Add i18n keys to account.json for favorites (es, en, pt) (complexity: 3)
+- [x] T-036: Add sort.mostSaved i18n key to accommodations.json (es, en, pt) (complexity: 1) [blocked by T-035]
+- [x] T-i18n-CL: Add collection limit i18n keys to account.json (es, en, pt) (complexity: 1) [blocked by T-035]
 
 ---
 
 ## Phase 6 — Core: Seed data (6 tasks)
 
-- [ ] T-S01: Audit bookmark seed data structure for collectionId field addition (complexity: 1)
-- [ ] T-S02: Create example seed JSON files for user_bookmark_collections (complexity: 2) [blocked by T-S01]
-- [ ] T-S03: Create userBookmarkCollections.seed.ts using createSeedFactory pattern (complexity: 3) [blocked by T-S02]
-- [ ] T-S04: Update bookmark JSON files and seed to add collectionId field on subset (complexity: 3) [blocked by T-S01, T-S03]
-- [ ] T-S05: Register userBookmarkCollections seed in index.ts and manifest-example.json (complexity: 2) [blocked by T-S03, T-S04]
+- [x] T-S01: Audit bookmark seed data structure for collectionId field addition (complexity: 1)
+- [x] T-S02: Create example seed JSON files for user_bookmark_collections (complexity: 2) [blocked by T-S01]
+- [x] T-S03: Create userBookmarkCollections.seed.ts using createSeedFactory pattern (complexity: 3) [blocked by T-S02]
+- [x] T-S04: Update bookmark JSON files and seed to add collectionId field on subset (complexity: 3) [blocked by T-S01, T-S03]
+- [x] T-S05: Register userBookmarkCollections seed in index.ts and manifest-example.json (complexity: 2) [blocked by T-S03, T-S04]
 
 ---
 
 ## Phase 7 — Integration: FavoriteButton foundation (5 tasks)
 
-- [ ] T-038a: Create FavoriteButton.client.tsx skeleton with props interface (complexity: 2) [blocked by T-002]
-- [ ] T-038b: Wire auth detection and AuthRequiredPopover into FavoriteButton (complexity: 2) [blocked by T-038a]
-- [ ] T-038c: Style FavoriteButton with CSS module and count pill (complexity: 2) [blocked by T-038b]
-- [ ] T-039a: Wire FavoriteButton toggle API calls (POST/DELETE bookmark) (complexity: 3) [blocked by T-035, T-038c]
-- [ ] T-039b: Wire FavoriteButton single-check fallback on mount (complexity: 2) [blocked by T-039a]
+- [x] T-038a: Create FavoriteButton.client.tsx skeleton with props interface (complexity: 2) [blocked by T-002]
+- [x] T-038b: Wire auth detection and AuthRequiredPopover into FavoriteButton (complexity: 2) [blocked by T-038a]
+- [x] T-038c: Style FavoriteButton with CSS module and count pill (complexity: 2) [blocked by T-038b]
+- [x] T-039a: Wire FavoriteButton toggle API calls (POST/DELETE bookmark) (complexity: 3) [blocked by T-035, T-038c]
+- [x] T-039b: Wire FavoriteButton single-check fallback on mount (complexity: 2) [blocked by T-039a]
 
 ---
 
 ## Phase 8 — Integration: DestinationCard extraction (4 tasks) [NEW]
 
-- [ ] T-DC1: Create DestinationCard.astro mirroring AccommodationCard layout (complexity: 3) [blocked by T-038c]
-- [ ] T-DC2: Refactor destinos/index.astro to use DestinationCard.astro (complexity: 2) [blocked by T-DC1]
-- [ ] T-DC3: Refactor DestinationsIsland.client.tsx card JSX to match DestinationCard structure (complexity: 3) [blocked by T-DC1]
-- [ ] T-DC4: Visual smoke test destination card carousel and listing parity (complexity: 1) [blocked by T-DC2, T-DC3]
+- [x] T-DC1: Create DestinationCard.astro mirroring AccommodationCard layout (complexity: 3) [blocked by T-038c]
+- [x] T-DC2: Refactor destinos/index.astro to use DestinationCard.astro (complexity: 2) [blocked by T-DC1]
+- [x] T-DC3: Refactor DestinationsIsland.client.tsx card JSX to match DestinationCard structure (complexity: 3) [blocked by T-DC1]
+- [x] T-DC4: Visual smoke test destination card carousel and listing parity (complexity: 1) [blocked by T-DC2, T-DC3]
 
 ---
 
 ## Phase 9 — Integration: Card coverage + map + detail headers (8 tasks)
 
-- [ ] T-040: Integrate FavoriteButton into AccommodationCard.astro (complexity: 3) [blocked by T-039b]
-- [ ] T-041: Implement bulk-check fetch on /alojamientos listing page (complexity: 3) [blocked by T-039b]
-- [ ] T-042: Integrate FavoriteButton into EventCard, ArticleCard components (complexity: 3) [blocked by T-036, T-040]
-- [ ] T-043: Integrate FavoriteButton into DestinationsIsland.client.tsx (complexity: 2) [blocked by T-DC1, T-040]
-- [ ] T-044: Integrate FavoriteButton into LocationMap.client.tsx popup (complexity: 3) [blocked by T-DC1, T-026, T-027, T-028, T-031, T-032, T-033, T-034, T-040, T-041, T-042, T-043]
-- [ ] T-045: Integrate FavoriteButton and counter into accommodation DetailHeader.astro (complexity: 3) [blocked by T-044]
-- [ ] T-046: Integrate FavoriteButton and counter into destination, event, post detail headers (complexity: 3) [blocked by T-045]
-- [ ] T-052: Add Most Saved sort option to alojamientos, eventos, and publicaciones listings (complexity: 3) [blocked by T-036]
+- [x] T-040: Integrate FavoriteButton into AccommodationCard.astro (complexity: 3) [blocked by T-039b]
+- [x] T-041: Implement bulk-check fetch on /alojamientos listing page (complexity: 3) [blocked by T-039b]
+- [x] T-042: Integrate FavoriteButton into EventCard, ArticleCard components (complexity: 3) [blocked by T-036, T-040]
+- [x] T-043: Integrate FavoriteButton into DestinationsIsland.client.tsx (complexity: 2) [blocked by T-DC1, T-040]
+- [x] T-044: Integrate FavoriteButton into LocationMap.client.tsx popup (complexity: 3) [blocked by T-DC1, T-026, T-027, T-028, T-031, T-032, T-033, T-034, T-040, T-041, T-042, T-043]
+- [x] T-045: Integrate FavoriteButton and counter into accommodation DetailHeader.astro (complexity: 3) [blocked by T-044]
+- [x] T-046: Integrate FavoriteButton and counter into destination, event, post detail headers (complexity: 3) [blocked by T-045]
+- [x] T-052: Add Most Saved sort option to alojamientos, eventos, and publicaciones listings (complexity: 3) [blocked by T-036]
 
 ---
 
 ## Phase 10 — Integration: Modals (5 tasks)
 
-- [ ] T-047a: Create CreateEditCollectionModal.client.tsx skeleton and form fields (complexity: 2) [blocked by T-046]
-- [ ] T-047b: Add color picker and icon picker to CreateEditCollectionModal (complexity: 2) [blocked by T-047a]
-- [ ] T-047c: Wire CreateEditCollectionModal API calls and error handling (complexity: 3) [blocked by T-047b]
-- [ ] T-048a: Create MoveToCollectionModal.client.tsx skeleton with collection list (complexity: 2) [blocked by T-047c]
-- [ ] T-048b: Wire MoveToCollectionModal API calls and inline create form (complexity: 3) [blocked by T-048a]
+- [x] T-047a: Create CreateEditCollectionModal.client.tsx skeleton and form fields (complexity: 2) [blocked by T-046]
+- [x] T-047b: Add color picker and icon picker to CreateEditCollectionModal (complexity: 2) [blocked by T-047a]
+- [x] T-047c: Wire CreateEditCollectionModal API calls and error handling (complexity: 3) [blocked by T-047b]
+- [x] T-048a: Create MoveToCollectionModal.client.tsx skeleton with collection list (complexity: 2) [blocked by T-047c]
+- [x] T-048b: Wire MoveToCollectionModal API calls and inline create form (complexity: 3) [blocked by T-048a]
 
 ---
 
 ## Phase 11 — Integration: Favorites page, collection detail, collection limit UI (11 tasks)
 
-- [ ] T-049a: Refactor UserFavoritesList.client.tsx: entity type tabs (complexity: 3) [blocked by T-047c, T-048b]
-- [ ] T-049b: Add 'Sin coleccion' uncollected bookmarks section to UserFavoritesList (complexity: 3) [blocked by T-049a]
-- [ ] T-049c: Add 'Mis colecciones' grid section to UserFavoritesList (complexity: 3) [blocked by T-049b]
-- [ ] T-049d: Wire MoveToCollectionModal trigger from bookmark cards in UserFavoritesList (complexity: 2) [blocked by T-049c]
-- [ ] T-050a: Add inline notes editor textarea to bookmark cards (complexity: 2) [blocked by T-049d]
-- [ ] T-050b: Wire notes save API call and keyboard shortcut (complexity: 2) [blocked by T-050a]
-- [ ] T-051a: Create /favoritos/colecciones/[id].astro page skeleton with auth guard (complexity: 2) [blocked by T-049d, T-050b]
-- [ ] T-051b: Add collection header and entity type filter chips to collection detail page (complexity: 2) [blocked by T-051a]
-- [ ] T-051c: Add paginated bookmark grid with MoveToCollectionModal and notes editor to collection detail page (complexity: 3) [blocked by T-051b]
-- [ ] T-UI-CL1: Display collection usage counter in /favoritos page header (complexity: 2) [blocked by T-CL3, T-i18n-CL]
-- [ ] T-UI-CL2: Disable create CTA in CreateEditCollectionModal when at limit (complexity: 2) [blocked by T-047c, T-CL3, T-i18n-CL]
+- [x] T-049a: Refactor UserFavoritesList.client.tsx: entity type tabs (complexity: 3) [blocked by T-047c, T-048b]
+- [x] T-049b: Add 'Sin coleccion' uncollected bookmarks section to UserFavoritesList (complexity: 3) [blocked by T-049a]
+- [x] T-049c: Add 'Mis colecciones' grid section to UserFavoritesList (complexity: 3) [blocked by T-049b]
+- [x] T-049d: Wire MoveToCollectionModal trigger from bookmark cards in UserFavoritesList (complexity: 2) [blocked by T-049c]
+- [x] T-050a: Add inline notes editor textarea to bookmark cards (complexity: 2) [blocked by T-049d]
+- [x] T-050b: Wire notes save API call and keyboard shortcut (complexity: 2) [blocked by T-050a]
+- [x] T-051a: Create /favoritos/colecciones/[id].astro page skeleton with auth guard (complexity: 2) [blocked by T-049d, T-050b]
+- [x] T-051b: Add collection header and entity type filter chips to collection detail page (complexity: 2) [blocked by T-051a]
+- [x] T-051c: Add paginated bookmark grid with MoveToCollectionModal and notes editor to collection detail page (complexity: 3) [blocked by T-051b]
+- [x] T-UI-CL1: Display collection usage counter in /favoritos page header (complexity: 2) [blocked by T-CL3, T-i18n-CL]
+- [x] T-UI-CL2: Disable create CTA in CreateEditCollectionModal when at limit (complexity: 2) [blocked by T-047c, T-CL3, T-i18n-CL]
 
 ---
 
 ## Phase 12 — Testing: Schemas + Services (9 tasks)
 
-- [ ] T-037: Write unit tests for UserBookmarkCollection schemas (complexity: 3) [blocked by T-015]
-- [ ] T-053a: Write unit tests for UserBookmarkCollectionService: createCollection and countActiveCollections (complexity: 3) [blocked by T-051c]
-- [ ] T-053b: Write unit tests for UserBookmarkCollectionService: listCollectionsByUser (complexity: 2) [blocked by T-053a]
-- [ ] T-054a: Write unit tests for UserBookmarkCollectionService: getCollectionById and updateCollection (complexity: 3) [blocked by T-053b]
-- [ ] T-054b: Write unit tests for UserBookmarkCollectionService: deleteCollection, addBookmark, removeBookmark (complexity: 3) [blocked by T-054a]
-- [ ] T-055: Write unit tests for UserBookmarkService additions (checkBookmarksBulk, updateBookmark) (complexity: 3) [blocked by T-054b]
-- [ ] T-CL4: Write unit tests for the collection limit guard (complexity: 2) [blocked by T-CL2]
-- [ ] T-S06: Write unit/integration test for userBookmarkCollections seed (complexity: 2) [blocked by T-S05]
+- [x] T-037: Write unit tests for UserBookmarkCollection schemas (complexity: 3) [blocked by T-015]
+- [x] T-053a: Write unit tests for UserBookmarkCollectionService: createCollection and countActiveCollections (complexity: 3) [blocked by T-051c]
+- [x] T-053b: Write unit tests for UserBookmarkCollectionService: listCollectionsByUser (complexity: 2) [blocked by T-053a]
+- [x] T-054a: Write unit tests for UserBookmarkCollectionService: getCollectionById and updateCollection (complexity: 3) [blocked by T-053b]
+- [x] T-054b: Write unit tests for UserBookmarkCollectionService: deleteCollection, addBookmark, removeBookmark (complexity: 3) [blocked by T-054a]
+- [x] T-055: Write unit tests for UserBookmarkService additions (checkBookmarksBulk, updateBookmark) (complexity: 3) [blocked by T-054b]
+- [x] T-CL4: Write unit tests for the collection limit guard (complexity: 2) [blocked by T-CL2]
+- [x] T-S06: Write unit/integration test for userBookmarkCollections seed (complexity: 2) [blocked by T-S05]
 
 ---
 
 ## Phase 13 — Testing: API integration + Frontend + E2E (11 tasks)
 
-- [ ] T-056a: Write integration tests for collection routes: create, list, getById (complexity: 3) [blocked by T-055]
-- [ ] T-056b: Write integration tests for collection routes: update, delete (complexity: 3) [blocked by T-056a]
-- [ ] T-CL5: Write integration test for GET /user-bookmark-collections usage block (complexity: 2) [blocked by T-CL3]
-- [ ] T-057a: Write integration tests for bookmark sub-resource and bulk-check routes (complexity: 3) [blocked by T-056b]
-- [ ] T-057b: Write integration tests for notes route and public count route (complexity: 3) [blocked by T-057a]
-- [ ] T-058: Write component tests for FavoriteButton.client.tsx (complexity: 3) [blocked by T-057b]
-- [ ] T-059a: Write E2E tests: favorite toggle (card and detail page) (complexity: 3) [blocked by T-058]
-- [ ] T-059b: Write E2E tests: collections CRUD and move bookmark (complexity: 3) [blocked by T-059a]
-- [ ] T-060a: Write E2E tests: inline notes and public counter (complexity: 3) [blocked by T-059b]
-- [ ] T-060b: Write E2E tests: collections limit and entity smoke tests (complexity: 3) [blocked by T-060a]
+- [x] T-056a: Write integration tests for collection routes: create, list, getById (complexity: 3) [blocked by T-055]
+- [x] T-056b: Write integration tests for collection routes: update, delete (complexity: 3) [blocked by T-056a]
+- [x] T-CL5: Write integration test for GET /user-bookmark-collections usage block (complexity: 2) [blocked by T-CL3]
+- [x] T-057a: Write integration tests for bookmark sub-resource and bulk-check routes (complexity: 3) [blocked by T-056b]
+- [x] T-057b: Write integration tests for notes route and public count route (complexity: 3) [blocked by T-057a]
+- [x] T-058: Write component tests for FavoriteButton.client.tsx (complexity: 3) [blocked by T-057b]
+- [x] T-059a: Write E2E tests: favorite toggle (card and detail page) (complexity: 3) [blocked by T-058]
+- [x] T-059b: Write E2E tests: collections CRUD and move bookmark (complexity: 3) [blocked by T-059a]
+- [x] T-060a: Write E2E tests: inline notes and public counter (complexity: 3) [blocked by T-059b]
+- [x] T-060b: Write E2E tests: collections limit and entity smoke tests (complexity: 3) [blocked by T-060a]
 
 ---
 
 ## Phase 14 — Docs (4 tasks)
 
-- [ ] T-061: Update CLAUDE.md files for service-core, db, and schemas packages (complexity: 2) [blocked by T-060b]
-- [ ] T-062: Add FavoriteButton reuse pattern note to apps/web CLAUDE.md (complexity: 1) [blocked by T-061]
-- [ ] T-063: Add backend naming split comment to userBookmark.dbschema.ts and route files (complexity: 1) [blocked by T-062]
-- [ ] T-ADR-098: Create ADR-026 documenting collections limit strategy (complexity: 1) [blocked by T-063]
+- [x] T-061: Update CLAUDE.md files for service-core, db, and schemas packages (complexity: 2) [blocked by T-060b]
+- [x] T-062: Add FavoriteButton reuse pattern note to apps/web CLAUDE.md (complexity: 1) [blocked by T-061]
+- [x] T-063: Add backend naming split comment to userBookmark.dbschema.ts and route files (complexity: 1) [blocked by T-062]
+- [x] T-ADR-098: Create ADR-026 documenting collections limit strategy (complexity: 1) [blocked by T-063]
 
 ---
 
 ## Phase 15 — Cleanup (1 task)
 
-- [ ] T-064: Final cleanup: remove dead code, sweep TODO(SPEC-098) markers, validate coverage (complexity: 2) [blocked by T-063, T-ADR-098]
+- [x] T-064: Final cleanup: remove dead code, sweep TODO(SPEC-098) markers, validate coverage (complexity: 2) [blocked by T-063, T-ADR-098]
 
 ---
 
