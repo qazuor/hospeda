@@ -9,86 +9,48 @@ on:
       - main
   workflow_call:
 
+# Shared env values used by every job. Secrets are injected per job (jobs
+# that don't need them simply ignore the missing values).
+env:
+  HOSPEDA_DATABASE_URL: ${{ secrets.HOSPEDA_DATABASE_URL }}
+  HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET }}
+  HOSPEDA_API_URL: ${{ secrets.HOSPEDA_API_URL }}
+  HOSPEDA_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL }}
+  VITE_API_URL: ${{ secrets.HOSPEDA_API_URL }}
+  VITE_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL }}
+  VITE_BETTER_AUTH_URL: ${{ secrets.HOSPEDA_API_URL }}/api/auth
+  PUBLIC_API_URL: ${{ secrets.HOSPEDA_API_URL }}
+  PUBLIC_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL }}
+  HOSPEDA_CLOUDINARY_CLOUD_NAME: ${{ secrets.HOSPEDA_CLOUDINARY_CLOUD_NAME }}
+  HOSPEDA_CLOUDINARY_API_KEY: ${{ secrets.HOSPEDA_CLOUDINARY_API_KEY }}
+  HOSPEDA_CLOUDINARY_API_SECRET: ${{ secrets.HOSPEDA_CLOUDINARY_API_SECRET }}
+
 jobs:
-  quality-check:
-    name: Quality Check
+  # ------------------------------------------------------------------
+  # Fast feedback: linting, formatting, code style. ~2 min.
+  # ------------------------------------------------------------------
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    services:
-      # PostgreSQL service container for SPEC-061 integration tests.
-      # Same image/credentials as docker-compose.yml for parity. The test DB
-      # itself (`hospeda_integration_test`) is created by global-setup.ts.
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_USER: hospeda_user
-          POSTGRES_PASSWORD: hospeda_pass
-          POSTGRES_DB: postgres
-        ports:
-          - 5436:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    env:
-      # Database
-      HOSPEDA_DATABASE_URL: ${{ secrets.HOSPEDA_DATABASE_URL }}
-
-      # Better Auth
-      HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET }}
-
-      # Application URLs
-      HOSPEDA_API_URL: ${{ secrets.HOSPEDA_API_URL }}
-      HOSPEDA_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL }}
-
-      # Admin app (Vite format) — required for build-time env validation
-      VITE_API_URL: ${{ secrets.HOSPEDA_API_URL }}
-      VITE_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL }}
-      VITE_BETTER_AUTH_URL: ${{ secrets.HOSPEDA_API_URL }}/api/auth
-
-      # Web app (Astro PUBLIC_ format)
-      PUBLIC_API_URL: ${{ secrets.HOSPEDA_API_URL }}
-      PUBLIC_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL }}
-
-      # Cloudinary (consumed by integration tests in @repo/media and @repo/seed)
-      HOSPEDA_CLOUDINARY_CLOUD_NAME: ${{ secrets.HOSPEDA_CLOUDINARY_CLOUD_NAME }}
-      HOSPEDA_CLOUDINARY_API_KEY: ${{ secrets.HOSPEDA_CLOUDINARY_API_KEY }}
-      HOSPEDA_CLOUDINARY_API_SECRET: ${{ secrets.HOSPEDA_CLOUDINARY_API_SECRET }}
-
+    timeout-minutes: 10
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Biome lint
+        run: pnpm lint
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
+  # ------------------------------------------------------------------
+  # Security checks: dependency audit + SAST. ~3 min.
+  # ------------------------------------------------------------------
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
       - name: Audit production dependencies (critical/high)
         run: pnpm audit --prod --audit-level=high
-
       - name: Semgrep SAST scan
         uses: semgrep/semgrep-action@v1
         with:
@@ -100,36 +62,31 @@ jobs:
         env:
           SEMGREP_RULES: p/typescript p/nodejs p/owasp-top-ten p/secrets
 
-      - name: Build all packages and apps
-        run: pnpm build
-
-      - name: Type check
-        run: pnpm typecheck
-
-      - name: Lint
-        run: pnpm lint
-
+  # ------------------------------------------------------------------
+  # Repository-wide guard scripts. Independent of build, runs in
+  # parallel for fast feedback. ~2 min.
+  # ------------------------------------------------------------------
+  guards:
+    name: Guards
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
       - name: Check CSP-incompatible patterns
         run: bash scripts/check-csp-patterns.sh
-
       - name: Check for unsafe ilike() usage
         run: bash scripts/check-unsafe-ilike.sh
-
       - name: Check Cloudinary SDK isolation
         run: bash scripts/check-cloudinary-isolation.sh
-
       - name: Check bare Cloudinary <img>
         run: bash scripts/check-bare-cloudinary-img.sh
-
       - name: Check 'as unknown as' type-cast count (SPEC-039)
         run: bash scripts/check-type-casts.sh
-
       - name: Check service getById test pattern (SPEC-083)
         run: bash scripts/check-getbyid-tests.sh
-
       - name: Check is:inline blocks carry CSP nonce (SPEC-047)
         run: bash scripts/check-inline-nonce.sh
-
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."
@@ -144,26 +101,134 @@ jobs:
           fi
           echo "No disabled tests found."
 
+  # ------------------------------------------------------------------
+  # i18n parity: locale completeness + Zod key sync. ~1 min.
+  # ------------------------------------------------------------------
+  docs:
+    name: Docs and i18n
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Verify i18n key sync (GAP-010)
+        run: npx tsx scripts/extract-zod-keys.ts --verify
+      - name: Verify i18n locale parity (SPEC-096 T-065)
+        run: pnpm --filter @repo/i18n check-locales
+
+  # ------------------------------------------------------------------
+  # Build all packages and apps. Required by typecheck and tests.
+  # ~5 min.
+  # ------------------------------------------------------------------
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Build all packages and apps
+        run: pnpm build
+
+  # ------------------------------------------------------------------
+  # TypeScript validation. Depends on build because some packages emit
+  # .d.ts files needed by downstream consumers. ~5 min.
+  # ------------------------------------------------------------------
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Build (turbo cache)
+        run: pnpm build
+      - name: Type check
+        run: pnpm typecheck
+
+  # ------------------------------------------------------------------
+  # Unit tests with coverage. Depends on build for any package that
+  # consumes built artifacts. ~10 min.
+  # ------------------------------------------------------------------
+  test-unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Build (turbo cache)
+        run: pnpm build
       - name: Run tests with coverage
         run: pnpm test:coverage
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-summaries
+          path: '**/coverage/coverage-summary.json'
+          if-no-files-found: warn
+          retention-days: 7
 
+  # ------------------------------------------------------------------
+  # Integration tests requiring a real PostgreSQL instance.
+  # Independent of unit tests so a unit failure doesn't hide
+  # integration regressions. ~7 min.
+  # ------------------------------------------------------------------
+  test-integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: hospeda_user
+          POSTGRES_PASSWORD: hospeda_pass
+          POSTGRES_DB: postgres
+        ports:
+          - 5436:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Build (turbo cache)
+        run: pnpm build
       - name: Run integration tests (SPEC-061 db + SPEC-080 service-core)
         run: pnpm test:integration
         env:
           HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
 
-      - name: Verify i18n key sync (GAP-010)
-        run: npx tsx scripts/extract-zod-keys.ts --verify
-
-      - name: Verify i18n locale parity (SPEC-096 T-065)
-        run: pnpm --filter @repo/i18n check-locales
-
+  # ------------------------------------------------------------------
+  # Coverage threshold check. Reads the coverage artifacts produced by
+  # test-unit and enforces per-package floors. ~30s.
+  # ------------------------------------------------------------------
+  coverage-check:
+    name: Coverage Threshold
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: test-unit
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-summaries
+          path: coverage-artifacts/
       - name: Check coverage threshold
         run: |
           echo "📊 Checking coverage threshold..."
 
-          # Find all coverage-summary.json files in the monorepo
-          COVERAGE_FILES=$(find . -name 'coverage-summary.json' -path '*/coverage/*' 2>/dev/null)
+          COVERAGE_FILES=$(find coverage-artifacts -name 'coverage-summary.json' 2>/dev/null)
 
           if [ -z "$COVERAGE_FILES" ]; then
             echo "❌ No coverage files found"
@@ -180,26 +245,23 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
           for file in $COVERAGE_FILES; do
-            # Extract package name from path
+            # Path layout: coverage-artifacts/<workspace-relative-path>/coverage/coverage-summary.json
             PACKAGE_PATH=$(dirname $(dirname "$file"))
             PACKAGE_NAME=$(basename "$PACKAGE_PATH")
 
-            # Get coverage percentage
             COVERAGE=$(jq -r '.total.lines.pct' "$file")
-
-            # Round coverage to 2 decimals
             COVERAGE_ROUNDED=$(printf "%.2f" "$COVERAGE")
 
             echo ""
             echo "📦 Package: $PACKAGE_NAME"
             echo "   Coverage: $COVERAGE_ROUNDED%"
 
-            # Determine threshold per package. The web and admin apps
-            # use lower bars because most surfaces are framework-specific
+            # Determine threshold per package. The web and admin apps use
+            # lower bars because most surfaces are framework-specific
             # (Astro SSR components, TanStack Router routes, React islands)
             # that cannot render in Vitest's jsdom; their behavior is
-            # verified through page-level and E2E tests instead of
-            # per-file unit coverage.
+            # verified through page-level and E2E tests instead of per-file
+            # unit coverage.
             THRESHOLD=90
             if [ "$PACKAGE_NAME" = "web" ]; then
               THRESHOLD=55
@@ -207,7 +269,6 @@ jobs:
               THRESHOLD=50
             fi
 
-            # Check if below threshold
             if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
               echo "   ❌ FAIL: Coverage below ${THRESHOLD}% threshold"
               FAILED=1
@@ -215,20 +276,16 @@ jobs:
               echo "   ✅ PASS: Coverage meets ${THRESHOLD}% threshold"
             fi
 
-            # Accumulate for global average
             TOTAL_COVERAGE=$(echo "$TOTAL_COVERAGE + $COVERAGE" | bc)
             FILE_COUNT=$((FILE_COUNT + 1))
           done
 
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-          # Calculate global average
           if [ $FILE_COUNT -gt 0 ]; then
             GLOBAL_COVERAGE=$(echo "scale=2; $TOTAL_COVERAGE / $FILE_COUNT" | bc)
             echo "🌍 Global Average Coverage: $GLOBAL_COVERAGE%"
           fi
-
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
 
@@ -239,24 +296,37 @@ jobs:
             echo "✅ All packages meet their coverage thresholds"
           fi
 
-      - name: Summary
-        if: always()
+  # ------------------------------------------------------------------
+  # Aggregator job. Used by cd-production.yml as a single dependency
+  # via `needs: ci` so we don't have to list every leaf job there.
+  # ------------------------------------------------------------------
+  ci-pass:
+    name: CI Pass
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - lint
+      - security
+      - guards
+      - docs
+      - build
+      - typecheck
+      - test-unit
+      - test-integration
+      - coverage-check
+    steps:
+      - name: Aggregate result
         run: |
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📋 CI Summary"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo ""
-          if [ "${{ job.status }}" == "success" ]; then
-            echo "✅ All checks passed!"
-            echo ""
-            echo "✓ Type check: PASSED"
-            echo "✓ Lint: PASSED"
-            echo "✓ Tests: PASSED"
-            echo "✓ Coverage: ≥90%"
-          else
-            echo "❌ Some checks failed"
-            echo ""
-            echo "Review the logs above for details"
+          if [ "${{ needs.lint.result }}" != "success" ] \
+            || [ "${{ needs.security.result }}" != "success" ] \
+            || [ "${{ needs.guards.result }}" != "success" ] \
+            || [ "${{ needs.docs.result }}" != "success" ] \
+            || [ "${{ needs.build.result }}" != "success" ] \
+            || [ "${{ needs.typecheck.result }}" != "success" ] \
+            || [ "${{ needs.test-unit.result }}" != "success" ] \
+            || [ "${{ needs.test-integration.result }}" != "success" ] \
+            || [ "${{ needs.coverage-check.result }}" != "success" ]; then
+            echo "❌ One or more checks failed"
+            exit 1
           fi
-          echo ""
+          echo "✅ All checks passed"
