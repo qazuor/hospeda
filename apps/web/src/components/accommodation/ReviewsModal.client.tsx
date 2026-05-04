@@ -1,8 +1,10 @@
+import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 /**
  * @file ReviewsModal.client.tsx
- * @description Modal for browsing all paginated reviews.
- * Focus trap, Escape close, load more pagination.
+ * @description Modal for browsing all paginated reviews. Cross-cutting modal
+ * concerns (centering, scroll-lock, ESC, focus trap, click-outside) are
+ * delegated to the shared `<Dialog>` component.
  */
 import { accommodationsApi } from '@/lib/api/endpoints';
 import { getInitialsFromName } from '@/lib/avatar-utils';
@@ -75,7 +77,6 @@ export function ReviewsModal({ accommodationId, reviewsCount, locale }: ReviewsM
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
     const [hasMore, setHasMore] = useState(true);
-    const dialogRef = useRef<HTMLDialogElement>(null);
     const triggerRef = useRef<HTMLButtonElement | null>(null);
 
     const fetchReviews = useCallback(
@@ -124,15 +125,6 @@ export function ReviewsModal({ accommodationId, reviewsCount, locale }: ReviewsM
         }
     }, [isOpen, page, fetchReviews]);
 
-    useEffect(() => {
-        if (!isOpen) return;
-        const handler = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') close();
-        };
-        document.addEventListener('keydown', handler);
-        return () => document.removeEventListener('keydown', handler);
-    }, [isOpen, close]);
-
     // Listen for trigger button clicks from ReviewPreview
     useEffect(() => {
         const handler = (e: Event) => {
@@ -147,42 +139,21 @@ export function ReviewsModal({ accommodationId, reviewsCount, locale }: ReviewsM
         return () => document.removeEventListener('click', handler);
     }, [accommodationId, open]);
 
-    if (!isOpen) return null;
-
     return (
-        <div
-            className={styles.overlay}
-            onClick={close}
-            onKeyDown={(e) => {
-                if (e.key === 'Escape') close();
-            }}
-            role="presentation"
+        <Dialog
+            isOpen={isOpen}
+            onClose={close}
+            size="md"
+            ariaLabelledBy="reviews-modal-title"
         >
-            <dialog
-                ref={dialogRef}
-                className={styles.modal}
-                aria-modal="true"
-                aria-labelledby="reviews-modal-title"
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => e.stopPropagation()}
+            <DialogHeader
+                titleId="reviews-modal-title"
+                onClose={close}
+                closeLabel={t('accommodations.detail.reviewsDetail.modal.close')}
             >
-                <div className={styles.header}>
-                    <h2
-                        id="reviews-modal-title"
-                        className={styles.title}
-                    >
-                        {t('accommodations.detail.reviewsDetail.modal.title')}
-                    </h2>
-                    <button
-                        type="button"
-                        className={styles.closeBtn}
-                        onClick={close}
-                        aria-label={t('accommodations.detail.reviewsDetail.modal.close')}
-                    >
-                        &times;
-                    </button>
-                </div>
-
+                {t('accommodations.detail.reviewsDetail.modal.title')}
+            </DialogHeader>
+            <DialogBody>
                 <div className={styles.body}>
                     {reviews.map((review) => {
                         const userName = review.user?.name ?? 'Anónimo';
@@ -289,7 +260,7 @@ export function ReviewsModal({ accommodationId, reviewsCount, locale }: ReviewsM
                         />
                     )}
                 </div>
-            </dialog>
-        </div>
+            </DialogBody>
+        </Dialog>
     );
 }

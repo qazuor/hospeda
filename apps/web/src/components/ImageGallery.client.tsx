@@ -12,10 +12,15 @@
  * Hydrate with `client:visible` (caller's responsibility).
  */
 
+import {
+    Dialog,
+    DialogBody,
+    DialogFloatingCloseButton
+} from '@/components/shared/ui/Dialog.client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, FullscreenIcon } from '@repo/icons';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronLeftIcon, ChevronRightIcon, FullscreenIcon } from '@repo/icons';
+import { useCallback, useEffect, useState } from 'react';
 import styles from './ImageGallery.module.css';
 
 /**
@@ -48,33 +53,6 @@ interface ImageGalleryProps {
     readonly className?: string;
 }
 
-// ─── Focus Trap ──────────────────────────────────────────────────────────────
-
-const FOCUSABLE_SELECTORS =
-    'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-function trapFocus(container: HTMLElement, event: KeyboardEvent): void {
-    const focusable = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS));
-    if (focusable.length === 0) return;
-
-    const first = focusable[0] as HTMLElement;
-    const last = focusable[focusable.length - 1] as HTMLElement;
-
-    if (event.key === 'Tab') {
-        if (event.shiftKey) {
-            if (document.activeElement === first) {
-                event.preventDefault();
-                last.focus();
-            }
-        } else {
-            if (document.activeElement === last) {
-                event.preventDefault();
-                first.focus();
-            }
-        }
-    }
-}
-
 // ─── Lightbox ────────────────────────────────────────────────────────────────
 
 interface LightboxProps {
@@ -86,8 +64,6 @@ interface LightboxProps {
 
 function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
     const [index, setIndex] = useState(initialIndex);
-    const lightboxRef = useRef<HTMLDialogElement>(null);
-    const closeRef = useRef<HTMLButtonElement>(null);
 
     const prev = useCallback(() => {
         setIndex((i) => (i - 1 + images.length) % images.length);
@@ -97,71 +73,36 @@ function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
         setIndex((i) => (i + 1) % images.length);
     }, [images.length]);
 
-    // Focus close button on mount
-    useEffect(() => {
-        closeRef.current?.focus();
-    }, []);
-
-    // Keyboard navigation + focus trap
+    // Arrow-key navigation. Esc + scroll-lock + focus-trap are owned by Dialog.
     useEffect(() => {
         function handleKeyDown(event: KeyboardEvent): void {
-            if (event.key === 'Escape') {
-                onClose();
-                return;
-            }
             if (event.key === 'ArrowLeft') {
                 prev();
                 return;
             }
             if (event.key === 'ArrowRight') {
                 next();
-                return;
-            }
-            if (lightboxRef.current) {
-                trapFocus(lightboxRef.current, event);
             }
         }
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [onClose, prev, next]);
-
-    // Prevent body scroll while lightbox is open
-    useEffect(() => {
-        const originalOverflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = originalOverflow;
-        };
-    }, []);
+    }, [prev, next]);
 
     const current = images[index];
 
     return (
-        // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard events handled via document listener in useEffect
-        <dialog
-            ref={lightboxRef}
-            aria-modal="true"
-            aria-label={t('ui.accessibility.openFullscreen', 'Visor de imágenes')}
-            className={styles.lightboxOverlay}
-            open
-            onClick={(e) => {
-                if (e.target === e.currentTarget) onClose();
-            }}
+        <Dialog
+            isOpen={true}
+            onClose={onClose}
+            size="full"
+            variant="transparent"
+            ariaLabel={t('ui.accessibility.openFullscreen', 'Visor de imágenes')}
         >
-            {/* Close */}
-            <button
-                ref={closeRef}
-                type="button"
-                className={styles.lightboxClose}
-                aria-label={t('ui.accessibility.closeLightbox', 'Cerrar visor')}
-                onClick={onClose}
-            >
-                <CloseIcon
-                    size={24}
-                    aria-hidden="true"
-                />
-            </button>
+            <DialogFloatingCloseButton
+                onClose={onClose}
+                closeLabel={t('ui.accessibility.closeLightbox', 'Cerrar visor')}
+            />
 
             {/* Counter */}
             <div
@@ -187,18 +128,21 @@ function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
                 </button>
             )}
 
-            {/* Image */}
-            <figure className={styles.lightboxFigure}>
-                <img
-                    key={current?.url}
-                    src={current?.url}
-                    alt={current?.alt ?? ''}
-                    className={styles.lightboxImg}
-                />
-                {current?.caption && (
-                    <figcaption className={styles.lightboxCaption}>{current.caption}</figcaption>
-                )}
-            </figure>
+            <DialogBody bare>
+                <figure className={styles.lightboxFigure}>
+                    <img
+                        key={current?.url}
+                        src={current?.url}
+                        alt={current?.alt ?? ''}
+                        className={styles.lightboxImg}
+                    />
+                    {current?.caption && (
+                        <figcaption className={styles.lightboxCaption}>
+                            {current.caption}
+                        </figcaption>
+                    )}
+                </figure>
+            </DialogBody>
 
             {/* Next */}
             {images.length > 1 && (
@@ -241,7 +185,7 @@ function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
                     ))}
                 </ul>
             )}
-        </dialog>
+        </Dialog>
     );
 }
 

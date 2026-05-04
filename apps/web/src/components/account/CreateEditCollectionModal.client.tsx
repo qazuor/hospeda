@@ -9,12 +9,12 @@
  * Hydration: caller must use `client:load`.
  */
 
+import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CollectionColorPicker, CollectionIconPicker } from './CollectionPickers';
 import styles from './CreateEditCollectionModal.module.css';
-import { trapFocus } from './collection-picker-config';
 import { useCollectionMutation } from './useCollectionMutation';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -111,13 +111,6 @@ export function CreateEditCollectionModal({
      */
     const showLimitBanner = !isEditMode && isAtLimit;
 
-    // ── Refs ──────────────────────────────────────────────────────────────
-
-    /** Reference to the modal panel (dialog element) for focus-trap and click-outside */
-    const panelRef = useRef<HTMLDialogElement>(null);
-    /** Reference to the X close button — receives focus on open */
-    const closeBtnRef = useRef<HTMLButtonElement>(null);
-
     // ── Form state ────────────────────────────────────────────────────────
 
     const [form, setForm] = useState<ModalFormState>(() => ({
@@ -166,56 +159,8 @@ export function CreateEditCollectionModal({
         onClose();
     }, [onClose, isSubmitting]);
 
-    // ── Keyboard: Escape + focus-trap ─────────────────────────────────────
-
-    useEffect(() => {
-        if (!isOpen) return;
-
-        function handleKeyDown(event: KeyboardEvent): void {
-            if (event.key === 'Escape') {
-                handleClose();
-                return;
-            }
-            if (panelRef.current) {
-                trapFocus(panelRef.current, event);
-            }
-        }
-
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, handleClose]);
-
-    // ── Body scroll lock ──────────────────────────────────────────────────
-
-    useEffect(() => {
-        if (!isOpen) return;
-        const previous = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = previous;
-        };
-    }, [isOpen]);
-
-    // ── Focus close button on open ────────────────────────────────────────
-
-    useEffect(() => {
-        if (isOpen) {
-            // Small delay to allow the modal to mount before stealing focus
-            const id = window.setTimeout(() => {
-                closeBtnRef.current?.focus();
-            }, 50);
-            return () => window.clearTimeout(id);
-        }
-    }, [isOpen]);
-
-    // ── Click-outside handler ─────────────────────────────────────────────
-
-    function handleOverlayClick(event: React.MouseEvent<HTMLDivElement>): void {
-        // Close only when the click lands directly on the overlay (not the panel)
-        if (event.target === event.currentTarget) {
-            handleClose();
-        }
-    }
+    // ESC, focus trap, scroll lock, focus management, click outside — all
+    // owned by the shared <Dialog> wrapper.
 
     // ── Field change handlers ─────────────────────────────────────────────
 
@@ -244,10 +189,6 @@ export function CreateEditCollectionModal({
         void submit(form);
     }
 
-    // ── Render guard ──────────────────────────────────────────────────────
-
-    if (!isOpen) return null;
-
     // ── Computed values ───────────────────────────────────────────────────
 
     const modalTitle = isEditMode
@@ -265,41 +206,23 @@ export function CreateEditCollectionModal({
     // ── JSX ───────────────────────────────────────────────────────────────
 
     return (
-        /* biome-ignore lint/a11y/useKeyWithClickEvents: keyboard events handled via document listener in useEffect */
-        <div
-            className={styles.overlay}
-            role="presentation"
-            aria-hidden="false"
-            onClick={handleOverlayClick}
+        <Dialog
+            isOpen={isOpen}
+            onClose={handleClose}
+            size="md"
+            ariaLabelledBy={MODAL_TITLE_ID}
+            closeOnEscape={!isSubmitting}
+            closeOnOverlayClick={!isSubmitting}
         >
-            <dialog
-                ref={panelRef}
-                className={styles.panel}
-                aria-modal="true"
-                aria-labelledby={MODAL_TITLE_ID}
-                open
+            <DialogHeader
+                titleId={MODAL_TITLE_ID}
+                onClose={handleClose}
+                closeLabel={t('common.modal.close', 'Cerrar')}
             >
-                {/* ── Header ──────────────────────────────────────────── */}
-                <header className={styles.header}>
-                    <h2
-                        id={MODAL_TITLE_ID}
-                        className={styles.title}
-                    >
-                        {modalTitle}
-                    </h2>
-                    <button
-                        ref={closeBtnRef}
-                        type="button"
-                        className={styles.closeBtn}
-                        aria-label={t('common.modal.close', 'Cerrar')}
-                        onClick={handleClose}
-                    >
-                        {/* Inline × glyph: acceptable for a single close icon without adding
-                            a new icon dependency at this skeleton stage */}
-                        <span aria-hidden="true">&#x2715;</span>
-                    </button>
-                </header>
+                {modalTitle}
+            </DialogHeader>
 
+            <DialogBody>
                 {/* ── Limit banner (CREATE mode only, when plan cap reached) ── */}
                 {showLimitBanner && (
                     <div
@@ -484,7 +407,7 @@ export function CreateEditCollectionModal({
                         </button>
                     </div>
                 </form>
-            </dialog>
-        </div>
+            </DialogBody>
+        </Dialog>
     );
 }

@@ -14,14 +14,19 @@
  * Hydration: caller must use `client:load`.
  */
 
+import {
+    Dialog,
+    DialogBody,
+    DialogFooter,
+    DialogHeader
+} from '@/components/shared/ui/Dialog.client';
 import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CreateEditCollectionModal } from './CreateEditCollectionModal.client';
 import styles from './MoveToCollectionModal.module.css';
-import { trapFocus } from './collection-picker-config';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -103,11 +108,6 @@ export function MoveToCollectionModal({
     isAtLimit = false
 }: MoveToCollectionModalProps) {
     const t = createT(locale);
-
-    /** Reference to the <dialog> panel — used for focus-trap and click-outside. */
-    const panelRef = useRef<HTMLDialogElement>(null);
-    /** Reference to the X close button — receives focus on open. */
-    const closeBtnRef = useRef<HTMLButtonElement>(null);
 
     // ── State ──────────────────────────────────────────────────────────────
 
@@ -204,43 +204,8 @@ export function MoveToCollectionModal({
         }
     }, [selectedValue, currentCollectionId, bookmarkId, onSaved, onClose, collections]);
 
-    // Keyboard: Escape + focus-trap
-    useEffect(() => {
-        if (!isOpen) return;
-        function handleKeyDown(event: KeyboardEvent): void {
-            if (event.key === 'Escape') {
-                handleClose();
-                return;
-            }
-            if (panelRef.current) trapFocus(panelRef.current, event);
-        }
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, handleClose]);
-
-    // Body scroll lock
-    useEffect(() => {
-        if (!isOpen) return;
-        const previous = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = previous;
-        };
-    }, [isOpen]);
-
-    // Focus close button on open
-    useEffect(() => {
-        if (isOpen) {
-            const id = window.setTimeout(() => {
-                closeBtnRef.current?.focus();
-            }, 50);
-            return () => window.clearTimeout(id);
-        }
-    }, [isOpen]);
-
-    function handleOverlayClick(event: React.MouseEvent<HTMLDivElement>): void {
-        if (event.target === event.currentTarget) handleClose();
-    }
+    // ESC, focus trap, scroll lock, click outside, focus management — all
+    // owned by the shared <Dialog> wrapper. Nothing to wire here.
 
     function handleRadioChange(value: string): void {
         setSelectedValue(value);
@@ -262,8 +227,6 @@ export function MoveToCollectionModal({
         setIsCreateModalOpen(false);
     }
 
-    if (!isOpen) return null;
-
     // ── Derived labels ─────────────────────────────────────────────────────
 
     const modalTitle = t('account.favorites.collections.move_to', 'Mover a colección');
@@ -279,42 +242,24 @@ export function MoveToCollectionModal({
 
     return (
         <>
-            {/* biome-ignore lint/a11y/useKeyWithClickEvents: keyboard events handled via document listener in useEffect */}
-            <div
-                className={styles.overlay}
-                role="presentation"
-                aria-hidden="false"
-                onClick={handleOverlayClick}
+            <Dialog
+                isOpen={isOpen}
+                onClose={handleClose}
+                size="md"
+                ariaLabelledBy={MODAL_TITLE_ID}
+                closeOnEscape={!isCreateModalOpen}
+                closeOnOverlayClick={!isCreateModalOpen}
             >
-                <dialog
-                    ref={panelRef}
-                    className={styles.panel}
-                    aria-modal="true"
-                    aria-labelledby={MODAL_TITLE_ID}
-                    data-testid="move-bookmark-modal"
-                    open
-                >
-                    {/* ── Header ──────────────────────────────────────── */}
-                    <header className={styles.header}>
-                        <h2
-                            id={MODAL_TITLE_ID}
-                            className={styles.title}
-                        >
-                            {modalTitle}
-                        </h2>
-                        <button
-                            ref={closeBtnRef}
-                            type="button"
-                            className={styles.closeBtn}
-                            aria-label={t('common.auth.close', 'Cerrar')}
-                            onClick={handleClose}
-                        >
-                            <span aria-hidden="true">&#x2715;</span>
-                        </button>
-                    </header>
+                <div data-testid="move-bookmark-modal">
+                    <DialogHeader
+                        titleId={MODAL_TITLE_ID}
+                        onClose={handleClose}
+                        closeLabel={t('common.auth.close', 'Cerrar')}
+                    >
+                        {modalTitle}
+                    </DialogHeader>
 
-                    {/* ── Body ────────────────────────────────────────── */}
-                    <div className={styles.body}>
+                    <DialogBody>
                         {/* Radio group — one option per collection + "Sin colección" */}
                         <div
                             className={styles.radioGroup}
@@ -437,10 +382,9 @@ export function MoveToCollectionModal({
                         >
                             {newCollectionLabel}
                         </button>
-                    </div>
+                    </DialogBody>
 
-                    {/* ── Footer ──────────────────────────────────────── */}
-                    <footer className={styles.footer}>
+                    <DialogFooter>
                         <button
                             type="button"
                             className={styles.cancelBtn}
@@ -464,9 +408,9 @@ export function MoveToCollectionModal({
                         >
                             {saveLabel}
                         </button>
-                    </footer>
-                </dialog>
-            </div>
+                    </DialogFooter>
+                </div>
+            </Dialog>
 
             {/* ── Sub-modal: CreateEditCollectionModal ─────────────────── */}
             <CreateEditCollectionModal

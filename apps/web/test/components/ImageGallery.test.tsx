@@ -349,8 +349,11 @@ describe('ImageGallery', () => {
         it('closes when clicking the overlay (outside the figure)', () => {
             openLightbox();
             const dialog = screen.getByRole('dialog');
-            // Simulate click on the overlay itself (target === currentTarget)
-            fireEvent.click(dialog);
+            // The shared Dialog component wraps the panel in a sibling overlay
+            // div (role="presentation"). Clicking that overlay closes the modal.
+            const overlay = dialog.parentElement;
+            expect(overlay).not.toBeNull();
+            fireEvent.click(overlay as HTMLElement);
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
         });
     });

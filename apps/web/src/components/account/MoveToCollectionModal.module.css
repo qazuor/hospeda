@@ -1,130 +1,9 @@
 /**
  * MoveToCollectionModal.module.css
- * Scoped styles for the MoveToCollectionModal React island.
- * ALL values use CSS custom properties from global.css — no hardcoded values.
- * Overlay, panel, header, footer, and button patterns are kept consistent with
- * CreateEditCollectionModal.module.css.
+ * Content-specific styles for MoveToCollectionModal. Outer chrome (overlay,
+ * panel, header, footer, scroll lock, ESC, focus management) lives in the
+ * shared <Dialog> component.
  */
-
-/* ── Overlay ────────────────────────────────────────────────────────────── */
-
-.overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 500;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: oklch(0 0 0 / 0.5);
-    padding: var(--space-4, 16px);
-    animation: overlayFadeIn 0.15s ease-out forwards;
-}
-
-@keyframes overlayFadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-/* ── Panel ──────────────────────────────────────────────────────────────── */
-
-.panel {
-    background-color: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-card, 24px);
-    box-shadow: var(--shadow-card-hover);
-    width: 100%;
-    max-width: 440px;
-    max-height: calc(100dvh - var(--space-8, 32px));
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    animation: panelSlideIn 0.18s ease-out forwards;
-}
-
-@keyframes panelSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-8px) scale(0.98);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .overlay {
-        animation: none;
-    }
-
-    .panel {
-        animation: none;
-    }
-}
-
-/* ── Header ─────────────────────────────────────────────────────────────── */
-
-.header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3, 12px);
-    padding: var(--space-5, 20px) var(--space-6, 24px) var(--space-4, 16px);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-}
-
-.title {
-    font-family: var(--font-heading);
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--foreground);
-    margin: 0;
-    line-height: 1.3;
-}
-
-.closeBtn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    background: none;
-    border: 1px solid transparent;
-    border-radius: var(--radius-button, 8px);
-    color: var(--muted-foreground);
-    cursor: pointer;
-    font-size: 1rem;
-    flex-shrink: 0;
-    transition: background-color var(--duration-normal, 0.4s) ease, color
-        var(--duration-normal, 0.4s) ease, border-color var(--duration-normal, 0.4s) ease;
-}
-
-.closeBtn:hover {
-    background-color: var(--surface-warm);
-    color: var(--foreground);
-    border-color: var(--border);
-}
-
-.closeBtn:focus-visible {
-    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
-    outline-offset: 2px;
-}
-
-/* ── Body ────────────────────────────────────────────────────────────────── */
-
-.body {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1, 4px);
-    padding: var(--space-4, 16px) var(--space-6, 24px) var(--space-5, 20px);
-    overflow-y: auto;
-    flex: 1;
-}
 
 /* ── Radio group ─────────────────────────────────────────────────────────── */
 
@@ -194,7 +73,7 @@
     height: 18px;
     border-radius: 50%;
     border: 2px solid var(--border);
-    background-color: var(--background);
+    background-color: var(--core-background);
     pointer-events: none;
     transition: border-color 0.15s ease, background-color 0.15s ease;
 }
@@ -203,11 +82,11 @@
 .radioInput:checked + .radioIndicator {
     border-color: var(--brand-primary);
     background-color: var(--brand-primary);
-    box-shadow: inset 0 0 0 3px var(--background);
+    box-shadow: inset 0 0 0 3px var(--core-background);
 }
 
 .radioInput:focus-visible + .radioIndicator {
-    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
+    outline: 3px solid var(--brand-primary);
     outline-offset: 2px;
 }
 
@@ -229,7 +108,7 @@
 
 .colorDotNone {
     background-color: transparent;
-    border: 1.5px dashed var(--muted-foreground);
+    border: 1.5px dashed var(--core-muted-foreground);
 }
 
 /* ── Collection info (name + badge) ─────────────────────────────────────── */
@@ -247,7 +126,7 @@
     font-family: var(--font-sans);
     font-size: 0.9375rem;
     font-weight: 500;
-    color: var(--foreground);
+    color: var(--core-foreground);
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -302,14 +181,14 @@
 }
 
 .newCollectionBtn:focus-visible {
-    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
+    outline: 3px solid var(--brand-primary);
     outline-offset: 2px;
 }
 
 .newCollectionBtn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -318,23 +197,12 @@
     }
 }
 
-/* ── Footer ──────────────────────────────────────────────────────────────── */
-
-.footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--space-3, 12px);
-    padding: var(--space-4, 16px) var(--space-6, 24px);
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
-}
-
-/* ── Buttons ─────────────────────────────────────────────────────────────── */
+/* ── Footer buttons ──────────────────────────────────────────────────────── */
 
 .cancelBtn {
     padding: var(--space-2, 8px) var(--space-4, 16px);
     background-color: transparent;
-    color: var(--foreground);
+    color: var(--core-foreground);
     border: 1px solid var(--border);
     border-radius: var(--radius-button, 8px);
     font-family: var(--font-sans);
@@ -351,7 +219,7 @@
 }
 
 .cancelBtn:focus-visible {
-    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
+    outline: 3px solid var(--brand-primary);
     outline-offset: 2px;
 }
 
@@ -361,7 +229,7 @@
     gap: var(--space-2, 8px);
     padding: var(--space-2, 8px) var(--space-5, 20px);
     background-color: var(--brand-primary);
-    color: white;
+    color: var(--primary-foreground);
     border: none;
     border-radius: var(--radius-button, 8px);
     font-family: var(--font-sans);
@@ -381,6 +249,6 @@
 }
 
 .saveBtn:focus-visible {
-    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
+    outline: 3px solid var(--brand-primary);
     outline-offset: 2px;
 }

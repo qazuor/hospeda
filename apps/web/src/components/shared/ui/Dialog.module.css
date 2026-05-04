@@ -1,0 +1,189 @@
+/**
+ * Dialog.module.css
+ * Shared modal dialog styles. All values use CSS custom properties from
+ * global.css — no hardcoded colors / spacing.
+ */
+
+/* The overlay covers the full viewport, sits above everything else, and
+ * carries the dimmed backdrop. ALL dialogs share the exact same backdrop
+ * — heavy dim + blur — so a tweak here lands on every modal at once.
+ * Centers the panel on both axes. */
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background-color: oklch(0 0 0 / 0.85);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4, 16px);
+    animation: dialogOverlayIn 0.18s ease-out;
+}
+
+/* The transparent panel variant (image lightbox) needs the full viewport
+ * — no padding around the overlay so the image can use every pixel. */
+.overlay:has(.panel[data-variant="transparent"]) {
+    padding: 0;
+}
+
+@keyframes dialogOverlayIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* The modal panel itself. Sized via the `data-size` attribute set by the
+ * component (sm / md / lg / full). Cap height + scrollable body. */
+.panel {
+    position: relative;
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    border-radius: var(--radius-card, 24px);
+    max-height: calc(100vh - 32px);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px oklch(0 0 0 / 0.25);
+    animation: dialogPanelIn 0.18s ease-out;
+}
+
+@keyframes dialogPanelIn {
+    from {
+        opacity: 0;
+        transform: scale(0.96) translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.panel[data-size="sm"] {
+    max-width: 420px;
+}
+.panel[data-size="md"] {
+    max-width: 640px;
+}
+.panel[data-size="lg"] {
+    max-width: 880px;
+}
+.panel[data-size="full"] {
+    max-width: 100vw;
+    max-height: 100vh;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+}
+
+/* When `transparent` is set the panel surrenders its background / shadow /
+ * radius — the consumer renders its own chrome (e.g. the image lightbox). */
+.panel[data-variant="transparent"] {
+    background-color: transparent;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+/* Header, body, footer are optional structural slots. */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 12px);
+    padding: var(--space-5, 20px);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.title {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.closeButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: none;
+    color: var(--core-muted-foreground);
+    cursor: pointer;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.closeButton:hover,
+.closeButton:focus-visible {
+    background-color: var(--surface-warm);
+    color: var(--core-foreground);
+    outline: none;
+}
+
+.closeButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* Floating close button used by the transparent variant (image lightbox). */
+.closeButtonFloating {
+    position: absolute;
+    top: var(--space-4, 16px);
+    right: var(--space-4, 16px);
+    width: 44px;
+    height: 44px;
+    border: 1px solid oklch(1 0 0 / 0.4);
+    background-color: oklch(0 0 0 / 0.65);
+    color: oklch(1 0 0);
+    z-index: 10;
+    box-shadow: 0 2px 12px oklch(0 0 0 / 0.5);
+}
+
+.closeButtonFloating:hover,
+.closeButtonFloating:focus-visible {
+    background-color: oklch(0 0 0 / 0.9);
+    border-color: oklch(1 0 0 / 0.8);
+    color: oklch(1 0 0);
+    transform: scale(1.05);
+}
+
+.body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: var(--space-5, 20px);
+}
+
+/* Body without padding — for the lightbox where the figure manages its own. */
+.bodyBare {
+    flex: 1 1 auto;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Sticky footer for action buttons (cancel / confirm). */
+.footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-3, 12px);
+    padding: var(--space-4, 16px) var(--space-5, 20px);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .overlay,
+    .panel {
+        animation: none;
+    }
+}

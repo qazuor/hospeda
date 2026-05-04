@@ -1,130 +1,21 @@
 /**
  * CreateEditCollectionModal.module.css
- * Scoped styles for the CreateEditCollectionModal React island.
- * ALL values use CSS custom properties from global.css — no hardcoded values.
+ * Content-specific styles for the create/edit collection form. Outer chrome
+ * (overlay, panel, header, scroll lock, ESC, focus management) lives in the
+ * shared <Dialog> component.
  */
-
-/* ── Overlay ────────────────────────────────────────────────────────────── */
-
-.overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 500;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: oklch(0 0 0 / 0.5);
-    padding: var(--space-4, 16px);
-    /* Smooth entry — respects prefers-reduced-motion via global CSS */
-    animation: overlayFadeIn 0.15s ease-out forwards;
-}
-
-@keyframes overlayFadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-/* ── Panel ──────────────────────────────────────────────────────────────── */
-
-.panel {
-    background-color: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-card, 24px);
-    box-shadow: var(--shadow-card-hover);
-    width: 100%;
-    max-width: 480px;
-    max-height: calc(100dvh - var(--space-8, 32px));
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    animation: panelSlideIn 0.18s ease-out forwards;
-}
-
-@keyframes panelSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-8px) scale(0.98);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .overlay {
-        animation: none;
-    }
-
-    .panel {
-        animation: none;
-    }
-}
-
-/* ── Header ─────────────────────────────────────────────────────────────── */
-
-.header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3, 12px);
-    padding: var(--space-5, 20px) var(--space-6, 24px) var(--space-4, 16px);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-}
-
-.title {
-    font-family: var(--font-heading);
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--foreground);
-    margin: 0;
-    line-height: 1.3;
-}
-
-.closeBtn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    background: none;
-    border: 1px solid transparent;
-    border-radius: var(--radius-button, 8px);
-    color: var(--muted-foreground);
-    cursor: pointer;
-    font-size: 1rem;
-    flex-shrink: 0;
-    transition: background-color var(--duration-normal, 0.4s) ease, color
-        var(--duration-normal, 0.4s) ease, border-color var(--duration-normal, 0.4s) ease;
-}
-
-.closeBtn:hover {
-    background-color: var(--surface-warm);
-    color: var(--foreground);
-    border-color: var(--border);
-}
-
-.closeBtn:focus-visible {
-    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
-    outline-offset: 2px;
-}
 
 /* ── Limit banner ────────────────────────────────────────────────────────── */
 
 .limitBanner {
-    margin: 0 var(--space-6, 24px);
+    margin-bottom: var(--space-4, 16px);
     padding: var(--space-3, 12px) var(--space-4, 16px);
-    background-color: oklch(from var(--color-warning, oklch(0.72 0.15 60)) l c h / 0.12);
-    border: 1px solid oklch(from var(--color-warning, oklch(0.72 0.15 60)) l c h / 0.35);
+    background-color: oklch(from var(--brand-accent) l c h / 0.12);
+    border: 1px solid oklch(from var(--brand-accent) l c h / 0.35);
     border-radius: var(--radius-button, 8px);
     font-family: var(--font-sans);
     font-size: 0.875rem;
-    color: var(--color-warning, oklch(0.72 0.15 60));
+    color: var(--brand-accent);
     line-height: 1.5;
 }
 
@@ -134,7 +25,6 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-5, 20px);
-    padding: var(--space-6, 24px);
 }
 
 /* ── Field ───────────────────────────────────────────────────────────────── */
@@ -156,18 +46,18 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--foreground);
+    color: var(--core-foreground);
     flex-shrink: 0;
 }
 
 .required {
-    color: var(--destructive, oklch(0.6 0.2 25));
+    color: var(--destructive);
 }
 
 .counter {
     font-family: var(--font-sans);
     font-size: 0.75rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     white-space: nowrap;
 }
 
@@ -177,8 +67,8 @@
 .textarea {
     width: 100%;
     padding: var(--space-2, 8px) var(--space-3, 12px);
-    background-color: var(--background);
-    color: var(--foreground);
+    background-color: var(--core-background);
+    color: var(--core-foreground);
     border: 1px solid var(--border);
     border-radius: var(--radius-button, 8px);
     font-family: var(--font-sans);
@@ -197,11 +87,11 @@
 }
 
 .input.inputError {
-    border-color: var(--destructive, oklch(0.6 0.2 25));
+    border-color: var(--destructive);
 }
 
 .input.inputError:focus {
-    box-shadow: 0 0 0 3px oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.15);
+    box-shadow: 0 0 0 3px oklch(from var(--destructive) l c h / 0.15);
 }
 
 .textarea {
@@ -214,14 +104,14 @@
 .errorMsg {
     font-family: var(--font-sans);
     font-size: 0.8125rem;
-    color: var(--destructive, oklch(0.6 0.2 25));
+    color: var(--destructive);
     margin: 0;
 }
 
 .hint {
     font-family: var(--font-sans);
     font-size: 0.8125rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     margin: 0;
 }
 
@@ -257,12 +147,12 @@
 }
 
 .colorSwatch:focus-visible {
-    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
+    outline: 3px solid var(--brand-primary);
     outline-offset: 2px;
 }
 
 .colorSwatchSelected {
-    box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--primary, oklch(0.55 0.17 264));
+    box-shadow: 0 0 0 2px var(--core-card), 0 0 0 4px var(--brand-primary);
 }
 
 /* "Sin color" swatch: transparent with a diagonal line indicator */
@@ -279,14 +169,14 @@
     background: linear-gradient(
         to bottom right,
         transparent calc(50% - 1px),
-        var(--destructive, oklch(0.6 0.2 25)) calc(50% - 1px),
-        var(--destructive, oklch(0.6 0.2 25)) calc(50% + 1px),
+        var(--destructive) calc(50% - 1px),
+        var(--destructive) calc(50% + 1px),
         transparent calc(50% + 1px)
     );
 }
 
 .colorSwatchNoneSelected {
-    box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--primary, oklch(0.55 0.17 264));
+    box-shadow: 0 0 0 2px var(--core-card), 0 0 0 4px var(--brand-primary);
 }
 
 /* ── Icon picker ─────────────────────────────────────────────────────────── */
@@ -306,8 +196,8 @@
     justify-content: center;
     border-radius: var(--radius-button, 8px);
     border: 2px solid var(--border);
-    background-color: var(--background);
-    color: var(--muted-foreground);
+    background-color: var(--core-background);
+    color: var(--core-muted-foreground);
     cursor: pointer;
     padding: 0;
     flex-shrink: 0;
@@ -327,7 +217,7 @@
 }
 
 .iconBtn:focus-visible {
-    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
+    outline: 3px solid var(--brand-primary);
     outline-offset: 2px;
 }
 
@@ -353,14 +243,15 @@
     display: flex;
     justify-content: flex-end;
     gap: var(--space-3, 12px);
-    padding-top: var(--space-2, 8px);
+    padding-top: var(--space-4, 16px);
+    margin-top: var(--space-2, 8px);
     border-top: 1px solid var(--border);
 }
 
 .cancelBtn {
     padding: var(--space-2, 8px) var(--space-4, 16px);
     background-color: transparent;
-    color: var(--foreground);
+    color: var(--core-foreground);
     border: 1px solid var(--border);
     border-radius: var(--radius-button, 8px);
     font-family: var(--font-sans);
@@ -377,14 +268,17 @@
 }
 
 .cancelBtn:focus-visible {
-    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
+    outline: 3px solid var(--brand-primary);
     outline-offset: 2px;
 }
 
 .submitBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
     padding: var(--space-2, 8px) var(--space-5, 20px);
     background-color: var(--brand-primary);
-    color: white;
+    color: var(--primary-foreground);
     border: none;
     border-radius: var(--radius-button, 8px);
     font-family: var(--font-sans);
@@ -404,27 +298,20 @@
 }
 
 .submitBtn:focus-visible {
-    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
+    outline: 3px solid var(--brand-primary);
     outline-offset: 2px;
 }
 
 /* ── Submit spinner ──────────────────────────────────────────────────────── */
 
-.submitBtn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2, 8px);
-}
-
 .spinner {
     display: inline-block;
     width: 14px;
     height: 14px;
-    border: 2px solid oklch(1 0 0 / 0.35);
-    border-top-color: white;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
-    flex-shrink: 0;
 }
 
 @keyframes spin {
@@ -436,6 +323,5 @@
 @media (prefers-reduced-motion: reduce) {
     .spinner {
         animation: none;
-        opacity: 0.6;
     }
 }

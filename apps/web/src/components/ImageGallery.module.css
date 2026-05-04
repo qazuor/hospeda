@@ -195,49 +195,8 @@
 
 /* ── Lightbox ───────────────────────────────────────────────────────────── */
 
-.lightboxOverlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    background: oklch(0 0 0 / 0.92);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: lightboxFadeIn 0.2s ease-out;
-}
-
-@keyframes lightboxFadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-.lightboxClose {
-    position: absolute;
-    top: var(--space-4, 16px);
-    right: var(--space-4, 16px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    border: none;
-    border-radius: 50%;
-    background: oklch(1 0 0 / 0.12);
-    color: oklch(1 0 0);
-    cursor: pointer;
-    transition: background var(--duration-normal, 0.4s) ease;
-    z-index: 10;
-}
-
-.lightboxClose:hover,
-.lightboxClose:focus-visible {
-    background: oklch(1 0 0 / 0.24);
-    outline: none;
-}
+/* Overlay tint + scroll lock + ESC + click-outside + portal + focus management
+ * are all handled by the shared <Dialog variant="transparent" size="full">. */
 
 .lightboxCounter {
     position: absolute;
@@ -260,19 +219,32 @@
     justify-content: center;
     width: 52px;
     height: 52px;
-    border: none;
+    border: 1px solid oklch(1 0 0 / 0.4);
     border-radius: 50%;
-    background: oklch(1 0 0 / 0.12);
+    background: oklch(0 0 0 / 0.65);
     color: oklch(1 0 0);
     cursor: pointer;
-    transition: background var(--duration-normal, 0.4s) ease;
+    transition: background var(--duration-normal, 0.4s) ease, border-color
+        var(--duration-normal, 0.4s) ease, transform var(--duration-normal, 0.4s) ease;
     z-index: 10;
+    box-shadow: 0 2px 12px oklch(0 0 0 / 0.5);
 }
 
 .lightboxNav:hover,
 .lightboxNav:focus-visible {
-    background: oklch(1 0 0 / 0.28);
+    background: oklch(0 0 0 / 0.9);
+    border-color: oklch(1 0 0 / 0.8);
     outline: none;
+}
+
+.lightboxNavPrev:hover,
+.lightboxNavPrev:focus-visible {
+    transform: translateY(-50%) scale(1.05);
+}
+
+.lightboxNavNext:hover,
+.lightboxNavNext:focus-visible {
+    transform: translateY(-50%) scale(1.05);
 }
 
 .lightboxNavPrev {
