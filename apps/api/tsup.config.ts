@@ -11,7 +11,13 @@ export default defineConfig({
     dts: true,
     bundle: true,
     tsconfig: './tsconfig.json',
-    external: ['@sentry/profiling-node'],
+    // CJS-only packages (or packages that use dynamic require()) must be
+    // externalised — bundling them into the ESM output of vercel.js
+    // produces `Dynamic require of "X" is not supported` at runtime.
+    // The packages themselves are still bundled into the deployment by
+    // Vercel as regular node_modules; they just stay as runtime imports
+    // instead of being inlined into vercel.js.
+    external: ['@sentry/profiling-node', 'cloudinary', 'file-type', 'image-size'],
     noExternal: [
         /@repo\/.*/,
         '@repo/config',

@@ -436,18 +436,27 @@ importers:
       better-auth:
         specifier: ^1.4.18
         version: 1.4.18(@tanstack/react-start@1.166.15(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(vite@8.0.10(@types/node@22.17.2)(esbuild@0.25.9)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-kit@0.31.5)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.28.16)(pg@8.16.3)(postgres@3.4.8))(pg@8.16.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)(vitest@3.2.4)
+      cloudinary:
+        specifier: ^2.9.0
+        version: 2.9.0
       dotenv:
         specifier: ^16.5.0
         version: 16.6.1
       drizzle-orm:
         specifier: '>=0.45.2'
         version: 0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.28.16)(pg@8.16.3)(postgres@3.4.8)
+      file-type:
+        specifier: ^19.6.0
+        version: 19.6.0
       hono:
         specifier: ^4.12.16
         version: 4.12.16
       hono-rate-limiter:
         specifier: ^0.4.2
         version: 0.4.2(hono@4.12.16)
+      image-size:
+        specifier: ^2.0.0
+        version: 2.0.2
       ioredis:
         specifier: ^5.4.0
         version: 5.10.0
@@ -13180,14 +13189,14 @@ snapshots:
       msw: 2.12.7(@types/node@25.3.3)(typescript@5.7.2)
       vite: 8.0.10(@types/node@25.3.3)(esbuild@0.25.9)(jiti@2.6.1)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.1)
 
-  '@vitest/mocker@3.2.4(msw@2.12.7(@types/node@25.3.3)(typescript@5.9.3))(vite@8.0.10(@types/node@22.17.2)(esbuild@0.25.9)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))':
+  '@vitest/mocker@3.2.4(msw@2.12.7(@types/node@25.3.3)(typescript@5.9.3))(vite@8.0.10(@types/node@25.3.3)(esbuild@0.25.9)(jiti@2.6.1)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.1))':
     dependencies:
       '@vitest/spy': 3.2.4
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
       msw: 2.12.7(@types/node@25.3.3)(typescript@5.9.3)
-      vite: 8.0.10(@types/node@22.17.2)(esbuild@0.25.9)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
+      vite: 8.0.10(@types/node@25.3.3)(esbuild@0.25.9)(jiti@2.6.1)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.1)
 
   '@vitest/pretty-format@3.2.4':
     dependencies:
@@ -18054,7 +18063,7 @@ snapshots:
     dependencies:
       '@types/chai': 5.2.2
       '@vitest/expect': 3.2.4
-      '@vitest/mocker': 3.2.4(msw@2.12.7(@types/node@25.3.3)(typescript@5.9.3))(vite@8.0.10(@types/node@22.17.2)(esbuild@0.25.9)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))
+      '@vitest/mocker': 3.2.4(msw@2.12.7(@types/node@25.3.3)(typescript@5.9.3))(vite@8.0.10(@types/node@25.3.3)(esbuild@0.25.9)(jiti@2.6.1)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.1))
       '@vitest/pretty-format': 3.2.4
       '@vitest/runner': 3.2.4
       '@vitest/snapshot': 3.2.4
