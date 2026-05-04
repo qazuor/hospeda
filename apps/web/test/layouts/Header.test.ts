@@ -26,8 +26,8 @@ describe('Header.astro — file structure', () => {
         expect(src).toContain('readonly locale: SupportedLocale');
     });
 
-    it('imports UserMenu from UserMenu.client', () => {
-        expect(src).toContain('UserMenu.client');
+    it('imports UserMenu from the shared navigation directory', () => {
+        expect(src).toContain('shared/navigation/UserMenu.client');
     });
 
     it('imports buildUrl from @/lib/urls', () => {
@@ -80,13 +80,14 @@ describe('Header.astro — Publicar CTA', () => {
         expect(src).toContain('buildUrl({ locale, path: "/publicar/" })');
     });
 
-    it('does NOT hide the CTA under 1200px (no display:none at 1200px breakpoint for .header__cta)', () => {
-        // The old header hid .header__cta under 1200px.
-        // REQ-096-16: "Publicar" MUST be visible at all viewport widths.
-        // Verify there is no .header__cta rule inside a max-width: 1199px / 1200px query.
+    it('does NOT hide the CTA under 1200px (REQ-096-16: Publicar visible at all widths)', () => {
+        // The old header hid .header__cta under 1200px. REQ-096-16 requires
+        // it to stay visible everywhere, so search the relevant CSS slice
+        // for any rule that would set display:none on this exact class.
         const ctaBlock = src.slice(src.indexOf('.header__cta'));
-        // Should NOT contain display: none in any context for the CTA class
-        expect(ctaBlock).not.toContain('display: none !important');
+        const ctaCssEnd = ctaBlock.indexOf('/* ──');
+        const ctaCss = ctaCssEnd === -1 ? ctaBlock : ctaBlock.slice(0, ctaCssEnd);
+        expect(ctaCss).not.toMatch(/\.header__cta[^{]*\{[^}]*display:\s*none/);
     });
 
     it('renders the CTA outside the hamburger-only area (within header__right)', () => {
@@ -116,8 +117,8 @@ describe('Header.astro — UserMenu island', () => {
         expect(src).toContain('client:load');
     });
 
-    it('passes user prop to UserMenu', () => {
-        expect(src).toContain('user={userMenuUser}');
+    it('passes initialUser prop to UserMenu', () => {
+        expect(src).toContain('initialUser={initialUserMenuUser}');
     });
 
     it('passes locale prop to UserMenu', () => {
@@ -128,14 +129,12 @@ describe('Header.astro — UserMenu island', () => {
         expect(src).toContain('Astro.locals.user');
     });
 
-    it('builds userMenuUser from server session data', () => {
-        expect(src).toContain('userMenuUser');
+    it('builds initialUserMenuUser from server session data', () => {
+        expect(src).toContain('initialUserMenuUser');
     });
 
-    it('sets userMenuUser to null when no session', () => {
-        expect(src).toContain('null');
-        // null is the unauthenticated state
-        expect(src).toContain('serverUser\n    ?');
+    it('sets initialUserMenuUser to null when no session', () => {
+        expect(src).toContain('initialUserMenuUser = serverUser\n    ?');
     });
 });
 
