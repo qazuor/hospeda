@@ -127,22 +127,40 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 ```bash
 # HOSPEDA_CRON_ADAPTER - Determines how jobs are scheduled
-# Options: 'manual' (default), 'node-cron', 'vercel'
-HOSPEDA_CRON_ADAPTER=manual
+# Options: 'manual' (default), 'node-cron', 'vercel', 'qstash'
+HOSPEDA_CRON_ADAPTER=qstash
 
 # HOSPEDA_DISABLE_AUTH - Disable authentication (DEVELOPMENT ONLY!)
 # WARNING: NEVER set to true in production
 # Default: false
 HOSPEDA_DISABLE_AUTH=false
+
+# QStash credentials (only when HOSPEDA_CRON_ADAPTER=qstash)
+# Get them at https://console.upstash.com/qstash:
+#   - QSTASH_TOKEN: bearer token used by scripts/setup-qstash-schedules.ts
+#     to provision schedules. NOT consumed at runtime.
+#   - QSTASH_CURRENT_SIGNING_KEY: verifies the Upstash-Signature header
+#     on every incoming production cron request.
+#   - QSTASH_NEXT_SIGNING_KEY: accepted during scheduled key rotation.
+QSTASH_TOKEN=<bearer token>
+QSTASH_CURRENT_SIGNING_KEY=sig_xxx
+QSTASH_NEXT_SIGNING_KEY=sig_xxx
 ```
+
+The Zod schema in `apps/api/src/utils/env.ts` cross-validates these:
+setting `HOSPEDA_CRON_ADAPTER=qstash` requires both signing keys, and
+setting one signing key without the other fails startup with a clear
+message. The bearer token (`QSTASH_TOKEN`) is only needed by the
+provisioning script — it is not validated at runtime.
 
 ### HOSPEDA_CRON_ADAPTER Options
 
 | Adapter | When to Use | Scheduling Behavior | Requirements |
 |---------|-------------|---------------------|--------------|
-| `manual` | Local development, debugging | None - manual trigger only | None |
+| `manual` | Local development, debugging | None — manual trigger only | None |
 | `node-cron` | VPS, self-hosted, Docker | In-process automatic scheduling | `node-cron` package |
-| `vercel` | Vercel deployment | External via Vercel Cron | `vercel.json` config |
+| `vercel` | Vercel deployment, daily-only schedules on the Hobby plan | External via Vercel Cron | `crons` array in `vercel.json` |
+| `qstash` | Vercel deployment with sub-daily schedules, multi-platform | External via Upstash QStash, signed requests | QStash account, signing keys, `setup-qstash-schedules.ts` |
 
 ---
 
@@ -329,23 +347,95 @@ HOSPEDA_CRON_SECRET=<your-vercel-secret>
 
 ---
 
+### Upstash QStash (qstash)
+
+**Best for:** Vercel deployments that need sub-daily schedules without paying for the Pro plan, multi-platform deployments, and any environment where a managed external scheduler is preferable to in-process timers.
+
+**Why QStash:** Vercel's Hobby plan caps cron jobs at daily granularity. QStash is a hosted scheduler that hits arbitrary HTTPS endpoints on a cron expression with sub-minute precision, signed retries, and a free tier of 500 messages per day.
+
+**Setup:**
+
+1. Create a free Upstash account at <https://upstash.com>.
+2. In the Upstash Console open **QStash** → copy three values:
+   - `QSTASH_TOKEN` — bearer token (under "Tokens").
+   - `QSTASH_CURRENT_SIGNING_KEY` — current verification key.
+   - `QSTASH_NEXT_SIGNING_KEY` — rotation pair.
+3. Add the three to the API's environment in production. For Vercel:
+
+   ```bash
+   cd apps/api
+   echo "<token>" | vercel env add QSTASH_TOKEN production
+   echo "<current key>" | vercel env add QSTASH_CURRENT_SIGNING_KEY production
+   echo "<next key>" | vercel env add QSTASH_NEXT_SIGNING_KEY production
+   ```
+
+4. Set `HOSPEDA_CRON_ADAPTER=qstash` in the API's production env.
+5. Deploy the API at least once so the public URL exists.
+6. Provision the schedules from the cron registry:
+
+   ```bash
+   QSTASH_TOKEN=<token> \
+   HOSPEDA_API_URL=https://<your-api>.vercel.app \
+   pnpm tsx scripts/setup-qstash-schedules.ts --dry-run
+
+   # Once the dry-run output looks correct:
+   pnpm tsx scripts/setup-qstash-schedules.ts
+   ```
+
+   The script reads `apps/api/src/cron/registry.ts` and creates one
+   QStash schedule per enabled job, targeting
+   `${HOSPEDA_API_URL}/api/v1/cron/<job-name>` with the `schedule` field
+   declared on the job definition.
+
+**How it works:**
+
+- Each scheduled firing sends a `POST` request to the cron endpoint with an `Upstash-Signature` JWT header.
+- The cron auth middleware (`apps/api/src/cron/middleware.ts`) accepts EITHER a verified `Upstash-Signature` (production) OR the legacy `HOSPEDA_CRON_SECRET` Bearer/`X-Cron-Secret` header (dev/manual). When a signature is present, an invalid one fails closed without falling back to the secret path.
+- The signature is verified using the `@upstash/qstash` `Receiver` class with both signing keys, so key rotation is seamless.
+- QStash retries failed deliveries up to 3 times by default and exposes a dead-letter queue in the dashboard.
+
+**Keeping schedules in sync:**
+
+The `setup-qstash-schedules.ts` script is **idempotent**: it creates new schedules, replaces ones whose cron expression changed, and removes orphans whose endpoint is no longer in the registry. The CD workflow (`.github/workflows/cd-production.yml`) re-runs it after every successful API deploy when `QSTASH_TOKEN` is configured as a secret, so the source of truth stays in code.
+
+**Limits and cost:**
+
+- Free tier: 500 messages per day.
+- Hospeda's projected load with all 16 enabled jobs is ≈ 470 msgs/day; the heaviest is `conversation-notification` (`*/5 * * * *` = 288/day).
+- The first paid tier costs ~$1/month and covers ~10× the load.
+- Schedules and dead-letter inspection are exposed in the QStash dashboard.
+
+**Expected logs (API):**
+
+```
+[CRON:trial-expiry] Completed { success: true, processed: 0, errors: 0, durationMs: 24, dryRun: false }
+```
+
+The cron adapter itself does not log anything specific to QStash — the signing-key verification happens transparently inside `cronAuthMiddleware`. Failed signatures show up as `Invalid Upstash-Signature on cron request` 401 responses.
+
+---
+
 ## Security
 
 ### Authentication Middleware
 
-All cron endpoints are protected by authentication middleware that validates the `X-Cron-Secret` header.
+All cron endpoints are protected by `cronAuthMiddleware`
+(`apps/api/src/cron/middleware.ts`). It accepts authentication through
+**either** path — at least one must be configured for cron requests to
+succeed:
 
-**Implementation:**
+1. **Upstash QStash signature** — production schedulers send an
+   `Upstash-Signature` JWT header. The middleware verifies it with the
+   current and next signing keys via the `@upstash/qstash` `Receiver`.
+   When the header is present but invalid, the request is rejected
+   (no fallback to the shared secret).
+2. **Shared secret** (`HOSPEDA_CRON_SECRET`) — a long random value
+   provided as a `Bearer` token in the `Authorization` header **or** as
+   an `X-Cron-Secret` header. Used for local dev, the admin panel's
+   manual trigger, and operators reaching the API directly.
 
-```typescript
-// Automatic in apps/api/src/routes/cron/[jobName].ts
-if (!process.env.HOSPEDA_DISABLE_AUTH) {
-  const secret = c.req.header('X-Cron-Secret');
-  if (secret !== process.env.HOSPEDA_CRON_SECRET) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-}
-```
+If neither QStash signing keys nor `HOSPEDA_CRON_SECRET` is configured,
+cron endpoints return `503` with a configuration error instead of `401`.
 
 ### Best Practices
 

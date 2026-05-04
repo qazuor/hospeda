@@ -137,7 +137,7 @@ export const HOSPEDA_ENV_VARS = [
         type: 'string',
         required: false,
         secret: false,
-        exampleValue: 'Hospeda/1.0 (https://hospeda.ar)',
+        exampleValue: 'Hospeda/1.0 (https://hospeda.com.ar)',
         apps: ['api'],
         category: 'auth'
     },
@@ -304,7 +304,7 @@ export const HOSPEDA_ENV_VARS = [
         type: 'string',
         required: false,
         secret: false,
-        exampleValue: 'noreply@hospeda.ar',
+        exampleValue: 'noreply@hospeda.com.ar',
         apps: ['api'],
         category: 'email'
     },
@@ -324,7 +324,7 @@ export const HOSPEDA_ENV_VARS = [
         type: 'string',
         required: false,
         secret: false,
-        exampleValue: 'admin@hospeda.ar',
+        exampleValue: 'admin@hospeda.com.ar',
         apps: ['api'],
         category: 'email'
     },

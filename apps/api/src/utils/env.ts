@@ -91,7 +91,7 @@ export const ApiEnvBaseSchema = z.object({
      * policy requires an identifiable User-Agent; missing or generic values
      * may result in throttling or banning.
      */
-    HOSPEDA_GEOCODING_USER_AGENT: z.string().min(1).default('Hospeda/1.0 (https://hospeda.ar)'),
+    HOSPEDA_GEOCODING_USER_AGENT: z.string().min(1).default('Hospeda/1.0 (https://hospeda.com.ar)'),
 
     // OAuth providers
     HOSPEDA_GOOGLE_CLIENT_ID: z.string().optional(),
@@ -397,6 +397,45 @@ const ApiEnvSchema = ApiEnvBaseSchema.superRefine((data, ctx) => {
             message:
                 'HOSPEDA_REDIS_URL is required in production for rate limiting to work across instances'
         });
+    }
+    // QSTash cross-validation: signing keys ship in pairs and are both
+    // required by the verifier. Setting one without the other is almost
+    // always a misconfiguration that would leave cron requests un-
+    // authenticatable in production.
+    if (data.QSTASH_CURRENT_SIGNING_KEY && !data.QSTASH_NEXT_SIGNING_KEY) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['QSTASH_NEXT_SIGNING_KEY'],
+            message:
+                'QSTASH_NEXT_SIGNING_KEY is required when QSTASH_CURRENT_SIGNING_KEY is set (key rotation pair)'
+        });
+    }
+    if (data.QSTASH_NEXT_SIGNING_KEY && !data.QSTASH_CURRENT_SIGNING_KEY) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['QSTASH_CURRENT_SIGNING_KEY'],
+            message:
+                'QSTASH_CURRENT_SIGNING_KEY is required when QSTASH_NEXT_SIGNING_KEY is set (key rotation pair)'
+        });
+    }
+    // When the cron adapter is set to qstash, both signing keys MUST be
+    // configured so incoming production cron requests can be verified.
+    if (data.HOSPEDA_CRON_ADAPTER === 'qstash') {
+        if (!data.QSTASH_CURRENT_SIGNING_KEY) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['QSTASH_CURRENT_SIGNING_KEY'],
+                message:
+                    'QSTASH_CURRENT_SIGNING_KEY is required when HOSPEDA_CRON_ADAPTER is "qstash"'
+            });
+        }
+        if (!data.QSTASH_NEXT_SIGNING_KEY) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['QSTASH_NEXT_SIGNING_KEY'],
+                message: 'QSTASH_NEXT_SIGNING_KEY is required when HOSPEDA_CRON_ADAPTER is "qstash"'
+            });
+        }
     }
     // OAuth cross-validation: require secret when client ID is set
     if (data.HOSPEDA_GOOGLE_CLIENT_ID && !data.HOSPEDA_GOOGLE_CLIENT_SECRET) {

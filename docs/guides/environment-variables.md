@@ -71,7 +71,7 @@ pnpm env:check
 | `HOSPEDA_BETTER_AUTH_SECRET` | string | yes | yes | - | Session signing secret (min 32 chars) |
 | `HOSPEDA_BETTER_AUTH_URL` | url | yes | no | - | Better Auth endpoint URL |
 | `HOSPEDA_LOCATION_SALT` | string | yes | yes | - | Salt for accommodation location obfuscation (min 32 chars). Generate with `openssl rand -base64 48`. Rotating changes all approximate-location offsets shown to public visitors. |
-| `HOSPEDA_GEOCODING_USER_AGENT` | string | no | no | `Hospeda/1.0 (https://hospeda.ar)` | Identifiable User-Agent header sent to Photon (Komoot) and Nominatim (OSM) when the admin location picker queries them. Required by Nominatim usage policy; missing or generic values may cause throttling. |
+| `HOSPEDA_GEOCODING_USER_AGENT` | string | no | no | `Hospeda/1.0 (https://hospeda.com.ar)` | Identifiable User-Agent header sent to Photon (Komoot) and Nominatim (OSM) when the admin location picker queries them. Required by Nominatim usage policy; missing or generic values may cause throttling. |
 | `HOSPEDA_GOOGLE_CLIENT_ID` | string | no | yes | - | Google OAuth client ID |
 | `HOSPEDA_GOOGLE_CLIENT_SECRET` | string | no | yes | - | Google OAuth secret |
 | `HOSPEDA_FACEBOOK_CLIENT_ID` | string | no | yes | - | Facebook OAuth client ID |
@@ -98,8 +98,11 @@ pnpm env:check
 
 | Variable | Type | Required | Secret | Default | Description |
 |----------|------|----------|--------|---------|-------------|
-| `HOSPEDA_CRON_SECRET` | string | no | yes | - | Cron endpoint auth secret |
-| `HOSPEDA_CRON_ADAPTER` | enum | no | no | `manual` | Scheduler type: `manual`, `vercel`, `node-cron` |
+| `HOSPEDA_CRON_SECRET` | string | no | yes | - | Cron endpoint auth secret (manual triggers, dev) |
+| `HOSPEDA_CRON_ADAPTER` | enum | no | no | `manual` | Scheduler type: `manual`, `vercel`, `qstash`, `node-cron` |
+| `QSTASH_TOKEN` | string | no | yes | - | Upstash QStash bearer token (provisioning script only, not consumed at runtime) |
+| `QSTASH_CURRENT_SIGNING_KEY` | string | no | yes | - | Verifies incoming QStash cron signatures. Required when `HOSPEDA_CRON_ADAPTER=qstash` |
+| `QSTASH_NEXT_SIGNING_KEY` | string | no | yes | - | Accepted during QStash signing-key rotation. Required when `HOSPEDA_CRON_ADAPTER=qstash` |
 | `HOSPEDA_LINEAR_API_KEY` | string | no | yes | - | Linear bug report API key |
 | `HOSPEDA_LINEAR_TEAM_ID` | string | no | no | - | Linear team ID |
 | `HOSPEDA_EXCHANGE_RATE_API_KEY` | string | no | yes | - | ExchangeRate-API key |
@@ -326,11 +329,11 @@ via `TEST_DB_URL` and `TEST_DB_NAME` before the test suite runs.
 | Variable | Development | Staging | Production |
 |----------|-------------|---------|------------|
 | `NODE_ENV` | `development` | `production` | `production` |
-| `HOSPEDA_API_URL` | `http://localhost:3001` | `https://api.staging.hospeda.ar` | `https://api.hospeda.ar` |
-| `HOSPEDA_SITE_URL` | `http://localhost:4321` | `https://staging.hospeda.ar` | `https://hospeda.ar` |
+| `HOSPEDA_API_URL` | `http://localhost:3001` | `https://api.staging.hospeda.com.ar` | `https://api.hospeda.com.ar` |
+| `HOSPEDA_SITE_URL` | `http://localhost:4321` | `https://staging.hospeda.com.ar` | `https://hospeda.com.ar` |
 | `HOSPEDA_DATABASE_URL` | local Docker Postgres | staging Postgres | production Postgres |
 | `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN` | `TEST-xxxx` token | `TEST-xxxx` token | live token |
-| `HOSPEDA_CRON_ADAPTER` | `manual` | `vercel` | `vercel` |
+| `HOSPEDA_CRON_ADAPTER` | `manual` | `qstash` | `qstash` |
 | `API_LOG_LEVEL` | `debug` | `info` | `warn` |
 | `API_LOG_USE_COLORS` | `true` | `false` | `false` |
 | `API_SECURITY_CSRF_ENABLED` | `false` | `true` | `true` |
@@ -353,6 +356,16 @@ pnpm env:pull
 Fetches variables from a Vercel project and writes them to the local `.env.local`
 file for the selected app. For each variable that differs from the local value,
 the script shows the new value and asks for confirmation before writing.
+
+> **Gotcha — pull overwrites; it does not merge.** The underlying `vercel env
+> pull` replaces `.env.local` with the contents of the chosen Vercel
+> environment. Any variable that exists locally but not in Vercel is silently
+> dropped on the next pull. If a variable is required by the app's Zod schema
+> (`apps/{app}/src/utils/env.ts`) and missing from Vercel, the next `pnpm dev`
+> after the pull will fail at startup with a Zod validation error. Treat
+> Vercel as the source of truth and keep `.env.example` aligned with the
+> Vercel project — the CD `pnpm env:check --ci` gate enforces this for staging
+> and production but cannot help a local pull.
 
 Source: `scripts/env/pull.ts`
 
@@ -384,6 +397,34 @@ Audits all three apps against Vercel for every environment target
 
 Exit code `0` means all required variables are present. Exit code `1` means at
 least one required variable is missing. Use `--ci` in GitHub Actions.
+
+#### Running it locally
+
+The script needs `VERCEL_TOKEN` in the environment. Generate one at
+[vercel.com/account/tokens](https://vercel.com/account/tokens), then export it.
+On fish, the recommended pattern is a universal variable so it survives across
+sessions without ending up in `~/.config/fish/config.fish` (which is committed):
+
+```fish
+set -Ux VERCEL_TOKEN <your-token>
+```
+
+On bash/zsh, prefer a per-shell export from a non-tracked file:
+
+```bash
+export VERCEL_TOKEN=<your-token>
+```
+
+Without it the script aborts before contacting the Vercel API with the message
+`VERCEL_TOKEN env var is required`.
+
+#### CI gate behavior
+
+Both `cd-staging.yml` and `cd-production.yml` run `pnpm env:check --ci` before
+their respective deploy steps. **Both treat the result as a hard failure** —
+production is no longer behind a `|| true` fallback. If the GitHub Actions
+runner is missing the `VERCEL_TOKEN` secret, the workflow stops with a clear
+error so the secret can be repaired before any deploy.
 
 Source: `scripts/env/check.ts`
 

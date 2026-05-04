@@ -61,6 +61,17 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_API }}
 
+      # Sync Upstash QStash schedules with the cron registry after each
+      # successful API deploy. The script is idempotent: it creates new
+      # schedules, updates changed cron expressions, and removes orphans.
+      # Skipped silently when QSTASH_TOKEN is not configured (e.g. forks).
+      - name: Sync QStash schedules with cron registry
+        if: env.QSTASH_TOKEN != ''
+        run: pnpm tsx scripts/setup-qstash-schedules.ts
+        env:
+          QSTASH_TOKEN: ${{ secrets.QSTASH_TOKEN }}
+          HOSPEDA_API_URL: ${{ vars.HOSPEDA_API_URL }}
+
   deploy-web:
     name: Deploy Web to Vercel (Production)
     needs: ci
