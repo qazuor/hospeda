@@ -5,7 +5,7 @@
 import { accommodations, getDb } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
-import { and, desc, eq, ne, or } from 'drizzle-orm';
+import { type SQL, and, desc, eq, ne, or } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { createPublicRoute } from '../../../utils/route-factory';
@@ -76,21 +76,47 @@ export const publicGetSimilarRoute = createPublicRoute({
             return [];
         }
 
-        const rows = await db
-            .select()
-            .from(accommodations)
-            .where(
-                and(
-                    or(...similarityConditions),
-                    ne(accommodations.id, id),
-                    eq(accommodations.lifecycleState, 'ACTIVE'),
-                    eq(accommodations.visibility, 'PUBLIC')
-                )
-            )
-            .orderBy(desc(accommodations.averageRating))
-            .limit(limit);
+        // Use the relational query builder so the `destination` relation is
+        // eager-loaded in the same round trip. Without this the consumer cards
+        // (Web app) cannot show the destination name and fall back to "—".
+        const orCondition = or(...similarityConditions) as SQL<unknown>;
+        const where = and(
+            orCondition,
+            ne(accommodations.id, id),
+            eq(accommodations.lifecycleState, 'ACTIVE'),
+            eq(accommodations.visibility, 'PUBLIC')
+        ) as SQL<unknown>;
 
-        return rows;
+        const rows = await db.query.accommodations.findMany({
+            where,
+            with: {
+                destination: {
+                    columns: {
+                        id: true,
+                        name: true,
+                        slug: true,
+                        summary: true,
+                        destinationType: true,
+                        level: true,
+                        path: true,
+                        pathIds: true
+                    }
+                }
+            },
+            orderBy: desc(accommodations.averageRating),
+            limit
+        });
+
+        // Project the loaded `destination` relation as `cityDestination` to
+        // match the public API response shape used by listByOwner / list.
+        // The Web transform's `deriveCityFields()` reads `cityDestination`
+        // (preferred) before falling back to legacy `destination`.
+        return rows.map((row) => {
+            const { destination, ...rest } = row as Record<string, unknown> & {
+                destination?: unknown;
+            };
+            return destination ? { ...rest, cityDestination: destination } : rest;
+        });
     },
     options: {
         cacheTTL: 300,
