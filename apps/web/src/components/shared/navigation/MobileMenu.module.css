@@ -286,43 +286,28 @@
     cursor: not-allowed;
 }
 
-/* Language switcher */
-.langSection {
+/* Preferences section — wraps shared LanguageSwitcher + ThemeControl */
+.preferencesSection {
     display: flex;
-    gap: 0.5rem;
+    flex-direction: column;
+    gap: 0.875rem;
     padding: 1rem 1.5rem;
     border-top: 1px solid var(--border);
 }
 
-.langOption {
+.preferencesGroup {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 44px;
-    padding: 0.375rem 0.75rem;
-    border-radius: var(--radius-button);
-    border: 1px solid var(--border);
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.preferencesLabel {
     font-family: var(--font-sans);
-    font-size: 13px;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: var(--core-foreground);
-    text-decoration: none;
-    transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.langOption:hover {
-    background-color: oklch(from var(--core-foreground) l c h / 0.05);
-}
-
-.langOptionActive {
-    background-color: oklch(from var(--brand-primary) l c h / 0.1);
-    border-color: var(--brand-primary);
-    color: var(--brand-primary);
-}
-
-.langOption:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--brand-accent);
+    color: var(--core-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
 /* Owner CTA link — accent pill button above auth section */
@@ -354,8 +339,3 @@
     box-shadow: 0 0 0 2px var(--brand-primary);
 }
 
-/* Theme toggle placement — pushes the icon button to the far right of the language row */
-.themeTogglePlacement {
-    margin-left: auto;
-    flex-shrink: 0;
-}

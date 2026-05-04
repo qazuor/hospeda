@@ -1,0 +1,253 @@
+.wrapper {
+    position: relative;
+    display: inline-flex;
+}
+
+/* ── Sign-in link (guest) ───────────────────────────────────────────── */
+
+.signInLink {
+    display: inline-flex;
+    align-items: center;
+    height: 2.5rem;
+    padding-inline: 1.25rem;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    font-weight: 500;
+    text-decoration: none;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        color var(--duration-normal, 0.4s) ease,
+        border-color var(--duration-normal, 0.4s) ease;
+}
+
+.signInLinkHero {
+    border: 1px solid rgba(255 255 255 / 0.35);
+    color: #fff;
+    background-color: rgba(255 255 255 / 0.12);
+}
+
+.signInLinkHero:hover {
+    background-color: rgba(255 255 255 / 0.18);
+}
+
+.signInLinkScrolled {
+    border: 1px solid oklch(from var(--core-foreground) l c h / 0.2);
+    color: var(--core-foreground);
+    background-color: transparent;
+}
+
+.signInLinkScrolled:hover {
+    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+}
+
+.signInLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* ── Trigger (authenticated) ────────────────────────────────────────── */
+
+.trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px 4px 4px;
+    border-radius: var(--radius-pill);
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.triggerHero {
+    color: #fff;
+    background-color: rgba(255 255 255 / 0.12);
+    border-color: rgba(255 255 255 / 0.25);
+}
+
+.triggerHero:hover {
+    background-color: rgba(255 255 255 / 0.18);
+}
+
+.triggerScrolled {
+    color: var(--core-foreground);
+    border-color: oklch(from var(--core-foreground) l c h / 0.15);
+}
+
+.triggerScrolled:hover {
+    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+}
+
+.trigger:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.avatar,
+.initials {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.initials {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground, #fff);
+}
+
+.displayName {
+    max-width: 12ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .displayName {
+        display: none;
+    }
+}
+
+.chevron {
+    display: inline-flex;
+    transition: transform 0.2s ease;
+}
+
+.chevronOpen {
+    transform: rotate(180deg);
+}
+
+/* ── Dropdown menu ──────────────────────────────────────────────────── */
+
+.menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: var(--z-dropdown, 60);
+    min-width: 280px;
+    max-width: 340px;
+    background-color: var(--core-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
+    overflow: hidden;
+    animation: menu-in 0.15s ease-out;
+}
+
+@keyframes menu-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.menuHeader {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.menuHeaderName {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--core-foreground);
+}
+
+.menuHeaderEmail {
+    margin: 2px 0 0;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.menuList {
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+}
+
+.menuLink,
+.signOutButton {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.menuLink:hover,
+.menuLink:focus-visible,
+.signOutButton:hover,
+.signOutButton:focus-visible {
+    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+    color: var(--brand-primary);
+    outline: none;
+}
+
+.signOutButton {
+    color: var(--core-muted-foreground);
+}
+
+.signOutButton:hover {
+    color: var(--core-destructive, #dc2626);
+}
+
+.divider {
+    margin: 4px 0;
+    border: none;
+    border-top: 1px solid var(--border);
+}
+
+.prefsSection {
+    padding: 8px 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.prefsRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.prefsLabel {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}

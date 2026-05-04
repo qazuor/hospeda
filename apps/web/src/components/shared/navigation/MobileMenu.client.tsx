@@ -14,6 +14,8 @@
  * Tasks: T-074
  */
 
+import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
+import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
 import { IconButton } from '@/components/ui/IconButtonReact';
 import { signOut } from '@/lib/auth-client';
 import { getInitials as getInitialsShared } from '@/lib/avatar-utils';
@@ -26,9 +28,7 @@ import {
     ChevronDownIcon,
     CloseIcon,
     LogoutIcon,
-    MoonIcon,
     SearchIcon,
-    SunIcon,
     UserIcon
 } from '@repo/icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -151,39 +151,21 @@ export function MobileMenu({
     const [isOpen, setIsOpen] = useState(false);
     const [isAccountOpen, setIsAccountOpen] = useState(false);
     const [isSigningOut, setIsSigningOut] = useState(false);
-    const [isDark, setIsDark] = useState(false);
     const closeButtonRef = useRef<HTMLButtonElement>(null);
     const authTexts = AUTH_TEXTS[locale] ?? AUTH_TEXTS.es;
 
-    // Read initial theme from the DOM (already resolved by the FOUC script).
-    // This works for `'light'`, `'dark'`, and `'system'` preferences.
-    useEffect(() => {
-        setIsDark(document.documentElement.getAttribute('data-theme') === 'dark');
-    }, []);
-
-    const handleThemeToggle = useCallback(() => {
-        const next = !isDark;
-        setIsDark(next);
-        if (next) {
-            document.documentElement.setAttribute('data-theme', 'dark');
-            localStorage.setItem('theme', 'dark');
-        } else {
-            document.documentElement.removeAttribute('data-theme');
-            localStorage.setItem('theme', 'light');
-        }
-    }, [isDark]);
-
     // ------------------------------------------------------------------
-    // Toggle handler .. wired to the external [data-mobile-toggle] button
+    // Toggle handler — listens for a window-level CustomEvent dispatched
+    // by the hamburger button. This keeps the wiring resilient to View
+    // Transitions: even when ClientRouter swaps the header DOM and the old
+    // hamburger node disappears, the new one re-dispatches the same event
+    // and this listener (registered once on the window) keeps working.
     // ------------------------------------------------------------------
     useEffect(() => {
-        const toggle = document.querySelector('[data-mobile-toggle]');
-        if (!toggle) return;
-
         const handler = () => setIsOpen((prev) => !prev);
-        toggle.addEventListener('click', handler);
+        window.addEventListener('mobile-menu:toggle', handler);
         return () => {
-            toggle.removeEventListener('click', handler);
+            window.removeEventListener('mobile-menu:toggle', handler);
         };
     }, []);
 
@@ -446,50 +428,23 @@ export function MobileMenu({
                 )}
             </div>
 
-            {/* Language switcher */}
-            <div className={styles.langSection}>
-                {(['es', 'en', 'pt'] as const).map((loc) => {
-                    const pathWithoutLocale = currentPath.replace(/^\/(es|en|pt)(\/|$)/, '/');
-                    const localeUrl = `/${loc}${pathWithoutLocale}`;
-                    return (
-                        <a
-                            key={loc}
-                            href={localeUrl}
-                            onClick={handleClose}
-                            tabIndex={isOpen ? 0 : -1}
-                            className={cn(
-                                styles.langOption,
-                                loc === locale && styles.langOptionActive
-                            )}
-                            aria-current={loc === locale ? 'true' : undefined}
-                        >
-                            {loc.toUpperCase()}
-                        </a>
-                    );
-                })}
-                <IconButton
-                    variant="outline"
-                    size="sm"
-                    ariaLabel={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-                    aria={{ pressed: isDark }}
-                    onClick={handleThemeToggle}
-                    tabIndex={isOpen ? 0 : -1}
-                    className={styles.themeTogglePlacement}
-                >
-                    {isDark ? (
-                        <MoonIcon
-                            size={18}
-                            weight="regular"
-                            aria-hidden="true"
-                        />
-                    ) : (
-                        <SunIcon
-                            size={18}
-                            weight="regular"
-                            aria-hidden="true"
-                        />
-                    )}
-                </IconButton>
+            {/* Language + theme controls — shared primitives */}
+            <div className={styles.preferencesSection}>
+                <div className={styles.preferencesGroup}>
+                    <span className={styles.preferencesLabel}>{t('nav.language', 'Idioma')}</span>
+                    <LanguageSwitcher
+                        locale={locale}
+                        currentPath={currentPath}
+                        variant="mobile"
+                    />
+                </div>
+                <div className={styles.preferencesGroup}>
+                    <span className={styles.preferencesLabel}>{t('nav.theme', 'Tema')}</span>
+                    <ThemeControl
+                        variant="mobile"
+                        showLabels
+                    />
+                </div>
             </div>
 
             {/* Bottom search link */}

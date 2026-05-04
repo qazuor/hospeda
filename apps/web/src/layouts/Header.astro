@@ -1,25 +1,34 @@
 ---
 /**
  * @file Header.astro
- * @description Site header — REQ-096-16 redesign.
+ * @description Site header with responsive controls.
  *
- * Layout: logo | nav (Alojamientos, Destinos, Eventos, Publicaciones, Contacto)
- *         | search icon | "Publicar" CTA | UserMenu island
+ * Layout adapts at three breakpoints to keep density manageable:
+ *   - Wide   (≥1280px): logo / nav / search / lang / theme / publicar / user-or-signin
+ *   - Narrow (1025-1279px): logo / nav / search / publicar / settings dropdown OR user
+ *   - Mobile (<1025px): logo / search / publicar / hamburger (which holds everything)
  *
- * Desktop (≥1025px): full nav visible.
- * Mobile (<1025px): nav collapses into hamburger.
- *   "Publicar" CTA and search icon remain visible outside the hamburger at ALL widths.
+ * Authentication is resolved client-side by the UserMenu island via
+ * `/api/v1/public/auth/me`. The server-rendered hint comes from
+ * `Astro.locals.user`, which is only populated on routes whose middleware
+ * parses the session (protected, auth, optional-session). UserMenu refines
+ * the hint on hydration, so the same Header works on SSR and SSG pages alike.
  *
- * Auth: reads Astro.locals.user (parsed by middleware for server-island and
- * protected routes). Passes user data as prop to UserMenu React island.
+ * The standalone language/theme controls and the settings dropdown stay
+ * hidden when `<html data-user-authenticated="true">` so authenticated
+ * users only see the consolidated UserMenu.
  */
 
 import { getImage, Image } from "astro:assets";
 import { BuildingIcon, HamburgerIcon, SearchIcon } from "@repo/icons";
 import MobileMenuIsland from "@/components/shared/navigation/MobileMenuIsland.astro";
-import { UserMenu } from "@/components/UserMenu.client";
+import { UserMenu } from "@/components/shared/navigation/UserMenu.client";
+import { SettingsDropdown } from "@/components/shared/navigation/SettingsDropdown.client";
+import { LanguageSwitcher } from "@/components/shared/preferences/LanguageSwitcher.client";
+import { ThemeControl } from "@/components/shared/preferences/ThemeControl.client";
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import IconButton from '@/components/shared/ui/IconButton.astro';
+import { getAdminUrl } from "@/lib/env";
 import { createTranslations } from "@/lib/i18n";
 import type { SupportedLocale } from "@/lib/i18n";
 import { buildUrl } from "@/lib/urls";
@@ -57,25 +66,28 @@ const currentPath = Astro.url.pathname;
 /** True when the page has a hero (homepage only). Header is transparent only on hero pages. */
 const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pathname);
 
-/** Resolve auth state for the UserMenu island. Middleware populates locals.user for
- * server island requests and protected/auth routes. On other SSR routes it may be null. */
+/**
+ * Server-side auth hint for UserMenu. Reliable on routes whose middleware
+ * parsed the session; on SSG / public routes it will be null even for
+ * signed-in visitors. UserMenu refines this client-side.
+ */
 const serverUser = Astro.locals.user ?? null;
 
-/** Build UserMenu user prop from server session data, or null when unauthenticated. */
-const userMenuUser = serverUser
+const initialUserMenuUser = serverUser
     ? {
           id: serverUser.id ?? '',
-          displayName: serverUser.name ?? serverUser.email ?? 'Usuario',
-          avatarUrl: ('avatarUrl' in serverUser && typeof serverUser.avatarUrl === 'string')
-              ? serverUser.avatarUrl
-              : ('image' in serverUser && typeof serverUser.image === 'string')
-                  ? serverUser.image
-                  : undefined,
-          slug: ('slug' in serverUser && typeof serverUser.slug === 'string')
-              ? serverUser.slug
-              : undefined,
+          name: serverUser.name ?? serverUser.email ?? 'Usuario',
+          email: serverUser.email ?? '',
+          avatarUrl:
+              'avatarUrl' in serverUser && typeof serverUser.avatarUrl === 'string'
+                  ? serverUser.avatarUrl
+                  : 'image' in serverUser && typeof serverUser.image === 'string'
+                    ? serverUser.image
+                    : undefined
       }
     : null;
+
+const adminPanelUrl = getAdminUrl();
 ---
 
 <header data-header class:list={['header', { 'header--hero': isHero }]} role="banner">
@@ -114,9 +126,9 @@ const userMenuUser = serverUser
             }
         </nav>
 
-        <!-- RIGHT AREA: search + Publicar (always visible) + UserMenu + hamburger -->
+        <!-- RIGHT AREA -->
         <div class="header__right">
-            <!-- Search icon — always visible -->
+            <!-- Search icon — visible at all widths -->
             <IconButton
                 as="a"
                 href={buildUrl({ locale, path: "busqueda" })}
@@ -128,7 +140,7 @@ const userMenuUser = serverUser
                 <SearchIcon size={20} weight="regular" aria-hidden="true" />
             </IconButton>
 
-            <!-- "Publicar" CTA — visible at ALL viewport widths (NOT hidden under 1200px) -->
+            <!-- "Publicar" CTA — visible at all widths -->
             <GradientButton
                 href={buildUrl({ locale, path: "/publicar/" })}
                 label={t("nav.publishCta", "Publicar")}
@@ -139,16 +151,42 @@ const userMenuUser = serverUser
                 <BuildingIcon slot="leading" size={16} weight="regular" />
             </GradientButton>
 
-            <!-- UserMenu island — client:load for immediate auth state hydration -->
-            <div class="header__user-menu">
-                <UserMenu
-                    user={userMenuUser}
+            <!-- Standalone preferences (BP wide ≥1280, guests only) -->
+            <div class="header__lang-control">
+                <LanguageSwitcher
+                    client:idle
                     locale={locale}
-                    client:load
+                    currentPath={currentPath}
+                    variant="navbar"
+                />
+            </div>
+            <div class="header__theme-control">
+                <ThemeControl client:idle variant="navbar" />
+            </div>
+
+            <!-- Settings dropdown (BP narrow 1025-1279, guests only) -->
+            <div class="header__settings">
+                <SettingsDropdown
+                    client:idle
+                    locale={locale}
+                    currentPath={currentPath}
+                    variant={isHero ? "hero" : "scrolled"}
                 />
             </div>
 
-            <!-- HAMBURGER (Mobile) — collapses nav on small screens -->
+            <!-- UserMenu — handles guest sign-in link AND authenticated avatar dropdown -->
+            <div class="header__user-menu">
+                <UserMenu
+                    client:load
+                    initialUser={initialUserMenuUser}
+                    locale={locale}
+                    currentPath={currentPath}
+                    variant={isHero ? "hero" : "scrolled"}
+                    adminPanelUrl={adminPanelUrl}
+                />
+            </div>
+
+            <!-- Hamburger (BP mobile <1025) -->
             <IconButton
                 ariaLabel={t("nav.openMenu", "Open navigation menu")}
                 variant="ghost"
@@ -173,7 +211,6 @@ const userMenuUser = serverUser
 />
 
 <style>
-    /* Header bar — solid by default, transparent only on hero pages */
     .header {
         position: sticky;
         top: 0;
@@ -189,7 +226,6 @@ const userMenuUser = serverUser
             box-shadow 300ms ease;
     }
 
-    /* On hero pages: start transparent, JS adds navbar--scrolled on scroll */
     .header--hero {
         background-color: transparent;
         backdrop-filter: none;
@@ -215,7 +251,8 @@ const userMenuUser = serverUser
         padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 5vw, 3rem);
     }
 
-    /* Logo */
+    /* ── Logo ──────────────────────────────────────────────────────── */
+
     .header__logo {
         display: flex;
         align-items: center;
@@ -247,7 +284,8 @@ const userMenuUser = serverUser
         white-space: nowrap;
     }
 
-    /* Navigation */
+    /* ── Main nav (links) ──────────────────────────────────────────── */
+
     .header__nav {
         display: none;
         flex: 1 0 0;
@@ -308,7 +346,8 @@ const userMenuUser = serverUser
         flex-shrink: 0;
     }
 
-    /* Right area — always visible, contains search + CTA + UserMenu + hamburger */
+    /* ── Right area ────────────────────────────────────────────────── */
+
     .header__right {
         display: flex;
         align-items: center;
@@ -317,12 +356,10 @@ const userMenuUser = serverUser
         flex-shrink: 0;
     }
 
-    /* Search icon — always visible at all widths */
     .header__search {
         flex-shrink: 0;
     }
 
-    /* "Publicar" CTA — always visible at ALL viewport widths (REQ-096-16) */
     .header__cta {
         font-size: var(--text-nav);
         border-radius: var(--radius-pill);
@@ -330,7 +367,55 @@ const userMenuUser = serverUser
         flex-shrink: 0;
     }
 
-    /* UserMenu — hidden on mobile (hamburger handles auth in mobile menu) */
+    /*
+     * Standalone language + theme controls.
+     * Visible only at BP wide (≥1280px) AND only for guests.
+     * The `:global([data-user-authenticated="true"])` hides them once UserMenu
+     * confirms the visitor is signed in (data attribute lives on <html>).
+     */
+    .header__lang-control,
+    .header__theme-control {
+        display: none;
+        flex-shrink: 0;
+    }
+
+    @media (min-width: 1280px) {
+        .header__lang-control,
+        .header__theme-control {
+            display: flex;
+            align-items: center;
+        }
+    }
+
+    :global([data-user-authenticated="true"]) .header__lang-control,
+    :global([data-user-authenticated="true"]) .header__theme-control {
+        display: none;
+    }
+
+    /*
+     * Settings dropdown for narrow desktop (1025-1279px) guests.
+     * Hidden when authenticated (UserMenu carries Lang/Theme inside).
+     */
+    .header__settings {
+        display: none;
+        flex-shrink: 0;
+    }
+
+    @media (min-width: 1025px) and (max-width: 1279px) {
+        .header__settings {
+            display: flex;
+            align-items: center;
+        }
+    }
+
+    :global([data-user-authenticated="true"]) .header__settings {
+        display: none;
+    }
+
+    /*
+     * UserMenu — visible at all desktop widths (≥1025px).
+     * Renders a sign-in link when guest and the avatar dropdown when authenticated.
+     */
     .header__user-menu {
         display: none;
         flex-shrink: 0;
@@ -343,7 +428,19 @@ const userMenuUser = serverUser
         }
     }
 
-    /* Hamburger (mobile) */
+    /*
+     * Sign-in fallback for narrow guests is provided by SettingsDropdown,
+     * so hide UserMenu's standalone sign-in link in that range to avoid
+     * duplication. Keep UserMenu visible for authenticated narrow users.
+     */
+    @media (min-width: 1025px) and (max-width: 1279px) {
+        :global(html:not([data-user-authenticated="true"])) .header__user-menu {
+            display: none;
+        }
+    }
+
+    /* ── Hamburger (mobile) ────────────────────────────────────────── */
+
     .header__hamburger {
         display: none;
         flex-shrink: 0;
@@ -355,12 +452,12 @@ const userMenuUser = serverUser
         }
     }
 
-    /* Hide hamburger when mobile menu is open to prevent overlap with close button */
     :global([data-mobile-menu-open]) .header__hamburger {
         display: none;
     }
 
-    /* Mobile */
+    /* ── Mobile tweaks ─────────────────────────────────────────────── */
+
     @media (max-width: 767px) {
         .header__inner {
             height: auto;
@@ -372,7 +469,6 @@ const userMenuUser = serverUser
             height: 44px;
         }
 
-        /* Keep CTA compact on very small screens */
         .header__cta {
             font-size: 12px;
             padding-inline: 0.75rem;
@@ -381,14 +477,14 @@ const userMenuUser = serverUser
 </style>
 
 <script>
-    /** Track handlers so we can remove them on re-init (View Transitions) */
     let currentScrollHandler: (() => void) | null = null;
     let currentResizeHandler: (() => void) | null = null;
 
     /**
      * Publish the navbar's REAL height as a CSS custom property on <html>.
-     * Consumers (WaveHeader sticky bar, listing sidebar) rely on this so they
-     * stay flush with the navbar across breakpoints — no hardcoded 80px gap.
+     * Consumers (WaveHeader sticky bar, listing sidebar, ToastViewport) rely
+     * on this so they stay flush with the navbar across breakpoints — no
+     * hardcoded 80px gap.
      */
     function publishNavbarHeight(header: Element): void {
         const height = (header as HTMLElement).getBoundingClientRect().height;
@@ -401,7 +497,6 @@ const userMenuUser = serverUser
         const SCROLL_THRESHOLD = 10;
         const header = document.querySelector("[data-header]");
 
-        // Clean up previous listeners to prevent accumulation
         if (currentScrollHandler) {
             window.removeEventListener("scroll", currentScrollHandler);
             currentScrollHandler = null;
@@ -442,6 +537,19 @@ const userMenuUser = serverUser
         });
     }
 
-    // Runs on initial load AND after every client-side navigation
+    /**
+     * Wire the hamburger button to a window-level CustomEvent so the
+     * MobileMenu island can react regardless of when it hydrates and
+     * regardless of whether ClientRouter swapped the header DOM. Uses
+     * event delegation on the document so the listener survives every
+     * navigation without rebinding.
+     */
+    function handleHamburgerClick(event: Event): void {
+        const target = event.target as Element | null;
+        if (!target?.closest('[data-mobile-toggle]')) return;
+        window.dispatchEvent(new CustomEvent('mobile-menu:toggle'));
+    }
+
+    document.addEventListener('click', handleHamburgerClick);
     document.addEventListener("astro:page-load", initHeaderScroll);
 </script>

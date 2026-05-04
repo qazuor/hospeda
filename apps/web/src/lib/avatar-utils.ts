@@ -6,7 +6,7 @@
  * initials from a display name (with an email fallback) when a user has not
  * uploaded an avatar image yet. Keeping the logic here, as pure functions,
  * means OwnerCard.astro, ReviewPreview.astro, AvatarUpload.client.tsx,
- * ReviewCard.tsx, UserNav.client.tsx and MobileMenu.client.tsx all agree on
+ * ReviewCard.tsx, UserMenu.client.tsx and MobileMenu.client.tsx all agree on
  * what "CR" vs "?" means.
  *
  * Previously duplicated across 5+ callsites with subtle differences (some
@@ -27,7 +27,7 @@ interface GetInitialsInput {
     readonly email?: string | null;
     /**
      * Custom placeholder for when nothing else resolves. Defaults to `"?"`.
-     * Pass `""` if you prefer an empty string (UserNav does this today).
+     * Pass `""` if you prefer an empty string (MobileMenu does this today).
      */
     readonly placeholder?: string;
 }

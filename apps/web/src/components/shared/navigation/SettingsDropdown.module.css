@@ -1,0 +1,122 @@
+.wrapper {
+    position: relative;
+    display: inline-flex;
+}
+
+.trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 10px;
+    border-radius: var(--radius-pill);
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.triggerHero {
+    color: #fff;
+    background-color: rgba(255 255 255 / 0.12);
+    border-color: rgba(255 255 255 / 0.25);
+}
+
+.triggerHero:hover {
+    background-color: rgba(255 255 255 / 0.18);
+}
+
+.triggerScrolled {
+    color: var(--core-foreground);
+    border-color: oklch(from var(--core-foreground) l c h / 0.15);
+}
+
+.triggerScrolled:hover {
+    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+}
+
+.trigger:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.chevron {
+    display: inline-flex;
+    transition: transform 0.2s ease;
+}
+
+.chevronOpen {
+    transform: rotate(180deg);
+}
+
+.popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: var(--z-dropdown, 60);
+    min-width: 280px;
+    background-color: var(--core-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: settings-in 0.15s ease-out;
+}
+
+@keyframes settings-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.label {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.signInLink {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.25rem;
+    padding-inline: 1rem;
+    border-radius: var(--radius-pill);
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground, #fff);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    text-align: center;
+    transition: background-color 0.2s ease;
+}
+
+.signInLink:hover {
+    background-color: oklch(from var(--brand-primary) calc(l - 0.05) c h);
+}
+
+.signInLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
