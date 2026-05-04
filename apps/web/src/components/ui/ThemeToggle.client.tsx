@@ -41,9 +41,10 @@ export interface ThemeToggleProps {
 /**
  * ThemeToggle — icon-only button that switches between light and dark themes.
  *
- * Reads the initial theme from `localStorage.getItem('theme')` on mount.
- * On click it toggles `data-theme="dark"` on `document.documentElement`
- * and writes the new value back to `localStorage`.
+ * Reads the initial theme from the `data-theme` attribute already resolved
+ * by the FOUC script (so `'light'`, `'dark'`, and `'system'` all behave
+ * correctly on first render). On click it toggles `data-theme="dark"` on
+ * `document.documentElement` and writes the new value back to `localStorage`.
  *
  * Reacts to the `navbar:scroll` custom event so its color style automatically
  * follows the header's hero/scrolled state.
@@ -60,12 +61,10 @@ export function ThemeToggle({
     const [isDark, setIsDark] = useState(false);
     const [activeVariant, setActiveVariant] = useState<'hero' | 'scrolled'>(initialVariant);
 
-    // Read initial theme from localStorage on mount (client only).
+    // Read initial theme from the DOM (already resolved by the FOUC script).
+    // This works for `'light'`, `'dark'`, and `'system'` preferences.
     useEffect(() => {
-        const stored = localStorage.getItem('theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const dark = stored ? stored === 'dark' : prefersDark;
-        setIsDark(dark);
+        setIsDark(document.documentElement.getAttribute('data-theme') === 'dark');
     }, []);
 
     // Sync visual variant with the navbar:scroll custom event.

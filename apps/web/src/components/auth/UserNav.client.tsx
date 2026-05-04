@@ -171,11 +171,10 @@ export function UserNav({
     const buttonRef = useRef<HTMLButtonElement>(null);
     const initials = getInitials({ name: user.name });
 
-    // Read initial theme from localStorage on mount (client only).
+    // Read initial theme from the DOM (already resolved by the FOUC script).
+    // This works for `'light'`, `'dark'`, and `'system'` preferences.
     useEffect(() => {
-        const stored = localStorage.getItem('theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setIsDark(stored ? stored === 'dark' : prefersDark);
+        setIsDark(document.documentElement.getAttribute('data-theme') === 'dark');
     }, []);
 
     // Sync button appearance with the navbar's scroll-state custom event.

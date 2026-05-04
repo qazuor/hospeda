@@ -11,6 +11,7 @@ import { createTranslations } from '@/lib/i18n';
 import Logo from '@/components/shared/navigation/Logo.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import FontsLoader from '@/components/shared/FontsLoader.astro';
+import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
 import { ClientRouter } from 'astro:transitions';
 import '@/styles/global.css';
 
@@ -49,15 +50,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).hr
 		<!-- Google Fonts (non-blocking) -->
 		<FontsLoader cspNonce={cspNonce} />
 
-		<!-- Theme FOUC prevention -->
-		<script is:inline nonce={cspNonce}>
-			(function() {
-				var t = localStorage.getItem('theme');
-				if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-					document.documentElement.setAttribute('data-theme', 'dark');
-				}
-			})();
-		</script>
+		<ThemeFoucScript cspNonce={cspNonce} />
 
 		<ClientRouter />
 

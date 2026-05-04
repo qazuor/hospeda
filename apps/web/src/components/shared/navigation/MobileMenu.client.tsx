@@ -155,11 +155,10 @@ export function MobileMenu({
     const closeButtonRef = useRef<HTMLButtonElement>(null);
     const authTexts = AUTH_TEXTS[locale] ?? AUTH_TEXTS.es;
 
-    // Read initial theme from localStorage on mount.
+    // Read initial theme from the DOM (already resolved by the FOUC script).
+    // This works for `'light'`, `'dark'`, and `'system'` preferences.
     useEffect(() => {
-        const stored = localStorage.getItem('theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setIsDark(stored ? stored === 'dark' : prefersDark);
+        setIsDark(document.documentElement.getAttribute('data-theme') === 'dark');
     }, []);
 
     const handleThemeToggle = useCallback(() => {

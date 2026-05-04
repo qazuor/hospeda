@@ -23,6 +23,7 @@ import SkipToContent from '@/components/shared/navigation/SkipToContent.astro';
 import ScrollToTop from '@/components/shared/navigation/ScrollToTop.astro';
 import NavigationProgress from '@/components/shared/navigation/NavigationProgress.astro';
 import FontsLoader from '@/components/shared/FontsLoader.astro';
+import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
 import { CookieConsentBanner } from '@/components/legal/CookieConsentBanner.client';
 import '@/styles/global.css';
 
@@ -59,15 +60,7 @@ const cookiesPolicyUrl = buildUrl({ locale, path: 'legal/cookies' });
 		<!-- Google Fonts: Geologica, Roboto, Caveat (non-blocking with preload + swap) -->
 		<FontsLoader cspNonce={cspNonce} />
 
-		<!-- Theme FOUC prevention: apply saved theme before first paint -->
-		<script is:inline nonce={cspNonce}>
-			(function() {
-				var t = localStorage.getItem('theme');
-				if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-					document.documentElement.setAttribute('data-theme', 'dark');
-				}
-			})();
-		</script>
+		<ThemeFoucScript cspNonce={cspNonce} />
 
 		<!-- FOUC prevention: hide text until fonts load.
 			 Guard with fonts.status check so client-side View Transition

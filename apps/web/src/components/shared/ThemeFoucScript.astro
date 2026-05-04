@@ -1,0 +1,45 @@
+---
+/**
+ * @file ThemeFoucScript.astro
+ * @description Inline script that applies the saved theme before the first
+ * paint to prevent a flash of unstyled content (FOUC) when dark mode is
+ * active.
+ *
+ * Reads `localStorage.getItem('theme')`:
+ * - `'dark'` → applies `data-theme="dark"`.
+ * - `'system'` → consults `prefers-color-scheme` and applies dark when the
+ *   OS reports a dark preference. Light otherwise.
+ * - anything else (including a missing key) → leaves the document in light
+ *   mode. Default is light: dark must be an explicit opt-in (either via the
+ *   `ThemeToggle` island or by selecting `'system'` in account preferences).
+ *
+ * Used by BaseLayout, AuthLayout, and ErrorLayout — a single source of
+ * truth for the theme bootstrap contract. The CSP nonce is forwarded so
+ * the inline script passes the strict CSP defined in `middleware.ts`.
+ *
+ * Usage:
+ * ```astro
+ * <ThemeFoucScript cspNonce={cspNonce} />
+ * ```
+ */
+
+interface Props {
+    /** CSP nonce forwarded from the layout. Required for inline scripts. */
+    readonly cspNonce: string;
+}
+
+const { cspNonce } = Astro.props;
+---
+
+<script is:inline nonce={cspNonce}>
+    (function () {
+        var stored = localStorage.getItem('theme');
+        var dark =
+            stored === 'dark' ||
+            (stored === 'system' &&
+                window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    })();
+</script>
