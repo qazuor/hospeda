@@ -17,6 +17,7 @@ export * from './post/index.js';
 export * from './postSponsor/index.js';
 export * from './postSponsorship/index.js';
 export * from './sponsorship/index.js';
+export * from './stats/index.js';
 export * from './tag/index.js';
 export * from './user/index.js';
 export * from './userBookmark/index.js';
