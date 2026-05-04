@@ -43,6 +43,11 @@ interface SearchBarProps {
     readonly locale: SupportedLocale;
     /** Pre-fetched destination options (cities only, from SSR). */
     readonly destinations: readonly DestinationOption[];
+    /**
+     * Absolute or locale-prefixed base URL of the listing page the search
+     * should navigate to. Example: `/es/alojamientos/`.
+     */
+    readonly searchBaseUrl: string;
 }
 
 /** Which panel is currently open, or null when all closed. */
@@ -107,7 +112,57 @@ export function SearchBar(props: SearchBarProps) {
     );
 }
 
-function SearchBarInner({ locale, destinations }: SearchBarProps) {
+/**
+ * Format a Date as ISO `YYYY-MM-DD` using local time (not UTC). Required
+ * because react-day-picker yields Date objects in local TZ; calling
+ * `.toISOString()` would shift dates near midnight to the previous day.
+ */
+function formatIsoDate(date: Date): string {
+    const y = date.getFullYear();
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const d = date.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+/**
+ * Build the navigation URL with only the params that have a meaningful value.
+ * Adults/children are emitted only when they differ from defaults (2/0) so the
+ * URL stays clean for casual searches.
+ */
+export function buildSearchUrl(args: {
+    readonly baseUrl: string;
+    readonly destinationId: string | null;
+    readonly types: ReadonlySet<AccommodationType>;
+    readonly checkIn?: Date;
+    readonly checkOut?: Date;
+    readonly adults: number;
+    readonly children: number;
+}): string {
+    const params = new URLSearchParams();
+    if (args.destinationId) {
+        params.set('destinationIds', args.destinationId);
+    }
+    if (args.types.size > 0 && args.types.size < ACCOMMODATION_TYPES.length) {
+        params.set('types', Array.from(args.types).join(','));
+    }
+    if (args.checkIn) {
+        params.set('checkIn', formatIsoDate(args.checkIn));
+    }
+    if (args.checkOut) {
+        params.set('checkOut', formatIsoDate(args.checkOut));
+    }
+    // Always emit adults/children so the listing's sidebar steppers reflect
+    // exactly what the user saw in the hero (otherwise defaults diverge: hero
+    // defaults to 2/0, sidebar minima are 1/0).
+    params.set('adults', String(args.adults));
+    if (args.children > 0) {
+        params.set('children', String(args.children));
+    }
+    const qs = params.toString();
+    return qs ? `${args.baseUrl}?${qs}` : args.baseUrl;
+}
+
+function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps) {
     const { t } = createTranslations(locale);
     const barRef = useRef<HTMLDivElement>(null);
 
@@ -377,6 +432,18 @@ function SearchBarInner({ locale, destinations }: SearchBarProps) {
                     type="button"
                     className={styles.button}
                     aria-label={t('home.searchBar.ctaLabel', 'Buscar')}
+                    onClick={() => {
+                        const url = buildSearchUrl({
+                            baseUrl: searchBaseUrl,
+                            destinationId: selectedDestination?.id ?? null,
+                            types: selectedTypes,
+                            checkIn: dateRange?.from,
+                            checkOut: dateRange?.to,
+                            adults,
+                            children
+                        });
+                        window.location.assign(url);
+                    }}
                 >
                     <span>{t('home.searchBar.ctaLabel', 'Buscar')}</span>
                     <span className={styles.buttonIcon}>
