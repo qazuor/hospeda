@@ -108,7 +108,7 @@
             }
         },
         {
-            "include": ["scripts/cli/**"],
+            "include": ["scripts/cli/**", "scripts/*.ts", "scripts/*.mjs"],
             "linter": {
                 "rules": {
                     "suspicious": {

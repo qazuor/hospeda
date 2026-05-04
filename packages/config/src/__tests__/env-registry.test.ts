@@ -19,7 +19,7 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *  - Docker       :  5 vars (docker-compose services)
  *  - System       :  6 vars (runtime/CI/Vercel)
  */
-const EXPECTED_VAR_COUNT = 194;
+const EXPECTED_VAR_COUNT = 197;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -259,13 +259,14 @@ describe('ENV_REGISTRY', () => {
     });
 
     describe('HOSPEDA_CRON_ADAPTER enum', () => {
-        it('should list manual, vercel, and node-cron as valid values', () => {
+        it('should list manual, vercel, qstash, and node-cron as valid values', () => {
             const entry = REGISTRY.find((e) => e.name === 'HOSPEDA_CRON_ADAPTER');
 
             expect(entry).toBeDefined();
             expect(entry?.type).toBe('enum');
             expect(entry?.enumValues).toContain('manual');
             expect(entry?.enumValues).toContain('vercel');
+            expect(entry?.enumValues).toContain('qstash');
             expect(entry?.enumValues).toContain('node-cron');
         });
     });

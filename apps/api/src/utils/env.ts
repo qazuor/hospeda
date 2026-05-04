@@ -288,8 +288,18 @@ export const ApiEnvBaseSchema = z.object({
         .string()
         .min(32, 'HOSPEDA_CRON_SECRET must be at least 32 characters for security')
         .optional(),
-    /** Cron adapter: manual (default), vercel, or node-cron */
-    HOSPEDA_CRON_ADAPTER: z.enum(['manual', 'vercel', 'node-cron']).default('manual'),
+    /** Cron adapter: manual (default), vercel, qstash, or node-cron */
+    HOSPEDA_CRON_ADAPTER: z.enum(['manual', 'vercel', 'qstash', 'node-cron']).default('manual'),
+    /**
+     * Upstash QStash bearer token used by the schedule-provisioning
+     * script (`scripts/setup-qstash-schedules.ts`). Not needed at API
+     * runtime — cron requests are verified via the signing keys below.
+     */
+    QSTASH_TOKEN: z.string().optional(),
+    /** Current Upstash QStash signing key — verifies incoming cron signatures. */
+    QSTASH_CURRENT_SIGNING_KEY: z.string().optional(),
+    /** Next Upstash QStash signing key — accepted during key rotation. */
+    QSTASH_NEXT_SIGNING_KEY: z.string().optional(),
     /** Shared secret for authenticating ISR revalidation requests from the API. Must be at least 32 characters. */
     HOSPEDA_REVALIDATION_SECRET: z.string().min(32).optional(),
     /** Cron schedule for automatic page revalidation (default: every hour) */

@@ -349,7 +349,38 @@ export const HOSPEDA_ENV_VARS = [
         required: false,
         secret: false,
         exampleValue: 'manual',
-        enumValues: ['manual', 'vercel', 'node-cron'] as const,
+        enumValues: ['manual', 'vercel', 'qstash', 'node-cron'] as const,
+        apps: ['api'],
+        category: 'cron'
+    },
+    {
+        name: 'QSTASH_TOKEN',
+        description:
+            'Upstash QStash bearer token. Used by scripts/setup-qstash-schedules.ts to provision schedules; not consumed at runtime.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'eyJ...',
+        apps: ['api'],
+        category: 'cron'
+    },
+    {
+        name: 'QSTASH_CURRENT_SIGNING_KEY',
+        description: 'Current Upstash QStash signing key. Verifies incoming cron signatures.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'sig_...',
+        apps: ['api'],
+        category: 'cron'
+    },
+    {
+        name: 'QSTASH_NEXT_SIGNING_KEY',
+        description: 'Next Upstash QStash signing key. Accepted during key rotation.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'sig_...',
         apps: ['api'],
         category: 'cron'
     },

@@ -41,11 +41,10 @@ jobs:
       # missing/misnamed Cloudinary, DB, and auth vars before they reach
       # production traffic.
       - name: Validate environment variables
-        # Soft check: if VERCEL_TOKEN is not configured as a repo secret,
-        # the script aborts before contacting the Vercel API. The deploy
-        # step below carries its own token and will still surface real
-        # auth/config problems, so let this step inform without blocking.
-        run: pnpm env:check --ci || true
+        # Hard gate: production deploys must not start with a known env drift.
+        # If VERCEL_TOKEN is missing as a repo secret, the script exits 1 and
+        # the workflow stops here on purpose — fix the secret before deploying.
+        run: pnpm env:check --ci
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
@@ -86,11 +85,10 @@ jobs:
       # SPEC-078-GAPS GAP-078-230: validate environment variables against
       # the canonical registry in @repo/config BEFORE deploying.
       - name: Validate environment variables
-        # Soft check: if VERCEL_TOKEN is not configured as a repo secret,
-        # the script aborts before contacting the Vercel API. The deploy
-        # step below carries its own token and will still surface real
-        # auth/config problems, so let this step inform without blocking.
-        run: pnpm env:check --ci || true
+        # Hard gate: production deploys must not start with a known env drift.
+        # If VERCEL_TOKEN is missing as a repo secret, the script exits 1 and
+        # the workflow stops here on purpose — fix the secret before deploying.
+        run: pnpm env:check --ci
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
@@ -125,11 +123,10 @@ jobs:
       # SPEC-078-GAPS GAP-078-230: validate environment variables against
       # the canonical registry in @repo/config BEFORE deploying.
       - name: Validate environment variables
-        # Soft check: if VERCEL_TOKEN is not configured as a repo secret,
-        # the script aborts before contacting the Vercel API. The deploy
-        # step below carries its own token and will still surface real
-        # auth/config problems, so let this step inform without blocking.
-        run: pnpm env:check --ci || true
+        # Hard gate: production deploys must not start with a known env drift.
+        # If VERCEL_TOKEN is missing as a repo secret, the script exits 1 and
+        # the workflow stops here on purpose — fix the secret before deploying.
+        run: pnpm env:check --ci
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 

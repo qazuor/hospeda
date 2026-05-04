@@ -38,48 +38,6 @@
             ]
         }
     ],
-    "crons": [
-        {
-            "path": "/api/v1/cron/trial-expiry",
-            "schedule": "0 2 * * *"
-        },
-        {
-            "path": "/api/v1/cron/addon-expiry",
-            "schedule": "0 5 * * *"
-        },
-        {
-            "path": "/api/v1/cron/notification-schedule",
-            "schedule": "0 8 * * *"
-        },
-        {
-            "path": "/api/v1/cron/webhook-retry",
-            "schedule": "0 3 * * *"
-        },
-        {
-            "path": "/api/v1/cron/exchange-rate-fetch",
-            "schedule": "0 4 * * *"
-        },
-        {
-            "path": "/api/v1/cron/dunning",
-            "schedule": "0 6 * * *"
-        },
-        {
-            "path": "/api/v1/cron/page-revalidation",
-            "schedule": "0 * * * *"
-        },
-        {
-            "path": "/api/v1/cron/conversation-notification",
-            "schedule": "*/5 * * * *"
-        },
-        {
-            "path": "/api/v1/cron/conversation-token-reminder",
-            "schedule": "0 9 * * *"
-        },
-        {
-            "path": "/api/v1/cron/conversation-token-cleanup",
-            "schedule": "0 3 * * *"
-        }
-    ],
     "functions": {
         "api/index.js": {
             "maxDuration": 60,
