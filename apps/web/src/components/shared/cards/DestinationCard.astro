@@ -81,6 +81,10 @@ const isExternalImage = destination.featuredImage.url.startsWith('http');
 				<Image
 					src={destination.featuredImage.url || '/assets/images/placeholder-destination.svg'}
 					alt={destination.featuredImage.caption ?? destination.name}
+					widths={[320, 432, 640, 864]}
+					sizes={variant === 'carousel'
+						? '(min-width: 1024px) 480px, (min-width: 768px) 60vw, 85vw'
+						: '(min-width: 1280px) 320px, (min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw'}
 					width={432}
 					height={280}
 					format="webp"
@@ -114,7 +118,7 @@ const isExternalImage = destination.featuredImage.url.startsWith('http');
 			<!-- Top-right actions: FavoriteButton island -->
 			<div class="dest-card__actions">
 				<FavoriteButton
-					client:load
+					client:visible
 					entityId={destination.id}
 					entityType="DESTINATION"
 					isAuthenticated={isAuthenticated}
