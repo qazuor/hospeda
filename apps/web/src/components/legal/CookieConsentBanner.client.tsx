@@ -93,6 +93,33 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
         }
     }, [isOpen]);
 
+    // Track banner height on the <body> so the footer gets bottom padding
+    // (so all content stays scrollable above the banner) and the
+    // scroll-to-top button can shift up. See `.cookie-banner-open` rules
+    // in global.css.
+    useEffect(() => {
+        if (!isOpen) return;
+        const banner = bannerRef.current;
+        if (!banner) return;
+
+        function updateHeight() {
+            if (!banner) return;
+            document.body.style.setProperty('--cookie-banner-height', `${banner.offsetHeight}px`);
+        }
+
+        document.body.classList.add('cookie-banner-open');
+        updateHeight();
+
+        const resizeObserver = new ResizeObserver(updateHeight);
+        resizeObserver.observe(banner);
+
+        return () => {
+            resizeObserver.disconnect();
+            document.body.classList.remove('cookie-banner-open');
+            document.body.style.removeProperty('--cookie-banner-height');
+        };
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     // ─── Handlers ─────────────────────────────────────────────────────────────
@@ -140,8 +167,6 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
                                 <a
                                     href={cookiesPolicyUrl}
                                     className={styles.learnMore}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
                                 >
                                     {t('cookieConsent.learnMore')}
                                 </a>

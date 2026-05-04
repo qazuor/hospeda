@@ -17,8 +17,8 @@
     left: 0;
     right: 0;
     z-index: 9000;
-    background-color: var(--card, oklch(1 0 0));
-    border-top: 1px solid var(--border, oklch(0.88 0 0));
+    background-color: var(--core-card);
+    border-top: 1px solid var(--border);
     box-shadow: 0 -4px 24px oklch(0 0 0 / 0.1);
     padding: var(--space-4, 16px) var(--space-container-x, 24px);
 }
@@ -55,7 +55,7 @@
     font-family: var(--font-heading);
     font-size: clamp(1rem, 2.5vw, 1.2rem);
     font-weight: 700;
-    color: var(--foreground);
+    color: var(--core-foreground);
     margin: 0;
     line-height: 1.2;
 }
@@ -63,7 +63,7 @@
 .description {
     font-family: var(--font-sans);
     font-size: var(--text-body-sm, 0.875rem);
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     margin: 0;
     line-height: 1.5;
 }
@@ -113,9 +113,9 @@
 }
 
 .btnPrimary {
-    background-color: var(--accent);
-    color: white;
-    border-color: var(--accent);
+    background-color: var(--brand-accent);
+    color: var(--accent-foreground);
+    border-color: var(--brand-accent);
 }
 
 .btnPrimary:hover {
@@ -130,18 +130,18 @@
 
 .btnSecondary:hover {
     background-color: var(--brand-primary);
-    color: white;
+    color: var(--primary-foreground);
 }
 
 .btnGhost {
     background-color: transparent;
-    color: var(--muted-foreground);
-    border-color: var(--border, oklch(0.88 0 0));
+    color: var(--core-muted-foreground);
+    border-color: var(--border);
 }
 
 .btnGhost:hover {
-    background-color: var(--surface-warm, oklch(0.97 0.01 60));
-    color: var(--foreground);
+    background-color: var(--surface-warm);
+    color: var(--core-foreground);
 }
 
 /* ── Category rows (customize view) ────────────────────────────────────────── */
@@ -151,7 +151,7 @@
     flex-direction: column;
     gap: var(--space-1, 4px);
     padding: var(--space-3, 12px) 0;
-    border-bottom: 1px solid var(--border, oklch(0.88 0 0));
+    border-bottom: 1px solid var(--border);
 }
 
 .category:last-of-type {
@@ -170,13 +170,13 @@
     font-family: var(--font-sans);
     font-size: var(--text-body-sm, 0.875rem);
     font-weight: 600;
-    color: var(--foreground);
+    color: var(--core-foreground);
 }
 
 .categoryDesc {
     font-family: var(--font-sans);
     font-size: 0.8rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     margin: 0;
     line-height: 1.5;
 }
@@ -187,8 +187,8 @@
     display: inline-flex;
     align-items: center;
     padding: 2px 10px;
-    background-color: oklch(from var(--success, oklch(0.55 0.18 145)) l c h / 0.12);
-    color: var(--success, oklch(0.55 0.18 145));
+    background-color: oklch(from var(--success) l c h / 0.12);
+    color: var(--success);
     border-radius: var(--radius-pill, 9999px);
     font-family: var(--font-sans);
     font-size: 0.72rem;
@@ -209,13 +209,14 @@
     align-items: center;
     width: 44px;
     height: 24px;
-    background-color: var(--muted, oklch(0.88 0 0));
+    background-color: var(--core-muted-foreground);
     border-radius: var(--radius-pill, 9999px);
-    border: none;
+    border: 1px solid oklch(from var(--core-foreground) l c h / 0.2);
     cursor: pointer;
     padding: 0;
     flex-shrink: 0;
-    transition: background-color var(--duration-normal, 0.4s) ease;
+    transition: background-color var(--duration-normal, 0.4s) ease,
+        border-color var(--duration-normal, 0.4s) ease;
 }
 
 .toggle:focus-visible {
@@ -224,16 +225,18 @@
 }
 
 .toggleOn {
-    background-color: var(--accent);
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
 }
 
 .toggleThumb {
     position: absolute;
-    left: 3px;
+    left: 2px;
     width: 18px;
     height: 18px;
-    background-color: white;
+    background-color: var(--core-card);
     border-radius: 50%;
+    box-shadow: 0 1px 3px oklch(0 0 0 / 0.25);
     transition: transform var(--duration-normal, 0.4s) ease;
     pointer-events: none;
 }
@@ -245,6 +248,6 @@
 /* ── Dark mode adjustments ──────────────────────────────────────────────────── */
 
 [data-theme="dark"] .banner {
-    background-color: var(--card);
+    background-color: var(--core-card);
     border-top-color: var(--border);
 }

@@ -250,6 +250,20 @@ body {
     overflow-x: clip;
 }
 
+/* --- Cookie consent banner: layout adjustments while open ---
+   The banner is a fixed-bottom element. While it is mounted, we add bottom
+   padding to the body so the footer (and any tail content) can be fully
+   scrolled into view above the banner, and we shift the scroll-to-top
+   button up so it remains visible. The banner exposes its current height
+   as `--cookie-banner-height` on <body> via JS. */
+body.cookie-banner-open {
+    padding-bottom: var(--cookie-banner-height, 0px);
+}
+
+body.cookie-banner-open #scroll-to-top {
+    bottom: calc(var(--cookie-banner-height, 0px) + 1rem);
+}
+
 img,
 svg {
     display: block;
