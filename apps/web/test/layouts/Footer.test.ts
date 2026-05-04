@@ -2,8 +2,9 @@
  * @file Footer.test.ts
  * @description Source-reading unit tests for Footer.astro.
  * Astro components cannot be rendered in Vitest/jsdom so we assert on the
- * source text to verify the 5-column layout, accordion pattern, i18n usage,
- * and all required navigation links.
+ * source text to verify the 4-zone vertical layout (brand+nav, newsletter
+ * strip, trust signals, bottom bar), the 3-column nav with mobile accordion,
+ * i18n usage, and all required navigation links.
  */
 
 import { readFileSync } from 'node:fs';
@@ -27,36 +28,29 @@ describe('Footer.astro', () => {
             expect(src).toContain('createTranslations');
             expect(src).toContain('buildUrl');
         });
+
+        it('pulls platform stats at request time for trust signals', () => {
+            expect(src).toContain('statsApi.getPlatformStats');
+        });
     });
 
-    describe('5-column nav structure', () => {
+    describe('3-column nav structure', () => {
         it('defines exploreLinks array', () => {
             expect(src).toContain('exploreLinks');
         });
 
-        it('defines categoryLinks array', () => {
-            expect(src).toContain('categoryLinks');
-        });
-
-        it('defines destinationLinks array', () => {
-            expect(src).toContain('destinationLinks');
-        });
-
-        it('defines subscriberLinks array', () => {
-            expect(src).toContain('subscriberLinks');
+        it('defines forYouLinks array', () => {
+            expect(src).toContain('forYouLinks');
         });
 
         it('defines companyLinks array', () => {
             expect(src).toContain('companyLinks');
         });
 
-        it('renders exactly 5 nav column details elements', () => {
-            const matches = src.match(/footer__nav-col--accordion/g);
-            // Each <details> has the class twice (opening tag and CSS rule)
-            // Count class occurrences: 5 elements x2 = 10 minimum, but CSS rules add more
-            // Just verify we have multiple columns
+        it('renders exactly 3 nav column <details> elements', () => {
+            const matches = src.match(/<details class="footer__nav-col"/g);
             expect(matches).not.toBeNull();
-            expect((matches ?? []).length).toBeGreaterThanOrEqual(5);
+            expect((matches ?? []).length).toBe(3);
         });
     });
 
@@ -84,50 +78,13 @@ describe('Footer.astro', () => {
         it('uses i18n key for search label', () => {
             expect(src).toContain('footer.search');
         });
-    });
 
-    describe('Categorías column', () => {
-        it('includes cabin type link', () => {
-            expect(src).toContain('/alojamientos/tipo/cabin/');
-        });
-
-        it('includes hotel type link', () => {
-            expect(src).toContain('/alojamientos/tipo/hotel/');
-        });
-
-        it('includes house type link', () => {
-            expect(src).toContain('/alojamientos/tipo/house/');
-        });
-
-        it('includes music event category link', () => {
-            expect(src).toContain('/eventos/categoria/music/');
-        });
-
-        it('includes culture event category link', () => {
-            expect(src).toContain('/eventos/categoria/culture/');
-        });
-
-        it('includes gastronomy event category link', () => {
-            expect(src).toContain('/eventos/categoria/gastronomy/');
-        });
-
-        it('includes nature event category link', () => {
-            expect(src).toContain('/eventos/categoria/nature/');
-        });
-
-        it('uses buildUrl for all category hrefs', () => {
-            expect(src).toContain('footer.categoryCabins');
-            expect(src).toContain('footer.categoryHotels');
-            expect(src).toContain('footer.categoryHouses');
-            expect(src).toContain('footer.categoryMusic');
-        });
-
-        it('uses i18n key for categories column title', () => {
-            expect(src).toContain('footer.categoriesTitle');
+        it('uses i18n key for the column title', () => {
+            expect(src).toContain('footer.exploreTitle');
         });
     });
 
-    describe('Propietarios & Turistas column', () => {
+    describe('Para vos column', () => {
         it('includes /suscriptores/propietarios/ link', () => {
             expect(src).toContain('/suscriptores/propietarios/');
         });
@@ -136,8 +93,26 @@ describe('Footer.astro', () => {
             expect(src).toContain('/suscriptores/turistas/');
         });
 
-        it('uses i18n key for subscribers column title', () => {
-            expect(src).toContain('footer.subscribersTitle');
+        it('includes /suscriptores/planes/ link', () => {
+            expect(src).toContain('/suscriptores/planes/');
+        });
+
+        it('uses i18n key for the column title', () => {
+            expect(src).toContain('footer.forYouTitle');
+        });
+    });
+
+    describe('Hospeda column', () => {
+        it('includes /nosotros/ link', () => {
+            expect(src).toContain('/nosotros/');
+        });
+
+        it('includes /contacto/ link', () => {
+            expect(src).toContain('/contacto/');
+        });
+
+        it('uses i18n key for the column title', () => {
+            expect(src).toContain('footer.hospedaTitle');
         });
     });
 
@@ -150,52 +125,101 @@ describe('Footer.astro', () => {
             expect(src).toContain('<summary');
         });
 
-        it('applies footer__nav-col--accordion class', () => {
-            expect(src).toContain('footer__nav-col--accordion');
+        it('applies footer__nav-col class to <details>', () => {
+            expect(src).toContain('class="footer__nav-col"');
         });
 
-        it('applies footer__nav-summary class to summary elements', () => {
-            expect(src).toContain('footer__nav-summary');
+        it('applies footer__nav-heading class to summary elements', () => {
+            expect(src).toContain('footer__nav-heading');
         });
 
-        it('first column has open attribute for default expanded state', () => {
-            expect(src).toContain(
-                '<details class="footer__nav-col footer__nav-col--accordion" open>'
-            );
+        it('all nav columns default to open so content is visible without JS', () => {
+            const openMatches = src.match(/<details class="footer__nav-col" open>/g);
+            expect(openMatches).not.toBeNull();
+            expect((openMatches ?? []).length).toBe(3);
         });
 
-        it('resets accordion on tablet+ with pointer-events: none', () => {
+        it('disables accordion behaviour on tablet+ via pointer-events: none', () => {
             expect(src).toContain('pointer-events: none');
         });
     });
 
-    describe('desktop 5-column grid', () => {
-        it('uses 5-column grid on large desktop', () => {
-            expect(src).toContain('grid-template-columns: repeat(5, 1fr)');
+    describe('responsive nav layout', () => {
+        it('stacks the nav into a single column on mobile', () => {
+            expect(src).toContain('grid-template-columns: 1fr');
         });
 
-        it('uses 3-column fallback on tablet', () => {
+        it('uses a 3-column nav grid on tablet (≥768px)', () => {
             expect(src).toContain('grid-template-columns: repeat(3, 1fr)');
         });
     });
 
-    describe('newsletter section', () => {
-        it('renders newsletter input', () => {
+    describe('newsletter zone', () => {
+        it('renders the email input', () => {
             expect(src).toContain('type="email"');
             expect(src).toContain('footer__newsletter-input');
         });
 
-        it('renders subscribe button', () => {
-            expect(src).toContain('footer.subscribe');
+        it('renders the subscribe button label via i18n', () => {
+            expect(src).toContain('footer.subscribeShort');
+        });
+
+        it('uses the newsletter short title i18n key', () => {
+            expect(src).toContain('footer.newsletterShortTitle');
+        });
+    });
+
+    describe('trust signals zone', () => {
+        it('renders the accommodations count trust signal', () => {
+            expect(src).toContain('footer.trustSignals.accommodationsCount');
+        });
+
+        it('renders the average rating trust signal', () => {
+            expect(src).toContain('footer.trustSignals.averageRating');
+        });
+
+        it('renders the local-support trust signal', () => {
+            expect(src).toContain('footer.trustSignals.localSupport');
+        });
+
+        it('renders the secure-payments trust signal', () => {
+            expect(src).toContain('footer.trustSignals.securePayments');
+        });
+
+        it('renders the no-commissions trust signal', () => {
+            expect(src).toContain('footer.trustSignals.noCommissions');
+        });
+
+        it('renders the payment methods row from simpleicons CDN', () => {
+            expect(src).toContain('cdn.simpleicons.org');
+            expect(src).toContain('mercadopago');
+            expect(src).toContain('visa');
+            expect(src).toContain('mastercard');
         });
     });
 
     describe('bottom bar', () => {
-        it('renders cookie preferences button', () => {
+        it('renders the contact email link', () => {
+            expect(src).toContain('footer.contactEmail');
+            expect(src).toContain('mailto:');
+        });
+
+        it('renders the contact phone link', () => {
+            expect(src).toContain('footer.contactPhone');
+            expect(src).toContain('tel:');
+        });
+
+        it('renders the legal links (terms, privacy, cookies)', () => {
+            expect(src).toContain('/legal/terminos/');
+            expect(src).toContain('/legal/privacidad/');
+            expect(src).toContain('/legal/cookies/');
+        });
+
+        it('renders the cookie preferences button', () => {
             expect(src).toContain('data-cookie-consent-reopen');
         });
 
-        it('renders copyright notice', () => {
+        it('renders the copyright notice', () => {
             expect(src).toContain('currentYear');
             expect(src).toContain('Hospeda');
         });
