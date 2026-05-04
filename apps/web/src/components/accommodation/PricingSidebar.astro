@@ -1,7 +1,9 @@
 ---
 /**
  * @file PricingSidebar.astro
- * @description Pricing sidebar with price, fee breakdown, and "Consultar" fallback.
+ * @description Pricing sidebar with price, optional fee/discount breakdown,
+ * stay-policy hints (capacity, min/max nights), and a "Consultar" fallback
+ * when there is no price.
  */
 import type { AccommodationDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
@@ -10,10 +12,11 @@ import GradientButton from '@/components/shared/ui/GradientButton.astro';
 
 interface Props {
   readonly price: AccommodationDetailData['price'];
+  readonly extraInfo?: AccommodationDetailData['extraInfo'];
   readonly lang: string;
 }
 
-const { price, lang } = Astro.props;
+const { price, extraInfo, lang } = Astro.props;
 const { t } = createTranslations(lang as SupportedLocale);
 
 const hasPrice = price?.price != null && price.price > 0;
@@ -30,6 +33,14 @@ function formatPrice(amount: number): string {
 
 const fees = price?.additionalFees as Record<string, unknown> | null | undefined;
 const discounts = price?.discounts as Record<string, unknown> | null | undefined;
+
+// Stay policy facts derived from extraInfo. Always-rendered when present so
+// the card is never empty under the price; the seed currently has these set
+// for every accommodation while `additionalFees` and `discounts` are mostly
+// empty.
+const capacity = typeof extraInfo?.capacity === 'number' ? extraInfo.capacity : null;
+const minNights = typeof extraInfo?.minNights === 'number' ? extraInfo.minNights : null;
+const maxNights = typeof extraInfo?.maxNights === 'number' ? extraInfo.maxNights : null;
 
 // Pre-process fees in frontmatter to avoid `as` casts in template
 interface FeeEntry { readonly key: string; readonly amount: number }
@@ -74,6 +85,29 @@ const hasDiscounts = discountEntries.length > 0;
         shape="rounded"
       />
     </div>
+  )}
+
+  {(capacity != null || minNights != null || maxNights != null) && (
+    <ul class="pricing-sidebar__facts">
+      {capacity != null && (
+        <li class="pricing-sidebar__fact">
+          <span class="pricing-sidebar__fact-icon" aria-hidden="true">👥</span>
+          <span>{t('accommodations.detail.pricing.capacityFact', undefined, { n: capacity })}</span>
+        </li>
+      )}
+      {minNights != null && minNights > 1 && (
+        <li class="pricing-sidebar__fact">
+          <span class="pricing-sidebar__fact-icon" aria-hidden="true">🌙</span>
+          <span>{t('accommodations.detail.pricing.minNightsFact', undefined, { n: minNights })}</span>
+        </li>
+      )}
+      {maxNights != null && maxNights > 0 && maxNights < 30 && (
+        <li class="pricing-sidebar__fact">
+          <span class="pricing-sidebar__fact-icon" aria-hidden="true">📅</span>
+          <span>{t('accommodations.detail.pricing.maxNightsFact', undefined, { n: maxNights })}</span>
+        </li>
+      )}
+    </ul>
   )}
 
   {(hasFees || hasDiscounts) && (
@@ -126,9 +160,41 @@ const hasDiscounts = discountEntries.length > 0;
     display: flex;
     align-items: baseline;
     gap: var(--space-2, 8px);
+  }
+  /* Only render the separator + spacing when there is content below the price
+   * (facts list and/or fee breakdown). `:has()` avoids needing a class flag. */
+  .pricing-sidebar__price-block:has(+ .pricing-sidebar__facts),
+  .pricing-sidebar__price-block:has(+ .pricing-sidebar__breakdown) {
     margin-bottom: var(--space-4, 16px);
     padding-bottom: var(--space-4, 16px);
     border-bottom: 1px solid var(--border);
+  }
+  .pricing-sidebar__facts:has(+ .pricing-sidebar__breakdown) {
+    margin-bottom: var(--space-4, 16px);
+    padding-bottom: var(--space-4, 16px);
+    border-bottom: 1px solid var(--border);
+  }
+  .pricing-sidebar__facts {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+  }
+  .pricing-sidebar__fact {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    line-height: 1.4;
+  }
+  .pricing-sidebar__fact-icon {
+    flex-shrink: 0;
+    font-size: 1rem;
+    line-height: 1;
   }
   .pricing-sidebar__amount {
     font-family: var(--font-heading);

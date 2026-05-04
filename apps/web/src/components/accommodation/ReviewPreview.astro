@@ -1,36 +1,30 @@
 ---
 /**
  * @file ReviewPreview.astro
- * @description Review preview section: RatingBreakdown + top 3 reviews + modal trigger.
- * Empty state when reviewsCount === 0.
+ * @description Review summary: average score + per-category breakdown + a
+ * single CTA that opens the modal with the full reviews list. Individual
+ * reviews are NOT rendered inline — they would take up too much vertical
+ * space on the detail page; the modal owns that view.
  */
 import type { AccommodationDetailData } from '@/data/types';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { getInitialsFromName } from '@/lib/avatar-utils';
-import { getMediaUrl } from '@repo/media';
 import RatingBreakdown from './RatingBreakdown.astro';
-
-interface ReviewItem {
-  readonly id: string;
-  readonly title?: string;
-  readonly content?: string;
-  readonly averageRating?: number;
-  readonly rating?: Readonly<Record<string, number>>;
-  readonly user?: { readonly name: string | null; readonly image: string | null };
-  readonly createdAt?: string;
-}
-
-const RATING_CATEGORIES = ['cleanliness', 'hospitality', 'services', 'accuracy', 'communication', 'location'] as const;
 
 interface Props {
   readonly accommodation: AccommodationDetailData;
-  readonly topReviews: readonly ReviewItem[];
   readonly lang: string;
+  /**
+   * Optional pre-computed average per rating category
+   * (`cleanliness`, `hospitality`, `services`, `accuracy`,
+   * `communication`, `location`). When provided, RatingBreakdown
+   * renders the per-category bars below the overall score.
+   */
+  readonly ratingBreakdown?: Readonly<Record<string, number>>;
 }
 
-const { accommodation, topReviews, lang } = Astro.props;
+const { accommodation, lang, ratingBreakdown } = Astro.props;
 const { t } = createTranslations(lang as SupportedLocale);
 
 const hasReviews = accommodation.reviewsCount > 0;
@@ -46,90 +40,23 @@ const hasReviews = accommodation.reviewsCount > 0;
       <RatingBreakdown
         averageRating={accommodation.averageRating}
         reviewsCount={accommodation.reviewsCount}
+        ratingBreakdown={ratingBreakdown}
         lang={lang}
       />
 
-      {topReviews.length > 0 && (
-        <div class="review-preview__cards">
-          {topReviews.map((review) => {
-            const userName = review.user?.name ?? 'Anónimo';
-            const rawUserImage = review.user?.image ?? null;
-            const userImage = rawUserImage ? getMediaUrl(rawUserImage, { preset: 'avatar' }) : null;
-            const initials = getInitialsFromName(userName);
-            const dateStr = review.createdAt
-              ? new Date(review.createdAt).toLocaleDateString(
-                  lang === 'pt' ? 'pt-BR' : lang === 'en' ? 'en-US' : 'es-AR',
-                  { year: 'numeric', month: 'short', day: 'numeric' }
-                )
-              : '';
-            return (
-              <article class="review-card">
-                <div class="review-card__header">
-                  <div class="review-card__avatar-wrapper" data-initials={initials}>
-                    {userImage && (
-                      <img
-                        src={userImage}
-                        alt={userName}
-                        class="review-card__avatar"
-                        width="40"
-                        height="40"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    )}
-                    <div class="review-card__avatar-fallback" aria-hidden="true">{initials}</div>
-                  </div>
-                  <div class="review-card__meta">
-                    <span class="review-card__name">{userName}</span>
-                    {dateStr && <time class="review-card__date">{dateStr}</time>}
-                  </div>
-                  {review.averageRating != null && (
-                    <span class="review-card__rating">&#9733; {review.averageRating.toFixed(1)}</span>
-                  )}
-                </div>
-                {review.content && (
-                  <p class="review-card__content">{review.content}</p>
-                )}
-                {review.rating && (
-                  <ul class="review-card__breakdown" aria-label={t('accommodations.detail.reviewsDetail.breakdownLabel', 'Puntajes desglosados')}>
-                    {RATING_CATEGORIES.map((cat) => {
-                      const value = review.rating?.[cat];
-                      if (value == null) return null;
-                      const label = t(`accommodations.detail.reviewsDetail.categories.${cat}`);
-                      const pct = (value / 5) * 100;
-                      return (
-                        <li class="review-breakdown__item">
-                          <span class="review-breakdown__label">{label}</span>
-                          <span class="review-breakdown__bar" aria-hidden="true">
-                            <span class="review-breakdown__bar-fill" style={`width: ${pct}%`}></span>
-                          </span>
-                          <span class="review-breakdown__value">{value.toFixed(1)}</span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </article>
-            );
-          })}
-        </div>
-      )}
-
-      {accommodation.reviewsCount > 3 && (
-        <GradientButton
-          as="button"
-          label={t('accommodations.detail.reviewsDetail.viewAll', undefined, { n: accommodation.reviewsCount })}
-          variant="outline-primary"
-          size="sm"
-          shape="rounded"
-          class="review-preview__view-all"
-          data={{
-            'reviews-modal-trigger': '',
-            'accommodation-id': accommodation.id,
-            'reviews-count': accommodation.reviewsCount,
-          }}
-        />
-      )}
+      <GradientButton
+        as="button"
+        label={t('accommodations.detail.reviewsDetail.viewAll', undefined, { n: accommodation.reviewsCount })}
+        variant="outline-primary"
+        size="sm"
+        shape="rounded"
+        class="review-preview__view-all"
+        data={{
+          'reviews-modal-trigger': '',
+          'accommodation-id': accommodation.id,
+          'reviews-count': accommodation.reviewsCount,
+        }}
+      />
     </>
   )}
 
@@ -137,165 +64,30 @@ const hasReviews = accommodation.reviewsCount > 0;
 </section>
 
 <style>
+  /* Flex column owns the vertical rhythm via `gap`, so the inline-flex
+     button can't end up flush against the rating bars regardless of how
+     the GradientButton renders internally. */
+  .review-preview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 24px);
+  }
   .review-preview__title {
     font-family: var(--font-heading);
     font-size: 1.5rem;
     font-weight: 600;
-    color: var(--foreground);
-    margin-bottom: var(--space-4, 16px);
+    color: var(--core-foreground);
+    margin: 0;
   }
   .review-preview__empty {
     font-family: var(--font-sans);
     font-size: 0.95rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     font-style: italic;
-  }
-  .review-preview__cards {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4, 16px);
-    margin-top: var(--space-5, 20px);
-  }
-  .review-card {
-    background-color: var(--card);
-    border-radius: var(--radius-card, 24px);
-    padding: var(--space-4, 16px);
-    border: 1px solid var(--border, oklch(0.9 0 0));
-  }
-  .review-card__header {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3, 12px);
-    margin-bottom: var(--space-3, 12px);
-  }
-  .review-card__avatar-wrapper {
-    position: relative;
-    width: 40px;
-    height: 40px;
-    flex-shrink: 0;
-  }
-  .review-card__avatar {
-    position: relative;
-    z-index: 1;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-    background-color: var(--brand-primary);
-  }
-  /* When the <img> errors, JS sets data-broken on the wrapper and we hide
-     the broken image so the underlying fallback shows through. */
-  .review-card__avatar-wrapper[data-broken='1'] .review-card__avatar {
-    display: none;
-  }
-  .review-card__avatar-fallback {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background-color: var(--brand-primary);
-    color: var(--primary-foreground);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-heading);
-    font-weight: 700;
-    font-size: 0.85rem;
-  }
-  .review-card__meta {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-  }
-  .review-card__name {
-    font-family: var(--font-sans);
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: var(--foreground);
-  }
-  .review-card__date {
-    font-family: var(--font-sans);
-    font-size: 0.75rem;
-    color: var(--muted-foreground);
-  }
-  .review-card__rating {
-    font-family: var(--font-heading);
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: var(--accent);
-  }
-  .review-card__content {
-    font-family: var(--font-sans);
-    font-size: 0.9rem;
-    line-height: 1.6;
-    color: var(--foreground);
     margin: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-  .review-card__breakdown {
-    list-style: none;
-    margin: var(--space-3, 12px) 0 0;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px 16px;
-  }
-  @media (max-width: 480px) {
-    .review-card__breakdown {
-      grid-template-columns: 1fr;
-    }
-  }
-  .review-breakdown__item {
-    display: grid;
-    grid-template-columns: minmax(80px, max-content) 1fr auto;
-    align-items: center;
-    gap: 8px;
-    font-family: var(--font-sans);
-    font-size: 0.75rem;
-    color: var(--muted-foreground);
-  }
-  .review-breakdown__label {
-    white-space: nowrap;
-  }
-  .review-breakdown__bar {
-    display: block;
-    height: 4px;
-    background-color: var(--border, oklch(0.9 0 0));
-    border-radius: 9999px;
-    overflow: hidden;
-  }
-  .review-breakdown__bar-fill {
-    display: block;
-    height: 100%;
-    background-color: var(--accent);
-    border-radius: 9999px;
-  }
-  .review-breakdown__value {
-    font-weight: 600;
-    color: var(--foreground);
-    font-variant-numeric: tabular-nums;
   }
   .review-preview__view-all {
-    margin-top: var(--space-4, 16px);
+    align-self: flex-start;
     padding: 10px 24px;
   }
 </style>
-
-<script>
-  // Mark the avatar wrapper as broken when the <img> fails to load (404,
-  // CORS, network error). CSS then hides the <img> and the always-rendered
-  // initials fallback shows through. Astro bundles this as a hashed module,
-  // so no inline-script CSP exception is needed.
-  document.querySelectorAll<HTMLImageElement>('.review-card__avatar').forEach((img) => {
-    const markBroken = () => {
-      img.closest('.review-card__avatar-wrapper')?.setAttribute('data-broken', '1');
-    };
-    if (img.complete && img.naturalWidth === 0) {
-      markBroken();
-    } else {
-      img.addEventListener('error', markBroken, { once: true });
-    }
-  });
-</script>

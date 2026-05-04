@@ -1,16 +1,17 @@
 /**
  * @file DetailHeader.test.ts
- * @description Source-reading tests for DetailHeader.astro after the
- * AccommodationTypeBadge unification and FavoriteButton/bookmark-count
- * integration (T-045). The detail header delegates the type pill to the
- * shared `AccommodationTypeBadge` component (single source of truth for
- * type colour + label) while keeping the generic `Badge` primitive for
- * status pills (featured/new). Compact-mode overrides reach into the type
- * badge through the `--acc-type-*` custom properties exposed by it.
+ * @description Source-reading tests for DetailHeader.astro.
  *
- * T-045: FavoriteButton island is placed top-right inside a new
- * `.detail-header__top-row` wrapper. The public bookmark counter is
- * rendered inline next to the rating when `bookmarkCount` is defined.
+ * The detail header delegates the type pill to the shared
+ * `AccommodationTypeBadge` (single source of truth for type colour + label).
+ * Status pills (featured/new) are rendered as inline `<span>` elements so
+ * they share the exact padding / font-size of the type badge — the generic
+ * Badge primitive's inline styles would otherwise win and produce a
+ * visually-smaller pill. Colours still come from `getBadgeStatusColor`.
+ *
+ * Layout: `.detail-header__main` (left) + `.detail-header__favorite` (right)
+ * keep the heart button anchored to the right at every breakpoint and in
+ * compact mode.
  */
 
 import { readFileSync } from 'node:fs';
@@ -26,10 +27,6 @@ describe('DetailHeader.astro — type badge unification', () => {
     describe('imports', () => {
         it('imports AccommodationTypeBadge from shared/ui', () => {
             expect(src).toContain("from '@/components/shared/ui/AccommodationTypeBadge.astro'");
-        });
-
-        it('imports the generic Badge for status pills', () => {
-            expect(src).toContain("from '@/components/shared/ui/Badge.astro'");
         });
 
         it('imports getBadgeStatusColor from @/lib/colors', () => {
@@ -60,9 +57,13 @@ describe('DetailHeader.astro — type badge unification', () => {
             expect(src).toMatch(/<AccommodationTypeBadge[\s\S]*?class="detail-header__type-badge"/);
         });
 
-        it('still uses the generic Badge primitive for status pills', () => {
-            expect(src).toContain('<Badge');
-            expect(src).toContain('class="detail-header__status-badge"');
+        it('renders status pills as inline spans sized to match the type badge', () => {
+            expect(src).toMatch(/<span[^>]*class="detail-header__status-pill"/);
+        });
+
+        it('applies status-pill colours from getBadgeStatusColor via inline style', () => {
+            expect(src).toContain('featuredColors');
+            expect(src).toContain('newColors');
         });
 
         it('does not render an inline `<span class="detail-header__type-badge">`', () => {
@@ -72,7 +73,7 @@ describe('DetailHeader.astro — type badge unification', () => {
 
     describe('CSS overrides preserved', () => {
         it('still defines compact-mode rules for the status pills', () => {
-            expect(src).toMatch(/wave-header--compact[\s\S]*?detail-header__status-badge/);
+            expect(src).toMatch(/wave-header--compact[\s\S]*?detail-header__status-pill/);
         });
 
         it('compact mode overrides the type badge via custom properties (no !important)', () => {
@@ -141,11 +142,9 @@ describe('DetailHeader.astro — T-045: FavoriteButton + bookmark counter', () =
             expect(src).toMatch(/<FavoriteButton[\s\S]*?variant="standalone"/);
         });
 
-        it('positions FavoriteButton inside detail-header__top-row', () => {
-            expect(src).toContain('detail-header__top-row');
-            expect(src).toMatch(
-                /detail-header__top-row[\s\S]*?FavoriteButton|FavoriteButton[\s\S]*?detail-header__top-row/
-            );
+        it('places FavoriteButton inside its own right-aligned container', () => {
+            expect(src).toContain('detail-header__favorite');
+            expect(src).toMatch(/detail-header__favorite[\s\S]*?<FavoriteButton/);
         });
     });
 
@@ -167,13 +166,17 @@ describe('DetailHeader.astro — T-045: FavoriteButton + bookmark counter', () =
         });
     });
 
-    describe('Top-row layout', () => {
-        it('wraps badges and FavoriteButton in detail-header__top-row', () => {
-            expect(src).toMatch(/class="detail-header__top-row"/);
+    describe('Layout', () => {
+        it('wraps the textual content in a detail-header__main container', () => {
+            expect(src).toMatch(/class="detail-header__main"/);
         });
 
-        it('has CSS for detail-header__top-row', () => {
-            expect(src).toContain('.detail-header__top-row');
+        it('puts the FavoriteButton in a sibling detail-header__favorite container', () => {
+            expect(src).toMatch(/class="detail-header__favorite"/);
+        });
+
+        it('keeps the favorite right-aligned via margin-left: auto', () => {
+            expect(src).toMatch(/\.detail-header__favorite\s*\{[^}]*margin-left:\s*auto/);
         });
 
         it('has CSS for detail-header__bookmark-count', () => {

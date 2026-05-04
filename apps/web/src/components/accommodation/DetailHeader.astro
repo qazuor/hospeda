@@ -4,22 +4,21 @@
  * @description Accommodation detail page header with name, type badge,
  * destination, status pills, rating, favorite button, and bookmark counter.
  *
- * Type pill is delegated to the shared `AccommodationTypeBadge` (single
- * source of truth for type colour/label across the app). Status pills
- * (featured/new) use the generic `Badge` primitive. The compact-mode
- * overrides for the wave header poke at the type badge through CSS custom
- * properties exposed by the badge component.
+ * Layout: a 2-column flex row at all times — `.detail-header__main` on the
+ * left holds badges + name + destination + rating; `.detail-header__favorite`
+ * on the right anchors the heart button. The favorite stays right-aligned
+ * regardless of viewport size or compact mode.
  *
- * FavoriteButton is a React island hydrated with `client:load` (it is
- * above the fold on detail pages). The bookmark counter is a static
- * non-clickable text element shown when `bookmarkCount` is provided.
+ * The status badges (featured/new) are rendered as plain spans here (instead
+ * of going through the `Badge` primitive) so we can size them identically to
+ * the type badge — the primitive's inline padding/font-size would otherwise
+ * win over any external override.
  */
 import type { AccommodationDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getBadgeStatusColor } from '@/lib/colors';
 import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
-import Badge from '@/components/shared/ui/Badge.astro';
 import RatingStars from '@/components/shared/ui/RatingStars.astro';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 
@@ -58,10 +57,15 @@ const isNew = (Date.now() - new Date(accommodation.createdAt).getTime()) < THIRT
 
 const featuredColors = getBadgeStatusColor({ status: 'featured' });
 const newColors = getBadgeStatusColor({ status: 'new' });
+
+const featuredStyle =
+  `background-color: ${featuredColors.bg}; color: ${featuredColors.text}; border-color: ${featuredColors.border};`;
+const newStyle =
+  `background-color: ${newColors.bg}; color: ${newColors.text}; border-color: ${newColors.border};`;
 ---
 
 <header class="detail-header">
-  <div class="detail-header__top-row">
+  <div class="detail-header__main">
     <div class="detail-header__badges">
       <AccommodationTypeBadge
         type={accommodation.type}
@@ -70,23 +74,63 @@ const newColors = getBadgeStatusColor({ status: 'new' });
         class="detail-header__type-badge"
       />
       {accommodation.isFeatured && (
-        <Badge
-          label={t('accommodations.detail.badges.featured')}
-          colorScheme={featuredColors}
-          size="sm"
-          class="detail-header__status-badge"
-        />
+        <span class="detail-header__status-pill" style={featuredStyle}>
+          {t('accommodations.detail.badges.featured')}
+        </span>
       )}
       {isNew && (
-        <Badge
-          label={t('accommodations.detail.badges.new')}
-          colorScheme={newColors}
-          size="sm"
-          class="detail-header__status-badge"
-        />
+        <span class="detail-header__status-pill" style={newStyle}>
+          {t('accommodations.detail.badges.new')}
+        </span>
       )}
     </div>
 
+    <h1 class="detail-header__name">{accommodation.name}</h1>
+
+    <a href={`/${lang}/destinos/${accommodation.destination.slug}`} class="detail-header__destination">
+      {accommodation.destination.name}
+    </a>
+
+    {accommodation.averageRating > 0 && (
+      <div class="detail-header__rating">
+        <RatingStars rating={accommodation.averageRating} />
+        <span class="detail-header__reviews-count">
+          ({accommodation.reviewsCount} {t('accommodations.detail.reviewsLabel')})
+        </span>
+        {bookmarkCount !== undefined && (
+          <span
+            class="detail-header__bookmark-count"
+            aria-label={bookmarkCount === 0
+              ? t('accommodations.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
+              : tPlural('accommodations.detail.bookmark_count', bookmarkCount)}
+          >
+            <span class="detail-header__bookmark-icon" aria-hidden="true">♥</span>
+            {bookmarkCount === 0
+              ? t('accommodations.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
+              : tPlural('accommodations.detail.bookmark_count', bookmarkCount)}
+          </span>
+        )}
+      </div>
+    )}
+
+    {accommodation.averageRating === 0 && bookmarkCount !== undefined && (
+      <div class="detail-header__rating">
+        <span
+          class="detail-header__bookmark-count"
+          aria-label={bookmarkCount === 0
+            ? t('accommodations.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
+            : tPlural('accommodations.detail.bookmark_count', bookmarkCount)}
+        >
+          <span class="detail-header__bookmark-icon" aria-hidden="true">♥</span>
+          {bookmarkCount === 0
+            ? t('accommodations.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
+            : tPlural('accommodations.detail.bookmark_count', bookmarkCount)}
+        </span>
+      </div>
+    )}
+  </div>
+
+  <div class="detail-header__favorite">
     <FavoriteButton
       client:load
       entityId={accommodationId}
@@ -99,66 +143,29 @@ const newColors = getBadgeStatusColor({ status: 'new' });
       class="detail-header__favorite-btn"
     />
   </div>
-
-  <h1 class="detail-header__name">{accommodation.name}</h1>
-
-  <a href={`/${lang}/destinos/${accommodation.destination.slug}`} class="detail-header__destination">
-    {accommodation.destination.name}
-  </a>
-
-  {accommodation.averageRating > 0 && (
-    <div class="detail-header__rating">
-      <RatingStars rating={accommodation.averageRating} />
-      <span class="detail-header__reviews-count">
-        ({accommodation.reviewsCount} {t('accommodations.detail.reviewsLabel')})
-      </span>
-      {bookmarkCount !== undefined && (
-        <span
-          class="detail-header__bookmark-count"
-          aria-label={bookmarkCount === 0
-            ? t('accommodations.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
-            : tPlural('accommodations.detail.bookmark_count', bookmarkCount)}
-        >
-          <span class="detail-header__bookmark-icon" aria-hidden="true">♥</span>
-          {bookmarkCount === 0
-            ? t('accommodations.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
-            : tPlural('accommodations.detail.bookmark_count', bookmarkCount)}
-        </span>
-      )}
-    </div>
-  )}
-
-  {accommodation.averageRating === 0 && bookmarkCount !== undefined && (
-    <div class="detail-header__rating">
-      <span
-        class="detail-header__bookmark-count"
-        aria-label={bookmarkCount === 0
-          ? t('accommodations.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
-          : tPlural('accommodations.detail.bookmark_count', bookmarkCount)}
-      >
-        <span class="detail-header__bookmark-icon" aria-hidden="true">♥</span>
-        {bookmarkCount === 0
-          ? t('accommodations.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
-          : tPlural('accommodations.detail.bookmark_count', bookmarkCount)}
-      </span>
-    </div>
-  )}
 </header>
 
 <style>
+  /* Always a 2-column row: main content stretches, favorite stays right. */
   .detail-header {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--space-3, 12px);
+  }
+
+  .detail-header__main {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-2, 8px);
     transition: flex-direction 0.3s ease, gap 0.3s ease;
   }
 
-  /* Top row: badges on the left, favorite button on the right */
-  .detail-header__top-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2, 8px);
+  .detail-header__favorite {
+    flex-shrink: 0;
+    margin-left: auto;
   }
 
   .detail-header__badges {
@@ -169,6 +176,25 @@ const newColors = getBadgeStatusColor({ status: 'new' });
     transition: gap 0.3s ease;
   }
 
+  /* Status pills: rendered inline (not via the Badge primitive) so they share
+   * the exact padding / font-size / radius of the type badge. The colour
+   * palette comes from `getBadgeStatusColor`, applied via inline `style`. */
+  .detail-header__status-pill {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px 14px;
+    line-height: 1.4;
+    white-space: nowrap;
+    transition: padding 0.3s ease, font-size 0.3s ease;
+  }
+
   /* Bookmark count pill (non-interactive, info only) */
   .detail-header__bookmark-count {
     display: inline-flex;
@@ -177,7 +203,7 @@ const newColors = getBadgeStatusColor({ status: 'new' });
     font-family: var(--font-sans);
     font-size: 0.8rem;
     font-weight: 500;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     border-left: 1px solid var(--border);
     padding-left: var(--space-2, 8px);
     margin-left: var(--space-1, 4px);
@@ -189,23 +215,11 @@ const newColors = getBadgeStatusColor({ status: 'new' });
     line-height: 1;
   }
 
-  /* Status pills (featured / new): the shared Badge primitive owns the
-   * colours; we just tighten the typography to match the type badge. */
-  :global(.detail-header__status-badge) {
-    font-family: var(--font-sans);
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    padding: 4px 14px;
-    transition: padding 0.3s ease, font-size 0.3s ease;
-  }
-
   .detail-header__name {
     font-family: var(--font-heading);
     font-size: clamp(1.5rem, 4vw, 2.5rem);
     font-weight: 700;
-    color: var(--foreground);
+    color: var(--core-foreground);
     margin: 0;
     line-height: 1.15;
     transition: font-size 0.3s ease;
@@ -235,23 +249,23 @@ const newColors = getBadgeStatusColor({ status: 'new' });
   .detail-header__reviews-count {
     font-family: var(--font-sans);
     font-size: 0.85rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
   }
 
   /* =========================================================
    * Compact state: triggered by .wave-header--compact ancestor.
-   * Badges + name + destination flow into a single horizontal line.
-   * Rating collapses.
+   * Only the inner main flow collapses to one line — the favorite
+   * keeps its outer position so it stays right-aligned.
    * ========================================================= */
   :global(.wave-header--compact) .detail-header {
+    align-items: center;
+  }
+
+  :global(.wave-header--compact) .detail-header__main {
     flex-direction: row;
     align-items: center;
     flex-wrap: wrap;
     gap: var(--space-2, 8px);
-  }
-
-  :global(.wave-header--compact) .detail-header__top-row {
-    gap: 4px;
   }
 
   :global(.wave-header--compact) .detail-header__badges {
@@ -264,7 +278,7 @@ const newColors = getBadgeStatusColor({ status: 'new' });
     --acc-type-font-size: 0.6rem;
     --acc-type-padding: 2px 10px;
   }
-  :global(.wave-header--compact .detail-header__status-badge) {
+  :global(.wave-header--compact) .detail-header__status-pill {
     font-size: 0.6rem;
     padding: 2px 10px;
   }
@@ -277,7 +291,7 @@ const newColors = getBadgeStatusColor({ status: 'new' });
   :global(.wave-header--compact) .detail-header__destination::before {
     content: '\00B7';
     margin-right: 0.35em;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     font-weight: 700;
   }
 
@@ -292,8 +306,8 @@ const newColors = getBadgeStatusColor({ status: 'new' });
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .detail-header,
-    :global(.detail-header__status-badge),
+    .detail-header__main,
+    .detail-header__status-pill,
     .detail-header__name,
     .detail-header__destination,
     .detail-header__rating {

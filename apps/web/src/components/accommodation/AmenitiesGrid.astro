@@ -2,7 +2,11 @@
 /**
  * @file AmenitiesGrid.astro
  * @description Amenities grid with icons, expandable overflow, and i18n names.
- * First 8 visible, rest in expandable section. Hidden if empty.
+ * Renders all items in a single grid. The first 8 are visible by default;
+ * the rest are hidden via CSS until the user clicks "Ver todas las N", which
+ * lives ALWAYS at the bottom of the section (so it never ends up between
+ * items after expansion). A tiny inline script toggles `aria-expanded` on
+ * the list to flip the CSS state.
  */
 import type { AccommodationAmenityItem } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
@@ -39,17 +43,22 @@ function getIcon(iconName: string | null) {
   return resolveIcon({ iconName });
 }
 
-const visible = amenities.slice(0, VISIBLE_COUNT);
-const overflow = amenities.slice(VISIBLE_COUNT);
-const hasOverflow = overflow.length > 0;
+const hasOverflow = amenities.length > VISIBLE_COUNT;
 const additionalCostLabel = t('accommodations.detail.amenitiesDetail.additionalCost');
+const viewAllLabel = t('accommodations.detail.amenitiesDetail.viewAll', undefined, { n: amenities.length });
+const viewLessLabel = t('accommodations.detail.amenitiesDetail.collapse', 'Ver menos');
 ---
 
 <section class="amenities-section">
   <h2 class="amenities-section__title">{t('accommodations.detail.amenitiesDetail.title')}</h2>
 
-  <div class="amenities-grid">
-    {visible.map((amenity) => {
+  <div
+    class="amenities-grid"
+    id="amenities-list"
+    data-amenities-list
+    aria-expanded="false"
+  >
+    {amenities.map((amenity) => {
       const Icon = getIcon(amenity.icon);
       const label = translateAmenity(amenity.name);
       return (
@@ -69,40 +78,51 @@ const additionalCostLabel = t('accommodations.detail.amenitiesDetail.additionalC
   </div>
 
   {hasOverflow && (
-    <details class="amenities-section__more">
-      <summary class="amenities-section__toggle">
-        {t('accommodations.detail.amenitiesDetail.viewAll', undefined, { n: amenities.length })}
-      </summary>
-      <div class="amenities-grid">
-        {overflow.map((amenity) => {
-          const Icon = getIcon(amenity.icon);
-          const label = translateAmenity(amenity.name);
-          return (
-            <div class="amenity-item">
-              {Icon ? (
-                <Icon size="sm" weight="duotone" aria-hidden="true" />
-              ) : (
-                <span class="amenity-item__dot" aria-hidden="true">&#8226;</span>
-              )}
-              <span class="amenity-item__name">{label}</span>
-              {amenity.additionalCost != null && (
-                <span class="amenity-item__cost">{additionalCostLabel}</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </details>
+    <button
+      type="button"
+      class="amenities-section__toggle"
+      data-amenities-toggle
+      data-label-more={viewAllLabel}
+      data-label-less={viewLessLabel}
+      aria-controls="amenities-list"
+      aria-expanded="false"
+    >
+      {viewAllLabel}
+    </button>
   )}
 </section>
 
+<script>
+  // Toggle expanded state on the amenities list. The button lives outside the
+  // list (after it in DOM), so it always renders at the bottom — never in the
+  // middle, regardless of how many items are expanded.
+  document.querySelectorAll<HTMLButtonElement>('[data-amenities-toggle]').forEach((btn) => {
+    const list = btn
+      .closest('.amenities-section')
+      ?.querySelector<HTMLElement>('[data-amenities-list]');
+    if (!list) return;
+    btn.addEventListener('click', () => {
+      const isOpen = list.getAttribute('aria-expanded') === 'true';
+      const next = isOpen ? 'false' : 'true';
+      list.setAttribute('aria-expanded', next);
+      btn.setAttribute('aria-expanded', next);
+      btn.textContent = next === 'true' ? btn.dataset.labelLess ?? '' : btn.dataset.labelMore ?? '';
+    });
+  });
+</script>
+
 <style>
+  .amenities-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+  }
   .amenities-section__title {
     font-family: var(--font-heading);
     font-size: 1.5rem;
     font-weight: 600;
-    color: var(--foreground);
-    margin-bottom: var(--space-4, 16px);
+    color: var(--core-foreground);
+    margin: 0;
   }
   .amenities-grid {
     display: grid;
@@ -115,36 +135,44 @@ const additionalCostLabel = t('accommodations.detail.amenitiesDetail.additionalC
   @media (min-width: 1024px) {
     .amenities-grid { grid-template-columns: repeat(4, 1fr); }
   }
+  /* Collapsed: hide everything past the first 8 items.
+     Keep this :nth-child threshold in sync with VISIBLE_COUNT in the script. */
+  .amenities-grid[aria-expanded="false"] > .amenity-item:nth-child(n+9) {
+    display: none;
+  }
   .amenity-item {
     display: flex;
     align-items: center;
     gap: var(--space-2, 8px);
     font-family: var(--font-sans);
     font-size: 0.95rem;
-    color: var(--foreground);
+    color: var(--core-foreground);
   }
   .amenity-item__dot {
-    color: var(--accent);
+    color: var(--brand-accent);
     font-size: 1.2rem;
     flex-shrink: 0;
   }
   .amenity-item__cost {
     font-size: 0.75rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     font-style: italic;
   }
   .amenities-section__toggle {
+    align-self: flex-start;
+    background: none;
+    border: none;
+    padding: 0;
     font-family: var(--font-sans);
     font-weight: 500;
     font-size: 0.95rem;
     color: var(--brand-primary);
     cursor: pointer;
-    margin-top: var(--space-3, 12px);
-    list-style: none;
   }
-  .amenities-section__toggle::-webkit-details-marker { display: none; }
   .amenities-section__toggle:hover { text-decoration: underline; }
-  .amenities-section__more .amenities-grid {
-    margin-top: var(--space-3, 12px);
+  .amenities-section__toggle:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 </style>

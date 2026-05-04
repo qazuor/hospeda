@@ -20,7 +20,7 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--foreground);
+    color: var(--core-foreground);
 }
 
 .required {
@@ -31,8 +31,8 @@
 .textarea {
     font-family: var(--font-sans);
     font-size: 0.875rem;
-    color: var(--foreground);
-    background-color: var(--background);
+    color: var(--core-foreground);
+    background-color: var(--core-background);
     border: 1px solid var(--border);
     border-radius: var(--radius-button, 8px);
     padding: var(--space-2, 8px) var(--space-3, 12px);
@@ -64,7 +64,7 @@
 .charCount {
     font-family: var(--font-sans);
     font-size: 0.75rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     text-align: right;
 }
 
@@ -84,8 +84,8 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
     font-weight: 600;
-    color: white;
-    background-color: var(--accent);
+    color: var(--accent-foreground);
+    background-color: var(--brand-accent);
     border: none;
     border-radius: var(--radius-button, 8px);
     padding: var(--space-3, 12px) var(--space-4, 16px);
@@ -96,7 +96,7 @@
 }
 
 .submitButton:hover:not(:disabled) {
-    background-color: oklch(from var(--accent) calc(l - 0.05) c h);
+    background-color: oklch(from var(--brand-accent) calc(l - 0.05) c h);
 }
 
 .submitButton:disabled {
@@ -107,7 +107,7 @@
 .successNotice {
     font-family: var(--font-sans);
     font-size: 0.875rem;
-    color: var(--foreground);
+    color: var(--core-foreground);
     background-color: oklch(from var(--brand-primary) l c h / 0.1);
     border: 1px solid oklch(from var(--brand-primary) l c h / 0.3);
     border-radius: var(--radius-button, 8px);
@@ -132,9 +132,9 @@
     gap: var(--space-2, 8px);
     font-family: var(--font-sans);
     font-size: 0.875rem;
-    color: var(--foreground);
-    background-color: oklch(from var(--accent) l c h / 0.08);
-    border: 1px solid oklch(from var(--accent) l c h / 0.25);
+    color: var(--core-foreground);
+    background-color: oklch(from var(--brand-accent) l c h / 0.08);
+    border: 1px solid oklch(from var(--brand-accent) l c h / 0.25);
     border-radius: var(--radius-button, 8px);
     padding: var(--space-3, 12px);
 }
@@ -145,7 +145,7 @@
 
 .requestAccessSent {
     font-style: italic;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
 }
 
 .secondaryButton {

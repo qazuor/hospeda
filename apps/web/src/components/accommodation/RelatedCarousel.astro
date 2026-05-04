@@ -13,17 +13,27 @@ interface Props {
   readonly title: string;
   readonly ariaLabel: string;
   readonly lang: string;
+  /**
+   * Optional total count of items in the section, displayed as a small pill
+   * next to the title. Hidden when undefined or 0.
+   */
+  readonly count?: number;
 }
 
-const { title, ariaLabel, lang } = Astro.props;
+const { title, ariaLabel, lang, count } = Astro.props;
 const { t } = createTranslations(lang as SupportedLocale);
 const prevLabel = t('accommodations.detail.related.prevSlide');
 const nextLabel = t('accommodations.detail.related.nextSlide');
 ---
 
-<section class="related-carousel" role="region" aria-label={ariaLabel}>
+<section class="related-carousel" role="region" aria-label={ariaLabel} data-overflowing="false">
   <div class="related-carousel__header">
-    <h3 class="related-carousel__title">{title}</h3>
+    <div class="related-carousel__title-wrap">
+      <h3 class="related-carousel__title">{title}</h3>
+      {count !== undefined && count > 0 && (
+        <span class="related-carousel__count" aria-label={`${count}`}>{count}</span>
+      )}
+    </div>
     <div class="related-carousel__arrows">
       <IconButton
         ariaLabel={prevLabel}
@@ -52,14 +62,71 @@ const nextLabel = t('accommodations.detail.related.nextSlide');
 
 <script>
   document.querySelectorAll('.related-carousel').forEach((carousel) => {
-    const track = carousel.querySelector('.related-carousel__track');
+    const track = carousel.querySelector<HTMLElement>('.related-carousel__track');
     if (!track) return;
+
+    // Click handlers for the arrows.
     carousel.querySelectorAll('.related-carousel__arrow').forEach((btn) => {
       btn.addEventListener('click', () => {
         const dir = (btn as HTMLElement).dataset.dir === 'prev' ? -1 : 1;
         track.scrollBy({ left: dir * 320, behavior: 'smooth' });
       });
     });
+
+    // Show arrows whenever a card cannot be fully visible at the current scroll
+    // position — i.e. when any direct child of the track sticks out beyond the
+    // track's left or right edge. This is more accurate than comparing
+    // `scrollWidth > clientWidth`, which suffers from sub-pixel rounding
+    // (e.g. 1290 vs 1289 reports "no overflow" even though 1px of a card is clipped).
+    const updateOverflow = (): void => {
+      const cards = Array.from(track.children) as HTMLElement[];
+      if (cards.length === 0) {
+        carousel.setAttribute('data-overflowing', 'false');
+        return;
+      }
+      const trackRect = track.getBoundingClientRect();
+      // Tolerate a half-pixel of fractional overhang to avoid false positives
+      // from sub-pixel layout, but flag anything visibly clipped.
+      const isOverflowing =
+        track.scrollWidth - track.clientWidth > 0.5 ||
+        cards.some((card) => {
+          const r = card.getBoundingClientRect();
+          return r.right > trackRect.right + 0.5 || r.left < trackRect.left - 0.5;
+        });
+      carousel.setAttribute('data-overflowing', isOverflowing ? 'true' : 'false');
+    };
+
+    // Run measurement after layout has settled (double rAF: first to flush
+    // style/layout, second to ensure the browser painted final dimensions).
+    const scheduleUpdate = (): void => {
+      requestAnimationFrame(() => requestAnimationFrame(updateOverflow));
+    };
+
+    scheduleUpdate();
+
+    // Recompute on track / viewport size changes.
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(scheduleUpdate);
+      ro.observe(track);
+    } else {
+      window.addEventListener('resize', scheduleUpdate);
+    }
+
+    // Recompute once images inside the track finish loading (cards may grow).
+    track.querySelectorAll('img').forEach((img) => {
+      if (img.complete) {
+        scheduleUpdate();
+        return;
+      }
+      img.addEventListener('load', scheduleUpdate, { once: true });
+      img.addEventListener('error', scheduleUpdate, { once: true });
+    });
+
+    // Recompute after web fonts finish loading (font swap can change card height
+    // and trigger horizontal scrollbar appearance/disappearance).
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(scheduleUpdate);
+    }
   });
 </script>
 
@@ -73,16 +140,41 @@ const nextLabel = t('accommodations.detail.related.nextSlide');
     justify-content: space-between;
     margin-bottom: var(--space-4, 16px);
   }
+  .related-carousel__title-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+  }
   .related-carousel__title {
     font-family: var(--font-heading);
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--foreground);
+    color: var(--core-foreground);
     margin: 0;
+  }
+  .related-carousel__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding: 0 var(--space-2, 8px);
+    border-radius: var(--radius-pill, 9999px);
+    background-color: oklch(from var(--brand-primary) l c h / 0.12);
+    color: var(--brand-primary);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1;
   }
   .related-carousel__arrows {
     display: flex;
     gap: var(--space-2, 8px);
+  }
+  /* Hide arrows when the track fits without scrolling. The data attribute is
+     set by the inline script after measuring scrollWidth vs clientWidth. */
+  .related-carousel[data-overflowing="false"] .related-carousel__arrows {
+    display: none;
   }
   /* .related-carousel__arrow aesthetics handled by .btn-icon--outline from components.css */
   .related-carousel__track {
