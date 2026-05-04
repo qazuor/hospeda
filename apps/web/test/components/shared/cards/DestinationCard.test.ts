@@ -20,9 +20,9 @@ describe('DestinationCard.astro', () => {
             expect(src).toContain('FavoriteButton');
         });
 
-        it('should import StarIcon from @repo/icons', () => {
-            expect(src).toContain("from '@repo/icons'");
-            expect(src).toContain('StarIcon');
+        it('should import DestinationRating component', () => {
+            expect(src).toContain("from '@/components/shared/cards/DestinationRating.astro'");
+            expect(src).toContain('DestinationRating');
         });
 
         it('should import buildUrl from @/lib/urls', () => {
@@ -134,8 +134,11 @@ describe('DestinationCard.astro', () => {
     });
 
     describe('FavoriteButton island', () => {
-        it('should use client:load hydration directive', () => {
-            expect(src).toContain('client:load');
+        it('should use client:visible hydration directive', () => {
+            // Defer hydration until the card scrolls into view to keep the
+            // initial JS payload small on listing pages with many cards.
+            expect(src).toContain('client:visible');
+            expect(src).not.toContain('client:load');
         });
 
         it('should pass entityType="DESTINATION" to FavoriteButton', () => {
@@ -176,17 +179,16 @@ describe('DestinationCard.astro', () => {
             expect(src).toContain('destination.summary');
         });
 
-        it('should render star rating icons', () => {
-            expect(src).toContain('StarIcon');
-            expect(src).toContain('fullStars');
+        it('should render the DestinationRating component when averageRating > 0', () => {
+            // Star rendering and reviews-count formatting live in DestinationRating.
+            // The card just delegates with the right props.
+            expect(src).toContain('<DestinationRating');
+            expect(src).toContain('averageRating={destination.averageRating}');
+            expect(src).toContain('reviewsCount={destination.reviewsCount}');
         });
 
-        it('should display averageRating as a decimal', () => {
-            expect(src).toContain('destination.averageRating.toFixed(1)');
-        });
-
-        it('should conditionally render reviewsCount', () => {
-            expect(src).toContain('destination.reviewsCount');
+        it('should pass onDark={true} to DestinationRating in the carousel overlay', () => {
+            expect(src).toContain('onDark={true}');
         });
 
         it('should render the CTA button in grid variant', () => {
@@ -222,10 +224,6 @@ describe('DestinationCard.astro', () => {
         it('should use t() for CTA label', () => {
             expect(src).toContain("t('destination.card.cta'");
         });
-
-        it('should use t() for rating aria-label', () => {
-            expect(src).toContain("t('destination.card.rating.label'");
-        });
     });
 
     describe('accessibility', () => {
@@ -235,10 +233,6 @@ describe('DestinationCard.astro', () => {
 
         it('should have a focus-visible style on the card link', () => {
             expect(src).toContain('dest-card__link:focus-visible');
-        });
-
-        it('should include an aria-label on the rating container', () => {
-            expect(src).toContain('aria-label={`');
         });
     });
 

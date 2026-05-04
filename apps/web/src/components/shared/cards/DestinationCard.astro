@@ -12,7 +12,7 @@
  */
 
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
-import { StarIcon } from '@repo/icons';
+import DestinationRating from '@/components/shared/cards/DestinationRating.astro';
 import { buildUrl } from '@/lib/urls';
 import { createTranslations } from '@/lib/i18n';
 import { Image } from 'astro:assets';
@@ -48,11 +48,9 @@ const {
 	isAuthenticated = false,
 } = Astro.props;
 
-const { t, tPlural } = createTranslations(locale);
+const { t } = createTranslations(locale);
 
 const detailUrl = buildUrl({ locale, path: `destinos/${destination.slug}` });
-
-const fullStars = Math.floor(destination.averageRating);
 
 const accommodationsLabel = destination.accommodationsCount === 1
 	? t('destination.card.accommodation_singular', 'alojamiento')
@@ -139,22 +137,12 @@ const isExternalImage = destination.featuredImage.url.startsWith('http');
 						{destination.summary}
 					</p>
 					{destination.averageRating > 0 && (
-						<div
-							class="dest-card__stars"
-							aria-label={`${t('destination.card.rating.label', 'Calificación')}: ${destination.averageRating.toFixed(1)} ${t('destination.card.rating.of5', 'de 5')}`}
-						>
-							{Array.from({ length: 5 }).map((_, i) => (
-								<span class={i < fullStars ? 'dest-card__star--filled' : 'dest-card__star--empty'}>
-									<StarIcon size={14} weight={i < fullStars ? 'fill' : 'regular'} aria-hidden="true" />
-								</span>
-							))}
-							<span class="dest-card__rating-value">{destination.averageRating.toFixed(1)}</span>
-							{destination.reviewsCount > 0 && (
-								<span class="dest-card__reviews-count">
-									({destination.reviewsCount} {t('common.reviews', 'reseñas')})
-								</span>
-							)}
-						</div>
+						<DestinationRating
+							averageRating={destination.averageRating}
+							reviewsCount={destination.reviewsCount}
+							locale={locale}
+							onDark={true}
+						/>
 					)}
 				</div>
 			)}
@@ -185,22 +173,11 @@ const isExternalImage = destination.featuredImage.url.startsWith('http');
 
 				<!-- Stars + rating row -->
 				{destination.averageRating > 0 && (
-					<div
-						class="dest-card__stars"
-						aria-label={`${t('destination.card.rating.label', 'Calificación')}: ${destination.averageRating.toFixed(1)} ${t('destination.card.rating.of5', 'de 5')}`}
-					>
-						{Array.from({ length: 5 }).map((_, i) => (
-							<span class={i < fullStars ? 'dest-card__star--filled' : 'dest-card__star--empty'}>
-								<StarIcon size={14} weight={i < fullStars ? 'fill' : 'regular'} aria-hidden="true" />
-							</span>
-						))}
-						<span class="dest-card__rating-value">{destination.averageRating.toFixed(1)}</span>
-						{destination.reviewsCount > 0 && (
-							<span class="dest-card__reviews-count">
-								({destination.reviewsCount} {t('common.reviews', 'reseñas')})
-							</span>
-						)}
-					</div>
+					<DestinationRating
+						averageRating={destination.averageRating}
+						reviewsCount={destination.reviewsCount}
+						locale={locale}
+					/>
 				)}
 
 				<!-- Divider -->
@@ -487,56 +464,6 @@ const isExternalImage = destination.featuredImage.url.startsWith('http');
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
 		margin: 0;
-	}
-
-	/* =========================================================================
-	   STARS & RATING (shared between grid content and carousel overlay)
-	   ========================================================================= */
-	.dest-card__stars {
-		display: flex;
-		align-items: center;
-		gap: 4px;
-	}
-
-	.dest-card__star--filled {
-		color: var(--rating-star);
-		display: inline-flex;
-	}
-
-	.dest-card__star--empty {
-		color: var(--core-muted-foreground);
-		opacity: 0.4;
-		display: inline-flex;
-	}
-
-	/* In overlay context the empty star should contrast on dark background */
-	.dest-card__overlay-content .dest-card__star--empty {
-		color: var(--primary-foreground);
-	}
-
-	.dest-card__rating-value {
-		font-family: var(--font-sans);
-		font-weight: 700;
-		font-size: 13px;
-		line-height: 19.2px;
-		color: var(--core-foreground);
-		margin-left: 4px;
-	}
-
-	.dest-card__overlay-content .dest-card__rating-value {
-		color: var(--primary-foreground);
-	}
-
-	.dest-card__reviews-count {
-		font-family: var(--font-sans);
-		font-weight: 400;
-		font-size: 12px;
-		line-height: 19.2px;
-		color: var(--core-muted-foreground);
-	}
-
-	.dest-card__overlay-content .dest-card__reviews-count {
-		color: oklch(from var(--primary-foreground) l c h / 0.75);
 	}
 
 	/* =========================================================================

@@ -1,0 +1,102 @@
+---
+/**
+ * @file DestinationRating.astro
+ * @description Reusable star-rating row for destination contexts.
+ *
+ * Renders 5 StarIcon glyphs (filled vs empty), the numeric rating value,
+ * and the optional reviews count in parentheses. The `onDark` prop adapts
+ * empty-star and value colors so it remains legible over an image overlay.
+ *
+ * Used by DestinationCard.astro (both grid content and carousel overlay).
+ */
+
+import { StarIcon } from '@repo/icons';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+	/** Average rating value, 0–5. */
+	readonly averageRating: number;
+	/** Total number of reviews aggregated into the rating. */
+	readonly reviewsCount: number;
+	/** Active locale used to resolve aria-label translations. */
+	readonly locale: SupportedLocale;
+	/**
+	 * Whether the rating renders over a dark/photographic surface.
+	 * Adjusts empty-star and value colors for legibility.
+	 * Defaults to false (light surface).
+	 */
+	readonly onDark?: boolean;
+	/** Star icon size in px. Defaults to 14. */
+	readonly size?: number;
+}
+
+const { averageRating, reviewsCount, locale, onDark = false, size = 14 } = Astro.props;
+const { t } = createTranslations(locale);
+
+const fullStars = Math.floor(averageRating);
+const ariaLabel = `${t('destination.card.rating.label', 'Calificación')}: ${averageRating.toFixed(1)} ${t('destination.card.rating.of5', 'de 5')}`;
+---
+
+<div class:list={['dest-rating', onDark && 'dest-rating--on-dark']} aria-label={ariaLabel}>
+	{Array.from({ length: 5 }).map((_, i) => (
+		<span class={i < fullStars ? 'dest-rating__star--filled' : 'dest-rating__star--empty'}>
+			<StarIcon size={size} weight={i < fullStars ? 'fill' : 'regular'} aria-hidden="true" />
+		</span>
+	))}
+	<span class="dest-rating__value">{averageRating.toFixed(1)}</span>
+	{reviewsCount > 0 && (
+		<span class="dest-rating__reviews">
+			({reviewsCount} {t('common.reviews', 'reseñas')})
+		</span>
+	)}
+</div>
+
+<style>
+	.dest-rating {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+	}
+
+	.dest-rating__star--filled {
+		display: inline-flex;
+		color: var(--rating-star);
+	}
+
+	.dest-rating__star--empty {
+		display: inline-flex;
+		color: var(--core-muted-foreground);
+		opacity: 0.4;
+	}
+
+	.dest-rating--on-dark .dest-rating__star--empty {
+		color: var(--primary-foreground);
+		opacity: 0.5;
+	}
+
+	.dest-rating__value {
+		font-family: var(--font-sans);
+		font-weight: 700;
+		font-size: 13px;
+		line-height: 1.5;
+		color: var(--core-foreground);
+		margin-left: 4px;
+	}
+
+	.dest-rating--on-dark .dest-rating__value {
+		color: var(--primary-foreground);
+	}
+
+	.dest-rating__reviews {
+		font-family: var(--font-sans);
+		font-weight: 400;
+		font-size: 12px;
+		line-height: 1.5;
+		color: var(--core-muted-foreground);
+	}
+
+	.dest-rating--on-dark .dest-rating__reviews {
+		color: oklch(from var(--primary-foreground) l c h / 0.75);
+	}
+</style>
