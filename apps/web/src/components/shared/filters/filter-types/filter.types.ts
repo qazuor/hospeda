@@ -5,6 +5,7 @@
  */
 
 import type { Dispatch } from 'react';
+import type { DateRangeFilterConfig } from './DateRangeFilter';
 import type { DualRangeFilterConfig } from './DualRangeFilter';
 import type { SelectSearchFilterConfig } from './SelectSearchFilter';
 import type { StarsFilterConfig } from './StarsFilter';
@@ -75,7 +76,8 @@ export type FilterGroup =
     | ToggleFilterConfig
     | DualRangeFilterConfig
     | SelectSearchFilterConfig
-    | IconChipsFilterConfig;
+    | IconChipsFilterConfig
+    | DateRangeFilterConfig;
 
 /** Shared reducer state shape. */
 export interface FilterState {
@@ -83,6 +85,12 @@ export interface FilterState {
     readonly ranges: Record<string, { readonly min: string; readonly max: string }>;
     readonly steppers: Record<string, number>;
     readonly toggles: Record<string, boolean>;
+    /**
+     * Date-range groups keyed by their config id. Each entry holds ISO
+     * `YYYY-MM-DD` strings (empty string when unset). Emitted to URL as the
+     * `checkIn` / `checkOut` params.
+     */
+    readonly dates: Record<string, { readonly from: string; readonly to: string }>;
     readonly search: string;
     readonly sort: string;
 }
@@ -96,6 +104,7 @@ export type FilterAction =
     | { type: 'SET_SORT'; value: string }
     | { type: 'SET_STEPPER'; groupId: string; value: number }
     | { type: 'SET_TOGGLE'; groupId: string; value: boolean }
+    | { type: 'SET_DATE_RANGE'; groupId: string; from: string; to: string }
     | { type: 'REMOVE_FILTER'; groupId: string; value: string }
     | { type: 'CLEAR_GROUP'; groupId: string }
     | { type: 'CLEAR_ALL' };

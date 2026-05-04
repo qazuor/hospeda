@@ -186,7 +186,12 @@
         "openFilters": "Filtros",
         "closeFilters": "Cerrar filtros",
         "activeCount": "{{count}} filtro activo",
-        "activeCountPlural": "{{count}} filtros activos"
+        "activeCountPlural": "{{count}} filtros activos",
+        "dateRange": {
+            "placeholder": "Elegí tus fechas",
+            "choose": "elegir",
+            "clear": "Limpiar fechas"
+        }
     },
     "sort": {
         "most_bookmarked": "Más guardados"

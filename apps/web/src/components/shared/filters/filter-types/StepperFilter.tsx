@@ -17,6 +17,15 @@ export interface StepperFilterConfig {
     readonly max?: number;
     readonly defaultValue?: number;
     readonly suffix?: string;
+    /**
+     * When true, the stepper emits its value to the URL whenever it has a
+     * value in state — even if equal to the default. The default behavior
+     * (false) only emits when the value is greater than the default, which
+     * is right for "minimum" filters (minBedrooms, minBathrooms, ...) but
+     * wrong for context steppers (hero search adults/children) that must
+     * survive across other filter changes.
+     */
+    readonly emitWhenAtDefault?: boolean;
 }
 
 interface StepperFilterProps {

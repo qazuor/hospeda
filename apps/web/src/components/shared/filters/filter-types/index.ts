@@ -21,4 +21,7 @@ export type { SelectSearchFilterConfig } from './SelectSearchFilter';
 export { IconChipsFilter } from './IconChipsFilter';
 export type { IconChipsFilterConfig } from './filter.types';
 
+export { DateRangeFilter } from './DateRangeFilter';
+export type { DateRangeFilterConfig } from './DateRangeFilter';
+
 export { FilterGroupContent } from './FilterGroupContent';

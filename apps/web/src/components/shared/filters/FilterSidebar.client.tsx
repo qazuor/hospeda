@@ -96,6 +96,14 @@ function filterReducer(state: FilterState, action: FilterAction): FilterState {
             return { ...state, steppers: { ...state.steppers, [action.groupId]: action.value } };
         case 'SET_TOGGLE':
             return { ...state, toggles: { ...state.toggles, [action.groupId]: action.value } };
+        case 'SET_DATE_RANGE':
+            return {
+                ...state,
+                dates: {
+                    ...state.dates,
+                    [action.groupId]: { from: action.from, to: action.to }
+                }
+            };
         case 'REMOVE_FILTER': {
             const current = state.selections[action.groupId] ?? [];
             return {
@@ -108,6 +116,7 @@ function filterReducer(state: FilterState, action: FilterAction): FilterState {
         }
         case 'CLEAR_GROUP': {
             const { [action.groupId]: _removed, ...restRanges } = state.ranges;
+            const { [action.groupId]: _removedDate, ...restDates } = state.dates;
             return {
                 ...state,
                 selections: { ...state.selections, [action.groupId]: [] },
@@ -117,7 +126,8 @@ function filterReducer(state: FilterState, action: FilterAction): FilterState {
                     [action.groupId]: false,
                     [`${action.groupId}_includeNull`]: false
                 },
-                ranges: restRanges
+                ranges: restRanges,
+                dates: restDates
             };
         }
         case 'CLEAR_ALL':
@@ -126,6 +136,7 @@ function filterReducer(state: FilterState, action: FilterAction): FilterState {
                 ranges: {},
                 steppers: {},
                 toggles: {},
+                dates: {},
                 search: '',
                 sort: state.sort
             };
@@ -153,7 +164,13 @@ function groupHasActiveSelection(group: FilterGroup, state: FilterState): boolea
     }
     if (group.type === 'stepper') {
         const def = getStepperDefault(group);
-        return (state.steppers[group.id] ?? def) > def;
+        const stateVal = state.steppers[group.id];
+        // Context steppers (emitWhenAtDefault) count as active whenever set,
+        // so they keep their group expanded after navigating from the hero.
+        if (group.emitWhenAtDefault === true) {
+            return stateVal !== undefined;
+        }
+        return (stateVal ?? def) > def;
     }
     if (group.type === 'stars') {
         const hasIncludeNull = !!state.toggles[`${group.id}_includeNull`];
@@ -172,6 +189,10 @@ function groupHasActiveSelection(group: FilterGroup, state: FilterState): boolea
                 (range?.max && range.max !== String(group.max))
             )
         );
+    }
+    if (group.type === 'date-range') {
+        const v = state.dates[group.id];
+        return !!(v?.from || v?.to);
     }
     return false;
 }
@@ -221,6 +242,7 @@ function initStateFromParams({
     const ranges: Record<string, { min: string; max: string }> = {};
     const steppers: Record<string, number> = {};
     const toggles: Record<string, boolean> = {};
+    const dates: Record<string, { from: string; to: string }> = {};
     const search = params.q ?? '';
     const sort = params.sortBy ?? defaultSort;
 
@@ -261,9 +283,16 @@ function initStateFromParams({
         if (group.type === 'toggle') {
             if (params[group.id] === 'true') toggles[group.id] = true;
         }
+        if (group.type === 'date-range') {
+            // Hydrate from canonical `checkIn` / `checkOut` URL params (not the
+            // group id), since these are the names the listing reads at SSR.
+            const from = params.checkIn ?? '';
+            const to = params.checkOut ?? '';
+            if (from || to) dates[group.id] = { from, to };
+        }
     }
 
-    return { selections, ranges, steppers, toggles, search, sort };
+    return { selections, ranges, steppers, toggles, dates, search, sort };
 }
 
 // --- Sub-components ---
@@ -743,8 +772,17 @@ export function FilterSidebar({
         for (const group of filters) {
             if (group.type === 'stepper' || group.type === 'stars') {
                 const def = getStepperDefault(group);
-                const val = state.steppers[group.id] ?? def;
-                if (val > def)
+                const stateVal = state.steppers[group.id];
+                const val = stateVal ?? def;
+                // Two emission modes:
+                //  - default (`val > def`): right for "minimum" filters.
+                //  - `emitWhenAtDefault`: right for context steppers that
+                //    must always reflect a chosen value (e.g. hero adults).
+                const shouldEmit =
+                    group.type === 'stepper' && group.emitWhenAtDefault === true
+                        ? stateVal !== undefined
+                        : val > def;
+                if (shouldEmit)
                     params.set(group.type === 'stars' ? 'minRating' : group.id, String(val));
             }
             if (group.type === 'toggle' && state.toggles[group.id]) {
@@ -757,6 +795,13 @@ export function FilterSidebar({
                 state.toggles[`${group.id}_includeNull`]
             ) {
                 params.set(group.includeNullParam, 'true');
+            }
+            // Date-range groups always emit canonical `checkIn` / `checkOut`
+            // params (not the group id), regardless of how many groups exist.
+            if (group.type === 'date-range') {
+                const v = state.dates[group.id];
+                if (v?.from) params.set('checkIn', v.from);
+                if (v?.to) params.set('checkOut', v.to);
             }
         }
         return params;

@@ -7,6 +7,7 @@
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { DateRangeFilter } from './DateRangeFilter';
 import { DualRangeFilter } from './DualRangeFilter';
 import styles from './FilterGroupContent.module.css';
 import { IconChipsFilter } from './IconChipsFilter';
@@ -21,6 +22,7 @@ import type {
     IconChipsFilterConfig
 } from './filter.types';
 import type {
+    DateRangeFilterConfig,
     DualRangeFilterConfig,
     SelectSearchFilterConfig,
     StarsFilterConfig,
@@ -248,6 +250,25 @@ export function FilterGroupContent({
                         dispatch({ type: 'TOGGLE_CHECKBOX', groupId: group.id, value: v });
                     }
                 }}
+                locale={locale}
+            />
+        );
+    }
+
+    if (group.type === 'date-range') {
+        const dateConfig = group as DateRangeFilterConfig;
+        return (
+            <DateRangeFilter
+                config={dateConfig}
+                value={state.dates[group.id] ?? { from: '', to: '' }}
+                onChange={(next) =>
+                    dispatch({
+                        type: 'SET_DATE_RANGE',
+                        groupId: group.id,
+                        from: next.from,
+                        to: next.to
+                    })
+                }
                 locale={locale}
             />
         );
