@@ -14,14 +14,25 @@ import EventCard from '@/components/shared/cards/EventCard.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { LocationMap } from '@/components/maps/LocationMap.client';
-import { destinationsApi, accommodationsApi, eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
+import DestinationGallery from '@/components/destination/DestinationGallery.astro';
+import DestinationAttractionsGrid from '@/components/destination/DestinationAttractionsGrid.astro';
+import DestinationRatingBreakdown from '@/components/destination/DestinationRatingBreakdown.astro';
+import DestinationStatsCard from '@/components/destination/DestinationStatsCard.astro';
+import DestinationFaqPlaceholder from '@/components/destination/DestinationFaqPlaceholder.astro';
+import DestinationClimatePlaceholder from '@/components/destination/DestinationClimatePlaceholder.astro';
+import {
+	destinationsApi,
+	accommodationsApi,
+	eventsApi,
+	userBookmarksPublicApi
+} from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { Image } from 'astro:assets';
-import { LocationIcon } from '@repo/icons';
+import { LocationIcon, HeartIcon } from '@repo/icons';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -40,45 +51,116 @@ if (!result.ok) return new Response(null, { status: 404 });
 
 const dest = result.data as Record<string, unknown>;
 const name = String(dest.name || '');
-const description = String(dest.summary || dest.description || '');
+const summary = String(dest.summary || '');
+const description = String(dest.description || summary);
 const slug = String(dest.slug || '');
 const destId = String(dest.id || '');
-const featuredImage = String(dest.featuredImage || '/assets/images/placeholder-destination.svg');
 const destType = String(dest.destinationType || '');
 
-// Fetch previews (3 accommodations + 3 events) and counts — all in parallel
+// --- Media (featuredImage + gallery) ----------------------------------------
+// The API returns media as an object { featuredImage: { url, caption }, gallery: [...] }.
+// We tolerate either shape (legacy string or new object) so the page never blows up.
+interface MediaImage { readonly url: string; readonly caption?: string; readonly description?: string }
+const mediaRaw = dest.media as
+	| { featuredImage?: MediaImage; gallery?: ReadonlyArray<MediaImage> }
+	| undefined;
+const PLACEHOLDER = '/assets/images/placeholder-destination.svg';
+const featuredImageObj: MediaImage =
+	mediaRaw?.featuredImage && typeof mediaRaw.featuredImage === 'object'
+		? mediaRaw.featuredImage
+		: typeof dest.featuredImage === 'string' && dest.featuredImage
+		  ? { url: dest.featuredImage, caption: name }
+		  : { url: PLACEHOLDER, caption: name };
+const galleryImages: ReadonlyArray<MediaImage> = mediaRaw?.gallery ?? [];
+
+// --- Domain data passed to the new section components -----------------------
+const attractions = (dest.attractions as ReadonlyArray<{
+	readonly id: string;
+	readonly name: string;
+	readonly slug?: string;
+	readonly description?: string;
+	readonly icon?: string;
+	readonly isFeatured?: boolean;
+	readonly displayWeight?: number;
+}>) ?? [];
+
+const ratingBreakdown = dest.rating as Record<string, number | undefined> | null | undefined;
+
+// --- Previews (3 accommodations + 3 events) and counts ----------------------
 let accCards: ReturnType<typeof toAccommodationCardProps>[] = [];
 let eventCards: ReturnType<typeof toEventCardProps>[] = [];
 let accCount = 0;
 let eventsCount = 0;
+let stats: {
+	accommodationsCount: number;
+	reviewsCount: number;
+	averageRating: number;
+	attractionsCount: number;
+	eventsCount: number;
+} = {
+	accommodationsCount: 0,
+	reviewsCount: 0,
+	averageRating: 0,
+	attractionsCount: 0,
+	eventsCount: 0
+};
 
 try {
-	const [accResult, accCountResult, eventsResult, eventsCountResult] = await Promise.all([
+	const [
+		accResult,
+		accCountResult,
+		eventsResult,
+		eventsCountResult,
+		statsResult
+	] = await Promise.all([
 		accommodationsApi.getByDestination({ destinationId: destId, pageSize: 3 }),
-		// pageSize=1 to get just the total count from pagination without heavy payload
 		accommodationsApi.getByDestination({ destinationId: destId, pageSize: 1 }),
 		eventsApi.list({ pageSize: 3, destinationId: destId }),
 		eventsApi.list({ pageSize: 1, destinationId: destId }),
+		destinationsApi.getStats({ id: destId })
 	]);
 
 	accCards = accResult.ok
-		? accResult.data.items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }))
+		? accResult.data.items.map((item) =>
+				toAccommodationCardProps({ item: item as unknown as Record<string, unknown> })
+		  )
 		: [];
 	accCount = accCountResult.ok ? (accCountResult.data.pagination?.total ?? 0) : 0;
 
 	eventCards = eventsResult.ok
-		? eventsResult.data.items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown> }))
+		? eventsResult.data.items.map((item) =>
+				toEventCardProps({ item: item as unknown as Record<string, unknown> })
+		  )
 		: [];
 	eventsCount = eventsCountResult.ok ? (eventsCountResult.data.pagination?.total ?? 0) : 0;
+
+	if (statsResult.ok) {
+		stats = {
+			accommodationsCount: statsResult.data.accommodationsCount,
+			reviewsCount: statsResult.data.reviewsCount,
+			averageRating: statsResult.data.averageRating,
+			attractionsCount: statsResult.data.attractionsCount,
+			eventsCount: statsResult.data.eventsCount
+		};
+	} else {
+		// Fall back to the locally derived counts so the sidebar still has something useful
+		stats = {
+			accommodationsCount: accCount,
+			reviewsCount: 0,
+			averageRating: 0,
+			attractionsCount: attractions.length,
+			eventsCount
+		};
+	}
 } catch (err) {
 	console.error('[destinos/detail] Error fetching previews:', err);
 }
 
-// --- Auth ---
+// --- Auth -------------------------------------------------------------------
 const userId = Astro.locals.user?.id ?? null;
 const isAuthenticated = userId !== null;
 
-// --- Bookmark count + favorite status (graceful degradation) ---
+// --- Bookmark count + favorite status (graceful degradation) ----------------
 let bookmarkCount: number | undefined;
 let initialIsFavorited: boolean | undefined;
 let initialBookmarkId: string | null = null;
@@ -110,17 +192,19 @@ if (isAuthenticated) {
 	}
 }
 
-// Build breadcrumb items from path segments
+// --- Breadcrumbs ------------------------------------------------------------
 const pathSegments = path.split('/').filter(Boolean);
 const breadcrumbItems = [
 	{ label: t('destinations.title', 'Destinos'), path: 'destinos' },
 	...pathSegments.map((segment, i) => ({
 		label: segment.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
-		...(i < pathSegments.length - 1 ? { path: `destinos/${pathSegments.slice(0, i + 1).join('/')}` } : {}),
-	})),
+		...(i < pathSegments.length - 1
+			? { path: `destinos/${pathSegments.slice(0, i + 1).join('/')}` }
+			: {})
+	}))
 ];
 
-// TouristDestination JSON-LD
+// --- TouristDestination JSON-LD --------------------------------------------
 const destLocation = dest.location as
 	| { coordinates?: { lat?: string; long?: string } }
 	| undefined;
@@ -133,36 +217,41 @@ const jsonLd: Record<string, unknown> = {
 	'@context': 'https://schema.org',
 	'@type': 'TouristDestination',
 	name,
-	description,
-	image: featuredImage,
+	description: summary || description,
+	image: featuredImageObj.url,
 	url: `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`,
 	...(hasDestCoords
 		? {
-			geo: {
-				'@type': 'GeoCoordinates',
-				latitude: destLat,
-				longitude: destLng,
-			},
-		}
-		: {}),
+				geo: {
+					'@type': 'GeoCoordinates',
+					latitude: destLat,
+					longitude: destLng
+				}
+		  }
+		: {})
 };
 
-// --- Breadcrumb JSON-LD (REQ-096-37 / T-068) ---
+// --- Breadcrumb JSON-LD (REQ-096-37 / T-068) -------------------------------
 const siteOriginDest = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const breadcrumbJsonLdItems = [
 	{ name: t('nav.home', 'Inicio'), url: `${siteOriginDest}/${locale}/` },
 	{ name: t('destinations.title', 'Destinos'), url: `${siteOriginDest}/${locale}/destinos/` },
 	...pathSegments.map((segment, i) => ({
 		name: segment.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
-		url: `${siteOriginDest}/${locale}/destinos/${pathSegments.slice(0, i + 1).join('/')}/`,
-	})),
+		url: `${siteOriginDest}/${locale}/destinos/${pathSegments.slice(0, i + 1).join('/')}/`
+	}))
 ];
+
+// Whether the destination's plain `description` field carries HTML (the
+// editor stores Tiptap-rendered HTML). We assume description is plain text
+// and rely on the optional contentHtml field for rich content.
+const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml : null;
 ---
 
 <DetailLayout
 	locale={locale}
 	title={name}
-	description={description}
+	description={summary || description}
 	showBreadcrumbs={true}
 	showSidebar={true}
 >
@@ -195,8 +284,11 @@ const breadcrumbJsonLdItems = [
 			/>
 		</div>
 		{bookmarkCount !== undefined && (
-			<span class="dest-detail__bookmark-count" aria-label={tPlural('destination.detail.bookmark_count', bookmarkCount)}>
-				<span class="dest-detail__bookmark-icon" aria-hidden="true">♥</span>
+			<span
+				class="dest-detail__bookmark-count"
+				aria-label={tPlural('destination.detail.bookmark_count', bookmarkCount)}
+			>
+				<HeartIcon size={14} weight="fill" aria-hidden="true" />
 				{tPlural('destination.detail.bookmark_count', bookmarkCount)}
 			</span>
 		)}
@@ -205,10 +297,10 @@ const breadcrumbJsonLdItems = [
 	<div class="dest-detail">
 		<!-- Hero -->
 		<div class="dest-detail__hero">
-			{featuredImage && !featuredImage.includes('placeholder') ? (
+			{featuredImageObj.url && !featuredImageObj.url.includes('placeholder') ? (
 				<Image
-					src={featuredImage}
-					alt={name}
+					src={featuredImageObj.url}
+					alt={featuredImageObj.caption ?? name}
 					width={1200}
 					height={675}
 					format="webp"
@@ -217,8 +309,8 @@ const breadcrumbJsonLdItems = [
 				/>
 			) : (
 				<img
-					src={featuredImage}
-					alt={name}
+					src={featuredImageObj.url}
+					alt={featuredImageObj.caption ?? name}
 					loading="eager"
 					class="dest-detail__hero-img"
 					width="1200"
@@ -227,12 +319,55 @@ const breadcrumbJsonLdItems = [
 			)}
 		</div>
 
-		<!-- Description -->
-		<div class="dest-detail__description" set:html={String(dest.contentHtml || description)} />
+		<!-- Description (rich HTML if available, else plain text) -->
+		<div class="dest-detail__section dest-detail__description">
+			{richDescription ? (
+				<div set:html={richDescription} />
+			) : (
+				<p>{description}</p>
+			)}
+		</div>
+
+		<!-- Photo gallery (extras beyond the hero) -->
+		{galleryImages.length > 0 && (
+			<div class="dest-detail__section">
+				<DestinationGallery
+					featuredImage={featuredImageObj}
+					gallery={galleryImages}
+					destinationName={name}
+					locale={locale}
+				/>
+			</div>
+		)}
+
+		<!-- What to do here -->
+		{attractions.length > 0 && (
+			<div class="dest-detail__section">
+				<DestinationAttractionsGrid
+					attractions={attractions}
+					locale={locale}
+				/>
+			</div>
+		)}
+
+		<!-- Rating breakdown -->
+		{ratingBreakdown && (
+			<div class="dest-detail__section">
+				<h2 class="dest-detail__section-title">
+					{t('destination.detail.rating.title', 'Calificación por dimensión')}
+				</h2>
+				<DestinationRatingBreakdown
+					rating={ratingBreakdown}
+					locale={locale}
+				/>
+			</div>
+		)}
 
 		<!-- Interactive map (SPEC-097) -->
 		<section class="dest-detail__section">
-			<h2 class="dest-detail__section-title">{t('destinations.detail.location', 'Ubicación')}</h2>
+			<h2 class="dest-detail__section-title">
+				{t('destinations.detail.location', 'Ubicación')}
+			</h2>
 			{hasDestCoords ? (
 				<LocationMap
 					client:only="react"
@@ -244,7 +379,7 @@ const breadcrumbJsonLdItems = [
 					i18nStrings={{
 						attribution: t('maps.attribution'),
 						approximateDisclaimer: t('maps.approximateDisclaimer'),
-						markerLabel: name,
+						markerLabel: name
 					}}
 				/>
 			) : (
@@ -254,12 +389,27 @@ const breadcrumbJsonLdItems = [
 			)}
 		</section>
 
+		<!-- FAQ placeholder (real FAQ data is not yet in the destination schema) -->
+		<div class="dest-detail__section">
+			<DestinationFaqPlaceholder locale={locale} />
+		</div>
+
+		<!-- Climate placeholder (will be populated via external weather API) -->
+		<div class="dest-detail__section">
+			<DestinationClimatePlaceholder locale={locale} />
+		</div>
+
 		<!-- Accommodation preview -->
 		{accCards.length > 0 && (
 			<section class="dest-detail__section">
 				<div class="dest-detail__section-header">
-					<h2 class="dest-detail__section-title">{t('destinations.detail.accommodations', 'Alojamientos')}</h2>
-					<a href={buildUrl({ locale, path: `destinos/${slug}/alojamientos` })} class="dest-detail__view-all">
+					<h2 class="dest-detail__section-title">
+						{t('destinations.detail.accommodations', 'Alojamientos')}
+					</h2>
+					<a
+						href={buildUrl({ locale, path: `destinos/${slug}/alojamientos` })}
+						class="dest-detail__view-all"
+					>
 						{t('destinations.detail.viewAll', 'Ver todos')} →
 					</a>
 				</div>
@@ -277,8 +427,13 @@ const breadcrumbJsonLdItems = [
 		{eventCards.length > 0 && (
 			<section class="dest-detail__section">
 				<div class="dest-detail__section-header">
-					<h2 class="dest-detail__section-title">{t('destinations.detail.events', 'Eventos')}</h2>
-					<a href={buildUrl({ locale, path: `destinos/${slug}/eventos` })} class="dest-detail__view-all">
+					<h2 class="dest-detail__section-title">
+						{t('destinations.detail.events', 'Eventos')}
+					</h2>
+					<a
+						href={buildUrl({ locale, path: `destinos/${slug}/eventos` })}
+						class="dest-detail__view-all"
+					>
 						{t('destinations.detail.viewAll', 'Ver todos')} →
 					</a>
 				</div>
@@ -295,51 +450,124 @@ const breadcrumbJsonLdItems = [
 
 	<!-- Sidebar -->
 	<div slot="sidebar" class="dest-sidebar">
-		<div class="dest-sidebar__card">
-			<h3 class="dest-sidebar__card-title">{t('destinations.detail.stats', 'Información')}</h3>
-			<ul class="dest-sidebar__stat-list">
-				<li class="dest-sidebar__stat-item">
-					<span class="dest-sidebar__stat-label">{t('destinations.detail.accommodationsCount', 'Alojamientos')}</span>
-					<span class="dest-sidebar__stat-value">{accCount}</span>
-				</li>
-				<li class="dest-sidebar__stat-item">
-					<span class="dest-sidebar__stat-label">{t('destinations.detail.eventsCount', 'Eventos')}</span>
-					<span class="dest-sidebar__stat-value">{eventsCount}</span>
-				</li>
-			</ul>
-		</div>
+		<DestinationStatsCard stats={stats} locale={locale} />
 	</div>
 </DetailLayout>
 
 <style>
-	.dest-detail__hero { margin-bottom: var(--space-6); border-radius: var(--radius-card); overflow: hidden; }
-	.dest-detail__hero-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+	.dest-detail__hero {
+		margin-bottom: 1.5rem;
+		border-radius: var(--radius-card);
+		overflow: hidden;
+	}
+	.dest-detail__hero-img {
+		width: 100%;
+		aspect-ratio: 16 / 9;
+		object-fit: cover;
+	}
 
-	.dest-detail__header-top-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
-	.dest-detail__header-left { flex: 1; min-width: 0; }
-	.dest-detail__title { font-family: var(--font-heading); font-weight: 700; font-size: clamp(1.75rem, 4vw, 2.5rem); color: var(--foreground); margin: 0 0 var(--space-2); }
-	.dest-detail__type { display: inline-flex; align-items: center; gap: 0.25rem; font-family: var(--font-sans); font-size: var(--text-body-sm); color: var(--muted-foreground); margin-bottom: var(--space-6); }
-	.dest-detail__bookmark-count { display: inline-flex; align-items: center; gap: 0.3em; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 500; color: var(--muted-foreground); margin-bottom: var(--space-4); }
-	.dest-detail__bookmark-icon { font-size: 0.75rem; color: var(--destructive); line-height: 1; }
+	.dest-detail__header-top-row {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.75rem;
+	}
+	.dest-detail__header-left {
+		flex: 1;
+		min-width: 0;
+	}
+	.dest-detail__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		color: var(--core-foreground);
+		margin: 0 0 0.5rem;
+	}
+	.dest-detail__type {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		color: var(--core-muted-foreground);
+		margin-bottom: 1rem;
+	}
+	.dest-detail__bookmark-count {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3em;
+		font-family: var(--font-sans);
+		font-size: 0.8rem;
+		font-weight: 500;
+		color: var(--core-muted-foreground);
+		margin-bottom: 1rem;
+	}
+	.dest-detail__bookmark-count :global(svg) {
+		color: var(--rating-star);
+	}
 
-	.dest-detail__description { font-family: var(--font-sans); line-height: 1.7; color: var(--foreground); margin-bottom: var(--space-8); }
-	.dest-detail__description :global(p) { margin-bottom: var(--space-4); }
+	.dest-detail__description {
+		font-family: var(--font-sans);
+		line-height: 1.7;
+		color: var(--core-foreground);
+	}
+	.dest-detail__description :global(p) {
+		margin-bottom: 1rem;
+	}
+	.dest-detail__description :global(p:last-child) {
+		margin-bottom: 0;
+	}
 
-	.dest-detail__section { margin-bottom: var(--space-8); }
-	.dest-detail__section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4); }
-	.dest-detail__section-title { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-xl); color: var(--foreground); margin: 0; }
-	.dest-detail__view-all { font-family: var(--font-sans); font-size: var(--text-body-sm); color: var(--brand-accent); text-decoration: none; }
-	.dest-detail__view-all:hover { text-decoration: underline; }
+	.dest-detail__section {
+		margin-bottom: 2rem;
+	}
+	.dest-detail__section-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 1rem;
+	}
+	.dest-detail__section-title {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: 1.5rem;
+		color: var(--core-foreground);
+		margin: 0 0 1rem;
+	}
+	.dest-detail__view-all {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		color: var(--brand-accent);
+		text-decoration: none;
+	}
+	.dest-detail__view-all:hover {
+		text-decoration: underline;
+	}
 
-	.dest-detail__preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-card-gap); }
-	.dest-detail__placeholder { background-color: var(--card); border: 1px dashed var(--border); border-radius: var(--radius-card); padding: var(--space-8); text-align: center; color: var(--muted-foreground); }
+	.dest-detail__preview-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-card-gap);
+	}
 
-	.dest-sidebar__card { background-color: var(--card); border-radius: var(--radius-card); padding: var(--space-6); box-shadow: var(--shadow-card); margin-bottom: var(--space-4); }
-	.dest-sidebar__card-title { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); color: var(--foreground); margin: 0 0 var(--space-4); }
-	.dest-sidebar__stat-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
-	.dest-sidebar__stat-item { display: flex; align-items: center; justify-content: space-between; }
-	.dest-sidebar__stat-label { font-family: var(--font-sans); font-size: var(--text-body-sm); color: var(--muted-foreground); }
-	.dest-sidebar__stat-value { font-family: var(--font-heading); font-size: var(--text-body); font-weight: 600; color: var(--foreground); }
+	.dest-detail__placeholder {
+		background-color: var(--core-card);
+		border: 1px dashed var(--border);
+		border-radius: var(--radius-card);
+		padding: 2rem;
+		text-align: center;
+		color: var(--core-muted-foreground);
+	}
 
-	@media (max-width: 768px) { .dest-detail__preview-grid { grid-template-columns: 1fr; } }
+	.dest-sidebar {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	@media (max-width: 768px) {
+		.dest-detail__preview-grid {
+			grid-template-columns: 1fr;
+		}
+	}
 </style>

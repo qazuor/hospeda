@@ -49,21 +49,45 @@ describe('destinos/[...path].astro — real counts (T-045)', () => {
     });
 
     describe('Sidebar rendering', () => {
-        it('renders accCount in the sidebar stat list', () => {
-            expect(src).toContain('{accCount}');
+        it('delegates the sidebar to DestinationStatsCard', () => {
+            expect(src).toContain('DestinationStatsCard');
+            expect(src).toContain('<DestinationStatsCard');
         });
 
-        it('renders eventsCount in the sidebar stat list', () => {
-            expect(src).toContain('{eventsCount}');
+        it('feeds the stats card with locally derived counts as fallback', () => {
+            // When the dedicated stats endpoint fails, the page falls back to
+            // accCount / eventsCount / attractions.length to keep the sidebar populated.
+            expect(src).toContain('accommodationsCount: accCount');
+            expect(src).toContain('eventsCount');
+            expect(src).toContain('attractionsCount');
         });
 
         it('does NOT have a TODO placeholder for stats anymore', () => {
             expect(src).not.toContain('statsPlaceholder');
         });
 
-        it('uses i18n keys for stat labels', () => {
-            expect(src).toContain("t('destinations.detail.accommodationsCount'");
-            expect(src).toContain("t('destinations.detail.eventsCount'");
+        it('does NOT inline the i18n keys for stat labels (delegated to component)', () => {
+            // Stat labels are owned by DestinationStatsCard; the page should not
+            // duplicate them.
+            expect(src).not.toContain("t('destinations.detail.accommodationsCount'");
+            expect(src).not.toContain("t('destinations.detail.eventsCount'");
+        });
+    });
+
+    describe('New section components are wired', () => {
+        it('imports DestinationGallery, DestinationAttractionsGrid, DestinationRatingBreakdown', () => {
+            expect(src).toContain('DestinationGallery');
+            expect(src).toContain('DestinationAttractionsGrid');
+            expect(src).toContain('DestinationRatingBreakdown');
+        });
+
+        it('imports DestinationFaqPlaceholder and DestinationClimatePlaceholder', () => {
+            expect(src).toContain('DestinationFaqPlaceholder');
+            expect(src).toContain('DestinationClimatePlaceholder');
+        });
+
+        it('fetches aggregated stats via destinationsApi.getStats', () => {
+            expect(src).toContain('destinationsApi.getStats');
         });
     });
 });
