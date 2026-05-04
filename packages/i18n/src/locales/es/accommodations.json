@@ -294,7 +294,10 @@
             "included": "incluido",
             "optional": "opcional",
             "perNightFlag": "por noche",
-            "perGuestFlag": "por huésped"
+            "perGuestFlag": "por huésped",
+            "capacityFact": "Hasta {n} huéspedes",
+            "minNightsFact": "Estadía mínima {n} noches",
+            "maxNightsFact": "Estadía máxima {n} noches"
         },
         "reviewsDetail": {
             "noReviews": "No hay opiniones todavía",
