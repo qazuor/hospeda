@@ -19,6 +19,7 @@ import { toDestinationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { ChevronDownIcon } from '@repo/icons';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -101,7 +102,7 @@ const sortOptions: ReadonlyArray<{ readonly value: string; readonly label: strin
 		<!-- Wave separator -->
 		<div class="dest-listing__wave" aria-hidden="true">
 			<svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-				<path d="M0,64 C288,120 576,0 864,64 C1152,128 1440,32 1440,32 L1440,0 L0,0 Z" fill="var(--surface-warm, #fdf6f0)" />
+				<path d="M0,64 C288,120 576,0 864,64 C1152,128 1440,32 1440,32 L1440,0 L0,0 Z" fill="var(--surface-warm)" />
 			</svg>
 		</div>
 
@@ -115,23 +116,20 @@ const sortOptions: ReadonlyArray<{ readonly value: string; readonly label: strin
 
 				{!hasError && cards.length > 0 && (
 					<div class="dest-listing__controls">
-						<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
+						<nav class="view-toggle" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
 							<span
 								class="view-toggle__btn view-toggle__btn--active"
-								role="tab"
-								aria-selected="true"
+								aria-current="page"
 							>
 								{t('accommodations.viewToggle.list', 'Lista')}
 							</span>
 							<a
 								href={mapHref}
 								class="view-toggle__btn"
-								role="tab"
-								aria-selected="false"
 							>
 								{t('accommodations.viewToggle.map', 'Mapa')}
 							</a>
-						</div>
+						</nav>
 
 						{/* SPEC-098 T-052c — Sort dropdown. Native <form> + <select>
 							with no JS so it works without hydrating an island.
@@ -147,18 +145,21 @@ const sortOptions: ReadonlyArray<{ readonly value: string; readonly label: strin
 							<label class="dest-sort__label" for="dest-sort-select">
 								{t('destinations.sort.label', 'Ordenar por')}
 							</label>
-							<select
-								id="dest-sort-select"
-								class="dest-sort__select"
-								name="sort"
-								data-sort-select
-							>
-								{sortOptions.map((opt) => (
-									<option value={opt.value} selected={opt.value === sortValue}>
-										{opt.label}
-									</option>
-								))}
-							</select>
+							<div class="dest-sort__select-wrap">
+								<select
+									id="dest-sort-select"
+									class="dest-sort__select"
+									name="sort"
+									data-sort-select
+								>
+									{sortOptions.map((opt) => (
+										<option value={opt.value} selected={opt.value === sortValue}>
+											{opt.label}
+										</option>
+									))}
+								</select>
+								<ChevronDownIcon size={16} weight="bold" aria-hidden="true" class="dest-sort__chevron" />
+							</div>
 							{/* Hidden inputs decompose the canonical sort token
 								into the sortBy/sortOrder pair the API expects. */}
 							<input type="hidden" name="sortBy" data-sort-by />
@@ -225,26 +226,26 @@ const sortOptions: ReadonlyArray<{ readonly value: string; readonly label: strin
 	/* View toggle */
 	.view-toggle {
 		display: inline-flex;
-		gap: var(--space-2, 8px);
+		gap: 0.5rem;
 		padding: 4px;
 		margin: 0;
-		background-color: var(--surface-warm, #faf6f0);
-		border-radius: var(--radius-pill, 9999px);
+		background-color: var(--surface-warm);
+		border-radius: var(--radius-pill);
 	}
 	.view-toggle__btn {
 		font-family: var(--font-sans);
 		font-size: 0.875rem;
 		padding: 0.5rem 1rem;
-		border-radius: var(--radius-pill, 9999px);
-		color: var(--muted-foreground, #555);
+		border-radius: var(--radius-pill);
+		color: var(--core-muted-foreground);
 		text-decoration: none;
-		transition: background-color var(--duration-normal, 0.4s) ease, color var(--duration-normal, 0.4s) ease;
+		transition: background-color var(--duration-normal) ease, color var(--duration-normal) ease;
 		cursor: pointer;
 	}
-	.view-toggle__btn:hover { color: var(--foreground); }
+	.view-toggle__btn:hover { color: var(--core-foreground); }
 	.view-toggle__btn--active {
-		background-color: var(--accent, #f59e0b);
-		color: white;
+		background-color: var(--brand-accent);
+		color: var(--accent-foreground);
 		font-weight: 500;
 		cursor: default;
 	}
@@ -257,46 +258,58 @@ const sortOptions: ReadonlyArray<{ readonly value: string; readonly label: strin
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: space-between;
-		gap: var(--space-3, 12px);
-		margin: 0 0 var(--space-4, 16px);
+		gap: 0.75rem;
+		margin: 0 0 1rem;
 	}
 
 	.dest-sort {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--space-2, 8px);
+		gap: 0.5rem;
 		font-family: var(--font-sans);
 		font-size: 0.875rem;
-		color: var(--muted-foreground, #555);
+		color: var(--core-muted-foreground);
 	}
 	.dest-sort__label { white-space: nowrap; }
+
+	.dest-sort__select-wrap {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+	}
+
 	.dest-sort__select {
 		font-family: var(--font-sans);
 		font-size: 0.875rem;
 		padding: 0.5rem 2.25rem 0.5rem 0.875rem;
-		border-radius: var(--radius-button, 8px);
-		border: 1px solid var(--border, #e2dccd);
-		background-color: var(--card, #fff);
-		color: var(--foreground);
+		border-radius: var(--radius-button);
+		border: 1px solid var(--border);
+		background-color: var(--core-card);
+		color: var(--core-foreground);
 		appearance: none;
-		background-image: linear-gradient(45deg, transparent 50%, var(--muted-foreground, #555) 50%),
-			linear-gradient(135deg, var(--muted-foreground, #555) 50%, transparent 50%);
-		background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
-		background-size: 6px 6px, 6px 6px;
-		background-repeat: no-repeat;
 		cursor: pointer;
-		transition: border-color var(--duration-normal, 0.4s) ease;
+		transition: border-color var(--duration-normal) ease;
 	}
 	.dest-sort__select:hover,
-	.dest-sort__select:focus { border-color: var(--accent, #f59e0b); outline: none; }
+	.dest-sort__select:focus-visible { border-color: var(--brand-accent); outline: none; }
+
+	.dest-sort__chevron {
+		position: absolute;
+		right: 0.75rem;
+		top: 50%;
+		transform: translateY(-50%);
+		color: var(--core-muted-foreground);
+		pointer-events: none;
+	}
+
 	.dest-sort__submit {
 		font-family: var(--font-sans);
 		font-size: 0.875rem;
 		padding: 0.5rem 1rem;
-		border-radius: var(--radius-button, 8px);
+		border-radius: var(--radius-button);
 		border: 0;
-		background-color: var(--accent, #f59e0b);
-		color: white;
+		background-color: var(--brand-accent);
+		color: var(--accent-foreground);
 		cursor: pointer;
 	}
 </style>
