@@ -30,6 +30,7 @@ A practical, junior-friendly runbook for rotating every secret used by the Hospe
    - 5.13 [Redis password](#513-redis-password)
    - 5.14 [Vercel API token](#514-vercel-api-token)
    - 5.15 [Exchange rate API key](#515-exchange-rate-api-key)
+   - 5.16 [Location salt (DO NOT rotate)](#516-location-salt-do-not-rotate)
 6. [Incident-Driven Rotation](#6-incident-driven-rotation)
 7. [Troubleshooting](#7-troubleshooting)
 8. [Audit Log](#8-audit-log)
@@ -88,12 +89,14 @@ If you are unsure whether a leak occurred, treat it as an incident. The cost of 
 | `VERCEL_TOKEN` (GitHub Actions) | 180 days | CI/CD bot token. Rotate when changing CI ownership or every 6 months. |
 | `HOSPEDA_EXCHANGE_RATE_API_KEY` | 365 days | Read-only third-party API. Low blast radius. Rotate annually with the other low-risk keys. |
 | `HOSPEDA_SEED_SUPER_ADMIN_PASSWORD` | On every prod seed run | Used only at bootstrap. Treat as one-time-use; never reuse. |
+| `HOSPEDA_LOCATION_SALT` | **Never** (after first prod deploy) | Generates deterministic offsets for accommodation location obfuscation. Rotating it invalidates every approximate location ever shown to public visitors. Treat as immutable in production. See [§5.16](#516-location-salt-do-not-rotate). |
 
 ### Notes on the cadence
 
 - **90 days** is the default for anything that touches money, sessions, or transactional email.
 - **180 days** is used for paired credentials (key + secret) and infra credentials where rotation is more disruptive.
 - **365 days** is reserved for OAuth client secrets and read-only third-party keys where the provider does not encourage rotation.
+- **Never** is used only for `HOSPEDA_LOCATION_SALT` and is documented separately in §5.16.
 - Any time a team member with access offboards, treat their last working day as a rotation trigger for every secret they could read.
 
 ---
@@ -255,7 +258,7 @@ Re-add the previous secret value (you saved it in `.env.production.before-rotati
 
 ```bash
 # After the rotation, request a fresh login and verify the cookie is set.
-curl -i -X POST https://api.hospeda.ar/api/auth/sign-in \
+curl -i -X POST https://api.hospeda.com.ar/api/auth/sign-in \
   -H "Content-Type: application/json" \
   -d '{"email":"<test_user>","password":"<test_pass>"}'
 # Expect: HTTP/2 200 with a Set-Cookie: better-auth.session_token=...
@@ -302,7 +305,7 @@ You cannot reuse the previous MercadoPago token (it was revoked at issuance time
 
 ```bash
 # Hit a billing read endpoint that exercises the MercadoPago client.
-curl -i https://api.hospeda.ar/api/v1/protected/billing/plans \
+curl -i https://api.hospeda.com.ar/api/v1/protected/billing/plans \
   -H "Cookie: better-auth.session_token=<valid_session>"
 # Expect: HTTP 200 with a JSON list of plans.
 ```
@@ -384,7 +387,7 @@ Cloudinary keeps the previous secret active for ~24 hours during the rotation gr
 # Use the seed package smoke test that uploads a 1x1 png.
 pnpm --filter @repo/seed run smoke:cloudinary
 # Or call the admin endpoint directly:
-curl -i https://api.hospeda.ar/api/v1/admin/media/health \
+curl -i https://api.hospeda.com.ar/api/v1/admin/media/health \
   -H "Cookie: better-auth.session_token=<admin_session>"
 ```
 
@@ -465,7 +468,7 @@ Restore the old key in Vercel and redeploy (only works if you have not yet revok
 
 ```bash
 # Use the API to send a test transactional email.
-curl -i -X POST https://api.hospeda.ar/api/v1/admin/notifications/test-email \
+curl -i -X POST https://api.hospeda.com.ar/api/v1/admin/notifications/test-email \
   -H "Content-Type: application/json" \
   -H "Cookie: better-auth.session_token=<admin_session>" \
   -d '{"to":"<your_email>"}'
@@ -579,7 +582,7 @@ Restore the previous key in Vercel and redeploy (works if you have not yet revok
 
 ```bash
 # Submit a feedback through the API.
-curl -i -X POST https://api.hospeda.ar/api/v1/public/feedback \
+curl -i -X POST https://api.hospeda.com.ar/api/v1/public/feedback \
   -H "Content-Type: application/json" \
   -d '{"type":"bug","message":"rotation smoke test","email":"<your_email>"}'
 # Expect: HTTP 200. Then check the Hospeda Linear team for a new issue.
@@ -614,7 +617,7 @@ curl -i -X POST https://api.hospeda.ar/api/v1/public/feedback \
 3. Redeploy staging. Manually invoke a cron endpoint with the new secret to confirm:
 
    ```bash
-   curl -i -X POST https://api.staging.hospeda.ar/api/v1/cron/exchange-rate-fetch \
+   curl -i -X POST https://api.staging.hospeda.com.ar/api/v1/cron/exchange-rate-fetch \
      -H "Authorization: Bearer <new_secret>"
    # Expect: HTTP 200
    ```
@@ -641,7 +644,7 @@ If cron starts failing after rotation, restore the previous secret in Vercel and
 
 ```bash
 # Manual cron invocation against prod (use with care).
-curl -i -X POST https://api.hospeda.ar/api/v1/cron/exchange-rate-fetch \
+curl -i -X POST https://api.hospeda.com.ar/api/v1/cron/exchange-rate-fetch \
   -H "Authorization: Bearer $HOSPEDA_CRON_SECRET"
 # Expect: HTTP 200. Check Vercel logs for the corresponding cron run.
 ```
@@ -681,7 +684,7 @@ Restore the previous value in both `apps/api` and `apps/web` Vercel envs and red
 
 ```bash
 # After rotation, trigger an admin revalidation request and check the response.
-curl -i -X POST https://hospeda.ar/api/revalidate \
+curl -i -X POST https://hospeda.com.ar/api/revalidate \
   -H "Authorization: Bearer $HOSPEDA_REVALIDATION_SECRET" \
   -H "Content-Type: application/json" \
   -d '{"path":"/es"}'
@@ -744,7 +747,7 @@ psql "$HOSPEDA_DATABASE_URL" -c "SELECT 1;"
 # Expect: a single row "1".
 
 # And via the API health endpoint:
-curl -i https://api.hospeda.ar/health/ready
+curl -i https://api.hospeda.com.ar/health/ready
 # Expect: HTTP 200 with {"status":"ready","db":"healthy",...}
 ```
 
@@ -790,7 +793,7 @@ redis-cli -u "$HOSPEDA_REDIS_URL" PING
 # Expect: PONG.
 
 # Via API:
-curl -i https://api.hospeda.ar/health/ready
+curl -i https://api.hospeda.com.ar/health/ready
 # Expect: {"redis":"healthy",...}
 ```
 
@@ -869,9 +872,58 @@ Restore the previous key in Vercel and redeploy (works only if not yet revoked o
 
 ```bash
 # Manually trigger the exchange rate cron.
-curl -i -X POST https://api.hospeda.ar/api/v1/cron/exchange-rate-fetch \
+curl -i -X POST https://api.hospeda.com.ar/api/v1/cron/exchange-rate-fetch \
   -H "Authorization: Bearer $HOSPEDA_CRON_SECRET"
 # Expect: HTTP 200, log line "exchange_rate_fetch_ok=true".
+```
+
+---
+
+### 5.16 Location salt (DO NOT rotate)
+
+- **Service**: in-house (privacy-aware accommodation map). Introduced in SPEC-097.
+- **Frequency**: **Never** after the first production deploy.
+- **Affected env vars**: `HOSPEDA_LOCATION_SALT`
+- **Affected environments**: dev, preview, prod (each with its own value).
+
+#### Why this is special
+
+`HOSPEDA_LOCATION_SALT` feeds an HMAC that turns each accommodation's exact coordinates into a deterministic, irreversible offset shown to non-authenticated public visitors. The same salt + same exact coordinates always produce the same approximate coordinates. That property is the whole point: a returning visitor sees the same blurred pin as last time, search engines and CDNs can cache the marker, and the offset cannot be undone to recover the real address.
+
+If you rotate the salt, every approximate coordinate ever rendered to the public changes. Cached map tiles, OpenGraph snapshots, structured data crawled by Google, and any third-party that cached our public listings will diverge from the new values. There is no way to "re-key" old cached output.
+
+#### Allowed exceptions
+
+You may rotate **only** in these scenarios, and only with a written incident report:
+
+1. **Confirmed compromise of the salt itself** — for example, the value was committed to a public repo or leaked in logs that left the platform. In that case the privacy guarantee is already broken; rotating is the lesser of two evils.
+2. **Pre-launch reset** — before the first time `hospeda.com.ar` serves traffic to real users, the salt can be regenerated freely. After that, treat it as immutable.
+
+If you are reading this and considering a routine rotation, **stop**. There is no schedule for this secret.
+
+#### Per-environment values
+
+Generate one salt per environment with `openssl rand -base64 48`. Store the production value in a password manager in addition to Vercel — losing it (and having to regenerate) is exactly the failure mode this section warns about.
+
+| Environment | Vercel scope | Notes |
+|-------------|--------------|-------|
+| Development | `Development` | Pulled into `.env.local` by `vercel env pull`. Working solo, the salt can be any value. With a team sharing the same Neon DB, use the same salt across devs. |
+| Staging | `Preview` | Independent random value. May be rotated freely while the staging URL is not indexed by search engines. |
+| Production | `Production` | Set once at first prod deploy. **Never rotate** thereafter. Keep a backup outside Vercel. |
+
+#### What to do if you accidentally rotated production
+
+1. Restore the old value from your password manager / Vercel rollback if available.
+2. If the old value is unrecoverable, accept the divergence: cached public maps and any external caches will eventually re-fetch the new approximate coordinates over the next CDN TTL. There is no clean fix.
+3. File an incident report and update [`runbooks/`](../runbooks/) with the lesson learned.
+
+#### Validation command
+
+```bash
+# After setting the salt in Vercel, confirm the API starts.
+cd apps/api
+pnpm dev
+# Expect: server starts without "HOSPEDA_LOCATION_SALT must be at least 32 characters" or "expected string, received undefined".
 ```
 
 ---

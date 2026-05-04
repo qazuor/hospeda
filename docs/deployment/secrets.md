@@ -54,8 +54,8 @@ These secrets must be set in **Settings → Secrets and variables → Actions** 
 
 | Secret | Description | Required | Example |
 |--------|-------------|----------|---------|
-| `HOSPEDA_API_URL` | Public URL of the API. Mapped to `VITE_API_URL` and `PUBLIC_API_URL` by CI | **Required** | `https://api.hospeda.ar` |
-| `HOSPEDA_SITE_URL` | Public URL of the web app. Mapped to `PUBLIC_SITE_URL` by CI | **Required** | `https://hospeda.ar` |
+| `HOSPEDA_API_URL` | Public URL of the API. Mapped to `VITE_API_URL` and `PUBLIC_API_URL` by CI | **Required** | `https://api.hospeda.com.ar` |
+| `HOSPEDA_SITE_URL` | Public URL of the web app. Mapped to `PUBLIC_SITE_URL` by CI | **Required** | `https://hospeda.com.ar` |
 
 ---
 
@@ -69,9 +69,11 @@ Set these in the Vercel project dashboard for the API under **Settings → Envir
 |----------|-------------|-----|---------|
 | `HOSPEDA_DATABASE_URL` | PostgreSQL connection string | Prod + Preview | `postgresql://user:pass@host:5432/hospeda` |
 | `HOSPEDA_BETTER_AUTH_SECRET` | Better Auth signing secret (min 32 chars) | Prod + Preview | `openssl rand -base64 32` |
-| `HOSPEDA_API_URL` | Public API URL (own URL) | Prod + Preview | `https://api.hospeda.ar` |
-| `HOSPEDA_SITE_URL` | Web app public URL (for CORS) | Prod + Preview | `https://hospeda.ar` |
-| `HOSPEDA_ADMIN_URL` | Admin app public URL (for CORS) | Prod + Preview | `https://admin.hospeda.ar` |
+| `HOSPEDA_BETTER_AUTH_URL` | Better Auth endpoint URL. **Without it the API refuses to start** (`ApiEnvBaseSchema` rejects undefined). Must point at the `/api/auth` mount of this server | Prod + Preview | `https://api.hospeda.com.ar/api/auth` |
+| `HOSPEDA_LOCATION_SALT` | Server-only salt (>= 32 chars) used to generate deterministic, irreversible offsets for accommodation location obfuscation. **Without it the API refuses to start.** **Must NEVER be rotated after production goes live** — rotating it changes every approximate location ever shown to public visitors. Generate per environment with `openssl rand -base64 48` | Prod + Preview | `openssl rand -base64 48` |
+| `HOSPEDA_API_URL` | Public API URL (own URL) | Prod + Preview | `https://api.hospeda.com.ar` |
+| `HOSPEDA_SITE_URL` | Web app public URL (for CORS) | Prod + Preview | `https://hospeda.com.ar` |
+| `HOSPEDA_ADMIN_URL` | Admin app public URL (for CORS) | Prod + Preview | `https://admin.hospeda.com.ar` |
 
 ### 2.2 Infrastructure (Required in Production)
 
@@ -97,9 +99,9 @@ Set these in the Vercel project dashboard for the API under **Settings → Envir
 | Variable | Description | Env | Required | Example |
 |----------|-------------|-----|----------|---------|
 | `HOSPEDA_RESEND_API_KEY` | Resend email API key. Without it transactional emails (welcome, password reset, booking confirmations) silently fail | Prod + Preview | **Required for email** | `re_xxxxxxxxxxxx` |
-| `HOSPEDA_RESEND_FROM_EMAIL` | Sender address | Prod + Preview | Optional | `noreply@hospeda.ar` |
+| `HOSPEDA_RESEND_FROM_EMAIL` | Sender address | Prod + Preview | Optional | `noreply@hospeda.com.ar` |
 | `HOSPEDA_RESEND_FROM_NAME` | Sender display name | Prod + Preview | Optional | `Hospeda` |
-| `HOSPEDA_ADMIN_NOTIFICATION_EMAILS` | Comma-separated admin emails for dispute/webhook alerts | Prod | Optional | `admin@hospeda.ar` |
+| `HOSPEDA_ADMIN_NOTIFICATION_EMAILS` | Comma-separated admin emails for dispute/webhook alerts | Prod | Optional | `admin@hospeda.com.ar` |
 
 ### 2.5 Monitoring (Sentry)
 
@@ -132,9 +134,8 @@ Set these in the Vercel project dashboard for the API under **Settings → Envir
 
 | Variable | Description | Env | Required | Example |
 |----------|-------------|-----|----------|---------|
-| `HOSPEDA_BETTER_AUTH_URL` | Better Auth endpoint URL | Prod + Preview | Optional | `https://api.hospeda.ar/api/auth` |
-| `API_CORS_ORIGINS` | Comma-separated allowed CORS origins | Prod | Optional | `https://hospeda.ar,https://admin.hospeda.ar` |
-| `API_SECURITY_CSRF_ORIGINS` | Comma-separated CSRF trusted origins | Prod | Optional | `https://hospeda.ar,https://admin.hospeda.ar` |
+| `API_CORS_ORIGINS` | Comma-separated allowed CORS origins | Prod | Optional | `https://hospeda.com.ar,https://admin.hospeda.com.ar` |
+| `API_SECURITY_CSRF_ORIGINS` | Comma-separated CSRF trusted origins | Prod | Optional | `https://hospeda.com.ar,https://admin.hospeda.com.ar` |
 | `API_RATE_LIMIT_TRUST_PROXY` | Must be `true` on Vercel — without it rate limiting sees Vercel's internal IP instead of the real client IP, effectively disabling per-IP rate limiting | Prod | **Recommended** | `true` |
 
 ### 2.9 Server Config (Optional Overrides)
@@ -161,9 +162,9 @@ Set in the Vercel project for the web app under **Settings → Environment Varia
 
 | Variable | Description | Env | Example |
 |----------|-------------|-----|---------|
-| `PUBLIC_API_URL` | API base URL exposed to the browser | Prod + Preview | `https://api.hospeda.ar` |
-| `PUBLIC_SITE_URL` | Web app base URL | Prod + Preview | `https://hospeda.ar` |
-| `HOSPEDA_BETTER_AUTH_URL` | Better Auth endpoint (for SSR auth) | Prod + Preview | `https://api.hospeda.ar/api/auth` |
+| `PUBLIC_API_URL` | API base URL exposed to the browser | Prod + Preview | `https://api.hospeda.com.ar` |
+| `PUBLIC_SITE_URL` | Web app base URL | Prod + Preview | `https://hospeda.com.ar` |
+| `HOSPEDA_BETTER_AUTH_URL` | Better Auth endpoint (for SSR auth) | Prod + Preview | `https://api.hospeda.com.ar/api/auth` |
 | `HOSPEDA_REVALIDATION_SECRET` | ISR bypass token consumed by `astro.config.mjs` (`bypassToken`). Must be **identical** to the value set on the API project. Min 32 characters | Prod + Preview | `openssl rand -hex 32` |
 
 ### 3.2 Monitoring
@@ -193,8 +194,8 @@ Set in the Vercel project for the admin app under **Settings → Environment Var
 
 | Variable | Description | Env | Example |
 |----------|-------------|-----|---------|
-| `VITE_API_URL` | API endpoint for the admin dashboard | Prod + Preview | `https://api.hospeda.ar` |
-| `VITE_BETTER_AUTH_URL` | Better Auth endpoint for the admin dashboard | Prod + Preview | `https://api.hospeda.ar/api/auth` |
+| `VITE_API_URL` | API endpoint for the admin dashboard | Prod + Preview | `https://api.hospeda.com.ar` |
+| `VITE_BETTER_AUTH_URL` | Better Auth endpoint for the admin dashboard | Prod + Preview | `https://api.hospeda.com.ar/api/auth` |
 
 ### 4.2 Monitoring
 
@@ -239,6 +240,10 @@ HOSPEDA_DATABASE_URL=postgresql://hospeda:hospeda@localhost:5432/hospeda
 HOSPEDA_BETTER_AUTH_SECRET=your-dev-secret-minimum-32-characters-long-here
 HOSPEDA_BETTER_AUTH_URL=http://localhost:3001/api/auth
 
+# Location obfuscation salt (>= 32 chars) — see §2.1
+# In dev any random value works; in production NEVER rotate after first deploy.
+HOSPEDA_LOCATION_SALT=replace-with-output-of-openssl-rand-base64-48
+
 # URLs
 HOSPEDA_API_URL=http://localhost:3001
 HOSPEDA_SITE_URL=http://localhost:4321
@@ -257,7 +262,7 @@ API_SECURITY_CSRF_ORIGINS=http://localhost:3000,http://localhost:4321
 
 # Email (optional in dev)
 # HOSPEDA_RESEND_API_KEY=re_xxxx
-# HOSPEDA_RESEND_FROM_EMAIL=noreply@hospeda.ar
+# HOSPEDA_RESEND_FROM_EMAIL=noreply@hospeda.com.ar
 
 # Cron (optional in dev)
 # HOSPEDA_CRON_SECRET=your-cron-secret-minimum-32-characters
@@ -486,7 +491,7 @@ cat apps/api/.vercel/project.json
 
 ## 11. Per-Service Onboarding
 
-This section walks through every external service that requires API keys for Hospeda. Each entry covers account creation, where to find keys in the dashboard, required scopes, and per-environment redirect URIs. Production hostnames use the `.ar` domain pattern as deployed by `cd-production.yml` (`hospeda.ar`, `api.hospeda.ar`, `admin.hospeda.ar`).
+This section walks through every external service that requires API keys for Hospeda. Each entry covers account creation, where to find keys in the dashboard, required scopes, and per-environment redirect URIs. Production hostnames use the `.ar` domain pattern as deployed by `cd-production.yml` (`hospeda.com.ar`, `api.hospeda.com.ar`, `admin.hospeda.com.ar`).
 
 > Troubleshooting for production-blocking issues lives in [§10](#10-troubleshooting). This section is for the *initial* onboarding flow only.
 
@@ -545,9 +550,9 @@ This section walks through every external service that requires API keys for Hos
 5. **Env vars produced.**
     - `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID_API`, `VERCEL_PROJECT_ID_WEB`, `VERCEL_PROJECT_ID_ADMIN`.
 6. **Domain configuration.**
-    - `hospeda-api` → `api.hospeda.ar`.
-    - `hospeda-web` → `hospeda.ar` and `www.hospeda.ar`.
-    - `hospeda-admin` → `admin.hospeda.ar`.
+    - `hospeda-api` → `api.hospeda.com.ar`.
+    - `hospeda-web` → `hospeda.com.ar` and `www.hospeda.com.ar`.
+    - `hospeda-admin` → `admin.hospeda.com.ar`.
 7. **Verification.**
 
     ```bash
@@ -578,15 +583,15 @@ This section walks through every external service that requires API keys for Hos
 
 4. **Env vars produced.**
     - `HOSPEDA_BETTER_AUTH_SECRET` (the secret itself).
-    - `HOSPEDA_BETTER_AUTH_URL` (the public URL of the auth endpoint, e.g. `https://api.hospeda.ar/api/auth`).
+    - `HOSPEDA_BETTER_AUTH_URL` (the public URL of the auth endpoint, e.g. `https://api.hospeda.com.ar/api/auth`).
 5. **Per-environment URLs.**
     - Dev: `http://localhost:3001/api/auth`.
-    - Staging: `https://api.staging.hospeda.ar/api/auth`.
-    - Prod: `https://api.hospeda.ar/api/auth`.
+    - Staging: `https://api.staging.hospeda.com.ar/api/auth`.
+    - Prod: `https://api.hospeda.com.ar/api/auth`.
 6. **Verification.**
 
     ```bash
-    curl https://api.hospeda.ar/api/auth/session
+    curl https://api.hospeda.com.ar/api/auth/session
     # Expected: { "session": null } when unauthenticated
     ```
 
@@ -607,8 +612,8 @@ This section walks through every external service that requires API keys for Hos
 3. **Where to find the keys.** Developer panel → **Your integrations** → select app → **Credentials**. Both **Public Key** and **Access Token** are shown for production and test.
 4. **Webhook configuration.** Developer panel → **Notifications** → **Webhooks** → add per environment:
     - Dev: use [ngrok](https://ngrok.com) tunnel pointed at `http://localhost:3001/api/v1/webhooks/mercado-pago`.
-    - Staging: `https://api.staging.hospeda.ar/api/v1/webhooks/mercado-pago`.
-    - Prod: `https://api.hospeda.ar/api/v1/webhooks/mercado-pago`.
+    - Staging: `https://api.staging.hospeda.com.ar/api/v1/webhooks/mercado-pago`.
+    - Prod: `https://api.hospeda.com.ar/api/v1/webhooks/mercado-pago`.
 
     Subscribe to: `payment.created`, `payment.updated`, `subscription_preapproval.updated`, `subscription_authorized_payment.created`. Copy the **Signing Secret** shown after saving.
 5. **Env vars produced.**
@@ -692,7 +697,7 @@ This section walks through every external service that requires API keys for Hos
 
     ```bash
     # API: trigger a test error
-    curl -X POST https://api.hospeda.ar/api/v1/debug/sentry-test
+    curl -X POST https://api.hospeda.com.ar/api/v1/debug/sentry-test
     # then check the Sentry project for the new event
     ```
 
@@ -710,15 +715,15 @@ This section walks through every external service that requires API keys for Hos
 **Provider.** [Resend](https://resend.com) — transactional email API.
 
 1. **Account creation.** Free tier (3K emails/month, 100/day) covers staging. Production: **Pro** ($20/mo, 50K emails). Sign up with the email you'll use to send from.
-2. **What to create.** One **domain**: `hospeda.ar` — added via Dashboard → **Domains** → **Add Domain**.
+2. **What to create.** One **domain**: `hospeda.com.ar` — added via Dashboard → **Domains** → **Add Domain**.
 3. **DNS records.** After adding the domain, Resend shows three required records to add to your DNS provider:
     - SPF: `TXT` record on root: `v=spf1 include:_spf.resend.com ~all`.
-    - DKIM: `CNAME` record on `resend._domainkey.hospeda.ar`.
-    - DMARC: `TXT` record on `_dmarc.hospeda.ar`: `v=DMARC1; p=none;`.
+    - DKIM: `CNAME` record on `resend._domainkey.hospeda.com.ar`.
+    - DMARC: `TXT` record on `_dmarc.hospeda.com.ar`: `v=DMARC1; p=none;`.
 
     Verification is automatic once DNS propagates (up to 48 hours).
 4. **Where to find the key.** Dashboard → **API Keys** → **Create API Key** → name `hospeda-prod` → **Sending access** scope → copy `re_xxxxxxxxxx`.
-5. **From-email rules.** The address in `HOSPEDA_RESEND_FROM_EMAIL` MUST be on a verified domain. Use a no-reply alias: `noreply@hospeda.ar`. Reply-to can be different.
+5. **From-email rules.** The address in `HOSPEDA_RESEND_FROM_EMAIL` MUST be on a verified domain. Use a no-reply alias: `noreply@hospeda.com.ar`. Reply-to can be different.
 6. **Env vars produced.**
     - `HOSPEDA_RESEND_API_KEY`
     - `HOSPEDA_RESEND_FROM_EMAIL`
@@ -729,14 +734,14 @@ This section walks through every external service that requires API keys for Hos
     curl -X POST 'https://api.resend.com/emails' \
       -H "Authorization: Bearer $HOSPEDA_RESEND_API_KEY" \
       -H 'Content-Type: application/json' \
-      -d '{"from":"noreply@hospeda.ar","to":"you@example.com","subject":"test","text":"hi"}'
+      -d '{"from":"noreply@hospeda.com.ar","to":"you@example.com","subject":"test","text":"hi"}'
     # Expected: 200 with id
     ```
 
 8. **Common gotchas.**
     - Sending from an unverified domain returns 403. Free Resend domains (`onboarding@resend.dev`) work for sandbox testing only.
     - DKIM failures are silent — emails go to spam. Verify with [mxtoolbox.com](https://mxtoolbox.com).
-    - Production should use a dedicated subdomain (`mail.hospeda.ar`) for IP reputation isolation.
+    - Production should use a dedicated subdomain (`mail.hospeda.com.ar`) for IP reputation isolation.
 
 ---
 
@@ -747,7 +752,7 @@ This section walks through every external service that requires API keys for Hos
 1. **Account creation.** Free Google Workspace or personal account.
 2. **What to create.**
     - One **GCP project** (e.g. `hospeda-auth`).
-    - Inside it: **APIs & Services → OAuth consent screen** → User type: **External**, app name: `Hospeda`, support email, app logo, authorized domain `hospeda.ar`.
+    - Inside it: **APIs & Services → OAuth consent screen** → User type: **External**, app name: `Hospeda`, support email, app logo, authorized domain `hospeda.com.ar`.
     - Then: **APIs & Services → Credentials → Create Credentials → OAuth client ID** → Application type: **Web application**.
 3. **Required scopes.** On the OAuth consent screen, add scopes:
     - `openid`
@@ -757,12 +762,12 @@ This section walks through every external service that requires API keys for Hos
     Better Auth uses these three to populate the user profile.
 4. **Authorized redirect URIs (per environment).** Add ALL of these to the same OAuth client (or one client per env for stricter isolation):
     - Dev: `http://localhost:3001/api/auth/callback/google`
-    - Staging: `https://api.staging.hospeda.ar/api/auth/callback/google`
-    - Prod: `https://api.hospeda.ar/api/auth/callback/google`
+    - Staging: `https://api.staging.hospeda.com.ar/api/auth/callback/google`
+    - Prod: `https://api.hospeda.com.ar/api/auth/callback/google`
 
     The path `/api/auth/callback/google` is the Better Auth default.
-5. **Authorized JavaScript origins.** Same hostnames without the path: `http://localhost:3001`, `https://api.hospeda.ar`.
-6. **App verification.** Required only when you exit "Testing" mode and want to support more than 100 users. Submit logo, privacy policy URL (`https://hospeda.ar/privacy`), terms URL. Approval takes 4–6 weeks.
+5. **Authorized JavaScript origins.** Same hostnames without the path: `http://localhost:3001`, `https://api.hospeda.com.ar`.
+6. **App verification.** Required only when you exit "Testing" mode and want to support more than 100 users. Submit logo, privacy policy URL (`https://hospeda.com.ar/privacy`), terms URL. Approval takes 4–6 weeks.
 7. **Env vars produced.**
     - `HOSPEDA_GOOGLE_CLIENT_ID`
     - `HOSPEDA_GOOGLE_CLIENT_SECRET`
@@ -770,7 +775,7 @@ This section walks through every external service that requires API keys for Hos
 
     ```bash
     # Visit in browser to start the OAuth flow:
-    open https://api.hospeda.ar/api/auth/sign-in/google
+    open https://api.hospeda.com.ar/api/auth/sign-in/google
     # Should redirect to accounts.google.com → consent → back to /api/auth/callback/google
     ```
 
@@ -793,8 +798,8 @@ This section walks through every external service that requires API keys for Hos
 4. **Required permissions.** Default `public_profile` and `email`. No app review required for these. Anything beyond (e.g. `user_friends`) needs Meta App Review (multi-week process).
 5. **Valid OAuth Redirect URIs.** App dashboard → **Facebook Login → Settings** → add per environment:
     - Dev: `http://localhost:3001/api/auth/callback/facebook`
-    - Staging: `https://api.staging.hospeda.ar/api/auth/callback/facebook`
-    - Prod: `https://api.hospeda.ar/api/auth/callback/facebook`
+    - Staging: `https://api.staging.hospeda.com.ar/api/auth/callback/facebook`
+    - Prod: `https://api.hospeda.com.ar/api/auth/callback/facebook`
 6. **App Mode.** Apps start in **Development** mode (only admins/testers can log in). To go to **Live** mode, you need: privacy policy URL, terms URL, app icon (1024×1024), category, and you must complete the **Data Use Checkup**.
 7. **Where to find the keys.** Settings → **Basic** → `App ID` and `App Secret` (click **Show** and re-enter your password).
 8. **Env vars produced.**
@@ -803,7 +808,7 @@ This section walks through every external service that requires API keys for Hos
 9. **Verification.**
 
     ```bash
-    open https://api.hospeda.ar/api/auth/sign-in/facebook
+    open https://api.hospeda.com.ar/api/auth/sign-in/facebook
     ```
 
 10. **Common gotchas.**
@@ -904,11 +909,11 @@ This section walks through every external service that requires API keys for Hos
 
     | Monitor | URL | Purpose |
     |---------|-----|---------|
-    | Web homepage | `https://hospeda.ar` | Public site reachability |
-    | API health check | `https://api.hospeda.ar/health` | API liveness |
-    | Admin login page | `https://admin.hospeda.ar` | Admin panel reachability |
-    | Auth flow | `https://hospeda.ar/api/auth/sign-in` | Better Auth endpoint reachable |
-    | Public API smoke | `https://api.hospeda.ar/api/v1/public/accommodations?limit=1` | DB + serialization works end-to-end |
+    | Web homepage | `https://hospeda.com.ar` | Public site reachability |
+    | API health check | `https://api.hospeda.com.ar/health` | API liveness |
+    | Admin login page | `https://admin.hospeda.com.ar` | Admin panel reachability |
+    | Auth flow | `https://hospeda.com.ar/api/auth/sign-in` | Better Auth endpoint reachable |
+    | Public API smoke | `https://api.hospeda.com.ar/api/v1/public/accommodations?limit=1` | DB + serialization works end-to-end |
 
 4. **Setup steps.**
     1. Create the workspace via dashboard sign-up.
@@ -918,7 +923,7 @@ This section walks through every external service that requires API keys for Hos
 5. **Where to find keys.** Dashboard → **API tokens**. Only required if integrating with the BetterStack API for programmatic monitor management. Plain HTTP probes do not need a key.
 6. **Env vars produced.** None. Uptime checks are external HTTP probes; they do not run inside the apps and do not need any app-side configuration.
 7. **Verification.** Open the BetterStack dashboard. All five monitors should show green within ~6 minutes (two consecutive successful 3-minute checks). The status page preview should render with all services up.
-8. **Status page.** Free tier exposes a status page on a `betterstacktatus.com` subdomain. A custom subdomain (`status.hospeda.ar`) requires the paid tier; deferred until the team commits to it. TODO: provision `status.hospeda.ar` once the paid tier is acquired.
+8. **Status page.** Free tier exposes a status page on a `betterstacktatus.com` subdomain. A custom subdomain (`status.hospeda.com.ar`) requires the paid tier; deferred until the team commits to it. TODO: provision `status.hospeda.com.ar` once the paid tier is acquired.
 9. **Common gotchas.**
     - Free tier hard cap: **10 monitors**. Adding the 11th requires paid plan.
     - Free tier does not support custom status page subdomains (paid tier does).

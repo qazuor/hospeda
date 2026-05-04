@@ -31,10 +31,10 @@ Three deployment tiers, all deployed to Vercel via GitHub Actions.
 | Tier | Branch | Deployment | API URL | Web URL | Admin URL |
 |------|--------|------------|---------|---------|-----------|
 | **Development** | local | `pnpm dev` | `http://localhost:3001` | `http://localhost:4321` | `http://localhost:3000` |
-| **Staging** | `staging` | `cd-staging.yml` (preview deploy with alias) | `https://api.staging.hospeda.ar` | `https://staging.hospeda.ar` | `https://admin.staging.hospeda.ar` |
-| **Production** | `main` | `cd-production.yml` (`--prod`) | `https://api.hospeda.ar` | `https://hospeda.ar` | `https://admin.hospeda.ar` |
+| **Staging** | `staging` | `cd-staging.yml` (preview deploy with alias) | `https://api.staging.hospeda.com.ar` | `https://staging.hospeda.com.ar` | `https://admin.staging.hospeda.com.ar` |
+| **Production** | `main` | `cd-production.yml` (`--prod`) | `https://api.hospeda.com.ar` | `https://hospeda.com.ar` | `https://admin.hospeda.com.ar` |
 
-Domain is `.ar` (Argentina market). Staging uses the **nested subdomain pattern** under `staging.hospeda.ar` so a single wildcard certificate (`*.staging.hospeda.ar`) covers all three apps. The exact hostnames live in the `staging` GitHub Environment as `HOSPEDA_API_URL` and `HOSPEDA_SITE_URL` variables and the production ones live in the `production` GitHub Environment.
+Domain is `.ar` (Argentina market). Staging uses the **nested subdomain pattern** under `staging.hospeda.com.ar` so a single wildcard certificate (`*.staging.hospeda.com.ar`) covers all three apps. The exact hostnames live in the `staging` GitHub Environment as `HOSPEDA_API_URL` and `HOSPEDA_SITE_URL` variables and the production ones live in the `production` GitHub Environment.
 
 ### What changes between environments
 
@@ -47,7 +47,7 @@ Conceptual differences only — exact values come from the registry plus per-env
 | Redis | Optional (in-memory fallback) | Required | **Required** — API refuses to start without it |
 | `HOSPEDA_CRON_SECRET` | Optional | Optional | **Required** — without it all 6 cron jobs silently fail |
 | MercadoPago tokens | `TEST-*` sandbox | `TEST-*` sandbox | `APP_USR-*` live |
-| OAuth redirect URIs | localhost | `*.staging.hospeda.ar` | `hospeda.ar` |
+| OAuth redirect URIs | localhost | `*.staging.hospeda.com.ar` | `hospeda.com.ar` |
 | `API_LOG_LEVEL` | `debug` | `info` | `warn` |
 | `API_LOG_USE_COLORS` | `true` | `false` | `false` |
 | `API_SECURITY_CSRF_ENABLED` | `false` | `true` | `true` |
@@ -66,12 +66,12 @@ Production and staging follow a parallel naming pattern so that DNS records, OAu
 
 | Tier | Web (apex) | API | Admin |
 |------|------------|-----|-------|
-| **Production** | `hospeda.ar` | `api.hospeda.ar` | `admin.hospeda.ar` |
-| **Staging** | `staging.hospeda.ar` | `api.staging.hospeda.ar` | `admin.staging.hospeda.ar` |
+| **Production** | `hospeda.com.ar` | `api.hospeda.com.ar` | `admin.hospeda.com.ar` |
+| **Staging** | `staging.hospeda.com.ar` | `api.staging.hospeda.com.ar` | `admin.staging.hospeda.com.ar` |
 
 ### Why nested subdomains for staging
 
-- A single wildcard certificate `*.staging.hospeda.ar` covers all three staging hosts. Vercel's automatic Let's Encrypt provisioning handles renewal.
+- A single wildcard certificate `*.staging.hospeda.com.ar` covers all three staging hosts. Vercel's automatic Let's Encrypt provisioning handles renewal.
 - The pattern mirrors production exactly (`api.<root>`, `admin.<root>`), so OAuth callback URLs, CORS allowlists, and Better Auth `trustedOrigins` only differ by the inserted `staging.` segment.
 - DNS-clean: a single `staging` zone holds three records instead of three sibling subdomains under the apex.
 
@@ -84,13 +84,13 @@ All records point at Vercel. Use one of:
 
     | Record | Type | Value |
     |--------|------|-------|
-    | `hospeda.ar` (apex) | `A` | `76.76.21.21` (Vercel) |
-    | `www.hospeda.ar` | `CNAME` | `cname.vercel-dns.com` |
-    | `api.hospeda.ar` | `CNAME` | `cname.vercel-dns.com` |
-    | `admin.hospeda.ar` | `CNAME` | `cname.vercel-dns.com` |
-    | `staging.hospeda.ar` | `CNAME` | `cname.vercel-dns.com` |
-    | `api.staging.hospeda.ar` | `CNAME` | `cname.vercel-dns.com` |
-    | `admin.staging.hospeda.ar` | `CNAME` | `cname.vercel-dns.com` |
+    | `hospeda.com.ar` (apex) | `A` | `76.76.21.21` (Vercel) |
+    | `www.hospeda.com.ar` | `CNAME` | `cname.vercel-dns.com` |
+    | `api.hospeda.com.ar` | `CNAME` | `cname.vercel-dns.com` |
+    | `admin.hospeda.com.ar` | `CNAME` | `cname.vercel-dns.com` |
+    | `staging.hospeda.com.ar` | `CNAME` | `cname.vercel-dns.com` |
+    | `api.staging.hospeda.com.ar` | `CNAME` | `cname.vercel-dns.com` |
+    | `admin.staging.hospeda.com.ar` | `CNAME` | `cname.vercel-dns.com` |
 
 After adding each domain to its Vercel project, Vercel auto-provisions the SSL certificate (apex + wildcards) within ~5 minutes.
 
@@ -136,17 +136,34 @@ Audits all three apps against Vercel for every environment target (`development`
 - Variables in `.env.example` but missing from Vercel (gaps)
 - Variables in Vercel but undocumented in `.env.example`
 
+The script needs a `VERCEL_TOKEN` in the environment. To run it locally:
+
+```fish
+# fish — persistent across sessions, stored in fish universal vars (not git):
+set -Ux VERCEL_TOKEN <token-from-vercel.com/account/tokens>
+
+# bash/zsh — current shell only:
+export VERCEL_TOKEN=<token-from-vercel.com/account/tokens>
+```
+
+Then:
+
 ```bash
 pnpm env:check            # Interactive
 pnpm env:check --ci       # Non-interactive, exits 1 on missing required vars
 pnpm env:check --verbose  # Show all variables, including OK ones
 ```
 
-This script runs in `cd-staging.yml` and `cd-production.yml` **before every deploy** (see GAP-078-230). A missing or misnamed variable fails the build before it reaches preview/production traffic.
+This script runs in `cd-staging.yml` and `cd-production.yml` **before every deploy** (see GAP-078-230). Both workflows treat the check as a **hard gate** — a missing or misnamed variable fails the build before it reaches preview/production traffic. There is no `|| true` fallback in production: if `VERCEL_TOKEN` is unset on the runner, the workflow stops on purpose so the secret can be repaired before deploying.
 
 ### `pnpm env:pull`
 
 Fetches variables from a Vercel project and writes them into the local `.env.local`. Shows a per-variable diff and asks for confirmation. Use this after teammates push new vars to Vercel.
+
+> **Gotcha — `vercel env pull` overwrites the entire file.** The underlying Vercel CLI does not merge: it replaces `.env.local` with whatever the linked Vercel project has for the chosen environment. If you have local-only variables that are not set in Vercel, **they are lost** on the next pull. Two implications:
+>
+> 1. Anything required by the app's Zod schema (`apps/{app}/src/utils/env.ts`) **must** also live in Vercel for that environment, otherwise `pnpm dev` will start failing after a pull. The hard gate in `cd-production.yml` catches this for prod, but a developer running `pnpm env:pull` locally has no such gate — keep `.env.example` and Vercel in sync.
+> 2. Never store one-off local-only values in `.env.local` and expect them to survive a pull. Either add them to Vercel as well, or keep them outside the file (a separate `.env.local.dev-only` sourced by hand, for example).
 
 ### `pnpm env:push`
 
