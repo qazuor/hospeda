@@ -439,21 +439,25 @@ const adminPanelUrl = getAdminUrl();
         }
     }
 
-    /* ── Hamburger (mobile) ────────────────────────────────────────── */
-
+    /* ── Hamburger (mobile only) ───────────────────────────────────────
+     * The IconButton applies a global `.btn-icon { display: inline-flex }`
+     * with the same specificity as our scoped `.header__hamburger`, so we
+     * have to use `!important` to keep the hamburger hidden on viewports
+     * where the navbar still has room for the standalone controls.
+     */
     .header__hamburger {
-        display: none;
+        display: none !important;
         flex-shrink: 0;
     }
 
     @media (max-width: 1024px) {
         .header__hamburger {
-            display: flex;
+            display: inline-flex !important;
         }
     }
 
     :global([data-mobile-menu-open]) .header__hamburger {
-        display: none;
+        display: none !important;
     }
 
     /* ── Mobile tweaks ─────────────────────────────────────────────── */
