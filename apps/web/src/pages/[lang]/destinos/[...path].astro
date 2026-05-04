@@ -16,6 +16,8 @@ import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { LocationMap } from '@/components/maps/LocationMap.client';
 import DestinationDetailHeader from '@/components/destination/DestinationDetailHeader.astro';
 import DestinationGallery from '@/components/destination/DestinationGallery.astro';
+import DestinationMiniMap from '@/components/destination/DestinationMiniMap.astro';
+import DestinationSidebarCtas from '@/components/destination/DestinationSidebarCtas.astro';
 import DestinationAttractionsGrid from '@/components/destination/DestinationAttractionsGrid.astro';
 import DestinationRatingBreakdown from '@/components/destination/DestinationRatingBreakdown.astro';
 import DestinationStatsCard from '@/components/destination/DestinationStatsCard.astro';
@@ -141,12 +143,27 @@ function extractItems(settled: PromiseSettledResult<unknown>): Record<string, un
 	return [];
 }
 
-/** Extract the pagination.total from a settled getList result. */
+/**
+ * Extract a "total count" from a settled list result.
+ *
+ * Some endpoints (events) ship pagination.total. Others wrap their array
+ * under a custom key (accommodations) without pagination metadata. We prefer
+ * pagination.total, then fall back to the length of whichever known wrapper
+ * array we can find — better an honest local count than a silent zero.
+ */
 function extractTotal(settled: PromiseSettledResult<unknown>): number {
 	if (settled.status === 'rejected') return 0;
-	const val = settled.value as { ok?: boolean; data?: { pagination?: { total?: number } } };
+	const val = settled.value as { ok?: boolean; data?: unknown };
 	if (!val?.ok) return 0;
-	return val.data?.pagination?.total ?? 0;
+	const d = val.data as Record<string, unknown> | undefined;
+	const total = (d?.pagination as { total?: number } | undefined)?.total;
+	if (typeof total === 'number') return total;
+	if (!d) return 0;
+	for (const key of ['items', 'data', 'accommodations', 'children', 'posts', 'events']) {
+		const arr = d[key];
+		if (Array.isArray(arr)) return arr.length;
+	}
+	return 0;
 }
 
 try {
@@ -198,6 +215,16 @@ try {
 			eventsCount
 		};
 	}
+
+	// Ensure stats always reflect what we actually loaded — when the dedicated
+	// stats endpoint returns 0 but our preview lists found items locally, prefer
+	// the local count over the missing aggregate. This keeps the sidebar honest.
+	stats = {
+		...stats,
+		accommodationsCount: Math.max(stats.accommodationsCount, accCount, accCards.length),
+		eventsCount: Math.max(stats.eventsCount, eventsCount, eventCards.length),
+		attractionsCount: Math.max(stats.attractionsCount, attractions.length)
+	};
 
 	relatedPosts = extractItems(postsResult).slice(0, 4);
 
@@ -409,41 +436,9 @@ const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml 
 			/>
 		</div>
 
-		<!-- Interactive map (SPEC-097) -->
-		<section class="dest-detail__section">
-			<h2 class="dest-detail__section-title">
-				{t('destinations.detail.location', 'Ubicación')}
-			</h2>
-			{hasDestCoords ? (
-				<LocationMap
-					client:only="react"
-					mode="exact"
-					lat={destLat as number}
-					lng={destLng as number}
-					zoom={11}
-					markerLabel={name}
-					ariaLabel={t('maps.ariaLabelDestination')}
-					i18nStrings={{
-						attribution: t('maps.attribution'),
-						approximateDisclaimer: t('maps.approximateDisclaimer'),
-						markerLabel: name
-					}}
-				/>
-			) : (
-				<div class="dest-detail__placeholder">
-					<p>{t('destinations.detail.mapPlaceholder', 'Ubicación no disponible')}</p>
-				</div>
-			)}
-		</section>
-
 		<!-- FAQ placeholder (real FAQ data is not yet in the destination schema) -->
 		<div class="dest-detail__section">
 			<DestinationFaqPlaceholder locale={locale} />
-		</div>
-
-		<!-- Climate placeholder (will be populated via external weather API) -->
-		<div class="dest-detail__section">
-			<DestinationClimatePlaceholder locale={locale} />
 		</div>
 
 		<!-- Accommodation preview -->
@@ -562,9 +557,28 @@ const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml 
 		)}
 	</div>
 
-	<!-- Sidebar -->
+	<!-- Sidebar: stats + mini-map + climate + quick CTAs.
+	     The DetailLayout already makes the <aside> sticky on desktop. -->
 	<div slot="sidebar" class="dest-sidebar">
 		<DestinationStatsCard stats={stats} locale={locale} />
+
+		{hasDestCoords && (
+			<DestinationMiniMap
+				lat={destLat as number}
+				lng={destLng as number}
+				name={name}
+				locale={locale}
+			/>
+		)}
+
+		<DestinationClimatePlaceholder locale={locale} />
+
+		<DestinationSidebarCtas
+			slug={slug}
+			accommodationsCount={stats.accommodationsCount}
+			eventsCount={stats.eventsCount}
+			locale={locale}
+		/>
 	</div>
 </DetailLayout>
 

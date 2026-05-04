@@ -43,8 +43,11 @@ describe('destinos/[...path].astro — real counts (T-045)', () => {
             expect(src).toContain('eventsCount');
         });
 
-        it('reads total from pagination response', () => {
-            expect(src).toContain('pagination?.total');
+        it('extracts the total count via the extractTotal helper', () => {
+            // The page now uses extractTotal which handles both pagination.total
+            // and bare-array length fallbacks for endpoints (like accommodations
+            // by destination) that don't ship pagination metadata.
+            expect(src).toContain('extractTotal(');
         });
     });
 

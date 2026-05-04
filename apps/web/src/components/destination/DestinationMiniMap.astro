@@ -1,0 +1,104 @@
+---
+/**
+ * @file DestinationMiniMap.astro
+ * @description Compact map card meant to live in the destination detail
+ * sidebar. Wraps the shared LocationMap React island with a smaller height
+ * and a header so it looks at home next to the stats card.
+ *
+ * The full map (large) used to live in the main column; this miniature
+ * replaces it there and goes sticky in the sidebar so it stays visible
+ * while the user scrolls through accommodations / events / posts.
+ */
+import { LocationMap } from '@/components/maps/LocationMap.client';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { LocationIcon } from '@repo/icons';
+
+interface Props {
+	readonly lat: number;
+	readonly lng: number;
+	readonly name: string;
+	readonly locale: SupportedLocale;
+	/** Map zoom — defaults to 11 (regional context). */
+	readonly zoom?: number;
+}
+
+const { lat, lng, name, locale, zoom = 11 } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+<aside class="dest-mini-map">
+	<header class="dest-mini-map__header">
+		<LocationIcon size={16} aria-hidden="true" />
+		<h3 class="dest-mini-map__title">
+			{t('destinations.detail.location', 'Ubicación')}
+		</h3>
+	</header>
+
+	<div class="dest-mini-map__viewport">
+		<LocationMap
+			client:only="react"
+			mode="exact"
+			lat={lat}
+			lng={lng}
+			zoom={zoom}
+			markerLabel={name}
+			ariaLabel={t('maps.ariaLabelDestination')}
+			i18nStrings={{
+				attribution: t('maps.attribution'),
+				approximateDisclaimer: t('maps.approximateDisclaimer'),
+				markerLabel: name
+			}}
+		/>
+	</div>
+
+	<p class="dest-mini-map__name">{name}</p>
+</aside>
+
+<style>
+	.dest-mini-map {
+		background-color: var(--core-card);
+		border-radius: var(--radius-organic-sm);
+		box-shadow: var(--shadow-card);
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.dest-mini-map__header {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 1rem 1.25rem 0.5rem;
+		color: var(--core-foreground);
+	}
+
+	.dest-mini-map__title {
+		font-family: var(--font-heading);
+		font-size: 1rem;
+		font-weight: 600;
+		margin: 0;
+	}
+
+	.dest-mini-map__viewport {
+		height: 240px;
+		width: 100%;
+		overflow: hidden;
+	}
+
+	/* The LocationMap island sets its own height to 100% — this gives it a
+	 * concrete pixel height to fill so it doesn't collapse in flex layout. */
+	.dest-mini-map__viewport :global(.location-map),
+	.dest-mini-map__viewport :global(.leaflet-container) {
+		height: 100%;
+		width: 100%;
+	}
+
+	.dest-mini-map__name {
+		font-family: var(--font-sans);
+		font-size: 0.85rem;
+		color: var(--core-muted-foreground);
+		padding: 0.75rem 1.25rem 1rem;
+		margin: 0;
+	}
+</style>

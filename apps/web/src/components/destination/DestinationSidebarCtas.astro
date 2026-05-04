@@ -1,0 +1,149 @@
+---
+/**
+ * @file DestinationSidebarCtas.astro
+ * @description Quick-action buttons for the destination detail sidebar.
+ * Two CTAs that link to the per-destination accommodations and events
+ * sub-pages. Useful as a sticky shortcut while the user is reading the
+ * detail page.
+ *
+ * Both rows render unconditionally — the buttons remain useful even when
+ * the count is zero (they navigate to a "no results" page that explains
+ * the situation in product copy).
+ */
+import { BedroomsIcon, CalendarIcon } from '@repo/icons';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+interface Props {
+	readonly slug: string;
+	readonly accommodationsCount: number;
+	readonly eventsCount: number;
+	readonly locale: SupportedLocale;
+}
+
+const { slug, accommodationsCount, eventsCount, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const accommodationsHref = buildUrl({ locale, path: `destinos/${slug}/alojamientos` });
+const eventsHref = buildUrl({ locale, path: `destinos/${slug}/eventos` });
+---
+
+<nav class="dest-cta-card" aria-label={t('destination.detail.sidebarCtas.label', 'Acciones rápidas')}>
+	<a href={accommodationsHref} class="dest-cta-card__row">
+		<span class="dest-cta-card__icon" aria-hidden="true">
+			<BedroomsIcon size={20} weight="fill" />
+		</span>
+		<span class="dest-cta-card__text">
+			<span class="dest-cta-card__label">
+				{t('destination.detail.sidebarCtas.accommodations', 'Buscar alojamientos')}
+			</span>
+			<span class="dest-cta-card__hint">
+				{accommodationsCount > 0
+					? t(
+							'destination.detail.sidebarCtas.accommodationsHint',
+							'{{count}} disponibles',
+							{ count: accommodationsCount }
+						)
+					: t('destination.detail.sidebarCtas.accommodationsHintEmpty', 'Ver opciones cercanas')}
+			</span>
+		</span>
+		<span class="dest-cta-card__arrow" aria-hidden="true">→</span>
+	</a>
+
+	<a href={eventsHref} class="dest-cta-card__row">
+		<span class="dest-cta-card__icon" aria-hidden="true">
+			<CalendarIcon size={20} weight="fill" />
+		</span>
+		<span class="dest-cta-card__text">
+			<span class="dest-cta-card__label">
+				{t('destination.detail.sidebarCtas.events', 'Ver eventos')}
+			</span>
+			<span class="dest-cta-card__hint">
+				{eventsCount > 0
+					? t(
+							'destination.detail.sidebarCtas.eventsHint',
+							'{{count}} próximos',
+							{ count: eventsCount }
+						)
+					: t('destination.detail.sidebarCtas.eventsHintEmpty', 'Próximamente')}
+			</span>
+		</span>
+		<span class="dest-cta-card__arrow" aria-hidden="true">→</span>
+	</a>
+</nav>
+
+<style>
+	.dest-cta-card {
+		display: flex;
+		flex-direction: column;
+		background-color: var(--core-card);
+		border-radius: var(--radius-organic-sm);
+		box-shadow: var(--shadow-card);
+		overflow: hidden;
+	}
+
+	.dest-cta-card__row {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 1rem 1.25rem;
+		text-decoration: none;
+		color: inherit;
+		border-bottom: 1px solid var(--border);
+		transition: background-color var(--duration-fast) ease;
+	}
+
+	.dest-cta-card__row:last-child {
+		border-bottom: none;
+	}
+
+	.dest-cta-card__row:hover {
+		background-color: oklch(from var(--brand-primary) l c h / 0.05);
+	}
+
+	.dest-cta-card__row:focus-visible {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: -2px;
+	}
+
+	.dest-cta-card__icon {
+		display: inline-flex;
+		flex-shrink: 0;
+		color: var(--brand-primary);
+	}
+
+	.dest-cta-card__text {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+	}
+
+	.dest-cta-card__label {
+		font-family: var(--font-heading);
+		font-size: 0.95rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+	}
+
+	.dest-cta-card__hint {
+		font-family: var(--font-sans);
+		font-size: 0.8rem;
+		color: var(--core-muted-foreground);
+	}
+
+	.dest-cta-card__arrow {
+		font-family: var(--font-sans);
+		font-size: 1.1rem;
+		color: var(--core-muted-foreground);
+		flex-shrink: 0;
+		transition: transform var(--duration-fast) ease;
+	}
+
+	.dest-cta-card__row:hover .dest-cta-card__arrow {
+		transform: translateX(2px);
+		color: var(--brand-primary);
+	}
+</style>

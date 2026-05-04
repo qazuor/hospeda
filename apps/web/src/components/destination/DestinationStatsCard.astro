@@ -35,43 +35,38 @@ interface StatRow {
 
 const rows: StatRow[] = [];
 
-if (stats.accommodationsCount > 0) {
-	rows.push({
-		value: String(stats.accommodationsCount),
-		label: t('destination.detail.stats.accommodations', 'alojamientos'),
-		icon: 'bed',
-	});
-}
-if (stats.eventsCount > 0) {
-	rows.push({
-		value: String(stats.eventsCount),
-		label: t('destination.detail.stats.events', 'eventos'),
-		icon: 'calendar',
-	});
-}
-if (stats.attractionsCount > 0) {
-	rows.push({
-		value: String(stats.attractionsCount),
-		label: t('destination.detail.stats.attractions', 'atracciones'),
-		icon: 'location',
-	});
-}
+// Always include accommodations / events / attractions rows even when 0,
+// so the sidebar is never silently empty. Reviews and rating only appear
+// when there is something meaningful to show (rating=0 means no scores yet).
+rows.push({
+	value: String(stats.accommodationsCount),
+	label: t('destination.detail.stats.accommodations', 'alojamientos'),
+	icon: 'bed'
+});
+rows.push({
+	value: String(stats.eventsCount),
+	label: t('destination.detail.stats.events', 'eventos'),
+	icon: 'calendar'
+});
+rows.push({
+	value: String(stats.attractionsCount),
+	label: t('destination.detail.stats.attractions', 'atracciones'),
+	icon: 'location'
+});
 if (stats.averageRating > 0) {
 	rows.push({
 		value: stats.averageRating.toFixed(1),
 		label: t('destination.detail.stats.rating', 'puntuación'),
-		icon: 'star',
+		icon: 'star'
 	});
 }
 if (stats.reviewsCount > 0) {
 	rows.push({
 		value: String(stats.reviewsCount),
 		label: t('destination.detail.stats.reviews', 'reseñas'),
-		icon: 'chat',
+		icon: 'chat'
 	});
 }
-
-if (rows.length === 0) return;
 ---
 
 <div class="dest-stats-card">

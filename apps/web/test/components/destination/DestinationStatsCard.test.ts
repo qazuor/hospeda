@@ -49,25 +49,20 @@ describe('DestinationStatsCard.astro', () => {
     });
 
     describe('rendering', () => {
-        it('should return early when all stats are zero', () => {
-            expect(src).toContain('rows.length === 0');
-            expect(src).toContain('return');
-        });
-
-        it('should omit accommodations row when count is 0', () => {
-            expect(src).toContain('stats.accommodationsCount > 0');
-        });
-
-        it('should omit events row when count is 0', () => {
-            expect(src).toContain('stats.eventsCount > 0');
-        });
-
-        it('should omit attractions row when count is 0', () => {
-            expect(src).toContain('stats.attractionsCount > 0');
+        it('should always render the core count rows (accommodations, events, attractions)', () => {
+            // The card stays visible even when counts are zero so the sidebar
+            // is never silently empty. Rating + reviews stay conditional.
+            expect(src).toContain("'destination.detail.stats.accommodations'");
+            expect(src).toContain("'destination.detail.stats.events'");
+            expect(src).toContain("'destination.detail.stats.attractions'");
         });
 
         it('should omit rating row when averageRating is 0', () => {
             expect(src).toContain('stats.averageRating > 0');
+        });
+
+        it('should omit reviews row when reviewsCount is 0', () => {
+            expect(src).toContain('stats.reviewsCount > 0');
         });
 
         it('should format averageRating with one decimal', () => {
