@@ -440,23 +440,26 @@ const adminPanelUrl = getAdminUrl();
     }
 
     /* ── Hamburger (mobile only) ───────────────────────────────────────
-     * The IconButton applies a global `.btn-icon { display: inline-flex }`
-     * with the same specificity as our scoped `.header__hamburger`, so we
-     * have to use `!important` to keep the hamburger hidden on viewports
-     * where the navbar still has room for the standalone controls.
+     * Must use `:global(...)` because the hamburger button is rendered by
+     * IconButton.astro, which lives in a different style scope. A normal
+     * scoped `.header__hamburger` selector wouldn't match the button — it
+     * would carry the Header's `data-astro-cid-*` attribute, but the button
+     * carries IconButton's. Without `:global` only the global `.btn-icon`
+     * rule (`display: inline-flex`) applies, so the hamburger leaks into
+     * every viewport.
      */
-    .header__hamburger {
+    :global(.header__hamburger) {
         display: none !important;
         flex-shrink: 0;
     }
 
     @media (max-width: 1024px) {
-        .header__hamburger {
+        :global(.header__hamburger) {
             display: inline-flex !important;
         }
     }
 
-    :global([data-mobile-menu-open]) .header__hamburger {
+    :global([data-mobile-menu-open]) :global(.header__hamburger) {
         display: none !important;
     }
 
