@@ -1,0 +1,128 @@
+/* Destination reviews modal — review list layout inside DialogBody.
+ * Cross-cutting modal chrome (overlay, panel, header) lives in the shared
+ * Dialog component. Only the review-list specific layout lives here.
+ * Tokens used must be the full-prefixed variants — no aliases. */
+
+.body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.reviewCard {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button);
+}
+
+.reviewHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.avatarWrapper {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+}
+
+.avatar {
+    position: relative;
+    z-index: 1;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: var(--brand-primary);
+}
+
+.avatarFallback {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.8rem;
+}
+
+.reviewMeta {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.reviewName {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--core-foreground);
+}
+
+.reviewDate {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+}
+
+.reviewRating {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--rating-star);
+}
+
+.reviewTitle {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0 0 0.25rem;
+}
+
+.reviewContent {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.empty {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--core-muted-foreground);
+    text-align: center;
+    padding: 1rem;
+    margin: 0;
+}
+
+.spinner {
+    text-align: center;
+    padding: 1rem;
+    color: var(--core-muted-foreground);
+    font-family: var(--font-sans);
+}
+
+.error {
+    text-align: center;
+    padding: 1rem;
+}
+
+.error p {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--core-muted-foreground);
+    margin: 0 0 0.75rem;
+}
+
+.loadMoreBtn {
+    align-self: center;
+}

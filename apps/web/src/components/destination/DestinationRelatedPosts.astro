@@ -1,0 +1,153 @@
+---
+/**
+ * @file DestinationRelatedPosts.astro
+ * @description Related blog posts section on the destination detail page.
+ * Renders nothing when the posts array is empty.
+ * Caps visible cards at 3; if more are available, shows a "see all" link.
+ * Props accept `unknown[]` and cast to RelatedPostCard's expected shape,
+ * which keeps the page's data layer decoupled from this component.
+ */
+
+import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface RelatedPost {
+    readonly id?: string;
+    readonly slug: string;
+    readonly title: string;
+    readonly summary?: string;
+    readonly featuredImage?: string | null;
+    readonly destinationName?: string | null;
+    readonly publishedAt?: string | null;
+}
+
+interface Props {
+    readonly posts: ReadonlyArray<unknown>;
+    readonly destinationName: string;
+    readonly locale: SupportedLocale;
+    /** Optional destination ID used to build the "see all" filter link. */
+    readonly destinationId?: string;
+}
+
+const { posts, destinationName, locale, destinationId } = Astro.props;
+const { t } = createTranslations(locale);
+
+if (posts.length === 0) return;
+
+const MAX_VISIBLE = 3;
+const visiblePosts = (posts as RelatedPost[]).slice(0, MAX_VISIBLE);
+const hasMore = posts.length > MAX_VISIBLE;
+
+const seeAllHref = `/${locale}/publicaciones/${destinationId ? `?destinationId=${destinationId}` : ''}`;
+---
+
+<section class="dest-related-posts" aria-labelledby="dest-related-posts-title">
+    <header class="dest-related-posts__header">
+        <h2 class="dest-related-posts__title" id="dest-related-posts-title">
+            {t('destination.detail.relatedPosts.title', '{{name}}', { name: destinationName })}
+        </h2>
+        <p class="dest-related-posts__subtitle">
+            {t('destination.detail.relatedPosts.subtitle', 'Notas y guías relacionadas')}
+        </p>
+    </header>
+
+    <div class="dest-related-posts__grid">
+        {visiblePosts.map((post) => (
+            <RelatedPostCard
+                id={post.id ?? post.slug}
+                slug={post.slug}
+                title={post.title}
+                summary={post.summary ?? ''}
+                featuredImage={post.featuredImage}
+                destinationName={post.destinationName}
+                publishedAt={post.publishedAt}
+                lang={locale}
+            />
+        ))}
+    </div>
+
+    {hasMore && (
+        <div class="dest-related-posts__more">
+            <a href={seeAllHref} class="dest-related-posts__more-link">
+                {t('destination.detail.relatedPosts.seeAll', 'Ver todas las publicaciones')}
+            </a>
+        </div>
+    )}
+</section>
+
+<style>
+    .dest-related-posts {
+        padding: 2rem 0;
+    }
+
+    .dest-related-posts__header {
+        margin-bottom: 1.5rem;
+    }
+
+    .dest-related-posts__title {
+        font-family: var(--font-heading);
+        font-size: clamp(1.25rem, 1.5vw + 0.75rem, 1.75rem);
+        font-weight: 700;
+        color: var(--core-foreground);
+        margin: 0 0 0.375rem;
+    }
+
+    .dest-related-posts__subtitle {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground);
+        margin: 0;
+    }
+
+    .dest-related-posts__grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    @media (min-width: 640px) {
+        .dest-related-posts__grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .dest-related-posts__grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    .dest-related-posts__more {
+        display: flex;
+        justify-content: center;
+        margin-top: 1.5rem;
+    }
+
+    .dest-related-posts__more-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.5rem;
+        border-radius: var(--radius-pill);
+        border: 1px solid var(--border);
+        background-color: var(--core-card);
+        color: var(--core-foreground);
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: border-color var(--duration-fast) ease,
+            background-color var(--duration-fast) ease;
+    }
+
+    .dest-related-posts__more-link:hover {
+        border-color: var(--brand-primary);
+        background-color: oklch(from var(--brand-primary) l c h / 0.06);
+    }
+
+    .dest-related-posts__more-link:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+</style>

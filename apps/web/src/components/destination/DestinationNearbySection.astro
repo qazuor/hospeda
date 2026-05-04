@@ -1,0 +1,106 @@
+---
+/**
+ * @file DestinationNearbySection.astro
+ * @description "Other destinations in the area" section on destination detail page.
+ * Siblings are derived from the parent's children in the destination hierarchy —
+ * NOT by geographic km-radius. Copy says "en la zona / en la región" which is
+ * an honest representation of the heuristic.
+ * Renders nothing when destinations array is empty.
+ * Caps visible cards at 4 in a 1/2/3/4-col responsive grid.
+ */
+
+import DestinationCard from '@/components/shared/cards/DestinationCard.astro';
+import { toDestinationCardProps } from '@/lib/api/transforms';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly destinations: ReadonlyArray<unknown>;
+    readonly locale: SupportedLocale;
+    readonly isAuthenticated?: boolean;
+}
+
+const { destinations, locale, isAuthenticated = false } = Astro.props;
+const { t } = createTranslations(locale);
+
+if (destinations.length === 0) return;
+
+const MAX_VISIBLE = 4;
+const visibleDestinations = (destinations as Record<string, unknown>[])
+    .slice(0, MAX_VISIBLE)
+    .map((item) => toDestinationCardProps({ item }));
+---
+
+<section class="dest-nearby" aria-labelledby="dest-nearby-title">
+    <header class="dest-nearby__header">
+        <h2 class="dest-nearby__title" id="dest-nearby-title">
+            {t('destination.detail.nearby.title', 'Otros destinos en la zona')}
+        </h2>
+        <p class="dest-nearby__subtitle">
+            {t(
+                'destination.detail.nearby.subtitle',
+                'Cercanos en la región — explorá lo que hay alrededor'
+            )}
+        </p>
+    </header>
+
+    <div class="dest-nearby__grid">
+        {visibleDestinations.map((card) => (
+            <DestinationCard
+                destination={card}
+                locale={locale}
+                variant="grid"
+                isAuthenticated={isAuthenticated}
+            />
+        ))}
+    </div>
+</section>
+
+<style>
+    .dest-nearby {
+        padding: 2rem 0;
+    }
+
+    .dest-nearby__header {
+        margin-bottom: 1.5rem;
+    }
+
+    .dest-nearby__title {
+        font-family: var(--font-heading);
+        font-size: clamp(1.25rem, 1.5vw + 0.75rem, 1.75rem);
+        font-weight: 700;
+        color: var(--core-foreground);
+        margin: 0 0 0.375rem;
+    }
+
+    .dest-nearby__subtitle {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground);
+        margin: 0;
+    }
+
+    .dest-nearby__grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    @media (min-width: 480px) {
+        .dest-nearby__grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (min-width: 768px) {
+        .dest-nearby__grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .dest-nearby__grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+</style>

@@ -607,6 +607,8 @@ export const postsApi = {
         category?: string;
         /** Filter posts by author UUID */
         authorId?: string;
+        /** Filter posts by destination UUID (used by detail pages for "related posts"). */
+        destinationId?: string;
         /**
          * Filter posts by PostTag UUID(s).
          * Pass a single UUID or a comma-separated list.

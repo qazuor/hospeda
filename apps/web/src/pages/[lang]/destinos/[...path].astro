@@ -20,10 +20,14 @@ import DestinationRatingBreakdown from '@/components/destination/DestinationRati
 import DestinationStatsCard from '@/components/destination/DestinationStatsCard.astro';
 import DestinationFaqPlaceholder from '@/components/destination/DestinationFaqPlaceholder.astro';
 import DestinationClimatePlaceholder from '@/components/destination/DestinationClimatePlaceholder.astro';
+import DestinationReviewsSection from '@/components/destination/DestinationReviewsSection.astro';
+import DestinationRelatedPosts from '@/components/destination/DestinationRelatedPosts.astro';
+import DestinationNearbySection from '@/components/destination/DestinationNearbySection.astro';
 import {
 	destinationsApi,
 	accommodationsApi,
 	eventsApi,
+	postsApi,
 	userBookmarksPublicApi
 } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
@@ -86,9 +90,11 @@ const attractions = (dest.attractions as ReadonlyArray<{
 
 const ratingBreakdown = dest.rating as Record<string, number | undefined> | null | undefined;
 
-// --- Previews (3 accommodations + 3 events) and counts ----------------------
+// --- Previews (accommodations, events, posts) and counts --------------------
 let accCards: ReturnType<typeof toAccommodationCardProps>[] = [];
 let eventCards: ReturnType<typeof toEventCardProps>[] = [];
+let relatedPosts: ReadonlyArray<unknown> = [];
+let nearbyDestinations: ReadonlyArray<unknown> = [];
 let accCount = 0;
 let eventsCount = 0;
 let stats: {
@@ -105,42 +111,56 @@ let stats: {
 	eventsCount: 0
 };
 
+const parentDestinationId =
+	typeof dest.parentDestinationId === 'string' && dest.parentDestinationId
+		? dest.parentDestinationId
+		: null;
+
 try {
 	const [
 		accResult,
 		accCountResult,
 		eventsResult,
 		eventsCountResult,
-		statsResult
-	] = await Promise.all([
+		statsResult,
+		postsResult,
+		siblingsResult
+	] = await Promise.allSettled([
 		accommodationsApi.getByDestination({ destinationId: destId, pageSize: 3 }),
 		accommodationsApi.getByDestination({ destinationId: destId, pageSize: 1 }),
 		eventsApi.list({ pageSize: 3, destinationId: destId }),
 		eventsApi.list({ pageSize: 1, destinationId: destId }),
-		destinationsApi.getStats({ id: destId })
+		destinationsApi.getStats({ id: destId }),
+		postsApi.list({ destinationId: destId, pageSize: 4 }),
+		parentDestinationId
+			? destinationsApi.getChildren({ id: parentDestinationId })
+			: Promise.resolve({ ok: false } as const)
 	]);
 
-	accCards = accResult.ok
-		? accResult.data.items.map((item) =>
-				toAccommodationCardProps({ item: item as unknown as Record<string, unknown> })
-		  )
-		: [];
-	accCount = accCountResult.ok ? (accCountResult.data.pagination?.total ?? 0) : 0;
+	if (accResult.status === 'fulfilled' && accResult.value.ok) {
+		accCards = accResult.value.data.items.map((item) =>
+			toAccommodationCardProps({ item: item as unknown as Record<string, unknown> })
+		);
+	}
+	if (accCountResult.status === 'fulfilled' && accCountResult.value.ok) {
+		accCount = accCountResult.value.data.pagination?.total ?? 0;
+	}
+	if (eventsResult.status === 'fulfilled' && eventsResult.value.ok) {
+		eventCards = eventsResult.value.data.items.map((item) =>
+			toEventCardProps({ item: item as unknown as Record<string, unknown> })
+		);
+	}
+	if (eventsCountResult.status === 'fulfilled' && eventsCountResult.value.ok) {
+		eventsCount = eventsCountResult.value.data.pagination?.total ?? 0;
+	}
 
-	eventCards = eventsResult.ok
-		? eventsResult.data.items.map((item) =>
-				toEventCardProps({ item: item as unknown as Record<string, unknown> })
-		  )
-		: [];
-	eventsCount = eventsCountResult.ok ? (eventsCountResult.data.pagination?.total ?? 0) : 0;
-
-	if (statsResult.ok) {
+	if (statsResult.status === 'fulfilled' && statsResult.value.ok) {
 		stats = {
-			accommodationsCount: statsResult.data.accommodationsCount,
-			reviewsCount: statsResult.data.reviewsCount,
-			averageRating: statsResult.data.averageRating,
-			attractionsCount: statsResult.data.attractionsCount,
-			eventsCount: statsResult.data.eventsCount
+			accommodationsCount: statsResult.value.data.accommodationsCount,
+			reviewsCount: statsResult.value.data.reviewsCount,
+			averageRating: statsResult.value.data.averageRating,
+			attractionsCount: statsResult.value.data.attractionsCount,
+			eventsCount: statsResult.value.data.eventsCount
 		};
 	} else {
 		// Fall back to the locally derived counts so the sidebar still has something useful
@@ -151,6 +171,19 @@ try {
 			attractionsCount: attractions.length,
 			eventsCount
 		};
+	}
+
+	if (postsResult.status === 'fulfilled' && postsResult.value.ok) {
+		relatedPosts = postsResult.value.data.items ?? [];
+	}
+
+	if (siblingsResult.status === 'fulfilled' && siblingsResult.value.ok) {
+		const siblings = siblingsResult.value.data.children ?? [];
+		// Drop the current destination from the siblings list and cap at 8 so
+		// the carousel stays focused. The component will further cap visible cards.
+		nearbyDestinations = siblings
+			.filter((d) => (d as { id?: string }).id !== destId)
+			.slice(0, 8);
 	}
 } catch (err) {
 	console.error('[destinos/detail] Error fetching previews:', err);
@@ -363,6 +396,16 @@ const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml 
 			</div>
 		)}
 
+		<!-- Reviews section (preview + modal) -->
+		<div class="dest-detail__section">
+			<DestinationReviewsSection
+				destinationId={destId}
+				averageRating={stats.averageRating}
+				reviewsCount={stats.reviewsCount}
+				locale={locale}
+			/>
+		</div>
+
 		<!-- Interactive map (SPEC-097) -->
 		<section class="dest-detail__section">
 			<h2 class="dest-detail__section-title">
@@ -444,6 +487,28 @@ const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml 
 						</div>
 					))}
 				</div>
+			</section>
+		)}
+
+		<!-- Related posts (filtered by destinationId on the server) -->
+		{relatedPosts.length > 0 && (
+			<section class="dest-detail__section">
+				<DestinationRelatedPosts
+					posts={relatedPosts}
+					destinationName={name}
+					locale={locale}
+				/>
+			</section>
+		)}
+
+		<!-- Other destinations in the area (siblings of the same parent) -->
+		{nearbyDestinations.length > 0 && (
+			<section class="dest-detail__section">
+				<DestinationNearbySection
+					destinations={nearbyDestinations}
+					locale={locale}
+					isAuthenticated={isAuthenticated}
+				/>
 			</section>
 		)}
 	</div>

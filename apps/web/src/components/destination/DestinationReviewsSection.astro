@@ -1,0 +1,136 @@
+---
+/**
+ * @file DestinationReviewsSection.astro
+ * @description Reviews section for destination detail page.
+ * Shows a rating summary + trigger button to open the DestinationReviewsModal.
+ * Renders an empty-state message when reviewsCount === 0 (no modal mounted).
+ */
+
+import { DestinationReviewsModal } from './DestinationReviewsModal.client';
+import { StarIcon } from '@repo/icons';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly destinationId: string;
+    readonly averageRating: number;
+    readonly reviewsCount: number;
+    readonly locale: SupportedLocale;
+}
+
+const { destinationId, averageRating, reviewsCount, locale } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+<section class="dest-reviews" aria-labelledby="dest-reviews-title">
+    <h2 class="dest-reviews__title" id="dest-reviews-title">
+        {t('destination.detail.reviews.title', 'Reseñas')}
+    </h2>
+
+    {reviewsCount === 0 ? (
+        <p class="dest-reviews__empty">
+            {t(
+                'destination.detail.reviews.empty',
+                'Todavía no hay reseñas para este destino.'
+            )}
+        </p>
+    ) : (
+        <>
+            <div class="dest-reviews__summary">
+                <span class="dest-reviews__avg" aria-label={`Calificación promedio: ${averageRating.toFixed(1)}`}>
+                    {averageRating.toFixed(1)}
+                </span>
+                <StarIcon size={22} weight="fill" color="var(--rating-star)" aria-hidden="true" />
+                <span class="dest-reviews__count">
+                    {t('destination.detail.reviews.count', '{{count}} reseñas', { count: reviewsCount })}
+                </span>
+            </div>
+
+            <button
+                class="dest-reviews__view-all"
+                type="button"
+                data-reviews-modal-trigger=""
+                data-destination-id={destinationId}
+                aria-haspopup="dialog"
+            >
+                {t('destination.detail.reviews.viewAll', 'Ver todas las reseñas')}
+            </button>
+
+            <DestinationReviewsModal
+                client:idle
+                destinationId={destinationId}
+                reviewsCount={reviewsCount}
+                locale={locale}
+            />
+        </>
+    )}
+</section>
+
+<style>
+    .dest-reviews {
+        padding: 2rem 0;
+    }
+
+    .dest-reviews__title {
+        font-family: var(--font-heading);
+        font-size: clamp(1.25rem, 1.5vw + 0.75rem, 1.75rem);
+        font-weight: 700;
+        color: var(--core-foreground);
+        margin: 0 0 1.25rem;
+    }
+
+    .dest-reviews__empty {
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        color: var(--core-muted-foreground);
+        margin: 0;
+    }
+
+    .dest-reviews__summary {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .dest-reviews__avg {
+        font-family: var(--font-heading);
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--core-foreground);
+        line-height: 1;
+    }
+
+    .dest-reviews__count {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground);
+    }
+
+    .dest-reviews__view-all {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        border-radius: var(--radius-pill);
+        border: 1px solid var(--brand-primary);
+        background-color: transparent;
+        color: var(--brand-primary);
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color var(--duration-fast) ease,
+            color var(--duration-fast) ease;
+    }
+
+    .dest-reviews__view-all:hover {
+        background-color: var(--brand-primary);
+        color: var(--primary-foreground);
+    }
+
+    .dest-reviews__view-all:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+</style>
