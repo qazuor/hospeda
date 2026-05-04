@@ -131,6 +131,7 @@ describe('GET /api/v1/public/stats', () => {
                     expect(typeof data.events).toBe('number');
                     expect(typeof data.posts).toBe('number');
                     expect(typeof data.reviews).toBe('number');
+                    expect(typeof data.averageRating).toBe('number');
 
                     // Assert values are non-negative integers
                     expect(data.accommodations).toBeGreaterThanOrEqual(0);
@@ -138,6 +139,17 @@ describe('GET /api/v1/public/stats', () => {
                     expect(data.events).toBeGreaterThanOrEqual(0);
                     expect(data.posts).toBeGreaterThanOrEqual(0);
                     expect(data.reviews).toBeGreaterThanOrEqual(0);
+
+                    // Average rating must be in the [0, 5] range
+                    expect(data.averageRating).toBeGreaterThanOrEqual(0);
+                    expect(data.averageRating).toBeLessThanOrEqual(5);
+
+                    // recentReviewerAvatars must be an array of strings (may be empty)
+                    expect(Array.isArray(data.recentReviewerAvatars)).toBe(true);
+                    for (const avatar of data.recentReviewerAvatars) {
+                        expect(typeof avatar).toBe('string');
+                        expect(avatar.length).toBeGreaterThan(0);
+                    }
                 }
                 // If not 200 in test env (DB unavailable), just check it's not 404
                 expect(res.status).not.toBe(404);
@@ -165,13 +177,15 @@ describe('GET /api/v1/public/stats', () => {
                     const body = await res.json();
                     const { data } = body;
 
-                    // Assert only the 5 expected keys are present
+                    // Assert only the 7 expected keys are present
                     const allowedKeys = new Set([
                         'accommodations',
                         'destinations',
                         'events',
                         'posts',
-                        'reviews'
+                        'reviews',
+                        'averageRating',
+                        'recentReviewerAvatars'
                     ]);
 
                     for (const key of Object.keys(data)) {
