@@ -55,7 +55,7 @@ jobs:
       # remotely; --prebuilt would require a successful local
       # `vercel build` which fails on this monorepo with "spawn sh ENOENT".
       - name: Deploy API to Vercel
-        run: npx --yes vercel@latest deploy --prod --yes --token="$VERCEL_TOKEN"
+        run: npx --yes vercel@latest deploy --prod --yes --archive=tgz --token="$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -104,7 +104,7 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Web to Vercel
-        run: npx --yes vercel@latest deploy --prod --yes --token="$VERCEL_TOKEN"
+        run: npx --yes vercel@latest deploy --prod --yes --archive=tgz --token="$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -142,7 +142,7 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Admin to Vercel
-        run: npx --yes vercel@latest deploy --prod --yes --token="$VERCEL_TOKEN"
+        run: npx --yes vercel@latest deploy --prod --yes --archive=tgz --token="$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
