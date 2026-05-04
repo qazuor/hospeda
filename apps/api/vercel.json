@@ -83,8 +83,7 @@
     "functions": {
         "api/index.js": {
             "maxDuration": 60,
-            "memory": 512,
-            "maxBodySize": "12mb"
+            "memory": 512
         }
     }
 }
