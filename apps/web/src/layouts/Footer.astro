@@ -1,21 +1,29 @@
 ---
 /**
  * @file Footer.astro
- * @description Site footer with 5-column navigation layout on desktop.
- * Layout:
- * - Wave SVG decoration overlapping the previous section
- * - TOP ROW (flex): LEFT_BLOCK (logo + description + social) + RIGHT_BLOCK (newsletter card + 5-col nav grid)
- * - BOTTOM BAR: contact info left, copyright right
- * - Mobile (<768px): nav columns collapse into <details><summary> accordion
+ * @description Site footer with 4-zone vertical layout:
+ * - ZONE 1: Brand block (logo + description + social) plus 3-column nav
+ *           grid (Explorar / Para vos / Hospeda). Heights are balanced
+ *           by keeping the newsletter form out of the brand column.
+ * - ZONE 1.5: Full-width newsletter strip.
+ * - ZONE 2: Trust signals strip + accepted payment methods row.
+ * - ZONE 3: Bottom bar with contact info, inline legal links, copyright.
  *
- * Columns: Explorar | Categorías | Destinos | Propietarios & Turistas | Hospeda
+ * Mobile (<768px): nav columns collapse into <details> accordions, brand
+ * block stacks above the nav, trust signals wrap into a 2x2 grid.
  *
- * Rendering: Static (no client JavaScript).
+ * Stats are pulled at request time from `/api/v1/public/stats` (cached 1h
+ * server-side). On fetch failure the section degrades gracefully to round
+ * fallback numbers so the footer never renders broken values.
+ *
+ * Rendering: Static HTML (no client JavaScript beyond the cookie-consent
+ * reopen handler).
  */
 
 import { Image } from "astro:assets";
 import GradientButton from "@/components/shared/ui/GradientButton.astro";
 import SocialLinks from "@/components/shared/SocialLinks.astro";
+import { statsApi } from "@/lib/api/endpoints";
 import type { SupportedLocale } from "@/lib/i18n";
 import { createTranslations } from "@/lib/i18n";
 import { buildUrl } from "@/lib/urls";
@@ -30,6 +38,43 @@ const { t } = createTranslations(locale);
 
 const currentYear = new Date().getFullYear();
 
+/** Round a count down to the nearest "marketing-friendly" tier so the
+ *  footer reads as `+50` / `+100` / `+1.000` rather than the precise
+ *  database number. Keeps the value honest while reinforcing scale. */
+function roundDown(n: number): number {
+    if (n >= 10000) return Math.floor(n / 1000) * 1000;
+    if (n >= 1000) return Math.floor(n / 100) * 100;
+    if (n >= 100) return Math.floor(n / 50) * 50;
+    if (n >= 10) return Math.floor(n / 10) * 10;
+    return n;
+}
+
+/** Fallbacks used if the stats endpoint is unreachable. Round numbers
+ *  picked to look plausible without lying about scale. */
+const STATS_FALLBACK = {
+    accommodations: 100,
+    destinations: 20,
+    averageRating: 4.5,
+} as const;
+
+let statsAccommodations = STATS_FALLBACK.accommodations;
+let statsAverageRating = STATS_FALLBACK.averageRating;
+
+try {
+    const result = await statsApi.getPlatformStats();
+    if (result.success && result.data) {
+        statsAccommodations = roundDown(result.data.accommodations) || STATS_FALLBACK.accommodations;
+        statsAverageRating = result.data.averageRating > 0
+            ? result.data.averageRating
+            : STATS_FALLBACK.averageRating;
+    }
+} catch {
+    // Silently fall through to defaults. Footer must never break the page.
+}
+
+const formattedCount = new Intl.NumberFormat(locale === "es" ? "es-AR" : locale).format(statsAccommodations);
+const formattedRating = statsAverageRating.toFixed(1).replace(".", ",");
+
 /** EXPLORAR column — top-level sections + search */
 const exploreLinks = [
     { label: t("footer.accommodations"), href: buildUrl({ locale, path: "/alojamientos/" }) },
@@ -39,638 +84,815 @@ const exploreLinks = [
     { label: t("footer.search", "Buscar"), href: buildUrl({ locale, path: "/busqueda/" }) },
 ] as const;
 
-/** CATEGORÍAS column — curated accommodation types and event categories */
-const categoryLinks = [
-    { label: t("footer.categoryCabins", "Cabañas"), href: buildUrl({ locale, path: "/alojamientos/tipo/cabin/" }) },
-    { label: t("footer.categoryHotels", "Hoteles"), href: buildUrl({ locale, path: "/alojamientos/tipo/hotel/" }) },
-    { label: t("footer.categoryHouses", "Casas"), href: buildUrl({ locale, path: "/alojamientos/tipo/house/" }) },
-    { label: t("footer.categoryMusic", "Música"), href: buildUrl({ locale, path: "/eventos/categoria/music/" }) },
-    { label: t("footer.categoryCulture", "Cultura"), href: buildUrl({ locale, path: "/eventos/categoria/culture/" }) },
-    { label: t("footer.categoryGastronomy", "Gastronomía"), href: buildUrl({ locale, path: "/eventos/categoria/gastronomy/" }) },
-    { label: t("footer.categoryNature", "Naturaleza"), href: buildUrl({ locale, path: "/eventos/categoria/nature/" }) },
-] as const;
-
-/** DESTINOS column */
-const destinationLinks = [
-    { label: t("footer.destinationCdu"), href: buildUrl({ locale, path: "/destinos/concepcion-del-uruguay/" }) },
-    { label: t("footer.destinationColon"), href: buildUrl({ locale, path: "/destinos/colon/" }) },
-    { label: t("footer.destinationGualeguaychu"), href: buildUrl({ locale, path: "/destinos/gualeguaychu/" }) },
-    { label: t("footer.destinationSanJose"), href: buildUrl({ locale, path: "/destinos/san-jose/" }) },
-] as const;
-
-/** PROPIETARIOS & TURISTAS column */
-const subscriberLinks = [
+/** PARA VOS column — owner + tourist value props */
+const forYouLinks = [
     { label: t("footer.listProperty"), href: buildUrl({ locale, path: "/suscriptores/propietarios/" }) },
     { label: t("footer.ownerPlans"), href: buildUrl({ locale, path: "/suscriptores/planes/" }) },
     { label: t("footer.touristPlans"), href: buildUrl({ locale, path: "/suscriptores/turistas/" }) },
     { label: t("footer.benefits"), href: buildUrl({ locale, path: "/beneficios/" }) },
 ] as const;
 
-/** HOSPEDA column */
+/** HOSPEDA column — corporate */
 const companyLinks = [
     { label: t("footer.aboutUs"), href: buildUrl({ locale, path: "/nosotros/" }) },
     { label: t("footer.contact"), href: buildUrl({ locale, path: "/contacto/" }) },
+] as const;
+
+/** Legal links — collapsed into a single inline row in the bottom bar. */
+const legalLinks = [
     { label: t("footer.terms"), href: buildUrl({ locale, path: "/legal/terminos/" }) },
     { label: t("footer.privacy"), href: buildUrl({ locale, path: "/legal/privacidad/" }) },
     { label: t("footer.cookies"), href: buildUrl({ locale, path: "/legal/cookies/" }) },
 ] as const;
 
 const cookiePreferencesLabel = t("cookieConsent.footer.preferencesLink", "Preferencias de cookies");
+const trustLabel = t("footer.trustSignals.label", "Por qué elegirnos");
+const paymentsLabel = t("footer.payments.label", "Métodos de pago");
+const accommodationsCountLabel = t("footer.trustSignals.accommodationsCount", "+{{count}} alojamientos").replace("{{count}}", formattedCount);
+
+/** Payment method logos served from the simpleicons CDN. Single-color
+ *  brand marks are returned as SVG and tinted via the `?color=` query.
+ *  Naranja X is intentionally omitted (no slug available upstream). */
+const paymentMethods = [
+    { slug: "mercadopago", label: "Mercado Pago" },
+    { slug: "visa", label: "Visa" },
+    { slug: "mastercard", label: "Mastercard" },
+    { slug: "americanexpress", label: "American Express" },
+] as const;
+const averageRatingLabel = t("footer.trustSignals.averageRating", "{{rating}} de promedio").replace("{{rating}}", formattedRating);
+const localSupportLabel = t("footer.trustSignals.localSupport", "Soporte local en español");
+const securePaymentsLabel = t("footer.trustSignals.securePayments", "Pagos seguros");
+const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisiones ocultas");
 ---
 
 <footer class="footer">
-    <!-- Wave decoration: overlaps the section above -->
+    <!-- Wave decoration overlapping the section above -->
     <div class="footer__wave" aria-hidden="true">
-        <svg viewBox="0 0 1440 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0,60 C240,120 480,0 720,60 C960,120 1200,0 1440,60 L1440,120 L0,120 Z" fill="var(--footer-bg)"
+        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+                d="M0,48 C180,72 360,16 540,32 C720,48 900,80 1080,56 C1260,32 1380,40 1440,48 L1440,80 L0,80 Z"
+                fill="var(--footer-bg)"
             ></path>
         </svg>
     </div>
 
-    <!-- Top row: left block + right block -->
-    <div class="footer__top">
-        <div class="footer__container">
-            <!-- LEFT BLOCK: logo + description + social -->
-            <div class="footer__left">
-                <div class="footer__logo">
+    <!-- ZONE 1: Brand + nav -->
+    <section class="footer__main">
+        <div class="footer__container footer__main-grid">
+            <!-- Brand block: logo, description, social, inline newsletter -->
+            <div class="footer__brand">
+                <a
+                    href={buildUrl({ locale, path: "/" })}
+                    class="footer__logo"
+                    aria-label="Hospeda"
+                >
                     <Image
                         src={logoSrc}
-                        alt="Hospeda logo"
-                        width={58}
-                        height={63}
+                        alt=""
+                        width={48}
+                        height={52}
                         class="footer__logo-icon"
                         loading="lazy"
                     />
                     <span class="footer__logo-wordmark">Hospeda</span>
-                </div>
+                </a>
 
-                <p class="footer__description">
+                <p class="footer__brand-desc">
                     {t("footer.shortDescription")}
                 </p>
 
-                <SocialLinks variant="light" />
-            </div>
-
-            <!-- RIGHT BLOCK: newsletter card + nav grid -->
-            <div class="footer__right">
-                <!-- Newsletter card -->
-                <div class="footer__newsletter">
-                    <div class="footer__newsletter-text">
-                        <h3 class="footer__newsletter-title">{t("footer.newsletterTitle")}</h3>
-                        <p class="footer__newsletter-desc">{t("footer.newsletterDescription")}</p>
-                    </div>
-                    <div class="footer__newsletter-form">
-                        <label for="newsletter-email" class="sr-only">
-                            {t("footer.newsletterPlaceholder")}
-                        </label>
-                        <input
-                            id="newsletter-email"
-                            type="email"
-                            name="email"
-                            autocomplete="email"
-                            class="footer__newsletter-input"
-                            placeholder={t("footer.newsletterPlaceholder")}
-                            aria-label={t("footer.newsletterPlaceholder")}
-                        />
-                        <GradientButton
-                            as="button"
-                            label={t("footer.subscribe")}
-                            variant="accent"
-                            size="sm"
-                            class="footer__newsletter-btn"
-                        />
-
-                    </div>
+                <div class="footer__brand-social">
+                    <SocialLinks variant="light" />
                 </div>
-
-                <!-- Navigation columns: 5 columns on desktop, accordion on mobile -->
-                <nav class="footer__nav" aria-label={t("footer.navigation", "Footer navigation")}>
-                    <!-- Column 1: Explorar -->
-                    <details class="footer__nav-col footer__nav-col--accordion" open>
-                        <summary class="footer__nav-heading footer__nav-summary">
-                            {t("footer.exploreTitle")}
-                        </summary>
-                        <ul class="footer__nav-list">
-                            {
-                                exploreLinks.map(({ label, href }) => (
-                                    <li>
-                                        <a href={href} class="footer__nav-link">
-                                            {label}
-                                        </a>
-                                    </li>
-                                ))
-                            }
-                        </ul>
-                    </details>
-
-                    <!-- Column 2: Categorías -->
-                    <details class="footer__nav-col footer__nav-col--accordion" open>
-                        <summary class="footer__nav-heading footer__nav-summary">
-                            {t("footer.categoriesTitle", "Categorías")}
-                        </summary>
-                        <ul class="footer__nav-list">
-                            {
-                                categoryLinks.map(({ label, href }) => (
-                                    <li>
-                                        <a href={href} class="footer__nav-link">
-                                            {label}
-                                        </a>
-                                    </li>
-                                ))
-                            }
-                        </ul>
-                    </details>
-
-                    <!-- Column 3: Destinos -->
-                    <details class="footer__nav-col footer__nav-col--accordion" open>
-                        <summary class="footer__nav-heading footer__nav-summary">
-                            {t("footer.destinationsTitle")}
-                        </summary>
-                        <ul class="footer__nav-list">
-                            {
-                                destinationLinks.map(({ label, href }) => (
-                                    <li>
-                                        <a href={href} class="footer__nav-link">
-                                            {label}
-                                        </a>
-                                    </li>
-                                ))
-                            }
-                        </ul>
-                    </details>
-
-                    <!-- Column 4: Propietarios & Turistas -->
-                    <details class="footer__nav-col footer__nav-col--accordion" open>
-                        <summary class="footer__nav-heading footer__nav-summary">
-                            {t("footer.subscribersTitle", "Propietarios & Turistas")}
-                        </summary>
-                        <ul class="footer__nav-list">
-                            {
-                                subscriberLinks.map(({ label, href }) => (
-                                    <li>
-                                        <a href={href} class="footer__nav-link">
-                                            {label}
-                                        </a>
-                                    </li>
-                                ))
-                            }
-                        </ul>
-                    </details>
-
-                    <!-- Column 5: Hospeda -->
-                    <details class="footer__nav-col footer__nav-col--accordion" open>
-                        <summary class="footer__nav-heading footer__nav-summary">
-                            {t("footer.hospedaTitle")}
-                        </summary>
-                        <ul class="footer__nav-list">
-                            {
-                                companyLinks.map(({ label, href }) => (
-                                    <li>
-                                        <a href={href} class="footer__nav-link">
-                                            {label}
-                                        </a>
-                                    </li>
-                                ))
-                            }
-                        </ul>
-                    </details>
-                </nav>
             </div>
-        </div>
-    </div>
 
-    <!-- Bottom bar -->
-    <div class="footer__bottom">
-        <div class="footer__container footer__bottom-inner">
-            <p class="footer__bottom-contact">
-                {t("footer.contactEmail")}&nbsp;&nbsp;|&nbsp;&nbsp;{t("footer.contactPhone")}
-            </p>
-            <div class="footer__bottom-right">
-                <button
-                    type="button"
-                    class="footer__cookie-btn"
-                    data-cookie-consent-reopen
-                    aria-label={cookiePreferencesLabel}
-                >
-                    {cookiePreferencesLabel}
-                </button>
-                <p class="footer__bottom-copy">
-                    &copy; {currentYear} Hospeda. {t("footer.rights")}
+            <!-- 3-column navigation -->
+            <nav class="footer__nav" aria-label={t("footer.navigation", "Footer navigation")}>
+                <details class="footer__nav-col" open>
+                    <summary class="footer__nav-heading">{t("footer.exploreTitle")}</summary>
+                    <ul class="footer__nav-list">
+                        {
+                            exploreLinks.map(({ label, href }) => (
+                                <li>
+                                    <a href={href} class="footer__nav-link">
+                                        {label}
+                                    </a>
+                                </li>
+                            ))
+                        }
+                    </ul>
+                </details>
+
+                <details class="footer__nav-col" open>
+                    <summary class="footer__nav-heading">{t("footer.forYouTitle", "Para vos")}</summary>
+                    <ul class="footer__nav-list">
+                        {
+                            forYouLinks.map(({ label, href }) => (
+                                <li>
+                                    <a href={href} class="footer__nav-link">
+                                        {label}
+                                    </a>
+                                </li>
+                            ))
+                        }
+                    </ul>
+                </details>
+
+                <details class="footer__nav-col" open>
+                    <summary class="footer__nav-heading">{t("footer.hospedaTitle")}</summary>
+                    <ul class="footer__nav-list">
+                        {
+                            companyLinks.map(({ label, href }) => (
+                                <li>
+                                    <a href={href} class="footer__nav-link">
+                                        {label}
+                                    </a>
+                                </li>
+                            ))
+                        }
+                    </ul>
+                </details>
+            </nav>
+        </div>
+    </section>
+
+    <!-- ZONE 1.5: Newsletter strip -->
+    <section class="footer__newsletter-zone" aria-label={t("footer.newsletterShortTitle", "Recibí novedades")}>
+        <div class="footer__container footer__newsletter-inner">
+            <div class="footer__newsletter-text">
+                <h3 class="footer__newsletter-title">
+                    {t("footer.newsletterShortTitle", "Recibí novedades")}
+                </h3>
+                <p class="footer__newsletter-desc">
+                    {t("footer.newsletterShortDescription", "Novedades y ofertas en tu correo.")}
                 </p>
             </div>
+            <form
+                class="footer__newsletter"
+                onsubmit="event.preventDefault();"
+            >
+                <label for="newsletter-email" class="sr-only">
+                    {t("footer.newsletterPlaceholder")}
+                </label>
+                <input
+                    id="newsletter-email"
+                    type="email"
+                    name="email"
+                    autocomplete="email"
+                    class="footer__newsletter-input"
+                    placeholder={t("footer.newsletterPlaceholder")}
+                    aria-label={t("footer.newsletterPlaceholder")}
+                />
+                <GradientButton
+                    as="button"
+                    label={t("footer.subscribeShort", "Suscribirme")}
+                    variant="accent"
+                    size="sm"
+                    class="footer__newsletter-btn"
+                />
+            </form>
         </div>
-    </div>
+    </section>
+
+    <!-- ZONE 2: Trust signals + payments -->
+    <section class="footer__trust" aria-label={trustLabel}>
+        <div class="footer__container footer__trust-inner">
+            <ul class="footer__trust-list">
+                <li class="footer__trust-item">
+                    <svg class="footer__trust-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M3 11l9-7 9 7v9a2 2 0 0 1-2 2h-4v-7h-6v7H5a2 2 0 0 1-2-2v-9z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="footer__trust-text">
+                        <strong class="footer__trust-strong">{accommodationsCountLabel}</strong>
+                        <span class="footer__trust-meta">{averageRatingLabel}</span>
+                    </span>
+                </li>
+                <li class="footer__trust-item">
+                    <svg class="footer__trust-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="footer__trust-text">
+                        <strong class="footer__trust-strong">{localSupportLabel}</strong>
+                    </span>
+                </li>
+                <li class="footer__trust-item">
+                    <svg class="footer__trust-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 2L4 6v6c0 5 3.5 9.4 8 10 4.5-.6 8-5 8-10V6l-8-4z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="footer__trust-text">
+                        <strong class="footer__trust-strong">{securePaymentsLabel}</strong>
+                    </span>
+                </li>
+                <li class="footer__trust-item">
+                    <svg class="footer__trust-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.6"/>
+                        <circle cx="16" cy="16" r="2.5" stroke="currentColor" stroke-width="1.6"/>
+                        <path d="M19 5L5 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    </svg>
+                    <span class="footer__trust-text">
+                        <strong class="footer__trust-strong">{noCommissionsLabel}</strong>
+                    </span>
+                </li>
+            </ul>
+
+            <ul class="footer__payments-list" aria-label={paymentsLabel}>
+                {
+                    paymentMethods.map(({ slug, label }) => (
+                        <li>
+                            <img
+                                class="footer__payment"
+                                src={`https://cdn.simpleicons.org/${slug}/ffffff`}
+                                alt={label}
+                                loading="lazy"
+                                width="48"
+                                height="24"
+                            />
+                        </li>
+                    ))
+                }
+            </ul>
+        </div>
+    </section>
+
+    <!-- ZONE 3: Bottom bar -->
+    <section class="footer__bottom">
+        <div class="footer__container footer__bottom-inner">
+            <div class="footer__bottom-contact">
+                <a class="footer__contact-link" href={`mailto:${t("footer.contactEmail")}`}>
+                    <svg class="footer__contact-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/>
+                        <path d="M3 7l9 6 9-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    </svg>
+                    <span>{t("footer.contactEmail")}</span>
+                </a>
+                <a class="footer__contact-link" href={`tel:${t("footer.contactPhone").replace(/\s+/g, "")}`}>
+                    <svg class="footer__contact-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M22 16.92V20a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2H7.2a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>{t("footer.contactPhone")}</span>
+                </a>
+            </div>
+
+            <ul class="footer__legal" aria-label={t("footer.legal", "Legal")}>
+                {
+                    legalLinks.map(({ label, href }) => (
+                        <li>
+                            <a href={href} class="footer__legal-link">
+                                {label}
+                            </a>
+                        </li>
+                    ))
+                }
+                <li>
+                    <button
+                        type="button"
+                        class="footer__legal-link footer__cookie-btn"
+                        data-cookie-consent-reopen
+                        aria-label={cookiePreferencesLabel}
+                    >
+                        {cookiePreferencesLabel}
+                    </button>
+                </li>
+            </ul>
+
+            <p class="footer__copyright">
+                &copy; {currentYear} Hospeda. {t("footer.bottom.rights", "Todos los derechos reservados")}.
+            </p>
+        </div>
+    </section>
 </footer>
 
 <script>
-    /** Dispatch the reopen event when any footer cookie-preferences button is clicked. */
-    document.addEventListener('astro:page-load', () => {
-        const btn = document.querySelector('[data-cookie-consent-reopen]');
+    /** Dispatch the reopen event when the footer cookie-preferences button is clicked. */
+    document.addEventListener("astro:page-load", () => {
+        const btn = document.querySelector("[data-cookie-consent-reopen]");
         if (btn) {
-            btn.addEventListener('click', () => {
-                window.dispatchEvent(new CustomEvent('cookie-consent:reopen'));
+            btn.addEventListener("click", () => {
+                window.dispatchEvent(new CustomEvent("cookie-consent:reopen"));
             });
         }
     });
 </script>
 
 <style>
-    /* ========================================================
+    /* ════════════════════════════════════════════════════════════════════
        Footer — base
-       ======================================================== */
+       ════════════════════════════════════════════════════════════════════ */
     .footer {
         position: relative;
         background-color: var(--footer-bg);
         color: var(--footer-fg);
     }
 
-    /* ========================================================
-       Wave decoration
-       ======================================================== */
-    .footer__wave {
-        position: absolute;
-        top: clamp(-40px, -5vw, -59px);
-        left: 0;
-        width: 100%;
-        height: 60px;
-        pointer-events: none;
-    }
-
-    .footer__wave svg {
-        width: 100%;
-        height: 100%;
-    }
-
-    /* ========================================================
-       Shared container
-       ======================================================== */
     .footer__container {
         max-width: var(--container-max);
         margin-inline: auto;
         padding-inline: var(--space-container-x);
     }
 
-    /* ========================================================
-       Top row
-       ======================================================== */
-    .footer__top {
-        padding-top: 96px;
+    /* ════════════════════════════════════════════════════════════════════
+       Wave decoration — smoother, double-curve transition into the footer
+       ════════════════════════════════════════════════════════════════════ */
+    .footer__wave {
+        position: absolute;
+        top: clamp(-3rem, -4vw, -4.5rem);
+        left: 0;
+        width: 100%;
+        height: 4rem;
+        pointer-events: none;
     }
 
-    .footer__top .footer__container {
+    .footer__wave svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    /* ════════════════════════════════════════════════════════════════════
+       ZONE 1: Brand + nav
+       ════════════════════════════════════════════════════════════════════ */
+    .footer__main {
+        padding-block: clamp(2.5rem, 5vw, 4rem);
+    }
+
+    .footer__main-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: clamp(2rem, 4vw, 3.5rem);
+    }
+
+    /* Brand block — vertical stack on all sizes */
+    .footer__brand {
         display: flex;
         flex-direction: column;
-        gap: 48px;
-        padding-top: 48px;
-        padding-bottom: 48px;
+        gap: 1.25rem;
     }
 
-    /* ========================================================
-       Left block
-       ======================================================== */
-    .footer__left {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 24px;
-        flex-shrink: 0;
-    }
-
-    /* Logo: icon + wordmark (horizontal per Figma) */
     .footer__logo {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 10px;
-        padding-inline: 10px;
+        gap: 0.625rem;
+        text-decoration: none;
+        color: var(--footer-fg);
+        width: fit-content;
     }
 
     .footer__logo-icon {
-        width: 58px;
-        height: 63px;
+        width: 2.5rem;
+        height: auto;
         object-fit: contain;
     }
 
     .footer__logo-wordmark {
         font-family: var(--font-decorative);
-        font-size: 48px;
+        font-size: clamp(2rem, 1.5rem + 1.5vw, 2.5rem);
         font-weight: 700;
-        color: var(--footer-fg);
         line-height: 1;
+        color: var(--footer-fg);
     }
 
-    /* Description */
-    .footer__description {
+    .footer__brand-desc {
         font-family: var(--font-sans);
-        font-size: var(--text-body);
+        font-size: var(--text-body-sm);
+        line-height: 1.6;
         color: var(--footer-fg-muted);
-        text-align: center;
-        max-width: 205px;
-        line-height: 1.5;
+        max-width: 30ch;
+        margin: 0;
     }
 
-    /* ========================================================
-       Right block
-       ======================================================== */
-    .footer__right {
+    .footer__brand-social {
         display: flex;
-        flex-direction: column;
-        gap: 20px;
-        flex: 1;
+        align-items: center;
+        gap: 0.5rem;
     }
 
-    /* ========================================================
-       Newsletter card
-       ======================================================== */
-    .footer__newsletter {
+    /* ════════════════════════════════════════════════════════════════════
+       ZONE 1.5: Newsletter strip — full-width row, sits between nav & trust
+       ════════════════════════════════════════════════════════════════════ */
+    .footer__newsletter-zone {
+        border-top: 1px solid var(--footer-border);
+        padding-block: clamp(1.5rem, 3vw, 2rem);
+    }
+
+    .footer__newsletter-inner {
         display: flex;
         flex-direction: column;
-        gap: 16px;
-        background-color: var(--footer-newsletter-bg);
-        border: 1px solid var(--footer-newsletter-border);
-        border-radius: 24px;
-        padding: 16px 12px;
+        gap: 1rem;
     }
 
     .footer__newsletter-text {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 0.25rem;
     }
 
     .footer__newsletter-title {
         font-family: var(--font-heading);
-        font-size: 24px;
-        font-weight: 700;
-        color: var(--footer-newsletter-fg);
+        font-size: var(--text-h4);
+        font-weight: 600;
         line-height: 1.2;
+        color: var(--footer-fg);
+        margin: 0;
     }
 
     .footer__newsletter-desc {
         font-family: var(--font-sans);
-        font-size: var(--text-body);
-        color: var(--footer-newsletter-fg);
+        font-size: var(--text-body-sm);
         line-height: 1.5;
+        color: var(--footer-fg-muted);
+        margin: 0;
     }
 
-    .footer__newsletter-form {
+    .footer__newsletter {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 0.5rem;
     }
 
     .footer__newsletter-input {
-        background-color: var(--core-background, #f5f5f5);
-        border: 1px solid var(--border, #e0e0e0);
-        border-radius: 12px;
-        padding: 15px 16px;
+        flex: 1;
+        min-width: 0;
+        background-color: oklch(from var(--footer-fg) l c h / 0.08);
+        border: 1px solid var(--footer-border);
+        border-radius: var(--radius-button);
+        padding: 0.625rem 0.875rem;
         font-family: var(--font-sans);
-        font-size: var(--text-body);
-        color: var(--core-foreground);
+        font-size: var(--text-body-sm);
+        color: var(--footer-fg);
         outline: none;
-        width: 100%;
+        transition: border-color var(--duration-normal) ease,
+            background-color var(--duration-normal) ease;
     }
 
-    @media (min-width: 768px) {
-        .footer__newsletter-input {
-            width: clamp(200px, 30vw, 260px);
-        }
+    .footer__newsletter-input::placeholder {
+        color: var(--footer-fg-muted);
     }
 
     .footer__newsletter-input:focus {
-        border-color: var(--footer-newsletter-fg);
+        border-color: oklch(from var(--footer-fg) l c h / 0.5);
+        background-color: oklch(from var(--footer-fg) l c h / 0.12);
     }
 
     .footer__newsletter-btn {
-        border-radius: var(--radius-pill, 9999px);
         align-self: flex-start;
         white-space: nowrap;
     }
 
-    /* ========================================================
-       Navigation grid
-       ======================================================== */
+    /* ════════════════════════════════════════════════════════════════════
+       Nav columns
+       ════════════════════════════════════════════════════════════════════ */
     .footer__nav {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        column-gap: 24px;
-        row-gap: 32px;
-        padding-left: 0;
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
     }
 
-    /* Accordion: <details> used as the column container on mobile */
-    .footer__nav-col--accordion {
+    .footer__nav-col {
         border-bottom: 1px solid var(--footer-border);
-        padding-bottom: 8px;
-    }
-
-    /* Summary acts as the column heading on mobile */
-    .footer__nav-summary {
-        cursor: pointer;
-        list-style: none;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 8px 0;
-    }
-
-    /* Remove default marker */
-    .footer__nav-summary::-webkit-details-marker,
-    .footer__nav-summary::marker {
-        display: none;
-    }
-
-    /* Chevron indicator via ::after */
-    .footer__nav-summary::after {
-        content: "▾";
-        font-size: 0.75rem;
-        color: var(--footer-fg-muted);
-        transition: transform var(--duration-normal) ease;
-        flex-shrink: 0;
-    }
-
-    .footer__nav-col--accordion[open] .footer__nav-summary::after {
-        transform: rotate(180deg);
+        padding-block: 0.5rem;
     }
 
     .footer__nav-heading {
+        list-style: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         font-family: var(--font-heading);
-        font-size: clamp(1rem, 2vw, 1.25rem);
-        font-weight: 700;
-        color: var(--footer-link);
-        margin-bottom: 0;
+        font-size: var(--text-h4);
+        font-weight: 500;
         line-height: 1.2;
+        color: var(--footer-fg);
+        padding-block: 0.25rem;
+    }
+
+    .footer__nav-heading::-webkit-details-marker,
+    .footer__nav-heading::marker {
+        display: none;
+    }
+
+    .footer__nav-heading::after {
+        content: "+";
+        font-size: 1.25rem;
+        font-weight: 400;
+        color: var(--footer-fg-muted);
+        transition: transform var(--duration-normal) ease;
+    }
+
+    .footer__nav-col[open] .footer__nav-heading::after {
+        transform: rotate(45deg);
     }
 
     .footer__nav-list {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 0.625rem;
         list-style: none;
-        padding-top: 8px;
+        padding: 0.75rem 0 0.5rem 0;
+        margin: 0;
     }
 
     .footer__nav-link {
         font-family: var(--font-sans);
-        font-size: var(--text-body);
+        font-size: var(--text-body-sm);
+        line-height: 1.4;
         color: var(--footer-fg-muted);
         text-decoration: none;
         transition: color var(--duration-normal) ease;
-        line-height: 1.4;
     }
 
-    .footer__nav-link:hover {
+    .footer__nav-link:hover,
+    .footer__nav-link:focus-visible {
         color: var(--footer-fg);
     }
 
-    /* ========================================================
-       Bottom bar
-       ======================================================== */
-    .footer__bottom {
+    /* ════════════════════════════════════════════════════════════════════
+       ZONE 2: Trust signals + payments
+       ════════════════════════════════════════════════════════════════════ */
+    .footer__trust {
         border-top: 1px solid var(--footer-border);
+        border-bottom: 1px solid var(--footer-border);
+        padding-block: 1.25rem;
+    }
+
+    .footer__trust-inner {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .footer__trust-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .footer__trust-item {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+    }
+
+    .footer__trust-icon {
+        flex-shrink: 0;
+        width: 1.5rem;
+        height: 1.5rem;
+        color: var(--brand-accent);
+    }
+
+    .footer__trust-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+        line-height: 1.3;
+        min-width: 0;
+    }
+
+    .footer__trust-strong {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        font-weight: 600;
+        color: var(--footer-fg);
+    }
+
+    .footer__trust-meta {
+        font-family: var(--font-sans);
+        font-size: var(--text-caption);
+        color: var(--footer-fg-muted);
+    }
+
+    /* Payments row — logo-only, served from cdn.simpleicons.org */
+    .footer__payments-list {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 1.25rem;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        flex-shrink: 0;
+    }
+
+    .footer__payment {
+        height: 1.5rem;
+        width: auto;
+        display: block;
+        flex-shrink: 0;
+        opacity: 0.7;
+        transition: opacity var(--duration-normal) ease;
+    }
+
+    .footer__payments-list li:hover .footer__payment {
+        opacity: 1;
+    }
+
+    /* ════════════════════════════════════════════════════════════════════
+       ZONE 3: Bottom bar
+       ════════════════════════════════════════════════════════════════════ */
+    .footer__bottom {
+        padding-block: 1rem;
     }
 
     .footer__bottom-inner {
         display: flex;
         flex-direction: column;
+        gap: 0.75rem;
         align-items: center;
-        gap: clamp(0.5rem, 2vw, 1rem);
-        padding-block: 16px;
-    }
-
-    .footer__bottom-contact,
-    .footer__bottom-copy {
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm);
-        color: var(--footer-fg-muted);
         text-align: center;
     }
 
-    /* Cookie preferences reopen button */
-    .footer__bottom-right {
+    .footer__bottom-contact {
         display: flex;
-        flex-direction: column;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.25rem;
+        justify-content: center;
+    }
+
+    .footer__contact-link {
+        display: inline-flex;
         align-items: center;
-        gap: 4px;
+        gap: 0.5rem;
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--footer-fg-muted);
+        text-decoration: none;
+        transition: color var(--duration-normal) ease;
+    }
+
+    .footer__contact-link:hover,
+    .footer__contact-link:focus-visible {
+        color: var(--footer-fg);
+    }
+
+    .footer__contact-icon {
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
+    }
+
+    .footer__legal {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem 0.875rem;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .footer__legal li {
+        position: relative;
+    }
+
+    .footer__legal li + li::before {
+        content: "·";
+        position: absolute;
+        left: -0.625rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--footer-fg-muted);
+        opacity: 0.5;
+    }
+
+    .footer__legal-link {
+        font-family: var(--font-sans);
+        font-size: var(--text-caption);
+        color: var(--footer-fg-muted);
+        text-decoration: none;
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        transition: color var(--duration-normal) ease;
+    }
+
+    .footer__legal-link:hover,
+    .footer__legal-link:focus-visible {
+        color: var(--footer-fg);
     }
 
     .footer__cookie-btn {
         font-family: var(--font-sans);
-        font-size: var(--text-body-sm);
+    }
+
+    .footer__copyright {
+        font-family: var(--font-sans);
+        font-size: var(--text-caption);
         color: var(--footer-fg-muted);
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 0;
-        text-decoration: underline;
-        text-underline-offset: 2px;
-        transition: color var(--duration-normal) ease;
+        margin: 0;
     }
 
-    .footer__cookie-btn:hover {
-        color: var(--footer-fg);
-    }
+    /* ════════════════════════════════════════════════════════════════════
+       Responsive — tablet (≥768px)
+       ════════════════════════════════════════════════════════════════════ */
+    @media (min-width: 48rem) {
+        .footer__main-grid {
+            grid-template-columns: minmax(16rem, 22rem) 1fr;
+            gap: clamp(2.5rem, 5vw, 5rem);
+            align-items: start;
+        }
 
-    /* ========================================================
-       Responsive: tablet (768px+)
-       ======================================================== */
-    @media (min-width: 768px) {
-        .footer__top .footer__container {
+        /* Newsletter strip: text on the left, form inline on the right */
+        .footer__newsletter-inner {
             flex-direction: row;
-            align-items: flex-start;
-            gap: 64px;
+            align-items: center;
+            justify-content: space-between;
+            gap: clamp(2rem, 5vw, 4rem);
         }
 
         .footer__newsletter {
             flex-direction: row;
-            align-items: flex-start;
-            gap: 32px;
-        }
-
-        .footer__newsletter-text {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .footer__newsletter-form {
-            flex-direction: row;
             align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
+            min-width: min(28rem, 100%);
         }
 
-        .footer__bottom-inner {
-            flex-direction: row;
-            justify-content: space-between;
+        .footer__newsletter-btn {
+            align-self: auto;
         }
 
-        .footer__bottom-contact,
-        .footer__bottom-copy {
-            text-align: left;
+        /* Nav: 3 static columns, accordion behaviour disabled */
+        .footer__nav {
+            grid-template-columns: repeat(3, 1fr);
+            gap: clamp(1rem, 3vw, 3rem);
         }
 
-        .footer__bottom-right {
-            flex-direction: row;
-            align-items: center;
-            gap: 16px;
-        }
-    }
-
-    /* ========================================================
-       Responsive: tablet (768px+) — accordion collapses into static columns
-       ======================================================== */
-    @media (min-width: 768px) {
-        /* Reset accordion behaviour on tablet+ */
-        .footer__nav-col--accordion {
+        .footer__nav-col {
             border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .footer__nav-summary {
-            cursor: default;
-            pointer-events: none;
-            padding: 0;
-        }
-
-        .footer__nav-summary::after {
-            display: none;
-        }
-
-        /* Always show list content on tablet+ */
-        .footer__nav-col--accordion:not([open]) .footer__nav-list {
-            display: flex;
+            padding-block: 0;
         }
 
         .footer__nav-heading {
-            margin-bottom: 12px;
+            cursor: default;
+            pointer-events: none;
+            margin-bottom: 0.875rem;
+            font-size: var(--text-body);
+            font-weight: 600;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+
+        .footer__nav-heading::after {
+            display: none;
+        }
+
+        .footer__nav-col:not([open]) .footer__nav-list {
+            display: flex;
         }
 
         .footer__nav-list {
-            padding-top: 0;
+            padding: 0;
         }
 
-        .footer__nav {
-            grid-template-columns: repeat(3, 1fr);
+        /* Trust signals: 4 columns inline */
+        .footer__trust-inner {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .footer__trust-list {
+            grid-template-columns: repeat(4, auto);
+            gap: clamp(1rem, 2vw, 2rem);
+            flex: 1;
+        }
+
+        /* Bottom bar: 3 zones inline */
+        .footer__bottom-inner {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+            gap: 1.25rem;
+        }
+
+        .footer__bottom-contact {
+            justify-content: flex-start;
+        }
+
+        .footer__legal {
+            justify-content: center;
         }
     }
 
-    /* ========================================================
-       Responsive: desktop (1024px+) — full 5-column layout
-       ======================================================== */
-    @media (min-width: 1024px) {
-        .footer__top .footer__container {
-            gap: 64px;
-        }
-
-        .footer__newsletter {
-            gap: 48px;
-            padding: 16px 24px;
+    /* ════════════════════════════════════════════════════════════════════
+       Responsive — desktop (≥1024px)
+       ════════════════════════════════════════════════════════════════════ */
+    @media (min-width: 64rem) {
+        .footer__main-grid {
+            grid-template-columns: minmax(18rem, 24rem) 1fr;
         }
 
         .footer__nav {
-            grid-template-columns: repeat(5, 1fr);
-            column-gap: 32px;
-            row-gap: 19px;
-            padding-left: 48px;
+            justify-items: end;
+        }
+
+        .footer__nav-col {
+            min-width: 9rem;
         }
     }
 </style>

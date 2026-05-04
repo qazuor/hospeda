@@ -18,7 +18,9 @@
     "rights": "All rights reserved.",
     "mateTagline": "Made with mate on the Uruguay coast",
     "newsletterTitle": "Get the best deals",
+    "newsletterShortTitle": "Get our newsletter",
     "newsletterDescription": "Subscribe and stay up to date with new accommodations, events and exclusive discounts in the Litoral.",
+    "newsletterShortDescription": "News and offers in your inbox.",
     "popularDestinations": "Popular destinations",
     "destinationCdu": "Concepción del Uruguay",
     "destinationGualeguaychu": "Gualeguaychú",
@@ -32,6 +34,7 @@
     "newsletterPlaceholder": "Your email or WhatsApp",
     "newsletterErrorMessage": "Please enter a valid email",
     "subscribe": "Subscribe →",
+    "subscribeShort": "Subscribe",
     "publications": "Blog",
     "events": "Events",
     "accommodations": "Accommodations",
@@ -39,12 +42,13 @@
     "tourists": "Tourists",
     "search": "Search",
     "navigation": "Footer navigation",
-    "exploreTitle": "EXPLORE",
-    "destinationsTitle": "DESTINATIONS",
-    "ownersTitle": "PROPERTY OWNERS",
-    "hospedaTitle": "HOSPEDA",
-    "subscribersTitle": "OWNERS & TOURISTS",
-    "categoriesTitle": "CATEGORIES",
+    "exploreTitle": "Explore",
+    "destinationsTitle": "Destinations",
+    "ownersTitle": "Property Owners",
+    "hospedaTitle": "Hospeda",
+    "forYouTitle": "For you",
+    "subscribersTitle": "For you",
+    "categoriesTitle": "Categories",
     "destinationSanJose": "San José",
     "categoryCabins": "Cabins",
     "categoryHotels": "Hotels",
@@ -52,5 +56,26 @@
     "categoryMusic": "Music",
     "categoryCulture": "Culture",
     "categoryGastronomy": "Gastronomy",
-    "categoryNature": "Nature"
+    "categoryNature": "Nature",
+    "trustSignals": {
+        "label": "Why choose us",
+        "accommodationsCount": "{{count}}+ accommodations",
+        "destinationsCount": "{{count}}+ destinations",
+        "averageRating": "{{rating}} average rating",
+        "localSupport": "Local Spanish-speaking support",
+        "securePayments": "Secure payments",
+        "noCommissions": "No hidden fees"
+    },
+    "payments": {
+        "label": "We accept",
+        "visa": "Visa",
+        "mastercard": "Mastercard",
+        "amex": "American Express",
+        "naranja": "Naranja X",
+        "mercadopago": "Mercado Pago"
+    },
+    "bottom": {
+        "rights": "All rights reserved",
+        "legalSeparator": "·"
+    }
 }
