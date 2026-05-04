@@ -1,0 +1,163 @@
+---
+/**
+ * @file DestinationRatingBreakdown.astro
+ * @description Per-dimension rating breakdown for destinations.
+ *
+ * Adapts the accommodation RatingBreakdown pattern to destination's 16+
+ * rating dimensions. Renders nothing when all values are 0 or the rating
+ * object is null/undefined. Uses a 2-column layout on desktop.
+ */
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+/** All recognised destination rating dimension keys. */
+const DIMENSION_KEYS = [
+	'landscape',
+	'attractions',
+	'accessibility',
+	'safety',
+	'cleanliness',
+	'hospitality',
+	'culturalOffer',
+	'gastronomy',
+	'affordability',
+	'nightlife',
+	'infrastructure',
+	'environmentalCare',
+	'wifiAvailability',
+	'shopping',
+	'beaches',
+	'greenSpaces',
+	'localEvents',
+	'weatherSatisfaction',
+] as const;
+
+type DimensionKey = (typeof DIMENSION_KEYS)[number];
+
+/** Map of dimension key → Spanish fallback label. */
+const DIMENSION_LABELS: Record<DimensionKey, string> = {
+	landscape: 'Paisaje',
+	attractions: 'Atracciones',
+	accessibility: 'Accesibilidad',
+	safety: 'Seguridad',
+	cleanliness: 'Limpieza',
+	hospitality: 'Hospitalidad',
+	culturalOffer: 'Oferta cultural',
+	gastronomy: 'Gastronomía',
+	affordability: 'Relación precio-calidad',
+	nightlife: 'Vida nocturna',
+	infrastructure: 'Infraestructura',
+	environmentalCare: 'Cuidado del entorno',
+	wifiAvailability: 'Conectividad wifi',
+	shopping: 'Compras',
+	beaches: 'Playas',
+	greenSpaces: 'Espacios verdes',
+	localEvents: 'Eventos locales',
+	weatherSatisfaction: 'Satisfacción climática',
+};
+
+interface Props {
+	readonly rating: Record<string, number | undefined> | null | undefined;
+	readonly locale: SupportedLocale;
+}
+
+const { rating, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+if (!rating) return;
+
+const activeDimensions = DIMENSION_KEYS.filter((key) => {
+	const val = rating[key];
+	return typeof val === 'number' && val > 0;
+});
+
+if (activeDimensions.length === 0) return;
+---
+
+<div class="dest-rating-breakdown">
+	<div class="dest-rating-breakdown__bars">
+		{activeDimensions.map((key) => {
+			const value = (rating[key] as number);
+			const pct = (value / 5) * 100;
+			const label = t(`destination.rating.dimensions.${key}`, DIMENSION_LABELS[key]);
+			return (
+				<div class="dest-rating-bar">
+					<span class="dest-rating-bar__label">{label}</span>
+					<div
+						class="dest-rating-bar__track"
+						role="meter"
+						aria-valuenow={value}
+						aria-valuemin={0}
+						aria-valuemax={5}
+						aria-label={`${label}: ${value.toFixed(1)} ${t('destination.rating.outOf', 'de 5')}`}
+					>
+						<div class="dest-rating-bar__fill" style={`width: ${pct}%`} />
+					</div>
+					<span class="dest-rating-bar__value">{value.toFixed(1)}</span>
+				</div>
+			);
+		})}
+	</div>
+</div>
+
+<style>
+	.dest-rating-breakdown__bars {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 0.75rem 1.5rem;
+	}
+
+	@media (min-width: 768px) {
+		.dest-rating-breakdown__bars {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	.dest-rating-bar {
+		display: grid;
+		grid-template-columns: 160px 1fr 40px;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.dest-rating-bar__label {
+		font-family: var(--font-sans);
+		font-size: 0.9rem;
+		color: var(--core-foreground);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.dest-rating-bar__track {
+		height: 8px;
+		background-color: var(--border);
+		border-radius: var(--radius-pill);
+		overflow: hidden;
+	}
+
+	.dest-rating-bar__fill {
+		height: 100%;
+		background-color: var(--brand-accent);
+		border-radius: var(--radius-pill);
+		transition: width var(--duration-normal) ease;
+	}
+
+	.dest-rating-bar__value {
+		font-family: var(--font-sans);
+		font-size: 0.85rem;
+		font-weight: 500;
+		color: var(--core-muted-foreground);
+		text-align: right;
+	}
+
+	@media (max-width: 640px) {
+		.dest-rating-bar {
+			grid-template-columns: 120px 1fr 36px;
+		}
+
+		.dest-rating-bar__label {
+			font-size: 0.8rem;
+		}
+	}
+</style>

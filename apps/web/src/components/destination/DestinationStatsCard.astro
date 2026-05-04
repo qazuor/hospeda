@@ -1,0 +1,152 @@
+---
+/**
+ * @file DestinationStatsCard.astro
+ * @description Sidebar-style stats card for a destination detail page.
+ *
+ * Displays aggregated counts (accommodations, events, attractions, reviews)
+ * and the average rating. Rows with a zero count are omitted. Renders nothing
+ * if every stat is zero.
+ */
+import { BedroomsIcon, CalendarIcon, LocationIcon, StarIcon, ChatIcon } from '@repo/icons';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface DestinationStats {
+	readonly accommodationsCount: number;
+	readonly reviewsCount: number;
+	readonly averageRating: number;
+	readonly attractionsCount: number;
+	readonly eventsCount: number;
+}
+
+interface Props {
+	readonly stats: DestinationStats;
+	readonly locale: SupportedLocale;
+}
+
+const { stats, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+interface StatRow {
+	value: string;
+	label: string;
+	icon: 'bed' | 'calendar' | 'location' | 'star' | 'chat';
+}
+
+const rows: StatRow[] = [];
+
+if (stats.accommodationsCount > 0) {
+	rows.push({
+		value: String(stats.accommodationsCount),
+		label: t('destination.detail.stats.accommodations', 'alojamientos'),
+		icon: 'bed',
+	});
+}
+if (stats.eventsCount > 0) {
+	rows.push({
+		value: String(stats.eventsCount),
+		label: t('destination.detail.stats.events', 'eventos'),
+		icon: 'calendar',
+	});
+}
+if (stats.attractionsCount > 0) {
+	rows.push({
+		value: String(stats.attractionsCount),
+		label: t('destination.detail.stats.attractions', 'atracciones'),
+		icon: 'location',
+	});
+}
+if (stats.averageRating > 0) {
+	rows.push({
+		value: stats.averageRating.toFixed(1),
+		label: t('destination.detail.stats.rating', 'puntuación'),
+		icon: 'star',
+	});
+}
+if (stats.reviewsCount > 0) {
+	rows.push({
+		value: String(stats.reviewsCount),
+		label: t('destination.detail.stats.reviews', 'reseñas'),
+		icon: 'chat',
+	});
+}
+
+if (rows.length === 0) return;
+---
+
+<div class="dest-stats-card">
+	<h3 class="dest-stats-card__title">
+		{t('destination.detail.stats.title', 'En este destino')}
+	</h3>
+
+	<ul class="dest-stats-card__list" role="list">
+		{rows.map((row) => (
+			<li class="dest-stats-card__row">
+				<span class="dest-stats-card__icon" aria-hidden="true">
+					{row.icon === 'bed' && <BedroomsIcon size={20} weight="fill" aria-hidden="true" />}
+					{row.icon === 'calendar' && <CalendarIcon size={20} weight="fill" aria-hidden="true" />}
+					{row.icon === 'location' && <LocationIcon size={20} weight="fill" aria-hidden="true" />}
+					{row.icon === 'star' && <StarIcon size={20} weight="fill" aria-hidden="true" />}
+					{row.icon === 'chat' && <ChatIcon size={20} weight="fill" aria-hidden="true" />}
+				</span>
+				<span class="dest-stats-card__value">{row.value}</span>
+				<span class="dest-stats-card__label">{row.label}</span>
+			</li>
+		))}
+	</ul>
+</div>
+
+<style>
+	.dest-stats-card {
+		display: flex;
+		flex-direction: column;
+		gap: 1.25rem;
+		padding: 1.5rem;
+		background-color: var(--core-card);
+		border-radius: var(--radius-organic-sm);
+		box-shadow: var(--shadow-card);
+	}
+
+	.dest-stats-card__title {
+		font-family: var(--font-heading);
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+		margin: 0;
+	}
+
+	.dest-stats-card__list {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.dest-stats-card__row {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.dest-stats-card__icon {
+		display: inline-flex;
+		flex-shrink: 0;
+		color: var(--brand-primary);
+	}
+
+	.dest-stats-card__value {
+		font-family: var(--font-heading);
+		font-size: 1.125rem;
+		font-weight: 700;
+		color: var(--core-foreground);
+		min-width: 2.5rem;
+	}
+
+	.dest-stats-card__label {
+		font-family: var(--font-sans);
+		font-size: 0.9rem;
+		color: var(--core-muted-foreground);
+	}
+</style>

@@ -28,6 +28,30 @@ interface AccommodationReviewPublicItem {
     readonly createdAt?: string;
 }
 
+/**
+ * Review item with user info (from GET /destinations/:id/reviews).
+ * Mirrors the public destination review schema; the rating object holds the
+ * 16-dimension breakdown that the destination review entity supports.
+ */
+interface DestinationReviewPublicItem {
+    readonly id: string;
+    readonly title?: string;
+    readonly content?: string;
+    readonly averageRating?: number;
+    readonly rating?: Record<string, number>;
+    readonly user?: { readonly name: string | null; readonly image: string | null };
+    readonly createdAt?: string;
+}
+
+/** Aggregated stats for a destination (from GET /destinations/:id/stats). */
+interface DestinationStatsItem {
+    readonly accommodationsCount: number;
+    readonly reviewsCount: number;
+    readonly averageRating: number;
+    readonly attractionsCount: number;
+    readonly eventsCount: number;
+}
+
 const BASE = '/api/v1/public';
 
 // --- Testimonials ---
@@ -488,6 +512,27 @@ export const destinationsApi = {
             path: `${BASE}/destinations/${id}/accommodations`,
             params: { page, pageSize }
         });
+    },
+
+    /** Get paginated reviews for a destination (with user info). */
+    getReviews({
+        id,
+        page,
+        pageSize
+    }: {
+        readonly id: string;
+        readonly page?: number;
+        readonly pageSize?: number;
+    }): Promise<ApiResult<PaginatedResponse<DestinationReviewPublicItem>>> {
+        return apiClient.getList({
+            path: `${BASE}/destinations/${id}/reviews`,
+            params: { page, pageSize }
+        });
+    },
+
+    /** Get aggregated stats for a destination (counts + averageRating). */
+    getStats({ id }: { readonly id: string }): Promise<ApiResult<DestinationStatsItem>> {
+        return apiClient.get({ path: `${BASE}/destinations/${id}/stats` });
     }
 };
 

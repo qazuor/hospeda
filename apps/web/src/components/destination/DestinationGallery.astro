@@ -1,0 +1,90 @@
+---
+/**
+ * @file DestinationGallery.astro
+ * @description Gallery section for a destination detail page.
+ *
+ * Wraps the shared ImageGallery React island with `client:visible`.
+ * Combines the featuredImage and gallery array into a deduplicated list of
+ * GalleryImage objects, then delegates all rendering and lightbox logic to
+ * the island. Renders nothing when no real images are available.
+ */
+import { ImageGallery } from '@/components/ImageGallery.client';
+import type { GalleryImage } from '@/components/ImageGallery.client';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+const PLACEHOLDER_URL = '/assets/images/placeholder-destination.svg';
+
+interface FeaturedImage {
+	readonly url: string;
+	readonly caption?: string;
+}
+
+interface GalleryItem {
+	readonly url: string;
+	readonly caption?: string;
+	readonly description?: string;
+}
+
+interface Props {
+	readonly featuredImage: FeaturedImage;
+	readonly gallery: ReadonlyArray<GalleryItem>;
+	readonly destinationName: string;
+	readonly locale: SupportedLocale;
+}
+
+const { featuredImage, gallery, destinationName, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+// Build deduplicated GalleryImage list: featured first, then extras.
+const seen = new Set<string>();
+
+function addImage(url: string, alt: string, caption?: string): GalleryImage | null {
+	if (!url || seen.has(url)) return null;
+	seen.add(url);
+	return { url, alt, caption };
+}
+
+const images: GalleryImage[] = [];
+
+const featuredEntry = addImage(featuredImage.url, destinationName, featuredImage.caption);
+if (featuredEntry) images.push(featuredEntry);
+
+for (const item of gallery) {
+	const entry = addImage(item.url, item.caption ?? destinationName, item.caption);
+	if (entry) images.push(entry);
+}
+
+// Nothing useful to show: placeholder-only or empty
+const hasRealImages = images.some((img) => img.url !== PLACEHOLDER_URL);
+if (!hasRealImages || images.length === 0) return;
+---
+
+<section class="dest-gallery" aria-labelledby="dest-gallery-title">
+	<h2 class="dest-gallery__title" id="dest-gallery-title">
+		{t('destination.detail.gallery.title', 'Galería')}
+	</h2>
+
+	<ImageGallery
+		images={images}
+		variant="detail"
+		locale={locale}
+		client:visible
+	/>
+</section>
+
+<style>
+	.dest-gallery {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+
+	.dest-gallery__title {
+		font-family: var(--font-heading);
+		font-size: 1.5rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+		margin: 0;
+	}
+</style>
