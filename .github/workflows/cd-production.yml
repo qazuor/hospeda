@@ -49,14 +49,13 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
-      # Deploy with vercel@latest. We let Vercel run the build remotely
-      # (no --prebuilt) because `vercel build` locally fails on monorepos
-      # with "spawn sh ENOENT" when its install wrapper tries to invoke
-      # pnpm. The trade-off: each deploy is a fresh build on Vercel's
-      # infra, but the project's existing build settings (root directory,
-      # build command, install command) are honored.
-      - name: Deploy to Vercel
-        working-directory: apps/api
+      # Deploy from the repo root so Vercel can apply each project's
+      # Root Directory setting (apps/api, apps/web, apps/admin) to the
+      # checkout. Running from inside the app directory would result in
+      # the path being doubled (apps/api/apps/api). Vercel runs the build
+      # remotely; --prebuilt would require a successful local
+      # `vercel build` which fails on this monorepo with "spawn sh ENOENT".
+      - name: Deploy API to Vercel
         run: npx --yes vercel@latest deploy --prod --yes --token="$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -95,8 +94,7 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
-      - name: Deploy to Vercel
-        working-directory: apps/web
+      - name: Deploy Web to Vercel
         run: npx --yes vercel@latest deploy --prod --yes --token="$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -135,8 +133,7 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
-      - name: Deploy to Vercel
-        working-directory: apps/admin
+      - name: Deploy Admin to Vercel
         run: npx --yes vercel@latest deploy --prod --yes --token="$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
