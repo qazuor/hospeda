@@ -15,6 +15,12 @@
     z-index: 0;
 }
 
+.mapWrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
 .container {
     width: 100%;
     min-height: 560px;
@@ -41,6 +47,56 @@
     color: var(--muted-foreground, #555);
     background-color: var(--card, #fff);
     border-top: 1px solid var(--border, #e5e5e5);
+}
+
+/* ─── Activation hint overlay ──────────────────────────────────────────────
+ * Sits on top of the map while scroll-wheel zoom is disabled. Covers the
+ * tile area (NOT the disclaimer below) so the page can scroll naturally
+ * over the map. Click anywhere on it to activate the map. The hint text
+ * is only visible while hovering for a non-intrusive UX.
+ * z-index 500 sits above tile panes (200-400) but below standard Leaflet
+ * popup panes (700) so popups still render correctly when the map is active. */
+.activationHint {
+    position: absolute;
+    inset: 0;
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background-color: transparent;
+    transition: background-color var(--duration-fast, 0.2s) ease;
+}
+
+.activationHint:hover {
+    background-color: oklch(0 0 0 / 0.25);
+}
+
+.activationHintText {
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    border-radius: var(--radius-pill, 9999px);
+    background-color: oklch(0 0 0 / 0.7);
+    color: oklch(1 0 0);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    box-shadow: 0 4px 12px oklch(0 0 0 / 0.25);
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity var(--duration-fast, 0.2s) ease, transform var(--duration-fast, 0.2s) ease;
+    pointer-events: none;
+}
+
+.activationHint:hover .activationHintText {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .activationHint,
+    .activationHintText {
+        transition: none;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

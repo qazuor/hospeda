@@ -28,7 +28,10 @@ vi.mock('react-leaflet', () => ({
             data-radius={radius}
         />
     ),
-    useMap: () => ({ setView: vi.fn() })
+    useMap: () => ({
+        setView: vi.fn(),
+        scrollWheelZoom: { enable: vi.fn(), disable: vi.fn() }
+    })
 }));
 
 vi.mock('leaflet', () => ({
