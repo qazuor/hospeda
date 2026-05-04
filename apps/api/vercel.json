@@ -39,7 +39,7 @@
         }
     ],
     "functions": {
-        "api/index.cjs": {
+        "api/index.js": {
             "maxDuration": 60,
             "memory": 512
         }
