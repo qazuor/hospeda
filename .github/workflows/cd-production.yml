@@ -73,6 +73,9 @@ jobs:
         run: pnpm tsx scripts/setup-qstash-schedules.ts
         env:
           QSTASH_TOKEN: ${{ secrets.QSTASH_TOKEN }}
+          # Optional region-specific endpoint. Leave the QSTASH_URL repo
+          # variable unset to use the SDK default (eu-central-1).
+          QSTASH_URL: ${{ vars.QSTASH_URL }}
           HOSPEDA_API_URL: ${{ vars.HOSPEDA_API_URL }}
 
   deploy-web:

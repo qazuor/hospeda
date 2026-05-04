@@ -31,6 +31,14 @@ const dryRun = process.argv.includes('--dry-run');
 const token = process.env.QSTASH_TOKEN;
 const apiUrl = process.env.HOSPEDA_API_URL;
 
+/**
+ * Optional override for the QStash REST endpoint. The SDK's default URL
+ * resolves to eu-central-1; QStash accounts created in another region
+ * must point this at their region's endpoint (visible on the QStash
+ * console at https://console.upstash.com/qstash under "REST API").
+ */
+const qstashUrl = process.env.QSTASH_URL;
+
 if (!token) {
     console.error('Missing QSTASH_TOKEN env var. Get it from https://console.upstash.com/qstash');
     process.exit(1);
@@ -47,7 +55,7 @@ console.log(
     `Provisioning ${CRON_SCHEDULES.length} QStash schedule(s) targeting ${baseUrl}/api/v1/cron/*${dryRun ? ' (dry-run)' : ''}`
 );
 
-const client = new Client({ token });
+const client = new Client(qstashUrl ? { token, baseUrl: qstashUrl } : { token });
 
 // Upstash QStash deduplicates schedules by destination URL when you POST
 // with the same destination + cron pair. Create them all in parallel.
