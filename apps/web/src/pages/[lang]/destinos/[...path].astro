@@ -36,7 +36,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { Image } from 'astro:assets';
-import { LocationIcon, HeartIcon } from '@repo/icons';
+import { LocationIcon, FavoriteIcon } from '@repo/icons';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -321,7 +321,7 @@ const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml 
 				class="dest-detail__bookmark-count"
 				aria-label={tPlural('destination.detail.bookmark_count', bookmarkCount)}
 			>
-				<HeartIcon size={14} weight="fill" aria-hidden="true" />
+				<FavoriteIcon size={14} weight="fill" aria-hidden="true" />
 				{tPlural('destination.detail.bookmark_count', bookmarkCount)}
 			</span>
 		)}
