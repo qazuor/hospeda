@@ -21,9 +21,58 @@
 
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { readEnvFile } from './utils/dotenv.js';
+import { readDocumentedKeys, readEnvFile } from './utils/dotenv.js';
 import { colors } from './utils/formatters.js';
 import { getVercelToken, listEnvVars, readProjectConfig } from './utils/vercel-api.js';
+
+/**
+ * Variables that legitimately exist in Vercel but are NOT user-managed and
+ * therefore should not be flagged as "extra" by the audit.
+ *
+ * Two sources:
+ * 1. Platform-injected values that Vercel/Node set automatically and reject
+ *    as project-Settings entries (e.g. NODE_ENV, VERCEL, CI).
+ * 2. Marketplace integrations that auto-provision a fixed family of vars
+ *    (e.g. Neon → POSTGRES_*, PG*, NEON_PROJECT_ID, DATABASE_URL[_UNPOOLED]).
+ *
+ * Adding to this list is a deliberate choice: it tells reviewers "yes, this
+ * shows up in `vercel env ls`, no, you do not need to document it in
+ * `.env.example`". If a variable is here it must also be ignored by the
+ * deploy gate, so keep the list narrow and well-justified.
+ */
+const PLATFORM_EXPECTED_EXTRAS: ReadonlySet<string> = new Set([
+    // Platform / runtime
+    'NODE_ENV',
+    'CI',
+    'VERCEL',
+    'VERCEL_ENV',
+    'VERCEL_URL',
+    'VERCEL_REGION',
+    'VERCEL_GIT_COMMIT_SHA',
+    'VERCEL_GIT_COMMIT_REF',
+    'VERCEL_GIT_COMMIT_MESSAGE',
+    'VERCEL_GIT_REPO_OWNER',
+    'VERCEL_GIT_REPO_SLUG',
+    'VERCEL_GIT_PROVIDER',
+    'VERCEL_OIDC_TOKEN',
+    // Neon Marketplace integration (auto-provisioned)
+    'DATABASE_URL',
+    'DATABASE_URL_UNPOOLED',
+    'NEON_PROJECT_ID',
+    'POSTGRES_DATABASE',
+    'POSTGRES_HOST',
+    'POSTGRES_PASSWORD',
+    'POSTGRES_PRISMA_URL',
+    'POSTGRES_URL',
+    'POSTGRES_URL_NON_POOLING',
+    'POSTGRES_URL_NO_SSL',
+    'POSTGRES_USER',
+    'PGDATABASE',
+    'PGHOST',
+    'PGHOST_UNPOOLED',
+    'PGPASSWORD',
+    'PGUSER'
+]);
 
 /** Root of the monorepo (two levels up from scripts/env/). */
 const ROOT_DIR = resolve(import.meta.dirname, '..', '..');
@@ -51,15 +100,28 @@ interface AppEnvAudit {
 }
 
 /**
- * Reads variable names from an `.env.example` file.
+ * Reads the variable names a `.env.example` file declares, splitting them
+ * into "required" (uncommented `KEY=...`) and "all documented" (required
+ * plus commented `# KEY=...`).
+ *
+ * - `required` drives the missing check: a required variable absent from
+ *   Vercel is a hard failure.
+ * - `documented` drives the extra check: a Vercel variable not mentioned
+ *   in `.env.example` (commented or otherwise) is an extra.
  *
  * @param filePath - Path to the `.env.example` file.
- * @returns Set of variable names.
+ * @returns Both key sets. Empty sets if the file does not exist.
  */
-async function readExampleKeys(filePath: string): Promise<ReadonlySet<string>> {
-    if (!existsSync(filePath)) return new Set();
-    const vars = await readEnvFile({ filePath });
-    return new Set(vars.keys());
+async function readExampleKeys(filePath: string): Promise<{
+    readonly required: ReadonlySet<string>;
+    readonly documented: ReadonlySet<string>;
+}> {
+    if (!existsSync(filePath)) {
+        return { required: new Set(), documented: new Set() };
+    }
+    const required = new Set((await readEnvFile({ filePath })).keys());
+    const documented = await readDocumentedKeys({ filePath });
+    return { required, documented };
 }
 
 /**
@@ -100,16 +162,17 @@ async function auditApp(
         remoteVars.filter((v) => v.target.includes(environment)).map((v) => v.key)
     );
 
-    // Read .env.example keys
+    // Read .env.example keys (required + all-documented)
     const examplePath = join(appDir, '.env.example');
-    const exampleKeys = await readExampleKeys(examplePath);
+    const { required, documented } = await readExampleKeys(examplePath);
 
     // Compute diff
     const missing: string[] = [];
     const ok: string[] = [];
     const extra: string[] = [];
 
-    for (const key of exampleKeys) {
+    // Missing: required variables absent from Vercel.
+    for (const key of required) {
         if (remoteKeys.has(key)) {
             ok.push(key);
         } else {
@@ -117,10 +180,12 @@ async function auditApp(
         }
     }
 
+    // Extra: Vercel variables not mentioned in .env.example (commented or
+    // otherwise) and not part of the platform-managed allow-list.
     for (const key of remoteKeys) {
-        if (!exampleKeys.has(key)) {
-            extra.push(key);
-        }
+        if (documented.has(key)) continue;
+        if (PLATFORM_EXPECTED_EXTRAS.has(key)) continue;
+        extra.push(key);
     }
 
     return { appName, environment, missing, extra, ok };

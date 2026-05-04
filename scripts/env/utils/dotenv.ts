@@ -107,6 +107,48 @@ export async function readEnvFile(params: ReadEnvFileParams): Promise<EnvMap> {
 }
 
 /**
+ * Returns the set of variable names declared in a `.env.example` file,
+ * including those whose lines are commented out.
+ *
+ * Treats `KEY=value` and `# KEY=value` (or `## KEY=...`, indented variants,
+ * `# export KEY=...`) as documenting the same `KEY`. Skips blank lines and
+ * pure narrative comments without a `KEY=` shape.
+ *
+ * Use this for documentation audits (e.g. `env:check`) where a commented-out
+ * sample line still counts as "the variable is documented in this file".
+ * Do NOT use it to read values — by design it does not return them.
+ *
+ * @param params - File path to read.
+ * @returns Set of declared variable names (commented or not).
+ */
+export async function readDocumentedKeys(params: ReadEnvFileParams): Promise<ReadonlySet<string>> {
+    const { filePath } = params;
+
+    if (!existsSync(filePath)) {
+        return new Set();
+    }
+
+    const content = await readFile(filePath, 'utf-8');
+    const keys = new Set<string>();
+    const keyShape = /^([A-Z_][A-Z0-9_]*)\s*=/;
+
+    for (const rawLine of content.split('\n')) {
+        const stripped = rawLine
+            .replace(/^\s+/, '')
+            .replace(/^#+\s*/, '')
+            .replace(/^export\s+/, '')
+            .trim();
+
+        if (!stripped) continue;
+
+        const match = keyShape.exec(stripped);
+        if (match?.[1]) keys.add(match[1]);
+    }
+
+    return keys;
+}
+
+/**
  * Writes a complete env variable map to a .env file.
  *
  * Overwrites the file entirely. Values containing spaces or special
