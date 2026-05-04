@@ -24,7 +24,7 @@
  */
 
 import { Client } from '@upstash/qstash';
-import { cronJobs } from '../apps/api/src/cron/registry.js';
+import { CRON_SCHEDULES } from '../apps/api/src/cron/schedules.manifest.js';
 
 const dryRun = process.argv.includes('--dry-run');
 
@@ -42,18 +42,17 @@ if (!apiUrl) {
 }
 
 const baseUrl = apiUrl.replace(/\/$/, '');
-const enabledJobs = cronJobs.filter((job) => job.enabled);
 
 console.log(
-    `Provisioning ${enabledJobs.length} QStash schedule(s) targeting ${baseUrl}/api/v1/cron/*${dryRun ? ' (dry-run)' : ''}`
+    `Provisioning ${CRON_SCHEDULES.length} QStash schedule(s) targeting ${baseUrl}/api/v1/cron/*${dryRun ? ' (dry-run)' : ''}`
 );
 
 const client = new Client({ token });
 
 // Upstash QStash deduplicates schedules by destination URL when you POST
 // with the same destination + cron pair. Create them all in parallel.
-const desiredByDestination = new Map<string, (typeof enabledJobs)[number]>();
-for (const job of enabledJobs) {
+const desiredByDestination = new Map<string, (typeof CRON_SCHEDULES)[number]>();
+for (const job of CRON_SCHEDULES) {
     desiredByDestination.set(`${baseUrl}/api/v1/cron/${job.name}`, job);
 }
 

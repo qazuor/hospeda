@@ -61,25 +61,13 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_API }}
 
-      # The provisioning script imports apps/api/src/cron/registry.ts,
-      # which transitively pulls in @repo/billing, @repo/db, and other
-      # workspace packages from their dist/ output. Vercel builds those
-      # remotely during the deploy step above, so on this runner they
-      # have to be built locally before the script can resolve the
-      # imports. Turbo Remote Cache makes this near-instant when the CI
-      # build job has already populated the cache for this commit.
-      - name: Build workspace dependencies (turbo cache)
-        if: env.QSTASH_TOKEN != ''
-        run: pnpm turbo run build --filter=...hospeda-api
-        env:
-          QSTASH_TOKEN: ${{ secrets.QSTASH_TOKEN }}
-          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-          TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-
-      # Sync Upstash QStash schedules with the cron registry after each
-      # successful API deploy. The script is idempotent: it creates new
-      # schedules, updates changed cron expressions, and removes orphans.
-      # Skipped silently when QSTASH_TOKEN is not configured (e.g. forks).
+      # Sync Upstash QStash schedules with the cron schedule manifest
+      # after each successful API deploy. The script reads the pure-data
+      # `apps/api/src/cron/schedules.manifest.ts` (no workspace imports)
+      # and is idempotent: it creates new schedules, updates changed
+      # cron expressions, and removes orphans. The manifest is kept in
+      # lockstep with the live registry by `schedules-manifest.test.ts`.
+      # Skipped silently when QSTASH_TOKEN is not configured.
       - name: Sync QStash schedules with cron registry
         if: env.QSTASH_TOKEN != ''
         run: pnpm tsx scripts/setup-qstash-schedules.ts
