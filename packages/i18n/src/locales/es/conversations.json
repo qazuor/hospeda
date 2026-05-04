@@ -80,7 +80,16 @@
         "submit": "Enviar mensaje",
         "verifyExpiredBody": "El enlace de verificación expiró o ya fue utilizado. Podés solicitar uno nuevo ingresando tu email.",
         "verifyExpiredTitle": "Enlace expirado",
-        "viewExisting": "Ver conversación existente"
+        "viewExisting": "Ver conversación existente",
+        "prefill": {
+            "intro": "Hola, me interesa este alojamiento.",
+            "dateRange": "Estoy mirando del {from} al {to}.",
+            "dateFrom": "Estoy mirando a partir del {from}.",
+            "dateTo": "Estoy mirando hasta el {to}.",
+            "guests": "Somos {adults} adultos y {children} niños.",
+            "guestsAdultsOnly": "Somos {adults} adultos.",
+            "outro": "¿Me podrías confirmar disponibilidad?"
+        }
     },
     "inbox": {
         "accommodation": "Alojamiento",

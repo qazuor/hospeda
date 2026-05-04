@@ -14,6 +14,7 @@ import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
+import SearchContextBanner from '@/components/shared/feedback/SearchContextBanner.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
 import { AccommodationTypeEnum } from '@repo/schemas';
@@ -63,6 +64,25 @@ const amenitiesParam = url.searchParams.get('amenities') ?? undefined;
 const featuresParam = url.searchParams.get('features') ?? undefined;
 const includeNoPrice = url.searchParams.get('includeNoPrice') === 'true' ? true : undefined;
 const includeNoReviews = url.searchParams.get('includeNoReviews') === 'true' ? true : undefined;
+
+// --- Hero search context (NOT sent to API; used for disclaimer + handoff to detail) ---
+// These params arrive from the home hero search bar. The listing does not
+// filter by them; they are surfaced in the disclaimer banner and forwarded
+// to the detail page so the contact form can pre-fill the message.
+const checkIn = url.searchParams.get('checkIn') ?? undefined;
+const checkOut = url.searchParams.get('checkOut') ?? undefined;
+const adultsParam = url.searchParams.get('adults');
+const childrenParam = url.searchParams.get('children');
+const adults = adultsParam ? Number(adultsParam) : undefined;
+const childrenCount = childrenParam ? Number(childrenParam) : undefined;
+
+// Build a query suffix to forward search context to each accommodation detail link.
+const contextQueryParams = new URLSearchParams();
+if (checkIn) contextQueryParams.set('checkIn', checkIn);
+if (checkOut) contextQueryParams.set('checkOut', checkOut);
+if (adults !== undefined && !Number.isNaN(adults)) contextQueryParams.set('adults', String(adults));
+if (childrenCount !== undefined && !Number.isNaN(childrenCount)) contextQueryParams.set('children', String(childrenCount));
+const contextQuery = contextQueryParams.toString() || undefined;
 
 // Fetch destinations for filter dropdown
 const destinationsResult = await destinationsApi.list({ pageSize: 100, sortBy: 'name', sortOrder: 'asc' });
@@ -211,8 +231,36 @@ const filterSummary = buildAccommodationListingSummary({
 });
 
 // Filter configuration for sidebar
-// Order: search → featured (toggle, inline) → type → destination → amenities → features → price → rest
+// Order: dates/guests context → search → featured (toggle, inline) → type → destination → amenities → features → price → rest
 const filterGroups: FilterGroup[] = [
+	{
+		id: 'dates',
+		label: t('accommodations.sidebar.dates', 'Fechas'),
+		type: 'date-range',
+		checkInPlaceholder: t('accommodations.sidebar.checkInPlaceholder', 'Llegada'),
+		checkOutPlaceholder: t('accommodations.sidebar.checkOutPlaceholder', 'Salida'),
+	},
+	{
+		id: 'adults',
+		label: t('accommodations.sidebar.adults', 'Adultos'),
+		type: 'stepper',
+		min: 1,
+		max: 10,
+		defaultValue: 2,
+		// Hero search context: keep the value in URL even when at default,
+		// so it survives across other filter changes and keeps the banner
+		// + detail-page prefill in sync.
+		emitWhenAtDefault: true,
+	},
+	{
+		id: 'children',
+		label: t('accommodations.sidebar.children', 'Niños'),
+		type: 'stepper',
+		min: 0,
+		max: 6,
+		defaultValue: 0,
+		emitWhenAtDefault: true,
+	},
 	{
 		id: 'q',
 		label: t('accommodations.sidebar.search', 'Búsqueda por texto'),
@@ -274,7 +322,7 @@ const filterGroups: FilterGroup[] = [
 	},
 	{
 		id: 'minGuests',
-		label: t('accommodations.sidebar.adults', 'Adultos'),
+		label: t('accommodations.sidebar.minCapacity', 'Capacidad mínima'),
 		type: 'stepper',
 		min: 0,
 		max: 20,
@@ -365,6 +413,11 @@ if (amenitiesParam) initialParams.amenities = amenitiesParam;
 if (featuresParam) initialParams.features = featuresParam;
 if (includeNoPrice) initialParams.includeNoPrice = 'true';
 if (includeNoReviews) initialParams.includeNoReviews = 'true';
+// Hero search context, also exposed as editable filters in the sidebar.
+if (checkIn) initialParams.checkIn = checkIn;
+if (checkOut) initialParams.checkOut = checkOut;
+if (adults !== undefined && !Number.isNaN(adults)) initialParams.adults = String(adults);
+if (childrenCount !== undefined && !Number.isNaN(childrenCount)) initialParams.children = String(childrenCount);
 ---
 
 <ListingLayout
@@ -447,11 +500,24 @@ if (includeNoReviews) initialParams.includeNoReviews = 'true';
 		/>
 	)}
 
+	<SearchContextBanner
+		locale={locale}
+		checkIn={checkIn}
+		checkOut={checkOut}
+		adults={adults}
+		children={childrenCount}
+	/>
+
 	{!hasError && cards.length > 0 && (
 		<div class="acc-grid">
 			{cards.map((card, i) => (
 				<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
-					<AccommodationCard data={card} locale={locale} isAuthenticated={isAuthenticated} />
+					<AccommodationCard
+						data={card}
+						locale={locale}
+						isAuthenticated={isAuthenticated}
+						linkQuery={contextQuery}
+					/>
 				</div>
 			))}
 		</div>
@@ -482,6 +548,10 @@ if (includeNoReviews) initialParams.includeNoReviews = 'true';
 				if (featuresParam) sp.set('features', featuresParam);
 				if (includeNoPrice) sp.set('includeNoPrice', 'true');
 				if (includeNoReviews) sp.set('includeNoReviews', 'true');
+				if (checkIn) sp.set('checkIn', checkIn);
+				if (checkOut) sp.set('checkOut', checkOut);
+				if (adults !== undefined && !Number.isNaN(adults)) sp.set('adults', String(adults));
+				if (childrenCount !== undefined && !Number.isNaN(childrenCount)) sp.set('children', String(childrenCount));
 				return sp;
 			})()}
 		/>

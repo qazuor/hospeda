@@ -42,6 +42,13 @@ interface ContactHostProps {
     readonly currentUser: ContactHostUser | null;
     readonly existingConversationId: string | null;
     readonly locale: SupportedLocale;
+    /**
+     * Optional pre-filled text for the message textarea. Used when the visitor
+     * arrived from the hero search with dates/guests selected, so the message
+     * starts with that context already typed.
+     * Ignored in Mode C (existing conversation), since no form is rendered.
+     */
+    readonly initialMessage?: string;
 }
 
 type SubmitState =
@@ -62,7 +69,8 @@ export function ContactHost({
     accommodation,
     currentUser,
     existingConversationId,
-    locale
+    locale,
+    initialMessage
 }: ContactHostProps) {
     const { t } = createTranslations(locale);
 
@@ -96,6 +104,7 @@ export function ContactHost({
             currentUser={currentUser}
             locale={locale}
             t={t}
+            initialMessage={initialMessage}
         />
     );
 }
@@ -109,15 +118,16 @@ interface ContactFormProps {
     readonly currentUser: ContactHostUser | null;
     readonly locale: SupportedLocale;
     readonly t: (key: string, fallback?: string, params?: Record<string, unknown>) => string;
+    readonly initialMessage?: string;
 }
 
-function ContactForm({ accommodation, currentUser, locale, t }: ContactFormProps) {
+function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: ContactFormProps) {
     const isAuthenticated = Boolean(currentUser);
 
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
-    const [message, setMessage] = useState('');
+    const [message, setMessage] = useState(initialMessage ?? '');
     const [submitState, setSubmitState] = useState<SubmitState>({ phase: 'idle' });
     const [requestAccessSent, setRequestAccessSent] = useState(false);
 

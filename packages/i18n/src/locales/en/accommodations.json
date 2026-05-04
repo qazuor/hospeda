@@ -128,7 +128,11 @@
         "featured": "Featured only",
         "clearAll": "Clear filters",
         "activeFilters": "Active filters",
-        "removeFilter": "Remove {{name}} filter"
+        "removeFilter": "Remove {{name}} filter",
+        "dates": "Dates",
+        "checkInPlaceholder": "Check-in",
+        "checkOutPlaceholder": "Check-out",
+        "minCapacity": "Minimum capacity"
     },
     "faqs": "Frequently asked questions",
     "contactTitle": "Contact",
@@ -362,5 +366,17 @@
         "baby_crib": "Baby crib",
         "wheelchair_accessible": "Wheelchair accessible",
         "pet_friendly": "Pet friendly"
+    },
+    "list": {
+        "searchContext": {
+            "title": "About your search",
+            "disclaimer": "Hospeda does not handle bookings: the dates and guest counts you picked are indicative. To confirm availability, contact the host directly from the accommodation page.",
+            "dateRange": "From {from} to {to}",
+            "dateFrom": "From {from}",
+            "dateTo": "Until {to}",
+            "guests": "{adults} adults · {children} children",
+            "guestsAdultsOnly": "{adults} adults",
+            "guestsChildrenOnly": "{children} children"
+        }
     }
 }

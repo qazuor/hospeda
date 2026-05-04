@@ -163,13 +163,17 @@
         "stars": "estrellas",
         "capacity": "Capacidad",
         "adults": "Adultos",
-        "children": "Menores",
+        "children": "Niños",
         "bedrooms": "Dormitorios",
         "bathrooms": "Baños",
         "featured": "Solo destacados",
         "clearAll": "Limpiar filtros",
         "activeFilters": "Filtros activos",
-        "removeFilter": "Quitar filtro {{name}}"
+        "removeFilter": "Quitar filtro {{name}}",
+        "dates": "Fechas",
+        "checkInPlaceholder": "Llegada",
+        "checkOutPlaceholder": "Salida",
+        "minCapacity": "Capacidad mínima"
     },
     "faqs": "Preguntas frecuentes",
     "contactTitle": "Contacto",
@@ -362,5 +366,17 @@
         "bookmark_count": "Guardado por {{count}} personas",
         "bookmark_count_one": "Guardado por {{count}} persona",
         "bookmark_count_zero": "Sé el primero en guardarlo"
+    },
+    "list": {
+        "searchContext": {
+            "title": "Aviso sobre tu búsqueda",
+            "disclaimer": "En Hospeda no gestionamos reservas: las fechas y la cantidad de personas son orientativas. Para confirmar disponibilidad, contactá directamente al anfitrión desde la página del alojamiento.",
+            "dateRange": "Del {from} al {to}",
+            "dateFrom": "Desde el {from}",
+            "dateTo": "Hasta el {to}",
+            "guests": "{adults} adultos · {children} niños",
+            "guestsAdultsOnly": "{adults} adultos",
+            "guestsChildrenOnly": "{children} niños"
+        }
     }
 }

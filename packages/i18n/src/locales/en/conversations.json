@@ -80,7 +80,16 @@
         "submit": "Send message",
         "verifyExpiredBody": "The verification link has expired or has already been used. You can request a new one by entering your email.",
         "verifyExpiredTitle": "Expired link",
-        "viewExisting": "View existing conversation"
+        "viewExisting": "View existing conversation",
+        "prefill": {
+            "intro": "Hi, I'm interested in this accommodation.",
+            "dateRange": "I'm looking from {from} to {to}.",
+            "dateFrom": "I'm looking from {from} onward.",
+            "dateTo": "I'm looking up to {to}.",
+            "guests": "We are {adults} adults and {children} children.",
+            "guestsAdultsOnly": "We are {adults} adults.",
+            "outro": "Could you confirm availability?"
+        }
     },
     "inbox": {
         "accommodation": "Accommodation",

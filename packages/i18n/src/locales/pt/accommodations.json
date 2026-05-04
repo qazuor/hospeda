@@ -128,7 +128,11 @@
         "featured": "Apenas destaques",
         "clearAll": "Limpar filtros",
         "activeFilters": "Filtros ativos",
-        "removeFilter": "Remover filtro {{name}}"
+        "removeFilter": "Remover filtro {{name}}",
+        "dates": "Datas",
+        "checkInPlaceholder": "Entrada",
+        "checkOutPlaceholder": "Saída",
+        "minCapacity": "Capacidade mínima"
     },
     "faqs": "Perguntas frequentes",
     "contactTitle": "Contato",
@@ -362,5 +366,17 @@
         "baby_crib": "Berço",
         "wheelchair_accessible": "Acessível para cadeirantes",
         "pet_friendly": "Aceita pets"
+    },
+    "list": {
+        "searchContext": {
+            "title": "Sobre sua busca",
+            "disclaimer": "A Hospeda não gerencia reservas: as datas e a quantidade de hóspedes selecionadas são indicativas. Para confirmar a disponibilidade, entre em contato diretamente com o anfitrião na página da hospedagem.",
+            "dateRange": "De {from} a {to}",
+            "dateFrom": "A partir de {from}",
+            "dateTo": "Até {to}",
+            "guests": "{adults} adultos · {children} crianças",
+            "guestsAdultsOnly": "{adults} adultos",
+            "guestsChildrenOnly": "{children} crianças"
+        }
     }
 }

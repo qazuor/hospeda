@@ -346,4 +346,58 @@ describe('ContactHost', () => {
             });
         });
     });
+
+    // -------------------------------------------------------------------------
+    // initialMessage prop (search context handoff from listing)
+    // -------------------------------------------------------------------------
+
+    describe('initialMessage prop', () => {
+        it('Mode A: pre-fills the message textarea when initialMessage is provided', () => {
+            const prefilled =
+                'Hola, me interesa este alojamiento. Estoy mirando del 1 al 7 de junio.';
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    currentUser={null}
+                    existingConversationId={null}
+                    locale={LOCALE}
+                    initialMessage={prefilled}
+                />
+            );
+            const textarea = screen.getByRole('textbox', {
+                name: /message/i
+            }) as HTMLTextAreaElement;
+            expect(textarea.value).toBe(prefilled);
+        });
+
+        it('Mode B: pre-fills the message textarea when initialMessage is provided and user is authenticated', () => {
+            const prefilled = 'Hola, me interesa. Somos 2 adultos.';
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    currentUser={CURRENT_USER}
+                    existingConversationId={null}
+                    locale={LOCALE}
+                    initialMessage={prefilled}
+                />
+            );
+            const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+            expect(textarea.value).toBe(prefilled);
+        });
+
+        it('leaves the textarea empty when initialMessage is undefined', () => {
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    currentUser={null}
+                    existingConversationId={null}
+                    locale={LOCALE}
+                />
+            );
+            const textarea = screen.getByRole('textbox', {
+                name: /message/i
+            }) as HTMLTextAreaElement;
+            expect(textarea.value).toBe('');
+        });
+    });
 });

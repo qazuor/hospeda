@@ -44,6 +44,81 @@ const { slug } = Astro.params;
 
 if (!slug) return new Response(null, { status: 404 });
 
+// --- Hero search context (forwarded from listing) ---
+// Builds an initial message for the contact form when the visitor arrives
+// from the home hero search with dates and/or guests selected.
+const ctxCheckIn = Astro.url.searchParams.get('checkIn') ?? undefined;
+const ctxCheckOut = Astro.url.searchParams.get('checkOut') ?? undefined;
+const ctxAdultsRaw = Astro.url.searchParams.get('adults');
+const ctxChildrenRaw = Astro.url.searchParams.get('children');
+const ctxAdults = ctxAdultsRaw ? Number(ctxAdultsRaw) : undefined;
+const ctxChildren = ctxChildrenRaw ? Number(ctxChildrenRaw) : undefined;
+
+/** Format ISO `YYYY-MM-DD` to a locale-aware label without TZ shift. */
+function fmtIsoDay(iso: string): string {
+	const [y, m, d] = iso.split('-').map(Number);
+	if (!y || !m || !d) return iso;
+	return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : locale === 'pt' ? 'pt-BR' : 'es-AR', {
+		day: '2-digit',
+		month: 'long',
+		year: 'numeric',
+		timeZone: 'UTC',
+	}).format(new Date(Date.UTC(y, m - 1, d, 12)));
+}
+
+const hasCtxDates = Boolean(ctxCheckIn || ctxCheckOut);
+const hasCtxGuests =
+	(ctxAdults !== undefined && !Number.isNaN(ctxAdults) && ctxAdults > 0) ||
+	(ctxChildren !== undefined && !Number.isNaN(ctxChildren) && ctxChildren > 0);
+
+let prefilledMessage: string | undefined;
+if (hasCtxDates || hasCtxGuests) {
+	const parts: string[] = [t('conversations.form.prefill.intro', 'Hola, me interesa este alojamiento.')];
+
+	if (ctxCheckIn && ctxCheckOut) {
+		parts.push(
+			t('conversations.form.prefill.dateRange', 'Estoy mirando del {from} al {to}.', {
+				from: fmtIsoDay(ctxCheckIn),
+				to: fmtIsoDay(ctxCheckOut),
+			})
+		);
+	} else if (ctxCheckIn) {
+		parts.push(
+			t('conversations.form.prefill.dateFrom', 'Estoy mirando a partir del {from}.', {
+				from: fmtIsoDay(ctxCheckIn),
+			})
+		);
+	} else if (ctxCheckOut) {
+		parts.push(
+			t('conversations.form.prefill.dateTo', 'Estoy mirando hasta el {to}.', {
+				to: fmtIsoDay(ctxCheckOut),
+			})
+		);
+	}
+
+	if (hasCtxGuests) {
+		const a = ctxAdults && !Number.isNaN(ctxAdults) ? ctxAdults : 0;
+		const c = ctxChildren && !Number.isNaN(ctxChildren) ? ctxChildren : 0;
+		if (c > 0) {
+			parts.push(
+				t('conversations.form.prefill.guests', 'Somos {adults} adultos y {children} niños.', {
+					adults: a,
+					children: c,
+				})
+			);
+		} else if (a > 0) {
+			parts.push(
+				t('conversations.form.prefill.guestsAdultsOnly', 'Somos {adults} adultos.', {
+					adults: a,
+				})
+			);
+		}
+	}
+
+	parts.push(t('conversations.form.prefill.outro', '¿Me podrías confirmar disponibilidad?'));
+	prefilledMessage = parts.join(' ');
+}
+
 // --- Primary fetch ---
 const result = await accommodationsApi.getBySlug({ slug });
 if (!result.ok || !result.data) return new Response(null, { status: 404 });
@@ -377,6 +452,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
                     currentUser={currentUser}
                     existingConversationId={existingConversationId}
                     locale={locale}
+                    initialMessage={prefilledMessage}
                 />
             </OwnerCard>
         </div>

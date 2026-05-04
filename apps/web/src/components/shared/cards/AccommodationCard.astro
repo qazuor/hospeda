@@ -31,12 +31,20 @@ interface Props {
 	 * auth-required popover. Defaults to false (guest user).
 	 */
 	readonly isAuthenticated?: boolean;
+	/**
+	 * Optional URL search string (without leading `?`) appended to the detail
+	 * link. Used to forward search context (checkIn, checkOut, adults,
+	 * children) from the listing into the detail page so the contact form can
+	 * pre-fill the message.
+	 */
+	readonly linkQuery?: string;
 }
 
-const { data, locale, isAuthenticated = false } = Astro.props;
+const { data, locale, isAuthenticated = false, linkQuery } = Astro.props;
 const { t } = createTranslations(locale);
 
-const detailUrl = buildUrl({ locale, path: `/alojamientos/${data.slug}/` });
+const baseDetailUrl = buildUrl({ locale, path: `/alojamientos/${data.slug}/` });
+const detailUrl = linkQuery ? `${baseDetailUrl}?${linkQuery}` : baseDetailUrl;
 
 const formattedPrice = data.price
 	? formatPrice({ amount: data.price.amount, currency: data.price.currency, locale })

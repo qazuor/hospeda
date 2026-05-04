@@ -1,0 +1,169 @@
+---
+/**
+ * @file SearchContextBanner.astro
+ * @description Informational banner shown at the top of the accommodation
+ * listing when the visitor arrived from the hero search with date or guest
+ * context. Clarifies that Hospeda does NOT manage bookings: real availability
+ * must be confirmed by contacting the host directly.
+ *
+ * Renders nothing when no context (dates/guests) was supplied.
+ */
+
+import { InfoIcon } from '@repo/icons';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
+import { formatDate } from '@/lib/format-utils';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly checkIn?: string;
+	readonly checkOut?: string;
+	readonly adults?: number;
+	readonly children?: number;
+}
+
+const { locale, checkIn, checkOut, adults, children } = Astro.props;
+const t = createT(locale);
+
+// Show the banner when ANY context is supplied. We treat 0 as "not supplied"
+// for guests because emitting children=0 / adults=0 has no informational value
+// and would otherwise force the banner open with no useful content.
+const hasContext = Boolean(checkIn || checkOut || (adults && adults > 0) || (children && children > 0));
+
+/**
+ * Format an ISO `YYYY-MM-DD` (already in local-day terms) without TZ shift.
+ * `formatDate` accepts a Date; we pin to noon UTC to dodge DST edge cases.
+ */
+function fmt(iso: string): string {
+	const [y, m, d] = iso.split('-').map(Number);
+	if (!y || !m || !d) return iso;
+	return formatDate({ date: new Date(Date.UTC(y, m - 1, d, 12)), locale });
+}
+
+const dateRangeLabel = checkIn && checkOut
+	? t('accommodations.list.searchContext.dateRange', undefined, { from: fmt(checkIn), to: fmt(checkOut) })
+	: checkIn
+		? t('accommodations.list.searchContext.dateFrom', undefined, { from: fmt(checkIn) })
+		: checkOut
+			? t('accommodations.list.searchContext.dateTo', undefined, { to: fmt(checkOut) })
+			: null;
+
+// Build the guests label only from values the user explicitly provided.
+// We must NOT invent missing pieces (e.g. "0 niños" when children was not in
+// the URL) because the disclaimer would lie about what the user picked.
+const hasAdults = adults !== undefined && Number.isFinite(adults) && adults > 0;
+const hasChildren = children !== undefined && Number.isFinite(children) && children > 0;
+
+const guestsLabel = (() => {
+	if (hasAdults && hasChildren) {
+		return t('accommodations.list.searchContext.guests', undefined, {
+			adults,
+			children,
+		});
+	}
+	if (hasAdults) {
+		return t('accommodations.list.searchContext.guestsAdultsOnly', undefined, { adults });
+	}
+	if (hasChildren) {
+		return t('accommodations.list.searchContext.guestsChildrenOnly', undefined, { children });
+	}
+	return null;
+})();
+---
+
+{hasContext && (
+	<aside
+		class="search-context-banner"
+		role="note"
+		aria-label={t('accommodations.list.searchContext.title', 'Aviso sobre tu búsqueda')}
+	>
+		<div class="search-context-banner__icon" aria-hidden="true">
+			<InfoIcon size={20} weight="fill" />
+		</div>
+
+		<div class="search-context-banner__body">
+			<p class="search-context-banner__title">
+				{t('accommodations.list.searchContext.title', 'Aviso sobre tu búsqueda')}
+			</p>
+			<p class="search-context-banner__text">
+				{t(
+					'accommodations.list.searchContext.disclaimer',
+					'En Hospeda no gestionamos reservas: las fechas y la cantidad de personas son orientativas. Para confirmar disponibilidad, contactá directamente al anfitrión.'
+				)}
+			</p>
+			{(dateRangeLabel || guestsLabel) && (
+				<p class="search-context-banner__chips">
+					{dateRangeLabel && <span class="search-context-banner__chip">{dateRangeLabel}</span>}
+					{guestsLabel && <span class="search-context-banner__chip">{guestsLabel}</span>}
+				</p>
+			)}
+		</div>
+	</aside>
+)}
+
+<style>
+	.search-context-banner {
+		display: flex;
+		align-items: flex-start;
+		gap: 12px;
+		padding: 16px 20px;
+		margin-bottom: 24px;
+		background-color: var(--surface-warm);
+		border: 1px solid var(--border);
+		border-left: 4px solid var(--brand-accent);
+		border-radius: var(--radius-md, 12px);
+	}
+
+	.search-context-banner__icon {
+		color: var(--brand-accent);
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		padding-top: 2px;
+	}
+
+	.search-context-banner__body {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		min-width: 0;
+	}
+
+	.search-context-banner__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: 15px;
+		line-height: 1.3;
+		color: var(--core-foreground);
+		margin: 0;
+	}
+
+	.search-context-banner__text {
+		font-family: var(--font-sans);
+		font-size: 14px;
+		line-height: 1.5;
+		color: var(--core-foreground);
+		margin: 0;
+	}
+
+	.search-context-banner__chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin: 4px 0 0;
+	}
+
+	.search-context-banner__chip {
+		display: inline-flex;
+		align-items: center;
+		padding: 4px 10px;
+		border-radius: 9999px;
+		background-color: var(--core-card);
+		border: 1px solid var(--border);
+		font-family: var(--font-sans);
+		font-weight: 500;
+		font-size: 12px;
+		line-height: 1.4;
+		color: var(--core-muted-foreground);
+	}
+</style>
