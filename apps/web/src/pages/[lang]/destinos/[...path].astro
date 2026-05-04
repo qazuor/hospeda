@@ -300,7 +300,7 @@ const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml 
 				{destType && (
 					<span class="dest-detail__type">
 						<LocationIcon size={16} aria-hidden="true" />
-						{t(`destinations.types.${destType.toLowerCase()}`, destType)}
+						{t(`destination.types.${destType}`, destType)}
 					</span>
 				)}
 			</div>
@@ -417,6 +417,7 @@ const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml 
 					mode="exact"
 					lat={destLat as number}
 					lng={destLng as number}
+					zoom={11}
 					markerLabel={name}
 					ariaLabel={t('maps.ariaLabelDestination')}
 					i18nStrings={{
@@ -443,19 +444,21 @@ const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml 
 		</div>
 
 		<!-- Accommodation preview -->
-		{accCards.length > 0 && (
-			<section class="dest-detail__section">
-				<div class="dest-detail__section-header">
-					<h2 class="dest-detail__section-title">
-						{t('destinations.detail.accommodations', 'Alojamientos')}
-					</h2>
+		<section class="dest-detail__section">
+			<div class="dest-detail__section-header">
+				<h2 class="dest-detail__section-title">
+					{t('destination.detailPage.accommodationsIn', 'Alojamientos en')} {name}
+				</h2>
+				{accCards.length > 0 && (
 					<a
 						href={buildUrl({ locale, path: `destinos/${slug}/alojamientos` })}
 						class="dest-detail__view-all"
 					>
-						{t('destinations.detail.viewAll', 'Ver todos')} →
+						{t('destination.detailPage.viewAll', 'Ver todos')} →
 					</a>
-				</div>
+				)}
+			</div>
+			{accCards.length > 0 ? (
 				<div class="dest-detail__preview-grid">
 					{accCards.map((card, i) => (
 						<div data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
@@ -463,23 +466,37 @@ const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml 
 						</div>
 					))}
 				</div>
-			</section>
-		)}
+			) : (
+				<div class="dest-detail__empty-state">
+					<p class="dest-detail__empty-title">
+						{t('destination.detailPage.noAccommodations', 'No hay alojamientos disponibles')}
+					</p>
+					<p class="dest-detail__empty-message">
+						{t(
+							'destination.detailPage.noAccommodationsMessage',
+							'Próximamente agregaremos alojamientos en este destino.'
+						)}
+					</p>
+				</div>
+			)}
+		</section>
 
 		<!-- Events preview -->
-		{eventCards.length > 0 && (
-			<section class="dest-detail__section">
-				<div class="dest-detail__section-header">
-					<h2 class="dest-detail__section-title">
-						{t('destinations.detail.events', 'Eventos')}
-					</h2>
+		<section class="dest-detail__section">
+			<div class="dest-detail__section-header">
+				<h2 class="dest-detail__section-title">
+					{t('destination.detailPage.eventsIn', 'Eventos en')} {name}
+				</h2>
+				{eventCards.length > 0 && (
 					<a
 						href={buildUrl({ locale, path: `destinos/${slug}/eventos` })}
 						class="dest-detail__view-all"
 					>
-						{t('destinations.detail.viewAll', 'Ver todos')} →
+						{t('destination.detailPage.viewAll', 'Ver todos')} →
 					</a>
-				</div>
+				)}
+			</div>
+			{eventCards.length > 0 ? (
 				<div class="dest-detail__preview-grid">
 					{eventCards.map((card, i) => (
 						<div data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
@@ -487,19 +504,48 @@ const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml 
 						</div>
 					))}
 				</div>
-			</section>
-		)}
+			) : (
+				<div class="dest-detail__empty-state">
+					<p class="dest-detail__empty-title">
+						{t('destination.detailPage.noEvents', 'No hay eventos próximos')}
+					</p>
+					<p class="dest-detail__empty-message">
+						{t(
+							'destination.detailPage.noEventsMessage',
+							'No hay eventos programados para este destino en este momento.'
+						)}
+					</p>
+				</div>
+			)}
+		</section>
 
 		<!-- Related posts (filtered by destinationId on the server) -->
-		{relatedPosts.length > 0 && (
-			<section class="dest-detail__section">
+		<section class="dest-detail__section">
+			{relatedPosts.length > 0 ? (
 				<DestinationRelatedPosts
 					posts={relatedPosts}
 					destinationName={name}
 					locale={locale}
 				/>
-			</section>
-		)}
+			) : (
+				<>
+					<h2 class="dest-detail__section-title">
+						{t('destination.detail.relatedPosts.title', 'Sobre {{name}}', { name })}
+					</h2>
+					<div class="dest-detail__empty-state">
+						<p class="dest-detail__empty-title">
+							{t('destination.detail.relatedPosts.empty', 'Todavía no hay notas sobre este destino')}
+						</p>
+						<p class="dest-detail__empty-message">
+							{t(
+								'destination.detail.relatedPosts.emptyMessage',
+								'Estamos preparando contenido para que conozcas más sobre este destino.'
+							)}
+						</p>
+					</div>
+				</>
+			)}
+		</section>
 
 		<!-- Other destinations in the area (siblings of the same parent) -->
 		{nearbyDestinations.length > 0 && (
@@ -622,6 +668,27 @@ const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml 
 		padding: 2rem;
 		text-align: center;
 		color: var(--core-muted-foreground);
+	}
+
+	.dest-detail__empty-state {
+		background-color: var(--core-card);
+		border: 1px dashed var(--border);
+		border-radius: var(--radius-organic-sm);
+		padding: 2rem 1.5rem;
+		text-align: center;
+	}
+	.dest-detail__empty-title {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: 1rem;
+		color: var(--core-foreground);
+		margin: 0 0 0.5rem;
+	}
+	.dest-detail__empty-message {
+		font-family: var(--font-sans);
+		font-size: 0.9rem;
+		color: var(--core-muted-foreground);
+		margin: 0;
 	}
 
 	.dest-sidebar {
