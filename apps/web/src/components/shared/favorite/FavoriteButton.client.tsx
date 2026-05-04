@@ -380,9 +380,12 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
         setIsPopoverOpen(false);
     };
 
+    const buttonRef = useRef<HTMLButtonElement>(null);
+
     return (
         <div className={styles.wrapper}>
             <button
+                ref={buttonRef}
                 type="button"
                 aria-pressed={isFavorited}
                 aria-label={ariaLabel}
@@ -413,6 +416,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
 
             {isPopoverOpen && (
                 <AuthRequiredPopover
+                    anchorRef={buttonRef}
                     message={t(
                         'ui.favorite.auth_required.message',
                         'Para guardar tus favoritos necesitás una cuenta. Es gratis y rápido.'
