@@ -25,6 +25,12 @@ interface SocialProofData {
 	readonly rating: string;
 	/** Total rating context shown next to the score (e.g. "de 500+"). */
 	readonly ratingOf: string;
+	/**
+	 * Real reviewer avatar URLs. Up to 4 are rendered as overlapping circles.
+	 * When fewer than 4 URLs are provided, the remaining slots fall back to
+	 * the original gradient placeholders so the row keeps its visual weight.
+	 */
+	readonly avatars?: readonly string[];
 }
 
 interface Props {
@@ -40,6 +46,18 @@ interface Props {
 
 const { locale, socialProof, destinations } = Astro.props;
 const { t } = createTranslations(locale);
+
+/**
+ * Build the 4-slot avatar row: every slot either holds a real reviewer URL
+ * (rendered as an `<img>`) or falls back to the gradient placeholder used by
+ * the original Figma design. Keeping the slot count fixed avoids layout shift
+ * when the API returns fewer than 4 avatars.
+ */
+const SOCIAL_PROOF_AVATAR_SLOTS = 4;
+const avatarSlots = Array.from({ length: SOCIAL_PROOF_AVATAR_SLOTS }, (_, index) => {
+	const url = socialProof?.avatars?.[index];
+	return url ? { kind: 'image' as const, url } : { kind: 'placeholder' as const, index };
+});
 
 // Process hero images through Astro's optimization pipeline
 const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
@@ -147,10 +165,25 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
 			{socialProof && (
 			<div class="social-proof">
 				<div class="social-proof__avatars">
-					<span class="social-proof__avatar social-proof__avatar--1" aria-hidden="true"></span>
-					<span class="social-proof__avatar social-proof__avatar--2" aria-hidden="true"></span>
-					<span class="social-proof__avatar social-proof__avatar--3" aria-hidden="true"></span>
-					<span class="social-proof__avatar social-proof__avatar--4" aria-hidden="true"></span>
+					{avatarSlots.map((slot) => (
+						slot.kind === 'image' ? (
+							<img
+								class="social-proof__avatar social-proof__avatar--image"
+								src={slot.url}
+								alt=""
+								width="30"
+								height="30"
+								loading="lazy"
+								decoding="async"
+								aria-hidden="true"
+							/>
+						) : (
+							<span
+								class={`social-proof__avatar social-proof__avatar--${slot.index + 1}`}
+								aria-hidden="true"
+							></span>
+						)
+					))}
 					<span class="social-proof__badge">{socialProof.count}</span>
 				</div>
 				<span class="social-proof__star" aria-hidden="true">★</span>
@@ -320,10 +353,22 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
 		margin-left: -8px;
 	}
 
-	.social-proof__avatar--1 { background: linear-gradient(135deg, var(--avatar-1-from), var(--avatar-1-to)); z-index: 1; }
-	.social-proof__avatar--2 { background: linear-gradient(135deg, var(--avatar-2-from), var(--avatar-2-to)); z-index: 2; }
-	.social-proof__avatar--3 { background: linear-gradient(135deg, var(--avatar-3-from), var(--avatar-3-to)); z-index: 3; }
-	.social-proof__avatar--4 { background: linear-gradient(135deg, var(--avatar-4-from), var(--avatar-4-to)); z-index: 4; }
+	.social-proof__avatar--1 { background: linear-gradient(135deg, var(--avatar-1-from), var(--avatar-1-to)); }
+	.social-proof__avatar--2 { background: linear-gradient(135deg, var(--avatar-2-from), var(--avatar-2-to)); }
+	.social-proof__avatar--3 { background: linear-gradient(135deg, var(--avatar-3-from), var(--avatar-3-to)); }
+	.social-proof__avatar--4 { background: linear-gradient(135deg, var(--avatar-4-from), var(--avatar-4-to)); }
+
+	/* Real reviewer avatars rendered as <img> — ensure they fill the circle. */
+	.social-proof__avatar--image {
+		object-fit: cover;
+		background-color: var(--surface-warm);
+	}
+
+	/* Stack each avatar over the previous one regardless of variant. */
+	.social-proof__avatar:nth-child(1) { z-index: 1; }
+	.social-proof__avatar:nth-child(2) { z-index: 2; }
+	.social-proof__avatar:nth-child(3) { z-index: 3; }
+	.social-proof__avatar:nth-child(4) { z-index: 4; }
 
 	.social-proof__badge {
 		display: inline-flex;

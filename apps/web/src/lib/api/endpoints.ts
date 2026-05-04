@@ -624,6 +624,10 @@ interface PlatformStats {
     readonly events: number;
     readonly posts: number;
     readonly reviews: number;
+    /** Global accommodation rating average on a 0-5 scale (rounded to 2 decimals). */
+    readonly averageRating: number;
+    /** Recent reviewer avatar URLs for the public hero "social proof" overlay. */
+    readonly recentReviewerAvatars: readonly string[];
 }
 
 /** Public platform stats API endpoints */

@@ -46,13 +46,6 @@ const destinations = destinationsResult.ok
       }))
     : [];
 
-// TODO: Replace with real social proof data from testimonials/stats API
-const socialProofMock = {
-    count: "500+",
-    rating: "4.8/5",
-    ratingOf: "de 500+",
-} as const;
-
 // Fetch platform stats for the stats section (SSG — fetched at build time)
 const statsResult = await statsApi.getPlatformStats();
 const platformStats: readonly StatItemData[] = statsResult.ok
@@ -64,6 +57,36 @@ const platformStats: readonly StatItemData[] = statsResult.ok
           { icon: "CalendarDotsIcon", value: statsResult.data.events, labelKey: "home.statistics.events" },
       ]
     : [];
+
+// Build hero "social proof" from real platform stats. Hide the block entirely
+// when there are no reviews yet so we never render "0+" or "0/5" placeholders.
+const socialProof = (() => {
+    if (!statsResult.ok) return undefined;
+    const reviewsCount = statsResult.data.reviews;
+    if (reviewsCount <= 0) return undefined;
+    const reviewsLabel = formatSocialProofCount(reviewsCount);
+    return {
+        count: reviewsLabel,
+        rating: `${statsResult.data.averageRating.toFixed(1)}/5`,
+        ratingOf: reviewsLabel,
+        avatars: statsResult.data.recentReviewerAvatars,
+    } as const;
+})();
+
+/**
+ * Rounds a count down to the nearest "marketing" milestone (10, 50, 100, ...)
+ * and appends a "+" suffix so the badge reads naturally ("500+", "1k+") instead
+ * of leaking exact figures that change between page builds.
+ */
+function formatSocialProofCount(value: number): string {
+    if (value >= 1000) {
+        const thousands = Math.floor(value / 1000);
+        return `${thousands}k+`;
+    }
+    if (value >= 100) return `${Math.floor(value / 100) * 100}+`;
+    if (value >= 10) return `${Math.floor(value / 10) * 10}+`;
+    return `${value}+`;
+}
 
 /** Category tiles for the "Explorá por categoría" section. */
 const categoryTiles = [
@@ -112,7 +135,7 @@ const categoryTiles = [
     canonicalPath={`/${locale}/`}
 >
     <!-- 1. Hero -->
-    <HeroSection locale={locale} socialProof={socialProofMock} destinations={destinations} />
+    <HeroSection locale={locale} socialProof={socialProof} destinations={destinations} />
 
     <!-- 2. Featured Accommodations -->
     <FeaturedAccommodationsSection locale={locale} />
