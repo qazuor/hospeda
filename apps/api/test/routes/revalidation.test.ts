@@ -176,6 +176,11 @@ vi.mock('@repo/service-core', async () => {
         PromotionService,
         DiscountCodeService,
         DiscountCodeUsageService,
+        // StatsService was added to @repo/service-core after this mock
+        // was last expanded; route registration imports it eagerly, so
+        // the mock must expose it (a class shape is enough — no method
+        // is invoked from this test path).
+        StatsService: class StatsService {},
         getRevalidationService: vi.fn(() => mockRevalidateService)
     };
 });

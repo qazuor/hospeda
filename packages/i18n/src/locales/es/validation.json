@@ -2318,6 +2318,30 @@
             "min": "El price to debe tener al menos {{min}} caracteres"
         }
     },
+    "publicStats": {
+        "accommodations": {
+            "nonnegative": "El accommodations no es válido (nonnegative)"
+        },
+        "averageRating": {
+            "max": "El average rating no puede superar los {{max}} caracteres",
+            "min": "El average rating debe tener al menos {{min}} caracteres"
+        },
+        "destinations": {
+            "nonnegative": "El destinations no es válido (nonnegative)"
+        },
+        "events": {
+            "nonnegative": "El events no es válido (nonnegative)"
+        },
+        "posts": {
+            "nonnegative": "El posts no es válido (nonnegative)"
+        },
+        "recentReviewerAvatars": {
+            "itemUrl": "El recent reviewer avatars no es válido (itemUrl)"
+        },
+        "reviews": {
+            "nonnegative": "El reviews no es válido (nonnegative)"
+        }
+    },
     "required": "El valor es obligatorio",
     "response": {
         "success": {

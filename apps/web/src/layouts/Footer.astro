@@ -229,7 +229,7 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
             </div>
             <form
                 class="footer__newsletter"
-                onsubmit="event.preventDefault();"
+                data-prevent-submit
             >
                 <label for="newsletter-email" class="sr-only">
                     {t("footer.newsletterPlaceholder")}
@@ -364,12 +364,20 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
 </footer>
 
 <script>
-    /** Dispatch the reopen event when the footer cookie-preferences button is clicked. */
+    /** Footer client-side wiring. Replaces inline event handlers, which are blocked by CSP. */
     document.addEventListener("astro:page-load", () => {
         const btn = document.querySelector("[data-cookie-consent-reopen]");
         if (btn) {
             btn.addEventListener("click", () => {
                 window.dispatchEvent(new CustomEvent("cookie-consent:reopen"));
+            });
+        }
+        // Newsletter forms opt out of native submission via [data-prevent-submit].
+        for (const form of document.querySelectorAll<HTMLFormElement>(
+            "form[data-prevent-submit]"
+        )) {
+            form.addEventListener("submit", (event) => {
+                event.preventDefault();
             });
         }
     });
