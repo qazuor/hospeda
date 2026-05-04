@@ -17,6 +17,7 @@ import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { StarIcon } from '@repo/icons';
 import useEmblaCarousel from 'embla-carousel-react';
 import { type ReactElement, useCallback, useEffect, useState } from 'react';
 import styles from './DestinationsIsland.module.css';
@@ -47,19 +48,26 @@ interface DestinationsIslandProps {
 
 /**
  * Renders star icons (filled/empty) for a given numeric rating.
- * Returns an array of 5 span elements.
+ * Uses StarIcon from @repo/icons to stay consistent with grid card variant.
  */
 function renderStars(rating: number): ReactElement[] {
-    return Array.from({ length: 5 }, (_, i) => (
-        <span
-            // biome-ignore lint/suspicious/noArrayIndexKey: static fixed-length star array, order never changes
-            key={i}
-            className={styles.cardStar}
-            aria-hidden="true"
-        >
-            {i < Math.round(rating) ? '★' : '☆'}
-        </span>
-    ));
+    const fullStars = Math.round(rating);
+    return Array.from({ length: 5 }, (_, i) => {
+        const isFilled = i < fullStars;
+        return (
+            <span
+                // biome-ignore lint/suspicious/noArrayIndexKey: static fixed-length star array, order never changes
+                key={i}
+                className={cn(styles.cardStar, !isFilled && styles.cardStarEmpty)}
+                aria-hidden="true"
+            >
+                <StarIcon
+                    size={14}
+                    weight={isFilled ? 'fill' : 'regular'}
+                />
+            </span>
+        );
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -210,13 +218,44 @@ function DestinationsIslandInner({
                             {destinations.map((destination, i) => {
                                 const isActive = i === activeIndex;
                                 const href = buildUrl({ locale, path: destination.path });
+                                const accommodationsLabel =
+                                    destination.accommodationsCount === 1
+                                        ? t(
+                                              'destination.card.accommodation_singular',
+                                              'alojamiento'
+                                          )
+                                        : t(
+                                              'destination.card.accommodation_plural',
+                                              'alojamientos'
+                                          );
+                                const ratingAriaLabel = `${t(
+                                    'destination.card.rating.label',
+                                    'Calificación'
+                                )}: ${destination.averageRating.toFixed(1)} ${t(
+                                    'destination.card.rating.of5',
+                                    'de 5'
+                                )}`;
+                                const slideAriaLabel = t(
+                                    'destination.carousel.slideOf',
+                                    '{{current}} de {{total}}: {{name}}',
+                                    {
+                                        current: i + 1,
+                                        total,
+                                        name: destination.name
+                                    }
+                                );
+                                const cardAriaLabel = t(
+                                    'destination.carousel.viewDestination',
+                                    'Ver destino {{name}}',
+                                    { name: destination.name }
+                                );
 
                                 return (
                                     <article
                                         key={destination.slug}
                                         className={styles.slide}
                                         aria-roledescription="slide"
-                                        aria-label={`${i + 1} de ${total}: ${destination.name}`}
+                                        aria-label={slideAriaLabel}
                                         style={{ position: 'relative' }}
                                     >
                                         <a
@@ -227,7 +266,7 @@ function DestinationsIslandInner({
                                             )}
                                             aria-current={isActive ? 'true' : undefined}
                                             tabIndex={isActive ? 0 : -1}
-                                            aria-label={`Ver destino ${destination.name}`}
+                                            aria-label={cardAriaLabel}
                                             onClick={(e) => {
                                                 if (!isActive) {
                                                     e.preventDefault();
@@ -271,24 +310,31 @@ function DestinationsIslandInner({
                                                 </h3>
                                                 <p className={styles.cardCount}>
                                                     {destination.accommodationsCount}{' '}
-                                                    {destination.accommodationsCount === 1
-                                                        ? 'alojamiento'
-                                                        : 'alojamientos'}
+                                                    {accommodationsLabel}
                                                 </p>
                                                 <p className={styles.cardDescription}>
                                                     {destination.summary}
                                                 </p>
-                                                <div
-                                                    className={styles.cardRating}
-                                                    aria-label={`Calificación: ${destination.averageRating} de 5`}
-                                                >
-                                                    <div className={styles.cardStars}>
-                                                        {renderStars(destination.averageRating)}
+                                                {destination.averageRating > 0 && (
+                                                    <div
+                                                        className={styles.cardRating}
+                                                        aria-label={ratingAriaLabel}
+                                                    >
+                                                        <div className={styles.cardStars}>
+                                                            {renderStars(destination.averageRating)}
+                                                        </div>
+                                                        <span className={styles.cardRatingValue}>
+                                                            {destination.averageRating.toFixed(1)}
+                                                        </span>
+                                                        {destination.reviewsCount > 0 && (
+                                                            <span
+                                                                className={styles.cardReviewCount}
+                                                            >
+                                                                ({destination.reviewsCount})
+                                                            </span>
+                                                        )}
                                                     </div>
-                                                    <span className={styles.cardReviewCount}>
-                                                        ({destination.reviewsCount})
-                                                    </span>
-                                                </div>
+                                                )}
                                             </div>
                                         </a>
 

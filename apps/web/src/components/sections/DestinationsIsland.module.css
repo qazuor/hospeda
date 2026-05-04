@@ -279,20 +279,36 @@
 }
 
 .cardStars {
-    display: flex;
+    display: inline-flex;
+    align-items: center;
     gap: 2px;
 }
 
 .cardStar {
-    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
     color: var(--rating-star);
     line-height: 1;
+}
+
+.cardStarEmpty {
+    color: var(--primary-foreground);
+    opacity: 0.5;
+}
+
+.cardRatingValue {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.8125rem;
+    color: var(--primary-foreground);
+    margin-left: 0.25rem;
 }
 
 .cardReviewCount {
     font-family: var(--font-sans);
     font-size: 0.75rem;
-    color: var(--core-muted-foreground);
+    color: var(--primary-foreground);
+    opacity: 0.75;
 }
 
 /* ==========================================================================
