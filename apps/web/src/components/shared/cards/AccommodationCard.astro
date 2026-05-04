@@ -129,7 +129,7 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 			<!-- Top right actions: FavoriteButton island + photo count -->
 			<div class="acc-card__actions">
 				<FavoriteButton
-					client:load
+					client:visible
 					entityId={data.id}
 					entityType="ACCOMMODATION"
 					initialIsFavorited={data.isFavorited}

@@ -65,30 +65,30 @@ const categories = ['cleanliness', 'hospitality', 'services', 'accuracy', 'commu
   .rating-breakdown__summary {
     display: flex;
     align-items: center;
-    gap: var(--space-4, 16px);
-    margin-bottom: var(--space-5, 20px);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
   }
   .rating-breakdown__score {
     font-family: var(--font-heading);
     font-size: 3rem;
     font-weight: 700;
-    color: var(--foreground);
+    color: var(--core-foreground);
     line-height: 1;
   }
   .rating-breakdown__stars {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1, 4px);
+    gap: 0.25rem;
   }
   .rating-breakdown__count {
     font-family: var(--font-sans);
     font-size: 0.85rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
   }
   .rating-breakdown__bars {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-3, 12px) var(--space-6, 24px);
+    gap: 0.75rem 1.5rem;
   }
   /* Two columns when there is room — keeps each bar comfortably wide. */
   @media (min-width: 768px) {
@@ -100,30 +100,30 @@ const categories = ['cleanliness', 'hospitality', 'services', 'accuracy', 'commu
     display: grid;
     grid-template-columns: 140px 1fr 40px;
     align-items: center;
-    gap: var(--space-3, 12px);
+    gap: 0.75rem;
   }
   .rating-bar__label {
     font-family: var(--font-sans);
     font-size: 0.9rem;
-    color: var(--foreground);
+    color: var(--core-foreground);
   }
   .rating-bar__track {
     height: 8px;
-    background-color: var(--border, oklch(0.9 0 0));
+    background-color: var(--border);
     border-radius: var(--radius-pill);
     overflow: hidden;
   }
   .rating-bar__fill {
     height: 100%;
-    background-color: var(--accent);
+    background-color: var(--brand-accent);
     border-radius: var(--radius-pill);
-    transition: width var(--duration-normal, 0.4s) ease;
+    transition: width var(--duration-normal) ease;
   }
   .rating-bar__value {
     font-family: var(--font-sans);
     font-size: 0.85rem;
     font-weight: 500;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     text-align: right;
   }
   @media (max-width: 640px) {

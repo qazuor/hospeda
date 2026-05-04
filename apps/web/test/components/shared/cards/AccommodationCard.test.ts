@@ -94,8 +94,11 @@ describe('AccommodationCard.astro', () => {
     });
 
     describe('FavoriteButton island integration (SPEC-098)', () => {
-        it('should render FavoriteButton with client:load directive', () => {
-            expect(src).toContain('client:load');
+        it('should render FavoriteButton with client:visible directive', () => {
+            // Defer hydration until the card scrolls into view to keep the
+            // initial JS payload small on listing pages with many cards.
+            expect(src).toContain('client:visible');
+            expect(src).not.toContain('client:load');
         });
 
         it('should pass entityId from data.id', () => {
