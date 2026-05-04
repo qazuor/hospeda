@@ -382,6 +382,12 @@ importers:
       '@qazuor/qzpay-mercadopago':
         specifier: ^1.1.0
         version: 1.1.0(mercadopago@2.12.0)
+      '@react-email/components':
+        specifier: ^0.0.30
+        version: 0.0.30(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@react-email/render':
+        specifier: ^2.0.4
+        version: 2.0.4(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@repo/billing':
         specifier: workspace:*
         version: link:../../packages/billing
@@ -458,7 +464,7 @@ importers:
         specifier: ^2.0.0
         version: 2.0.2
       ioredis:
-        specifier: ^5.4.0
+        specifier: ^5.10.0
         version: 5.10.0
       jose:
         specifier: ^6.1.0
@@ -472,6 +478,15 @@ importers:
       pg:
         specifier: ^8.16.3
         version: 8.16.3
+      react:
+        specifier: ^19
+        version: 19.1.1
+      react-dom:
+        specifier: ^19
+        version: 19.1.1(react@19.1.1)
+      resend:
+        specifier: ^4
+        version: 4.8.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       sanitize-html:
         specifier: ^2.17.0
         version: 2.17.0
@@ -6387,9 +6402,6 @@ packages:
   html-void-elements@3.0.0:
     resolution: {integrity: sha512-bEqo66MRXsUGxWHV5IP0PUiAWwoEjba4VCzg0LjFJBpchPaTfyfCKTG6bc5F8ucKec3q5y6qOdGyYTSBEvhCrg==}
 
-  htmlparser2@10.0.0:
-    resolution: {integrity: sha512-TwAZM+zE5Tq3lrEHvOlvwgj1XLWQCtaaibSN11Q+gGBAS7Y1uZSWwXXRe4iF6OXnaq1riyQAPFOBtYc77Mxq0g==}
-
   htmlparser2@10.1.0:
     resolution: {integrity: sha512-VTZkM9GWRAtEpveh7MSF6SjjrpNVNNVJfFup7xTY3UpFtm67foy9HDVXneLtFVt4pMz5kZtgNcvCniNFb1hlEQ==}
 
@@ -7729,11 +7741,6 @@ packages:
 
   prettier@3.3.3:
     resolution: {integrity: sha512-i2tDNA0O5IrMO757lfrdQZCc2jPNDVntV0m/+4whiDfWaTKfMNgR7Qz0NAeGz/nRqF4m5/6CLzbP4/liHt12Ew==}
-    engines: {node: '>=14'}
-    hasBin: true
-
-  prettier@3.6.2:
-    resolution: {integrity: sha512-I7AIg5boAr5R0FFtJ6rCfD+LFsWHp81dolrFD8S79U9tb8Az2nGrJncnMSnys+bpQJfRUzqs9hnA81OAA3hCuQ==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -11368,7 +11375,7 @@ snapshots:
   '@react-email/render@1.1.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
       html-to-text: 9.0.5
-      prettier: 3.6.2
+      prettier: 3.8.3
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
       react-promise-suspense: 0.3.4
@@ -11376,7 +11383,7 @@ snapshots:
   '@react-email/render@2.0.4(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
       html-to-text: 9.0.5
-      prettier: 3.6.2
+      prettier: 3.8.3
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
 
@@ -12471,7 +12478,7 @@ snapshots:
       '@tanstack/router-core': 1.131.26
       '@tanstack/router-utils': 1.131.2
       '@tanstack/virtual-file-routes': 1.131.2
-      prettier: 3.6.2
+      prettier: 3.8.3
       recast: 0.23.11
       source-map: 0.7.6
       tsx: 4.20.4
@@ -13773,7 +13780,7 @@ snapshots:
       domhandler: 5.0.3
       domutils: 3.2.2
       encoding-sniffer: 0.2.1
-      htmlparser2: 10.0.0
+      htmlparser2: 10.1.0
       parse5: 7.3.0
       parse5-htmlparser2-tree-adapter: 7.1.0
       parse5-parser-stream: 7.1.2
@@ -14233,8 +14240,7 @@ snapshots:
 
   entities@6.0.1: {}
 
-  entities@7.0.1:
-    optional: true
+  entities@7.0.1: {}
 
   env-paths@2.2.1: {}
 
@@ -14749,20 +14755,12 @@ snapshots:
 
   html-void-elements@3.0.0: {}
 
-  htmlparser2@10.0.0:
-    dependencies:
-      domelementtype: 2.3.0
-      domhandler: 5.0.3
-      domutils: 3.2.2
-      entities: 6.0.1
-
   htmlparser2@10.1.0:
     dependencies:
       domelementtype: 2.3.0
       domhandler: 5.0.3
       domutils: 3.2.2
       entities: 7.0.1
-    optional: true
 
   htmlparser2@8.0.2:
     dependencies:
@@ -16403,10 +16401,7 @@ snapshots:
 
   prettier@3.3.3: {}
 
-  prettier@3.6.2: {}
-
-  prettier@3.8.3:
-    optional: true
+  prettier@3.8.3: {}
 
   pretty-bytes@7.1.0: {}
 

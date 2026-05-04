@@ -11,13 +11,29 @@ export default defineConfig({
     dts: true,
     bundle: true,
     tsconfig: './tsconfig.json',
-    // CJS-only packages (or packages that use dynamic require()) must be
-    // externalised — bundling them into the ESM output of vercel.js
-    // produces `Dynamic require of "X" is not supported` at runtime.
-    // The packages themselves are still bundled into the deployment by
-    // Vercel as regular node_modules; they just stay as runtime imports
-    // instead of being inlined into vercel.js.
-    external: ['@sentry/profiling-node', 'cloudinary', 'file-type', 'image-size'],
+    // Externalised packages: bundling these breaks at runtime because
+    // they either ship only as CommonJS (using dynamic require()), or
+    // pull in CJS-only transitive deps (e.g. react-dom/server uses
+    // require('util'), require('crypto')). esbuild emits a polyfill
+    // (`__require`) that throws "Dynamic require of X is not supported"
+    // when the polyfill cannot resolve to a real `require`. Keeping
+    // them as runtime imports lets Node's normal CJS interop handle
+    // the resolution. Each entry is a direct dependency of apps/api so
+    // pnpm installs it at apps/api/node_modules where the deployed
+    // function can find it.
+    external: [
+        '@sentry/profiling-node',
+        'cloudinary',
+        'file-type',
+        'image-size',
+        'react',
+        'react-dom',
+        'react-dom/server',
+        '@react-email/components',
+        '@react-email/render',
+        'resend',
+        'ioredis'
+    ],
     noExternal: [
         /@repo\/.*/,
         '@repo/config',
