@@ -1,0 +1,222 @@
+---
+/**
+ * @file DestinationDetailHeader.astro
+ * @description Destination detail page header with type badge, name,
+ * bookmark counter, and favorite button. Designed to live inside a
+ * WaveHeader so it can collapse to a single row when the wave goes
+ * compact on scroll (mirroring the accommodation DetailHeader pattern).
+ *
+ * Layout: 2-column flex at all times — `.dest-header__main` on the left
+ * (badges + name + meta) and `.dest-header__favorite` on the right.
+ *
+ * Compact mode: when the page-header is wrapped by a `.wave-header--compact`
+ * ancestor (toggled by WaveHeader's IntersectionObserver), the inner main
+ * flow collapses to a single wrapped row, fonts shrink, and the bookmark
+ * meta line is hidden so only the type · name pair remains visible.
+ */
+import { LocationIcon, FavoriteIcon } from '@repo/icons';
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+	readonly destinationId: string;
+	readonly name: string;
+	/** Raw destinationType enum value (e.g. CITY, REGION, COUNTRY). */
+	readonly destinationType: string;
+	readonly locale: SupportedLocale;
+	readonly isAuthenticated?: boolean;
+	readonly initialIsFavorited?: boolean;
+	readonly initialBookmarkId?: string | null;
+	readonly bookmarkCount?: number;
+}
+
+const {
+	destinationId,
+	name,
+	destinationType,
+	locale,
+	isAuthenticated = false,
+	initialIsFavorited,
+	initialBookmarkId = null,
+	bookmarkCount
+} = Astro.props;
+const { t, tPlural } = createTranslations(locale);
+
+const typeLabel = destinationType
+	? t(`destination.types.${destinationType}`, destinationType)
+	: '';
+---
+
+<header class="dest-header">
+	<div class="dest-header__main">
+		{typeLabel && (
+			<div class="dest-header__badges">
+				<span class="dest-header__type-badge">
+					<LocationIcon size={14} aria-hidden="true" />
+					{typeLabel}
+				</span>
+			</div>
+		)}
+
+		<h1 class="dest-header__name">{name}</h1>
+
+		{bookmarkCount !== undefined && (
+			<div class="dest-header__meta">
+				<span
+					class="dest-header__bookmark-count"
+					aria-label={bookmarkCount === 0
+						? t('destination.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
+						: tPlural('destination.detail.bookmark_count', bookmarkCount)}
+				>
+					<FavoriteIcon size={14} weight="fill" aria-hidden="true" />
+					{bookmarkCount === 0
+						? t('destination.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
+						: tPlural('destination.detail.bookmark_count', bookmarkCount)}
+				</span>
+			</div>
+		)}
+	</div>
+
+	<div class="dest-header__favorite">
+		<FavoriteButton
+			client:load
+			entityId={destinationId}
+			entityType="DESTINATION"
+			initialIsFavorited={initialIsFavorited}
+			initialBookmarkId={initialBookmarkId}
+			isAuthenticated={isAuthenticated}
+			variant="standalone"
+			locale={locale}
+		/>
+	</div>
+</header>
+
+<style>
+	.dest-header {
+		display: flex;
+		flex-direction: row;
+		align-items: flex-start;
+		gap: 0.75rem;
+	}
+
+	.dest-header__main {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		transition: flex-direction 0.3s ease, gap 0.3s ease;
+	}
+
+	.dest-header__favorite {
+		flex-shrink: 0;
+		margin-left: auto;
+	}
+
+	.dest-header__badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		align-items: center;
+		transition: gap 0.3s ease;
+	}
+
+	.dest-header__type-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-pill);
+		background-color: var(--core-card);
+		color: var(--core-muted-foreground);
+		font-family: var(--font-sans);
+		font-size: 0.7rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		padding: 4px 14px;
+		line-height: 1.4;
+		white-space: nowrap;
+		transition: padding 0.3s ease, font-size 0.3s ease;
+	}
+
+	.dest-header__name {
+		font-family: var(--font-heading);
+		font-size: clamp(1.5rem, 4vw, 2.5rem);
+		font-weight: 700;
+		color: var(--core-foreground);
+		margin: 0;
+		line-height: 1.15;
+		transition: font-size 0.3s ease;
+	}
+
+	.dest-header__meta {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		overflow: hidden;
+		max-height: 3em;
+		opacity: 1;
+		transition:
+			max-height 0.3s ease,
+			opacity 0.2s ease;
+	}
+
+	.dest-header__bookmark-count {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35em;
+		font-family: var(--font-sans);
+		font-size: 0.85rem;
+		font-weight: 500;
+		color: var(--core-muted-foreground);
+	}
+
+	.dest-header__bookmark-count :global(svg) {
+		color: var(--rating-star);
+	}
+
+	/* =========================================================
+	 * Compact state — collapses everything in __main to one row.
+	 * Only the type-badge and the name remain readable; meta hides.
+	 * ========================================================= */
+	:global(.wave-header--compact) .dest-header {
+		align-items: center;
+	}
+
+	:global(.wave-header--compact) .dest-header__main {
+		flex-direction: row;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	:global(.wave-header--compact) .dest-header__badges {
+		gap: 4px;
+	}
+
+	:global(.wave-header--compact) .dest-header__type-badge {
+		font-size: 0.6rem;
+		padding: 2px 10px;
+	}
+
+	:global(.wave-header--compact) .dest-header__name {
+		font-size: clamp(1rem, 2vw, 1.25rem);
+	}
+
+	:global(.wave-header--compact) .dest-header__meta {
+		max-height: 0;
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.dest-header__main,
+		.dest-header__type-badge,
+		.dest-header__name,
+		.dest-header__meta {
+			transition: none;
+		}
+	}
+</style>

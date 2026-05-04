@@ -14,6 +14,7 @@ import EventCard from '@/components/shared/cards/EventCard.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { LocationMap } from '@/components/maps/LocationMap.client';
+import DestinationDetailHeader from '@/components/destination/DestinationDetailHeader.astro';
 import DestinationGallery from '@/components/destination/DestinationGallery.astro';
 import DestinationAttractionsGrid from '@/components/destination/DestinationAttractionsGrid.astro';
 import DestinationRatingBreakdown from '@/components/destination/DestinationRatingBreakdown.astro';
@@ -36,8 +37,6 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { Image } from 'astro:assets';
-import { LocationIcon, FavoriteIcon } from '@repo/icons';
-import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t, tPlural } = createTranslations(locale);
@@ -116,6 +115,33 @@ const parentDestinationId =
 		? dest.parentDestinationId
 		: null;
 
+/**
+ * Defensive extraction for paginated API results that may return either
+ * `{ items: [...] }`, `{ data: [...] }`, or a bare array. Same pattern used
+ * by the accommodation detail page (see alojamientos/[slug].astro).
+ */
+function extractItems(settled: PromiseSettledResult<unknown>): Record<string, unknown>[] {
+	if (settled.status === 'rejected') return [];
+	const val = settled.value as { ok?: boolean; data?: unknown };
+	if (!val?.ok) return [];
+	const d = val.data;
+	if (Array.isArray(d)) return d as Record<string, unknown>[];
+	if (d && typeof d === 'object') {
+		const obj = d as Record<string, unknown>;
+		if (Array.isArray(obj.items)) return obj.items as Record<string, unknown>[];
+		if (Array.isArray(obj.data)) return obj.data as Record<string, unknown>[];
+	}
+	return [];
+}
+
+/** Extract the pagination.total from a settled getList result. */
+function extractTotal(settled: PromiseSettledResult<unknown>): number {
+	if (settled.status === 'rejected') return 0;
+	const val = settled.value as { ok?: boolean; data?: { pagination?: { total?: number } } };
+	if (!val?.ok) return 0;
+	return val.data?.pagination?.total ?? 0;
+}
+
 try {
 	const [
 		accResult,
@@ -137,22 +163,15 @@ try {
 			: Promise.resolve({ ok: false } as const)
 	]);
 
-	if (accResult.status === 'fulfilled' && accResult.value.ok) {
-		accCards = accResult.value.data.items.map((item) =>
-			toAccommodationCardProps({ item: item as unknown as Record<string, unknown> })
-		);
-	}
-	if (accCountResult.status === 'fulfilled' && accCountResult.value.ok) {
-		accCount = accCountResult.value.data.pagination?.total ?? 0;
-	}
-	if (eventsResult.status === 'fulfilled' && eventsResult.value.ok) {
-		eventCards = eventsResult.value.data.items.map((item) =>
-			toEventCardProps({ item: item as unknown as Record<string, unknown> })
-		);
-	}
-	if (eventsCountResult.status === 'fulfilled' && eventsCountResult.value.ok) {
-		eventsCount = eventsCountResult.value.data.pagination?.total ?? 0;
-	}
+	accCards = extractItems(accResult)
+		.slice(0, 3)
+		.map((item) => toAccommodationCardProps({ item }));
+	accCount = extractTotal(accCountResult);
+
+	eventCards = extractItems(eventsResult)
+		.slice(0, 3)
+		.map((item) => toEventCardProps({ item }));
+	eventsCount = extractTotal(eventsCountResult);
 
 	if (statsResult.status === 'fulfilled' && statsResult.value.ok) {
 		stats = {
@@ -173,17 +192,15 @@ try {
 		};
 	}
 
-	if (postsResult.status === 'fulfilled' && postsResult.value.ok) {
-		relatedPosts = postsResult.value.data.items ?? [];
-	}
+	relatedPosts = extractItems(postsResult).slice(0, 4);
 
 	if (siblingsResult.status === 'fulfilled' && siblingsResult.value.ok) {
-		const siblings = siblingsResult.value.data.children ?? [];
+		const siblings = (siblingsResult.value.data.children ?? []) as ReadonlyArray<{
+			id?: string;
+		}>;
 		// Drop the current destination from the siblings list and cap at 8 so
 		// the carousel stays focused. The component will further cap visible cards.
-		nearbyDestinations = siblings
-			.filter((d) => (d as { id?: string }).id !== destId)
-			.slice(0, 8);
+		nearbyDestinations = siblings.filter((d) => d.id !== destId).slice(0, 8);
 	}
 } catch (err) {
 	console.error('[destinos/detail] Error fetching previews:', err);
@@ -294,37 +311,16 @@ const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml 
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={breadcrumbItems} />
 
 	<Fragment slot="page-header">
-		<div class="dest-detail__header-top-row">
-			<div class="dest-detail__header-left">
-				<h1 class="dest-detail__title">{name}</h1>
-				{destType && (
-					<span class="dest-detail__type">
-						<LocationIcon size={16} aria-hidden="true" />
-						{t(`destination.types.${destType}`, destType)}
-					</span>
-				)}
-			</div>
-			<FavoriteButton
-				client:load
-				entityId={destId}
-				entityType="DESTINATION"
-				initialIsFavorited={initialIsFavorited}
-				initialBookmarkId={initialBookmarkId}
-				isAuthenticated={isAuthenticated}
-				variant="standalone"
-				locale={locale}
-				class="dest-detail__favorite-btn"
-			/>
-		</div>
-		{bookmarkCount !== undefined && (
-			<span
-				class="dest-detail__bookmark-count"
-				aria-label={tPlural('destination.detail.bookmark_count', bookmarkCount)}
-			>
-				<FavoriteIcon size={14} weight="fill" aria-hidden="true" />
-				{tPlural('destination.detail.bookmark_count', bookmarkCount)}
-			</span>
-		)}
+		<DestinationDetailHeader
+			destinationId={destId}
+			name={name}
+			destinationType={destType}
+			locale={locale}
+			isAuthenticated={isAuthenticated}
+			initialIsFavorited={initialIsFavorited}
+			initialBookmarkId={initialBookmarkId}
+			bookmarkCount={bookmarkCount}
+		/>
 	</Fragment>
 
 	<div class="dest-detail">
@@ -575,46 +571,6 @@ const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml 
 		width: 100%;
 		aspect-ratio: 16 / 9;
 		object-fit: cover;
-	}
-
-	.dest-detail__header-top-row {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: 0.75rem;
-	}
-	.dest-detail__header-left {
-		flex: 1;
-		min-width: 0;
-	}
-	.dest-detail__title {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: clamp(1.75rem, 4vw, 2.5rem);
-		color: var(--core-foreground);
-		margin: 0 0 0.5rem;
-	}
-	.dest-detail__type {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.25rem;
-		font-family: var(--font-sans);
-		font-size: 0.875rem;
-		color: var(--core-muted-foreground);
-		margin-bottom: 1rem;
-	}
-	.dest-detail__bookmark-count {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.3em;
-		font-family: var(--font-sans);
-		font-size: 0.8rem;
-		font-weight: 500;
-		color: var(--core-muted-foreground);
-		margin-bottom: 1rem;
-	}
-	.dest-detail__bookmark-count :global(svg) {
-		color: var(--rating-star);
 	}
 
 	.dest-detail__description {
