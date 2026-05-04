@@ -15,8 +15,8 @@ Cada item tiene:
 4. **Si algo falla**: a quién avisar.
 
 **Las pruebas se hacen en STAGING**, no en producción.
-Staging URL principal: `https://staging.hospeda.ar`
-Staging admin: `https://admin.staging.hospeda.ar`
+Staging URL principal: `https://staging.hospeda.com.ar`
+Staging admin: `https://admin.staging.hospeda.com.ar`
 
 Si vos sos la única persona haciendo el checklist y no sos técnico/a, **NO te saltees items**. Si dudás, pedí ayuda al equipo técnico antes de marcar OK.
 
@@ -45,7 +45,7 @@ Marcá cada item con un `[x]` cuando esté completo.
 
 **Cómo**:
 
-1. Abrir `https://staging.hospeda.ar/auth/signup` en una ventana **incógnita**.
+1. Abrir `https://staging.hospeda.com.ar/auth/signup` en una ventana **incógnita**.
 2. Llenar el formulario con un email tuyo personal con sufijo `+test1`. Ejemplo: si tu email es `juan@gmail.com`, usar `juan+test1@gmail.com`.
 3. Inventar una contraseña fuerte (mín. 12 caracteres, números, mayúsculas, símbolos).
 4. Click "Crear cuenta".
@@ -71,11 +71,11 @@ Marcá cada item con un `[x]` cuando esté completo.
 **Cómo**:
 
 1. Logout (si estás logueado): click avatar arriba derecha → "Cerrar sesión".
-2. Ir a `https://staging.hospeda.ar/auth/signin`.
+2. Ir a `https://staging.hospeda.com.ar/auth/signin`.
 3. **Caso 1 — Login OK**: poner email + password del usuario que creaste en AUTH-1 → click "Iniciar sesión". Te lleva al dashboard.
 4. Hacer logout de nuevo.
 5. **Caso 2 — Password incorrecto**: mismo email pero password mal → click "Iniciar sesión". Te muestra error.
-6. **Caso 3 — Email inexistente**: poner `noexiste@hospeda.ar` con cualquier password → click. Te muestra error.
+6. **Caso 3 — Email inexistente**: poner `noexiste@hospeda.com.ar` con cualquier password → click. Te muestra error.
 
 **Qué tiene que pasar**:
 
@@ -121,7 +121,7 @@ Marcá cada item con un `[x]` cuando esté completo.
 2. Click avatar → "Cerrar sesión".
 3. Te lleva a la home como anónimo.
 4. Apretar la flecha "atrás" del navegador. **NO debería volver al área autenticada** — debería seguir mostrando home pública o pedir login.
-5. Abrir nueva pestaña → ir a `https://staging.hospeda.ar/mi-cuenta`. Te debería redirigir a `/auth/signin`.
+5. Abrir nueva pestaña → ir a `https://staging.hospeda.com.ar/mi-cuenta`. Te debería redirigir a `/auth/signin`.
 
 **Qué tiene que pasar**: ningún recurso autenticado accesible después del logout. Si "atrás" te muestra contenido del usuario, es un bug.
 
@@ -139,7 +139,7 @@ Marcá cada item con un `[x]` cuando esté completo.
 
 **Cómo**:
 
-1. En el iPhone, abrir Safari → `https://staging.hospeda.ar`.
+1. En el iPhone, abrir Safari → `https://staging.hospeda.com.ar`.
 2. Login (usar el mismo de AUTH-1 o crear uno nuevo).
 3. Tap "Publicar mi alojamiento".
 4. Llenar el formulario inicial (nombre, descripción corta, tipo, ciudad).
@@ -168,7 +168,7 @@ Marcá cada item con un `[x]` cuando esté completo.
 
 **Cómo**:
 
-1. Safari → `https://staging.hospeda.ar`.
+1. Safari → `https://staging.hospeda.com.ar`.
 2. Probar en **vertical** y **horizontal**.
 3. Navegar: home → buscar destino → resultado → click una propiedad → detalle.
 4. Toggle el favorito (corazón) en una propiedad.
@@ -222,7 +222,7 @@ Marcá cada item con un `[x]` cuando esté completo.
 **Cómo**:
 
 1. En tu móvil, **DESACTIVAR wifi**, dejar solo datos móviles 4G/3G.
-2. Abrir `https://staging.hospeda.ar` en una pestaña nueva.
+2. Abrir `https://staging.hospeda.com.ar` en una pestaña nueva.
 3. Cronometrar: ¿en cuántos segundos podés interactuar con la página? (ver el primer botón usable).
 
 **Qué tiene que pasar**:
@@ -260,7 +260,7 @@ Este es el item más importante. Está documentado paso a paso en `docs/deployme
 **Cómo**:
 
 1. Tener un usuario con subscription `active` (resultado de MP-1).
-2. En el panel admin de staging (`https://admin.staging.hospeda.ar`), ir a Billing → Subscriptions → encontrar la del usuario.
+2. En el panel admin de staging (`https://admin.staging.hospeda.com.ar`), ir a Billing → Subscriptions → encontrar la del usuario.
 3. Click "Refund" o "Reembolsar".
 4. Confirmar.
 5. Verificar:
@@ -277,7 +277,7 @@ Este es el item más importante. Está documentado paso a paso en `docs/deployme
 **Cómo**:
 
 1. Tener un usuario con subscription `active` (vencimiento al menos 7 días en el futuro).
-2. Logueado como ese user en `https://staging.hospeda.ar`, ir a "Mi cuenta" → Billing → "Cancelar suscripción".
+2. Logueado como ese user en `https://staging.hospeda.com.ar`, ir a "Mi cuenta" → Billing → "Cancelar suscripción".
 3. Confirmar cancelación.
 4. Verificar:
    - La subscription queda `canceled`.
@@ -350,7 +350,7 @@ Si MP no cobra dentro de los siguientes 60 minutos, hay un bug.
 
 **Cómo**:
 
-1. Abrir `https://staging.hospeda.ar` en desktop.
+1. Abrir `https://staging.hospeda.com.ar` en desktop.
 2. **Soltar el mouse**. Solo teclado.
 3. Tab para avanzar entre elementos. Shift+Tab para retroceder. Enter para activar.
 4. Probar:
@@ -427,12 +427,12 @@ Si MP no cobra dentro de los siguientes 60 minutos, hay un bug.
 **Cómo**:
 
 1. Ir a `https://metatags.io/`.
-2. En el campo URL pegar `https://staging.hospeda.ar/`.
+2. En el campo URL pegar `https://staging.hospeda.com.ar/`.
 3. Click "Test".
 4. Verificar la pestaña Google: muestra título y descripción.
 5. Verificar la pestaña Facebook: muestra preview con imagen.
 6. Verificar Twitter: muestra card con imagen.
-7. Repetir para `https://staging.hospeda.ar/alojamientos/{algun-slug-real}`.
+7. Repetir para `https://staging.hospeda.com.ar/alojamientos/{algun-slug-real}`.
 
 **Qué tiene que pasar**: TODAS las pestañas (Google, Facebook, Twitter, LinkedIn) muestran preview con título, descripción e imagen. Si una sale "vacía" o con texto genérico, anotá la URL.
 
@@ -445,9 +445,9 @@ Si MP no cobra dentro de los siguientes 60 minutos, hay un bug.
 **Cómo**:
 
 1. Ir a `https://validator.schema.org/`.
-2. En "Fetch URL" pegar `https://staging.hospeda.ar/`.
+2. En "Fetch URL" pegar `https://staging.hospeda.com.ar/`.
 3. Click "Run test".
-4. Repetir con `https://staging.hospeda.ar/alojamientos/{algun-slug-real}`.
+4. Repetir con `https://staging.hospeda.com.ar/alojamientos/{algun-slug-real}`.
 
 **Qué tiene que pasar**:
 
@@ -463,7 +463,7 @@ Si MP no cobra dentro de los siguientes 60 minutos, hay un bug.
 
 **Cómo**:
 
-1. Copiar la URL `https://staging.hospeda.ar/alojamientos/{algun-slug-real}`.
+1. Copiar la URL `https://staging.hospeda.com.ar/alojamientos/{algun-slug-real}`.
 2. **WhatsApp**: pegarla en un chat propio (mensaje a vos mismo). Esperar 5 segundos.
 3. **Twitter/X**: nuevo tweet, pegar URL. Antes de enviar, esperar el preview.
 4. **Facebook**: pegar URL en el composer de un post. Esperar preview.
@@ -478,10 +478,10 @@ Si MP no cobra dentro de los siguientes 60 minutos, hay un bug.
 
 **Cómo**:
 
-1. Abrir `https://staging.hospeda.ar/sitemap.xml` en el navegador.
+1. Abrir `https://staging.hospeda.com.ar/sitemap.xml` en el navegador.
 2. Verificar que carga sin error y es XML legible.
-3. Abrir `https://staging.hospeda.ar/robots.txt`.
-4. Verificar que tiene una línea `Sitemap: https://staging.hospeda.ar/sitemap.xml`.
+3. Abrir `https://staging.hospeda.com.ar/robots.txt`.
+4. Verificar que tiene una línea `Sitemap: https://staging.hospeda.com.ar/sitemap.xml`.
 5. (Solo en producción, no staging) Loguearse en Google Search Console → Sitemaps → verificar que `sitemap.xml` está submitted y muestra "Success".
 
 **Qué tiene que pasar**: ambas URLs cargan, robots.txt referencia el sitemap.
@@ -511,7 +511,7 @@ Si MP no cobra dentro de los siguientes 60 minutos, hay un bug.
 
 **Cómo**:
 
-1. Sin login (incógnito), ir a `https://staging.hospeda.ar/contacto`.
+1. Sin login (incógnito), ir a `https://staging.hospeda.com.ar/contacto`.
 2. Llenar nombre, email, mensaje (cualquier texto razonable).
 3. Submit.
 

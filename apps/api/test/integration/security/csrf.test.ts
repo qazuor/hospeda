@@ -19,8 +19,8 @@ vi.mock('../../../src/utils/env', () => {
         NODE_ENV: 'test',
         API_SECURITY_ENABLED: true,
         HOSPEDA_TESTING_ORIGIN_VERIFICATION: true,
-        HOSPEDA_SITE_URL: 'https://hospeda.ar',
-        HOSPEDA_ADMIN_URL: 'https://admin.hospeda.ar',
+        HOSPEDA_SITE_URL: 'https://hospeda.com.ar',
+        HOSPEDA_ADMIN_URL: 'https://admin.hospeda.com.ar',
         API_SECURITY_HEADERS_ENABLED: false
     };
     return {
@@ -28,7 +28,7 @@ vi.mock('../../../src/utils/env', () => {
         env: mockEnv,
         getSecurityConfig: () => ({ enabled: true }),
         getCorsConfig: () => ({
-            origins: ['https://hospeda.ar', 'https://admin.hospeda.ar', '*.hospeda.ar']
+            origins: ['https://hospeda.com.ar', 'https://admin.hospeda.com.ar', '*.hospeda.com.ar']
         })
     };
 });
@@ -88,7 +88,7 @@ describe('CSRF / origin verification — mutation methods', () => {
             const response = await app.request('/resource', {
                 method,
                 headers: {
-                    origin: 'https://hospeda.ar',
+                    origin: 'https://hospeda.com.ar',
                     'content-type': 'application/json'
                 },
                 body: method === 'DELETE' ? undefined : JSON.stringify({})
@@ -121,7 +121,7 @@ describe('CSRF / origin verification — mutation methods', () => {
         const response = await app.request('/resource', {
             method: 'POST',
             headers: {
-                referer: 'https://hospeda.ar/some/page',
+                referer: 'https://hospeda.com.ar/some/page',
                 'content-type': 'application/json'
             },
             body: JSON.stringify({})
@@ -164,11 +164,11 @@ describe('CSRF / origin verification — mutation methods', () => {
         expect(response.status).toBe(200);
     });
 
-    it('honors wildcard subdomain matching (*.hospeda.ar)', async () => {
+    it('honors wildcard subdomain matching (*.hospeda.com.ar)', async () => {
         const response = await app.request('/resource', {
             method: 'POST',
             headers: {
-                origin: 'https://staging.hospeda.ar',
+                origin: 'https://staging.hospeda.com.ar',
                 'content-type': 'application/json'
             },
             body: JSON.stringify({})
@@ -177,11 +177,11 @@ describe('CSRF / origin verification — mutation methods', () => {
     });
 
     it('rejects sibling domain attack against wildcard subdomain', async () => {
-        // *.hospeda.ar must NOT match evil-hospeda.ar
+        // *.hospeda.com.ar must NOT match evil-hospeda.com.ar
         const response = await app.request('/resource', {
             method: 'POST',
             headers: {
-                origin: 'https://evil-hospeda.ar',
+                origin: 'https://evil-hospeda.com.ar',
                 'content-type': 'application/json'
             },
             body: JSON.stringify({})

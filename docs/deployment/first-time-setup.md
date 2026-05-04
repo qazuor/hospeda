@@ -183,7 +183,7 @@ Follow [`secrets.md §11.3`](./secrets.md#113-better-auth) for full setup.
 Env vars produced:
 
 - `HOSPEDA_BETTER_AUTH_SECRET` (generated with `openssl rand -base64 32`)
-- `HOSPEDA_BETTER_AUTH_URL` (e.g., `https://api.hospeda.ar/api/auth`)
+- `HOSPEDA_BETTER_AUTH_URL` (e.g., `https://api.hospeda.com.ar/api/auth`)
 
 **Validation**. Skip until Phase 7 (the secret cannot be tested without a deployed API).
 
@@ -283,9 +283,9 @@ curl "https://api.cloudinary.com/v1_1/$HOSPEDA_CLOUDINARY_CLOUD_NAME/resources/i
 
 Follow [`secrets.md §11.7`](./secrets.md#117-resend) for full setup. Highlights:
 
-- Add `hospeda.ar` as a Resend domain immediately. DNS propagation can take up to 48 hours.
+- Add `hospeda.com.ar` as a Resend domain immediately. DNS propagation can take up to 48 hours.
 - Add three DNS records (SPF, DKIM, DMARC) at the registrar in Phase 2.
-- Use a no-reply alias as the from address: `noreply@hospeda.ar`.
+- Use a no-reply alias as the from address: `noreply@hospeda.com.ar`.
 
 Env vars produced:
 
@@ -303,7 +303,7 @@ Follow [`secrets.md §11.4`](./secrets.md#114-mercadopago) for full setup. Highl
 
 - Business account (CUIT required) for ARS payouts.
 - One application per environment. Generate **Test** credentials first; production credentials only after the rest is wired up.
-- Webhook URL must be publicly reachable. For Phase 7 validation, the production URL is `https://api.hospeda.ar/api/v1/webhooks/mercado-pago`.
+- Webhook URL must be publicly reachable. For Phase 7 validation, the production URL is `https://api.hospeda.com.ar/api/v1/webhooks/mercado-pago`.
 
 Env vars produced:
 
@@ -384,7 +384,7 @@ Volver a la application **Hospeda E2E** → pestaña **Credenciales** → selecc
 También en **Webhooks** dentro de la misma application:
 
 - Click **+ Configurar notificaciones**.
-- En **URL de producción** poné `https://api.staging.hospeda.ar/api/v1/webhooks/mercadopago/notifications` (o la de tu staging real).
+- En **URL de producción** poné `https://api.staging.hospeda.com.ar/api/v1/webhooks/mercadopago/notifications` (o la de tu staging real).
 - En **Eventos** marcá: `Payments` y `Subscriptions`.
 - Después de guardar, te muestra una **clave secreta** (Webhook signing key). Esa es la que necesitás copiar también.
 
@@ -442,7 +442,7 @@ MP da tarjetas de test que el código ya conoce (`apps/e2e/tests/host/host-02-mp
 
 - Cuenta ngrok personal (free tier alcanza). Crear en `https://ngrok.com` si no tenés.
 - Token ngrok configurado localmente: `ngrok config add-authtoken <tu-token>`.
-- Acceso al staging de Hospeda corriendo (`https://api.staging.hospeda.ar`).
+- Acceso al staging de Hospeda corriendo (`https://api.staging.hospeda.com.ar`).
 - Acceso al panel MP developers para reconfigurar el webhook URL temporalmente.
 
 **Pasos**.
@@ -480,7 +480,7 @@ En el panel MP → application **Hospeda E2E** (o la de staging) → **Webhooks*
 
 ##### 4) Disparar un payment desde el front de staging
 
-Abrir `https://staging.hospeda.ar` → loguear como host de prueba → ir a Billing → **Upgrade** a un plan pago → completar checkout con tarjeta `4509 9535 6623 3704` (CVV `123`, vence `11/30`).
+Abrir `https://staging.hospeda.com.ar` → loguear como host de prueba → ir a Billing → **Upgrade** a un plan pago → completar checkout con tarjeta `4509 9535 6623 3704` (CVV `123`, vence `11/30`).
 
 ##### 5) Verificar que el webhook llega
 
@@ -524,7 +524,7 @@ Ctrl+C en ambas terminales
 
 Follow [`secrets.md §11.8`](./secrets.md#118-google-oauth) for full setup. Highlights:
 
-- Configure the OAuth consent screen with `hospeda.ar` as an authorized domain.
+- Configure the OAuth consent screen with `hospeda.com.ar` as an authorized domain.
 - Add **all** redirect URIs (dev, staging, prod) up front to avoid round-trips.
 - Submit app verification only when leaving Testing mode (4-6 week review).
 
@@ -618,60 +618,60 @@ Hospeda's production domain pattern is `.ar` (Argentina market). The three apps 
 
 | App | Production hostname |
 |-----|---------------------|
-| Web | `hospeda.ar` (and `www.hospeda.ar`) |
-| API | `api.hospeda.ar` |
-| Admin | `admin.hospeda.ar` |
+| Web | `hospeda.com.ar` (and `www.hospeda.com.ar`) |
+| API | `api.hospeda.com.ar` |
+| Admin | `admin.hospeda.com.ar` |
 
-Staging mirrors the production naming pattern under the `staging.hospeda.ar` zone (nested subdomain pattern):
+Staging mirrors the production naming pattern under the `staging.hospeda.com.ar` zone (nested subdomain pattern):
 
 | App | Staging hostname |
 |-----|------------------|
-| Web | `staging.hospeda.ar` |
-| API | `api.staging.hospeda.ar` |
-| Admin | `admin.staging.hospeda.ar` |
+| Web | `staging.hospeda.com.ar` |
+| API | `api.staging.hospeda.com.ar` |
+| Admin | `admin.staging.hospeda.com.ar` |
 
-A single wildcard certificate (`*.staging.hospeda.ar`) covers all three. See [`environments.md → Domain Pattern`](environments.md#domain-pattern) for the full DNS record list and rationale.
+A single wildcard certificate (`*.staging.hospeda.com.ar`) covers all three. See [`environments.md → Domain Pattern`](environments.md#domain-pattern) for the full DNS record list and rationale.
 
 ### Steps
 
-1. **Acquire the apex domain**. Register `hospeda.ar` through a NIC.ar accredited registrar. Country-code `.ar` requires Argentine CUIT/CUIL or local representation. Allow 24-48h for delegation.
+1. **Acquire the apex domain**. Register `hospeda.com.ar` through a NIC.ar accredited registrar. Country-code `.ar` requires Argentine CUIT/CUIL or local representation. Allow 24-48h for delegation.
 
 2. **Configure DNS at the registrar**. Use one of:
     - **Vercel-managed nameservers** (recommended): set the registrar's nameservers to the four addresses Vercel provides under Project → Settings → Domains.
     - **Registrar-managed records**: add `A`/`CNAME` records pointing at Vercel's IP and `cname.vercel-dns.com`.
 
 3. **Add the domains to each Vercel project**. In the Vercel dashboard:
-    - `hospeda-api` → add `api.hospeda.ar` and `api.staging.hospeda.ar`
-    - `hospeda-web` → add `hospeda.ar`, `www.hospeda.ar` (with the `www → apex` redirect Vercel offers automatically), and `staging.hospeda.ar`
-    - `hospeda-admin` → add `admin.hospeda.ar` and `admin.staging.hospeda.ar`
+    - `hospeda-api` → add `api.hospeda.com.ar` and `api.staging.hospeda.com.ar`
+    - `hospeda-web` → add `hospeda.com.ar`, `www.hospeda.com.ar` (with the `www → apex` redirect Vercel offers automatically), and `staging.hospeda.com.ar`
+    - `hospeda-admin` → add `admin.hospeda.com.ar` and `admin.staging.hospeda.com.ar`
 
-    Production domains are scoped to the **Production** environment; staging domains to **Preview** (Vercel calls staging "preview" in their environment model). Vercel auto-provisions Let's Encrypt SSL certificates, including the `*.staging.hospeda.ar` wildcard. No manual cert work.
+    Production domains are scoped to the **Production** environment; staging domains to **Preview** (Vercel calls staging "preview" in their environment model). Vercel auto-provisions Let's Encrypt SSL certificates, including the `*.staging.hospeda.com.ar` wildcard. No manual cert work.
 
 4. **Add the Resend DNS records** from Phase 1.6. SPF, DKIM, and DMARC must all show as `Verified` in the Resend dashboard before transactional email works.
 
 5. **Update Better Auth `trustedOrigins`**. The list lives in `apps/api/src/lib/auth.ts`. Confirm production hostnames are present. The runtime `HOSPEDA_API_URL`, `HOSPEDA_SITE_URL`, and `HOSPEDA_ADMIN_URL` env vars are also consumed by the CORS and CSRF middleware.
 
 6. **Update OAuth redirect URIs**. Add the production callback URLs to:
-    - Google Cloud Console → OAuth 2.0 client → Authorized redirect URIs: `https://api.hospeda.ar/api/auth/callback/google`. Per [`secrets.md §11.8`](./secrets.md#118-google-oauth).
-    - Meta for Developers → Facebook Login → Settings: `https://api.hospeda.ar/api/auth/callback/facebook`. Per [`secrets.md §11.9`](./secrets.md#119-facebook-oauth).
+    - Google Cloud Console → OAuth 2.0 client → Authorized redirect URIs: `https://api.hospeda.com.ar/api/auth/callback/google`. Per [`secrets.md §11.8`](./secrets.md#118-google-oauth).
+    - Meta for Developers → Facebook Login → Settings: `https://api.hospeda.com.ar/api/auth/callback/facebook`. Per [`secrets.md §11.9`](./secrets.md#119-facebook-oauth).
 
 ### Validation
 
 ```bash
 # DNS resolves
-dig +short hospeda.ar
-dig +short api.hospeda.ar
-dig +short admin.hospeda.ar
+dig +short hospeda.com.ar
+dig +short api.hospeda.com.ar
+dig +short admin.hospeda.com.ar
 
 # SSL is provisioned (after Vercel finishes — usually within 5 minutes of adding the domain)
-curl -I https://hospeda.ar
-curl -I https://api.hospeda.ar
-curl -I https://admin.hospeda.ar
+curl -I https://hospeda.com.ar
+curl -I https://api.hospeda.com.ar
+curl -I https://admin.hospeda.com.ar
 
 # Resend records resolve
-dig +short TXT hospeda.ar | grep "v=spf1"
-dig +short CNAME resend._domainkey.hospeda.ar
-dig +short TXT _dmarc.hospeda.ar
+dig +short TXT hospeda.com.ar | grep "v=spf1"
+dig +short CNAME resend._domainkey.hospeda.com.ar
+dig +short TXT _dmarc.hospeda.com.ar
 ```
 
 Each should return non-empty. If DNS is not propagated after 1 hour, double-check the registrar nameservers.
@@ -796,7 +796,7 @@ The day-1 production seed must therefore be a curated `--required` run that **ex
 
 5. Create the first admin user through Better Auth signup, then promote.
 
-    a. Visit `https://hospeda.ar/auth/sign-up` (or the staging URL during dry-runs) and complete the signup flow with the **real** admin email address. Use Google OAuth or email/password — both flows produce a row in `users` with `role = 'USER'`.
+    a. Visit `https://hospeda.com.ar/auth/sign-up` (or the staging URL during dry-runs) and complete the signup flow with the **real** admin email address. Use Google OAuth or email/password — both flows produce a row in `users` with `role = 'USER'`.
 
     b. Promote that user to `SUPER_ADMIN` directly in the database. There is no admin UI for this until at least one admin already exists, so the bootstrap promotion has to be a manual SQL update against the production DB:
 
@@ -806,7 +806,7 @@ The day-1 production seed must therefore be a curated `--required` run that **ex
 
     Replace `<your-admin-email>` with the address used in step 5.a. Verify exactly one row is reported as updated. After this point, every subsequent role change must go through `UserService.assignRole` (see [`packages/service-core/CLAUDE.md`](../../packages/service-core/CLAUDE.md)) — never via raw SQL.
 
-    c. Sign out and sign back in so the session cookie picks up the new role. Visit `https://admin.hospeda.ar` and confirm the admin panel loads.
+    c. Sign out and sign back in so the session cookie picks up the new role. Visit `https://admin.hospeda.com.ar` and confirm the admin panel loads.
 
 6. Switch your shell back to the **pooled** URL (`?pgbouncer=true`) so future connections from the API use pgbouncer.
 
@@ -852,8 +852,8 @@ The CD workflows ([`cd-production.yml`](../../.github/workflows/cd-production.ym
 
 4. Add **environment-scoped variables** (used by `cd-production.yml` for the smoke test step):
 
-    - In `production` environment → **Variables** → add `HOSPEDA_API_URL=https://api.hospeda.ar` and `HOSPEDA_SITE_URL=https://hospeda.ar`.
-    - In `staging` environment → add `HOSPEDA_API_URL=https://api.staging.hospeda.ar` and `HOSPEDA_SITE_URL=https://staging.hospeda.ar`.
+    - In `production` environment → **Variables** → add `HOSPEDA_API_URL=https://api.hospeda.com.ar` and `HOSPEDA_SITE_URL=https://hospeda.com.ar`.
+    - In `staging` environment → add `HOSPEDA_API_URL=https://api.staging.hospeda.com.ar` and `HOSPEDA_SITE_URL=https://staging.hospeda.com.ar`.
 
 5. Add **environment-scoped secrets** if any value differs between staging and production (typically `HOSPEDA_DATABASE_URL`).
 
@@ -907,7 +907,7 @@ The first production deploy is just a push to `main`. The workflow runs the CI c
 
 ### Validation
 
-The `verify-production` job at the end of the workflow exits 0 only if `https://api.hospeda.ar/health/live` and `https://hospeda.ar` both return HTTP 200. If it fails, see the [Troubleshooting](#troubleshooting) section.
+The `verify-production` job at the end of the workflow exits 0 only if `https://api.hospeda.com.ar/health/live` and `https://hospeda.com.ar` both return HTTP 200. If it fails, see the [Troubleshooting](#troubleshooting) section.
 
 ---
 
@@ -918,9 +918,9 @@ This is the manual smoke test. Run every check below. If any fails, it represent
 ### URL reachability
 
 ```bash
-curl -I https://hospeda.ar
-curl -I https://api.hospeda.ar/health/live
-curl -I https://admin.hospeda.ar
+curl -I https://hospeda.com.ar
+curl -I https://api.hospeda.com.ar/health/live
+curl -I https://admin.hospeda.com.ar
 ```
 
 All three return `HTTP/2 200`.
@@ -930,7 +930,7 @@ All three return `HTTP/2 200`.
 1. Trigger a test event from the API:
 
     ```bash
-    curl -X POST https://api.hospeda.ar/api/v1/debug/sentry-test \
+    curl -X POST https://api.hospeda.com.ar/api/v1/debug/sentry-test \
       -H "Authorization: Bearer <admin-jwt>"
     ```
 
@@ -954,7 +954,7 @@ Any of those lines saying `DISABLED` indicates a missing env var. Match against 
 
 ### Authentication
 
-1. Visit `https://hospeda.ar` and click **Sign in with Google**. The flow must redirect to `accounts.google.com`, prompt for consent, and redirect back to `https://api.hospeda.ar/api/auth/callback/google` then to the web app.
+1. Visit `https://hospeda.com.ar` and click **Sign in with Google**. The flow must redirect to `accounts.google.com`, prompt for consent, and redirect back to `https://api.hospeda.com.ar/api/auth/callback/google` then to the web app.
 2. Repeat with **Sign in with Facebook**.
 3. If you see `redirect_uri_mismatch`, the OAuth dashboard does not have the production callback URL. Fix in Phase 1.8/1.9.
 
@@ -978,7 +978,7 @@ The API has six Vercel cron jobs configured in `apps/api/vercel.json`. Trigger o
 Hit the revalidation endpoint from the API to invalidate a Web page:
 
 ```bash
-curl -X POST "https://api.hospeda.ar/api/v1/admin/revalidate?path=/" \
+curl -X POST "https://api.hospeda.com.ar/api/v1/admin/revalidate?path=/" \
   -H "Authorization: Bearer <admin-jwt>"
 ```
 
@@ -1019,15 +1019,15 @@ The platform uses [BetterStack](https://betterstack.com) (formerly BetterUptime)
 
 | Monitor | URL | Why |
 |---------|-----|-----|
-| Web homepage | `https://hospeda.ar` | Public site reachability |
-| API health check | `https://api.hospeda.ar/health` | API liveness |
-| Admin login page | `https://admin.hospeda.ar` | Admin panel reachability |
-| Auth flow | `https://hospeda.ar/api/auth/sign-in` | Better Auth endpoint reachable |
-| Public API smoke | `https://api.hospeda.ar/api/v1/public/accommodations?limit=1` | DB + serialization works end-to-end |
+| Web homepage | `https://hospeda.com.ar` | Public site reachability |
+| API health check | `https://api.hospeda.com.ar/health` | API liveness |
+| Admin login page | `https://admin.hospeda.com.ar` | Admin panel reachability |
+| Auth flow | `https://hospeda.com.ar/api/auth/sign-in` | Better Auth endpoint reachable |
+| Public API smoke | `https://api.hospeda.com.ar/api/v1/public/accommodations?limit=1` | DB + serialization works end-to-end |
 
 #### Status page
 
-Free tier exposes a status page on a `betterstacktatus.com` subdomain. A custom subdomain (`status.hospeda.ar`) requires the paid tier. TODO: provision `status.hospeda.ar` as a future subdomain once the paid tier is acquired.
+Free tier exposes a status page on a `betterstacktatus.com` subdomain. A custom subdomain (`status.hospeda.com.ar`) requires the paid tier. TODO: provision `status.hospeda.com.ar` as a future subdomain once the paid tier is acquired.
 
 ### Dashboards to bookmark
 
@@ -1070,7 +1070,7 @@ For provider-level issues during onboarding, see the per-service common gotchas 
 |---------|--------------|--------------|
 | Vercel deploy fails with `unauthorized` | `VERCEL_TOKEN` or project IDs wrong in GitHub | Phase 5. Re-run `vercel link` and copy `.vercel/project.json` |
 | Vercel deploy fails on `pnpm env:check` | Missing required env var on the Vercel project | Phase 3. Compare against `secrets.md §2`-`§4` |
-| `https://hospeda.ar` returns "Not found" | DNS not propagated or domain not added to Vercel | Phase 2. `dig +short hospeda.ar` and Vercel → Settings → Domains |
+| `https://hospeda.com.ar` returns "Not found" | DNS not propagated or domain not added to Vercel | Phase 2. `dig +short hospeda.com.ar` and Vercel → Settings → Domains |
 | OAuth sign-in returns `redirect_uri_mismatch` | Production callback URL not on the OAuth client | Phase 1.8 or 1.9. Add the URL in the provider dashboard |
 | Sentry events have minified stack traces | `SENTRY_AUTH_TOKEN` was missing at build time | Phase 3. Set the build-time env var on each Vercel project, then redeploy |
 | MercadoPago webhook never arrives | Webhook URL wrong, secret wrong, or app in test mode | Phase 1.7 + Phase 7. Verify the URL in the MP developer panel and check API logs for signature errors |
@@ -1079,7 +1079,7 @@ For provider-level issues during onboarding, see the per-service common gotchas 
 | Resend domain shows `Pending` after 24h | Wrong DNS records at registrar | Phase 2. Re-check SPF, DKIM, DMARC records at the registrar |
 | API returns 503 on cold start | `HOSPEDA_REDIS_URL` missing in production | Phase 3. Set the URL on the API Vercel project |
 | Rate limit applies to all requests at once | `API_RATE_LIMIT_TRUST_PROXY` not `true` | Phase 3. Set on API project |
-| `https://hospeda.ar` works but `https://api.hospeda.ar` is 404 | API project domain not configured or wrong project linked | Phase 2 + Phase 1.1. Confirm `apps/api/.vercel/project.json` `projectId` matches the project that owns `api.hospeda.ar` |
+| `https://hospeda.com.ar` works but `https://api.hospeda.com.ar` is 404 | API project domain not configured or wrong project linked | Phase 2 + Phase 1.1. Confirm `apps/api/.vercel/project.json` `projectId` matches the project that owns `api.hospeda.com.ar` |
 
 For deeper incident response, see the runbooks in [`docs/runbooks/`](../runbooks/README.md): rollback, backup-recovery, billing-incidents, cloudinary-incidents, monitoring, sentry-setup, scaling, production-bugs.
 
@@ -1107,4 +1107,4 @@ For deeper incident response, see the runbooks in [`docs/runbooks/`](../runbooks
 
 These items are referenced above as `TODO: confirm` and should be tracked as separate tasks before the platform is opened to public traffic.
 
-1. **Custom status page subdomain**. BetterStack free tier exposes the status page on a `betterstacktatus.com` subdomain. Provisioning `status.hospeda.ar` requires upgrading to the paid tier. Decide and provision before public launch.
+1. **Custom status page subdomain**. BetterStack free tier exposes the status page on a `betterstacktatus.com` subdomain. Provisioning `status.hospeda.com.ar` requires upgrading to the paid tier. Decide and provision before public launch.

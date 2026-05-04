@@ -43,7 +43,7 @@ jobs:
       - name: Validate environment variables
         run: pnpm env:check
 
-      # Pin the staging deploy to api.staging.hospeda.ar so OAuth callbacks,
+      # Pin the staging deploy to api.staging.hospeda.com.ar so OAuth callbacks,
       # MercadoPago webhooks, and BetterStack monitors keep working across
       # redeploys. See docs/deployment/environments.md (Domain Pattern).
       - name: Deploy to Vercel (Preview)
@@ -53,7 +53,7 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_API }}
           working-directory: apps/api
-          alias-domains: api.staging.hospeda.ar
+          alias-domains: api.staging.hospeda.com.ar
 
   deploy-web:
     name: Deploy Web to Vercel (Staging)
@@ -81,7 +81,7 @@ jobs:
       - name: Validate environment variables
         run: pnpm env:check
 
-      # Pin the staging deploy to staging.hospeda.ar (web apex for staging).
+      # Pin the staging deploy to staging.hospeda.com.ar (web apex for staging).
       - name: Deploy to Vercel (Preview)
         uses: amondnet/vercel-action@v25
         with:
@@ -89,7 +89,7 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
           working-directory: apps/web
-          alias-domains: staging.hospeda.ar
+          alias-domains: staging.hospeda.com.ar
 
   deploy-admin:
     name: Deploy Admin to Vercel (Staging)
@@ -117,7 +117,7 @@ jobs:
       - name: Validate environment variables
         run: pnpm env:check
 
-      # Pin the staging deploy to admin.staging.hospeda.ar.
+      # Pin the staging deploy to admin.staging.hospeda.com.ar.
       - name: Deploy to Vercel (Preview)
         uses: amondnet/vercel-action@v25
         with:
@@ -125,4 +125,4 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
           working-directory: apps/admin
-          alias-domains: admin.staging.hospeda.ar
+          alias-domains: admin.staging.hospeda.com.ar

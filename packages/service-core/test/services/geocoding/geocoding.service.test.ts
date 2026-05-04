@@ -11,7 +11,7 @@ import {
     geocodingReverse
 } from '../../../src/services/geocoding/geocoding.service';
 
-const userAgent = 'Hospeda/1.0 (test@hospeda.ar)';
+const userAgent = 'Hospeda/1.0 (test@hospeda.com.ar)';
 
 const photonResponse = {
     features: [

@@ -106,8 +106,8 @@ Three deployment tiers. The full per-environment matrix lives in [`environments.
 | Tier | Branch | API URL | Web URL | Admin URL |
 |------|--------|---------|---------|-----------|
 | Development | local | `http://localhost:3001` | `http://localhost:4321` | `http://localhost:3000` |
-| Staging | `staging` | `https://api.staging.hospeda.ar` | `https://staging.hospeda.ar` | `https://admin.staging.hospeda.ar` |
-| Production | `main` | `https://api.hospeda.ar` | `https://hospeda.ar` | `https://admin.hospeda.ar` |
+| Staging | `staging` | `https://api.staging.hospeda.com.ar` | `https://staging.hospeda.com.ar` | `https://admin.staging.hospeda.com.ar` |
+| Production | `main` | `https://api.hospeda.com.ar` | `https://hospeda.com.ar` | `https://admin.hospeda.com.ar` |
 
 For environment variable definitions, prefix conventions, and how to add new variables, see [`environments.md`](./environments.md). For per-secret values and how to obtain them, see [`secrets.md`](./secrets.md).
 
@@ -132,9 +132,9 @@ Hospeda uses `drizzle-kit push` (no numbered migration files). To revert a schem
 ### Health Check Endpoints
 
 ```bash
-curl https://api.hospeda.ar/health          # API
-curl https://hospeda.ar/api/health          # Web
-curl https://admin.hospeda.ar/api/health    # Admin
+curl https://api.hospeda.com.ar/health          # API
+curl https://hospeda.com.ar/api/health          # Web
+curl https://admin.hospeda.com.ar/api/health    # Admin
 ```
 
 ### Monitoring Tools

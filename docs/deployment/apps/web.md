@@ -5,7 +5,7 @@ Complete guide for deploying the Hospeda public-facing web app (`apps/web`) to V
 **Last Updated**: 2026-04-30
 **Target Platform**: Vercel
 **Framework**: Astro 5 (SSR + ISR) with React islands
-**Production Domain Pattern**: `hospeda.ar` (Argentina market)
+**Production Domain Pattern**: `hospeda.com.ar` (Argentina market)
 
 ---
 
@@ -32,7 +32,7 @@ Complete guide for deploying the Hospeda public-facing web app (`apps/web`) to V
 
 ### What is the Web App?
 
-`apps/web` is the public-facing site at `https://hospeda.ar`. It is the page tourists see when discovering accommodations, destinations, events, and blog posts in Concepcion del Uruguay and the Litoral region of Argentina.
+`apps/web` is the public-facing site at `https://hospeda.com.ar`. It is the page tourists see when discovering accommodations, destinations, events, and blog posts in Concepcion del Uruguay and the Litoral region of Argentina.
 
 It is intentionally separate from the admin panel (`apps/admin`) and the REST API (`apps/api`). The web app only consumes the public and protected tiers of the API. It never calls `/api/v1/admin/*`.
 
@@ -58,7 +58,7 @@ It is intentionally separate from the admin panel (`apps/admin`) and the REST AP
 | Output directory | `dist` |
 | Install command | `pnpm install --frozen-lockfile` |
 | Node version | 20 |
-| Custom domain | `hospeda.ar` (production) |
+| Custom domain | `hospeda.com.ar` (production) |
 | Root domain redirects | `/` -> `/es/` (configured in `vercel.json`) |
 | Trailing slashes | Always (Astro `trailingSlash: 'always'`) |
 
@@ -179,7 +179,7 @@ This produces a preview deployment. Promote to production with `vercel --prod` o
 ### Step 2. Configure Custom Domain
 
 1. Vercel assigns a default URL like `https://hospeda-web.vercel.app`. This works but is not the production domain.
-2. In the Vercel project settings, go to **Domains** and add `hospeda.ar` and `www.hospeda.ar`.
+2. In the Vercel project settings, go to **Domains** and add `hospeda.com.ar` and `www.hospeda.com.ar`.
 3. Configure DNS at your registrar (Cloudflare, Namecheap, etc.):
 
    | Type | Name | Value | TTL |
@@ -190,7 +190,7 @@ This produces a preview deployment. Promote to production with `vercel --prod` o
    Apex records on Vercel use an `A` record pointing to a Vercel anycast IP. The exact IP is shown in the Vercel domain configuration screen. If your registrar supports `ALIAS` or `ANAME` records (Cloudflare flattening, DNSimple ALIAS), use that to point `@` at `cname.vercel-dns.com`.
 
 4. Wait for DNS propagation (5-60 minutes). Vercel polls the domain and shows "Valid Configuration" once the records resolve.
-5. Decide which domain is canonical. Recommended: redirect `www.hospeda.ar` -> `hospeda.ar` in Vercel domain settings.
+5. Decide which domain is canonical. Recommended: redirect `www.hospeda.com.ar` -> `hospeda.com.ar` in Vercel domain settings.
 
 ### Step 3. SSL/TLS
 
@@ -202,10 +202,10 @@ If the cert fails to issue, check that your DNS is fully propagated. Vercel cann
 
 ```bash
 # Check the deployment URL
-curl -I https://hospeda.ar
+curl -I https://hospeda.com.ar
 # HTTP/2 308   (redirect from / to /es/)
 
-curl -I https://hospeda.ar/es/
+curl -I https://hospeda.com.ar/es/
 # HTTP/2 200
 ```
 
@@ -230,8 +230,8 @@ These must be present BEFORE the build runs. The `astro.config.mjs` reads them a
 
 | Variable | Type | Example | Purpose |
 |----------|------|---------|---------|
-| `PUBLIC_API_URL` | URL | `https://api.hospeda.ar` | API base URL. Inlined into the browser bundle and used by `lib/api/client.ts`. |
-| `PUBLIC_SITE_URL` | URL | `https://hospeda.ar` | Web app base URL. Used for canonical links, sitemap, og:url, JSON-LD. |
+| `PUBLIC_API_URL` | URL | `https://api.hospeda.com.ar` | API base URL. Inlined into the browser bundle and used by `lib/api/client.ts`. |
+| `PUBLIC_SITE_URL` | URL | `https://hospeda.com.ar` | Web app base URL. Used for canonical links, sitemap, og:url, JSON-LD. |
 
 If either is missing at build time, the build fails fast at the top of `astro.config.mjs` with `[env] Missing required URL env vars`. There is no graceful fallback. This is intentional. A misconfigured site URL would poison every canonical tag and OG card on the live site.
 
@@ -241,7 +241,7 @@ These are read by the Vercel Function on every SSR/ISR request.
 
 | Variable | Type | Example | Purpose |
 |----------|------|---------|---------|
-| `HOSPEDA_BETTER_AUTH_URL` | URL | `https://api.hospeda.ar/api/auth` | Server-side Better Auth endpoint. Used by middleware to validate sessions for `/mi-cuenta/*`. |
+| `HOSPEDA_BETTER_AUTH_URL` | URL | `https://api.hospeda.com.ar/api/auth` | Server-side Better Auth endpoint. Used by middleware to validate sessions for `/mi-cuenta/*`. |
 
 > Note: in dev, `HOSPEDA_API_URL` and `HOSPEDA_SITE_URL` may be set instead of the `PUBLIC_*` pair. The build script accepts either. In production, prefer `PUBLIC_*` so the values are inlined for the browser.
 
@@ -302,7 +302,7 @@ If you change any `PUBLIC_*` variable, you MUST redeploy. They are inlined at bu
 ```bash
 cd apps/web
 vercel env add PUBLIC_API_URL production
-# Paste: https://api.hospeda.ar
+# Paste: https://api.hospeda.com.ar
 
 # Pull all env vars to a local file (gitignored)
 vercel env pull .env.local
@@ -410,9 +410,9 @@ Preview deployments use any env var with the **Preview** scope in Vercel. Set st
 
 Recommended preview scope:
 
-- `PUBLIC_API_URL=https://api.staging.hospeda.ar`
-- `PUBLIC_SITE_URL=https://staging.hospeda.ar`
-- `HOSPEDA_BETTER_AUTH_URL=https://api.staging.hospeda.ar/api/auth`
+- `PUBLIC_API_URL=https://api.staging.hospeda.com.ar`
+- `PUBLIC_SITE_URL=https://staging.hospeda.com.ar`
+- `HOSPEDA_BETTER_AUTH_URL=https://api.staging.hospeda.com.ar/api/auth`
 
 ### Use Cases
 
@@ -469,7 +469,7 @@ If you change a page and want to force the cache to refresh without waiting 24h:
 
 ```bash
 # Replace <secret> and <path> with real values
-curl -X POST "https://hospeda.ar/<path>" \
+curl -X POST "https://hospeda.com.ar/<path>" \
   -H "x-prerender-revalidate: <secret>"
 ```
 
@@ -501,7 +501,7 @@ Run these checks after every production deploy. They catch the 90% of deploy reg
 ### Status Code Checks
 
 ```bash
-SITE=https://hospeda.ar
+SITE=https://hospeda.com.ar
 
 # Apex redirect
 curl -I "${SITE}"

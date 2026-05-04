@@ -1557,8 +1557,8 @@ For critical secrets like database URLs:
 ```
 HOSPEDA_DATABASE_URL          # Production DB
 HOSPEDA_BETTER_AUTH_SECRET      # Production Better Auth
-HOSPEDA_API_URL               # https://api.hospeda.ar
-HOSPEDA_SITE_URL              # https://hospeda.ar
+HOSPEDA_API_URL               # https://api.hospeda.com.ar
+HOSPEDA_SITE_URL              # https://hospeda.com.ar
 ```
 
 **Staging** (staging branch):
@@ -1566,8 +1566,8 @@ HOSPEDA_SITE_URL              # https://hospeda.ar
 ```
 HOSPEDA_DEV_DATABASE_URL      # Staging DB
 HOSPEDA_DEV_BETTER_AUTH_SECRET  # Staging Better Auth
-HOSPEDA_DEV_API_URL           # https://api.staging.hospeda.ar
-HOSPEDA_DEV_SITE_URL          # https://staging.hospeda.ar
+HOSPEDA_DEV_API_URL           # https://api.staging.hospeda.com.ar
+HOSPEDA_DEV_SITE_URL          # https://staging.hospeda.com.ar
 ```
 
 **Development** (local):

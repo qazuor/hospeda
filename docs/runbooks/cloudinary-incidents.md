@@ -70,7 +70,7 @@ Use the public health endpoint to manually verify Cloudinary connectivity. This 
 ### 2.1 Production / preview
 
 ```bash
-curl -i https://api.hospeda.ar/api/v1/public/health/media
+curl -i https://api.hospeda.com.ar/api/v1/public/health/media
 ```
 
 > TODO: confirm production hostname with team if it differs.
@@ -178,7 +178,7 @@ Wait for the deploy to be live. Vercel runtime functions read env vars at cold s
 
 ```bash
 # Should return 200 status:ok
-curl -i https://api.hospeda.ar/api/v1/public/health/media
+curl -i https://api.hospeda.com.ar/api/v1/public/health/media
 ```
 
 If the validation curl returns 200, revoke the old key in the Cloudinary dashboard:
@@ -231,7 +231,7 @@ Provide:
 ### 4.5 After lift
 
 ```bash
-curl -i https://api.hospeda.ar/api/v1/public/health/media
+curl -i https://api.hospeda.com.ar/api/v1/public/health/media
 ```
 
 Should return 200. Confirm an upload through the admin panel.

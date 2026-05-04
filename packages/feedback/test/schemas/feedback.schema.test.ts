@@ -94,7 +94,7 @@ describe('feedbackEnvironmentSchema', () => {
         it('should accept complete environment with all optional fields', () => {
             // Arrange
             const input = {
-                currentUrl: 'https://hospeda.ar/es/alojamientos',
+                currentUrl: 'https://hospeda.com.ar/es/alojamientos',
                 browser: 'Chrome 124',
                 os: 'macOS 14',
                 viewport: '1440x900',
@@ -259,7 +259,7 @@ describe('feedbackFormSchema', () => {
                 actualResult: 'The page crashes instead.',
                 environment: {
                     ...validPayload.environment,
-                    currentUrl: 'https://hospeda.ar/es/alojamientos',
+                    currentUrl: 'https://hospeda.com.ar/es/alojamientos',
                     browser: 'Firefox 125',
                     os: 'Windows 11',
                     viewport: '1920x1080',
@@ -661,7 +661,7 @@ describe('feedbackFormSchema', () => {
             const validEmails = [
                 'user@example.com',
                 'user+tag@subdomain.example.org',
-                'first.last@hospeda.ar'
+                'first.last@hospeda.com.ar'
             ];
 
             for (const reporterEmail of validEmails) {
