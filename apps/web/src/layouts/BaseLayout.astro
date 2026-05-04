@@ -25,6 +25,7 @@ import NavigationProgress from '@/components/shared/navigation/NavigationProgres
 import FontsLoader from '@/components/shared/FontsLoader.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
 import { CookieConsentBanner } from '@/components/legal/CookieConsentBanner.client';
+import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import '@/styles/global.css';
 
 interface Props {
@@ -103,6 +104,8 @@ const cookiesPolicyUrl = buildUrl({ locale, path: 'legal/cookies' });
 			locale={locale}
 			cookiesPolicyUrl={cookiesPolicyUrl}
 		/>
+
+		<ToastViewport client:idle />
 
 		<!-- Page initialization script -->
 		<script>

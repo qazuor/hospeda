@@ -11,6 +11,7 @@ import Logo from '@/components/shared/navigation/Logo.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import FontsLoader from '@/components/shared/FontsLoader.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
+import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { ClientRouter } from 'astro:transitions';
 import '@/styles/global.css';
 
@@ -71,6 +72,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).hr
 				<slot />
 			</div>
 		</main>
+
+		<ToastViewport client:idle />
 	</body>
 </html>
 

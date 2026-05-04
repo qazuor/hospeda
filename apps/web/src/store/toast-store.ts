@@ -6,8 +6,19 @@
  * Uses module-level state with a subscriber pattern compatible with React's
  * `useSyncExternalStore`.
  *
- * Copied from `apps/web` with no changes — the API is identical across both apps.
+ * Optional `action` and `secondaryAction` extend the basic toast with up to two
+ * call-to-action links rendered next to the dismiss button by `ToastViewport`.
  */
+
+/**
+ * A clickable action attached to a toast. Renders as a link or button next to
+ * the dismiss button. Either `href` (link) or `onClick` (button) must be set.
+ */
+export interface ToastAction {
+    readonly label: string;
+    readonly href?: string;
+    readonly onClick?: () => void;
+}
 
 /**
  * A toast notification object.
@@ -17,29 +28,24 @@ export interface Toast {
     readonly type: 'success' | 'error' | 'warning' | 'info';
     readonly message: string;
     readonly duration?: number;
+    /** Primary action (e.g. "Sign in"). Rendered prominently. */
+    readonly action?: ToastAction;
+    /** Secondary action (e.g. "View benefits"). Rendered as a quieter link. */
+    readonly secondaryAction?: ToastAction;
 }
 
-/** Internal mutable store state */
 let toasts: Toast[] = [];
 
-/** Set of listener callbacks to notify on state changes */
 const listeners = new Set<() => void>();
 
-/** Map of toast IDs to their auto-dismiss timeout IDs */
 const timeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
-/** Notify all subscribers of a state change */
 function emitChange(): void {
     for (const listener of listeners) {
         listener();
     }
 }
 
-/**
- * Generate a unique identifier for a toast.
- *
- * @returns Unique toast identifier string
- */
 function generateId(): string {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
         return crypto.randomUUID();
@@ -54,13 +60,15 @@ function generateId(): string {
  * @param params.type - Visual type: success | error | warning | info
  * @param params.message - Human-readable message content
  * @param params.duration - Auto-dismiss delay in ms. Defaults to 5000. Pass 0 to persist.
+ * @param params.action - Optional primary CTA
+ * @param params.secondaryAction - Optional secondary CTA (rendered as quieter link)
  * @returns The generated toast `id`
  */
 export function addToast(params: Omit<Toast, 'id'>): string {
-    const { type, message, duration = 5000 } = params;
+    const { type, message, duration = 5000, action, secondaryAction } = params;
 
     const id = generateId();
-    const toast: Toast = { id, type, message, duration };
+    const toast: Toast = { id, type, message, duration, action, secondaryAction };
 
     toasts = [...toasts, toast];
     emitChange();
@@ -75,11 +83,6 @@ export function addToast(params: Omit<Toast, 'id'>): string {
     return id;
 }
 
-/**
- * Remove a toast notification by its `id`.
- *
- * @param id - Toast identifier to remove
- */
 export function removeToast(id: string): void {
     const timeoutId = timeouts.get(id);
     if (timeoutId !== undefined) {
@@ -91,9 +94,6 @@ export function removeToast(id: string): void {
     emitChange();
 }
 
-/**
- * Remove all toast notifications from the store.
- */
 export function clearToasts(): void {
     for (const timeoutId of timeouts.values()) {
         clearTimeout(timeoutId);
@@ -104,11 +104,6 @@ export function clearToasts(): void {
     emitChange();
 }
 
-/**
- * Get the current snapshot of toasts.
- *
- * @returns Readonly array of current toasts
- */
 export function getToasts(): ReadonlyArray<Toast> {
     return toasts;
 }
