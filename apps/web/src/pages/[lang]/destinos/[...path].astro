@@ -116,9 +116,14 @@ const parentDestinationId =
 		: null;
 
 /**
- * Defensive extraction for paginated API results that may return either
- * `{ items: [...] }`, `{ data: [...] }`, or a bare array. Same pattern used
- * by the accommodation detail page (see alojamientos/[slug].astro).
+ * Defensive extraction for paginated / wrapped API results.
+ *
+ * The public API isn't fully consistent on its list-response shape: some
+ * endpoints return `{ items: [...] }`, some `{ data: [...] }`, the
+ * accommodations-by-destination endpoint returns `{ accommodations: [...] }`
+ * (AccommodationListWrapperSchema), and getChildren returns `{ children: [...] }`.
+ * Some routes return a bare array. We probe the well-known wrapper keys
+ * before giving up — keeps the page resilient to future schema renames.
  */
 function extractItems(settled: PromiseSettledResult<unknown>): Record<string, unknown>[] {
 	if (settled.status === 'rejected') return [];
@@ -128,8 +133,10 @@ function extractItems(settled: PromiseSettledResult<unknown>): Record<string, un
 	if (Array.isArray(d)) return d as Record<string, unknown>[];
 	if (d && typeof d === 'object') {
 		const obj = d as Record<string, unknown>;
-		if (Array.isArray(obj.items)) return obj.items as Record<string, unknown>[];
-		if (Array.isArray(obj.data)) return obj.data as Record<string, unknown>[];
+		const wrapperKeys = ['items', 'data', 'accommodations', 'children', 'posts', 'events'];
+		for (const key of wrapperKeys) {
+			if (Array.isArray(obj[key])) return obj[key] as Record<string, unknown>[];
+		}
 	}
 	return [];
 }
@@ -157,7 +164,7 @@ try {
 		eventsApi.list({ pageSize: 3, destinationId: destId }),
 		eventsApi.list({ pageSize: 1, destinationId: destId }),
 		destinationsApi.getStats({ id: destId }),
-		postsApi.list({ destinationId: destId, pageSize: 4 }),
+		postsApi.getByRelatedDestination({ destinationId: destId }),
 		parentDestinationId
 			? destinationsApi.getChildren({ id: parentDestinationId })
 			: Promise.resolve({ ok: false } as const)

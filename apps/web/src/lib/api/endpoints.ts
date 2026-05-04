@@ -659,6 +659,19 @@ export const postsApi = {
      */
     getSummary({ id }: { readonly id: string }): Promise<ApiResult<PostSummary>> {
         return apiClient.get({ path: `${BASE}/posts/${id}/summary` });
+    },
+
+    /**
+     * Get posts related to a destination via the dedicated public endpoint.
+     * The general `list({ destinationId })` filter does NOT do the same thing —
+     * the related endpoint applies the relation graph rather than a flat filter.
+     */
+    getByRelatedDestination({
+        destinationId
+    }: { readonly destinationId: string }): Promise<ApiResult<PaginatedResponse<PostListItem>>> {
+        return apiClient.getList({
+            path: `${BASE}/posts/related/destination/${destinationId}`
+        });
     }
 };
 
