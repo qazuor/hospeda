@@ -1,0 +1,85 @@
+.root {
+    display: inline-flex;
+    align-items: center;
+    border-radius: var(--radius-pill);
+    background-color: oklch(from var(--core-foreground) l c h / 0.06);
+    padding: 2px;
+}
+
+.root--menu {
+    width: 100%;
+    justify-content: stretch;
+}
+
+.root--menu .option {
+    flex: 1;
+    text-align: center;
+}
+
+.root--mobile {
+    width: 100%;
+    border-radius: var(--radius-button, 8px);
+    background-color: transparent;
+    border: 1px solid var(--border);
+    padding: 0;
+}
+
+.root--mobile .option {
+    flex: 1;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 14px;
+}
+
+.option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+    text-decoration: none;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+    min-width: 36px;
+}
+
+.option:hover {
+    color: var(--core-foreground);
+}
+
+.option:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.optionActive {
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.optionActive:hover {
+    color: var(--brand-primary);
+}
+
+.root--mobile .optionActive {
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground, #fff);
+    box-shadow: none;
+    border-radius: 0;
+}
+
+.root--mobile .option:first-child.optionActive {
+    border-top-left-radius: var(--radius-button, 8px);
+    border-bottom-left-radius: var(--radius-button, 8px);
+}
+
+.root--mobile .option:last-child.optionActive {
+    border-top-right-radius: var(--radius-button, 8px);
+    border-bottom-right-radius: var(--radius-button, 8px);
+}

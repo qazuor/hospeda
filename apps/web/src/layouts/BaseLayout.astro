@@ -26,6 +26,7 @@ import FontsLoader from '@/components/shared/FontsLoader.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
 import { CookieConsentBanner } from '@/components/legal/CookieConsentBanner.client';
 import { ToastViewport } from '@/components/ui/ToastViewport.client';
+import { GuestPreferenceNudge } from '@/components/shared/preferences/GuestPreferenceNudge.client';
 import '@/styles/global.css';
 
 interface Props {
@@ -42,10 +43,19 @@ const {
 
 const cspNonce = Astro.locals.cspNonce ?? '';
 const cookiesPolicyUrl = buildUrl({ locale, path: 'legal/cookies' });
+
+/**
+ * Hint for client islands (UserMenu, GuestPreferenceNudge) about whether the
+ * visitor is authenticated. Only reliable on routes where middleware parses
+ * the session (protected, auth, optional-session). On SSG / public routes
+ * `Astro.locals.user` is null, so `UserMenu` does its own /auth/me fetch
+ * after hydration and updates this attribute as needed.
+ */
+const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 ---
 
 <!doctype html>
-<html lang={locale}>
+<html lang={locale} data-user-authenticated={isAuthenticatedHint}>
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -106,6 +116,7 @@ const cookiesPolicyUrl = buildUrl({ locale, path: 'legal/cookies' });
 		/>
 
 		<ToastViewport client:idle />
+		<GuestPreferenceNudge client:idle />
 
 		<!-- Page initialization script -->
 		<script>
