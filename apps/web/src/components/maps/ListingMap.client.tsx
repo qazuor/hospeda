@@ -22,7 +22,22 @@ import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconShadowUrl from 'leaflet/dist/images/marker-shadow.png';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Circle, MapContainer, Marker, Popup, TileLayer, useMapEvents } from 'react-leaflet';
-import MarkerClusterGroup from 'react-leaflet-cluster';
+import ReactLeafletClusterImport from 'react-leaflet-cluster';
+
+// CJS/ESM interop guard.
+// `react-leaflet-cluster@2.1.0` ships as CJS with the component exposed as
+// `module.exports.default`. With Vite + React 19, the default import resolves
+// to the wrapper object `{ default: Component }` instead of the component
+// itself, causing React to throw at hydration time:
+//   "Element type is invalid ... got: object. Check the render method of
+//    `ListingMap`."
+// Unwrap defensively: prefer `.default` when present, fall back to the import
+// when the bundler already unwrapped it.
+const MarkerClusterGroup = ((
+    ReactLeafletClusterImport as unknown as {
+        default?: typeof ReactLeafletClusterImport;
+    }
+).default ?? ReactLeafletClusterImport) as typeof ReactLeafletClusterImport;
 
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import type { SupportedLocale } from '@/lib/i18n';
