@@ -47,10 +47,32 @@ export const feedbackErrorInfoSchema = z.object({
 });
 
 /**
+ * Valid device type identifiers derived from viewport / UA hints.
+ */
+export const DEVICE_TYPE_IDS = ['mobile', 'tablet', 'desktop'] as const;
+
+/**
+ * Valid color scheme identifiers (light or dark mode preference).
+ */
+export const COLOR_SCHEME_IDS = ['light', 'dark'] as const;
+
+/**
+ * Schema for a single recorded user interaction (privacy-preserving structural info only).
+ */
+export const feedbackInteractionSchema = z.object({
+    /** Element tag (e.g. "BUTTON", "A", "INPUT") */
+    type: z.string(),
+    /** Short selector hint: id, first className, or tag-only fallback */
+    selector: z.string(),
+    /** ISO datetime string */
+    timestamp: z.string()
+});
+
+/**
  * Schema for the auto-collected environment data.
  *
- * All fields except `timestamp` and `appSource` are editable by the user
- * before submission (per US-07).
+ * All fields except `timestamp`, `appSource`, and `userId` are editable by
+ * the user before submission (per US-07).
  */
 export const feedbackEnvironmentSchema = z.object({
     /** URL where the FAB was clicked or the error occurred */
@@ -72,7 +94,28 @@ export const feedbackEnvironmentSchema = z.object({
     /** Last N console.error() calls captured before the report */
     consoleErrors: z.array(z.string().max(500)).max(20).optional(),
     /** Error message and stack trace when submitted from an error boundary */
-    errorInfo: feedbackErrorInfoSchema.optional()
+    errorInfo: feedbackErrorInfoSchema.optional(),
+    /** BCP 47 language tag, e.g. "es-AR", "en-US" (from navigator.language) */
+    locale: z.string().optional(),
+    /** IANA timezone, e.g. "America/Argentina/Buenos_Aires" */
+    timezone: z.string().optional(),
+    /** Device class derived from viewport width and UA hints */
+    deviceType: z.enum(DEVICE_TYPE_IDS).optional(),
+    /** Network Information API effective type, e.g. "4g", "3g", "slow-2g" */
+    connectionType: z.string().optional(),
+    /** User's resolved color scheme preference */
+    colorScheme: z.enum(COLOR_SCHEME_IDS).optional(),
+    /**
+     * App-level feature flags read from localStorage (configurable prefix).
+     * Values are truncated to 200 characters per entry.
+     */
+    featureFlags: z.record(z.string(), z.string()).optional(),
+    /** Last N visited URLs (path + search), most-recent last */
+    navigationHistory: z.array(z.string()).optional(),
+    /** Last N user clicks (privacy-preserving structural info only) */
+    lastInteractions: z.array(feedbackInteractionSchema).optional(),
+    /** Most recent Sentry event ID at the time the form was opened */
+    sentryEventId: z.string().optional()
 });
 
 /**
@@ -137,6 +180,21 @@ export type FeedbackEnvironment = z.infer<typeof feedbackEnvironmentSchema>;
  * TypeScript type for the error boundary error info sub-object.
  */
 export type FeedbackErrorInfo = z.infer<typeof feedbackErrorInfoSchema>;
+
+/**
+ * TypeScript type for a single recorded user interaction.
+ */
+export type FeedbackInteraction = z.infer<typeof feedbackInteractionSchema>;
+
+/**
+ * Union type of valid device type IDs.
+ */
+export type DeviceTypeId = (typeof DEVICE_TYPE_IDS)[number];
+
+/**
+ * Union type of valid color scheme IDs.
+ */
+export type ColorSchemeId = (typeof COLOR_SCHEME_IDS)[number];
 
 /**
  * Union type of all valid report type ID strings.

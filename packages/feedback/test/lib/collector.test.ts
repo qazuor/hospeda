@@ -126,6 +126,161 @@ describe('collectEnvironmentData', () => {
         });
     });
 
+    describe('extended environment fields', () => {
+        beforeEach(() => {
+            vi.stubGlobal('window', {
+                location: {
+                    href: 'https://example.com/page?q=1',
+                    origin: 'https://example.com',
+                    pathname: '/page'
+                },
+                innerWidth: 1920,
+                innerHeight: 1080,
+                matchMedia: (query: string) => ({
+                    matches: query.includes('dark'),
+                    media: query
+                }),
+                localStorage: {
+                    length: 3,
+                    key: (i: number) =>
+                        ['feature_dark_mode', 'ff_beta_panel', 'unrelated_key'][i] ?? null,
+                    getItem: (k: string) => {
+                        if (k === 'feature_dark_mode') return 'on';
+                        if (k === 'ff_beta_panel') return 'true';
+                        if (k === 'unrelated_key') return 'should-be-ignored';
+                        return null;
+                    }
+                }
+            });
+            vi.stubGlobal('navigator', {
+                userAgent: 'Mozilla/5.0 (mocked)',
+                language: 'es-AR',
+                connection: { effectiveType: '4g' }
+            });
+            vi.stubGlobal('document', {
+                documentElement: { dataset: {} }
+            });
+        });
+
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        it('should collect locale from navigator.language', () => {
+            const result = collectEnvironmentData({ appSource: 'web' });
+            expect(result.locale).toBe('es-AR');
+        });
+
+        it('should collect a non-empty timezone', () => {
+            const result = collectEnvironmentData({ appSource: 'web' });
+            expect(typeof result.timezone).toBe('string');
+            expect((result.timezone ?? '').length).toBeGreaterThan(0);
+        });
+
+        it('should derive deviceType=desktop for wide viewports', () => {
+            const result = collectEnvironmentData({ appSource: 'web' });
+            expect(result.deviceType).toBe('desktop');
+        });
+
+        it('should derive deviceType=mobile for narrow viewports', () => {
+            vi.stubGlobal('window', {
+                location: { origin: 'https://example.com', pathname: '/' },
+                innerWidth: 480,
+                innerHeight: 800,
+                matchMedia: () => ({ matches: false }),
+                localStorage: { length: 0, key: () => null, getItem: () => null }
+            });
+            const result = collectEnvironmentData({ appSource: 'web' });
+            expect(result.deviceType).toBe('mobile');
+        });
+
+        it('should derive deviceType=tablet for mid viewports', () => {
+            vi.stubGlobal('window', {
+                location: { origin: 'https://example.com', pathname: '/' },
+                innerWidth: 800,
+                innerHeight: 1024,
+                matchMedia: () => ({ matches: false }),
+                localStorage: { length: 0, key: () => null, getItem: () => null }
+            });
+            const result = collectEnvironmentData({ appSource: 'web' });
+            expect(result.deviceType).toBe('tablet');
+        });
+
+        it('should collect connectionType from navigator.connection', () => {
+            const result = collectEnvironmentData({ appSource: 'web' });
+            expect(result.connectionType).toBe('4g');
+        });
+
+        it('should resolve colorScheme from prefers-color-scheme media query', () => {
+            const result = collectEnvironmentData({ appSource: 'web' });
+            expect(result.colorScheme).toBe('dark');
+        });
+
+        it('should prefer document.documentElement.dataset.theme over media query', () => {
+            vi.stubGlobal('document', {
+                documentElement: { dataset: { theme: 'light' } }
+            });
+            const result = collectEnvironmentData({ appSource: 'web' });
+            expect(result.colorScheme).toBe('light');
+        });
+
+        it('should extract feature flags from localStorage with default prefixes', () => {
+            const result = collectEnvironmentData({ appSource: 'web' });
+            expect(result.featureFlags).toEqual({
+                feature_dark_mode: 'on',
+                ff_beta_panel: 'true'
+            });
+            expect(result.featureFlags?.unrelated_key).toBeUndefined();
+        });
+
+        it('should respect a custom featureFlagPrefixes override', () => {
+            const result = collectEnvironmentData({
+                appSource: 'web',
+                featureFlagPrefixes: ['unrelated_']
+            });
+            expect(result.featureFlags).toEqual({
+                unrelated_key: 'should-be-ignored'
+            });
+        });
+
+        it('should pass through navigationHistory and lastInteractions inputs', () => {
+            const result = collectEnvironmentData({
+                appSource: 'web',
+                navigationHistory: ['/a', '/b'],
+                lastInteractions: [
+                    { type: 'BUTTON', selector: '#btn', timestamp: '2026-05-04T12:00:00Z' }
+                ]
+            });
+            expect(result.navigationHistory).toEqual(['/a', '/b']);
+            expect(result.lastInteractions).toHaveLength(1);
+        });
+
+        it('should pass through sentryEventId', () => {
+            const result = collectEnvironmentData({
+                appSource: 'web',
+                sentryEventId: 'abc123def456'
+            });
+            expect(result.sentryEventId).toBe('abc123def456');
+        });
+
+        it('should truncate feature flag values to 200 characters', () => {
+            const longValue = 'x'.repeat(500);
+            vi.stubGlobal('window', {
+                location: { origin: 'https://example.com', pathname: '/' },
+                innerWidth: 1920,
+                innerHeight: 1080,
+                matchMedia: () => ({ matches: false }),
+                localStorage: {
+                    length: 1,
+                    key: (i: number) => (i === 0 ? 'feature_long' : null),
+                    getItem: (k: string) => (k === 'feature_long' ? longValue : null)
+                }
+            });
+            const result = collectEnvironmentData({ appSource: 'web' });
+            expect(result.featureFlags?.feature_long).toHaveLength(200);
+        });
+    });
+
     describe('SSR environment (no window / navigator)', () => {
         beforeEach(() => {
             // Remove browser globals to simulate SSR
@@ -161,6 +316,15 @@ describe('collectEnvironmentData', () => {
             const result = collectEnvironmentData({ appSource: 'standalone' });
             expect(result.appSource).toBe('standalone');
             expect(result.timestamp).toBeTruthy();
+        });
+
+        it('should return undefined for the extended browser-only fields', () => {
+            const result = collectEnvironmentData({ appSource: 'web' });
+            expect(result.locale).toBeUndefined();
+            expect(result.deviceType).toBeUndefined();
+            expect(result.connectionType).toBeUndefined();
+            expect(result.colorScheme).toBeUndefined();
+            expect(result.featureFlags).toBeUndefined();
         });
 
         it('should still pass through all scalar input fields', () => {

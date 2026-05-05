@@ -92,8 +92,32 @@ export const FEEDBACK_STRINGS = {
         browser: 'Navegador',
         os: 'Sistema operativo',
         viewport: 'Viewport',
-        version: 'Version',
-        consoleErrors: 'Errores de consola'
+        version: 'Build',
+        consoleErrors: 'Errores de consola',
+        // Field group headers
+        groupSystem: 'Sistema',
+        groupBrowser: 'Navegador',
+        groupTraces: 'Trazas',
+        groupContext: 'Contexto',
+        // Newly editable fields
+        locale: 'Idioma',
+        timezone: 'Zona horaria',
+        deviceType: 'Tipo de dispositivo',
+        connectionType: 'Conexion',
+        colorScheme: 'Tema',
+        featureFlags: 'Feature flags (clave=valor por linea)',
+        navigationHistory: 'Historial de navegacion (una URL por linea)',
+        lastInteractions: 'Ultimas interacciones (tag | selector | timestamp)',
+        sentryEventId: 'Sentry event ID',
+        errorMessage: 'Mensaje de error',
+        errorStack: 'Stack trace',
+        // Select option labels
+        deviceTypeMobile: 'Mobile',
+        deviceTypeTablet: 'Tablet',
+        deviceTypeDesktop: 'Desktop',
+        colorSchemeLight: 'Claro',
+        colorSchemeDark: 'Oscuro',
+        unspecified: '-- Sin especificar --'
     },
 
     /** Success state after a report is submitted */

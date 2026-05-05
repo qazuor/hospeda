@@ -7,6 +7,11 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { collectEnvironmentData } from '../lib/collector.js';
+import {
+    getLastInteractions,
+    getNavigationHistory,
+    installRuntimeTrackers
+} from '../lib/runtime-trackers.js';
 import type { AppSourceId, FeedbackEnvironment } from '../schemas/feedback.schema.js';
 import { useConsoleCapture } from './useConsoleCapture.js';
 
@@ -37,6 +42,10 @@ export interface UseAutoCollectInput {
     userName?: string;
     /** Pre-filled error info from an error boundary */
     errorInfo?: { message: string; stack?: string };
+    /** Optional override for which localStorage prefixes are scanned for feature flags */
+    featureFlagPrefixes?: ReadonlyArray<string>;
+    /** Most recent Sentry event ID (typically supplied by the FAB on open) */
+    sentryEventId?: string;
 }
 
 /**
@@ -64,33 +73,23 @@ export interface UseAutoCollectResult {
 /**
  * Auto-collects environment data when mounted.
  *
- * Combines browser detection, console error capture, and optional auth context
- * into a mutable environment object that the user can review and edit before
- * submission. The `consoleErrors` field is refreshed on mount to capture any
- * errors that occurred since page load.
+ * Combines browser detection, console error capture, runtime ring buffers
+ * (navigation + interactions), and optional auth context into a mutable
+ * environment object that the user can review and edit before submission.
+ * The `consoleErrors`, `navigationHistory`, and `lastInteractions` fields
+ * are refreshed on mount.
  *
  * @param input - App source, optional version/user context, and pre-filled error info
  * @returns Mutable environment object, an `updateField` setter, and pass-through user fields
- *
- * @example
- * ```tsx
- * function FeedbackForm({ appSource }: { appSource: AppSourceId }) {
- *   const { environment, updateField, userEmail, userName } = useAutoCollect({
- *     appSource,
- *     deployVersion: import.meta.env.PUBLIC_VERSION,
- *   });
- *
- *   return (
- *     <input
- *       value={environment.currentUrl ?? ''}
- *       onChange={(e) => updateField('currentUrl', e.target.value)}
- *     />
- *   );
- * }
- * ```
  */
 export function useAutoCollect(input: UseAutoCollectInput): UseAutoCollectResult {
     const { getErrors } = useConsoleCapture();
+
+    // Make sure runtime trackers are installed (idempotent) so the buffers
+    // start filling as soon as the FAB mounts.
+    useEffect(() => {
+        installRuntimeTrackers();
+    }, []);
 
     const [environment, setEnvironment] = useState<FeedbackEnvironment>(() =>
         collectEnvironmentData({
@@ -98,27 +97,35 @@ export function useAutoCollect(input: UseAutoCollectInput): UseAutoCollectResult
             deployVersion: input.deployVersion,
             userId: input.userId,
             consoleErrors: getErrors(),
-            errorInfo: input.errorInfo
+            errorInfo: input.errorInfo,
+            featureFlagPrefixes: input.featureFlagPrefixes,
+            navigationHistory: getNavigationHistory(),
+            lastInteractions: getLastInteractions(),
+            sentryEventId: input.sentryEventId
         })
     );
 
-    // Refresh console errors on mount to capture any errors since page load.
+    // Refresh dynamic data on mount so the user sees the most recent
+    // console errors / navigation / interactions.
     useEffect(() => {
         setEnvironment((prev) => ({
             ...prev,
-            consoleErrors: getErrors()
+            consoleErrors: getErrors(),
+            navigationHistory: getNavigationHistory(),
+            lastInteractions: getLastInteractions()
         }));
     }, [getErrors]);
 
-    // Update environment when auth props change (e.g., user logs in/out).
+    // Update environment when auth props or sentry event id change.
     useEffect(() => {
         setEnvironment((prev) => ({
             ...prev,
             userId: input.userId,
             appSource: input.appSource,
-            deployVersion: input.deployVersion
+            deployVersion: input.deployVersion,
+            sentryEventId: input.sentryEventId
         }));
-    }, [input.userId, input.appSource, input.deployVersion]);
+    }, [input.userId, input.appSource, input.deployVersion, input.sentryEventId]);
 
     const updateField = useCallback(
         <K extends keyof FeedbackEnvironment>(key: K, value: FeedbackEnvironment[K]) => {

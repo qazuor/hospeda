@@ -15,17 +15,23 @@
  */
 export {
     APP_SOURCE_IDS,
+    COLOR_SCHEME_IDS,
+    DEVICE_TYPE_IDS,
     REPORT_TYPE_IDS,
     SEVERITY_IDS,
     feedbackEnvironmentSchema,
     feedbackErrorInfoSchema,
-    feedbackFormSchema
+    feedbackFormSchema,
+    feedbackInteractionSchema
 } from './feedback.schema.js';
 export type {
     AppSourceId,
+    ColorSchemeId,
+    DeviceTypeId,
     FeedbackEnvironment,
     FeedbackErrorInfo,
     FeedbackFormData,
+    FeedbackInteraction,
     ReportTypeId,
     SeverityId
 } from './feedback.schema.js';

@@ -7,7 +7,10 @@
 
 // Components
 export { FeedbackFAB } from './components/FeedbackFAB.js';
-export type { FeedbackFABProps } from './components/FeedbackFAB.js';
+export type {
+    FeedbackFABProps,
+    SentryFeedbackBridgePayload
+} from './components/FeedbackFAB.js';
 export { FeedbackForm } from './components/FeedbackForm.js';
 export type { FeedbackFormProps } from './components/FeedbackForm.js';
 export { FeedbackModal } from './components/FeedbackModal.js';
@@ -42,21 +45,34 @@ export {
     feedbackFormSchema,
     feedbackEnvironmentSchema,
     feedbackErrorInfoSchema,
+    feedbackInteractionSchema,
     REPORT_TYPE_IDS,
     SEVERITY_IDS,
-    APP_SOURCE_IDS
+    APP_SOURCE_IDS,
+    DEVICE_TYPE_IDS,
+    COLOR_SCHEME_IDS
 } from './schemas/feedback.schema.js';
 export type {
     FeedbackFormData,
     FeedbackEnvironment,
     FeedbackErrorInfo,
+    FeedbackInteraction,
     ReportTypeId,
     SeverityId,
-    AppSourceId
+    AppSourceId,
+    DeviceTypeId,
+    ColorSchemeId
 } from './schemas/feedback.schema.js';
 
 // Utilities
-export { collectEnvironmentData } from './lib/collector.js';
+export { collectEnvironmentData, DEFAULT_FEATURE_FLAG_PREFIXES } from './lib/collector.js';
 export type { CollectEnvironmentInput } from './lib/collector.js';
+export {
+    installRuntimeTrackers,
+    uninstallRuntimeTrackers,
+    getNavigationHistory,
+    getLastInteractions,
+    resetRuntimeTrackers
+} from './lib/runtime-trackers.js';
 export { serializeFeedbackParams, parseFeedbackParams } from './lib/query-params.js';
 export type { FeedbackQueryParams } from './lib/query-params.js';
