@@ -560,7 +560,6 @@ Follow [`secrets.md §11.10`](./secrets.md#1110-linear) for full setup. Skip if 
 Env vars produced:
 
 - `HOSPEDA_LINEAR_API_KEY`
-- `HOSPEDA_LINEAR_TEAM_ID`
 
 **Validation**.
 

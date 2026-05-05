@@ -185,8 +185,8 @@ export const ApiEnvBaseSchema = z.object({
     API_RATE_LIMIT_STANDARD_HEADERS: z.coerce.boolean().default(true),
     API_RATE_LIMIT_LEGACY_HEADERS: z.coerce.boolean().default(false),
     API_RATE_LIMIT_MESSAGE: z.string().default('Too many requests, please try again later.'),
-    /** Trust x-forwarded-for / cf-connecting-ip. Only enable behind a trusted proxy. */
-    API_RATE_LIMIT_TRUST_PROXY: z.coerce.boolean().default(false),
+    /** Trust x-forwarded-for / cf-connecting-ip. Default true — matches Vercel/Cloudflare/Nginx deploy targets. Set false ONLY for direct-exposed local dev runs. */
+    API_RATE_LIMIT_TRUST_PROXY: z.coerce.boolean().default(true),
     API_RATE_LIMIT_TRUSTED_PROXIES: z.string().default(''),
 
     // Rate Limiting - auth / public / admin tiers
@@ -252,7 +252,17 @@ export const ApiEnvBaseSchema = z.object({
     API_VALIDATION_SANITIZE_ENABLED: z.coerce.boolean().default(true),
     API_VALIDATION_SANITIZE_MAX_STRING_LENGTH: z.coerce.number().default(1000),
     API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS: z.coerce.boolean().default(true),
-    API_VALIDATION_SANITIZE_ALLOWED_CHARS: z.string().default('[\\w\\s\\-.,!?@#$%&*()+=]'),
+    /**
+     * Allowed-chars regex for input sanitization. The default explicitly includes
+     * Spanish (á é í ó ú ü ñ + uppercase), Portuguese (ã õ ç + uppercase) and
+     * common Latin diacritics (à è ì ò ù â ê î ô û + uppercase) because Hospeda
+     * serves es-AR, en, and pt audiences. Stripping accents silently corrupts
+     * place names like "Concepción del Uruguay" or "São Paulo" — never default
+     * to a regex that excludes them.
+     */
+    API_VALIDATION_SANITIZE_ALLOWED_CHARS: z
+        .string()
+        .default('[\\w\\sáéíóúüñÁÉÍÓÚÜÑàèìòùÀÈÌÒÙâêîôûÂÊÎÔÛçÇãõÃÕ\\-.,!?@#$%&*()+=]'),
 
     // Metrics
     API_METRICS_ENABLED: z.coerce.boolean().default(true),
@@ -262,11 +272,10 @@ export const ApiEnvBaseSchema = z.object({
     // Database pool
     HOSPEDA_DB_POOL_MAX_CONNECTIONS: z.coerce.number().default(10),
     HOSPEDA_DB_POOL_IDLE_TIMEOUT_MS: z.coerce.number().default(30000),
-    HOSPEDA_DB_POOL_CONNECTION_TIMEOUT_MS: z.coerce.number().default(2000),
+    HOSPEDA_DB_POOL_CONNECTION_TIMEOUT_MS: z.coerce.number().default(5000),
 
     // Linear / Feedback integration
     HOSPEDA_LINEAR_API_KEY: z.string().optional(),
-    HOSPEDA_LINEAR_TEAM_ID: z.string().optional(),
     /** Kill switch for feedback system. Set to 'false' to disable. */
     HOSPEDA_FEEDBACK_ENABLED: z
         .string()
@@ -322,7 +331,7 @@ export const ApiEnvBaseSchema = z.object({
 
     // Email / Notifications
     HOSPEDA_RESEND_API_KEY: z.string().optional(),
-    HOSPEDA_RESEND_FROM_EMAIL: z.string().optional(),
+    HOSPEDA_RESEND_FROM_EMAIL: z.string().email().optional(),
     HOSPEDA_RESEND_FROM_NAME: z.string().optional(),
     /** Comma-separated list of admin emails for system notifications */
     HOSPEDA_ADMIN_NOTIFICATION_EMAILS: z.string().optional(),
@@ -452,6 +461,41 @@ const ApiEnvSchema = ApiEnvBaseSchema.superRefine((data, ctx) => {
             message:
                 'HOSPEDA_FACEBOOK_CLIENT_SECRET is required when HOSPEDA_FACEBOOK_CLIENT_ID is set'
         });
+    }
+    // Production safety: reject test/debug flags that would weaken security if accidentally set.
+    // These have use-site gates today, but a future refactor could drop them silently. The
+    // schema-level guard ensures the deploy fails fast at startup.
+    if (data.NODE_ENV === 'production') {
+        if (data.HOSPEDA_API_DEBUG_ERRORS === true) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['HOSPEDA_API_DEBUG_ERRORS'],
+                message:
+                    'HOSPEDA_API_DEBUG_ERRORS must not be true in production (would leak stack traces)'
+            });
+        }
+        if (data.HOSPEDA_DISABLE_AUTH === true) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['HOSPEDA_DISABLE_AUTH'],
+                message: 'HOSPEDA_DISABLE_AUTH must not be true in production (auth bypass)'
+            });
+        }
+        if (data.HOSPEDA_ALLOW_MOCK_ACTOR === true) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['HOSPEDA_ALLOW_MOCK_ACTOR'],
+                message:
+                    'HOSPEDA_ALLOW_MOCK_ACTOR must not be true in production (impersonation vector)'
+            });
+        }
+        if (data.HOSPEDA_DEBUG_TESTS === true) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['HOSPEDA_DEBUG_TESTS'],
+                message: 'HOSPEDA_DEBUG_TESTS must not be true in production (log spam)'
+            });
+        }
     }
     // Reject localhost/127.0.0.1 in CORS and CSRF origins in production
     if (data.NODE_ENV === 'production') {

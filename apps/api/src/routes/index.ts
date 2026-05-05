@@ -76,7 +76,6 @@ import { mediaHealthRoutes } from './health/media';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
-import { reportRoutes } from './reports';
 import { revalidationRouter } from './revalidation';
 import { publicSearchRoutes } from './search/public';
 import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorship';
@@ -318,9 +317,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Billing routes (user-facing: trial, addons, promo-codes, subscriptions, etc.)
         app.route('/api/v1/protected/billing', createBillingRoutesHandler());
-
-        // Reports routes (bug reports, labels)
-        app.route('/api/v1/protected/reports', reportRoutes);
 
         // Internal: Vercel cron scheduler (requires CRON_SECRET, not a public API)
         app.route('/api/v1/cron', cronRoutes);

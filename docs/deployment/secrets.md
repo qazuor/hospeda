@@ -125,7 +125,6 @@ Set these in the Vercel project dashboard for the API under **Settings → Envir
 | Variable | Description | Env | Required | How to obtain |
 |----------|-------------|-----|----------|---------------|
 | `HOSPEDA_LINEAR_API_KEY` | Linear API key for automatic bug report creation from feedback form | Prod | Optional | Linear → Settings → API → Personal API keys |
-| `HOSPEDA_LINEAR_TEAM_ID` | Linear team ID where issues will be created | Prod | Optional | Linear → Team settings → General |
 | `HOSPEDA_EXCHANGE_RATE_API_KEY` | ExchangeRate-API key for multi-currency rates | Prod | Optional | [exchangerate-api.com](https://www.exchangerate-api.com/) |
 | `HOSPEDA_DOLAR_API_BASE_URL` | DolarAPI base URL for ARS exchange rates | Prod | Optional | `https://dolarapi.com/v1` |
 | `HOSPEDA_EXCHANGE_RATE_API_BASE_URL` | ExchangeRate-API base URL | Prod | Optional | `https://v6.exchangerate-api.com/v6` |
@@ -829,7 +828,6 @@ This section walks through every external service that requires API keys for Hos
 5. **Where to find the team ID.** Open the team in Linear → **Settings → General → ID** (the slug-like value, e.g. `team_abcd1234`). Or via API: `curl -H "Authorization: $HOSPEDA_LINEAR_API_KEY" https://api.linear.app/graphql -d '{"query":"{ teams { nodes { id name } } }"}'`.
 6. **Env vars produced.**
     - `HOSPEDA_LINEAR_API_KEY`
-    - `HOSPEDA_LINEAR_TEAM_ID`
 7. **Verification.**
 
     ```bash

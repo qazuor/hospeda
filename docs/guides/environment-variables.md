@@ -104,7 +104,6 @@ pnpm env:check
 | `QSTASH_CURRENT_SIGNING_KEY` | string | no | yes | - | Verifies incoming QStash cron signatures. Required when `HOSPEDA_CRON_ADAPTER=qstash` |
 | `QSTASH_NEXT_SIGNING_KEY` | string | no | yes | - | Accepted during QStash signing-key rotation. Required when `HOSPEDA_CRON_ADAPTER=qstash` |
 | `HOSPEDA_LINEAR_API_KEY` | string | no | yes | - | Linear bug report API key |
-| `HOSPEDA_LINEAR_TEAM_ID` | string | no | no | - | Linear team ID |
 | `HOSPEDA_EXCHANGE_RATE_API_KEY` | string | no | yes | - | ExchangeRate-API key |
 | `HOSPEDA_DOLAR_API_BASE_URL` | url | no | no | - | DolarAPI base URL |
 | `HOSPEDA_EXCHANGE_RATE_API_BASE_URL` | url | no | no | - | ExchangeRate-API base URL |
