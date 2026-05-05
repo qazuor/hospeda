@@ -1,4 +1,5 @@
 import { forwardRef } from 'react';
+import styles from './Label.module.css';
 import { cn } from './cn.js';
 
 /** Props accepted by the Label component. */
@@ -6,8 +7,6 @@ export interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> 
 
 /**
  * Styled `<label>` primitive for use with form inputs in the feedback package.
- *
- * Uses `text-sm font-semibold text-foreground` via the host app's Tailwind token.
  * Accepts `htmlFor` and all standard label attributes.
  *
  * @example
@@ -20,11 +19,7 @@ export const Label = forwardRef<HTMLLabelElement, LabelProps>(({ className, ...p
             {/* biome-ignore lint/a11y/noLabelWithoutControl: generic primitive - callers supply htmlFor or nest the control */}
             <label
                 ref={ref}
-                className={cn(
-                    'block font-semibold text-foreground text-sm leading-none',
-                    'peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
-                    className
-                )}
+                className={cn(styles.label, className)}
                 {...props}
             />
         </>

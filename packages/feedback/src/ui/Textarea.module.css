@@ -1,0 +1,49 @@
+/**
+ * Textarea component styles for @repo/feedback.
+ */
+
+.textarea {
+    display: flex;
+    min-height: 5rem;
+    width: 100%;
+    border-radius: var(--fb-radius-sm);
+    border: 1px solid var(--fb-input-border);
+    background-color: var(--fb-input-bg);
+    padding: 0.5rem 0.75rem;
+    font-family: var(--fb-font-family);
+    font-size: var(--fb-font-size-sm);
+    color: var(--fb-foreground);
+    box-shadow: var(--fb-shadow-sm);
+    resize: vertical;
+    transition: border-color var(--fb-duration-fast) var(--fb-easing);
+    outline: none;
+    box-sizing: border-box;
+}
+
+.textarea::placeholder {
+    color: var(--fb-foreground-muted);
+}
+
+.textarea:focus-visible {
+    outline: 2px solid var(--fb-primary);
+    outline-offset: 0;
+    border-color: var(--fb-primary);
+}
+
+.textarea:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.textarea[aria-invalid="true"] {
+    border-color: var(--fb-destructive);
+}
+
+/* Size modifier used in StepDetails tech fields */
+.compact {
+    height: 1.75rem;
+    min-height: unset;
+    font-size: var(--fb-font-size-xs);
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}

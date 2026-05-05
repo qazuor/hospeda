@@ -1,0 +1,68 @@
+/**
+ * SuccessScreen component styles.
+ */
+
+.root {
+    width: 100%;
+    max-width: 520px;
+    font-family: var(--fb-font-family);
+}
+
+.inner {
+    padding: var(--fb-space-6) var(--fb-space-4);
+    text-align: center;
+}
+
+.checkmark {
+    margin-bottom: 0.75rem;
+    font-size: 3rem;
+    color: var(--fb-success);
+    line-height: 1;
+}
+
+.title {
+    margin-bottom: var(--fb-space-2);
+    font-weight: var(--fb-font-weight-semibold);
+    font-size: var(--fb-font-size-lg);
+    color: var(--fb-foreground);
+}
+
+.message {
+    margin-bottom: 0.375rem;
+    font-size: var(--fb-font-size-sm);
+    color: var(--fb-foreground);
+    opacity: 0.8;
+}
+
+.issueLine {
+    margin-bottom: 0.25rem;
+    font-size: var(--fb-font-size-xs);
+    color: var(--fb-foreground-muted);
+}
+
+.issueLink {
+    color: var(--fb-primary);
+    text-decoration: none;
+}
+
+.issueLink:hover {
+    text-decoration: underline;
+}
+
+.issueBold {
+    font-weight: var(--fb-font-weight-semibold);
+    color: var(--fb-primary);
+}
+
+.thanks {
+    margin-top: 0.75rem;
+    margin-bottom: var(--fb-space-6);
+    font-size: var(--fb-font-size-xs);
+    color: var(--fb-foreground-muted);
+}
+
+.actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+}

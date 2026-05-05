@@ -1,16 +1,16 @@
 import { forwardRef } from 'react';
+import styles from './Input.module.css';
 import { cn } from './cn.js';
 
 /** Props accepted by the Input component. */
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
 /**
- * Shadcn-compatible styled input primitive for the feedback package.
+ * Styled input primitive for the feedback package.
  *
- * Uses semantic Tailwind tokens (`border-input`, `bg-background`, `ring-ring`,
- * `placeholder:text-muted-foreground`) that resolve via CSS custom properties
- * defined by the host app. Error state is signaled via the native `aria-invalid`
- * attribute, which applies `aria-invalid:border-destructive`.
+ * Error state is signaled via the native `aria-invalid` attribute which
+ * applies a red border via the CSS selector `[aria-invalid='true']`.
+ * All colors come from CSS custom properties in tokens.css.
  *
  * @example
  * <Input placeholder="Your email" aria-invalid={!!errors.email} />
@@ -21,15 +21,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             <input
                 ref={ref}
                 type={type}
-                className={cn(
-                    'flex h-9 w-full rounded-md border border-input bg-background px-3 py-1',
-                    'text-sm shadow-sm transition-colors',
-                    'placeholder:text-muted-foreground',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    'disabled:cursor-not-allowed disabled:opacity-50',
-                    'aria-invalid:border-destructive',
-                    className
-                )}
+                className={cn(styles.input, className)}
                 {...props}
             />
         );

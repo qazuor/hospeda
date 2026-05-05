@@ -1,0 +1,41 @@
+/**
+ * FeedbackForm component styles.
+ */
+
+.formRoot {
+    width: 100%;
+    max-width: 520px;
+    font-family: var(--fb-font-family);
+}
+
+.formTitle {
+    margin-bottom: var(--fb-space-4);
+    border-bottom: 1px solid var(--fb-border);
+    padding-bottom: 0.75rem;
+    font-weight: var(--fb-font-weight-semibold);
+    font-size: var(--fb-font-size-base);
+    color: var(--fb-foreground);
+}
+
+.errorAlert {
+    margin-bottom: var(--fb-space-4);
+    border-radius: var(--fb-radius-sm);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    background-color: rgba(220, 38, 38, 0.05);
+    padding: 0.625rem 0.875rem;
+    color: var(--fb-destructive);
+    font-family: var(--fb-font-family);
+    font-size: var(--fb-font-size-sm);
+}
+
+/* ------------------------------------------------------------------ */
+/* Honeypot field (hidden from real users)                             */
+/* ------------------------------------------------------------------ */
+
+.honeypot {
+    position: absolute;
+    left: -9999px;
+    height: 0;
+    overflow: hidden;
+    opacity: 0;
+}

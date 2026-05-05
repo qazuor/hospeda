@@ -7,6 +7,7 @@
  */
 import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { Button } from '../ui/Button.js';
+import styles from './SuccessScreen.module.css';
 
 /** Props for the SuccessScreen component */
 export interface SuccessScreenProps {
@@ -35,44 +36,36 @@ export function SuccessScreen({
     onClose
 }: SuccessScreenProps) {
     return (
-        <div className="w-full max-w-[520px] font-sans">
-            <div className="px-4 py-6 text-center">
-                <div className="mb-3 text-5xl text-green-600 leading-none">&#10003;</div>
+        <div className={styles.root}>
+            <div className={styles.inner}>
+                <div className={styles.checkmark}>&#10003;</div>
 
-                <p className="mb-2 font-bold text-foreground text-lg">
-                    {FEEDBACK_STRINGS.success.title}
-                </p>
-                <p className="mb-1.5 text-foreground/80 text-sm">
-                    {FEEDBACK_STRINGS.success.message}
-                </p>
+                <p className={styles.title}>{FEEDBACK_STRINGS.success.title}</p>
+                <p className={styles.message}>{FEEDBACK_STRINGS.success.message}</p>
 
                 {linearIssueId ? (
-                    <p className="mb-1 text-muted-foreground text-xs">
+                    <p className={styles.issueLine}>
                         {FEEDBACK_STRINGS.success.issueLabel}:{' '}
                         {linearIssueUrl ? (
                             <a
                                 href={linearIssueUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-primary no-underline hover:underline"
+                                className={styles.issueLink}
                             >
-                                <span className="font-semibold">{linearIssueId}</span>
+                                <span className={styles.issueBold}>{linearIssueId}</span>
                             </a>
                         ) : (
-                            <span className="font-semibold text-primary">{linearIssueId}</span>
+                            <span className={styles.issueBold}>{linearIssueId}</span>
                         )}
                     </p>
                 ) : (
-                    <p className="mb-1 text-muted-foreground text-xs">
-                        {FEEDBACK_STRINGS.success.fallbackMessage}
-                    </p>
+                    <p className={styles.issueLine}>{FEEDBACK_STRINGS.success.fallbackMessage}</p>
                 )}
 
-                <p className="mt-3 mb-6 text-muted-foreground text-xs">
-                    {FEEDBACK_STRINGS.success.thanks}
-                </p>
+                <p className={styles.thanks}>{FEEDBACK_STRINGS.success.thanks}</p>
 
-                <div className="flex justify-center gap-3">
+                <div className={styles.actions}>
                     <Button
                         type="button"
                         variant="secondary"

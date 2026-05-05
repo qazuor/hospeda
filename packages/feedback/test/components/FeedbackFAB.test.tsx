@@ -642,31 +642,14 @@ describe('FeedbackFAB (RTL render)', () => {
     });
 
     // -----------------------------------------------------------------------
-    // Media query breakpoint listener (handleChange in useEffect)
+    // FAB renders correctly regardless of viewport size
+    //
+    // The FAB size (48px mobile / 56px desktop) is now handled entirely via
+    // CSS media queries in FeedbackFAB.module.css — no JS matchMedia listener.
+    // This test verifies the FAB renders and is accessible at any viewport.
     // -----------------------------------------------------------------------
 
-    it('responds to viewport breakpoint changes via matchMedia', () => {
-        const listeners = new Set<(e: MediaQueryListEvent) => void>();
-        const matchMediaSpy = vi.fn().mockReturnValue({
-            matches: false,
-            media: '(min-width: 640px)',
-            addEventListener: (_ev: string, cb: (e: MediaQueryListEvent) => void) => {
-                listeners.add(cb);
-            },
-            removeEventListener: (_ev: string, cb: (e: MediaQueryListEvent) => void) => {
-                listeners.delete(cb);
-            },
-            addListener: () => {},
-            removeListener: () => {},
-            dispatchEvent: () => true,
-            onchange: null
-        });
-        Object.defineProperty(window, 'matchMedia', {
-            value: matchMediaSpy,
-            writable: true,
-            configurable: true
-        });
-
+    it('FAB renders and remains accessible across viewport sizes', () => {
         render(
             <FeedbackFAB
                 apiUrl="http://localhost:3001"
@@ -674,15 +657,10 @@ describe('FeedbackFAB (RTL render)', () => {
             />
         );
 
-        // Simulate the viewport crossing the breakpoint, invoking the
-        // (e) => setIsDesktop(e.matches) inline handler.
-        act(() => {
-            for (const cb of listeners) {
-                cb({ matches: true } as MediaQueryListEvent);
-            }
-        });
-
-        expect(matchMediaSpy).toHaveBeenCalled();
+        // FAB is always rendered and accessible regardless of viewport
+        const fab = screen.getByTestId('feedback-fab');
+        expect(fab).toBeInTheDocument();
+        expect(fab).toHaveAttribute('aria-label');
     });
 
     // -----------------------------------------------------------------------

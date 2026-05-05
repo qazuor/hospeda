@@ -14,6 +14,7 @@ import { Input } from '../../ui/Input.js';
 import { Label } from '../../ui/Label.js';
 import { Select } from '../../ui/Select.js';
 import { Textarea } from '../../ui/Textarea.js';
+import styles from './StepDetails.module.css';
 
 /** Data managed by step 2 of the feedback form (all optional) */
 export interface StepDetailsData {
@@ -140,9 +141,9 @@ export function StepDetails({
     };
 
     return (
-        <div className="space-y-4">
+        <div className={styles.stepRoot}>
             {/* Severity */}
-            <div>
+            <div className={styles.fieldGroup}>
                 <Label htmlFor="feedback-severity">{FEEDBACK_STRINGS.fields.severity}</Label>
                 <Select
                     id="feedback-severity"
@@ -165,7 +166,7 @@ export function StepDetails({
             </div>
 
             {/* Steps to reproduce */}
-            <div>
+            <div className={styles.fieldGroup}>
                 <Label htmlFor="feedback-steps">{FEEDBACK_STRINGS.fields.stepsToReproduce}</Label>
                 <Textarea
                     id="feedback-steps"
@@ -181,7 +182,7 @@ export function StepDetails({
             </div>
 
             {/* Expected result */}
-            <div>
+            <div className={styles.fieldGroup}>
                 <Label htmlFor="feedback-expected">{FEEDBACK_STRINGS.fields.expectedResult}</Label>
                 <Textarea
                     id="feedback-expected"
@@ -197,7 +198,7 @@ export function StepDetails({
             </div>
 
             {/* Actual result */}
-            <div>
+            <div className={styles.fieldGroup}>
                 <Label htmlFor="feedback-actual">{FEEDBACK_STRINGS.fields.actualResult}</Label>
                 <Textarea
                     id="feedback-actual"
@@ -211,18 +212,16 @@ export function StepDetails({
 
             {/* File attachments */}
             <div>
-                <p className="mb-1 font-semibold text-foreground text-sm">
-                    {FEEDBACK_STRINGS.fields.attachments}
-                </p>
+                <p className={styles.attachmentsLabel}>{FEEDBACK_STRINGS.fields.attachments}</p>
                 {attachments.length < FEEDBACK_CONFIG.maxAttachments && (
                     <label
                         htmlFor="feedback-files"
-                        className="block cursor-pointer rounded-md border-2 border-border border-dashed bg-muted/50 p-4 text-center transition-colors hover:bg-muted"
+                        className={styles.uploadZone}
                     >
-                        <span className="font-medium text-sm">
+                        <span className={styles.uploadZoneText}>
                             {FEEDBACK_STRINGS.fields.uploadButton}
                         </span>
-                        <p className="mt-1 text-muted-foreground text-xs">
+                        <p className={styles.uploadZoneHint}>
                             {FEEDBACK_STRINGS.fields.fileHintFormat} &mdash;{' '}
                             {FEEDBACK_STRINGS.fields.fileHintMaxSize.replace(
                                 '{size}',
@@ -236,20 +235,20 @@ export function StepDetails({
                                 ','
                             )}
                             multiple
-                            className="hidden"
+                            className={styles.uploadInput}
                             onChange={handleFileChange}
                         />
                     </label>
                 )}
                 {fileRejections.length > 0 && (
                     <ul
-                        className="mt-1 list-none p-0"
+                        className={styles.rejectionList}
                         role="alert"
                     >
                         {fileRejections.map((msg) => (
                             <li
                                 key={msg}
-                                className="mt-0.5 text-destructive text-xs"
+                                className={styles.rejectionItem}
                             >
                                 {msg}
                             </li>
@@ -257,22 +256,22 @@ export function StepDetails({
                     </ul>
                 )}
                 {attachments.length > 0 && (
-                    <ul className="mt-2 list-none space-y-1 p-0">
+                    <ul className={styles.attachmentList}>
                         {attachments.map((file, index) => (
                             <li
                                 // biome-ignore lint/suspicious/noArrayIndexKey: index is stable for attachment list
                                 key={index}
-                                className="flex items-center justify-between rounded bg-muted px-3 py-1.5 text-foreground text-sm"
+                                className={styles.attachmentItem}
                             >
                                 <span>
                                     {file.name}
-                                    <span className="ml-1.5 text-muted-foreground text-xs">
+                                    <span className={styles.attachmentSize}>
                                         ({formatFileSize(file.size)})
                                     </span>
                                 </span>
                                 <button
                                     type="button"
-                                    className="p-0.5 font-bold text-destructive text-sm hover:text-destructive/80"
+                                    className={styles.removeBtn}
                                     onClick={() => onRemoveAttachment(index)}
                                     aria-label={FEEDBACK_STRINGS.fields.removeFileLabel.replace(
                                         '{name}',
@@ -288,29 +287,29 @@ export function StepDetails({
             </div>
 
             {/* Collapsible tech details */}
-            <div className="overflow-hidden rounded-md border border-border">
+            <div className={styles.techSection}>
                 <button
                     type="button"
-                    className="flex w-full items-center justify-between bg-muted px-3.5 py-2.5 text-left font-semibold text-foreground text-xs"
+                    className={styles.techToggle}
                     onClick={() => setTechOpen((prev) => !prev)}
                     aria-expanded={techOpen}
                 >
                     <span>{FEEDBACK_STRINGS.techDetails.title}</span>
-                    <span>{techOpen ? '▲' : '▼'}</span>
+                    <span className={styles.techToggleChevron}>{techOpen ? '▲' : '▼'}</span>
                 </button>
 
                 {techOpen && (
-                    <div className="space-y-2.5 p-3.5">
+                    <div className={styles.techFields}>
                         <div>
                             <label
                                 htmlFor="tech-url"
-                                className="mb-0.5 block font-medium text-muted-foreground text-xs"
+                                className={styles.techFieldLabel}
                             >
                                 {FEEDBACK_STRINGS.techDetails.url}
                             </label>
                             <Input
                                 id="tech-url"
-                                className="h-7 text-xs"
+                                style={{ height: '1.75rem', fontSize: '0.75rem' }}
                                 value={environment.currentUrl ?? ''}
                                 onChange={(e) =>
                                     onEnvironmentChange(
@@ -324,13 +323,13 @@ export function StepDetails({
                         <div>
                             <label
                                 htmlFor="tech-browser"
-                                className="mb-0.5 block font-medium text-muted-foreground text-xs"
+                                className={styles.techFieldLabel}
                             >
                                 {FEEDBACK_STRINGS.techDetails.browser}
                             </label>
                             <Input
                                 id="tech-browser"
-                                className="h-7 text-xs"
+                                style={{ height: '1.75rem', fontSize: '0.75rem' }}
                                 value={environment.browser ?? ''}
                                 onChange={(e) =>
                                     onEnvironmentChange(
@@ -344,13 +343,13 @@ export function StepDetails({
                         <div>
                             <label
                                 htmlFor="tech-os"
-                                className="mb-0.5 block font-medium text-muted-foreground text-xs"
+                                className={styles.techFieldLabel}
                             >
                                 {FEEDBACK_STRINGS.techDetails.os}
                             </label>
                             <Input
                                 id="tech-os"
-                                className="h-7 text-xs"
+                                style={{ height: '1.75rem', fontSize: '0.75rem' }}
                                 value={environment.os ?? ''}
                                 onChange={(e) =>
                                     onEnvironmentChange(
@@ -364,13 +363,13 @@ export function StepDetails({
                         <div>
                             <label
                                 htmlFor="tech-viewport"
-                                className="mb-0.5 block font-medium text-muted-foreground text-xs"
+                                className={styles.techFieldLabel}
                             >
                                 {FEEDBACK_STRINGS.techDetails.viewport}
                             </label>
                             <Input
                                 id="tech-viewport"
-                                className="h-7 text-xs"
+                                style={{ height: '1.75rem', fontSize: '0.75rem' }}
                                 value={environment.viewport ?? ''}
                                 onChange={(e) =>
                                     onEnvironmentChange(
@@ -384,13 +383,13 @@ export function StepDetails({
                         <div>
                             <label
                                 htmlFor="tech-version"
-                                className="mb-0.5 block font-medium text-muted-foreground text-xs"
+                                className={styles.techFieldLabel}
                             >
                                 {FEEDBACK_STRINGS.techDetails.version}
                             </label>
                             <Input
                                 id="tech-version"
-                                className="h-7 text-xs"
+                                style={{ height: '1.75rem', fontSize: '0.75rem' }}
                                 value={environment.deployVersion ?? ''}
                                 onChange={(e) =>
                                     onEnvironmentChange(
@@ -403,10 +402,10 @@ export function StepDetails({
 
                         {environment.consoleErrors && environment.consoleErrors.length > 0 && (
                             <div>
-                                <span className="mb-0.5 block font-medium text-muted-foreground text-xs">
+                                <span className={styles.techFieldLabel}>
                                     {FEEDBACK_STRINGS.techDetails.consoleErrors}
                                 </span>
-                                <p className="text-muted-foreground text-xs italic">
+                                <p className={styles.techConsoleNote}>
                                     {FEEDBACK_STRINGS.fields.consoleErrorsCount.replace(
                                         '{count}',
                                         String(environment.consoleErrors.length)
@@ -419,7 +418,7 @@ export function StepDetails({
             </div>
 
             {/* Action buttons */}
-            <div className="flex justify-between gap-3 pt-2">
+            <div className={styles.actions}>
                 <Button
                     type="button"
                     variant="secondary"

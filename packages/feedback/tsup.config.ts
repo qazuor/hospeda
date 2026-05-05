@@ -6,5 +6,8 @@ export default defineConfig({
     dts: true,
     clean: true,
     sourcemap: true,
-    external: ['react']
+    external: ['react'],
+    // Include CSS files (tokens.css and CSS Modules) in the bundle.
+    // tsup copies .css files to dist; CSS Modules are inlined into JS.
+    injectStyle: false
 });

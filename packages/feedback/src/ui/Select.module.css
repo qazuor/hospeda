@@ -1,0 +1,36 @@
+/**
+ * Select component styles for @repo/feedback.
+ */
+
+.select {
+    display: flex;
+    height: 2.25rem;
+    width: 100%;
+    appearance: none;
+    border-radius: var(--fb-radius-sm);
+    border: 1px solid var(--fb-input-border);
+    background-color: var(--fb-input-bg);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding: 0.25rem 2.25rem 0.25rem 0.75rem;
+    font-family: var(--fb-font-family);
+    font-size: var(--fb-font-size-sm);
+    color: var(--fb-foreground);
+    box-shadow: var(--fb-shadow-sm);
+    transition: border-color var(--fb-duration-fast) var(--fb-easing);
+    outline: none;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.select:focus-visible {
+    outline: 2px solid var(--fb-primary);
+    outline-offset: 0;
+    border-color: var(--fb-primary);
+}
+
+.select:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}

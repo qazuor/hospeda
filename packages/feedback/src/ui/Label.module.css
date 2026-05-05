@@ -1,0 +1,19 @@
+/**
+ * Label component styles for @repo/feedback.
+ */
+
+.label {
+    display: block;
+    font-family: var(--fb-font-family);
+    font-weight: var(--fb-font-weight-semibold);
+    font-size: var(--fb-font-size-sm);
+    color: var(--fb-foreground);
+    line-height: 1;
+    margin-bottom: var(--fb-space-1);
+}
+
+.label:has(+ :disabled),
+.label:has(~ :disabled) {
+    cursor: not-allowed;
+    opacity: 0.7;
+}

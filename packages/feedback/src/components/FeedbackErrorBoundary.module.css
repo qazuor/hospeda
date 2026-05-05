@@ -1,0 +1,55 @@
+/**
+ * FeedbackErrorBoundary component styles.
+ */
+
+.errorContainer {
+    display: flex;
+    min-height: 200px;
+    align-items: center;
+    justify-content: center;
+    padding: var(--fb-space-6);
+    font-family: var(--fb-font-family);
+}
+
+.errorCard {
+    width: 100%;
+    max-width: 560px;
+    border-radius: var(--fb-radius-md);
+    border: 1px solid rgba(220, 38, 38, 0.4);
+    background-color: var(--fb-card);
+    padding: var(--fb-space-8);
+    box-shadow: var(--fb-shadow-lg);
+}
+
+.errorHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin-bottom: 0.75rem;
+}
+
+.errorIcon {
+    flex-shrink: 0;
+    font-size: var(--fb-font-size-xl);
+    line-height: 1;
+}
+
+.errorTitle {
+    margin: 0;
+    font-weight: var(--fb-font-weight-semibold);
+    font-size: var(--fb-font-size-lg);
+    color: var(--fb-destructive);
+}
+
+.errorMessage {
+    margin-bottom: var(--fb-space-6);
+    font-size: var(--fb-font-size-sm);
+    color: var(--fb-foreground-muted);
+    line-height: 1.6;
+}
+
+.errorActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}

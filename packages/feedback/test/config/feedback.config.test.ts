@@ -40,9 +40,11 @@ describe('REPORT_TYPES', () => {
         }
     });
 
-    it('should have a linearLabelId placeholder on every entry', () => {
+    it('should have a configured linearLabelId UUID on every entry', () => {
+        const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         for (const type of REPORT_TYPES) {
-            expect(type.linearLabelId).toMatch(/^PLACEHOLDER_/);
+            expect(type.linearLabelId).toMatch(uuidPattern);
+            expect(type.linearLabelId).not.toMatch(/^PLACEHOLDER_/);
         }
     });
 });

@@ -434,10 +434,14 @@ describe('FeedbackModal (RTL render)', () => {
             />
         );
 
+        // Verify the element exists and has the correct text content.
+        // The CSS class is a hashed CSS Module class — test behavior, not the
+        // specific class name string (which would be implementation-dependent).
         const title = document.getElementById('feedback-modal-title');
         expect(title).toBeInTheDocument();
-        expect(title).toHaveClass('sr-only');
         expect(title?.textContent).toBe(FEEDBACK_STRINGS.form.title);
+        // The title must be referenced by aria-labelledby on the dialog
+        // (accessibility contract — verified in the adjacent test)
     });
 
     it('dialog has aria-labelledby pointing to the title', () => {

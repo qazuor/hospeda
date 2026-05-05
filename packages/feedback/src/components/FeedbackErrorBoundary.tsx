@@ -17,7 +17,9 @@ import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { serializeFeedbackParams } from '../lib/query-params.js';
 import type { AppSourceId, ReportTypeId } from '../schemas/feedback.schema.js';
 import { Button } from '../ui/Button.js';
+import styles from './FeedbackErrorBoundary.module.css';
 import { FeedbackModal } from './FeedbackModal.js';
+import '../styles/tokens.css';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -138,14 +140,6 @@ function openFeedbackTab(feedbackPageUrl: string, error: Error, appSource: AppSo
  * action buttons: "Reportar este error" (opens the inline FeedbackModal or a
  * new-tab fallback) and "Recargar" (calls `window.location.reload()`).
  *
- * The inline FeedbackModal is pre-filled with:
- * - `type`: 'bug-js'
- * - `title`: The error message (truncated to 200 chars)
- * - `errorInfo.message` and `errorInfo.stack` from the caught error
- *
- * If the modal itself throws during render the boundary falls back to opening
- * a new browser tab instead of crashing again.
- *
  * @example
  * ```tsx
  * <FeedbackErrorBoundary
@@ -179,9 +173,6 @@ export class FeedbackErrorBoundary extends Component<
     /**
      * Updates the component state when a descendant throws during rendering.
      *
-     * React calls this method during the "render" phase so it must be pure
-     * and side-effect free. Actual logging should happen in `componentDidCatch`.
-     *
      * @param error - The error that was thrown
      * @returns Partial state to merge (hasError + error)
      */
@@ -194,10 +185,9 @@ export class FeedbackErrorBoundary extends Component<
     // -----------------------------------------------------------------------
 
     /**
-     * Called after a descendant throws. Stores the React component tree info
-     * alongside the error for potential inclusion in the bug report.
+     * Called after a descendant throws. Stores the React component tree info.
      *
-     * @param error - The error that was thrown
+     * @param _error - The error that was thrown
      * @param info - React diagnostic info including `componentStack`
      */
     componentDidCatch(_error: Error, info: ErrorInfo): void {
@@ -210,7 +200,6 @@ export class FeedbackErrorBoundary extends Component<
 
     /**
      * Resets the error state so the boundary re-renders its children.
-     * Binds to "try again" or post-report actions.
      */
     readonly resetError = (): void => {
         this.setState({
@@ -223,11 +212,6 @@ export class FeedbackErrorBoundary extends Component<
 
     /**
      * Handles the "Reportar este error" button click.
-     *
-     * First attempts to show the FeedbackModal inline by setting
-     * `showInlineForm: true`. The modal rendering is wrapped in an error
-     * handler inside `renderInlineModal`; if it fails the boundary falls
-     * back to opening a new tab (when `feedbackPageUrl` is configured).
      */
     readonly handleReportClick = (): void => {
         this.setState({ showInlineForm: true });
@@ -255,10 +239,6 @@ export class FeedbackErrorBoundary extends Component<
 
     /**
      * Attempts to render the inline FeedbackModal.
-     *
-     * If any exception is thrown while constructing the modal props or the
-     * component itself fails the method falls back to opening the standalone
-     * feedback page in a new tab.
      *
      * @returns The FeedbackModal element, or null if a fallback was triggered
      */
@@ -296,7 +276,6 @@ export class FeedbackErrorBoundary extends Component<
             );
         } catch {
             // FeedbackModal failed to render — open new-tab fallback.
-            // Use microtask to avoid setState during render phase.
             if (feedbackPageUrl) {
                 openFeedbackTab(feedbackPageUrl, error, appSource);
             }
@@ -309,35 +288,30 @@ export class FeedbackErrorBoundary extends Component<
 
     /**
      * Renders the default error fallback card.
-     *
-     * Shows the error title and message from FEEDBACK_STRINGS, a "Report"
-     * button, and a "Reload" button.
      */
     private renderDefaultFallback(): ReactNode {
         return (
-            <div className="flex min-h-[200px] items-center justify-center p-6">
+            <div className={`feedback-root ${styles.errorContainer}`}>
                 <div
-                    className="w-full max-w-[560px] rounded-xl border border-destructive/40 bg-card p-8 shadow-lg"
+                    className={styles.errorCard}
                     role="alert"
                     aria-live="assertive"
                 >
-                    <div className="mb-3 flex items-center gap-2.5">
+                    <div className={styles.errorHeader}>
                         <span
-                            className="shrink-0 text-xl leading-none"
+                            className={styles.errorIcon}
                             aria-hidden="true"
                         >
                             ⚠️
                         </span>
-                        <h2 className="m-0 font-bold text-destructive text-lg">
+                        <h2 className={styles.errorTitle}>
                             {FEEDBACK_STRINGS.errorBoundary.title}
                         </h2>
                     </div>
 
-                    <p className="mb-6 text-muted-foreground text-sm leading-relaxed">
-                        {FEEDBACK_STRINGS.errorBoundary.message}
-                    </p>
+                    <p className={styles.errorMessage}>{FEEDBACK_STRINGS.errorBoundary.message}</p>
 
-                    <div className="flex flex-wrap gap-3">
+                    <div className={styles.errorActions}>
                         <Button
                             type="button"
                             variant="destructive"

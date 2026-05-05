@@ -1,0 +1,28 @@
+/**
+ * StepBasic component styles.
+ */
+
+.stepRoot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fb-space-4);
+    font-family: var(--fb-font-family);
+}
+
+.fieldGroup {
+    display: flex;
+    flex-direction: column;
+}
+
+.fieldError {
+    margin-top: 0.25rem;
+    font-size: var(--fb-font-size-xs);
+    color: var(--fb-destructive);
+}
+
+.actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-top: var(--fb-space-2);
+}

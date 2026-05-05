@@ -1,17 +1,20 @@
 import { clsx } from 'clsx';
 import type { ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 
 /**
- * Merges Tailwind CSS class names, resolving conflicts via tailwind-merge.
+ * Merges CSS class names using clsx.
+ *
+ * This helper no longer uses tailwind-merge since the feedback package
+ * has migrated to CSS Modules. It accepts the same ClassValue inputs
+ * as before (strings, arrays, conditionals) for a drop-in replacement.
  *
  * @param inputs - Class values accepted by clsx (strings, arrays, conditionals)
- * @returns A single deduplicated and conflict-resolved class string
+ * @returns A single space-separated class string
  *
  * @example
- * cn('px-4 py-2', 'px-6') // => 'py-2 px-6'
- * cn('text-red-500', isError && 'text-destructive') // conditional
+ * cn(styles.fab, isPulsing && styles.pulsing)
+ * cn(styles.container, isMobile ? styles.drawer : styles.modal)
  */
 export function cn(...inputs: ClassValue[]): string {
-    return twMerge(clsx(inputs));
+    return clsx(inputs);
 }

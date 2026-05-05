@@ -1,0 +1,179 @@
+/**
+ * StepDetails component styles.
+ */
+
+.stepRoot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fb-space-4);
+    font-family: var(--fb-font-family);
+}
+
+.fieldGroup {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ------------------------------------------------------------------ */
+/* Attachments upload zone                                              */
+/* ------------------------------------------------------------------ */
+
+.attachmentsLabel {
+    margin-bottom: 0.25rem;
+    font-weight: var(--fb-font-weight-semibold);
+    font-size: var(--fb-font-size-sm);
+    color: var(--fb-foreground);
+}
+
+.uploadZone {
+    display: block;
+    cursor: pointer;
+    border-radius: var(--fb-radius-sm);
+    border: 2px dashed var(--fb-border);
+    background-color: rgba(107, 114, 128, 0.05);
+    padding: var(--fb-space-4);
+    text-align: center;
+    transition: background-color var(--fb-duration-fast) var(--fb-easing);
+}
+
+.uploadZone:hover {
+    background-color: rgba(107, 114, 128, 0.1);
+}
+
+.uploadZoneText {
+    font-size: var(--fb-font-size-sm);
+    font-weight: var(--fb-font-weight-medium);
+    color: var(--fb-foreground);
+}
+
+.uploadZoneHint {
+    margin-top: 0.25rem;
+    font-size: var(--fb-font-size-xs);
+    color: var(--fb-foreground-muted);
+}
+
+.uploadInput {
+    display: none;
+}
+
+/* Rejection error list */
+.rejectionList {
+    margin-top: 0.25rem;
+    list-style: none;
+    padding: 0;
+}
+
+.rejectionItem {
+    margin-top: 0.125rem;
+    font-size: var(--fb-font-size-xs);
+    color: var(--fb-destructive);
+}
+
+/* Attachment file list */
+.attachmentList {
+    margin-top: var(--fb-space-2);
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.attachmentItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: var(--fb-radius-sm);
+    background-color: var(--fb-border);
+    padding: 0.375rem 0.75rem;
+    font-size: var(--fb-font-size-sm);
+    color: var(--fb-foreground);
+}
+
+.attachmentSize {
+    margin-left: 0.375rem;
+    font-size: var(--fb-font-size-xs);
+    color: var(--fb-foreground-muted);
+}
+
+.removeBtn {
+    padding: 0.125rem;
+    font-weight: var(--fb-font-weight-semibold);
+    font-size: var(--fb-font-size-sm);
+    color: var(--fb-destructive);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: opacity var(--fb-duration-fast) var(--fb-easing);
+}
+
+.removeBtn:hover {
+    opacity: 0.8;
+}
+
+/* ------------------------------------------------------------------ */
+/* Collapsible tech details section                                     */
+/* ------------------------------------------------------------------ */
+
+.techSection {
+    overflow: hidden;
+    border-radius: var(--fb-radius-sm);
+    border: 1px solid var(--fb-border);
+}
+
+.techToggle {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--fb-border);
+    padding: 0.625rem 0.875rem;
+    text-align: left;
+    font-family: var(--fb-font-family);
+    font-weight: var(--fb-font-weight-semibold);
+    font-size: var(--fb-font-size-xs);
+    color: var(--fb-foreground);
+    border: none;
+    cursor: pointer;
+    transition: background-color var(--fb-duration-fast) var(--fb-easing);
+}
+
+.techToggle:hover {
+    background-color: rgba(229, 231, 235, 0.8);
+}
+
+.techToggleChevron {
+    font-size: var(--fb-font-size-xs);
+}
+
+.techFields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    padding: 0.875rem;
+}
+
+.techFieldLabel {
+    display: block;
+    margin-bottom: 0.125rem;
+    font-weight: var(--fb-font-weight-medium);
+    font-size: var(--fb-font-size-xs);
+    color: var(--fb-foreground-muted);
+}
+
+.techConsoleNote {
+    font-size: var(--fb-font-size-xs);
+    color: var(--fb-foreground-muted);
+    font-style: italic;
+}
+
+/* ------------------------------------------------------------------ */
+/* Action buttons                                                       */
+/* ------------------------------------------------------------------ */
+
+.actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-top: var(--fb-space-2);
+}

@@ -12,11 +12,13 @@ import { useAutoCollect } from '../hooks/useAutoCollect.js';
 import { useFeedbackSubmit } from '../hooks/useFeedbackSubmit.js';
 import type { AppSourceId, FeedbackEnvironment, ReportTypeId } from '../schemas/feedback.schema.js';
 import { REPORT_TYPE_IDS, feedbackFormSchema } from '../schemas/feedback.schema.js';
+import styles from './FeedbackForm.module.css';
 import { SuccessScreen } from './SuccessScreen.js';
 import { StepBasic } from './steps/StepBasic.js';
 import type { StepBasicData } from './steps/StepBasic.js';
 import { StepDetails } from './steps/StepDetails.js';
 import type { StepDetailsData } from './steps/StepDetails.js';
+import '../styles/tokens.css';
 
 /** Which step of the form is currently visible */
 type Step = 'basic' | 'details' | 'success';
@@ -88,13 +90,6 @@ function buildInitialBasicData(
 }
 
 /**
- * Maps Zod issue paths to human-readable error messages using FEEDBACK_STRINGS.
- *
- * @param path - The Zod issue path array (first element is the field name)
- * @param message - The Zod default message
- * @returns A user-facing error string
- */
-/**
  * Checks if a Zod validation message indicates a "too big" constraint
  * (maximum length exceeded). Matches both Zod v3 ("at most") and v4
  * ("too_big" code or "maximum" keyword) error messages.
@@ -103,6 +98,13 @@ function isTooBig(message: string): boolean {
     return /\b(most|too.?big|maximum|exceed|long)\b/i.test(message);
 }
 
+/**
+ * Maps Zod issue paths to human-readable error messages using FEEDBACK_STRINGS.
+ *
+ * @param path - The Zod issue path array (first element is the field name)
+ * @param message - The Zod default message
+ * @returns A user-facing error string
+ */
 function mapZodMessage(path: PropertyKey[], message: string): string {
     const field = path[0];
     if (field === 'title') {
@@ -130,24 +132,7 @@ function mapZodMessage(path: PropertyKey[], message: string): string {
  * - Step 2 (details): severity, reproduction steps, attachments, environment
  * - Success: confirmation with Linear issue ID or fallback message
  *
- * The component calls `feedbackFormSchema.safeParse()` on combined data before
- * submission and maps Zod errors to field-level messages shown on the relevant
- * step. On success it transitions to a success screen with "Enviar otro" and
- * "Cerrar" actions.
- *
  * @param props - See {@link FeedbackFormProps}
- *
- * @example
- * ```tsx
- * <FeedbackForm
- *   apiUrl={import.meta.env.PUBLIC_API_URL}
- *   appSource="web"
- *   userId={session?.userId}
- *   userEmail={session?.email}
- *   userName={session?.name}
- *   onClose={() => setOpen(false)}
- * />
- * ```
  */
 export function FeedbackForm({
     apiUrl,
@@ -218,11 +203,6 @@ export function FeedbackForm({
     // Validation
     // ------------------------------------------------------------------ //
 
-    /**
-     * Validates only step 1 fields (type, title, description, email, name).
-     * Uses a lightweight pick of the full schema to avoid validating
-     * environment and step 2 fields unnecessarily.
-     */
     const validateStep1 = useCallback((): boolean => {
         const step1Schema = feedbackFormSchema.pick({
             type: true,
@@ -251,10 +231,6 @@ export function FeedbackForm({
         return false;
     }, [basicData]);
 
-    /**
-     * Validates the combined form data using feedbackFormSchema.
-     * Returns true if valid, false if errors were set.
-     */
     const validate = useCallback((): boolean => {
         const combined = {
             ...basicData,
@@ -279,8 +255,6 @@ export function FeedbackForm({
         }
         setErrors(fieldErrors);
 
-        // Navigate to the step that has errors.
-        // Step 1 fields: type, title, description, reporterEmail, reporterName
         const step1Fields = new Set([
             'type',
             'title',
@@ -301,8 +275,6 @@ export function FeedbackForm({
     // ------------------------------------------------------------------ //
 
     const handleSubmit = useCallback(async () => {
-        // validate() already runs safeParse and sets errors, so we only
-        // need to build the combined data once for submission.
         if (!validate()) return;
 
         const combined = {
@@ -312,7 +284,6 @@ export function FeedbackForm({
             environment
         };
 
-        // validate() confirmed the data is valid, so use parse() directly
         const parsed = feedbackFormSchema.parse(combined);
 
         await submit(parsed, attachments.length > 0 ? attachments : undefined, honeypot);
@@ -362,14 +333,12 @@ export function FeedbackForm({
 
     if (step === 'details') {
         return (
-            <div className="w-full max-w-[520px] font-sans">
-                <p className="mb-4 border-border border-b pb-3 font-bold text-base text-foreground">
-                    {FEEDBACK_STRINGS.form.step2Title}
-                </p>
+            <div className={styles.formRoot}>
+                <p className={styles.formTitle}>{FEEDBACK_STRINGS.form.step2Title}</p>
 
                 {submitState.error && (
                     <div
-                        className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-destructive text-sm"
+                        className={styles.errorAlert}
                         role="alert"
                     >
                         {submitState.error}
@@ -397,14 +366,12 @@ export function FeedbackForm({
     // ------------------------------------------------------------------ //
 
     return (
-        <div className="w-full max-w-[520px] font-sans">
-            <p className="mb-4 border-border border-b pb-3 font-bold text-base text-foreground">
-                {FEEDBACK_STRINGS.form.title}
-            </p>
+        <div className={styles.formRoot}>
+            <p className={styles.formTitle}>{FEEDBACK_STRINGS.form.title}</p>
 
             {submitState.error && (
                 <div
-                    className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-destructive text-sm"
+                    className={styles.errorAlert}
                     role="alert"
                 >
                     {submitState.error}
@@ -414,7 +381,7 @@ export function FeedbackForm({
             {/* Honeypot field: hidden from real users, filled by bots */}
             <div
                 aria-hidden="true"
-                className="-left-[9999px] absolute h-0 overflow-hidden opacity-0"
+                className={styles.honeypot}
             >
                 <label htmlFor="feedback-website">Website</label>
                 <input

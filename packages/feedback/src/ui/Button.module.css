@@ -1,0 +1,109 @@
+/**
+ * Button component styles for @repo/feedback.
+ * Uses CSS custom properties from tokens.css via the feedback-root cascade.
+ */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fb-space-2);
+    white-space: nowrap;
+    border-radius: var(--fb-radius-sm);
+    font-family: var(--fb-font-family);
+    font-weight: var(--fb-font-weight-medium);
+    transition: background-color var(--fb-duration-fast) var(--fb-easing), color
+        var(--fb-duration-fast) var(--fb-easing), opacity var(--fb-duration-fast) var(--fb-easing);
+    cursor: pointer;
+    border: none;
+    outline: none;
+}
+
+.btn:focus-visible {
+    outline: 2px solid var(--fb-primary);
+    outline-offset: 2px;
+}
+
+.btn:disabled {
+    pointer-events: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Sizes */
+.sizeDefault {
+    height: 2.25rem;
+    padding: 0.5rem 1rem;
+    font-size: var(--fb-font-size-sm);
+}
+
+.sizeSm {
+    height: 2rem;
+    border-radius: var(--fb-radius-sm);
+    padding: 0 0.75rem;
+    font-size: var(--fb-font-size-xs);
+}
+
+.sizeLg {
+    height: 2.5rem;
+    border-radius: var(--fb-radius-sm);
+    padding: 0 2rem;
+    font-size: var(--fb-font-size-base);
+}
+
+.sizeIcon {
+    height: 2.25rem;
+    width: 2.25rem;
+    padding: 0;
+}
+
+/* Variants */
+.variantDefault {
+    background-color: var(--fb-primary);
+    color: var(--fb-primary-foreground);
+    box-shadow: var(--fb-shadow-sm);
+}
+
+.variantDefault:hover:not(:disabled) {
+    background-color: var(--fb-primary-hover);
+}
+
+.variantSecondary {
+    background-color: transparent;
+    color: var(--fb-primary);
+    border: 1px solid var(--fb-primary);
+}
+
+.variantSecondary:hover:not(:disabled) {
+    background-color: rgba(79, 70, 229, 0.1);
+}
+
+.variantDestructive {
+    background-color: var(--fb-destructive);
+    color: #ffffff;
+    box-shadow: var(--fb-shadow-sm);
+}
+
+.variantDestructive:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--fb-destructive) 90%, black);
+}
+
+.variantGhost {
+    background-color: transparent;
+    color: var(--fb-foreground);
+}
+
+.variantGhost:hover:not(:disabled) {
+    background-color: var(--fb-border);
+}
+
+.variantOutline {
+    background-color: var(--fb-background);
+    color: var(--fb-foreground);
+    border: 1px solid var(--fb-input-border);
+    box-shadow: var(--fb-shadow-sm);
+}
+
+.variantOutline:hover:not(:disabled) {
+    background-color: var(--fb-border);
+}

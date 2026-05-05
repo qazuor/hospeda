@@ -12,6 +12,7 @@ import { Input } from '../../ui/Input.js';
 import { Label } from '../../ui/Label.js';
 import { Select } from '../../ui/Select.js';
 import { Textarea } from '../../ui/Textarea.js';
+import styles from './StepBasic.module.css';
 
 /** Data managed by step 1 of the feedback form */
 export interface StepBasicData {
@@ -79,9 +80,9 @@ export function StepBasic({
     isSubmitting
 }: StepBasicProps) {
     return (
-        <div className="space-y-4">
+        <div className={styles.stepRoot}>
             {/* Report type */}
-            <div>
+            <div className={styles.fieldGroup}>
                 <Label htmlFor="feedback-type">{FEEDBACK_STRINGS.fields.type}</Label>
                 <Select
                     id="feedback-type"
@@ -102,7 +103,7 @@ export function StepBasic({
                 {errors.type && (
                     <p
                         id="feedback-type-error"
-                        className="mt-1 text-destructive text-xs"
+                        className={styles.fieldError}
                         role="alert"
                     >
                         {errors.type}
@@ -111,7 +112,7 @@ export function StepBasic({
             </div>
 
             {/* Title */}
-            <div>
+            <div className={styles.fieldGroup}>
                 <Label htmlFor="feedback-title">{FEEDBACK_STRINGS.fields.title}</Label>
                 <Input
                     id="feedback-title"
@@ -125,7 +126,7 @@ export function StepBasic({
                 {errors.title && (
                     <p
                         id="feedback-title-error"
-                        className="mt-1 text-destructive text-xs"
+                        className={styles.fieldError}
                         role="alert"
                     >
                         {errors.title}
@@ -134,11 +135,11 @@ export function StepBasic({
             </div>
 
             {/* Description */}
-            <div>
+            <div className={styles.fieldGroup}>
                 <Label htmlFor="feedback-description">{FEEDBACK_STRINGS.fields.description}</Label>
                 <Textarea
                     id="feedback-description"
-                    className="min-h-[100px]"
+                    style={{ minHeight: '100px' }}
                     value={data.description}
                     onChange={(e) => onChange('description', e.target.value)}
                     placeholder={FEEDBACK_STRINGS.fields.descriptionPlaceholder}
@@ -148,7 +149,7 @@ export function StepBasic({
                 {errors.description && (
                     <p
                         id="feedback-description-error"
-                        className="mt-1 text-destructive text-xs"
+                        className={styles.fieldError}
                         role="alert"
                     >
                         {errors.description}
@@ -159,7 +160,7 @@ export function StepBasic({
             {/* Contact fields (hidden when authenticated) */}
             {showContactFields && (
                 <>
-                    <div>
+                    <div className={styles.fieldGroup}>
                         <Label htmlFor="feedback-email">{FEEDBACK_STRINGS.fields.email}</Label>
                         <Input
                             id="feedback-email"
@@ -175,7 +176,7 @@ export function StepBasic({
                         {errors.reporterEmail && (
                             <p
                                 id="feedback-email-error"
-                                className="mt-1 text-destructive text-xs"
+                                className={styles.fieldError}
                                 role="alert"
                             >
                                 {errors.reporterEmail}
@@ -183,7 +184,7 @@ export function StepBasic({
                         )}
                     </div>
 
-                    <div>
+                    <div className={styles.fieldGroup}>
                         <Label htmlFor="feedback-name">{FEEDBACK_STRINGS.fields.name}</Label>
                         <Input
                             id="feedback-name"
@@ -199,7 +200,7 @@ export function StepBasic({
                         {errors.reporterName && (
                             <p
                                 id="feedback-name-error"
-                                className="mt-1 text-destructive text-xs"
+                                className={styles.fieldError}
                                 role="alert"
                             >
                                 {errors.reporterName}
@@ -210,7 +211,7 @@ export function StepBasic({
             )}
 
             {/* Action buttons */}
-            <div className="flex justify-between gap-3 pt-2">
+            <div className={styles.actions}>
                 <Button
                     type="button"
                     variant="secondary"

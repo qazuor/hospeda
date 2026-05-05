@@ -24,7 +24,9 @@ import { useConsoleCapture } from '../hooks/useConsoleCapture.js';
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut.js';
 import type { AppSourceId, ReportTypeId } from '../schemas/feedback.schema.js';
 import { cn } from '../ui/cn.js';
+import styles from './FeedbackFAB.module.css';
 import { FeedbackModal } from './FeedbackModal.js';
+import '../styles/tokens.css';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -32,21 +34,6 @@ import { FeedbackModal } from './FeedbackModal.js';
 
 /** localStorage key for persisting the minimized state */
 const MINIMIZED_STORAGE_KEY = 'feedback-fab-minimized';
-
-/** CSS keyframes injected once into <head> for the pulse animation */
-const PULSE_KEYFRAMES_ID = 'feedback-fab-pulse-keyframes';
-
-const PULSE_CSS = `
-@keyframes feedbackFabPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .feedback-fab-pulse {
-    animation: none !important;
-  }
-}
-`;
 
 // ---------------------------------------------------------------------------
 // localStorage helpers (exported for testability)
@@ -78,23 +65,6 @@ export function writeMinimizedToStorage(value: boolean): void {
     } catch {
         // Silently ignore (e.g. private browsing quota errors)
     }
-}
-
-// ---------------------------------------------------------------------------
-// CSS injection helper
-// ---------------------------------------------------------------------------
-
-/**
- * Injects the pulse keyframe CSS into the document <head> once.
- * Safe to call multiple times; a guard element ID prevents duplicates.
- */
-function injectPulseStyles(): void {
-    if (typeof document === 'undefined') return;
-    if (document.getElementById(PULSE_KEYFRAMES_ID)) return;
-    const style = document.createElement('style');
-    style.id = PULSE_KEYFRAMES_ID;
-    style.textContent = PULSE_CSS;
-    document.head.appendChild(style);
 }
 
 // ---------------------------------------------------------------------------
@@ -185,7 +155,6 @@ export function FeedbackFAB({
     const [isMinimized, setIsMinimized] = useState<boolean>(false);
     const [isHovered, setIsHovered] = useState<boolean>(false);
     const [isPulsing, setIsPulsing] = useState<boolean>(false);
-    const [isDesktop, setIsDesktop] = useState<boolean>(false);
 
     // ------------------------------------------------------------------
     // Keyboard shortcut
@@ -228,14 +197,6 @@ export function FeedbackFAB({
     useEffect(() => {
         writeMinimizedToStorage(isMinimized);
     }, [isMinimized]);
-
-    // ------------------------------------------------------------------
-    // Inject pulse CSS keyframes once
-    // ------------------------------------------------------------------
-
-    useEffect(() => {
-        injectPulseStyles();
-    }, []);
 
     // ------------------------------------------------------------------
     // Pulse animation: trigger every 30 seconds when not minimized
@@ -281,21 +242,6 @@ export function FeedbackFAB({
     }, []);
 
     // ------------------------------------------------------------------
-    // Desktop FAB size upgrade via media query (48px -> 56px)
-    // ------------------------------------------------------------------
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-
-        const mql = window.matchMedia('(min-width: 640px)');
-        const handleChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
-
-        setIsDesktop(mql.matches);
-        mql.addEventListener('change', handleChange);
-        return () => mql.removeEventListener('change', handleChange);
-    }, []);
-
-    // ------------------------------------------------------------------
     // Kill switch (AFTER all hooks to satisfy Rules of Hooks)
     // ------------------------------------------------------------------
 
@@ -333,10 +279,6 @@ export function FeedbackFAB({
     const modalElement =
         typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 
-    // Base classes for the FAB button
-    const fabBase =
-        'fixed bottom-6 right-6 z-[9998] flex cursor-pointer items-center justify-center rounded-full border-none transition-all duration-200';
-
     // ------------------------------------------------------------------
     // Render: minimized state
     // ------------------------------------------------------------------
@@ -344,14 +286,12 @@ export function FeedbackFAB({
     if (isMinimized) {
         return (
             <>
-                <div className="relative inline-block">
+                <div className={cn('feedback-root', styles.fabWrapper)}>
                     <button
                         type="button"
                         className={cn(
-                            fabBase,
-                            isHovered
-                                ? 'size-12 bg-primary text-primary-foreground shadow-lg'
-                                : 'size-6 bg-primary/40 shadow-md'
+                            styles.minimizedDot,
+                            isHovered && styles.minimizedDotExpanded
                         )}
                         onClick={handleMinimizedClick}
                         onMouseEnter={() => setIsHovered(true)}
@@ -372,7 +312,7 @@ export function FeedbackFAB({
                     {isHovered && (
                         <span
                             id={tooltipId}
-                            className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-14 whitespace-nowrap rounded-md bg-foreground px-2.5 py-1.5 text-background text-xs leading-snug shadow-lg"
+                            className={styles.minimizedTooltip}
                             role="tooltip"
                         >
                             {FEEDBACK_STRINGS.fab.tooltip}
@@ -389,22 +329,12 @@ export function FeedbackFAB({
     // Render: full FAB
     // ------------------------------------------------------------------
 
-    const fabSize = isDesktop ? 'size-14' : 'size-12';
-
     return (
         <>
-            <div className="relative inline-block">
+            <div className={cn('feedback-root', styles.fabWrapper)}>
                 <button
                     type="button"
-                    className={cn(
-                        fabBase,
-                        fabSize,
-                        'bg-primary text-primary-foreground shadow-lg shadow-primary/40',
-                        isPulsing && 'feedback-fab-pulse'
-                    )}
-                    style={
-                        isPulsing ? { animation: 'feedbackFabPulse 0.6s ease-in-out' } : undefined
-                    }
+                    className={cn(styles.fab, isPulsing && styles.pulsing)}
                     onClick={handleFabClick}
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}
@@ -424,7 +354,7 @@ export function FeedbackFAB({
                 {isHovered && (
                     <span
                         id={tooltipId}
-                        className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-14 whitespace-nowrap rounded-md bg-foreground px-2.5 py-1.5 text-background text-xs leading-snug shadow-lg"
+                        className={styles.tooltip}
                         role="tooltip"
                     >
                         {tooltipText}
@@ -434,7 +364,7 @@ export function FeedbackFAB({
                 {/* Minimize button: small circle in top-right corner of the FAB */}
                 <button
                     type="button"
-                    className="-right-1.5 -top-1.5 absolute z-10 flex size-6 items-center justify-center rounded-full border-none bg-primary-foreground/20 text-primary-foreground shadow-md backdrop-blur-sm hover:bg-primary-foreground/30"
+                    className={styles.minimizeBtn}
                     onClick={handleMinimize}
                     aria-label={FEEDBACK_STRINGS.fab.minimizeTooltip}
                     data-testid="feedback-fab-minimize"
