@@ -8,13 +8,30 @@
  */
 
 .feedback-root {
-    /* Map the package primary onto Hospeda's accent (warm orange CTA). */
+    /* --- Brand: warm orange CTA --- */
     --fb-primary: var(--brand-accent);
     --fb-primary-foreground: var(--accent-foreground);
     /* Slightly darker accent for hover. oklch keeps perceptual lightness. */
     --fb-primary-hover: oklch(0.62 0.2 50);
     --fb-shadow-fab: 0 8px 24px oklch(0.7 0.18 55 / 0.4);
     --fb-shadow-fab-color: oklch(0.7 0.18 55 / 0.55);
+
+    /* --- Surfaces / typography --- */
+    /* Map the package neutrals onto the web app's theme tokens so the
+       feedback modal honors the active light/dark theme automatically. */
+    --fb-background: var(--core-background);
+    --fb-foreground: var(--core-foreground);
+    --fb-foreground-muted: var(--core-muted-foreground);
+    --fb-card: var(--core-card);
+    --fb-border: var(--border);
+    --fb-input-bg: var(--core-card);
+    --fb-input-border: var(--border);
+
+    /* --- Modal backdrop ---
+       Strong dim so the modal clearly separates from busy page content. The
+       web app's --overlay token is intentionally light for non-modal dialogs;
+       feedback uses a much darker value here. */
+    --fb-overlay: oklch(0.12 0.02 220 / 0.85);
 }
 
 /*

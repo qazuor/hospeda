@@ -1,13 +1,14 @@
 /**
  * @repo/feedback - FeedbackFAB (Floating Action Button) component.
  *
- * The primary entry point for the feedback system. Renders a floating button
- * in the bottom-right corner of the viewport. Clicking it (or pressing the
- * configured keyboard shortcut Ctrl+Shift+F) opens the FeedbackModal.
+ * The primary entry point for the feedback system. Renders a labelled pill
+ * button in the bottom-right corner that, after a short delay, auto-collapses
+ * to an icon-only circle so it stops competing with page content. Hovering
+ * (or focusing) expands the pill back so the user always sees the affordance
+ * before clicking.
  *
- * The FAB supports a minimized state (a small dot) that persists across page
- * loads via localStorage. When minimized, hovering expands a tooltip preview;
- * clicking the dot opens the form directly.
+ * Clicking the FAB or pressing the configured keyboard shortcut
+ * (Ctrl+Shift+F) opens the FeedbackModal.
  *
  * A subtle pulse animation fires every 30 seconds to draw attention. The
  * animation is suppressed when `prefers-reduced-motion: reduce` is set.
@@ -15,7 +16,7 @@
  * Rendering is skipped entirely when `FEEDBACK_CONFIG.enabled` is false,
  * acting as a kill switch for the entire feedback system.
  */
-import { CloseIcon, DebugIcon } from '@repo/icons';
+import { DebugIcon } from '@repo/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FEEDBACK_CONFIG, getShortcutLabel } from '../config/feedback.config.js';
@@ -44,42 +45,23 @@ export interface SentryFeedbackBridgePayload {
     readonly associatedEventId?: string;
 }
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-/** localStorage key for persisting the minimized state */
-const MINIMIZED_STORAGE_KEY = 'feedback-fab-minimized';
-
-// ---------------------------------------------------------------------------
-// localStorage helpers (exported for testability)
-// ---------------------------------------------------------------------------
+/** Delay before the FAB collapses from labelled pill to icon-only. */
+const COLLAPSE_DELAY_MS = 2200;
 
 /**
- * Reads the minimized preference from localStorage.
- *
- * @returns The persisted boolean value, or `false` when unavailable/SSR.
+ * Legacy localStorage key for the previous "user-pinned minimize" feature.
+ * The new behavior is auto-collapse-on-timer with no persistence, so we
+ * defensively clear any leftover value that might still trigger old code
+ * in cached bundles. Safe to remove once cached clients have rotated.
  */
-export function readMinimizedFromStorage(): boolean {
-    if (typeof window === 'undefined') return false;
-    try {
-        return globalThis.localStorage.getItem(MINIMIZED_STORAGE_KEY) === 'true';
-    } catch {
-        return false;
-    }
-}
+const LEGACY_MINIMIZED_STORAGE_KEY = 'feedback-fab-minimized';
 
-/**
- * Writes the minimized preference to localStorage.
- *
- * @param value - Whether the FAB should be in minimized state.
- */
-export function writeMinimizedToStorage(value: boolean): void {
+function clearLegacyMinimizedFlag(): void {
     if (typeof window === 'undefined') return;
     try {
-        globalThis.localStorage.setItem(MINIMIZED_STORAGE_KEY, String(value));
+        globalThis.localStorage.removeItem(LEGACY_MINIMIZED_STORAGE_KEY);
     } catch {
-        // Silently ignore (e.g. private browsing quota errors)
+        // Ignore — private browsing or storage quota errors.
     }
 }
 
@@ -196,11 +178,13 @@ export function FeedbackFAB({
     // double-register listeners.
     useEffect(() => {
         installRuntimeTrackers();
+        // Drop the legacy persisted-minimize flag; the new FAB auto-collapses
+        // on a timer and never persists user-driven state.
+        clearLegacyMinimizedFlag();
     }, []);
 
     const [isOpen, setIsOpen] = useState<boolean>(false);
-    const [isMinimized, setIsMinimized] = useState<boolean>(false);
-    const [isHovered, setIsHovered] = useState<boolean>(false);
+    const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
     const [isPulsing, setIsPulsing] = useState<boolean>(false);
     const [sentryEventId, setSentryEventId] = useState<string | undefined>(undefined);
 
@@ -242,38 +226,29 @@ export function FeedbackFAB({
         const handleExternalOpen = () => {
             captureSentryEventId();
             setIsOpen(true);
-            if (isMinimized) setIsMinimized(false);
             // Acknowledge so the caller knows the FAB handled the request
             window.dispatchEvent(new CustomEvent('feedback:ack'));
         };
         window.addEventListener('feedback:open', handleExternalOpen);
         return () => window.removeEventListener('feedback:open', handleExternalOpen);
-    }, [isMinimized, captureSentryEventId]);
+    }, [captureSentryEventId]);
 
     // ------------------------------------------------------------------
-    // Restore minimized state from localStorage after hydration
+    // Auto-collapse: shrink labelled pill to icon-only after a short delay
+    // so the FAB stops competing with page content. Hover/focus expands it
+    // back via CSS.
     // ------------------------------------------------------------------
 
     useEffect(() => {
-        const stored = readMinimizedFromStorage();
-        if (stored) setIsMinimized(true);
+        const timer = setTimeout(() => setIsCollapsed(true), COLLAPSE_DELAY_MS);
+        return () => clearTimeout(timer);
     }, []);
 
     // ------------------------------------------------------------------
-    // Persist minimized state
+    // Pulse animation: trigger every 30 seconds.
     // ------------------------------------------------------------------
 
     useEffect(() => {
-        writeMinimizedToStorage(isMinimized);
-    }, [isMinimized]);
-
-    // ------------------------------------------------------------------
-    // Pulse animation: trigger every 30 seconds when not minimized
-    // ------------------------------------------------------------------
-
-    useEffect(() => {
-        if (isMinimized) return;
-
         const PULSE_INTERVAL_MS = 30_000;
         const PULSE_DURATION_MS = 600;
         let pulseTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -287,23 +262,13 @@ export function FeedbackFAB({
             clearInterval(interval);
             if (pulseTimeout) clearTimeout(pulseTimeout);
         };
-    }, [isMinimized]);
+    }, []);
 
     // ------------------------------------------------------------------
     // Handlers
     // ------------------------------------------------------------------
 
     const handleFabClick = useCallback(() => {
-        captureSentryEventId();
-        setIsOpen(true);
-    }, [captureSentryEventId]);
-
-    const handleMinimize = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-        e.stopPropagation();
-        setIsMinimized(true);
-    }, []);
-
-    const handleMinimizedClick = useCallback(() => {
         captureSentryEventId();
         setIsOpen(true);
     }, [captureSentryEventId]);
@@ -319,10 +284,9 @@ export function FeedbackFAB({
     if (!FEEDBACK_CONFIG.enabled) return null;
 
     // ------------------------------------------------------------------
-    // Tooltip: derive shortcut label from config instead of hardcoding
+    // ARIA / native title text
     // ------------------------------------------------------------------
 
-    const tooltipId = 'feedback-fab-tooltip';
     const tooltipText = `${FEEDBACK_STRINGS.fab.tooltipBase} (${getShortcutLabel()})`;
 
     // ------------------------------------------------------------------
@@ -354,53 +318,9 @@ export function FeedbackFAB({
         typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 
     // ------------------------------------------------------------------
-    // Render: minimized state
-    // ------------------------------------------------------------------
-
-    if (isMinimized) {
-        return (
-            <>
-                <div
-                    className={cn('feedback-root', 'fabWrapper')}
-                    data-feedback-root=""
-                >
-                    <button
-                        type="button"
-                        className={cn('minimizedDot', isHovered && 'minimizedDotExpanded')}
-                        onClick={handleMinimizedClick}
-                        onMouseEnter={() => setIsHovered(true)}
-                        onMouseLeave={() => setIsHovered(false)}
-                        onFocus={() => setIsHovered(true)}
-                        onBlur={() => setIsHovered(false)}
-                        aria-label={tooltipText}
-                        aria-describedby={isHovered ? tooltipId : undefined}
-                        data-testid="feedback-fab-minimized"
-                    >
-                        {isHovered && (
-                            <DebugIcon
-                                size={24}
-                                aria-hidden="true"
-                            />
-                        )}
-                    </button>
-                    {isHovered && (
-                        <span
-                            id={tooltipId}
-                            className="minimizedTooltip"
-                            role="tooltip"
-                        >
-                            {FEEDBACK_STRINGS.fab.tooltip}
-                        </span>
-                    )}
-                </div>
-
-                {modalElement}
-            </>
-        );
-    }
-
-    // ------------------------------------------------------------------
-    // Render: full FAB
+    // Render: single labelled pill that auto-collapses to icon-only after a
+    // short delay. Hover/focus expands it back via CSS using `:hover` /
+    // `:focus-visible` so no extra React state is needed.
     // ------------------------------------------------------------------
 
     return (
@@ -411,14 +331,10 @@ export function FeedbackFAB({
             >
                 <button
                     type="button"
-                    className={cn('fab', isPulsing && 'pulsing')}
+                    className={cn('fab', isCollapsed && 'fabCollapsed', isPulsing && 'pulsing')}
                     onClick={handleFabClick}
-                    onMouseEnter={() => setIsHovered(true)}
-                    onMouseLeave={() => setIsHovered(false)}
-                    onFocus={() => setIsHovered(true)}
-                    onBlur={() => setIsHovered(false)}
-                    aria-label={FEEDBACK_STRINGS.fab.tooltip}
-                    aria-describedby={isHovered ? tooltipId : undefined}
+                    aria-label={tooltipText}
+                    title={tooltipText}
                     data-testid="feedback-fab"
                 >
                     <DebugIcon
@@ -426,31 +342,6 @@ export function FeedbackFAB({
                         aria-hidden="true"
                     />
                     <span className="fabLabel">{FEEDBACK_STRINGS.fab.label}</span>
-                </button>
-
-                {/* Tooltip rendered outside button to avoid duplicate screen reader announcement */}
-                {isHovered && (
-                    <span
-                        id={tooltipId}
-                        className="tooltip"
-                        role="tooltip"
-                    >
-                        {tooltipText}
-                    </span>
-                )}
-
-                {/* Minimize button: small circle in top-right corner of the FAB */}
-                <button
-                    type="button"
-                    className="minimizeBtn"
-                    onClick={handleMinimize}
-                    aria-label={FEEDBACK_STRINGS.fab.minimizeTooltip}
-                    data-testid="feedback-fab-minimize"
-                >
-                    <CloseIcon
-                        size={12}
-                        aria-hidden="true"
-                    />
                 </button>
             </div>
 

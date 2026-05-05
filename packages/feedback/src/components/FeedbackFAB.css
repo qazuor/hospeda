@@ -1,8 +1,9 @@
 /**
  * FeedbackFAB component styles.
  *
- * The pulse keyframes are defined here (moved from the injectPulseStyles()
- * runtime injection). The prefers-reduced-motion guard is included.
+ * The FAB is a single labelled pill that auto-collapses to an icon-only
+ * circle a couple of seconds after page load and re-expands on hover/focus.
+ * The pulse keyframes live here (moved from the previous JS-injected style).
  */
 
 @keyframes feedbackFabPulse {
@@ -11,12 +12,12 @@
         transform: scale(1);
     }
     50% {
-        transform: scale(1.1);
+        transform: scale(1.06);
     }
 }
 
 /* ------------------------------------------------------------------ */
-/* FAB wrapper — positions the button + minimize button + tooltip      */
+/* Wrapper                                                             */
 /* ------------------------------------------------------------------ */
 
 .feedback-root .fabWrapper {
@@ -25,7 +26,7 @@
 }
 
 /* ------------------------------------------------------------------ */
-/* Base FAB button                                                      */
+/* FAB button — labelled pill (default)                                */
 /* ------------------------------------------------------------------ */
 
 .feedback-root .fab {
@@ -38,56 +39,98 @@
     justify-content: center;
     gap: 0.625rem;
     cursor: pointer;
-    border-radius: var(--fb-radius-pill);
     border: none;
-    transition: transform var(--fb-duration-fast) var(--fb-easing), box-shadow
-        var(--fb-duration-fast) var(--fb-easing), background-color
-        var(--fb-duration-fast) var(--fb-easing);
-    /* Mobile (default): pill 56px tall with icon + text. */
-    height: 3.5rem;
-    padding: 0 1.25rem 0 1rem;
+    border-radius: var(--fb-radius-pill);
+    height: 3.75rem;
+    padding: 0 1.5rem 0 1.25rem;
     background-color: var(--fb-primary);
     color: var(--fb-primary-foreground);
     box-shadow: var(--fb-shadow-fab),
         0 0 0 4px rgba(255, 255, 255, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
     font-family: var(--fb-font-family);
-    font-size: var(--fb-font-size-base);
+    font-size: var(--fb-font-size-lg);
     font-weight: var(--fb-font-weight-semibold);
     letter-spacing: 0.01em;
+    /* Animate every property that changes on collapse/expand. */
+    transition: transform var(--fb-duration-normal) var(--fb-easing),
+        background-color var(--fb-duration-fast) var(--fb-easing),
+        box-shadow var(--fb-duration-fast) var(--fb-easing),
+        width var(--fb-duration-normal) var(--fb-easing),
+        padding var(--fb-duration-normal) var(--fb-easing),
+        gap var(--fb-duration-normal) var(--fb-easing);
 }
 
-/* Force the icon to inherit the button's text color (white) instead of the
-   hardcoded fill that ships with the @repo/icons SVGs. CSS wins over the
-   SVG presentation attribute. */
+/* Force the icon to inherit the button's text color (white) regardless of
+   the hardcoded fill that ships with the @repo/icons SVG. CSS wins over
+   the SVG presentation attribute on every element and child path. */
 .feedback-root .fab svg,
 .feedback-root .fab svg path {
     fill: currentColor;
+    /* Prevent the SVG from shrinking when the label width animates. */
+    flex-shrink: 0;
 }
 
-/* Slight brightness on the back path so the bug glyph reads clearly. */
+/* Slight transparency on the decorative back path of the bug glyph so the
+   silhouette reads cleanly at the small icon-only state. */
 .feedback-root .fab svg path[opacity] {
-    opacity: 0.4;
+    opacity: 0.45;
 }
 
+/* The label text. Lives inline with the icon when expanded, fades and
+   collapses in width when the pill auto-collapses to a circle. */
 .feedback-root .fabLabel {
-    display: inline;
+    display: inline-block;
     line-height: 1;
+    white-space: nowrap;
+    max-width: 12rem;
+    opacity: 1;
+    overflow: hidden;
+    transition: max-width var(--fb-duration-normal) var(--fb-easing),
+        opacity var(--fb-duration-fast) var(--fb-easing);
 }
 
-/* Desktop: a touch larger so the call-to-action is unmissable. */
-@media (min-width: 640px) {
-    .feedback-root .fab {
-        height: 3.75rem;
-        padding: 0 1.5rem 0 1.25rem;
-        font-size: var(--fb-font-size-lg);
-    }
+/* ------------------------------------------------------------------ */
+/* Collapsed state — icon-only circle, same height                     */
+/* ------------------------------------------------------------------ */
+
+.feedback-root .fab.fabCollapsed {
+    /* Height stays the same — only width and padding shrink. */
+    padding: 0;
+    gap: 0;
+    /* Width equals the height to land on a perfect circle. */
+    width: 3.75rem;
 }
+
+.feedback-root .fab.fabCollapsed .fabLabel {
+    max-width: 0;
+    opacity: 0;
+}
+
+/* Hover / focus while collapsed — expand back to the labelled pill so the
+   user can read the affordance. The underlying button retains the
+   collapsed class; the pseudo-class is layered on top. */
+.feedback-root .fab.fabCollapsed:hover,
+.feedback-root .fab.fabCollapsed:focus-visible {
+    width: auto;
+    padding: 0 1.5rem 0 1.25rem;
+    gap: 0.625rem;
+}
+
+.feedback-root .fab.fabCollapsed:hover .fabLabel,
+.feedback-root .fab.fabCollapsed:focus-visible .fabLabel {
+    max-width: 12rem;
+    opacity: 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* Hover (any state) — slight lift + brand-hover background            */
+/* ------------------------------------------------------------------ */
 
 .feedback-root .fab:hover {
     transform: translateY(-2px);
     background-color: var(--fb-primary-hover);
-    box-shadow: 0 16px 36px var(--fb-shadow-fab-color, rgba(79, 70, 229, 0.55)),
+    box-shadow: 0 16px 36px var(--fb-shadow-fab-color, rgba(0, 0, 0, 0.35)),
         0 0 0 4px rgba(255, 255, 255, 0.18),
         inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
@@ -97,7 +140,10 @@
     outline-offset: 3px;
 }
 
-/* Pulse animation class toggled via JS state */
+/* ------------------------------------------------------------------ */
+/* Pulse animation (every 30s)                                         */
+/* ------------------------------------------------------------------ */
+
 .feedback-root .pulsing {
     animation: feedbackFabPulse 0.6s ease-in-out;
 }
@@ -106,109 +152,8 @@
     .feedback-root .pulsing {
         animation: none;
     }
-}
-
-/* ------------------------------------------------------------------ */
-/* Minimize button (small circle top-right corner of the FAB)         */
-/* ------------------------------------------------------------------ */
-
-.feedback-root .minimizeBtn {
-    position: absolute;
-    top: -0.375rem;
-    right: -0.375rem;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: var(--fb-radius-full);
-    border: none;
-    background-color: rgba(255, 255, 255, 0.2);
-    color: var(--fb-primary-foreground);
-    box-shadow: var(--fb-shadow-md);
-    cursor: pointer;
-    backdrop-filter: blur(4px);
-    transition: background-color var(--fb-duration-fast) var(--fb-easing);
-}
-
-.feedback-root .minimizeBtn:hover {
-    background-color: rgba(255, 255, 255, 0.3);
-}
-
-/* ------------------------------------------------------------------ */
-/* Tooltip                                                              */
-/* ------------------------------------------------------------------ */
-
-.feedback-root .tooltip {
-    position: absolute;
-    top: 50%;
-    right: 3.5rem; /* right-14 = 3.5rem */
-    transform: translateY(-50%);
-    white-space: nowrap;
-    border-radius: var(--fb-radius-sm);
-    background-color: var(--fb-foreground);
-    color: var(--fb-background);
-    font-family: var(--fb-font-family);
-    font-size: var(--fb-font-size-xs);
-    line-height: 1.4;
-    padding: 0.375rem 0.625rem;
-    box-shadow: var(--fb-shadow-lg);
-    pointer-events: none;
-}
-
-/* ------------------------------------------------------------------ */
-/* Minimized dot                                                        */
-/* ------------------------------------------------------------------ */
-
-.feedback-root .minimizedDot {
-    position: fixed;
-    bottom: var(--fb-space-6);
-    right: var(--fb-space-6);
-    z-index: var(--fb-z-fab);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--fb-radius-full);
-    border: none;
-    cursor: pointer;
-    transition: width var(--fb-duration-normal) var(--fb-easing), height var(--fb-duration-normal)
-        var(--fb-easing), background-color var(--fb-duration-normal) var(--fb-easing), box-shadow
-        var(--fb-duration-normal) var(--fb-easing);
-    /* Default: collapsed dot 24px */
-    width: 1.5rem;
-    height: 1.5rem;
-    background-color: rgba(79, 70, 229, 0.4);
-    box-shadow: var(--fb-shadow-md);
-}
-
-.feedback-root .minimizedDotExpanded {
-    width: 3rem;
-    height: 3rem;
-    background-color: var(--fb-primary);
-    color: var(--fb-primary-foreground);
-    box-shadow: var(--fb-shadow-lg);
-}
-
-.feedback-root .minimizedDot:focus-visible {
-    outline: 2px solid var(--fb-primary);
-    outline-offset: 2px;
-}
-
-/* Tooltip for the minimized dot (right side) */
-.feedback-root .minimizedTooltip {
-    position: absolute;
-    top: 50%;
-    right: 3.5rem;
-    transform: translateY(-50%);
-    white-space: nowrap;
-    border-radius: var(--fb-radius-sm);
-    background-color: var(--fb-foreground);
-    color: var(--fb-background);
-    font-family: var(--fb-font-family);
-    font-size: var(--fb-font-size-xs);
-    line-height: 1.4;
-    padding: 0.375rem 0.625rem;
-    box-shadow: var(--fb-shadow-lg);
-    pointer-events: none;
+    .feedback-root .fab,
+    .feedback-root .fabLabel {
+        transition: none;
+    }
 }
