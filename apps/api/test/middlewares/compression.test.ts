@@ -15,19 +15,13 @@ vi.mock('../../src/utils/env', () => ({
         COMPRESSION_ENABLED: true,
         COMPRESSION_ALGORITHMS: 'gzip,deflate',
         COMPRESSION_THRESHOLD: 1024,
-        COMPRESSION_LEVEL: 6,
-        COMPRESSION_CHUNK_SIZE: 16384,
-        COMPRESSION_FILTER: 'text/*,application/json,application/xml,application/javascript',
-        COMPRESSION_EXCLUDE_ENDPOINTS: '/health/db,/docs'
+        COMPRESSION_LEVEL: 6
     },
     getCompressionConfig: () => ({
         enabled: true,
         algorithms: ['gzip', 'deflate'],
         threshold: 1024,
-        level: 6,
-        chunkSize: 16384,
-        filter: ['text/*', 'application/json', 'application/xml', 'application/javascript'],
-        excludeEndpoints: ['/health/db', '/docs']
+        level: 6
     }),
     validateApiEnv: vi.fn()
 }));
@@ -41,34 +35,18 @@ describe('Compression Middleware', () => {
         algorithms?: string;
         threshold?: number;
         level?: number;
-        chunkSize?: number;
-        filter?: string;
-        excludeEndpoints?: string;
     }) => ({
         env: {
             COMPRESSION_ENABLED: config.enabled ?? true,
             COMPRESSION_ALGORITHMS: config.algorithms ?? 'gzip,deflate',
             COMPRESSION_THRESHOLD: config.threshold ?? 1024,
-            COMPRESSION_LEVEL: config.level ?? 6,
-            COMPRESSION_CHUNK_SIZE: config.chunkSize ?? 16384,
-            COMPRESSION_FILTER:
-                config.filter ?? 'text/*,application/json,application/xml,application/javascript',
-            COMPRESSION_EXCLUDE_ENDPOINTS: config.excludeEndpoints ?? '/health/db,/docs'
+            COMPRESSION_LEVEL: config.level ?? 6
         },
         getCompressionConfig: () => ({
             enabled: config.enabled ?? true,
             algorithms: (config.algorithms ?? 'gzip,deflate').split(',').map((a) => a.trim()),
             threshold: config.threshold ?? 1024,
-            level: config.level ?? 6,
-            chunkSize: config.chunkSize ?? 16384,
-            filter: (
-                config.filter ?? 'text/*,application/json,application/xml,application/javascript'
-            )
-                .split(',')
-                .map((f) => f.trim()),
-            excludeEndpoints: (config.excludeEndpoints ?? '/health/db,/docs')
-                .split(',')
-                .map((e) => e.trim())
+            level: config.level ?? 6
         })
     });
 

@@ -35,12 +35,15 @@ export const securityHeadersMiddleware = async (c: Context, next: Next) => {
         return;
     }
 
-    // Shared non-CSP security headers applied to all routes including /docs
+    // Shared non-CSP security headers applied to all routes including /docs.
+    // X-Content-Type-Options is always 'nosniff' (only valid value).
+    // X-XSS-Protection is always '0' — modern browsers ignore this header
+    // (replaced by CSP) and the legacy XSS auditor had bugs.
     const commonHeaders = {
         strictTransportSecurity: securityConfig.strictTransportSecurity,
         xFrameOptions: securityConfig.xFrameOptions,
-        xContentTypeOptions: securityConfig.xContentTypeOptions,
-        xXssProtection: securityConfig.xXssProtection,
+        xContentTypeOptions: 'nosniff',
+        xXssProtection: '0',
         referrerPolicy: securityConfig.referrerPolicy,
         permissionsPolicy: {
             camera: false,

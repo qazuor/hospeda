@@ -16,8 +16,6 @@ vi.mock('../../src/utils/env', () => {
         API_SECURITY_HEADERS_ENABLED: true,
         API_SECURITY_STRICT_TRANSPORT_SECURITY: 'max-age=31536000; includeSubDomains',
         API_SECURITY_X_FRAME_OPTIONS: 'SAMEORIGIN',
-        API_SECURITY_X_CONTENT_TYPE_OPTIONS: 'nosniff',
-        API_SECURITY_X_XSS_PROTECTION: '0',
         API_SECURITY_REFERRER_POLICY: 'strict-origin-when-cross-origin',
         HOSPEDA_TESTING_ORIGIN_VERIFICATION: false
     };
@@ -30,8 +28,6 @@ vi.mock('../../src/utils/env', () => {
             headersEnabled: mockEnv.API_SECURITY_HEADERS_ENABLED,
             strictTransportSecurity: mockEnv.API_SECURITY_STRICT_TRANSPORT_SECURITY,
             xFrameOptions: mockEnv.API_SECURITY_X_FRAME_OPTIONS,
-            xContentTypeOptions: mockEnv.API_SECURITY_X_CONTENT_TYPE_OPTIONS,
-            xXssProtection: mockEnv.API_SECURITY_X_XSS_PROTECTION,
             referrerPolicy: mockEnv.API_SECURITY_REFERRER_POLICY
         }),
         getCorsConfig: () => ({

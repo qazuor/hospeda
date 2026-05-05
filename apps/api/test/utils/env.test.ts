@@ -90,21 +90,11 @@ describe('Environment Configuration', () => {
             expect(envModule.env.API_CACHE_DEFAULT_MAX_AGE).toBe(300);
             expect(envModule.env.API_CACHE_DEFAULT_STALE_WHILE_REVALIDATE).toBe(60);
             expect(envModule.env.API_CACHE_DEFAULT_STALE_IF_ERROR).toBe(86400);
-            expect(envModule.env.API_CACHE_PUBLIC_ENDPOINTS).toBe(
-                '/api/v1/public/accommodations,/health'
-            );
-            expect(envModule.env.API_CACHE_PRIVATE_ENDPOINTS).toBe('/api/v1/public/users');
-            expect(envModule.env.API_CACHE_NO_CACHE_ENDPOINTS).toBe('/health/db,/docs');
 
             // Compression Configuration
             expect(envModule.env.API_COMPRESSION_ENABLED).toBe(true);
             expect(envModule.env.API_COMPRESSION_LEVEL).toBe(5);
             expect(envModule.env.API_COMPRESSION_THRESHOLD).toBe(1024);
-            expect(envModule.env.API_COMPRESSION_CHUNK_SIZE).toBe(16384);
-            expect(envModule.env.API_COMPRESSION_FILTER).toBe(
-                'text/*,application/json,application/xml,application/javascript'
-            );
-            expect(envModule.env.API_COMPRESSION_EXCLUDE_ENDPOINTS).toBe('/health/db,/docs');
             expect(envModule.env.API_COMPRESSION_ALGORITHMS).toBe('gzip,deflate');
 
             // Rate Limiting Configuration
@@ -128,8 +118,6 @@ describe('Environment Configuration', () => {
                 'max-age=31536000; includeSubDomains'
             );
             expect(envModule.env.API_SECURITY_X_FRAME_OPTIONS).toBe('DENY');
-            expect(envModule.env.API_SECURITY_X_CONTENT_TYPE_OPTIONS).toBe('nosniff');
-            expect(envModule.env.API_SECURITY_X_XSS_PROTECTION).toBe('0');
             expect(envModule.env.API_SECURITY_REFERRER_POLICY).toBe(
                 'strict-origin-when-cross-origin'
             );

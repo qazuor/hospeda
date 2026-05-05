@@ -181,9 +181,6 @@ export const ApiEnvBaseSchema = z.object({
     API_CACHE_DEFAULT_MAX_AGE: z.coerce.number().default(300),
     API_CACHE_DEFAULT_STALE_WHILE_REVALIDATE: z.coerce.number().default(60),
     API_CACHE_DEFAULT_STALE_IF_ERROR: z.coerce.number().default(86400),
-    API_CACHE_PUBLIC_ENDPOINTS: z.string().default('/api/v1/public/accommodations,/health'),
-    API_CACHE_PRIVATE_ENDPOINTS: z.string().default('/api/v1/public/users'),
-    API_CACHE_NO_CACHE_ENDPOINTS: z.string().default('/health/db,/docs'),
     API_CACHE_ETAG_ENABLED: z.coerce.boolean().default(true),
     API_CACHE_LAST_MODIFIED_ENABLED: z.coerce.boolean().default(true),
 
@@ -191,11 +188,6 @@ export const ApiEnvBaseSchema = z.object({
     API_COMPRESSION_ENABLED: z.coerce.boolean().default(true),
     API_COMPRESSION_LEVEL: z.coerce.number().min(1).max(9).default(6),
     API_COMPRESSION_THRESHOLD: z.coerce.number().default(1024),
-    API_COMPRESSION_CHUNK_SIZE: z.coerce.number().default(16384),
-    API_COMPRESSION_FILTER: z
-        .string()
-        .default('text/*,application/json,application/xml,application/javascript'),
-    API_COMPRESSION_EXCLUDE_ENDPOINTS: z.string().default('/health/db,/docs'),
     API_COMPRESSION_ALGORITHMS: z.string().default('gzip,deflate'),
 
     // Rate Limiting - global
@@ -257,8 +249,6 @@ export const ApiEnvBaseSchema = z.object({
         .string()
         .default('max-age=31536000; includeSubDomains'),
     API_SECURITY_X_FRAME_OPTIONS: z.string().default('SAMEORIGIN'),
-    API_SECURITY_X_CONTENT_TYPE_OPTIONS: z.string().default('nosniff'),
-    API_SECURITY_X_XSS_PROTECTION: z.string().default('0'),
     API_SECURITY_REFERRER_POLICY: z.string().default('strict-origin-when-cross-origin'),
     API_SECURITY_PERMISSIONS_POLICY: z.string().default('camera=(), microphone=(), geolocation=()'),
 

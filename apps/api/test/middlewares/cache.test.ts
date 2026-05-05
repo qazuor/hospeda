@@ -9,9 +9,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../../src/utils/env', () => ({
     getCacheConfig: vi.fn(() => ({
         enabled: true,
-        publicEndpoints: ['/api/v1/public/accommodations', '/api/v1/public/destinations'],
-        privateEndpoints: ['/api/v1/protected/users'],
-        noCacheEndpoints: ['/health/db', '/docs'],
         maxAge: 60,
         staleWhileRevalidate: 30,
         staleIfError: 3600,
@@ -71,9 +68,6 @@ describe('Cache Middleware', () => {
         vi.clearAllMocks();
         vi.mocked(getCacheConfig).mockReturnValue({
             enabled: true,
-            publicEndpoints: ['/api/v1/public/accommodations', '/api/v1/public/destinations'],
-            privateEndpoints: ['/api/v1/protected/users'],
-            noCacheEndpoints: ['/health/db', '/docs'],
             defaultMaxAge: 60,
             defaultStaleWhileRevalidate: 30,
             defaultStaleIfError: 3600,
@@ -93,9 +87,6 @@ describe('Cache Middleware', () => {
         it('should return pass-through middleware when cache is disabled', async () => {
             vi.mocked(getCacheConfig).mockReturnValue({
                 enabled: false,
-                publicEndpoints: [],
-                privateEndpoints: [],
-                noCacheEndpoints: [],
                 defaultMaxAge: 60,
                 defaultStaleWhileRevalidate: 30,
                 defaultStaleIfError: 3600,
@@ -241,16 +232,16 @@ describe('Cache Middleware', () => {
             let callCount = 0;
 
             app.use('*', middleware);
-            app.get('/api/v1/protected/users', (c) => {
+            app.get('/api/v1/public/users', (c) => {
                 callCount++;
                 return c.json({ user: 'data', callCount });
             });
 
             // Two requests with different auth tokens
-            const res1 = await app.request('/api/v1/protected/users', {
+            const res1 = await app.request('/api/v1/public/users', {
                 headers: { Authorization: 'Bearer token-a' }
             });
-            const res2 = await app.request('/api/v1/protected/users', {
+            const res2 = await app.request('/api/v1/public/users', {
                 headers: { Authorization: 'Bearer token-b' }
             });
 
@@ -260,7 +251,7 @@ describe('Cache Middleware', () => {
             expect(callCount).toBe(2);
 
             // Now repeat with token-a - should be a HIT
-            const res3 = await app.request('/api/v1/protected/users', {
+            const res3 = await app.request('/api/v1/public/users', {
                 headers: { Authorization: 'Bearer token-a' }
             });
             expect(res3.headers.get('X-Cache')).toBe('HIT');
@@ -273,13 +264,13 @@ describe('Cache Middleware', () => {
             let callCount = 0;
 
             app.use('*', middleware);
-            app.get('/api/v1/protected/users', (c) => {
+            app.get('/api/v1/public/users', (c) => {
                 callCount++;
                 return c.json({ user: 'anon' });
             });
 
-            await app.request('/api/v1/protected/users');
-            const res2 = await app.request('/api/v1/protected/users');
+            await app.request('/api/v1/public/users');
+            const res2 = await app.request('/api/v1/public/users');
 
             expect(res2.headers.get('X-Cache')).toBe('HIT');
             expect(callCount).toBe(1);
@@ -291,9 +282,6 @@ describe('Cache Middleware', () => {
             // Use a very short TTL for testing
             vi.mocked(getCacheConfig).mockReturnValue({
                 enabled: true,
-                publicEndpoints: ['/api/v1/public/accommodations'],
-                privateEndpoints: [],
-                noCacheEndpoints: [],
                 defaultMaxAge: 0,
                 defaultStaleWhileRevalidate: 0,
                 defaultStaleIfError: 0,
@@ -382,9 +370,6 @@ describe('Cache Middleware', () => {
         it('should log info message when cache is disabled', () => {
             vi.mocked(getCacheConfig).mockReturnValue({
                 enabled: false,
-                publicEndpoints: [],
-                privateEndpoints: [],
-                noCacheEndpoints: [],
                 defaultMaxAge: 60,
                 defaultStaleWhileRevalidate: 30,
                 defaultStaleIfError: 3600,

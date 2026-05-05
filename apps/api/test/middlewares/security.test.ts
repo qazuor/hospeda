@@ -15,8 +15,6 @@ vi.mock('../../src/utils/env', () => {
             "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; frame-src 'none';",
         API_SECURITY_STRICT_TRANSPORT_SECURITY: 'max-age=31536000; includeSubDomains',
         API_SECURITY_X_FRAME_OPTIONS: 'SAMEORIGIN',
-        API_SECURITY_X_CONTENT_TYPE_OPTIONS: 'nosniff',
-        API_SECURITY_X_XSS_PROTECTION: '0',
         API_SECURITY_REFERRER_POLICY: 'strict-origin-when-cross-origin',
         API_SECURITY_PERMISSIONS_POLICY: 'camera=(), microphone=(), geolocation=()'
     };
@@ -30,8 +28,6 @@ vi.mock('../../src/utils/env', () => {
             contentSecurityPolicy: mockEnv.API_SECURITY_CONTENT_SECURITY_POLICY,
             strictTransportSecurity: mockEnv.API_SECURITY_STRICT_TRANSPORT_SECURITY,
             xFrameOptions: mockEnv.API_SECURITY_X_FRAME_OPTIONS,
-            xContentTypeOptions: mockEnv.API_SECURITY_X_CONTENT_TYPE_OPTIONS,
-            xXssProtection: mockEnv.API_SECURITY_X_XSS_PROTECTION,
             referrerPolicy: mockEnv.API_SECURITY_REFERRER_POLICY,
             permissionsPolicy: mockEnv.API_SECURITY_PERMISSIONS_POLICY
         })

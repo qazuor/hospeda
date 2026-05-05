@@ -7,6 +7,11 @@ import type { MiddlewareHandler } from 'hono';
 import type { AppBindings } from '../types';
 import { getCacheConfig } from '../utils/env';
 import { apiLogger } from '../utils/logger';
+import {
+    NO_CACHE_ENDPOINTS,
+    PRIVATE_CACHE_ENDPOINTS,
+    PUBLIC_CACHE_ENDPOINTS
+} from './cache.constants';
 
 /** Cached response entry stored in the in-memory cache */
 interface CacheEntry {
@@ -133,9 +138,9 @@ export const createCacheMiddleware = (): MiddlewareHandler<AppBindings> => {
         const key = generateCacheKey({
             path,
             authorization,
-            publicEndpoints: cacheConfig.publicEndpoints,
-            privateEndpoints: cacheConfig.privateEndpoints,
-            noCacheEndpoints: cacheConfig.noCacheEndpoints
+            publicEndpoints: PUBLIC_CACHE_ENDPOINTS,
+            privateEndpoints: PRIVATE_CACHE_ENDPOINTS,
+            noCacheEndpoints: NO_CACHE_ENDPOINTS
         });
 
         // If no cache key generated, skip caching

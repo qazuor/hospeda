@@ -389,60 +389,6 @@ export const API_CONFIG_ENV_VARS = [
             'Ventana donde los navegadores/CDN pueden servir cache stale si el origin devuelve error (seg). Por defecto 86400 (24h); mantiene el sitio arriba durante caídas parciales.'
     },
     {
-        name: 'API_CACHE_PUBLIC_ENDPOINTS',
-        description: 'Comma-separated path prefixes that receive public cache headers',
-        descriptionEs:
-            'Prefijos de ruta (separados por comas) que reciben headers de cache público',
-        type: 'string',
-        required: false,
-        secret: false,
-        defaultValue:
-            '/api/v1/public/accommodations,/api/v1/public/destinations,/api/v1/public/events,/api/v1/public/posts,/api/v1/public/amenities,/api/v1/public/features,/api/v1/public/attractions,/api/v1/public/event-locations,/api/v1/public/event-organizers,/api/v1/public/exchange-rates,/api/v1/public/posts/tags,/api/v1/public/search,/api/v1/public/stats,/api/v1/public/testimonials,/health',
-        exampleValue:
-            '/api/v1/public/accommodations,/api/v1/public/destinations,/api/v1/public/events,/api/v1/public/posts,/health',
-        apps: ['api'],
-        category: 'api-config',
-        howToObtain:
-            'Path prefixes that get "Cache-Control: public" (cacheable by CDN). Use for read-only endpoints with no per-user data. Default covers all current public read-only endpoints.',
-        howToObtainEs:
-            'Prefijos de ruta que reciben "Cache-Control: public" (cacheable por CDN). Usalo para endpoints de solo lectura sin datos por usuario. El default cubre todos los endpoints públicos de solo lectura actuales.'
-    },
-    {
-        name: 'API_CACHE_PRIVATE_ENDPOINTS',
-        description: 'Comma-separated path prefixes that receive private cache headers',
-        descriptionEs:
-            'Prefijos de ruta (separados por comas) que reciben headers de cache privado',
-        type: 'string',
-        required: false,
-        secret: false,
-        defaultValue:
-            '/api/v1/public/users,/api/v1/public/conversations,/api/v1/public/plans,/api/v1/public/user-bookmarks',
-        exampleValue: '/api/v1/public/users,/api/v1/public/conversations',
-        apps: ['api'],
-        category: 'api-config',
-        howToObtain:
-            'Path prefixes that get "Cache-Control: private" (cacheable only by the browser, not CDN). Use for per-user data. Default covers users, conversations, plans, bookmarks.',
-        howToObtainEs:
-            'Prefijos de ruta que reciben "Cache-Control: private" (cacheable solo por el navegador, no por CDN). Usalo para datos por usuario. El default cubre users, conversations, plans, bookmarks.'
-    },
-    {
-        name: 'API_CACHE_NO_CACHE_ENDPOINTS',
-        description: 'Comma-separated path prefixes that receive no-cache headers',
-        descriptionEs: 'Prefijos de ruta (separados por comas) que reciben headers no-cache',
-        type: 'string',
-        required: false,
-        secret: false,
-        defaultValue:
-            '/health/db,/docs,/api/v1/cron,/api/v1/webhooks,/api/v1/admin/metrics,/api/auth',
-        exampleValue: '/health/db,/docs,/api/v1/cron,/api/v1/webhooks,/api/auth',
-        apps: ['api'],
-        category: 'api-config',
-        howToObtain:
-            'Path prefixes that must always hit origin (Cache-Control: no-store). Default covers diagnostics, docs, cron, webhooks, admin metrics, and Better Auth (cookie-bound, never cacheable).',
-        howToObtainEs:
-            'Prefijos de ruta que siempre tienen que pegar al origin (Cache-Control: no-store). El default cubre diagnostics, docs, cron, webhooks, admin metrics y Better Auth (atado a cookies, nunca cacheable).'
-    },
-    {
         name: 'API_CACHE_ETAG_ENABLED',
         description: 'Enable ETag response headers',
         descriptionEs: 'Activa los headers ETag en las respuestas',
@@ -525,54 +471,6 @@ export const API_CONFIG_ENV_VARS = [
             'Skip compression for responses smaller than this many bytes (gzip has overhead). Default 1024 (1KB). Rarely change.',
         howToObtainEs:
             'No comprime respuestas más chicas que esta cantidad de bytes (gzip tiene overhead). Por defecto 1024 (1KB). Rara vez se cambia.'
-    },
-    {
-        name: 'API_COMPRESSION_CHUNK_SIZE',
-        description: 'Streaming chunk size in bytes for compressed responses',
-        descriptionEs: 'Tamaño de chunk en bytes para streaming de respuestas comprimidas',
-        type: 'number',
-        required: false,
-        secret: false,
-        defaultValue: '16384',
-        exampleValue: '16384',
-        apps: ['api'],
-        category: 'api-config',
-        howToObtain:
-            'Internal stream chunk size for gzip. Default 16384 (16KB). Almost never touch.',
-        howToObtainEs:
-            'Tamaño interno del chunk de stream para gzip. Por defecto 16384 (16KB). Casi nunca se toca.'
-    },
-    {
-        name: 'API_COMPRESSION_FILTER',
-        description: 'Comma-separated MIME type patterns eligible for compression',
-        descriptionEs: 'Patrones de MIME (separados por comas) elegibles para comprimir',
-        type: 'string',
-        required: false,
-        secret: false,
-        defaultValue: 'text/*,application/json,application/xml,application/javascript',
-        exampleValue: 'text/*,application/json,application/xml,application/javascript',
-        apps: ['api'],
-        category: 'api-config',
-        howToObtain:
-            "Comma-separated MIME patterns that get compressed. Default covers JSON/text/JS/XML. Don't add image/* or video/* (already compressed).",
-        howToObtainEs:
-            'Patrones MIME separados por comas que se comprimen. El default cubre JSON/text/JS/XML. NO agregues image/* o video/* (ya están comprimidos).'
-    },
-    {
-        name: 'API_COMPRESSION_EXCLUDE_ENDPOINTS',
-        description: 'Comma-separated path prefixes excluded from compression',
-        descriptionEs: 'Prefijos de ruta (separados por comas) excluidos de la compresión',
-        type: 'string',
-        required: false,
-        secret: false,
-        defaultValue: '/health/db,/docs',
-        exampleValue: '/health/db,/docs',
-        apps: ['api'],
-        category: 'api-config',
-        howToObtain:
-            'Path prefixes that bypass compression (useful for health checks where overhead matters more than bytes saved).',
-        howToObtainEs:
-            'Prefijos de ruta que saltean la compresión (útil para health checks donde el overhead importa más que los bytes ahorrados).'
     },
     {
         name: 'API_COMPRESSION_ALGORITHMS',
@@ -1027,39 +925,6 @@ export const API_CONFIG_ENV_VARS = [
             'Anti-clickjacking. Use "DENY" (block all framing), "SAMEORIGIN" (default — allow only your own pages to frame the API).',
         howToObtainEs:
             'Anti-clickjacking. Usá "DENY" (bloquea todo framing), "SAMEORIGIN" (default; solo tus páginas pueden enmarcar la API).'
-    },
-    {
-        name: 'API_SECURITY_X_CONTENT_TYPE_OPTIONS',
-        description: 'Value of the X-Content-Type-Options response header',
-        descriptionEs: 'Valor del header de respuesta X-Content-Type-Options',
-        type: 'string',
-        required: false,
-        secret: false,
-        defaultValue: 'nosniff',
-        exampleValue: 'nosniff',
-        apps: ['api'],
-        category: 'api-config',
-        howToObtain:
-            'Always "nosniff". Stops browsers from guessing content type and running scripts disguised as something else.',
-        howToObtainEs:
-            'Siempre "nosniff". Evita que los navegadores adivinen el content-type y ejecuten scripts disfrazados de otra cosa.'
-    },
-    {
-        name: 'API_SECURITY_X_XSS_PROTECTION',
-        description: 'Value of the X-XSS-Protection response header',
-        descriptionEs: 'Valor del header de respuesta X-XSS-Protection',
-        type: 'enum',
-        required: false,
-        secret: false,
-        defaultValue: '0',
-        exampleValue: '0',
-        enumValues: ['0', '1', '1; mode=block'] as const,
-        apps: ['api'],
-        category: 'api-config',
-        howToObtain:
-            'Default "0" — modern browsers ignore this header (replaced by CSP). Keep "0" to disable the legacy XSS auditor (which had bugs).',
-        howToObtainEs:
-            'Por defecto "0"; los navegadores modernos ignoran este header (lo reemplazó CSP). Dejá "0" para desactivar el auditor XSS legacy (que tenía bugs).'
     },
     {
         name: 'API_SECURITY_REFERRER_POLICY',

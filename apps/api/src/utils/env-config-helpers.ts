@@ -54,6 +54,9 @@ export const parseCorsOrigins = (origins: string | undefined): string[] => {
 
 /**
  * Returns the resolved cache configuration from environment variables.
+ *
+ * Note: endpoint classification (public/private/no-cache) is hardcoded in
+ * `apps/api/src/middlewares/cache.constants.ts`. Paths are code, not config.
  */
 export const getCacheConfig = () => ({
     enabled: _safe.getBoolean('API_CACHE_ENABLED', true),
@@ -63,15 +66,6 @@ export const getCacheConfig = () => ({
     maxAge: _safe.getNumber('API_CACHE_DEFAULT_MAX_AGE', 300),
     staleWhileRevalidate: _safe.getNumber('API_CACHE_DEFAULT_STALE_WHILE_REVALIDATE', 60),
     staleIfError: _safe.getNumber('API_CACHE_DEFAULT_STALE_IF_ERROR', 86400),
-    publicEndpoints: parseCommaSeparated(
-        _safe.get('API_CACHE_PUBLIC_ENDPOINTS', '/api/v1/public/accommodations,/health')
-    ),
-    privateEndpoints: parseCommaSeparated(
-        _safe.get('API_CACHE_PRIVATE_ENDPOINTS', '/api/v1/public/users')
-    ),
-    noCacheEndpoints: parseCommaSeparated(
-        _safe.get('API_CACHE_NO_CACHE_ENDPOINTS', '/health/db,/docs')
-    ),
     etagEnabled: _safe.getBoolean('API_CACHE_ETAG_ENABLED', true),
     lastModifiedEnabled: _safe.getBoolean('API_CACHE_LAST_MODIFIED_ENABLED', true)
 });
@@ -98,19 +92,15 @@ export const getCorsConfig = () => ({
 
 /**
  * Returns the resolved compression configuration from environment variables.
+ *
+ * Note: chunk size, MIME filter, and excluded endpoints are hardcoded
+ * (see compression middleware and `cache.constants.ts`). Operators tune
+ * the kill switch (`enabled`), `level`, and `threshold` only.
  */
 export const getCompressionConfig = () => ({
     enabled: _safe.getBoolean('API_COMPRESSION_ENABLED', true),
     level: _safe.getNumber('API_COMPRESSION_LEVEL', 6),
     threshold: _safe.getNumber('API_COMPRESSION_THRESHOLD', 1024),
-    chunkSize: _safe.getNumber('API_COMPRESSION_CHUNK_SIZE', 16384),
-    filter: _safe.get(
-        'API_COMPRESSION_FILTER',
-        'text/*,application/json,application/xml,application/javascript'
-    ),
-    excludeEndpoints: parseCommaSeparated(
-        _safe.get('API_COMPRESSION_EXCLUDE_ENDPOINTS', '/health/db,/docs')
-    ),
     algorithms: _safe.get('API_COMPRESSION_ALGORITHMS', 'gzip,deflate')
 });
 
@@ -190,8 +180,6 @@ export const getSecurityConfig = () => ({
         'max-age=31536000; includeSubDomains'
     ),
     xFrameOptions: _safe.get('API_SECURITY_X_FRAME_OPTIONS', 'SAMEORIGIN'),
-    xContentTypeOptions: _safe.get('API_SECURITY_X_CONTENT_TYPE_OPTIONS', 'nosniff'),
-    xXssProtection: _safe.get('API_SECURITY_X_XSS_PROTECTION', '0'),
     referrerPolicy: _safe.get('API_SECURITY_REFERRER_POLICY', 'strict-origin-when-cross-origin'),
     permissionsPolicy: _safe.get(
         'API_SECURITY_PERMISSIONS_POLICY',
