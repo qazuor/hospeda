@@ -12,14 +12,14 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
 /**
  * Total number of environment variable definitions across all categories.
  * Breakdown:
- *  - HOSPEDA_*    : 47 vars (server-side platform) [+1 HOSPEDA_MAX_COLLECTIONS_PER_USER]
+ *  - HOSPEDA_*    : 46 vars (server-side platform) [+1 HOSPEDA_MAX_COLLECTIONS_PER_USER]
  *  - API_*        : 91 vars (Hono middleware configuration)
  *  - PUBLIC_*     :  6 vars (Astro web app, browser-exposed)
  *  - VITE_*       : 23 vars (TanStack admin, Vite-exposed)
  *  - Docker       :  5 vars (docker-compose services)
  *  - System       :  6 vars (runtime/CI/Vercel)
  */
-const EXPECTED_VAR_COUNT = 197;
+const EXPECTED_VAR_COUNT = 196;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -176,6 +176,12 @@ describe('ENV_REGISTRY', () => {
 
     describe('secret flag', () => {
         it('should mark credential/token variables as secret', () => {
+            // NOTE: Sentry DSNs (HOSPEDA_SENTRY_DSN / PUBLIC_SENTRY_DSN /
+            // VITE_SENTRY_DSN) are intentionally NOT in this list. Sentry DSNs
+            // are write-only ingestion keys, intentionally public per Sentry
+            // design (https://docs.sentry.io/concepts/key-terms/dsn-explainer/)
+            // and the client variants are bundled into browser JS by design.
+            // See env-registry test below for explicit non-secret assertions.
             const expectedSecrets = [
                 'HOSPEDA_DATABASE_URL',
                 'HOSPEDA_BETTER_AUTH_SECRET',
@@ -190,11 +196,8 @@ describe('ENV_REGISTRY', () => {
                 'HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET',
                 'HOSPEDA_RESEND_API_KEY',
                 'HOSPEDA_CRON_SECRET',
-                'HOSPEDA_SENTRY_DSN',
                 'HOSPEDA_SEED_SUPER_ADMIN_PASSWORD',
-                'POSTGRES_PASSWORD',
-                'PUBLIC_SENTRY_DSN',
-                'VITE_SENTRY_DSN'
+                'POSTGRES_PASSWORD'
             ];
 
             for (const name of expectedSecrets) {
@@ -214,12 +217,15 @@ describe('ENV_REGISTRY', () => {
                 'HOSPEDA_RESEND_FROM_EMAIL',
                 'HOSPEDA_RESEND_FROM_NAME',
                 'HOSPEDA_COMMIT_SHA',
+                'HOSPEDA_SENTRY_DSN',
                 'API_PORT',
                 'API_CORS_ORIGINS',
                 'PUBLIC_API_URL',
                 'PUBLIC_SITE_URL',
+                'PUBLIC_SENTRY_DSN',
                 'VITE_API_URL',
                 'VITE_BETTER_AUTH_URL',
+                'VITE_SENTRY_DSN',
                 'POSTGRES_USER',
                 'POSTGRES_DB',
                 'NODE_ENV'
@@ -311,10 +317,13 @@ describe('ENV_REGISTRY', () => {
             expect(entry?.category).toBe('client-web');
         });
 
-        it('should include PUBLIC_SENTRY_DSN marked as secret', () => {
+        it('should include PUBLIC_SENTRY_DSN NOT marked as secret', () => {
+            // Sentry DSNs are intentionally public by design — they ship in
+            // the browser bundle and are write-only ingestion keys. See
+            // https://docs.sentry.io/concepts/key-terms/dsn-explainer/.
             const entry = REGISTRY.find((e) => e.name === 'PUBLIC_SENTRY_DSN');
             expect(entry).toBeDefined();
-            expect(entry?.secret).toBe(true);
+            expect(entry?.secret).toBe(false);
         });
 
         it('should include PUBLIC_SENTRY_RELEASE not marked as secret', () => {
@@ -338,10 +347,12 @@ describe('ENV_REGISTRY', () => {
             expect(entry?.required).toBe(true);
         });
 
-        it('should include VITE_SENTRY_DSN marked as secret', () => {
+        it('should include VITE_SENTRY_DSN NOT marked as secret', () => {
+            // Sentry DSNs are intentionally public by design — they ship in
+            // the admin browser bundle and are write-only ingestion keys.
             const entry = REGISTRY.find((e) => e.name === 'VITE_SENTRY_DSN');
             expect(entry).toBeDefined();
-            expect(entry?.secret).toBe(true);
+            expect(entry?.secret).toBe(false);
         });
 
         it('should contain all 23 VITE_* admin variables', () => {

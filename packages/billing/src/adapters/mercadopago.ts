@@ -21,9 +21,9 @@ import { MERCADO_PAGO_DEFAULT_TIMEOUT_MS } from '../constants/billing.constants.
  */
 export interface MercadoPagoAdapterConfig {
     /**
-     * MercadoPago access token
-     * Typically starts with 'APP_USR-' or 'TEST-', but some test credentials
-     * may use 'APP_USR-' prefix even in sandbox mode.
+     * MercadoPago access token. Starts with the 'APP_USR-' prefix for BOTH
+     * test and production credentials. Sandbox is activated through the test
+     * credentials section + test users + test cards, not by a different prefix.
      *
      * @remarks
      * If not provided, will be read from HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN environment variable

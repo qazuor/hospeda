@@ -24,32 +24,47 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_API_URL',
         description: 'API base URL',
+        descriptionEs: 'URL base de la API',
         type: 'url',
         required: true,
         secret: false,
         exampleValue: 'http://localhost:3001',
         apps: ['api', 'web', 'admin'],
-        category: 'core'
+        category: 'core',
+        howToObtain:
+            'Where the Hono API lives. Local: http://localhost:3001. Preview: https://api-<branch>-<team>.vercel.app. Production: https://api.hospeda.com.ar (or your real domain).',
+        howToObtainEs:
+            'Donde corre la API de Hono. Local: http://localhost:3001. Preview: https://api-<branch>-<team>.vercel.app. Producción: https://api.hospeda.com.ar (o tu dominio real).'
     },
     {
         name: 'HOSPEDA_SITE_URL',
         description: 'Web app base URL',
+        descriptionEs: 'URL base del sitio web',
         type: 'url',
         required: true,
         secret: false,
         exampleValue: 'http://localhost:4321',
         apps: ['api', 'web'],
-        category: 'core'
+        category: 'core',
+        howToObtain:
+            'Where the public Astro website lives. Local: http://localhost:4321. Production: https://hospeda.com.ar (or your real domain). The API uses this for CORS allowlist and outbound links.',
+        howToObtainEs:
+            'Donde corre el sitio público de Astro. Local: http://localhost:4321. Producción: https://hospeda.com.ar (o tu dominio real). La API la usa para el allowlist de CORS y para armar links de salida.'
     },
     {
         name: 'HOSPEDA_ADMIN_URL',
         description: 'Admin app URL (CORS, server-side links from web)',
+        descriptionEs: 'URL del admin (para CORS y para links del lado servidor desde la web)',
         type: 'url',
         required: false,
         secret: false,
         exampleValue: 'http://localhost:3000',
         apps: ['api', 'web'],
-        category: 'core'
+        category: 'core',
+        howToObtain:
+            'Where the TanStack Start admin dashboard lives. Local: http://localhost:3000. Production: https://admin.hospeda.com.ar (or your real subdomain). Used by API for CORS.',
+        howToObtainEs:
+            'Donde corre el dashboard de admin (TanStack Start). Local: http://localhost:3000. Producción: https://admin.hospeda.com.ar (o tu subdominio real). La API la usa para CORS.'
     },
 
     // -------------------------------------------------------------------------
@@ -58,52 +73,80 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_DATABASE_URL',
         description: 'PostgreSQL connection string',
+        descriptionEs: 'Connection string de PostgreSQL',
         type: 'url',
         required: true,
         secret: true,
         exampleValue: 'postgresql://user:password@host:5432/dbname',
         apps: ['api', 'seed'],
-        category: 'database'
+        category: 'database',
+        howToObtain:
+            'Format: postgresql://USER:PASSWORD@HOST:PORT/DBNAME. For local dev use the Docker compose values (default: postgresql://hospeda_user:hospeda_pass@localhost:5436/hospeda_dev). For prod/preview use the Neon connection string from the Vercel Marketplace integration.',
+        howToObtainEs:
+            'Formato: postgresql://USUARIO:PASSWORD@HOST:PUERTO/BASE. Para dev local usá los valores del Docker compose (default: postgresql://hospeda_user:hospeda_pass@localhost:5436/hospeda_dev). Para prod/preview usá la connection string de Neon que te da la integración de Vercel Marketplace.'
     },
     {
         name: 'HOSPEDA_DB_POOL_MAX_CONNECTIONS',
         description: 'DB pool max connections',
+        descriptionEs: 'Máximo de conexiones del pool de la DB',
         type: 'number',
         required: false,
         secret: false,
+        defaultValue: '10',
         exampleValue: '10',
         apps: ['api'],
-        category: 'database'
+        category: 'database',
+        howToObtain:
+            'Max simultaneous Postgres connections per app instance. Default 10. Lower it if your DB has a hard cap (Neon free tier = 100 total).',
+        howToObtainEs:
+            'Conexiones simultáneas máximas a Postgres por instancia de la app. Por defecto 10. Bajalo si tu DB tiene un tope (Neon free tier = 100 total).'
     },
     {
         name: 'HOSPEDA_DB_POOL_IDLE_TIMEOUT_MS',
         description: 'DB pool idle timeout',
+        descriptionEs: 'Timeout de inactividad del pool de la DB',
         type: 'number',
         required: false,
         secret: false,
+        defaultValue: '30000',
         exampleValue: '30000',
         apps: ['api'],
-        category: 'database'
+        category: 'database',
+        howToObtain:
+            'How long an idle connection stays alive before being closed (ms). Default 30000 (30s).',
+        howToObtainEs:
+            'Cuánto tiempo se mantiene viva una conexión inactiva antes de cerrarse (ms). Por defecto 30000 (30s).'
     },
     {
         name: 'HOSPEDA_DB_POOL_CONNECTION_TIMEOUT_MS',
         description: 'DB pool connection timeout',
+        descriptionEs: 'Timeout para conseguir una conexión del pool',
         type: 'number',
         required: false,
         secret: false,
+        defaultValue: '5000',
         exampleValue: '5000',
         apps: ['api'],
-        category: 'database'
+        category: 'database',
+        howToObtain:
+            'How long to wait for a free connection before failing the request (ms). Default 5000 (5s) — chosen as a sane balance for serverless cold starts on Neon. Lower it on warm long-running instances if you want faster fail-fast.',
+        howToObtainEs:
+            'Cuánto tiempo esperar una conexión libre antes de fallar el request (ms). Por defecto 5000 (5s) — elegido como balance sano para cold starts en serverless con Neon. Bajalo en instancias warm largas si querés fail-fast más rápido.'
     },
     {
         name: 'HOSPEDA_SEED_SUPER_ADMIN_PASSWORD',
         description: 'Super admin password for seeding',
+        descriptionEs: 'Contraseña del super admin para el seed inicial',
         type: 'string',
         required: false,
         secret: true,
         exampleValue: 'your-super-admin-password',
         apps: ['seed'],
-        category: 'database'
+        category: 'database',
+        howToObtain:
+            'Pick a strong password — it becomes the password of the bootstrapped super-admin user during db:seed. Used only at seed time; you can change it later via the admin UI.',
+        howToObtainEs:
+            'Elegí una contraseña fuerte; se convierte en la contraseña del usuario super-admin que crea db:seed. Solo se usa al sembrar la DB; después la podés cambiar desde la UI del admin.'
     },
 
     // -------------------------------------------------------------------------
@@ -111,85 +154,130 @@ export const HOSPEDA_ENV_VARS = [
     // -------------------------------------------------------------------------
     {
         name: 'HOSPEDA_BETTER_AUTH_SECRET',
-        description: 'Better Auth session signing secret',
+        description:
+            'Better Auth session signing secret. Min 32 chars enforced by Zod (apps/api/src/utils/env.ts).',
+        descriptionEs:
+            'Secreto de firma de sesiones de Better Auth. Mínimo 32 caracteres (validado por Zod en apps/api/src/utils/env.ts).',
         type: 'string',
         required: true,
         secret: true,
-        exampleValue: 'your-secret-key-minimum-32-characters-long',
+        exampleValue: 'X9k2n8Q4f7H3p1L6m0R5s2T8v4W7y3Z6a9B2c5D8e1F4=',
         apps: ['api'],
-        category: 'auth'
+        category: 'auth',
+        howToObtain:
+            'Generate a random 32+ char base64 secret with:  openssl rand -base64 32  — keep it stable across deploys (rotating invalidates all sessions). Each environment (dev/preview/prod) MUST have its own value.',
+        howToObtainEs:
+            'Generá un secreto aleatorio de 32+ chars en base64 con:  openssl rand -base64 32  — dejalo estable entre deploys (si lo rotás, invalidás todas las sesiones). Cada entorno (dev/preview/prod) DEBE tener el suyo propio.'
     },
     {
         name: 'HOSPEDA_LOCATION_SALT',
         description:
-            'Server-only salt for deterministic accommodation location obfuscation (privacy-aware approximate coordinates). Must be at least 32 characters; rotating changes all approximate locations shown to public visitors.',
+            'Server-only salt for deterministic accommodation location obfuscation (privacy-aware approximate coordinates). Min 32 chars enforced by Zod. Rotating changes all approximate locations shown to public visitors.',
+        descriptionEs:
+            'Salt server-only para ofuscar de forma determinística la ubicación de alojamientos (coordenadas aproximadas con criterio de privacidad). Mínimo 32 caracteres validado por Zod. Si lo rotás, cambian todas las ubicaciones aproximadas que ven los visitantes.',
         type: 'string',
         required: true,
         secret: true,
-        exampleValue: 'replace-with-32-plus-char-random-string-from-openssl',
+        exampleValue: 'L8m3p6Q9r2S5t8U1v4W7x0Y3z6A9b2C5d8E1f4G7h0J=',
         apps: ['api'],
-        category: 'auth'
+        category: 'auth',
+        howToObtain:
+            'Generate with:  openssl rand -base64 32  — NEVER rotate in prod (would shift every public approximate location). Service-core consumes it transitively (location-obfuscation.ts, accommodation.projections.ts).',
+        howToObtainEs:
+            'Generalo con:  openssl rand -base64 32  — NUNCA lo rotes en prod (movería todas las ubicaciones aproximadas que se muestran al público). Lo consume service-core de forma transitiva (location-obfuscation.ts, accommodation.projections.ts).'
     },
     {
         name: 'HOSPEDA_GEOCODING_USER_AGENT',
         description:
             'User-Agent header sent to Photon (Komoot) and Nominatim (OSM) when the admin location picker queries them. Required by Nominatim usage policy; missing or generic values may cause throttling.',
+        descriptionEs:
+            'Header User-Agent que se manda a Photon (Komoot) y Nominatim (OSM) cuando el location picker del admin los consulta. Lo exige la policy de Nominatim; si lo dejás vacío o genérico te van a tirar throttling.',
         type: 'string',
         required: false,
         secret: false,
+        defaultValue: 'Hospeda/1.0 (https://hospeda.com.ar)',
         exampleValue: 'Hospeda/1.0 (https://hospeda.com.ar)',
         apps: ['api'],
-        category: 'auth'
+        category: 'integrations',
+        howToObtain:
+            'Free text identifying your app to OSM Nominatim, e.g. "Hospeda/1.0 (https://hospeda.com.ar)". Nominatim policy requires this — generic UAs get rate-limited or banned.',
+        howToObtainEs:
+            'Texto libre que identifica tu app a Nominatim de OSM, ej: "Hospeda/1.0 (https://hospeda.com.ar)". La policy de Nominatim lo exige; los UAs genéricos sufren rate-limit o ban.'
     },
     {
         name: 'HOSPEDA_BETTER_AUTH_URL',
         description: 'Better Auth endpoint URL',
+        descriptionEs: 'URL del endpoint de Better Auth',
         type: 'url',
         required: true,
         secret: false,
         exampleValue: 'http://localhost:3001/api/auth',
         apps: ['api', 'web'],
-        category: 'auth'
+        category: 'auth',
+        howToObtain:
+            'Always HOSPEDA_API_URL + "/api/auth". Local: http://localhost:3001/api/auth. Production: https://api.hospeda.com.ar/api/auth. Better Auth handles sign-in/sign-out/sessions at this path.',
+        howToObtainEs:
+            'Siempre es HOSPEDA_API_URL + "/api/auth". Local: http://localhost:3001/api/auth. Producción: https://api.hospeda.com.ar/api/auth. Better Auth maneja sign-in/sign-out/sesiones en esa ruta.'
     },
     {
         name: 'HOSPEDA_GOOGLE_CLIENT_ID',
         description: 'Google OAuth client ID',
+        descriptionEs: 'Client ID de OAuth de Google',
         type: 'string',
         required: false,
         secret: true,
         exampleValue: 'your-google-client-id',
         apps: ['api'],
-        category: 'auth'
+        category: 'auth',
+        helpUrl: 'https://console.cloud.google.com/apis/credentials',
+        howToObtain:
+            'Google Cloud Console → APIs & Services → Credentials → Create credentials → OAuth Client ID (Web application). Add HOSPEDA_BETTER_AUTH_URL/callback as the authorized redirect URI.',
+        howToObtainEs:
+            'Google Cloud Console → APIs & Services → Credentials → Create credentials → OAuth Client ID (Web application). Agregá HOSPEDA_BETTER_AUTH_URL/callback como redirect URI autorizada.'
     },
     {
         name: 'HOSPEDA_GOOGLE_CLIENT_SECRET',
         description: 'Google OAuth secret',
+        descriptionEs: 'Secret de OAuth de Google',
         type: 'string',
         required: false,
         secret: true,
         exampleValue: 'your-google-client-secret',
         apps: ['api'],
-        category: 'auth'
+        category: 'auth',
+        helpUrl: 'https://console.cloud.google.com/apis/credentials',
+        howToObtain: 'Same OAuth Client created above — copy the Client Secret.',
+        howToObtainEs: 'El mismo OAuth Client que creaste arriba; copiá el Client Secret.'
     },
     {
         name: 'HOSPEDA_FACEBOOK_CLIENT_ID',
         description: 'Facebook OAuth client ID',
+        descriptionEs: 'Client ID de OAuth de Facebook',
         type: 'string',
         required: false,
         secret: true,
         exampleValue: 'your-facebook-client-id',
         apps: ['api'],
-        category: 'auth'
+        category: 'auth',
+        helpUrl: 'https://developers.facebook.com/apps',
+        howToObtain:
+            'Meta for Developers → your app → Settings → Basic → App ID. Configure Facebook Login product and add the OAuth redirect URI.',
+        howToObtainEs:
+            'Meta for Developers → tu app → Settings → Basic → App ID. Configurá el producto Facebook Login y agregá la redirect URI de OAuth.'
     },
     {
         name: 'HOSPEDA_FACEBOOK_CLIENT_SECRET',
         description: 'Facebook OAuth secret',
+        descriptionEs: 'Secret de OAuth de Facebook',
         type: 'string',
         required: false,
         secret: true,
         exampleValue: 'your-facebook-client-secret',
         apps: ['api'],
-        category: 'auth'
+        category: 'auth',
+        helpUrl: 'https://developers.facebook.com/apps',
+        howToObtain: 'Same Meta app → Settings → Basic → App Secret (click "Show").',
+        howToObtainEs: 'La misma app de Meta → Settings → Basic → App Secret (clickeá "Show").'
     },
 
     // -------------------------------------------------------------------------
@@ -197,18 +285,27 @@ export const HOSPEDA_ENV_VARS = [
     // -------------------------------------------------------------------------
     {
         name: 'HOSPEDA_REDIS_URL',
-        description: 'Redis URL for rate limiting',
+        description:
+            'Redis URL for rate limiting. REQUIRED in production (a superRefine in apps/api/src/utils/env.ts rejects startup if empty when NODE_ENV=production). Optional in development/test.',
+        descriptionEs:
+            'URL de Redis para rate limiting. OBLIGATORIA en producción (un superRefine en apps/api/src/utils/env.ts rechaza el startup si queda vacía con NODE_ENV=production). Opcional en development/test.',
         type: 'url',
         required: false,
         secret: true,
-        exampleValue: 'redis://localhost:6379',
+        exampleValue: 'redis://localhost:6381',
         apps: ['api'],
-        category: 'cache'
+        category: 'cache',
+        howToObtain:
+            'Format: redis://[user:pass@]host:port. Local: redis://localhost:6381 (Docker compose — port offset from default 6379 to avoid clashing with system Redis). Production: use Vercel Marketplace → Upstash Redis (gives you a redis://default:TOKEN@... URL). NOTE: hard-required in production — startup will fail if missing.',
+        howToObtainEs:
+            'Formato: redis://[usuario:pass@]host:puerto. Local: redis://localhost:6381 (Docker compose — puerto desplazado del default 6379 para no chocar con un Redis del sistema). Producción: usá Vercel Marketplace → Upstash Redis (te da una URL tipo redis://default:TOKEN@...). OJO: en producción es obligatoria — el startup falla si queda vacía.'
     },
     {
         name: 'HOSPEDA_RATE_LIMIT_BACKEND',
         description:
             'Storage backend for the sliding-window per-user rate limiter. "memory" uses an in-process Map (single-instance dev/staging). "redis" uses Redis sorted sets for distributed multi-instance deployments. Falls back to in-memory when Redis is unavailable.',
+        descriptionEs:
+            'Backend de almacenamiento del rate limiter por-usuario (sliding window). "memory" usa un Map en memoria (single-instance, dev/staging). "redis" usa sorted sets de Redis para deploys distribuidos multi-instancia. Cae a in-memory si Redis no está disponible.',
         type: 'enum',
         required: false,
         secret: false,
@@ -225,37 +322,55 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN',
         description: 'MercadoPago API token',
+        descriptionEs: 'Token de API de MercadoPago',
         type: 'string',
         required: false,
         secret: true,
-        exampleValue: 'TEST-xxxx-xxxx',
+        exampleValue: 'APP_USR-1234567890123456-010100-abcdef0123456789abcdef0123456789-123456789',
         apps: ['api'],
-        category: 'billing'
+        category: 'billing',
+        helpUrl: 'https://www.mercadopago.com.ar/developers/panel/app',
+        howToObtain:
+            'Create an application in the Mercado Pago developer panel → Credentials. The access token starts with "APP_USR-" for BOTH test and production — there is NO "TEST-" prefix on application credentials. Sandbox testing works by using the test credentials section + test users + test cards (https://www.mercadopago.com.ar/developers/en/docs/your-integrations/test/cards), not by a different token prefix. Copy from "Test credentials" panel section for development/preview, "Production credentials" for production. Each environment must use its own pair.',
+        howToObtainEs:
+            'Creá una aplicación en el panel de developers de Mercado Pago → Credenciales. El access token empieza con "APP_USR-" tanto para test como para producción — NO existe prefijo "TEST-" en credenciales de aplicación. El sandbox funciona usando la sección "Credenciales de prueba" + test users + tarjetas de prueba (https://www.mercadopago.com.ar/developers/en/docs/your-integrations/test/cards), no con un prefijo distinto. Copiá desde "Credenciales de prueba" para development/preview, "Credenciales de producción" para producción. Cada entorno usa su propio par.'
     },
     {
         name: 'HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET',
         description: 'MercadoPago webhook signature secret',
+        descriptionEs: 'Secreto para firmar webhooks de MercadoPago',
         type: 'string',
         required: false,
         secret: true,
-        exampleValue: 'whsec_xxxx',
+        exampleValue: 'a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456',
         apps: ['api'],
-        category: 'billing'
+        category: 'billing',
+        helpUrl: 'https://www.mercadopago.com.ar/developers/panel/app',
+        howToObtain:
+            'Same Mercado Pago app → Webhooks section → "Configure notifications" → copy the "Secret signature" string. MP shows it once on creation — it is an opaque random string (no fixed prefix like "whsec_"). Used with HMAC-SHA256 to verify incoming webhook payloads via the x-signature header.',
+        howToObtainEs:
+            'La misma app de Mercado Pago → sección Webhooks → "Configurar notificaciones" → copiá la "Clave secreta". MP la muestra una sola vez al crearla — es un string random opaco (no tiene prefijo fijo tipo "whsec_"). Se usa con HMAC-SHA256 para validar el header x-signature de los webhooks entrantes.'
     },
     {
         name: 'HOSPEDA_MERCADO_PAGO_SANDBOX',
         description: 'Enable MercadoPago sandbox mode',
+        descriptionEs: 'Activa el modo sandbox de MercadoPago',
         type: 'boolean',
         required: false,
         secret: false,
         defaultValue: 'true',
         exampleValue: 'true',
         apps: ['api'],
-        category: 'billing'
+        category: 'billing',
+        howToObtain:
+            'true = use Mercado Pago sandbox (test cards, no real charges). false = real production charges. Keep true for development and preview, false only for production.',
+        howToObtainEs:
+            'true = usar el sandbox de Mercado Pago (tarjetas de prueba, sin cobros reales). false = cobros reales de producción. Dejá true en development y preview; false solo en producción.'
     },
     {
         name: 'HOSPEDA_MERCADO_PAGO_TIMEOUT',
         description: 'MercadoPago API request timeout in ms',
+        descriptionEs: 'Timeout en ms para los requests a la API de MercadoPago',
         type: 'number',
         required: false,
         secret: false,
@@ -267,22 +382,34 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_MERCADO_PAGO_PLATFORM_ID',
         description: 'MercadoPago platform ID for marketplace tracking',
+        descriptionEs: 'Platform ID de MercadoPago para tracking de marketplace',
         type: 'string',
         required: false,
         secret: false,
-        exampleValue: 'MP-PLATFORM-ID',
+        defaultValue: '',
+        exampleValue: 'leave-empty-unless-mp-assigned',
         apps: ['api'],
-        category: 'billing'
+        category: 'billing',
+        howToObtain:
+            'Optional marketplace identifier issued by Mercado Pago to platform partners. Leave EMPTY (default) unless MP support assigned one to your account — there is no public format and you cannot generate it yourself. When given, MP delivers it via email or in the partner portal.',
+        howToObtainEs:
+            'Identificador opcional de marketplace que Mercado Pago entrega a partners. Dejalo VACÍO (default) salvo que el soporte de MP te haya asignado uno — no tiene formato público y no se genera solo. Cuando te lo dan, MP lo manda por mail o lo ves en el portal de partners.'
     },
     {
         name: 'HOSPEDA_MERCADO_PAGO_INTEGRATOR_ID',
         description: 'MercadoPago integrator ID for tracking',
+        descriptionEs: 'Integrator ID de MercadoPago para tracking',
         type: 'string',
         required: false,
         secret: false,
-        exampleValue: 'MP-INTEGRATOR-ID',
+        defaultValue: '',
+        exampleValue: 'leave-empty-unless-mp-certified',
         apps: ['api'],
-        category: 'billing'
+        category: 'billing',
+        howToObtain:
+            'Optional integrator tracking ID issued by Mercado Pago to certified integration partners (developers/agencies who completed MP certification). Leave EMPTY (default) unless you have completed MP certification and were issued one.',
+        howToObtainEs:
+            'Tracking ID opcional que Mercado Pago da a partners de integración certificados (developers/agencias que completaron la certificación de MP). Dejalo VACÍO (default) salvo que hayas completado la certificación y te hayan asignado uno.'
     },
 
     // -------------------------------------------------------------------------
@@ -291,42 +418,64 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_RESEND_API_KEY',
         description: 'Resend email API key',
+        descriptionEs: 'API key de Resend para envío de mails',
         type: 'string',
         required: false,
         secret: true,
         exampleValue: 're_xxxx',
         apps: ['api'],
-        category: 'email'
+        category: 'email',
+        helpUrl: 'https://resend.com/api-keys',
+        howToObtain:
+            'Sign up at resend.com → API Keys → Create API key → choose "Sending access" → copy the key starting with "re_". Verify your sending domain first under Domains.',
+        howToObtainEs:
+            'Registrate en resend.com → API Keys → Create API key → elegí "Sending access" → copiá la key que empieza con "re_". Antes verificá tu dominio de envío en Domains.'
     },
     {
         name: 'HOSPEDA_RESEND_FROM_EMAIL',
         description: 'Sender email address',
+        descriptionEs: 'Dirección de email del remitente',
         type: 'string',
         required: false,
         secret: false,
         exampleValue: 'noreply@hospeda.com.ar',
         apps: ['api'],
-        category: 'email'
+        category: 'email',
+        howToObtain:
+            'A "From" address using a domain you have verified in Resend (e.g. noreply@yourdomain.com). Cannot use a Gmail/Yahoo address — must be your own domain.',
+        howToObtainEs:
+            'Dirección "From" usando un dominio que ya verificaste en Resend (ej: noreply@tudominio.com). NO podés usar Gmail/Yahoo; tiene que ser tu propio dominio.'
     },
     {
         name: 'HOSPEDA_RESEND_FROM_NAME',
         description: 'Sender display name',
+        descriptionEs: 'Nombre visible del remitente',
         type: 'string',
         required: false,
         secret: false,
         exampleValue: 'Hospeda',
         apps: ['api'],
-        category: 'email'
+        category: 'email',
+        howToObtain:
+            'Friendly name shown next to the email address (e.g. "Hospeda", "Hospeda Notifications"). Free text — pick what you want recipients to see.',
+        howToObtainEs:
+            'Nombre amigable que aparece al lado del email (ej: "Hospeda", "Hospeda Notificaciones"). Texto libre; elegí lo que quieras que vean los destinatarios.'
     },
     {
         name: 'HOSPEDA_ADMIN_NOTIFICATION_EMAILS',
         description: 'Comma-separated admin emails for dispute/webhook notifications',
+        descriptionEs:
+            'Emails de admin separados por comas para notificaciones de disputas/webhooks',
         type: 'string',
         required: false,
         secret: false,
         exampleValue: 'admin@hospeda.com.ar',
         apps: ['api'],
-        category: 'email'
+        category: 'email',
+        howToObtain:
+            'List of email addresses (comma-separated, no spaces) that receive ops alerts: payment disputes, webhook failures, etc. Example: alice@hospeda.ar,bob@hospeda.ar',
+        howToObtainEs:
+            'Lista de emails (separados por comas, sin espacios) que reciben alertas operativas: disputas de pagos, fallos de webhooks, etc. Ejemplo: alice@hospeda.ar,bob@hospeda.ar'
     },
 
     // -------------------------------------------------------------------------
@@ -334,77 +483,121 @@ export const HOSPEDA_ENV_VARS = [
     // -------------------------------------------------------------------------
     {
         name: 'HOSPEDA_CRON_SECRET',
-        description: 'Cron endpoint auth secret',
+        description:
+            'Cron endpoint auth secret. Min 32 chars enforced by Zod. REQUIRED in production (superRefine in apps/api/src/utils/env.ts rejects startup if empty when NODE_ENV=production).',
+        descriptionEs:
+            'Secreto de autenticación para los endpoints de cron. Mínimo 32 caracteres validado por Zod. OBLIGATORIO en producción (un superRefine en apps/api/src/utils/env.ts rechaza el startup si queda vacío con NODE_ENV=production).',
         type: 'string',
         required: false,
         secret: true,
-        exampleValue: 'your-cron-secret',
+        exampleValue: 'Tg7L9m2N0p1Q3r4S5t6U7v8W9x0Y1z2A3b4C5d6E7f8=',
         apps: ['api'],
-        category: 'cron'
+        category: 'cron',
+        howToObtain:
+            'Generate with:  openssl rand -base64 32  — protects /api/cron/* endpoints from being triggered by anyone outside your scheduler. Must match what you configure in QStash (or Vercel Cron). Required in production: startup will fail if missing.',
+        howToObtainEs:
+            'Generalo con:  openssl rand -base64 32  — protege los endpoints /api/cron/* para que solo los pueda disparar tu scheduler. Tiene que coincidir con lo que configures en QStash (o Vercel Cron). Obligatorio en producción: el startup falla si queda vacío.'
     },
     {
         name: 'HOSPEDA_CRON_ADAPTER',
         description: 'Cron scheduler type',
+        descriptionEs: 'Tipo de scheduler de cron',
         type: 'enum',
         required: false,
         secret: false,
         exampleValue: 'manual',
         enumValues: ['manual', 'vercel', 'qstash', 'node-cron'] as const,
         apps: ['api'],
-        category: 'cron'
+        category: 'cron',
+        howToObtain:
+            'Pick one: "manual" (no scheduler, dev only), "vercel" (Vercel Cron — free tier limited), "qstash" (Upstash QStash — recommended for prod), "node-cron" (in-process, single instance only).',
+        howToObtainEs:
+            'Elegí uno: "manual" (sin scheduler, solo dev), "vercel" (Vercel Cron, free tier limitado), "qstash" (Upstash QStash — recomendado para prod), "node-cron" (in-process, solo single-instance).'
     },
     {
         name: 'QSTASH_TOKEN',
         description:
             'Upstash QStash bearer token. Used by scripts/setup-qstash-schedules.ts to provision schedules; not consumed at runtime.',
+        descriptionEs:
+            'Token bearer de Upstash QStash. Lo usa scripts/setup-qstash-schedules.ts para provisionar schedules; no se consume en runtime.',
         type: 'string',
         required: false,
         secret: true,
         exampleValue: 'eyJ...',
         apps: ['api'],
-        category: 'cron'
+        category: 'cron',
+        helpUrl: 'https://console.upstash.com/qstash',
+        howToObtain:
+            'Upstash Console → QStash → "Details" tab → copy the QSTASH_TOKEN. Free tier: 500 messages/day. Required only when HOSPEDA_CRON_ADAPTER=qstash.',
+        howToObtainEs:
+            'Consola de Upstash → QStash → tab "Details" → copiá el QSTASH_TOKEN. Free tier: 500 mensajes/día. Solo es necesario cuando HOSPEDA_CRON_ADAPTER=qstash.'
     },
     {
         name: 'QSTASH_CURRENT_SIGNING_KEY',
         description: 'Current Upstash QStash signing key. Verifies incoming cron signatures.',
+        descriptionEs:
+            'Signing key actual de Upstash QStash. Verifica las firmas de los cron entrantes.',
         type: 'string',
         required: false,
         secret: true,
         exampleValue: 'sig_...',
         apps: ['api'],
-        category: 'cron'
+        category: 'cron',
+        helpUrl: 'https://console.upstash.com/qstash',
+        howToObtain:
+            'Upstash Console → QStash → "Details" tab → "Signing Keys" section → copy "Current Signing Key". Used to verify that incoming cron POSTs really came from QStash.',
+        howToObtainEs:
+            'Consola de Upstash → QStash → tab "Details" → sección "Signing Keys" → copiá "Current Signing Key". Sirve para verificar que los POSTs entrantes realmente vienen de QStash.'
     },
     {
         name: 'QSTASH_NEXT_SIGNING_KEY',
         description: 'Next Upstash QStash signing key. Accepted during key rotation.',
+        descriptionEs:
+            'Próxima signing key de Upstash QStash. Se acepta durante la rotación de keys.',
         type: 'string',
         required: false,
         secret: true,
         exampleValue: 'sig_...',
         apps: ['api'],
-        category: 'cron'
+        category: 'cron',
+        helpUrl: 'https://console.upstash.com/qstash',
+        howToObtain:
+            'Upstash Console → QStash → "Details" tab → "Signing Keys" section → copy "Next Signing Key". Used during key rotation; both keys are accepted simultaneously.',
+        howToObtainEs:
+            'Consola de Upstash → QStash → tab "Details" → sección "Signing Keys" → copiá "Next Signing Key". Se usa durante la rotación; ambas keys se aceptan simultáneamente.'
     },
     {
         name: 'HOSPEDA_REVALIDATION_SECRET',
         description:
             'Shared secret for authenticating ISR revalidation requests from the API. Min 32 characters.',
+        descriptionEs:
+            'Secreto compartido para autenticar requests de revalidación ISR que vienen de la API. Mínimo 32 caracteres.',
         type: 'string',
         required: false,
         secret: true,
         exampleValue: 'a-secret-string-of-at-least-32-characters',
         apps: ['api', 'web'],
-        category: 'cron'
+        category: 'cron',
+        howToObtain:
+            'Generate with:  openssl rand -base64 32  — MUST be identical in apps/api AND apps/web for the same environment, otherwise revalidation hits will be rejected with 401.',
+        howToObtainEs:
+            'Generalo con:  openssl rand -base64 32  — TIENE que ser idéntico en apps/api Y apps/web para el mismo entorno; sino los hits de revalidación se rechazan con 401.'
     },
     {
         name: 'HOSPEDA_REVALIDATION_CRON_SCHEDULE',
         description: 'Cron schedule for automatic page revalidation',
+        descriptionEs: 'Schedule cron para la revalidación automática de páginas',
         type: 'string',
         required: false,
         secret: false,
         defaultValue: '0 * * * *',
         exampleValue: '0 * * * *',
         apps: ['api'],
-        category: 'cron'
+        category: 'cron',
+        howToObtain:
+            'Standard 5-field cron expression. Default "0 * * * *" = top of every hour. Hospeda uses QStash (HOSPEDA_CRON_ADAPTER=qstash) which has no per-day quota, so the hourly default is the right value. Use crontab.guru to compose other schedules. Examples: "*/15 * * * *" (every 15 min), "0 3 * * *" (3 AM daily). NOTE: if you switch to Vercel Cron on a Hobby plan you must lower the frequency — Hobby caps at 1 run/day.',
+        howToObtainEs:
+            'Expresión cron estándar de 5 campos. Por defecto "0 * * * *" = inicio de cada hora. Hospeda usa QStash (HOSPEDA_CRON_ADAPTER=qstash) que no tiene quota por día, así que el default por hora es el valor correcto. Usá crontab.guru para otros schedules. Ejemplos: "*/15 * * * *" (cada 15 min), "0 3 * * *" (3 AM diario). OJO: si cambiás a Vercel Cron en plan Hobby tenés que bajar la frecuencia — Hobby limita a 1 run/día.'
     },
 
     // -------------------------------------------------------------------------
@@ -414,13 +607,19 @@ export const HOSPEDA_ENV_VARS = [
         name: 'HOSPEDA_ADDON_LIFECYCLE_ENABLED',
         description:
             'Feature flag for addon lifecycle processing (cancellations, plan changes, expiry). Set to "false" to disable side-effects without deploying code.',
+        descriptionEs:
+            'Feature flag del procesamiento de ciclo de vida de addons (cancelaciones, cambios de plan, expiración). Poné "false" para desactivar los efectos secundarios sin tener que deployar.',
         type: 'boolean',
         required: false,
         secret: false,
         defaultValue: 'true',
         exampleValue: 'true',
         apps: ['api'],
-        category: 'billing'
+        category: 'billing',
+        howToObtain:
+            'Set "true" to keep addon billing side-effects active (default). Set "false" as a kill-switch when something is wrong with the lifecycle pipeline — pauses all addon cancellations/plan changes without redeploying.',
+        howToObtainEs:
+            'Poné "true" para mantener activos los efectos de facturación de addons (default). Poné "false" como kill-switch si algo anda mal en el pipeline; pausa todas las cancelaciones/cambios de addons sin redeploy.'
     },
 
     // -------------------------------------------------------------------------
@@ -429,24 +628,34 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_AUTH_LOCKOUT_MAX_ATTEMPTS',
         description: 'Max failed login attempts before temporary lockout',
+        descriptionEs: 'Intentos fallidos máximos de login antes del lockout temporal',
         type: 'number',
         required: false,
         secret: false,
         defaultValue: '5',
         exampleValue: '5',
         apps: ['api'],
-        category: 'auth'
+        category: 'auth',
+        howToObtain:
+            'Number of failed sign-in attempts allowed within the lockout window before the account is temporarily locked. Default 5. Lower for stricter brute-force protection.',
+        howToObtainEs:
+            'Cantidad de intentos fallidos de sign-in permitidos dentro de la ventana antes de que se bloquee temporalmente la cuenta. Por defecto 5. Bajalo para protección anti-brute-force más estricta.'
     },
     {
         name: 'HOSPEDA_AUTH_LOCKOUT_WINDOW_MS',
         description: 'Lockout window in milliseconds (default 900000 = 15 min)',
+        descriptionEs: 'Ventana de lockout en milisegundos (por defecto 900000 = 15 min)',
         type: 'number',
         required: false,
         secret: false,
         defaultValue: '900000',
         exampleValue: '900000',
         apps: ['api'],
-        category: 'auth'
+        category: 'auth',
+        howToObtain:
+            'How long the lockout lasts after exceeding max attempts (in ms). Default 900000 = 15 min. Use 1800000 = 30 min for stricter, 300000 = 5 min for friendlier.',
+        howToObtainEs:
+            'Cuánto dura el lockout después de pasar el máximo de intentos (en ms). Por defecto 900000 = 15 min. Usá 1800000 = 30 min para más estricto, 300000 = 5 min para más amable.'
     },
 
     // -------------------------------------------------------------------------
@@ -455,72 +664,96 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_LINEAR_API_KEY',
         description: 'Linear bug report API key',
+        descriptionEs: 'API key de Linear para reportes de bugs',
         type: 'string',
         required: false,
         secret: true,
         exampleValue: 'lin_api_xxxx',
         apps: ['api'],
-        category: 'integrations'
-    },
-    {
-        name: 'HOSPEDA_LINEAR_TEAM_ID',
-        description: 'Linear team ID for issue creation',
-        type: 'string',
-        required: false,
-        secret: false,
-        exampleValue: 'team-id',
-        apps: ['api'],
-        category: 'integrations'
+        category: 'integrations',
+        helpUrl: 'https://linear.app/settings/api',
+        howToObtain:
+            'Linear → Settings → API → Personal API Keys → "Create new key" → copy the value starting with "lin_api_". Used to create issues automatically from feedback widget.',
+        howToObtainEs:
+            'Linear → Settings → API → Personal API Keys → "Create new key" → copiá el valor que empieza con "lin_api_". Se usa para crear issues automáticamente desde el widget de feedback.'
     },
     {
         name: 'HOSPEDA_FEEDBACK_ENABLED',
         description: 'Kill switch to disable feedback endpoint (set to "false" to disable)',
-        type: 'string',
+        descriptionEs:
+            'Kill switch para desactivar el endpoint de feedback (poné "false" para desactivar)',
+        type: 'boolean',
         required: false,
         secret: false,
+        defaultValue: 'true',
         exampleValue: 'true',
         apps: ['api'],
-        category: 'integrations'
+        category: 'integrations',
+        howToObtain:
+            'Set "true" to enable the in-app feedback widget, "false" to hide it and reject submissions. Internally Zod transforms via `(v) => v !== "false"` — any value other than the literal string "false" is truthy. Useful as kill switch if Linear integration is down.',
+        howToObtainEs:
+            'Poné "true" para habilitar el widget de feedback in-app, "false" para esconderlo y rechazar envíos. Internamente Zod usa `(v) => v !== "false"` — cualquier valor distinto del string literal "false" se interpreta como true. Sirve como kill switch si la integración con Linear se rompe.'
     },
     {
         name: 'HOSPEDA_FEEDBACK_FALLBACK_EMAIL',
         description: 'Email address for feedback fallback notifications when Linear is unavailable',
+        descriptionEs: 'Email para recibir feedback cuando Linear no está disponible (fallback)',
         type: 'string',
         required: false,
         secret: false,
         exampleValue: 'feedback@hospeda.com',
         apps: ['api'],
-        category: 'integrations'
+        category: 'integrations',
+        howToObtain:
+            'Single email that receives feedback submissions when Linear API fails (so feedback is never lost). Use a real monitored inbox.',
+        howToObtainEs:
+            'Email único que recibe los envíos de feedback cuando falla la API de Linear (para no perder feedback). Usá una casilla real que estés monitoreando.'
     },
     {
         name: 'HOSPEDA_EXCHANGE_RATE_API_KEY',
         description: 'ExchangeRate-API key',
+        descriptionEs: 'API key de ExchangeRate-API',
         type: 'string',
         required: false,
         secret: true,
         exampleValue: 'your-api-key',
         apps: ['api'],
-        category: 'integrations'
+        category: 'integrations',
+        helpUrl: 'https://app.exchangerate-api.com/dashboard',
+        howToObtain:
+            'Sign up at exchangerate-api.com → Dashboard → copy the API key. Free tier: 1,500 requests/month. Used for converting prices between USD/ARS/etc.',
+        howToObtainEs:
+            'Registrate en exchangerate-api.com → Dashboard → copiá la API key. Free tier: 1.500 requests/mes. Se usa para convertir precios entre USD/ARS/etc.'
     },
     {
         name: 'HOSPEDA_DOLAR_API_BASE_URL',
         description: 'DolarAPI base URL',
+        descriptionEs: 'URL base de DolarAPI',
         type: 'url',
         required: false,
         secret: false,
         exampleValue: 'https://dolarapi.com/v1',
         apps: ['api'],
-        category: 'integrations'
+        category: 'integrations',
+        howToObtain:
+            'Public free Argentine USD/ARS rate API — keep the default unless you need a fork or proxy. No key required.',
+        howToObtainEs:
+            'API pública y gratuita de cotización USD/ARS argentina; dejá el default salvo que necesites un fork o proxy. No requiere key.'
     },
     {
         name: 'HOSPEDA_EXCHANGE_RATE_API_BASE_URL',
         description: 'ExchangeRate-API base URL',
+        descriptionEs: 'URL base de ExchangeRate-API',
         type: 'url',
         required: false,
         secret: false,
         exampleValue: 'https://v6.exchangerate-api.com/v6',
         apps: ['api'],
-        category: 'integrations'
+        category: 'integrations',
+        howToObtain:
+            'Default endpoint for exchangerate-api.com v6 — keep it unless their docs ask you to switch. The API key is appended automatically by the client.',
+        howToObtainEs:
+            'Endpoint default de exchangerate-api.com v6; dejalo salvo que su doc te pida cambiarlo. La API key la agrega automáticamente el cliente.'
     },
 
     // -------------------------------------------------------------------------
@@ -529,56 +762,87 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_CLOUDINARY_CLOUD_NAME',
         description: 'Cloudinary account cloud name for image storage and CDN delivery',
+        descriptionEs:
+            'Cloud name de la cuenta de Cloudinary para almacenamiento y entrega CDN de imágenes',
         type: 'string',
         required: false,
         secret: false,
         exampleValue: 'hospeda',
         apps: ['api', 'seed'],
-        category: 'integrations'
+        category: 'integrations',
+        helpUrl: 'https://console.cloudinary.com/settings/api-keys',
+        howToObtain:
+            'Cloudinary Console → top-right account info, or Settings → API Keys → "Cloud name". This is the unique slug of your account, NOT a secret.',
+        howToObtainEs:
+            'Consola de Cloudinary → info de cuenta arriba a la derecha, o Settings → API Keys → "Cloud name". Es el slug único de tu cuenta; NO es un secreto.'
     },
     {
         name: 'HOSPEDA_CLOUDINARY_API_KEY',
         description: 'Cloudinary API key for server-side image upload and management',
+        descriptionEs: 'API key de Cloudinary para upload y manejo de imágenes del lado servidor',
         type: 'string',
         required: false,
         secret: true,
         exampleValue: '123456789012345',
         apps: ['api', 'seed'],
-        category: 'integrations'
+        category: 'integrations',
+        helpUrl: 'https://console.cloudinary.com/settings/api-keys',
+        howToObtain:
+            'Cloudinary Console → Settings → API Keys → copy the "API Key" (typically a 15-digit number). Used together with API secret for server-side uploads.',
+        howToObtainEs:
+            'Consola de Cloudinary → Settings → API Keys → copiá la "API Key" (típicamente un número de 15 dígitos). Se usa junto con el API secret para uploads del lado servidor.'
     },
     {
         name: 'HOSPEDA_CLOUDINARY_API_SECRET',
         description: 'Cloudinary API secret for server-side authentication',
+        descriptionEs: 'API secret de Cloudinary para autenticación del lado servidor',
         type: 'string',
         required: false,
         secret: true,
         exampleValue: 'your-cloudinary-api-secret',
         apps: ['api', 'seed'],
-        category: 'integrations'
+        category: 'integrations',
+        helpUrl: 'https://console.cloudinary.com/settings/api-keys',
+        howToObtain:
+            'Cloudinary Console → Settings → API Keys → click "Reveal" next to the API Secret → copy. Server-only — never expose to the browser.',
+        howToObtainEs:
+            'Consola de Cloudinary → Settings → API Keys → clickeá "Reveal" al lado del API Secret → copiá. Solo del lado servidor; nunca lo expongas al navegador.'
     },
     {
         name: 'HOSPEDA_ALLOW_PROD_CLEANUP',
         description:
             'Safety flag required to allow destructive cleanup operations (e.g. seed --clean-images) in production environments. Must be exactly "true".',
+        descriptionEs:
+            'Flag de seguridad requerido para permitir operaciones destructivas de cleanup (ej: seed --clean-images) en entornos de producción. Debe ser exactamente "true".',
         type: 'boolean',
         required: false,
         secret: false,
         defaultValue: 'false',
         exampleValue: 'false',
         apps: ['seed'],
-        category: 'integrations'
+        category: 'integrations',
+        howToObtain:
+            'Hard guard. Keep "false". Set to "true" ONLY for the duration of an authorized one-shot cleanup script run in production, then revert to false immediately.',
+        howToObtainEs:
+            'Guarda dura. Dejalo en "false". Ponelo en "true" SOLO durante una corrida autorizada y puntual de un script de cleanup en producción; después volvelo a false inmediatamente.'
     },
     {
         name: 'HOSPEDA_MEDIA_MAX_FILE_SIZE_MB',
         description:
             'Maximum upload file size in megabytes (values above 4.5 require Vercel Pro plan)',
-        type: 'string',
+        descriptionEs:
+            'Tamaño máximo de archivo a subir en megabytes (valores arriba de 4.5 requieren plan Vercel Pro)',
+        type: 'number',
         required: false,
         secret: false,
         defaultValue: '10',
         exampleValue: '10',
         apps: ['api', 'seed'],
-        category: 'integrations'
+        category: 'integrations',
+        howToObtain:
+            'Cap on a single uploaded file size in MB. Default 10. Vercel Hobby plan caps requests at 4.5MB — use 4 there.',
+        howToObtainEs:
+            'Tope al tamaño de un archivo subido en MB. Por defecto 10. El plan Hobby de Vercel limita los requests a 4.5MB; en ese caso usá 4.'
     },
 
     // -------------------------------------------------------------------------
@@ -592,13 +856,19 @@ export const HOSPEDA_ENV_VARS = [
          */
         description:
             'Maximum number of active collections (wishlists) a user may have. Soft-deleted collections are excluded from this count. Default 10.',
+        descriptionEs:
+            'Cantidad máxima de colecciones activas (wishlists) que un usuario puede tener. Las soft-deleted no cuentan. Por defecto 10.',
         type: 'number',
         required: false,
         secret: false,
         defaultValue: '10',
         exampleValue: '10',
         apps: ['api'],
-        category: 'features'
+        category: 'features',
+        howToObtain:
+            'Per-user wishlist quota. Default 10. Bump up if you want power users to organize favorites in many lists.',
+        howToObtainEs:
+            'Cuota de wishlists por usuario. Por defecto 10. Subilo si querés que los power users puedan organizar favoritos en muchas listas.'
     },
 
     // -------------------------------------------------------------------------
@@ -607,22 +877,34 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_MESSAGING_BLOCKED_WORDS',
         description: 'Comma-separated list of blocked words for conversation content moderation',
+        descriptionEs:
+            'Lista de palabras bloqueadas (separadas por comas) para moderación de contenido en conversaciones',
         type: 'string',
         required: false,
         secret: false,
         exampleValue: 'spam,scam,phishing',
         apps: ['api'],
-        category: 'messaging'
+        category: 'messaging',
+        howToObtain:
+            'Comma-separated list (no spaces) of words that trigger soft moderation on guest↔host messages. Case-insensitive. Example: "spam,scam,phishing,viagra".',
+        howToObtainEs:
+            'Lista separada por comas (sin espacios) de palabras que disparan moderación blanda en mensajes huésped↔host. No distingue mayúsculas. Ejemplo: "spam,scam,phishing,viagra".'
     },
     {
         name: 'HOSPEDA_MESSAGING_BLOCKED_DOMAINS',
         description: 'Comma-separated list of email domains blocked from initiating conversations',
+        descriptionEs:
+            'Lista de dominios de email (separados por comas) bloqueados para iniciar conversaciones',
         type: 'string',
         required: false,
         secret: false,
         exampleValue: 'mailinator.com,guerrillamail.com',
         apps: ['api'],
-        category: 'messaging'
+        category: 'messaging',
+        howToObtain:
+            'Comma-separated list (no spaces) of email-domain blacklist used to reject signup/inquiry from disposable email providers. Example: "mailinator.com,guerrillamail.com,tempmail.com".',
+        howToObtainEs:
+            'Lista separada por comas (sin espacios) de dominios bloqueados para rechazar signups/consultas desde proveedores de email descartables. Ejemplo: "mailinator.com,guerrillamail.com,tempmail.com".'
     },
 
     // -------------------------------------------------------------------------
@@ -631,32 +913,48 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_SENTRY_DSN',
         description: 'Sentry DSN for API error tracking',
+        descriptionEs: 'DSN de Sentry para tracking de errores de la API',
         type: 'url',
         required: false,
-        secret: true,
+        secret: false,
         exampleValue: 'https://xxxx@sentry.io/xxxx',
         apps: ['api'],
-        category: 'monitoring'
+        category: 'monitoring',
+        helpUrl: 'https://sentry.io/settings/projects/',
+        howToObtain:
+            'Sentry → your project → Settings → Client Keys (DSN) → copy the DSN URL. NOTE: Sentry DSNs are write-only ingestion keys, intentionally public per Sentry design (https://docs.sentry.io/concepts/key-terms/dsn-explainer/) — they are not secrets. Each environment should still use a project-specific DSN. Leave blank to disable error tracking.',
+        howToObtainEs:
+            'Sentry → tu proyecto → Settings → Client Keys (DSN) → copiá la URL del DSN. OJO: los DSN de Sentry son keys write-only de ingestión, intencionalmente públicas por diseño (https://docs.sentry.io/concepts/key-terms/dsn-explainer/) — no son secretos. Igual conviene que cada entorno use un DSN distinto. Dejala vacía para desactivar el tracking.'
     },
     {
         name: 'HOSPEDA_SENTRY_RELEASE',
         description: 'Sentry release identifier',
+        descriptionEs: 'Identificador de release de Sentry',
         type: 'string',
         required: false,
         secret: false,
-        exampleValue: '1.0.0',
+        exampleValue: 'abc123def456',
         apps: ['api'],
-        category: 'monitoring'
+        category: 'monitoring',
+        howToObtain:
+            'Free-text version label that groups errors per deploy. Standard practice on Vercel: wire it to VERCEL_GIT_COMMIT_SHA so each deploy gets a unique release identifier (commit hash like "abc123def456"). Avoid semver "1.0.0" — every preview deploy would collide on the same release.',
+        howToObtainEs:
+            'Etiqueta de versión en texto libre que agrupa errores por deploy. Práctica estándar en Vercel: conectala a VERCEL_GIT_COMMIT_SHA así cada deploy es un release único (hash de commit tipo "abc123def456"). Evitá semver "1.0.0" — cada preview tendría colisión en el mismo release.'
     },
     {
         name: 'HOSPEDA_SENTRY_PROJECT',
         description: 'Sentry project name',
+        descriptionEs: 'Nombre del proyecto de Sentry',
         type: 'string',
         required: false,
         secret: false,
         exampleValue: 'hospeda-api',
         apps: ['api'],
-        category: 'monitoring'
+        category: 'monitoring',
+        howToObtain:
+            'The project slug shown in your Sentry URL: sentry.io/organizations/<org>/projects/<this-value>/. Used by source map upload tooling.',
+        howToObtainEs:
+            'El slug del proyecto que aparece en la URL de Sentry: sentry.io/organizations/<org>/projects/<este-valor>/. Lo usa la herramienta de upload de source maps.'
     },
 
     // -------------------------------------------------------------------------
@@ -665,52 +963,76 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_DISABLE_AUTH',
         description: 'Bypass auth in tests',
+        descriptionEs: 'Saltea la autenticación en tests',
         type: 'boolean',
         required: false,
         secret: false,
         exampleValue: 'false',
         apps: ['api'],
-        category: 'testing'
+        category: 'testing',
+        howToObtain:
+            'Set "true" ONLY in test environments to skip authentication checks. NEVER true in dev/preview/prod (would expose admin endpoints). Default: false.',
+        howToObtainEs:
+            'Poné "true" SOLO en entornos de testing para saltear los checks de autenticación. NUNCA true en dev/preview/prod (expondría endpoints de admin). Por defecto: false.'
     },
     {
         name: 'HOSPEDA_ALLOW_MOCK_ACTOR',
         description: 'Allow mock actors in tests',
+        descriptionEs: 'Permite actores mock en tests',
         type: 'boolean',
         required: false,
         secret: false,
         exampleValue: 'false',
         apps: ['api'],
-        category: 'testing'
+        category: 'testing',
+        howToObtain:
+            'Set "true" in CI/test env to let tests inject fake "actor" users via x-actor-id header. NEVER true in prod.',
+        howToObtainEs:
+            'Poné "true" en CI/tests para permitir que los tests inyecten usuarios "actor" falsos vía header x-actor-id. NUNCA true en prod.'
     },
     {
         name: 'HOSPEDA_TESTING_RATE_LIMIT',
         description: 'Enable rate limit in tests',
+        descriptionEs: 'Activa el rate limit en tests',
         type: 'boolean',
         required: false,
         secret: false,
         exampleValue: 'false',
         apps: ['api'],
-        category: 'testing'
+        category: 'testing',
+        howToObtain:
+            'Default false (rate limit disabled in tests for speed). Set true only when explicitly testing rate-limit behavior.',
+        howToObtainEs:
+            'Por defecto false (rate limit desactivado en tests para ir más rápido). Ponelo en true solo cuando estés testeando explícitamente el comportamiento de rate limit.'
     },
     {
         name: 'HOSPEDA_TESTING_ORIGIN_VERIFICATION',
         description: 'Enable origin check in tests',
+        descriptionEs: 'Activa el check de origin en tests',
         type: 'boolean',
         required: false,
         secret: false,
         exampleValue: 'false',
         apps: ['api'],
-        category: 'testing'
+        category: 'testing',
+        howToObtain:
+            'Default false (CSRF origin verification skipped in tests). Set true only when testing CSRF protections specifically.',
+        howToObtainEs:
+            'Por defecto false (verificación de origin de CSRF salteada en tests). Ponelo en true solo cuando estés testeando específicamente las protecciones CSRF.'
     },
     {
         name: 'HOSPEDA_DEBUG_TESTS',
         description: 'Verbose test logging',
+        descriptionEs: 'Logging verboso en tests',
         type: 'boolean',
         required: false,
         secret: false,
         exampleValue: 'false',
         apps: ['api'],
-        category: 'testing'
+        category: 'testing',
+        howToObtain: 'Set true to print verbose logs while running the test suite. Default: false.',
+        howToObtainEs:
+            'Poné true para imprimir logs verbosos mientras corre la suite de tests. Por defecto: false.'
     },
 
     // -------------------------------------------------------------------------
@@ -719,12 +1041,17 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_API_DEBUG_ERRORS',
         description: 'Show error details in responses',
+        descriptionEs: 'Muestra detalles de error en las respuestas',
         type: 'boolean',
         required: false,
         secret: false,
         exampleValue: 'false',
         apps: ['api'],
-        category: 'debugging'
+        category: 'debugging',
+        howToObtain:
+            'Set true in dev/staging to leak full error stack traces in API responses (handy when debugging). NEVER true in prod (info disclosure).',
+        howToObtainEs:
+            'Poné true en dev/staging para filtrar los stack traces completos en las respuestas de la API (útil cuando debuggeás). NUNCA true en prod (info disclosure).'
     },
 
     // -------------------------------------------------------------------------
@@ -733,44 +1060,65 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_COMMIT_SHA',
         description: 'Build commit SHA',
+        descriptionEs: 'SHA del commit del build',
         type: 'string',
         required: false,
         secret: false,
         exampleValue: 'abc123',
         apps: ['api'],
-        category: 'build'
+        category: 'build',
+        howToObtain:
+            'On Vercel this is auto-set from VERCEL_GIT_COMMIT_SHA — usually leave blank locally. Used to tie API responses to a specific git commit (helps debugging "which version was running").',
+        howToObtainEs:
+            'En Vercel se autocompleta desde VERCEL_GIT_COMMIT_SHA; en local típicamente lo dejás vacío. Sirve para atar las respuestas de la API a un commit de git específico (ayuda a debuggear "qué versión estaba corriendo").'
     },
     {
         name: 'HOSPEDA_DEBUG_ACTOR_ID',
         description:
             'Override actor ID for admin debugging (mapped to VITE_DEBUG_ACTOR_ID at build)',
+        descriptionEs:
+            'Override del actor ID para debuggear el admin (se mapea a VITE_DEBUG_ACTOR_ID en build)',
         type: 'string',
         required: false,
         secret: false,
         exampleValue: 'user-uuid',
         apps: ['admin'],
-        category: 'debugging'
+        category: 'debugging',
+        howToObtain:
+            'A real user UUID from your DB to impersonate while developing the admin app. Get it from db:studio → users table. Leave blank in prod.',
+        howToObtainEs:
+            'Un UUID real de usuario de tu DB para impersonar mientras desarrollás el admin. Sacalo de db:studio → tabla users. En prod dejalo vacío.'
     },
     {
         name: 'HOSPEDA_SUPPORTED_LOCALES',
         description: 'Supported locales (mapped to VITE_SUPPORTED_LOCALES at build)',
+        descriptionEs: 'Locales soportados (se mapea a VITE_SUPPORTED_LOCALES en build)',
         type: 'string',
         required: false,
         secret: false,
-        defaultValue: 'en,es',
-        exampleValue: 'en,es,pt',
+        defaultValue: 'es,en,pt',
+        exampleValue: 'es,en,pt',
         apps: ['admin'],
-        category: 'i18n'
+        category: 'i18n',
+        howToObtain:
+            'Comma-separated list of locale codes the admin UI offers (e.g. "es,en,pt"). Must be a subset of what @repo/i18n actually has translations for. Order does not matter for routing but tooling may use the first as a tie-breaker.',
+        howToObtainEs:
+            'Lista separada por comas con los códigos de locale que ofrece la UI del admin (ej: "es,en,pt"). Tiene que ser un subconjunto de lo que @repo/i18n realmente tiene traducido. El orden no afecta el routing pero algunas herramientas usan el primero como desempate.'
     },
     {
         name: 'HOSPEDA_DEFAULT_LOCALE',
         description: 'Default locale (mapped to VITE_DEFAULT_LOCALE at build)',
+        descriptionEs: 'Locale por defecto (se mapea a VITE_DEFAULT_LOCALE en build)',
         type: 'string',
         required: false,
         secret: false,
-        defaultValue: 'en',
+        defaultValue: 'es',
         exampleValue: 'es',
         apps: ['admin'],
-        category: 'i18n'
+        category: 'i18n',
+        howToObtain:
+            'Locale used when no preference is set (e.g. "es" for Argentina). Must be one of HOSPEDA_SUPPORTED_LOCALES.',
+        howToObtainEs:
+            'Locale que se usa cuando no hay preferencia (ej: "es" para Argentina). Tiene que ser uno de HOSPEDA_SUPPORTED_LOCALES.'
     }
 ] as const satisfies readonly EnvVarDefinition[];
