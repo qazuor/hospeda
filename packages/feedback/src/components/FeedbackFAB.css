@@ -36,47 +36,60 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.625rem;
     cursor: pointer;
     border-radius: var(--fb-radius-pill);
     border: none;
     transition: transform var(--fb-duration-fast) var(--fb-easing), box-shadow
         var(--fb-duration-fast) var(--fb-easing), background-color
         var(--fb-duration-fast) var(--fb-easing);
-    /* Mobile: circular 56px, icon-only (label hidden via .fabLabel rule) */
-    width: 3.5rem;
+    /* Mobile (default): pill 56px tall with icon + text. */
     height: 3.5rem;
-    padding: 0;
+    padding: 0 1.25rem 0 1rem;
     background-color: var(--fb-primary);
     color: var(--fb-primary-foreground);
-    box-shadow: var(--fb-shadow-fab);
+    box-shadow: var(--fb-shadow-fab),
+        0 0 0 4px rgba(255, 255, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18);
     font-family: var(--fb-font-family);
-    font-size: var(--fb-font-size-sm);
+    font-size: var(--fb-font-size-base);
     font-weight: var(--fb-font-weight-semibold);
     letter-spacing: 0.01em;
 }
 
-/* The text label is hidden on mobile (icon-only) and shown on desktop. */
-.feedback-root .fabLabel {
-    display: none;
+/* Force the icon to inherit the button's text color (white) instead of the
+   hardcoded fill that ships with the @repo/icons SVGs. CSS wins over the
+   SVG presentation attribute. */
+.feedback-root .fab svg,
+.feedback-root .fab svg path {
+    fill: currentColor;
 }
 
-/* Desktop: pill with icon + visible text label, taller and wider. */
+/* Slight brightness on the back path so the bug glyph reads clearly. */
+.feedback-root .fab svg path[opacity] {
+    opacity: 0.4;
+}
+
+.feedback-root .fabLabel {
+    display: inline;
+    line-height: 1;
+}
+
+/* Desktop: a touch larger so the call-to-action is unmissable. */
 @media (min-width: 640px) {
     .feedback-root .fab {
-        width: auto;
-        height: 3.25rem;
-        padding: 0 1.25rem 0 1rem;
-    }
-    .feedback-root .fabLabel {
-        display: inline;
+        height: 3.75rem;
+        padding: 0 1.5rem 0 1.25rem;
+        font-size: var(--fb-font-size-lg);
     }
 }
 
 .feedback-root .fab:hover {
     transform: translateY(-2px);
     background-color: var(--fb-primary-hover);
-    box-shadow: 0 14px 32px var(--fb-shadow-fab-color, rgba(79, 70, 229, 0.55));
+    box-shadow: 0 16px 36px var(--fb-shadow-fab-color, rgba(79, 70, 229, 0.55)),
+        0 0 0 4px rgba(255, 255, 255, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .feedback-root .fab:focus-visible {

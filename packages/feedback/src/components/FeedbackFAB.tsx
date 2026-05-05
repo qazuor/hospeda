@@ -422,7 +422,7 @@ export function FeedbackFAB({
                     data-testid="feedback-fab"
                 >
                     <DebugIcon
-                        size={20}
+                        size={24}
                         aria-hidden="true"
                     />
                     <span className="fabLabel">{FEEDBACK_STRINGS.fab.label}</span>
