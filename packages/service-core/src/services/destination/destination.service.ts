@@ -1240,6 +1240,13 @@ export class DestinationService extends BaseCrudService<
 
     /**
      * Finds a destination by its materialized path.
+     *
+     * The detail flow needs the related `attractions` array (selected into
+     * `DestinationPublicSchema`) and the base lookup does not eagerly load
+     * relations, so we hydrate attractions explicitly here. Same treatment
+     * is applied to `getBySlug` below — both are convenience wrappers that
+     * the destination detail page consumes.
+     *
      * @param actor - The actor performing the action
      * @param params - Input containing the materialized path
      * @param ctx - Optional service context. When provided with a transaction, the query runs within it.
@@ -1262,8 +1269,55 @@ export class DestinationService extends BaseCrudService<
                         `Destination not found at path: ${validData.path}`
                     );
                 }
-                return destination;
+                return this._withAttractions(destination, resolvedCtx);
             }
         });
+    }
+
+    /**
+     * Override of the base `getBySlug` to hydrate the `attractions` relation,
+     * matching what the public detail page expects.
+     *
+     * The base implementation in BaseCrudRead returns the entity without
+     * relations. Without this override the destination detail page sees
+     * `attractions: undefined` and the "Qué hacer acá" section, the stats
+     * counter, and any future attraction-driven UI all silently render as
+     * empty.
+     *
+     * @param actor - The user performing the action
+     * @param slug - Destination slug to resolve
+     * @param ctx - Optional service context (transaction propagation)
+     */
+    public override async getBySlug(
+        actor: Actor,
+        slug: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Destination | null>> {
+        const result = await super.getBySlug(actor, slug, ctx);
+        if (result.error || !result.data) return result;
+        const hydrated = await this._withAttractions(result.data, ctx);
+        return { data: hydrated };
+    }
+
+    /**
+     * Loads attractions for a single destination via the existing batch
+     * loader (which uses an inner join + ORDER BY displayWeight DESC) and
+     * merges them onto the destination object. If the destination already
+     * carries an attractions array (e.g., loaded by a future relations
+     * query), we leave it untouched.
+     *
+     * @param destination - Destination to enrich
+     * @param ctx - Optional service context for transaction propagation
+     * @returns The destination object with `attractions` populated
+     */
+    private async _withAttractions(
+        destination: Destination,
+        ctx?: ServiceContext
+    ): Promise<Destination> {
+        const existing = (destination as { attractions?: ReadonlyArray<unknown> }).attractions;
+        if (Array.isArray(existing) && existing.length > 0) return destination;
+        const map = await this.model.getAttractionsMap([destination.id], ctx?.tx);
+        const attractions = map.get(destination.id) ?? [];
+        return { ...destination, attractions } as Destination;
     }
 }
