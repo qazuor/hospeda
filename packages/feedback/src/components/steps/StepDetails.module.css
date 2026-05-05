@@ -167,6 +167,58 @@
     font-style: italic;
 }
 
+/* Sub-groups inside the tech details section */
+.techGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-top: 1px dashed var(--fb-border);
+}
+
+.techGroup:first-child {
+    padding-top: 0;
+    border-top: none;
+}
+
+.techGroupTitle {
+    font-weight: var(--fb-font-weight-semibold);
+    font-size: var(--fb-font-size-xs);
+    color: var(--fb-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.25rem;
+}
+
+.techGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+    .techGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.techField {
+    display: flex;
+    flex-direction: column;
+}
+
+.techFieldFull {
+    grid-column: 1 / -1;
+}
+
+.techTextarea {
+    font-family: var(--fb-font-family);
+    font-size: 0.75rem;
+    min-height: 4rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
 /* ------------------------------------------------------------------ */
 /* Action buttons                                                       */
 /* ------------------------------------------------------------------ */

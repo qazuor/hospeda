@@ -22,11 +22,27 @@ import { FEEDBACK_CONFIG, getShortcutLabel } from '../config/feedback.config.js'
 import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { useConsoleCapture } from '../hooks/useConsoleCapture.js';
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut.js';
+import { installRuntimeTrackers } from '../lib/runtime-trackers.js';
 import type { AppSourceId, ReportTypeId } from '../schemas/feedback.schema.js';
 import { cn } from '../ui/cn.js';
 import styles from './FeedbackFAB.module.css';
 import { FeedbackModal } from './FeedbackModal.js';
 import '../styles/tokens.css';
+
+/**
+ * Payload passed to the optional Sentry feedback bridge callback after a
+ * successful submission to the backend (Linear).
+ */
+export interface SentryFeedbackBridgePayload {
+    /** Reporter display name */
+    readonly name: string;
+    /** Reporter email */
+    readonly email: string;
+    /** Free-form description */
+    readonly message: string;
+    /** Sentry event ID associated with this feedback, if any */
+    readonly associatedEventId?: string;
+}
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -112,6 +128,27 @@ export interface FeedbackFABProps {
         /** JavaScript error info captured by an error boundary */
         readonly errorInfo?: { readonly message: string; readonly stack?: string };
     };
+    /**
+     * Optional override for which localStorage prefixes should be scanned
+     * to extract feature flags. Defaults to `['feature_', 'ff_']`.
+     */
+    readonly featureFlagPrefixes?: ReadonlyArray<string>;
+    /**
+     * Optional getter the FAB calls when the modal opens, to capture the
+     * latest Sentry event ID and correlate the feedback with a Sentry event.
+     *
+     * The package stays SDK-agnostic — the consumer wires Sentry.lastEventId().
+     */
+    readonly getSentryEventId?: () => string | undefined;
+    /**
+     * Optional bridge callback invoked after a successful submission. The
+     * consumer can forward this to `Sentry.captureFeedback({ ... })` so the
+     * report also appears in Sentry's User Feedback panel.
+     *
+     * The package never imports a Sentry SDK directly. Errors thrown by the
+     * callback are caught and logged but do not block the Linear flow.
+     */
+    readonly onSentryFeedback?: (payload: SentryFeedbackBridgePayload) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -141,7 +178,10 @@ export function FeedbackFAB({
     userId,
     userEmail,
     userName,
-    prefillData
+    prefillData,
+    featureFlagPrefixes,
+    getSentryEventId,
+    onSentryFeedback
 }: FeedbackFABProps): React.JSX.Element | null {
     // ------------------------------------------------------------------
     // State (all hooks MUST be before any conditional return)
@@ -151,18 +191,46 @@ export function FeedbackFAB({
     // so errors are captured before the form is opened (GAP-031-04).
     useConsoleCapture();
 
+    // Install runtime trackers (navigation history + last interactions) once
+    // when the FAB mounts. Idempotent — multiple FAB mounts won't
+    // double-register listeners.
+    useEffect(() => {
+        installRuntimeTrackers();
+    }, []);
+
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [isMinimized, setIsMinimized] = useState<boolean>(false);
     const [isHovered, setIsHovered] = useState<boolean>(false);
     const [isPulsing, setIsPulsing] = useState<boolean>(false);
+    const [sentryEventId, setSentryEventId] = useState<string | undefined>(undefined);
 
     // ------------------------------------------------------------------
     // Keyboard shortcut
     // ------------------------------------------------------------------
 
+    /**
+     * Captures the most recent Sentry event ID from the consumer-provided
+     * getter. Wrapped in try/catch so any SDK failure cannot crash the FAB.
+     */
+    const captureSentryEventId = useCallback(() => {
+        if (!getSentryEventId) {
+            setSentryEventId(undefined);
+            return;
+        }
+        try {
+            setSentryEventId(getSentryEventId());
+        } catch {
+            setSentryEventId(undefined);
+        }
+    }, [getSentryEventId]);
+
     const handleToggle = useCallback(() => {
-        setIsOpen((prev) => !prev);
-    }, []);
+        setIsOpen((prev) => {
+            const next = !prev;
+            if (next) captureSentryEventId();
+            return next;
+        });
+    }, [captureSentryEventId]);
 
     useKeyboardShortcut({ onToggle: handleToggle });
 
@@ -172,6 +240,7 @@ export function FeedbackFAB({
 
     useEffect(() => {
         const handleExternalOpen = () => {
+            captureSentryEventId();
             setIsOpen(true);
             if (isMinimized) setIsMinimized(false);
             // Acknowledge so the caller knows the FAB handled the request
@@ -179,7 +248,7 @@ export function FeedbackFAB({
         };
         window.addEventListener('feedback:open', handleExternalOpen);
         return () => window.removeEventListener('feedback:open', handleExternalOpen);
-    }, [isMinimized]);
+    }, [isMinimized, captureSentryEventId]);
 
     // ------------------------------------------------------------------
     // Restore minimized state from localStorage after hydration
@@ -225,8 +294,9 @@ export function FeedbackFAB({
     // ------------------------------------------------------------------
 
     const handleFabClick = useCallback(() => {
+        captureSentryEventId();
         setIsOpen(true);
-    }, []);
+    }, [captureSentryEventId]);
 
     const handleMinimize = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation();
@@ -234,8 +304,9 @@ export function FeedbackFAB({
     }, []);
 
     const handleMinimizedClick = useCallback(() => {
+        captureSentryEventId();
         setIsOpen(true);
-    }, []);
+    }, [captureSentryEventId]);
 
     const handleClose = useCallback(() => {
         setIsOpen(false);
@@ -269,7 +340,10 @@ export function FeedbackFAB({
                 userId,
                 userEmail,
                 userName,
-                prefillData
+                prefillData,
+                featureFlagPrefixes,
+                sentryEventId,
+                onSentryFeedback
             }}
         />
     );
@@ -286,7 +360,10 @@ export function FeedbackFAB({
     if (isMinimized) {
         return (
             <>
-                <div className={cn('feedback-root', styles.fabWrapper)}>
+                <div
+                    className={cn('feedback-root', styles.fabWrapper)}
+                    data-feedback-root=""
+                >
                     <button
                         type="button"
                         className={cn(
@@ -331,7 +408,10 @@ export function FeedbackFAB({
 
     return (
         <>
-            <div className={cn('feedback-root', styles.fabWrapper)}>
+            <div
+                className={cn('feedback-root', styles.fabWrapper)}
+                data-feedback-root=""
+            >
                 <button
                     type="button"
                     className={cn(styles.fab, isPulsing && styles.pulsing)}

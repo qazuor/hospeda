@@ -24,6 +24,21 @@ import '../styles/tokens.css';
 type Step = 'basic' | 'details' | 'success';
 
 /**
+ * Payload passed to the optional Sentry feedback bridge callback after a
+ * successful submission to the backend (Linear).
+ */
+export interface SentryFeedbackBridgePayload {
+    /** Reporter display name */
+    readonly name: string;
+    /** Reporter email */
+    readonly email: string;
+    /** Free-form description */
+    readonly message: string;
+    /** Sentry event ID associated with this feedback, if any */
+    readonly associatedEventId?: string;
+}
+
+/**
  * Props for the FeedbackForm component.
  *
  * @example
@@ -63,6 +78,16 @@ export interface FeedbackFormProps {
         /** Error info from an ErrorBoundary */
         readonly errorInfo?: { readonly message: string; readonly stack?: string };
     };
+    /** Optional override for which localStorage prefixes are scanned for feature flags */
+    readonly featureFlagPrefixes?: ReadonlyArray<string>;
+    /** Most recent Sentry event ID (typically captured when modal opens) */
+    readonly sentryEventId?: string;
+    /**
+     * Optional bridge callback invoked after a successful submission. Used to
+     * forward the report to Sentry's `captureFeedback` so it appears in
+     * Sentry's User Feedback panel.
+     */
+    readonly onSentryFeedback?: (payload: SentryFeedbackBridgePayload) => void;
     /** Called when the user clicks "Cerrar" on the success screen */
     readonly onClose?: () => void;
 }
@@ -142,6 +167,9 @@ export function FeedbackForm({
     userEmail,
     userName,
     prefillData,
+    featureFlagPrefixes,
+    sentryEventId,
+    onSentryFeedback,
     onClose
 }: FeedbackFormProps) {
     const [step, setStep] = useState<Step>('basic');
@@ -152,6 +180,7 @@ export function FeedbackForm({
     const [attachments, setAttachments] = useState<File[]>([]);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [honeypot, setHoneypot] = useState<string>('');
+    const [hasNotifiedSentry, setHasNotifiedSentry] = useState<boolean>(false);
 
     const { environment, updateField: updateEnvField } = useAutoCollect({
         appSource,
@@ -159,7 +188,9 @@ export function FeedbackForm({
         userId,
         userEmail,
         userName,
-        errorInfo: prefillData?.errorInfo
+        errorInfo: prefillData?.errorInfo,
+        featureFlagPrefixes,
+        sentryEventId
     });
 
     const { state: submitState, submit, reset: resetSubmit } = useFeedbackSubmit({ apiUrl });
@@ -299,6 +330,7 @@ export function FeedbackForm({
         setDetailsData({});
         setAttachments([]);
         setErrors({});
+        setHasNotifiedSentry(false);
         resetSubmit();
     }, [userEmail, userName, resetSubmit]);
 
@@ -310,7 +342,34 @@ export function FeedbackForm({
         if (submitState.result !== null && step !== 'success') {
             setStep('success');
         }
-    }, [submitState.result, step]);
+
+        // Mirror the report into Sentry's User Feedback channel (best-effort).
+        // The package never imports a Sentry SDK directly — the consumer
+        // (web/admin) provides the bridge callback. Wrapped in try/catch so
+        // any SDK failure cannot break the success flow.
+        if (submitState.result !== null && !hasNotifiedSentry && onSentryFeedback) {
+            try {
+                onSentryFeedback({
+                    name: basicData.reporterName,
+                    email: basicData.reporterEmail,
+                    message: basicData.description,
+                    associatedEventId: environment.sentryEventId
+                });
+            } catch {
+                // Intentionally swallow — Sentry mirroring must never break Linear
+            }
+            setHasNotifiedSentry(true);
+        }
+    }, [
+        submitState.result,
+        step,
+        hasNotifiedSentry,
+        onSentryFeedback,
+        basicData.reporterName,
+        basicData.reporterEmail,
+        basicData.description,
+        environment.sentryEventId
+    ]);
 
     // ------------------------------------------------------------------ //
     // Success screen
