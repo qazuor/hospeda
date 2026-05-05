@@ -12,14 +12,14 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
 /**
  * Total number of environment variable definitions across all categories.
  * Breakdown:
- *  - HOSPEDA_*    : 46 vars (server-side platform) [+1 HOSPEDA_MAX_COLLECTIONS_PER_USER]
+ *  - HOSPEDA_*    : 45 vars (server-side platform) [+1 HOSPEDA_MAX_COLLECTIONS_PER_USER]
  *  - API_*        : 78 vars (Hono middleware configuration)
  *  - PUBLIC_*     :  6 vars (Astro web app, browser-exposed)
  *  - VITE_*       : 23 vars (TanStack admin, Vite-exposed)
  *  - Docker       :  5 vars (docker-compose services)
  *  - System       :  6 vars (runtime/CI/Vercel)
  */
-const EXPECTED_VAR_COUNT = 184;
+const EXPECTED_VAR_COUNT = 183;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

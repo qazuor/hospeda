@@ -12,7 +12,7 @@ exports[`ENV_REGISTRY > var count per category > should match expected distribut
   "core": 3,
   "cron": 7,
   "database": 5,
-  "debugging": 2,
+  "debugging": 1,
   "docker": 5,
   "email": 4,
   "features": 1,

@@ -1091,23 +1091,6 @@ export const HOSPEDA_ENV_VARS = [
             'En Vercel se autocompleta desde VERCEL_GIT_COMMIT_SHA; en local típicamente lo dejás vacío. Sirve para atar las respuestas de la API a un commit de git específico (ayuda a debuggear "qué versión estaba corriendo").'
     },
     {
-        name: 'HOSPEDA_DEBUG_ACTOR_ID',
-        description:
-            'Override actor ID for admin debugging (mapped to VITE_DEBUG_ACTOR_ID at build)',
-        descriptionEs:
-            'Override del actor ID para debuggear el admin (se mapea a VITE_DEBUG_ACTOR_ID en build)',
-        type: 'string',
-        required: false,
-        secret: false,
-        exampleValue: 'user-uuid',
-        apps: ['admin'],
-        category: 'debugging',
-        howToObtain:
-            'A real user UUID from your DB to impersonate while developing the admin app. Get it from db:studio → users table. Leave blank in prod.',
-        howToObtainEs:
-            'Un UUID real de usuario de tu DB para impersonar mientras desarrollás el admin. Sacalo de db:studio → tabla users. En prod dejalo vacío.'
-    },
-    {
         name: 'HOSPEDA_SUPPORTED_LOCALES',
         description: 'Supported locales (mapped to VITE_SUPPORTED_LOCALES at build)',
         descriptionEs: 'Locales soportados (se mapea a VITE_SUPPORTED_LOCALES en build)',
