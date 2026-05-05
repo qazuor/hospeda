@@ -25,25 +25,123 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
-            "caption": "Vista del centro histórico de Colón",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001393/hospeda/seed/required/destinations/002-destination-colon/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/002-destination-colon/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Vista del centro histórico de Colón"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
-                "caption": "Palacio San José",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001394/hospeda/seed/required/destinations/002-destination-colon/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/002-destination-colon/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
-                "caption": "Termas de Colón",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001395/hospeda/seed/required/destinations/002-destination-colon/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/002-destination-colon/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
-                "caption": "Arquitectura colonial de Colón",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001396/hospeda/seed/required/destinations/002-destination-colon/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/002-destination-colon/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001397/hospeda/seed/required/destinations/002-destination-colon/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/002-destination-colon/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001398/hospeda/seed/required/destinations/002-destination-colon/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/002-destination-colon/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001399/hospeda/seed/required/destinations/002-destination-colon/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/002-destination-colon/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001400/hospeda/seed/required/destinations/002-destination-colon/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/002-destination-colon/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001401/hospeda/seed/required/destinations/002-destination-colon/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/002-destination-colon/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001402/hospeda/seed/required/destinations/002-destination-colon/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/002-destination-colon/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001403/hospeda/seed/required/destinations/002-destination-colon/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/002-destination-colon/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001404/hospeda/seed/required/destinations/002-destination-colon/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/002-destination-colon/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001405/hospeda/seed/required/destinations/002-destination-colon/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/002-destination-colon/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },

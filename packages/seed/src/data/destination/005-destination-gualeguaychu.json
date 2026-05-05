@@ -25,25 +25,123 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop",
-            "caption": "Vista panorámica de Gualeguaychú y su carnaval",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001489/hospeda/seed/required/destinations/005-destination-gualeguaychu/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/005-destination-gualeguaychu/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Vista panorámica de Gualeguaychú y su carnaval"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop",
-                "caption": "Carnaval de Gualeguaychú",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001490/hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
-                "caption": "Costanera de Gualeguaychú",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001491/hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
-                "caption": "Termas de Gualeguaychú",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001493/hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001494/hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001496/hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001498/hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001499/hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001500/hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001501/hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001502/hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001503/hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001505/hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/005-destination-gualeguaychu/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },

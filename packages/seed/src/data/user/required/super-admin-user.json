@@ -97,7 +97,6 @@
         "accommodation.review.update",
         "destination.review.create",
         "destination.review.update",
-
         "host.contact.view",
         "host.message.send",
         "auditLog.view",
@@ -163,7 +162,7 @@
         "linkedin": "https://linkedin.com/in/superadmin-hospeda"
     },
     "profile": {
-        "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+        "avatar": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001529/hospeda/seed/required/avatars/super-admin-user.webp",
         "bio": "Super administrador del sistema con acceso completo a todas las funcionalidades. Responsable de la gestion general de la plataforma y configuraciones del sistema."
     },
     "settings": {

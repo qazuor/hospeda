@@ -25,25 +25,330 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
-            "caption": "Centro histórico de Concepción del Uruguay",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001406/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Centro histórico de Concepción del Uruguay"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
-                "caption": "Arquitectura colonial de Concepción del Uruguay",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001408/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
-                "caption": "Costanera de Concepción del Uruguay",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001409/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
-                "caption": "Plaza principal de la ciudad",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001410/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001411/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001412/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001413/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001415/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001416/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001417/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001418/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001420/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001422/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001423/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001424/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001425/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001427/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001429/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-17.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-17",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001431/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-18.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-18",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001433/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-19.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-19",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001434/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-20.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-20",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001436/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-21.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-21",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001437/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-22.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-22",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001438/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-23.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-23",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001439/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-24.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-24",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001440/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-25.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-25",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001441/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-26.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-26",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001442/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-27.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-27",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001443/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-28.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-28",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001444/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-29.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-29",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001445/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-30.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-30",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001447/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-31.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-31",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001447/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-32.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-32",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001448/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-33.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-33",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001449/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-34.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-34",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1778001450/hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-35.webp",
+                "publicId": "hospeda/seed/required/destinations/011-destination-concepcion-del-uruguay/gallery-35",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },
