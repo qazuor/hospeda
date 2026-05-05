@@ -114,14 +114,36 @@ function collectConnectionType(): string | undefined {
     }
 }
 
+/**
+ * localStorage keys consumer apps may use to persist a theme preference.
+ * Checked in order; the first one that resolves to 'light' or 'dark' wins.
+ * This lets the collector reflect the app's actual theme even when the
+ * `<html data-theme>` attribute is not used (e.g. when the web app stores
+ * the preference but never mirrors it to the DOM).
+ */
+const THEME_STORAGE_KEYS = ['hospeda-theme', 'theme', 'color-scheme'] as const;
+
 function collectColorScheme(): ColorSchemeId | undefined {
     try {
+        // 1. <html data-theme="..."> — explicit DOM hint, highest priority.
         if (typeof document !== 'undefined') {
             const themeAttr = document.documentElement.dataset.theme;
             if (themeAttr === 'dark' || themeAttr === 'light') {
                 return themeAttr;
             }
         }
+        // 2. localStorage — reflect the app's stored preference even when
+        // the consumer app does not mirror it to <html data-theme>.
+        if (typeof window !== 'undefined' && window.localStorage) {
+            for (const key of THEME_STORAGE_KEYS) {
+                const stored = window.localStorage.getItem(key);
+                if (stored === 'dark' || stored === 'light') {
+                    return stored;
+                }
+            }
+        }
+        // 3. OS preference via matchMedia. Last resort because the user may
+        // have overridden the OS default in the app itself.
         if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
             return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
