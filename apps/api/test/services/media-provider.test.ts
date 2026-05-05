@@ -88,6 +88,14 @@ describe('getMediaProvider()', () => {
         process.env.HOSPEDA_REDIS_URL = 'redis://prod-host:6379';
         process.env.API_CORS_ORIGINS = 'https://example.com';
         process.env.API_SECURITY_CSRF_ORIGINS = 'https://example.com';
+        // Production refinements forbid debug/test flags. The .env.test file
+        // sets these to true for the rest of the suite; we must clear them
+        // here to simulate a clean prod boot (otherwise validateApiEnv
+        // calls process.exit(1) — which is the correct prod-safety behavior).
+        process.env.HOSPEDA_API_DEBUG_ERRORS = 'false';
+        process.env.HOSPEDA_DISABLE_AUTH = 'false';
+        process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'false';
+        process.env.HOSPEDA_DEBUG_TESTS = 'false';
 
         vi.resetModules();
         const envModule: EnvModule = await import('../../src/utils/env');

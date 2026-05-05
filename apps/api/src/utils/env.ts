@@ -104,18 +104,41 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_ADMIN_URL: z.string().url().optional(),
 
     // Test / debug flags (explicit opt-in; use HOSPEDA_* names)
+    // NOTE: we use string→boolean transform here instead of z.coerce.boolean()
+    // because the latter has a notorious footgun: any non-empty string
+    // (including the literal 'false') coerces to true. Using transform with an
+    // explicit `=== 'true'` check makes 'false', '0', '', etc. all evaluate
+    // to false, which matches every developer's mental model of these flags.
     /** Set true to bypass authentication in test/dev environments */
-    HOSPEDA_DISABLE_AUTH: z.coerce.boolean().default(false),
+    HOSPEDA_DISABLE_AUTH: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
     /** Set true to allow mock actor injection in test/dev environments */
-    HOSPEDA_ALLOW_MOCK_ACTOR: z.coerce.boolean().default(false),
+    HOSPEDA_ALLOW_MOCK_ACTOR: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
     /** Set true to show detailed error messages and stack traces in 5xx responses */
-    HOSPEDA_API_DEBUG_ERRORS: z.coerce.boolean().default(false),
+    HOSPEDA_API_DEBUG_ERRORS: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
     /** Set true to enable rate limiting in test environments */
-    HOSPEDA_TESTING_RATE_LIMIT: z.coerce.boolean().default(false),
+    HOSPEDA_TESTING_RATE_LIMIT: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
     /** Set true to enable verbose debug output during tests */
-    HOSPEDA_DEBUG_TESTS: z.coerce.boolean().default(false),
+    HOSPEDA_DEBUG_TESTS: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
     /** Set true to enforce origin verification in testing */
-    HOSPEDA_TESTING_ORIGIN_VERIFICATION: z.coerce.boolean().default(false),
+    HOSPEDA_TESTING_ORIGIN_VERIFICATION: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
 
     // Platform-injected (set by Vercel/CI, not user-configured)
     /** Set to "1" by Vercel when running in their platform */

@@ -162,7 +162,7 @@ describe('Environment Configuration', () => {
             expect(envModule.env.API_VALIDATION_SANITIZE_MAX_STRING_LENGTH).toBe(1000);
             expect(envModule.env.API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS).toBe(true);
             expect(envModule.env.API_VALIDATION_SANITIZE_ALLOWED_CHARS).toBe(
-                '[\\w\\s\\-.,!?@#$%&*()+=]'
+                '[\\w\\sáéíóúüñÁÉÍÓÚÜÑàèìòùÀÈÌÒÙâêîôûÂÊÎÔÛçÇãõÃÕ\\-.,!?@#$%&*()+=]'
             );
 
             // Internationalization Configuration - handled by client apps, not API
@@ -621,7 +621,7 @@ describe('Environment Configuration', () => {
             envModule.validateApiEnv();
             expect(envModule.env.HOSPEDA_DB_POOL_MAX_CONNECTIONS).toBe(10);
             expect(envModule.env.HOSPEDA_DB_POOL_IDLE_TIMEOUT_MS).toBe(30000);
-            expect(envModule.env.HOSPEDA_DB_POOL_CONNECTION_TIMEOUT_MS).toBe(2000);
+            expect(envModule.env.HOSPEDA_DB_POOL_CONNECTION_TIMEOUT_MS).toBe(5000);
         });
     });
 
