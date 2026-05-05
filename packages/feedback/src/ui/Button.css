@@ -3,7 +3,7 @@
  * Uses CSS custom properties from tokens.css via the feedback-root cascade.
  */
 
-.btn {
+.feedback-root .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -19,91 +19,91 @@
     outline: none;
 }
 
-.btn:focus-visible {
+.feedback-root .btn:focus-visible {
     outline: 2px solid var(--fb-primary);
     outline-offset: 2px;
 }
 
-.btn:disabled {
+.feedback-root .btn:disabled {
     pointer-events: none;
     opacity: 0.5;
     cursor: not-allowed;
 }
 
 /* Sizes */
-.sizeDefault {
+.feedback-root .sizeDefault {
     height: 2.25rem;
     padding: 0.5rem 1rem;
     font-size: var(--fb-font-size-sm);
 }
 
-.sizeSm {
+.feedback-root .sizeSm {
     height: 2rem;
     border-radius: var(--fb-radius-sm);
     padding: 0 0.75rem;
     font-size: var(--fb-font-size-xs);
 }
 
-.sizeLg {
+.feedback-root .sizeLg {
     height: 2.5rem;
     border-radius: var(--fb-radius-sm);
     padding: 0 2rem;
     font-size: var(--fb-font-size-base);
 }
 
-.sizeIcon {
+.feedback-root .sizeIcon {
     height: 2.25rem;
     width: 2.25rem;
     padding: 0;
 }
 
 /* Variants */
-.variantDefault {
+.feedback-root .variantDefault {
     background-color: var(--fb-primary);
     color: var(--fb-primary-foreground);
     box-shadow: var(--fb-shadow-sm);
 }
 
-.variantDefault:hover:not(:disabled) {
+.feedback-root .variantDefault:hover:not(:disabled) {
     background-color: var(--fb-primary-hover);
 }
 
-.variantSecondary {
+.feedback-root .variantSecondary {
     background-color: transparent;
     color: var(--fb-primary);
     border: 1px solid var(--fb-primary);
 }
 
-.variantSecondary:hover:not(:disabled) {
+.feedback-root .variantSecondary:hover:not(:disabled) {
     background-color: rgba(79, 70, 229, 0.1);
 }
 
-.variantDestructive {
+.feedback-root .variantDestructive {
     background-color: var(--fb-destructive);
     color: #ffffff;
     box-shadow: var(--fb-shadow-sm);
 }
 
-.variantDestructive:hover:not(:disabled) {
+.feedback-root .variantDestructive:hover:not(:disabled) {
     background-color: color-mix(in srgb, var(--fb-destructive) 90%, black);
 }
 
-.variantGhost {
+.feedback-root .variantGhost {
     background-color: transparent;
     color: var(--fb-foreground);
 }
 
-.variantGhost:hover:not(:disabled) {
+.feedback-root .variantGhost:hover:not(:disabled) {
     background-color: var(--fb-border);
 }
 
-.variantOutline {
+.feedback-root .variantOutline {
     background-color: var(--fb-background);
     color: var(--fb-foreground);
     border: 1px solid var(--fb-input-border);
     box-shadow: var(--fb-shadow-sm);
 }
 
-.variantOutline:hover:not(:disabled) {
+.feedback-root .variantOutline:hover:not(:disabled) {
     background-color: var(--fb-border);
 }

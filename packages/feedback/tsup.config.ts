@@ -7,7 +7,13 @@ export default defineConfig({
     clean: true,
     sourcemap: true,
     external: ['react'],
-    // Include CSS files (tokens.css and CSS Modules) in the bundle.
-    // tsup copies .css files to dist; CSS Modules are inlined into JS.
+    // CSS files (tokens.css and the colocated component styles) are bundled
+    // into a single dist/index.css file emitted alongside the JS. Consumers
+    // must import '@repo/feedback/styles.css' at the entry point of their
+    // app — exposing it as a static stylesheet so the host bundler (Vite,
+    // Astro, etc.) tracks it as a normal CSS asset. This survives Astro
+    // view transitions; the previous `injectStyle: true` approach injected
+    // <style> tags at hydration time and they were dropped when Astro
+    // replaced the <head> on navigation.
     injectStyle: false
 });

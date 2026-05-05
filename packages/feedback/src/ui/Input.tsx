@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import styles from './Input.module.css';
+import './Input.css';
 import { cn } from './cn.js';
 
 /** Props accepted by the Input component. */
@@ -21,7 +21,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             <input
                 ref={ref}
                 type={type}
-                className={cn(styles.input, className)}
+                className={cn('input', className)}
                 {...props}
             />
         );

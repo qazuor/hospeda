@@ -12,7 +12,7 @@ import { Input } from '../../ui/Input.js';
 import { Label } from '../../ui/Label.js';
 import { Select } from '../../ui/Select.js';
 import { Textarea } from '../../ui/Textarea.js';
-import styles from './StepBasic.module.css';
+import './StepBasic.css';
 
 /** Data managed by step 1 of the feedback form */
 export interface StepBasicData {
@@ -80,9 +80,9 @@ export function StepBasic({
     isSubmitting
 }: StepBasicProps) {
     return (
-        <div className={styles.stepRoot}>
+        <div className="stepRoot">
             {/* Report type */}
-            <div className={styles.fieldGroup}>
+            <div className="fieldGroup">
                 <Label htmlFor="feedback-type">{FEEDBACK_STRINGS.fields.type}</Label>
                 <Select
                     id="feedback-type"
@@ -103,7 +103,7 @@ export function StepBasic({
                 {errors.type && (
                     <p
                         id="feedback-type-error"
-                        className={styles.fieldError}
+                        className="fieldError"
                         role="alert"
                     >
                         {errors.type}
@@ -112,7 +112,7 @@ export function StepBasic({
             </div>
 
             {/* Title */}
-            <div className={styles.fieldGroup}>
+            <div className="fieldGroup">
                 <Label htmlFor="feedback-title">{FEEDBACK_STRINGS.fields.title}</Label>
                 <Input
                     id="feedback-title"
@@ -126,7 +126,7 @@ export function StepBasic({
                 {errors.title && (
                     <p
                         id="feedback-title-error"
-                        className={styles.fieldError}
+                        className="fieldError"
                         role="alert"
                     >
                         {errors.title}
@@ -135,7 +135,7 @@ export function StepBasic({
             </div>
 
             {/* Description */}
-            <div className={styles.fieldGroup}>
+            <div className="fieldGroup">
                 <Label htmlFor="feedback-description">{FEEDBACK_STRINGS.fields.description}</Label>
                 <Textarea
                     id="feedback-description"
@@ -149,7 +149,7 @@ export function StepBasic({
                 {errors.description && (
                     <p
                         id="feedback-description-error"
-                        className={styles.fieldError}
+                        className="fieldError"
                         role="alert"
                     >
                         {errors.description}
@@ -160,7 +160,7 @@ export function StepBasic({
             {/* Contact fields (hidden when authenticated) */}
             {showContactFields && (
                 <>
-                    <div className={styles.fieldGroup}>
+                    <div className="fieldGroup">
                         <Label htmlFor="feedback-email">{FEEDBACK_STRINGS.fields.email}</Label>
                         <Input
                             id="feedback-email"
@@ -176,7 +176,7 @@ export function StepBasic({
                         {errors.reporterEmail && (
                             <p
                                 id="feedback-email-error"
-                                className={styles.fieldError}
+                                className="fieldError"
                                 role="alert"
                             >
                                 {errors.reporterEmail}
@@ -184,7 +184,7 @@ export function StepBasic({
                         )}
                     </div>
 
-                    <div className={styles.fieldGroup}>
+                    <div className="fieldGroup">
                         <Label htmlFor="feedback-name">{FEEDBACK_STRINGS.fields.name}</Label>
                         <Input
                             id="feedback-name"
@@ -200,7 +200,7 @@ export function StepBasic({
                         {errors.reporterName && (
                             <p
                                 id="feedback-name-error"
-                                className={styles.fieldError}
+                                className="fieldError"
                                 role="alert"
                             >
                                 {errors.reporterName}
@@ -211,7 +211,7 @@ export function StepBasic({
             )}
 
             {/* Action buttons */}
-            <div className={styles.actions}>
+            <div className="actions">
                 <Button
                     type="button"
                     variant="secondary"

@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import styles from './Button.module.css';
+import './Button.css';
 import { cn } from './cn.js';
 
 /** Visual style variant of the button. */
@@ -17,27 +17,18 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 const variantClassMap: Record<ButtonVariant, string> = {
-    // biome-ignore lint/style/noNonNullAssertion: CSS Module classes are always present when defined
-    default: styles.variantDefault!,
-    // biome-ignore lint/style/noNonNullAssertion: CSS Module classes are always present when defined
-    secondary: styles.variantSecondary!,
-    // biome-ignore lint/style/noNonNullAssertion: CSS Module classes are always present when defined
-    destructive: styles.variantDestructive!,
-    // biome-ignore lint/style/noNonNullAssertion: CSS Module classes are always present when defined
-    ghost: styles.variantGhost!,
-    // biome-ignore lint/style/noNonNullAssertion: CSS Module classes are always present when defined
-    outline: styles.variantOutline!
+    default: 'variantDefault',
+    secondary: 'variantSecondary',
+    destructive: 'variantDestructive',
+    ghost: 'variantGhost',
+    outline: 'variantOutline'
 };
 
 const sizeClassMap: Record<ButtonSize, string> = {
-    // biome-ignore lint/style/noNonNullAssertion: CSS Module classes are always present when defined
-    default: styles.sizeDefault!,
-    // biome-ignore lint/style/noNonNullAssertion: CSS Module classes are always present when defined
-    sm: styles.sizeSm!,
-    // biome-ignore lint/style/noNonNullAssertion: CSS Module classes are always present when defined
-    lg: styles.sizeLg!,
-    // biome-ignore lint/style/noNonNullAssertion: CSS Module classes are always present when defined
-    icon: styles.sizeIcon!
+    default: 'sizeDefault',
+    sm: 'sizeSm',
+    lg: 'sizeLg',
+    icon: 'sizeIcon'
 };
 
 /**
@@ -56,7 +47,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         return (
             <button
                 ref={ref}
-                className={cn(styles.btn, variantClassMap[variant], sizeClassMap[size], className)}
+                className={cn('btn', variantClassMap[variant], sizeClassMap[size], className)}
                 {...props}
             />
         );

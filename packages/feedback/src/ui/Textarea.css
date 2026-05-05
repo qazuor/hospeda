@@ -2,7 +2,7 @@
  * Textarea component styles for @repo/feedback.
  */
 
-.textarea {
+.feedback-root .textarea {
     display: flex;
     min-height: 5rem;
     width: 100%;
@@ -20,27 +20,27 @@
     box-sizing: border-box;
 }
 
-.textarea::placeholder {
+.feedback-root .textarea::placeholder {
     color: var(--fb-foreground-muted);
 }
 
-.textarea:focus-visible {
+.feedback-root .textarea:focus-visible {
     outline: 2px solid var(--fb-primary);
     outline-offset: 0;
     border-color: var(--fb-primary);
 }
 
-.textarea:disabled {
+.feedback-root .textarea:disabled {
     cursor: not-allowed;
     opacity: 0.5;
 }
 
-.textarea[aria-invalid="true"] {
+.feedback-root .textarea[aria-invalid="true"] {
     border-color: var(--fb-destructive);
 }
 
 /* Size modifier used in StepDetails tech fields */
-.compact {
+.feedback-root .compact {
     height: 1.75rem;
     min-height: unset;
     font-size: var(--fb-font-size-xs);

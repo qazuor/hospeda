@@ -2,7 +2,7 @@
  * FeedbackErrorBoundary component styles.
  */
 
-.errorContainer {
+.feedback-root .errorContainer {
     display: flex;
     min-height: 200px;
     align-items: center;
@@ -11,7 +11,7 @@
     font-family: var(--fb-font-family);
 }
 
-.errorCard {
+.feedback-root .errorCard {
     width: 100%;
     max-width: 560px;
     border-radius: var(--fb-radius-md);
@@ -21,34 +21,34 @@
     box-shadow: var(--fb-shadow-lg);
 }
 
-.errorHeader {
+.feedback-root .errorHeader {
     display: flex;
     align-items: center;
     gap: 0.625rem;
     margin-bottom: 0.75rem;
 }
 
-.errorIcon {
+.feedback-root .errorIcon {
     flex-shrink: 0;
     font-size: var(--fb-font-size-xl);
     line-height: 1;
 }
 
-.errorTitle {
+.feedback-root .errorTitle {
     margin: 0;
     font-weight: var(--fb-font-weight-semibold);
     font-size: var(--fb-font-size-lg);
     color: var(--fb-destructive);
 }
 
-.errorMessage {
+.feedback-root .errorMessage {
     margin-bottom: var(--fb-space-6);
     font-size: var(--fb-font-size-sm);
     color: var(--fb-foreground-muted);
     line-height: 1.6;
 }
 
-.errorActions {
+.feedback-root .errorActions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;

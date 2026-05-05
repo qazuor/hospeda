@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import styles from './Label.module.css';
+import './Label.css';
 import { cn } from './cn.js';
 
 /** Props accepted by the Label component. */
@@ -19,7 +19,7 @@ export const Label = forwardRef<HTMLLabelElement, LabelProps>(({ className, ...p
             {/* biome-ignore lint/a11y/noLabelWithoutControl: generic primitive - callers supply htmlFor or nest the control */}
             <label
                 ref={ref}
-                className={cn(styles.label, className)}
+                className={cn('label', className)}
                 {...props}
             />
         </>

@@ -2,14 +2,14 @@
  * StepDetails component styles.
  */
 
-.stepRoot {
+.feedback-root .stepRoot {
     display: flex;
     flex-direction: column;
     gap: var(--fb-space-4);
     font-family: var(--fb-font-family);
 }
 
-.fieldGroup {
+.feedback-root .fieldGroup {
     display: flex;
     flex-direction: column;
 }
@@ -18,14 +18,14 @@
 /* Attachments upload zone                                              */
 /* ------------------------------------------------------------------ */
 
-.attachmentsLabel {
+.feedback-root .attachmentsLabel {
     margin-bottom: 0.25rem;
     font-weight: var(--fb-font-weight-semibold);
     font-size: var(--fb-font-size-sm);
     color: var(--fb-foreground);
 }
 
-.uploadZone {
+.feedback-root .uploadZone {
     display: block;
     cursor: pointer;
     border-radius: var(--fb-radius-sm);
@@ -36,41 +36,41 @@
     transition: background-color var(--fb-duration-fast) var(--fb-easing);
 }
 
-.uploadZone:hover {
+.feedback-root .uploadZone:hover {
     background-color: rgba(107, 114, 128, 0.1);
 }
 
-.uploadZoneText {
+.feedback-root .uploadZoneText {
     font-size: var(--fb-font-size-sm);
     font-weight: var(--fb-font-weight-medium);
     color: var(--fb-foreground);
 }
 
-.uploadZoneHint {
+.feedback-root .uploadZoneHint {
     margin-top: 0.25rem;
     font-size: var(--fb-font-size-xs);
     color: var(--fb-foreground-muted);
 }
 
-.uploadInput {
+.feedback-root .uploadInput {
     display: none;
 }
 
 /* Rejection error list */
-.rejectionList {
+.feedback-root .rejectionList {
     margin-top: 0.25rem;
     list-style: none;
     padding: 0;
 }
 
-.rejectionItem {
+.feedback-root .rejectionItem {
     margin-top: 0.125rem;
     font-size: var(--fb-font-size-xs);
     color: var(--fb-destructive);
 }
 
 /* Attachment file list */
-.attachmentList {
+.feedback-root .attachmentList {
     margin-top: var(--fb-space-2);
     list-style: none;
     padding: 0;
@@ -79,7 +79,7 @@
     gap: 0.25rem;
 }
 
-.attachmentItem {
+.feedback-root .attachmentItem {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -90,13 +90,13 @@
     color: var(--fb-foreground);
 }
 
-.attachmentSize {
+.feedback-root .attachmentSize {
     margin-left: 0.375rem;
     font-size: var(--fb-font-size-xs);
     color: var(--fb-foreground-muted);
 }
 
-.removeBtn {
+.feedback-root .removeBtn {
     padding: 0.125rem;
     font-weight: var(--fb-font-weight-semibold);
     font-size: var(--fb-font-size-sm);
@@ -107,7 +107,7 @@
     transition: opacity var(--fb-duration-fast) var(--fb-easing);
 }
 
-.removeBtn:hover {
+.feedback-root .removeBtn:hover {
     opacity: 0.8;
 }
 
@@ -115,13 +115,13 @@
 /* Collapsible tech details section                                     */
 /* ------------------------------------------------------------------ */
 
-.techSection {
+.feedback-root .techSection {
     overflow: hidden;
     border-radius: var(--fb-radius-sm);
     border: 1px solid var(--fb-border);
 }
 
-.techToggle {
+.feedback-root .techToggle {
     display: flex;
     width: 100%;
     align-items: center;
@@ -138,22 +138,22 @@
     transition: background-color var(--fb-duration-fast) var(--fb-easing);
 }
 
-.techToggle:hover {
+.feedback-root .techToggle:hover {
     background-color: rgba(229, 231, 235, 0.8);
 }
 
-.techToggleChevron {
+.feedback-root .techToggleChevron {
     font-size: var(--fb-font-size-xs);
 }
 
-.techFields {
+.feedback-root .techFields {
     display: flex;
     flex-direction: column;
     gap: 0.625rem;
     padding: 0.875rem;
 }
 
-.techFieldLabel {
+.feedback-root .techFieldLabel {
     display: block;
     margin-bottom: 0.125rem;
     font-weight: var(--fb-font-weight-medium);
@@ -161,14 +161,14 @@
     color: var(--fb-foreground-muted);
 }
 
-.techConsoleNote {
+.feedback-root .techConsoleNote {
     font-size: var(--fb-font-size-xs);
     color: var(--fb-foreground-muted);
     font-style: italic;
 }
 
 /* Sub-groups inside the tech details section */
-.techGroup {
+.feedback-root .techGroup {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -176,12 +176,12 @@
     border-top: 1px dashed var(--fb-border);
 }
 
-.techGroup:first-child {
+.feedback-root .techGroup:first-child {
     padding-top: 0;
     border-top: none;
 }
 
-.techGroupTitle {
+.feedback-root .techGroupTitle {
     font-weight: var(--fb-font-weight-semibold);
     font-size: var(--fb-font-size-xs);
     color: var(--fb-foreground);
@@ -190,28 +190,28 @@
     margin-bottom: 0.25rem;
 }
 
-.techGrid {
+.feedback-root .techGrid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.5rem;
 }
 
 @media (max-width: 640px) {
-    .techGrid {
+    .feedback-root .techGrid {
         grid-template-columns: 1fr;
     }
 }
 
-.techField {
+.feedback-root .techField {
     display: flex;
     flex-direction: column;
 }
 
-.techFieldFull {
+.feedback-root .techFieldFull {
     grid-column: 1 / -1;
 }
 
-.techTextarea {
+.feedback-root .techTextarea {
     font-family: var(--fb-font-family);
     font-size: 0.75rem;
     min-height: 4rem;
@@ -223,7 +223,7 @@
 /* Action buttons                                                       */
 /* ------------------------------------------------------------------ */
 
-.actions {
+.feedback-root .actions {
     display: flex;
     justify-content: space-between;
     gap: 0.75rem;

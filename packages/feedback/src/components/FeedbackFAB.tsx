@@ -25,7 +25,7 @@ import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut.js';
 import { installRuntimeTrackers } from '../lib/runtime-trackers.js';
 import type { AppSourceId, ReportTypeId } from '../schemas/feedback.schema.js';
 import { cn } from '../ui/cn.js';
-import styles from './FeedbackFAB.module.css';
+import './FeedbackFAB.css';
 import { FeedbackModal } from './FeedbackModal.js';
 import '../styles/tokens.css';
 
@@ -361,15 +361,12 @@ export function FeedbackFAB({
         return (
             <>
                 <div
-                    className={cn('feedback-root', styles.fabWrapper)}
+                    className={cn('feedback-root', 'fabWrapper')}
                     data-feedback-root=""
                 >
                     <button
                         type="button"
-                        className={cn(
-                            styles.minimizedDot,
-                            isHovered && styles.minimizedDotExpanded
-                        )}
+                        className={cn('minimizedDot', isHovered && 'minimizedDotExpanded')}
                         onClick={handleMinimizedClick}
                         onMouseEnter={() => setIsHovered(true)}
                         onMouseLeave={() => setIsHovered(false)}
@@ -389,7 +386,7 @@ export function FeedbackFAB({
                     {isHovered && (
                         <span
                             id={tooltipId}
-                            className={styles.minimizedTooltip}
+                            className="minimizedTooltip"
                             role="tooltip"
                         >
                             {FEEDBACK_STRINGS.fab.tooltip}
@@ -409,12 +406,12 @@ export function FeedbackFAB({
     return (
         <>
             <div
-                className={cn('feedback-root', styles.fabWrapper)}
+                className={cn('feedback-root', 'fabWrapper')}
                 data-feedback-root=""
             >
                 <button
                     type="button"
-                    className={cn(styles.fab, isPulsing && styles.pulsing)}
+                    className={cn('fab', isPulsing && 'pulsing')}
                     onClick={handleFabClick}
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}
@@ -434,7 +431,7 @@ export function FeedbackFAB({
                 {isHovered && (
                     <span
                         id={tooltipId}
-                        className={styles.tooltip}
+                        className="tooltip"
                         role="tooltip"
                     >
                         {tooltipText}
@@ -444,7 +441,7 @@ export function FeedbackFAB({
                 {/* Minimize button: small circle in top-right corner of the FAB */}
                 <button
                     type="button"
-                    className={styles.minimizeBtn}
+                    className="minimizeBtn"
                     onClick={handleMinimize}
                     aria-label={FEEDBACK_STRINGS.fab.minimizeTooltip}
                     data-testid="feedback-fab-minimize"

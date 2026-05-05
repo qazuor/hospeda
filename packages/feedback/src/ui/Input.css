@@ -2,7 +2,7 @@
  * Input component styles for @repo/feedback.
  */
 
-.input {
+.feedback-root .input {
     display: flex;
     height: 2.25rem;
     width: 100%;
@@ -19,21 +19,21 @@
     box-sizing: border-box;
 }
 
-.input::placeholder {
+.feedback-root .input::placeholder {
     color: var(--fb-foreground-muted);
 }
 
-.input:focus-visible {
+.feedback-root .input:focus-visible {
     outline: 2px solid var(--fb-primary);
     outline-offset: 0;
     border-color: var(--fb-primary);
 }
 
-.input:disabled {
+.feedback-root .input:disabled {
     cursor: not-allowed;
     opacity: 0.5;
 }
 
-.input[aria-invalid="true"] {
+.feedback-root .input[aria-invalid="true"] {
     border-color: var(--fb-destructive);
 }

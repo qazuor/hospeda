@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import styles from './Textarea.module.css';
+import './Textarea.css';
 import { cn } from './cn.js';
 
 /** Props accepted by the Textarea component. */
@@ -20,7 +20,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         return (
             <textarea
                 ref={ref}
-                className={cn(styles.textarea, className)}
+                className={cn('textarea', className)}
                 {...props}
             />
         );

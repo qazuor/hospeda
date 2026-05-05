@@ -16,7 +16,7 @@ import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { cn } from '../ui/cn.js';
 import { FeedbackForm } from './FeedbackForm.js';
 import type { FeedbackFormProps } from './FeedbackForm.js';
-import styles from './FeedbackModal.module.css';
+import './FeedbackModal.css';
 import '../styles/tokens.css';
 
 /** Breakpoint in pixels at which the layout switches from drawer to modal */
@@ -232,21 +232,21 @@ export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps
             aria-labelledby={TITLE_ID}
             onClick={handleDialogClick}
             onKeyDown={handleKeyDown}
-            className={cn('feedback-root', styles.dialog)}
+            className={cn('feedback-root', 'dialog')}
             data-feedback-modal=""
             data-testid="feedback-modal-dialog"
         >
             {/* Inner container: visual styles and focus trap boundary */}
             <div
                 ref={containerRef}
-                className={styles.content}
+                className="content"
                 tabIndex={-1}
                 data-testid="feedback-modal-content"
             >
                 {/* Visually hidden title for screen readers */}
                 <span
                     id={TITLE_ID}
-                    className={styles.srOnly}
+                    className="srOnly"
                 >
                     {FEEDBACK_STRINGS.form.title}
                 </span>
@@ -254,7 +254,7 @@ export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps
                 {/* Drag handle for mobile drawer */}
                 {isMobile && (
                     <div
-                        className={styles.dragHandle}
+                        className="dragHandle"
                         aria-hidden="true"
                     />
                 )}
@@ -262,7 +262,7 @@ export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps
                 {/* Close button */}
                 <button
                     type="button"
-                    className={styles.closeBtn}
+                    className="closeBtn"
                     onClick={onClose}
                     aria-label={FEEDBACK_STRINGS.buttons.close}
                     data-testid="feedback-modal-close"

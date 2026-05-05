@@ -16,6 +16,7 @@ import { GlobalErrorBoundary } from '@/lib/error-boundaries';
 import { adminQzpayTheme } from '@/lib/qzpay-theme';
 import { initSentry } from '@/lib/sentry';
 import { FeedbackErrorBoundary, FeedbackFAB } from '@repo/feedback';
+import '@repo/feedback/styles.css';
 import * as Sentry from '@sentry/react';
 
 /**

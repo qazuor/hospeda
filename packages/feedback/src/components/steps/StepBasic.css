@@ -2,25 +2,25 @@
  * StepBasic component styles.
  */
 
-.stepRoot {
+.feedback-root .stepRoot {
     display: flex;
     flex-direction: column;
     gap: var(--fb-space-4);
     font-family: var(--fb-font-family);
 }
 
-.fieldGroup {
+.feedback-root .fieldGroup {
     display: flex;
     flex-direction: column;
 }
 
-.fieldError {
+.feedback-root .fieldError {
     margin-top: 0.25rem;
     font-size: var(--fb-font-size-xs);
     color: var(--fb-destructive);
 }
 
-.actions {
+.feedback-root .actions {
     display: flex;
     justify-content: space-between;
     gap: 0.75rem;

@@ -2,7 +2,7 @@
  * Select component styles for @repo/feedback.
  */
 
-.select {
+.feedback-root .select {
     display: flex;
     height: 2.25rem;
     width: 100%;
@@ -24,13 +24,13 @@
     cursor: pointer;
 }
 
-.select:focus-visible {
+.feedback-root .select:focus-visible {
     outline: 2px solid var(--fb-primary);
     outline-offset: 0;
     border-color: var(--fb-primary);
 }
 
-.select:disabled {
+.feedback-root .select:disabled {
     cursor: not-allowed;
     opacity: 0.5;
 }

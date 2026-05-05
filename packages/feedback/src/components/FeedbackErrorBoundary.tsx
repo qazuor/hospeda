@@ -17,7 +17,7 @@ import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { serializeFeedbackParams } from '../lib/query-params.js';
 import type { AppSourceId, ReportTypeId } from '../schemas/feedback.schema.js';
 import { Button } from '../ui/Button.js';
-import styles from './FeedbackErrorBoundary.module.css';
+import './FeedbackErrorBoundary.css';
 import { FeedbackModal } from './FeedbackModal.js';
 import '../styles/tokens.css';
 
@@ -291,27 +291,25 @@ export class FeedbackErrorBoundary extends Component<
      */
     private renderDefaultFallback(): ReactNode {
         return (
-            <div className={`feedback-root ${styles.errorContainer}`}>
+            <div className="feedback-root errorContainer">
                 <div
-                    className={styles.errorCard}
+                    className="errorCard"
                     role="alert"
                     aria-live="assertive"
                 >
-                    <div className={styles.errorHeader}>
+                    <div className="errorHeader">
                         <span
-                            className={styles.errorIcon}
+                            className="errorIcon"
                             aria-hidden="true"
                         >
                             ⚠️
                         </span>
-                        <h2 className={styles.errorTitle}>
-                            {FEEDBACK_STRINGS.errorBoundary.title}
-                        </h2>
+                        <h2 className="errorTitle">{FEEDBACK_STRINGS.errorBoundary.title}</h2>
                     </div>
 
-                    <p className={styles.errorMessage}>{FEEDBACK_STRINGS.errorBoundary.message}</p>
+                    <p className="errorMessage">{FEEDBACK_STRINGS.errorBoundary.message}</p>
 
-                    <div className={styles.errorActions}>
+                    <div className="errorActions">
                         <Button
                             type="button"
                             variant="destructive"

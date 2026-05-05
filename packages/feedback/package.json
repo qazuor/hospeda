@@ -19,7 +19,8 @@
         "./config": {
             "types": "./dist/config/index.d.ts",
             "import": "./dist/config/index.js"
-        }
+        },
+        "./styles.css": "./dist/index.css"
     },
     "scripts": {
         "build": "tsup",

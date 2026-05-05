@@ -20,7 +20,7 @@ import { Input } from '../../ui/Input.js';
 import { Label } from '../../ui/Label.js';
 import { Select } from '../../ui/Select.js';
 import { Textarea } from '../../ui/Textarea.js';
-import styles from './StepDetails.module.css';
+import './StepDetails.css';
 
 /**
  * Serializes a feature flags map into a textarea-friendly string
@@ -276,9 +276,9 @@ export function StepDetails({
     };
 
     return (
-        <div className={styles.stepRoot}>
+        <div className="stepRoot">
             {/* Severity */}
-            <div className={styles.fieldGroup}>
+            <div className="fieldGroup">
                 <Label htmlFor="feedback-severity">{FEEDBACK_STRINGS.fields.severity}</Label>
                 <Select
                     id="feedback-severity"
@@ -301,7 +301,7 @@ export function StepDetails({
             </div>
 
             {/* Steps to reproduce */}
-            <div className={styles.fieldGroup}>
+            <div className="fieldGroup">
                 <Label htmlFor="feedback-steps">{FEEDBACK_STRINGS.fields.stepsToReproduce}</Label>
                 <Textarea
                     id="feedback-steps"
@@ -317,7 +317,7 @@ export function StepDetails({
             </div>
 
             {/* Expected result */}
-            <div className={styles.fieldGroup}>
+            <div className="fieldGroup">
                 <Label htmlFor="feedback-expected">{FEEDBACK_STRINGS.fields.expectedResult}</Label>
                 <Textarea
                     id="feedback-expected"
@@ -333,7 +333,7 @@ export function StepDetails({
             </div>
 
             {/* Actual result */}
-            <div className={styles.fieldGroup}>
+            <div className="fieldGroup">
                 <Label htmlFor="feedback-actual">{FEEDBACK_STRINGS.fields.actualResult}</Label>
                 <Textarea
                     id="feedback-actual"
@@ -347,16 +347,16 @@ export function StepDetails({
 
             {/* File attachments */}
             <div>
-                <p className={styles.attachmentsLabel}>{FEEDBACK_STRINGS.fields.attachments}</p>
+                <p className="attachmentsLabel">{FEEDBACK_STRINGS.fields.attachments}</p>
                 {attachments.length < FEEDBACK_CONFIG.maxAttachments && (
                     <label
                         htmlFor="feedback-files"
-                        className={styles.uploadZone}
+                        className="uploadZone"
                     >
-                        <span className={styles.uploadZoneText}>
+                        <span className="uploadZoneText">
                             {FEEDBACK_STRINGS.fields.uploadButton}
                         </span>
-                        <p className={styles.uploadZoneHint}>
+                        <p className="uploadZoneHint">
                             {FEEDBACK_STRINGS.fields.fileHintFormat} &mdash;{' '}
                             {FEEDBACK_STRINGS.fields.fileHintMaxSize.replace(
                                 '{size}',
@@ -370,20 +370,20 @@ export function StepDetails({
                                 ','
                             )}
                             multiple
-                            className={styles.uploadInput}
+                            className="uploadInput"
                             onChange={handleFileChange}
                         />
                     </label>
                 )}
                 {fileRejections.length > 0 && (
                     <ul
-                        className={styles.rejectionList}
+                        className="rejectionList"
                         role="alert"
                     >
                         {fileRejections.map((msg) => (
                             <li
                                 key={msg}
-                                className={styles.rejectionItem}
+                                className="rejectionItem"
                             >
                                 {msg}
                             </li>
@@ -391,22 +391,22 @@ export function StepDetails({
                     </ul>
                 )}
                 {attachments.length > 0 && (
-                    <ul className={styles.attachmentList}>
+                    <ul className="attachmentList">
                         {attachments.map((file, index) => (
                             <li
                                 // biome-ignore lint/suspicious/noArrayIndexKey: index is stable for attachment list
                                 key={index}
-                                className={styles.attachmentItem}
+                                className="attachmentItem"
                             >
                                 <span>
                                     {file.name}
-                                    <span className={styles.attachmentSize}>
+                                    <span className="attachmentSize">
                                         ({formatFileSize(file.size)})
                                     </span>
                                 </span>
                                 <button
                                     type="button"
-                                    className={styles.removeBtn}
+                                    className="removeBtn"
                                     onClick={() => onRemoveAttachment(index)}
                                     aria-label={FEEDBACK_STRINGS.fields.removeFileLabel.replace(
                                         '{name}',
@@ -422,29 +422,29 @@ export function StepDetails({
             </div>
 
             {/* Collapsible tech details */}
-            <div className={styles.techSection}>
+            <div className="techSection">
                 <button
                     type="button"
-                    className={styles.techToggle}
+                    className="techToggle"
                     onClick={() => setTechOpen((prev) => !prev)}
                     aria-expanded={techOpen}
                 >
                     <span>{FEEDBACK_STRINGS.techDetails.title}</span>
-                    <span className={styles.techToggleChevron}>{techOpen ? '▲' : '▼'}</span>
+                    <span className="techToggleChevron">{techOpen ? '▲' : '▼'}</span>
                 </button>
 
                 {techOpen && (
-                    <div className={styles.techFields}>
+                    <div className="techFields">
                         {/* --------------- Group: Sistema --------------- */}
-                        <section className={styles.techGroup}>
-                            <h4 className={styles.techGroupTitle}>
+                        <section className="techGroup">
+                            <h4 className="techGroupTitle">
                                 {FEEDBACK_STRINGS.techDetails.groupSystem}
                             </h4>
-                            <div className={styles.techGrid}>
-                                <div className={styles.techField}>
+                            <div className="techGrid">
+                                <div className="techField">
                                     <label
                                         htmlFor="tech-locale"
-                                        className={styles.techFieldLabel}
+                                        className="techFieldLabel"
                                     >
                                         {FEEDBACK_STRINGS.techDetails.locale}
                                     </label>
@@ -461,10 +461,10 @@ export function StepDetails({
                                     />
                                 </div>
 
-                                <div className={styles.techField}>
+                                <div className="techField">
                                     <label
                                         htmlFor="tech-timezone"
-                                        className={styles.techFieldLabel}
+                                        className="techFieldLabel"
                                     >
                                         {FEEDBACK_STRINGS.techDetails.timezone}
                                     </label>
@@ -481,10 +481,10 @@ export function StepDetails({
                                     />
                                 </div>
 
-                                <div className={styles.techField}>
+                                <div className="techField">
                                     <label
                                         htmlFor="tech-color-scheme"
-                                        className={styles.techFieldLabel}
+                                        className="techFieldLabel"
                                     >
                                         {FEEDBACK_STRINGS.techDetails.colorScheme}
                                     </label>
@@ -512,10 +512,10 @@ export function StepDetails({
                                     </Select>
                                 </div>
 
-                                <div className={styles.techField}>
+                                <div className="techField">
                                     <label
                                         htmlFor="tech-device-type"
-                                        className={styles.techFieldLabel}
+                                        className="techFieldLabel"
                                     >
                                         {FEEDBACK_STRINGS.techDetails.deviceType}
                                     </label>
@@ -546,10 +546,10 @@ export function StepDetails({
                                     </Select>
                                 </div>
 
-                                <div className={styles.techField}>
+                                <div className="techField">
                                     <label
                                         htmlFor="tech-connection"
-                                        className={styles.techFieldLabel}
+                                        className="techFieldLabel"
                                     >
                                         {FEEDBACK_STRINGS.techDetails.connectionType}
                                     </label>
@@ -569,15 +569,15 @@ export function StepDetails({
                         </section>
 
                         {/* --------------- Group: Navegador --------------- */}
-                        <section className={styles.techGroup}>
-                            <h4 className={styles.techGroupTitle}>
+                        <section className="techGroup">
+                            <h4 className="techGroupTitle">
                                 {FEEDBACK_STRINGS.techDetails.groupBrowser}
                             </h4>
-                            <div className={styles.techGrid}>
-                                <div className={styles.techField}>
+                            <div className="techGrid">
+                                <div className="techField">
                                     <label
                                         htmlFor="tech-browser"
-                                        className={styles.techFieldLabel}
+                                        className="techFieldLabel"
                                     >
                                         {FEEDBACK_STRINGS.techDetails.browser}
                                     </label>
@@ -594,10 +594,10 @@ export function StepDetails({
                                     />
                                 </div>
 
-                                <div className={styles.techField}>
+                                <div className="techField">
                                     <label
                                         htmlFor="tech-os"
-                                        className={styles.techFieldLabel}
+                                        className="techFieldLabel"
                                     >
                                         {FEEDBACK_STRINGS.techDetails.os}
                                     </label>
@@ -614,10 +614,10 @@ export function StepDetails({
                                     />
                                 </div>
 
-                                <div className={styles.techField}>
+                                <div className="techField">
                                     <label
                                         htmlFor="tech-viewport"
-                                        className={styles.techFieldLabel}
+                                        className="techFieldLabel"
                                     >
                                         {FEEDBACK_STRINGS.techDetails.viewport}
                                     </label>
@@ -634,10 +634,10 @@ export function StepDetails({
                                     />
                                 </div>
 
-                                <div className={`${styles.techField} ${styles.techFieldFull}`}>
+                                <div className="techField techFieldFull">
                                     <label
                                         htmlFor="tech-url"
-                                        className={styles.techFieldLabel}
+                                        className="techFieldLabel"
                                     >
                                         {FEEDBACK_STRINGS.techDetails.url}
                                     </label>
@@ -654,10 +654,10 @@ export function StepDetails({
                                     />
                                 </div>
 
-                                <div className={styles.techField}>
+                                <div className="techField">
                                     <label
                                         htmlFor="tech-version"
-                                        className={styles.techFieldLabel}
+                                        className="techFieldLabel"
                                     >
                                         {FEEDBACK_STRINGS.techDetails.version}
                                     </label>
@@ -677,21 +677,21 @@ export function StepDetails({
                         </section>
 
                         {/* --------------- Group: Trazas --------------- */}
-                        <section className={styles.techGroup}>
-                            <h4 className={styles.techGroupTitle}>
+                        <section className="techGroup">
+                            <h4 className="techGroupTitle">
                                 {FEEDBACK_STRINGS.techDetails.groupTraces}
                             </h4>
-                            <div className={styles.techGrid}>
-                                <div className={`${styles.techField} ${styles.techFieldFull}`}>
+                            <div className="techGrid">
+                                <div className="techField techFieldFull">
                                     <label
                                         htmlFor="tech-console-errors"
-                                        className={styles.techFieldLabel}
+                                        className="techFieldLabel"
                                     >
                                         {FEEDBACK_STRINGS.techDetails.consoleErrors}
                                     </label>
                                     <Textarea
                                         id="tech-console-errors"
-                                        className={styles.techTextarea}
+                                        className="techTextarea"
                                         value={consoleErrorsText}
                                         onChange={(e) =>
                                             onEnvironmentChange(
@@ -702,10 +702,10 @@ export function StepDetails({
                                     />
                                 </div>
 
-                                <div className={`${styles.techField} ${styles.techFieldFull}`}>
+                                <div className="techField techFieldFull">
                                     <label
                                         htmlFor="tech-error-message"
-                                        className={styles.techFieldLabel}
+                                        className="techFieldLabel"
                                     >
                                         {FEEDBACK_STRINGS.techDetails.errorMessage}
                                     </label>
@@ -717,25 +717,25 @@ export function StepDetails({
                                     />
                                 </div>
 
-                                <div className={`${styles.techField} ${styles.techFieldFull}`}>
+                                <div className="techField techFieldFull">
                                     <label
                                         htmlFor="tech-error-stack"
-                                        className={styles.techFieldLabel}
+                                        className="techFieldLabel"
                                     >
                                         {FEEDBACK_STRINGS.techDetails.errorStack}
                                     </label>
                                     <Textarea
                                         id="tech-error-stack"
-                                        className={styles.techTextarea}
+                                        className="techTextarea"
                                         value={environment.errorInfo?.stack ?? ''}
                                         onChange={(e) => updateErrorInfo('stack', e.target.value)}
                                     />
                                 </div>
 
-                                <div className={styles.techField}>
+                                <div className="techField">
                                     <label
                                         htmlFor="tech-sentry-event-id"
-                                        className={styles.techFieldLabel}
+                                        className="techFieldLabel"
                                     >
                                         {FEEDBACK_STRINGS.techDetails.sentryEventId}
                                     </label>
@@ -755,21 +755,21 @@ export function StepDetails({
                         </section>
 
                         {/* --------------- Group: Contexto --------------- */}
-                        <section className={styles.techGroup}>
-                            <h4 className={styles.techGroupTitle}>
+                        <section className="techGroup">
+                            <h4 className="techGroupTitle">
                                 {FEEDBACK_STRINGS.techDetails.groupContext}
                             </h4>
-                            <div className={styles.techGrid}>
-                                <div className={`${styles.techField} ${styles.techFieldFull}`}>
+                            <div className="techGrid">
+                                <div className="techField techFieldFull">
                                     <label
                                         htmlFor="tech-feature-flags"
-                                        className={styles.techFieldLabel}
+                                        className="techFieldLabel"
                                     >
                                         {FEEDBACK_STRINGS.techDetails.featureFlags}
                                     </label>
                                     <Textarea
                                         id="tech-feature-flags"
-                                        className={styles.techTextarea}
+                                        className="techTextarea"
                                         value={featureFlagsText}
                                         onChange={(e) =>
                                             onEnvironmentChange(
@@ -780,16 +780,16 @@ export function StepDetails({
                                     />
                                 </div>
 
-                                <div className={`${styles.techField} ${styles.techFieldFull}`}>
+                                <div className="techField techFieldFull">
                                     <label
                                         htmlFor="tech-nav-history"
-                                        className={styles.techFieldLabel}
+                                        className="techFieldLabel"
                                     >
                                         {FEEDBACK_STRINGS.techDetails.navigationHistory}
                                     </label>
                                     <Textarea
                                         id="tech-nav-history"
-                                        className={styles.techTextarea}
+                                        className="techTextarea"
                                         value={navHistoryText}
                                         onChange={(e) =>
                                             onEnvironmentChange(
@@ -800,16 +800,16 @@ export function StepDetails({
                                     />
                                 </div>
 
-                                <div className={`${styles.techField} ${styles.techFieldFull}`}>
+                                <div className="techField techFieldFull">
                                     <label
                                         htmlFor="tech-last-interactions"
-                                        className={styles.techFieldLabel}
+                                        className="techFieldLabel"
                                     >
                                         {FEEDBACK_STRINGS.techDetails.lastInteractions}
                                     </label>
                                     <Textarea
                                         id="tech-last-interactions"
-                                        className={styles.techTextarea}
+                                        className="techTextarea"
                                         value={lastInteractionsText}
                                         onChange={(e) =>
                                             onEnvironmentChange(
@@ -826,7 +826,7 @@ export function StepDetails({
             </div>
 
             {/* Action buttons */}
-            <div className={styles.actions}>
+            <div className="actions">
                 <Button
                     type="button"
                     variant="secondary"

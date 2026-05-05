@@ -12,7 +12,7 @@ import { useAutoCollect } from '../hooks/useAutoCollect.js';
 import { useFeedbackSubmit } from '../hooks/useFeedbackSubmit.js';
 import type { AppSourceId, FeedbackEnvironment, ReportTypeId } from '../schemas/feedback.schema.js';
 import { REPORT_TYPE_IDS, feedbackFormSchema } from '../schemas/feedback.schema.js';
-import styles from './FeedbackForm.module.css';
+import './FeedbackForm.css';
 import { SuccessScreen } from './SuccessScreen.js';
 import { StepBasic } from './steps/StepBasic.js';
 import type { StepBasicData } from './steps/StepBasic.js';
@@ -392,12 +392,12 @@ export function FeedbackForm({
 
     if (step === 'details') {
         return (
-            <div className={styles.formRoot}>
-                <p className={styles.formTitle}>{FEEDBACK_STRINGS.form.step2Title}</p>
+            <div className="formRoot">
+                <p className="formTitle">{FEEDBACK_STRINGS.form.step2Title}</p>
 
                 {submitState.error && (
                     <div
-                        className={styles.errorAlert}
+                        className="errorAlert"
                         role="alert"
                     >
                         {submitState.error}
@@ -425,12 +425,12 @@ export function FeedbackForm({
     // ------------------------------------------------------------------ //
 
     return (
-        <div className={styles.formRoot}>
-            <p className={styles.formTitle}>{FEEDBACK_STRINGS.form.title}</p>
+        <div className="formRoot">
+            <p className="formTitle">{FEEDBACK_STRINGS.form.title}</p>
 
             {submitState.error && (
                 <div
-                    className={styles.errorAlert}
+                    className="errorAlert"
                     role="alert"
                 >
                     {submitState.error}
@@ -440,7 +440,7 @@ export function FeedbackForm({
             {/* Honeypot field: hidden from real users, filled by bots */}
             <div
                 aria-hidden="true"
-                className={styles.honeypot}
+                className="honeypot"
             >
                 <label htmlFor="feedback-website">Website</label>
                 <input

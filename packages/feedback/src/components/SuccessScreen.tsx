@@ -7,7 +7,7 @@
  */
 import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { Button } from '../ui/Button.js';
-import styles from './SuccessScreen.module.css';
+import './SuccessScreen.css';
 
 /** Props for the SuccessScreen component */
 export interface SuccessScreenProps {
@@ -36,36 +36,36 @@ export function SuccessScreen({
     onClose
 }: SuccessScreenProps) {
     return (
-        <div className={styles.root}>
-            <div className={styles.inner}>
-                <div className={styles.checkmark}>&#10003;</div>
+        <div className="root">
+            <div className="inner">
+                <div className="checkmark">&#10003;</div>
 
-                <p className={styles.title}>{FEEDBACK_STRINGS.success.title}</p>
-                <p className={styles.message}>{FEEDBACK_STRINGS.success.message}</p>
+                <p className="title">{FEEDBACK_STRINGS.success.title}</p>
+                <p className="message">{FEEDBACK_STRINGS.success.message}</p>
 
                 {linearIssueId ? (
-                    <p className={styles.issueLine}>
+                    <p className="issueLine">
                         {FEEDBACK_STRINGS.success.issueLabel}:{' '}
                         {linearIssueUrl ? (
                             <a
                                 href={linearIssueUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={styles.issueLink}
+                                className="issueLink"
                             >
-                                <span className={styles.issueBold}>{linearIssueId}</span>
+                                <span className="issueBold">{linearIssueId}</span>
                             </a>
                         ) : (
-                            <span className={styles.issueBold}>{linearIssueId}</span>
+                            <span className="issueBold">{linearIssueId}</span>
                         )}
                     </p>
                 ) : (
-                    <p className={styles.issueLine}>{FEEDBACK_STRINGS.success.fallbackMessage}</p>
+                    <p className="issueLine">{FEEDBACK_STRINGS.success.fallbackMessage}</p>
                 )}
 
-                <p className={styles.thanks}>{FEEDBACK_STRINGS.success.thanks}</p>
+                <p className="thanks">{FEEDBACK_STRINGS.success.thanks}</p>
 
-                <div className={styles.actions}>
+                <div className="actions">
                     <Button
                         type="button"
                         variant="secondary"

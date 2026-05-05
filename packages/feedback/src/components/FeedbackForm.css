@@ -2,13 +2,13 @@
  * FeedbackForm component styles.
  */
 
-.formRoot {
+.feedback-root .formRoot {
     width: 100%;
     max-width: 520px;
     font-family: var(--fb-font-family);
 }
 
-.formTitle {
+.feedback-root .formTitle {
     margin-bottom: var(--fb-space-4);
     border-bottom: 1px solid var(--fb-border);
     padding-bottom: 0.75rem;
@@ -17,7 +17,7 @@
     color: var(--fb-foreground);
 }
 
-.errorAlert {
+.feedback-root .errorAlert {
     margin-bottom: var(--fb-space-4);
     border-radius: var(--fb-radius-sm);
     border: 1px solid rgba(220, 38, 38, 0.3);
@@ -32,7 +32,7 @@
 /* Honeypot field (hidden from real users)                             */
 /* ------------------------------------------------------------------ */
 
-.honeypot {
+.feedback-root .honeypot {
     position: absolute;
     left: -9999px;
     height: 0;

@@ -2,66 +2,66 @@
  * SuccessScreen component styles.
  */
 
-.root {
+.feedback-root .root {
     width: 100%;
     max-width: 520px;
     font-family: var(--fb-font-family);
 }
 
-.inner {
+.feedback-root .inner {
     padding: var(--fb-space-6) var(--fb-space-4);
     text-align: center;
 }
 
-.checkmark {
+.feedback-root .checkmark {
     margin-bottom: 0.75rem;
     font-size: 3rem;
     color: var(--fb-success);
     line-height: 1;
 }
 
-.title {
+.feedback-root .title {
     margin-bottom: var(--fb-space-2);
     font-weight: var(--fb-font-weight-semibold);
     font-size: var(--fb-font-size-lg);
     color: var(--fb-foreground);
 }
 
-.message {
+.feedback-root .message {
     margin-bottom: 0.375rem;
     font-size: var(--fb-font-size-sm);
     color: var(--fb-foreground);
     opacity: 0.8;
 }
 
-.issueLine {
+.feedback-root .issueLine {
     margin-bottom: 0.25rem;
     font-size: var(--fb-font-size-xs);
     color: var(--fb-foreground-muted);
 }
 
-.issueLink {
+.feedback-root .issueLink {
     color: var(--fb-primary);
     text-decoration: none;
 }
 
-.issueLink:hover {
+.feedback-root .issueLink:hover {
     text-decoration: underline;
 }
 
-.issueBold {
+.feedback-root .issueBold {
     font-weight: var(--fb-font-weight-semibold);
     color: var(--fb-primary);
 }
 
-.thanks {
+.feedback-root .thanks {
     margin-top: 0.75rem;
     margin-bottom: var(--fb-space-6);
     font-size: var(--fb-font-size-xs);
     color: var(--fb-foreground-muted);
 }
 
-.actions {
+.feedback-root .actions {
     display: flex;
     justify-content: center;
     gap: 0.75rem;

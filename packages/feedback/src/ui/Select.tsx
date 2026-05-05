@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import styles from './Select.module.css';
+import './Select.css';
 import { cn } from './cn.js';
 
 /** Props accepted by the Select component. */
@@ -26,7 +26,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         return (
             <select
                 ref={ref}
-                className={cn(styles.select, className)}
+                className={cn('select', className)}
                 {...props}
             >
                 {children}

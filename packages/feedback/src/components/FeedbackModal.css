@@ -18,7 +18,7 @@ dialog[data-feedback-modal]::backdrop {
 /* <dialog> element: full-screen transparent overlay                  */
 /* ------------------------------------------------------------------ */
 
-.dialog {
+.feedback-root .dialog {
     position: fixed;
     inset: 0;
     margin: 0;
@@ -36,7 +36,7 @@ dialog[data-feedback-modal]::backdrop {
 }
 
 @media (min-width: 640px) {
-    .dialog {
+    .feedback-root .dialog {
         /* Desktop: centered modal */
         align-items: center;
         justify-content: center;
@@ -48,7 +48,7 @@ dialog[data-feedback-modal]::backdrop {
 /* Inner content container                                              */
 /* ------------------------------------------------------------------ */
 
-.content {
+.feedback-root .content {
     position: relative;
     width: 100%;
     overflow-y: auto;
@@ -61,7 +61,7 @@ dialog[data-feedback-modal]::backdrop {
 }
 
 @media (min-width: 640px) {
-    .content {
+    .feedback-root .content {
         /* Desktop: centered card */
         max-height: 90vh;
         max-width: 640px;
@@ -74,7 +74,7 @@ dialog[data-feedback-modal]::backdrop {
 /* Screen-reader only title                                             */
 /* ------------------------------------------------------------------ */
 
-.srOnly {
+.feedback-root .srOnly {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -90,7 +90,7 @@ dialog[data-feedback-modal]::backdrop {
 /* Drag handle (mobile only)                                            */
 /* ------------------------------------------------------------------ */
 
-.dragHandle {
+.feedback-root .dragHandle {
     width: 2.5rem;
     height: 0.25rem;
     border-radius: var(--fb-radius-pill);
@@ -102,7 +102,7 @@ dialog[data-feedback-modal]::backdrop {
 /* Close button                                                         */
 /* ------------------------------------------------------------------ */
 
-.closeBtn {
+.feedback-root .closeBtn {
     position: absolute;
     top: var(--fb-space-4);
     right: var(--fb-space-4);
@@ -121,11 +121,11 @@ dialog[data-feedback-modal]::backdrop {
     transition: color var(--fb-duration-fast) var(--fb-easing);
 }
 
-.closeBtn:hover {
+.feedback-root .closeBtn:hover {
     color: var(--fb-foreground);
 }
 
-.closeBtn:focus-visible {
+.feedback-root .closeBtn:focus-visible {
     outline: 2px solid var(--fb-primary);
     outline-offset: 2px;
 }
