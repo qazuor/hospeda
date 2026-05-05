@@ -39,13 +39,30 @@ export const SEVERITY_ENUM = z.enum(['critical', 'high', 'medium', 'low']);
 /** Valid app source identifiers (mirrors APP_SOURCE_IDS from @repo/feedback) */
 const APP_SOURCE_ENUM = z.enum(['web', 'admin', 'standalone']);
 
+/** Valid device type identifiers (mirrors DEVICE_TYPE_IDS from @repo/feedback) */
+const DEVICE_TYPE_ENUM = z.enum(['mobile', 'tablet', 'desktop']);
+
+/** Valid color scheme identifiers (mirrors COLOR_SCHEME_IDS from @repo/feedback) */
+const COLOR_SCHEME_ENUM = z.enum(['light', 'dark']);
+
+/** Single user interaction sub-schema (mirrors feedbackInteractionSchema). */
+const interactionSchema = z.object({
+    type: z.string().max(64),
+    selector: z.string().max(120),
+    timestamp: z.string().datetime()
+});
+
 /**
  * Server-side environment sub-schema.
  *
  * Mirrors feedbackEnvironmentSchema from @repo/feedback but uses Zod v4
- * to stay compatible with the API package's dependency.
+ * to stay compatible with the API package's dependency. Keep this in sync
+ * with the package schema — Zod strips unknown fields by default, so any
+ * new auto-collected field that is not declared here will silently be
+ * dropped before it reaches the Linear service.
  */
 const environmentSchema = z.object({
+    // Core browser/runtime
     currentUrl: z.string().url().optional(),
     browser: z.string().optional(),
     os: z.string().optional(),
@@ -54,13 +71,28 @@ const environmentSchema = z.object({
     appSource: APP_SOURCE_ENUM,
     deployVersion: z.string().optional(),
     userId: z.string().optional(),
+
+    // Errors / traces
     consoleErrors: z.array(z.string().max(500)).max(20).optional(),
     errorInfo: z
         .object({
             message: z.string().max(1000),
             stack: z.string().max(5000).optional()
         })
-        .optional()
+        .optional(),
+    sentryEventId: z.string().max(120).optional(),
+
+    // Sistema
+    locale: z.string().max(35).optional(),
+    timezone: z.string().max(64).optional(),
+    deviceType: DEVICE_TYPE_ENUM.optional(),
+    connectionType: z.string().max(32).optional(),
+    colorScheme: COLOR_SCHEME_ENUM.optional(),
+
+    // Contexto
+    featureFlags: z.record(z.string(), z.string().max(500)).optional(),
+    navigationHistory: z.array(z.string().max(500)).max(20).optional(),
+    lastInteractions: z.array(interactionSchema).max(10).optional()
 });
 
 /**

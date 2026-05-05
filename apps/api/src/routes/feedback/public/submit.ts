@@ -395,6 +395,7 @@ export const submitFeedbackRoute = createSimpleRoute({
                 actualResult: validated.actualResult,
                 appSource: validated.environment.appSource,
                 environment: {
+                    // Core
                     currentUrl: validated.environment.currentUrl,
                     browser: validated.environment.browser,
                     os: validated.environment.os,
@@ -402,8 +403,20 @@ export const submitFeedbackRoute = createSimpleRoute({
                     timestamp: validated.environment.timestamp,
                     deployVersion: validated.environment.deployVersion,
                     userId: validated.environment.userId,
+                    // Errors / traces
                     consoleErrors: validated.environment.consoleErrors,
-                    errorInfo: validated.environment.errorInfo
+                    errorInfo: validated.environment.errorInfo,
+                    sentryEventId: validated.environment.sentryEventId,
+                    // Sistema
+                    locale: validated.environment.locale,
+                    timezone: validated.environment.timezone,
+                    deviceType: validated.environment.deviceType,
+                    connectionType: validated.environment.connectionType,
+                    colorScheme: validated.environment.colorScheme,
+                    // Contexto
+                    featureFlags: validated.environment.featureFlags,
+                    navigationHistory: validated.environment.navigationHistory,
+                    lastInteractions: validated.environment.lastInteractions
                 },
                 attachments: feedbackAttachments.length > 0 ? feedbackAttachments : undefined
             };
