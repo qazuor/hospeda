@@ -90,6 +90,13 @@ export interface FeedbackFormProps {
     readonly onSentryFeedback?: (payload: SentryFeedbackBridgePayload) => void;
     /** Called when the user clicks "Cerrar" on the success screen */
     readonly onClose?: () => void;
+    /**
+     * Whether the host modal is currently open. The form remains mounted
+     * while the modal is hidden, so this flag drives the refresh of dynamic
+     * ring-buffer data (console errors, navigation history, last
+     * interactions) on every modal open.
+     */
+    readonly isOpen?: boolean;
 }
 
 /**
@@ -170,7 +177,8 @@ export function FeedbackForm({
     featureFlagPrefixes,
     sentryEventId,
     onSentryFeedback,
-    onClose
+    onClose,
+    isOpen
 }: FeedbackFormProps) {
     const [step, setStep] = useState<Step>('basic');
     const [basicData, setBasicData] = useState<StepBasicData>(() =>
@@ -190,7 +198,8 @@ export function FeedbackForm({
         userName,
         errorInfo: prefillData?.errorInfo,
         featureFlagPrefixes,
-        sentryEventId
+        sentryEventId,
+        isOpen
     });
 
     const { state: submitState, submit, reset: resetSubmit } = useFeedbackSubmit({ apiUrl });

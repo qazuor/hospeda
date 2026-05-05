@@ -273,6 +273,7 @@ export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps
                 <FeedbackForm
                     {...formProps}
                     onClose={onClose}
+                    isOpen={isOpen}
                 />
             </div>
         </dialog>

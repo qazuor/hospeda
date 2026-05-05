@@ -46,6 +46,14 @@ export interface UseAutoCollectInput {
     featureFlagPrefixes?: ReadonlyArray<string>;
     /** Most recent Sentry event ID (typically supplied by the FAB on open) */
     sentryEventId?: string;
+    /**
+     * Whether the modal hosting the form is currently open. The hook uses
+     * this to refresh dynamic ring-buffer data (console errors, navigation
+     * history, last interactions) every time the modal opens — those buffers
+     * keep filling while the form is mounted but hidden, and the user
+     * expects to see the latest state when they re-open the modal.
+     */
+    isOpen?: boolean;
 }
 
 /**
@@ -105,16 +113,20 @@ export function useAutoCollect(input: UseAutoCollectInput): UseAutoCollectResult
         })
     );
 
-    // Refresh dynamic data on mount so the user sees the most recent
-    // console errors / navigation / interactions.
+    // Refresh dynamic ring-buffer data on every modal open. The buffers keep
+    // filling while the form is mounted-but-hidden, so we re-read them each
+    // time the user opens the modal. We intentionally depend on `isOpen` so
+    // a transition from closed → open triggers the refresh; the initial mount
+    // also runs because React fires effects on first commit.
     useEffect(() => {
+        if (input.isOpen === false) return;
         setEnvironment((prev) => ({
             ...prev,
             consoleErrors: getErrors(),
             navigationHistory: getNavigationHistory(),
             lastInteractions: getLastInteractions()
         }));
-    }, [getErrors]);
+    }, [getErrors, input.isOpen]);
 
     // Update environment when auth props or sentry event id change.
     useEffect(() => {
