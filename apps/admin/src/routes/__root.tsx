@@ -16,6 +16,47 @@ import { GlobalErrorBoundary } from '@/lib/error-boundaries';
 import { adminQzpayTheme } from '@/lib/qzpay-theme';
 import { initSentry } from '@/lib/sentry';
 import { FeedbackErrorBoundary, FeedbackFAB } from '@repo/feedback';
+import * as Sentry from '@sentry/react';
+
+/**
+ * Returns the most recent Sentry event ID, if any. Wrapped in try/catch so
+ * SDK changes or pre-init calls don't crash the FAB.
+ */
+const getSentryEventId = (): string | undefined => {
+    try {
+        const fn = (Sentry as { lastEventId?: () => string | undefined }).lastEventId;
+        return typeof fn === 'function' ? fn() : undefined;
+    } catch {
+        return undefined;
+    }
+};
+
+/**
+ * Mirrors a successful feedback report into Sentry's User Feedback channel.
+ * Best-effort: any SDK error is swallowed so the Linear flow is unaffected.
+ */
+const handleSentryFeedback = (payload: {
+    name: string;
+    email: string;
+    message: string;
+    associatedEventId?: string;
+}): void => {
+    try {
+        const fn = (
+            Sentry as {
+                captureFeedback?: (data: {
+                    name: string;
+                    email: string;
+                    message: string;
+                    associatedEventId?: string;
+                }) => void;
+            }
+        ).captureFeedback;
+        fn?.(payload);
+    } catch {
+        // Intentional no-op
+    }
+};
 
 // Validate environment variables eagerly at module load time - fails fast on misconfiguration
 validateAdminEnv();
@@ -177,6 +218,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                         userId={session?.user.id}
                         userEmail={session?.user.email}
                         userName={session?.user.name}
+                        getSentryEventId={getSentryEventId}
+                        onSentryFeedback={handleSentryFeedback}
                     />
                 </FeedbackErrorBoundary>
                 {env.NODE_ENV === 'development' && <TanstackDevtools />}

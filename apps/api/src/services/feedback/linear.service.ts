@@ -51,6 +51,18 @@ export interface FeedbackAttachment {
 }
 
 /**
+ * Single recorded user interaction (privacy-preserving structural info only).
+ */
+export interface FeedbackInteraction {
+    /** Element tag name (e.g. "BUTTON", "A", "INPUT") */
+    type: string;
+    /** Short selector hint (id, first className, or tag fallback) */
+    selector: string;
+    /** ISO 8601 timestamp */
+    timestamp: string;
+}
+
+/**
  * Environment metadata collected by the feedback widget.
  */
 export interface FeedbackEnvironment {
@@ -75,6 +87,24 @@ export interface FeedbackEnvironment {
         message: string;
         stack?: string;
     };
+    /** BCP 47 language tag, e.g. "es-AR" */
+    locale?: string;
+    /** IANA timezone */
+    timezone?: string;
+    /** Device class derived from viewport width and UA hints */
+    deviceType?: 'mobile' | 'tablet' | 'desktop';
+    /** Network Information API effective type, e.g. "4g" */
+    connectionType?: string;
+    /** User's resolved color scheme preference */
+    colorScheme?: 'light' | 'dark';
+    /** App-level feature flags read from localStorage */
+    featureFlags?: Record<string, string>;
+    /** Recent navigation history (most-recent last) */
+    navigationHistory?: string[];
+    /** Recent user interactions (privacy-preserving structural info only) */
+    lastInteractions?: FeedbackInteraction[];
+    /** Most recent Sentry event ID at submission time */
+    sentryEventId?: string;
 }
 
 /**
@@ -403,19 +433,59 @@ export class LinearFeedbackService {
         // Environment metadata
         const env = input.environment;
         const envLines: string[] = [];
-        if (env.currentUrl) envLines.push(`- **URL:** ${env.currentUrl}`);
-        if (env.browser) envLines.push(`- **Navegador:** ${env.browser}`);
-        if (env.os) envLines.push(`- **SO:** ${env.os}`);
-        if (env.viewport) envLines.push(`- **Viewport:** ${env.viewport}`);
-        envLines.push(`- **Timestamp:** ${env.timestamp}`);
-        if (env.deployVersion) envLines.push(`- **Version:** ${env.deployVersion}`);
-        if (env.userId) envLines.push(`- **User ID:** ${env.userId}`);
+        if (env.currentUrl) envLines.push(`- **URL:** ${escapeMarkdown(env.currentUrl)}`);
+        if (env.browser) envLines.push(`- **Navegador:** ${escapeMarkdown(env.browser)}`);
+        if (env.os) envLines.push(`- **SO:** ${escapeMarkdown(env.os)}`);
+        if (env.viewport) envLines.push(`- **Viewport:** ${escapeMarkdown(env.viewport)}`);
+        envLines.push(`- **Timestamp:** ${escapeMarkdown(env.timestamp)}`);
+        if (env.deployVersion) envLines.push(`- **Build:** ${escapeMarkdown(env.deployVersion)}`);
+        if (env.userId) envLines.push(`- **User ID:** ${escapeMarkdown(env.userId)}`);
         sections.push(`## Entorno\n${envLines.join('\n')}`);
+
+        // Sistema (locale / timezone / device class / network / theme)
+        const sistemaLines: string[] = [];
+        if (env.locale) sistemaLines.push(`- **Idioma:** ${escapeMarkdown(env.locale)}`);
+        if (env.timezone) sistemaLines.push(`- **Zona horaria:** ${escapeMarkdown(env.timezone)}`);
+        if (env.deviceType)
+            sistemaLines.push(`- **Dispositivo:** ${escapeMarkdown(env.deviceType)}`);
+        if (env.connectionType)
+            sistemaLines.push(`- **Conexion:** ${escapeMarkdown(env.connectionType)}`);
+        if (env.colorScheme) sistemaLines.push(`- **Tema:** ${escapeMarkdown(env.colorScheme)}`);
+        if (sistemaLines.length > 0) {
+            sections.push(`## Sistema\n${sistemaLines.join('\n')}`);
+        }
 
         // Console errors (sanitized: redact API keys, paths, truncate each, GAP-031-24)
         if (env.consoleErrors && env.consoleErrors.length > 0) {
             const sanitized = env.consoleErrors.map((e) => sanitizeConsoleError(e));
             sections.push(`## Errores de consola\n\`\`\`\n${sanitized.join('\n')}\n\`\`\``);
+        }
+
+        // Contexto (feature flags / navigation history / last interactions)
+        const contextoBlocks: string[] = [];
+        if (env.featureFlags && Object.keys(env.featureFlags).length > 0) {
+            const flagLines = Object.entries(env.featureFlags)
+                .map(([key, value]) => `- ${escapeMarkdown(key)}=${escapeMarkdown(value)}`)
+                .join('\n');
+            contextoBlocks.push(`**Feature flags:**\n${flagLines}`);
+        }
+        if (env.navigationHistory && env.navigationHistory.length > 0) {
+            const navLines = env.navigationHistory
+                .map((url, i) => `${i + 1}. ${escapeMarkdown(url)}`)
+                .join('\n');
+            contextoBlocks.push(`**Historial de navegacion:**\n${navLines}`);
+        }
+        if (env.lastInteractions && env.lastInteractions.length > 0) {
+            const interactionLines = env.lastInteractions
+                .map(
+                    (it) =>
+                        `- ${escapeMarkdown(it.type)} | ${escapeMarkdown(it.selector)} | ${escapeMarkdown(it.timestamp)}`
+                )
+                .join('\n');
+            contextoBlocks.push(`**Ultimas interacciones:**\n${interactionLines}`);
+        }
+        if (contextoBlocks.length > 0) {
+            sections.push(`## Contexto\n${contextoBlocks.join('\n\n')}`);
         }
 
         // Uncaught JS error (truncate & escape stack, GAP-031-20/54)
@@ -425,6 +495,13 @@ export class LinearFeedbackService {
                 ? `\n\`\`\`\n${truncateStack(env.errorInfo.stack)}\n\`\`\``
                 : '';
             sections.push(`## Error\n**${escapedMessage}**${stackPart}`);
+        }
+
+        // Sentry correlation (link to event in Sentry, when ID present)
+        if (env.sentryEventId) {
+            const escapedId = escapeMarkdown(env.sentryEventId);
+            const sentryUrl = `https://sentry.io/organizations/qazuor/issues/?project=hospeda&query=${encodeURIComponent(env.sentryEventId)}`;
+            sections.push(`## Sentry\n- **Event ID:** \`${escapedId}\`\n- **Link:** ${sentryUrl}`);
         }
 
         // Footer

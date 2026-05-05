@@ -502,12 +502,14 @@ describe('LinearFeedbackService', () => {
             expect(description).toContain('## Resultado actual');
             expect(description).toContain('Page crashed');
             expect(description).toContain('## Entorno');
-            expect(description).toContain('https://hospeda.com/checkout');
+            // escapeMarkdown escapes "/", "-" etc. — strip backslashes for matching
+            const stripped = description.replace(/\\/g, '');
+            expect(stripped).toContain('https://hospeda.com/checkout');
             expect(description).toContain('Chrome 120');
             expect(description).toContain('macOS 14');
             expect(description).toContain('1440x900');
             expect(description).toContain('abc123');
-            expect(description).toContain('user-42');
+            expect(stripped).toContain('user-42');
             expect(description).toContain('## Errores de consola');
             expect(description).toContain('TypeError: Cannot read properties of undefined');
             expect(description).toContain('## Error');
@@ -571,6 +573,145 @@ describe('LinearFeedbackService', () => {
             expect(description).toContain('## Descripcion');
             expect(description).toContain('## Entorno');
             expect(description).toContain('*Fuente:');
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // buildIssueBody - new sections (Sistema, Contexto, Sentry)
+    // -------------------------------------------------------------------------
+
+    describe('buildIssueBody - extended environment sections', () => {
+        it('should render the Sistema section when locale/timezone/etc are provided', async () => {
+            const service = makeService();
+            mockClientInstance.createIssue.mockResolvedValue(mockIssuePayload('id-sys', 'ABC-S'));
+
+            const input = makeInput({
+                environment: {
+                    timestamp: '2026-03-06T12:00:00Z',
+                    locale: 'es-AR',
+                    timezone: 'America/Argentina/Buenos_Aires',
+                    deviceType: 'desktop',
+                    connectionType: '4g',
+                    colorScheme: 'dark'
+                }
+            });
+
+            await service.createIssue(input);
+
+            const description = (
+                mockClientInstance.createIssue.mock.calls[0]?.[0] as { description: string }
+            ).description;
+
+            expect(description).toContain('## Sistema');
+            // escapeMarkdown escapes "-" and "_" so use loose tag-stripped match
+            expect(description.replace(/\\/g, '')).toContain('es-AR');
+            expect(description.replace(/\\/g, '')).toContain('America/Argentina/Buenos_Aires');
+            expect(description).toContain('desktop');
+            expect(description).toContain('4g');
+            expect(description).toContain('dark');
+        });
+
+        it('should omit the Sistema section when none of its fields are present', async () => {
+            const service = makeService();
+            mockClientInstance.createIssue.mockResolvedValue(
+                mockIssuePayload('id-no-sys', 'ABC-NS')
+            );
+
+            await service.createIssue(makeInput());
+
+            const description = (
+                mockClientInstance.createIssue.mock.calls[0]?.[0] as { description: string }
+            ).description;
+
+            expect(description).not.toContain('## Sistema');
+        });
+
+        it('should render Contexto with feature flags / nav history / interactions', async () => {
+            const service = makeService();
+            mockClientInstance.createIssue.mockResolvedValue(mockIssuePayload('id-ctx', 'ABC-C'));
+
+            const input = makeInput({
+                environment: {
+                    timestamp: '2026-03-06T12:00:00Z',
+                    featureFlags: { feature_dark_mode: 'on', ff_beta: 'true' },
+                    navigationHistory: ['/home', '/checkout', '/checkout/payment'],
+                    lastInteractions: [
+                        {
+                            type: 'BUTTON',
+                            selector: '#pay-btn',
+                            timestamp: '2026-03-06T11:59:00Z'
+                        }
+                    ]
+                }
+            });
+
+            await service.createIssue(input);
+
+            const description = (
+                mockClientInstance.createIssue.mock.calls[0]?.[0] as { description: string }
+            ).description;
+
+            expect(description).toContain('## Contexto');
+            // escapeMarkdown escapes "_", "-" and "#" — strip backslashes for matching
+            const stripped = description.replace(/\\/g, '');
+            expect(stripped).toContain('feature_dark_mode=on');
+            expect(stripped).toContain('ff_beta=true');
+            expect(stripped).toContain('1. /home');
+            expect(stripped).toContain('3. /checkout/payment');
+            expect(description).toContain('BUTTON');
+            expect(stripped).toContain('#pay-btn');
+        });
+
+        it('should omit Contexto when no contextual data is present', async () => {
+            const service = makeService();
+            mockClientInstance.createIssue.mockResolvedValue(
+                mockIssuePayload('id-no-ctx', 'ABC-NC')
+            );
+
+            await service.createIssue(makeInput());
+
+            const description = (
+                mockClientInstance.createIssue.mock.calls[0]?.[0] as { description: string }
+            ).description;
+
+            expect(description).not.toContain('## Contexto');
+        });
+
+        it('should render the Sentry section with event ID and link', async () => {
+            const service = makeService();
+            mockClientInstance.createIssue.mockResolvedValue(mockIssuePayload('id-snt', 'ABC-SN'));
+
+            const input = makeInput({
+                environment: {
+                    timestamp: '2026-03-06T12:00:00Z',
+                    sentryEventId: 'abcdef0123456789'
+                }
+            });
+
+            await service.createIssue(input);
+
+            const description = (
+                mockClientInstance.createIssue.mock.calls[0]?.[0] as { description: string }
+            ).description;
+
+            expect(description).toContain('## Sentry');
+            expect(description).toContain('abcdef0123456789');
+            expect(description).toContain('sentry.io/organizations/qazuor');
+        });
+
+        it('should omit the Sentry section when sentryEventId is absent', async () => {
+            const service = makeService();
+            mockClientInstance.createIssue.mockResolvedValue(
+                mockIssuePayload('id-no-snt', 'ABC-NSN')
+            );
+
+            await service.createIssue(makeInput());
+
+            const description = (
+                mockClientInstance.createIssue.mock.calls[0]?.[0] as { description: string }
+            ).description;
+
+            expect(description).not.toContain('## Sentry');
         });
     });
 

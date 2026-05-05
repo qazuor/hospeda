@@ -12,6 +12,7 @@ export type {
     CreateFeedbackIssueInput,
     FeedbackAttachment,
     FeedbackEnvironment,
+    FeedbackInteraction,
     LinearFeedbackServiceInput,
     LinearFileUploadResult,
     LinearIssueResult
