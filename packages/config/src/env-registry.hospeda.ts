@@ -678,6 +678,24 @@ export const HOSPEDA_ENV_VARS = [
             'Linear → Settings → API → Personal API Keys → "Create new key" → copiá el valor que empieza con "lin_api_". Se usa para crear issues automáticamente desde el widget de feedback.'
     },
     {
+        name: 'PUBLIC_FEEDBACK_ENABLED',
+        description:
+            'Enables the Hospeda feedback FAB widget in the web app. Gate visibility per environment (dev/preview/production).',
+        descriptionEs:
+            'Habilita el widget FAB de feedback de Hospeda en la app web. Controlá la visibilidad por entorno (dev/preview/producción).',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'true',
+        apps: ['web'],
+        category: 'integrations',
+        howToObtain:
+            'Set to "true" in preview and production environments to show the feedback FAB. Leave unset locally (defaults to false so dev/local stays quiet).',
+        howToObtainEs:
+            'Poné "true" en los entornos de preview y producción para mostrar el FAB de feedback. Dejalo sin setear en local (por defecto es false así no molesta en dev).'
+    },
+    {
         name: 'HOSPEDA_FEEDBACK_ENABLED',
         description: 'Kill switch to disable feedback endpoint (set to "false" to disable)',
         descriptionEs:

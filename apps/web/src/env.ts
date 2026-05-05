@@ -27,6 +27,15 @@ export const serverEnvBaseSchema = z.object({
     PUBLIC_SENTRY_DSN: z.string().url().optional(),
     PUBLIC_SENTRY_RELEASE: z.string().optional(),
     PUBLIC_VERSION: z.string().optional(),
+    /**
+     * Kill switch for the feedback FAB widget in the web app.
+     * Defaults to false so local/dev environments are unaffected.
+     * Set to 'true' in preview and production to show the FAB.
+     */
+    PUBLIC_FEEDBACK_ENABLED: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
 });
 

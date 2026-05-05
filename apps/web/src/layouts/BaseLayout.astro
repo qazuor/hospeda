@@ -16,6 +16,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { getApiUrl, getDeployVersion, isFeedbackEnabled } from '@/lib/env';
 import { ClientRouter } from 'astro:transitions';
 import Header from './Header.astro';
 import Footer from './Footer.astro';
@@ -28,6 +29,7 @@ import { CookieConsentBanner } from '@/components/legal/CookieConsentBanner.clie
 import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { GuestPreferenceNudge } from '@/components/shared/preferences/GuestPreferenceNudge.client';
 import { AuthedPreferenceSync } from '@/components/shared/preferences/AuthedPreferenceSync.client';
+import { FeedbackFABClient } from '@/components/feedback/FeedbackFAB.client';
 import '@/styles/global.css';
 
 interface Props {
@@ -44,6 +46,10 @@ const {
 
 const cspNonce = Astro.locals.cspNonce ?? '';
 const cookiesPolicyUrl = buildUrl({ locale, path: 'legal/cookies' });
+
+const feedbackEnabled = isFeedbackEnabled();
+const apiUrl = getApiUrl();
+const deployVersion = getDeployVersion();
 
 /**
  * Hint for client islands (UserMenu, GuestPreferenceNudge) about whether the
@@ -119,6 +125,17 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<ToastViewport client:idle />
 		<GuestPreferenceNudge client:idle />
 		<AuthedPreferenceSync client:idle />
+
+		{feedbackEnabled && (
+			<FeedbackFABClient
+				client:idle
+				apiUrl={apiUrl}
+				deployVersion={deployVersion}
+				userId={Astro.locals.user?.id}
+				userEmail={Astro.locals.user?.email}
+				userName={Astro.locals.user?.name}
+			/>
+		)}
 
 		<!-- Page initialization script -->
 		<script>

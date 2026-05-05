@@ -123,3 +123,16 @@ export function isLoggingEnabled(): boolean {
     if (import.meta.env.DEV === true) return true;
     return import.meta.env.PUBLIC_ENABLE_LOGGING === 'true';
 }
+
+/**
+ * Check whether the feedback FAB widget is enabled.
+ *
+ * Controlled by the `PUBLIC_FEEDBACK_ENABLED` env var (Zod-transformed to boolean).
+ * Defaults to `false` so local/dev environments are unaffected. Set to `'true'` in
+ * preview/production to show the FAB.
+ *
+ * @returns True when the FAB should be rendered
+ */
+export function isFeedbackEnabled(): boolean {
+    return getEnv().PUBLIC_FEEDBACK_ENABLED === true;
+}
