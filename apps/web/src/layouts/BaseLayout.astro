@@ -31,6 +31,10 @@ import { GuestPreferenceNudge } from '@/components/shared/preferences/GuestPrefe
 import { AuthedPreferenceSync } from '@/components/shared/preferences/AuthedPreferenceSync.client';
 import { FeedbackFABClient } from '@/components/feedback/FeedbackFAB.client';
 import '@/styles/global.css';
+// Static stylesheet for the @repo/feedback widget. Imported here so Astro/Vite
+// tracks it as a page-level CSS asset and preserves it across view transitions
+// (a runtime-injected style tag would be dropped when Astro swaps the head).
+import '@repo/feedback/styles.css';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -115,7 +119,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		</main>
 
 		<Footer locale={locale} />
-		<ScrollToTop />
+		<ScrollToTop locale={locale} feedbackEnabled={feedbackEnabled} />
 		<CookieConsentBanner
 			client:idle
 			locale={locale}
@@ -129,6 +133,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		{feedbackEnabled && (
 			<FeedbackFABClient
 				client:idle
+				transition:persist="feedback-fab"
 				apiUrl={apiUrl}
 				deployVersion={deployVersion}
 				userId={Astro.locals.user?.id}
