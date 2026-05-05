@@ -19,20 +19,36 @@
  * ```
  */
 export const REPORT_TYPES = [
-    { id: 'bug-js', label: 'Error de JavaScript', linearLabelId: 'PLACEHOLDER_LABEL_BUG_JS' },
-    { id: 'bug-ui-ux', label: 'Error de UI/UX', linearLabelId: 'PLACEHOLDER_LABEL_BUG_UI_UX' },
+    {
+        id: 'bug-js',
+        label: 'Error de JavaScript',
+        linearLabelId: 'f8dc7a89-03c3-42c1-b94a-a1fef4ceaf8f'
+    },
+    {
+        id: 'bug-ui-ux',
+        label: 'Error de UI/UX',
+        linearLabelId: 'f49088fa-6f44-4f6c-a485-48d79161e838'
+    },
     {
         id: 'bug-content',
         label: 'Error de texto/imagen',
-        linearLabelId: 'PLACEHOLDER_LABEL_BUG_CONTENT'
+        linearLabelId: 'b29af64b-a2ea-40cf-a73b-1403fee93d01'
     },
     {
         id: 'feature-request',
         label: 'Solicitud de funcionalidad',
-        linearLabelId: 'PLACEHOLDER_LABEL_FEATURE_REQUEST'
+        linearLabelId: 'b995fd11-5043-4625-8fbb-ba038246255e'
     },
-    { id: 'improvement', label: 'Mejora', linearLabelId: 'PLACEHOLDER_LABEL_IMPROVEMENT' },
-    { id: 'other', label: 'Otro', linearLabelId: 'PLACEHOLDER_LABEL_OTHER' }
+    {
+        id: 'improvement',
+        label: 'Mejora',
+        linearLabelId: '52a305bc-e1a5-4b15-ba70-180022770240'
+    },
+    {
+        id: 'other',
+        label: 'Otro',
+        linearLabelId: 'f6ead8f8-a46a-4888-bc01-e640497e0625'
+    }
 ] as const;
 
 /**
@@ -97,17 +113,17 @@ export const ALLOWED_FILE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'ima
  * ```
  */
 export const LINEAR_CONFIG = {
-    teamId: 'PLACEHOLDER_TEAM_ID',
-    projectId: 'PLACEHOLDER_PROJECT_ID',
-    defaultStateId: 'PLACEHOLDER_STATE_TRIAGE',
+    teamId: '67d66e22-cd86-4cef-84bd-a6211eb78061',
+    projectId: '4348abf8-5e6d-4a48-a3bc-4ca690982424',
+    defaultStateId: 'ec585d2a-f8e5-45b9-a0af-4708fda51ea8',
     labels: {
         source: {
-            web: 'PLACEHOLDER_LABEL_SOURCE_WEB',
-            admin: 'PLACEHOLDER_LABEL_SOURCE_ADMIN',
-            standalone: 'PLACEHOLDER_LABEL_SOURCE_STANDALONE'
+            web: '28850d5a-9888-433b-bf0d-2ea405df15a0',
+            admin: 'e147bfa5-a519-4f29-9fbc-08b623cf3b79',
+            standalone: 'cf0f7a39-0dfa-4d6e-98ae-918a114186d2'
         },
         environment: {
-            beta: 'PLACEHOLDER_LABEL_ENV_BETA'
+            beta: 'cda1a6d2-eb78-486e-aaf6-7a94b9a49a53'
         }
     }
 } as const;
