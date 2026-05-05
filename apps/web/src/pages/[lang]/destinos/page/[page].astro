@@ -1,23 +1,21 @@
 ---
 /**
  * @file [page].astro
- * @description Pagination rewrite. Validates page param, redirects page 1
- * to canonical URL, rewrites to parent listing with ?page=N.
+ * @description Legacy pagination route. The destinations listing no longer
+ * paginates (the catalog is small enough to render in a single grid), so any
+ * `/destinos/page/N/` URL — page 1 or otherwise — is permanently redirected
+ * to the canonical listing. Kept around to preserve link equity from
+ * previously indexed paginated URLs.
  */
 
-const { page: pageParam } = Astro.params;
+const { page: pageParam, lang } = Astro.params;
 const page = Number(pageParam);
 
-// Must be a positive integer
+// Reject obviously malformed values with a 404 instead of redirecting,
+// so we don't trade a broken URL for a slightly less broken one.
 if (!Number.isInteger(page) || page < 1) {
 	return new Response(null, { status: 404 });
 }
 
-// Page 1 → redirect to canonical (no /page/1/ in URL)
-if (page === 1) {
-	return Astro.redirect(`/${Astro.params.lang}/destinos/`, 301);
-}
-
-// Rewrite to parent listing with page query param
-return Astro.rewrite(`/${Astro.params.lang}/destinos/?page=${page}`);
+return Astro.redirect(`/${lang}/destinos/`, 301);
 ---

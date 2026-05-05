@@ -1,8 +1,23 @@
 ---
 /**
  * @file destinos/index.astro
- * @description Destinations listing page with card grid and pagination.
+ * @description Destinations listing page with card grid (no pagination).
  * Uses DefaultLayout (no filter sidebar - hierarchy serves as filter).
+ *
+ * Renders all destinations in a single grid: the catalog is small enough
+ * that pagination only adds friction. Default order is "featured first, then
+ * alphabetical A-Z" — applied via a stable client-side sort over the API
+ * response (which already comes ordered by name asc).
+ *
+ * Attraction filter (multi-select AND): a row of attraction badges above the
+ * grid lets users narrow the list to destinations that have ALL of the
+ * selected attractions. The selection is persisted in `?attractions=a,b`
+ * so URLs are shareable and survive refresh. The available badge set is
+ * derived from the union of all attractions across the loaded destinations.
+ * Note: with AND semantics each extra badge restricts the list further, so
+ * the result can become empty quickly — the empty-filter banner below
+ * handles that case explicitly.
+ *
  * @route /{lang}/destinos/
  * @rendering SSR + ISR 24h
  */
@@ -13,72 +28,140 @@ import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astr
 import DestinationCard from '@/components/shared/cards/DestinationCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
-import Pagination from '@/components/shared/feedback/Pagination.astro';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { toDestinationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { ChevronDownIcon } from '@repo/icons';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const isAuthenticated = Boolean(Astro.locals.user);
 
 const url = Astro.url;
-const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
-const pageSize = 12;
 
-// SPEC-098 T-052c — sort dropdown wiring.
-// The public destination list endpoint whitelists sortBy via
-// ALLOWED_SORT_FIELDS = { 'name', 'createdAt', 'mostSaved' }. Anything else
-// falls back to the model's default ordering. We default `mostSaved` to
-// descending so the most-saved destinations appear first.
-const ALLOWED_SORT_BY = new Set(['name', 'createdAt', 'mostSaved']);
-const rawSortBy = url.searchParams.get('sortBy') ?? undefined;
-const sortBy = rawSortBy && ALLOWED_SORT_BY.has(rawSortBy) ? rawSortBy : undefined;
-const explicitSortOrder = url.searchParams.get('sortOrder') as 'asc' | 'desc' | null;
-const sortOrder: 'asc' | 'desc' | undefined =
-    explicitSortOrder ?? (sortBy === 'mostSaved' ? 'desc' : sortBy ? 'asc' : undefined);
+// The public destinations endpoint caps `pageSize` at 100 (Zod validator on
+// the API). The catalog is curated and tiny (~tens of CITY destinations), so
+// a single page of 100 covers everything today. If `total` ever approaches
+// 100, revisit this and either add real pagination back or fan out a second
+// request server-side.
+const PAGE_SIZE_ALL = 100;
 
+// Default order is fixed: name asc. Featured destinations are pinned to the
+// top by a stable client-side sort below, so users always see "featured first,
+// then alphabetical A-Z" out of the box. The previous sort dropdown was
+// removed — the catalog is small and the default ordering is the only one
+// that meaningfully helps discovery.
 const result = await destinationsApi.list({
-    page,
-    pageSize,
+    page: 1,
+    pageSize: PAGE_SIZE_ALL,
     destinationType: 'CITY',
-    sortBy,
-    sortOrder
+    sortBy: 'name',
+    sortOrder: 'asc'
 });
 
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.total : 0;
-const totalPages = result.ok ? Math.ceil(total / pageSize) : 0;
-const cards = items.map((item) => toDestinationCardProps({ item: item as unknown as Record<string, unknown> }));
+const rawCards = items.map((item) =>
+    toDestinationCardProps({ item: item as unknown as Record<string, unknown> })
+);
 
-const baseUrl = buildUrl({ locale, path: 'destinos' });
+// Pin featured destinations to the top while preserving the alphabetical
+// order returned by the API. `Array.prototype.sort` in V8 is stable since
+// 2019, so non-featured cards keep their A-Z order.
+const sortedCards = [...rawCards].sort(
+    (a, b) => Number(b.isFeatured) - Number(a.isFeatured)
+);
+
+// --- Attraction filter state ----------------------------------------------
+// Parse the active attraction ids from the query string. Empty/missing means
+// no filter is active. We store an ordered array (for canonical URL building)
+// AND a Set (for O(1) membership lookups during filtering and badge rendering).
+const rawAttractionsParam = url.searchParams.get('attractions') ?? '';
+const requestedIds = rawAttractionsParam
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+// Build the union of attractions across all loaded destinations, deduplicated
+// by id. Sorted by displayWeight desc, then name asc, so the most relevant
+// attractions show up first. This guarantees every badge has ≥1 matching
+// destination (we derive from the same dataset we're filtering).
+type AttractionBadge = {
+    readonly id: string;
+    readonly name: string;
+    readonly displayWeight: number;
+};
+const attractionMap = new Map<string, AttractionBadge>();
+for (const card of rawCards) {
+    if (!card.attractions) continue;
+    for (const a of card.attractions) {
+        if (!attractionMap.has(a.id)) {
+            attractionMap.set(a.id, {
+                id: a.id,
+                name: a.name,
+                displayWeight: a.displayWeight ?? 0
+            });
+        }
+    }
+}
+const availableAttractions: ReadonlyArray<AttractionBadge> = [...attractionMap.values()].sort(
+    (a, b) => {
+        if (b.displayWeight !== a.displayWeight) return b.displayWeight - a.displayWeight;
+        return a.name.localeCompare(b.name);
+    }
+);
+
+// Drop any requested id that doesn't exist in the available set (stale link,
+// stripped attraction, etc.). This keeps the URL canonical and prevents the
+// filter from "pretending" to be active with no visible badge.
+const activeIds = new Set(requestedIds.filter((id) => attractionMap.has(id)));
+const isFilterActive = activeIds.size > 0;
+
+// AND semantics: a card passes only if it has every active attraction.
+// Implemented as `Array.prototype.every` over the active id set against the
+// card's own attractions, which keeps the comparison branch-free and works
+// with the readonly array shape returned by the transform.
+const filteredCards = isFilterActive
+    ? sortedCards.filter((c) => {
+          const cardAttractionIds = new Set(c.attractions?.map((a) => a.id) ?? []);
+          for (const requiredId of activeIds) {
+              if (!cardAttractionIds.has(requiredId)) return false;
+          }
+          return true;
+      })
+    : sortedCards;
+
+// Anchor appended to every filter href. With Astro's `<ClientRouter />`
+// preserving scroll across navigations, clicking a badge while scrolled
+// down can leave the user staring at whitespace if the filtered grid is
+// shorter than the previous one. The anchor brings them back to the
+// filters + grid region without any JS.
+const FILTER_ANCHOR = '#dest-filter-top';
+
+// Build the canonical href for a badge. Toggle the badge id in the active set:
+// click an inactive badge → adds it; click an active one → removes it. When
+// the resulting set is empty, drop the `attractions` query param entirely so
+// `/destinos/` stays clean.
+function buildBadgeHref(badgeId: string): string {
+    const next = new Set(activeIds);
+    if (next.has(badgeId)) next.delete(badgeId);
+    else next.add(badgeId);
+    const target = new URL(url.toString());
+    if (next.size === 0) target.searchParams.delete('attractions');
+    else target.searchParams.set('attractions', [...next].join(','));
+    return `${target.pathname}${target.search}${FILTER_ANCHOR}`;
+}
+
+function buildClearHref(): string {
+    const target = new URL(url.toString());
+    target.searchParams.delete('attractions');
+    const base = `${target.pathname}${target.search}` || target.pathname;
+    return `${base}${FILTER_ANCHOR}`;
+}
+
 const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
-
-// Build the value used by the dropdown. We collapse sortBy+sortOrder into a
-// single token so the native <select> can use a single `value` attribute and
-// the form submits one canonical key per option.
-const sortValue =
-    sortBy === 'name'
-        ? sortOrder === 'desc'
-            ? 'name_desc'
-            : 'name_asc'
-        : sortBy === 'createdAt'
-          ? 'createdAt_desc'
-          : sortBy === 'mostSaved'
-            ? 'mostSaved'
-            : '';
-
-const sortOptions: ReadonlyArray<{ readonly value: string; readonly label: string }> = [
-    { value: '', label: t('destinations.sort.label', 'Ordenar por') },
-    { value: 'name_asc', label: t('destinations.sort.nameAsc', 'Nombre (A-Z)') },
-    { value: 'name_desc', label: t('destinations.sort.nameDesc', 'Nombre (Z-A)') },
-    { value: 'createdAt_desc', label: t('destinations.sort.newest', 'Más recientes') },
-    { value: 'mostSaved', label: t('destinations.sort.mostSaved', 'Más guardados') }
-];
 ---
 
 <DefaultLayout
@@ -110,11 +193,51 @@ const sortOptions: ReadonlyArray<{ readonly value: string; readonly label: strin
 			<div class="dest-listing__container">
 				{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="destinos" />}
 
-				{!hasError && cards.length === 0 && (
+				{!hasError && sortedCards.length === 0 && (
 					<EmptyState locale={locale} variant="empty" />
 				)}
 
-				{!hasError && cards.length > 0 && (
+				{!hasError && sortedCards.length > 0 && availableAttractions.length > 0 && (
+					<nav
+						id="dest-filter-top"
+						class="dest-attractions-filter"
+						aria-label={t('destinations.filter.attractionsAriaLabel', 'Filtrar por atracciones')}
+					>
+						<ul class="dest-attractions-filter__list">
+							{availableAttractions.map((attr) => {
+								const active = activeIds.has(attr.id);
+								return (
+									<li>
+										<a
+											href={buildBadgeHref(attr.id)}
+											class:list={[
+												'dest-attractions-filter__badge',
+												{ 'dest-attractions-filter__badge--active': active }
+											]}
+											aria-pressed={active ? 'true' : 'false'}
+											rel="nofollow"
+										>
+											{attr.name}
+										</a>
+									</li>
+								);
+							})}
+							{isFilterActive && (
+								<li>
+									<a
+										href={buildClearHref()}
+										class="dest-attractions-filter__clear"
+										rel="nofollow"
+									>
+										{t('destinations.filter.clear', 'Limpiar filtros')}
+									</a>
+								</li>
+							)}
+						</ul>
+					</nav>
+				)}
+
+				{!hasError && sortedCards.length > 0 && (
 					<div class="dest-listing__controls">
 						<nav class="view-toggle" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
 							<span
@@ -130,66 +253,34 @@ const sortOptions: ReadonlyArray<{ readonly value: string; readonly label: strin
 								{t('accommodations.viewToggle.map', 'Mapa')}
 							</a>
 						</nav>
-
-						{/* SPEC-098 T-052c — Sort dropdown. Native <form> + <select>
-							with no JS so it works without hydrating an island.
-							The select submits the form on change via the inline
-							script below; the form itself just builds a GET URL
-							that reuses Astro's SSR pipeline. */}
-						<form
-							class="dest-sort"
-							method="get"
-							action={buildUrl({ locale, path: 'destinos' })}
-							data-sort-form
-						>
-							<label class="dest-sort__label" for="dest-sort-select">
-								{t('destinations.sort.label', 'Ordenar por')}
-							</label>
-							<div class="dest-sort__select-wrap">
-								<select
-									id="dest-sort-select"
-									class="dest-sort__select"
-									name="sort"
-									data-sort-select
-								>
-									{sortOptions.map((opt) => (
-										<option value={opt.value} selected={opt.value === sortValue}>
-											{opt.label}
-										</option>
-									))}
-								</select>
-								<ChevronDownIcon size={16} weight="bold" aria-hidden="true" class="dest-sort__chevron" />
-							</div>
-							{/* Hidden inputs decompose the canonical sort token
-								into the sortBy/sortOrder pair the API expects. */}
-							<input type="hidden" name="sortBy" data-sort-by />
-							<input type="hidden" name="sortOrder" data-sort-order />
-							<noscript>
-								<button class="dest-sort__submit" type="submit">
-									{t('destinations.sort.apply', 'Aplicar')}
-								</button>
-							</noscript>
-						</form>
 					</div>
 				)}
 
-				{!hasError && cards.length > 0 && (
+				{!hasError && filteredCards.length > 0 && (
 					<div class="dest-grid">
-						{cards.map((card, i) => (
-							<div data-reveal="up" style={`transition-delay: ${Math.min(i, 8) * 80}ms`}>
-								<DestinationCard
-									destination={card}
-									locale={locale}
-									variant="grid"
-									isAuthenticated={isAuthenticated}
-								/>
-							</div>
+						{filteredCards.map((card) => (
+							<DestinationCard
+								destination={card}
+								locale={locale}
+								variant="grid"
+								isAuthenticated={isAuthenticated}
+							/>
 						))}
 					</div>
 				)}
 
-				{totalPages > 1 && (
-					<Pagination currentPage={page} totalPages={totalPages} baseUrl={baseUrl.slice(0, -1)} locale={locale} />
+				{!hasError && sortedCards.length > 0 && filteredCards.length === 0 && (
+					<div class="dest-listing__empty-filter">
+						<p class="dest-listing__empty-filter-msg">
+							{t(
+								'destinations.filter.empty',
+								'No hay destinos que coincidan con los filtros seleccionados.'
+							)}
+						</p>
+						<a href={buildClearHref()} class="dest-listing__empty-filter-clear">
+							{t('destinations.filter.clear', 'Limpiar filtros')}
+						</a>
+					</div>
 				)}
 			</div>
 		</div>
@@ -223,7 +314,73 @@ const sortOptions: ReadonlyArray<{ readonly value: string; readonly label: strin
 	@media (max-width: 768px) { .dest-grid { grid-template-columns: repeat(2, 1fr); } }
 	@media (max-width: 480px) { .dest-grid { grid-template-columns: 1fr; } }
 
-	/* View toggle */
+	/* Attraction filter row.
+	 * Wrapping pill list. Each pill is a plain anchor — no JS — that flips the
+	 * id in the `?attractions=` query param. Active state uses brand-accent for
+	 * affordance; the rest uses surface-warm to stay calm against the grid. */
+	.dest-attractions-filter {
+		margin: 0 0 1.25rem;
+		/* Used as the anchor target after each badge click. Without scroll
+		 * margin the nav lands flush against the (potentially sticky) site
+		 * header. The value is intentionally a bit generous so the user can
+		 * see the filter row + the first row of cards in one viewport. */
+		scroll-margin-top: 6rem;
+	}
+
+	.dest-attractions-filter__list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.dest-attractions-filter__badge,
+	.dest-attractions-filter__clear {
+		display: inline-flex;
+		align-items: center;
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		padding: 0.5rem 0.875rem;
+		border-radius: var(--radius-pill);
+		text-decoration: none;
+		transition:
+			background-color var(--duration-normal) ease,
+			color var(--duration-normal) ease,
+			border-color var(--duration-normal) ease;
+	}
+
+	.dest-attractions-filter__badge {
+		background-color: var(--surface-warm);
+		color: var(--core-foreground);
+		border: 1px solid transparent;
+	}
+
+	.dest-attractions-filter__badge:hover {
+		background-color: oklch(from var(--brand-accent) l c h / 0.12);
+		color: var(--brand-accent);
+	}
+
+	.dest-attractions-filter__badge--active,
+	.dest-attractions-filter__badge--active:hover {
+		background-color: var(--brand-accent);
+		color: var(--accent-foreground);
+		font-weight: 500;
+	}
+
+	.dest-attractions-filter__clear {
+		background-color: transparent;
+		color: var(--core-muted-foreground);
+		border: 1px dashed var(--core-muted-foreground);
+	}
+
+	.dest-attractions-filter__clear:hover {
+		color: var(--core-foreground);
+		border-color: var(--core-foreground);
+	}
+
+	/* View toggle (Lista | Mapa) */
 	.view-toggle {
 		display: inline-flex;
 		gap: 0.5rem;
@@ -250,123 +407,51 @@ const sortOptions: ReadonlyArray<{ readonly value: string; readonly label: strin
 		cursor: default;
 	}
 
-	/* SPEC-098 T-052c — Sort dropdown row.
-	 * Lays the view-toggle and the sort form side-by-side, wrapping on
-	 * narrow viewports so the controls remain reachable. */
 	.dest-listing__controls {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		justify-content: space-between;
+		justify-content: flex-start;
 		gap: 0.75rem;
 		margin: 0 0 1rem;
 	}
 
-	.dest-sort {
+	/* Empty state shown when filters narrow the list to zero.
+	 * Distinct from EmptyState (which fires when the catalog itself is empty)
+	 * because we want to hint at the action: clear the filters. */
+	.dest-listing__empty-filter {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.875rem;
+		padding: var(--space-12) var(--space-6);
+		text-align: center;
+	}
+
+	.dest-listing__empty-filter-msg {
+		margin: 0;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-lg, 1rem);
+		color: var(--core-muted-foreground);
+		max-width: 40ch;
+		line-height: 1.6;
+	}
+
+	.dest-listing__empty-filter-clear {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.5rem;
 		font-family: var(--font-sans);
 		font-size: 0.875rem;
-		color: var(--core-muted-foreground);
-	}
-	.dest-sort__label { white-space: nowrap; }
-
-	.dest-sort__select-wrap {
-		position: relative;
-		display: inline-flex;
-		align-items: center;
-	}
-
-	.dest-sort__select {
-		font-family: var(--font-sans);
-		font-size: 0.875rem;
-		padding: 0.5rem 2.25rem 0.5rem 0.875rem;
+		padding: 0.625rem 1.25rem;
 		border-radius: var(--radius-button);
-		border: 1px solid var(--border);
-		background-color: var(--core-card);
-		color: var(--core-foreground);
-		appearance: none;
-		cursor: pointer;
-		transition: border-color var(--duration-normal) ease;
-	}
-	.dest-sort__select:hover,
-	.dest-sort__select:focus-visible { border-color: var(--brand-accent); outline: none; }
-
-	.dest-sort__chevron {
-		position: absolute;
-		right: 0.75rem;
-		top: 50%;
-		transform: translateY(-50%);
-		color: var(--core-muted-foreground);
-		pointer-events: none;
+		color: var(--brand-accent);
+		border: 1px solid var(--brand-accent);
+		text-decoration: none;
+		transition: background-color var(--duration-normal) ease, color var(--duration-normal) ease;
 	}
 
-	.dest-sort__submit {
-		font-family: var(--font-sans);
-		font-size: 0.875rem;
-		padding: 0.5rem 1rem;
-		border-radius: var(--radius-button);
-		border: 0;
+	.dest-listing__empty-filter-clear:hover {
 		background-color: var(--brand-accent);
 		color: var(--accent-foreground);
-		cursor: pointer;
 	}
 </style>
-
-<script>
-	/**
-	 * SPEC-098 T-052c — Sort dropdown wiring.
-	 *
-	 * Maps the canonical sort token from the dropdown into the
-	 * `sortBy`/`sortOrder` pair the public destination list endpoint expects,
-	 * preserves any other existing query params, drops `page` (so a re-sort
-	 * resets pagination), and submits the GET form.
-	 */
-	(() => {
-		const form = document.querySelector('[data-sort-form]') as HTMLFormElement | null;
-		if (!form) return;
-		const select = form.querySelector('[data-sort-select]') as HTMLSelectElement | null;
-		const sortByInput = form.querySelector('[data-sort-by]') as HTMLInputElement | null;
-		const sortOrderInput = form.querySelector('[data-sort-order]') as HTMLInputElement | null;
-		if (!select || !sortByInput || !sortOrderInput) return;
-
-		function tokenToPair(token: string): { sortBy: string; sortOrder: '' | 'asc' | 'desc' } {
-			switch (token) {
-				case 'name_asc':
-					return { sortBy: 'name', sortOrder: 'asc' };
-				case 'name_desc':
-					return { sortBy: 'name', sortOrder: 'desc' };
-				case 'createdAt_desc':
-					return { sortBy: 'createdAt', sortOrder: 'desc' };
-				case 'mostSaved':
-					return { sortBy: 'mostSaved', sortOrder: 'desc' };
-				default:
-					return { sortBy: '', sortOrder: '' };
-			}
-		}
-
-		select.addEventListener('change', () => {
-			const { sortBy, sortOrder } = tokenToPair(select.value);
-			sortByInput.value = sortBy;
-			sortOrderInput.value = sortOrder;
-
-			// Preserve other query params (e.g. future filters), drop `page` and
-			// the synthetic `sort` token that the form would otherwise submit.
-			const url = new URL(window.location.href);
-			url.searchParams.delete('page');
-			url.searchParams.delete('sort');
-			if (sortBy) {
-				url.searchParams.set('sortBy', sortBy);
-			} else {
-				url.searchParams.delete('sortBy');
-			}
-			if (sortOrder) {
-				url.searchParams.set('sortOrder', sortOrder);
-			} else {
-				url.searchParams.delete('sortOrder');
-			}
-			window.location.href = url.toString();
-		});
-	})();
-</script>
