@@ -5,7 +5,7 @@
  *   - Unit: N requests pass, (N+1)th returns 429 with Retry-After
  *   - Sliding window: requests expire after windowMs, new ones are accepted
  *   - Per-user isolation: user A hitting limit does not affect user B
- *   - Headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
+ *   - Headers: RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset
  *   - Guest/IP fallback when actor is unavailable
  */
 
@@ -35,10 +35,8 @@ vi.mock('../../src/utils/env', () => {
             windowMs: 60_000,
             maxRequests: 100,
             keyGenerator: 'ip',
-            skipSuccessfulRequests: false,
-            skipFailedRequests: false,
-            standardHeaders: true,
-            legacyHeaders: false,
+            skip: 'none' as const,
+            headers: 'standard' as const,
             message: 'Too many requests',
             trustProxy: true,
             authEnabled: true,
@@ -176,7 +174,7 @@ describe('createSlidingWindowPerUserRateLimit', () => {
     // ── 2. Informational headers on allowed requests ──────────────────────────
 
     describe('X-RateLimit-* headers on successful responses', () => {
-        it('should set X-RateLimit-Limit header', async () => {
+        it('should set RateLimit-Limit header', async () => {
             // Arrange
             const app = buildApp({ windowMs: 60_000, max: 10, actorId: 'user-eee' });
 
@@ -185,10 +183,10 @@ describe('createSlidingWindowPerUserRateLimit', () => {
 
             // Assert
             expect(res.status).toBe(200);
-            expect(res.headers.get('X-RateLimit-Limit')).toBe('10');
+            expect(res.headers.get('RateLimit-Limit')).toBe('10');
         });
 
-        it('should decrement X-RateLimit-Remaining with each request', async () => {
+        it('should decrement RateLimit-Remaining with each request', async () => {
             // Arrange
             const app = buildApp({ windowMs: 60_000, max: 5, actorId: 'user-fff' });
 
@@ -198,12 +196,12 @@ describe('createSlidingWindowPerUserRateLimit', () => {
             const res3 = await app.request('/upload', { method: 'POST' });
 
             // Assert (max=5, consumed 1/2/3 → remaining 4/3/2)
-            expect(res1.headers.get('X-RateLimit-Remaining')).toBe('4');
-            expect(res2.headers.get('X-RateLimit-Remaining')).toBe('3');
-            expect(res3.headers.get('X-RateLimit-Remaining')).toBe('2');
+            expect(res1.headers.get('RateLimit-Remaining')).toBe('4');
+            expect(res2.headers.get('RateLimit-Remaining')).toBe('3');
+            expect(res3.headers.get('RateLimit-Remaining')).toBe('2');
         });
 
-        it('should set X-RateLimit-Reset to a future epoch timestamp', async () => {
+        it('should set RateLimit-Reset to a future epoch timestamp', async () => {
             // Arrange
             const app = buildApp({ windowMs: 60_000, max: 10, actorId: 'user-ggg' });
 
@@ -212,18 +210,18 @@ describe('createSlidingWindowPerUserRateLimit', () => {
             const res = await app.request('/upload', { method: 'POST' });
             const afterMs = Date.now();
 
-            // The middleware sets X-RateLimit-Reset = ceil((now + windowMs) / 1000).
+            // The middleware sets RateLimit-Reset = ceil((now + windowMs) / 1000).
             // Allow a 2-second margin to account for ceil rounding and test jitter.
             const minReset = Math.floor((beforeMs + 60_000) / 1000);
             const maxReset = Math.ceil((afterMs + 60_000) / 1000) + 2;
 
             // Assert
-            const reset = Number(res.headers.get('X-RateLimit-Reset'));
+            const reset = Number(res.headers.get('RateLimit-Reset'));
             expect(reset).toBeGreaterThanOrEqual(minReset);
             expect(reset).toBeLessThanOrEqual(maxReset);
         });
 
-        it('should set X-RateLimit-Remaining to 0 on the last allowed request', async () => {
+        it('should set RateLimit-Remaining to 0 on the last allowed request', async () => {
             // Arrange
             const app = buildApp({ windowMs: 60_000, max: 2, actorId: 'user-hhh' });
 
@@ -231,10 +229,10 @@ describe('createSlidingWindowPerUserRateLimit', () => {
             const res = await app.request('/upload', { method: 'POST' });
 
             // Assert: last allowed request — remaining = 0
-            expect(res.headers.get('X-RateLimit-Remaining')).toBe('0');
+            expect(res.headers.get('RateLimit-Remaining')).toBe('0');
         });
 
-        it('should set X-RateLimit-Remaining = 0 and include Retry-After on 429', async () => {
+        it('should set RateLimit-Remaining = 0 and include Retry-After on 429', async () => {
             // Arrange
             const app = buildApp({ windowMs: 60_000, max: 1, actorId: 'user-iii' });
             await app.request('/upload', { method: 'POST' });
@@ -244,7 +242,7 @@ describe('createSlidingWindowPerUserRateLimit', () => {
 
             // Assert
             expect(res.status).toBe(429);
-            expect(res.headers.get('X-RateLimit-Remaining')).toBe('0');
+            expect(res.headers.get('RateLimit-Remaining')).toBe('0');
             expect(res.headers.get('Retry-After')).toBeDefined();
         });
     });

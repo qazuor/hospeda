@@ -47,10 +47,8 @@ vi.mock('../../../src/utils/env', () => {
         windowMs: 60_000,
         maxRequests: 100,
         keyGenerator: 'ip',
-        skipSuccessfulRequests: false,
-        skipFailedRequests: false,
-        standardHeaders: true,
-        legacyHeaders: false,
+        skip: 'none' as const,
+        headers: 'standard' as const,
         message: 'Too many requests, please try again later.',
         trustProxy: true,
         authEnabled: true,
@@ -229,14 +227,14 @@ describe('adminBillingRoutes — router-level rate limit (SPEC-064 T-050)', () =
         expect(resB.status).toBe(200);
     });
 
-    it('should include X-RateLimit-Limit=50 header on allowed requests', async () => {
+    it('should include RateLimit-Limit=50 header on allowed requests', async () => {
         const res = await app.request('/api/v1/admin/billing/usage', {
             headers: { 'X-Forwarded-For': CLIENT_IP }
         });
 
         expect(res.status).toBe(200);
-        expect(res.headers.get('X-RateLimit-Limit')).toBe(ADMIN_BILLING_LIMIT.toString());
-        expect(res.headers.get('X-RateLimit-Remaining')).toBe((ADMIN_BILLING_LIMIT - 1).toString());
+        expect(res.headers.get('RateLimit-Limit')).toBe(ADMIN_BILLING_LIMIT.toString());
+        expect(res.headers.get('RateLimit-Remaining')).toBe((ADMIN_BILLING_LIMIT - 1).toString());
     });
 
     it('should include Retry-After and X-RateLimit-* headers on 429 response', async () => {
@@ -252,7 +250,7 @@ describe('adminBillingRoutes — router-level rate limit (SPEC-064 T-050)', () =
 
         expect(res.status).toBe(429);
         expect(res.headers.get('Retry-After')).toBeDefined();
-        expect(res.headers.get('X-RateLimit-Limit')).toBe(ADMIN_BILLING_LIMIT.toString());
-        expect(res.headers.get('X-RateLimit-Remaining')).toBe('0');
+        expect(res.headers.get('RateLimit-Limit')).toBe(ADMIN_BILLING_LIMIT.toString());
+        expect(res.headers.get('RateLimit-Remaining')).toBe('0');
     });
 });

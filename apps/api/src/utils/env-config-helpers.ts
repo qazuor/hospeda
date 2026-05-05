@@ -119,7 +119,7 @@ export const getRateLimitConfig = () => ({
         | 'both'
         | 'none',
     message: _safe.get('API_RATE_LIMIT_MESSAGE', 'Too many requests, please try again later.'),
-    trustProxy: _safe.getBoolean('API_RATE_LIMIT_TRUST_PROXY', false),
+    trustProxy: _safe.getBoolean('API_RATE_LIMIT_TRUST_PROXY', true),
     trustedProxies: parseCommaSeparated(_safe.get('API_RATE_LIMIT_TRUSTED_PROXIES', '')),
     authEnabled: _safe.getBoolean('API_RATE_LIMIT_AUTH_ENABLED', true),
     authWindowMs: _safe.getNumber('API_RATE_LIMIT_AUTH_WINDOW_MS', 300000),

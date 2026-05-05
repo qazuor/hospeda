@@ -13,6 +13,63 @@ interface RateLimitEntry {
     readonly windowStart: number;
 }
 
+/**
+ * Header style for rate-limit response headers.
+ * - 'standard' emits IETF `RateLimit-*` headers
+ * - 'legacy' emits `X-RateLimit-*` headers
+ * - 'both' emits both families
+ * - 'none' emits no rate-limit headers
+ */
+type RateLimitHeaderStyle = 'standard' | 'legacy' | 'both' | 'none';
+
+/**
+ * Sets rate-limit response headers on the given target according to the
+ * configured header style. The target may be a `Headers` instance (for direct
+ * Response building) or a Hono `Context` (for middleware-style header setting).
+ *
+ * @param params - Target, header style, limit/remaining/reset values, and an
+ *   optional debug type tag.
+ */
+const setRateLimitHeaders = ({
+    target,
+    style,
+    limit,
+    remaining,
+    reset,
+    typeTag
+}: {
+    readonly target: Headers | Context;
+    readonly style: RateLimitHeaderStyle;
+    readonly limit: string;
+    readonly remaining: string;
+    readonly reset: string;
+    readonly typeTag?: string;
+}): void => {
+    if (style === 'none') return;
+    const setHeader = (name: string, value: string): void => {
+        if (target instanceof Headers) {
+            target.set(name, value);
+        } else {
+            target.header(name, value);
+        }
+    };
+    const emitStandard = style === 'standard' || style === 'both';
+    const emitLegacy = style === 'legacy' || style === 'both';
+    if (emitStandard) {
+        setHeader('RateLimit-Limit', limit);
+        setHeader('RateLimit-Remaining', remaining);
+        setHeader('RateLimit-Reset', reset);
+    }
+    if (emitLegacy) {
+        setHeader('X-RateLimit-Limit', limit);
+        setHeader('X-RateLimit-Remaining', remaining);
+        setHeader('X-RateLimit-Reset', reset);
+    }
+    if (typeTag) {
+        setHeader('X-RateLimit-Type', typeTag);
+    }
+};
+
 /** Abstract rate limit store interface */
 interface RateLimitStore {
     get(key: string): Promise<RateLimitEntry | undefined>;
@@ -299,6 +356,7 @@ export const createPerRouteRateLimitMiddleware = ({
             return;
         }
 
+        const baseRateLimitConfig = getBaseRateLimitConfig();
         const clientIp = getClientIp({ c });
         const path = c.req.path;
         const store = getStore();
@@ -328,11 +386,15 @@ export const createPerRouteRateLimitMiddleware = ({
 
             const responseHeaders = new Headers();
             responseHeaders.set('Content-Type', 'application/json');
-            responseHeaders.set('X-RateLimit-Limit', requests.toString());
-            responseHeaders.set('X-RateLimit-Remaining', '0');
-            responseHeaders.set('X-RateLimit-Reset', Math.floor(resetTime / 1000).toString());
-            responseHeaders.set('X-RateLimit-Type', 'per-route');
             responseHeaders.set('Retry-After', Math.ceil((resetTime - now) / 1000).toString());
+            setRateLimitHeaders({
+                target: responseHeaders,
+                style: baseRateLimitConfig.headers,
+                limit: requests.toString(),
+                remaining: '0',
+                reset: Math.floor(resetTime / 1000).toString(),
+                typeTag: 'per-route'
+            });
 
             return new Response(JSON.stringify(responseBody), {
                 status: 429,
@@ -342,10 +404,14 @@ export const createPerRouteRateLimitMiddleware = ({
 
         await store.set(storeKey, { count: count + 1, windowStart }, windowMs);
 
-        c.header('X-RateLimit-Limit', requests.toString());
-        c.header('X-RateLimit-Remaining', (requests - count - 1).toString());
-        c.header('X-RateLimit-Reset', Math.floor(resetTime / 1000).toString());
-        c.header('X-RateLimit-Type', 'per-route');
+        setRateLimitHeaders({
+            target: c,
+            style: baseRateLimitConfig.headers,
+            limit: requests.toString(),
+            remaining: (requests - count - 1).toString(),
+            reset: Math.floor(resetTime / 1000).toString(),
+            typeTag: 'per-route'
+        });
 
         await next();
     };
@@ -545,28 +611,14 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
         const responseHeaders = new Headers();
         responseHeaders.set('Content-Type', 'application/json');
 
-        // Add rate limit headers based on configured header style.
-        // - 'standard' emits IETF RateLimit-* headers
-        // - 'legacy' emits X-RateLimit-* headers
-        // - 'both' emits both families
-        // - 'none' emits no rate-limit headers
-        const emitStandard = config.headers === 'standard' || config.headers === 'both';
-        const emitLegacy = config.headers === 'legacy' || config.headers === 'both';
-        const limit = config.maxRequests.toString();
-        const reset = Math.floor(resetTime / 1000).toString();
-        if (emitStandard) {
-            responseHeaders.set('RateLimit-Limit', limit);
-            responseHeaders.set('RateLimit-Remaining', '0');
-            responseHeaders.set('RateLimit-Reset', reset);
-        }
-        if (emitLegacy) {
-            responseHeaders.set('X-RateLimit-Limit', limit);
-            responseHeaders.set('X-RateLimit-Remaining', '0');
-            responseHeaders.set('X-RateLimit-Reset', reset);
-        }
-        if (emitStandard || emitLegacy) {
-            responseHeaders.set('X-RateLimit-Type', endpointType); // Add endpoint type for debugging
-        }
+        setRateLimitHeaders({
+            target: responseHeaders,
+            style: config.headers,
+            limit: config.maxRequests.toString(),
+            remaining: '0',
+            reset: Math.floor(resetTime / 1000).toString(),
+            typeTag: endpointType
+        });
 
         // Add preserved CORS headers
         for (const [header, value] of Object.entries(corsHeaders)) {
@@ -582,26 +634,14 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
     await store.set(storeKey, { count: count + 1, windowStart }, config.windowMs);
 
     // Set rate limit headers for successful requests based on configured header style.
-    {
-        const emitStandard = config.headers === 'standard' || config.headers === 'both';
-        const emitLegacy = config.headers === 'legacy' || config.headers === 'both';
-        const limit = config.maxRequests.toString();
-        const remaining = (config.maxRequests - count - 1).toString();
-        const reset = Math.floor(resetTime / 1000).toString();
-        if (emitStandard) {
-            c.header('RateLimit-Limit', limit);
-            c.header('RateLimit-Remaining', remaining);
-            c.header('RateLimit-Reset', reset);
-        }
-        if (emitLegacy) {
-            c.header('X-RateLimit-Limit', limit);
-            c.header('X-RateLimit-Remaining', remaining);
-            c.header('X-RateLimit-Reset', reset);
-        }
-        if (emitStandard || emitLegacy) {
-            c.header('X-RateLimit-Type', endpointType); // Add endpoint type for debugging
-        }
-    }
+    setRateLimitHeaders({
+        target: c,
+        style: config.headers,
+        limit: config.maxRequests.toString(),
+        remaining: (config.maxRequests - count - 1).toString(),
+        reset: Math.floor(resetTime / 1000).toString(),
+        typeTag: endpointType
+    });
 
     // Log rate limit activity for monitoring
     if (count > config.maxRequests * 0.8) {
@@ -690,6 +730,7 @@ export const createKeyedRateLimitMiddleware = (
         const keyHash = createHash('sha256').update(rawKey).digest('hex');
         const storeKey = `ratelimit:${keyPrefix}:${keyHash}`;
 
+        const baseRateLimitConfig = getBaseRateLimitConfig();
         const store = getStore();
         const now = Date.now();
         const windowStart = Math.floor(now / windowMs) * windowMs;
@@ -716,10 +757,14 @@ export const createKeyedRateLimitMiddleware = (
             const headers = new Headers();
             headers.set('Content-Type', 'application/json');
             headers.set('Retry-After', retryAfterSec.toString());
-            headers.set('X-RateLimit-Limit', requests.toString());
-            headers.set('X-RateLimit-Remaining', '0');
-            headers.set('X-RateLimit-Reset', Math.floor(resetTime / 1000).toString());
-            headers.set('X-RateLimit-Type', 'keyed');
+            setRateLimitHeaders({
+                target: headers,
+                style: baseRateLimitConfig.headers,
+                limit: requests.toString(),
+                remaining: '0',
+                reset: Math.floor(resetTime / 1000).toString(),
+                typeTag: 'keyed'
+            });
 
             return new Response(JSON.stringify(responseBody), {
                 status: 429,
@@ -729,10 +774,14 @@ export const createKeyedRateLimitMiddleware = (
 
         await store.set(storeKey, { count: count + 1, windowStart }, windowMs);
 
-        c.header('X-RateLimit-Limit', requests.toString());
-        c.header('X-RateLimit-Remaining', (requests - count - 1).toString());
-        c.header('X-RateLimit-Reset', Math.floor(resetTime / 1000).toString());
-        c.header('X-RateLimit-Type', 'keyed');
+        setRateLimitHeaders({
+            target: c,
+            style: baseRateLimitConfig.headers,
+            limit: requests.toString(),
+            remaining: (requests - count - 1).toString(),
+            reset: Math.floor(resetTime / 1000).toString(),
+            typeTag: 'keyed'
+        });
 
         await next();
         return undefined;
@@ -1164,9 +1213,13 @@ export function createSlidingWindowPerUserRateLimit(
             const headers = new Headers();
             headers.set('Content-Type', 'application/json');
             headers.set('Retry-After', retryAfterSec.toString());
-            headers.set('X-RateLimit-Limit', max.toString());
-            headers.set('X-RateLimit-Remaining', '0');
-            headers.set('X-RateLimit-Reset', resetEpochSec.toString());
+            setRateLimitHeaders({
+                target: headers,
+                style: getBaseRateLimitConfig().headers,
+                limit: max.toString(),
+                remaining: '0',
+                reset: resetEpochSec.toString()
+            });
 
             return new Response(JSON.stringify(responseBody), {
                 status: 429,
@@ -1179,9 +1232,13 @@ export function createSlidingWindowPerUserRateLimit(
         const remaining = Math.max(0, max - newCount);
         const resetEpochSec = Math.ceil((Date.now() + windowMs) / 1000);
 
-        c.header('X-RateLimit-Limit', max.toString());
-        c.header('X-RateLimit-Remaining', remaining.toString());
-        c.header('X-RateLimit-Reset', resetEpochSec.toString());
+        setRateLimitHeaders({
+            target: c,
+            style: getBaseRateLimitConfig().headers,
+            limit: max.toString(),
+            remaining: remaining.toString(),
+            reset: resetEpochSec.toString()
+        });
 
         await next();
         return undefined;

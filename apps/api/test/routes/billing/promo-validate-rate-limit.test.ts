@@ -42,10 +42,8 @@ vi.mock('../../../src/utils/env', () => {
         windowMs: 60_000,
         maxRequests: 100,
         keyGenerator: 'ip',
-        skipSuccessfulRequests: false,
-        skipFailedRequests: false,
-        standardHeaders: true,
-        legacyHeaders: false,
+        skip: 'none' as const,
+        headers: 'standard' as const,
         message: 'Too many requests, please try again later.',
         trustProxy: true,
         authEnabled: true,
@@ -224,8 +222,8 @@ describe('validatePromoCodeRoute — per-route rate limit (SPEC-064 T-049)', () 
         });
 
         expect(res.status).toBe(200);
-        expect(res.headers.get('X-RateLimit-Limit')).toBe(PROMO_VALIDATE_LIMIT.toString());
-        expect(res.headers.get('X-RateLimit-Remaining')).toBeDefined();
+        expect(res.headers.get('RateLimit-Limit')).toBe(PROMO_VALIDATE_LIMIT.toString());
+        expect(res.headers.get('RateLimit-Remaining')).toBeDefined();
     });
 
     it('should include Retry-After header on 429 response', async () => {

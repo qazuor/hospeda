@@ -28,10 +28,8 @@ vi.mock('../../src/utils/env', () => {
         windowMs: 60_000,
         maxRequests: 200,
         keyGenerator: 'ip',
-        skipSuccessfulRequests: false,
-        skipFailedRequests: false,
-        standardHeaders: true,
-        legacyHeaders: false,
+        skip: 'none' as const,
+        headers: 'standard' as const,
         message: 'Too many requests.',
         trustProxy: true,
 
@@ -211,8 +209,8 @@ describe('MercadoPago webhook per-route rate limit (SPEC-064 T-049/T-050)', () =
 
         // Assert headers are present on the 429 response
         expect(res.status).toBe(429);
-        expect(res.headers.get('X-RateLimit-Limit')).toBe('1');
-        expect(res.headers.get('X-RateLimit-Remaining')).toBe('0');
+        expect(res.headers.get('RateLimit-Limit')).toBe('1');
+        expect(res.headers.get('RateLimit-Remaining')).toBe('0');
         expect(res.headers.get('Retry-After')).toBeTruthy();
     });
 });
