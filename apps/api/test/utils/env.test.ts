@@ -112,10 +112,8 @@ describe('Environment Configuration', () => {
             expect(envModule.env.API_RATE_LIMIT_WINDOW_MS).toBe(900000);
             expect(envModule.env.API_RATE_LIMIT_MAX_REQUESTS).toBe(100);
             expect(envModule.env.API_RATE_LIMIT_KEY_GENERATOR).toBe('user');
-            expect(envModule.env.API_RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS).toBe(false);
-            expect(envModule.env.API_RATE_LIMIT_SKIP_FAILED_REQUESTS).toBe(false);
-            expect(envModule.env.API_RATE_LIMIT_STANDARD_HEADERS).toBe(true);
-            expect(envModule.env.API_RATE_LIMIT_LEGACY_HEADERS).toBe(false);
+            expect(envModule.env.API_RATE_LIMIT_SKIP).toBe('none');
+            expect(envModule.env.API_RATE_LIMIT_HEADERS).toBe('standard');
             expect(envModule.env.API_RATE_LIMIT_MESSAGE).toBe(
                 'Too many requests, please try again later.'
             );
@@ -142,7 +140,6 @@ describe('Environment Configuration', () => {
             // Response Formatting Configuration
             expect(envModule.env.API_RESPONSE_FORMAT_ENABLED).toBe(true);
             expect(envModule.env.API_RESPONSE_INCLUDE_TIMESTAMP).toBe(true);
-            expect(envModule.env.API_RESPONSE_INCLUDE_VERSION).toBe(true);
             expect(envModule.env.API_RESPONSE_API_VERSION).toBe('1.0.0');
             expect(envModule.env.API_RESPONSE_INCLUDE_REQUEST_ID).toBe(true);
             expect(envModule.env.API_RESPONSE_INCLUDE_METADATA).toBe(true);
@@ -179,8 +176,7 @@ describe('Environment Configuration', () => {
                     extra: {
                         HOSPEDA_CRON_SECRET: 'production-cron-secret-value-min-32ch',
                         HOSPEDA_REDIS_URL: 'redis://localhost:6379',
-                        API_CORS_ORIGINS: 'https://hospeda.com.ar',
-                        API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar'
+                        API_CORS_ORIGINS: 'https://hospeda.com.ar'
                     }
                 },
                 { envValue: 'test', extra: {} }
@@ -264,7 +260,7 @@ describe('Environment Configuration', () => {
             process.env = createValidTestEnv({
                 API_LOG_SAVE: 'true',
                 API_CACHE_ENABLED: 'true',
-                API_RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS: 'true'
+                API_RATE_LIMIT_ENABLED: 'true'
             });
 
             const envModule = await import('../../src/utils/env');
@@ -272,7 +268,7 @@ describe('Environment Configuration', () => {
 
             expect(envModule.env.API_LOG_SAVE).toBe(true);
             expect(envModule.env.API_CACHE_ENABLED).toBe(true);
-            expect(envModule.env.API_RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS).toBe(true);
+            expect(envModule.env.API_RATE_LIMIT_ENABLED).toBe(true);
         });
     });
 
@@ -591,13 +587,14 @@ describe('Environment Configuration', () => {
             );
         });
 
-        it('should accept custom CSRF origins', async () => {
+        it('should derive CSRF origins from CORS origins', async () => {
             process.env = createValidTestEnv({
-                API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar'
+                API_CORS_ORIGINS: 'https://hospeda.com.ar'
             });
             const envModule = await import('../../src/utils/env');
             envModule.validateApiEnv();
-            expect(envModule.env.API_SECURITY_CSRF_ORIGINS).toBe('https://hospeda.com.ar');
+            const { getSecurityConfig } = await import('../../src/utils/env-config-helpers');
+            expect(getSecurityConfig().csrfOrigins).toEqual(['https://hospeda.com.ar']);
         });
     });
 
@@ -764,94 +761,50 @@ describe('Environment Configuration', () => {
         });
     });
 
-    describe('Production CSRF Localhost Rejection', () => {
-        it('should reject localhost in API_SECURITY_CSRF_ORIGINS in production', async () => {
-            // Arrange
-            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
-                throw new Error('Process exit');
-            });
-
-            process.env = createValidTestEnv({
-                NODE_ENV: 'production',
-                HOSPEDA_CRON_SECRET: 'production-cron-secret-value-min-32ch',
-                HOSPEDA_REDIS_URL: 'redis://prod:6379',
-                API_CORS_ORIGINS: 'https://hospeda.com.ar',
-                API_SECURITY_CSRF_ORIGINS: 'http://localhost:3000'
-            });
-
-            // Act
-            const { validateApiEnv } = await import('../../src/utils/env');
-
-            // Assert
-            expect(() => validateApiEnv()).toThrow('Process exit');
-            expect(exitSpy).toHaveBeenCalledWith(1);
-
-            consoleSpy.mockRestore();
-            exitSpy.mockRestore();
-        });
-
-        it('should reject 127.0.0.1 in API_SECURITY_CSRF_ORIGINS in production', async () => {
-            // Arrange
-            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
-                throw new Error('Process exit');
-            });
-
-            process.env = createValidTestEnv({
-                NODE_ENV: 'production',
-                HOSPEDA_CRON_SECRET: 'production-cron-secret-value-min-32ch',
-                HOSPEDA_REDIS_URL: 'redis://prod:6379',
-                API_CORS_ORIGINS: 'https://hospeda.com.ar',
-                API_SECURITY_CSRF_ORIGINS: 'http://127.0.0.1:3000'
-            });
-
-            // Act
-            const { validateApiEnv } = await import('../../src/utils/env');
-
-            // Assert
-            expect(() => validateApiEnv()).toThrow('Process exit');
-            expect(exitSpy).toHaveBeenCalledWith(1);
-
-            consoleSpy.mockRestore();
-            exitSpy.mockRestore();
-        });
-
-        it('should accept valid CSRF origins in production', async () => {
-            // Arrange
-            process.env = createValidTestEnv({
-                NODE_ENV: 'production',
-                HOSPEDA_CRON_SECRET: 'production-cron-secret-value-min-32ch',
-                HOSPEDA_REDIS_URL: 'redis://prod:6379',
-                API_CORS_ORIGINS: 'https://hospeda.com.ar',
-                API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar,https://admin.hospeda.com.ar'
-            });
-
-            // Act
-            const envModule = await import('../../src/utils/env');
-            envModule.validateApiEnv();
-
-            // Assert
-            expect(envModule.env.API_SECURITY_CSRF_ORIGINS).toBe(
-                'https://hospeda.com.ar,https://admin.hospeda.com.ar'
-            );
-        });
-
-        it('should allow localhost CSRF origins in non-production environments', async () => {
+    describe('CSRF origins derive from CORS origins', () => {
+        it('should derive CSRF origins from API_CORS_ORIGINS via getSecurityConfig', async () => {
             // Arrange
             process.env = createValidTestEnv({
                 NODE_ENV: 'development',
-                API_SECURITY_CSRF_ORIGINS: 'http://localhost:3000,http://localhost:5173'
+                API_CORS_ORIGINS: 'http://localhost:3000,http://localhost:5173'
             });
 
             // Act
             const envModule = await import('../../src/utils/env');
             envModule.validateApiEnv();
+            const { getSecurityConfig } = await import('../../src/utils/env-config-helpers');
+            const security = getSecurityConfig();
 
             // Assert
-            expect(envModule.env.API_SECURITY_CSRF_ORIGINS).toBe(
-                'http://localhost:3000,http://localhost:5173'
-            );
+            expect(security.csrfOrigins).toEqual([
+                'http://localhost:3000',
+                'http://localhost:5173'
+            ]);
+        });
+
+        it('should reject localhost in API_CORS_ORIGINS in production (covers CSRF too)', async () => {
+            // Arrange
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+                throw new Error('Process exit');
+            });
+
+            process.env = createValidTestEnv({
+                NODE_ENV: 'production',
+                HOSPEDA_CRON_SECRET: 'production-cron-secret-value-min-32ch',
+                HOSPEDA_REDIS_URL: 'redis://prod:6379',
+                API_CORS_ORIGINS: 'http://localhost:3000'
+            });
+
+            // Act
+            const { validateApiEnv } = await import('../../src/utils/env');
+
+            // Assert
+            expect(() => validateApiEnv()).toThrow('Process exit');
+            expect(exitSpy).toHaveBeenCalledWith(1);
+
+            consoleSpy.mockRestore();
+            exitSpy.mockRestore();
         });
     });
 

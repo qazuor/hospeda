@@ -122,10 +122,12 @@ export const getRateLimitConfig = () => ({
     windowMs: _safe.getNumber('API_RATE_LIMIT_WINDOW_MS', 900000),
     maxRequests: _safe.getNumber('API_RATE_LIMIT_MAX_REQUESTS', 100),
     keyGenerator: _safe.get('API_RATE_LIMIT_KEY_GENERATOR', 'ip'),
-    skipSuccessfulRequests: _safe.getBoolean('API_RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS', false),
-    skipFailedRequests: _safe.getBoolean('API_RATE_LIMIT_SKIP_FAILED_REQUESTS', false),
-    standardHeaders: _safe.getBoolean('API_RATE_LIMIT_STANDARD_HEADERS', true),
-    legacyHeaders: _safe.getBoolean('API_RATE_LIMIT_LEGACY_HEADERS', false),
+    skip: _safe.get('API_RATE_LIMIT_SKIP', 'none') as 'none' | 'successful' | 'failed',
+    headers: _safe.get('API_RATE_LIMIT_HEADERS', 'standard') as
+        | 'standard'
+        | 'legacy'
+        | 'both'
+        | 'none',
     message: _safe.get('API_RATE_LIMIT_MESSAGE', 'Too many requests, please try again later.'),
     trustProxy: _safe.getBoolean('API_RATE_LIMIT_TRUST_PROXY', false),
     trustedProxies: parseCommaSeparated(_safe.get('API_RATE_LIMIT_TRUSTED_PROXIES', '')),
@@ -172,10 +174,11 @@ export const getRateLimitConfig = () => ({
 export const getSecurityConfig = () => ({
     enabled: _safe.getBoolean('API_SECURITY_ENABLED', true),
     csrfEnabled: _safe.getBoolean('API_SECURITY_CSRF_ENABLED', true),
-    csrfOrigin: _safe.get('API_SECURITY_CSRF_ORIGIN'),
-    csrfOrigins: parseCommaSeparated(
-        _safe.get('API_SECURITY_CSRF_ORIGINS', 'http://localhost:3000,http://localhost:5173')
-    ),
+    /**
+     * CSRF trusted origins are derived from API_CORS_ORIGINS (single source of truth).
+     * Both serve the same allowlist purpose for cross-origin requests.
+     */
+    csrfOrigins: parseCorsOrigins(_safe.get('API_CORS_ORIGINS', '')),
     headersEnabled: _safe.getBoolean('API_SECURITY_HEADERS_ENABLED', true),
     // Default CSP for API responses. Note: security.ts middleware hardcodes its own CSP policy.
     contentSecurityPolicy: _safe.get(
@@ -225,8 +228,11 @@ export const getValidationConfig = () => ({
 export const getResponseConfig = () => ({
     formatEnabled: _safe.getBoolean('API_RESPONSE_FORMAT_ENABLED', true),
     includeTimestamp: _safe.getBoolean('API_RESPONSE_INCLUDE_TIMESTAMP', true),
-    includeVersion: _safe.getBoolean('API_RESPONSE_INCLUDE_VERSION', true),
+    /**
+     * `apiVersion` is included when non-empty. Empty string disables version inclusion.
+     */
     apiVersion: _safe.get('API_RESPONSE_API_VERSION', '1.0.0'),
+    includeVersion: _safe.get('API_RESPONSE_API_VERSION', '1.0.0').length > 0,
     includeRequestId: _safe.getBoolean('API_RESPONSE_INCLUDE_REQUEST_ID', true),
     includeMetadata: _safe.getBoolean('API_RESPONSE_INCLUDE_METADATA', true),
     successMessage: _safe.get('API_RESPONSE_SUCCESS_MESSAGE', 'Success'),

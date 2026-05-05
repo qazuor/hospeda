@@ -659,68 +659,42 @@ export const API_CONFIG_ENV_VARS = [
             'Cómo se agrupan los requests: "ip" (por IP de origen) o "user" (por usuario autenticado). Por defecto "ip".'
     },
     {
-        name: 'API_RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS',
-        description: 'Do not count 2xx responses toward the rate limit',
-        descriptionEs: 'No contar respuestas 2xx para el rate limit',
-        type: 'boolean',
+        name: 'API_RATE_LIMIT_SKIP',
+        description:
+            'Which response classes to exclude from rate-limit counting (none, successful, failed)',
+        descriptionEs:
+            'Qué clases de respuesta excluir del conteo del rate-limit (none, successful, failed)',
+        type: 'enum',
         required: false,
         secret: false,
-        defaultValue: 'false',
-        exampleValue: 'false',
+        defaultValue: 'none',
+        exampleValue: 'none',
+        enumValues: ['none', 'successful', 'failed'] as const,
         apps: ['api'],
         category: 'api-config',
         howToObtain:
-            'Default false (everything counts). Set true to only throttle on errors — useful when you want to limit retries but allow normal traffic.',
+            'Default "none" (everything counts). Use "successful" to skip 2xx responses (throttle only on errors), or "failed" to skip 4xx/5xx (lenient with buggy clients; rarely a good idea).',
         howToObtainEs:
-            'Por defecto false (todo cuenta). Poné true para throttlear solo sobre errores; útil cuando querés limitar reintentos pero dejar pasar tráfico normal.'
+            'Por defecto "none" (todo cuenta). Usá "successful" para no contar respuestas 2xx (throttle sólo sobre errores), o "failed" para no contar 4xx/5xx (benévolo con clientes buggy; rara vez es buena idea).'
     },
     {
-        name: 'API_RATE_LIMIT_SKIP_FAILED_REQUESTS',
-        description: 'Do not count 4xx/5xx responses toward the rate limit',
-        descriptionEs: 'No contar respuestas 4xx/5xx para el rate limit',
-        type: 'boolean',
+        name: 'API_RATE_LIMIT_HEADERS',
+        description:
+            'Rate-limit response header style: standard (IETF), legacy (X-*), both, or none',
+        descriptionEs:
+            'Estilo de headers de rate-limit: standard (IETF), legacy (X-*), both o none',
+        type: 'enum',
         required: false,
         secret: false,
-        defaultValue: 'false',
-        exampleValue: 'false',
+        defaultValue: 'standard',
+        exampleValue: 'standard',
+        enumValues: ['standard', 'legacy', 'both', 'none'] as const,
         apps: ['api'],
         category: 'api-config',
         howToObtain:
-            'Default false (everything counts). Set true to be lenient with bots/buggy clients hitting errors. Almost never set true (defeats the point).',
+            'Default "standard" (IETF RateLimit-Limit/Remaining/Reset). Use "legacy" for X-RateLimit-* (pre-IETF), "both" if a mixed client base needs them, or "none" to suppress rate-limit headers entirely.',
         howToObtainEs:
-            'Por defecto false (todo cuenta). Poné true para ser benévolo con bots/clientes buggy que pegan errores. Casi nunca lo pongas en true (anula el propósito).'
-    },
-    {
-        name: 'API_RATE_LIMIT_STANDARD_HEADERS',
-        description: 'Return RateLimit-* standard response headers',
-        descriptionEs: 'Devuelve headers de respuesta estándar RateLimit-*',
-        type: 'boolean',
-        required: false,
-        secret: false,
-        defaultValue: 'true',
-        exampleValue: 'true',
-        apps: ['api'],
-        category: 'api-config',
-        howToObtain:
-            'Default true. Returns IETF-standard RateLimit-Limit/Remaining/Reset headers. Helps clients self-throttle.',
-        howToObtainEs:
-            'Por defecto true. Devuelve los headers estándar IETF RateLimit-Limit/Remaining/Reset. Ayuda a que los clientes se auto-throttleen.'
-    },
-    {
-        name: 'API_RATE_LIMIT_LEGACY_HEADERS',
-        description: 'Return X-RateLimit-* legacy response headers',
-        descriptionEs: 'Devuelve los headers legacy X-RateLimit-*',
-        type: 'boolean',
-        required: false,
-        secret: false,
-        defaultValue: 'false',
-        exampleValue: 'false',
-        apps: ['api'],
-        category: 'api-config',
-        howToObtain:
-            'Default false. Legacy X-RateLimit-* headers (pre-IETF). Enable only if a client library requires them.',
-        howToObtainEs:
-            'Por defecto false. Headers legacy X-RateLimit-* (pre-IETF). Activalo solo si una librería cliente los necesita.'
+            'Por defecto "standard" (IETF RateLimit-Limit/Remaining/Reset). Usá "legacy" para X-RateLimit-* (pre-IETF), "both" si tenés clientes mezclados, o "none" para suprimir los headers de rate-limit.'
     },
     {
         name: 'API_RATE_LIMIT_MESSAGE',
@@ -989,37 +963,6 @@ export const API_CONFIG_ENV_VARS = [
             'Por defecto true. Rechaza requests POST/PUT/DELETE cuyo header Origin no esté en la allowlist. Crítico para auth basada en cookies.'
     },
     {
-        name: 'API_SECURITY_CSRF_ORIGIN',
-        description: 'Single trusted origin for CSRF checks (overrides list)',
-        descriptionEs: 'Origin único confiable para checks de CSRF (override de la lista)',
-        type: 'string',
-        required: false,
-        secret: false,
-        exampleValue: 'http://localhost:4321',
-        apps: ['api'],
-        category: 'api-config',
-        howToObtain:
-            'Single origin override. Leave blank to use API_SECURITY_CSRF_ORIGINS (the comma-separated list). Useful for one-off scripted environments.',
-        howToObtainEs:
-            'Override de un único origin. Dejalo vacío para usar API_SECURITY_CSRF_ORIGINS (la lista separada por comas). Útil para entornos scriptados puntuales.'
-    },
-    {
-        name: 'API_SECURITY_CSRF_ORIGINS',
-        description: 'Comma-separated list of trusted origins for CSRF verification',
-        descriptionEs: 'Lista de orígenes confiables para verificación CSRF, separados por comas',
-        type: 'string',
-        required: false,
-        secret: false,
-        defaultValue: 'http://localhost:3000,http://localhost:5173',
-        exampleValue: 'http://localhost:3000,http://localhost:5173',
-        apps: ['api'],
-        category: 'api-config',
-        howToObtain:
-            'Allowlist of origins for state-changing requests (with protocol, no trailing slash). Mirror your API_CORS_ORIGINS list for the apps that POST.',
-        howToObtainEs:
-            'Allowlist de orígenes para requests que cambian estado (con protocolo, sin slash final). Espejá tu lista de API_CORS_ORIGINS para las apps que hacen POST.'
-    },
-    {
         name: 'API_SECURITY_HEADERS_ENABLED',
         description: 'Inject OWASP-recommended security response headers',
         descriptionEs: 'Inyecta los headers de seguridad recomendados por OWASP',
@@ -1197,24 +1140,11 @@ export const API_CONFIG_ENV_VARS = [
             'Por defecto true. Agrega un campo "timestamp" a cada respuesta. Útil para debugging del lado cliente.'
     },
     {
-        name: 'API_RESPONSE_INCLUDE_VERSION',
-        description: 'Include API version string in every response envelope',
-        descriptionEs: 'Incluye la versión de la API en cada envelope de respuesta',
-        type: 'boolean',
-        required: false,
-        secret: false,
-        defaultValue: 'true',
-        exampleValue: 'true',
-        apps: ['api'],
-        category: 'api-config',
-        howToObtain: 'Default true. Adds the API_RESPONSE_API_VERSION value to every response.',
-        howToObtainEs:
-            'Por defecto true. Agrega el valor de API_RESPONSE_API_VERSION a cada respuesta.'
-    },
-    {
         name: 'API_RESPONSE_API_VERSION',
-        description: 'API version string injected into every response envelope',
-        descriptionEs: 'Versión de la API que se inyecta en cada envelope de respuesta',
+        description:
+            'API version string injected into every response envelope (empty string disables version inclusion)',
+        descriptionEs:
+            'Versión de la API que se inyecta en cada envelope de respuesta (string vacío desactiva la inclusión)',
         type: 'string',
         required: false,
         secret: false,
@@ -1223,9 +1153,9 @@ export const API_CONFIG_ENV_VARS = [
         apps: ['api'],
         category: 'api-config',
         howToObtain:
-            'Free-text version label. Default "1.0.0". Bump manually for breaking changes; clients can detect.',
+            'Free-text version label. Default "1.0.0" (included in every response and as X-API-Version header). Set to empty string to omit the version field and header entirely. Bump manually for breaking changes.',
         howToObtainEs:
-            'Etiqueta de versión en texto libre. Por defecto "1.0.0". Subila a mano cuando hay breaking changes; los clientes pueden detectarlo.'
+            'Etiqueta de versión en texto libre. Por defecto "1.0.0" (se incluye en cada respuesta y como header X-API-Version). Dejalo vacío para omitir el campo y el header. Subila a mano cuando hay breaking changes.'
     },
     {
         name: 'API_RESPONSE_INCLUDE_REQUEST_ID',

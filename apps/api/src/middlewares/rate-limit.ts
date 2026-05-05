@@ -407,8 +407,7 @@ const getRateLimitConfig = (endpointType: RateLimitEndpointType) => {
                 windowMs: baseConfig.authWindowMs,
                 maxRequests: baseConfig.authMaxRequests,
                 message: baseConfig.authMessage,
-                standardHeaders: baseConfig.standardHeaders,
-                legacyHeaders: baseConfig.legacyHeaders
+                headers: baseConfig.headers
             };
         case 'public':
             return {
@@ -416,8 +415,7 @@ const getRateLimitConfig = (endpointType: RateLimitEndpointType) => {
                 windowMs: baseConfig.publicWindowMs,
                 maxRequests: baseConfig.publicMaxRequests,
                 message: baseConfig.publicMessage,
-                standardHeaders: baseConfig.standardHeaders,
-                legacyHeaders: baseConfig.legacyHeaders
+                headers: baseConfig.headers
             };
         case 'admin':
             return {
@@ -425,8 +423,7 @@ const getRateLimitConfig = (endpointType: RateLimitEndpointType) => {
                 windowMs: baseConfig.adminWindowMs,
                 maxRequests: baseConfig.adminMaxRequests,
                 message: baseConfig.adminMessage,
-                standardHeaders: baseConfig.standardHeaders,
-                legacyHeaders: baseConfig.legacyHeaders
+                headers: baseConfig.headers
             };
         case 'billing':
             return {
@@ -434,8 +431,7 @@ const getRateLimitConfig = (endpointType: RateLimitEndpointType) => {
                 windowMs: baseConfig.billingWindowMs,
                 maxRequests: baseConfig.billingMaxRequests,
                 message: baseConfig.billingMessage,
-                standardHeaders: baseConfig.standardHeaders,
-                legacyHeaders: baseConfig.legacyHeaders
+                headers: baseConfig.headers
             };
         case 'webhook':
             return {
@@ -443,8 +439,7 @@ const getRateLimitConfig = (endpointType: RateLimitEndpointType) => {
                 windowMs: baseConfig.webhookWindowMs,
                 maxRequests: baseConfig.webhookMaxRequests,
                 message: baseConfig.webhookMessage,
-                standardHeaders: baseConfig.standardHeaders,
-                legacyHeaders: baseConfig.legacyHeaders
+                headers: baseConfig.headers
             };
         default:
             return {
@@ -452,8 +447,7 @@ const getRateLimitConfig = (endpointType: RateLimitEndpointType) => {
                 windowMs: baseConfig.windowMs,
                 maxRequests: baseConfig.maxRequests,
                 message: baseConfig.message,
-                standardHeaders: baseConfig.standardHeaders,
-                legacyHeaders: baseConfig.legacyHeaders
+                headers: baseConfig.headers
             };
     }
 };
@@ -551,11 +545,26 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
         const responseHeaders = new Headers();
         responseHeaders.set('Content-Type', 'application/json');
 
-        // Add rate limit headers
-        if (config.standardHeaders) {
-            responseHeaders.set('X-RateLimit-Limit', config.maxRequests.toString());
+        // Add rate limit headers based on configured header style.
+        // - 'standard' emits IETF RateLimit-* headers
+        // - 'legacy' emits X-RateLimit-* headers
+        // - 'both' emits both families
+        // - 'none' emits no rate-limit headers
+        const emitStandard = config.headers === 'standard' || config.headers === 'both';
+        const emitLegacy = config.headers === 'legacy' || config.headers === 'both';
+        const limit = config.maxRequests.toString();
+        const reset = Math.floor(resetTime / 1000).toString();
+        if (emitStandard) {
+            responseHeaders.set('RateLimit-Limit', limit);
+            responseHeaders.set('RateLimit-Remaining', '0');
+            responseHeaders.set('RateLimit-Reset', reset);
+        }
+        if (emitLegacy) {
+            responseHeaders.set('X-RateLimit-Limit', limit);
             responseHeaders.set('X-RateLimit-Remaining', '0');
-            responseHeaders.set('X-RateLimit-Reset', Math.floor(resetTime / 1000).toString());
+            responseHeaders.set('X-RateLimit-Reset', reset);
+        }
+        if (emitStandard || emitLegacy) {
             responseHeaders.set('X-RateLimit-Type', endpointType); // Add endpoint type for debugging
         }
 
@@ -572,12 +581,26 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
     // Update rate limit data
     await store.set(storeKey, { count: count + 1, windowStart }, config.windowMs);
 
-    // Set rate limit headers for successful requests
-    if (config.standardHeaders) {
-        c.header('X-RateLimit-Limit', config.maxRequests.toString());
-        c.header('X-RateLimit-Remaining', (config.maxRequests - count - 1).toString());
-        c.header('X-RateLimit-Reset', Math.floor(resetTime / 1000).toString());
-        c.header('X-RateLimit-Type', endpointType); // Add endpoint type for debugging
+    // Set rate limit headers for successful requests based on configured header style.
+    {
+        const emitStandard = config.headers === 'standard' || config.headers === 'both';
+        const emitLegacy = config.headers === 'legacy' || config.headers === 'both';
+        const limit = config.maxRequests.toString();
+        const remaining = (config.maxRequests - count - 1).toString();
+        const reset = Math.floor(resetTime / 1000).toString();
+        if (emitStandard) {
+            c.header('RateLimit-Limit', limit);
+            c.header('RateLimit-Remaining', remaining);
+            c.header('RateLimit-Reset', reset);
+        }
+        if (emitLegacy) {
+            c.header('X-RateLimit-Limit', limit);
+            c.header('X-RateLimit-Remaining', remaining);
+            c.header('X-RateLimit-Reset', reset);
+        }
+        if (emitStandard || emitLegacy) {
+            c.header('X-RateLimit-Type', endpointType); // Add endpoint type for debugging
+        }
     }
 
     // Log rate limit activity for monitoring

@@ -22,10 +22,9 @@ vi.mock('../../src/utils/env', () => {
         API_RATE_LIMIT_WINDOW_MS: 1000, // 1 second for testing
         API_RATE_LIMIT_MAX_REQUESTS: 3, // 3 requests per window
         API_RATE_LIMIT_KEY_GENERATOR: 'ip',
-        API_RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS: false,
-        API_RATE_LIMIT_SKIP_FAILED_REQUESTS: false,
-        API_RATE_LIMIT_STANDARD_HEADERS: true,
-        API_RATE_LIMIT_LEGACY_HEADERS: false,
+        API_RATE_LIMIT_SKIP: 'none' as const,
+        // Tests assert against X-RateLimit-* headers, which are the legacy style.
+        API_RATE_LIMIT_HEADERS: 'legacy' as const,
         API_RATE_LIMIT_MESSAGE: 'Too many requests, please try again later.',
 
         // Auth rate limiting
@@ -69,10 +68,8 @@ vi.mock('../../src/utils/env', () => {
         windowMs: mockEnv.API_RATE_LIMIT_WINDOW_MS,
         maxRequests: mockEnv.API_RATE_LIMIT_MAX_REQUESTS,
         keyGenerator: mockEnv.API_RATE_LIMIT_KEY_GENERATOR,
-        skipSuccessfulRequests: mockEnv.API_RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS,
-        skipFailedRequests: mockEnv.API_RATE_LIMIT_SKIP_FAILED_REQUESTS,
-        standardHeaders: mockEnv.API_RATE_LIMIT_STANDARD_HEADERS,
-        legacyHeaders: mockEnv.API_RATE_LIMIT_LEGACY_HEADERS,
+        skip: mockEnv.API_RATE_LIMIT_SKIP,
+        headers: mockEnv.API_RATE_LIMIT_HEADERS,
         message: mockEnv.API_RATE_LIMIT_MESSAGE,
         trustProxy: true, // Enable proxy trust for IP detection in tests
 

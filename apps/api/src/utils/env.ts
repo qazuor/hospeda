@@ -203,10 +203,21 @@ export const ApiEnvBaseSchema = z.object({
     API_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),
     API_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
     API_RATE_LIMIT_KEY_GENERATOR: z.string().default('ip'),
-    API_RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS: z.coerce.boolean().default(false),
-    API_RATE_LIMIT_SKIP_FAILED_REQUESTS: z.coerce.boolean().default(false),
-    API_RATE_LIMIT_STANDARD_HEADERS: z.coerce.boolean().default(true),
-    API_RATE_LIMIT_LEGACY_HEADERS: z.coerce.boolean().default(false),
+    /**
+     * Which response classes to exclude from rate-limit counting.
+     * - 'none' (default): count every response
+     * - 'successful': do not count 2xx responses
+     * - 'failed': do not count 4xx/5xx responses
+     */
+    API_RATE_LIMIT_SKIP: z.enum(['none', 'successful', 'failed']).default('none'),
+    /**
+     * Which rate-limit response header style to emit.
+     * - 'standard' (default): IETF RateLimit-* headers
+     * - 'legacy': X-RateLimit-* headers (pre-IETF)
+     * - 'both': emit both header families
+     * - 'none': emit no rate-limit headers
+     */
+    API_RATE_LIMIT_HEADERS: z.enum(['standard', 'legacy', 'both', 'none']).default('standard'),
     API_RATE_LIMIT_MESSAGE: z.string().default('Too many requests, please try again later.'),
     /** Trust x-forwarded-for / cf-connecting-ip. Default true — matches Vercel/Cloudflare/Nginx deploy targets. Set false ONLY for direct-exposed local dev runs. */
     API_RATE_LIMIT_TRUST_PROXY: z.coerce.boolean().default(true),
@@ -235,8 +246,6 @@ export const ApiEnvBaseSchema = z.object({
     // Security
     API_SECURITY_ENABLED: z.coerce.boolean().default(true),
     API_SECURITY_CSRF_ENABLED: z.coerce.boolean().default(true),
-    API_SECURITY_CSRF_ORIGIN: z.string().optional(),
-    API_SECURITY_CSRF_ORIGINS: z.string().default('http://localhost:3000,http://localhost:5173'),
     API_SECURITY_HEADERS_ENABLED: z.coerce.boolean().default(true),
     // Default CSP for API responses. Note: security.ts middleware hardcodes its own CSP policy.
     API_SECURITY_CONTENT_SECURITY_POLICY: z
@@ -256,7 +265,10 @@ export const ApiEnvBaseSchema = z.object({
     // Response format
     API_RESPONSE_FORMAT_ENABLED: z.coerce.boolean().default(true),
     API_RESPONSE_INCLUDE_TIMESTAMP: z.coerce.boolean().default(true),
-    API_RESPONSE_INCLUDE_VERSION: z.coerce.boolean().default(true),
+    /**
+     * API version string injected into responses. Empty string disables version inclusion.
+     * Default '1.0.0' (include version). Set to '' to omit version from response envelope and headers.
+     */
     API_RESPONSE_API_VERSION: z.string().default('1.0.0'),
     API_RESPONSE_INCLUDE_REQUEST_ID: z.coerce.boolean().default(true),
     API_RESPONSE_INCLUDE_METADATA: z.coerce.boolean().default(true),
@@ -530,16 +542,6 @@ const ApiEnvSchema = ApiEnvBaseSchema.superRefine((data, ctx) => {
                     code: z.ZodIssueCode.custom,
                     path: ['API_CORS_ORIGINS'],
                     message: `CORS origin '${origin}' contains localhost, which is not allowed in production`
-                });
-            }
-        }
-        const csrfOrigins = data.API_SECURITY_CSRF_ORIGINS?.split(',').map((o) => o.trim()) ?? [];
-        for (const origin of csrfOrigins) {
-            if (localhostPattern.test(origin)) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    path: ['API_SECURITY_CSRF_ORIGINS'],
-                    message: `CSRF origin '${origin}' contains localhost, which is not allowed in production`
                 });
             }
         }

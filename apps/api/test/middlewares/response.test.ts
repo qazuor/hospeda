@@ -18,51 +18,23 @@ vi.mock('../../src/utils/env', () => {
     const mockEnv = {
         API_RESPONSE_FORMAT_ENABLED: true,
         API_RESPONSE_INCLUDE_METADATA: true,
-        API_RESPONSE_INCLUDE_VERSION: true,
         API_RESPONSE_INCLUDE_REQUEST_ID: true,
         API_RESPONSE_API_VERSION: '1.0.0',
-        API_RESPONSE_ERROR_MESSAGE: 'Internal server error',
-        // Legacy names for backward compatibility with tests
-        RESPONSE_FORMAT_ENABLED: true,
-        RESPONSE_INCLUDE_METADATA: true,
-        RESPONSE_INCLUDE_VERSION: true,
-        RESPONSE_INCLUDE_REQUEST_ID: true,
-        RESPONSE_API_VERSION: '1.0.0',
-        RESPONSE_ERROR_MESSAGE: 'Internal server error'
+        API_RESPONSE_ERROR_MESSAGE: 'Internal server error'
     };
 
     const mockModule = {
         env: mockEnv,
         validateApiEnv: vi.fn(),
         getResponseConfig: () => ({
-            formatEnabled:
-                mockModule.env.RESPONSE_FORMAT_ENABLED ??
-                mockModule.env.API_RESPONSE_FORMAT_ENABLED ??
-                true,
-            includeMetadata:
-                mockModule.env.RESPONSE_INCLUDE_METADATA ??
-                mockModule.env.API_RESPONSE_INCLUDE_METADATA ??
-                true,
-            includeVersion:
-                mockModule.env.RESPONSE_INCLUDE_VERSION ??
-                mockModule.env.API_RESPONSE_INCLUDE_VERSION ??
-                true,
-            includeRequestId:
-                mockModule.env.RESPONSE_INCLUDE_REQUEST_ID ??
-                mockModule.env.API_RESPONSE_INCLUDE_REQUEST_ID ??
-                true,
-            apiVersion:
-                mockModule.env.RESPONSE_API_VERSION ??
-                mockModule.env.API_RESPONSE_API_VERSION ??
-                '1.0.0',
-            errorMessage:
-                mockModule.env.RESPONSE_ERROR_MESSAGE ??
-                mockModule.env.API_RESPONSE_ERROR_MESSAGE ??
-                'Internal server error',
-            includeTimestamp:
-                mockModule.env.RESPONSE_INCLUDE_METADATA ??
-                mockModule.env.API_RESPONSE_INCLUDE_METADATA ??
-                true,
+            formatEnabled: mockModule.env.API_RESPONSE_FORMAT_ENABLED ?? true,
+            includeMetadata: mockModule.env.API_RESPONSE_INCLUDE_METADATA ?? true,
+            // Version inclusion is derived: empty string disables, any non-empty string enables.
+            includeVersion: (mockModule.env.API_RESPONSE_API_VERSION ?? '').length > 0,
+            includeRequestId: mockModule.env.API_RESPONSE_INCLUDE_REQUEST_ID ?? true,
+            apiVersion: mockModule.env.API_RESPONSE_API_VERSION ?? '1.0.0',
+            errorMessage: mockModule.env.API_RESPONSE_ERROR_MESSAGE ?? 'Internal server error',
+            includeTimestamp: mockModule.env.API_RESPONSE_INCLUDE_METADATA ?? true,
             successMessage: 'Success'
         })
     };
@@ -108,13 +80,13 @@ describe('Response Middleware', () => {
         it('should handle successful responses without metadata when disabled', async () => {
             // Mock env to disable metadata
             const originalIncludeMetadata = env.API_RESPONSE_INCLUDE_METADATA;
-            const originalIncludeVersion = env.API_RESPONSE_INCLUDE_VERSION;
+            const originalApiVersion = env.API_RESPONSE_API_VERSION;
             const originalIncludeRequestId = env.API_RESPONSE_INCLUDE_REQUEST_ID;
 
-            // Temporarily disable metadata
-            (env as any).RESPONSE_INCLUDE_METADATA = false;
-            (env as any).RESPONSE_INCLUDE_VERSION = false;
-            (env as any).RESPONSE_INCLUDE_REQUEST_ID = false;
+            // Temporarily disable metadata. API_RESPONSE_API_VERSION='' disables version inclusion.
+            (env as any).API_RESPONSE_INCLUDE_METADATA = false;
+            (env as any).API_RESPONSE_API_VERSION = '';
+            (env as any).API_RESPONSE_INCLUDE_REQUEST_ID = false;
 
             try {
                 app.get('/test-no-metadata', (c) => {
@@ -131,9 +103,9 @@ describe('Response Middleware', () => {
                 expect(data.metadata).toBeUndefined();
             } finally {
                 // Restore original values
-                (env as any).RESPONSE_INCLUDE_METADATA = originalIncludeMetadata;
-                (env as any).RESPONSE_INCLUDE_VERSION = originalIncludeVersion;
-                (env as any).RESPONSE_INCLUDE_REQUEST_ID = originalIncludeRequestId;
+                (env as any).API_RESPONSE_INCLUDE_METADATA = originalIncludeMetadata;
+                (env as any).API_RESPONSE_API_VERSION = originalApiVersion;
+                (env as any).API_RESPONSE_INCLUDE_REQUEST_ID = originalIncludeRequestId;
             }
         });
 
@@ -281,7 +253,7 @@ describe('Response Middleware', () => {
             const originalEnabled = env.API_RESPONSE_FORMAT_ENABLED;
 
             // Temporarily disable formatting
-            (env as any).RESPONSE_FORMAT_ENABLED = false;
+            (env as any).API_RESPONSE_FORMAT_ENABLED = false;
 
             try {
                 app.get('/test-disabled', (c) => {
@@ -296,7 +268,7 @@ describe('Response Middleware', () => {
                 expect(data.success).toBeUndefined();
             } finally {
                 // Restore original value
-                (env as any).RESPONSE_FORMAT_ENABLED = originalEnabled;
+                (env as any).API_RESPONSE_FORMAT_ENABLED = originalEnabled;
             }
         });
     });
