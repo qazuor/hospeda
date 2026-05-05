@@ -4,9 +4,10 @@
  * @description Gallery section for a destination detail page.
  *
  * Wraps the shared ImageGallery React island with `client:visible`.
- * Combines the featuredImage and gallery array into a deduplicated list of
- * GalleryImage objects, then delegates all rendering and lightbox logic to
- * the island. Renders nothing when no real images are available.
+ * Renders ONLY the extra gallery images. The featuredImage URL is used
+ * exclusively to deduplicate against the hero shown by DestinationDetailHeader,
+ * never inserted into the gallery itself. Renders nothing when no real
+ * non-featured images are available.
  */
 import { ImageGallery } from '@/components/ImageGallery.client';
 import type { GalleryImage } from '@/components/ImageGallery.client';
@@ -36,8 +37,11 @@ interface Props {
 const { featuredImage, gallery, destinationName, locale } = Astro.props;
 const { t } = createTranslations(locale);
 
-// Build deduplicated GalleryImage list: featured first, then extras.
+// Build gallery list with ONLY extra images. The featured URL is pre-seeded in
+// `seen` so that if it accidentally appears inside `gallery` it is filtered out
+// (the hero already renders it above).
 const seen = new Set<string>();
+if (featuredImage.url) seen.add(featuredImage.url);
 
 function addImage(url: string, alt: string, caption?: string): GalleryImage | null {
 	if (!url || seen.has(url)) return null;
@@ -46,9 +50,6 @@ function addImage(url: string, alt: string, caption?: string): GalleryImage | nu
 }
 
 const images: GalleryImage[] = [];
-
-const featuredEntry = addImage(featuredImage.url, destinationName, featuredImage.caption);
-if (featuredEntry) images.push(featuredEntry);
 
 for (const item of gallery) {
 	const entry = addImage(item.url, item.caption ?? destinationName, item.caption);
