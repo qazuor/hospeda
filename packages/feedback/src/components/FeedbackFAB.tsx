@@ -422,9 +422,10 @@ export function FeedbackFAB({
                     data-testid="feedback-fab"
                 >
                     <DebugIcon
-                        size={24}
+                        size={20}
                         aria-hidden="true"
                     />
+                    <span className="fabLabel">{FEEDBACK_STRINGS.fab.label}</span>
                 </button>
 
                 {/* Tooltip rendered outside button to avoid duplicate screen reader announcement */}

@@ -14,15 +14,9 @@ import type { SupportedLocale } from '@/lib/i18n';
 
 interface Props {
   readonly locale?: SupportedLocale;
-  /**
-   * When true, lifts the button above the feedback FAB stack so they don't
-   * overlap. The FAB occupies bottom-right corner at z-index 9998; this
-   * button stacks above it with an additional offset.
-   */
-  readonly feedbackEnabled?: boolean;
 }
 
-const { locale = 'es', feedbackEnabled = false } = Astro.props;
+const { locale = 'es' } = Astro.props;
 const { t } = createTranslations(locale);
 ---
 
@@ -30,7 +24,7 @@ const { t } = createTranslations(locale);
   id="scroll-to-top"
   transition:persist="scroll-to-top"
   aria-label={t('common.scrollToTop')}
-  class:list={['scroll-to-top', feedbackEnabled && 'scroll-to-top--lifted']}
+  class="scroll-to-top"
 >
   <!-- SVG progress ring -->
   <svg
@@ -94,13 +88,7 @@ const { t } = createTranslations(locale);
     pointer-events: none;
     transition:
       opacity var(--duration-normal) ease,
-      background-color var(--duration-normal) ease,
-      bottom var(--duration-normal) ease;
-  }
-
-  /* Lift above the feedback FAB when both are mounted (FAB is 56px tall + 24px bottom + 16px gap). */
-  .scroll-to-top--lifted {
-    bottom: 6rem;
+      background-color var(--duration-normal) ease;
   }
 
   .scroll-to-top--visible {
@@ -156,10 +144,6 @@ const { t } = createTranslations(locale);
       width: 40px;
       bottom: 4rem;
       right: 1rem;
-    }
-
-    .scroll-to-top--lifted {
-      bottom: 5.5rem;
     }
 
     .scroll-to-top__arrow {

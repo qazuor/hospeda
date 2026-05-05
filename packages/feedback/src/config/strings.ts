@@ -34,7 +34,11 @@
 export const FEEDBACK_STRINGS = {
     /** Floating action button (FAB) strings */
     fab: {
+        /** Visible label inside the FAB pill (desktop only). */
+        label: 'Reportar problema',
+        /** ARIA label and hover tooltip — full description with shortcut. */
         tooltip: 'Reportar un problema (Ctrl+Shift+F)',
+        /** ARIA label without keyboard shortcut. */
         tooltipBase: 'Reportar un problema',
         minimizeTooltip: 'Minimizar'
     },

@@ -33,39 +33,55 @@
     bottom: var(--fb-space-6);
     right: var(--fb-space-6);
     z-index: var(--fb-z-fab);
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 0.5rem;
     cursor: pointer;
-    border-radius: var(--fb-radius-full);
+    border-radius: var(--fb-radius-pill);
     border: none;
     transition: transform var(--fb-duration-fast) var(--fb-easing), box-shadow
+        var(--fb-duration-fast) var(--fb-easing), background-color
         var(--fb-duration-fast) var(--fb-easing);
-    /* Mobile: 48px */
-    width: 3rem;
-    height: 3rem;
+    /* Mobile: circular 56px, icon-only (label hidden via .fabLabel rule) */
+    width: 3.5rem;
+    height: 3.5rem;
+    padding: 0;
     background-color: var(--fb-primary);
     color: var(--fb-primary-foreground);
     box-shadow: var(--fb-shadow-fab);
+    font-family: var(--fb-font-family);
+    font-size: var(--fb-font-size-sm);
+    font-weight: var(--fb-font-weight-semibold);
+    letter-spacing: 0.01em;
 }
 
-/* Desktop: 56px */
+/* The text label is hidden on mobile (icon-only) and shown on desktop. */
+.feedback-root .fabLabel {
+    display: none;
+}
+
+/* Desktop: pill with icon + visible text label, taller and wider. */
 @media (min-width: 640px) {
     .feedback-root .fab {
-        width: 3.5rem;
-        height: 3.5rem;
+        width: auto;
+        height: 3.25rem;
+        padding: 0 1.25rem 0 1rem;
+    }
+    .feedback-root .fabLabel {
+        display: inline;
     }
 }
 
-.feedback-root .fab:hover,
-.feedback-root .fab:focus-visible {
-    outline: none;
-    box-shadow: 0 10px 28px rgba(79, 70, 229, 0.5);
+.feedback-root .fab:hover {
+    transform: translateY(-2px);
+    background-color: var(--fb-primary-hover);
+    box-shadow: 0 14px 32px var(--fb-shadow-fab-color, rgba(79, 70, 229, 0.55));
 }
 
 .feedback-root .fab:focus-visible {
-    outline: 2px solid var(--fb-primary-foreground);
-    outline-offset: 2px;
+    outline: 3px solid var(--fb-primary-foreground);
+    outline-offset: 3px;
 }
 
 /* Pulse animation class toggled via JS state */

@@ -1,0 +1,60 @@
+/**
+ * @file feedback-overrides.css
+ * @description App-level overrides for the @repo/feedback widget tokens.
+ *
+ * The package ships sensible neutral defaults so it works in any host. This
+ * file maps those defaults onto the Hospeda brand palette and adjusts the
+ * FAB position to live above the global ScrollToTop button.
+ */
+
+.feedback-root {
+    /* Map the package primary onto Hospeda's accent (warm orange CTA). */
+    --fb-primary: var(--brand-accent);
+    --fb-primary-foreground: var(--accent-foreground);
+    /* Slightly darker accent for hover. oklch keeps perceptual lightness. */
+    --fb-primary-hover: oklch(0.62 0.2 50);
+    --fb-shadow-fab: 0 8px 24px oklch(0.7 0.18 55 / 0.4);
+    --fb-shadow-fab-color: oklch(0.7 0.18 55 / 0.55);
+}
+
+/*
+ * Position the FAB above the ScrollToTop button so the FAB reads as the
+ * primary action and the secondary scroll control sits below it.
+ *
+ * ScrollToTop sizes (apps/web/src/components/shared/navigation/ScrollToTop.astro):
+ *   - Mobile (<768px): 40x40 at bottom: 4rem (lifted to clear the hero)
+ *   - Desktop:         48x48 at bottom: 1.5rem
+ *
+ * FAB sits 16px above the ScrollToTop top edge on both breakpoints.
+ *
+ * Layout (desktop):
+ *   ┌──────────────────┐  bottom: 5.5rem (~88px)
+ *   │  Reportar pill   │
+ *   └──────────────────┘
+ *        16px gap
+ *   ┌────┐                bottom: 1.5rem (~24px)
+ *   │ ↑  │
+ *   └────┘
+ */
+.feedback-root .fab {
+    /* Mobile: ScrollToTop top edge is at 4rem + 40px = 6.5rem. Add 1rem gap. */
+    bottom: 7.5rem;
+}
+
+@media (min-width: 768px) {
+    .feedback-root .fab {
+        /* Desktop: ScrollToTop top edge is at 1.5rem + 48px = 4.5rem. Add 1rem gap. */
+        bottom: 5.5rem;
+    }
+}
+
+/* Keep the minimized dot aligned with the same lifted offset. */
+.feedback-root .minimizedDot {
+    bottom: 7.5rem;
+}
+
+@media (min-width: 768px) {
+    .feedback-root .minimizedDot {
+        bottom: 5.5rem;
+    }
+}

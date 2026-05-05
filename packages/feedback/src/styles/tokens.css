@@ -58,9 +58,11 @@
     --fb-font-weight-medium: 500;
     --fb-font-weight-semibold: 600;
 
-    /* Z-index */
-    --fb-z-fab: 9998;
-    --fb-z-modal: 9999;
+    /* Z-index — extremely high so the FAB always renders above any host
+       app surface (banners, toasts, popovers, third-party widgets, etc.).
+       The modal stacks one tick above the FAB so it covers the FAB when open. */
+    --fb-z-fab: 2147483646;
+    --fb-z-modal: 2147483647;
 
     /* Motion */
     --fb-duration-fast: 0.15s;

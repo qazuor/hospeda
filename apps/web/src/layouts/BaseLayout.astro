@@ -35,6 +35,10 @@ import '@/styles/global.css';
 // tracks it as a page-level CSS asset and preserves it across view transitions
 // (a runtime-injected style tag would be dropped when Astro swaps the head).
 import '@repo/feedback/styles.css';
+// App-level overrides: map @repo/feedback tokens onto the Hospeda brand palette
+// and lift the FAB above the ScrollToTop button. Loaded after the package CSS
+// so the override selectors win without needing higher specificity.
+import '@/styles/feedback-overrides.css';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -119,7 +123,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		</main>
 
 		<Footer locale={locale} />
-		<ScrollToTop locale={locale} feedbackEnabled={feedbackEnabled} />
+		<ScrollToTop locale={locale} />
 		<CookieConsentBanner
 			client:idle
 			locale={locale}
