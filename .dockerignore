@@ -1,45 +1,58 @@
-# Dependencies
-node_modules/
+# Dependencies (always re-installed inside the build)
+node_modules
+**/node_modules
+
+# Build outputs (re-built inside Docker, never trust host artefacts)
+**/dist
+**/.output
+**/.nitro
+**/.turbo
+**/.next
+**/.astro
+**/.vercel
+build/
+
+# Coverage and test runner state
+**/coverage
+.nyc_output/
+
+# Environment files (secrets stay outside the image)
+**/.env
+**/.env.local
+**/.env.*
+
+# VCS and tooling metadata
+.git
+.github
+.husky
+.vscode
+.idea
+.cursorignore
+.editorconfig
+.gitignore
+.markdownlint-cli2.jsonc
+.huskyrc
+# NOTE: do NOT exclude .npmrc or patches/ — pnpm install --frozen-lockfile
+# inside the deps stage needs both (lockfile references patched deps).
+
+# Repo-only documentation and AI scaffolding
+**/*.md
+docs
+.claude
+.remember
+mappings
+
+# Local logs and OS junk
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-
-# Environment files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Build outputs
-dist/
-build/
-.next/
-.turbo/
-
-# IDE files
-.vscode/
-.idea/
+.DS_Store
+Thumbs.db
 *.swp
 *.swo
 
-# OS files
-.DS_Store
-Thumbs.db
-
-# Git
-.git/
-.gitignore
-
-# Documentation
-README.md
-*.md
-
-# Test files
-coverage/
-.nyc_output/
-
-# Logs
-logs/
-*.log
+# Local Docker compose state (we ship per-app Dockerfiles to Coolify)
+docker-compose.yml
+docker/
