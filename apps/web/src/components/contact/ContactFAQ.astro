@@ -1,0 +1,164 @@
+---
+/**
+ * @file ContactFAQ.astro
+ * @description Accordion of frequently asked questions on the contact page.
+ * Uses native <details>/<summary> for zero-JS progressive disclosure.
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { ChevronDownIcon } from '@repo/icons';
+
+interface Props {
+	readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const items = [
+	{
+		key: 'responseTime',
+		question: t('contact.faq.items.responseTime.question', '¿Cuánto tardan en responder?'),
+		answer: t(
+			'contact.faq.items.responseTime.answer',
+			'Respondemos en menos de 24 horas hábiles. En fines de semana puede demorar un poco más.'
+		)
+	},
+	{
+		key: 'accommodationIssue',
+		question: t(
+			'contact.faq.items.accommodationIssue.question',
+			'Tengo un problema con un alojamiento que reservé'
+		),
+		answer: t(
+			'contact.faq.items.accommodationIssue.answer',
+			'Seleccioná "Consulta sobre un alojamiento" en el formulario y agregá el ID del alojamiento.'
+		)
+	},
+	{
+		key: 'ownerInquiry',
+		question: t(
+			'contact.faq.items.ownerInquiry.question',
+			'Quiero publicar mi alojamiento en Hospeda'
+		),
+		answer: t(
+			'contact.faq.items.ownerInquiry.answer',
+			'Visitá la página de propietarios para conocer planes y empezar el alta.'
+		)
+	},
+	{
+		key: 'languages',
+		question: t('contact.faq.items.languages.question', '¿En qué idiomas atienden?'),
+		answer: t(
+			'contact.faq.items.languages.answer',
+			'Atendemos en español, inglés y portugués. Escribinos en el idioma que prefieras.'
+		)
+	}
+];
+---
+
+<div class="contact-faq" role="list">
+	{items.map((item, i) => (
+		<details
+			class="contact-faq__item"
+			role="listitem"
+			data-reveal="up"
+			style={`transition-delay: ${i * 80}ms`}
+		>
+			<summary class="contact-faq__summary">
+				<span class="contact-faq__question">{item.question}</span>
+				<span class="contact-faq__icon" aria-hidden="true">
+					<ChevronDownIcon size={20} weight="bold" />
+				</span>
+			</summary>
+			<div class="contact-faq__answer">
+				<p>{item.answer}</p>
+			</div>
+		</details>
+	))}
+</div>
+
+<style>
+	.contact-faq {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3, 0.75rem);
+		max-width: 800px;
+		margin: var(--space-6, 1.5rem) auto 0;
+	}
+
+	.contact-faq__item {
+		background-color: var(--core-card);
+		border-radius: var(--radius-card);
+		box-shadow: var(--shadow-card);
+		overflow: hidden;
+		transition: box-shadow var(--duration-normal) ease;
+	}
+
+	.contact-faq__item:hover {
+		box-shadow: var(--shadow-card-hover);
+	}
+
+	.contact-faq__item[open] {
+		box-shadow: var(--shadow-card-hover);
+	}
+
+	.contact-faq__summary {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3, 0.75rem);
+		padding: var(--space-4, 1rem) var(--space-5, 1.25rem);
+		cursor: pointer;
+		list-style: none;
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: var(--text-h4);
+		color: var(--core-foreground);
+	}
+
+	.contact-faq__summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.contact-faq__summary:focus-visible {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: -2px;
+	}
+
+	.contact-faq__question {
+		flex: 1;
+	}
+
+	.contact-faq__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		background-color: oklch(from var(--brand-primary) l c h / 0.1);
+		color: var(--brand-primary);
+		flex-shrink: 0;
+		transition: transform var(--duration-normal) ease;
+	}
+
+	.contact-faq__item[open] .contact-faq__icon {
+		transform: rotate(180deg);
+		background-color: oklch(from var(--brand-accent) l c h / 0.15);
+		color: var(--brand-accent);
+	}
+
+	.contact-faq__answer {
+		padding: 0 var(--space-5, 1.25rem) var(--space-4, 1rem);
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--core-muted-foreground);
+		line-height: 1.6;
+	}
+
+	.contact-faq__answer p {
+		margin: 0;
+	}
+</style>

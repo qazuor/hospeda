@@ -1,7 +1,7 @@
 ---
 /**
  * @file contacto/index.astro
- * @description Contact page hero + form + secondary info section.
+ * @description Contact page: hero with form, channels, location & hours, FAQ.
  * @route /{lang}/contacto/
  * @rendering SSG (prerender)
  */
@@ -9,6 +9,8 @@
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import { ContactForm } from '@/components/ContactForm.client';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
+import ContactFAQ from '@/components/contact/ContactFAQ.astro';
+import ContactMiniMap from '@/components/contact/ContactMiniMap.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import {
@@ -17,7 +19,10 @@ import {
 	WhatsappIcon,
 	LocationIcon,
 	ClockIcon,
-	CheckCircleIcon
+	CheckCircleIcon,
+	ArrowRightIcon,
+	InstagramIcon,
+	FacebookIcon
 } from '@repo/icons';
 import type { GetStaticPaths } from 'astro';
 
@@ -31,16 +36,61 @@ const { lang } = Astro.params;
 const locale = lang as SupportedLocale;
 const { t } = createTranslations(locale);
 
+// ─── Contact data (from i18n, with hardcoded coords) ──────────────────────────
 const phoneRaw = t('contact.phone.value', '+54 3442 453797');
 const phoneHref = phoneRaw.replace(/[^+\d]/g, '');
 const whatsappRaw = t('contact.whatsapp.value', '+54 9 3442 453797');
 const whatsappHref = whatsappRaw.replace(/[^\d]/g, '');
 const emailValue = t('contact.email.value', 'info@hospeda.com');
+const addressValue = t('contact.address.value', 'Concepción del Uruguay, Entre Ríos, Argentina');
+
+// Concepción del Uruguay coordinates
+const officeLat = -32.4847;
+const officeLng = -58.2329;
 
 const trustSignals = [
 	t('contact.trust.responseTime', 'Respondemos en menos de 24 hs'),
 	t('contact.trust.secure', 'Tus datos están protegidos'),
 	t('contact.trust.humans', 'Te atiende una persona, no un bot')
+];
+
+const channels = [
+	{
+		key: 'email',
+		title: t('contact.channels.email.title', 'Email'),
+		description: t(
+			'contact.channels.email.description',
+			'Para consultas detalladas y formales.'
+		),
+		value: emailValue,
+		cta: t('contact.channels.email.cta', 'Escribinos un mail'),
+		href: `mailto:${emailValue}`,
+		external: false
+	},
+	{
+		key: 'phone',
+		title: t('contact.channels.phone.title', 'Teléfono'),
+		description: t(
+			'contact.channels.phone.description',
+			'Lunes a viernes, 9 a 18 hs (UTC-3).'
+		),
+		value: phoneRaw,
+		cta: t('contact.channels.phone.cta', 'Llamanos'),
+		href: `tel:${phoneHref}`,
+		external: false
+	},
+	{
+		key: 'whatsapp',
+		title: t('contact.channels.whatsapp.title', 'WhatsApp'),
+		description: t(
+			'contact.channels.whatsapp.description',
+			'Respuesta rápida en horario de oficina.'
+		),
+		value: whatsappRaw,
+		cta: t('contact.channels.whatsapp.cta', 'Chatear por WhatsApp'),
+		href: `https://wa.me/${whatsappHref}`,
+		external: true
+	}
 ];
 
 const hours = [
@@ -57,6 +107,12 @@ const hours = [
 		value: t('contact.hours.sundayValue', 'Cerrado')
 	}
 ];
+
+const socialLinks = [
+	{ key: 'instagram', label: 'Instagram', href: 'https://instagram.com/hospeda', Icon: InstagramIcon },
+	{ key: 'facebook', label: 'Facebook', href: 'https://facebook.com/hospeda', Icon: FacebookIcon },
+	{ key: 'whatsapp', label: 'WhatsApp', href: `https://wa.me/${whatsappHref}`, Icon: WhatsappIcon }
+];
 ---
 
 <DefaultLayout
@@ -64,6 +120,7 @@ const hours = [
 	title={t('contact.title', 'Contacto')}
 	description={t('contact.description', 'Contactate con el equipo de Hospeda. Estamos para ayudarte.')}
 >
+	<!-- ───── Section 1 — Hero with form ─────────────────────────────────── -->
 	<section class="contact-hero section">
 		<div class="contact-hero__decoratives" aria-hidden="true">
 			<img
@@ -116,93 +173,131 @@ const hours = [
 		</div>
 	</section>
 
-	<section class="contact-info section section--warm">
-		<div class="contact-info__container">
+	<!-- ───── Section 2 — Channels ───────────────────────────────────────── -->
+	<section class="contact-channels section section--warm">
+		<div class="contact-channels__container">
+			<SectionHeader
+				tagline={t('contact.channels.tagline', 'Otros canales')}
+				title={t('contact.channels.title', 'Hablemos como prefieras')}
+				subtitle={t('contact.channels.subtitle', 'Elegí el canal que más te convenga. Te respondemos lo antes posible.')}
+			/>
+
+			<div class="contact-channels__grid">
+				{channels.map((channel, i) => {
+					const Icon = channel.key === 'email'
+						? EmailIcon
+						: channel.key === 'phone'
+							? PhoneIcon
+							: WhatsappIcon;
+					return (
+						<a
+							href={channel.href}
+							class={`contact-channel contact-channel--${channel.key}`}
+							data-reveal="up"
+							style={`transition-delay: ${i * 100}ms`}
+							{...(channel.external && { target: '_blank', rel: 'noopener noreferrer' })}
+						>
+							<span class="contact-channel__icon" aria-hidden="true">
+								<Icon size="lg" weight="duotone" />
+							</span>
+							<h3 class="contact-channel__title">{channel.title}</h3>
+							<p class="contact-channel__description">{channel.description}</p>
+							<p class="contact-channel__value">{channel.value}</p>
+							<span class="contact-channel__cta">
+								{channel.cta}
+								<ArrowRightIcon size="sm" weight="bold" />
+							</span>
+						</a>
+					);
+				})}
+			</div>
+		</div>
+	</section>
+
+	<!-- ───── Section 3 — Visit us (map + hours + social) ────────────────── -->
+	<section class="contact-visit section">
+		<div class="contact-visit__container">
 			<SectionHeader
 				tagline={t('contact.hours.tagline', 'Cuándo estamos')}
 				title={t('contact.hours.title', 'Horarios de atención')}
 				subtitle={t('contact.hours.subtitle', 'Te respondemos en menos de 24 horas hábiles.')}
 			/>
 
-			<div class="contact-info__grid">
-				<article class="contact-info-card" data-reveal="up">
-					<header class="contact-info-card__header">
-						<span class="contact-info-card__icon" aria-hidden="true">
-							<ClockIcon size="lg" weight="duotone" />
-						</span>
-						<h3 class="contact-info-card__title">{t('contact.hours.title', 'Horarios')}</h3>
-					</header>
-					<dl class="contact-info-card__list">
-						{hours.map((row) => (
-							<div class="contact-info-card__row">
-								<dt>{row.label}</dt>
-								<dd>{row.value}</dd>
-							</div>
-						))}
-					</dl>
-					<p class="contact-info-card__note">{t('contact.hours.timezone', 'Hora de Argentina (UTC-3)')}</p>
-				</article>
+			<div class="contact-visit__grid">
+				<div class="contact-visit__map" data-reveal="up">
+					<ContactMiniMap
+						locale={locale}
+						lat={officeLat}
+						lng={officeLng}
+						label={addressValue}
+					/>
+				</div>
 
-				<article class="contact-info-card" data-reveal="up" style="transition-delay: 100ms">
-					<header class="contact-info-card__header">
-						<span class="contact-info-card__icon" aria-hidden="true">
-							<EmailIcon size="lg" weight="duotone" />
-						</span>
-						<h3 class="contact-info-card__title">{t('contact.email.label', 'Email')}</h3>
-					</header>
-					<a class="contact-info-card__link" href={`mailto:${emailValue}`}>
-						{emailValue}
-					</a>
-					<p class="contact-info-card__note">
-						{t('contact.channels.email.description', 'Para consultas detalladas y formales.')}
-					</p>
-				</article>
+				<div class="contact-visit__sidebar">
+					<article class="contact-visit-card" data-reveal="up" style="transition-delay: 100ms">
+						<header class="contact-visit-card__header">
+							<span class="contact-visit-card__icon" aria-hidden="true">
+								<ClockIcon size="md" weight="duotone" />
+							</span>
+							<h3 class="contact-visit-card__title">
+								{t('contact.hours.title', 'Horarios')}
+							</h3>
+						</header>
+						<dl class="contact-visit-card__list">
+							{hours.map((row) => (
+								<div class="contact-visit-card__row">
+									<dt>{row.label}</dt>
+									<dd>{row.value}</dd>
+								</div>
+							))}
+						</dl>
+						<p class="contact-visit-card__note">
+							{t('contact.hours.timezone', 'Hora de Argentina (UTC-3)')}
+						</p>
+					</article>
 
-				<article class="contact-info-card" data-reveal="up" style="transition-delay: 200ms">
-					<header class="contact-info-card__header">
-						<span class="contact-info-card__icon" aria-hidden="true">
-							<PhoneIcon size="lg" weight="duotone" />
-						</span>
-						<h3 class="contact-info-card__title">{t('contact.phone.label', 'Teléfono')}</h3>
-					</header>
-					<a class="contact-info-card__link" href={`tel:${phoneHref}`}>{phoneRaw}</a>
-					<p class="contact-info-card__note">
-						{t('contact.channels.phone.description', 'Lunes a viernes, 9 a 18 hs (UTC-3).')}
-					</p>
-				</article>
-
-				<article class="contact-info-card" data-reveal="up" style="transition-delay: 300ms">
-					<header class="contact-info-card__header">
-						<span class="contact-info-card__icon" aria-hidden="true">
-							<WhatsappIcon size="lg" weight="duotone" />
-						</span>
-						<h3 class="contact-info-card__title">{t('contact.whatsapp.label', 'WhatsApp')}</h3>
-					</header>
-					<a
-						class="contact-info-card__link"
-						href={`https://wa.me/${whatsappHref}`}
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						{whatsappRaw}
-					</a>
-					<p class="contact-info-card__note">
-						{t('contact.channels.whatsapp.description', 'Respuesta rápida en horario de oficina.')}
-					</p>
-				</article>
-
-				<article class="contact-info-card" data-reveal="up" style="transition-delay: 400ms">
-					<header class="contact-info-card__header">
-						<span class="contact-info-card__icon" aria-hidden="true">
-							<LocationIcon size="lg" weight="duotone" />
-						</span>
-						<h3 class="contact-info-card__title">{t('contact.address.label', 'Dirección')}</h3>
-					</header>
-					<p class="contact-info-card__address">
-						{t('contact.address.value', 'Concepción del Uruguay, Entre Ríos, Argentina')}
-					</p>
-				</article>
+					<article class="contact-visit-card" data-reveal="up" style="transition-delay: 200ms">
+						<header class="contact-visit-card__header">
+							<span class="contact-visit-card__icon" aria-hidden="true">
+								<InstagramIcon size="md" weight="duotone" />
+							</span>
+							<h3 class="contact-visit-card__title">
+								{t('contact.channels.social.title', 'Redes sociales')}
+							</h3>
+						</header>
+						<p class="contact-visit-card__note">
+							{t('contact.channels.social.description', 'Seguinos para novedades y promos.')}
+						</p>
+						<ul class="contact-visit-card__social" role="list">
+							{socialLinks.map(({ key, label, href, Icon: SocialIcon }) => (
+								<li>
+									<a
+										href={href}
+										class="contact-visit-card__social-link"
+										target="_blank"
+										rel="noopener noreferrer"
+										aria-label={label}
+									>
+										<SocialIcon size="md" weight="duotone" />
+									</a>
+								</li>
+							))}
+						</ul>
+					</article>
+				</div>
 			</div>
+		</div>
+	</section>
+
+	<!-- ───── Section 4 — FAQ ────────────────────────────────────────────── -->
+	<section class="contact-faq-section section section--warm">
+		<div class="contact-faq-section__container">
+			<SectionHeader
+				tagline={t('contact.faq.tagline', 'Preguntas frecuentes')}
+				title={t('contact.faq.title', 'Antes de escribirnos')}
+				subtitle={t('contact.faq.subtitle', 'Quizás tu pregunta ya tiene respuesta.')}
+			/>
+			<ContactFAQ locale={locale} />
 		</div>
 	</section>
 </DefaultLayout>
@@ -318,7 +413,7 @@ const hours = [
 		width: 100%;
 	}
 
-	/* ─── Hero visual aside ─────────────────────────────────────────────────── */
+	/* Hero visual aside */
 
 	.contact-hero__visual {
 		position: relative;
@@ -415,34 +510,28 @@ const hours = [
 		}
 	}
 
-	/* ─── Info section (warm) ───────────────────────────────────────────────── */
+	/* ─── Channels section ─────────────────────────────────────────────────── */
 
-	.contact-info__container {
+	.contact-channels__container {
 		max-width: var(--container-max);
 		margin: 0 auto;
 		padding: 0 var(--space-container-x);
 	}
 
-	.contact-info__grid {
+	.contact-channels__grid {
 		margin-top: var(--space-6, 1.5rem);
 		display: grid;
 		grid-template-columns: 1fr;
 		gap: var(--space-card-gap, 1.5rem);
 	}
 
-	@media (min-width: 600px) {
-		.contact-info__grid {
-			grid-template-columns: repeat(2, 1fr);
-		}
-	}
-
-	@media (min-width: 960px) {
-		.contact-info__grid {
+	@media (min-width: 700px) {
+		.contact-channels__grid {
 			grid-template-columns: repeat(3, 1fr);
 		}
 	}
 
-	.contact-info-card {
+	.contact-channel {
 		background-color: var(--core-card);
 		border-radius: var(--radius-card);
 		padding: var(--space-6, 1.5rem);
@@ -450,35 +539,147 @@ const hours = [
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-3, 0.75rem);
+		text-decoration: none;
+		color: inherit;
 		transition:
 			transform var(--duration-normal) ease,
-			box-shadow var(--duration-normal) ease;
+			box-shadow var(--duration-normal) ease,
+			border-color var(--duration-normal) ease;
+		border: 1px solid transparent;
 	}
 
-	.contact-info-card:hover {
-		transform: translateY(-4px);
+	.contact-channel:hover,
+	.contact-channel:focus-visible {
+		transform: translateY(-6px);
 		box-shadow: var(--shadow-card-hover);
+		border-color: oklch(from var(--brand-primary) l c h / 0.2);
+		outline: none;
 	}
 
-	.contact-info-card__header {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3, 0.75rem);
-	}
-
-	.contact-info-card__icon {
+	.contact-channel__icon {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 48px;
-		height: 48px;
+		width: 56px;
+		height: 56px;
 		border-radius: var(--radius-md, 10px);
 		background-color: oklch(from var(--brand-primary) l c h / 0.1);
 		color: var(--brand-primary);
 		flex-shrink: 0;
 	}
 
-	.contact-info-card__title {
+	.contact-channel--whatsapp .contact-channel__icon {
+		background-color: oklch(0.65 0.18 145 / 0.12);
+		color: oklch(0.55 0.18 145);
+	}
+
+	.contact-channel--phone .contact-channel__icon {
+		background-color: oklch(from var(--brand-accent) l c h / 0.12);
+		color: var(--brand-accent);
+	}
+
+	.contact-channel__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-h3);
+		color: var(--core-foreground);
+		margin: 0;
+	}
+
+	.contact-channel__description {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+		margin: 0;
+		line-height: 1.5;
+	}
+
+	.contact-channel__value {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--core-foreground);
+		font-weight: 600;
+		margin: 0;
+		word-break: break-word;
+	}
+
+	.contact-channel__cta {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2, 0.5rem);
+		margin-top: auto;
+		font-family: var(--font-sans);
+		font-weight: 700;
+		font-size: var(--text-body-sm);
+		color: var(--brand-primary);
+		transition: gap var(--duration-fast) ease;
+	}
+
+	.contact-channel:hover .contact-channel__cta,
+	.contact-channel:focus-visible .contact-channel__cta {
+		gap: var(--space-3, 0.75rem);
+		color: var(--brand-accent);
+	}
+
+	/* ─── Visit section (map + sidebar) ────────────────────────────────────── */
+
+	.contact-visit__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+	}
+
+	.contact-visit__grid {
+		margin-top: var(--space-6, 1.5rem);
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--space-card-gap, 1.5rem);
+	}
+
+	@media (min-width: 900px) {
+		.contact-visit__grid {
+			grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+		}
+	}
+
+	.contact-visit__map {
+		min-height: 360px;
+	}
+
+	.contact-visit__sidebar {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-card-gap, 1.5rem);
+	}
+
+	.contact-visit-card {
+		background-color: var(--core-card);
+		border-radius: var(--radius-card);
+		padding: var(--space-6, 1.5rem);
+		box-shadow: var(--shadow-card);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3, 0.75rem);
+	}
+
+	.contact-visit-card__header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3, 0.75rem);
+	}
+
+	.contact-visit-card__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 40px;
+		height: 40px;
+		border-radius: var(--radius-md, 10px);
+		background-color: oklch(from var(--brand-primary) l c h / 0.1);
+		color: var(--brand-primary);
+	}
+
+	.contact-visit-card__title {
 		font-family: var(--font-heading);
 		font-weight: 700;
 		font-size: var(--text-h4);
@@ -486,7 +687,7 @@ const hours = [
 		margin: 0;
 	}
 
-	.contact-info-card__list {
+	.contact-visit-card__list {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-2, 0.5rem);
@@ -494,7 +695,7 @@ const hours = [
 		padding: 0;
 	}
 
-	.contact-info-card__row {
+	.contact-visit-card__row {
 		display: flex;
 		justify-content: space-between;
 		align-items: baseline;
@@ -503,34 +704,18 @@ const hours = [
 		font-size: var(--text-body-sm);
 	}
 
-	.contact-info-card__row dt {
+	.contact-visit-card__row dt {
 		color: var(--core-muted-foreground);
 		margin: 0;
 	}
 
-	.contact-info-card__row dd {
+	.contact-visit-card__row dd {
 		color: var(--core-foreground);
 		font-weight: 600;
 		margin: 0;
 	}
 
-	.contact-info-card__link {
-		font-family: var(--font-sans);
-		font-size: var(--text-body);
-		color: var(--brand-primary);
-		text-decoration: none;
-		font-weight: 600;
-		word-break: break-word;
-		transition: color var(--duration-fast) ease;
-	}
-
-	.contact-info-card__link:hover,
-	.contact-info-card__link:focus-visible {
-		color: var(--brand-accent);
-		text-decoration: underline;
-	}
-
-	.contact-info-card__note {
+	.contact-visit-card__note {
 		font-family: var(--font-sans);
 		font-size: var(--text-body-sm);
 		color: var(--core-muted-foreground);
@@ -538,11 +723,42 @@ const hours = [
 		line-height: 1.5;
 	}
 
-	.contact-info-card__address {
-		font-family: var(--font-sans);
-		font-size: var(--text-body);
-		color: var(--core-foreground);
-		margin: 0;
-		line-height: 1.5;
+	.contact-visit-card__social {
+		display: flex;
+		gap: var(--space-3, 0.75rem);
+		margin: var(--space-2, 0.5rem) 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.contact-visit-card__social-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 44px;
+		height: 44px;
+		border-radius: var(--radius-md, 10px);
+		background-color: oklch(from var(--brand-primary) l c h / 0.08);
+		color: var(--brand-primary);
+		transition:
+			background-color var(--duration-fast) ease,
+			color var(--duration-fast) ease,
+			transform var(--duration-fast) ease;
+	}
+
+	.contact-visit-card__social-link:hover,
+	.contact-visit-card__social-link:focus-visible {
+		background-color: var(--brand-primary);
+		color: var(--core-card);
+		transform: translateY(-2px);
+		outline: none;
+	}
+
+	/* ─── FAQ section ──────────────────────────────────────────────────────── */
+
+	.contact-faq-section__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
 	}
 </style>

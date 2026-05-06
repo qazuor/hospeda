@@ -1,0 +1,114 @@
+---
+/**
+ * @file ContactMiniMap.astro
+ * @description Compact map card for the contact page showing the company
+ * location. Wraps the shared LocationMap React island. Coordinates are passed
+ * in by the parent so the page can localize the address label.
+ */
+
+import { LocationMap } from '@/components/maps/LocationMap.client';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { LocationIcon } from '@repo/icons';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly lat: number;
+	readonly lng: number;
+	readonly label: string;
+	readonly zoom?: number;
+}
+
+const { locale, lat, lng, label, zoom = 13 } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+<aside class="contact-mini-map">
+	<header class="contact-mini-map__header">
+		<span class="contact-mini-map__icon" aria-hidden="true">
+			<LocationIcon size="md" weight="duotone" />
+		</span>
+		<h3 class="contact-mini-map__title">
+			{t('contact.address.label', 'Dirección')}
+		</h3>
+	</header>
+
+	<div class="contact-mini-map__viewport">
+		<LocationMap
+			client:only="react"
+			mode="exact"
+			lat={lat}
+			lng={lng}
+			zoom={zoom}
+			markerLabel={label}
+			ariaLabel={t('maps.ariaLabelDestination', 'Mapa de ubicación')}
+			i18nStrings={{
+				attribution: t('maps.attribution'),
+				approximateDisclaimer: t('maps.approximateDisclaimer'),
+				markerLabel: label
+			}}
+		/>
+	</div>
+
+	<p class="contact-mini-map__address">{label}</p>
+</aside>
+
+<style>
+	.contact-mini-map {
+		background-color: var(--core-card);
+		border-radius: var(--radius-card);
+		box-shadow: var(--shadow-card);
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+	}
+
+	.contact-mini-map__header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3, 0.75rem);
+		padding: var(--space-5, 1.25rem) var(--space-5, 1.25rem) var(--space-3, 0.75rem);
+		color: var(--core-foreground);
+	}
+
+	.contact-mini-map__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 40px;
+		height: 40px;
+		border-radius: var(--radius-md, 10px);
+		background-color: oklch(from var(--brand-primary) l c h / 0.1);
+		color: var(--brand-primary);
+	}
+
+	.contact-mini-map__title {
+		font-family: var(--font-heading);
+		font-size: var(--text-h4);
+		font-weight: 700;
+		margin: 0;
+	}
+
+	.contact-mini-map__viewport {
+		height: 280px;
+		width: 100%;
+		overflow: hidden;
+		flex-shrink: 0;
+	}
+
+	.contact-mini-map__viewport :global(.location-map),
+	.contact-mini-map__viewport :global(.leaflet-container) {
+		height: 100%;
+		width: 100%;
+	}
+
+	.contact-mini-map__address {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+		padding: var(--space-4, 1rem) var(--space-5, 1.25rem);
+		margin: 0;
+		line-height: 1.5;
+	}
+</style>
