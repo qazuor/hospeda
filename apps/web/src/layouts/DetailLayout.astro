@@ -19,6 +19,8 @@ interface Props {
 	readonly canonicalPath?: string;
 	readonly showBreadcrumbs?: boolean;
 	readonly showSidebar?: boolean;
+	/** Open Graph image URL for social sharing cards. */
+	readonly ogImage?: string;
 }
 
 const {
@@ -28,6 +30,7 @@ const {
 	canonicalPath = Astro.url.pathname,
 	showBreadcrumbs = true,
 	showSidebar = true,
+	ogImage,
 } = Astro.props;
 
 const siteBase = import.meta.env.SITE ?? Astro.url.origin;
@@ -44,6 +47,7 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 		description={resolvedDescription}
 		locale={locale}
 		canonical={canonicalUrl}
+		image={ogImage}
 	/>
 	<slot name="head-extra" slot="head" />
 
