@@ -1,0 +1,211 @@
+---
+/**
+ * @file CheckoutResult.astro
+ * @description Shared layout for the three MercadoPago return pages
+ * (success, failure, pending). Each page owns its title/body copy and
+ * its CTA targets, the visual scaffolding (icon disc, headline, body
+ * paragraph, action row) lives here so that it stays consistent and
+ * any future polish lands in all three at once.
+ *
+ * Variants control the rendered SVG and the colored background of the
+ * icon disc. Primary and optional secondary CTAs are passed in by the
+ * page so they can point at locale-aware URLs.
+ */
+
+interface CtaProps {
+	readonly href: string;
+	readonly label: string;
+}
+
+interface Props {
+	readonly variant: 'success' | 'failure' | 'pending';
+	readonly title: string;
+	readonly body: string;
+	readonly primaryCta: CtaProps;
+	readonly secondaryCta?: CtaProps;
+}
+
+const { variant, title, body, primaryCta, secondaryCta } = Astro.props;
+---
+
+<section class="checkout-result section">
+	<div class="checkout-result__container" data-reveal="up">
+		<div
+			class:list={[
+				'checkout-result__icon',
+				`checkout-result__icon--${variant}`
+			]}
+			aria-hidden="true"
+		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				viewBox="0 0 64 64"
+				fill="none"
+				width="80"
+				height="80"
+				aria-hidden="true"
+			>
+				<circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="4" />
+				{variant === 'success' && (
+					<path
+						d="M20 32l9 9 15-18"
+						stroke="currentColor"
+						stroke-width="4"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					/>
+				)}
+				{variant === 'failure' && (
+					<path
+						d="M22 22l20 20M42 22L22 42"
+						stroke="currentColor"
+						stroke-width="4"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					/>
+				)}
+				{variant === 'pending' && (
+					<path
+						d="M32 18v14l9 6"
+						stroke="currentColor"
+						stroke-width="4"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					/>
+				)}
+			</svg>
+		</div>
+
+		<h1 class="checkout-result__title">{title}</h1>
+		<p class="checkout-result__body">{body}</p>
+
+		<div class="checkout-result__actions">
+			<a
+				href={primaryCta.href}
+				class="checkout-result__cta checkout-result__cta--primary"
+			>
+				{primaryCta.label}
+			</a>
+			{secondaryCta && (
+				<a
+					href={secondaryCta.href}
+					class="checkout-result__cta checkout-result__cta--secondary"
+				>
+					{secondaryCta.label}
+				</a>
+			)}
+		</div>
+	</div>
+</section>
+
+<style>
+	.checkout-result {
+		min-height: 60vh;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.checkout-result__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: var(--space-section) var(--space-container-x);
+		text-align: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-6);
+	}
+
+	.checkout-result__icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100px;
+		height: 100px;
+		border-radius: 50%;
+	}
+
+	.checkout-result__icon--success {
+		color: var(--success);
+		background-color: oklch(from var(--success) l c h / 0.12);
+	}
+
+	.checkout-result__icon--failure {
+		color: var(--destructive);
+		background-color: oklch(from var(--destructive) l c h / 0.12);
+	}
+
+	.checkout-result__icon--pending {
+		color: var(--warning);
+		background-color: oklch(from var(--warning) l c h / 0.12);
+	}
+
+	.checkout-result__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		color: var(--core-foreground);
+		margin: 0;
+	}
+
+	.checkout-result__body {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-lg);
+		color: var(--core-muted-foreground);
+		margin: 0;
+		max-width: 55ch;
+	}
+
+	.checkout-result__actions {
+		margin-top: var(--space-4);
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-4);
+		justify-content: center;
+	}
+
+	.checkout-result__cta {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--space-3) var(--space-8);
+		font-family: var(--font-sans);
+		font-weight: 600;
+		font-size: var(--text-body-lg);
+		border-radius: var(--radius-button);
+		text-decoration: none;
+		transition: opacity var(--duration-normal) ease;
+	}
+
+	.checkout-result__cta:hover {
+		opacity: 0.85;
+	}
+
+	.checkout-result__cta--primary {
+		background-color: var(--brand-accent);
+		color: var(--accent-foreground);
+	}
+
+	.checkout-result__cta--secondary {
+		background-color: transparent;
+		color: var(--core-muted-foreground);
+		border: 1.5px solid var(--border);
+	}
+
+	.checkout-result__cta--secondary:hover {
+		background-color: var(--surface-warm);
+		opacity: 1;
+	}
+
+	@media (max-width: 768px) {
+		.checkout-result__container {
+			padding: var(--space-12) var(--space-container-x);
+		}
+
+		.checkout-result__actions {
+			flex-direction: column;
+			align-items: stretch;
+		}
+	}
+</style>

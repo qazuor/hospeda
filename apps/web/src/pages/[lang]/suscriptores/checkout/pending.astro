@@ -10,6 +10,7 @@
  * @rendering SSR (no prerender — consistent with success/failure siblings)
  */
 
+import CheckoutResult from '@/components/billing/CheckoutResult.astro';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -27,124 +28,16 @@ const miCuentaUrl = buildUrl({ locale, path: 'mi-cuenta' });
 	title={t('billing.checkout.pending.pageTitle', 'Pago en proceso — Hospeda')}
 	description={t('billing.checkout.pending.title', 'Tu pago está siendo procesado')}
 >
-	<section class="checkout-result section">
-		<div class="checkout-result__container" data-reveal="up">
-			<div class="checkout-result__icon checkout-result__icon--pending" aria-hidden="true">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					viewBox="0 0 64 64"
-					fill="none"
-					width="80"
-					height="80"
-					aria-hidden="true"
-				>
-					<circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="4" />
-					<!-- Clock face -->
-					<path
-						d="M32 18v14l9 6"
-						stroke="currentColor"
-						stroke-width="4"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/>
-				</svg>
-			</div>
-
-			<h1 class="checkout-result__title">
-				{t('billing.checkout.pending.title', 'Tu pago está siendo procesado')}
-			</h1>
-
-			<p class="checkout-result__body">
-				{t(
-					'billing.checkout.pending.body',
-					'Puede demorar hasta 24 horas en confirmarse. Te avisaremos por email cuando se acredite.'
-				)}
-			</p>
-
-			<div class="checkout-result__actions">
-				<a href={miCuentaUrl} class="checkout-result__cta">
-					{t('billing.checkout.pending.cta', 'Verificar estado')}
-				</a>
-			</div>
-		</div>
-	</section>
+	<CheckoutResult
+		variant="pending"
+		title={t('billing.checkout.pending.title', 'Tu pago está siendo procesado')}
+		body={t(
+			'billing.checkout.pending.body',
+			'Puede demorar hasta 24 horas en confirmarse. Te avisaremos por email cuando se acredite.'
+		)}
+		primaryCta={{
+			href: miCuentaUrl,
+			label: t('billing.checkout.pending.cta', 'Verificar estado'),
+		}}
+	/>
 </MarketingLayout>
-
-<style>
-	.checkout-result {
-		min-height: 60vh;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.checkout-result__container {
-		max-width: var(--container-max);
-		margin: 0 auto;
-		padding: var(--space-section) var(--space-container-x);
-		text-align: center;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: var(--space-6);
-	}
-
-	.checkout-result__icon {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 100px;
-		height: 100px;
-		border-radius: 50%;
-	}
-
-	.checkout-result__icon--pending {
-		color: var(--warning);
-		background-color: oklch(from var(--warning) l c h / 0.12);
-	}
-
-	.checkout-result__title {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: clamp(1.75rem, 4vw, 2.5rem);
-		color: var(--core-foreground);
-		margin: 0;
-	}
-
-	.checkout-result__body {
-		font-family: var(--font-sans);
-		font-size: var(--text-body-lg);
-		color: var(--core-muted-foreground);
-		margin: 0;
-		max-width: 55ch;
-	}
-
-	.checkout-result__actions {
-		margin-top: var(--space-4);
-	}
-
-	.checkout-result__cta {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: var(--space-3) var(--space-8);
-		background-color: var(--brand-accent);
-		color: var(--accent-foreground, #fff);
-		font-family: var(--font-sans);
-		font-weight: 600;
-		font-size: var(--text-body-lg);
-		border-radius: var(--radius-button);
-		text-decoration: none;
-		transition: opacity var(--duration-normal) ease;
-	}
-
-	.checkout-result__cta:hover {
-		opacity: 0.85;
-	}
-
-	@media (max-width: 768px) {
-		.checkout-result__container {
-			padding: var(--space-12) var(--space-container-x);
-		}
-	}
-</style>
