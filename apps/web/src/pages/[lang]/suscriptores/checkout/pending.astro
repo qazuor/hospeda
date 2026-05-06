@@ -39,11 +39,11 @@ const miCuentaUrl = buildUrl({ locale, path: 'mi-cuenta' });
 					aria-hidden="true"
 				>
 					<circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="4" />
-					<!-- Hourglass body -->
+					<!-- Clock face -->
 					<path
-						d="M22 18h20M22 46h20M24 18l8 14-8 14M40 18l-8 14 8 14"
+						d="M32 18v14l9 6"
 						stroke="currentColor"
-						stroke-width="3.5"
+						stroke-width="4"
 						stroke-linecap="round"
 						stroke-linejoin="round"
 					/>
@@ -99,8 +99,8 @@ const miCuentaUrl = buildUrl({ locale, path: 'mi-cuenta' });
 	}
 
 	.checkout-result__icon--pending {
-		color: oklch(0.65 0.18 75);
-		background-color: oklch(0.65 0.18 75 / 0.1);
+		color: var(--warning);
+		background-color: oklch(from var(--warning) l c h / 0.12);
 	}
 
 	.checkout-result__title {
