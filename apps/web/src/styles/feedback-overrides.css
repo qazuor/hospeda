@@ -75,3 +75,21 @@
         bottom: 5.5rem;
     }
 }
+
+/*
+ * When the cookie consent banner is mounted, lift the FAB so it stays clear
+ * of the banner. The banner exposes its current height as
+ * --cookie-banner-height on <body>; matches the lift applied to ScrollToTop
+ * in global.css.
+ */
+body.cookie-banner-open .feedback-root .fab,
+body.cookie-banner-open .feedback-root .minimizedDot {
+    bottom: calc(var(--cookie-banner-height, 0px) + 6rem);
+}
+
+@media (min-width: 768px) {
+    body.cookie-banner-open .feedback-root .fab,
+    body.cookie-banner-open .feedback-root .minimizedDot {
+        bottom: calc(var(--cookie-banner-height, 0px) + 4rem);
+    }
+}
