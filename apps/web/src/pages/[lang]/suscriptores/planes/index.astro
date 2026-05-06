@@ -103,8 +103,11 @@ const hasPlans = ownerPlans.length > 0;
 		</div>
 	</section>
 
-	<section class="pricing-cards section">
+	<section class="pricing-cards section" aria-labelledby="pricing-cards-heading">
 		<div class="pricing-cards__container">
+			<h2 id="pricing-cards-heading" class="sr-only">
+				{t('pricing.owner.cardsHeading', 'Comparativa de planes para propietarios')}
+			</h2>
 			{!hasPlans ? (
 				<EmptyState
 					locale={locale}

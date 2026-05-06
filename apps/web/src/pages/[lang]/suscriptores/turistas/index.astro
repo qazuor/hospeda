@@ -102,8 +102,11 @@ const hasPlans = touristPlans.length > 0;
 		</div>
 	</section>
 
-	<section class="pricing-cards section">
+	<section class="pricing-cards section" aria-labelledby="pricing-cards-heading">
 		<div class="pricing-cards__container">
+			<h2 id="pricing-cards-heading" class="sr-only">
+				{t('pricing.tourist.cardsHeading', 'Comparativa de planes para turistas')}
+			</h2>
 			{!hasPlans ? (
 				<EmptyState
 					locale={locale}
