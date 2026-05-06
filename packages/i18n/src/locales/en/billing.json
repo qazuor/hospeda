@@ -211,7 +211,9 @@
             "processing": "Processing...",
             "processingAriaLabel": "Processing payment",
             "error": "We could not start the payment. Please try again.",
-            "unauthCta": "Sign in to subscribe"
+            "unauthCta": "Sign in to subscribe",
+            "currentPlan": "Current plan",
+            "currentPlanAriaLabel": "This is your current plan"
         }
     },
     "limits": {

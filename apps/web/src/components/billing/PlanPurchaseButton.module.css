@@ -22,7 +22,7 @@
     border: none;
     border-radius: var(--radius-button, 8px);
     background-color: var(--brand-accent);
-    color: var(--accent-foreground, #fff);
+    color: var(--accent-foreground);
     font-family: var(--font-sans);
     font-size: 1rem;
     font-weight: 600;
@@ -50,6 +50,38 @@
 .button:disabled {
     opacity: 0.65;
     cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------------------
+ * Current-plan state (rendered when this plan matches the active subscription)
+ * ------------------------------------------------------------------------- */
+
+.buttonCurrent {
+    background-color: oklch(from var(--success) l c h / 0.12);
+    color: var(--success);
+    cursor: default;
+    opacity: 1;
+}
+
+.buttonCurrent:hover:not(:disabled) {
+    background-color: oklch(from var(--success) l c h / 0.12);
+    transform: none;
+}
+
+.buttonCurrent:disabled {
+    opacity: 1;
+    cursor: default;
+}
+
+.currentContent {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: 600;
+}
+
+.currentIcon {
+    flex-shrink: 0;
 }
 
 /* ---------------------------------------------------------------------------
@@ -91,8 +123,8 @@
     display: inline-block;
     width: 1rem;
     height: 1rem;
-    border: 2px solid rgba(255 255 255 / 0.35);
-    border-top-color: #fff;
+    border: 2px solid oklch(from var(--accent-foreground) l c h / 0.35);
+    border-top-color: var(--accent-foreground);
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
     flex-shrink: 0;
@@ -112,7 +144,7 @@
     margin: 0;
     font-family: var(--font-sans);
     font-size: 0.875rem;
-    color: var(--destructive, #e53e3e);
+    color: var(--destructive);
     text-align: center;
     line-height: 1.4;
 }
@@ -128,6 +160,6 @@
 
     .spinner {
         animation: none;
-        border-top-color: #fff;
+        border-top-color: var(--accent-foreground);
     }
 }

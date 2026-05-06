@@ -11,7 +11,8 @@
  */
 
 import type { JSX } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { userApi } from '../../lib/api/endpoints-protected';
 import { useSession } from '../../lib/auth-client';
 import { getApiUrl } from '../../lib/env';
 import type { SupportedLocale } from '../../lib/i18n';
@@ -49,6 +50,35 @@ export interface PlanPurchaseButtonProps {
     readonly ctaText: string;
     /** Current locale for translations and URL construction. */
     readonly locale: SupportedLocale;
+}
+
+// ---------------------------------------------------------------------------
+// Subscription cache (module singleton)
+// ---------------------------------------------------------------------------
+
+/**
+ * Module-level promise that fetches the current user's subscription. Several
+ * <PlanPurchaseButton> islands hydrate on the same pricing page; without
+ * sharing the request each one would issue its own GET, hitting the API N
+ * times for a value that's identical across all buttons. The first call
+ * starts the fetch; all subsequent calls await the same promise.
+ *
+ * Reset by `clearSubscriptionCache()` if the page wants to invalidate after
+ * a checkout completes (currently not used — the success page is a separate
+ * route so the cache is naturally fresh on next visit).
+ */
+let subscriptionPromise: Promise<string | null> | null = null;
+
+function fetchCurrentPlanSlug(): Promise<string | null> {
+    if (subscriptionPromise) return subscriptionPromise;
+    subscriptionPromise = userApi
+        .getSubscription()
+        .then((result) => {
+            if (!result.ok) return null;
+            return result.data.subscription?.planSlug ?? null;
+        })
+        .catch(() => null);
+    return subscriptionPromise;
 }
 
 // ---------------------------------------------------------------------------
@@ -113,6 +143,7 @@ export function PlanPurchaseButton({
     const { data: session, isPending: sessionPending } = useSession();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [currentPlanSlug, setCurrentPlanSlug] = useState<string | null>(null);
 
     const { t } = createTranslations(locale);
 
@@ -125,6 +156,30 @@ export function PlanPurchaseButton({
         'billing.checkout.button.error',
         'No pudimos iniciar el pago. Intenta de nuevo.'
     );
+    const currentPlanLabel = t('billing.checkout.button.currentPlan', 'Plan actual');
+    const currentPlanAriaLabel = t(
+        'billing.checkout.button.currentPlanAriaLabel',
+        'Este es tu plan actual'
+    );
+
+    // Fetch the user's current subscription once they're authenticated. Shared
+    // across every PlanPurchaseButton on the page via subscriptionPromise so a
+    // pricing grid with N tiers issues exactly one request, not N.
+    useEffect(() => {
+        if (!isAuthenticated) {
+            setCurrentPlanSlug(null);
+            return;
+        }
+        let cancelled = false;
+        fetchCurrentPlanSlug().then((slug) => {
+            if (!cancelled) setCurrentPlanSlug(slug);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated]);
+
+    const isCurrentPlan = isAuthenticated && currentPlanSlug === planId;
 
     /**
      * Handle button click.
@@ -182,19 +237,45 @@ export function PlanPurchaseButton({
         }
     }
 
-    const buttonAriaLabel = loading ? processingAriaLabel : `${ctaText} — ${formattedPrice}`;
+    const buttonAriaLabel = isCurrentPlan
+        ? currentPlanAriaLabel
+        : loading
+          ? processingAriaLabel
+          : `${ctaText} — ${formattedPrice}`;
 
     return (
         <div className={styles.wrapper}>
             <button
                 type="button"
-                disabled={loading}
+                disabled={loading || isCurrentPlan}
                 aria-label={buttonAriaLabel}
                 aria-busy={loading}
-                onClick={() => void handleClick()}
-                className={styles.button}
+                aria-disabled={isCurrentPlan}
+                onClick={isCurrentPlan ? undefined : () => void handleClick()}
+                className={`${styles.button}${isCurrentPlan ? ` ${styles.buttonCurrent}` : ''}`}
             >
-                {loading ? (
+                {isCurrentPlan ? (
+                    <span className={styles.currentContent}>
+                        <svg
+                            className={styles.currentIcon}
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            aria-hidden="true"
+                        >
+                            <path
+                                d="M5 12.5l4.5 4.5L19 7"
+                                stroke="currentColor"
+                                stroke-width="2.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            />
+                        </svg>
+                        <span>{currentPlanLabel}</span>
+                    </span>
+                ) : loading ? (
                     <span className={styles.loadingContent}>
                         <span
                             className={styles.spinner}

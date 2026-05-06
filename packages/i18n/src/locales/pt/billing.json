@@ -211,7 +211,9 @@
             "processing": "Processando...",
             "processingAriaLabel": "Processando pagamento",
             "error": "Não conseguimos iniciar o pagamento. Tente novamente.",
-            "unauthCta": "Faça login para contratar"
+            "unauthCta": "Faça login para contratar",
+            "currentPlan": "Plano atual",
+            "currentPlanAriaLabel": "Este é o seu plano atual"
         }
     },
     "limits": {
