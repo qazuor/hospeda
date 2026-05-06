@@ -8,7 +8,6 @@
  */
 
 const fs = require('node:fs');
-const path = require('node:path');
 const { globSync } = require('glob');
 
 // Statistics
@@ -174,7 +173,7 @@ function fixMD024(content) {
                 const contexts = headingContexts.get(normalizedText);
                 const currentContext = contexts.find((c) => c.index === index);
 
-                if (currentContext && currentContext.context && currentContext.context !== text) {
+                if (currentContext?.context && currentContext.context !== text) {
                     // Don't add context if it would be redundant
                     const contextWords = currentContext.context.split(' ').slice(0, 2).join(' ');
                     if (!text.includes(contextWords)) {
@@ -202,7 +201,7 @@ function fixMD051(content) {
 
     // Extract all headings to build valid fragment map
     const validFragments = new Set();
-    lines.forEach((line) => {
+    for (const line of lines) {
         const headingMatch = line.match(/^#{1,6}\s+(.+)$/);
         if (headingMatch) {
             // Convert to slug (markdown heading anchor format)
@@ -212,7 +211,7 @@ function fixMD051(content) {
                 .replace(/\s+/g, '-');
             validFragments.add(slug);
         }
-    });
+    }
 
     // Fix invalid fragment links
     const result = content.replace(/\[([^\]]+)\]\(#([^)]+)\)/g, (match, text, fragment) => {
@@ -263,7 +262,6 @@ function fixMD033(content) {
         });
 
         // Escape HTML tags outside code spans
-        const originalModified = modified;
         modified = modified.replace(/<([A-Za-z][A-Za-z0-9]*)>/g, (match) => {
             fixed++;
             return `\`${match}\``;
@@ -316,13 +314,13 @@ function main() {
     const patterns = ['docs/**/*.md', 'apps/*/docs/**/*.md', 'packages/*/docs/**/*.md'];
 
     const files = [];
-    patterns.forEach((pattern) => {
+    for (const pattern of patterns) {
         const matches = globSync(pattern, {
             ignore: ['**/node_modules/**', '**/dist/**', '**/build/**'],
             cwd: process.cwd()
         });
         files.push(...matches);
-    });
+    }
 
     console.log(`Found ${files.length} markdown files to process\n`);
 
@@ -341,8 +339,8 @@ function main() {
     console.log(
         `  Total fixes: ${stats.md036Fixed + stats.md029Fixed + stats.md024Fixed + stats.md051Fixed + stats.md033Fixed}`
     );
-    console.log(`\nNote: MD040 (code language) errors were intentionally NOT fixed`);
-    console.log(`      and will need manual review (language detection requires context)`);
+    console.log('\nNote: MD040 (code language) errors were intentionally NOT fixed');
+    console.log('      and will need manual review (language detection requires context)');
 }
 
 // Run if called directly

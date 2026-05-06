@@ -17,8 +17,8 @@
  *   <out-dir>/<pkg-path>/coverage/coverage-summary.json
  */
 
-import { readdirSync, readFileSync, mkdirSync, writeFileSync, statSync } from 'node:fs';
-import { join, relative, dirname } from 'node:path';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { dirname, join, relative } from 'node:path';
 
 const [, , shardsDir, outDir] = process.argv;
 
@@ -233,14 +233,8 @@ for (const [pkgPath, files] of groups) {
 
     const outPkgDir = join(outDir, pkgPath, 'coverage');
     mkdirSync(outPkgDir, { recursive: true });
-    writeFileSync(
-        join(outPkgDir, 'coverage-final.json'),
-        JSON.stringify(merged, null, 2)
-    );
-    writeFileSync(
-        join(outPkgDir, 'coverage-summary.json'),
-        JSON.stringify(summary, null, 2)
-    );
+    writeFileSync(join(outPkgDir, 'coverage-final.json'), JSON.stringify(merged, null, 2));
+    writeFileSync(join(outPkgDir, 'coverage-summary.json'), JSON.stringify(summary, null, 2));
 
     console.log(
         `  ✓ ${pkgPath}: ${files.length} shard(s) merged, lines ${total.lines.pct.toFixed(2)}%`

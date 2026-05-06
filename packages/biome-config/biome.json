@@ -19,8 +19,14 @@
             "**/routeTree.gen.ts",
             "**/*.astro",
             "**/docs/examples/**",
-            "**/mappings/id-mappings.json"
+            "**/mappings/id-mappings.json",
+            "**/.remember/**"
         ]
+    },
+    "css": {
+        "parser": {
+            "cssModules": true
+        }
     },
     "organizeImports": {
         "enabled": true
@@ -108,7 +114,12 @@
             }
         },
         {
-            "include": ["scripts/cli/**", "scripts/*.ts", "scripts/*.mjs"],
+            "include": [
+                "scripts/**/*.ts",
+                "scripts/**/*.mjs",
+                "scripts/**/*.js",
+                "scripts/**/*.cjs"
+            ],
             "linter": {
                 "rules": {
                     "suspicious": {

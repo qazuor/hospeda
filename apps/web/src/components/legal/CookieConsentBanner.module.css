@@ -16,7 +16,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 9000;
+    z-index: var(--z-cookie-banner);
     background-color: var(--core-card);
     border-top: 1px solid var(--border);
     box-shadow: 0 -4px 24px oklch(0 0 0 / 0.1);
