@@ -160,6 +160,11 @@
     --z-dropdown: 60;
     --z-modal: 100;
     --z-toast: 200;
+    /* Cookie consent banner sits above all in-page content (9000); the
+       fullscreen mobile menu must clear it so opening the menu is not
+       partially obscured by the banner. */
+    --z-cookie-banner: 9000;
+    --z-mobile-menu: 9100;
 
     /* --- Layout (runtime tokens overridden by JS) --- */
     --navbar-height: 80px;

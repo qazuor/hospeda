@@ -93,3 +93,16 @@ body.cookie-banner-open .feedback-root .minimizedDot {
         bottom: calc(var(--cookie-banner-height, 0px) + 4rem);
     }
 }
+
+/*
+ * Hide the FAB while the fullscreen mobile menu is open. The package's FAB
+ * uses the maximum int z-index by design (so it always wins over normal page
+ * content), but that conflicts with the fullscreen menu — the FAB ends up
+ * floating on top of the menu drawer. When MobileMenu opens it sets
+ * [data-mobile-menu-open] on <html>; we hide the FAB while that flag is set.
+ */
+html[data-mobile-menu-open] .feedback-root .fab,
+html[data-mobile-menu-open] .feedback-root .minimizedDot {
+    visibility: hidden;
+    pointer-events: none;
+}
