@@ -21,54 +21,79 @@ export const DOCKER_ENV_VARS = [
     {
         name: 'POSTGRES_USER',
         description: 'PostgreSQL superuser name used by the Docker Compose database service',
+        descriptionEs: 'Nombre del superusuario de PostgreSQL en el servicio Docker Compose',
         type: 'string',
         required: true,
         secret: false,
         exampleValue: 'hospeda',
         apps: ['docker'],
-        category: 'docker'
+        category: 'docker',
+        howToObtain:
+            'Pick any username (e.g. "hospeda"). Used only inside the local Docker container — has no relation to your production DB user.',
+        howToObtainEs:
+            'Elegí cualquier nombre de usuario (ej: "hospeda"). Solo se usa dentro del contenedor Docker local; no tiene relación con el usuario de producción.'
     },
     {
         name: 'POSTGRES_PASSWORD',
         description: 'PostgreSQL superuser password for the Docker Compose database service',
+        descriptionEs: 'Contraseña del superusuario de PostgreSQL en el servicio Docker Compose',
         type: 'string',
         required: true,
         secret: true,
         exampleValue: 'hospeda',
         apps: ['docker'],
-        category: 'docker'
+        category: 'docker',
+        howToObtain:
+            'Pick any password — local Docker only. Use something simple like "hospeda" or "password" since it never leaves your machine.',
+        howToObtainEs:
+            'Elegí cualquier contraseña; solo es para Docker local. Algo simple como "hospeda" o "password" alcanza porque nunca sale de tu máquina.'
     },
     {
         name: 'POSTGRES_DB',
         description: 'PostgreSQL database name created on first boot by the Docker service',
+        descriptionEs: 'Nombre de la base de datos que crea el contenedor en el primer arranque',
         type: 'string',
         required: true,
         secret: false,
         exampleValue: 'hospeda',
         apps: ['docker'],
-        category: 'docker'
+        category: 'docker',
+        howToObtain:
+            'Database name auto-created on first container boot. Typical: "hospeda_dev". Has to match the DB part of HOSPEDA_DATABASE_URL.',
+        howToObtainEs:
+            'Nombre de DB que se crea automáticamente al arrancar el contenedor. Típicamente "hospeda_dev". Tiene que coincidir con la parte de la base en HOSPEDA_DATABASE_URL.'
     },
     {
         name: 'POSTGRES_PORT',
         description: 'Host-side port mapped to the PostgreSQL Docker container',
+        descriptionEs: 'Puerto del host mapeado al contenedor de PostgreSQL',
         type: 'number',
         required: false,
         secret: false,
-        defaultValue: '5432',
-        exampleValue: '5432',
+        defaultValue: '5436',
+        exampleValue: '5436',
         apps: ['docker'],
-        category: 'docker'
+        category: 'docker',
+        howToObtain:
+            'Port your machine exposes Postgres on. Default 5436 (this repo offsets to avoid collision with a system Postgres on 5432). Change it if 5436 is also taken.',
+        howToObtainEs:
+            'Puerto donde tu máquina expone Postgres. Por defecto 5436 (este repo usa un puerto desplazado para evitar colisionar con un Postgres de sistema en 5432). Cambialo si el 5436 también está ocupado.'
     },
     {
         name: 'REDIS_PORT',
         description: 'Host-side port mapped to the Redis Docker container',
+        descriptionEs: 'Puerto del host mapeado al contenedor de Redis',
         type: 'number',
         required: false,
         secret: false,
-        defaultValue: '6379',
-        exampleValue: '6379',
+        defaultValue: '6381',
+        exampleValue: '6381',
         apps: ['docker'],
-        category: 'docker'
+        category: 'docker',
+        howToObtain:
+            'Port your machine exposes Redis on. Default 6381 (this repo offsets to avoid collision with a system Redis on 6379). Change if 6381 is also taken.',
+        howToObtainEs:
+            'Puerto donde tu máquina expone Redis. Por defecto 6381 (este repo usa un puerto desplazado para evitar colisionar con un Redis de sistema en 6379). Cambialo si el 6381 también está ocupado.'
     }
 ] as const satisfies readonly EnvVarDefinition[];
 
@@ -84,6 +109,7 @@ export const SYSTEM_ENV_VARS = [
     {
         name: 'NODE_ENV',
         description: 'Node.js execution environment; controls optimisations and feature flags',
+        descriptionEs: 'Entorno de ejecución de Node.js; controla optimizaciones y feature flags',
         type: 'enum',
         required: false,
         secret: false,
@@ -91,58 +117,86 @@ export const SYSTEM_ENV_VARS = [
         exampleValue: 'development',
         enumValues: ['development', 'production', 'test'] as const,
         apps: ['api', 'web', 'admin'],
-        category: 'system'
+        category: 'system',
+        howToObtain:
+            'Auto-set by the runtime. Vercel sets "production" for prod builds and "development" for the dev server. Do NOT set it manually in Vercel — the platform rejects it.',
+        howToObtainEs:
+            'Lo setea el runtime automáticamente. Vercel pone "production" para builds de prod y "development" para el dev server. NO lo seteés manualmente en Vercel; la plataforma lo rechaza.'
     },
     {
         name: 'CI',
         description: 'Set to true by most CI systems; disables interactive prompts',
+        descriptionEs: 'Lo ponen en true los sistemas de CI; desactiva los prompts interactivos',
         type: 'boolean',
         required: false,
         secret: false,
         exampleValue: 'false',
         apps: ['api'],
-        category: 'system'
+        category: 'system',
+        howToObtain:
+            'Auto-set by GitHub Actions / Vercel / etc. Do NOT set manually. Code uses it to disable interactive prompts in scripts.',
+        howToObtainEs:
+            'Lo setean automáticamente GitHub Actions / Vercel / etc. NO lo seteés a mano. El código lo usa para apagar prompts interactivos en scripts.'
     },
     {
         name: 'VERCEL',
         description: 'Automatically set to 1 when running on Vercel serverless infrastructure',
+        descriptionEs: 'Se setea en 1 automáticamente cuando corre en infraestructura de Vercel',
         type: 'boolean',
         required: false,
         secret: false,
         exampleValue: 'false',
         apps: ['api'],
-        category: 'system'
+        category: 'system',
+        howToObtain: 'Auto-set by Vercel runtime to 1. Do NOT set manually.',
+        howToObtainEs: 'Lo setea Vercel automáticamente en 1. NO lo seteés a mano.'
     },
     {
         name: 'VERCEL_GIT_COMMIT_SHA',
         description: 'Full Git commit SHA injected by Vercel at build time',
+        descriptionEs: 'SHA completo del commit Git que inyecta Vercel al momento del build',
         type: 'string',
         required: false,
         secret: false,
         exampleValue: 'abc123def456',
         apps: ['api'],
-        category: 'system'
+        category: 'system',
+        howToObtain:
+            'Auto-set by Vercel at build time to the deployed git SHA. Use it as the Sentry release identifier so each deploy is uniquely tagged.',
+        howToObtainEs:
+            'Vercel lo setea al hacer el build con el SHA del commit deployado. Conectalo al "release" de Sentry así cada deploy queda etiquetado único.'
     },
     // SENTRY_ENVIRONMENT: Deferred.. use import.meta.env.MODE or NODE_ENV instead
     {
         name: 'TEST_DB_URL',
         description: 'PostgreSQL connection string for E2E test database setup scripts',
+        descriptionEs:
+            'Connection string de PostgreSQL para los scripts de setup de la DB de tests E2E',
         type: 'url',
         required: false,
         secret: false,
         exampleValue: 'postgresql://postgres:postgres@localhost:5432/hospeda_test',
         apps: ['api'],
-        category: 'system'
+        category: 'system',
+        howToObtain:
+            'Postgres connection string used by E2E test bootstrap to drop/recreate the test DB. Local-only — never set in prod. Format: postgresql://USER:PASS@HOST:PORT/DBNAME.',
+        howToObtainEs:
+            'Connection string de Postgres que usa el bootstrap de los E2E para tirar y recrear la base de tests. Solo local; nunca la pongas en prod. Formato: postgresql://USUARIO:PASS@HOST:PUERTO/BASE.'
     },
     {
         name: 'TEST_DB_NAME',
         description: 'Database name used by E2E test setup scripts',
+        descriptionEs: 'Nombre de la base de datos que usan los scripts de setup de tests E2E',
         type: 'string',
         required: false,
         secret: false,
         defaultValue: 'hospeda_test',
         exampleValue: 'hospeda_test',
         apps: ['api'],
-        category: 'system'
+        category: 'system',
+        howToObtain:
+            'Name of the throwaway DB the E2E suite recreates each run. Default: "hospeda_test". Should NEVER be the same name as your real dev DB.',
+        howToObtainEs:
+            'Nombre de la DB descartable que la suite E2E recrea en cada corrida. Por defecto "hospeda_test". NUNCA uses el mismo nombre que tu DB de desarrollo real.'
     }
 ] as const satisfies readonly EnvVarDefinition[];

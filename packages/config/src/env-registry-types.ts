@@ -37,6 +37,13 @@ export interface EnvVarDefinition {
     /** Human-readable description of what this variable controls. */
     readonly description: string;
 
+    /**
+     * Spanish translation of `description`. Used by interactive tooling
+     * (e.g. `pnpm env:sync`) when the user prefers Spanish output. Optional —
+     * tooling falls back to `description` when absent.
+     */
+    readonly descriptionEs?: string;
+
     /** Runtime value type. Use `enum` together with `enumValues`. */
     readonly type: EnvVarType;
 
@@ -72,4 +79,34 @@ export interface EnvVarDefinition {
 
     /** Logical grouping used for documentation and tooling output. */
     readonly category: string;
+
+    /**
+     * Free-form instructions shown in interactive prompts (e.g. `pnpm env:sync`)
+     * to help the developer obtain a valid value. Use plain text — multiple
+     * sentences allowed. Should explain how to generate the value or where to
+     * find it (provider dashboard URL, CLI command, etc.).
+     *
+     * Examples:
+     *   - 'Generate with: openssl rand -base64 32'
+     *   - 'Get it from the Clerk dashboard → API Keys → Secret keys'
+     *   - 'Postgres connection string: postgresql://user:pass@host:port/db'
+     */
+    readonly howToObtain?: string;
+
+    /**
+     * Spanish translation of `howToObtain`. Used by interactive tooling
+     * (e.g. `pnpm env:sync`) when the user prefers Spanish output. Optional —
+     * tooling falls back to `howToObtain` when absent.
+     */
+    readonly howToObtainEs?: string;
+
+    /**
+     * URL to the provider's documentation, dashboard, or signup page where the
+     * value can be obtained. Shown in interactive prompts as a clickable hint.
+     *
+     * Examples:
+     *   - 'https://dashboard.clerk.com/last-active?path=api-keys'
+     *   - 'https://www.mercadopago.com.ar/developers/panel/credentials'
+     */
+    readonly helpUrl?: string;
 }
