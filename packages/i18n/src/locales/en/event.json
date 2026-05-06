@@ -61,7 +61,8 @@
         "getTickets": "Get Tickets",
         "relatedEvents": "Related Events",
         "shareEvent": "Share Event",
-        "pastEvent": "Past Event"
+        "pastEvent": "Past Event",
+        "cancelled": "Cancelled"
     },
     "categoryPage": {
         "categories": {

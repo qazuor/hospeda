@@ -1,0 +1,61 @@
+---
+/**
+ * @file EventDetailTagsRow.astro
+ * @description Horizontal row of tag pills for the event detail page.
+ *
+ * Only rendered when `tags.length > 0`. Pill colors are derived from a
+ * stable hash of the tag string so each tag has a consistent color across
+ * renders, using the same muted-color approach as Post tags.
+ */
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { getMutedColorScheme } from '@/lib/colors';
+
+interface Props {
+    readonly tags: readonly string[];
+    readonly locale: SupportedLocale;
+}
+
+const { tags, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+if (tags.length === 0) {
+    // Render nothing — caller should also guard, but belt-and-suspenders.
+    return;
+}
+
+// All tags share the same muted color scheme (no per-tag color mapping in this app).
+const tagColors = getMutedColorScheme();
+const tagStyle = `background-color: ${tagColors.bg}; color: ${tagColors.text}; border-color: ${tagColors.border};`;
+---
+
+<div class="event-tags" aria-label={t('events.detail.tagsLabel', 'Etiquetas del evento')}>
+    {tags.map((tag) => (
+        <span class="event-tags__pill" style={tagStyle}>
+            {tag}
+        </span>
+    ))}
+</div>
+
+<style>
+    .event-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: var(--space-4, 1rem);
+    }
+
+    .event-tags__pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: var(--radius-pill);
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 3px 12px;
+        line-height: 1.5;
+        white-space: nowrap;
+        border: 1px solid transparent;
+        letter-spacing: 0.02em;
+    }
+</style>

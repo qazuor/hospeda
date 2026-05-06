@@ -1,0 +1,131 @@
+---
+/**
+ * @file EventDetailLocationCard.astro
+ * @description Sidebar card showing the event venue location on a mini map.
+ *
+ * Only rendered when GPS coordinates are available. When coordinates are absent
+ * the component renders nothing — following the "show only if info exists" rule.
+ *
+ * Mirrors DestinationMiniMap.astro but uses `mode="exact"` and an event-specific
+ * zoom level (14 for venue-level precision).
+ */
+import { LocationMap } from '@/components/maps/LocationMap.client';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { LocationIcon } from '@repo/icons';
+
+interface Props {
+    /** GPS coordinates of the event venue. */
+    readonly coordinates: { readonly lat: number; readonly lng: number };
+    /** Name of the venue or place shown as marker label and card footer. */
+    readonly venueName?: string;
+    /** Full address string (street + number + floor + apartment). */
+    readonly fullAddress?: string;
+    /** Map zoom level — defaults to 14 (venue-level). */
+    readonly zoom?: number;
+    readonly locale: SupportedLocale;
+}
+
+const { coordinates, venueName, fullAddress, zoom = 14, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const markerLabel = venueName || t('events.detail.venue', 'Lugar del evento');
+---
+
+<aside class="event-location-card">
+    <header class="event-location-card__header">
+        <LocationIcon size={16} aria-hidden="true" />
+        <h3 class="event-location-card__title">
+            {t('events.detail.location', 'Ubicación')}
+        </h3>
+    </header>
+
+    <div class="event-location-card__viewport">
+        <LocationMap
+            client:only="react"
+            mode="exact"
+            lat={coordinates.lat}
+            lng={coordinates.lng}
+            zoom={zoom}
+            markerLabel={markerLabel}
+            ariaLabel={t('maps.ariaLabelEvent', 'Mapa del lugar del evento')}
+            i18nStrings={{
+                attribution: t('maps.attribution', 'Datos © OpenStreetMap'),
+                approximateDisclaimer: t('maps.approximateDisclaimer', ''),
+                markerLabel
+            }}
+        />
+    </div>
+
+    {(venueName || fullAddress) && (
+        <div class="event-location-card__footer">
+            {venueName && (
+                <p class="event-location-card__venue">{venueName}</p>
+            )}
+            {fullAddress && (
+                <p class="event-location-card__address">{fullAddress}</p>
+            )}
+        </div>
+    )}
+</aside>
+
+<style>
+    .event-location-card {
+        background-color: var(--core-card);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .event-location-card__header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem 1.25rem 0.5rem;
+        color: var(--core-foreground);
+    }
+
+    .event-location-card__title {
+        font-family: var(--font-heading);
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .event-location-card__viewport {
+        height: 220px;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    /* Give the LocationMap island a concrete pixel height to fill. */
+    .event-location-card__viewport :global(.location-map),
+    .event-location-card__viewport :global(.leaflet-container) {
+        height: 100%;
+        width: 100%;
+    }
+
+    .event-location-card__footer {
+        padding: 0.75rem 1.25rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .event-location-card__venue {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .event-location-card__address {
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        color: var(--core-muted-foreground);
+        margin: 0;
+    }
+</style>

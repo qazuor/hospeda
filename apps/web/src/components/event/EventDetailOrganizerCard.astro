@@ -1,0 +1,301 @@
+---
+/**
+ * @file EventDetailOrganizerCard.astro
+ * @description Sidebar card displaying the event organizer details.
+ *
+ * Shows logo (optional), name, description (sanitized), contact info, and
+ * social network links. Only rendered when `organizer` has at least a name.
+ *
+ * Social icons available in @repo/icons: FacebookIcon, InstagramIcon,
+ * TwitterIcon, YoutubeIcon, WebIcon (used for LinkedIn as a fallback since
+ * no LinkedinIcon exists in the package).
+ */
+import { sanitizeHtml } from '@/lib/sanitize-html';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import {
+    EmailIcon,
+    PhoneIcon,
+    GlobeIcon,
+    FacebookIcon,
+    InstagramIcon,
+    TwitterIcon,
+    YoutubeIcon,
+    WebIcon
+} from '@repo/icons';
+import type { EventDetailOrganizer } from '@/data/types';
+
+interface Props {
+    readonly organizer: EventDetailOrganizer;
+    readonly locale: SupportedLocale;
+    /** Site origin for `sanitizeHtml` internal-link detection (optional). */
+    readonly siteOrigin?: string;
+}
+
+const { organizer, locale, siteOrigin } = Astro.props;
+const { t } = createTranslations(locale);
+
+const safeDescription = organizer.description
+    ? sanitizeHtml({ html: organizer.description, siteOrigin })
+    : '';
+
+const contact = organizer.contactInfo;
+const social = organizer.socialNetworks;
+
+const hasSocial = social &&
+    (social.facebook || social.instagram || social.twitter || social.youtube || social.linkedin);
+---
+
+<aside class="event-organizer-card">
+    <header class="event-organizer-card__header">
+        {organizer.logo && (
+            <img
+                src={organizer.logo}
+                alt={organizer.name}
+                class="event-organizer-card__logo"
+                loading="lazy"
+                width="48"
+                height="48"
+            />
+        )}
+        <div class="event-organizer-card__header-text">
+            <p class="event-organizer-card__label">
+                {t('events.detail.organizer', 'Organizador')}
+            </p>
+            <h3 class="event-organizer-card__name">{organizer.name}</h3>
+        </div>
+    </header>
+
+    {safeDescription && (
+        <div
+            class="event-organizer-card__description"
+            set:html={safeDescription}
+        />
+    )}
+
+    {contact && (contact.email || contact.phone || contact.website) && (
+        <div class="event-organizer-card__contact">
+            {contact.email && (
+                <a
+                    href={`mailto:${contact.email}`}
+                    class="event-organizer-card__contact-link"
+                    aria-label={t('events.detail.contactEmail', 'Enviar email al organizador')}
+                >
+                    <EmailIcon size={15} aria-hidden="true" />
+                    <span>{contact.email}</span>
+                </a>
+            )}
+            {contact.phone && (
+                <a
+                    href={`tel:${contact.phone}`}
+                    class="event-organizer-card__contact-link"
+                    aria-label={t('events.detail.contactPhone', 'Llamar al organizador')}
+                >
+                    <PhoneIcon size={15} aria-hidden="true" />
+                    <span>{contact.phone}</span>
+                </a>
+            )}
+            {contact.website && (
+                <a
+                    href={contact.website}
+                    class="event-organizer-card__contact-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t('events.detail.contactWebsite', 'Visitar sitio web del organizador')}
+                >
+                    <GlobeIcon size={15} aria-hidden="true" />
+                    <span>{contact.website.replace(/^https?:\/\//, '')}</span>
+                </a>
+            )}
+        </div>
+    )}
+
+    {hasSocial && (
+        <div class="event-organizer-card__social" aria-label={t('events.detail.socialNetworks', 'Redes sociales')}>
+            {social?.facebook && (
+                <a
+                    href={social.facebook}
+                    class="event-organizer-card__social-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Facebook"
+                >
+                    <FacebookIcon size={18} aria-hidden="true" />
+                </a>
+            )}
+            {social?.instagram && (
+                <a
+                    href={social.instagram}
+                    class="event-organizer-card__social-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Instagram"
+                >
+                    <InstagramIcon size={18} aria-hidden="true" />
+                </a>
+            )}
+            {social?.twitter && (
+                <a
+                    href={social.twitter}
+                    class="event-organizer-card__social-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Twitter / X"
+                >
+                    <TwitterIcon size={18} aria-hidden="true" />
+                </a>
+            )}
+            {social?.youtube && (
+                <a
+                    href={social.youtube}
+                    class="event-organizer-card__social-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="YouTube"
+                >
+                    <YoutubeIcon size={18} aria-hidden="true" />
+                </a>
+            )}
+            {social?.linkedin && (
+                <a
+                    href={social.linkedin}
+                    class="event-organizer-card__social-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="LinkedIn"
+                >
+                    {/* No LinkedinIcon in @repo/icons — using WebIcon as fallback */}
+                    <WebIcon size={18} aria-hidden="true" />
+                </a>
+            )}
+        </div>
+    )}
+</aside>
+
+<style>
+    .event-organizer-card {
+        background-color: var(--core-card);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-card);
+        padding: var(--space-6, 1.5rem);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 1rem);
+    }
+
+    .event-organizer-card__header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .event-organizer-card__logo {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--radius-md);
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .event-organizer-card__header-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+        min-width: 0;
+    }
+
+    .event-organizer-card__label {
+        font-family: var(--font-sans);
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--core-muted-foreground);
+        margin: 0;
+    }
+
+    .event-organizer-card__name {
+        font-family: var(--font-heading);
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .event-organizer-card__description {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        line-height: 1.6;
+        color: var(--core-muted-foreground);
+    }
+
+    .event-organizer-card__description :global(p) {
+        margin: 0 0 0.5rem;
+    }
+
+    .event-organizer-card__description :global(p:last-child) {
+        margin-bottom: 0;
+    }
+
+    .event-organizer-card__contact {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        border-top: 1px solid var(--border, oklch(from var(--core-foreground) l c h / 0.1));
+        padding-top: var(--space-3, 0.75rem);
+    }
+
+    .event-organizer-card__contact-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        color: var(--brand-primary);
+        text-decoration: none;
+        transition: color var(--duration-normal, 0.4s) ease;
+        overflow: hidden;
+    }
+
+    .event-organizer-card__contact-link span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .event-organizer-card__contact-link:hover {
+        color: var(--brand-accent);
+    }
+
+    .event-organizer-card__social {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        border-top: 1px solid var(--border, oklch(from var(--core-foreground) l c h / 0.1));
+        padding-top: var(--space-3, 0.75rem);
+    }
+
+    .event-organizer-card__social-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-md);
+        background-color: oklch(from var(--brand-primary) l c h / 0.1);
+        color: var(--brand-primary);
+        transition:
+            background-color var(--duration-normal, 0.4s) ease,
+            color var(--duration-normal, 0.4s) ease;
+        text-decoration: none;
+    }
+
+    .event-organizer-card__social-link:hover {
+        background-color: var(--brand-primary);
+        color: var(--primary-foreground);
+    }
+</style>

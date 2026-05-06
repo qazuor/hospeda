@@ -11,14 +11,19 @@ import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { ShareButtons } from '@/components/ShareButtons.client';
+import { ImageGallery } from '@/components/ImageGallery.client';
+import EventDetailHeader from '@/components/event/EventDetailHeader.astro';
+import EventDetailPricingCard from '@/components/event/EventDetailPricingCard.astro';
+import EventDetailLocationCard from '@/components/event/EventDetailLocationCard.astro';
+import EventDetailOrganizerCard from '@/components/event/EventDetailOrganizerCard.astro';
+import EventDetailTagsRow from '@/components/event/EventDetailTagsRow.astro';
 import { eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
+import { toEventDetailProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { formatPrice } from '@/lib/format-utils';
 import { Image } from 'astro:assets';
 import { sanitizeHtml } from '@/lib/sanitize-html';
-import EventDetailHeader from '@/components/event/EventDetailHeader.astro';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -29,35 +34,28 @@ if (!slug) return new Response(null, { status: 404 });
 const result = await eventsApi.getBySlug({ slug });
 if (!result.ok) return new Response(null, { status: 404 });
 
-const event = result.data as Record<string, unknown>;
+const event = toEventDetailProps({ item: result.data as Record<string, unknown> });
 
-const eventId = String(event.id || '');
-const name = String(event.name || event.title || '');
-const description = String(event.summary || event.description || '');
-const category = String(event.category || '');
-const startDate = String(event.startDate || '');
-const endDate = event.endDate ? String(event.endDate) : undefined;
-const featuredImage = String(event.featuredImage || '/assets/images/placeholder-event.svg');
-const locationObj = event.location as Record<string, unknown> | undefined;
-const locationName = String(locationObj?.name || locationObj?.venueName || '');
-const locationCity = String(locationObj?.city || '');
-const isCancelled = Boolean(event.isCancelled);
-const isPast = startDate ? new Date(startDate) < new Date() : false;
-const price = event.price as { amount?: number; currency?: string } | undefined;
-const organizerObj = event.organizer as Record<string, unknown> | undefined;
-
-// EventStatus mapping per schema.org Event docs (REQ-096-37 / T-067):
-//  - cancelled → EventCancelled
-//  - rescheduled → EventRescheduled
-//  - postponed → EventPostponed
-//  - moved online → EventMovedOnline
-//  - everything else (active or unknown) → EventScheduled
-const isRescheduled = Boolean(event.isRescheduled);
-const eventStatus = isCancelled
-	? 'EventCancelled'
-	: isRescheduled
-		? 'EventRescheduled'
-		: 'EventScheduled';
+const {
+	id: eventId,
+	name,
+	summary,
+	contentHtml,
+	description,
+	category,
+	startDate,
+	endDate,
+	featuredImage,
+	gallery,
+	location,
+	pricing,
+	organizer,
+	tags,
+	seo,
+	isCancelled,
+	isPast,
+	eventStatus,
+} = event;
 
 // --- Auth ---
 const userId = Astro.locals.user?.id ?? null;
@@ -97,47 +95,76 @@ if (eventId) {
 	}
 }
 
-const canonical = `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`;
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const canonical = `${siteOrigin}${Astro.url.pathname}`;
+
+// --- Rich description HTML ---
+const safeDescriptionHtml = sanitizeHtml({
+	html: contentHtml || description || summary,
+	siteOrigin,
+});
+
+// --- JSON-LD (Event schema.org) ---
+// Build offers block from pricing data.
+const offersBlock = !pricing.isFree && pricing.price != null
+	? {
+			'@type': 'Offer',
+			price: pricing.price,
+			priceCurrency: pricing.currency ?? 'ARS',
+			...(pricing.priceFrom != null ? { lowPrice: pricing.priceFrom } : {}),
+			...(pricing.priceTo != null ? { highPrice: pricing.priceTo } : {}),
+	  }
+	: pricing.priceFrom != null && pricing.priceTo != null
+	  ? {
+				'@type': 'AggregateOffer',
+				priceCurrency: pricing.currency ?? 'ARS',
+				lowPrice: pricing.priceFrom,
+				highPrice: pricing.priceTo,
+	    }
+	  : undefined;
 
 const jsonLd = {
 	'@context': 'https://schema.org',
 	'@type': 'Event',
 	name,
-	description,
+	description: seo.description || summary,
 	startDate,
 	...(endDate ? { endDate } : {}),
 	eventStatus: `https://schema.org/${eventStatus}`,
-	image: featuredImage,
-	url: `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`,
+	image: featuredImage.url,
+	url: canonical,
 	location: {
 		'@type': 'Place',
-		name: locationName || locationCity,
-		address: { '@type': 'PostalAddress', addressLocality: locationCity },
+		name: location.name || location.city || '',
+		address: {
+			'@type': 'PostalAddress',
+			addressLocality: location.city || '',
+			streetAddress: location.fullAddress || undefined,
+		},
 	},
-	...(organizerObj ? { organizer: { '@type': 'Organization', name: String(organizerObj.name || '') } } : {}),
-	...(price?.amount ? { offers: { '@type': 'Offer', price: price.amount, priceCurrency: price.currency ?? 'ARS' } } : {}),
+	...(organizer ? { organizer: { '@type': 'Organization', name: organizer.name } } : {}),
+	...(offersBlock ? { offers: offersBlock } : {}),
 };
 
-// --- Breadcrumb JSON-LD (REQ-096-37 / T-068) ---
-const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+// --- Breadcrumb JSON-LD ---
 const breadcrumbItems = [
 	{ name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
 	{ name: t('events.title', 'Eventos'), url: `${siteOrigin}/${locale}/eventos/` },
-	{ name, url: `${siteOrigin}${Astro.url.pathname}` },
+	{ name, url: canonical },
 ];
 
-// Sanitize event description HTML before injecting via `set:html` to prevent XSS.
-// `siteOrigin` is passed so internal links don't get target="_blank".
-const safeDescriptionHtml = sanitizeHtml({
-	html: String(event.contentHtml || description),
-	siteOrigin,
-});
+// --- Gallery display logic ---
+// Show ImageGallery when there are gallery images beyond the featured one.
+// When only featuredImage exists, show it as the hero image.
+const hasGallery = gallery.length > 0;
+const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 ---
 
 <DetailLayout
 	locale={locale}
-	title={name}
-	description={description}
+	title={seo.title || name}
+	description={seo.description || summary}
+	ogImage={featuredIsPlaceholder ? undefined : featuredImage.url}
 	showBreadcrumbs={true}
 	showSidebar={true}
 >
@@ -160,8 +187,8 @@ const safeDescriptionHtml = sanitizeHtml({
 			category={category}
 			startDate={startDate}
 			endDate={endDate}
-			locationCity={locationCity}
-			locationName={locationName}
+			locationCity={location.city}
+			locationName={location.name}
 			isPast={isPast}
 			isCancelled={isCancelled}
 			bookmarkCount={bookmarkCount}
@@ -173,32 +200,50 @@ const safeDescriptionHtml = sanitizeHtml({
 	</Fragment>
 
 	<div class="event-detail">
-		<!-- Hero -->
-		<div class="event-detail__hero">
-			{featuredImage && !featuredImage.includes('placeholder') ? (
-				<Image
-					src={featuredImage}
-					alt={name}
-					width={1200}
-					height={675}
-					format="webp"
-					loading="eager"
-					class="event-detail__hero-img"
+		<!-- Gallery or hero image -->
+		{hasGallery ? (
+			<div class="event-detail__gallery">
+				<ImageGallery
+					client:visible
+					variant="detail"
+					images={gallery}
+					locale={locale}
 				/>
-			) : (
-				<img
-					src={featuredImage}
-					alt={name}
-					loading="eager"
-					class="event-detail__hero-img"
-					width="1200"
-					height="675"
-				/>
-			)}
-		</div>
+			</div>
+		) : (
+			<div class="event-detail__hero">
+				{!featuredIsPlaceholder ? (
+					<Image
+						src={featuredImage.url}
+						alt={featuredImage.caption || name}
+						width={1200}
+						height={675}
+						format="webp"
+						loading="eager"
+						class="event-detail__hero-img"
+					/>
+				) : (
+					<img
+						src={featuredImage.url}
+						alt={name}
+						loading="eager"
+						class="event-detail__hero-img"
+						width="1200"
+						height="675"
+					/>
+				)}
+			</div>
+		)}
 
-		<!-- Description -->
-		<div class="event-detail__description" set:html={safeDescriptionHtml} />
+		<!-- Description body -->
+		{safeDescriptionHtml && (
+			<div class="event-detail__description" set:html={safeDescriptionHtml} />
+		)}
+
+		<!-- Tags row (only when tags exist) -->
+		{tags.length > 0 && (
+			<EventDetailTagsRow tags={tags} locale={locale} />
+		)}
 
 		<!-- Share buttons -->
 		<div class="event-detail__share">
@@ -208,36 +253,85 @@ const safeDescriptionHtml = sanitizeHtml({
 
 	<!-- Sidebar -->
 	<div slot="sidebar" class="event-sidebar">
-		<div class="event-sidebar__card">
-			{price?.amount ? (
-				<div class="event-sidebar__price">
-					<span class="event-sidebar__price-amount">{formatPrice({ amount: price.amount, currency: price.currency ?? 'ARS', locale })}</span>
-				</div>
-			) : (
-				<p class="event-sidebar__free">{t('events.detail.free', 'Evento gratuito')}</p>
-			)}
-		</div>
+		<!-- Pricing card (always present — shows free or price) -->
+		<EventDetailPricingCard pricing={pricing} locale={locale} />
 
-		{organizerObj && (
-			<div class="event-sidebar__card">
-				<h3 class="event-sidebar__card-title">{t('events.detail.organizer', 'Organizador')}</h3>
-				<p class="event-sidebar__organizer-name">{String(organizerObj.name || '')}</p>
-			</div>
+		<!-- Location map (only when GPS coordinates are available) -->
+		{location.coordinates && (
+			<EventDetailLocationCard
+				coordinates={location.coordinates}
+				venueName={location.name}
+				fullAddress={location.fullAddress}
+				locale={locale}
+			/>
+		)}
+
+		<!-- Organizer card (only when organizer has a name) -->
+		{organizer && (
+			<EventDetailOrganizerCard
+				organizer={organizer}
+				locale={locale}
+				siteOrigin={siteOrigin}
+			/>
 		)}
 	</div>
 </DetailLayout>
 
 <style>
-	.event-detail__hero { position: relative; margin-bottom: var(--space-6); border-radius: var(--radius-card); overflow: hidden; }
-	.event-detail__hero-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+	/* ---- Main column ---- */
+	.event-detail__gallery {
+		margin-bottom: var(--space-6, 1.5rem);
+	}
 
-	.event-detail__description { font-family: var(--font-sans); line-height: 1.7; color: var(--core-foreground); margin-bottom: var(--space-8); }
-	.event-detail__description :global(p) { margin-bottom: var(--space-4); }
+	.event-detail__hero {
+		position: relative;
+		margin-bottom: var(--space-6, 1.5rem);
+		border-radius: var(--radius-card);
+		overflow: hidden;
+	}
 
-	.event-sidebar__card { background-color: var(--core-card); border-radius: var(--radius-card); padding: var(--space-6); box-shadow: var(--shadow-card); margin-bottom: var(--space-4); }
-	.event-sidebar__price-amount { font-family: var(--font-heading); font-weight: 700; font-size: var(--text-2xl); color: var(--brand-accent); }
-	.event-sidebar__free { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); color: var(--core-foreground); margin: 0; }
-	.event-sidebar__card-title { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); color: var(--core-foreground); margin: 0 0 var(--space-2); }
-	.event-sidebar__organizer-name { font-family: var(--font-sans); color: var(--core-muted-foreground); margin: 0; }
-	.event-detail__share { margin-top: var(--space-6); display: flex; justify-content: flex-start; }
+	.event-detail__hero-img {
+		width: 100%;
+		aspect-ratio: 16 / 9;
+		object-fit: cover;
+	}
+
+	.event-detail__description {
+		font-family: var(--font-sans);
+		line-height: 1.7;
+		color: var(--core-foreground);
+		margin-bottom: var(--space-8, 2rem);
+	}
+
+	.event-detail__description :global(p) {
+		margin-bottom: var(--space-4, 1rem);
+	}
+
+	.event-detail__description :global(h2),
+	.event-detail__description :global(h3),
+	.event-detail__description :global(h4) {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		color: var(--core-foreground);
+		margin: var(--space-6, 1.5rem) 0 var(--space-3, 0.75rem);
+	}
+
+	.event-detail__description :global(ul),
+	.event-detail__description :global(ol) {
+		padding-left: 1.5rem;
+		margin-bottom: var(--space-4, 1rem);
+	}
+
+	.event-detail__share {
+		margin-top: var(--space-6, 1.5rem);
+		display: flex;
+		justify-content: flex-start;
+	}
+
+	/* ---- Sidebar ---- */
+	.event-sidebar {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4, 1rem);
+	}
 </style>

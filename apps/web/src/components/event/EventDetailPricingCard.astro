@@ -1,0 +1,234 @@
+---
+/**
+ * @file EventDetailPricingCard.astro
+ * @description Sidebar pricing card for the event detail page.
+ *
+ * Handles all pricing scenarios:
+ * - Free event: large "Evento gratuito" label.
+ * - Price range (priceFrom / priceTo): "Desde X hasta Y".
+ * - Flat price: single formatted price.
+ * - Early bird (only if deadline is in the future): badge with price + deadline.
+ * - Group discount (threshold + percent): informational note.
+ * - Price per group: separate display line.
+ *
+ * All monetary values are formatted via `formatPrice()`.
+ */
+import { formatPrice, formatDate } from '@/lib/format-utils';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import type { EventDetailPricing } from '@/data/types';
+
+interface Props {
+    readonly pricing: EventDetailPricing;
+    readonly locale: SupportedLocale;
+}
+
+const { pricing, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const {
+    price,
+    priceFrom,
+    priceTo,
+    currency,
+    isFree,
+    earlyBirdPrice,
+    earlyBirdDeadline,
+    groupDiscountThreshold,
+    groupDiscountPercent,
+    pricePerGroup
+} = pricing;
+
+const hasRange = priceFrom != null && priceTo != null;
+const hasFlat = !hasRange && price != null;
+const hasEarlyBird = earlyBirdPrice != null && earlyBirdDeadline != null;
+const hasGroupDiscount = groupDiscountThreshold != null && groupDiscountPercent != null;
+const hasGroupPrice = pricePerGroup != null;
+
+const fmt = (amount: number) =>
+    formatPrice({ amount, currency: currency ?? 'ARS', locale });
+---
+
+<aside class="event-pricing-card">
+    <h3 class="event-pricing-card__title">
+        {t('events.detail.pricing', 'Precio')}
+    </h3>
+
+    {isFree ? (
+        <p class="event-pricing-card__free">
+            {t('events.detail.free', 'Evento gratuito')}
+        </p>
+    ) : (
+        <div class="event-pricing-card__body">
+            {hasRange && (
+                <div class="event-pricing-card__range">
+                    <span class="event-pricing-card__range-label">
+                        {t('events.detail.priceFrom', 'Desde')}
+                    </span>
+                    <span class="event-pricing-card__price-value">
+                        {fmt(priceFrom!)}
+                    </span>
+                    <span class="event-pricing-card__range-label">
+                        {t('events.detail.priceTo', 'hasta')}
+                    </span>
+                    <span class="event-pricing-card__price-value">
+                        {fmt(priceTo!)}
+                    </span>
+                </div>
+            )}
+
+            {hasFlat && (
+                <span class="event-pricing-card__price-value event-pricing-card__price-value--large">
+                    {fmt(price!)}
+                </span>
+            )}
+
+            {hasEarlyBird && (
+                <div class="event-pricing-card__early-bird">
+                    <span class="event-pricing-card__early-bird-badge">
+                        Early bird
+                    </span>
+                    <span class="event-pricing-card__early-bird-price">
+                        {fmt(earlyBirdPrice!)}
+                    </span>
+                    <span class="event-pricing-card__early-bird-until">
+                        {t('events.detail.earlyBirdUntil', 'hasta el')}
+                        {' '}
+                        {formatDate({ date: earlyBirdDeadline!, locale })}
+                    </span>
+                </div>
+            )}
+
+            {hasGroupPrice && (
+                <p class="event-pricing-card__group-price">
+                    {t('events.detail.pricePerGroup', 'Precio por grupo')}{': '}
+                    <strong>{fmt(pricePerGroup!)}</strong>
+                </p>
+            )}
+
+            {hasGroupDiscount && (
+                <p class="event-pricing-card__group-discount">
+                    {t('events.detail.groupDiscount', '{percent}% de descuento desde {threshold} personas')
+                        .replace('{percent}', String(groupDiscountPercent))
+                        .replace('{threshold}', String(groupDiscountThreshold))}
+                </p>
+            )}
+        </div>
+    )}
+</aside>
+
+<style>
+    .event-pricing-card {
+        background-color: var(--core-card);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-card);
+        padding: var(--space-6, 1.5rem);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 1rem);
+    }
+
+    .event-pricing-card__title {
+        font-family: var(--font-heading);
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .event-pricing-card__free {
+        font-family: var(--font-heading);
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--brand-tertiary, var(--brand-primary));
+        margin: 0;
+    }
+
+    .event-pricing-card__body {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 0.75rem);
+    }
+
+    .event-pricing-card__range {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    .event-pricing-card__range-label {
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        color: var(--core-muted-foreground);
+    }
+
+    .event-pricing-card__price-value {
+        font-family: var(--font-heading);
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--brand-accent);
+    }
+
+    .event-pricing-card__price-value--large {
+        font-size: 1.75rem;
+    }
+
+    .event-pricing-card__early-bird {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        padding: 0.5rem 0.75rem;
+        background-color: oklch(from var(--brand-accent) l c h / 0.08);
+        border: 1px solid oklch(from var(--brand-accent) l c h / 0.25);
+        border-radius: var(--radius-md);
+    }
+
+    .event-pricing-card__early-bird-badge {
+        font-family: var(--font-sans);
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--brand-accent);
+        padding: 2px 8px;
+        border-radius: var(--radius-pill);
+        background-color: oklch(from var(--brand-accent) l c h / 0.15);
+    }
+
+    .event-pricing-card__early-bird-price {
+        font-family: var(--font-heading);
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--brand-accent);
+    }
+
+    .event-pricing-card__early-bird-until {
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        color: var(--core-muted-foreground);
+    }
+
+    .event-pricing-card__group-price {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .event-pricing-card__group-price strong {
+        color: var(--brand-accent);
+    }
+
+    .event-pricing-card__group-discount {
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        color: var(--core-muted-foreground);
+        margin: 0;
+        padding: 0.4rem 0.75rem;
+        border-left: 3px solid oklch(from var(--brand-primary) l c h / 0.4);
+        background-color: oklch(from var(--brand-primary) l c h / 0.04);
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    }
+</style>

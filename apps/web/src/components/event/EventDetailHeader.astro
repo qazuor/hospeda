@@ -1,0 +1,305 @@
+---
+/**
+ * @file EventDetailHeader.astro
+ * @description Event detail page header with category badge, title, date/location meta,
+ * status badges (past/cancelled), bookmark counter, and favorite button.
+ *
+ * Layout: 2-column flex at all times — `.event-header__main` on the left holds
+ * badges + title + meta; `.event-header__favorite` on the right anchors the heart
+ * button. The favorite stays right-aligned regardless of viewport or compact mode.
+ *
+ * Compact mode: when inside a `.wave-header--compact` ancestor, the main column
+ * collapses to a single row, fonts shrink, and meta + bookmark count are hidden.
+ */
+
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { getEventCategoryColor, getBadgeStatusColor } from '@/lib/colors';
+import { formatDate } from '@/lib/format-utils';
+import { CalendarDotsIcon, LocationIcon } from '@repo/icons';
+
+interface Props {
+    readonly eventId: string;
+    readonly name: string;
+    readonly category: string;
+    readonly startDate: string | Date;
+    readonly endDate?: string | Date | null;
+    readonly locationCity?: string | null;
+    readonly locationName?: string | null;
+    readonly isPast: boolean;
+    readonly isCancelled: boolean;
+    readonly bookmarkCount?: number;
+    readonly locale: SupportedLocale;
+    readonly isAuthenticated: boolean;
+    readonly initialIsFavorited?: boolean;
+    readonly initialBookmarkId?: string | null;
+}
+
+const {
+    eventId,
+    name,
+    category,
+    startDate,
+    endDate,
+    locationCity,
+    locationName,
+    isPast,
+    isCancelled,
+    bookmarkCount,
+    locale,
+    isAuthenticated,
+    initialIsFavorited,
+    initialBookmarkId = null,
+} = Astro.props;
+
+const { t, tPlural } = createTranslations(locale);
+
+const categoryColors = getEventCategoryColor({ category: category.toLowerCase() });
+const pastColors = getBadgeStatusColor({ status: 'past' });
+const cancelledColors = getBadgeStatusColor({ status: 'cancelled' });
+
+const locationLabel =
+    locationName &&
+    locationCity &&
+    locationName.trim().toLowerCase() !== locationCity.trim().toLowerCase()
+        ? `${locationName}, ${locationCity}`
+        : locationName || locationCity || null;
+
+const categoryStyle = `background-color: ${categoryColors.bg}; color: ${categoryColors.text}; border: 1px solid ${categoryColors.border};`;
+const pastStyle = `background-color: ${pastColors.bg}; color: ${pastColors.text};`;
+const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancelledColors.text};`;
+---
+
+<header class="event-header">
+    <div class="event-header__main">
+        <div class="event-header__badges">
+            <span class="event-header__category-badge" style={categoryStyle}>
+                {t(`events.categories.${category.toLowerCase()}`, category)}
+            </span>
+            {isPast && (
+                <span class="event-header__status-pill" style={pastStyle}>
+                    {t('event.detail.pastEvent', 'Evento Finalizado')}
+                </span>
+            )}
+            {isCancelled && (
+                <span class="event-header__status-pill" style={cancelledStyle}>
+                    {t('event.detail.cancelled', 'Cancelado')}
+                </span>
+            )}
+        </div>
+
+        <h1 class="event-header__title">{name}</h1>
+
+        <div class="event-header__meta">
+            {startDate && (
+                <span class="event-header__meta-item">
+                    <CalendarDotsIcon size={15} aria-hidden="true" />
+                    {formatDate({ date: String(startDate), locale })}
+                    {endDate && (
+                        <span class="event-header__meta-separator" aria-hidden="true">–</span>
+                    )}
+                    {endDate && formatDate({ date: String(endDate), locale })}
+                </span>
+            )}
+            {locationLabel && (
+                <span class="event-header__meta-item">
+                    <LocationIcon size={15} aria-hidden="true" />
+                    {locationLabel}
+                </span>
+            )}
+            {bookmarkCount !== undefined && (
+                <span
+                    class="event-header__bookmark-count"
+                    aria-label={bookmarkCount === 0
+                        ? t('event.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
+                        : tPlural('event.detail.bookmark_count', bookmarkCount)}
+                >
+                    <span class="event-header__bookmark-icon" aria-hidden="true">♥</span>
+                    {bookmarkCount === 0
+                        ? t('event.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
+                        : tPlural('event.detail.bookmark_count', bookmarkCount)}
+                </span>
+            )}
+        </div>
+    </div>
+
+    <div class="event-header__favorite">
+        <FavoriteButton
+            client:load
+            entityId={eventId}
+            entityType="EVENT"
+            initialIsFavorited={initialIsFavorited}
+            initialBookmarkId={initialBookmarkId}
+            isAuthenticated={isAuthenticated}
+            variant="standalone"
+            locale={locale}
+        />
+    </div>
+</header>
+
+<style>
+    .event-header {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: var(--space-3, 12px);
+    }
+
+    .event-header__main {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2, 8px);
+        transition: flex-direction 0.3s ease, gap 0.3s ease;
+    }
+
+    .event-header__favorite {
+        flex-shrink: 0;
+        margin-left: auto;
+    }
+
+    .event-header__badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2, 8px);
+        align-items: center;
+        transition: gap 0.3s ease;
+    }
+
+    .event-header__category-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: var(--radius-pill, 9999px);
+        font-family: var(--font-sans);
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 4px 14px;
+        line-height: 1.4;
+        white-space: nowrap;
+        transition: padding 0.3s ease, font-size 0.3s ease;
+    }
+
+    .event-header__status-pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: var(--radius-pill, 9999px);
+        font-family: var(--font-sans);
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 4px 14px;
+        line-height: 1.4;
+        white-space: nowrap;
+        transition: padding 0.3s ease, font-size 0.3s ease;
+    }
+
+    .event-header__title {
+        font-family: var(--font-heading);
+        font-size: clamp(1.5rem, 4vw, 2.5rem);
+        font-weight: 700;
+        color: var(--core-foreground);
+        margin: 0;
+        line-height: 1.15;
+        transition: font-size 0.3s ease;
+    }
+
+    .event-header__meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--space-3, 12px);
+        overflow: hidden;
+        max-height: 3em;
+        opacity: 1;
+        transition:
+            max-height 0.3s ease,
+            opacity 0.2s ease;
+    }
+
+    .event-header__meta-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3em;
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm, 0.875rem);
+        color: var(--core-muted-foreground);
+    }
+
+    .event-header__meta-separator {
+        margin: 0 0.2em;
+    }
+
+    .event-header__bookmark-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3em;
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--core-muted-foreground);
+        border-left: 1px solid var(--border);
+        padding-left: var(--space-2, 8px);
+        margin-left: var(--space-1, 4px);
+    }
+
+    .event-header__bookmark-icon {
+        font-size: 0.75rem;
+        color: var(--destructive);
+        line-height: 1;
+    }
+
+    /* =========================================================
+     * Compact state — collapses __main to one row on scroll.
+     * FavoriteButton stays right-aligned via the outer flex row.
+     * ========================================================= */
+    :global(.wave-header--compact) .event-header {
+        align-items: center;
+    }
+
+    :global(.wave-header--compact) .event-header__main {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--space-2, 8px);
+    }
+
+    :global(.wave-header--compact) .event-header__badges {
+        gap: 4px;
+    }
+
+    :global(.wave-header--compact) .event-header__category-badge {
+        font-size: 0.6rem;
+        padding: 2px 10px;
+    }
+
+    :global(.wave-header--compact) .event-header__status-pill {
+        font-size: 0.6rem;
+        padding: 2px 10px;
+    }
+
+    :global(.wave-header--compact) .event-header__title {
+        font-size: clamp(1rem, 2vw, 1.25rem);
+    }
+
+    :global(.wave-header--compact) .event-header__meta {
+        max-height: 0;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .event-header__main,
+        .event-header__badges,
+        .event-header__category-badge,
+        .event-header__status-pill,
+        .event-header__title,
+        .event-header__meta {
+            transition: none;
+        }
+    }
+</style>

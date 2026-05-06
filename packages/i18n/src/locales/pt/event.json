@@ -61,7 +61,8 @@
         "getTickets": "Obter Ingressos",
         "relatedEvents": "Eventos Relacionados",
         "shareEvent": "Compartilhar Evento",
-        "pastEvent": "Evento Encerrado"
+        "pastEvent": "Evento Encerrado",
+        "cancelled": "Cancelado"
     },
     "categoryPage": {
         "categories": {
