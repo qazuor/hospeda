@@ -15,10 +15,8 @@
     font-size: var(--text-body-sm, 0.875rem);
     font-weight: 500;
     text-decoration: none;
-    transition:
-        background-color var(--duration-normal, 0.4s) ease,
-        color var(--duration-normal, 0.4s) ease,
-        border-color var(--duration-normal, 0.4s) ease;
+    transition: background-color var(--duration-normal, 0.4s) ease, color
+        var(--duration-normal, 0.4s) ease, border-color var(--duration-normal, 0.4s) ease;
 }
 
 .signInLinkHero {
@@ -60,10 +58,7 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
     font-weight: 500;
-    transition:
-        background-color 0.2s ease,
-        border-color 0.2s ease,
-        color 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .triggerHero {
@@ -220,7 +215,7 @@
 }
 
 .signOutButton:hover {
-    color: var(--core-destructive, #dc2626);
+    color: var(--destructive, #dc2626);
 }
 
 .divider {

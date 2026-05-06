@@ -10,7 +10,7 @@ This file provides **prescriptive guidelines** for building the Hospeda Web appl
 
 Astro 5 public-facing website for the Hospeda platform. SSR with Vercel adapter, React islands for selective interactivity, semantic CSS with Astro scoped styles and CSS Modules (fully tokenized design system via CSS custom properties), and i18n support for Spanish (primary), English, and Portuguese.
 
-It uses a new design based on the TravHub reference template with organic shapes, warm palette, and Geologica/Roboto/Caveat typography.
+It uses a warm palette and Geologica/Roboto/Caveat typography. Cards and images use uniform border-radius (`--radius-card`); do NOT use asymmetric/organic radius.
 
 ## Key Commands
 
@@ -198,7 +198,7 @@ This app uses **semantic CSS** with three layers:
 ### Golden Rules
 
 1. **NEVER hardcode colors, spacing, shadows, or radii.** Use CSS custom properties from `global.css` (e.g., `var(--accent)`, `var(--space-6)`)
-2. **NEVER use uniform border-radius on cards/images.** Use organic asymmetric shapes (`var(--radius-organic)`)
+2. **ALWAYS use uniform border-radius on cards/images.** Use `var(--radius-card)` (or `var(--radius-md)` for compact surfaces). Do NOT use `--radius-organic*` — it's deprecated.
 3. **ALWAYS use semantic token names** (`var(--brand-primary)`, `var(--core-muted-foreground)`), never raw color values
 4. **ALWAYS alternate section backgrounds** between `var(--core-background)` and `var(--surface-warm)`
 5. **Dark mode must work automatically.** If you use tokens, it does. If you hardcode, it breaks
@@ -226,11 +226,9 @@ This app uses **semantic CSS** with three layers:
 --primary-foreground       /* Text on brand-primary */
 --accent-foreground        /* Text on brand-accent */
 
-/* Shapes */
---radius-organic       /* 0px 100px - signature asymmetric radius */
---radius-organic-sm    /* 0px 75px - card content areas */
---radius-organic-alt   /* 100px 0px - reversed (blog thumbnails) */
+/* Shapes (uniform corners only — `--radius-organic*` is DEPRECATED, do not use) */
 --radius-card          /* 24px - card outer container */
+--radius-md            /* ~10px - smaller surfaces, inputs, sidebar items */
 --radius-button        /* 8px - buttons */
 --radius-pill          /* 9999px - badges, tags */
 
@@ -410,7 +408,7 @@ export const STATIC_PREFIXES = ['/_astro/', '/_server-islands/', '/favicon'] as 
 ---
 /**
  * @file AccommodationCard.astro
- * @description Card displaying accommodation summary with organic shape image.
+ * @description Card displaying accommodation summary with image and details.
  */
 
 interface Props {
@@ -441,7 +439,7 @@ const { title, slug, image, price, locale } = Astro.props;
 
 <style>
   .accommodation-card__image-wrapper {
-    border-radius: var(--radius-organic);
+    border-radius: var(--radius-card);
     overflow: hidden;
   }
   .accommodation-card__img {
@@ -454,7 +452,7 @@ const { title, slug, image, price, locale } = Astro.props;
   }
   .accommodation-card__content {
     background-color: var(--card);
-    border-radius: var(--radius-organic-sm);
+    border-radius: var(--radius-card);
     padding: var(--space-5);
   }
   .accommodation-card__title {
@@ -785,7 +783,7 @@ React island at `src/components/account/CollectionDetailActions.client.tsx`. Mou
 - **No console.log**: Use `src/lib/logger.ts` which wraps `@repo/logger`
 - **No default exports**: All `.ts` and `.tsx` files use named exports only
 - **No raw API data in components**: Always go through `transforms.ts`
-- **Organic shapes**: Cards and images use asymmetric radius, not uniform `rounded-xl`
+- **Uniform radius**: Cards and images use `var(--radius-card)`. Do NOT use `--radius-organic*` (deprecated)
 - **Auth in islands**: Pass `Astro.locals.user` as props. Islands cannot read server locals
 - **Image optimization**: `<Image>` from `astro:assets` for local images; `<img loading="lazy">` for remote
 

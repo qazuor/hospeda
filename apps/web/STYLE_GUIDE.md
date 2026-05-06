@@ -12,13 +12,13 @@ Design reference: TravHub index3 template, adapted for Hospeda brand identity.
 
 **Warm, modern, trustworthy, adventurous, with strong personality.**
 
-The design balances organic, nature-inspired shapes with clean modern typography. It feels approachable and inviting (tourism for the Litoral region), not corporate or sterile.
+The design balances soft, friendly shapes with clean modern typography. It feels approachable and inviting (tourism for the Litoral region), not corporate or sterile.
 
 ### 1.2 Key Visual Traits
 
 | Trait | How it manifests |
 |-------|-----------------|
-| **Organic shapes** | Asymmetric border-radius (`0 100px`), blob backgrounds, rounded images |
+| **Soft uniform shapes** | Uniform `var(--radius-card)` corners on cards/images. Do NOT use asymmetric/organic radius. |
 | **Warm palette** | Peach tints, sunset orange accent, earthy dark tones |
 | **Layered depth** | Overlapping elements, negative margins, subtle shadows |
 | **Nature connection** | SVG decoratives (birds, waves, compass), parallax nature photos |
@@ -28,7 +28,7 @@ The design balances organic, nature-inspired shapes with clean modern typography
 ### 1.3 Design Rules
 
 - **NEVER** hardcode colors, spacing, or font values.. always use tokens
-- **NEVER** use uniform border-radius on cards/images.. use asymmetric organic shapes
+- **ALWAYS** use uniform border-radius on cards/images via `var(--radius-card)`. Asymmetric/organic radius is deprecated.
 - **ALWAYS** alternate section backgrounds (white / peach tint)
 - **ALWAYS** use scroll-reveal animations on content entering the viewport
 - **ALWAYS** stagger animations on repeated elements (cards, list items)
@@ -191,32 +191,20 @@ Each token has an optional shared utility class in `components.css` that applies
 
 ### 2.3 Border Radius Tokens
 
-The design uses **asymmetric organic radius** as a signature visual element. Instead of a uniform radius on all four corners, shapes have one or two rounded corners.
+The design uses **uniform border-radius** on all four corners. Cards, images, and surface containers share a single `--radius-card` value so the visual language stays calm and consistent.
+
+> **Deprecated**: `--radius-organic`, `--radius-organic-sm`, and `--radius-organic-alt` (asymmetric `0px 100px` / `0px 75px` / `100px 0px` shapes) are no longer part of the design language. Do not use them in new components. They remain in `global.css` only until existing call-sites are migrated.
 
 | Token | Value | Usage |
 |-------|-------|-------|
 | `--radius` | `0.75rem` | Default small radius (buttons, inputs) |
 | `--radius-sm` | `calc(var(--radius) - 4px)` | Tight radius |
-| `--radius-md` | `calc(var(--radius) - 2px)` | Medium radius |
+| `--radius-md` | `calc(var(--radius) - 2px)` | Medium radius (sidebar items, compact surfaces) |
 | `--radius-lg` | `var(--radius)` | Standard radius |
 | `--radius-xl` | `calc(var(--radius) + 4px)` | Large radius |
-| `--radius-organic` | `0px 100px` | Signature asymmetric shape (cards, images) |
-| `--radius-organic-sm` | `0px 75px` | Smaller organic radius (card content) |
-| `--radius-organic-alt` | `100px 0px` | Reversed organic shape (blog thumbnails) |
-| `--radius-card` | `24px` | Card outer container |
+| `--radius-card` | `24px` | Card outer container, images, gallery items |
 | `--radius-pill` | `9999px` | Pills, tags, full-round |
 | `--radius-button` | `8px` | Buttons |
-
-#### Organic Radius Patterns
-
-```
-Standard card image:    border-radius: 0px 100px;   (top-left sharp, others rounded)
-Card content area:      border-radius: 0px 75px;    (slightly less rounded)
-Blog thumbnail:         border-radius: 100px 0px;   (reversed)
-Gallery items:          border-radius: 0px 100px;   (consistent with cards)
-Team member photos:     border-radius: 0px 100px;
-Blog card outer:        border-radius: 24px;        (uniform, wraps the inner organic shapes)
-```
 
 ### 2.4 Shadow Tokens
 
@@ -532,7 +520,7 @@ The shared base classes in `components.css:105-130` apply to all cards. Speciali
 | `.card` | `border-radius` | `var(--radius-card)` (24px) |
 | `.card` | `box-shadow` | `var(--shadow-card)` |
 | `.card:hover` | `box-shadow` | `var(--shadow-card-hover)` |
-| `.card__image` | `border-radius` | `var(--radius-organic)` (0px 100px) |
+| `.card__image` | `border-radius` | `var(--radius-card)` (24px, uniform) |
 | `.card__image` | `overflow` | `hidden` |
 | `.card__image img` | `transition` | `transform var(--duration-normal) ease-in-out` |
 | `.card:hover .card__image img` | `transform` | `scale(1.1)` |
@@ -576,7 +564,7 @@ Component: `src/components/sections/DestinationsSection.astro` delegates to `Des
 
 The destination section uses a linear-gradient background from `var(--core-background)` through `var(--surface-warm)` and back. Inside the React island, each destination card is an image-only card with overlay content that slides up on hover. Tokens consumed:
 
-- Outer container: `border-radius: var(--radius-organic)` (asymmetric 0px 100px)
+- Outer container: `border-radius: var(--radius-card)` (24px, uniform)
 - Image: `object-fit: cover`, `transition: transform var(--duration-normal) ease-in-out`, hover `scale(1.1)`
 - Overlay title: `font-family: var(--font-heading)`, color on `var(--core-card)` surface
 - Link pill: `border-radius: var(--radius-pill)`, `background-color: var(--brand-accent)`, `color: var(--accent-foreground)`
@@ -603,7 +591,7 @@ Component: `src/components/shared/cards/ArticleCard.astro`
 | `.article-card__cta` | `color` | `var(--brand-primary)` |
 | `.article-card__accent-bar` | `height` | `4px`, color from `getPostCategoryColor()` |
 
-Category color is resolved by `getPostCategoryColor({ category })` in `src/lib/colors.ts` and applied via inline `style` on the accent bar. Badge components use the same color scheme. The image container does NOT use `var(--radius-organic)` — article cards keep a rectangular image area (`border-radius: 0`) within the rounded outer card.
+Category color is resolved by `getPostCategoryColor({ category })` in `src/lib/colors.ts` and applied via inline `style` on the accent bar. Badge components use the same color scheme. Article cards keep a rectangular image area (`border-radius: 0`) within the rounded outer card.
 
 The featured variant is `src/components/shared/cards/FeaturedArticleCard.astro` and uses the same token set at larger scale.
 
@@ -1119,7 +1107,7 @@ Background blobs are absolutely-positioned decorative elements placed inside a `
     inset: -10% -5%;
     background-color: var(--surface-warm);
     opacity: 0.55;
-    border-radius: var(--radius-organic);
+    border-radius: 50%;
     z-index: -1;
     pointer-events: none;
   }
@@ -1139,7 +1127,7 @@ The hero image itself is clipped to an irregular blob path using an inline SVG `
   aspect-ratio: 1;
   background-color: var(--surface-warm);
   opacity: 0.3;           /* range: 0.3–0.5 */
-  border-radius: var(--radius-organic);
+  border-radius: 50%;
   z-index: -1;
   pointer-events: none;
 }
