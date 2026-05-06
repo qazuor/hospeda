@@ -1,0 +1,65 @@
+/* MobileDrawer.module.css
+ * Styles for the mobile drawer: overlay backdrop and sliding panel.
+ * Only active on viewports < 768px — hidden on desktop via media queries.
+ * Uses CSS custom properties from global.css — never hardcode values.
+ */
+
+/* ============================================================
+   Overlay backdrop
+   ============================================================ */
+
+.drawerOverlay {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .drawerOverlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 300;
+        background-color: oklch(0 0 0 / 0.45);
+        animation: overlayFadeIn var(--duration-fast) ease forwards;
+    }
+}
+
+@keyframes overlayFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ============================================================
+   Drawer panel
+   ============================================================ */
+
+.drawer {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .drawer {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: min(85vw, 380px);
+        z-index: 400;
+        background-color: var(--card);
+        box-shadow: 4px 0 24px oklch(0 0 0 / 0.12);
+        transform: translateX(-100%);
+        transition: transform var(--duration-normal) ease;
+        overflow: hidden;
+        border: none;
+        padding: 0;
+    }
+
+    .drawerOpen {
+        transform: translateX(0);
+    }
+}

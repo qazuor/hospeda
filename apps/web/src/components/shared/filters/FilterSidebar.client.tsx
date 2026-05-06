@@ -15,10 +15,24 @@ import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import styles from './FilterSidebar.module.css';
+import { FilterGroup } from './components/FilterGroup';
+import { MobileDrawer } from './components/MobileDrawer';
+import { SortPopover } from './components/SortPopover';
+import {
+    buildParamsFromState,
+    computeInitialCollapsed,
+    filterReducer,
+    groupHasActiveSelection,
+    initStateFromParams
+} from './filter-reducer';
 import { FilterGroupContent } from './filter-types/FilterGroupContent';
-import type { FilterAction, FilterGroup, FilterState } from './filter-types/filter.types';
+import type {
+    FilterAction,
+    FilterGroup as FilterGroupType,
+    FilterState
+} from './filter-types/filter.types';
+import { useFilterDebounce } from './hooks/useFilterDebounce';
 
 // Re-export public types for consumers of this component
 export type { FilterGroup } from './filter-types/filter.types';
@@ -32,7 +46,7 @@ interface SortOption {
 /** Props for the FilterSidebar component. */
 export interface FilterSidebarProps {
     readonly locale: SupportedLocale;
-    readonly filters: readonly FilterGroup[];
+    readonly filters: readonly FilterGroupType[];
     readonly sortOptions?: readonly SortOption[];
     readonly defaultSort?: string;
     /**
@@ -50,361 +64,21 @@ export interface FilterSidebarProps {
     /**
      * Layout position of the filter panel on desktop (>=768px).
      *
-     * - `'left'` (default): static panel to the left of the content grid —
-     *   the parent layout places the sidebar in a CSS grid column.
-     * - `'top'`: horizontal bar above the content area — the wrapper renders
-     *   as a full-width strip with filters scrolling horizontally.
+     * - `'left'` (default): static panel to the left of the content grid.
+     * - `'top'`: horizontal bar above the content area.
      *
      * On mobile (<768px) both variants collapse to the same floating-button +
-     * left-side drawer (existing behavior is always preserved).
+     * left-side drawer.
      */
     readonly position?: 'left' | 'top';
     readonly className?: string;
 }
 
-// --- Reducer ---
+// --- SidebarPanel sub-component ---
 
-function filterReducer(state: FilterState, action: FilterAction): FilterState {
-    switch (action.type) {
-        case 'TOGGLE_CHECKBOX': {
-            const current = state.selections[action.groupId] ?? [];
-            const updated = current.includes(action.value)
-                ? current.filter((v) => v !== action.value)
-                : [...current, action.value];
-            return { ...state, selections: { ...state.selections, [action.groupId]: updated } };
-        }
-        case 'SET_RADIO':
-            return {
-                ...state,
-                selections: { ...state.selections, [action.groupId]: [action.value] }
-            };
-        case 'SET_RANGE': {
-            const prev = state.ranges[action.groupId] ?? { min: '', max: '' };
-            return {
-                ...state,
-                ranges: {
-                    ...state.ranges,
-                    [action.groupId]: { ...prev, [action.field]: action.value }
-                }
-            };
-        }
-        case 'SET_SEARCH':
-            return { ...state, search: action.value };
-        case 'SET_SORT':
-            return { ...state, sort: action.value };
-        case 'SET_STEPPER':
-            return { ...state, steppers: { ...state.steppers, [action.groupId]: action.value } };
-        case 'SET_TOGGLE':
-            return { ...state, toggles: { ...state.toggles, [action.groupId]: action.value } };
-        case 'SET_DATE_RANGE':
-            return {
-                ...state,
-                dates: {
-                    ...state.dates,
-                    [action.groupId]: { from: action.from, to: action.to }
-                }
-            };
-        case 'REMOVE_FILTER': {
-            const current = state.selections[action.groupId] ?? [];
-            return {
-                ...state,
-                selections: {
-                    ...state.selections,
-                    [action.groupId]: current.filter((v) => v !== action.value)
-                }
-            };
-        }
-        case 'CLEAR_GROUP': {
-            const { [action.groupId]: _removed, ...restRanges } = state.ranges;
-            const { [action.groupId]: _removedDate, ...restDates } = state.dates;
-            return {
-                ...state,
-                selections: { ...state.selections, [action.groupId]: [] },
-                steppers: { ...state.steppers, [action.groupId]: 0 },
-                toggles: {
-                    ...state.toggles,
-                    [action.groupId]: false,
-                    [`${action.groupId}_includeNull`]: false
-                },
-                ranges: restRanges,
-                dates: restDates
-            };
-        }
-        case 'CLEAR_ALL':
-            return {
-                selections: {},
-                ranges: {},
-                steppers: {},
-                toggles: {},
-                dates: {},
-                search: '',
-                sort: state.sort
-            };
-        default:
-            return state;
-    }
-}
-
-// --- Helpers ---
-
-function getStepperDefault(group: FilterGroup): number {
-    if (group.type === 'stepper') return group.defaultValue ?? group.min ?? 0;
-    return 0;
-}
-
-/** Returns true when the given group has any active selection in the current state. */
-function groupHasActiveSelection(group: FilterGroup, state: FilterState): boolean {
-    if (
-        group.type === 'checkbox' ||
-        group.type === 'radio' ||
-        group.type === 'select-search' ||
-        group.type === 'icon-chips'
-    ) {
-        return (state.selections[group.id] ?? []).length > 0;
-    }
-    if (group.type === 'stepper') {
-        const def = getStepperDefault(group);
-        const stateVal = state.steppers[group.id];
-        // Context steppers (emitWhenAtDefault) count as active whenever set,
-        // so they keep their group expanded after navigating from the hero.
-        if (group.emitWhenAtDefault === true) {
-            return stateVal !== undefined;
-        }
-        return (stateVal ?? def) > def;
-    }
-    if (group.type === 'stars') {
-        const hasIncludeNull = !!state.toggles[`${group.id}_includeNull`];
-        return hasIncludeNull || (state.steppers[group.id] ?? 0) > 0;
-    }
-    if (group.type === 'toggle') {
-        return !!state.toggles[group.id];
-    }
-    if (group.type === 'dual-range') {
-        const range = state.ranges[group.id];
-        const hasIncludeNull = !!state.toggles[`${group.id}_includeNull`];
-        return (
-            hasIncludeNull ||
-            !!(
-                (range?.min && range.min !== String(group.min)) ||
-                (range?.max && range.max !== String(group.max))
-            )
-        );
-    }
-    if (group.type === 'date-range') {
-        const v = state.dates[group.id];
-        return !!(v?.from || v?.to);
-    }
-    return false;
-}
-
-/**
- * Computes the initial collapsed state for each filter group.
- * Groups with active values or the first group are expanded; the rest are collapsed.
- */
-function computeInitialCollapsed({
-    filters,
-    state
-}: {
-    readonly filters: readonly FilterGroup[];
-    readonly state: FilterState;
-}): Record<string, boolean> {
-    const result: Record<string, boolean> = {};
-    let isFirst = true;
-    for (const group of filters) {
-        const hasActive = groupHasActiveSelection(group, state);
-        if (hasActive || isFirst) {
-            result[group.id] = false; // expanded
-        } else {
-            result[group.id] = true; // collapsed
-        }
-        isFirst = false;
-    }
-    return result;
-}
-
-// --- State initialization ---
-
-/**
- * Builds the initial FilterState from a plain params record (server-provided or
- * parsed from `window.location.search`). Called once as the `useReducer` lazy
- * initializer to avoid the hydration flash that occurs when reading the URL on mount.
- */
-function initStateFromParams({
-    filters,
-    defaultSort,
-    params
-}: {
-    readonly filters: readonly FilterGroup[];
-    readonly defaultSort: string;
-    readonly params: Readonly<Record<string, string>>;
-}): FilterState {
-    const selections: Record<string, string[]> = {};
-    const ranges: Record<string, { min: string; max: string }> = {};
-    const steppers: Record<string, number> = {};
-    const toggles: Record<string, boolean> = {};
-    const dates: Record<string, { from: string; to: string }> = {};
-    const search = params.q ?? '';
-    const sort = params.sortBy ?? defaultSort;
-
-    for (const group of filters) {
-        if (
-            group.type === 'checkbox' ||
-            group.type === 'radio' ||
-            group.type === 'select-search' ||
-            group.type === 'icon-chips'
-        ) {
-            const val = params[group.id];
-            if (val) selections[group.id] = val.split(',');
-        }
-        if (group.type === 'dual-range') {
-            const cap = group.id.charAt(0).toUpperCase() + group.id.slice(1);
-            const min = params[`min${cap}`] ?? '';
-            const max = params[`max${cap}`] ?? '';
-            if (min || max) ranges[group.id] = { min, max };
-            // Restore includeNull toggle
-            const includeNullParam = group.includeNullParam;
-            if (includeNullParam && params[includeNullParam] === 'true') {
-                toggles[`${group.id}_includeNull`] = true;
-            }
-        }
-        if (group.type === 'stepper') {
-            const val = params[group.id];
-            if (val) steppers[group.id] = Number(val);
-        }
-        if (group.type === 'stars') {
-            const val = params.minRating;
-            if (val) steppers[group.id] = Number(val);
-            // Restore includeNull toggle
-            const includeNullParam = group.includeNullParam;
-            if (includeNullParam && params[includeNullParam] === 'true') {
-                toggles[`${group.id}_includeNull`] = true;
-            }
-        }
-        if (group.type === 'toggle') {
-            if (params[group.id] === 'true') toggles[group.id] = true;
-        }
-        if (group.type === 'date-range') {
-            // Hydrate from canonical `checkIn` / `checkOut` URL params (not the
-            // group id), since these are the names the listing reads at SSR.
-            const from = params.checkIn ?? '';
-            const to = params.checkOut ?? '';
-            if (from || to) dates[group.id] = { from, to };
-        }
-    }
-
-    return { selections, ranges, steppers, toggles, dates, search, sort };
-}
-
-// --- Sub-components ---
-
-/**
- * Sort icon button + popover dropdown.
- * Replaces the legacy <select> sort control in the sidebar header.
- */
-interface SortPopoverProps {
-    readonly options: readonly SortOption[];
-    readonly value: string;
-    readonly onChange: (value: string) => void;
-    readonly t: ReturnType<typeof createTranslations>['t'];
-}
-
-function SortPopover({ options, value, onChange, t }: SortPopoverProps) {
-    const [isOpen, setIsOpen] = useState(false);
-    const triggerRef = useRef<HTMLButtonElement>(null);
-    const dropdownRef = useRef<HTMLDivElement>(null);
-    const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number }>({
-        top: 0,
-        right: 0
-    });
-
-    // Position the dropdown relative to the trigger using fixed positioning
-    // (escapes overflow:hidden on parent containers)
-    useEffect(() => {
-        if (!isOpen || !triggerRef.current) return;
-        const rect = triggerRef.current.getBoundingClientRect();
-        setDropdownPos({
-            top: rect.bottom + 6,
-            right: window.innerWidth - rect.right
-        });
-    }, [isOpen]);
-
-    // Close when clicking outside the popover
-    useEffect(() => {
-        if (!isOpen) return;
-        const handleMouseDown = (e: MouseEvent) => {
-            if (
-                triggerRef.current?.contains(e.target as Node) ||
-                dropdownRef.current?.contains(e.target as Node)
-            ) {
-                return;
-            }
-            setIsOpen(false);
-        };
-        document.addEventListener('mousedown', handleMouseDown);
-        return () => document.removeEventListener('mousedown', handleMouseDown);
-    }, [isOpen]);
-
-    const selectedLabel = options.find((o) => o.value === value)?.label ?? '';
-
-    return (
-        <>
-            <button
-                type="button"
-                ref={triggerRef}
-                className={styles.sortPopoverTrigger}
-                onClick={() => setIsOpen((prev) => !prev)}
-                aria-expanded={isOpen}
-                aria-label={`${t('ui.filter.sortBy', 'Ordenar por')}: ${selectedLabel}`}
-                title={`${t('ui.filter.sortBy', 'Ordenar por')}: ${selectedLabel}`}
-            >
-                ⇅
-            </button>
-            {isOpen &&
-                createPortal(
-                    <div
-                        ref={dropdownRef}
-                        className={styles.sortPopoverDropdown}
-                        style={{
-                            top: `${dropdownPos.top}px`,
-                            right: `${dropdownPos.right}px`,
-                            backgroundColor:
-                                document.documentElement.dataset.theme === 'dark'
-                                    ? 'oklch(0.25 0.01 210)'
-                                    : 'oklch(0.99 0.002 210)',
-                            border: `1px solid ${
-                                document.documentElement.dataset.theme === 'dark'
-                                    ? 'oklch(0.35 0.01 210)'
-                                    : 'oklch(0.85 0.01 210)'
-                            }`
-                        }}
-                    >
-                        {options.map((opt) => (
-                            <button
-                                key={opt.value}
-                                type="button"
-                                className={cn(
-                                    styles.sortPopoverOption,
-                                    opt.value === value && styles.sortPopoverOptionActive
-                                )}
-                                onClick={() => {
-                                    onChange(opt.value);
-                                    setIsOpen(false);
-                                }}
-                            >
-                                {opt.label}
-                                {opt.value === value && <span aria-hidden="true">✓</span>}
-                            </button>
-                        ))}
-                    </div>,
-                    document.body
-                )}
-        </>
-    );
-}
-
-/** The inner panel content shared between desktop sidebar and mobile drawer. */
+/** Props for the SidebarPanel inner layout component. */
 interface SidebarPanelProps {
-    readonly filters: readonly FilterGroup[];
+    readonly filters: readonly FilterGroupType[];
     readonly state: FilterState;
     readonly dispatch: React.Dispatch<FilterAction>;
     readonly collapsed: Record<string, boolean>;
@@ -420,6 +94,11 @@ interface SidebarPanelProps {
     readonly onCloseDrawer?: () => void;
 }
 
+/**
+ * Inner panel content shared between desktop sidebar and mobile drawer.
+ * Renders the header (title, badge, sort, clear-all) and the scrollable body
+ * with inline toggle filters and collapsible filter groups.
+ */
 function SidebarPanel({
     filters,
     state,
@@ -436,7 +115,6 @@ function SidebarPanel({
     drawerMode = false,
     onCloseDrawer
 }: SidebarPanelProps) {
-    // Separate toggle filters (rendered inline) from collapsible groups
     const inlineFilters = filters.filter((g) => g.type === 'toggle');
     const collapsibleFilters = filters.filter((g) => g.type !== 'toggle');
 
@@ -477,7 +155,7 @@ function SidebarPanel({
                                 options={sortOptions}
                                 value={state.sort}
                                 onChange={(v) => dispatch({ type: 'SET_SORT', value: v })}
-                                t={t}
+                                locale={locale}
                             />
                         )}
                         {activeCount > 0 && (
@@ -536,80 +214,26 @@ function SidebarPanel({
                 {collapsibleFilters.map((group) => {
                     const hasActive = groupHasActiveSelection(group, state);
                     return (
-                        <fieldset
+                        <FilterGroup
                             key={group.id}
-                            className={cn(styles.group, hasActive && styles.groupActive)}
-                            aria-labelledby={`filter-${group.id}`}
+                            id={group.id}
+                            label={group.label}
+                            locale={locale}
+                            collapsed={!!collapsed[group.id]}
+                            hasActive={hasActive}
+                            onToggle={() => onToggleGroup(group.id)}
+                            onReset={() => onResetGroup(group.id)}
                         >
-                            <div className={styles.groupHeader}>
-                                <button
-                                    type="button"
-                                    className={styles.groupToggle}
-                                    onClick={() => onToggleGroup(group.id)}
-                                    id={`filter-${group.id}`}
-                                    aria-expanded={!collapsed[group.id]}
-                                >
-                                    <span className={styles.groupToggleLabel}>
-                                        {hasActive && (
-                                            <span
-                                                className={styles.groupActiveDot}
-                                                aria-hidden="true"
-                                            />
-                                        )}
-                                        {group.label}
-                                    </span>
-                                </button>
-                                <span className={styles.groupHeaderActions}>
-                                    {hasActive && (
-                                        <button
-                                            type="button"
-                                            className={styles.groupReset}
-                                            onClick={() => onResetGroup(group.id)}
-                                            aria-label={`${t('ui.filter.reset', 'Limpiar')} ${group.label}`}
-                                        >
-                                            ×
-                                        </button>
-                                    )}
-                                    <button
-                                        type="button"
-                                        className={styles.chevronBtn}
-                                        onClick={() => onToggleGroup(group.id)}
-                                        aria-label={
-                                            collapsed[group.id]
-                                                ? t('ui.filter.expand', 'Expandir')
-                                                : t('ui.filter.collapse', 'Colapsar')
-                                        }
-                                    >
-                                        <span
-                                            className={cn(
-                                                styles.chevron,
-                                                collapsed[group.id] && styles.chevronCollapsed
-                                            )}
-                                            aria-hidden="true"
-                                        >
-                                            ▾
-                                        </span>
-                                    </button>
-                                </span>
-                            </div>
-
-                            <div
-                                className={cn(
-                                    styles.groupContent,
-                                    collapsed[group.id] && styles.groupContentCollapsed
-                                )}
-                            >
-                                <FilterGroupContent
-                                    group={group}
-                                    state={state}
-                                    dispatch={dispatch}
-                                    onSearchChange={(searchValue: string) => {
-                                        dispatch({ type: 'SET_SEARCH', value: searchValue });
-                                    }}
-                                    locale={locale}
-                                />
-                            </div>
-                        </fieldset>
+                            <FilterGroupContent
+                                group={group}
+                                state={state}
+                                dispatch={dispatch}
+                                onSearchChange={(v: string) =>
+                                    dispatch({ type: 'SET_SEARCH', value: v })
+                                }
+                                locale={locale}
+                            />
+                        </FilterGroup>
                     );
                 })}
             </div>
@@ -617,7 +241,7 @@ function SidebarPanel({
     );
 }
 
-// --- Component ---
+// --- Main component ---
 
 /**
  * FilterSidebar component.
@@ -625,10 +249,8 @@ function SidebarPanel({
  * Every state change triggers a debounced navigation (500ms) via Astro View Transitions.
  *
  * Responsive behavior:
- * - Desktop (>= 768px): static panel whose layout depends on `position`:
- *   - `'left'` (default): sidebar column to the left of content (parent grid controls placement).
- *   - `'top'`: horizontal strip above content (full-width, filters scroll horizontally).
- * - Mobile (< 768px): floating trigger button + full-height drawer from the left (both positions).
+ * - Desktop (>= 768px): static panel, layout depends on `position` prop.
+ * - Mobile (< 768px): floating trigger button + full-height drawer (position-agnostic).
  */
 export function FilterSidebar({
     locale,
@@ -641,10 +263,8 @@ export function FilterSidebar({
     className
 }: FilterSidebarProps) {
     const { t } = createTranslations(locale);
-    const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [isNavigating, setIsNavigating] = useState(false);
-    const drawerPanelRef = useRef<HTMLDialogElement>(null);
+    const { debouncedNavigate, isPending, clearPending } = useFilterDebounce();
     const isInitialMount = useRef(true);
 
     const [state, dispatch] = useReducer(
@@ -654,29 +274,21 @@ export function FilterSidebar({
             initStateFromParams({ filters: f, defaultSort: ds, params: p })
     );
 
-    /**
-     * Pre-sort filters once from initial (URL-applied) state so that active filters
-     * float to the top only on page load, not on every local state change.
-     */
+    /** Pre-sort filters once from initial state so active filters float to top on load only. */
     const sortedFilters = useMemo(() => {
         const initialState = initStateFromParams({
             filters,
             defaultSort,
             params: initialParams ?? {}
         });
-        const active: FilterGroup[] = [];
-        const inactive: FilterGroup[] = [];
+        const active: FilterGroupType[] = [];
+        const inactive: FilterGroupType[] = [];
         for (const group of filters) {
-            if (groupHasActiveSelection(group, initialState)) {
-                active.push(group);
-            } else {
-                inactive.push(group);
-            }
+            (groupHasActiveSelection(group, initialState) ? active : inactive).push(group);
         }
         return [...active, ...inactive];
     }, [filters, defaultSort, initialParams]);
 
-    // Smart collapsible defaults: computed lazily from the initial state
     const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
         computeInitialCollapsed({ filters: sortedFilters, state })
     );
@@ -691,184 +303,49 @@ export function FilterSidebar({
         return () => mql.removeEventListener('change', handleChange);
     }, []);
 
-    // Lock body scroll while drawer is open
-    useEffect(() => {
-        if (isDrawerOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
-        return () => {
-            document.body.style.overflow = '';
-        };
-    }, [isDrawerOpen]);
-
-    // Trap focus inside the drawer when open
-    useEffect(() => {
-        if (!isDrawerOpen || !drawerPanelRef.current) return;
-        const panel = drawerPanelRef.current;
-        const focusable = panel.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        first?.focus();
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                setIsDrawerOpen(false);
-                return;
-            }
-            if (e.key !== 'Tab') return;
-            if (e.shiftKey) {
-                if (document.activeElement === first) {
-                    e.preventDefault();
-                    last?.focus();
-                }
-            } else {
-                if (document.activeElement === last) {
-                    e.preventDefault();
-                    first?.focus();
-                }
-            }
-        };
-
-        panel.addEventListener('keydown', handleKeyDown);
-        return () => panel.removeEventListener('keydown', handleKeyDown);
-    }, [isDrawerOpen]);
-
-    // Close drawer and clear navigating state when Astro swaps the page
+    // Handle Astro page lifecycle events
     useEffect(() => {
         const handleBeforeSwap = () => {
             setIsDrawerOpen(false);
-            setIsNavigating(false);
+            clearPending();
         };
         document.addEventListener('astro:before-swap', handleBeforeSwap);
-        return () => document.removeEventListener('astro:before-swap', handleBeforeSwap);
-    }, []);
-
-    // Clean up loading attribute and navigating state when Astro finishes loading
-    useEffect(() => {
-        const cleanup = () => {
-            delete document.documentElement.dataset.filtersLoading;
-            setIsNavigating(false);
+        document.addEventListener('astro:page-load', clearPending);
+        return () => {
+            document.removeEventListener('astro:before-swap', handleBeforeSwap);
+            document.removeEventListener('astro:page-load', clearPending);
         };
-        document.addEventListener('astro:page-load', cleanup);
-        return () => document.removeEventListener('astro:page-load', cleanup);
-    }, []);
+    }, [clearPending]);
 
-    const buildParams = useCallback((): URLSearchParams => {
-        const params = new URLSearchParams();
-        if (state.search) params.set('q', state.search);
-        if (state.sort) params.set('sortBy', state.sort);
-        for (const [id, values] of Object.entries(state.selections)) {
-            if (values.length > 0) params.set(id, values.join(','));
-        }
-        for (const [id, range] of Object.entries(state.ranges)) {
-            const cap = id.charAt(0).toUpperCase() + id.slice(1);
-            if (range.min) params.set(`min${cap}`, range.min);
-            if (range.max) params.set(`max${cap}`, range.max);
-        }
-        for (const group of filters) {
-            if (group.type === 'stepper' || group.type === 'stars') {
-                const def = getStepperDefault(group);
-                const stateVal = state.steppers[group.id];
-                const val = stateVal ?? def;
-                // Two emission modes:
-                //  - default (`val > def`): right for "minimum" filters.
-                //  - `emitWhenAtDefault`: right for context steppers that
-                //    must always reflect a chosen value (e.g. hero adults).
-                const shouldEmit =
-                    group.type === 'stepper' && group.emitWhenAtDefault === true
-                        ? stateVal !== undefined
-                        : val > def;
-                if (shouldEmit)
-                    params.set(group.type === 'stars' ? 'minRating' : group.id, String(val));
-            }
-            if (group.type === 'toggle' && state.toggles[group.id]) {
-                params.set(group.id, 'true');
-            }
-            // includeNull params for dual-range and stars
-            if (
-                (group.type === 'dual-range' || group.type === 'stars') &&
-                group.includeNullParam &&
-                state.toggles[`${group.id}_includeNull`]
-            ) {
-                params.set(group.includeNullParam, 'true');
-            }
-            // Date-range groups always emit canonical `checkIn` / `checkOut`
-            // params (not the group id), regardless of how many groups exist.
-            if (group.type === 'date-range') {
-                const v = state.dates[group.id];
-                if (v?.from) params.set('checkIn', v.from);
-                if (v?.to) params.set('checkOut', v.to);
-            }
-        }
-        return params;
-    }, [state, filters]);
-
-    // Keep a ref to buildParams and onFiltersChange to avoid stale closures in the debounce
-    const buildParamsRef = useRef(buildParams);
-    buildParamsRef.current = buildParams;
+    // Refs to avoid stale closures in the debounce
     const onFiltersChangeRef = useRef(onFiltersChange);
     onFiltersChangeRef.current = onFiltersChange;
+
+    const stateRef = useRef(state);
+    stateRef.current = state;
+
+    const filtersRef = useRef(filters);
+    filtersRef.current = filters;
 
     /**
      * Auto-navigate on every state change with a 500ms debounce.
      * Skips the initial mount (state already matches the URL).
      * biome-ignore lint/correctness/useExhaustiveDependencies: `state` is intentionally the
      * only dependency — the reducer returns a new object on every change, making this
-     * a correct reactive trigger. All other dependencies are accessed via refs.
+     * a correct reactive trigger. All other values accessed via refs to avoid stale closures.
      */
     useEffect(() => {
         if (isInitialMount.current) {
             isInitialMount.current = false;
             return;
         }
+        debouncedNavigate(
+            buildParamsFromState({ state: stateRef.current, filters: filtersRef.current }),
+            onFiltersChangeRef.current
+        );
+    }, [state, debouncedNavigate]);
 
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-
-        // nosemgrep: javascript.lang.security.detect-eval-with-expression.detect-eval-with-expression
-        debounceRef.current = setTimeout(() => {
-            const params = buildParamsRef.current();
-
-            // If a custom handler is provided (e.g. tests or embedded usage), use it
-            if (onFiltersChangeRef.current) {
-                onFiltersChangeRef.current(params);
-                return;
-            }
-
-            setIsNavigating(true);
-            document.documentElement.dataset.filtersLoading = 'true';
-
-            const newUrl = new URL(window.location.href);
-            newUrl.pathname = newUrl.pathname.replace(/\/page\/\d+\/?$/, '/');
-            newUrl.search = params.toString();
-            newUrl.searchParams.delete('page');
-
-            // Use Astro View Transitions navigate for smooth transition
-            (
-                import('astro:transitions/client') as Promise<{
-                    navigate: (href: string) => Promise<void>;
-                }>
-            )
-                .then(({ navigate }) => {
-                    navigate(newUrl.href);
-                })
-                .catch(() => {
-                    // Fallback to hard navigation if View Transitions are unavailable
-                    window.location.href = newUrl.href;
-                });
-        }, 500);
-
-        return () => {
-            if (debounceRef.current) clearTimeout(debounceRef.current);
-        };
-    }, [state]);
-
-    const handleClearAll = useCallback(() => {
-        dispatch({ type: 'CLEAR_ALL' });
-    }, []);
+    const handleClearAll = useCallback(() => dispatch({ type: 'CLEAR_ALL' }), []);
 
     const handleResetGroup = useCallback(
         (groupId: string) => {
@@ -887,7 +364,6 @@ export function FilterSidebar({
         setCollapsed((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
     }, []);
 
-    /** Count of filter groups that have an active selection. */
     const activeCount = useMemo(
         () => filters.filter((g) => groupHasActiveSelection(g, state)).length,
         [filters, state]
@@ -901,7 +377,7 @@ export function FilterSidebar({
         locale,
         t,
         activeCount,
-        isNavigating,
+        isNavigating: isPending,
         sortOptions,
         onToggleGroup: toggleGroup,
         onClearAll: handleClearAll,
@@ -960,31 +436,18 @@ export function FilterSidebar({
                 )}
             </button>
 
-            {/* Mobile drawer */}
-            {isDrawerOpen && (
-                /* Overlay */
-                <div
-                    className={styles.drawerOverlay}
-                    onClick={() => setIsDrawerOpen(false)}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Escape') setIsDrawerOpen(false);
-                    }}
-                    aria-hidden="true"
-                />
-            )}
-
-            <dialog
-                ref={drawerPanelRef}
-                className={cn(styles.drawer, isDrawerOpen && styles.drawerOpen)}
-                aria-label={t('ui.filter.title', 'Filtros')}
-                open={isDrawerOpen}
+            {/* Mobile drawer — focus trap, scroll lock, escape handled inside */}
+            <MobileDrawer
+                isOpen={isDrawerOpen}
+                onClose={() => setIsDrawerOpen(false)}
+                ariaLabel={t('ui.filter.title', 'Filtros')}
             >
                 <SidebarPanel
                     {...panelProps}
                     drawerMode
                     onCloseDrawer={() => setIsDrawerOpen(false)}
                 />
-            </dialog>
+            </MobileDrawer>
         </div>
     );
 }

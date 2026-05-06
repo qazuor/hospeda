@@ -93,6 +93,17 @@ vi.mock('@/components/shared/filters/filter-types/IconChipsFilter.module.css', (
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
 
+// New sub-component CSS mocks (after refactor)
+vi.mock('@/components/shared/filters/components/FilterGroup.module.css', () => ({
+    default: new Proxy({}, { get: (_t, prop) => String(prop) })
+}));
+vi.mock('@/components/shared/filters/components/MobileDrawer.module.css', () => ({
+    default: new Proxy({}, { get: (_t, prop) => String(prop) })
+}));
+vi.mock('@/components/shared/filters/components/SortPopover.module.css', () => ({
+    default: new Proxy({}, { get: (_t, prop) => String(prop) })
+}));
+
 // ---------------------------------------------------------------------------
 // Test fixtures
 // ---------------------------------------------------------------------------

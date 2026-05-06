@@ -1,0 +1,81 @@
+/* SortPopover.module.css
+ * Styles for the sort icon trigger button and the portal-mounted dropdown.
+ * The dropdown uses position:fixed (set via inline style) so it can escape
+ * overflow:hidden ancestors — no absolute positioning needed here.
+ * Uses CSS custom properties from global.css — never hardcode values.
+ */
+
+/* ============================================================
+   Trigger button
+   ============================================================ */
+
+.sortPopoverTrigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    background: none;
+    border: 1px solid oklch(from var(--border) l c h / 0.5);
+    border-radius: var(--radius-pill);
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    transition: color var(--duration-fast) ease, border-color var(--duration-fast) ease,
+        background-color var(--duration-fast) ease;
+}
+
+.sortPopoverTrigger:hover {
+    color: var(--brand-primary);
+    border-color: oklch(from var(--brand-primary) l c h / 0.3);
+    background-color: oklch(from var(--brand-primary) l c h / 0.04);
+}
+
+/* ============================================================
+   Dropdown (portal-mounted on document.body, position:fixed via inline style)
+   ============================================================ */
+
+.sortPopoverDropdown {
+    position: fixed;
+    z-index: 500;
+    min-width: 200px;
+    /* background-color and border set via inline style to read theme from document */
+    border-radius: 0.5rem;
+    box-shadow: 0 8px 32px oklch(0 0 0 / 0.18), 0 2px 8px oklch(0 0 0 / 0.08);
+    padding: 0.375rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+/* ============================================================
+   Dropdown options
+   ============================================================ */
+
+.sortPopoverOption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: none;
+    border: none;
+    border-radius: 0.375rem;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--foreground);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease;
+}
+
+.sortPopoverOption:hover {
+    background-color: oklch(from var(--brand-primary) l c h / 0.06);
+}
+
+.sortPopoverOptionActive {
+    color: var(--brand-primary);
+    font-weight: 600;
+}
