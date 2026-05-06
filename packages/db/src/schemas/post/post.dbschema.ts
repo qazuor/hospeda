@@ -21,6 +21,7 @@ import {
 } from '../enums.dbschema.ts';
 import { events } from '../event/event.dbschema.ts';
 import { rEntityTag } from '../tag/r_entity_tag.dbschema.ts';
+import { rPostPostTag } from '../tag/r_post_post_tag.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { postSponsorships } from './post_sponsorship.dbschema.ts';
 
@@ -123,5 +124,12 @@ export const postsRelations = relations(posts, ({ one, many }) => ({
         fields: [posts.sponsorshipId],
         references: [postSponsorships.id]
     }),
-    tags: many(rEntityTag)
+    tags: many(rEntityTag),
+    /**
+     * SPEC-086: many-to-many relation to PostTags via the `r_post_post_tag`
+     * join table. Editors assign these public, SEO-driven tags to posts.
+     * Loaded with the nested `postTag` to flatten into a `PostTag[]` array
+     * at the service layer.
+     */
+    postTags: many(rPostPostTag)
 }));

@@ -12,11 +12,13 @@ import type {
     GetPostStatsInput,
     GetPostSummaryInput,
     ListRelationsConfig,
+    PaginatedListOutput,
     Post,
     PostCreateInput,
     PostEngagementStats,
     PostListInput,
     PostSummary,
+    PostTag,
     PostUpdateInput,
     VisibilityEnum
 } from '@repo/schemas';
@@ -84,8 +86,42 @@ export class PostService extends BaseCrudService<
             relatedAccommodation: true,
             relatedDestination: true,
             relatedEvent: true,
-            sponsorship: { sponsor: true } // Nested relation: sponsorship -> sponsor
+            sponsorship: { sponsor: true }, // Nested relation: sponsorship -> sponsor
+            // SPEC-086: load PostTags via the `r_post_post_tag` join with the
+            // nested `postTag` populated. Flattened to a `PostTag[]` array
+            // by `_afterGetByField`/`_afterList` so consumers receive the
+            // canonical shape declared in `PostSchema.postTags`.
+            postTags: { postTag: true }
         };
+    }
+
+    /**
+     * Flattens the nested `r_post_post_tag` rows produced by the relational
+     * loader into the canonical `PostTag[]` shape exposed by `PostSchema`.
+     *
+     * Drizzle's `findFirst({ with: { postTags: { with: { postTag: true } } } })`
+     * returns join rows shaped as `{ postId, postTagId, postTag: PostTag }`.
+     * Public consumers expect a flat `PostTag[]`, so we lift the nested
+     * `postTag` field to the top level and discard the join metadata.
+     *
+     * @param entity - Post entity returned by the model layer (with raw join rows).
+     * @returns The same entity reference, with `postTags` flattened in-place.
+     */
+    private flattenPostTagsRelation<T extends Post | null | undefined>(entity: T): T {
+        if (!entity) return entity;
+        const raw = (entity as unknown as { postTags?: unknown }).postTags;
+        if (!Array.isArray(raw)) return entity;
+        const flat: PostTag[] = raw
+            .map((row) => {
+                if (row && typeof row === 'object' && 'postTag' in row) {
+                    return (row as { postTag: PostTag | null | undefined }).postTag ?? null;
+                }
+                // Already flat (e.g. mocked data) — keep as-is.
+                return (row as PostTag | null | undefined) ?? null;
+            })
+            .filter((tag): tag is PostTag => tag !== null && tag !== undefined);
+        (entity as unknown as { postTags: PostTag[] }).postTags = flat;
+        return entity;
     }
 
     /**
@@ -254,6 +290,52 @@ export class PostService extends BaseCrudService<
         return {
             ...rest
         } as Partial<Post>;
+    }
+
+    /**
+     * Lifecycle hook: flattens the nested `r_post_post_tag` join rows into
+     * a top-level `PostTag[]` on the returned entity (SPEC-086).
+     */
+    protected override async _afterGetByField(
+        entity: Post | null,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Post | null> {
+        return this.flattenPostTagsRelation(entity);
+    }
+
+    /**
+     * Lifecycle hook: flattens nested `r_post_post_tag` join rows into a
+     * top-level `PostTag[]` on every item of a paginated list result
+     * (SPEC-086).
+     */
+    protected override async _afterList(
+        result: PaginatedListOutput<Post>,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<PaginatedListOutput<Post>> {
+        if (!result?.items) return result;
+        return {
+            ...result,
+            items: result.items.map((item) => this.flattenPostTagsRelation(item))
+        };
+    }
+
+    /**
+     * Lifecycle hook: flattens nested `r_post_post_tag` join rows into a
+     * top-level `PostTag[]` on every item of a paginated search result
+     * (SPEC-086).
+     */
+    protected override async _afterSearch(
+        result: PaginatedListOutput<Post>,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<PaginatedListOutput<Post>> {
+        if (!result?.items) return result;
+        return {
+            ...result,
+            items: result.items.map((item) => this.flattenPostTagsRelation(item))
+        };
     }
 
     /**

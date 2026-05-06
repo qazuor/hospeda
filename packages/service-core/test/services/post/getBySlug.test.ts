@@ -80,4 +80,60 @@ describe('PostService.getBySlug', () => {
         const result = await service.getBySlug(actor, post.slug);
         expectInternalError(result);
     });
+
+    it('flattens nested r_post_post_tag rows into a top-level postTags array (SPEC-086)', async () => {
+        const postTagA = {
+            id: getMockId('feature'),
+            name: 'Gastronomía',
+            slug: 'gastronomia',
+            color: 'ORANGE',
+            icon: null,
+            description: null,
+            lifecycleState: 'ACTIVE',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            createdById: null,
+            updatedById: null
+        };
+        const postTagB = {
+            id: getMockId('user'),
+            name: 'Familia',
+            slug: 'familia',
+            color: 'BLUE',
+            icon: null,
+            description: null,
+            lifecycleState: 'ACTIVE',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            createdById: null,
+            updatedById: null
+        };
+        const postWithJoinRows = {
+            ...post,
+            postTags: [
+                { postId: post.id, postTagId: postTagA.id, postTag: postTagA },
+                { postId: post.id, postTagId: postTagB.id, postTag: postTagB }
+            ]
+        };
+        (modelMock.findOne as Mock).mockResolvedValue(postWithJoinRows);
+        (modelMock.findOneWithRelations as Mock).mockResolvedValue(postWithJoinRows);
+        const result = await service.getBySlug(actor, post.slug);
+        assertions.expectSuccess(result);
+        const flattened = (result.data as { postTags?: unknown[] }).postTags;
+        expect(Array.isArray(flattened)).toBe(true);
+        expect(flattened).toHaveLength(2);
+        expect((flattened as Array<{ slug: string }>)[0]?.slug).toBe('gastronomia');
+        expect((flattened as Array<{ slug: string }>)[1]?.slug).toBe('familia');
+    });
+
+    it('returns an empty array when the post has no postTags assigned', async () => {
+        const postWithEmptyTags = { ...post, postTags: [] };
+        (modelMock.findOne as Mock).mockResolvedValue(postWithEmptyTags);
+        (modelMock.findOneWithRelations as Mock).mockResolvedValue(postWithEmptyTags);
+        const result = await service.getBySlug(actor, post.slug);
+        assertions.expectSuccess(result);
+        const flattened = (result.data as { postTags?: unknown[] }).postTags;
+        expect(Array.isArray(flattened)).toBe(true);
+        expect(flattened).toHaveLength(0);
+    });
 });

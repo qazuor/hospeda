@@ -15,6 +15,7 @@ import { BaseModerationFields } from '../../common/moderation.schema.js';
 import { BaseSeoFields } from '../../common/seo.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { PostCategoryEnumSchema } from '../../enums/index.js';
+import { PostTagSchema } from '../tag/post-tag.schema.js';
 import { TagSchema } from '../tag/tag.schema.js';
 
 /**
@@ -32,8 +33,16 @@ export const PostSchema = z.object({
     ...BaseModerationFields,
     ...BaseSeoFields,
     ...BaseVisibilityFields,
-    // Tags
+    // User-tags (private, no slug — SPEC-086 D-002).
     tags: z.array(TagSchema).optional(),
+
+    /**
+     * Public, SEO-driven PostTags assigned to this post via the
+     * `r_post_post_tag` join table (SPEC-086). Different subsystem from
+     * the `tags` field above. Optional because the JOIN is only loaded
+     * by the public read paths (getById, getBySlug, list).
+     */
+    postTags: z.array(PostTagSchema).optional(),
 
     // Post-specific core fields
     slug: z

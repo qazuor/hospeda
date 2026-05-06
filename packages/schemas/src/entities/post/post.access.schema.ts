@@ -128,6 +128,9 @@ export const PostPublicSchema = PostSchema.pick({
     // Tags (public)
     tags: true,
 
+    /** Public PostTags (SEO taxonomy) — SPEC-086. */
+    postTags: true,
+
     // Basic timestamps
     createdAt: true,
     updatedAt: true
@@ -184,6 +187,7 @@ export const PostProtectedSchema = PostSchema.pick({
     visibility: true,
     seo: true,
     tags: true,
+    postTags: true,
     createdAt: true,
     updatedAt: true,
 

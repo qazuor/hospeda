@@ -53,7 +53,8 @@ describe('PostService.getById', () => {
                 relatedAccommodation: true,
                 relatedDestination: true,
                 relatedEvent: true,
-                sponsorship: { sponsor: true }
+                sponsorship: { sponsor: true },
+                postTags: { postTag: true }
             },
             undefined
         );

@@ -50,7 +50,8 @@ export class PostModel extends BaseModelImpl<Post> {
         'relatedDestination',
         'relatedEvent',
         'sponsorship',
-        'tags'
+        'tags',
+        'postTags'
     ] as const;
 
     /**

@@ -63,7 +63,8 @@ describe('PostService - Relations Support', () => {
                 relatedAccommodation: true,
                 relatedDestination: true,
                 relatedEvent: true,
-                sponsorship: { sponsor: true }
+                sponsorship: { sponsor: true },
+                postTags: { postTag: true }
             });
         });
     });
@@ -84,7 +85,8 @@ describe('PostService - Relations Support', () => {
                     relatedAccommodation: true,
                     relatedDestination: true,
                     relatedEvent: true,
-                    sponsorship: { sponsor: true }
+                    sponsorship: { sponsor: true },
+                    postTags: { postTag: true }
                 },
                 {},
                 { page: undefined, pageSize: undefined },
