@@ -19,6 +19,7 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.ADMIN_PAYMENT_FAILURE]: '[Admin] Fallo de pago - {userEmail}',
     [NotificationType.ADMIN_SYSTEM_EVENT]: '[Admin] Evento del sistema - {eventType}',
     [NotificationType.FEEDBACK_REPORT]: '[{reportType}] {reportTitle}',
+    [NotificationType.CONTACT_SUBMISSION]: '[Contacto] {contactType} - {senderName}',
     [NotificationType.SUBSCRIPTION_CANCELLED]: 'Tu suscripción {planName} ha sido cancelada',
     [NotificationType.SUBSCRIPTION_PAUSED]:
         'Tu suscripción {planName} ha sido pausada - Acción requerida',

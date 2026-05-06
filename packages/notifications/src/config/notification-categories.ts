@@ -26,6 +26,9 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // Feedback - Sent to admin notification list, not end-user
     [NotificationType.FEEDBACK_REPORT]: NotificationCategory.ADMIN,
 
+    // Contact form submission - Sent to support inbox, not end-user
+    [NotificationType.CONTACT_SUBMISSION]: NotificationCategory.ADMIN,
+
     // Subscription lifecycle - Transactional, always sent
     [NotificationType.SUBSCRIPTION_CANCELLED]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.SUBSCRIPTION_PAUSED]: NotificationCategory.TRANSACTIONAL,

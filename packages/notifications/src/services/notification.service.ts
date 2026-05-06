@@ -11,6 +11,7 @@ import {
     AddonRenewalConfirmation,
     AdminPaymentFailure,
     AdminSystemEvent,
+    ContactSubmissionEmail,
     FeedbackReportEmail,
     PaymentFailure,
     PaymentRetryWarning,
@@ -31,6 +32,7 @@ import type {
     AddonCancellationPayload,
     AddonEventPayload,
     AdminNotificationPayload,
+    ContactSubmissionPayload,
     FeedbackReportPayload,
     NotificationPayload,
     PaymentNotificationPayload,
@@ -450,6 +452,19 @@ export class NotificationService {
                 });
             }
 
+            case 'contact_submission': {
+                const p = payload as ContactSubmissionPayload;
+                return ContactSubmissionEmail({
+                    senderFirstName: p.senderFirstName,
+                    senderLastName: p.senderLastName,
+                    senderEmail: p.senderEmail,
+                    message: p.message,
+                    contactType: p.contactType,
+                    accommodationId: p.accommodationId,
+                    submittedAt: p.submittedAt
+                });
+            }
+
             case 'subscription_cancelled': {
                 const lifecyclePayload = payload as SubscriptionLifecyclePayload;
                 return SubscriptionCancelled({
@@ -558,6 +573,14 @@ export class NotificationService {
         if (payload.type === 'feedback_report' && 'reportType' in payload) {
             subjectData.reportType = payload.reportType;
             subjectData.reportTitle = payload.reportTitle;
+        }
+
+        // Contact submission specific fields
+        if (payload.type === 'contact_submission' && 'senderFirstName' in payload) {
+            const fullName = `${payload.senderFirstName} ${payload.senderLastName}`.trim();
+            subjectData.senderName = fullName;
+            subjectData.contactType =
+                payload.contactType === 'accommodation' ? 'Alojamiento' : 'General';
         }
 
         // Payment retry warning specific fields

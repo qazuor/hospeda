@@ -16,6 +16,7 @@ export enum NotificationType {
     ADMIN_PAYMENT_FAILURE = 'admin_payment_failure',
     ADMIN_SYSTEM_EVENT = 'admin_system_event',
     FEEDBACK_REPORT = 'feedback_report',
+    CONTACT_SUBMISSION = 'contact_submission',
     SUBSCRIPTION_CANCELLED = 'subscription_cancelled',
     SUBSCRIPTION_PAUSED = 'subscription_paused',
     SUBSCRIPTION_REACTIVATED = 'subscription_reactivated',
@@ -151,6 +152,46 @@ export interface FeedbackReportPayload extends BaseNotificationPayload {
             stack?: string;
         };
     };
+}
+
+/**
+ * Payload for public contact form submissions.
+ *
+ * Sent to the support inbox when a visitor fills out the website contact form.
+ * Recipient is the support team, not the user submitting the form.
+ *
+ * @example
+ * ```ts
+ * const payload: ContactSubmissionPayload = {
+ *   type: NotificationType.CONTACT_SUBMISSION,
+ *   recipientEmail: 'info@hospeda.com',
+ *   recipientName: 'Hospeda Support',
+ *   userId: null,
+ *   contactType: 'general',
+ *   senderFirstName: 'Juan',
+ *   senderLastName: 'Pérez',
+ *   senderEmail: 'juan@example.com',
+ *   message: 'Quería consultar por...',
+ *   submittedAt: '2026-05-06T10:00:00.000Z',
+ * };
+ * ```
+ */
+export interface ContactSubmissionPayload extends BaseNotificationPayload {
+    type: NotificationType.CONTACT_SUBMISSION;
+    /** "general" or "accommodation" — drives subject line and template variant */
+    readonly contactType: 'general' | 'accommodation';
+    /** First name supplied by the form */
+    readonly senderFirstName: string;
+    /** Last name supplied by the form */
+    readonly senderLastName: string;
+    /** Reply-to email address for the support team */
+    readonly senderEmail: string;
+    /** Free-form message body (sanitized plain text, may contain newlines) */
+    readonly message: string;
+    /** Optional accommodation UUID when contactType is "accommodation" */
+    readonly accommodationId?: string;
+    /** ISO 8601 timestamp of when the form was submitted */
+    readonly submittedAt: string;
 }
 
 /** Payload for subscription lifecycle notifications (cancellation, pause, reactivation) */
@@ -304,6 +345,7 @@ export type NotificationPayload =
     | TrialEventPayload
     | AdminNotificationPayload
     | FeedbackReportPayload
+    | ContactSubmissionPayload
     | PlanDowngradeLimitWarningPayload
     | PaymentRetryWarningPayload
     | AddonCancellationPayload;
