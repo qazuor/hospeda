@@ -10,9 +10,10 @@
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
-        "lint": "biome check .",
+        "lint": "biome check . && pnpm check-tokens",
         "format": "biome format --write .",
         "typecheck": "tsc --noEmit --project ./tsconfig.json",
+        "check-tokens": "node scripts/check-css-tokens.cjs",
         "lighthouse": "lhci autorun --config=./lighthouserc.json",
         "clean": "rm -rf node_modules dist .astro"
     },

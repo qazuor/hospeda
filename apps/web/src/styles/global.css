@@ -83,6 +83,7 @@
     --font-sans: "Roboto", sans-serif;
     --font-heading: "Geologica", sans-serif;
     --font-decorative: "Caveat", cursive;
+    --font-mono: ui-monospace, "Menlo", "Monaco", "Cascadia Code", monospace;
 
     /* --- Radius (derived from --radius) --- */
     --radius-sm: calc(var(--radius) - 4px);
@@ -107,6 +108,19 @@
     --space-card-gap: clamp(1rem, 3vw, 1.875rem);
     --space-section-header-mb: 50px;
 
+    /* Numeric spacing scale (Tailwind-equivalent for fine-grained control) */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-7: 1.75rem;
+    --space-8: 2rem;
+    --space-9: 2.25rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+
     /* --- Typography scale --- */
     --text-hero: clamp(3rem, 2rem + 5vw, 5.75rem);
     --text-display: clamp(2rem, 1.5rem + 3vw, 3rem);
@@ -115,11 +129,17 @@
     --text-h4: clamp(0.9375rem, 0.875rem + 0.25vw, 1.125rem);
     --text-body: 1rem;
     --text-body-sm: 0.875rem;
+    --text-body-xs: 0.8125rem;
     --text-meta: 0.8125rem;
     --text-caption: 0.75rem;
     --text-tagline: clamp(1.125rem, 1rem + 0.625vw, 1.5rem);
     --text-nav: 0.875rem;
     --text-button: 1rem;
+
+    /* Typography scale - extra sizes (for body emphasis and intermediate sizes) */
+    --text-body-lg: 1.125rem;
+    --text-lg: 1.25rem;
+    --text-xl: 1.5rem;
 
     /* --- Shadows --- */
     --shadow-card: 0 4px 12px -2px oklch(from var(--core-foreground) l c h / 0.08);
@@ -137,7 +157,17 @@
     /* --- Z-index --- */
     --z-content: 10;
     --z-nav: 50;
+    --z-dropdown: 60;
     --z-modal: 100;
+    --z-toast: 200;
+
+    /* --- Layout (runtime: navbar height is also published by Header.astro) --- */
+    --navbar-height: 80px;
+
+    /* --- Hover / state variants (derived) --- */
+    --primary-hover: oklch(from var(--brand-primary) calc(l - 0.05) c h);
+    --accent-hover: oklch(from var(--brand-accent) calc(l - 0.05) c h);
+    --brand-primary-dark: oklch(from var(--brand-primary) calc(l - 0.1) c h);
 
     /* --- Layout --- */
     --container-max: 1350px;
@@ -179,6 +209,11 @@
     --chart-3: oklch(0.72 0.19 55);
     --chart-4: oklch(0.78 0.11 190);
     --chart-5: oklch(0.62 0.1 240);
+
+    /* Hover variants in dark mode go LIGHTER, not darker */
+    --primary-hover: oklch(from var(--brand-primary) calc(l + 0.07) c h);
+    --accent-hover: oklch(from var(--brand-accent) calc(l + 0.07) c h);
+    --brand-primary-dark: oklch(from var(--brand-primary) calc(l - 0.08) c h);
 
     /* Feedback tokens (dark) */
     --success: oklch(0.65 0.16 150);
