@@ -1,0 +1,228 @@
+---
+/**
+ * @file PostTableOfContents.astro
+ * @description Static table-of-contents navigation for a blog post.
+ * Renders a `<nav>` with an `<ol>` of heading links derived from the post HTML.
+ * On desktop it is sticky (handled by sidebar layout). On mobile it collapses
+ * into a `<details>` accordion.
+ *
+ * Active heading highlighting is added by the PostTocActive island (client:idle)
+ * which attaches/removes `data-active` on the link elements via IntersectionObserver.
+ */
+
+import { PostTocActive } from './PostTocActive.client';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import type { TocHeading } from '@/lib/extract-toc';
+
+interface Props {
+	readonly headings: ReadonlyArray<TocHeading>;
+	readonly locale: SupportedLocale;
+}
+
+const { headings, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const label = t('blog.detail.tableOfContents', 'En este artículo');
+---
+
+{headings.length > 0 && (
+	<div class="post-toc">
+		<!-- Mobile: collapsible accordion -->
+		<details class="post-toc__mobile">
+			<summary class="post-toc__summary">{label}</summary>
+			<nav aria-label={label}>
+				<ol class="post-toc__list">
+					{headings.map((h) => (
+						<li class:list={['post-toc__item', { 'post-toc__item--h3': h.level === 3 }]}>
+							<a
+								href={`#${h.id}`}
+								class="post-toc__link"
+								data-toc-link={h.id}
+							>
+								{h.text}
+							</a>
+						</li>
+					))}
+				</ol>
+			</nav>
+		</details>
+
+		<!-- Desktop: always visible -->
+		<div class="post-toc__desktop">
+			<p class="post-toc__title">{label}</p>
+			<nav aria-label={label}>
+				<ol class="post-toc__list">
+					{headings.map((h) => (
+						<li class:list={['post-toc__item', { 'post-toc__item--h3': h.level === 3 }]}>
+							<a
+								href={`#${h.id}`}
+								class="post-toc__link"
+								data-toc-link={h.id}
+							>
+								{h.text}
+							</a>
+						</li>
+					))}
+				</ol>
+			</nav>
+		</div>
+
+		<!-- Active heading tracker — no visible output, only DOM mutations -->
+		<PostTocActive client:idle headings={headings} />
+	</div>
+)}
+
+<style>
+	.post-toc {
+		background-color: var(--core-card);
+		border-radius: var(--radius-card);
+		box-shadow: var(--shadow-card);
+		overflow: hidden;
+	}
+
+	/* =========================================================
+	 * Desktop view
+	 * ========================================================= */
+	.post-toc__desktop {
+		display: none;
+		padding: 1.25rem 1.25rem 1.5rem;
+	}
+
+	.post-toc__title {
+		font-family: var(--font-heading);
+		font-size: 0.95rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+		margin: 0 0 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+
+	/* =========================================================
+	 * Mobile view (accordion)
+	 * ========================================================= */
+	.post-toc__mobile {
+		display: block;
+	}
+
+	.post-toc__summary {
+		font-family: var(--font-heading);
+		font-size: 0.95rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+		padding: 1rem 1.25rem;
+		cursor: pointer;
+		list-style: none;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		user-select: none;
+	}
+
+	.post-toc__summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.post-toc__summary::after {
+		content: '▾';
+		font-size: 0.9rem;
+		color: var(--core-muted-foreground);
+		transition: transform 0.2s ease;
+	}
+
+	.post-toc__mobile[open] .post-toc__summary::after {
+		transform: rotate(-180deg);
+	}
+
+	.post-toc__mobile nav {
+		padding: 0 1.25rem 1.25rem;
+	}
+
+	@keyframes toc-slide-down {
+		from {
+			opacity: 0;
+			transform: translateY(-8px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	details[open] summary ~ * {
+		animation: toc-slide-down 200ms ease-out;
+	}
+
+	/* =========================================================
+	 * Shared list styles
+	 * ========================================================= */
+	.post-toc__list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+
+	.post-toc__item {
+		line-height: 1.3;
+	}
+
+	.post-toc__item--h3 {
+		padding-left: 1rem;
+	}
+
+	.post-toc__link {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		color: var(--core-muted-foreground);
+		text-decoration: none;
+		display: block;
+		padding: 0.25rem 0.5rem;
+		border-radius: var(--radius-md);
+		border-left: 2px solid transparent;
+		transition:
+			color 0.15s ease,
+			border-color 0.15s ease,
+			background-color 0.15s ease;
+	}
+
+	.post-toc__link:hover {
+		color: var(--brand-primary);
+		background-color: oklch(from var(--brand-primary) l c h / 0.06);
+	}
+
+	/* Active state set by PostTocActive island */
+	.post-toc__link[data-active='true'] {
+		color: var(--brand-primary);
+		border-left-color: var(--brand-primary);
+		font-weight: 600;
+		background-color: oklch(from var(--brand-primary) l c h / 0.08);
+	}
+
+	/* =========================================================
+	 * Responsive: show desktop variant, hide mobile
+	 * ========================================================= */
+	@media (min-width: 1024px) {
+		.post-toc__mobile {
+			display: none;
+		}
+
+		.post-toc__desktop {
+			display: block;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.post-toc__summary::after,
+		.post-toc__link {
+			transition: none;
+		}
+
+		details[open] summary ~ * {
+			animation: none;
+		}
+	}
+</style>

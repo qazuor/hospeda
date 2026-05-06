@@ -13,6 +13,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const PAGES_DIR = resolve(__dirname, '../../src/pages/[lang]');
+const TRANSFORMS_FILE = resolve(__dirname, '../../src/lib/api/transforms.ts');
 
 /** Read a page source file relative to the pages directory. */
 function readPage(relativePath: string): string {
@@ -168,18 +169,24 @@ describe('JSON-LD coverage across pages (SPEC-096 REQ-096-37)', () => {
         }
 
         it('event detail maps cancelled → EventCancelled', () => {
-            const src = readPage('eventos/[slug].astro');
-            expect(src).toContain("'EventCancelled'");
+            // EventStatus mapping lives in toEventDetailProps() in transforms.ts;
+            // the page reads eventStatus from the transform result.
+            const transforms = readFileSync(TRANSFORMS_FILE, 'utf8');
+            expect(transforms).toContain("'EventCancelled'");
         });
 
         it('event detail maps rescheduled → EventRescheduled', () => {
-            const src = readPage('eventos/[slug].astro');
-            expect(src).toContain("'EventRescheduled'");
+            // EventStatus mapping lives in toEventDetailProps() in transforms.ts;
+            // the page reads eventStatus from the transform result.
+            const transforms = readFileSync(TRANSFORMS_FILE, 'utf8');
+            expect(transforms).toContain("'EventRescheduled'");
         });
 
         it('event detail defaults to EventScheduled', () => {
-            const src = readPage('eventos/[slug].astro');
-            expect(src).toContain("'EventScheduled'");
+            // EventStatus mapping lives in toEventDetailProps() in transforms.ts;
+            // the page reads eventStatus from the transform result.
+            const transforms = readFileSync(TRANSFORMS_FILE, 'utf8');
+            expect(transforms).toContain("'EventScheduled'");
         });
 
         it('post detail emits a publisher Organization', () => {

@@ -1,0 +1,125 @@
+---
+/**
+ * @file PostSponsorshipBanner.astro
+ * @description Renders a sponsored content disclosure banner for posts that have
+ * an associated sponsorship. Shows the sponsor logo, custom message, and a CTA
+ * link to the sponsor website. Accessible: marked with aria-label and rel="sponsored".
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface SponsorshipData {
+	/** Optional custom message from the sponsor. */
+	readonly message?: string | null;
+	/** Sponsor website URL. */
+	readonly websiteUrl?: string | null;
+	/** Sponsor display name. */
+	readonly sponsorName?: string | null;
+	/** Sponsor logo image URL. */
+	readonly logoUrl?: string | null;
+}
+
+interface Props {
+	readonly sponsorship: SponsorshipData;
+	readonly locale: SupportedLocale;
+}
+
+const { sponsorship, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const label = t('blog.detail.sponsoredContent', 'Contenido patrocinado');
+---
+
+<aside class="post-sponsorship" aria-label={label}>
+	<div class="post-sponsorship__header">
+		<span class="post-sponsorship__badge">{label}</span>
+
+		{sponsorship.logoUrl && (
+			<img
+				src={sponsorship.logoUrl}
+				alt={sponsorship.sponsorName ?? ''}
+				class="post-sponsorship__logo"
+				width={80}
+				height={32}
+				loading="lazy"
+				decoding="async"
+			/>
+		)}
+	</div>
+
+	{sponsorship.message && (
+		<p class="post-sponsorship__message">{sponsorship.message}</p>
+	)}
+
+	{sponsorship.websiteUrl && (
+		<a
+			href={sponsorship.websiteUrl}
+			class="post-sponsorship__cta"
+			target="_blank"
+			rel="sponsored noopener noreferrer"
+		>
+			{sponsorship.sponsorName ?? sponsorship.websiteUrl} →
+		</a>
+	)}
+</aside>
+
+<style>
+	.post-sponsorship {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		padding: 1.25rem 1.5rem;
+		background-color: oklch(from var(--brand-accent) l c h / 0.06);
+		border: 1px solid oklch(from var(--brand-accent) l c h / 0.25);
+		border-radius: var(--radius-card);
+		margin-top: var(--space-8, 2rem);
+	}
+
+	.post-sponsorship__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+	}
+
+	.post-sponsorship__badge {
+		font-family: var(--font-sans);
+		font-size: 0.7rem;
+		font-weight: 700;
+		color: var(--core-muted-foreground);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-pill);
+		padding: 0.2rem 0.6rem;
+	}
+
+	.post-sponsorship__logo {
+		height: 32px;
+		width: auto;
+		object-fit: contain;
+	}
+
+	.post-sponsorship__message {
+		font-family: var(--font-sans);
+		font-size: 0.95rem;
+		line-height: 1.6;
+		color: var(--core-foreground);
+		margin: 0;
+	}
+
+	.post-sponsorship__cta {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--brand-accent);
+		text-decoration: none;
+		transition: color 0.15s ease;
+		align-self: flex-start;
+	}
+
+	.post-sponsorship__cta:hover {
+		text-decoration: underline;
+	}
+</style>

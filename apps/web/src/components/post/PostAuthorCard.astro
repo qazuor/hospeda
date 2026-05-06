@@ -1,0 +1,253 @@
+---
+/**
+ * @file PostAuthorCard.astro
+ * @description Sidebar card displaying the post author's avatar, name, bio,
+ * and links to their author profile and post listing.
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+interface AuthorShape {
+	readonly id: string;
+	readonly displayName?: string | null;
+	readonly firstName?: string | null;
+	readonly lastName?: string | null;
+	readonly profilePicture?: string | null;
+	readonly bio?: string | null;
+	readonly slug?: string | null;
+}
+
+interface Props {
+	readonly author: AuthorShape;
+	readonly locale: SupportedLocale;
+}
+
+const { author, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const name =
+	author.displayName ||
+	[author.firstName, author.lastName].filter(Boolean).join(' ') ||
+	'';
+
+const profileUrl = author.slug
+	? buildUrl({ locale, path: `publicaciones/autor/${author.slug}` })
+	: null;
+
+const morePostsUrl = buildUrl({
+	locale,
+	path: `publicaciones`,
+});
+---
+
+<div class="post-author-card">
+	<p class="post-author-card__heading">{t('blog.detail.aboutAuthor', 'Sobre el autor')}</p>
+
+	<div class="post-author-card__body">
+		{author.profilePicture ? (
+			<img
+				src={author.profilePicture}
+				alt={name}
+				class="post-author-card__avatar"
+				width={56}
+				height={56}
+				loading="lazy"
+				decoding="async"
+			/>
+		) : (
+			<div class="post-author-card__avatar-placeholder" aria-hidden="true">
+				{name.charAt(0).toUpperCase()}
+			</div>
+		)}
+
+		<div class="post-author-card__info">
+			{profileUrl ? (
+				<a href={profileUrl} class="post-author-card__name post-author-card__name--link">
+					{name}
+				</a>
+			) : (
+				<span class="post-author-card__name">{name}</span>
+			)}
+
+			{author.bio && (
+				author.bio.length > 150 ? (
+					<div class="post-author-card__bio-wrapper">
+						<p class="post-author-card__bio post-author-card__bio--clamped">{author.bio}</p>
+						<details class="post-author-card__bio-details">
+							<summary class="post-author-card__bio-toggle">
+								<span class="post-author-card__bio-show">{t('blog.detail.viewMore', 'Ver más')}</span>
+								<span class="post-author-card__bio-hide">{t('blog.detail.viewLess', 'Ver menos')}</span>
+							</summary>
+							<p class="post-author-card__bio post-author-card__bio--full">{author.bio}</p>
+						</details>
+					</div>
+				) : (
+					<p class="post-author-card__bio">{author.bio}</p>
+				)
+			)}
+		</div>
+	</div>
+
+	<a
+		href={`${morePostsUrl}?authorId=${author.id}`}
+		class="post-author-card__cta"
+	>
+		{t('blog.detail.moreFromAuthor', 'Más artículos del autor')} →
+	</a>
+</div>
+
+<style>
+	.post-author-card {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		padding: 1.25rem;
+		background-color: var(--core-card);
+		border-radius: var(--radius-card);
+		box-shadow: var(--shadow-card);
+	}
+
+	.post-author-card__heading {
+		font-family: var(--font-heading);
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: var(--core-muted-foreground);
+		margin: 0;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.post-author-card__body {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.875rem;
+	}
+
+	.post-author-card__avatar {
+		width: 56px;
+		height: 56px;
+		border-radius: 50%;
+		object-fit: cover;
+		flex-shrink: 0;
+	}
+
+	.post-author-card__avatar-placeholder {
+		width: 56px;
+		height: 56px;
+		border-radius: 50%;
+		background-color: oklch(from var(--brand-primary) l c h / 0.15);
+		color: var(--brand-primary);
+		font-family: var(--font-heading);
+		font-size: 1.4rem;
+		font-weight: 700;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	.post-author-card__info {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+
+	.post-author-card__name {
+		font-family: var(--font-heading);
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+	}
+
+	.post-author-card__name--link {
+		text-decoration: none;
+		transition: color 0.15s ease;
+	}
+
+	.post-author-card__name--link:hover {
+		color: var(--brand-accent);
+		text-decoration: underline;
+	}
+
+	.post-author-card__bio {
+		font-family: var(--font-sans);
+		font-size: 0.85rem;
+		line-height: 1.5;
+		color: var(--core-muted-foreground);
+		margin: 0;
+	}
+
+	.post-author-card__bio--clamped {
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.post-author-card__bio-wrapper {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+	}
+
+	.post-author-card__bio-details {
+		display: contents;
+	}
+
+	.post-author-card__bio-details[open] ~ .post-author-card__bio--clamped,
+	.post-author-card__bio-wrapper:has(details[open]) .post-author-card__bio--clamped {
+		display: none;
+	}
+
+	.post-author-card__bio--full {
+		margin: 0;
+	}
+
+	.post-author-card__bio-toggle {
+		list-style: none;
+		cursor: pointer;
+		font-family: var(--font-sans);
+		font-size: 0.8rem;
+		font-weight: 500;
+		color: var(--brand-primary);
+		transition: color 0.15s ease;
+	}
+
+	.post-author-card__bio-toggle::-webkit-details-marker {
+		display: none;
+	}
+
+	.post-author-card__bio-toggle:hover {
+		color: var(--brand-accent);
+	}
+
+	.post-author-card__bio-hide {
+		display: none;
+	}
+
+	.post-author-card__bio-details[open] .post-author-card__bio-show {
+		display: none;
+	}
+
+	.post-author-card__bio-details[open] .post-author-card__bio-hide {
+		display: inline;
+	}
+
+	.post-author-card__cta {
+		font-family: var(--font-sans);
+		font-size: 0.85rem;
+		font-weight: 500;
+		color: var(--brand-primary);
+		text-decoration: none;
+		transition: color 0.15s ease;
+	}
+
+	.post-author-card__cta:hover {
+		color: var(--brand-accent);
+		text-decoration: underline;
+	}
+</style>

@@ -92,10 +92,17 @@ describe('T-050 — ShareButtons in detail pages', () => {
             expect(src).toContain('authorSlug');
             expect(src).toContain('authorObj?.slug');
         });
+    });
+
+    describe('PostAuthorCard.astro — author link rendering (T-044, B3.4)', () => {
+        const authorCardSrc = readFileSync(
+            resolve(__dirname, '../../src/components/post/PostAuthorCard.astro'),
+            'utf8'
+        );
 
         it('renders author as a link when slug is available', () => {
-            expect(src).toContain('post-detail__author-link');
-            expect(src).toContain('publicaciones/autor/${authorSlug}');
+            expect(authorCardSrc).toContain('post-author-card__name--link');
+            expect(authorCardSrc).toContain('publicaciones/autor/${author.slug}');
         });
     });
 });

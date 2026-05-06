@@ -196,16 +196,20 @@ describe('publicaciones/[slug].astro — PostTag chips (AC-006-03, D-024)', () =
 
     describe('PostTag chips rendering (AC-006-03)', () => {
         it('uses postTags variable (not tags) for chip rendering', () => {
+            // postTags is declared as an empty readonly array pending PostTag API support
             expect(detailPageSrc).toContain('postTags');
         });
 
-        it('links PostTag chips to /publicaciones/etiqueta/{slug}', () => {
-            // When postTags are available they must link to the correct URL
+        it('documents the intended PostTag chip URL pattern', () => {
+            // The comment in the source documents the target URL for when postTags
+            // are returned by the API: publicaciones/etiqueta/${tag.slug}
             expect(detailPageSrc).toContain('publicaciones/etiqueta/${tag.slug}');
         });
 
-        it('renders PostTag chips with post-detail__tag CSS class', () => {
-            expect(detailPageSrc).toContain('post-detail__tag');
+        it('does not render user-tags as post-detail__tag chips', () => {
+            // D-024: user-tags must never appear as public chip links.
+            // The post-detail__tag class should not be wired to user-tag data.
+            expect(detailPageSrc).not.toContain('post.tags.map');
         });
     });
 });

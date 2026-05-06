@@ -1,0 +1,156 @@
+---
+/**
+ * @file PostRelatedEntityCard.astro
+ * @description Sidebar card linking to a related entity (destination, accommodation,
+ * or event) associated with the current post. Renders an image, name, truncated
+ * summary, and a link to the entity detail page.
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+type EntityType = 'destination' | 'accommodation' | 'event';
+
+interface RelatedEntity {
+	readonly id: string;
+	readonly name: string;
+	readonly slug: string;
+	readonly summary?: string | null;
+	readonly image?: string | null;
+	readonly type: EntityType;
+}
+
+interface Props {
+	readonly entity: RelatedEntity;
+	readonly locale: SupportedLocale;
+}
+
+const { entity, locale } = Astro.props;
+
+const pathByType: Record<EntityType, string> = {
+	destination: `destinos/${entity.slug}`,
+	accommodation: `alojamientos/${entity.slug}`,
+	event: `eventos/${entity.slug}`,
+};
+
+const labelByType: Record<EntityType, string> = {
+	destination: 'Destino',
+	accommodation: 'Alojamiento',
+	event: 'Evento',
+};
+
+const href = buildUrl({ locale, path: pathByType[entity.type] });
+const typeLabel = labelByType[entity.type];
+---
+
+<a href={href} class="post-related-entity" aria-label={`${typeLabel}: ${entity.name}`}>
+	{entity.image && (
+		<div class="post-related-entity__image-wrapper">
+			<img
+				src={entity.image}
+				alt={entity.name}
+				class="post-related-entity__img"
+				width={80}
+				height={56}
+				loading="lazy"
+				decoding="async"
+			/>
+		</div>
+	)}
+
+	<div class="post-related-entity__content">
+		<span class="post-related-entity__type">{typeLabel}</span>
+		<p class="post-related-entity__name">{entity.name}</p>
+		{entity.summary && (
+			<p class="post-related-entity__summary">{entity.summary}</p>
+		)}
+	</div>
+
+	<span class="post-related-entity__arrow" aria-hidden="true">→</span>
+</a>
+
+<style>
+	.post-related-entity {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 1rem 1.25rem;
+		background-color: var(--core-card);
+		border-radius: var(--radius-card);
+		box-shadow: var(--shadow-card);
+		text-decoration: none;
+		color: inherit;
+		transition: box-shadow 0.2s ease, background-color 0.15s ease;
+	}
+
+	.post-related-entity:hover {
+		box-shadow: var(--shadow-card-hover);
+		background-color: oklch(from var(--brand-primary) l c h / 0.03);
+	}
+
+	.post-related-entity__image-wrapper {
+		flex-shrink: 0;
+		width: 80px;
+		height: 56px;
+		border-radius: var(--radius-md);
+		overflow: hidden;
+	}
+
+	.post-related-entity__img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.post-related-entity__content {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+
+	.post-related-entity__type {
+		font-family: var(--font-sans);
+		font-size: 0.7rem;
+		font-weight: 600;
+		color: var(--brand-primary);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.post-related-entity__name {
+		font-family: var(--font-heading);
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+		margin: 0;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.post-related-entity__summary {
+		font-family: var(--font-sans);
+		font-size: 0.78rem;
+		line-height: 1.4;
+		color: var(--core-muted-foreground);
+		margin: 0;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.post-related-entity__arrow {
+		font-size: 1rem;
+		color: var(--core-muted-foreground);
+		flex-shrink: 0;
+		transition: transform 0.15s ease, color 0.15s ease;
+	}
+
+	.post-related-entity:hover .post-related-entity__arrow {
+		transform: translateX(2px);
+		color: var(--brand-primary);
+	}
+</style>

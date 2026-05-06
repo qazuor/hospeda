@@ -10,21 +10,30 @@ import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
-import Badge from '@/components/shared/ui/Badge.astro';
 import { ShareButtons } from '@/components/ShareButtons.client';
+import PostDetailHeader from '@/components/post/PostDetailHeader.astro';
+import PostContent from '@/components/post/PostContent.astro';
+import PostTableOfContents from '@/components/post/PostTableOfContents.astro';
+import PostAuthorCard from '@/components/post/PostAuthorCard.astro';
+import PostRelatedEntityCard from '@/components/post/PostRelatedEntityCard.astro';
+import PostSponsorshipBanner from '@/components/post/PostSponsorshipBanner.astro';
+import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
+import TagChips from '@/components/TagChips.astro';
+import { ReadingProgressBar } from '@/components/post/ReadingProgressBar.client';
+import { buildUrl } from '@/lib/urls';
 import { postsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
-import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
-import { formatDate } from '@/lib/format-utils';
-import { Image } from 'astro:assets';
 import { getPostCategoryColor } from '@/lib/colors';
+import { getExpiryStatus } from '@/lib/format-expires';
 import { getMediaUrl } from '@repo/media';
+import { sanitizeHtml } from '@/lib/sanitize-html';
+import { extractToc } from '@/lib/extract-toc';
+import { Image } from 'astro:assets';
 
 const locale = Astro.locals.locale as SupportedLocale;
-const { t, tPlural } = createTranslations(locale);
+const { t } = createTranslations(locale);
 const { slug } = Astro.params;
 
 if (!slug) return new Response(null, { status: 404 });
@@ -42,23 +51,38 @@ const updatedAt = post.updatedAt ? String(post.updatedAt) : undefined;
 const featuredImage = String(post.featuredImage || '/assets/images/placeholder-post.svg');
 const readingTime = Number(post.readingTimeMinutes || 0);
 const authorObj = post.author as Record<string, unknown> | undefined;
-const authorName = String(authorObj?.displayName || authorObj?.name || '');
-const authorSlug = authorObj?.slug ? String(authorObj.slug) : null;
-const rawAuthorAvatar = String(authorObj?.image || authorObj?.avatarUrl || '');
-// Route Cloudinary-hosted author avatars through the `avatar` preset so a
-// 150x150 face-cropped variant is delivered. Non-Cloudinary URLs pass through
-// unchanged (getMediaUrl contract). Empty strings stay empty to keep the
-// conditional render below unchanged.
-const authorAvatar = rawAuthorAvatar
-	? getMediaUrl(rawAuthorAvatar, { preset: 'avatar' })
-	: '';
-// SPEC-086 D-024: user-tags are an internal subsystem with no public web UI.
-// The `post.tags` field from the API contains user-tags (no slug — D-002).
-// PostTags (public SEO taxonomy) are a separate subsystem not yet returned
-// in the post detail API response. Do NOT render user-tags as public links.
-// This array is kept for future postTags support when the API includes them.
-const postTags: readonly { readonly name: string; readonly slug: string }[] = [];
 const categoryColors = getPostCategoryColor(category.toLowerCase());
+
+// SPEC-086 D-024: user-tags (`post.tags`) are an internal subsystem with no
+// public web UI — DO NOT render them as public links.
+// PostTags (`post.postTags`) are the public SEO taxonomy and ARE rendered
+// below the article body, linking to `/{lang}/publicaciones/etiqueta/{slug}/`.
+// SPEC-086 D-002: tags without a slug cannot be rendered as filter links — skip them defensively.
+const rawPostTags = Array.isArray(post.postTags) ? post.postTags : [];
+const postTags: readonly { readonly id: string; readonly name: string; readonly slug: string }[] = rawPostTags
+    .filter((tag): tag is Record<string, unknown> => tag !== null && typeof tag === 'object')
+    .map((tag) => ({
+        id: String(tag.id ?? ''),
+        name: String(tag.name ?? ''),
+        slug: String(tag.slug ?? ''),
+    }))
+    .filter((tag) => tag.slug && tag.name);
+
+const rawAuthorAvatar = String(authorObj?.profilePicture || authorObj?.image || authorObj?.avatarUrl || '');
+const authorAvatar = rawAuthorAvatar ? getMediaUrl(rawAuthorAvatar, { preset: 'avatar' }) : '';
+const authorSlug = authorObj?.slug ? String(authorObj.slug) : null;
+
+const authorForCard = authorObj
+	? {
+			id: String(authorObj.id || ''),
+			displayName: authorObj.displayName ? String(authorObj.displayName) : null,
+			firstName: authorObj.firstName ? String(authorObj.firstName) : null,
+			lastName: authorObj.lastName ? String(authorObj.lastName) : null,
+			profilePicture: authorAvatar || null,
+			bio: authorObj.bio ? String(authorObj.bio) : null,
+			slug: authorObj.slug ? String(authorObj.slug) : null,
+	  }
+	: null;
 
 // --- Auth ---
 const userId = Astro.locals.user?.id ?? null;
@@ -71,43 +95,120 @@ let initialBookmarkId: string | null = null;
 
 if (postId) {
 	try {
-		const countResult = await userBookmarksPublicApi.count({
-			entityType: 'POST',
-			entityId: postId
-		});
-		if (countResult.ok) {
-			bookmarkCount = countResult.data.count;
-		}
-	} catch {
-		// Graceful degradation: counter not shown if fetch fails
-	}
+		const countResult = await userBookmarksPublicApi.count({ entityType: 'POST', entityId: postId });
+		if (countResult.ok) bookmarkCount = countResult.data.count;
+	} catch { /* graceful */ }
 
 	if (isAuthenticated) {
 		try {
-			const statusResult = await userBookmarksApi.checkStatus({
-				entityId: postId,
-				entityType: 'POST'
-			});
+			const statusResult = await userBookmarksApi.checkStatus({ entityId: postId, entityType: 'POST' });
 			if (statusResult.ok) {
 				initialIsFavorited = statusResult.data.isFavorited;
 				initialBookmarkId = statusResult.data.bookmarkId;
 			}
-		} catch {
-			// Graceful degradation: FavoriteButton hydrates itself on mount
-		}
+		} catch { /* graceful */ }
 	}
 }
 
+// --- Expiry ---
+const postExpiresAt = post.expiresAt ? String(post.expiresAt) : undefined;
+const expiryStatus = getExpiryStatus({ expiresAt: postExpiresAt });
+const showExpiryBanner = expiryStatus.status === 'expiring-soon' || expiryStatus.status === 'expired';
+const expiryDateLabel = postExpiresAt
+    ? new Date(postExpiresAt).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' })
+    : '';
+
+// --- Sanitize content ---
+const siteOrigin = Astro.site?.href ?? Astro.url.origin;
+const safeContentHtml = sanitizeHtml({
+	html: String(post.contentHtml || post.content || summary),
+	siteOrigin,
+});
+
+// --- TOC headings extracted from sanitized HTML ---
+const tocHeadings = extractToc({ html: safeContentHtml });
+
+// --- SEO override ---
+const seoPost = post.seo as Record<string, unknown> | undefined;
+const seoTitle = seoPost?.title ? String(seoPost.title) : title;
+const seoDescription = seoPost?.description ? String(seoPost.description) : summary;
+
+// --- Related posts ---
+let relatedPosts: ReadonlyArray<Record<string, unknown>> = [];
+const relatedDestinationId = post.relatedDestinationId ? String(post.relatedDestinationId) : null;
+
+try {
+	const relResult = relatedDestinationId
+		? await postsApi.list({ destinationId: relatedDestinationId, pageSize: 4 })
+		: await postsApi.list({ category, pageSize: 4 });
+
+	if (relResult.ok) {
+		const items = (relResult.data as { items?: unknown[]; data?: unknown[] }).items
+			?? (relResult.data as { items?: unknown[]; data?: unknown[] }).data
+			?? [];
+		relatedPosts = (items as Record<string, unknown>[]).filter((p) => p.id !== postId).slice(0, 4);
+	}
+} catch { /* graceful */ }
+
+// --- Related entity for sidebar ---
+const relatedDestRaw = post.relatedDestination as Record<string, unknown> | undefined;
+const relatedAccRaw = post.relatedAccommodation as Record<string, unknown> | undefined;
+const relatedEventRaw = post.relatedEvent as Record<string, unknown> | undefined;
+
+type EntityType = 'destination' | 'accommodation' | 'event';
+
+interface RelatedEntity {
+	readonly id: string;
+	readonly name: string;
+	readonly slug: string;
+	readonly summary?: string | null;
+	readonly image?: string | null;
+	readonly type: EntityType;
+}
+
+function toRelatedEntity(raw: Record<string, unknown>, type: EntityType): RelatedEntity | null {
+	const id = raw.id ? String(raw.id) : '';
+	const name = raw.name ? String(raw.name) : '';
+	const entitySlug = raw.slug ? String(raw.slug) : '';
+	if (!id || !name || !entitySlug) return null;
+	return {
+		id,
+		name,
+		slug: entitySlug,
+		summary: raw.summary ? String(raw.summary) : null,
+		image: raw.featuredImage ? String(raw.featuredImage) : null,
+		type,
+	};
+}
+
+const relatedEntity: RelatedEntity | null =
+	(relatedDestRaw && toRelatedEntity(relatedDestRaw, 'destination')) ||
+	(relatedAccRaw && toRelatedEntity(relatedAccRaw, 'accommodation')) ||
+	(relatedEventRaw && toRelatedEntity(relatedEventRaw, 'event')) ||
+	null;
+
+// --- Sponsorship ---
+const sponsorship = post.sponsorship as Record<string, unknown> | undefined;
+
+// --- JSON-LD ---
+const siteBase = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const jsonLd = {
 	'@context': 'https://schema.org',
 	'@type': 'BlogPosting',
 	headline: title,
-	description: summary,
+	description: seoDescription,
 	image: featuredImage,
-	url: `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`,
+	url: `${siteBase}${Astro.url.pathname}`,
 	datePublished: publishedAt,
-	...(updatedAt ? { dateModified: updatedAt } : {}),
-	...(authorName ? { author: { '@type': 'Person', name: authorName } } : {}),
+	...(updatedAt && updatedAt > publishedAt ? { dateModified: updatedAt } : {}),
+	...(authorForCard?.displayName || authorForCard?.firstName
+		? {
+				author: {
+					'@type': 'Person',
+					name: authorForCard.displayName || [authorForCard.firstName, authorForCard.lastName].filter(Boolean).join(' '),
+				},
+		  }
+		: {}),
 	publisher: {
 		'@type': 'Organization',
 		name: 'Hospeda',
@@ -115,24 +216,25 @@ const jsonLd = {
 	},
 };
 
-// --- Breadcrumb JSON-LD (REQ-096-37 / T-068) ---
-const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const siteOriginClean = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const breadcrumbItems = [
-	{ name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
-	{ name: t('blog.title', 'Publicaciones'), url: `${siteOrigin}/${locale}/publicaciones/` },
-	{ name: title, url: `${siteOrigin}${Astro.url.pathname}` },
+	{ name: t('nav.home', 'Inicio'), url: `${siteOriginClean}/${locale}/` },
+	{ name: t('blog.title', 'Publicaciones'), url: `${siteOriginClean}/${locale}/publicaciones/` },
+	{ name: title, url: `${siteOriginClean}${Astro.url.pathname}` },
 ];
 ---
 
 <DetailLayout
 	locale={locale}
-	title={title}
-	description={summary}
+	title={seoTitle}
+	description={seoDescription}
 	showBreadcrumbs={true}
-	showSidebar={false}
+	showSidebar={true}
 >
 	<JsonLd slot="head-extra" data={jsonLd} />
 	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
+
+	<ReadingProgressBar client:idle />
 
 	<Breadcrumbs
 		slot="breadcrumbs"
@@ -144,44 +246,29 @@ const breadcrumbItems = [
 	/>
 
 	<Fragment slot="page-header">
-		<div class="post-detail__header-top-row">
-			<h1 class="post-detail__title">{title}</h1>
-			{postId && (
-				<FavoriteButton
-					client:load
-					entityId={postId}
-					entityType="POST"
-					initialIsFavorited={initialIsFavorited}
-					initialBookmarkId={initialBookmarkId}
-					isAuthenticated={isAuthenticated}
-					variant="standalone"
-					locale={locale}
-					class="post-detail__favorite-btn"
-				/>
-			)}
-		</div>
-		<div class="post-detail__meta">
-			<span class="post-detail__category" style={`background-color: ${categoryColors.bg}; color: ${categoryColors.text};`}>
-				{t(`blog.categories.${category.toLowerCase()}`, category)}
-			</span>
-			{publishedAt && (
-				<time class="post-detail__date" datetime={publishedAt}>
-					{formatDate({ date: publishedAt, locale })}
-				</time>
-			)}
-			{readingTime > 0 && (
-				<span class="post-detail__reading-time">
-					{readingTime} min {t('blog.detail.readingTime', 'de lectura')}
-				</span>
-			)}
-			{bookmarkCount !== undefined && (
-				<span class="post-detail__bookmark-count" aria-label={tPlural('blog.detail.bookmark_count', bookmarkCount)}>
-					<span class="post-detail__bookmark-icon" aria-hidden="true">♥</span>
-					{tPlural('blog.detail.bookmark_count', bookmarkCount)}
-				</span>
-			)}
-		</div>
+		<PostDetailHeader
+			title={title}
+			category={category}
+			categoryColor={{ bg: categoryColors.bg, text: categoryColors.text }}
+			publishedAt={publishedAt}
+			readingTimeMinutes={readingTime}
+			bookmarkCount={bookmarkCount}
+			postId={postId}
+			locale={locale}
+			isAuthenticated={isAuthenticated}
+			initialIsFavorited={initialIsFavorited}
+			initialBookmarkId={initialBookmarkId}
+		/>
 	</Fragment>
+
+	{showExpiryBanner && (
+		<div class:list={['post-expiry-banner', { 'post-expiry-banner--expired': expiryStatus.status === 'expired' }]}>
+			{expiryStatus.status === 'expired'
+				? t('blog.detail.expiredOn', `Publicación expirada el ${expiryDateLabel}`).replace('{{date}}', expiryDateLabel)
+				: t('blog.detail.expiresOn', `Esta publicación expira el ${expiryDateLabel}`).replace('{{date}}', expiryDateLabel)
+			}
+		</div>
+	)}
 
 	<article class="post-detail">
 		<!-- Cover image -->
@@ -208,91 +295,156 @@ const breadcrumbItems = [
 			)}
 		</div>
 
-		<!-- Author -->
-		{authorName && (
-			<div class="post-detail__author">
-				{authorAvatar ? (
-					<img
-						src={authorAvatar}
-						alt={authorName}
-						class="post-detail__author-avatar"
-						width={40}
-						height={40}
-						loading="lazy"
-						decoding="async"
-					/>
-				) : null}
-				{authorSlug ? (
-					<a
-						href={buildUrl({ locale, path: `publicaciones/autor/${authorSlug}` })}
-						class="post-detail__author-name post-detail__author-link"
-					>
-						{authorName}
-					</a>
-				) : (
-					<span class="post-detail__author-name">{authorName}</span>
-				)}
+		<!-- Post body -->
+		<PostContent safeContentHtml={safeContentHtml} summary={summary} />
+
+		<!-- PostTags (SPEC-086): public SEO taxonomy linking to tag-filtered listings -->
+		{postTags.length > 0 && (
+			<div class="post-detail__tags">
+				<TagChips
+					ariaLabel={t('blog.detail.tags.title', 'Etiquetas de la publicación')}
+					chips={postTags.map((tag) => ({
+						label: tag.name,
+						href: buildUrl({ locale, path: `publicaciones/etiqueta/${tag.slug}` }),
+					}))}
+				/>
 			</div>
 		)}
 
-		<!-- Content (TipTap) -->
-		<div class="post-detail__content" set:html={String(post.contentHtml || post.content || summary)} />
-
-		<!-- PostTags (SPEC-086: public SEO taxonomy — rendered as clickable chips) -->
-		{postTags.length > 0 && (
-			<div class="post-detail__tags">
-				{postTags.map((tag: { readonly name: string; readonly slug: string }) => (
-					<a
-						href={buildUrl({ locale, path: `publicaciones/etiqueta/${tag.slug}` })}
-						class="post-detail__tag"
-					>
-						#{tag.name}
-					</a>
-				))}
-			</div>
+		<!-- Sponsorship (after content) -->
+		{sponsorship && (
+			<PostSponsorshipBanner
+				sponsorship={{
+					message: sponsorship.message ? String(sponsorship.message) : null,
+					websiteUrl: sponsorship.websiteUrl ? String(sponsorship.websiteUrl) : null,
+					sponsorName: sponsorship.sponsorName ? String(sponsorship.sponsorName) : null,
+					logoUrl: sponsorship.logoUrl ? String(sponsorship.logoUrl) : null,
+				}}
+				locale={locale}
+			/>
 		)}
 
 		<!-- Share buttons -->
 		<div class="post-detail__share">
 			<ShareButtons
-				url={`${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`}
+				url={`${siteBase}${Astro.url.pathname}`}
 				title={title}
 				locale={locale}
 				client:visible
 			/>
 		</div>
+
+		<!-- Related posts -->
+		{relatedPosts.length > 0 && (
+			<section class="post-detail__related">
+				<h2 class="post-detail__related-title">
+					{t('blog.detail.relatedPosts', 'Publicaciones relacionadas')}
+				</h2>
+				<div class="post-detail__related-grid">
+					{relatedPosts.map((p) => (
+						<RelatedPostCard
+							id={String(p.id || '')}
+							slug={String(p.slug || '')}
+							title={String(p.title || '')}
+							summary={String(p.summary || p.excerpt || '')}
+							featuredImage={p.featuredImage ? String(p.featuredImage) : null}
+							publishedAt={p.publishedAt ? String(p.publishedAt) : null}
+							lang={locale}
+						/>
+					))}
+				</div>
+			</section>
+		)}
 	</article>
+
+	<!-- Sidebar -->
+	<div slot="sidebar" class="post-sidebar">
+		<PostTableOfContents headings={tocHeadings} locale={locale} />
+
+		{authorForCard && authorForCard.id && (
+			<PostAuthorCard author={authorForCard} locale={locale} />
+		)}
+
+		{relatedEntity && (
+			<PostRelatedEntityCard entity={relatedEntity} locale={locale} />
+		)}
+	</div>
 </DetailLayout>
 
 <style>
-	.post-detail { max-width: 75ch; margin: 0 auto; }
+	.post-expiry-banner {
+		margin-bottom: 1rem;
+		padding: 0.75rem 1rem;
+		border-radius: var(--radius-md);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		font-weight: 500;
+		background-color: oklch(from var(--brand-warning, #f59e0b) l c h / 0.1);
+		border: 1px solid oklch(from var(--brand-warning, #f59e0b) l c h / 0.35);
+		color: var(--core-foreground);
+	}
 
-	.post-detail__cover { margin-bottom: var(--space-6); border-radius: var(--radius-card); overflow: hidden; }
-	.post-detail__cover-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+	.post-expiry-banner--expired {
+		background-color: var(--muted, oklch(0.9 0 0));
+		border-color: var(--border);
+		color: var(--core-muted-foreground);
+	}
 
-	.post-detail__header-top-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
-	.post-detail__meta { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-3); }
-	.post-detail__category { padding: 0.25rem 0.75rem; border-radius: var(--radius-pill); font-family: var(--font-sans); font-size: var(--text-body-sm); font-weight: 600; }
-	.post-detail__date, .post-detail__reading-time { font-family: var(--font-sans); font-size: var(--text-body-sm); color: var(--muted-foreground); }
-	.post-detail__bookmark-count { display: inline-flex; align-items: center; gap: 0.3em; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 500; color: var(--muted-foreground); border-left: 1px solid var(--border); padding-left: var(--space-2, 8px); margin-left: var(--space-1, 4px); }
-	.post-detail__bookmark-icon { font-size: 0.75rem; color: var(--destructive); line-height: 1; }
+	.post-detail {
+		min-width: 0;
+	}
 
-	.post-detail__title { font-family: var(--font-heading); font-weight: 700; font-size: clamp(1.75rem, 4vw, 2.75rem); color: var(--foreground); line-height: 1.2; margin: 0 0 var(--space-4); }
+	.post-detail__cover {
+		margin-bottom: var(--space-6, 1.5rem);
+		border-radius: var(--radius-card);
+		overflow: hidden;
+	}
 
-	.post-detail__author { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-8); }
-	.post-detail__author-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-	.post-detail__author-name { font-family: var(--font-sans); font-weight: 500; color: var(--foreground); }
-	.post-detail__author-link { text-decoration: none; transition: color var(--duration-fast) ease; }
-	.post-detail__author-link:hover { color: var(--brand-accent); text-decoration: underline; }
+	.post-detail__cover-img {
+		width: 100%;
+		aspect-ratio: 16 / 9;
+		object-fit: cover;
+	}
 
-	.post-detail__content { font-family: var(--font-sans); font-size: var(--text-body-lg); line-height: 1.8; color: var(--foreground); margin-bottom: var(--space-8); }
-	.post-detail__content :global(h2) { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-xl); margin-top: var(--space-8); margin-bottom: var(--space-4); }
-	.post-detail__content :global(h3) { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); margin-top: var(--space-6); margin-bottom: var(--space-3); }
-	.post-detail__content :global(p) { margin-bottom: var(--space-4); }
-	.post-detail__content :global(img) { width: 100%; border-radius: var(--radius-card); margin: var(--space-6) 0; }
+	.post-detail__tags {
+		margin-top: var(--space-6, 1.5rem);
+	}
 
-	.post-detail__tags { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-6); }
-	.post-detail__tag { padding: 0.375rem 0.75rem; background-color: var(--muted); border-radius: var(--radius-pill); font-family: var(--font-sans); font-size: var(--text-body-sm); color: var(--muted-foreground); text-decoration: none; transition: background-color var(--duration-fast) ease; }
-	.post-detail__tag:hover { background-color: var(--border); color: var(--foreground); }
-	.post-detail__share { margin-top: var(--space-6); display: flex; justify-content: flex-start; }
+	.post-detail__share {
+		margin-top: var(--space-6, 1.5rem);
+		display: flex;
+		justify-content: flex-start;
+	}
+
+	.post-detail__related {
+		margin-top: var(--space-8, 2rem);
+		padding-top: var(--space-6, 1.5rem);
+		border-top: 1px solid var(--border);
+	}
+
+	.post-detail__related-title {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: 1.35rem;
+		color: var(--core-foreground);
+		margin: 0 0 1.25rem;
+	}
+
+	.post-detail__related-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: var(--space-card-gap, 1.5rem);
+	}
+
+	.post-sidebar {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	@media (max-width: 640px) {
+		.post-detail__related-grid {
+			grid-template-columns: 1fr;
+		}
+	}
 </style>
