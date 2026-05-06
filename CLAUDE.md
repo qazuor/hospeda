@@ -366,3 +366,23 @@ Each app/package has its own `CLAUDE.md` with detailed instructions:
 - [Guides](docs/guides/README.md) - Step-by-step development guides
 - [Dependency Policy](docs/guides/dependency-policy.md) - What to use for what
 - [Full Documentation Index](docs/index.md)
+
+## Spec Workflow + Worktrees
+
+Cuando se inicie una **nueva spec formal** en este repo (vía `/task-master:spec`, `/sdd-new`, o creando un dir nuevo en `.claude/specs/SPEC-NNN-slug/`):
+
+1. **Por default crear worktree, sin preguntar** (la política global de `~/.claude/CLAUDE.md` "preguntar primero" NO aplica para specs formales — el usuario eligió default-on para este caso).
+2. **Nombre**: `spec-<NNN>-<slug>` (ej: `spec-098-vps-migration`).
+3. **Path**: `../hospeda-spec-<NNN>-<slug>` (al lado del repo, no dentro).
+4. **Branch**: `spec/SPEC-<NNN>-<slug>` (sigue convención de specs del proyecto).
+5. **Antes de crear**: correr `git worktree list` y revisar. Si ya existe una worktree para esa spec (matching nombre o branch), USAR esa en lugar de crear nueva. Avisar al usuario "ya existe la worktree X en path Y, sigo ahí".
+6. **Después de crear**: copiar manualmente los archivos de `.worktreeinclude` (`git worktree add` no lo hace solo), avisar al usuario el path absoluto, y sugerir abrir nueva terminal o `cd` ahí.
+7. **Guardar nota** en engram con `topic_key: spec/SPEC-<NNN>-<slug>/worktree` con path + branch + estado, para que futuras sesiones la encuentren.
+
+### Excepciones (NO crear worktree, trabajar en directorio actual)
+
+- Specs **deltas** o continuaciones de spec existente — ya tienen su worktree.
+- Specs marcadas como `status: draft-exploration` en frontmatter (todavía exploratorias, no formales).
+- Trabajo de SOLO documentación / lectura sobre la spec (sin edits a código).
+
+Para cualquier OTRO trabajo que NO sea spec formal, aplica la política global "Worktree Policy" en `~/.claude/CLAUDE.md` (preguntar primero al usuario si quiere worktree).
