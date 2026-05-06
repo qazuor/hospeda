@@ -165,6 +165,21 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 
 		<!-- Named slot for page-specific head content (SEOHead, JSON-LD, etc.) -->
 		<slot name="head" />
+
+		<!--
+		  Fallback: when JavaScript is disabled, the IntersectionObserver that
+		  reveals [data-reveal] elements never runs, so the entire page below
+		  the hero would stay invisible. Force-reveal everything for no-JS users
+		  and SEO crawlers that don't execute scripts.
+		-->
+		<noscript>
+			<style>
+				[data-reveal] {
+					opacity: 1 !important;
+					transform: none !important;
+				}
+			</style>
+		</noscript>
 	</head>
 	<body>
 		<NavigationProgress />
