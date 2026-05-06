@@ -13,17 +13,15 @@ import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { ShareButtons } from '@/components/ShareButtons.client';
 import { eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
-import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
-import { formatDate, formatPrice } from '@/lib/format-utils';
-import { getEventCategoryColor, getBadgeStatusColor } from '@/lib/colors';
+import { formatPrice } from '@/lib/format-utils';
 import { Image } from 'astro:assets';
-import { LocationIcon, CalendarDotsIcon } from '@repo/icons';
+import { sanitizeHtml } from '@/lib/sanitize-html';
+import EventDetailHeader from '@/components/event/EventDetailHeader.astro';
 
 const locale = Astro.locals.locale as SupportedLocale;
-const { t, tPlural } = createTranslations(locale);
+const { t } = createTranslations(locale);
 const { slug } = Astro.params;
 
 if (!slug) return new Response(null, { status: 404 });
@@ -44,7 +42,6 @@ const locationObj = event.location as Record<string, unknown> | undefined;
 const locationName = String(locationObj?.name || locationObj?.venueName || '');
 const locationCity = String(locationObj?.city || '');
 const isCancelled = Boolean(event.isCancelled);
-const isActive = Boolean(event.isActive ?? true);
 const isPast = startDate ? new Date(startDate) < new Date() : false;
 const price = event.price as { amount?: number; currency?: string } | undefined;
 const organizerObj = event.organizer as Record<string, unknown> | undefined;
@@ -61,9 +58,6 @@ const eventStatus = isCancelled
 	: isRescheduled
 		? 'EventRescheduled'
 		: 'EventScheduled';
-const categoryColors = getEventCategoryColor({ category: category.toLowerCase() });
-const pastColors = getBadgeStatusColor({ status: 'past' });
-const cancelledColors = getBadgeStatusColor({ status: 'cancelled' });
 
 // --- Auth ---
 const userId = Astro.locals.user?.id ?? null;
@@ -131,6 +125,13 @@ const breadcrumbItems = [
 	{ name: t('events.title', 'Eventos'), url: `${siteOrigin}/${locale}/eventos/` },
 	{ name, url: `${siteOrigin}${Astro.url.pathname}` },
 ];
+
+// Sanitize event description HTML before injecting via `set:html` to prevent XSS.
+// `siteOrigin` is passed so internal links don't get target="_blank".
+const safeDescriptionHtml = sanitizeHtml({
+	html: String(event.contentHtml || description),
+	siteOrigin,
+});
 ---
 
 <DetailLayout
@@ -153,57 +154,22 @@ const breadcrumbItems = [
 	/>
 
 	<Fragment slot="page-header">
-		<div class="event-detail__header-top-row">
-			<h1 class="event-detail__title">{name}</h1>
-			{eventId && (
-				<FavoriteButton
-					client:load
-					entityId={eventId}
-					entityType="EVENT"
-					initialIsFavorited={initialIsFavorited}
-					initialBookmarkId={initialBookmarkId}
-					isAuthenticated={isAuthenticated}
-					variant="standalone"
-					locale={locale}
-					class="event-detail__favorite-btn"
-				/>
-			)}
-		</div>
-		<div class="event-detail__meta">
-			<span class="event-detail__category" style={`background-color: ${categoryColors.bg}; color: ${categoryColors.text};`}>
-				{t(`events.categories.${category.toLowerCase()}`, category)}
-			</span>
-			{startDate && (
-				<span class="event-detail__date">
-					<CalendarDotsIcon size={16} aria-hidden="true" />
-					{formatDate({ date: startDate, locale })}
-				</span>
-			)}
-			{locationCity && (
-				<span class="event-detail__location">
-					<LocationIcon size={16} aria-hidden="true" />
-					{locationName ? `${locationName}, ${locationCity}` : locationCity}
-				</span>
-			)}
-			{isPast && (
-				<span
-					class="event-detail__status-badge"
-					style={`background-color: ${pastColors.bg}; color: ${pastColors.text};`}
-				>{t('events.detail.pastEvent', 'Evento pasado')}</span>
-			)}
-			{isCancelled && (
-				<span
-					class="event-detail__status-badge"
-					style={`background-color: ${cancelledColors.bg}; color: ${cancelledColors.text};`}
-				>{t('events.detail.cancelled', 'Cancelado')}</span>
-			)}
-			{bookmarkCount !== undefined && (
-				<span class="event-detail__bookmark-count" aria-label={tPlural('event.detail.bookmark_count', bookmarkCount)}>
-					<span class="event-detail__bookmark-icon" aria-hidden="true">♥</span>
-					{tPlural('event.detail.bookmark_count', bookmarkCount)}
-				</span>
-			)}
-		</div>
+		<EventDetailHeader
+			eventId={eventId}
+			name={name}
+			category={category}
+			startDate={startDate}
+			endDate={endDate}
+			locationCity={locationCity}
+			locationName={locationName}
+			isPast={isPast}
+			isCancelled={isCancelled}
+			bookmarkCount={bookmarkCount}
+			locale={locale}
+			isAuthenticated={isAuthenticated}
+			initialIsFavorited={initialIsFavorited}
+			initialBookmarkId={initialBookmarkId}
+		/>
 	</Fragment>
 
 	<div class="event-detail">
@@ -232,16 +198,7 @@ const breadcrumbItems = [
 		</div>
 
 		<!-- Description -->
-		<div class="event-detail__description" set:html={String(event.contentHtml || description)} />
-
-		<!-- Map placeholder -->
-		<section class="event-detail__section">
-			<h2 class="event-detail__section-title">{t('events.detail.location', 'Ubicación')}</h2>
-			<!-- TODO: MapView island (T-022) -->
-			<div class="event-detail__placeholder">
-				<p>{t('events.detail.mapPlaceholder', 'Mapa interactivo próximamente')}</p>
-			</div>
-		</section>
+		<div class="event-detail__description" set:html={safeDescriptionHtml} />
 
 		<!-- Share buttons -->
 		<div class="event-detail__share">
@@ -273,30 +230,14 @@ const breadcrumbItems = [
 <style>
 	.event-detail__hero { position: relative; margin-bottom: var(--space-6); border-radius: var(--radius-card); overflow: hidden; }
 	.event-detail__hero-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
-	.event-detail__status-badge {
-		position: absolute; top: var(--space-4); left: var(--space-4);
-		padding: 0.375rem 0.75rem; border-radius: var(--radius-pill);
-		font-family: var(--font-sans); font-size: var(--text-body-sm); font-weight: 600;
-	}
 
-	.event-detail__header-top-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
-	.event-detail__meta { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-3); }
-	.event-detail__category { padding: 0.25rem 0.75rem; border-radius: var(--radius-pill); font-family: var(--font-sans); font-size: var(--text-body-sm); font-weight: 600; }
-	.event-detail__date, .event-detail__location { display: inline-flex; align-items: center; gap: 0.25rem; font-family: var(--font-sans); font-size: var(--text-body-sm); color: var(--muted-foreground); }
-	.event-detail__bookmark-count { display: inline-flex; align-items: center; gap: 0.3em; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 500; color: var(--muted-foreground); border-left: 1px solid var(--border); padding-left: var(--space-2, 8px); margin-left: var(--space-1, 4px); }
-	.event-detail__bookmark-icon { font-size: 0.75rem; color: var(--destructive); line-height: 1; }
-
-	.event-detail__title { font-family: var(--font-heading); font-weight: 700; font-size: clamp(1.5rem, 3vw, 2.25rem); color: var(--foreground); margin: 0 0 var(--space-6); }
-	.event-detail__description { font-family: var(--font-sans); line-height: 1.7; color: var(--foreground); margin-bottom: var(--space-8); }
+	.event-detail__description { font-family: var(--font-sans); line-height: 1.7; color: var(--core-foreground); margin-bottom: var(--space-8); }
 	.event-detail__description :global(p) { margin-bottom: var(--space-4); }
-	.event-detail__section { margin-bottom: var(--space-8); }
-	.event-detail__section-title { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-xl); color: var(--foreground); margin: 0 0 var(--space-4); }
-	.event-detail__placeholder { background-color: var(--card); border: 1px dashed var(--border); border-radius: var(--radius-card); padding: var(--space-8); text-align: center; color: var(--muted-foreground); }
 
-	.event-sidebar__card { background-color: var(--card); border-radius: var(--radius-card); padding: var(--space-6); box-shadow: var(--shadow-card); margin-bottom: var(--space-4); }
+	.event-sidebar__card { background-color: var(--core-card); border-radius: var(--radius-card); padding: var(--space-6); box-shadow: var(--shadow-card); margin-bottom: var(--space-4); }
 	.event-sidebar__price-amount { font-family: var(--font-heading); font-weight: 700; font-size: var(--text-2xl); color: var(--brand-accent); }
-	.event-sidebar__free { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); color: var(--foreground); margin: 0; }
-	.event-sidebar__card-title { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); color: var(--foreground); margin: 0 0 var(--space-2); }
-	.event-sidebar__organizer-name { font-family: var(--font-sans); color: var(--muted-foreground); margin: 0; }
+	.event-sidebar__free { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); color: var(--core-foreground); margin: 0; }
+	.event-sidebar__card-title { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); color: var(--core-foreground); margin: 0 0 var(--space-2); }
+	.event-sidebar__organizer-name { font-family: var(--font-sans); color: var(--core-muted-foreground); margin: 0; }
 	.event-detail__share { margin-top: var(--space-6); display: flex; justify-content: flex-start; }
 </style>
