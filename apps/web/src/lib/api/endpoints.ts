@@ -551,6 +551,16 @@ export const eventsApi = {
         category?: string;
         /** Filter events by destination UUID (resolved via event_locations.destination_id). */
         destinationId?: string;
+        /** ISO date string — only return events starting on or after this date. */
+        startDateAfter?: string;
+        /** ISO date string — only return events starting on or before this date. */
+        startDateBefore?: string;
+        /** Minimum event price (inclusive). */
+        minPrice?: number;
+        /** Maximum event price (inclusive). */
+        maxPrice?: number;
+        /** When true, only return free events (price === 0 or isFree flag). */
+        isFree?: boolean;
     }): Promise<ApiResult<PaginatedResponse<EventPublic>>> {
         return apiClient.getList({ path: `${BASE}/events`, params });
     },

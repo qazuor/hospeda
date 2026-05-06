@@ -1,7 +1,21 @@
 ---
 /**
  * @file eventos/index.astro
- * @description Events listing page with top filter bar, EventCard grid, and pagination.
+ * @description Events listing page with temporal quick-filter chips, category
+ * chips, FilterSidebar (search + category + free toggle + price range + sort),
+ * EventCard grid, and pagination.
+ *
+ * URL params:
+ * - page        — pagination (default: 1)
+ * - q           — full-text search
+ * - category    — event category enum value
+ * - sortBy      — sort field (startDate | name | mostSaved)
+ * - sortOrder   — asc | desc
+ * - when        — temporal quick-filter (today | week | month | next60 | past)
+ * - isFree      — boolean toggle for free events only
+ * - priceMin    — minimum event price
+ * - priceMax    — maximum event price
+ *
  * @route /{lang}/eventos/
  * @rendering SSR + ISR 24h
  */
@@ -14,6 +28,8 @@ import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import TagChips from '@/components/TagChips.astro';
+import EventDateFilterChips from '@/components/event/EventDateFilterChips.astro';
+import type { EventDateFilter } from '@/components/event/EventDateFilterChips.astro';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import { eventsApi } from '@/lib/api/endpoints';
 import { toEventCardProps } from '@/lib/api/transforms';
@@ -34,10 +50,104 @@ const sortBy = url.searchParams.get('sortBy') ?? 'startDate';
 // the most active bookmarks appear first. Other fields keep their existing
 // asc default.
 const explicitSortOrder = url.searchParams.get('sortOrder') as 'asc' | 'desc' | null;
-const sortOrder: 'asc' | 'desc' =
-    explicitSortOrder ?? (sortBy === 'mostSaved' ? 'desc' : 'asc');
 
-const result = await eventsApi.list({ page, pageSize, q, category, sortBy, sortOrder });
+/** Parse the temporal quick-filter from the `when` query param. */
+const rawWhen = url.searchParams.get('when');
+const VALID_WHEN_VALUES: ReadonlyArray<EventDateFilter> = ['today', 'week', 'month', 'next60', 'past'];
+const when: EventDateFilter = VALID_WHEN_VALUES.includes(rawWhen as EventDateFilter)
+    ? (rawWhen as EventDateFilter)
+    : 'all';
+
+/** Parse price and free-toggle params.
+ * The FilterSidebar dual-range with id='price' emits `minPrice` and `maxPrice`
+ * (convention: `min${capitalize(id)}` and `max${capitalize(id)}`).
+ */
+const isFreeParam = url.searchParams.get('isFree');
+const isFree: boolean | undefined = isFreeParam === 'true' ? true : isFreeParam === 'false' ? false : undefined;
+const priceMinParam = url.searchParams.get('minPrice');
+const priceMaxParam = url.searchParams.get('maxPrice');
+const priceMin: number | undefined = priceMinParam ? Number(priceMinParam) : undefined;
+const priceMax: number | undefined = priceMaxParam ? Number(priceMaxParam) : undefined;
+
+/** Compute date range from the `when` temporal filter. */
+const now = new Date();
+
+/**
+ * Returns a copy of `now` at 00:00:00.000 local time.
+ */
+function startOfToday(): Date {
+    const d = new Date(now);
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+/**
+ * Returns a copy of `now` at 23:59:59.999 local time.
+ */
+function endOfToday(): Date {
+    const d = new Date(now);
+    d.setHours(23, 59, 59, 999);
+    return d;
+}
+
+/**
+ * Returns a date N days ahead of `startOfToday()` at 23:59:59.999.
+ */
+function daysAhead(n: number): Date {
+    const d = startOfToday();
+    d.setDate(d.getDate() + n);
+    d.setHours(23, 59, 59, 999);
+    return d;
+}
+
+let startDateAfter: string | undefined;
+let startDateBefore: string | undefined;
+let effectiveSortOrder: 'asc' | 'desc';
+
+switch (when) {
+    case 'today':
+        startDateAfter = startOfToday().toISOString();
+        startDateBefore = endOfToday().toISOString();
+        effectiveSortOrder = explicitSortOrder ?? 'asc';
+        break;
+    case 'week':
+        startDateAfter = startOfToday().toISOString();
+        startDateBefore = daysAhead(7).toISOString();
+        effectiveSortOrder = explicitSortOrder ?? 'asc';
+        break;
+    case 'month':
+        startDateAfter = startOfToday().toISOString();
+        startDateBefore = daysAhead(30).toISOString();
+        effectiveSortOrder = explicitSortOrder ?? 'asc';
+        break;
+    case 'next60':
+        startDateAfter = startOfToday().toISOString();
+        startDateBefore = daysAhead(60).toISOString();
+        effectiveSortOrder = explicitSortOrder ?? 'asc';
+        break;
+    case 'past':
+        startDateBefore = startOfToday().toISOString();
+        // Past events default to descending so the most recent appear first
+        effectiveSortOrder = explicitSortOrder ?? 'desc';
+        break;
+    default:
+        effectiveSortOrder = explicitSortOrder ?? (sortBy === 'mostSaved' ? 'desc' : 'asc');
+        break;
+}
+
+const result = await eventsApi.list({
+    page,
+    pageSize,
+    q,
+    category,
+    sortBy,
+    sortOrder: effectiveSortOrder,
+    startDateAfter,
+    startDateBefore,
+    isFree: isFree ?? undefined,
+    minPrice: priceMin,
+    maxPrice: priceMax,
+});
 
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
@@ -45,36 +155,56 @@ const total = result.ok ? result.data.total : 0;
 const totalPages = result.ok ? Math.ceil(total / pageSize) : 0;
 const cards = items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown> }));
 
+/**
+ * Build the `filterGroups` config for FilterSidebar.
+ * Includes: search, category (checkbox), free toggle, price dual-range.
+ * The `isFree` toggle uses the existing `type: 'toggle'` group.
+ * The price range uses the existing `type: 'dual-range'` group.
+ */
 const filterGroups = [
-	{
-		id: 'q',
-		label: t('events.filters.search', 'Buscar'),
-		type: 'search' as const,
-	},
-	{
-		id: 'category',
-		label: t('events.filters.category', 'Categoría'),
-		type: 'checkbox' as const,
-		options: [
-			{ value: 'MUSIC', label: t('events.categories.music', 'Música') },
-			{ value: 'CULTURE', label: t('events.categories.culture', 'Cultura') },
-			{ value: 'SPORTS', label: t('events.categories.sports', 'Deportes') },
-			{ value: 'GASTRONOMY', label: t('events.categories.gastronomy', 'Gastronomía') },
-			{ value: 'FESTIVAL', label: t('events.categories.festival', 'Festival') },
-			{ value: 'NATURE', label: t('events.categories.nature', 'Naturaleza') },
-			{ value: 'THEATER', label: t('events.categories.theater', 'Teatro') },
-			{ value: 'WORKSHOP', label: t('events.categories.workshop', 'Taller') },
-			{ value: 'OTHER', label: t('events.categories.other', 'Otros') },
-		],
-	},
+    {
+        id: 'q',
+        label: t('events.filters.search', 'Buscar'),
+        type: 'search' as const,
+    },
+    {
+        id: 'category',
+        label: t('events.filters.category', 'Categoría'),
+        type: 'checkbox' as const,
+        options: [
+            { value: 'MUSIC',      label: t('events.categories.music',      'Música') },
+            { value: 'CULTURE',    label: t('events.categories.culture',    'Cultura') },
+            { value: 'SPORTS',     label: t('events.categories.sports',     'Deportes') },
+            { value: 'GASTRONOMY', label: t('events.categories.gastronomy', 'Gastronomía') },
+            { value: 'FESTIVAL',   label: t('events.categories.festival',   'Festival') },
+            { value: 'NATURE',     label: t('events.categories.nature',     'Naturaleza') },
+            { value: 'THEATER',    label: t('events.categories.theater',    'Teatro') },
+            { value: 'WORKSHOP',   label: t('events.categories.workshop',   'Taller') },
+            { value: 'OTHER',      label: t('events.categories.other',      'Otros') },
+        ],
+    },
+    {
+        id: 'isFree',
+        label: t('events.dateFilters.freeToggle', 'Solo eventos gratuitos'),
+        type: 'toggle' as const,
+    },
+    {
+        id: 'price',
+        label: t('events.dateFilters.priceRange', 'Rango de precio'),
+        type: 'dual-range' as const,
+        min: 0,
+        max: 10000,
+        step: 100,
+        format: 'currency' as const,
+    },
 ] as const;
 
 const sortOptions = [
-	{ value: 'startDate', label: t('events.sort.date', 'Fecha') },
-	{ value: 'name', label: t('events.sort.name', 'Nombre') },
-	// SPEC-098 T-052a — orders by total active bookmarks (descending) via the
-	// `mostSaved` synthetic sort field on the public event list endpoint.
-	{ value: 'mostSaved', label: t('ui.sort.most_bookmarked', 'Más guardados') },
+    { value: 'startDate', label: t('events.sort.date',  'Fecha') },
+    { value: 'name',      label: t('events.sort.name',  'Nombre') },
+    // SPEC-098 T-052a — orders by total active bookmarks (descending) via the
+    // `mostSaved` synthetic sort field on the public event list endpoint.
+    { value: 'mostSaved', label: t('ui.sort.most_bookmarked', 'Más guardados') },
 ] as const;
 
 const baseUrl = buildUrl({ locale, path: 'eventos' });
@@ -85,15 +215,40 @@ const isAuthenticated = Astro.locals.user ? true : false;
 
 /** Quick-filter chips: top event categories */
 const categoryChips = [
-    { label: t('events.categories.music', 'Música'), href: buildUrl({ locale, path: '/eventos/categoria/music/' }) },
-    { label: t('events.categories.culture', 'Cultura'), href: buildUrl({ locale, path: '/eventos/categoria/culture/' }) },
+    { label: t('events.categories.music',      'Música'),      href: buildUrl({ locale, path: '/eventos/categoria/music/'      }) },
+    { label: t('events.categories.culture',    'Cultura'),     href: buildUrl({ locale, path: '/eventos/categoria/culture/'    }) },
     { label: t('events.categories.gastronomy', 'Gastronomía'), href: buildUrl({ locale, path: '/eventos/categoria/gastronomy/' }) },
-    { label: t('events.categories.festival', 'Festival'), href: buildUrl({ locale, path: '/eventos/categoria/festival/' }) },
-    { label: t('events.categories.nature', 'Naturaleza'), href: buildUrl({ locale, path: '/eventos/categoria/nature/' }) },
-    { label: t('events.categories.theater', 'Teatro'), href: buildUrl({ locale, path: '/eventos/categoria/theater/' }) },
-    { label: t('events.categories.sports', 'Deportes'), href: buildUrl({ locale, path: '/eventos/categoria/sports/' }) },
-    { label: t('events.categories.workshop', 'Taller'), href: buildUrl({ locale, path: '/eventos/categoria/workshop/' }) },
+    { label: t('events.categories.festival',   'Festival'),    href: buildUrl({ locale, path: '/eventos/categoria/festival/'   }) },
+    { label: t('events.categories.nature',     'Naturaleza'),  href: buildUrl({ locale, path: '/eventos/categoria/nature/'     }) },
+    { label: t('events.categories.theater',    'Teatro'),      href: buildUrl({ locale, path: '/eventos/categoria/theater/'    }) },
+    { label: t('events.categories.sports',     'Deportes'),    href: buildUrl({ locale, path: '/eventos/categoria/sports/'     }) },
+    { label: t('events.categories.workshop',   'Taller'),      href: buildUrl({ locale, path: '/eventos/categoria/workshop/'   }) },
 ] as const;
+
+/**
+ * Build the `initialParams` record for FilterSidebar so server-rendered state
+ * matches the URL on first paint (avoids hydration flash).
+ * Keys match the URL param names emitted by FilterSidebar's reducer.
+ * `price` dual-range maps to `priceMin` / `priceMax` via the `id: 'price'` group.
+ */
+const sidebarInitialParams: Record<string, string> = {};
+if (q)              sidebarInitialParams['q']        = q;
+if (category)       sidebarInitialParams['category'] = category;
+if (isFreeParam)    sidebarInitialParams['isFree']   = isFreeParam;
+// dual-range with id='price': reducer reads params['minPrice'] and params['maxPrice']
+if (priceMinParam)  sidebarInitialParams['minPrice'] = priceMinParam;
+if (priceMaxParam)  sidebarInitialParams['maxPrice'] = priceMaxParam;
+const explicitSortOrderParam = url.searchParams.get('sortOrder');
+if (sortBy)                 sidebarInitialParams['sortBy']    = sortBy;
+if (explicitSortOrderParam) sidebarInitialParams['sortOrder'] = explicitSortOrderParam;
+
+/**
+ * Build URLSearchParams to pass to Pagination so it preserves all active
+ * filters (including `when`, `isFree`, `priceMin`, `priceMax`, `q`, etc.)
+ * across page navigations.
+ */
+const paginationParams = new URLSearchParams(url.searchParams);
+paginationParams.delete('page');
 ---
 
 <ListingLayout
@@ -124,8 +279,18 @@ const categoryChips = [
 		filters={filterGroups}
 		sortOptions={sortOptions}
 		defaultSort="startDate"
+		initialParams={sidebarInitialParams}
 	/>
 
+	<!-- Temporal quick-filter chips (above category chips) -->
+	<EventDateFilterChips
+		locale={locale}
+		current={when}
+		baseUrl={baseUrl.slice(0, -1)}
+		searchParams={paginationParams}
+	/>
+
+	<!-- Category chips (below temporal chips) -->
 	<TagChips
 		chips={categoryChips}
 		ariaLabel={t('events.categoryChips.ariaLabel', 'Filtrar por categoría de evento')}
@@ -148,7 +313,14 @@ const categoryChips = [
 	)}
 
 	{totalPages > 1 && (
-		<Pagination slot="pagination" currentPage={page} totalPages={totalPages} baseUrl={baseUrl.slice(0, -1)} locale={locale} />
+		<Pagination
+			slot="pagination"
+			currentPage={page}
+			totalPages={totalPages}
+			baseUrl={baseUrl.slice(0, -1)}
+			locale={locale}
+			searchParams={paginationParams}
+		/>
 	)}
 </ListingLayout>
 
@@ -159,5 +331,5 @@ const categoryChips = [
 		gap: var(--space-card-gap);
 	}
 	@media (max-width: 1024px) { .events-grid { grid-template-columns: repeat(2, 1fr); } }
-	@media (max-width: 640px) { .events-grid { grid-template-columns: 1fr; } }
+	@media (max-width: 640px)  { .events-grid { grid-template-columns: 1fr; } }
 </style>

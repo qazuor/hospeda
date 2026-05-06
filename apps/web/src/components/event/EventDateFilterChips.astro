@@ -1,0 +1,196 @@
+---
+/**
+ * @file EventDateFilterChips.astro
+ * @description Horizontal row of temporal quick-filter chips for the events listing.
+ * Each chip sets the `when` query param and links back to the base events URL,
+ * preserving any other active query params (category, q, sortBy, sortOrder,
+ * priceMin, priceMax, isFree).
+ *
+ * Active chip is highlighted with `aria-pressed="true"` for accessibility.
+ * No client JavaScript — pure server-rendered anchor links.
+ *
+ * Rendering: Static (no client JavaScript).
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+/** Valid temporal filter values for the `when` query param. */
+export type EventDateFilter = 'all' | 'today' | 'week' | 'month' | 'next60' | 'past';
+
+interface Props {
+    /** Current locale for i18n. */
+    readonly locale: SupportedLocale;
+    /**
+     * Currently active temporal filter.
+     * Defaults to `'all'` (no date restriction).
+     */
+    readonly current?: EventDateFilter;
+    /**
+     * Base URL for the events listing (e.g. `/es/eventos`).
+     * Should NOT include a trailing slash — the component appends `/`.
+     */
+    readonly baseUrl: string;
+    /**
+     * All currently active query params to preserve when building chip hrefs.
+     * Pass `Astro.url.searchParams` from the listing page.
+     */
+    readonly searchParams: URLSearchParams;
+}
+
+const {
+    locale,
+    current = 'all',
+    baseUrl,
+    searchParams,
+} = Astro.props;
+
+const { t } = createTranslations(locale);
+
+/** Ordered list of temporal filter options. */
+const DATE_FILTERS: ReadonlyArray<{ readonly value: EventDateFilter; readonly label: string }> = [
+    { value: 'all',    label: t('events.dateFilters.all',    'Todos') },
+    { value: 'today',  label: t('events.dateFilters.today',  'Hoy') },
+    { value: 'week',   label: t('events.dateFilters.week',   'Esta semana') },
+    { value: 'month',  label: t('events.dateFilters.month',  'Este mes') },
+    { value: 'next60', label: t('events.dateFilters.next60', 'Próximos 60 días') },
+    { value: 'past',   label: t('events.dateFilters.past',   'Pasados') },
+] as const;
+
+/**
+ * Build the href for a single chip.
+ * Preserves all existing params except `when` and `page` (resets to page 1).
+ *
+ * @param value - The target `when` value for this chip.
+ * @returns Full URL string with the new `when` param applied.
+ */
+function buildChipHref(value: EventDateFilter): string {
+    const params = new URLSearchParams(searchParams);
+    // Always reset to page 1 when changing the date filter
+    params.delete('page');
+
+    if (value === 'all') {
+        params.delete('when');
+    } else {
+        params.set('when', value);
+    }
+
+    const qs = params.toString();
+    const base = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+    return qs ? `${base}?${qs}` : base;
+}
+---
+
+<nav
+    class="event-date-chips"
+    aria-label={t('events.dateFilters.ariaLabel', 'Filtrar eventos por fecha')}
+>
+    <ul class="event-date-chips__list" role="list">
+        {DATE_FILTERS.map(({ value, label }) => {
+            const isActive = current === value;
+            return (
+                <li class="event-date-chips__item">
+                    <a
+                        href={buildChipHref(value)}
+                        class:list={[
+                            'event-date-chips__chip',
+                            { 'event-date-chips__chip--active': isActive },
+                        ]}
+                        aria-pressed={isActive ? 'true' : 'false'}
+                        rel="nofollow"
+                    >
+                        {label}
+                    </a>
+                </li>
+            );
+        })}
+    </ul>
+</nav>
+
+<style>
+    /* ============================================================
+       EventDateFilterChips — temporal quick-filter chips row
+       ============================================================ */
+    .event-date-chips {
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .event-date-chips__list {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: var(--space-3, 12px);
+        padding-block: var(--space-2, 8px);
+        padding-inline: 2px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        /* Fade out the edges to hint horizontal scroll */
+        mask-image: linear-gradient(
+            to right,
+            transparent 0,
+            black 32px,
+            black calc(100% - 32px),
+            transparent 100%
+        );
+        -webkit-mask-image: linear-gradient(
+            to right,
+            transparent 0,
+            black 32px,
+            black calc(100% - 32px),
+            transparent 100%
+        );
+        padding-inline: 32px;
+    }
+
+    .event-date-chips__list::-webkit-scrollbar {
+        display: none;
+    }
+
+    .event-date-chips__chip {
+        display: inline-flex;
+        align-items: center;
+        white-space: nowrap;
+        flex-shrink: 0;
+        padding: 6px 16px;
+        border-radius: var(--radius-pill);
+        border: 1px solid oklch(from var(--brand-primary) l c h / 0.25);
+        background-color: var(--core-card);
+        color: var(--core-foreground);
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm, 0.875rem);
+        font-weight: 500;
+        line-height: 1.4;
+        text-decoration: none;
+        cursor: pointer;
+        transition:
+            background-color var(--duration-normal) ease,
+            color var(--duration-normal) ease,
+            border-color var(--duration-normal) ease,
+            box-shadow var(--duration-normal) ease;
+    }
+
+    .event-date-chips__chip:hover {
+        background-color: oklch(from var(--brand-accent) l c h / 0.12);
+        color: var(--brand-accent);
+        border-color: oklch(from var(--brand-accent) l c h / 0.4);
+    }
+
+    .event-date-chips__chip:focus-visible {
+        outline: 2px solid var(--brand-accent);
+        outline-offset: 2px;
+    }
+
+    .event-date-chips__chip--active,
+    .event-date-chips__chip--active:hover {
+        background-color: var(--brand-accent);
+        color: var(--accent-foreground);
+        border-color: var(--brand-accent);
+        font-weight: 600;
+        box-shadow: 0 2px 8px oklch(from var(--brand-accent) l c h / 0.3);
+    }
+</style>

@@ -123,5 +123,16 @@
         "location": "Ubicación",
         "free": "Gratis",
         "paid": "Pago"
+    },
+    "dateFilters": {
+        "all": "Todos",
+        "today": "Hoy",
+        "week": "Esta semana",
+        "month": "Este mes",
+        "next60": "Próximos 60 días",
+        "past": "Pasados",
+        "ariaLabel": "Filtrar eventos por fecha",
+        "freeToggle": "Solo eventos gratuitos",
+        "priceRange": "Rango de precio"
     }
 }
