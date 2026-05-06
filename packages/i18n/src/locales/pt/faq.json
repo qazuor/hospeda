@@ -1,0 +1,284 @@
+{
+    "title": "Perguntas frequentes - Hospeda",
+    "description": "Tudo o que você precisa saber sobre a Hospeda: como funciona, para turistas, anfitriões, editores, parceiros e mais.",
+    "hero": {
+        "tagline": "Estamos aqui para ajudar",
+        "title": "Perguntas frequentes",
+        "subtitle": "Respostas para as dúvidas mais comuns sobre a Hospeda. Se não encontrar o que procura, escreva para a gente.",
+        "ctaContact": "Falar com a gente",
+        "ctaContactHint": "Não encontrou sua pergunta?"
+    },
+    "nav": {
+        "label": "Categorias de perguntas",
+        "jumpTo": "Ir para:"
+    },
+    "categories": {
+        "about": {
+            "key": "about",
+            "tagline": "O básico",
+            "title": "Sobre a Hospeda",
+            "subtitle": "O que somos e como a plataforma funciona.",
+            "items": {
+                "what": {
+                    "question": "O que é a Hospeda?",
+                    "answer": "A Hospeda é um portal de turismo focado na costa do Rio Uruguai e na região do Litoral Entrerriano (Argentina). Reunimos hospedagens, eventos, destinos e matérias em um só lugar para que viajantes e anfitriões se encontrem sem intermediários complicados."
+                },
+                "coverage": {
+                    "question": "Que área vocês cobrem?",
+                    "answer": "Cobrimos principalmente Concepción del Uruguay, Colón, Gualeguaychú, San José, Federación, Paysandú e outras cidades do corredor do Rio Uruguai. Adicionamos novos destinos conforme cresce nossa rede de hospedagens e parceiros locais."
+                },
+                "cost": {
+                    "question": "Quanto custa usar a Hospeda como turista?",
+                    "answer": "Zero. Buscar hospedagens, ver fotos, ler matérias, consultar eventos e contatar anfitriões é grátis e sempre será para os viajantes."
+                },
+                "languages": {
+                    "question": "Em quais idiomas o site funciona?",
+                    "answer": "Espanhol, inglês e português. Você pode trocar o idioma no menu superior. Atendemos consultas nos três idiomas."
+                },
+                "different": {
+                    "question": "Em que vocês são diferentes do Booking, Airbnb ou outras plataformas grandes?",
+                    "answer": "Somos locais, falamos seu idioma e conhecemos a região. Não cobramos taxas escondidas dos hóspedes, os anfitriões definem seus preços sem penalizações, e fazemos curadoria de conteúdo editorial sobre a região: eventos, gastronomia, cultura e rotas. Somos um portal turístico completo, não só um buscador de camas."
+                },
+                "scope": {
+                    "question": "A Hospeda é só para hospedagens?",
+                    "answer": "Não. Além das hospedagens, você encontra eventos, destinos com informações úteis para planejar sua viagem, matérias e guias sobre a região. É um portal turístico completo."
+                },
+                "verified": {
+                    "question": "Vocês verificam as hospedagens publicadas?",
+                    "answer": "Sim. Cada hospedagem passa por uma revisão inicial onde validamos dados de contato, fotos reais e descrição. As avaliações são de hóspedes reais que reservaram pela plataforma."
+                }
+            }
+        },
+        "tourists": {
+            "key": "tourists",
+            "tagline": "Se você está viajando",
+            "title": "Para turistas",
+            "subtitle": "Buscar, reservar e aproveitar sua estadia.",
+            "items": {
+                "search": {
+                    "question": "Como busco uma hospedagem?",
+                    "answer": "Pelo buscador da home ou pela seção Hospedagens você pode filtrar por destino, datas, número de hóspedes, tipo (cabana, hotel, casa, apartamento), preço, serviços e mais. Também pode explorar por destino diretamente no mapa."
+                },
+                "booking": {
+                    "question": "Posso reservar diretamente pela Hospeda?",
+                    "answer": "Algumas hospedagens permitem consultar disponibilidade e reservar online. Outras conectam você diretamente com o anfitrião por WhatsApp, e-mail ou telefone. A página de cada hospedagem indica claramente qual aplica."
+                },
+                "contactOwner": {
+                    "question": "Como contato um anfitrião?",
+                    "answer": "Cada página de hospedagem tem botões de contato direto (WhatsApp, e-mail, telefone). Se você se cadastrar, pode salvar todas as suas consultas e favoritos em uma única conta."
+                },
+                "reviews": {
+                    "question": "As avaliações são reais?",
+                    "answer": "Sim. Apenas usuários que realmente se hospedaram podem deixar avaliações. Moderamos conteúdo ofensivo e os anfitriões podem responder publicamente. Não editamos nem apagamos avaliações legítimas."
+                },
+                "favorites": {
+                    "question": "Posso salvar hospedagens como favoritas?",
+                    "answer": "Sim. Com uma conta gratuita você pode salvar hospedagens, organizá-las em coleções (por exemplo \"Fim de semana de março\" ou \"Viagem com as crianças\") e acessá-las de qualquer dispositivo."
+                },
+                "issue": {
+                    "question": "O que faço se tiver um problema com uma hospedagem?",
+                    "answer": "Escreva para a gente pela página Contato selecionando \"Consulta sobre hospedagem\" e adicionando o ID que aparece na URL da hospedagem. Mediamos entre você e o anfitrião para encontrar uma solução."
+                },
+                "petFriendly": {
+                    "question": "Tem hospedagens pet-friendly?",
+                    "answer": "Sim. Nos filtros de busca tem a opção \"Aceita pets\" para mostrar só as opções disponíveis. Algumas podem ter restrições (tamanho, quantidade), confira as condições da hospedagem."
+                },
+                "events": {
+                    "question": "Como encontro eventos na região?",
+                    "answer": "Na seção Eventos você encontra festas, festivais, feiras, shows e atividades organizadas por categoria, data e destino. É uma ótima forma de planejar a viagem em torno de algo que te interessa."
+                },
+                "cancellation": {
+                    "question": "Como funcionam os cancelamentos?",
+                    "answer": "Cada hospedagem define sua própria política de cancelamento, que você verá claramente antes de reservar. Se ficar com dúvidas, consulte o anfitrião antes de confirmar."
+                }
+            }
+        },
+        "owners": {
+            "key": "owners",
+            "tagline": "Se você tem uma propriedade",
+            "title": "Para anfitriões",
+            "subtitle": "Como publicar, planos e gestão da sua propriedade.",
+            "items": {
+                "publish": {
+                    "question": "Como publico minha hospedagem?",
+                    "answer": "Acesse a seção Anfitriões e preencha o formulário de cadastro. Você precisa de fotos, descrição, serviços, preços de referência e dados de contato. Em 24 a 48 horas úteis validamos e publicamos sua propriedade."
+                },
+                "cost": {
+                    "question": "Quanto custa publicar?",
+                    "answer": "Temos um plano gratuito com funcionalidades básicas e planos pagos com mais visibilidade, fotos, destaques e ferramentas de gestão. Veja os detalhes na página de Planos para anfitriões."
+                },
+                "commission": {
+                    "question": "Vocês cobram comissão por reserva?",
+                    "answer": "Não cobramos comissão por reserva. Você fica com 100% do valor combinado com o hóspede. O que se paga é a assinatura mensal ou anual do plano escolhido."
+                },
+                "ready": {
+                    "question": "Quais informações preciso ter prontas para criar meu anúncio?",
+                    "answer": "Fotos de boa qualidade (mínimo 6, ideal 10+), descrição da hospedagem, serviços e comodidades (wifi, piscina, cozinha, etc.), capacidade máxima, preços de referência por temporada, localização exata e dados de contato. Se tiver dúvidas, ajudamos no cadastro."
+                },
+                "manageReviews": {
+                    "question": "Como gerencio as avaliações que os hóspedes deixam?",
+                    "answer": "No seu painel de anfitrião você vê todas as avaliações e pode responder publicamente. Não pode apagar avaliações legítimas, mas pode reportar conteúdo ofensivo ou falso para revisarmos."
+                },
+                "featured": {
+                    "question": "Posso destacar minha hospedagem ou aparecer primeiro nas buscas?",
+                    "answer": "Sim. Os planos superiores incluem destaques na home, prioridade nas buscas e selos de \"Destaque\" ou \"Verificado\". Também vendemos add-ons pontuais para promover em datas chave (alta temporada, feriados prolongados)."
+                },
+                "pause": {
+                    "question": "E se eu quiser pausar minha hospedagem?",
+                    "answer": "Você pode pausar sua publicação a qualquer momento pelo painel. A propriedade deixa de aparecer nas buscas até você reativar, sem perder fotos, avaliações ou configurações. A assinatura continua, salvo se você cancelar."
+                },
+                "payments": {
+                    "question": "Como cobro dos hóspedes?",
+                    "answer": "Você define o método de pagamento (dinheiro, transferência, MercadoPago, etc.) e cobra direto do hóspede. A Hospeda não fica com nenhum percentual dos pagamentos por reserva."
+                },
+                "support": {
+                    "question": "Vocês oferecem suporte para anfitriões?",
+                    "answer": "Sim. Atendemos por WhatsApp, e-mail e telefone em horário comercial. Os planos pagos têm prioridade de resposta e os planos premium incluem suporte dedicado."
+                }
+            }
+        },
+        "contributors": {
+            "key": "contributors",
+            "tagline": "Se quer contribuir com conteúdo",
+            "title": "Para editores e colaboradores",
+            "subtitle": "Matérias, fotos, eventos: como contribuir com a comunidade.",
+            "items": {
+                "writeArticle": {
+                    "question": "Quero propor uma matéria, como faço?",
+                    "answer": "Mande um e-mail para info@hospeda.com com a ideia (tema, abordagem, tamanho aproximado) e algumas amostras anteriores se tiver. Se encaixar na linha editorial, retornamos para coordenar e publicar com sua assinatura."
+                },
+                "submitPhotos": {
+                    "question": "Vocês podem publicar fotos minhas da região?",
+                    "answer": "Sim, recebemos fotografias de paisagens, festas, gastronomia e vida local. Sempre creditamos o autor e, conforme o caso, fazemos uma matéria ou galeria específica. Mande amostras para info@hospeda.com."
+                },
+                "submitEvent": {
+                    "question": "Como aviso sobre um evento ou atividade?",
+                    "answer": "Duas opções: (1) cadastrar pelo formulário de eventos se tiver conta de organizador, ou (2) escrever para a gente com a info (data, local, descrição, fotos, link de ingressos) que publicamos. É grátis para eventos abertos ao público."
+                },
+                "paid": {
+                    "question": "Vocês pagam pelas contribuições?",
+                    "answer": "Contribuições pontuais da comunidade são publicadas com crédito ao autor mas sem pagamento. Para colaborações recorrentes (matérias semanais, cobertura de eventos, fotografia profissional) temos um programa pago combinado caso a caso."
+                },
+                "placeReviews": {
+                    "question": "Posso escrever resenhas de lugares e restaurantes?",
+                    "answer": "Sim. Estamos montando uma seção de gastronomia e experiências. Se quiser somar resenhas de restaurantes, bares, peñas ou atrações, escreva para a gente que coordenamos."
+                },
+                "program": {
+                    "question": "Vocês têm um programa de fotógrafos ou redatores?",
+                    "answer": "Estamos montando um programa de colaboradores com benefícios (acesso a eventos, descontos em hospedagens parceiras, crédito em matérias destacadas). Se interessar, escreva para a gente contando o que você faz."
+                },
+                "languages": {
+                    "question": "Aceitam contribuições em inglês ou português?",
+                    "answer": "Sim. Recebemos conteúdo nos três idiomas, especialmente útil para chegar a turistas brasileiros e de outros países que visitam a região."
+                }
+            }
+        },
+        "partners": {
+            "key": "partners",
+            "tagline": "Se você tem uma marca ou instituição",
+            "title": "Parceiros e publicidade",
+            "subtitle": "Anunciar, patrocinar e construir parcerias.",
+            "items": {
+                "advertise": {
+                    "question": "Como posso anunciar na Hospeda?",
+                    "answer": "Temos formatos para marcas, instituições e comércios locais: banners na home, conteúdo patrocinado, destaques por destino, presença na newsletter e patrocínio de seções. Mande um e-mail para partners@hospeda.com com seu objetivo e montamos uma proposta."
+                },
+                "formats": {
+                    "question": "Quais formatos de banner ou conteúdo patrocinado vocês oferecem?",
+                    "answer": "Banners na home e seções (desktop e mobile), matérias patrocinadas com selo claro de \"Conteúdo patrocinado\", vídeos curtos, destaques na newsletter e campanhas de marca por temporada. Enviamos o media kit com métricas e preços."
+                },
+                "tourismOffices": {
+                    "question": "Fazem parcerias com órgãos de turismo ou municípios?",
+                    "answer": "Sim, trabalhamos com secretarias de turismo, câmaras hoteleiras e órgãos regionais. Montamos páginas de destino com conteúdo oficial, calendários de eventos e campanhas conjuntas. Escreva contando sobre sua instituição."
+                },
+                "eventSponsorship": {
+                    "question": "Como funciona o patrocínio de eventos?",
+                    "answer": "Marcas e comércios podem patrocinar eventos específicos para aparecer em destaque na página, ganhar visibilidade pré-evento e receber tráfego qualificado. Temos pacotes desde patrocínio simples até apresentação oficial do evento."
+                },
+                "officialPartner": {
+                    "question": "Posso aparecer como parceiro oficial?",
+                    "answer": "Sim. O programa de parceiros oficiais inclui logo no rodapé, menção em seções afins, prioridade na cobertura editorial e co-marketing. É pensado para marcas alinhadas com turismo, gastronomia ou cultura regional."
+                },
+                "commercialContact": {
+                    "question": "Com quem falo sobre temas comerciais?",
+                    "answer": "Mande um e-mail para partners@hospeda.com ou pela página Contato selecionando \"Consulta comercial\". Respondemos em até 48 horas úteis com uma proposta inicial."
+                },
+                "minBudget": {
+                    "question": "Tem orçamento mínimo para anunciar?",
+                    "answer": "Trabalhamos com todos os tamanhos: do comércio local que quer aparecer no seu destino até marcas regionais ou nacionais. Tem formato para cada orçamento e te ajudamos a escolher o melhor."
+                }
+            }
+        },
+        "account": {
+            "key": "account",
+            "tagline": "Sua conta e seus dados",
+            "title": "Conta e privacidade",
+            "subtitle": "Cadastro, dados pessoais e configurações.",
+            "items": {
+                "needAccount": {
+                    "question": "Preciso de uma conta para usar a Hospeda?",
+                    "answer": "Não para navegar e buscar. Sim se quiser salvar favoritos, deixar avaliações, receber novidades por e-mail ou publicar como anfitrião ou organizador. Criar conta é grátis e rápido."
+                },
+                "deleteAccount": {
+                    "question": "Como excluo minha conta?",
+                    "answer": "Em Minha Conta > Configurações > Excluir conta. Removemos seus dados pessoais em até 30 dias conforme nossa política de privacidade. As avaliações que você deixou podem permanecer de forma anônima."
+                },
+                "dataStored": {
+                    "question": "Quais dados vocês guardam sobre mim?",
+                    "answer": "Dados de cadastro (nome, e-mail), preferências (idioma, modo escuro, favoritos), histórico de busca anônimo e, se reservou, dados da reserva. Não vendemos dados a terceiros. Veja a Política de privacidade para o detalhamento completo."
+                },
+                "themeLanguage": {
+                    "question": "Como mudo o idioma ou o modo escuro?",
+                    "answer": "No menu do cabeçalho, no ícone de configurações. Sua preferência é salva no navegador e, se tiver conta, fica vinculada ao seu perfil."
+                },
+                "paymentSecurity": {
+                    "question": "Meus dados de pagamento estão seguros?",
+                    "answer": "Os pagamentos são processados pelo MercadoPago com criptografia ponta a ponta. A Hospeda nunca guarda números de cartão ou credenciais bancárias em seus servidores."
+                },
+                "newsletter": {
+                    "question": "Como me inscrevo ou cancelo a newsletter?",
+                    "answer": "Inscreva-se pelo formulário no rodapé do site. Para cancelar, todos os e-mails têm um link de descadastro no final. Também dá para gerenciar em Minha Conta > Notificações."
+                }
+            }
+        },
+        "support": {
+            "key": "support",
+            "tagline": "Se precisar falar com a gente",
+            "title": "Suporte e contato",
+            "subtitle": "Canais, horários e emergências.",
+            "items": {
+                "channels": {
+                    "question": "Quais são os canais de contato?",
+                    "answer": "E-mail (info@hospeda.com), WhatsApp, telefone e formulário de contato do site. Para temas comerciais: partners@hospeda.com. Veja a página de Contato para todos os detalhes."
+                },
+                "hours": {
+                    "question": "Quais são os horários de atendimento?",
+                    "answer": "Segunda a sexta de 9 às 18 (UTC-3, horário da Argentina). Sábados de 10 às 13. Domingos e feriados fechado. Os e-mails e formulários respondemos em até 24 horas úteis."
+                },
+                "whatsapp": {
+                    "question": "Vocês têm WhatsApp?",
+                    "answer": "Sim. O número está na página de Contato e no rodapé do site. Atendemos em horário comercial com resposta média de poucos minutos durante o dia."
+                },
+                "urgency": {
+                    "question": "E se eu tiver uma emergência fora do horário?",
+                    "answer": "Se a emergência for com uma hospedagem já reservada, contate diretamente o anfitrião pelos dados da confirmação. Se for algo crítico, mande um e-mail com assunto \"URGENTE\" e revisamos assim que possível."
+                },
+                "freePhone": {
+                    "question": "Vocês têm número 0800?",
+                    "answer": "Por enquanto não. Temos número fixo e WhatsApp com custo de chamada/mensagem normal. Para consultas por escrito recomendamos e-mail ou formulário web, que são sempre grátis."
+                },
+                "press": {
+                    "question": "E se eu for de imprensa ou mídia?",
+                    "answer": "Mande um e-mail para info@hospeda.com com assunto \"Imprensa\" ou pelo formulário de contato. Conectamos você com a área correspondente e enviamos o press kit com materiais para divulgação."
+                }
+            }
+        }
+    },
+    "stillNeedHelp": {
+        "tagline": "Ainda em dúvida?",
+        "title": "Não encontrou o que procurava",
+        "subtitle": "Escreva para a gente diretamente. Atende uma pessoa, não um bot.",
+        "ctaContact": "Ir para contato",
+        "ctaWhatsApp": "Falar pelo WhatsApp"
+    }
+}

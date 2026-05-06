@@ -1,0 +1,284 @@
+{
+    "title": "Frequently asked questions - Hospeda",
+    "description": "Everything you need to know about Hospeda: how it works, for tourists, hosts, editors, partners and more.",
+    "hero": {
+        "tagline": "We are here to help",
+        "title": "Frequently asked questions",
+        "subtitle": "Answers to the most common questions about Hospeda. If you don't find what you are looking for, just write to us.",
+        "ctaContact": "Talk to us",
+        "ctaContactHint": "Didn't find your question?"
+    },
+    "nav": {
+        "label": "Question categories",
+        "jumpTo": "Jump to:"
+    },
+    "categories": {
+        "about": {
+            "key": "about",
+            "tagline": "The basics",
+            "title": "About Hospeda",
+            "subtitle": "What we are and how the platform works.",
+            "items": {
+                "what": {
+                    "question": "What is Hospeda?",
+                    "answer": "Hospeda is a tourism portal focused on the Uruguay River coast and the Litoral Entrerriano region (Argentina). We bring together accommodations, events, destinations and articles in one place so travelers and hosts can find each other without complicated middlemen."
+                },
+                "coverage": {
+                    "question": "What area do you cover?",
+                    "answer": "We mainly cover Concepción del Uruguay, Colón, Gualeguaychú, San José, Federación, Paysandú and other towns along the Uruguay River corridor. We add new destinations as our network of accommodations and local partners grows."
+                },
+                "cost": {
+                    "question": "How much does it cost to use Hospeda as a tourist?",
+                    "answer": "Zero. Searching for accommodations, viewing photos, reading articles, checking events and contacting hosts is free, and it always will be for travelers."
+                },
+                "languages": {
+                    "question": "What languages does the site support?",
+                    "answer": "Spanish, English and Portuguese. You can switch the language from the top menu. We also handle inquiries in all three."
+                },
+                "different": {
+                    "question": "How are you different from Booking, Airbnb or other big platforms?",
+                    "answer": "We are local, we speak your language and we know the area. We don't charge hidden fees to guests, hosts manage their own pricing without penalties, and we curate editorial content about the region: events, food, culture and routes. We are a complete tourism portal, not just a bed search."
+                },
+                "scope": {
+                    "question": "Is Hospeda only for accommodations?",
+                    "answer": "No. Beyond accommodations, you'll find events, destinations with useful info to plan your trip, articles and guides about the region. It's a full tourism portal."
+                },
+                "verified": {
+                    "question": "Do you verify the accommodations that get published?",
+                    "answer": "Yes. Every accommodation goes through an initial review where we validate contact details, real photos and description. Reviews come from real guests who booked through the platform."
+                }
+            }
+        },
+        "tourists": {
+            "key": "tourists",
+            "tagline": "If you are traveling",
+            "title": "For tourists",
+            "subtitle": "Search, book and enjoy your stay.",
+            "items": {
+                "search": {
+                    "question": "How do I search for accommodation?",
+                    "answer": "From the home search bar or the Accommodations section you can filter by destination, dates, number of guests, type (cabin, hotel, house, apartment), price, services and more. You can also explore by destination directly from the map."
+                },
+                "booking": {
+                    "question": "Can I book directly through Hospeda?",
+                    "answer": "Some accommodations allow availability checks and online booking. Others connect you directly with the host via WhatsApp, email or phone. The accommodation page tells you clearly which one applies."
+                },
+                "contactOwner": {
+                    "question": "How do I contact a host?",
+                    "answer": "Each accommodation page has direct contact buttons (WhatsApp, email, phone). If you sign up, you can keep all your inquiries and favorites under a single account."
+                },
+                "reviews": {
+                    "question": "Are the reviews real?",
+                    "answer": "Yes. Only users who actually stayed at a place can leave reviews. We moderate offensive content and hosts can respond publicly. We don't edit or delete legitimate reviews."
+                },
+                "favorites": {
+                    "question": "Can I save accommodations as favorites?",
+                    "answer": "Yes. With a free account you can save accommodations, organize them in collections (for example \"March weekend\" or \"Trip with kids\") and access them from any device."
+                },
+                "issue": {
+                    "question": "What do I do if I have a problem with an accommodation?",
+                    "answer": "Write to us from the Contact page selecting \"Inquiry about an accommodation\" and adding the ID that appears in the accommodation URL. We mediate between you and the host to find a solution."
+                },
+                "petFriendly": {
+                    "question": "Are there pet-friendly accommodations?",
+                    "answer": "Yes. The search filters include a \"Pet-friendly\" toggle that narrows results to available options. Some may have restrictions (size, count), so check the accommodation conditions."
+                },
+                "events": {
+                    "question": "How do I find events in the area?",
+                    "answer": "The Events section lists parties, festivals, fairs, concerts and activities organized by category, date and destination. It's a great way to plan your trip around something you care about."
+                },
+                "cancellation": {
+                    "question": "How do cancellations work?",
+                    "answer": "Each accommodation defines its own cancellation policy, which you'll see clearly before booking. If in doubt, ask the host directly before confirming."
+                }
+            }
+        },
+        "owners": {
+            "key": "owners",
+            "tagline": "If you have a property",
+            "title": "For hosts",
+            "subtitle": "How to publish, plans and managing your property.",
+            "items": {
+                "publish": {
+                    "question": "How do I publish my property?",
+                    "answer": "Visit the Hosts section and complete the onboarding form. You'll need photos, a description, services, reference pricing and contact details. Within 24 to 48 business hours we validate and publish your property."
+                },
+                "cost": {
+                    "question": "How much does it cost to publish?",
+                    "answer": "We have a free plan with basic features and paid plans with more visibility, photos, highlights and management tools. Check the details on the Host plans page."
+                },
+                "commission": {
+                    "question": "Do you charge commission on bookings?",
+                    "answer": "No commission per booking. You keep 100% of what you agree on with the guest. What you pay is the monthly or yearly subscription of the plan you choose."
+                },
+                "ready": {
+                    "question": "What information do I need to create my listing?",
+                    "answer": "Good quality photos (minimum 6, ideally 10+), property description, services and amenities (wifi, pool, kitchen, etc.), maximum capacity, seasonal reference prices, exact location and contact details. If you have questions, we help you during onboarding."
+                },
+                "manageReviews": {
+                    "question": "How do I manage the reviews guests leave?",
+                    "answer": "From your host panel you can see every review and respond publicly. You can't delete legitimate reviews, but you can report offensive or fake content for us to review."
+                },
+                "featured": {
+                    "question": "Can I feature my property or rank higher in search results?",
+                    "answer": "Yes. Higher tier plans include home page features, search priority and \"Featured\" or \"Verified\" badges. We also offer one-off add-ons to promote during key dates (high season, long weekends)."
+                },
+                "pause": {
+                    "question": "What if I want to pause my listing?",
+                    "answer": "You can pause your listing whenever you want from the panel. The property stops appearing in searches until you reactivate it, without losing photos, reviews or settings. The subscription continues unless you cancel."
+                },
+                "payments": {
+                    "question": "How do I get paid by guests?",
+                    "answer": "You define the payment method (cash, transfer, MercadoPago, etc.) and collect directly from the guest. Hospeda does not take any cut of booking payments."
+                },
+                "support": {
+                    "question": "Do you offer host support?",
+                    "answer": "Yes. We're available via WhatsApp, email and phone during office hours. Paid plans get priority response and premium plans include dedicated support."
+                }
+            }
+        },
+        "contributors": {
+            "key": "contributors",
+            "tagline": "If you want to add content",
+            "title": "For editors and contributors",
+            "subtitle": "Articles, photos, events: how to contribute to the community.",
+            "items": {
+                "writeArticle": {
+                    "question": "I want to pitch an article, how do I do it?",
+                    "answer": "Email info@hospeda.com with the idea (topic, angle, approximate length) and a few previous samples if you have them. If it fits the editorial line we'll get back to you to coordinate and publish it under your name."
+                },
+                "submitPhotos": {
+                    "question": "Can you publish photos I've taken in the area?",
+                    "answer": "Yes, we accept photographs of landscapes, parties, food and local life. We always credit the author and, depending on the case, build a dedicated article or gallery. Send samples to info@hospeda.com."
+                },
+                "submitEvent": {
+                    "question": "How do I submit an event or activity?",
+                    "answer": "Two options: (1) load it from the events form if you have an organizer account, or (2) write to us with the info (date, place, description, photos, ticket link) and we'll publish it. It's free for events open to the public."
+                },
+                "paid": {
+                    "question": "Do you pay for contributions?",
+                    "answer": "One-off community contributions are published with author credit but no payment. For recurring contributions (weekly columns, event coverage, professional photography) we have a case-by-case paid program."
+                },
+                "placeReviews": {
+                    "question": "Can I write reviews of places and restaurants?",
+                    "answer": "Yes. We're building a food and experiences section. If you'd like to add reviews of restaurants, bars, peñas or attractions, let us know and we'll coordinate."
+                },
+                "program": {
+                    "question": "Do you have a photographer or writer program?",
+                    "answer": "We're putting together a contributors program with perks (event access, discounts at partner accommodations, credit on featured articles). If you want to join, write to us telling us what you do."
+                },
+                "languages": {
+                    "question": "Do you accept contributions in English or Portuguese?",
+                    "answer": "Yes. We welcome content in all three languages, especially useful to reach Brazilian and other international travelers visiting the region."
+                }
+            }
+        },
+        "partners": {
+            "key": "partners",
+            "tagline": "If you have a brand or institution",
+            "title": "Partners and advertising",
+            "subtitle": "Advertising, sponsoring and building partnerships.",
+            "items": {
+                "advertise": {
+                    "question": "How can I advertise on Hospeda?",
+                    "answer": "We have formats for brands, institutions and local businesses: home banners, sponsored content, destination features, newsletter presence and section sponsorships. Email partners@hospeda.com with your goal and we'll put together a proposal."
+                },
+                "formats": {
+                    "question": "What banner or sponsored content formats do you offer?",
+                    "answer": "Banners on home and sections (desktop and mobile), sponsored articles clearly tagged as \"Sponsored content\", short videos, newsletter highlights and seasonal brand campaigns. We share the media kit with metrics and pricing."
+                },
+                "tourismOffices": {
+                    "question": "Do you partner with tourism boards or municipalities?",
+                    "answer": "Yes, we work with tourism secretariats, hotel chambers and regional bodies. We build destination pages with official content, event calendars and joint campaigns. Get in touch and tell us about your institution."
+                },
+                "eventSponsorship": {
+                    "question": "How does event sponsorship work?",
+                    "answer": "Brands and businesses can sponsor specific events to appear featured on the event page, gain pre-event visibility and receive qualified traffic. We have packages from simple sponsorship to official event presentation."
+                },
+                "officialPartner": {
+                    "question": "Can I appear as an official partner?",
+                    "answer": "Yes. The official partners program includes a footer logo, mentions in related sections, editorial coverage priority and co-marketing. It's designed for brands aligned with tourism, gastronomy or regional culture."
+                },
+                "commercialContact": {
+                    "question": "Who do I contact for commercial matters?",
+                    "answer": "Email partners@hospeda.com or use the Contact page selecting \"Commercial inquiry\". We respond within 48 business hours with an initial proposal."
+                },
+                "minBudget": {
+                    "question": "Do you have a minimum advertising budget?",
+                    "answer": "We work with all sizes: from a local business that wants to appear in its destination to regional or national brands. There are formats for every budget, and we help you choose the best fit."
+                }
+            }
+        },
+        "account": {
+            "key": "account",
+            "tagline": "Your account and your data",
+            "title": "Account and privacy",
+            "subtitle": "Sign-up, personal data and settings.",
+            "items": {
+                "needAccount": {
+                    "question": "Do I need an account to use Hospeda?",
+                    "answer": "Not for browsing and searching. Yes if you want to save favorites, leave reviews, get email updates or publish as a host or organizer. Creating an account is free and quick."
+                },
+                "deleteAccount": {
+                    "question": "How do I delete my account?",
+                    "answer": "From My Account > Settings > Delete account. We remove your personal data within 30 days according to our privacy policy. The reviews you left may remain anonymously."
+                },
+                "dataStored": {
+                    "question": "What data do you store about me?",
+                    "answer": "Sign-up data (name, email), preferences (language, dark mode, favorites), anonymous search history and, if you booked, booking data. We don't sell data to third parties. See the Privacy policy for full details."
+                },
+                "themeLanguage": {
+                    "question": "How do I change the language or dark mode?",
+                    "answer": "From the header menu, in the settings icon. Your preference is saved in your browser and, if you have an account, also tied to your profile."
+                },
+                "paymentSecurity": {
+                    "question": "Is my payment data secure?",
+                    "answer": "Payments are processed by MercadoPago with end-to-end encryption. Hospeda never stores card numbers or banking credentials on its servers."
+                },
+                "newsletter": {
+                    "question": "How do I subscribe or unsubscribe from the newsletter?",
+                    "answer": "Subscribe from the form at the bottom of the site. To unsubscribe, every email includes an unsubscribe link at the bottom. You can also manage it from My Account > Notifications."
+                }
+            }
+        },
+        "support": {
+            "key": "support",
+            "tagline": "If you need to reach us",
+            "title": "Support and contact",
+            "subtitle": "Channels, hours and emergencies.",
+            "items": {
+                "channels": {
+                    "question": "What are the contact channels?",
+                    "answer": "Email (info@hospeda.com), WhatsApp, phone and the contact form on the site. For commercial matters: partners@hospeda.com. Check the Contact page for full details."
+                },
+                "hours": {
+                    "question": "What are your hours?",
+                    "answer": "Monday to Friday 9 to 18 (UTC-3, Argentina time). Saturday 10 to 13. Closed on Sundays and holidays. Emails and forms are answered within 24 business hours."
+                },
+                "whatsapp": {
+                    "question": "Do you have WhatsApp?",
+                    "answer": "Yes. The number is on the Contact page and at the site footer. We respond during office hours, usually within minutes during the day."
+                },
+                "urgency": {
+                    "question": "What if I have an emergency outside hours?",
+                    "answer": "If the emergency is about an already booked accommodation, contact the host directly using the details in your booking confirmation. If it's something critical, email us with subject \"URGENT\" and we'll respond as soon as we can."
+                },
+                "freePhone": {
+                    "question": "Do you have a toll-free number?",
+                    "answer": "Not yet. We have a regular phone line and WhatsApp at standard call/message rates. For written inquiries we recommend email or the web form, which are always free."
+                },
+                "press": {
+                    "question": "What if I'm from press or media?",
+                    "answer": "Email info@hospeda.com with subject \"Press\" or use the contact form. We connect you with the right area and share the press kit with materials for distribution."
+                }
+            }
+        }
+    },
+    "stillNeedHelp": {
+        "tagline": "Still wondering?",
+        "title": "Didn't find what you were looking for",
+        "subtitle": "Write to us directly. A real person answers, not a bot.",
+        "ctaContact": "Go to contact",
+        "ctaWhatsApp": "Message us on WhatsApp"
+    }
+}

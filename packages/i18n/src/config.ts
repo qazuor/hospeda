@@ -31,6 +31,7 @@ export const namespaces = [
     'owners',
     'contact',
     'about',
+    'faq',
     'benefits',
     'error',
     'privacy',
@@ -134,6 +135,7 @@ import destinationEs from './locales/es/destination.json';
 import errorEs from './locales/es/error.json';
 import eventEs from './locales/es/event.json';
 import exchangeRateEs from './locales/es/exchange-rate.json';
+import faqEs from './locales/es/faq.json';
 import fieldsEs from './locales/es/fields.json';
 import footerEs from './locales/es/footer.json';
 import homeEs from './locales/es/home.json';
@@ -179,6 +181,7 @@ import destinationEn from './locales/en/destination.json';
 import errorEn from './locales/en/error.json';
 import eventEn from './locales/en/event.json';
 import exchangeRateEn from './locales/en/exchange-rate.json';
+import faqEn from './locales/en/faq.json';
 import fieldsEn from './locales/en/fields.json';
 import footerEn from './locales/en/footer.json';
 import homeEn from './locales/en/home.json';
@@ -224,6 +227,7 @@ import destinationPt from './locales/pt/destination.json';
 import errorPt from './locales/pt/error.json';
 import eventPt from './locales/pt/event.json';
 import exchangeRatePt from './locales/pt/exchange-rate.json';
+import faqPt from './locales/pt/faq.json';
 import fieldsPt from './locales/pt/fields.json';
 import footerPt from './locales/pt/footer.json';
 import homePt from './locales/pt/home.json';
@@ -261,6 +265,7 @@ const rawTranslations = {
         error: errorEs,
         events: eventEs,
         'exchange-rate': exchangeRateEs,
+        faq: faqEs,
         footer: footerEs,
         home: homeEs,
         host: hostEs,
@@ -306,6 +311,7 @@ const rawTranslations = {
         error: errorEn,
         events: eventEn,
         'exchange-rate': exchangeRateEn,
+        faq: faqEn,
         footer: footerEn,
         home: homeEn,
         host: hostEn,
@@ -351,6 +357,7 @@ const rawTranslations = {
         error: errorPt,
         events: eventPt,
         'exchange-rate': exchangeRatePt,
+        faq: faqPt,
         footer: footerPt,
         home: homePt,
         host: hostPt,
