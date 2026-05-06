@@ -110,6 +110,58 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 
 		<ClientRouter />
 
+		{feedbackEnabled && (
+			<script is:inline nonce={cspNonce}>{`
+				/* Feedback nav-history bootstrap (Opción A).
+				   Captures navigation BEFORE the FAB island hydrates with
+				   client:idle, persists to sessionStorage so the FAB picks
+				   it up on hydration and across full-page reloads. */
+				(function () {
+					if (window.__hospedaFeedbackBootstrapped) return;
+					window.__hospedaFeedbackBootstrapped = true;
+					var SS_KEY = '__hospeda_feedback_nav__';
+					var MAX = 10;
+					function read() {
+						try {
+							var raw = sessionStorage.getItem(SS_KEY);
+							var parsed = raw ? JSON.parse(raw) : [];
+							return Array.isArray(parsed) ? parsed : [];
+						} catch (e) { return []; }
+					}
+					function write(nav) {
+						try { sessionStorage.setItem(SS_KEY, JSON.stringify(nav)); } catch (e) {}
+					}
+					function push(url) {
+						if (!url) return;
+						var nav = read();
+						if (nav[nav.length - 1] === url) return;
+						nav.push(url);
+						if (nav.length > MAX) nav = nav.slice(-MAX);
+						write(nav);
+					}
+					function current() {
+						try { return location.pathname + location.search; }
+						catch (e) { return ''; }
+					}
+					push(current());
+					var origPush = history.pushState;
+					var origReplace = history.replaceState;
+					history.pushState = function () {
+						var r = origPush.apply(this, arguments);
+						push(current());
+						return r;
+					};
+					history.replaceState = function () {
+						var r = origReplace.apply(this, arguments);
+						push(current());
+						return r;
+					};
+					window.addEventListener('popstate', function () { push(current()); });
+					document.addEventListener('astro:after-swap', function () { push(current()); });
+				})();
+			`}</script>
+		)}
+
 		<!-- Named slot for page-specific head content (SEOHead, JSON-LD, etc.) -->
 		<slot name="head" />
 	</head>

@@ -75,28 +75,29 @@ function textToNavHistory(text: string): string[] | undefined {
 }
 
 /**
- * Serializes interactions into a `tag | selector | timestamp` per-line string.
+ * Format a single interaction for the readonly preview textarea.
+ *
+ * Order of preference for the visible label: `text` → `ariaLabel` → tag+selector.
+ * When there is no enrichment we fall back to the legacy `tag | selector` format
+ * so older payloads still render reasonably.
  */
-function interactionsToText(interactions: FeedbackInteraction[] | undefined): string {
-    if (!interactions) return '';
-    return interactions.map((i) => `${i.type} | ${i.selector} | ${i.timestamp}`).join('\n');
+function formatInteraction(i: FeedbackInteraction): string {
+    const event = i.event ?? 'click';
+    const label = i.text ?? i.ariaLabel ?? `${i.type.toLowerCase()} ${i.selector}`;
+    const parts: string[] = [`${event} "${label}"`];
+    if (i.domPath) parts.push(i.domPath);
+    if (i.href) parts.push(`→ ${i.href}`);
+    parts.push(i.timestamp);
+    return parts.join(' · ');
 }
 
 /**
- * Parses textarea input back into a structured interactions array. Lines that
- * cannot be parsed are skipped. Returns `undefined` for empty input.
+ * Serializes interactions into a human-readable per-line string for the
+ * readonly preview textarea.
  */
-function textToInteractions(text: string): FeedbackInteraction[] | undefined {
-    const result: FeedbackInteraction[] = [];
-    for (const line of text.split('\n')) {
-        const trimmed = line.trim();
-        if (!trimmed) continue;
-        const parts = trimmed.split('|').map((p) => p.trim());
-        const [type, selector, timestamp] = parts;
-        if (!type || !selector || !timestamp) continue;
-        result.push({ type, selector, timestamp });
-    }
-    return result.length > 0 ? result : undefined;
+function interactionsToText(interactions: FeedbackInteraction[] | undefined): string {
+    if (!interactions) return '';
+    return interactions.map(formatInteraction).join('\n');
 }
 
 /** Serializes a console errors array into a textarea-friendly string. */
@@ -801,22 +802,34 @@ export function StepDetails({
                                 </div>
 
                                 <div className="techField techFieldFull">
-                                    <label
-                                        htmlFor="tech-last-interactions"
-                                        className="techFieldLabel"
-                                    >
-                                        {FEEDBACK_STRINGS.techDetails.lastInteractions}
-                                    </label>
+                                    <div className="techFieldHeader">
+                                        <label
+                                            htmlFor="tech-last-interactions"
+                                            className="techFieldLabel"
+                                        >
+                                            {FEEDBACK_STRINGS.techDetails.lastInteractions}
+                                        </label>
+                                        {environment.lastInteractions &&
+                                            environment.lastInteractions.length > 0 && (
+                                                <button
+                                                    type="button"
+                                                    className="techFieldClear"
+                                                    onClick={() =>
+                                                        onEnvironmentChange(
+                                                            'lastInteractions',
+                                                            undefined
+                                                        )
+                                                    }
+                                                >
+                                                    {FEEDBACK_STRINGS.techDetails.clearField}
+                                                </button>
+                                            )}
+                                    </div>
                                     <Textarea
                                         id="tech-last-interactions"
                                         className="techTextarea"
                                         value={lastInteractionsText}
-                                        onChange={(e) =>
-                                            onEnvironmentChange(
-                                                'lastInteractions',
-                                                textToInteractions(e.target.value)
-                                            )
-                                        }
+                                        readOnly
                                     />
                                 </div>
                             </div>

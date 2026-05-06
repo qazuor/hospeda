@@ -639,7 +639,10 @@ describe('LinearFeedbackService', () => {
                         {
                             type: 'BUTTON',
                             selector: '#pay-btn',
-                            timestamp: '2026-03-06T11:59:00Z'
+                            timestamp: '2026-03-06T11:59:00Z',
+                            event: 'click' as const,
+                            text: 'Pagar ahora',
+                            domPath: 'main>form>button'
                         }
                     ]
                 }
@@ -658,8 +661,9 @@ describe('LinearFeedbackService', () => {
             expect(stripped).toContain('ff_beta=true');
             expect(stripped).toContain('1. /home');
             expect(stripped).toContain('3. /checkout/payment');
-            expect(description).toContain('BUTTON');
-            expect(stripped).toContain('#pay-btn');
+            expect(stripped).toContain('click');
+            expect(stripped).toContain('Pagar ahora');
+            expect(stripped).toContain('main>form>button');
         });
 
         it('should omit Contexto when no contextual data is present', async () => {

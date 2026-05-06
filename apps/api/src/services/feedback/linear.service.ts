@@ -51,7 +51,10 @@ export interface FeedbackAttachment {
 }
 
 /**
- * Single recorded user interaction (privacy-preserving structural info only).
+ * Single recorded user interaction.
+ *
+ * Includes a short visible label, optional href, and DOM path so the issue
+ * reviewer can actually locate where the user clicked.
  */
 export interface FeedbackInteraction {
     /** Element tag name (e.g. "BUTTON", "A", "INPUT") */
@@ -60,6 +63,16 @@ export interface FeedbackInteraction {
     selector: string;
     /** ISO 8601 timestamp */
     timestamp: string;
+    /** Event kind that produced this interaction */
+    event?: 'click' | 'submit';
+    /** Visible text of the element (truncated) */
+    text?: string;
+    /** aria-label value when present */
+    ariaLabel?: string;
+    /** href for `<a>` targets (same-origin links only) */
+    href?: string;
+    /** Short DOM ancestry path */
+    domPath?: string;
 }
 
 /**
@@ -546,10 +559,18 @@ export class LinearFeedbackService {
         }
         if (env.lastInteractions && env.lastInteractions.length > 0) {
             const interactionLines = env.lastInteractions
-                .map(
-                    (it) =>
-                        `- ${escapeMarkdown(it.type)} | ${escapeMarkdown(it.selector)} | ${escapeMarkdown(it.timestamp)}`
-                )
+                .map((it) => {
+                    const event = it.event ?? 'click';
+                    const label =
+                        it.text ?? it.ariaLabel ?? `${it.type.toLowerCase()} ${it.selector}`;
+                    const parts = [
+                        `- **${escapeMarkdown(event)}** "${escapeMarkdown(label)}"`,
+                        it.domPath ? `\`${escapeMarkdown(it.domPath)}\`` : null,
+                        it.href ? `→ ${escapeMarkdown(it.href)}` : null,
+                        `_${escapeMarkdown(it.timestamp)}_`
+                    ].filter(Boolean);
+                    return parts.join(' · ');
+                })
                 .join('\n');
             contextoBlocks.push(`**Ultimas interacciones:**\n${interactionLines}`);
         }

@@ -57,7 +57,20 @@ export const DEVICE_TYPE_IDS = ['mobile', 'tablet', 'desktop'] as const;
 export const COLOR_SCHEME_IDS = ['light', 'dark'] as const;
 
 /**
- * Schema for a single recorded user interaction (privacy-preserving structural info only).
+ * Valid interaction event types we track.
+ *
+ * `click` covers button/link presses, `submit` covers form submissions.
+ * Other event types are intentionally left out to bound the buffer noise.
+ */
+export const INTERACTION_EVENT_IDS = ['click', 'submit'] as const;
+
+/**
+ * Schema for a single recorded user interaction.
+ *
+ * Captures structural info plus a few non-sensitive enrichments (visible
+ * label, target href, short DOM path) so reviewers can actually figure out
+ * what the user did. Inputs in private fields and elements marked with
+ * `data-feedback-skip` / `data-private` are filtered out at capture time.
  */
 export const feedbackInteractionSchema = z.object({
     /** Element tag (e.g. "BUTTON", "A", "INPUT") */
@@ -65,7 +78,17 @@ export const feedbackInteractionSchema = z.object({
     /** Short selector hint: id, first className, or tag-only fallback */
     selector: z.string(),
     /** ISO datetime string */
-    timestamp: z.string()
+    timestamp: z.string(),
+    /** Event kind that produced this interaction */
+    event: z.enum(INTERACTION_EVENT_IDS).optional(),
+    /** Visible text of the element (truncated to 60 chars) */
+    text: z.string().max(60).optional(),
+    /** `aria-label` value when present (truncated to 60 chars) */
+    ariaLabel: z.string().max(60).optional(),
+    /** href for `<a>` targets (same-origin links only, max 200 chars) */
+    href: z.string().max(200).optional(),
+    /** Short DOM ancestry path, e.g. `nav>div>button` (max 120 chars) */
+    domPath: z.string().max(120).optional()
 });
 
 /**

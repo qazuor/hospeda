@@ -86,15 +86,40 @@ describe('runtime-trackers', () => {
             // Re-installation must not duplicate the listener
             expect(occurrences).toBe(1);
         });
+
+        it('should restore navigation history from sessionStorage on install', () => {
+            // Simulate state previously persisted by the BaseLayout bootstrap
+            // script, then install — the buffer should pick it up.
+            window.sessionStorage.setItem(
+                '__hospeda_feedback_nav__',
+                JSON.stringify(['/landing', '/landing/details'])
+            );
+            installRuntimeTrackers();
+
+            const history = getNavigationHistory();
+            expect(history).toContain('/landing');
+            expect(history).toContain('/landing/details');
+        });
+
+        it('should mirror new navigations to sessionStorage', () => {
+            installRuntimeTrackers();
+
+            window.history.pushState({}, '', '/persisted');
+
+            const stored = window.sessionStorage.getItem('__hospeda_feedback_nav__');
+            expect(stored).toBeTruthy();
+            const parsed = JSON.parse(stored ?? '[]') as string[];
+            expect(parsed[parsed.length - 1]).toBe('/persisted');
+        });
     });
 
     describe('last interactions', () => {
-        it('should record click target as a structural interaction', () => {
+        it('should record click target with visible text and DOM path', () => {
             installRuntimeTrackers();
 
             const button = document.createElement('button');
             button.id = 'submit-btn';
-            button.textContent = 'Should NOT appear in interactions';
+            button.textContent = 'Reservar ahora';
             document.body.appendChild(button);
 
             button.click();
@@ -102,13 +127,62 @@ describe('runtime-trackers', () => {
             const interactions = getLastInteractions();
             expect(interactions).toBeDefined();
             expect(interactions?.length).toBe(1);
-            expect(interactions?.[0]?.type).toBe('BUTTON');
-            expect(interactions?.[0]?.selector).toBe('#submit-btn');
-            // Privacy: textContent must NOT leak into the buffer
-            const stringified = JSON.stringify(interactions);
-            expect(stringified).not.toContain('Should NOT appear');
+            const entry = interactions?.[0];
+            expect(entry?.type).toBe('BUTTON');
+            expect(entry?.selector).toBe('#submit-btn');
+            expect(entry?.event).toBe('click');
+            expect(entry?.text).toBe('Reservar ahora');
+            expect(entry?.domPath).toBeDefined();
 
             document.body.removeChild(button);
+        });
+
+        it('should capture aria-label when present', () => {
+            installRuntimeTrackers();
+
+            const button = document.createElement('button');
+            button.setAttribute('aria-label', 'Cerrar dialogo');
+            button.className = 'close-btn';
+            document.body.appendChild(button);
+
+            button.click();
+
+            const interactions = getLastInteractions();
+            expect(interactions?.[0]?.ariaLabel).toBe('Cerrar dialogo');
+
+            document.body.removeChild(button);
+        });
+
+        it('should capture same-origin href on anchor clicks', () => {
+            installRuntimeTrackers();
+
+            const a = document.createElement('a');
+            a.href = '/destinos/concepcion';
+            a.textContent = 'Concepcion';
+            document.body.appendChild(a);
+
+            a.click();
+
+            const interactions = getLastInteractions();
+            expect(interactions?.[0]?.href).toBe('/destinos/concepcion');
+
+            document.body.removeChild(a);
+        });
+
+        it('should NOT capture cross-origin hrefs', () => {
+            installRuntimeTrackers();
+
+            const a = document.createElement('a');
+            a.href = 'https://external.example.com/page';
+            a.textContent = 'External';
+            document.body.appendChild(a);
+
+            a.click();
+
+            const interactions = getLastInteractions();
+            expect(interactions?.[0]?.href).toBeUndefined();
+
+            document.body.removeChild(a);
         });
 
         it('should never include input values in recorded interactions', () => {
@@ -127,6 +201,75 @@ describe('runtime-trackers', () => {
             expect(stringified).not.toContain('super-secret-value');
 
             document.body.removeChild(input);
+        });
+
+        it('should skip clicks on password / sensitive inputs entirely', () => {
+            installRuntimeTrackers();
+
+            const pwd = document.createElement('input');
+            pwd.type = 'password';
+            pwd.value = 'p@ssw0rd';
+            document.body.appendChild(pwd);
+
+            pwd.click();
+
+            expect(getLastInteractions()).toBeUndefined();
+            document.body.removeChild(pwd);
+        });
+
+        it('should skip clicks inside elements marked data-feedback-skip', () => {
+            installRuntimeTrackers();
+
+            const wrap = document.createElement('div');
+            wrap.setAttribute('data-feedback-skip', '');
+            const inner = document.createElement('button');
+            inner.id = 'private-btn';
+            inner.textContent = 'Hidden';
+            wrap.appendChild(inner);
+            document.body.appendChild(wrap);
+
+            inner.click();
+
+            expect(getLastInteractions()).toBeUndefined();
+            document.body.removeChild(wrap);
+        });
+
+        it('should walk up to the actionable ancestor when clicking nested children', () => {
+            installRuntimeTrackers();
+
+            const button = document.createElement('button');
+            button.id = 'icon-btn';
+            button.setAttribute('aria-label', 'Menu');
+            const icon = document.createElement('span');
+            icon.textContent = '*';
+            button.appendChild(icon);
+            document.body.appendChild(button);
+
+            icon.click();
+
+            const interactions = getLastInteractions();
+            expect(interactions?.[0]?.type).toBe('BUTTON');
+            expect(interactions?.[0]?.selector).toBe('#icon-btn');
+
+            document.body.removeChild(button);
+        });
+
+        it('should record submit events on forms', () => {
+            installRuntimeTrackers();
+
+            const form = document.createElement('form');
+            form.id = 'login-form';
+            // Avoid actual navigation in jsdom
+            form.addEventListener('submit', (e) => e.preventDefault());
+            document.body.appendChild(form);
+
+            form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+            const interactions = getLastInteractions();
+            expect(interactions?.[0]?.event).toBe('submit');
+            expect(interactions?.[0]?.type).toBe('FORM');
+
+            document.body.removeChild(form);
         });
 
         it('should cap interactions buffer at 5 entries', () => {

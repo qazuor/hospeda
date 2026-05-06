@@ -161,6 +161,34 @@
     color: var(--fb-foreground-muted);
 }
 
+.feedback-root .techFieldHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.125rem;
+}
+
+.feedback-root .techFieldHeader .techFieldLabel {
+    margin-bottom: 0;
+}
+
+.feedback-root .techFieldClear {
+    background: none;
+    border: 1px solid var(--fb-border);
+    border-radius: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.6875rem;
+    color: var(--fb-foreground-muted);
+    cursor: pointer;
+    line-height: 1;
+}
+
+.feedback-root .techFieldClear:hover {
+    background: var(--fb-surface-hover, rgba(0, 0, 0, 0.04));
+    color: var(--fb-foreground);
+}
+
 .feedback-root .techConsoleNote {
     font-size: var(--fb-font-size-xs);
     color: var(--fb-foreground-muted);
