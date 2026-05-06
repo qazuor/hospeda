@@ -1,8 +1,26 @@
 {
     "title": "Contact - Hospeda",
     "description": "Get in touch with us. We're here to help you with any questions about accommodations and travel.",
-    "heading": "Contact Us",
+    "tagline": "Reach out",
+    "heading": "Contact us",
     "subheading": "We're here to help. Reach out to us with any questions",
+    "subtitle": "Have a question or suggestion? Fill out the form and we'll get back to you shortly.",
+    "email": {
+        "label": "Email",
+        "value": "info@hospeda.com"
+    },
+    "phone": {
+        "label": "Phone",
+        "value": "+54 3442 453797"
+    },
+    "whatsapp": {
+        "label": "WhatsApp",
+        "value": "+54 9 3442 453797"
+    },
+    "address": {
+        "label": "Address",
+        "value": "Concepción del Uruguay, Entre Ríos, Argentina"
+    },
     "form": {
         "title": "Send us a message",
         "firstName": "First name",
@@ -31,13 +49,19 @@
             "messageRequired": "Message is required",
             "messageMinLength": "Message must be at least 20 characters"
         },
+        "messagePlaceholder": "Write your question or suggestion here...",
+        "accommodationIdPlaceholder": "Accommodation UUID (e.g., 550e8400-...)",
         "successMessage": "Your message was sent successfully",
+        "successMsg": "Thanks for reaching out. We'll get back to you shortly.",
         "errorMessage": "Could not send the message. Please try again.",
         "ariaLabel": "Contact form",
         "accommodationId": "Accommodation ID",
         "lastNameError": "Last name must be at least 2 characters",
         "emailError": "Please enter a valid email address",
+        "messageError": "Message must be at least 10 characters",
+        "accommodationIdError": "Accommodation ID is required and must be a valid UUID",
         "errorGeneral": "Something went wrong. Please try again later.",
+        "errorRateLimit": "Too many attempts. Please wait a minute and try again.",
         "sending": "Sending...",
         "successTitle": "Message sent!",
         "type": "Inquiry type",
@@ -48,12 +72,77 @@
         "title": "Contact information",
         "address": {
             "label": "Address",
-            "value": "123 Main Street\nCity, Country 12345"
+            "value": "Concepción del Uruguay, Entre Ríos, Argentina"
         },
         "email": {
             "label": "Email",
-            "value": "contact@hospeda.com"
+            "value": "info@hospeda.com"
         }
+    },
+    "channels": {
+        "tagline": "Other channels",
+        "title": "Let's talk however you prefer",
+        "subtitle": "Pick the channel that works best for you. We'll reply as soon as possible.",
+        "email": {
+            "title": "Email",
+            "description": "For detailed or formal inquiries.",
+            "cta": "Send us an email"
+        },
+        "phone": {
+            "title": "Phone",
+            "description": "Monday to Friday, 9 AM to 6 PM (UTC-3).",
+            "cta": "Call us"
+        },
+        "whatsapp": {
+            "title": "WhatsApp",
+            "description": "Quick replies during business hours.",
+            "cta": "Chat on WhatsApp"
+        },
+        "social": {
+            "title": "Social media",
+            "description": "Follow us for news and promos.",
+            "cta": "View our profiles"
+        }
+    },
+    "hours": {
+        "tagline": "When we're here",
+        "title": "Office hours",
+        "subtitle": "We reply within 24 business hours.",
+        "weekdays": "Monday to Friday",
+        "weekdaysValue": "9:00 AM - 6:00 PM",
+        "saturday": "Saturdays",
+        "saturdayValue": "10:00 AM - 1:00 PM",
+        "sunday": "Sundays and holidays",
+        "sundayValue": "Closed",
+        "timezone": "Argentina time (UTC-3)"
+    },
+    "faq": {
+        "tagline": "Frequently asked",
+        "title": "Before reaching out",
+        "subtitle": "Maybe your question already has an answer.",
+        "items": {
+            "responseTime": {
+                "question": "How long until I get a reply?",
+                "answer": "We reply within 24 business hours. Weekends may take a bit longer."
+            },
+            "accommodationIssue": {
+                "question": "I have an issue with a booking",
+                "answer": "Pick \"Accommodation inquiry\" in the form and add the accommodation ID. This helps us assist you faster."
+            },
+            "ownerInquiry": {
+                "question": "I want to list my property on Hospeda",
+                "answer": "Visit our owners page for plans and onboarding. If you need help, write to us."
+            },
+            "languages": {
+                "question": "What languages do you speak?",
+                "answer": "We speak Spanish, English, and Portuguese. Write to us in the language you prefer."
+            }
+        }
+    },
+    "trust": {
+        "responseTime": "We reply within 24 hours",
+        "secure": "Your data is protected",
+        "humans": "A real person, not a bot"
     },
     "success": "Thanks for reaching out!",
     "error": "Something went wrong while sending your message.",

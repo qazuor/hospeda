@@ -42,10 +42,16 @@ const { t } = createTranslations(locale);
 
 			<div class="contact-page__info" data-reveal="up">
 				<p class="contact-page__info-item">
-					<strong>{t('contact.email.label', 'Email')}:</strong> info@hospeda.com
+					<strong>{t('contact.email.label', 'Email')}:</strong>
+					<a class="contact-page__info-link" href={`mailto:${t('contact.email.value', 'info@hospeda.com')}`}>
+						{t('contact.email.value', 'info@hospeda.com')}
+					</a>
 				</p>
 				<p class="contact-page__info-item">
-					<strong>{t('contact.phone.label', 'Teléfono')}:</strong> +54 3442 453797
+					<strong>{t('contact.phone.label', 'Teléfono')}:</strong>
+					<a class="contact-page__info-link" href={`tel:${t('contact.phone.value', '+54 3442 453797').replace(/\s/g, '')}`}>
+						{t('contact.phone.value', '+54 3442 453797')}
+					</a>
 				</p>
 			</div>
 		</div>
@@ -62,45 +68,37 @@ const { t } = createTranslations(locale);
 
 	.contact-page__tagline {
 		font-family: var(--font-decorative);
-		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+		font-size: var(--text-tagline);
 		color: var(--brand-accent);
 		font-style: italic;
-		margin: 0 0 var(--space-2);
+		margin: 0 0 var(--space-2, 0.5rem);
 	}
 
 	.contact-page__title {
 		font-family: var(--font-heading);
 		font-weight: 700;
-		font-size: clamp(1.75rem, 4vw, 2.5rem);
-		color: var(--foreground);
-		margin: 0 0 var(--space-4);
+		font-size: var(--text-h2);
+		color: var(--core-foreground);
+		margin: 0 0 var(--space-4, 1rem);
 	}
 
 	.contact-page__subtitle {
 		font-family: var(--font-sans);
-		font-size: var(--text-body-lg);
-		color: var(--muted-foreground);
+		font-size: var(--text-body);
+		color: var(--core-muted-foreground);
 		max-width: 55ch;
-		margin: 0 auto var(--space-8);
+		margin: 0 auto var(--space-8, 2rem);
 		line-height: 1.6;
 	}
 
 	.contact-page__form-area {
-		max-width: 600px;
-		margin: 0 auto var(--space-8);
-	}
-
-	.contact-page__placeholder {
-		background-color: var(--card);
-		border: 1px dashed var(--border);
-		border-radius: var(--radius-card);
-		padding: var(--space-8);
-		color: var(--muted-foreground);
+		max-width: 640px;
+		margin: 0 auto var(--space-8, 2rem);
 	}
 
 	.contact-page__info {
 		display: flex;
-		gap: var(--space-6);
+		gap: var(--space-6, 1.5rem);
 		justify-content: center;
 		flex-wrap: wrap;
 	}
@@ -108,7 +106,20 @@ const { t } = createTranslations(locale);
 	.contact-page__info-item {
 		font-family: var(--font-sans);
 		font-size: var(--text-body);
-		color: var(--foreground);
+		color: var(--core-foreground);
 		margin: 0;
+	}
+
+	.contact-page__info-link {
+		color: var(--brand-primary);
+		text-decoration: none;
+		margin-left: var(--space-2, 0.5rem);
+		transition: color var(--duration-fast) ease;
+	}
+
+	.contact-page__info-link:hover,
+	.contact-page__info-link:focus-visible {
+		color: var(--brand-accent);
+		text-decoration: underline;
 	}
 </style>

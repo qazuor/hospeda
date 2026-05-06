@@ -1,10 +1,28 @@
 {
     "title": "Contacto - Hospeda",
-    "description": "Ponte en contacto con nosotros. Estamos aquí para ayudarte con cualquier pregunta sobre alojamientos y viajes.",
-    "heading": "Contáctanos",
-    "subheading": "Estamos aquí para ayudarte. Ponte en contacto con nosotros para cualquier consulta",
+    "description": "Ponete en contacto con nosotros. Estamos para ayudarte con cualquier consulta sobre alojamientos y viajes.",
+    "tagline": "Escribinos",
+    "heading": "Contactanos",
+    "subheading": "Estamos aquí para ayudarte. Ponete en contacto con nosotros para cualquier consulta",
+    "subtitle": "¿Tenés alguna consulta o sugerencia? Completá el formulario y te responderemos a la brevedad.",
+    "email": {
+        "label": "Email",
+        "value": "info@hospeda.com"
+    },
+    "phone": {
+        "label": "Teléfono",
+        "value": "+54 3442 453797"
+    },
+    "whatsapp": {
+        "label": "WhatsApp",
+        "value": "+54 9 3442 453797"
+    },
+    "address": {
+        "label": "Dirección",
+        "value": "Concepción del Uruguay, Entre Ríos, Argentina"
+    },
     "form": {
-        "title": "Envíanos un mensaje",
+        "title": "Envianos un mensaje",
         "firstName": "Nombre",
         "lastName": "Apellido",
         "name": "Nombre",
@@ -31,13 +49,19 @@
             "messageRequired": "El mensaje es obligatorio",
             "messageMinLength": "El mensaje debe tener al menos 20 caracteres"
         },
+        "messagePlaceholder": "Escribí tu consulta o sugerencia aquí...",
+        "accommodationIdPlaceholder": "UUID del alojamiento (ej: 550e8400-...)",
         "successMessage": "Tu mensaje fue enviado correctamente",
+        "successMsg": "Gracias por escribirnos. Te responderemos a la brevedad.",
         "errorMessage": "No se pudo enviar el mensaje. Intentá nuevamente.",
         "ariaLabel": "Formulario de contacto",
         "accommodationId": "ID de alojamiento",
         "lastNameError": "El apellido debe tener al menos 2 caracteres",
         "emailError": "Por favor ingresá un email válido",
+        "messageError": "El mensaje debe tener al menos 10 caracteres",
+        "accommodationIdError": "El ID del alojamiento es requerido y debe ser un UUID válido",
         "errorGeneral": "Ocurrió un error. Intentá de nuevo más tarde.",
+        "errorRateLimit": "Demasiados intentos. Esperá un minuto y volvé a intentar.",
         "sending": "Enviando...",
         "successTitle": "¡Mensaje enviado!",
         "type": "Tipo de consulta",
@@ -48,21 +72,86 @@
         "title": "Información de contacto",
         "address": {
             "label": "Dirección",
-            "value": "Calle Principal 123\nCiudad, País 12345"
+            "value": "Concepción del Uruguay, Entre Ríos, Argentina"
         },
         "email": {
             "label": "Email",
-            "value": "contacto@hospeda.com"
+            "value": "info@hospeda.com"
         }
+    },
+    "channels": {
+        "tagline": "Otros canales",
+        "title": "Hablemos como prefieras",
+        "subtitle": "Elegí el canal que más te convenga. Te respondemos lo antes posible.",
+        "email": {
+            "title": "Email",
+            "description": "Para consultas detalladas y formales.",
+            "cta": "Escribinos un mail"
+        },
+        "phone": {
+            "title": "Teléfono",
+            "description": "Lunes a viernes, 9 a 18 hs (UTC-3).",
+            "cta": "Llamanos"
+        },
+        "whatsapp": {
+            "title": "WhatsApp",
+            "description": "Respuesta rápida en horario de oficina.",
+            "cta": "Chatear por WhatsApp"
+        },
+        "social": {
+            "title": "Redes sociales",
+            "description": "Seguinos para novedades y promos.",
+            "cta": "Ver redes"
+        }
+    },
+    "hours": {
+        "tagline": "Cuándo estamos",
+        "title": "Horarios de atención",
+        "subtitle": "Te respondemos en menos de 24 horas hábiles.",
+        "weekdays": "Lunes a viernes",
+        "weekdaysValue": "9:00 a 18:00",
+        "saturday": "Sábados",
+        "saturdayValue": "10:00 a 13:00",
+        "sunday": "Domingos y feriados",
+        "sundayValue": "Cerrado",
+        "timezone": "Hora de Argentina (UTC-3)"
+    },
+    "faq": {
+        "tagline": "Preguntas frecuentes",
+        "title": "Antes de escribirnos",
+        "subtitle": "Quizás tu pregunta ya tiene respuesta.",
+        "items": {
+            "responseTime": {
+                "question": "¿Cuánto tardan en responder?",
+                "answer": "Respondemos en menos de 24 horas hábiles. En fines de semana puede demorar un poco más."
+            },
+            "accommodationIssue": {
+                "question": "Tengo un problema con un alojamiento que reservé",
+                "answer": "Seleccioná \"Consulta sobre un alojamiento\" en el formulario y agregá el ID del alojamiento. Esto nos permite ayudarte más rápido."
+            },
+            "ownerInquiry": {
+                "question": "Quiero publicar mi alojamiento en Hospeda",
+                "answer": "Visitá la página de propietarios para conocer planes y empezar el alta. Si necesitás ayuda, escribinos."
+            },
+            "languages": {
+                "question": "¿En qué idiomas atienden?",
+                "answer": "Atendemos en español, inglés y portugués. Escribinos en el idioma que prefieras."
+            }
+        }
+    },
+    "trust": {
+        "responseTime": "Respondemos en menos de 24 hs",
+        "secure": "Tus datos están protegidos",
+        "humans": "Te atiende una persona, no un bot"
     },
     "success": "¡Gracias por contactarnos!",
     "error": "Ocurrió un error al enviar el mensaje.",
     "page": {
         "title": "Contacto",
-        "description": "Contacta con Hospeda. Estamos aquí para ayudarte con tus consultas sobre alojamiento en Concepción del Uruguay",
+        "description": "Contactá con Hospeda. Estamos para ayudarte con tus consultas sobre alojamiento en Concepción del Uruguay",
         "contactInfo": "Información de contacto",
         "officeHours": "Horario de atención",
         "officeHoursValue": "Lunes a Viernes, 9:00 - 18:00",
-        "followUs": "Síguenos"
+        "followUs": "Seguinos"
     }
 }

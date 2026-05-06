@@ -1,8 +1,26 @@
 {
     "title": "Contato - Hospeda",
-    "description": "Entre em contato conosco. Estamos aqui para te ajudar com qualquer duvida sobre acomodacoes e viagens.",
-    "heading": "Fale Conosco",
+    "description": "Entre em contato conosco. Estamos aqui para te ajudar com qualquer dúvida sobre acomodações e viagens.",
+    "tagline": "Escreva-nos",
+    "heading": "Fale conosco",
     "subheading": "Estamos aqui para te ajudar. Entre em contato conosco para qualquer consulta",
+    "subtitle": "Tem alguma dúvida ou sugestão? Preencha o formulário e responderemos em breve.",
+    "email": {
+        "label": "Email",
+        "value": "info@hospeda.com"
+    },
+    "phone": {
+        "label": "Telefone",
+        "value": "+54 3442 453797"
+    },
+    "whatsapp": {
+        "label": "WhatsApp",
+        "value": "+54 9 3442 453797"
+    },
+    "address": {
+        "label": "Endereço",
+        "value": "Concepción del Uruguay, Entre Ríos, Argentina"
+    },
     "form": {
         "title": "Manda uma mensagem pra gente",
         "firstName": "Nome",
@@ -31,13 +49,19 @@
             "messageRequired": "A mensagem é obrigatória",
             "messageMinLength": "A mensagem deve ter pelo menos 20 caracteres"
         },
+        "messagePlaceholder": "Escreva sua dúvida ou sugestão aqui...",
+        "accommodationIdPlaceholder": "UUID da acomodação (ex: 550e8400-...)",
         "successMessage": "Sua mensagem foi enviada com sucesso",
+        "successMsg": "Obrigado por entrar em contato. Responderemos em breve.",
         "errorMessage": "Não foi possível enviar a mensagem. Tente novamente.",
         "ariaLabel": "Formulário de contato",
         "accommodationId": "ID da acomodação",
         "lastNameError": "O sobrenome deve ter pelo menos 2 caracteres",
         "emailError": "Por favor insira um e-mail válido",
+        "messageError": "A mensagem deve ter pelo menos 10 caracteres",
+        "accommodationIdError": "O ID da acomodação é obrigatório e deve ser um UUID válido",
         "errorGeneral": "Ocorreu um erro. Tente novamente mais tarde.",
+        "errorRateLimit": "Muitas tentativas. Espere um minuto e tente novamente.",
         "sending": "Enviando...",
         "successTitle": "Mensagem enviada!",
         "type": "Tipo de consulta",
@@ -45,15 +69,80 @@
         "typeGeneral": "Consulta geral"
     },
     "info": {
-        "title": "Informacoes de contato",
+        "title": "Informações de contato",
         "address": {
-            "label": "Endereco",
-            "value": "Rua Principal 123\nCidade, Pais 12345"
+            "label": "Endereço",
+            "value": "Concepción del Uruguay, Entre Ríos, Argentina"
         },
         "email": {
             "label": "Email",
-            "value": "contato@hospeda.com"
+            "value": "info@hospeda.com"
         }
+    },
+    "channels": {
+        "tagline": "Outros canais",
+        "title": "Vamos conversar como você preferir",
+        "subtitle": "Escolha o canal que mais te convém. Respondemos o quanto antes.",
+        "email": {
+            "title": "Email",
+            "description": "Para consultas detalhadas ou formais.",
+            "cta": "Mande um email"
+        },
+        "phone": {
+            "title": "Telefone",
+            "description": "Segunda a sexta, das 9 às 18h (UTC-3).",
+            "cta": "Ligue para nós"
+        },
+        "whatsapp": {
+            "title": "WhatsApp",
+            "description": "Resposta rápida em horário comercial.",
+            "cta": "Conversar pelo WhatsApp"
+        },
+        "social": {
+            "title": "Redes sociais",
+            "description": "Siga-nos para novidades e promoções.",
+            "cta": "Ver perfis"
+        }
+    },
+    "hours": {
+        "tagline": "Quando estamos aqui",
+        "title": "Horário de atendimento",
+        "subtitle": "Respondemos em até 24 horas úteis.",
+        "weekdays": "Segunda a sexta",
+        "weekdaysValue": "9:00 às 18:00",
+        "saturday": "Sábados",
+        "saturdayValue": "10:00 às 13:00",
+        "sunday": "Domingos e feriados",
+        "sundayValue": "Fechado",
+        "timezone": "Horário da Argentina (UTC-3)"
+    },
+    "faq": {
+        "tagline": "Perguntas frequentes",
+        "title": "Antes de escrever",
+        "subtitle": "Talvez sua dúvida já tenha resposta.",
+        "items": {
+            "responseTime": {
+                "question": "Em quanto tempo respondem?",
+                "answer": "Respondemos em até 24 horas úteis. Aos fins de semana pode demorar um pouco mais."
+            },
+            "accommodationIssue": {
+                "question": "Tenho um problema com uma reserva",
+                "answer": "Selecione \"Consulta sobre acomodação\" no formulário e adicione o ID da acomodação. Isso nos ajuda a te atender mais rápido."
+            },
+            "ownerInquiry": {
+                "question": "Quero anunciar minha acomodação na Hospeda",
+                "answer": "Visite a página de proprietários para conhecer planos e começar o cadastro. Se precisar de ajuda, escreva pra gente."
+            },
+            "languages": {
+                "question": "Em quais idiomas atendem?",
+                "answer": "Atendemos em espanhol, inglês e português. Escreva no idioma que preferir."
+            }
+        }
+    },
+    "trust": {
+        "responseTime": "Respondemos em menos de 24h",
+        "secure": "Seus dados estão protegidos",
+        "humans": "Te atende uma pessoa, não um bot"
     },
     "success": "Obrigado por entrar em contato!",
     "error": "Ocorreu um erro ao enviar a mensagem.",
