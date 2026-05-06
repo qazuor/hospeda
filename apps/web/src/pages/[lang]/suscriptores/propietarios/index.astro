@@ -13,7 +13,16 @@ import JsonLd from '@/components/seo/JsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { MapIcon, SettingsIcon, ShieldIcon } from '@repo/icons';
 import type { GetStaticPaths } from 'astro';
+
+interface BenefitDefinition {
+	readonly Icon: typeof MapIcon;
+	readonly titleKey: string;
+	readonly titleFb: string;
+	readonly descKey: string;
+	readonly descFb: string;
+}
 
 export const prerender = true;
 
@@ -25,11 +34,29 @@ const { lang } = Astro.params;
 const locale = lang as SupportedLocale;
 const { t } = createTranslations(locale);
 
-const benefits = [
-	{ titleKey: 'owners.benefits.1.title', titleFb: 'Visibilidad regional', descKey: 'owners.benefits.1.desc', descFb: 'Llegá a miles de viajeros que buscan alojamiento en la costa del río Uruguay y el litoral entrerriano.' },
-	{ titleKey: 'owners.benefits.2.title', titleFb: 'Gestión simple', descKey: 'owners.benefits.2.desc', descFb: 'Publicá, editá y gestioná tus propiedades desde un solo lugar. Panel de control intuitivo y fácil de usar.' },
-	{ titleKey: 'owners.benefits.3.title', titleFb: 'Sin comisiones ocultas', descKey: 'owners.benefits.3.desc', descFb: 'Planes transparentes con precios fijos. Sabés exactamente cuánto pagás, sin sorpresas en cada reserva.' },
-] as const;
+const benefits: ReadonlyArray<BenefitDefinition> = [
+	{
+		Icon: MapIcon,
+		titleKey: 'owners.benefits.1.title',
+		titleFb: 'Visibilidad regional',
+		descKey: 'owners.benefits.1.desc',
+		descFb: 'Llegá a miles de viajeros que buscan alojamiento en la costa del río Uruguay y el litoral entrerriano.',
+	},
+	{
+		Icon: SettingsIcon,
+		titleKey: 'owners.benefits.2.title',
+		titleFb: 'Gestión simple',
+		descKey: 'owners.benefits.2.desc',
+		descFb: 'Publicá, editá y gestioná tus propiedades desde un solo lugar. Panel de control intuitivo y fácil de usar.',
+	},
+	{
+		Icon: ShieldIcon,
+		titleKey: 'owners.benefits.3.title',
+		titleFb: 'Sin comisiones ocultas',
+		descKey: 'owners.benefits.3.desc',
+		descFb: 'Planes transparentes con precios fijos. Sabés exactamente cuánto pagás, sin sorpresas en cada reserva.',
+	},
+];
 
 const steps = [
 	{ num: '01', titleKey: 'owners.steps.1.title', titleFb: 'Registrate', descKey: 'owners.steps.1.desc', descFb: 'Creá tu cuenta de propietario en menos de 2 minutos. Solo necesitás un email.' },
@@ -83,7 +110,14 @@ const faqJsonLd = {
 				/>
 			</div>
 			<div class="owners-hero__image" data-reveal="scale" aria-hidden="true">
-				<div class="owners-hero__image-placeholder"></div>
+				<img
+					src="/assets/images/shapes/hero-icon-hotel.svg"
+					alt=""
+					class="owners-hero__image-illustration"
+					loading="eager"
+					width="520"
+					height="420"
+				/>
 			</div>
 		</div>
 	</section>
@@ -97,9 +131,7 @@ const faqJsonLd = {
 				{benefits.map((b, i) => (
 					<div class="owners-benefit-card" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
 						<div class="owners-benefit-card__icon" aria-hidden="true">
-							<svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-								<rect width="48" height="48" rx="12" fill="oklch(from var(--brand-primary) l c h / 0.1)" />
-							</svg>
+							<b.Icon size={28} weight="regular" />
 						</div>
 						<h3 class="owners-benefit-card__title">{t(b.titleKey, b.titleFb)}</h3>
 						<p class="owners-benefit-card__desc">{t(b.descKey, b.descFb)}</p>
@@ -197,11 +229,17 @@ const faqJsonLd = {
 		margin: 0 0 var(--space-6);
 	}
 
-	.owners-hero__image-placeholder {
+	.owners-hero__image {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.owners-hero__image-illustration {
 		width: 100%;
-		aspect-ratio: 4/3;
-		background-color: oklch(from var(--brand-primary) l c h / 0.08);
-		border-radius: var(--radius-card);
+		max-width: 520px;
+		height: auto;
+		filter: drop-shadow(0 12px 32px oklch(from var(--brand-primary) l c h / 0.15));
 	}
 
 	/* Benefits */
@@ -248,9 +286,27 @@ const faqJsonLd = {
 		border-radius: var(--radius-card);
 		padding: var(--space-6);
 		box-shadow: var(--shadow-card);
+		transition:
+			transform var(--duration-normal) ease,
+			box-shadow var(--duration-normal) ease;
 	}
 
-	.owners-benefit-card__icon { margin-bottom: var(--space-4); }
+	.owners-benefit-card:hover {
+		transform: translateY(-4px);
+		box-shadow: var(--shadow-card-hover);
+	}
+
+	.owners-benefit-card__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 56px;
+		height: 56px;
+		border-radius: var(--radius-md);
+		background-color: oklch(from var(--brand-primary) l c h / 0.1);
+		color: var(--brand-primary);
+		margin-bottom: var(--space-4);
+	}
 
 	.owners-benefit-card__title {
 		font-family: var(--font-heading);
@@ -320,9 +376,28 @@ const faqJsonLd = {
 		cursor: pointer;
 		list-style: none;
 		padding: var(--space-2) 0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
 	}
 
 	.owners-faq__question::-webkit-details-marker { display: none; }
+
+	.owners-faq__question::after {
+		content: "";
+		flex-shrink: 0;
+		width: 12px;
+		height: 12px;
+		border-right: 2px solid currentColor;
+		border-bottom: 2px solid currentColor;
+		transform: rotate(45deg);
+		transition: transform var(--duration-normal) ease;
+	}
+
+	.owners-faq__item[open] > .owners-faq__question::after {
+		transform: rotate(-135deg);
+	}
 
 	.owners-faq__answer {
 		font-family: var(--font-sans);
@@ -349,14 +424,14 @@ const faqJsonLd = {
 	.owners-cta__tagline { color: oklch(from var(--brand-accent) l c h / 0.8); }
 
 	.owners-cta__title {
-		color: #fff;
+		color: var(--surface-dark-foreground);
 		margin: 0 0 var(--space-4);
 	}
 
 	.owners-cta__desc {
 		font-family: var(--font-sans);
 		font-size: var(--text-body-lg);
-		color: oklch(1 0 0 / 0.7);
+		color: oklch(from var(--surface-dark-foreground) l c h / 0.75);
 		max-width: 55ch;
 		margin: 0 auto var(--space-6);
 		line-height: 1.6;
