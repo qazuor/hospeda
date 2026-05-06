@@ -380,6 +380,7 @@ export const submitFeedbackRoute = createSimpleRoute({
         // ── 9. Attempt Linear issue creation with exponential backoff ─────────
         const reportTypeLabel = resolveReportTypeLabel(validated.type);
         const linearService = getLinearService();
+        let linearLastError: string | null = null;
 
         if (linearService) {
             const issueInput: CreateFeedbackIssueInput = {
@@ -452,10 +453,20 @@ export const submitFeedbackRoute = createSimpleRoute({
             } catch (linearError) {
                 const linearErrorMsg =
                     linearError instanceof Error ? linearError.message : String(linearError);
+                const linearErrorStack =
+                    linearError instanceof Error ? linearError.stack?.slice(0, 1500) : undefined;
+                linearLastError = linearErrorMsg;
 
                 apiLogger.error(
-                    { error: linearErrorMsg, feedbackType: validated.type },
-                    'All Linear retries exhausted - falling back to email notification'
+                    {
+                        error: linearErrorMsg,
+                        stack: linearErrorStack,
+                        feedbackType: validated.type,
+                        attachmentCount: feedbackAttachments.length
+                    },
+                    // Embed the error message in the log text so loggers that
+                    // collapse the metadata Object to "[Object]" still surface it.
+                    `All Linear retries exhausted (${linearErrorMsg}) - falling back to email notification`
                 );
             }
         }
@@ -487,23 +498,58 @@ export const submitFeedbackRoute = createSimpleRoute({
             }
         };
 
-        try {
-            await sendNotification(fallbackPayload, {
-                skipDb: true,
-                skipLogging: true,
-                emailAttachments:
-                    feedbackAttachments.length > 0
-                        ? feedbackAttachments.map((att) => ({
-                              filename: att.filename,
-                              content: att.buffer,
-                              contentType: att.contentType
-                          }))
-                        : undefined
-            });
-        } catch (emailError: unknown) {
+        // We can detect a no-op delivery in advance: when RESEND_API_KEY is
+        // missing, sendNotification silently skips (resolves without throwing),
+        // and `emailFallbackOk = true` would mislead the caller. Treat the
+        // missing key as an email failure right away.
+        let emailFallbackOk = false;
+        const emailDeliveryAvailable = Boolean(env.HOSPEDA_RESEND_API_KEY);
+
+        if (emailDeliveryAvailable) {
+            try {
+                await sendNotification(fallbackPayload, {
+                    skipDb: true,
+                    skipLogging: true,
+                    emailAttachments:
+                        feedbackAttachments.length > 0
+                            ? feedbackAttachments.map((att) => ({
+                                  filename: att.filename,
+                                  content: att.buffer,
+                                  contentType: att.contentType
+                              }))
+                            : undefined
+                });
+                emailFallbackOk = true;
+            } catch (emailError: unknown) {
+                const emailErrorMsg =
+                    emailError instanceof Error ? emailError.message : String(emailError);
+                apiLogger.error(
+                    { error: emailErrorMsg, linearError: linearLastError },
+                    `Feedback email fallback also failed (${emailErrorMsg})`
+                );
+            }
+        } else {
             apiLogger.error(
-                { error: emailError instanceof Error ? emailError.message : String(emailError) },
-                'Feedback email fallback also failed'
+                { linearError: linearLastError },
+                'Email fallback unavailable: HOSPEDA_RESEND_API_KEY not configured'
+            );
+        }
+
+        // If both Linear AND email failed, return an error so the user knows
+        // their report did NOT reach anyone. Returning `success: true` with
+        // `linearIssueId: null` would silently mislead the reporter.
+        if (!emailFallbackOk) {
+            return ctx.json(
+                {
+                    success: false,
+                    error: {
+                        code: 'INTEGRATION_FAILURE',
+                        message:
+                            'No pudimos crear el issue ni enviar el email. ' +
+                            'Intentalo de nuevo en unos minutos.'
+                    }
+                },
+                503
             );
         }
 

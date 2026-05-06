@@ -7,9 +7,16 @@
  * @module utils/markdown-helpers
  */
 
-/** Allowed presigned URL hosts for SSRF prevention (GAP-031-48) */
+/** Allowed presigned URL hosts for SSRF prevention (GAP-031-48).
+ *
+ *  Matches:
+ *  - AWS S3 buckets (any region):  `<bucket>.s3<region>.amazonaws.com`
+ *  - Linear CDN:                   `uploads.linear.app`
+ *  - Google Cloud Storage (Linear's current backend, observed 2026-05):
+ *    `storage.googleapis.com` or `<bucket>.storage.googleapis.com`
+ */
 export const ALLOWED_UPLOAD_HOST_PATTERN =
-    /^https:\/\/[a-z0-9-]+\.s3[a-z0-9.-]*\.amazonaws\.com\//i;
+    /^https:\/\/(?:[a-z0-9-]+\.s3[a-z0-9.-]*\.amazonaws\.com|uploads\.linear\.app|(?:[a-z0-9-]+\.)?storage\.googleapis\.com)\//i;
 
 /** Patterns that indicate sensitive data in console errors (GAP-031-24) */
 const SENSITIVE_PATTERNS = /sk_live_|pk_live_|Bearer |api_key=|apikey=|secret=|password=|token=/gi;

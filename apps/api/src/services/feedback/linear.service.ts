@@ -235,20 +235,63 @@ export class LinearFeedbackService {
      */
     async uploadFile(file: FeedbackAttachment): Promise<LinearFileUploadResult> {
         logger.info(
-            { filename: file.filename, contentType: file.contentType, size: file.size },
-            'Uploading file to Linear'
+            {
+                filename: file.filename,
+                contentType: file.contentType,
+                declaredSize: file.size,
+                bufferLength: file.buffer.length
+            },
+            'Uploading file to Linear (step 1: requesting presigned URL)'
         );
 
-        const uploadPayload = await this.client.fileUpload(
-            file.contentType,
-            file.filename,
-            file.size
-        );
+        // Sanity: the size we declare to Linear MUST match the bytes we PUT.
+        // A mismatch here makes S3 reject the PUT with "Content-Length differs".
+        const realSize = file.buffer.length;
+        if (realSize !== file.size) {
+            logger.warn(
+                { declaredSize: file.size, realSize },
+                'Attachment size mismatch between File.size and buffer.length; using buffer.length'
+            );
+        }
+
+        let uploadPayload: Awaited<ReturnType<LinearClient['fileUpload']>>;
+        try {
+            uploadPayload = await this.client.fileUpload(file.contentType, file.filename, realSize);
+        } catch (sdkError) {
+            const message = sdkError instanceof Error ? sdkError.message : String(sdkError);
+            logger.error(
+                {
+                    sdkError: message,
+                    stack: sdkError instanceof Error ? sdkError.stack?.slice(0, 800) : undefined
+                },
+                `Linear SDK fileUpload threw: ${message}`
+            );
+            throw sdkError;
+        }
 
         const uploadData = uploadPayload.uploadFile;
         if (!uploadData) {
+            logger.error(
+                { rawPayload: JSON.stringify(uploadPayload).slice(0, 500) },
+                'Linear fileUpload returned no upload data — full payload missing uploadFile'
+            );
             throw new Error('Linear fileUpload returned no upload data');
         }
+
+        logger.info(
+            {
+                hasHeaders: Boolean(uploadData.headers?.length),
+                headerCount: uploadData.headers?.length ?? 0,
+                uploadHost: (() => {
+                    try {
+                        return new URL(uploadData.uploadUrl).hostname;
+                    } catch {
+                        return 'invalid-url';
+                    }
+                })()
+            },
+            'Linear returned presigned URL (step 2: about to PUT)'
+        );
 
         const headers: Record<string, string> = {
             'Content-Type': file.contentType,
@@ -263,7 +306,8 @@ export class LinearFeedbackService {
             }
         }
 
-        // Validate that the upload URL is a legitimate S3 host (GAP-031-48: SSRF)
+        // Validate that the upload URL is a legitimate S3 / GCS / Linear host
+        // (GAP-031-48: SSRF prevention). Linear migrated to GCS in 2026-05.
         if (!ALLOWED_UPLOAD_HOST_PATTERN.test(uploadData.uploadUrl)) {
             const hostname = new URL(uploadData.uploadUrl).hostname;
             throw new Error(`Unexpected upload URL host: ${hostname}`);
@@ -279,10 +323,35 @@ export class LinearFeedbackService {
         const uploadResponse = await fetch(uploadData.uploadUrl, {
             method: 'PUT',
             headers,
-            body: Uint8Array.from(file.buffer)
+            // Buffer is a Uint8Array subclass — pass it directly. Avoid
+            // `Uint8Array.from(buffer)` which iterates byte-by-byte and has
+            // produced empty/corrupt bodies in undici fetch.
+            body: file.buffer
         });
 
         if (!uploadResponse.ok) {
+            // Read the response body for debugging — S3 returns the failure
+            // reason as XML and Linear's CDN as JSON. Failure to read should
+            // not mask the original status.
+            let errorBody = '';
+            try {
+                errorBody = (await uploadResponse.text()).slice(0, 500);
+            } catch {
+                /* ignore */
+            }
+            logger.error(
+                {
+                    status: uploadResponse.status,
+                    statusText: uploadResponse.statusText,
+                    uploadHost: urlForLog.hostname,
+                    filename: file.filename,
+                    contentType: file.contentType,
+                    size: file.size,
+                    sentHeaders: Object.keys(headers),
+                    errorBody
+                },
+                'Linear file upload PUT failed'
+            );
             throw new Error(
                 `Linear file upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`
             );
