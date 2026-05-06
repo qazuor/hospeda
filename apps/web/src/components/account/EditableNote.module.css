@@ -15,7 +15,7 @@
     font-family: var(--font-sans);
     font-size: 0.8125rem;
     line-height: 1.5;
-    color: var(--foreground);
+    color: var(--core-foreground);
     cursor: pointer;
     transition: background-color var(--duration-normal, 0.4s) ease, border-color
         var(--duration-normal, 0.4s) ease;
@@ -46,7 +46,7 @@
     font-family: var(--font-sans);
     font-size: 0.8125rem;
     line-height: 1.5;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     cursor: pointer;
     font-style: italic;
     transition: background-color var(--duration-normal, 0.4s) ease, border-color
@@ -56,7 +56,7 @@
 .notePlaceholder:hover {
     background-color: oklch(from var(--brand-primary) l c h / 0.04);
     border-color: var(--brand-primary);
-    color: var(--foreground);
+    color: var(--core-foreground);
 }
 
 .notePlaceholder:focus-visible {
@@ -83,8 +83,8 @@
     font-family: var(--font-sans);
     font-size: 0.8125rem;
     line-height: 1.5;
-    color: var(--foreground);
-    background-color: var(--card);
+    color: var(--core-foreground);
+    background-color: var(--core-card);
     outline: none;
     box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.15);
     transition: border-color var(--duration-normal, 0.4s) ease, box-shadow
@@ -109,7 +109,7 @@
 .charCount {
     font-family: var(--font-sans);
     font-size: 0.75rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     flex-shrink: 0;
 }
 
@@ -160,7 +160,7 @@
 .cancelBtn {
     padding: var(--space-1, 4px) var(--space-3, 12px);
     background-color: transparent;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     border: 1px solid var(--border);
     border-radius: var(--radius-button, 8px);
     font-family: var(--font-sans);
@@ -173,7 +173,7 @@
 
 .cancelBtn:hover:not(:disabled) {
     background-color: var(--surface-warm);
-    color: var(--foreground);
+    color: var(--core-foreground);
 }
 
 .cancelBtn:disabled {

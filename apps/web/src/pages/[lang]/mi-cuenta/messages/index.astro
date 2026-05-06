@@ -132,14 +132,14 @@ function formatDate(dateStr: string): string {
         font-family: var(--font-heading);
         font-size: 1.5rem;
         font-weight: 700;
-        color: var(--foreground);
+        color: var(--core-foreground);
         margin: 0;
     }
 
     .messages-inbox__empty {
         font-family: var(--font-sans);
         font-size: 0.9rem;
-        color: var(--muted-foreground);
+        color: var(--core-muted-foreground);
         padding: var(--space-6, 24px) 0;
         text-align: center;
     }
@@ -168,7 +168,7 @@ function formatDate(dateStr: string): string {
         display: block;
         padding: var(--space-4, 16px);
         text-decoration: none;
-        background-color: var(--card);
+        background-color: var(--core-card);
     }
 
     .messages-inbox__row {
@@ -182,7 +182,7 @@ function formatDate(dateStr: string): string {
         font-family: var(--font-heading);
         font-weight: 600;
         font-size: 0.95rem;
-        color: var(--foreground);
+        color: var(--core-foreground);
         flex: 1;
     }
 
@@ -191,7 +191,7 @@ function formatDate(dateStr: string): string {
         font-size: 0.75rem;
         font-weight: 700;
         color: white;
-        background-color: var(--accent);
+        background-color: var(--brand-accent);
         border-radius: var(--radius-pill, 9999px);
         padding: 2px 8px;
         line-height: 1.4;
@@ -200,14 +200,14 @@ function formatDate(dateStr: string): string {
     .messages-inbox__time {
         font-family: var(--font-sans);
         font-size: 0.78rem;
-        color: var(--muted-foreground);
+        color: var(--core-muted-foreground);
         white-space: nowrap;
     }
 
     .messages-inbox__excerpt {
         font-family: var(--font-sans);
         font-size: 0.83rem;
-        color: var(--muted-foreground);
+        color: var(--core-muted-foreground);
         margin: 0;
         overflow: hidden;
         display: -webkit-box;
@@ -241,6 +241,6 @@ function formatDate(dateStr: string): string {
     .messages-inbox__page-info {
         font-family: var(--font-sans);
         font-size: 0.875rem;
-        color: var(--muted-foreground);
+        color: var(--core-muted-foreground);
     }
 </style>

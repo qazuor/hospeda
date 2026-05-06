@@ -64,7 +64,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     transition: color var(--duration-fast) ease;
 }
 
@@ -121,7 +121,7 @@
     font-size: 0.625rem;
     transition: transform var(--duration-normal) ease;
     flex-shrink: 0;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
 }
 
 .chevronCollapsed {

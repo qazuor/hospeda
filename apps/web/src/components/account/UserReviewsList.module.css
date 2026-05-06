@@ -15,7 +15,7 @@
     justify-content: center;
     align-items: center;
     padding: var(--space-10, 40px);
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     font-family: var(--font-sans);
 }
 
@@ -33,7 +33,7 @@
 /* ── Review card ───────────────────────────────────────────────────────── */
 
 .card {
-    background-color: var(--card);
+    background-color: var(--core-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-card);
     padding: var(--space-5, 20px);
@@ -54,7 +54,7 @@
     font-family: var(--font-heading);
     font-weight: 600;
     font-size: 1rem;
-    color: var(--foreground);
+    color: var(--core-foreground);
     text-decoration: none;
     line-height: 1.4;
 }
@@ -67,7 +67,7 @@
     font-family: var(--font-heading);
     font-weight: 600;
     font-size: 1rem;
-    color: var(--foreground);
+    color: var(--core-foreground);
     line-height: 1.4;
 }
 
@@ -83,8 +83,8 @@
     align-items: center;
     gap: 4px;
     padding: 2px var(--space-2, 8px);
-    background-color: oklch(from var(--accent) l c h / 0.15);
-    color: var(--accent);
+    background-color: oklch(from var(--brand-accent) l c h / 0.15);
+    color: var(--brand-accent);
     border-radius: var(--radius-pill, 9999px);
     font-family: var(--font-sans);
     font-size: 0.8125rem;
@@ -95,13 +95,13 @@
 .dateMeta {
     font-family: var(--font-sans);
     font-size: 0.8125rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
 }
 
 .typeMeta {
     font-family: var(--font-sans);
     font-size: 0.8125rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     padding: 2px var(--space-2, 8px);
     background-color: var(--surface-warm);
     border-radius: var(--radius-pill, 9999px);
@@ -110,7 +110,7 @@
 .reviewText {
     font-family: var(--font-sans);
     font-size: 0.9375rem;
-    color: var(--foreground);
+    color: var(--core-foreground);
     margin: 0;
     line-height: 1.6;
     overflow: hidden;
@@ -125,7 +125,7 @@
     font-family: var(--font-heading);
     font-weight: 600;
     font-size: 1.125rem;
-    color: var(--foreground);
+    color: var(--core-foreground);
     margin: 0;
     padding-bottom: var(--space-2, 8px);
     border-bottom: 2px solid var(--border);
@@ -142,8 +142,8 @@
 
 .pageBtn {
     padding: var(--space-2, 8px) var(--space-4, 16px);
-    background-color: var(--card);
-    color: var(--foreground);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
     border: 1px solid var(--border);
     border-radius: var(--radius-button, 8px);
     font-family: var(--font-sans);
@@ -166,5 +166,5 @@
 .pageInfo {
     font-family: var(--font-sans);
     font-size: 0.875rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
 }

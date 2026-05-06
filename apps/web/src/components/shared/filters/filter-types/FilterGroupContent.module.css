@@ -13,12 +13,12 @@
     background-color: var(--background);
     font-family: var(--font-sans);
     font-size: 0.8125rem;
-    color: var(--foreground);
+    color: var(--core-foreground);
     transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
 
 .searchInput::placeholder {
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
 }
 
 .searchInput:focus {
@@ -38,8 +38,8 @@
     display: inline-flex;
     align-items: center;
     padding: 0.375rem 0.75rem;
-    background-color: oklch(from var(--foreground) l c h / 0.04);
-    color: var(--muted-foreground);
+    background-color: oklch(from var(--core-foreground) l c h / 0.04);
+    color: var(--core-muted-foreground);
     border: 1px solid oklch(from var(--border) l c h / 0.6);
     border-radius: var(--radius-pill);
     font-family: var(--font-sans);
@@ -76,7 +76,7 @@
     gap: 0.625rem;
     font-family: var(--font-sans);
     font-size: 0.8125rem;
-    color: var(--foreground);
+    color: var(--core-foreground);
     cursor: pointer;
     padding: 0.3125rem 0;
     border-radius: 0.25rem;
@@ -111,7 +111,7 @@
     background-color: var(--background);
     font-family: var(--font-sans);
     font-size: 0.8125rem;
-    color: var(--foreground);
+    color: var(--core-foreground);
     transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
 
@@ -128,7 +128,7 @@
 }
 
 .rangeSeparator {
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     flex-shrink: 0;
     font-size: 0.75rem;
 }

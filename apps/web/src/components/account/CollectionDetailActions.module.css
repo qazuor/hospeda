@@ -45,8 +45,8 @@
 /* ── Edit button (secondary) ─────────────────────────────────────────────── */
 
 .editBtn {
-    background-color: var(--card);
-    color: var(--foreground);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
     border-color: var(--border);
 }
 

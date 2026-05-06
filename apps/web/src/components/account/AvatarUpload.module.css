@@ -119,7 +119,7 @@
 .hint {
     font-family: var(--font-sans);
     font-size: 0.78rem;
-    color: var(--muted-foreground, oklch(0.55 0 0));
+    color: var(--core-muted-foreground);
     margin: 0;
     text-align: center;
 }

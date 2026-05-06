@@ -44,8 +44,8 @@
     padding: var(--space-3, 12px) var(--space-4, 16px);
     font-family: var(--font-sans, sans-serif);
     font-size: 0.875rem;
-    color: var(--muted-foreground, #555);
-    background-color: var(--card, #fff);
+    color: var(--core-muted-foreground);
+    background-color: var(--core-card);
     border-top: 1px solid var(--border, #e5e5e5);
 }
 

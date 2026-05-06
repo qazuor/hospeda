@@ -17,7 +17,7 @@
     gap: var(--space-2, 8px);
     padding: var(--space-2, 8px) var(--space-4, 16px);
     background: transparent;
-    color: var(--foreground, currentColor);
+    color: var(--core-foreground);
     border: 1.5px solid var(--border, oklch(0.87 0.01 264));
     border-radius: var(--radius-button, 8px);
     font-family: var(--font-sans, sans-serif);
@@ -46,7 +46,7 @@
     bottom: calc(100% + var(--space-2, 8px));
     right: 0;
     min-width: 220px;
-    background: var(--card, oklch(1 0 0));
+    background: var(--core-card);
     border: 1px solid var(--border, oklch(0.87 0.01 264));
     border-radius: var(--radius-card, 24px);
     box-shadow: var(--shadow-card, 0 4px 20px oklch(0 0 0 / 0.12));
@@ -80,7 +80,7 @@
     font-family: var(--font-heading, sans-serif);
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--foreground, currentColor);
+    color: var(--core-foreground);
 }
 
 .closeBtn {
@@ -92,7 +92,7 @@
     background: transparent;
     border: none;
     border-radius: 50%;
-    color: var(--muted-foreground, oklch(0.55 0.01 264));
+    color: var(--core-muted-foreground);
     cursor: pointer;
     transition: background var(--duration-normal, 0.4s) ease;
 }
@@ -121,7 +121,7 @@
     padding: var(--space-2, 8px) var(--space-4, 16px);
     background: transparent;
     border: none;
-    color: var(--foreground, currentColor);
+    color: var(--core-foreground);
     font-family: var(--font-sans, sans-serif);
     font-size: 0.875rem;
     text-decoration: none;

@@ -51,14 +51,14 @@ const resolvedActionLabel = actionLabel ?? defaultActions[variant];
 		<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
 			{variant === 'no-results' ? (
 				<>
-					<circle cx="28" cy="28" r="18" stroke="var(--muted-foreground)" stroke-width="2" opacity="0.3" />
-					<line x1="40" y1="40" x2="54" y2="54" stroke="var(--muted-foreground)" stroke-width="2" stroke-linecap="round" opacity="0.3" />
+					<circle cx="28" cy="28" r="18" stroke="var(--core-muted-foreground)" stroke-width="2" opacity="0.3" />
+					<line x1="40" y1="40" x2="54" y2="54" stroke="var(--core-muted-foreground)" stroke-width="2" stroke-linecap="round" opacity="0.3" />
 				</>
 			) : (
 				<>
-					<rect x="12" y="16" width="40" height="32" rx="8" stroke="var(--muted-foreground)" stroke-width="2" opacity="0.3" />
-					<line x1="24" y1="30" x2="40" y2="30" stroke="var(--muted-foreground)" stroke-width="2" stroke-linecap="round" opacity="0.3" />
-					<line x1="24" y1="38" x2="34" y2="38" stroke="var(--muted-foreground)" stroke-width="2" stroke-linecap="round" opacity="0.3" />
+					<rect x="12" y="16" width="40" height="32" rx="8" stroke="var(--core-muted-foreground)" stroke-width="2" opacity="0.3" />
+					<line x1="24" y1="30" x2="40" y2="30" stroke="var(--core-muted-foreground)" stroke-width="2" stroke-linecap="round" opacity="0.3" />
+					<line x1="24" y1="38" x2="34" y2="38" stroke="var(--core-muted-foreground)" stroke-width="2" stroke-linecap="round" opacity="0.3" />
 				</>
 			)}
 		</svg>
@@ -87,7 +87,7 @@ const resolvedActionLabel = actionLabel ?? defaultActions[variant];
 	.empty-state__message {
 		font-family: var(--font-sans);
 		font-size: var(--text-body-lg);
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		max-width: 40ch;
 		line-height: 1.6;
 		margin: 0;

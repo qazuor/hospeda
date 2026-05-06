@@ -61,27 +61,27 @@
     font-family: var(--font-sans);
     font-weight: 600;
     font-size: 0.85rem;
-    color: var(--foreground);
+    color: var(--core-foreground);
 }
 
 .reviewDate {
     font-family: var(--font-sans);
     font-size: 0.75rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
 }
 
 .reviewRating {
     font-family: var(--font-heading);
     font-weight: 600;
     font-size: 0.85rem;
-    color: var(--accent);
+    color: var(--brand-accent);
 }
 
 .reviewContent {
     font-family: var(--font-sans);
     font-size: 0.9rem;
     line-height: 1.6;
-    color: var(--foreground);
+    color: var(--core-foreground);
     margin: 0;
 }
 
@@ -107,7 +107,7 @@
     gap: 8px;
     font-family: var(--font-sans);
     font-size: 0.75rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
 }
 
 .breakdownLabel {
@@ -125,20 +125,20 @@
 .breakdownBarFill {
     display: block;
     height: 100%;
-    background-color: var(--accent);
+    background-color: var(--brand-accent);
     border-radius: 9999px;
 }
 
 .breakdownValue {
     font-weight: 600;
-    color: var(--foreground);
+    color: var(--core-foreground);
     font-variant-numeric: tabular-nums;
 }
 
 .spinner {
     text-align: center;
     padding: var(--space-4, 16px);
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     font-family: var(--font-sans);
 }
 
@@ -150,7 +150,7 @@
 .error p {
     font-family: var(--font-sans);
     font-size: 0.9rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     margin: 0 0 var(--space-3, 12px);
 }
 

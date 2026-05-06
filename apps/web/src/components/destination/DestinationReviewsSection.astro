@@ -1,12 +1,16 @@
 ---
 /**
  * @file DestinationReviewsSection.astro
- * @description Reviews section for destination detail page.
- * Shows a rating summary + trigger button to open the DestinationReviewsModal.
- * Renders an empty-state message when reviewsCount === 0 (no modal mounted).
+ * @description Combined reviews + dimension ratings section for the destination
+ * detail page. Shows the average rating summary, the per-dimension breakdown
+ * (only when there are reviews — ratings without reviews are not displayable
+ * since the breakdown is computed from review submissions), and a button to
+ * open the DestinationReviewsModal with the full list. Renders an empty-state
+ * message when reviewsCount === 0.
  */
 
 import { DestinationReviewsModal } from './DestinationReviewsModal.client';
+import DestinationRatingBreakdown from './DestinationRatingBreakdown.astro';
 import { StarIcon } from '@repo/icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -16,10 +20,14 @@ interface Props {
     readonly averageRating: number;
     readonly reviewsCount: number;
     readonly locale: SupportedLocale;
+    /** Per-dimension rating breakdown (rendered only when reviewsCount > 0). */
+    readonly ratingBreakdown?: Record<string, number | undefined> | null;
 }
 
-const { destinationId, averageRating, reviewsCount, locale } = Astro.props;
+const { destinationId, averageRating, reviewsCount, locale, ratingBreakdown } = Astro.props;
 const { t } = createTranslations(locale);
+
+const showBreakdown = reviewsCount > 0 && ratingBreakdown != null;
 ---
 
 <section class="dest-reviews" aria-labelledby="dest-reviews-title">
@@ -45,6 +53,15 @@ const { t } = createTranslations(locale);
                     {t('destination.detail.reviews.count', '{{count}} reseñas', { count: reviewsCount })}
                 </span>
             </div>
+
+            {showBreakdown && (
+                <div class="dest-reviews__breakdown">
+                    <h3 class="dest-reviews__breakdown-title">
+                        {t('destination.detail.rating.title', 'Calificación por dimensión')}
+                    </h3>
+                    <DestinationRatingBreakdown rating={ratingBreakdown} locale={locale} />
+                </div>
+            )}
 
             <button
                 class="dest-reviews__view-all"
@@ -90,7 +107,19 @@ const { t } = createTranslations(locale);
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        margin-bottom: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .dest-reviews__breakdown {
+        margin-bottom: 1.25rem;
+    }
+
+    .dest-reviews__breakdown-title {
+        font-family: var(--font-heading);
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0 0 0.75rem;
     }
 
     .dest-reviews__avg {

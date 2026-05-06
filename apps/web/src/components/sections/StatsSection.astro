@@ -173,7 +173,7 @@ const t = createT(locale);
       halo.setAttribute('cx', String(cx));
       halo.setAttribute('cy', String(bestY));
       halo.setAttribute('r', '8');
-      halo.setAttribute('fill', 'var(--accent)');
+      halo.setAttribute('fill', 'var(--brand-accent)');
       halo.setAttribute('opacity', '0.25');
       halo.classList.add('wave-dot');
       svg.appendChild(halo);
@@ -183,7 +183,7 @@ const t = createT(locale);
       dot.setAttribute('cx', String(cx));
       dot.setAttribute('cy', String(bestY));
       dot.setAttribute('r', '4');
-      dot.setAttribute('fill', 'var(--accent)');
+      dot.setAttribute('fill', 'var(--brand-accent)');
       dot.classList.add('wave-dot');
       svg.appendChild(dot);
     });
@@ -248,7 +248,7 @@ const t = createT(locale);
   .stats-section__cards {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-32, 2rem);
+    gap: var(--space-8, 2rem);
     width: 100%;
   }
 

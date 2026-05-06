@@ -115,28 +115,28 @@ const resolvedDescription = description ?? 'Información legal de Hospeda';
 		list-style: none;
 		padding: 0;
 		margin: 0 0 var(--space-3) 0;
-		font-size: var(--text-sm);
-		color: var(--muted-foreground);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
 	}
 
 	.legal-breadcrumbs__item:not(:last-child)::after {
 		content: '›';
 		margin-left: 0.5rem;
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 	}
 
 	.legal-breadcrumbs__link {
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		text-decoration: none;
 	}
 
 	.legal-breadcrumbs__link:hover {
-		color: var(--foreground);
+		color: var(--core-foreground);
 		text-decoration: underline;
 	}
 
 	.legal-breadcrumbs__item--current {
-		color: var(--foreground);
+		color: var(--core-foreground);
 		font-weight: 500;
 	}
 
@@ -144,14 +144,14 @@ const resolvedDescription = description ?? 'Información legal de Hospeda';
 		font-family: var(--font-heading);
 		font-weight: 700;
 		font-size: clamp(1.75rem, 4vw, 2.5rem);
-		color: var(--foreground);
+		color: var(--core-foreground);
 		margin: 0;
 	}
 
 	.legal-header__date {
 		font-family: var(--font-sans);
-		font-size: var(--text-sm);
-		color: var(--muted-foreground);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
 		margin: var(--space-2) 0 0;
 	}
 
@@ -193,7 +193,7 @@ const resolvedDescription = description ?? 'Información legal de Hospeda';
 		font-family: var(--font-heading);
 		font-weight: 600;
 		font-size: var(--text-lg);
-		color: var(--foreground);
+		color: var(--core-foreground);
 		margin: 0 0 var(--space-4);
 	}
 
@@ -201,7 +201,7 @@ const resolvedDescription = description ?? 'Información legal de Hospeda';
 		max-width: 65ch;
 		font-family: var(--font-sans);
 		line-height: 1.7;
-		color: var(--foreground);
+		color: var(--core-foreground);
 	}
 
 	.legal-prose :global(h2) {
@@ -210,7 +210,7 @@ const resolvedDescription = description ?? 'Información legal de Hospeda';
 		font-size: clamp(1.25rem, 2.5vw, 1.5rem);
 		margin-top: var(--space-8);
 		margin-bottom: var(--space-4);
-		color: var(--foreground);
+		color: var(--core-foreground);
 	}
 
 	.legal-prose :global(p) {

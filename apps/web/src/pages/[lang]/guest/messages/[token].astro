@@ -172,14 +172,14 @@ const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
         font-family: var(--font-heading);
         font-size: 1.4rem;
         font-weight: 700;
-        color: var(--foreground);
+        color: var(--core-foreground);
         margin: 0;
     }
 
     .guest-thread__accommodation {
         font-family: var(--font-sans);
         font-size: 0.85rem;
-        color: var(--muted-foreground);
+        color: var(--core-muted-foreground);
     }
 
     .guest-thread__load-older {
@@ -231,7 +231,7 @@ const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
     }
 
     .guest-thread__message--owner .guest-thread__bubble {
-        background-color: var(--card);
+        background-color: var(--core-card);
         border: 1px solid var(--border);
         border-radius: var(--radius-organic-alt, 100px 0px);
         padding: var(--space-3, 12px) var(--space-4, 16px);
@@ -257,13 +257,13 @@ const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
 
     .guest-thread__message--owner .guest-thread__body,
     .guest-thread__message--system .guest-thread__body {
-        color: var(--foreground);
+        color: var(--core-foreground);
     }
 
     .guest-thread__timestamp {
         font-family: var(--font-sans);
         font-size: 0.72rem;
-        color: var(--muted-foreground);
+        color: var(--core-muted-foreground);
         align-self: flex-end;
     }
 
@@ -274,7 +274,7 @@ const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
     .guest-thread__read-receipt {
         font-family: var(--font-sans);
         font-size: 0.78rem;
-        color: var(--muted-foreground);
+        color: var(--core-muted-foreground);
         text-align: right;
         margin: 0 0 var(--space-2, 8px);
     }
@@ -282,7 +282,7 @@ const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
     .guest-thread__closed-notice {
         font-family: var(--font-sans);
         font-size: 0.875rem;
-        color: var(--muted-foreground);
+        color: var(--core-muted-foreground);
         text-align: center;
         border: 1px solid var(--border);
         border-radius: var(--radius-button, 8px);

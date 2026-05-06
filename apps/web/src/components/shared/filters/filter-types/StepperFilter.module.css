@@ -23,7 +23,7 @@
     background: none;
     font-size: 1.125rem;
     line-height: 1;
-    color: var(--foreground);
+    color: var(--core-foreground);
     cursor: pointer;
     transition: color var(--duration-fast) ease, border-color var(--duration-fast) ease,
         background-color var(--duration-fast) ease;
@@ -50,12 +50,12 @@
     font-family: var(--font-sans);
     font-size: 1rem;
     font-weight: 700;
-    color: var(--foreground);
+    color: var(--core-foreground);
     font-variant-numeric: tabular-nums;
 }
 
 .stepperSuffix {
     font-weight: 400;
     font-size: 0.75rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
 }

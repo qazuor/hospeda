@@ -3,7 +3,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background-color: var(--card, #fff);
+    background-color: var(--core-card);
     border-radius: var(--radius-card, 16px);
     box-shadow: var(--shadow-card, 0 6px 24px rgb(0 0 0 / 0.08));
     overflow: hidden;
@@ -12,7 +12,7 @@
 .sidebarHeader {
     padding: var(--space-4, 16px);
     border-bottom: 1px solid var(--border, #e5e5e5);
-    background-color: var(--card, #fff);
+    background-color: var(--core-card);
 }
 
 .sidebarTitle {
@@ -20,14 +20,14 @@
     font-family: var(--font-heading, sans-serif);
     font-size: 1.125rem;
     font-weight: 600;
-    color: var(--foreground, #222);
+    color: var(--core-foreground);
     line-height: 1.3;
 }
 
 .sidebarSubtitle {
     margin: 2px 0 0;
     font-size: 0.8125rem;
-    color: var(--muted-foreground, #666);
+    color: var(--core-muted-foreground);
 }
 
 .sidebarScroll {
@@ -51,7 +51,7 @@
 .empty {
     padding: var(--space-6, 24px);
     text-align: center;
-    color: var(--muted-foreground, #666);
+    color: var(--core-muted-foreground);
     font-size: 0.9375rem;
 }
 
@@ -59,7 +59,7 @@
     display: block;
     border-radius: var(--radius-card, 14px);
     overflow: hidden;
-    background-color: var(--card, #fff);
+    background-color: var(--core-card);
     box-shadow: var(--shadow-card, 0 4px 14px rgb(0 0 0 / 0.06));
     transition: box-shadow var(--duration-normal, 0.4s) ease, transform var(--duration-normal, 0.4s)
         ease, outline-color var(--duration-normal, 0.4s) ease;
@@ -109,7 +109,7 @@
     padding: 4px 10px;
     border-radius: var(--radius-pill, 9999px);
     background-color: rgb(255 255 255 / 0.92);
-    color: var(--foreground, #222);
+    color: var(--core-foreground);
     font-size: 0.75rem;
     font-weight: 500;
     backdrop-filter: blur(4px);
@@ -134,7 +134,7 @@
     font-family: var(--font-heading, sans-serif);
     font-size: 1rem;
     font-weight: 600;
-    color: var(--foreground, #222);
+    color: var(--core-foreground);
     line-height: 1.3;
     flex: 1;
     min-width: 0;
@@ -148,7 +148,7 @@
     flex-shrink: 0;
     padding: 3px 8px;
     border-radius: var(--radius-pill, 9999px);
-    background-color: var(--accent, #f59e0b);
+    background-color: var(--brand-accent);
     color: white;
     font-size: 0.6875rem;
     font-weight: 600;
@@ -161,14 +161,14 @@
 .cardCity {
     margin: 0;
     font-size: 0.8125rem;
-    color: var(--muted-foreground, #666);
+    color: var(--core-muted-foreground);
 }
 
 .cardSummary {
     margin: 0;
     font-size: 0.8125rem;
     line-height: 1.45;
-    color: var(--foreground, #222);
+    color: var(--core-foreground);
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -188,21 +188,21 @@
     align-items: center;
     gap: 4px;
     font-size: 0.8125rem;
-    color: var(--foreground, #222);
+    color: var(--core-foreground);
 }
 
 .cardRating > span:first-child {
-    color: var(--accent, #f59e0b);
+    color: var(--brand-accent);
 }
 
 .cardReviewsCount {
-    color: var(--muted-foreground, #666);
+    color: var(--core-muted-foreground);
 }
 
 .cardPrice {
     font-size: 0.9375rem;
     font-weight: 600;
-    color: var(--foreground, #222);
+    color: var(--core-foreground);
 }
 
 /* ----- Mobile bottom sheet ----- */
@@ -214,7 +214,7 @@
     z-index: 1000;
     padding: 12px 24px;
     border-radius: var(--radius-pill, 9999px);
-    background-color: var(--foreground, #222);
+    background-color: var(--core-foreground);
     color: white;
     font-family: var(--font-sans, sans-serif);
     font-size: 0.9375rem;
@@ -233,7 +233,7 @@
     position: fixed;
     inset: auto 0 0 0;
     z-index: 1001;
-    background-color: var(--card, #fff);
+    background-color: var(--core-card);
     border-radius: 24px 24px 0 0;
     box-shadow: 0 -8px 32px rgb(0 0 0 / 0.18);
     height: 85vh;
@@ -268,13 +268,13 @@
     font-family: var(--font-heading, sans-serif);
     font-size: 1.125rem;
     font-weight: 600;
-    color: var(--foreground, #222);
+    color: var(--core-foreground);
 }
 
 .sheetSubtitle {
     margin: 2px 0 0;
     font-size: 0.8125rem;
-    color: var(--muted-foreground, #666);
+    color: var(--core-muted-foreground);
 }
 
 .sheetClose {
@@ -282,7 +282,7 @@
     border: none;
     font-size: 1.75rem;
     line-height: 1;
-    color: var(--foreground, #222);
+    color: var(--core-foreground);
     cursor: pointer;
     padding: 4px 8px;
     border-radius: var(--radius-button, 8px);

@@ -30,8 +30,8 @@
     padding: var(--space-3, 12px) var(--space-4, 16px);
     font-family: var(--font-sans, sans-serif);
     font-size: 0.875rem;
-    color: var(--muted-foreground, #555);
-    background-color: var(--card, #fff);
+    color: var(--core-muted-foreground);
+    background-color: var(--core-card);
     border-top: 1px solid var(--border, #e5e5e5);
 }
 
@@ -67,7 +67,7 @@
 }
 
 .popup :global(.leaflet-popup-close-button) {
-    color: var(--foreground, #222);
+    color: var(--core-foreground);
     padding: 8px 8px 0 0;
     font-size: 1.25rem;
     z-index: 2;
@@ -79,7 +79,7 @@
     width: 280px;
     display: flex;
     flex-direction: column;
-    background-color: var(--card, #fff);
+    background-color: var(--core-card);
 }
 
 .popupImageWrapper {
@@ -104,7 +104,7 @@
     padding: 4px 10px;
     border-radius: var(--radius-pill, 9999px);
     background-color: rgb(255 255 255 / 0.92);
-    color: var(--foreground, #222);
+    color: var(--core-foreground);
     font-size: 0.75rem;
     font-weight: 500;
     backdrop-filter: blur(4px);
@@ -139,7 +139,7 @@
     font-family: var(--font-heading, sans-serif);
     font-size: 1rem;
     font-weight: 600;
-    color: var(--foreground, #222);
+    color: var(--core-foreground);
     margin: 0;
     line-height: 1.3;
     flex: 1;
@@ -155,7 +155,7 @@
     flex-shrink: 0;
     padding: 3px 8px;
     border-radius: var(--radius-pill, 9999px);
-    background-color: var(--accent, #f59e0b);
+    background-color: var(--brand-accent);
     color: white;
     font-size: 0.6875rem;
     font-weight: 600;
@@ -168,14 +168,14 @@
 .popupCity {
     margin: 0;
     font-size: 0.8125rem;
-    color: var(--muted-foreground, #666);
+    color: var(--core-muted-foreground);
 }
 
 .popupSummary {
     margin: 0;
     font-size: 0.8125rem;
     line-height: 1.45;
-    color: var(--foreground, #222);
+    color: var(--core-foreground);
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -185,7 +185,7 @@
 .popupCount {
     margin: 0;
     font-size: 0.8125rem;
-    color: var(--muted-foreground, #666);
+    color: var(--core-muted-foreground);
 }
 
 .popupMeta {
@@ -201,21 +201,21 @@
     align-items: center;
     gap: 4px;
     font-size: 0.8125rem;
-    color: var(--foreground, #222);
+    color: var(--core-foreground);
 }
 
 .popupRating > span:first-child {
-    color: var(--accent, #f59e0b);
+    color: var(--brand-accent);
 }
 
 .popupReviewsCount {
-    color: var(--muted-foreground, #666);
+    color: var(--core-muted-foreground);
 }
 
 .popupPrice {
     font-size: 0.9375rem;
     font-weight: 600;
-    color: var(--foreground, #222);
+    color: var(--core-foreground);
 }
 
 .popupCta {
@@ -224,7 +224,7 @@
     text-align: center;
     padding: 8px 12px;
     border-radius: var(--radius-button, 8px);
-    background-color: var(--accent, #f59e0b);
+    background-color: var(--brand-accent);
     color: white;
     font-size: 0.875rem;
     font-weight: 500;

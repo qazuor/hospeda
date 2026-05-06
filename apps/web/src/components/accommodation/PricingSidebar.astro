@@ -136,7 +136,7 @@ const hasDiscounts = discountEntries.length > 0;
 <style>
   .pricing-sidebar {
     position: relative;
-    background-color: var(--card);
+    background-color: var(--core-card);
     border-radius: var(--radius-card, 24px);
     padding: var(--space-6, 24px) var(--space-5, 20px) var(--space-5, 20px);
     box-shadow: var(--shadow-card);
@@ -200,14 +200,14 @@ const hasDiscounts = discountEntries.length > 0;
     font-family: var(--font-heading);
     font-size: 2.25rem;
     font-weight: 700;
-    color: var(--accent);
+    color: var(--brand-accent);
     letter-spacing: -0.02em;
     line-height: 1.05;
   }
   .pricing-sidebar__period {
     font-family: var(--font-sans);
     font-size: 0.9rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
   }
   .pricing-sidebar__consult {
     text-align: center;
@@ -243,10 +243,10 @@ const hasDiscounts = discountEntries.length > 0;
   }
   .pricing-sidebar__fee-name,
   .pricing-sidebar__discount-name {
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
   }
   .pricing-sidebar__fee-amount {
-    color: var(--foreground);
+    color: var(--core-foreground);
     font-weight: 500;
   }
   .pricing-sidebar__discount-value {

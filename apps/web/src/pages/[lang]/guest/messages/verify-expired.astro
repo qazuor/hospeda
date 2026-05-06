@@ -54,14 +54,14 @@ const pageTitle = t('conversations.form.verifyExpiredTitle');
         font-family: var(--font-heading);
         font-size: 1.6rem;
         font-weight: 700;
-        color: var(--foreground);
+        color: var(--core-foreground);
         margin: 0 0 var(--space-3, 12px);
     }
 
     .verify-expired__body {
         font-family: var(--font-sans);
         font-size: 0.9rem;
-        color: var(--muted-foreground);
+        color: var(--core-muted-foreground);
         margin: 0 0 var(--space-5, 20px);
     }
 
@@ -71,7 +71,7 @@ const pageTitle = t('conversations.form.verifyExpiredTitle');
         font-size: 0.875rem;
         font-weight: 600;
         color: white;
-        background-color: var(--accent);
+        background-color: var(--brand-accent);
         border-radius: var(--radius-button, 8px);
         padding: var(--space-3, 12px) var(--space-4, 16px);
         text-decoration: none;
@@ -79,6 +79,6 @@ const pageTitle = t('conversations.form.verifyExpiredTitle');
     }
 
     .verify-expired__cta:hover {
-        background-color: oklch(from var(--accent) calc(l - 0.05) c h);
+        background-color: oklch(from var(--brand-accent) calc(l - 0.05) c h);
     }
 </style>

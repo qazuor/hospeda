@@ -623,16 +623,16 @@ if (childrenCount !== undefined && !Number.isNaN(childrenCount)) initialParams.c
 		font-size: 0.875rem;
 		padding: 0.5rem 1rem;
 		border-radius: var(--radius-pill, 9999px);
-		color: var(--muted-foreground, #555);
+		color: var(--core-muted-foreground);
 		text-decoration: none;
 		transition: background-color var(--duration-normal, 0.4s) ease, color var(--duration-normal, 0.4s) ease;
 		cursor: pointer;
 	}
 	.view-toggle__btn:hover {
-		color: var(--foreground);
+		color: var(--core-foreground);
 	}
 	.view-toggle__btn--active {
-		background-color: var(--accent, #f59e0b);
+		background-color: var(--brand-accent);
 		color: white;
 		font-weight: 500;
 		cursor: default;

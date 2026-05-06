@@ -465,18 +465,18 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 	.coleccion-breadcrumb__link {
 		font-family: var(--font-sans);
 		font-size: 0.875rem;
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		text-decoration: none;
 		transition: color var(--duration-fast) ease;
 	}
 
 	.coleccion-breadcrumb__link:hover {
-		color: var(--foreground);
+		color: var(--core-foreground);
 	}
 
 	.coleccion-breadcrumb__separator {
 		font-size: 0.875rem;
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		user-select: none;
 	}
 
@@ -484,7 +484,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 		font-family: var(--font-sans);
 		font-size: 0.875rem;
 		font-weight: 500;
-		color: var(--foreground);
+		color: var(--core-foreground);
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -492,7 +492,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 	/* ------------------------------------------------------------------ */
 	.coleccion-error {
 		padding: var(--space-8);
-		background-color: var(--card);
+		background-color: var(--core-card);
 		border-radius: var(--radius-card);
 		border: 1px solid var(--border);
 		text-align: center;
@@ -500,7 +500,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 
 	.coleccion-error__message {
 		font-family: var(--font-sans);
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		margin-bottom: var(--space-4);
 	}
 
@@ -553,7 +553,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 		font-family: var(--font-heading);
 		font-weight: 700;
 		font-size: clamp(1.5rem, 3vw, 2rem);
-		color: var(--foreground);
+		color: var(--core-foreground);
 		margin: 0 0 var(--space-2) 0;
 		line-height: 1.2;
 	}
@@ -561,7 +561,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 	.coleccion-header__description {
 		font-family: var(--font-sans);
 		font-size: var(--text-body);
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		margin: 0 0 var(--space-2) 0;
 		line-height: 1.5;
 	}
@@ -571,7 +571,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 		font-family: var(--font-sans);
 		font-size: 0.8125rem;
 		font-weight: 500;
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		background-color: var(--muted);
 		padding: 2px var(--space-2);
 		border-radius: var(--radius-pill);
@@ -618,7 +618,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 		font-family: var(--font-sans);
 		font-size: 0.875rem;
 		font-weight: 400;
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		background-color: transparent;
 		border: 1px solid var(--border);
 		border-radius: var(--radius-pill);
@@ -632,7 +632,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 
 	.coleccion-tabs__btn:hover {
 		background-color: var(--muted);
-		color: var(--foreground);
+		color: var(--core-foreground);
 	}
 
 	.coleccion-tabs__btn--active {
@@ -647,7 +647,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 	/* ------------------------------------------------------------------ */
 	.coleccion-empty {
 		padding: var(--space-12) var(--space-8);
-		background-color: var(--card);
+		background-color: var(--core-card);
 		border-radius: var(--radius-card);
 		border: 1px dashed var(--border);
 		text-align: center;
@@ -655,7 +655,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 
 	.coleccion-empty__message {
 		font-family: var(--font-sans);
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		margin: 0;
 	}
 
@@ -687,7 +687,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 	/* Bookmark card                                                        */
 	/* ------------------------------------------------------------------ */
 	.coleccion-card {
-		background-color: var(--card);
+		background-color: var(--core-card);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-card);
 		overflow: hidden;
@@ -715,7 +715,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 		align-items: center;
 		justify-content: center;
 		background-color: var(--surface-warm);
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		font-family: var(--font-sans);
 		font-size: 0.8125rem;
 	}
@@ -732,7 +732,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 		font-family: var(--font-heading);
 		font-weight: 600;
 		font-size: 1rem;
-		color: var(--foreground);
+		color: var(--core-foreground);
 		margin: 0;
 		line-height: 1.4;
 		overflow: hidden;
@@ -753,14 +753,14 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 	.coleccion-card__meta {
 		font-family: var(--font-sans);
 		font-size: 0.8125rem;
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		margin: 0;
 	}
 
 	.coleccion-card__note {
 		font-family: var(--font-sans);
 		font-size: 0.875rem;
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		margin: 0;
 		font-style: italic;
 		overflow: hidden;
@@ -795,7 +795,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 		font-size: 0.875rem;
 		font-weight: 500;
 		color: var(--brand-primary);
-		background-color: var(--card);
+		background-color: var(--core-card);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-button);
 		text-decoration: none;
@@ -811,13 +811,13 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 	.coleccion-pagination__btn--disabled {
 		opacity: 0.4;
 		cursor: not-allowed;
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 	}
 
 	.coleccion-pagination__info {
 		font-family: var(--font-sans);
 		font-size: 0.875rem;
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		white-space: nowrap;
 	}
 

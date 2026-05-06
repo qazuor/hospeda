@@ -11,7 +11,7 @@
 /* ── Section card ──────────────────────────────────────────────────────── */
 
 .section {
-    background-color: var(--card);
+    background-color: var(--core-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-card);
     padding: var(--space-6, 24px);
@@ -21,7 +21,7 @@
     font-family: var(--font-heading);
     font-weight: 600;
     font-size: 1rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     margin: 0 0 var(--space-5, 20px);
 }
 
@@ -55,7 +55,7 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--foreground);
+    color: var(--core-foreground);
 }
 
 .required {
@@ -68,7 +68,7 @@
     width: 100%;
     padding: var(--space-2, 8px) var(--space-3, 12px);
     background-color: var(--background);
-    color: var(--foreground);
+    color: var(--core-foreground);
     border: 1px solid var(--border);
     border-radius: var(--radius-button, 8px);
     font-family: var(--font-sans);
@@ -111,7 +111,7 @@
 .hint {
     font-family: var(--font-sans);
     font-size: 0.8125rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     margin: 0;
 }
 
@@ -169,12 +169,12 @@
     align-items: center;
     gap: var(--space-2, 8px);
     padding: var(--space-2, 8px) var(--space-3, 12px);
-    background-color: var(--card);
+    background-color: var(--core-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-button, 8px);
     font-family: var(--font-sans);
     font-size: 0.875rem;
-    color: var(--foreground);
+    color: var(--core-foreground);
     cursor: pointer;
     transition: background-color var(--duration-normal, 0.4s) ease, border-color
         var(--duration-normal, 0.4s) ease;
@@ -197,7 +197,7 @@
 .avatarUploading {
     font-family: var(--font-sans);
     font-size: 0.8125rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
 }
 
 /* ── Form feedback banner ──────────────────────────────────────────────── */

@@ -26,7 +26,7 @@ const { summary, description } = Astro.props;
 <style>
   .description__summary {
     background-color: var(--surface-warm);
-    border-left: 4px solid var(--accent);
+    border-left: 4px solid var(--brand-accent);
     border-radius: var(--radius-button, 8px);
     padding: var(--space-4, 16px) var(--space-5, 20px);
     margin-bottom: var(--space-5, 20px);
@@ -35,14 +35,14 @@ const { summary, description } = Astro.props;
     font-family: var(--font-sans);
     font-size: 1.1rem;
     line-height: 1.6;
-    color: var(--foreground);
+    color: var(--core-foreground);
     margin: 0;
   }
   .description__body {
     font-family: var(--font-sans);
     font-size: 1rem;
     line-height: 1.7;
-    color: var(--foreground);
+    color: var(--core-foreground);
   }
   .description__body :global(h2),
   .description__body :global(h3) {

@@ -46,7 +46,7 @@ interface Props {
 
 const { data, locale, isTrending = false, isAuthenticated = false } = Astro.props;
 const { t } = createTranslations(locale);
-const newsColors = { bg: 'var(--brand-info, #0ea5e9)', text: '#fff' };
+const newsColors = { bg: 'var(--info, #0ea5e9)', text: '#fff' };
 
 const expiryStatus = getExpiryStatus({ expiresAt: data.expiresAt });
 const showExpiryBadge = expiryStatus.status === 'expiring-soon';
@@ -239,9 +239,9 @@ const readingTimeSuffix = t('blog.detail.readingTime', 'min de lectura');
         font-family: var(--font-sans);
         font-size: var(--text-caption);
         font-weight: 600;
-        color: var(--brand-warning, #f59e0b);
-        background-color: oklch(from var(--brand-warning, #f59e0b) l c h / 0.12);
-        border: 1px solid oklch(from var(--brand-warning, #f59e0b) l c h / 0.35);
+        color: var(--warning, #f59e0b);
+        background-color: oklch(from var(--warning, #f59e0b) l c h / 0.12);
+        border: 1px solid oklch(from var(--warning, #f59e0b) l c h / 0.35);
         border-radius: var(--radius-pill);
         padding: 0.2rem 0.5rem;
         line-height: 1;

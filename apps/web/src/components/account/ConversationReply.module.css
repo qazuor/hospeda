@@ -27,7 +27,7 @@
 .textarea {
     font-family: var(--font-sans);
     font-size: 0.875rem;
-    color: var(--foreground);
+    color: var(--core-foreground);
     background-color: var(--background);
     border: 1px solid var(--border);
     border-radius: var(--radius-button, 8px);
@@ -51,7 +51,7 @@
 .charCount {
     font-family: var(--font-sans);
     font-size: 0.75rem;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     text-align: right;
 }
 
@@ -65,7 +65,7 @@
     font-size: 0.875rem;
     font-weight: 600;
     color: white;
-    background-color: var(--accent);
+    background-color: var(--brand-accent);
     border: none;
     border-radius: var(--radius-button, 8px);
     padding: var(--space-2, 8px) var(--space-4, 16px);
@@ -76,7 +76,7 @@
 }
 
 .submitButton:hover:not(:disabled) {
-    background-color: oklch(from var(--accent) calc(l - 0.05) c h);
+    background-color: oklch(from var(--brand-accent) calc(l - 0.05) c h);
 }
 
 .submitButton:disabled {
@@ -98,7 +98,7 @@
 .success {
     font-family: var(--font-sans);
     font-size: 0.85rem;
-    color: var(--foreground);
+    color: var(--core-foreground);
     background-color: oklch(from var(--brand-primary) l c h / 0.1);
     border: 1px solid oklch(from var(--brand-primary) l c h / 0.3);
     border-radius: var(--radius-button, 8px);

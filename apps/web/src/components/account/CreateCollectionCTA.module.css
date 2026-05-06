@@ -37,7 +37,7 @@
 .ctaBtn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
-    background-color: var(--muted-foreground);
+    background-color: var(--core-muted-foreground);
 }
 
 /* ── Plus icon ───────────────────────────────────────────────────────────── */
@@ -53,7 +53,7 @@
 .limitMsg {
     font-family: var(--font-sans);
     font-size: 0.8125rem;
-    color: var(--color-warning, oklch(0.72 0.15 60));
+    color: var(--warning, oklch(0.72 0.15 60));
     margin: var(--space-1, 4px) 0 0;
     flex-basis: 100%;
 }

@@ -56,12 +56,12 @@
     background-color: var(--background);
     font-family: var(--font-sans);
     font-size: 0.8125rem;
-    color: var(--foreground);
+    color: var(--core-foreground);
     transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
 
 .selectSearchInput::placeholder {
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
 }
 
 .selectSearchInput:focus {
@@ -91,7 +91,7 @@
 }
 
 .selectSearchList::-webkit-scrollbar-thumb {
-    background-color: oklch(from var(--muted-foreground) l c h / 0.15);
+    background-color: oklch(from var(--core-muted-foreground) l c h / 0.15);
     border-radius: var(--radius-pill);
 }
 
@@ -132,7 +132,7 @@
     gap: 0.625rem;
     font-family: var(--font-sans);
     font-size: 0.8125rem;
-    color: var(--foreground);
+    color: var(--core-foreground);
     cursor: pointer;
     padding: 0.3125rem 0;
     border-radius: 0.25rem;

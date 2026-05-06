@@ -157,8 +157,8 @@ export function LocationMap(props: LocationMapProps) {
                             center={[lat, lng]}
                             radius={props.radiusMeters}
                             pathOptions={{
-                                color: 'var(--accent, #f59e0b)',
-                                fillColor: 'var(--accent, #f59e0b)',
+                                color: 'var(--brand-accent)',
+                                fillColor: 'var(--brand-accent)',
                                 fillOpacity: 0.18,
                                 weight: 2
                             }}

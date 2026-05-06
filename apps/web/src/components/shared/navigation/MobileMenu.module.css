@@ -213,7 +213,7 @@
 }
 
 .userChevron {
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     transition: transform 0.2s ease;
     flex-shrink: 0;
 }
@@ -338,4 +338,3 @@
     outline: none;
     box-shadow: 0 0 0 2px var(--brand-primary);
 }
-

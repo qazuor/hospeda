@@ -213,7 +213,7 @@ export function ListingMap(props: ListingMapProps) {
     const isAccommodationMode = props.mode === 'accommodation-list';
     const maxZoom = isAccommodationMode ? ACCOMMODATION_MAX_ZOOM : DESTINATION_MAX_ZOOM;
 
-    const accentColor = 'var(--accent, #f59e0b)';
+    const accentColor = 'var(--brand-accent)';
     const highlightColor = 'var(--primary, #2563eb)';
 
     const renderedMarkers = useMemo(() => {

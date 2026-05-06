@@ -159,9 +159,9 @@ function EmptyReviews({ label }: { readonly label: string }) {
             style={{
                 textAlign: 'center',
                 padding: 'var(--space-10, 40px) var(--space-6, 24px)',
-                color: 'var(--muted-foreground)',
+                color: 'var(--core-muted-foreground)',
                 fontFamily: 'var(--font-sans)',
-                background: 'var(--card)',
+                background: 'var(--core-card)',
                 borderRadius: 'var(--radius-card)',
                 border: '1px dashed var(--border)'
             }}

@@ -21,7 +21,7 @@
     padding: var(--space-3, 0.75rem) var(--space-5, 1.25rem);
     border: none;
     border-radius: var(--radius-button, 8px);
-    background-color: var(--accent);
+    background-color: var(--brand-accent);
     color: var(--accent-foreground, #fff);
     font-family: var(--font-sans);
     font-size: 1rem;
@@ -34,7 +34,7 @@
 }
 
 .button:hover:not(:disabled) {
-    background-color: oklch(from var(--accent) calc(l - 0.06) c h);
+    background-color: oklch(from var(--brand-accent) calc(l - 0.06) c h);
     transform: translateY(-1px);
 }
 
@@ -43,7 +43,7 @@
 }
 
 .button:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--brand-accent);
     outline-offset: 3px;
 }
 

@@ -105,22 +105,22 @@ const miCuentaUrl = buildUrl({ locale, path: 'mi-cuenta' });
 	}
 
 	.checkout-result__icon--success {
-		color: var(--color-success, oklch(0.55 0.18 145));
-		background-color: oklch(from var(--color-success, oklch(0.55 0.18 145)) l c h / 0.1);
+		color: var(--success);
+		background-color: oklch(from var(--success) l c h / 0.1);
 	}
 
 	.checkout-result__title {
 		font-family: var(--font-heading);
 		font-weight: 700;
 		font-size: clamp(1.75rem, 4vw, 2.5rem);
-		color: var(--foreground);
+		color: var(--core-foreground);
 		margin: 0;
 	}
 
 	.checkout-result__subtitle {
 		font-family: var(--font-sans);
 		font-size: var(--text-body-lg);
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		margin: 0;
 		max-width: 50ch;
 	}
@@ -134,7 +134,7 @@ const miCuentaUrl = buildUrl({ locale, path: 'mi-cuenta' });
 		align-items: center;
 		justify-content: center;
 		padding: var(--space-3) var(--space-8);
-		background-color: var(--accent);
+		background-color: var(--brand-accent);
 		color: var(--accent-foreground, #fff);
 		font-family: var(--font-sans);
 		font-weight: 600;

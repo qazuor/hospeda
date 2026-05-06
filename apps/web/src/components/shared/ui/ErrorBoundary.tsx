@@ -67,7 +67,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 >
                     <p
                         style={{
-                            color: 'var(--muted-foreground, #666)',
+                            color: 'var(--core-muted-foreground)',
                             fontSize: '14px',
                             margin: '0 0 12px 0'
                         }}
@@ -80,7 +80,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                         style={{
                             padding: '8px 20px',
                             borderRadius: 'var(--radius-button, 8px)',
-                            backgroundColor: 'var(--accent, #f59e0b)',
+                            backgroundColor: 'var(--brand-accent)',
                             color: '#fff',
                             border: 'none',
                             cursor: 'pointer',

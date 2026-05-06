@@ -1,78 +1,100 @@
 ---
 /**
  * @file DestinationDetailHeader.astro
- * @description Destination detail page header with type badge, name,
+ * @description Destination detail page header with name, attraction badges,
  * bookmark counter, and favorite button. Designed to live inside a
  * WaveHeader so it can collapse to a single row when the wave goes
  * compact on scroll (mirroring the accommodation DetailHeader pattern).
  *
  * Layout: 2-column flex at all times — `.dest-header__main` on the left
- * (badges + name + meta) and `.dest-header__favorite` on the right.
+ * (name + attractions + meta) and `.dest-header__favorite` on the right.
  *
  * Compact mode: when the page-header is wrapped by a `.wave-header--compact`
  * ancestor (toggled by WaveHeader's IntersectionObserver), the inner main
  * flow collapses to a single wrapped row, fonts shrink, and the bookmark
- * meta line is hidden so only the type · name pair remains visible.
+ * meta + attractions are hidden so only the name remains visible.
  */
-import { LocationIcon, FavoriteIcon } from '@repo/icons';
+import { FavoriteIcon } from '@repo/icons';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
+/** Minimal attraction shape rendered as a header badge. */
+export interface HeaderAttraction {
+	readonly id: string;
+	readonly name: string;
+	readonly slug?: string;
+	readonly displayWeight?: number;
+}
+
 interface Props {
 	readonly destinationId: string;
 	readonly name: string;
-	/** Raw destinationType enum value (e.g. CITY, REGION, COUNTRY). */
-	readonly destinationType: string;
 	readonly locale: SupportedLocale;
 	readonly isAuthenticated?: boolean;
 	readonly initialIsFavorited?: boolean;
 	readonly initialBookmarkId?: string | null;
 	readonly bookmarkCount?: number;
+	/** Optional attractions, rendered as badges below the name. */
+	readonly attractions?: ReadonlyArray<HeaderAttraction>;
+	/** Maximum number of attractions to render as badges. Defaults to 6. */
+	readonly maxAttractions?: number;
 }
 
 const {
 	destinationId,
 	name,
-	destinationType,
 	locale,
 	isAuthenticated = false,
 	initialIsFavorited,
 	initialBookmarkId = null,
-	bookmarkCount
+	bookmarkCount,
+	attractions = [],
+	maxAttractions = 6
 } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 
-const typeLabel = destinationType
-	? t(`destination.types.${destinationType}`, destinationType)
-	: '';
+// Attractions: highest displayWeight first, then alphabetical, capped to maxAttractions.
+const sortedAttractions = [...attractions]
+	.sort((a, b) => {
+		const wA = a.displayWeight ?? 0;
+		const wB = b.displayWeight ?? 0;
+		if (wB !== wA) return wB - wA;
+		return a.name.localeCompare(b.name);
+	})
+	.slice(0, maxAttractions);
+const remainingAttractions = Math.max(0, attractions.length - sortedAttractions.length);
 ---
 
 <header class="dest-header">
 	<div class="dest-header__main">
-		{typeLabel && (
-			<div class="dest-header__badges">
-				<span class="dest-header__type-badge">
-					<LocationIcon size={14} aria-hidden="true" />
-					{typeLabel}
-				</span>
-			</div>
-		)}
-
 		<h1 class="dest-header__name">{name}</h1>
+
+		{sortedAttractions.length > 0 && (
+			<ul class="dest-header__attractions" aria-label={t('destinations.detail.attractions.title', 'Qué hacer acá')}>
+				{sortedAttractions.map((a) => (
+					<li class="dest-header__attraction-badge">{a.name}</li>
+				))}
+				{remainingAttractions > 0 && (
+					<li class="dest-header__attraction-badge dest-header__attraction-badge--more">
+						+{remainingAttractions}
+					</li>
+				)}
+			</ul>
+		)}
 
 		{bookmarkCount !== undefined && (
 			<div class="dest-header__meta">
 				<span
 					class="dest-header__bookmark-count"
 					aria-label={bookmarkCount === 0
-						? t('destination.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
-						: tPlural('destination.detail.bookmark_count', bookmarkCount)}
+						? t('destinations.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
+						: tPlural('destinations.detail.bookmark_count', bookmarkCount)}
 				>
 					<FavoriteIcon size={14} weight="fill" aria-hidden="true" />
 					{bookmarkCount === 0
-						? t('destination.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
-						: tPlural('destination.detail.bookmark_count', bookmarkCount)}
+						? t('destinations.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
+						: tPlural('destinations.detail.bookmark_count', bookmarkCount)}
 				</span>
 			</div>
 		)}
@@ -114,31 +136,36 @@ const typeLabel = destinationType
 		margin-left: auto;
 	}
 
-	.dest-header__badges {
+	.dest-header__attractions {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
-		align-items: center;
-		transition: gap 0.3s ease;
+		gap: 0.4rem;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		transition: max-height 0.3s ease, opacity 0.2s ease;
 	}
 
-	.dest-header__type-badge {
+	.dest-header__attraction-badge {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.25rem;
-		border: 1px solid var(--border);
+		border: 1px solid oklch(from var(--brand-primary) l c h / 0.25);
 		border-radius: var(--radius-pill);
-		background-color: var(--core-card);
-		color: var(--core-muted-foreground);
+		background-color: oklch(from var(--brand-primary) l c h / 0.1);
+		color: var(--brand-primary);
 		font-family: var(--font-sans);
-		font-size: 0.7rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		padding: 4px 14px;
+		font-size: 0.75rem;
+		font-weight: 600;
+		padding: 3px 10px;
 		line-height: 1.4;
 		white-space: nowrap;
 		transition: padding 0.3s ease, font-size 0.3s ease;
+	}
+
+	.dest-header__attraction-badge--more {
+		background-color: var(--core-card);
+		color: var(--core-muted-foreground);
+		border-color: var(--border);
 	}
 
 	.dest-header__name {
@@ -192,13 +219,11 @@ const typeLabel = destinationType
 		gap: 0.5rem;
 	}
 
-	:global(.wave-header--compact) .dest-header__badges {
-		gap: 4px;
-	}
-
-	:global(.wave-header--compact) .dest-header__type-badge {
-		font-size: 0.6rem;
-		padding: 2px 10px;
+	:global(.wave-header--compact) .dest-header__attractions {
+		max-height: 0;
+		opacity: 0;
+		pointer-events: none;
+		overflow: hidden;
 	}
 
 	:global(.wave-header--compact) .dest-header__name {
@@ -213,7 +238,8 @@ const typeLabel = destinationType
 
 	@media (prefers-reduced-motion: reduce) {
 		.dest-header__main,
-		.dest-header__type-badge,
+		.dest-header__attractions,
+		.dest-header__attraction-badge,
 		.dest-header__name,
 		.dest-header__meta {
 			transition: none;

@@ -195,7 +195,7 @@ const detailsJson = showDevDetails && error?.details !== undefined
 		font-family: var(--font-heading);
 		font-size: var(--text-xl, 1.25rem);
 		font-weight: 600;
-		color: var(--foreground);
+		color: var(--core-foreground);
 		max-width: 36ch;
 		line-height: 1.4;
 		margin: 0;
@@ -204,7 +204,7 @@ const detailsJson = showDevDetails && error?.details !== undefined
 	.error-banner__subtitle {
 		font-family: var(--font-sans);
 		font-size: var(--text-body);
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		max-width: 44ch;
 		line-height: 1.6;
 		margin: 0;
@@ -260,7 +260,7 @@ const detailsJson = showDevDetails && error?.details !== undefined
 		font-family: var(--font-sans);
 		font-size: var(--text-body);
 		font-weight: 500;
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		cursor: pointer;
 		white-space: nowrap;
 		transition: background-color var(--duration-normal) ease, color var(--duration-normal) ease, border-color var(--duration-normal) ease;
@@ -268,8 +268,8 @@ const detailsJson = showDevDetails && error?.details !== undefined
 
 	.error-banner__report:hover {
 		background-color: var(--muted);
-		color: var(--foreground);
-		border-color: var(--foreground);
+		color: var(--core-foreground);
+		border-color: var(--core-foreground);
 	}
 
 	.error-banner__report :global(svg) {
@@ -287,7 +287,7 @@ const detailsJson = showDevDetails && error?.details !== undefined
 	.error-banner__details-summary {
 		font-family: var(--font-sans);
 		font-size: var(--text-body-sm);
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		cursor: pointer;
 		user-select: none;
 		padding: var(--space-2);
@@ -307,7 +307,7 @@ const detailsJson = showDevDetails && error?.details !== undefined
 		border-radius: var(--radius-button);
 		font-family: var(--font-mono, monospace);
 		font-size: var(--text-body-xs, 0.75rem);
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 	}
 
 	.error-banner__detail-line {
@@ -316,7 +316,7 @@ const detailsJson = showDevDetails && error?.details !== undefined
 
 	.error-banner__detail-label {
 		font-weight: 600;
-		color: var(--foreground);
+		color: var(--core-foreground);
 	}
 
 	.error-banner__detail-pre {

@@ -10,7 +10,7 @@
     max-width: 640px;
     margin: 0 auto;
     padding: var(--space-6, 1.5rem);
-    background-color: var(--card);
+    background-color: var(--core-card);
     border-radius: var(--radius-organic-sm, 0px 75px);
     box-shadow: var(--shadow-card);
 }
@@ -25,7 +25,7 @@
     font-family: var(--font-sans);
     font-size: var(--text-body-sm, 0.9375rem);
     font-weight: 600;
-    color: var(--foreground);
+    color: var(--core-foreground);
 }
 
 .input,
@@ -34,7 +34,7 @@
     width: 100%;
     font-family: var(--font-sans);
     font-size: var(--text-body, 1rem);
-    color: var(--foreground);
+    color: var(--core-foreground);
     background-color: var(--background);
     border: 1px solid var(--border);
     border-radius: var(--radius-button, 8px);
@@ -47,8 +47,8 @@
 .select:focus,
 .textarea:focus {
     outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px oklch(from var(--accent) l c h / 0.2);
+    border-color: var(--brand-accent);
+    box-shadow: 0 0 0 3px oklch(from var(--brand-accent) l c h / 0.2);
 }
 
 .input[aria-invalid="true"],
@@ -66,7 +66,7 @@
     margin: 0;
     font-family: var(--font-sans);
     font-size: var(--text-body-xs, 0.8125rem);
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
 }
 
 .error {
@@ -98,7 +98,7 @@
     font-weight: 600;
     font-size: var(--text-body, 1rem);
     color: var(--background);
-    background-color: var(--accent);
+    background-color: var(--brand-accent);
     border: none;
     border-radius: var(--radius-button, 8px);
     padding: var(--space-3, 0.75rem) var(--space-6, 1.5rem);
@@ -108,7 +108,7 @@
 }
 
 .submitBtn:hover:not(:disabled) {
-    background-color: oklch(from var(--accent) calc(l - 0.05) c h);
+    background-color: oklch(from var(--brand-accent) calc(l - 0.05) c h);
     transform: translateY(-1px);
 }
 
@@ -122,6 +122,6 @@
     text-align: center;
     font-family: var(--font-sans);
     font-size: var(--text-body-xs, 0.8125rem);
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     line-height: 1.5;
 }

@@ -172,7 +172,7 @@
     background: none;
     cursor: pointer;
     aspect-ratio: 4 / 3;
-    border-radius: var(--radius-organic-sm, 0px 75px);
+    border-radius: var(--radius-card, 24px);
 }
 
 .inlineGridImg {
@@ -336,7 +336,7 @@
 
 .lightboxThumbActive {
     opacity: 1;
-    border-color: var(--accent, oklch(0.72 0.18 62));
+    border-color: var(--brand-accent);
 }
 
 .lightboxThumbImg {

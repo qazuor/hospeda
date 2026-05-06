@@ -50,7 +50,7 @@
         bottom: 0;
         width: min(85vw, 380px);
         z-index: 400;
-        background-color: var(--card);
+        background-color: var(--core-card);
         box-shadow: 4px 0 24px oklch(0 0 0 / 0.12);
         transform: translateX(-100%);
         transition: transform var(--duration-normal) ease;

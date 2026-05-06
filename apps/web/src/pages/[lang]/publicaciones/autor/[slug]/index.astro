@@ -141,7 +141,7 @@ const canonical = `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`;
 		display: flex;
 		align-items: flex-start;
 		gap: var(--space-5);
-		background-color: var(--card);
+		background-color: var(--core-card);
 		border-radius: var(--radius-card);
 		padding: var(--space-6);
 		box-shadow: var(--shadow-card);
@@ -167,14 +167,14 @@ const canonical = `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`;
 		font-family: var(--font-heading);
 		font-weight: 700;
 		font-size: var(--text-xl);
-		color: var(--foreground);
+		color: var(--core-foreground);
 		margin: 0;
 	}
 
 	.author-page__bio {
 		font-family: var(--font-sans);
 		font-size: var(--text-body);
-		color: var(--muted-foreground);
+		color: var(--core-muted-foreground);
 		line-height: 1.6;
 		margin: 0;
 	}

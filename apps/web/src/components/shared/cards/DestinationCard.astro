@@ -57,6 +57,11 @@ const accommodationsLabel = destination.accommodationsCount === 1
 	: t('destination.card.accommodation_plural', 'alojamientos');
 
 const isExternalImage = destination.featuredImage.url.startsWith('http');
+
+// Top attractions for the card chip row (already sorted desc by displayWeight in transforms).
+const MAX_ATTRACTIONS_ON_CARD = 3;
+const topAttractions = (destination.attractions ?? []).slice(0, MAX_ATTRACTIONS_ON_CARD);
+const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) - topAttractions.length);
 ---
 
 <article class={`dest-card dest-card--${variant}`}>
@@ -170,6 +175,18 @@ const isExternalImage = destination.featuredImage.url.startsWith('http');
 
 				<!-- Description -->
 				<p class="dest-card__description">{destination.summary}</p>
+
+				<!-- Top attractions -->
+				{topAttractions.length > 0 && (
+					<ul class="dest-card__attractions" aria-label={t('destinations.detail.attractions.title', 'Qué hacer acá')}>
+						{topAttractions.map((a) => (
+							<li class="dest-card__attraction">{a.name}</li>
+						))}
+						{remainingAttractions > 0 && (
+							<li class="dest-card__attraction dest-card__attraction--more">+{remainingAttractions}</li>
+						)}
+					</ul>
+				)}
 
 				<!-- Stars + rating row -->
 				{destination.averageRating > 0 && (
@@ -464,6 +481,42 @@ const isExternalImage = destination.featuredImage.url.startsWith('http');
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
 		margin: 0;
+	}
+
+	/* =========================================================================
+	   ATTRACTIONS (grid variant)
+	   ========================================================================= */
+	.dest-card__attractions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.dest-card__attraction {
+		display: inline-flex;
+		align-items: center;
+		border: 1px solid oklch(from var(--brand-primary) l c h / 0.25);
+		border-radius: 9999px;
+		background-color: oklch(from var(--brand-primary) l c h / 0.08);
+		color: var(--brand-primary);
+		font-family: var(--font-sans);
+		font-weight: 500;
+		font-size: 11px;
+		line-height: 1;
+		padding: 4px 8px;
+		white-space: nowrap;
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.dest-card__attraction--more {
+		background-color: var(--core-card);
+		color: var(--core-muted-foreground);
+		border-color: var(--border);
 	}
 
 	/* =========================================================================

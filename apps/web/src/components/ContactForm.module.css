@@ -78,13 +78,13 @@
 .input.inputError,
 .select.inputError,
 .textarea.inputError {
-    border-color: var(--error, oklch(0.6 0.22 25));
+    border-color: var(--destructive, oklch(0.6 0.22 25));
 }
 
 .input.inputError:focus,
 .select.inputError:focus,
 .textarea.inputError:focus {
-    box-shadow: 0 0 0 3px oklch(from var(--error, oklch(0.6 0.22 25)) l c h / 0.18);
+    box-shadow: 0 0 0 3px oklch(from var(--destructive, oklch(0.6 0.22 25)) l c h / 0.18);
 }
 
 .select {
@@ -115,7 +115,7 @@
 .errorMsg {
     font-family: var(--font-sans);
     font-size: var(--text-body-sm);
-    color: var(--error, oklch(0.6 0.22 25));
+    color: var(--destructive, oklch(0.6 0.22 25));
     margin: 0;
 }
 
@@ -199,11 +199,11 @@
 
 .formError {
     padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
-    background-color: oklch(from var(--error, oklch(0.6 0.22 25)) l c h / 0.1);
-    border: 1px solid var(--error, oklch(0.6 0.22 25));
+    background-color: oklch(from var(--destructive, oklch(0.6 0.22 25)) l c h / 0.1);
+    border: 1px solid var(--destructive, oklch(0.6 0.22 25));
     border-radius: var(--radius-button);
     font-family: var(--font-sans);
     font-size: var(--text-body-sm);
-    color: var(--error, oklch(0.6 0.22 25));
+    color: var(--destructive, oklch(0.6 0.22 25));
     margin: 0;
 }

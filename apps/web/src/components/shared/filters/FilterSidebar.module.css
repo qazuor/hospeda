@@ -98,7 +98,7 @@
     overflow: hidden;
     border: 1px solid var(--border);
     border-radius: 1rem;
-    background-color: var(--card);
+    background-color: var(--core-card);
     box-shadow: 0 1px 3px oklch(0 0 0 / 0.04), 0 4px 12px oklch(0 0 0 / 0.03);
 }
 
@@ -112,7 +112,7 @@
     gap: 0.75rem;
     padding: 1.25rem 1.5rem;
     border-bottom: 1px solid oklch(from var(--border) l c h / 0.5);
-    background-color: var(--card);
+    background-color: var(--core-card);
     flex-shrink: 0;
     position: sticky;
     top: 0;
@@ -133,7 +133,7 @@
     font-size: 1.125rem;
     font-weight: 700;
     letter-spacing: -0.01em;
-    color: var(--foreground);
+    color: var(--core-foreground);
     margin: 0;
 }
 
@@ -168,7 +168,7 @@
     font-family: var(--font-sans);
     font-size: 0.6875rem;
     font-weight: 500;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     cursor: pointer;
     transition: color var(--duration-fast) ease;
     white-space: nowrap;
@@ -208,16 +208,16 @@
     background: none;
     font-size: 1.25rem;
     line-height: 1;
-    color: var(--muted-foreground);
+    color: var(--core-muted-foreground);
     cursor: pointer;
     transition: color var(--duration-fast) ease, border-color var(--duration-fast) ease,
         background-color var(--duration-fast) ease;
 }
 
 .drawerClose:hover {
-    color: var(--foreground);
-    border-color: var(--foreground);
-    background-color: oklch(from var(--foreground) l c h / 0.04);
+    color: var(--core-foreground);
+    border-color: var(--core-foreground);
+    background-color: oklch(from var(--core-foreground) l c h / 0.04);
 }
 
 /* Scrollable body */
@@ -239,12 +239,12 @@
 }
 
 .sidebarBody::-webkit-scrollbar-thumb {
-    background-color: oklch(from var(--muted-foreground) l c h / 0.2);
+    background-color: oklch(from var(--core-muted-foreground) l c h / 0.2);
     border-radius: var(--radius-pill);
 }
 
 .sidebarBody::-webkit-scrollbar-thumb:hover {
-    background-color: oklch(from var(--muted-foreground) l c h / 0.35);
+    background-color: oklch(from var(--core-muted-foreground) l c h / 0.35);
 }
 
 /* ============================================================

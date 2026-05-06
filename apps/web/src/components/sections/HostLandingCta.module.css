@@ -69,7 +69,7 @@
 
 .secondaryLink:hover,
 .secondaryLink:focus-visible {
-    color: var(--accent);
+    color: var(--brand-accent);
 }
 
 .secondaryLink:focus-visible {
