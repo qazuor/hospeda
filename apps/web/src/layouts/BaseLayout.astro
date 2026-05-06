@@ -30,6 +30,7 @@ import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { GuestPreferenceNudge } from '@/components/shared/preferences/GuestPreferenceNudge.client';
 import { AuthedPreferenceSync } from '@/components/shared/preferences/AuthedPreferenceSync.client';
 import { FeedbackFABClient } from '@/components/feedback/FeedbackFAB.client';
+import { PaginationLoading } from '@/components/shared/feedback/PaginationLoading.client';
 import '@/styles/global.css';
 // Static stylesheet for the @repo/feedback widget. Imported here so Astro/Vite
 // tracks it as a page-level CSS asset and preserves it across view transitions
@@ -185,6 +186,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<ToastViewport client:idle />
 		<GuestPreferenceNudge client:idle />
 		<AuthedPreferenceSync client:idle />
+		<PaginationLoading client:idle />
 
 		{feedbackEnabled && (
 			<FeedbackFABClient
