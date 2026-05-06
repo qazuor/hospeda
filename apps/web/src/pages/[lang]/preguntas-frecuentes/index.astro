@@ -1,0 +1,656 @@
+---
+/**
+ * @file preguntas-frecuentes/index.astro
+ * @description Comprehensive FAQ page covering tourists, hosts, contributors,
+ * partners, account/privacy, and support. Single-page layout with sticky
+ * category nav (desktop), zero-JS accordions via native <details>/<summary>,
+ * and a FAQPage JSON-LD payload aggregating every question.
+ * @route /{lang}/preguntas-frecuentes/
+ * @rendering SSG (prerender)
+ */
+
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import {
+	ChevronDownIcon,
+	InfoIcon,
+	UsersIcon,
+	HomeIcon,
+	PostIcon,
+	PromotionsIcon,
+	UserIcon,
+	ChatIcon,
+	EmailIcon,
+	WhatsappIcon,
+	ArrowRightIcon
+} from '@repo/icons';
+import type { GetStaticPaths } from 'astro';
+
+export const prerender = true;
+
+export const getStaticPaths = (() => {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}) satisfies GetStaticPaths;
+
+const { lang } = Astro.params;
+const locale = lang as SupportedLocale;
+const { t } = createTranslations(locale);
+
+/**
+ * Category configuration: ordered, with their item keys.
+ * Keep ordering tight here so the nav, the sections, and the JSON-LD agree.
+ */
+const categories = [
+	{
+		key: 'about',
+		Icon: InfoIcon,
+		items: ['what', 'coverage', 'cost', 'languages', 'different', 'scope', 'verified']
+	},
+	{
+		key: 'tourists',
+		Icon: UsersIcon,
+		items: [
+			'search',
+			'booking',
+			'contactOwner',
+			'reviews',
+			'favorites',
+			'issue',
+			'petFriendly',
+			'events',
+			'cancellation'
+		]
+	},
+	{
+		key: 'owners',
+		Icon: HomeIcon,
+		items: [
+			'publish',
+			'cost',
+			'commission',
+			'ready',
+			'manageReviews',
+			'featured',
+			'pause',
+			'payments',
+			'support'
+		]
+	},
+	{
+		key: 'contributors',
+		Icon: PostIcon,
+		items: [
+			'writeArticle',
+			'submitPhotos',
+			'submitEvent',
+			'paid',
+			'placeReviews',
+			'program',
+			'languages'
+		]
+	},
+	{
+		key: 'partners',
+		Icon: PromotionsIcon,
+		items: [
+			'advertise',
+			'formats',
+			'tourismOffices',
+			'eventSponsorship',
+			'officialPartner',
+			'commercialContact',
+			'minBudget'
+		]
+	},
+	{
+		key: 'account',
+		Icon: UserIcon,
+		items: [
+			'needAccount',
+			'deleteAccount',
+			'dataStored',
+			'themeLanguage',
+			'paymentSecurity',
+			'newsletter'
+		]
+	},
+	{
+		key: 'support',
+		Icon: ChatIcon,
+		items: ['channels', 'hours', 'whatsapp', 'urgency', 'freePhone', 'press']
+	}
+] as const;
+
+const resolvedCategories = categories.map((cat) => ({
+	key: cat.key,
+	Icon: cat.Icon,
+	tagline: t(`faq.categories.${cat.key}.tagline`),
+	title: t(`faq.categories.${cat.key}.title`),
+	subtitle: t(`faq.categories.${cat.key}.subtitle`),
+	items: cat.items.map((itemKey) => ({
+		key: itemKey,
+		question: t(`faq.categories.${cat.key}.items.${itemKey}.question`),
+		answer: t(`faq.categories.${cat.key}.items.${itemKey}.answer`)
+	}))
+}));
+
+// ─── JSON-LD: FAQPage with every Q/A flattened ────────────────────────────────
+const faqJsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'FAQPage',
+	name: t('faq.title'),
+	description: t('faq.description'),
+	inLanguage: locale,
+	mainEntity: resolvedCategories.flatMap((cat) =>
+		cat.items.map((item) => ({
+			'@type': 'Question',
+			name: item.question,
+			acceptedAnswer: {
+				'@type': 'Answer',
+				text: item.answer
+			}
+		}))
+	)
+};
+
+const contactHref = buildUrl({ locale, path: '/contacto/' });
+const whatsappHref = 'https://wa.me/5493442453797';
+---
+
+<DefaultLayout
+	locale={locale}
+	title={t('faq.title')}
+	description={t('faq.description')}
+>
+	<script
+		slot="head-extra"
+		type="application/ld+json"
+		set:html={JSON.stringify(faqJsonLd)}
+	></script>
+
+	<!-- ───── Hero ───────────────────────────────────────────────────────── -->
+	<section class="faq-hero section section--warm">
+		<div class="faq-hero__container" data-reveal="up">
+			<p class="faq-hero__tagline">{t('faq.hero.tagline')}</p>
+			<h1 class="faq-hero__title">{t('faq.hero.title')}</h1>
+			<p class="faq-hero__subtitle">{t('faq.hero.subtitle')}</p>
+
+			<div class="faq-hero__cta">
+				<span class="faq-hero__cta-hint">{t('faq.hero.ctaContactHint')}</span>
+				<a href={contactHref} class="faq-hero__cta-link">
+					{t('faq.hero.ctaContact')}
+					<ArrowRightIcon size="sm" weight="bold" />
+				</a>
+			</div>
+		</div>
+	</section>
+
+	<!-- ───── Category nav (sticky on desktop) ───────────────────────────── -->
+	<nav class="faq-nav" aria-label={t('faq.nav.label')}>
+		<div class="faq-nav__container">
+			<span class="faq-nav__hint" aria-hidden="true">{t('faq.nav.jumpTo')}</span>
+			<ul class="faq-nav__list">
+				{resolvedCategories.map((cat) => (
+					<li>
+						<a href={`#cat-${cat.key}`} class="faq-nav__link">
+							<span class="faq-nav__icon" aria-hidden="true">
+								<cat.Icon size="sm" weight="duotone" />
+							</span>
+							<span class="faq-nav__label">{cat.title}</span>
+						</a>
+					</li>
+				))}
+			</ul>
+		</div>
+	</nav>
+
+	<!-- ───── Categories ─────────────────────────────────────────────────── -->
+	{resolvedCategories.map((cat, catIdx) => (
+		<section
+			id={`cat-${cat.key}`}
+			class:list={[
+				'faq-category',
+				'section',
+				{ 'section--warm': catIdx % 2 === 1 }
+			]}
+		>
+			<div class="faq-category__container">
+				<div class="faq-category__header">
+					<span class="faq-category__icon" aria-hidden="true">
+						<cat.Icon size="lg" weight="duotone" />
+					</span>
+					<SectionHeader
+						tagline={cat.tagline}
+						title={cat.title}
+						subtitle={cat.subtitle}
+						alignment="left"
+					/>
+				</div>
+
+				<div class="faq-category__list" role="list">
+					{cat.items.map((item, i) => (
+						<details
+							class="faq-item"
+							role="listitem"
+							data-reveal="up"
+							style={`transition-delay: ${Math.min(i, 6) * 60}ms`}
+						>
+							<summary class="faq-item__summary">
+								<span class="faq-item__question">{item.question}</span>
+								<span class="faq-item__icon" aria-hidden="true">
+									<ChevronDownIcon size={20} weight="bold" />
+								</span>
+							</summary>
+							<div class="faq-item__answer">
+								<p>{item.answer}</p>
+							</div>
+						</details>
+					))}
+				</div>
+			</div>
+		</section>
+	))}
+
+	<!-- ───── Still need help CTA ────────────────────────────────────────── -->
+	<section class="faq-still section">
+		<div class="faq-still__container" data-reveal="up">
+			<p class="faq-still__tagline">{t('faq.stillNeedHelp.tagline')}</p>
+			<h2 class="faq-still__title">{t('faq.stillNeedHelp.title')}</h2>
+			<p class="faq-still__subtitle">{t('faq.stillNeedHelp.subtitle')}</p>
+
+			<div class="faq-still__actions">
+				<a href={contactHref} class="faq-still__btn faq-still__btn--primary">
+					<EmailIcon size="md" weight="duotone" />
+					<span>{t('faq.stillNeedHelp.ctaContact')}</span>
+				</a>
+				<a
+					href={whatsappHref}
+					class="faq-still__btn faq-still__btn--secondary"
+					target="_blank"
+					rel="noopener noreferrer"
+				>
+					<WhatsappIcon size="md" weight="duotone" />
+					<span>{t('faq.stillNeedHelp.ctaWhatsApp')}</span>
+				</a>
+			</div>
+		</div>
+	</section>
+</DefaultLayout>
+
+<style>
+	/* ─── Hero ──────────────────────────────────────────────────────────── */
+	.faq-hero {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.faq-hero__container {
+		max-width: 880px;
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		text-align: center;
+	}
+
+	.faq-hero__tagline {
+		font-family: var(--font-decorative);
+		font-size: var(--text-tagline);
+		color: var(--brand-accent);
+		font-style: italic;
+		margin: 0 0 var(--space-2, 0.5rem);
+	}
+
+	.faq-hero__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-h2);
+		color: var(--core-foreground);
+		margin: 0 0 var(--space-4, 1rem);
+		line-height: 1.15;
+	}
+
+	.faq-hero__subtitle {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--core-muted-foreground);
+		max-width: 60ch;
+		margin: 0 auto var(--space-5, 1.25rem);
+		line-height: 1.6;
+	}
+
+	.faq-hero__cta {
+		display: inline-flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		align-items: center;
+		gap: 0.5rem 0.75rem;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+	}
+
+	.faq-hero__cta-hint {
+		color: var(--core-muted-foreground);
+	}
+
+	.faq-hero__cta-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		color: var(--brand-primary);
+		font-weight: 600;
+		text-decoration: none;
+		transition: gap var(--duration-fast) ease, color var(--duration-fast) ease;
+	}
+
+	.faq-hero__cta-link:hover,
+	.faq-hero__cta-link:focus-visible {
+		gap: 0.65rem;
+		color: var(--brand-accent);
+		outline: none;
+	}
+
+	/* ─── Category nav ──────────────────────────────────────────────────── */
+	.faq-nav {
+		background-color: var(--core-card);
+		border-bottom: 1px solid oklch(from var(--core-foreground) l c h / 0.08);
+		position: relative;
+		z-index: 5;
+	}
+
+	.faq-nav__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0.875rem var(--space-container-x);
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		align-items: stretch;
+	}
+
+	.faq-nav__hint {
+		font-family: var(--font-sans);
+		font-size: var(--text-caption);
+		color: var(--core-muted-foreground);
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+	}
+
+	.faq-nav__list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-wrap: nowrap;
+		gap: 0.5rem;
+		overflow-x: auto;
+		scrollbar-width: thin;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.faq-nav__link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 0.875rem;
+		border-radius: var(--radius-pill);
+		background-color: oklch(from var(--brand-primary) l c h / 0.08);
+		color: var(--brand-primary);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		font-weight: 500;
+		text-decoration: none;
+		white-space: nowrap;
+		transition:
+			background-color var(--duration-fast) ease,
+			color var(--duration-fast) ease,
+			transform var(--duration-fast) ease;
+	}
+
+	.faq-nav__link:hover,
+	.faq-nav__link:focus-visible {
+		background-color: var(--brand-primary);
+		color: var(--core-card);
+		transform: translateY(-1px);
+		outline: none;
+	}
+
+	.faq-nav__icon {
+		display: inline-flex;
+		flex-shrink: 0;
+	}
+
+	@media (min-width: 768px) {
+		.faq-nav {
+			position: sticky;
+			top: 0;
+			backdrop-filter: blur(8px);
+			background-color: oklch(from var(--core-card) l c h / 0.92);
+		}
+
+		.faq-nav__container {
+			flex-direction: row;
+			align-items: center;
+			gap: 1rem;
+		}
+
+		.faq-nav__list {
+			flex-wrap: wrap;
+			overflow-x: visible;
+			flex: 1;
+		}
+	}
+
+	/* ─── Category section ──────────────────────────────────────────────── */
+	.faq-category {
+		scroll-margin-top: 5rem;
+	}
+
+	.faq-category__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+	}
+
+	.faq-category__header {
+		display: flex;
+		align-items: flex-start;
+		gap: 1rem;
+		margin-bottom: var(--space-4, 1rem);
+	}
+
+	.faq-category__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 56px;
+		height: 56px;
+		flex-shrink: 0;
+		border-radius: var(--radius-md, 10px);
+		background-color: oklch(from var(--brand-primary) l c h / 0.1);
+		color: var(--brand-primary);
+		margin-top: 0.25rem;
+	}
+
+	.faq-category:nth-of-type(even) .faq-category__icon {
+		background-color: oklch(from var(--brand-accent) l c h / 0.12);
+		color: var(--brand-accent);
+	}
+
+	.faq-category__list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3, 0.75rem);
+		max-width: 880px;
+		margin-top: var(--space-5, 1.25rem);
+	}
+
+	/* ─── FAQ accordion item ────────────────────────────────────────────── */
+	.faq-item {
+		background-color: var(--core-card);
+		border-radius: var(--radius-card);
+		box-shadow: var(--shadow-card);
+		overflow: hidden;
+		transition: box-shadow var(--duration-normal) ease;
+	}
+
+	.faq-item:hover,
+	.faq-item[open] {
+		box-shadow: var(--shadow-card-hover);
+	}
+
+	.faq-item__summary {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3, 0.75rem);
+		padding: var(--space-4, 1rem) var(--space-5, 1.25rem);
+		cursor: pointer;
+		list-style: none;
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: var(--text-h4);
+		color: var(--core-foreground);
+	}
+
+	.faq-item__summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.faq-item__summary:focus-visible {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: -2px;
+	}
+
+	.faq-item__question {
+		flex: 1;
+	}
+
+	.faq-item__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 32px;
+		flex-shrink: 0;
+		border-radius: 50%;
+		background-color: oklch(from var(--brand-primary) l c h / 0.1);
+		color: var(--brand-primary);
+		transition: transform var(--duration-normal) ease;
+	}
+
+	.faq-item[open] .faq-item__icon {
+		transform: rotate(180deg);
+		background-color: oklch(from var(--brand-accent) l c h / 0.15);
+		color: var(--brand-accent);
+	}
+
+	.faq-item__answer {
+		padding: 0 var(--space-5, 1.25rem) var(--space-4, 1rem);
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--core-muted-foreground);
+		line-height: 1.65;
+	}
+
+	.faq-item__answer p {
+		margin: 0;
+	}
+
+	/* ─── Still need help CTA ───────────────────────────────────────────── */
+	.faq-still {
+		background-color: var(--surface-warm);
+	}
+
+	.faq-still__container {
+		max-width: 720px;
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		text-align: center;
+	}
+
+	.faq-still__tagline {
+		font-family: var(--font-decorative);
+		font-size: var(--text-tagline);
+		color: var(--brand-accent);
+		font-style: italic;
+		margin: 0 0 var(--space-2, 0.5rem);
+	}
+
+	.faq-still__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-h2);
+		color: var(--core-foreground);
+		margin: 0 0 var(--space-3, 0.75rem);
+		line-height: 1.2;
+	}
+
+	.faq-still__subtitle {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--core-muted-foreground);
+		max-width: 50ch;
+		margin: 0 auto var(--space-6, 1.5rem);
+		line-height: 1.6;
+	}
+
+	.faq-still__actions {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		justify-content: center;
+		align-items: stretch;
+	}
+
+	.faq-still__btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0.875rem 1.5rem;
+		border-radius: var(--radius-pill);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		font-weight: 600;
+		text-decoration: none;
+		transition:
+			transform var(--duration-fast) ease,
+			box-shadow var(--duration-fast) ease,
+			background-color var(--duration-fast) ease;
+	}
+
+	.faq-still__btn:hover,
+	.faq-still__btn:focus-visible {
+		transform: translateY(-2px);
+		box-shadow: var(--shadow-card);
+		outline: none;
+	}
+
+	.faq-still__btn--primary {
+		background-color: var(--brand-primary);
+		color: var(--core-card);
+	}
+
+	.faq-still__btn--primary:hover {
+		background-color: oklch(from var(--brand-primary) calc(l - 0.05) c h);
+	}
+
+	.faq-still__btn--secondary {
+		background-color: var(--core-card);
+		color: oklch(0.55 0.18 145);
+		border: 1px solid oklch(0.55 0.18 145 / 0.3);
+	}
+
+	.faq-still__btn--secondary:hover {
+		background-color: oklch(0.65 0.18 145 / 0.1);
+	}
+
+	@media (min-width: 600px) {
+		.faq-still__actions {
+			flex-direction: row;
+			align-items: center;
+		}
+	}
+</style>
