@@ -544,12 +544,19 @@ export class DestinationService extends BaseCrudService<
                     );
                 }
                 checkCanViewDestination(actor, destination);
+                // findById does not load attractions; fetch the count separately
+                // so the stats card reflects the same number as the public list endpoint.
+                const attractionsMap = await this.model.getAttractionsMap(
+                    [destinationId],
+                    resolvedCtx.tx
+                );
+                const attractionsCount = attractionsMap.get(destinationId)?.length ?? 0;
                 return {
                     stats: {
                         accommodationsCount: destination.accommodationsCount ?? 0,
                         reviewsCount: destination.reviewsCount ?? 0,
                         averageRating: destination.averageRating ?? 0,
-                        attractionsCount: destination.attractions?.length ?? 0,
+                        attractionsCount,
                         eventsCount: null // No event-destination relation exists yet
                     }
                 };

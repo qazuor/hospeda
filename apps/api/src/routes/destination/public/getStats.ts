@@ -31,7 +31,9 @@ export const publicGetDestinationStatsRoute = createPublicRoute({
             destinationId: params.id as string
         });
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
-        return result.data;
+        // Service returns { stats: DestinationStats }; the response schema is the
+        // flat DestinationStats object, so unwrap before returning.
+        return result.data?.stats;
     },
     options: {
         cacheTTL: 600, // Cache for 10 minutes
