@@ -926,7 +926,10 @@ export function toEventDetailProps({
             : null;
 
     // --- Pricing ---
-    const priceObj = item.price as Record<string, unknown> | undefined;
+    // The public API response exposes the price block under `pricing` (matches
+    // EventPriceSchema). Older shapes used `price`, so we accept both for
+    // forward-compatibility.
+    const priceObj = (item.pricing ?? item.price) as Record<string, unknown> | undefined;
     const hasPriceData = priceObj != null;
     const pricingIsFree = hasPriceData
         ? Boolean(priceObj.isFree ?? (priceObj.amount == null && priceObj.price == null))
