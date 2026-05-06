@@ -15,6 +15,7 @@ import {
     EventProtectedSchema,
     EventPublicSchema
 } from '../event/event.access.schema.js';
+import { PublicPostTagSchema } from '../tag/post-tag.public.schema.js';
 import {
     UserAdminSchema,
     UserProtectedSchema,
@@ -143,6 +144,12 @@ export const PostPublicSchema = PostSchema.pick({
     relatedDestination: DestinationPublicSchema.nullish(),
     /** Full related event when JOIN is performed — public-tier fields only. */
     relatedEvent: EventPublicSchema.nullish(),
+    /**
+     * Public PostTags — overrides the picked field to use the slimmer
+     * PublicPostTagSchema (id, name, slug, color, icon, lifecycleState,
+     * description) instead of the full admin-tier PostTagSchema.
+     */
+    postTags: z.array(PublicPostTagSchema).optional(),
     /**
      * Sponsorship data with nested sponsor user — public-tier fields only.
      * Inlined to avoid circular import with postSponsorship.access.schema.ts.

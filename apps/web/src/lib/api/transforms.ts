@@ -462,7 +462,7 @@ export function toArticleCardProps({
         entity: 'post',
         id: String(item.slug || ''),
         extract: true,
-        fallback: '/images/placeholder-post.svg'
+        fallback: '/assets/images/placeholder-blog.svg'
     });
 
     return {
