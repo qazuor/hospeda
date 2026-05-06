@@ -1,0 +1,33 @@
+{
+    "cta": "Get started",
+    "free": "Free",
+    "recommended": "Recommended",
+    "trial": "{days}-day free trial",
+    "includesEverything": "Everything in {plan}, plus:",
+    "features": {
+        "label": "Includes"
+    },
+    "empty": {
+        "contact": "Contact us"
+    },
+    "owner": {
+        "title": "Plans for owners — Hospeda",
+        "description": "Publish your accommodation with the plan that best fits your business.",
+        "tagline": "Plans and pricing",
+        "heading": "Plans for owners",
+        "subtitle": "Choose the plan that best fits your property and goals.",
+        "empty": "Plans are not available right now.",
+        "period": "/month",
+        "cardsHeading": "Owner plan comparison"
+    },
+    "tourist": {
+        "title": "Plans for travelers — Hospeda",
+        "description": "Subscribe and enjoy exclusive benefits on your trips around the litoral region.",
+        "tagline": "Plans and pricing",
+        "heading": "Plans for travelers",
+        "subtitle": "Choose the plan that best fits how you travel.",
+        "empty": "Plans are not available right now.",
+        "period": "/month",
+        "cardsHeading": "Tourist plan comparison"
+    }
+}

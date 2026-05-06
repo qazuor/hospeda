@@ -1,0 +1,33 @@
+{
+    "cta": "Empezar",
+    "free": "Gratis",
+    "recommended": "Recomendado",
+    "trial": "{days} días gratis",
+    "includesEverything": "Todo lo del plan {plan}, más:",
+    "features": {
+        "label": "Incluye"
+    },
+    "empty": {
+        "contact": "Contactanos"
+    },
+    "owner": {
+        "title": "Planes para propietarios — Hospeda",
+        "description": "Publicá tu alojamiento con el plan que mejor se adapte a tu negocio.",
+        "tagline": "Planes y precios",
+        "heading": "Planes para propietarios",
+        "subtitle": "Elegí el plan que mejor se adapte a tu propiedad y objetivos.",
+        "empty": "Planes no disponibles en este momento.",
+        "period": "/mes",
+        "cardsHeading": "Comparativa de planes para propietarios"
+    },
+    "tourist": {
+        "title": "Planes para turistas — Hospeda",
+        "description": "Suscribite y disfrutá de beneficios exclusivos en tus viajes por el litoral.",
+        "tagline": "Planes y precios",
+        "heading": "Planes para turistas",
+        "subtitle": "Elegí el plan que mejor se adapte a tu forma de viajar.",
+        "empty": "Planes no disponibles en este momento.",
+        "period": "/mes",
+        "cardsHeading": "Comparativa de planes para turistas"
+    }
+}

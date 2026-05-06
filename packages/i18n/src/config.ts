@@ -34,6 +34,7 @@ export const namespaces = [
     'faq',
     'benefits',
     'error',
+    'pricing',
     'privacy',
     'search',
     'terms',
@@ -144,6 +145,7 @@ import mapsEs from './locales/es/maps.json';
 import navEs from './locales/es/nav.json';
 import newsletterEs from './locales/es/newsletter.json';
 import ownersEs from './locales/es/owners.json';
+import pricingEs from './locales/es/pricing.json';
 import privacyEs from './locales/es/privacy.json';
 import revalidationEs from './locales/es/revalidation.json';
 import reviewEs from './locales/es/review.json';
@@ -190,6 +192,7 @@ import mapsEn from './locales/en/maps.json';
 import navEn from './locales/en/nav.json';
 import newsletterEn from './locales/en/newsletter.json';
 import ownersEn from './locales/en/owners.json';
+import pricingEn from './locales/en/pricing.json';
 import privacyEn from './locales/en/privacy.json';
 import revalidationEn from './locales/en/revalidation.json';
 import reviewEn from './locales/en/review.json';
@@ -236,6 +239,7 @@ import mapsPt from './locales/pt/maps.json';
 import navPt from './locales/pt/nav.json';
 import newsletterPt from './locales/pt/newsletter.json';
 import ownersPt from './locales/pt/owners.json';
+import pricingPt from './locales/pt/pricing.json';
 import privacyPt from './locales/pt/privacy.json';
 import revalidationPt from './locales/pt/revalidation.json';
 import reviewPt from './locales/pt/review.json';
@@ -272,6 +276,7 @@ const rawTranslations = {
         nav: navEs,
         newsletter: newsletterEs,
         owners: ownersEs,
+        pricing: pricingEs,
         privacy: privacyEs,
         review: reviewEs,
         search: searchEs,
@@ -318,6 +323,7 @@ const rawTranslations = {
         nav: navEn,
         newsletter: newsletterEn,
         owners: ownersEn,
+        pricing: pricingEn,
         privacy: privacyEn,
         review: reviewEn,
         search: searchEn,
@@ -364,6 +370,7 @@ const rawTranslations = {
         nav: navPt,
         newsletter: newsletterPt,
         owners: ownersPt,
+        pricing: pricingPt,
         privacy: privacyPt,
         review: reviewPt,
         search: searchPt,

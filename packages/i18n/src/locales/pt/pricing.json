@@ -1,0 +1,33 @@
+{
+    "cta": "Começar",
+    "free": "Grátis",
+    "recommended": "Recomendado",
+    "trial": "{days} dias grátis",
+    "includesEverything": "Tudo do plano {plan}, mais:",
+    "features": {
+        "label": "Inclui"
+    },
+    "empty": {
+        "contact": "Fale conosco"
+    },
+    "owner": {
+        "title": "Planos para anfitriões — Hospeda",
+        "description": "Publique sua hospedagem com o plano que melhor se adapta ao seu negócio.",
+        "tagline": "Planos e preços",
+        "heading": "Planos para anfitriões",
+        "subtitle": "Escolha o plano que melhor se adapta à sua propriedade e seus objetivos.",
+        "empty": "Os planos não estão disponíveis no momento.",
+        "period": "/mês",
+        "cardsHeading": "Comparação de planos para anfitriões"
+    },
+    "tourist": {
+        "title": "Planos para viajantes — Hospeda",
+        "description": "Assine e aproveite benefícios exclusivos em suas viagens pela região do litoral.",
+        "tagline": "Planos e preços",
+        "heading": "Planos para viajantes",
+        "subtitle": "Escolha o plano que melhor se adapta ao seu jeito de viajar.",
+        "empty": "Os planos não estão disponíveis no momento.",
+        "period": "/mês",
+        "cardsHeading": "Comparação de planos para viajantes"
+    }
+}
