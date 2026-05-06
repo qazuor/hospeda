@@ -164,7 +164,10 @@ export default defineConfig({
             'import.meta.env.PUBLIC_API_URL': JSON.stringify(HOSPEDA_API_URL),
             'import.meta.env.PUBLIC_SITE_URL': JSON.stringify(HOSPEDA_SITE_URL),
             'import.meta.env.PUBLIC_SENTRY_RELEASE': JSON.stringify(
-                process.env.VERCEL_GIT_COMMIT_SHA || process.env.PUBLIC_SENTRY_RELEASE || ''
+                process.env.HOSPEDA_GIT_SHA ||
+                    process.env.VERCEL_GIT_COMMIT_SHA ||
+                    process.env.PUBLIC_SENTRY_RELEASE ||
+                    ''
             )
         }
     }

@@ -124,7 +124,8 @@ export default defineConfig({
                             process.env.VITE_DEFAULT_LOCALE || 'es'
                         ),
                         'import.meta.env.VITE_SENTRY_RELEASE': JSON.stringify(
-                            process.env.VERCEL_GIT_COMMIT_SHA ||
+                            process.env.HOSPEDA_GIT_SHA ||
+                                process.env.VERCEL_GIT_COMMIT_SHA ||
                                 process.env.VITE_SENTRY_RELEASE ||
                                 ''
                         )
