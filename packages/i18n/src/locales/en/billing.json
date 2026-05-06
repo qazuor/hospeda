@@ -180,37 +180,38 @@
     },
     "checkout": {
         "success": {
-            "title": "[TODO]",
-            "subtitle": "[TODO]",
+            "title": "Your subscription is active!",
+            "subtitle": "Your payment was approved successfully",
             "planDetails": "Plan: {{planName}}",
             "amountDetails": "Amount: {{amount}}",
-            "verifyingStatus": "[TODO]",
-            "cta": "[TODO]",
-            "pageTitle": "[TODO]"
+            "verifyingStatus": "Verifying payment status...",
+            "verifyingSubtitle": "We are confirming your payment. This may take a moment.",
+            "cta": "Go to my account",
+            "pageTitle": "Payment approved — Hospeda"
         },
         "pending": {
-            "title": "[TODO]",
-            "body": "[TODO]",
-            "cta": "[TODO]",
-            "pageTitle": "[TODO]"
+            "title": "Your payment is being processed",
+            "body": "It may take up to 24 hours to confirm. We'll email you when it clears.",
+            "cta": "Check status",
+            "pageTitle": "Payment processing — Hospeda"
         },
         "failure": {
-            "title": "[TODO]",
-            "genericMessage": "[TODO]",
-            "reasonInsufficientFunds": "[TODO]",
-            "reasonCardDeclined": "[TODO]",
-            "reasonExpired": "[TODO]",
-            "reasonInvalidData": "[TODO]",
-            "retryCta": "[TODO]",
-            "supportCta": "[TODO]",
-            "pageTitle": "[TODO]"
+            "title": "Your payment could not be processed",
+            "genericMessage": "We were unable to process your payment. Please review your details and try again.",
+            "reasonInsufficientFunds": "Insufficient funds on the card",
+            "reasonCardDeclined": "The card was declined",
+            "reasonExpired": "The card has expired",
+            "reasonInvalidData": "Invalid card details",
+            "retryCta": "Try again",
+            "supportCta": "Contact support",
+            "pageTitle": "Payment rejected — Hospeda"
         },
         "button": {
-            "cta": "[TODO]",
-            "processing": "[TODO]",
-            "processingAriaLabel": "[TODO]",
-            "error": "[TODO]",
-            "unauthCta": "[TODO]"
+            "cta": "Subscribe",
+            "processing": "Processing...",
+            "processingAriaLabel": "Processing payment",
+            "error": "We could not start the payment. Please try again.",
+            "unauthCta": "Sign in to subscribe"
         }
     },
     "limits": {
@@ -339,5 +340,67 @@
                 "button": "Start Free Trial"
             }
         }
+    },
+    "plan": {
+        "owner-basico": {
+            "name": "Basic",
+            "description": "Ideal plan to start publishing your first accommodation. The essentials for your property."
+        },
+        "owner-pro": {
+            "name": "Professional",
+            "description": "Advanced statistics, featured listing, and priority support to grow your business."
+        },
+        "owner-premium": {
+            "name": "Premium",
+            "description": "Everything in Professional, plus custom branding, API access, and a dedicated manager."
+        },
+        "tourist-free": {
+            "name": "Free",
+            "description": "Save favorites, read reviews, and plan your next trip at no cost."
+        },
+        "tourist-plus": {
+            "name": "Plus",
+            "description": "Ad-free browsing, price alerts, exclusive deals, and early access to events."
+        },
+        "tourist-vip": {
+            "name": "VIP",
+            "description": "VIP support, concierge, airport transfers, and exclusive promotions."
+        }
+    },
+    "entitlement": {
+        "publish_accommodations": "Publish accommodations",
+        "edit_accommodation_info": "Edit accommodation info",
+        "view_basic_stats": "Basic statistics",
+        "view_advanced_stats": "Advanced statistics",
+        "respond_reviews": "Respond to reviews",
+        "priority_support": "Priority support",
+        "featured_listing": "Featured in search results",
+        "custom_branding": "Custom branding",
+        "api_access": "API access",
+        "dedicated_manager": "Dedicated account manager",
+        "create_promotions": "Create promotions",
+        "social_media_integration": "Social media integration",
+        "can_use_rich_description": "Rich descriptions",
+        "can_embed_video": "Embed videos in your listing",
+        "can_use_calendar": "Availability calendar",
+        "can_sync_external_calendar": "Sync external calendars",
+        "can_contact_whatsapp_display": "Show WhatsApp contact",
+        "can_contact_whatsapp_direct": "Direct WhatsApp contact",
+        "has_verification_badge": "Verified property badge",
+        "save_favorites": "Save favorites",
+        "write_reviews": "Write reviews",
+        "read_reviews": "Read full reviews",
+        "ad_free": "Ad-free browsing",
+        "price_alerts": "Price alerts",
+        "early_access_events": "Early access to events",
+        "exclusive_deals": "Exclusive deals",
+        "vip_support": "VIP support",
+        "concierge_service": "Concierge service",
+        "airport_transfers": "Airport transfers",
+        "vip_promotions_access": "Access to VIP promotions",
+        "can_compare_accommodations": "Compare accommodations",
+        "can_attach_review_photos": "Upload photos in reviews",
+        "can_view_search_history": "View search history",
+        "can_view_recommendations": "Personalized recommendations"
     }
 }

@@ -180,37 +180,38 @@
     },
     "checkout": {
         "success": {
-            "title": "[TODO]",
-            "subtitle": "[TODO]",
+            "title": "Sua assinatura está ativa!",
+            "subtitle": "Seu pagamento foi aprovado com sucesso",
             "planDetails": "Plano: {{planName}}",
             "amountDetails": "Valor: {{amount}}",
-            "verifyingStatus": "[TODO]",
-            "cta": "[TODO]",
-            "pageTitle": "[TODO]"
+            "verifyingStatus": "Verificando o status do pagamento...",
+            "verifyingSubtitle": "Estamos confirmando seu pagamento. Pode levar alguns instantes.",
+            "cta": "Ir para minha conta",
+            "pageTitle": "Pagamento aprovado — Hospeda"
         },
         "pending": {
-            "title": "[TODO]",
-            "body": "[TODO]",
-            "cta": "[TODO]",
-            "pageTitle": "[TODO]"
+            "title": "Seu pagamento está sendo processado",
+            "body": "Pode levar até 24 horas para confirmar. Vamos te avisar por email quando for aprovado.",
+            "cta": "Verificar status",
+            "pageTitle": "Pagamento em processamento — Hospeda"
         },
         "failure": {
-            "title": "[TODO]",
-            "genericMessage": "[TODO]",
-            "reasonInsufficientFunds": "[TODO]",
-            "reasonCardDeclined": "[TODO]",
-            "reasonExpired": "[TODO]",
-            "reasonInvalidData": "[TODO]",
-            "retryCta": "[TODO]",
-            "supportCta": "[TODO]",
-            "pageTitle": "[TODO]"
+            "title": "Não foi possível processar o pagamento",
+            "genericMessage": "Não conseguimos processar seu pagamento. Verifique os dados e tente novamente.",
+            "reasonInsufficientFunds": "Saldo insuficiente no cartão",
+            "reasonCardDeclined": "O cartão foi recusado",
+            "reasonExpired": "O cartão está vencido",
+            "reasonInvalidData": "Dados do cartão inválidos",
+            "retryCta": "Tentar novamente",
+            "supportCta": "Falar com o suporte",
+            "pageTitle": "Pagamento recusado — Hospeda"
         },
         "button": {
-            "cta": "[TODO]",
-            "processing": "[TODO]",
-            "processingAriaLabel": "[TODO]",
-            "error": "[TODO]",
-            "unauthCta": "[TODO]"
+            "cta": "Contratar",
+            "processing": "Processando...",
+            "processingAriaLabel": "Processando pagamento",
+            "error": "Não conseguimos iniciar o pagamento. Tente novamente.",
+            "unauthCta": "Faça login para contratar"
         }
     },
     "limits": {
@@ -339,5 +340,67 @@
                 "button": "Começar Teste Gratuito"
             }
         }
+    },
+    "plan": {
+        "owner-basico": {
+            "name": "Básico",
+            "description": "Plano ideal para começar a publicar sua primeira hospedagem. O essencial para sua propriedade."
+        },
+        "owner-pro": {
+            "name": "Profissional",
+            "description": "Estatísticas avançadas, anúncio em destaque e suporte prioritário para fazer seu negócio crescer."
+        },
+        "owner-premium": {
+            "name": "Premium",
+            "description": "Tudo do plano Profissional, identidade visual personalizada, acesso à API e gerente dedicado."
+        },
+        "tourist-free": {
+            "name": "Grátis",
+            "description": "Salve favoritos, leia avaliações e planeje sua próxima viagem sem custo."
+        },
+        "tourist-plus": {
+            "name": "Plus",
+            "description": "Sem anúncios, alertas de preço, ofertas exclusivas e acesso antecipado a eventos."
+        },
+        "tourist-vip": {
+            "name": "VIP",
+            "description": "Suporte VIP, concierge, traslados ao aeroporto e promoções exclusivas."
+        }
+    },
+    "entitlement": {
+        "publish_accommodations": "Publicar hospedagens",
+        "edit_accommodation_info": "Editar informações da hospedagem",
+        "view_basic_stats": "Estatísticas básicas",
+        "view_advanced_stats": "Estatísticas avançadas",
+        "respond_reviews": "Responder avaliações",
+        "priority_support": "Suporte prioritário",
+        "featured_listing": "Aparecer em destaque nas buscas",
+        "custom_branding": "Identidade visual personalizada",
+        "api_access": "Acesso à API",
+        "dedicated_manager": "Gerente de conta dedicado",
+        "create_promotions": "Criar promoções",
+        "social_media_integration": "Integração com redes sociais",
+        "can_use_rich_description": "Descrições enriquecidas",
+        "can_embed_video": "Inserir vídeos no anúncio",
+        "can_use_calendar": "Calendário de disponibilidade",
+        "can_sync_external_calendar": "Sincronizar calendários externos",
+        "can_contact_whatsapp_display": "Mostrar contato por WhatsApp",
+        "can_contact_whatsapp_direct": "Contato direto por WhatsApp",
+        "has_verification_badge": "Selo de propriedade verificada",
+        "save_favorites": "Salvar favoritos",
+        "write_reviews": "Escrever avaliações",
+        "read_reviews": "Ler avaliações completas",
+        "ad_free": "Navegação sem anúncios",
+        "price_alerts": "Alertas de preço",
+        "early_access_events": "Acesso antecipado a eventos",
+        "exclusive_deals": "Ofertas exclusivas",
+        "vip_support": "Suporte VIP",
+        "concierge_service": "Serviço de concierge",
+        "airport_transfers": "Traslados ao aeroporto",
+        "vip_promotions_access": "Acesso a promoções VIP",
+        "can_compare_accommodations": "Comparar hospedagens",
+        "can_attach_review_photos": "Enviar fotos nas avaliações",
+        "can_view_search_history": "Ver histórico de buscas",
+        "can_view_recommendations": "Recomendações personalizadas"
     }
 }
