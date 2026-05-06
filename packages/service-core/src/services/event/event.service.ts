@@ -39,7 +39,7 @@ import {
     VisibilityEnum
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type {
@@ -50,7 +50,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { type Actor, ServiceError } from '../../types';
-import { generateEventSlug } from './event.helpers';
+import { buildEventDateConditions, generateEventSlug } from './event.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './event.normalizers';
 import {
     checkCanAdminList,
@@ -457,27 +457,15 @@ export class EventService extends BaseCrudService<
         const { startDateAfter, startDateBefore, endDateAfter, endDateBefore, ...simpleFilters } =
             entityFilters;
 
-        const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
-
-        // JSONB date extraction - EventDateSchema uses 'start' and 'end' keys
-        if (startDateAfter) {
-            extraConditions.push(
-                sql`(${eventTable.date}->>'start')::timestamptz >= ${startDateAfter}`
-            );
-        }
-        if (startDateBefore) {
-            extraConditions.push(
-                sql`(${eventTable.date}->>'start')::timestamptz <= ${startDateBefore}`
-            );
-        }
-        if (endDateAfter) {
-            extraConditions.push(sql`(${eventTable.date}->>'end')::timestamptz >= ${endDateAfter}`);
-        }
-        if (endDateBefore) {
-            extraConditions.push(
-                sql`(${eventTable.date}->>'end')::timestamptz <= ${endDateBefore}`
-            );
-        }
+        const extraConditions: SQL[] = [
+            ...(params.extraConditions ?? []),
+            ...buildEventDateConditions({
+                startDateAfter,
+                startDateBefore,
+                endDateAfter,
+                endDateBefore
+            })
+        ];
 
         return super._executeAdminSearch({
             ...rest,
@@ -537,6 +525,10 @@ export class EventService extends BaseCrudService<
             sortOrder: _sortOrder,
             q: _q,
             destinationId,
+            startDateAfter,
+            startDateBefore,
+            endDateAfter,
+            endDateBefore,
             ...filterParams
         } = params;
 
@@ -547,7 +539,14 @@ export class EventService extends BaseCrudService<
             return { items: [], total: 0 };
         }
 
-        const additionalConditions: SQL[] = [];
+        const additionalConditions: SQL[] = [
+            ...buildEventDateConditions({
+                startDateAfter,
+                startDateBefore,
+                endDateAfter,
+                endDateBefore
+            })
+        ];
         if (locationIds !== null && locationIds.length > 0) {
             additionalConditions.push(inArray(eventTable.locationId, locationIds));
         }
@@ -588,6 +587,10 @@ export class EventService extends BaseCrudService<
             sortOrder: _sortOrder,
             q: _q,
             destinationId,
+            startDateAfter,
+            startDateBefore,
+            endDateAfter,
+            endDateBefore,
             ...filterParams
         } = params;
 
@@ -598,7 +601,14 @@ export class EventService extends BaseCrudService<
             return { count: 0 };
         }
 
-        const additionalConditions: SQL[] = [];
+        const additionalConditions: SQL[] = [
+            ...buildEventDateConditions({
+                startDateAfter,
+                startDateBefore,
+                endDateAfter,
+                endDateBefore
+            })
+        ];
         if (locationIds !== null && locationIds.length > 0) {
             additionalConditions.push(inArray(eventTable.locationId, locationIds));
         }

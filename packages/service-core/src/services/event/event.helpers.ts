@@ -4,8 +4,48 @@
  * Follows the pattern of other service helpers.
  */
 
-import { EventModel } from '@repo/db';
+import { EventModel, events as eventTable } from '@repo/db';
 import { createUniqueSlug } from '@repo/utils';
+import type { SQL } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
+
+/**
+ * Builds raw SQL conditions for the JSONB `date` column of the events table
+ * from optional `startDateAfter`/`startDateBefore`/`endDateAfter`/`endDateBefore`
+ * filters. The `date` column stores `{ start, end, ... }` per EventDateSchema,
+ * so date range queries must extract `date->>'start'` / `date->>'end'` and
+ * cast them to `timestamptz` to compare against ISO 8601 strings.
+ *
+ * Returns an empty array when no date filters are present, so callers can
+ * safely spread/concat the result without further checks.
+ *
+ * @param input - Optional date range filters as ISO 8601 strings or Date objects
+ * @returns Array of Drizzle `SQL` conditions ready to add to a `WHERE` clause
+ */
+export function buildEventDateConditions(input: {
+    readonly startDateAfter?: string | Date;
+    readonly startDateBefore?: string | Date;
+    readonly endDateAfter?: string | Date;
+    readonly endDateBefore?: string | Date;
+}): SQL[] {
+    const conditions: SQL[] = [];
+    const { startDateAfter, startDateBefore, endDateAfter, endDateBefore } = input;
+
+    if (startDateAfter) {
+        conditions.push(sql`(${eventTable.date}->>'start')::timestamptz >= ${startDateAfter}`);
+    }
+    if (startDateBefore) {
+        conditions.push(sql`(${eventTable.date}->>'start')::timestamptz <= ${startDateBefore}`);
+    }
+    if (endDateAfter) {
+        conditions.push(sql`(${eventTable.date}->>'end')::timestamptz >= ${endDateAfter}`);
+    }
+    if (endDateBefore) {
+        conditions.push(sql`(${eventTable.date}->>'end')::timestamptz <= ${endDateBefore}`);
+    }
+
+    return conditions;
+}
 
 /**
  * Generates a unique slug for an event based on category, name, and date.start.
