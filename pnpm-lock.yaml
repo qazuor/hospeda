@@ -81,6 +81,9 @@ importers:
       '@playwright/test':
         specifier: ^1.58.2
         version: 1.58.2
+      '@repo/config':
+        specifier: workspace:*
+        version: link:packages/config
       '@types/node':
         specifier: ^22.15.3
         version: 22.17.2
@@ -96,6 +99,9 @@ importers:
       ajv-formats:
         specifier: ^3.0.1
         version: 3.0.1(ajv@8.18.0)
+      cloudinary:
+        specifier: ^2.9.0
+        version: 2.9.0
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
@@ -111,6 +117,9 @@ importers:
       markdownlint-cli2:
         specifier: ^0.18.1
         version: 0.18.1
+      sharp:
+        specifier: ^0.34.5
+        version: 0.34.5
       tsx:
         specifier: ^4.19.4
         version: 4.20.4
@@ -1895,9 +1904,6 @@ packages:
 
   '@emnapi/runtime@1.10.0':
     resolution: {integrity: sha512-ewvYlk86xUoGI0zQRNq/mC+16R1QeDlKQy21Ki3oSYXNgLb45GV1P6A0M+/s6nyCuNDqe5VpaY84BzXGwVbwFA==}
-
-  '@emnapi/runtime@1.8.1':
-    resolution: {integrity: sha512-mehfKSMWjjNol8659Z8KxEMrdSJDDot5SXMq00dM8BN4o+CLNXQ0xH2V7EchNHV4RmbZLmmPdEaXZc5H2FXmDg==}
 
   '@emnapi/wasi-threads@1.2.1':
     resolution: {integrity: sha512-uTII7OYF+/Mes/MrcIOYp5yOtSMLBWSIoLPpcgwipoiKbli6k322tcoFsxoIIxPDqW01SQGAgko4EzZi2BNv2w==}
@@ -9767,11 +9773,6 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
-  '@emnapi/runtime@1.8.1':
-    dependencies:
-      tslib: 2.8.1
-    optional: true
-
   '@emnapi/wasi-threads@1.2.1':
     dependencies:
       tslib: 2.8.1
@@ -10008,7 +10009,7 @@ snapshots:
 
   '@img/sharp-wasm32@0.34.5':
     dependencies:
-      '@emnapi/runtime': 1.8.1
+      '@emnapi/runtime': 1.10.0
     optional: true
 
   '@img/sharp-win32-arm64@0.34.5':
@@ -13148,7 +13149,7 @@ snapshots:
       std-env: 3.10.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@25.3.3)(@vitest/ui@3.2.4)(esbuild@0.25.9)(jiti@2.6.1)(jsdom@26.0.0)(msw@2.12.7(@types/node@25.3.3)(typescript@5.7.2))(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.1)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.17.2)(@vitest/ui@3.2.4)(esbuild@0.25.9)(jiti@2.6.1)(jsdom@26.0.0)(msw@2.12.7(@types/node@22.17.2)(typescript@5.9.3))(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -13196,14 +13197,14 @@ snapshots:
       msw: 2.12.7(@types/node@25.3.3)(typescript@5.7.2)
       vite: 8.0.10(@types/node@25.3.3)(esbuild@0.25.9)(jiti@2.6.1)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.1)
 
-  '@vitest/mocker@3.2.4(msw@2.12.7(@types/node@25.3.3)(typescript@5.9.3))(vite@8.0.10(@types/node@25.3.3)(esbuild@0.25.9)(jiti@2.6.1)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.1))':
+  '@vitest/mocker@3.2.4(msw@2.12.7(@types/node@25.3.3)(typescript@5.9.3))(vite@8.0.10(@types/node@22.17.2)(esbuild@0.25.9)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))':
     dependencies:
       '@vitest/spy': 3.2.4
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
       msw: 2.12.7(@types/node@25.3.3)(typescript@5.9.3)
-      vite: 8.0.10(@types/node@25.3.3)(esbuild@0.25.9)(jiti@2.6.1)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.1)
+      vite: 8.0.10(@types/node@22.17.2)(esbuild@0.25.9)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
 
   '@vitest/pretty-format@3.2.4':
     dependencies:
@@ -13234,7 +13235,7 @@ snapshots:
       sirv: 3.0.1
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@25.3.3)(@vitest/ui@3.2.4)(esbuild@0.25.9)(jiti@2.6.1)(jsdom@26.0.0)(msw@2.12.7(@types/node@25.3.3)(typescript@5.7.2))(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.1)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.17.2)(@vitest/ui@3.2.4)(esbuild@0.25.9)(jiti@2.6.1)(jsdom@26.0.0)(msw@2.12.7(@types/node@22.17.2)(typescript@5.9.3))(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
 
   '@vitest/utils@3.2.4':
     dependencies:
@@ -18058,7 +18059,7 @@ snapshots:
     dependencies:
       '@types/chai': 5.2.2
       '@vitest/expect': 3.2.4
-      '@vitest/mocker': 3.2.4(msw@2.12.7(@types/node@25.3.3)(typescript@5.9.3))(vite@8.0.10(@types/node@25.3.3)(esbuild@0.25.9)(jiti@2.6.1)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.1))
+      '@vitest/mocker': 3.2.4(msw@2.12.7(@types/node@25.3.3)(typescript@5.9.3))(vite@8.0.10(@types/node@22.17.2)(esbuild@0.25.9)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))
       '@vitest/pretty-format': 3.2.4
       '@vitest/runner': 3.2.4
       '@vitest/snapshot': 3.2.4

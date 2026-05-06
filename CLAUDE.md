@@ -212,6 +212,18 @@ See [docs/guides/environment-variables.md](docs/guides/environment-variables.md)
 
 The canonical registry of all env vars lives in `packages/config`. Use `pnpm env:check` to validate your local env against it.
 
+### Adding a new environment variable (workflow)
+
+When introducing a new env var, ALL of the following must happen in the same change:
+
+1. **Register it** in `packages/config/src/env-registry.*.ts` with full metadata (`description`, `type`, `required`, `secret`, `defaultValue`, `exampleValue`, `apps`, `category`).
+2. **Add Zod validation** in the consuming app's `env.ts` (e.g., `apps/api/src/utils/env.ts`).
+3. **Update `.env.example`** in each consuming app with a safe placeholder value.
+4. **Document it** if its purpose is non-obvious (in the relevant `docs/` guide or app `CLAUDE.md`).
+5. **Push to Vercel** by running `pnpm env:sync` (interactive: prompts per missing var per app/env). Do this for every environment that needs the var (dev/preview/prod).
+
+> Claude operating rule: when adding/modifying env vars, after step 4 either run `pnpm env:sync` directly or, if running it would be intrusive (prompts the user), STOP and tell the user "I added env var X to the registry — run `pnpm env:sync --app=<app> --env=<env>` to push it to Vercel". Never leave a registered var without a Vercel entry.
+
 Key environment variables:
 
 ```bash
