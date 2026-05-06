@@ -18,16 +18,16 @@
         "clean": "rm -rf node_modules dist .astro"
     },
     "dependencies": {
+        "@astrojs/node": "^10.0.6",
         "@astrojs/react": "^4.2.1",
         "@astrojs/sitemap": "^3.7.0",
-        "@astrojs/vercel": "^8.2.11",
         "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/feedback": "workspace:*",
-        "@repo/media": "workspace:*",
         "@repo/i18n": "workspace:*",
         "@repo/icons": "workspace:*",
         "@repo/logger": "workspace:*",
+        "@repo/media": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@repo/utils": "workspace:*",
         "@sentry/astro": "^10.40.0",
