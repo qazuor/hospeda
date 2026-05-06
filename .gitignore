@@ -131,5 +131,6 @@ scripts/ralph/snapshots/
 node_modules
 .playwright-mcp
 .claude/design-clones
+.claude/worktrees/
 apps/web-test
 apps/web-old
