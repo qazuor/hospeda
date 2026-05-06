@@ -47,20 +47,30 @@ function resolveToken(token: string): string {
     return TOKEN_TO_CSS_VAR[token] ?? token;
 }
 
-/** Creates a ColorScheme from a token name with standard bg/border opacity */
+/**
+ * Creates a ColorScheme from a token name with configurable bg/border opacity.
+ *
+ * The default opacities (0.15 / 0.30) match the standard pill look used across
+ * cards. Pass `bgOpacity` when a denser fill is needed (e.g. glassy badge over
+ * a dark image). The border opacity is derived as `bgOpacity * 2` clamped to 1
+ * so callers don't need to know about it.
+ */
 function scheme({
     token,
-    textToken
+    textToken,
+    bgOpacity = 0.15
 }: {
     readonly token: string;
     readonly textToken?: string;
+    readonly bgOpacity?: number;
 }): ColorScheme {
     const cssToken = resolveToken(token);
     const cssText = resolveToken(textToken ?? token);
+    const borderOpacity = Math.min(bgOpacity * 2, 1);
     return {
-        bg: `oklch(from var(--${cssToken}) l c h / 0.15)`,
+        bg: `oklch(from var(--${cssToken}) l c h / ${bgOpacity})`,
         text: `var(--${cssText})`,
-        border: `oklch(from var(--${cssToken}) l c h / 0.30)`
+        border: `oklch(from var(--${cssToken}) l c h / ${borderOpacity})`
     };
 }
 
@@ -208,44 +218,55 @@ export function getAccommodationTypeLabel({
  * Returns the color scheme for an event category badge.
  * Supports both English API values and Spanish legacy names from seed data.
  *
- * @param params - Object containing the event category string.
+ * @param params - Object containing the event category string and optional
+ *   `bgOpacity` (default 0.15). Pass a higher opacity for glassy badge looks
+ *   over images (e.g. 0.85 on featured cards).
  * @returns A ColorScheme with CSS values for bg, text, and border.
  *
  * @example
  * ```ts
  * getEventCategoryColor({ category: 'music' })
- * // { bg: 'oklch(from var(--brand-accent) l c h / 0.15)', text: 'var(--brand-accent)', border: 'oklch(from var(--brand-accent) l c h / 0.30)' }
+ * // { bg: 'oklch(from var(--brand-accent) l c h / 0.15)', ... }
+ *
+ * getEventCategoryColor({ category: 'music', bgOpacity: 0.85 })
+ * // { bg: 'oklch(from var(--brand-accent) l c h / 0.85)', ... }
  * ```
  */
-export function getEventCategoryColor({ category }: { readonly category: string }): ColorScheme {
+export function getEventCategoryColor({
+    category,
+    bgOpacity
+}: {
+    readonly category: string;
+    readonly bgOpacity?: number;
+}): ColorScheme {
     switch (category.toLowerCase()) {
         case 'music':
-            return scheme({ token: 'accent' });
+            return scheme({ token: 'accent', bgOpacity });
         case 'sports':
-            return scheme({ token: 'primary' });
+            return scheme({ token: 'primary', bgOpacity });
         case 'cultural':
         case 'culture':
-            return scheme({ token: 'hospeda-sky' });
+            return scheme({ token: 'hospeda-sky', bgOpacity });
         case 'gastronomy':
-            return scheme({ token: 'hospeda-forest' });
+            return scheme({ token: 'hospeda-forest', bgOpacity });
         case 'festival':
-            return scheme({ token: 'hospeda-sky' });
+            return scheme({ token: 'hospeda-sky', bgOpacity });
         case 'wellness':
-            return scheme({ token: 'hospeda-river', textToken: 'card' });
+            return scheme({ token: 'hospeda-river', textToken: 'card', bgOpacity });
         case 'art':
-            return scheme({ token: 'hospeda-sand', textToken: 'foreground' });
+            return scheme({ token: 'hospeda-sand', textToken: 'foreground', bgOpacity });
         case 'family':
-            return scheme({ token: 'info', textToken: 'info-foreground' });
+            return scheme({ token: 'info', textToken: 'info-foreground', bgOpacity });
         case 'nature':
-            return scheme({ token: 'hospeda-forest' });
+            return scheme({ token: 'hospeda-forest', bgOpacity });
         case 'theater':
-            return scheme({ token: 'hospeda-river', textToken: 'card' });
+            return scheme({ token: 'hospeda-river', textToken: 'card', bgOpacity });
         case 'workshop':
-            return scheme({ token: 'hospeda-sand', textToken: 'foreground' });
+            return scheme({ token: 'hospeda-sand', textToken: 'foreground', bgOpacity });
         case 'other':
-            return scheme({ token: 'muted-foreground' });
+            return scheme({ token: 'muted-foreground', bgOpacity });
         default:
-            return scheme({ token: 'accent' });
+            return scheme({ token: 'accent', bgOpacity });
     }
 }
 

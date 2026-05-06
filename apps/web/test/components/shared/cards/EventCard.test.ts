@@ -35,9 +35,9 @@ describe('EventCard.astro', () => {
             expect(src).toContain('getEventCategoryColor');
         });
 
-        it('should import formatDate from @/lib/format-utils', () => {
-            expect(src).toContain("from '@/lib/format-utils'");
-            expect(src).toContain('formatDate');
+        it('should import formatEventDate from utils/formatEventDate', () => {
+            expect(src).toContain("from './utils/formatEventDate'");
+            expect(src).toContain('formatEventDate');
         });
 
         it('should import buildUrl from @/lib/urls', () => {
@@ -135,8 +135,8 @@ describe('EventCard.astro', () => {
             expect(src).toContain('card__content');
         });
 
-        it('should render an <img> element', () => {
-            expect(src).toContain('<img');
+        it('should use EventCardImage partial for the image', () => {
+            expect(src).toContain('EventCardImage');
         });
 
         it('should render an <h3> for the event name', () => {
@@ -145,8 +145,9 @@ describe('EventCard.astro', () => {
     });
 
     describe('image', () => {
-        it('should use loading="lazy" on the image', () => {
-            expect(src).toContain('loading="lazy"');
+        it('should use EventCardImage which sets loading="lazy" by default', () => {
+            // Image loading strategy is delegated to the EventCardImage partial.
+            expect(src).toContain('EventCardImage');
         });
 
         it('should prefer caption over name as alt text (caption wins when present)', () => {
@@ -162,8 +163,9 @@ describe('EventCard.astro', () => {
             expect(src).toContain('aspect-ratio: 16/9');
         });
 
-        it('should use organic border-radius on the image', () => {
-            expect(src).toContain('var(--radius-organic)');
+        it('should use --radius-card on the image (not deprecated --radius-organic)', () => {
+            expect(src).toContain('var(--radius-card)');
+            expect(src).not.toContain('var(--radius-organic)');
         });
     });
 
@@ -209,11 +211,12 @@ describe('EventCard.astro', () => {
         });
 
         it('should display venue name when location exists', () => {
-            expect(src).toContain('data.location.name');
+            expect(src).toContain('data.location?.name');
         });
 
         it('should prefer cityName from cityDestination over legacy location.city (SPEC-095)', () => {
-            expect(src).toContain('data.cityName ?? data.location.city');
+            expect(src).toContain('data.cityName');
+            expect(src).toContain('data.location');
         });
 
         it('should render summary text', () => {

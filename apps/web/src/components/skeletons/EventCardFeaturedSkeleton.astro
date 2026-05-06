@@ -1,0 +1,137 @@
+---
+/**
+ * @file EventCardFeaturedSkeleton.astro
+ * @description Skeleton loading placeholder for EventCardFeatured.
+ *
+ * Mirrors the vertical layout of the featured card:
+ * - Image area (~260px tall, full width)
+ * - Content area with title lines, summary lines, and location pill
+ *
+ * Uses the same pulse animation tokens as EventGridSkeleton.astro so all
+ * event skeletons feel visually consistent.
+ */
+---
+
+<div class="skeleton-featured">
+  <!-- Image area -->
+  <div class="skeleton-featured__image skeleton-pulse"></div>
+
+  <!-- Overlay chips (badge + date block) — decorative -->
+  <div class="skeleton-featured__overlays" aria-hidden="true">
+    <div class="skeleton-featured__badge-chip skeleton-pulse"></div>
+    <div class="skeleton-featured__date-chip skeleton-pulse"></div>
+  </div>
+
+  <!-- Content area -->
+  <div class="skeleton-featured__content">
+    <div class="skeleton-line skeleton-line--title skeleton-pulse"></div>
+    <div class="skeleton-line skeleton-line--title-short skeleton-pulse"></div>
+    <div class="skeleton-line skeleton-line--summary skeleton-pulse"></div>
+    <div class="skeleton-line skeleton-line--summary skeleton-pulse"></div>
+    <div class="skeleton-line skeleton-line--summary-short skeleton-pulse"></div>
+    <div class="skeleton-featured__location-pill skeleton-pulse"></div>
+  </div>
+</div>
+
+<style>
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  .skeleton-pulse {
+    animation: skeleton-pulse 1.8s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-pulse {
+      animation: none;
+      opacity: 0.6;
+    }
+  }
+
+  .skeleton-featured {
+    position: relative;
+    background-color: var(--core-card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Image area */
+  .skeleton-featured__image {
+    background-color: var(--border);
+    width: 100%;
+    height: 260px;
+    flex-shrink: 0;
+  }
+
+  /* Overlay chips positioned over the image bottom area */
+  .skeleton-featured__overlays {
+    position: absolute;
+    top: 200px; /* approximate bottom of image area */
+    left: 0.875rem;
+    right: 0.875rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 0.5rem;
+  }
+
+  .skeleton-featured__badge-chip {
+    background-color: var(--border);
+    border-radius: var(--radius-pill);
+    height: 1.5rem;
+    width: 5.5rem;
+  }
+
+  .skeleton-featured__date-chip {
+    background-color: var(--border);
+    border-radius: 10px;
+    height: 3rem;
+    width: 4.5rem;
+  }
+
+  /* Content area */
+  .skeleton-featured__content {
+    padding: 1.25rem 1.5rem 1.25rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .skeleton-line {
+    background-color: var(--border);
+    border-radius: var(--radius-sm);
+  }
+
+  .skeleton-line--title {
+    height: 1.125rem;
+    width: 80%;
+  }
+
+  .skeleton-line--title-short {
+    height: 1.125rem;
+    width: 55%;
+  }
+
+  .skeleton-line--summary {
+    height: 0.875rem;
+    width: 100%;
+  }
+
+  .skeleton-line--summary-short {
+    height: 0.875rem;
+    width: 65%;
+  }
+
+  .skeleton-featured__location-pill {
+    background-color: var(--border);
+    border-radius: var(--radius-pill);
+    height: 1.375rem;
+    width: 7rem;
+    margin-top: 0.25rem;
+  }
+</style>

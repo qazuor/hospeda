@@ -29,6 +29,8 @@ import {
 import { FavoriteButton } from "@/components/shared/favorite/FavoriteButton.client";
 import { buildUrl } from "@/lib/urls";
 import { getEventCategoryColor } from "@/lib/colors";
+import { formatEventDate } from "./utils/formatEventDate";
+import { getEventCategoryIconName, getEventCategoryLabel } from "./utils/eventCategoryIcon";
 import type { EventCardData } from "@/data/types";
 import type { SupportedLocale } from "@/lib/i18n";
 
@@ -57,126 +59,25 @@ const { data, locale, isAuthenticated = false } = Astro.props;
 
 const detailUrl = buildUrl({ locale, path: `/eventos/${data.slug}/` });
 
-/** Locale tag used by Intl formatters. */
-const bcp47: Record<SupportedLocale, string> = { es: "es-AR", en: "en-US", pt: "pt-BR" };
-const intlLocale = bcp47[locale];
-
-const startDate = new Date(data.date.start);
-const endDate = data.date.end ? new Date(data.date.end) : null;
-
-/** Month abbreviation (3 chars, uppercase) extracted from the start date. */
-const monthAbbr = startDate
-    .toLocaleDateString(intlLocale, { month: "short" })
-    .replace(".", "")
-    .toUpperCase()
-    .slice(0, 3);
-
 /** Normalize API category to lowercase and handle aliases. */
 const rawCategory = data.category.toLowerCase();
-const CATEGORY_ALIASES: Record<string, string> = { culture: "cultural" };
+const CATEGORY_ALIASES: Readonly<Record<string, string>> = { culture: "cultural" };
 const normalizedCategory = CATEGORY_ALIASES[rawCategory] ?? rawCategory;
 
 /** Category colors resolved from design tokens. */
 const categoryColors = getEventCategoryColor({ category: normalizedCategory });
 
-/** Capitalize the first letter of a string for display. */
-function capitalize(str: string): string {
-    if (!str) return str;
-    return str.charAt(0).toUpperCase() + str.slice(1);
-}
+const dateResult = formatEventDate({
+    start: data.date.start,
+    end: data.date.end,
+    locale,
+    mode: "rangeWithTime",
+});
+const dateLabel = dateResult.mode !== "short" ? dateResult.dateLine : "";
+const timeLabel = dateResult.mode !== "short" ? dateResult.timeLine : null;
+const monthAbbr = dateResult.mode === "rangeWithTime" ? (dateResult.monthAbbr ?? "") : "";
 
-/**
- * Localized category label map.
- * Keys are lowercase API category slugs. Fallback is capitalize(category).
- */
-const CATEGORY_LABELS: Record<string, Record<SupportedLocale, string>> = {
-    music: { es: "Música", en: "Music", pt: "Música" },
-    sports: { es: "Deportes", en: "Sports", pt: "Esportes" },
-    cultural: { es: "Cultural", en: "Cultural", pt: "Cultural" },
-    culture: { es: "Cultural", en: "Cultural", pt: "Cultural" },
-    gastronomy: { es: "Gastronomía", en: "Gastronomy", pt: "Gastronomia" },
-    festival: { es: "Festival", en: "Festival", pt: "Festival" },
-    wellness: { es: "Bienestar", en: "Wellness", pt: "Bem-estar" },
-    art: { es: "Arte", en: "Art", pt: "Arte" },
-    family: { es: "Familia", en: "Family", pt: "Família" },
-    nature: { es: "Naturaleza", en: "Nature", pt: "Natureza" },
-    workshop: { es: "Taller", en: "Workshop", pt: "Oficina" },
-    education: { es: "Educación", en: "Education", pt: "Educação" },
-    other: { es: "Evento", en: "Event", pt: "Evento" },
-};
-
-/**
- * Returns the localized display label for a given category slug.
- * Falls back to capitalized slug when no mapping exists.
- */
-function getCategoryLabel(category: string, loc: SupportedLocale): string {
-    const labels = CATEGORY_LABELS[category.toLowerCase()];
-    if (labels) return labels[loc];
-    return capitalize(category);
-}
-
-/**
- * Human-readable date range text shown inside the date block.
- * Supports: single day, same-month range, cross-month range.
- */
-function buildDateLabel(): string {
-    const startDay = startDate.getDate();
-    const startMonthShort = startDate.toLocaleDateString(intlLocale, { month: "short" }).replace(".", "");
-
-    if (!endDate) {
-        return `${startDay} ${startMonthShort}`;
-    }
-
-    const endDay = endDate.getDate();
-    const endMonthShort = endDate.toLocaleDateString(intlLocale, { month: "short" }).replace(".", "");
-
-    const sameDay =
-        startDate.getDate() === endDate.getDate() &&
-        startDate.getMonth() === endDate.getMonth() &&
-        startDate.getFullYear() === endDate.getFullYear();
-
-    if (sameDay) {
-        return `${startDay} ${startMonthShort}`;
-    }
-
-    const sameMonth = startDate.getMonth() === endDate.getMonth();
-
-    /* Multi-day same month: "14-16 Ago" */
-    if (sameMonth) {
-        return `${startDay}-${endDay} ${startMonthShort}`;
-    }
-
-    /* Multi-day cross-month: "14 Ago - 16 Sep" */
-    return `${startDay} ${startMonthShort} -\n${endDay} ${endMonthShort}`;
-}
-
-/**
- * Human-readable time range.
- * Hides time when start time is "00:00" (no real time set).
- * Shows "HH:MM hs" for start-only, "HH:MM a HH:MM" for range.
- */
-function buildTimeLabel(): string | null {
-    const startHH = startDate.getHours().toString().padStart(2, "0");
-    const startMM = startDate.getMinutes().toString().padStart(2, "0");
-    const startTime = `${startHH}:${startMM}`;
-
-    if (startTime === "00:00") {
-        return null;
-    }
-
-    if (!endDate) {
-        return `${startTime} hs`;
-    }
-
-    const endHH = endDate.getHours().toString().padStart(2, "0");
-    const endMM = endDate.getMinutes().toString().padStart(2, "0");
-    const endTime = `${endHH}:${endMM}`;
-
-    return `${startTime} a ${endTime}`;
-}
-
-const dateLabel = buildDateLabel();
-const timeLabel = buildTimeLabel();
+const categoryIconName = getEventCategoryIconName(normalizedCategory);
 
 /** Whether the URL is a known placeholder or invalid for direct rendering. */
 const showImage = Boolean(data.featuredImage.url) && !data.featuredImage.url.includes("placeholder");
@@ -217,58 +118,19 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         <div class="event-card-h__photo-wrap" aria-hidden="true">
             <!-- Placeholder always renders as a background layer -->
             <div class="event-card-h__photo-placeholder" style={`${placeholderStyle} color: ${categoryColors.text};`}>
-                {normalizedCategory === "music" && <BallroomIcon size={64} weight="duotone" aria-hidden="true" />}
-                {normalizedCategory === "sports" && <SportsCenterIcon size={64} weight="duotone" aria-hidden="true" />}
-                {
-                    normalizedCategory === "cultural" && (
-                        <CulturalCenterIcon size={64} weight="duotone" aria-hidden="true" />
-                    )
-                }
-                {
-                    normalizedCategory === "gastronomy" && (
-                        <RestaurantIcon size={64} weight="duotone" aria-hidden="true" />
-                    )
-                }
-                {
-                    normalizedCategory === "festival" && (
-                        <FestivalPlazaIcon size={64} weight="duotone" aria-hidden="true" />
-                    )
-                }
-                {
-                    normalizedCategory === "wellness" && (
-                        <WellnessCenterIcon size={64} weight="duotone" aria-hidden="true" />
-                    )
-                }
-                {normalizedCategory === "art" && <MuseumIcon size={64} weight="duotone" aria-hidden="true" />}
-                {normalizedCategory === "family" && <UsersIcon size={64} weight="duotone" aria-hidden="true" />}
-                {normalizedCategory === "nature" && <NatureReserveIcon size={64} weight="duotone" aria-hidden="true" />}
-                {normalizedCategory === "theater" && <AmphitheaterIcon size={64} weight="duotone" aria-hidden="true" />}
-                {
-                    normalizedCategory === "workshop" && (
-                        <WorkshopSpaceIcon size={64} weight="duotone" aria-hidden="true" />
-                    )
-                }
-                {
-                    normalizedCategory === "education" && (
-                        <BooksAndMagazinesIcon size={64} weight="duotone" aria-hidden="true" />
-                    )
-                }
-                {
-                    ![
-                        "music",
-                        "sports",
-                        "cultural",
-                        "gastronomy",
-                        "festival",
-                        "wellness",
-                        "art",
-                        "family",
-                        "nature",
-                        "theater",
-                        "workshop",
-                        "education",
-                    ].includes(normalizedCategory) && <EventIcon size={64} weight="duotone" aria-hidden="true" />
-                }
+                {categoryIconName === "BallroomIcon" && <BallroomIcon size={64} weight="duotone" aria-hidden="true" />}
+                {categoryIconName === "SportsCenterIcon" && <SportsCenterIcon size={64} weight="duotone" aria-hidden="true" />}
+                {categoryIconName === "CulturalCenterIcon" && <CulturalCenterIcon size={64} weight="duotone" aria-hidden="true" />}
+                {categoryIconName === "RestaurantIcon" && <RestaurantIcon size={64} weight="duotone" aria-hidden="true" />}
+                {categoryIconName === "FestivalPlazaIcon" && <FestivalPlazaIcon size={64} weight="duotone" aria-hidden="true" />}
+                {categoryIconName === "WellnessCenterIcon" && <WellnessCenterIcon size={64} weight="duotone" aria-hidden="true" />}
+                {categoryIconName === "MuseumIcon" && <MuseumIcon size={64} weight="duotone" aria-hidden="true" />}
+                {categoryIconName === "UsersIcon" && <UsersIcon size={64} weight="duotone" aria-hidden="true" />}
+                {categoryIconName === "NatureReserveIcon" && <NatureReserveIcon size={64} weight="duotone" aria-hidden="true" />}
+                {categoryIconName === "AmphitheaterIcon" && <AmphitheaterIcon size={64} weight="duotone" aria-hidden="true" />}
+                {categoryIconName === "WorkshopSpaceIcon" && <WorkshopSpaceIcon size={64} weight="duotone" aria-hidden="true" />}
+                {categoryIconName === "BooksAndMagazinesIcon" && <BooksAndMagazinesIcon size={64} weight="duotone" aria-hidden="true" />}
+                {categoryIconName === "EventIcon" && <EventIcon size={64} weight="duotone" aria-hidden="true" />}
             </div>
             <!-- Image renders on top; if it fails to load the placeholder shows through -->
             {
@@ -303,59 +165,20 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
                 style={`background-color: ${categoryColors.bg}; color: ${categoryColors.text}; border: 1px solid ${categoryColors.border};`}
                 aria-hidden="true"
             >
-                {normalizedCategory === "music" && <BallroomIcon size={14} weight="regular" aria-hidden="true" />}
-                {normalizedCategory === "sports" && <SportsCenterIcon size={14} weight="regular" aria-hidden="true" />}
-                {
-                    normalizedCategory === "cultural" && (
-                        <CulturalCenterIcon size={14} weight="regular" aria-hidden="true" />
-                    )
-                }
-                {
-                    normalizedCategory === "gastronomy" && (
-                        <RestaurantIcon size={14} weight="regular" aria-hidden="true" />
-                    )
-                }
-                {
-                    normalizedCategory === "festival" && (
-                        <FestivalPlazaIcon size={14} weight="regular" aria-hidden="true" />
-                    )
-                }
-                {
-                    normalizedCategory === "wellness" && (
-                        <WellnessCenterIcon size={14} weight="regular" aria-hidden="true" />
-                    )
-                }
-                {normalizedCategory === "art" && <MuseumIcon size={14} weight="regular" aria-hidden="true" />}
-                {normalizedCategory === "family" && <UsersIcon size={14} weight="regular" aria-hidden="true" />}
-                {normalizedCategory === "nature" && <NatureReserveIcon size={14} weight="regular" aria-hidden="true" />}
-                {normalizedCategory === "theater" && <AmphitheaterIcon size={14} weight="regular" aria-hidden="true" />}
-                {
-                    normalizedCategory === "workshop" && (
-                        <WorkshopSpaceIcon size={14} weight="regular" aria-hidden="true" />
-                    )
-                }
-                {
-                    normalizedCategory === "education" && (
-                        <BooksAndMagazinesIcon size={14} weight="regular" aria-hidden="true" />
-                    )
-                }
-                {
-                    ![
-                        "music",
-                        "sports",
-                        "cultural",
-                        "gastronomy",
-                        "festival",
-                        "wellness",
-                        "art",
-                        "family",
-                        "nature",
-                        "theater",
-                        "workshop",
-                        "education",
-                    ].includes(normalizedCategory) && <EventIcon size={14} weight="regular" aria-hidden="true" />
-                }
-                {getCategoryLabel(data.category, locale)}
+                {categoryIconName === "BallroomIcon" && <BallroomIcon size={14} weight="regular" aria-hidden="true" />}
+                {categoryIconName === "SportsCenterIcon" && <SportsCenterIcon size={14} weight="regular" aria-hidden="true" />}
+                {categoryIconName === "CulturalCenterIcon" && <CulturalCenterIcon size={14} weight="regular" aria-hidden="true" />}
+                {categoryIconName === "RestaurantIcon" && <RestaurantIcon size={14} weight="regular" aria-hidden="true" />}
+                {categoryIconName === "FestivalPlazaIcon" && <FestivalPlazaIcon size={14} weight="regular" aria-hidden="true" />}
+                {categoryIconName === "WellnessCenterIcon" && <WellnessCenterIcon size={14} weight="regular" aria-hidden="true" />}
+                {categoryIconName === "MuseumIcon" && <MuseumIcon size={14} weight="regular" aria-hidden="true" />}
+                {categoryIconName === "UsersIcon" && <UsersIcon size={14} weight="regular" aria-hidden="true" />}
+                {categoryIconName === "NatureReserveIcon" && <NatureReserveIcon size={14} weight="regular" aria-hidden="true" />}
+                {categoryIconName === "AmphitheaterIcon" && <AmphitheaterIcon size={14} weight="regular" aria-hidden="true" />}
+                {categoryIconName === "WorkshopSpaceIcon" && <WorkshopSpaceIcon size={14} weight="regular" aria-hidden="true" />}
+                {categoryIconName === "BooksAndMagazinesIcon" && <BooksAndMagazinesIcon size={14} weight="regular" aria-hidden="true" />}
+                {categoryIconName === "EventIcon" && <EventIcon size={14} weight="regular" aria-hidden="true" />}
+                {getEventCategoryLabel(data.category, locale)}
             </span>
 
             <h3 class="event-card-h__title">{data.name}</h3>
@@ -437,7 +260,8 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         transform: rotate(-12deg) scale(1.6);
     }
 
-    /* Real image sits on top; when it fails to load the placeholder shows through */
+    /* Real image sits on top; when it fails to load (or is missing) the
+       category-aware placeholder layer underneath shows through. */
     .event-card-h__photo {
         position: relative;
         width: 100%;
@@ -447,11 +271,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         z-index: 1;
         transition: transform var(--duration-normal) ease;
         border: none;
-        background-color: var(--muted, #f0f0f0);
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 256 256'%3E%3Cpath fill='%23999' d='M216 40H40a16 16 0 0 0-16 16v144a16 16 0 0 0 16 16h176a16 16 0 0 0 16-16V56a16 16 0 0 0-16-16Zm0 16v102.75l-26.07-26.06a16 16 0 0 0-22.63 0l-20 20-44-44a16 16 0 0 0-22.62 0L40 149.37V56ZM40 172l52-52 80 80H40Zm176 28h-21.37l-36-36 20-20L216 181.38V200ZM144 100a12 12 0 1 1 12 12 12 12 0 0 1-12-12Z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: center;
-        background-size: 48px;
+        background-color: transparent;
     }
 
     .event-card-h:hover .event-card-h__photo {

@@ -6,13 +6,13 @@
  * detail page.
  */
 
-import { Image } from 'astro:assets';
 import Badge from '../ui/Badge.astro';
+import EventCardImage from './utils/EventCardImage.astro';
 import { CalendarDotsIcon, LocationIcon } from '@repo/icons';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { getEventCategoryColor } from '@/lib/colors';
-import { formatDate } from '@/lib/format-utils';
 import { buildUrl } from '@/lib/urls';
+import { formatEventDate } from './utils/formatEventDate';
 import type { EventCardData } from '@/data/types';
 import type { SupportedLocale } from '@/lib/i18n';
 
@@ -42,38 +42,30 @@ const { data, locale, isAuthenticated = false } = Astro.props;
 const categoryColor = getEventCategoryColor({ category: data.category });
 const detailUrl = buildUrl({ locale, path: `/eventos/${data.slug}/` });
 
-const startDate = data.date.start ? formatDate({ date: data.date.start, locale }) : '';
-const endDate = data.date.end ? formatDate({ date: data.date.end, locale }) : null;
+const dateResult = formatEventDate({ start: data.date.start, end: data.date.end, locale, mode: 'short' });
+const startDateLabel = dateResult.mode === 'short' ? dateResult.startLabel : '';
+const endDateLabel = dateResult.mode === 'short' ? dateResult.endLabel : null;
+
+const locationCity = data.cityName ?? data.location?.city ?? '';
+const locationVenue = data.location?.name ?? '';
+const locationLabel =
+  locationVenue && locationCity && locationVenue.trim().toLowerCase() !== locationCity.trim().toLowerCase()
+    ? `${locationVenue}, ${locationCity}`
+    : locationVenue || locationCity;
 ---
 
 <article class="card event-card">
   <!-- Image area -->
   <div class="card__image event-card__image">
     <a href={detailUrl} tabindex="-1" aria-hidden="true">
-      {data.featuredImage.url && !data.featuredImage.url.includes('placeholder') ? (
-        <Image
-          src={data.featuredImage.url}
-          alt={data.featuredImage.caption ?? data.name}
-          width={400}
-          height={225}
-          format="webp"
-          loading="lazy"
-          class="event-card__img"
-          style="border-radius: var(--radius-organic);"
-          data-fallback="/assets/images/placeholder-event.svg"
-        />
-      ) : (
-        <img
-          src={data.featuredImage.url || '/assets/images/placeholder-event.svg'}
-          alt={data.featuredImage.caption ?? data.name}
-          loading="lazy"
-          class="event-card__img"
-          style="border-radius: var(--radius-organic);"
-          width="400"
-          height="225"
-          data-fallback="/assets/images/placeholder-event.svg"
-        />
-      )}
+      <EventCardImage
+        url={data.featuredImage.url}
+        alt={data.featuredImage.caption ?? data.name}
+        width={400}
+        height={225}
+        imgClass="event-card__img"
+        imgStyle="border-radius: var(--radius-card);"
+      />
     </a>
     <!-- FavoriteButton island: top-right over image, OUTSIDE the <a> link (HTML semantics) -->
     <div class="event-card__fav-wrapper">
@@ -114,18 +106,18 @@ const endDate = data.date.end ? formatDate({ date: data.date.end, locale }) : nu
     <p class="event-card__meta">
       <CalendarDotsIcon size={14} weight="regular" aria-hidden="true" />
       <span>
-        {startDate}
-        {endDate && (
-          <> &ndash; {endDate}</>
+        {startDateLabel}
+        {endDateLabel && (
+          <> &ndash; {endDateLabel}</>
         )}
       </span>
     </p>
 
-    <!-- Location (optional) -->
-    {data.location && (
+    <!-- Location (optional, deduped if venue equals city) -->
+    {locationLabel && (
       <p class="event-card__meta event-card__meta--location">
         <LocationIcon size={14} weight="regular" aria-hidden="true" />
-        <span>{data.location.name}, {data.cityName ?? data.location.city}</span>
+        <span>{locationLabel}</span>
       </p>
     )}
 

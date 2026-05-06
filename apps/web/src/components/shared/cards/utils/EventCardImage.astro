@@ -1,0 +1,96 @@
+---
+/**
+ * @file EventCardImage.astro
+ * @description Reusable image partial for event card variants.
+ *
+ * Renders an optimised `<Image>` from `astro:assets` when the URL is a real
+ * image, or a plain `<img>` when the URL is empty or a placeholder path.
+ * This deduplicates the conditional image/img pattern that previously appeared
+ * in EventCard, EventCardFeatured, and EventCardHorizontal.
+ *
+ * NOTE: This partial emits no wrapping element — the caller is responsible for
+ * positioning, sizing, and aspect-ratio CSS applied to the parent container.
+ *
+ * @example
+ * ```astro
+ * <div class="my-card__image-wrap">
+ *   <EventCardImage
+ *     url={data.featuredImage.url}
+ *     alt={data.featuredImage.caption ?? data.name}
+ *     width={400}
+ *     height={225}
+ *     imgClass="my-card__img"
+ *   />
+ * </div>
+ * ```
+ */
+
+import { Image } from 'astro:assets';
+
+interface Props {
+  /** Remote image URL. When empty or containing "placeholder", a plain <img> is used. */
+  readonly url: string;
+  /** Alt text for the image. Pass an empty string for decorative images. */
+  readonly alt: string;
+  /** Intrinsic width in pixels forwarded to `<Image>` for optimisation. */
+  readonly width: number;
+  /** Intrinsic height in pixels forwarded to `<Image>` for optimisation. */
+  readonly height: number;
+  /** CSS class(es) applied to the rendered element. */
+  readonly imgClass?: string;
+  /** Inline styles applied to the rendered element (e.g. border-radius token). */
+  readonly imgStyle?: string;
+  /** Fallback src used for the plain `<img>` when no real URL is provided. */
+  readonly fallbackSrc?: string;
+  /**
+   * Loading strategy. Defaults to `'lazy'`.
+   * Use `'eager'` for above-the-fold hero images.
+   */
+  readonly loading?: 'lazy' | 'eager';
+  /**
+   * When `true`, adds a `data-hide-on-error` attribute so the image-fallback
+   * script can hide the element if the network load fails.
+   */
+  readonly hideOnError?: boolean;
+}
+
+const {
+  url,
+  alt,
+  width,
+  height,
+  imgClass,
+  imgStyle,
+  fallbackSrc = '/assets/images/placeholder-event.svg',
+  loading = 'lazy',
+  hideOnError = false,
+} = Astro.props;
+
+const isRealImage = Boolean(url) && !url.includes('placeholder');
+---
+
+{isRealImage ? (
+  <Image
+    src={url}
+    alt={alt}
+    width={width}
+    height={height}
+    format="webp"
+    loading={loading}
+    class={imgClass}
+    style={imgStyle}
+    data-fallback={fallbackSrc}
+    data-hide-on-error={hideOnError || undefined}
+  />
+) : (
+  <img
+    src={url || fallbackSrc}
+    alt={alt}
+    loading={loading}
+    class={imgClass}
+    style={imgStyle}
+    width={String(width)}
+    height={String(height)}
+    data-fallback={fallbackSrc}
+  />
+)}

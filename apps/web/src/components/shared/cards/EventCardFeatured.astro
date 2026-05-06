@@ -18,7 +18,6 @@
  * ```
  */
 
-import { Image } from 'astro:assets';
 import {
   LocationIcon,
   ArrowRightIcon,
@@ -39,6 +38,8 @@ import {
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { buildUrl } from '@/lib/urls';
 import { getEventCategoryColor } from '@/lib/colors';
+import { formatEventDate } from './utils/formatEventDate';
+import { getEventCategoryIconName, getEventCategoryLabel } from './utils/eventCategoryIcon';
 import type { EventCardData } from '@/data/types';
 import type { SupportedLocale } from '@/lib/i18n';
 
@@ -68,185 +69,16 @@ const { data, locale, isAuthenticated = false } = Astro.props;
 const detailUrl = buildUrl({ locale, path: `/eventos/${data.slug}/` });
 const categoryColor = getEventCategoryColor({ category: data.category });
 
-/** Locale tag used by Intl formatters. */
-const bcp47: Record<SupportedLocale, string> = { es: 'es-AR', en: 'en-US', pt: 'pt-BR' };
-const intlLocale = bcp47[locale];
+const dateResult = formatEventDate({
+  start: data.date.start,
+  end: data.date.end,
+  locale,
+  mode: 'compact',
+});
+const dateLine = dateResult.mode !== 'short' ? dateResult.dateLine : '';
+const timeLine = dateResult.mode !== 'short' ? dateResult.timeLine : null;
 
-const startDate = new Date(data.date.start);
-const endDate = data.date.end ? new Date(data.date.end) : null;
-
-/** Month abbreviation (3 chars, uppercase) from the start date. */
-const monthAbbr = startDate
-  .toLocaleDateString(intlLocale, { month: 'short' })
-  .replace('.', '')
-  .toUpperCase()
-  .slice(0, 3);
-
-/**
- * Builds the compact date display for the date block overlay.
- * Returns an object with `dateLine` (day/range + month) and an optional `timeLine`.
- */
-function buildDateBlock(): { dateLine: string; timeLine: string | null } {
-  const startDay = startDate.getDate();
-  const startTime = startDate.toLocaleTimeString(intlLocale, {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-
-  let dateLine: string;
-
-  if (!endDate) {
-    dateLine = `${startDay} ${monthAbbr}`;
-  } else {
-    const endDay = endDate.getDate();
-    const endMonthAbbr = endDate
-      .toLocaleDateString(intlLocale, { month: 'short' })
-      .replace('.', '')
-      .toUpperCase()
-      .slice(0, 3);
-
-    const sameDay =
-      startDate.getDate() === endDate.getDate() &&
-      startDate.getMonth() === endDate.getMonth() &&
-      startDate.getFullYear() === endDate.getFullYear();
-
-    if (sameDay) {
-      dateLine = `${startDay} ${monthAbbr}`;
-    } else {
-      const sameMonth = startDate.getMonth() === endDate.getMonth();
-      if (sameMonth) {
-        dateLine = `${startDay}-${endDay} ${monthAbbr}`;
-      } else {
-        dateLine = `${startDay} ${monthAbbr}-${endDay} ${endMonthAbbr}`;
-      }
-    }
-  }
-
-  /* Determine if we should show a time line. */
-  const startTimeStr = startDate.toLocaleTimeString(intlLocale, {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-
-  let timeLine: string | null = null;
-
-  /* Hide time when both start and end are "00:00". */
-  const startIsMidnight = startTimeStr === '00:00';
-  if (!startIsMidnight) {
-    if (endDate) {
-      const endTimeStr = endDate.toLocaleTimeString(intlLocale, {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      });
-      const endIsMidnight = endTimeStr === '00:00';
-      if (!endIsMidnight) {
-        timeLine = `${startTime} - ${endTimeStr}`;
-      } else {
-        timeLine = `${startTime}`;
-      }
-    } else {
-      timeLine = `${startTime}`;
-    }
-  }
-
-  return { dateLine, timeLine };
-}
-
-const { dateLine, timeLine } = buildDateBlock();
-
-/**
- * Maps event category to the appropriate icon component name.
- * Returns one of the named imports defined above.
- */
-type CategoryIconName =
-  | 'BallroomIcon'
-  | 'SportsCenterIcon'
-  | 'CulturalCenterIcon'
-  | 'RestaurantIcon'
-  | 'FestivalPlazaIcon'
-  | 'WellnessCenterIcon'
-  | 'MuseumIcon'
-  | 'UsersIcon'
-  | 'NatureReserveIcon'
-  | 'AmphitheaterIcon'
-  | 'WorkshopSpaceIcon'
-  | 'BooksAndMagazinesIcon'
-  | 'EventIcon';
-
-function getCategoryIconName(category: string): CategoryIconName {
-  switch (category.toLowerCase()) {
-    case 'music':
-    case 'musica':
-      return 'BallroomIcon';
-    case 'sports':
-    case 'deporte':
-      return 'SportsCenterIcon';
-    case 'cultural':
-    case 'culture':
-    case 'cultura':
-      return 'CulturalCenterIcon';
-    case 'gastronomy':
-    case 'gastronomia':
-      return 'RestaurantIcon';
-    case 'festival':
-      return 'FestivalPlazaIcon';
-    case 'wellness':
-    case 'bienestar':
-      return 'WellnessCenterIcon';
-    case 'art':
-    case 'arte':
-      return 'MuseumIcon';
-    case 'family':
-    case 'familia':
-      return 'UsersIcon';
-    case 'nature':
-    case 'naturaleza':
-      return 'NatureReserveIcon';
-    case 'theater':
-    case 'teatro':
-      return 'AmphitheaterIcon';
-    case 'workshop':
-    case 'taller':
-      return 'WorkshopSpaceIcon';
-    case 'education':
-    case 'educacion':
-      return 'BooksAndMagazinesIcon';
-    default:
-      return 'EventIcon';
-  }
-}
-
-const categoryIconName = getCategoryIconName(data.category);
-
-/** Locale-aware category label map. */
-const CATEGORY_LABELS: Record<string, Record<SupportedLocale, string>> = {
-  music: { es: 'Música', en: 'Music', pt: 'Música' },
-  sports: { es: 'Deportes', en: 'Sports', pt: 'Esportes' },
-  cultural: { es: 'Cultural', en: 'Cultural', pt: 'Cultural' },
-  culture: { es: 'Cultural', en: 'Cultural', pt: 'Cultural' },
-  gastronomy: { es: 'Gastronomía', en: 'Gastronomy', pt: 'Gastronomia' },
-  festival: { es: 'Festival', en: 'Festival', pt: 'Festival' },
-  wellness: { es: 'Bienestar', en: 'Wellness', pt: 'Bem-estar' },
-  art: { es: 'Arte', en: 'Art', pt: 'Arte' },
-  family: { es: 'Familia', en: 'Family', pt: 'Família' },
-  nature: { es: 'Naturaleza', en: 'Nature', pt: 'Natureza' },
-  workshop: { es: 'Taller', en: 'Workshop', pt: 'Oficina' },
-  education: { es: 'Educación', en: 'Education', pt: 'Educação' },
-  other: { es: 'Evento', en: 'Event', pt: 'Evento' },
-};
-
-/**
- * Returns a locale-aware label for the given event category.
- * Falls back to a capitalized version of the raw category string.
- */
-function getCategoryLabel(category: string, loc: SupportedLocale): string {
-  const labels = CATEGORY_LABELS[category.toLowerCase()];
-  if (labels) return labels[loc];
-  return category.charAt(0).toUpperCase() + category.slice(1);
-}
+const categoryIconName = getEventCategoryIconName(data.category);
 
 /**
  * Determines whether the featuredImage prop contains a real image URL.
@@ -261,7 +93,10 @@ const hasRealImage =
  * Semi-transparent version of the category color used for the badge overlay.
  * We use a slightly more opaque value (0.85) for a glassy but readable look.
  */
-const badgeBgSolid = categoryColor.bg.replace('/ 0.15)', '/ 0.85)');
+const badgeBgSolid = getEventCategoryColor({
+  category: data.category,
+  bgOpacity: 0.85,
+}).bg;
 ---
 
 <article class="event-card-featured" style={`--category-color: ${categoryColor.text};`}>
@@ -312,12 +147,11 @@ const badgeBgSolid = categoryColor.bg.replace('/ 0.15)', '/ 0.85)');
 
       <!-- Real image on top; when it loads it covers the fallback -->
       {hasRealImage && (
-        <Image
+        <img
           src={data.featuredImage.url}
           alt=""
-          width={600}
-          height={260}
-          format="webp"
+          width="600"
+          height="260"
           loading="lazy"
           class="event-card-featured__image"
           data-hide-on-error
@@ -348,7 +182,7 @@ const badgeBgSolid = categoryColor.bg.replace('/ 0.15)', '/ 0.85)');
           {categoryIconName === 'BooksAndMagazinesIcon' && <BooksAndMagazinesIcon size={14} weight="fill" aria-hidden="true" />}
           {categoryIconName === 'EventIcon' && <EventIcon size={14} weight="fill" aria-hidden="true" />}
         </span>
-        <span class="event-card-featured__badge-label">{getCategoryLabel(data.category, locale)}</span>
+        <span class="event-card-featured__badge-label">{getEventCategoryLabel(data.category, locale)}</span>
       </div>
 
       <!-- Date block: bottom-right overlay -->
