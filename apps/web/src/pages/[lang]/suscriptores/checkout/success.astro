@@ -12,14 +12,11 @@
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import type { GetStaticPaths } from 'astro';
 
 export const prerender = false;
 
-const { lang } = Astro.params;
-const locale = (lang ?? 'es') as SupportedLocale;
+const locale = Astro.locals.locale;
 const { t } = createTranslations(locale);
 
 const collectionStatus = Astro.url.searchParams.get('collection_status');
@@ -35,25 +32,47 @@ const miCuentaUrl = buildUrl({ locale, path: 'mi-cuenta' });
 >
 	<section class="checkout-result section">
 		<div class="checkout-result__container" data-reveal="up">
-			<div class="checkout-result__icon checkout-result__icon--success" aria-hidden="true">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					viewBox="0 0 64 64"
-					fill="none"
-					width="80"
-					height="80"
-					aria-hidden="true"
-				>
-					<circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="4" />
-					<path
-						d="M20 32l9 9 15-18"
-						stroke="currentColor"
-						stroke-width="4"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/>
-				</svg>
-			</div>
+			{isApproved ? (
+				<div class="checkout-result__icon checkout-result__icon--success" aria-hidden="true">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 64 64"
+						fill="none"
+						width="80"
+						height="80"
+						aria-hidden="true"
+					>
+						<circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="4" />
+						<path
+							d="M20 32l9 9 15-18"
+							stroke="currentColor"
+							stroke-width="4"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+					</svg>
+				</div>
+			) : (
+				<div class="checkout-result__icon checkout-result__icon--pending" aria-hidden="true">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 64 64"
+						fill="none"
+						width="80"
+						height="80"
+						aria-hidden="true"
+					>
+						<circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="4" />
+						<path
+							d="M32 18v14l9 6"
+							stroke="currentColor"
+							stroke-width="4"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+					</svg>
+				</div>
+			)}
 
 			<h1 class="checkout-result__title">
 				{isApproved
@@ -61,11 +80,14 @@ const miCuentaUrl = buildUrl({ locale, path: 'mi-cuenta' });
 					: t('billing.checkout.success.verifyingStatus', 'Verificando estado del pago...')}
 			</h1>
 
-			{isApproved && (
-				<p class="checkout-result__subtitle">
-					{t('billing.checkout.success.subtitle', 'Tu pago fue aprobado correctamente')}
-				</p>
-			)}
+			<p class="checkout-result__subtitle">
+				{isApproved
+					? t('billing.checkout.success.subtitle', 'Tu pago fue aprobado correctamente')
+					: t(
+							'billing.checkout.success.verifyingSubtitle',
+							'Estamos confirmando tu pago. Esto puede tardar unos instantes.'
+						)}
+			</p>
 
 			<div class="checkout-result__actions">
 				<a href={miCuentaUrl} class="checkout-result__cta">
@@ -107,6 +129,11 @@ const miCuentaUrl = buildUrl({ locale, path: 'mi-cuenta' });
 	.checkout-result__icon--success {
 		color: var(--success);
 		background-color: oklch(from var(--success) l c h / 0.1);
+	}
+
+	.checkout-result__icon--pending {
+		color: var(--warning);
+		background-color: oklch(from var(--warning) l c h / 0.1);
 	}
 
 	.checkout-result__title {

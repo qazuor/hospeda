@@ -13,6 +13,7 @@
 import type { JSX } from 'react';
 import { useState } from 'react';
 import { useSession } from '../../lib/auth-client';
+import { getApiUrl } from '../../lib/env';
 import type { SupportedLocale } from '../../lib/i18n';
 import { createTranslations } from '../../lib/i18n';
 import { buildUrl } from '../../lib/urls';
@@ -148,8 +149,7 @@ export function PlanPurchaseButton({
         setLoading(true);
 
         try {
-            const apiUrl = (import.meta.env.PUBLIC_API_URL as string | undefined) ?? '';
-            const url = `${apiUrl.replace(/\/$/, '')}/api/v1/protected/billing/checkout`;
+            const url = `${getApiUrl()}/api/v1/protected/billing/checkout`;
 
             const response = await fetch(url, {
                 method: 'POST',

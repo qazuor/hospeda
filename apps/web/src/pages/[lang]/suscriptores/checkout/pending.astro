@@ -12,13 +12,11 @@
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
 export const prerender = false;
 
-const { lang } = Astro.params;
-const locale = (lang ?? 'es') as SupportedLocale;
+const locale = Astro.locals.locale;
 const { t } = createTranslations(locale);
 
 const miCuentaUrl = buildUrl({ locale, path: 'mi-cuenta' });
