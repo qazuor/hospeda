@@ -185,6 +185,7 @@
             "planDetails": "Plan: {{planName}}",
             "amountDetails": "Monto: {{amount}}",
             "verifyingStatus": "Verificando estado del pago...",
+            "verifyingSubtitle": "Estamos confirmando tu pago. Esto puede tardar unos instantes.",
             "cta": "Ir a mi cuenta",
             "pageTitle": "Pago aprobado — Hospeda"
         },
@@ -339,5 +340,67 @@
                 "button": "Comenzar Prueba Gratuita"
             }
         }
+    },
+    "plan": {
+        "owner-basico": {
+            "name": "Básico",
+            "description": "Plan ideal para empezar a publicar tu primer alojamiento. Lo esencial para tu propiedad."
+        },
+        "owner-pro": {
+            "name": "Profesional",
+            "description": "Estadísticas avanzadas, listado destacado y soporte prioritario para hacer crecer tu negocio."
+        },
+        "owner-premium": {
+            "name": "Premium",
+            "description": "Todo lo del plan Profesional, branding personalizado, acceso a API y un gestor dedicado."
+        },
+        "tourist-free": {
+            "name": "Gratis",
+            "description": "Guardá favoritos, leé reseñas y planificá tu próximo viaje sin costo."
+        },
+        "tourist-plus": {
+            "name": "Plus",
+            "description": "Sin publicidad, alertas de precio, ofertas exclusivas y acceso anticipado a eventos."
+        },
+        "tourist-vip": {
+            "name": "VIP",
+            "description": "Soporte VIP, conserjería, traslados al aeropuerto y promociones exclusivas."
+        }
+    },
+    "entitlement": {
+        "publish_accommodations": "Publicar alojamientos",
+        "edit_accommodation_info": "Editar información del alojamiento",
+        "view_basic_stats": "Estadísticas básicas",
+        "view_advanced_stats": "Estadísticas avanzadas",
+        "respond_reviews": "Responder reseñas",
+        "priority_support": "Soporte prioritario",
+        "featured_listing": "Aparecer destacado en búsquedas",
+        "custom_branding": "Branding personalizado",
+        "api_access": "Acceso a la API",
+        "dedicated_manager": "Gestor de cuenta dedicado",
+        "create_promotions": "Crear promociones",
+        "social_media_integration": "Integración con redes sociales",
+        "can_use_rich_description": "Descripciones enriquecidas",
+        "can_embed_video": "Embedeer videos en el alojamiento",
+        "can_use_calendar": "Calendario de disponibilidad",
+        "can_sync_external_calendar": "Sincronizar calendarios externos",
+        "can_contact_whatsapp_display": "Mostrar contacto por WhatsApp",
+        "can_contact_whatsapp_direct": "Contacto directo por WhatsApp",
+        "has_verification_badge": "Sello de propiedad verificada",
+        "save_favorites": "Guardar favoritos",
+        "write_reviews": "Escribir reseñas",
+        "read_reviews": "Leer reseñas completas",
+        "ad_free": "Navegación sin publicidad",
+        "price_alerts": "Alertas de precio",
+        "early_access_events": "Acceso anticipado a eventos",
+        "exclusive_deals": "Ofertas exclusivas",
+        "vip_support": "Soporte VIP",
+        "concierge_service": "Servicio de conserjería",
+        "airport_transfers": "Traslados al aeropuerto",
+        "vip_promotions_access": "Acceso a promociones VIP",
+        "can_compare_accommodations": "Comparar alojamientos",
+        "can_attach_review_photos": "Subir fotos en reseñas",
+        "can_view_search_history": "Ver historial de búsquedas",
+        "can_view_recommendations": "Recomendaciones personalizadas"
     }
 }
