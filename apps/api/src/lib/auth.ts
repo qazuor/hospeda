@@ -364,7 +364,18 @@ export function getAuth(): ReturnType<typeof betterAuth> {
             disableCSRFCheck: false,
             /** Explicitly enable origin validation for redirects */
             disableOriginCheck: false,
-            useSecureCookies: env.NODE_ENV === 'production'
+            useSecureCookies: env.NODE_ENV === 'production',
+            /**
+             * SSO across subdomains (web, admin, api). In production the cookie is
+             * scoped to the apex `hospeda.com.ar` so a session minted on
+             * `hospeda.com.ar` is also valid on `admin.hospeda.com.ar` and
+             * `api.hospeda.com.ar`. In dev `domain` stays undefined so cookies
+             * fall back to per-host scoping (localhost:3000 vs localhost:4321).
+             */
+            crossSubDomainCookies: {
+                enabled: true,
+                domain: env.NODE_ENV === 'production' ? 'hospeda.com.ar' : undefined
+            }
         },
 
         databaseHooks: {
