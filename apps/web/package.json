@@ -18,7 +18,7 @@
         "clean": "rm -rf node_modules dist .astro"
     },
     "dependencies": {
-        "@astrojs/node": "^10.0.6",
+        "@astrojs/node": "^9.4.0",
         "@astrojs/react": "^4.2.1",
         "@astrojs/sitemap": "^3.7.0",
         "@repo/billing": "workspace:*",
