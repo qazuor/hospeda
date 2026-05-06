@@ -1,15 +1,24 @@
 ---
 /**
  * @file contacto/index.astro
- * @description Contact page with contact form placeholder.
+ * @description Contact page hero + form + secondary info section.
  * @route /{lang}/contacto/
  * @rendering SSG (prerender)
  */
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import { ContactForm } from '@/components/ContactForm.client';
+import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import {
+	EmailIcon,
+	PhoneIcon,
+	WhatsappIcon,
+	LocationIcon,
+	ClockIcon,
+	CheckCircleIcon
+} from '@repo/icons';
 import type { GetStaticPaths } from 'astro';
 
 export const prerender = true;
@@ -21,6 +30,33 @@ export const getStaticPaths = (() => {
 const { lang } = Astro.params;
 const locale = lang as SupportedLocale;
 const { t } = createTranslations(locale);
+
+const phoneRaw = t('contact.phone.value', '+54 3442 453797');
+const phoneHref = phoneRaw.replace(/[^+\d]/g, '');
+const whatsappRaw = t('contact.whatsapp.value', '+54 9 3442 453797');
+const whatsappHref = whatsappRaw.replace(/[^\d]/g, '');
+const emailValue = t('contact.email.value', 'info@hospeda.com');
+
+const trustSignals = [
+	t('contact.trust.responseTime', 'Respondemos en menos de 24 hs'),
+	t('contact.trust.secure', 'Tus datos están protegidos'),
+	t('contact.trust.humans', 'Te atiende una persona, no un bot')
+];
+
+const hours = [
+	{
+		label: t('contact.hours.weekdays', 'Lunes a viernes'),
+		value: t('contact.hours.weekdaysValue', '9:00 a 18:00')
+	},
+	{
+		label: t('contact.hours.saturday', 'Sábados'),
+		value: t('contact.hours.saturdayValue', '10:00 a 13:00')
+	},
+	{
+		label: t('contact.hours.sunday', 'Domingos y feriados'),
+		value: t('contact.hours.sundayValue', 'Cerrado')
+	}
+];
 ---
 
 <DefaultLayout
@@ -28,45 +64,205 @@ const { t } = createTranslations(locale);
 	title={t('contact.title', 'Contacto')}
 	description={t('contact.description', 'Contactate con el equipo de Hospeda. Estamos para ayudarte.')}
 >
-	<section class="contact-page section">
-		<div class="contact-page__container">
-			<p class="contact-page__tagline" data-reveal="up">{t('contact.tagline', 'Escribinos')}</p>
-			<h1 class="contact-page__title" data-reveal="up">{t('contact.heading', 'Contacto')}</h1>
-			<p class="contact-page__subtitle" data-reveal="up">
-				{t('contact.subtitle', '¿Tenés alguna consulta o sugerencia? Completá el formulario y te responderemos a la brevedad.')}
-			</p>
+	<section class="contact-hero section">
+		<div class="contact-hero__decoratives" aria-hidden="true">
+			<img
+				src="/assets/images/shapes/deco-arrow-1.svg"
+				alt=""
+				class="contact-hero__deco contact-hero__deco--arrow"
+				loading="eager"
+			/>
+		</div>
 
-			<div class="contact-page__form-area" data-reveal="up">
-				<ContactForm locale={locale} client:visible />
+		<div class="contact-hero__container">
+			<div class="contact-hero__content" data-reveal="up">
+				<p class="contact-hero__tagline">{t('contact.tagline', 'Escribinos')}</p>
+				<h1 class="contact-hero__title">{t('contact.heading', 'Contactanos')}</h1>
+				<p class="contact-hero__subtitle">
+					{t('contact.subtitle', '¿Tenés alguna consulta o sugerencia? Completá el formulario y te responderemos a la brevedad.')}
+				</p>
+
+				<ul class="contact-hero__trust" role="list">
+					{trustSignals.map((signal) => (
+						<li class="contact-hero__trust-item">
+							<span class="contact-hero__trust-icon" aria-hidden="true">
+								<CheckCircleIcon size="sm" weight="fill" />
+							</span>
+							<span>{signal}</span>
+						</li>
+					))}
+				</ul>
+
+				<div class="contact-hero__form" data-reveal="up">
+					<ContactForm locale={locale} client:visible />
+				</div>
 			</div>
 
-			<div class="contact-page__info" data-reveal="up">
-				<p class="contact-page__info-item">
-					<strong>{t('contact.email.label', 'Email')}:</strong>
-					<a class="contact-page__info-link" href={`mailto:${t('contact.email.value', 'info@hospeda.com')}`}>
-						{t('contact.email.value', 'info@hospeda.com')}
+			<aside class="contact-hero__visual" aria-hidden="true" data-reveal="right">
+				<div class="contact-hero__blob"></div>
+				<div class="contact-hero__icon-wrap">
+					<EmailIcon size={96} weight="duotone" />
+				</div>
+				<div class="contact-hero__floating contact-hero__floating--phone">
+					<PhoneIcon size="md" weight="duotone" />
+				</div>
+				<div class="contact-hero__floating contact-hero__floating--chat">
+					<WhatsappIcon size="md" weight="duotone" />
+				</div>
+				<div class="contact-hero__floating contact-hero__floating--pin">
+					<LocationIcon size="md" weight="duotone" />
+				</div>
+			</aside>
+		</div>
+	</section>
+
+	<section class="contact-info section section--warm">
+		<div class="contact-info__container">
+			<SectionHeader
+				tagline={t('contact.hours.tagline', 'Cuándo estamos')}
+				title={t('contact.hours.title', 'Horarios de atención')}
+				subtitle={t('contact.hours.subtitle', 'Te respondemos en menos de 24 horas hábiles.')}
+			/>
+
+			<div class="contact-info__grid">
+				<article class="contact-info-card" data-reveal="up">
+					<header class="contact-info-card__header">
+						<span class="contact-info-card__icon" aria-hidden="true">
+							<ClockIcon size="lg" weight="duotone" />
+						</span>
+						<h3 class="contact-info-card__title">{t('contact.hours.title', 'Horarios')}</h3>
+					</header>
+					<dl class="contact-info-card__list">
+						{hours.map((row) => (
+							<div class="contact-info-card__row">
+								<dt>{row.label}</dt>
+								<dd>{row.value}</dd>
+							</div>
+						))}
+					</dl>
+					<p class="contact-info-card__note">{t('contact.hours.timezone', 'Hora de Argentina (UTC-3)')}</p>
+				</article>
+
+				<article class="contact-info-card" data-reveal="up" style="transition-delay: 100ms">
+					<header class="contact-info-card__header">
+						<span class="contact-info-card__icon" aria-hidden="true">
+							<EmailIcon size="lg" weight="duotone" />
+						</span>
+						<h3 class="contact-info-card__title">{t('contact.email.label', 'Email')}</h3>
+					</header>
+					<a class="contact-info-card__link" href={`mailto:${emailValue}`}>
+						{emailValue}
 					</a>
-				</p>
-				<p class="contact-page__info-item">
-					<strong>{t('contact.phone.label', 'Teléfono')}:</strong>
-					<a class="contact-page__info-link" href={`tel:${t('contact.phone.value', '+54 3442 453797').replace(/\s/g, '')}`}>
-						{t('contact.phone.value', '+54 3442 453797')}
+					<p class="contact-info-card__note">
+						{t('contact.channels.email.description', 'Para consultas detalladas y formales.')}
+					</p>
+				</article>
+
+				<article class="contact-info-card" data-reveal="up" style="transition-delay: 200ms">
+					<header class="contact-info-card__header">
+						<span class="contact-info-card__icon" aria-hidden="true">
+							<PhoneIcon size="lg" weight="duotone" />
+						</span>
+						<h3 class="contact-info-card__title">{t('contact.phone.label', 'Teléfono')}</h3>
+					</header>
+					<a class="contact-info-card__link" href={`tel:${phoneHref}`}>{phoneRaw}</a>
+					<p class="contact-info-card__note">
+						{t('contact.channels.phone.description', 'Lunes a viernes, 9 a 18 hs (UTC-3).')}
+					</p>
+				</article>
+
+				<article class="contact-info-card" data-reveal="up" style="transition-delay: 300ms">
+					<header class="contact-info-card__header">
+						<span class="contact-info-card__icon" aria-hidden="true">
+							<WhatsappIcon size="lg" weight="duotone" />
+						</span>
+						<h3 class="contact-info-card__title">{t('contact.whatsapp.label', 'WhatsApp')}</h3>
+					</header>
+					<a
+						class="contact-info-card__link"
+						href={`https://wa.me/${whatsappHref}`}
+						target="_blank"
+						rel="noopener noreferrer"
+					>
+						{whatsappRaw}
 					</a>
-				</p>
+					<p class="contact-info-card__note">
+						{t('contact.channels.whatsapp.description', 'Respuesta rápida en horario de oficina.')}
+					</p>
+				</article>
+
+				<article class="contact-info-card" data-reveal="up" style="transition-delay: 400ms">
+					<header class="contact-info-card__header">
+						<span class="contact-info-card__icon" aria-hidden="true">
+							<LocationIcon size="lg" weight="duotone" />
+						</span>
+						<h3 class="contact-info-card__title">{t('contact.address.label', 'Dirección')}</h3>
+					</header>
+					<p class="contact-info-card__address">
+						{t('contact.address.value', 'Concepción del Uruguay, Entre Ríos, Argentina')}
+					</p>
+				</article>
 			</div>
 		</div>
 	</section>
 </DefaultLayout>
 
 <style>
-	.contact-page__container {
+	/* ─── Hero ──────────────────────────────────────────────────────────────── */
+
+	.contact-hero {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.contact-hero__decoratives {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.contact-hero__deco--arrow {
+		position: absolute;
+		top: clamp(20%, 25%, 30%);
+		right: clamp(2%, 4vw, 6%);
+		width: clamp(60px, 8vw, 110px);
+		height: auto;
+		opacity: 0.5;
+		transform: rotate(15deg);
+	}
+
+	@media (max-width: 900px) {
+		.contact-hero__deco--arrow {
+			display: none;
+		}
+	}
+
+	.contact-hero__container {
+		position: relative;
+		z-index: 1;
 		max-width: var(--container-max);
 		margin: 0 auto;
 		padding: 0 var(--space-container-x);
-		text-align: center;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-8, 2rem);
+		align-items: start;
 	}
 
-	.contact-page__tagline {
+	@media (min-width: 960px) {
+		.contact-hero__container {
+			grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+			gap: clamp(2rem, 5vw, 5rem);
+		}
+	}
+
+	.contact-hero__content {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.contact-hero__tagline {
 		font-family: var(--font-decorative);
 		font-size: var(--text-tagline);
 		color: var(--brand-accent);
@@ -74,52 +270,279 @@ const { t } = createTranslations(locale);
 		margin: 0 0 var(--space-2, 0.5rem);
 	}
 
-	.contact-page__title {
+	.contact-hero__title {
 		font-family: var(--font-heading);
 		font-weight: 700;
 		font-size: var(--text-h2);
 		color: var(--core-foreground);
 		margin: 0 0 var(--space-4, 1rem);
+		line-height: 1.15;
 	}
 
-	.contact-page__subtitle {
+	.contact-hero__subtitle {
 		font-family: var(--font-sans);
 		font-size: var(--text-body);
 		color: var(--core-muted-foreground);
 		max-width: 55ch;
-		margin: 0 auto var(--space-8, 2rem);
+		margin: 0 0 var(--space-5, 1.25rem);
 		line-height: 1.6;
 	}
 
-	.contact-page__form-area {
-		max-width: 640px;
-		margin: 0 auto var(--space-8, 2rem);
-	}
-
-	.contact-page__info {
+	.contact-hero__trust {
+		list-style: none;
+		padding: 0;
+		margin: 0 0 var(--space-6, 1.5rem);
 		display: flex;
-		gap: var(--space-6, 1.5rem);
-		justify-content: center;
-		flex-wrap: wrap;
+		flex-direction: column;
+		gap: var(--space-2, 0.5rem);
 	}
 
-	.contact-page__info-item {
+	.contact-hero__trust-item {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2, 0.5rem);
 		font-family: var(--font-sans);
-		font-size: var(--text-body);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+	}
+
+	.contact-hero__trust-icon {
+		display: inline-flex;
+		color: var(--brand-accent);
+		flex-shrink: 0;
+	}
+
+	.contact-hero__form {
+		margin-top: var(--space-4, 1rem);
+		max-width: 640px;
+		width: 100%;
+	}
+
+	/* ─── Hero visual aside ─────────────────────────────────────────────────── */
+
+	.contact-hero__visual {
+		position: relative;
+		display: none;
+		align-items: center;
+		justify-content: center;
+		min-height: 360px;
+	}
+
+	@media (min-width: 960px) {
+		.contact-hero__visual {
+			display: flex;
+			align-self: stretch;
+		}
+	}
+
+	.contact-hero__blob {
+		position: absolute;
+		inset: 0;
+		margin: auto;
+		width: clamp(260px, 28vw, 400px);
+		height: clamp(260px, 28vw, 400px);
+		border-radius: 50%;
+		background: radial-gradient(
+			circle at 30% 30%,
+			oklch(from var(--brand-primary) l c h / 0.18),
+			oklch(from var(--brand-accent) l c h / 0.08) 60%,
+			transparent 75%
+		);
+		filter: blur(2px);
+	}
+
+	.contact-hero__icon-wrap {
+		position: relative;
+		z-index: 2;
+		width: clamp(140px, 16vw, 200px);
+		height: clamp(140px, 16vw, 200px);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background-color: var(--core-card);
+		border-radius: 50%;
+		box-shadow: var(--shadow-card);
+		color: var(--brand-primary);
+	}
+
+	.contact-hero__floating {
+		position: absolute;
+		z-index: 3;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 56px;
+		height: 56px;
+		border-radius: 50%;
+		background-color: var(--core-card);
+		box-shadow: var(--shadow-card);
+		color: var(--brand-accent);
+		animation: contact-float 6s ease-in-out infinite;
+	}
+
+	.contact-hero__floating--phone {
+		top: 12%;
+		left: 8%;
+		animation-delay: 0s;
+	}
+
+	.contact-hero__floating--chat {
+		bottom: 18%;
+		left: 4%;
+		color: oklch(0.65 0.18 145);
+		animation-delay: 1.5s;
+	}
+
+	.contact-hero__floating--pin {
+		top: 18%;
+		right: 6%;
+		color: var(--brand-primary);
+		animation-delay: 3s;
+	}
+
+	@keyframes contact-float {
+		0%, 100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-10px);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.contact-hero__floating {
+			animation: none;
+		}
+	}
+
+	/* ─── Info section (warm) ───────────────────────────────────────────────── */
+
+	.contact-info__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+	}
+
+	.contact-info__grid {
+		margin-top: var(--space-6, 1.5rem);
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--space-card-gap, 1.5rem);
+	}
+
+	@media (min-width: 600px) {
+		.contact-info__grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (min-width: 960px) {
+		.contact-info__grid {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	.contact-info-card {
+		background-color: var(--core-card);
+		border-radius: var(--radius-card);
+		padding: var(--space-6, 1.5rem);
+		box-shadow: var(--shadow-card);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3, 0.75rem);
+		transition:
+			transform var(--duration-normal) ease,
+			box-shadow var(--duration-normal) ease;
+	}
+
+	.contact-info-card:hover {
+		transform: translateY(-4px);
+		box-shadow: var(--shadow-card-hover);
+	}
+
+	.contact-info-card__header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3, 0.75rem);
+	}
+
+	.contact-info-card__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 48px;
+		height: 48px;
+		border-radius: var(--radius-md, 10px);
+		background-color: oklch(from var(--brand-primary) l c h / 0.1);
+		color: var(--brand-primary);
+		flex-shrink: 0;
+	}
+
+	.contact-info-card__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-h4);
 		color: var(--core-foreground);
 		margin: 0;
 	}
 
-	.contact-page__info-link {
+	.contact-info-card__list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2, 0.5rem);
+		margin: 0;
+		padding: 0;
+	}
+
+	.contact-info-card__row {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: var(--space-3, 0.75rem);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+	}
+
+	.contact-info-card__row dt {
+		color: var(--core-muted-foreground);
+		margin: 0;
+	}
+
+	.contact-info-card__row dd {
+		color: var(--core-foreground);
+		font-weight: 600;
+		margin: 0;
+	}
+
+	.contact-info-card__link {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
 		color: var(--brand-primary);
 		text-decoration: none;
-		margin-left: var(--space-2, 0.5rem);
+		font-weight: 600;
+		word-break: break-word;
 		transition: color var(--duration-fast) ease;
 	}
 
-	.contact-page__info-link:hover,
-	.contact-page__info-link:focus-visible {
+	.contact-info-card__link:hover,
+	.contact-info-card__link:focus-visible {
 		color: var(--brand-accent);
 		text-decoration: underline;
+	}
+
+	.contact-info-card__note {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+		margin: 0;
+		line-height: 1.5;
+	}
+
+	.contact-info-card__address {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--core-foreground);
+		margin: 0;
+		line-height: 1.5;
 	}
 </style>

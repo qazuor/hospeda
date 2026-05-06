@@ -173,9 +173,11 @@
 }
 
 .successIcon {
-    font-size: 3rem;
-    display: block;
-    margin-bottom: var(--space-4, 1rem);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-4, 1rem);
+    color: var(--brand-accent);
 }
 
 .successTitle {

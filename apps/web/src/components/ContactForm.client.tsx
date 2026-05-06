@@ -12,6 +12,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { CheckCircleIcon } from '@repo/icons';
 import type { ContactSubmitInput } from '@repo/schemas';
 import { ContactSubmitSchema } from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, useState } from 'react';
@@ -143,7 +144,10 @@ export function ContactForm({ locale }: ContactFormProps) {
                     className={styles.successIcon}
                     aria-hidden="true"
                 >
-                    ✅
+                    <CheckCircleIcon
+                        size={64}
+                        weight="duotone"
+                    />
                 </span>
                 <h2 className={styles.successTitle}>
                     {t('contact.form.successTitle', '¡Mensaje enviado!')}
