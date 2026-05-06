@@ -482,89 +482,22 @@ export const HOSPEDA_ENV_VARS = [
     // Cron
     // -------------------------------------------------------------------------
     {
-        name: 'HOSPEDA_CRON_SECRET',
-        description:
-            'Cron endpoint auth secret. Min 32 chars enforced by Zod. REQUIRED in production (superRefine in apps/api/src/utils/env.ts rejects startup if empty when NODE_ENV=production).',
-        descriptionEs:
-            'Secreto de autenticación para los endpoints de cron. Mínimo 32 caracteres validado por Zod. OBLIGATORIO en producción (un superRefine en apps/api/src/utils/env.ts rechaza el startup si queda vacío con NODE_ENV=production).',
-        type: 'string',
-        required: false,
-        secret: true,
-        exampleValue: 'Tg7L9m2N0p1Q3r4S5t6U7v8W9x0Y1z2A3b4C5d6E7f8=',
-        apps: ['api'],
-        category: 'cron',
-        howToObtain:
-            'Generate with:  openssl rand -base64 32  — protects /api/cron/* endpoints from being triggered by anyone outside your scheduler. Must match what you configure in QStash (or Vercel Cron). Required in production: startup will fail if missing.',
-        howToObtainEs:
-            'Generalo con:  openssl rand -base64 32  — protege los endpoints /api/cron/* para que solo los pueda disparar tu scheduler. Tiene que coincidir con lo que configures en QStash (o Vercel Cron). Obligatorio en producción: el startup falla si queda vacío.'
-    },
-    {
         name: 'HOSPEDA_CRON_ADAPTER',
-        description: 'Cron scheduler type',
-        descriptionEs: 'Tipo de scheduler de cron',
+        description:
+            'Cron scheduler type. Use "node-cron" in production (in-process scheduling on the VPS) and "manual" in dev/tests/CI when a human or test harness triggers jobs.',
+        descriptionEs:
+            'Tipo de scheduler de cron. Usá "node-cron" en producción (scheduling in-process en el VPS) y "manual" en dev/tests/CI cuando los jobs los dispara una persona o el test harness.',
         type: 'enum',
         required: false,
         secret: false,
         exampleValue: 'manual',
-        enumValues: ['manual', 'vercel', 'qstash', 'node-cron'] as const,
+        enumValues: ['manual', 'node-cron'] as const,
         apps: ['api'],
         category: 'cron',
         howToObtain:
-            'Pick one: "manual" (no scheduler, dev only), "vercel" (Vercel Cron — free tier limited), "qstash" (Upstash QStash — recommended for prod), "node-cron" (in-process, single instance only).',
+            'Pick "node-cron" for production VPS deploys (the API process schedules and runs all jobs itself). Pick "manual" for dev/tests/CI where jobs are triggered through the admin panel or test fixtures.',
         howToObtainEs:
-            'Elegí uno: "manual" (sin scheduler, solo dev), "vercel" (Vercel Cron, free tier limitado), "qstash" (Upstash QStash — recomendado para prod), "node-cron" (in-process, solo single-instance).'
-    },
-    {
-        name: 'QSTASH_TOKEN',
-        description:
-            'Upstash QStash bearer token. Used by scripts/setup-qstash-schedules.ts to provision schedules; not consumed at runtime.',
-        descriptionEs:
-            'Token bearer de Upstash QStash. Lo usa scripts/setup-qstash-schedules.ts para provisionar schedules; no se consume en runtime.',
-        type: 'string',
-        required: false,
-        secret: true,
-        exampleValue: 'eyJ...',
-        apps: ['api'],
-        category: 'cron',
-        helpUrl: 'https://console.upstash.com/qstash',
-        howToObtain:
-            'Upstash Console → QStash → "Details" tab → copy the QSTASH_TOKEN. Free tier: 500 messages/day. Required only when HOSPEDA_CRON_ADAPTER=qstash.',
-        howToObtainEs:
-            'Consola de Upstash → QStash → tab "Details" → copiá el QSTASH_TOKEN. Free tier: 500 mensajes/día. Solo es necesario cuando HOSPEDA_CRON_ADAPTER=qstash.'
-    },
-    {
-        name: 'QSTASH_CURRENT_SIGNING_KEY',
-        description: 'Current Upstash QStash signing key. Verifies incoming cron signatures.',
-        descriptionEs:
-            'Signing key actual de Upstash QStash. Verifica las firmas de los cron entrantes.',
-        type: 'string',
-        required: false,
-        secret: true,
-        exampleValue: 'sig_...',
-        apps: ['api'],
-        category: 'cron',
-        helpUrl: 'https://console.upstash.com/qstash',
-        howToObtain:
-            'Upstash Console → QStash → "Details" tab → "Signing Keys" section → copy "Current Signing Key". Used to verify that incoming cron POSTs really came from QStash.',
-        howToObtainEs:
-            'Consola de Upstash → QStash → tab "Details" → sección "Signing Keys" → copiá "Current Signing Key". Sirve para verificar que los POSTs entrantes realmente vienen de QStash.'
-    },
-    {
-        name: 'QSTASH_NEXT_SIGNING_KEY',
-        description: 'Next Upstash QStash signing key. Accepted during key rotation.',
-        descriptionEs:
-            'Próxima signing key de Upstash QStash. Se acepta durante la rotación de keys.',
-        type: 'string',
-        required: false,
-        secret: true,
-        exampleValue: 'sig_...',
-        apps: ['api'],
-        category: 'cron',
-        helpUrl: 'https://console.upstash.com/qstash',
-        howToObtain:
-            'Upstash Console → QStash → "Details" tab → "Signing Keys" section → copy "Next Signing Key". Used during key rotation; both keys are accepted simultaneously.',
-        howToObtainEs:
-            'Consola de Upstash → QStash → tab "Details" → sección "Signing Keys" → copiá "Next Signing Key". Se usa durante la rotación; ambas keys se aceptan simultáneamente.'
+            'Elegí "node-cron" para deploys productivos en el VPS (el proceso de la API agenda y ejecuta los jobs). Elegí "manual" para dev/tests/CI donde los jobs los dispara el panel admin o los fixtures de tests.'
     },
     {
         name: 'HOSPEDA_REVALIDATION_SECRET',
@@ -595,9 +528,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'cron',
         howToObtain:
-            'Standard 5-field cron expression. Default "0 * * * *" = top of every hour. Hospeda uses QStash (HOSPEDA_CRON_ADAPTER=qstash) which has no per-day quota, so the hourly default is the right value. Use crontab.guru to compose other schedules. Examples: "*/15 * * * *" (every 15 min), "0 3 * * *" (3 AM daily). NOTE: if you switch to Vercel Cron on a Hobby plan you must lower the frequency — Hobby caps at 1 run/day.',
+            'Standard 5-field cron expression. Default "0 * * * *" = top of every hour. Hospeda runs cron in-process via node-cron on the VPS, so there is no per-day quota — the hourly default is fine. Use crontab.guru to compose other schedules. Examples: "*/15 * * * *" (every 15 min), "0 3 * * *" (3 AM daily).',
         howToObtainEs:
-            'Expresión cron estándar de 5 campos. Por defecto "0 * * * *" = inicio de cada hora. Hospeda usa QStash (HOSPEDA_CRON_ADAPTER=qstash) que no tiene quota por día, así que el default por hora es el valor correcto. Usá crontab.guru para otros schedules. Ejemplos: "*/15 * * * *" (cada 15 min), "0 3 * * *" (3 AM diario). OJO: si cambiás a Vercel Cron en plan Hobby tenés que bajar la frecuencia — Hobby limita a 1 run/día.'
+            'Expresión cron estándar de 5 campos. Por defecto "0 * * * *" = inicio de cada hora. Hospeda corre cron in-process con node-cron en el VPS, así que no hay quota por día — el default por hora va bien. Usá crontab.guru para otros schedules. Ejemplos: "*/15 * * * *" (cada 15 min), "0 3 * * *" (3 AM diario).'
     },
 
     // -------------------------------------------------------------------------

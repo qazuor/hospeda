@@ -84,7 +84,7 @@ const startServer = async (): Promise<void> => {
 
                 // Start cron scheduler (only in non-test environments)
                 if (env.NODE_ENV !== 'test') {
-                    startCronScheduler(port).catch((error) => {
+                    startCronScheduler().catch((error) => {
                         apiLogger.error(
                             'Failed to start cron scheduler:',
                             error instanceof Error ? error.message : String(error)

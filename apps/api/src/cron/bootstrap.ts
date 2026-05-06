@@ -1,141 +1,143 @@
 /**
  * Cron Scheduler Bootstrap
- * Initializes and starts the cron scheduler based on environment configuration
+ *
+ * Schedules every enabled cron job in-process via `node-cron` and invokes
+ * each handler directly (no HTTP hop). Configured by the
+ * `HOSPEDA_CRON_ADAPTER` env var:
+ *
+ * - `node-cron` — the production VPS path: spin up node-cron schedules
+ *   and call `job.handler(ctx)` on each tick.
+ * - `manual` — used in dev/tests/CI when something else (admin panel,
+ *   tests, an operator) is responsible for triggering jobs.
+ *
  * @module cron/bootstrap
  */
 
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
 import { getEnabledCronJobs } from './registry';
+import type { CronJobContext, CronJobDefinition, CronJobResult } from './types';
+
+/** Default per-job execution timeout (matches the value used by admin manual triggers). */
+const DEFAULT_JOB_TIMEOUT_MS = 30_000;
 
 /**
- * Supported cron adapters
- * - 'node-cron': Uses node-cron library for in-process scheduling
- * - 'vercel': Jobs are triggered externally by Vercel Cron
- * - 'manual': Jobs must be triggered manually via HTTP
+ * Builds the per-tick context handed to a job handler.
+ *
+ * Each log call is namespaced with the job name so log scraping by
+ * `[CRON:<name>]` works the same as on the admin manual trigger path.
  */
-type CronAdapter = 'node-cron' | 'vercel' | 'manual';
+function buildContext(jobName: string): CronJobContext {
+    return {
+        logger: {
+            info: (message, data) =>
+                apiLogger.info({ message: `[CRON:${jobName}] ${message}`, ...data }),
+            warn: (message, data) =>
+                apiLogger.warn({ message: `[CRON:${jobName}] ${message}`, ...data }),
+            error: (message, data) =>
+                apiLogger.error({ message: `[CRON:${jobName}] ${message}`, ...data }),
+            debug: (message, data) =>
+                apiLogger.debug({ message: `[CRON:${jobName}] ${message}`, ...data })
+        },
+        startedAt: new Date(),
+        dryRun: false
+    };
+}
+
+/** Runs a single job handler with a wall-clock timeout. */
+async function runJobWithTimeout(
+    job: CronJobDefinition,
+    timeoutMs: number
+): Promise<CronJobResult> {
+    const ctx = buildContext(job.name);
+    const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(
+            () => reject(new Error(`Job execution timeout after ${timeoutMs}ms`)),
+            timeoutMs
+        );
+    });
+    return Promise.race([job.handler(ctx), timeoutPromise]);
+}
 
 /**
- * Start the cron scheduler
- * Initializes job scheduling based on CRON_ADAPTER environment variable
- *
- * Environment Variables:
- * - CRON_ADAPTER: Scheduler type ('node-cron', 'vercel', 'manual')
- * - CRON_SECRET: Shared secret for authenticating cron requests
- *
- * @param port - Port number where the API server is running
+ * Start the cron scheduler.
  *
  * @example
  * ```typescript
- * // In src/index.ts after server starts
  * if (process.env.NODE_ENV !== 'test') {
- *   await startCronScheduler(port);
+ *   await startCronScheduler();
  * }
  * ```
  */
-export const startCronScheduler = async (port: number): Promise<void> => {
-    const adapter = (env.HOSPEDA_CRON_ADAPTER || 'manual') as CronAdapter;
-
-    apiLogger.info({ message: '[CRON] Initializing cron scheduler', adapter });
+export const startCronScheduler = async (): Promise<void> => {
+    const adapter = env.HOSPEDA_CRON_ADAPTER;
 
     if (adapter !== 'node-cron') {
         apiLogger.info({
-            message: `[CRON] Using ${adapter} adapter - no in-process scheduling needed`
+            message: `[cron] adapter=${adapter} — in-process scheduling skipped`
         });
         return;
     }
 
-    // node-cron adapter: schedule jobs in-process
+    let nodeCron: typeof import('node-cron');
     try {
-        // Dynamic import to avoid requiring node-cron as a hard dependency
-        const nodeCron = await import('node-cron');
-
-        const enabledJobs = getEnabledCronJobs();
-
-        if (enabledJobs.length === 0) {
-            apiLogger.warn({ message: '[CRON] No enabled jobs found - scheduler not started' });
-            return;
-        }
-
-        const cronSecret = env.HOSPEDA_CRON_SECRET;
-        if (!cronSecret) {
-            apiLogger.error({
-                message: '[CRON] CRON_SECRET not configured - cannot schedule jobs'
-            });
-            return;
-        }
-
-        // Schedule each enabled job
-        for (const job of enabledJobs) {
-            try {
-                nodeCron.schedule(job.schedule, async () => {
-                    apiLogger.info({ message: `[CRON] Triggering scheduled job: ${job.name}` });
-
-                    try {
-                        // Call the job endpoint via HTTP
-                        const response = await fetch(
-                            `http://localhost:${port}/api/v1/cron/${job.name}`,
-                            {
-                                method: 'POST',
-                                headers: {
-                                    'X-Cron-Secret': cronSecret,
-                                    'Content-Type': 'application/json'
-                                }
-                            }
-                        );
-
-                        if (response.ok) {
-                            const result = await response.json();
-                            apiLogger.info({
-                                message: `[CRON] Job completed: ${job.name}`,
-                                result
-                            });
-                        } else {
-                            const errorText = await response.text();
-                            apiLogger.error({
-                                message: `[CRON] Job failed: ${job.name}`,
-                                status: response.status,
-                                error: errorText
-                            });
-                        }
-                    } catch (error) {
-                        const errorMessage =
-                            error instanceof Error ? error.message : 'Unknown error';
-                        apiLogger.error({
-                            message: `[CRON] Failed to trigger job: ${job.name}`,
-                            error: errorMessage
-                        });
-                    }
-                });
-
-                apiLogger.info({
-                    message: `[CRON] Scheduled job: ${job.name}`,
-                    schedule: job.schedule,
-                    description: job.description
-                });
-            } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                apiLogger.error({
-                    message: `[CRON] Failed to schedule job: ${job.name}`,
-                    error: errorMessage
-                });
-            }
-        }
-
-        apiLogger.info({ message: `[CRON] Scheduler started with ${enabledJobs.length} jobs` });
+        nodeCron = await import('node-cron');
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        apiLogger.error({
+            message:
+                '[cron] Failed to load node-cron — in-process scheduling disabled. ' +
+                'Install with: pnpm add node-cron @types/node-cron',
+            error: errorMessage
+        });
+        return;
+    }
 
-        // If node-cron is not installed, provide helpful error message
-        if (errorMessage.includes('Cannot find module')) {
-            apiLogger.warn({
-                message:
-                    '[CRON] node-cron not installed - in-process scheduling disabled. ' +
-                    'Install with: pnpm add -D node-cron @types/node-cron'
+    const enabledJobs = getEnabledCronJobs();
+    if (enabledJobs.length === 0) {
+        apiLogger.warn({ message: '[cron] No enabled jobs found — scheduler not started' });
+        return;
+    }
+
+    apiLogger.info({ message: `[cron] adapter=node-cron jobs=${enabledJobs.length} initialized` });
+
+    for (const job of enabledJobs) {
+        try {
+            nodeCron.schedule(job.schedule, async () => {
+                const startTime = Date.now();
+                apiLogger.info({ message: `[cron] tick: ${job.name}` });
+                try {
+                    const result = await runJobWithTimeout(
+                        job,
+                        job.timeoutMs ?? DEFAULT_JOB_TIMEOUT_MS
+                    );
+                    apiLogger.info({
+                        message: `[cron] completed: ${job.name}`,
+                        success: result.success,
+                        processed: result.processed,
+                        errors: result.errors,
+                        durationMs: Date.now() - startTime
+                    });
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                    apiLogger.error({
+                        message: `[cron] failed: ${job.name}`,
+                        error: errorMessage,
+                        durationMs: Date.now() - startTime
+                    });
+                }
             });
-        } else {
-            apiLogger.error({ message: '[CRON] Failed to start scheduler', error: errorMessage });
+
+            apiLogger.info({
+                message: `[cron] schedule registered: ${job.name} @ ${job.schedule}`,
+                description: job.description
+            });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            apiLogger.error({
+                message: `[cron] failed to register schedule: ${job.name}`,
+                error: errorMessage
+            });
         }
     }
 };

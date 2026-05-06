@@ -58,7 +58,6 @@ import { adminOwnerPromotionRoutes, protectedOwnerPromotionRoutes } from './owne
 import { adminPostSponsorRoutes } from './postSponsor';
 
 // ─── Non-entity route imports ─────────────────────────────────────────────────
-import { cronRoutes } from '../cron';
 import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
 import { createBillingRoutesHandler } from './billing';
@@ -317,9 +316,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Billing routes (user-facing: trial, addons, promo-codes, subscriptions, etc.)
         app.route('/api/v1/protected/billing', createBillingRoutesHandler());
-
-        // Internal: Vercel cron scheduler (requires CRON_SECRET, not a public API)
-        app.route('/api/v1/cron', cronRoutes);
 
         // Webhook routes (public endpoints with signature verification)
         const mercadoPagoWebhookRoutes = createMercadoPagoWebhookRoutes();

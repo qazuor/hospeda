@@ -317,23 +317,12 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_EXCHANGE_RATE_API_BASE_URL: z.string().url().optional(),
 
     // Cron
-    /** Shared secret for authenticating cron HTTP requests. Required in production (min 32 chars). */
-    HOSPEDA_CRON_SECRET: z
-        .string()
-        .min(32, 'HOSPEDA_CRON_SECRET must be at least 32 characters for security')
-        .optional(),
-    /** Cron adapter: manual (default), vercel, qstash, or node-cron */
-    HOSPEDA_CRON_ADAPTER: z.enum(['manual', 'vercel', 'qstash', 'node-cron']).default('manual'),
     /**
-     * Upstash QStash bearer token used by the schedule-provisioning
-     * script (`scripts/setup-qstash-schedules.ts`). Not needed at API
-     * runtime — cron requests are verified via the signing keys below.
+     * Cron scheduler adapter:
+     * - 'node-cron': in-process scheduling (production VPS path)
+     * - 'manual': no scheduler — used in dev/tests/CI
      */
-    QSTASH_TOKEN: z.string().optional(),
-    /** Current Upstash QStash signing key — verifies incoming cron signatures. */
-    QSTASH_CURRENT_SIGNING_KEY: z.string().optional(),
-    /** Next Upstash QStash signing key — accepted during key rotation. */
-    QSTASH_NEXT_SIGNING_KEY: z.string().optional(),
+    HOSPEDA_CRON_ADAPTER: z.enum(['manual', 'node-cron']).default('manual'),
     /** Shared secret for authenticating ISR revalidation requests from the API. Must be at least 32 characters. */
     HOSPEDA_REVALIDATION_SECRET: z.string().min(32).optional(),
     /** Cron schedule for automatic page revalidation (default: every hour) */
@@ -413,16 +402,6 @@ export const ApiEnvBaseSchema = z.object({
 const ApiEnvSchema = ApiEnvBaseSchema.superRefine((data, ctx) => {
     if (
         data.NODE_ENV === 'production' &&
-        (!data.HOSPEDA_CRON_SECRET || data.HOSPEDA_CRON_SECRET.trim() === '')
-    ) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['HOSPEDA_CRON_SECRET'],
-            message: 'HOSPEDA_CRON_SECRET is required in production environment'
-        });
-    }
-    if (
-        data.NODE_ENV === 'production' &&
         (!data.HOSPEDA_REDIS_URL || data.HOSPEDA_REDIS_URL.trim() === '')
     ) {
         ctx.addIssue({
@@ -431,45 +410,6 @@ const ApiEnvSchema = ApiEnvBaseSchema.superRefine((data, ctx) => {
             message:
                 'HOSPEDA_REDIS_URL is required in production for rate limiting to work across instances'
         });
-    }
-    // QSTash cross-validation: signing keys ship in pairs and are both
-    // required by the verifier. Setting one without the other is almost
-    // always a misconfiguration that would leave cron requests un-
-    // authenticatable in production.
-    if (data.QSTASH_CURRENT_SIGNING_KEY && !data.QSTASH_NEXT_SIGNING_KEY) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['QSTASH_NEXT_SIGNING_KEY'],
-            message:
-                'QSTASH_NEXT_SIGNING_KEY is required when QSTASH_CURRENT_SIGNING_KEY is set (key rotation pair)'
-        });
-    }
-    if (data.QSTASH_NEXT_SIGNING_KEY && !data.QSTASH_CURRENT_SIGNING_KEY) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['QSTASH_CURRENT_SIGNING_KEY'],
-            message:
-                'QSTASH_CURRENT_SIGNING_KEY is required when QSTASH_NEXT_SIGNING_KEY is set (key rotation pair)'
-        });
-    }
-    // When the cron adapter is set to qstash, both signing keys MUST be
-    // configured so incoming production cron requests can be verified.
-    if (data.HOSPEDA_CRON_ADAPTER === 'qstash') {
-        if (!data.QSTASH_CURRENT_SIGNING_KEY) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['QSTASH_CURRENT_SIGNING_KEY'],
-                message:
-                    'QSTASH_CURRENT_SIGNING_KEY is required when HOSPEDA_CRON_ADAPTER is "qstash"'
-            });
-        }
-        if (!data.QSTASH_NEXT_SIGNING_KEY) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['QSTASH_NEXT_SIGNING_KEY'],
-                message: 'QSTASH_NEXT_SIGNING_KEY is required when HOSPEDA_CRON_ADAPTER is "qstash"'
-            });
-        }
     }
     // OAuth cross-validation: require secret when client ID is set
     if (data.HOSPEDA_GOOGLE_CLIENT_ID && !data.HOSPEDA_GOOGLE_CLIENT_SECRET) {

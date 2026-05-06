@@ -195,7 +195,6 @@ describe('ENV_REGISTRY', () => {
                 'HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN',
                 'HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET',
                 'HOSPEDA_RESEND_API_KEY',
-                'HOSPEDA_CRON_SECRET',
                 'HOSPEDA_SEED_SUPER_ADMIN_PASSWORD',
                 'POSTGRES_PASSWORD'
             ];
@@ -265,15 +264,12 @@ describe('ENV_REGISTRY', () => {
     });
 
     describe('HOSPEDA_CRON_ADAPTER enum', () => {
-        it('should list manual, vercel, qstash, and node-cron as valid values', () => {
+        it('should list only manual and node-cron as valid values', () => {
             const entry = REGISTRY.find((e) => e.name === 'HOSPEDA_CRON_ADAPTER');
 
             expect(entry).toBeDefined();
             expect(entry?.type).toBe('enum');
-            expect(entry?.enumValues).toContain('manual');
-            expect(entry?.enumValues).toContain('vercel');
-            expect(entry?.enumValues).toContain('qstash');
-            expect(entry?.enumValues).toContain('node-cron');
+            expect(entry?.enumValues).toEqual(['manual', 'node-cron']);
         });
     });
 
