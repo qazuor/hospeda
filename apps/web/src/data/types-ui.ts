@@ -110,6 +110,10 @@ export interface ArticleCardBaseProps {
     readonly isFeatured: boolean;
     /** Whether this article is promoted/sponsored. */
     readonly isPromoted?: boolean;
+    /** Whether this article is a news item. */
+    readonly isNews?: boolean;
+    /** Optional ISO 8601 expiration date for the article. */
+    readonly expiresAt?: string;
     /** Optional related entity (destination, accommodation, or event). */
     readonly relatedEntity?: ArticleRelatedEntity;
     /**

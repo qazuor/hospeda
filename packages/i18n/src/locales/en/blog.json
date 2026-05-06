@@ -35,7 +35,14 @@
     },
     "card": {
         "readMore": "Read more",
-        "readingTime": "min read"
+        "readingTime": "min read",
+        "trending": "Trending",
+        "promoted": "Featured",
+        "news": "News",
+        "expiresToday": "Expires today",
+        "expiresIn": "Expires in {{count}} days",
+        "expiresIn_one": "Expires in {{count}} day",
+        "about": "About"
     },
     "list": {
         "title": "Articles & blog posts"
@@ -54,7 +61,15 @@
         "share": "Share",
         "tags": "Tags",
         "readingTime": "min read",
-        "home": "Home"
+        "home": "Home",
+        "tableOfContents": "In this article",
+        "aboutAuthor": "About the author",
+        "moreFromAuthor": "More articles by this author",
+        "viewMore": "View more",
+        "viewLess": "View less",
+        "sponsoredContent": "Sponsored content",
+        "expiresOn": "This post expires on {{date}}",
+        "expiredOn": "Post expired on {{date}}"
     },
     "tagPage": {
         "title": "Posts tagged with \"{tag}\"",
@@ -82,6 +97,15 @@
             "events": "Events",
             "gastronomy": "Gastronomy",
             "tips": "Tips"
+        }
+    },
+    "empty": {
+        "withFilters": {
+            "title": "No posts found for those filters",
+            "cta": "Clear filters"
+        },
+        "noFilters": {
+            "title": "No posts available yet"
         }
     }
 }

@@ -35,7 +35,14 @@
     },
     "card": {
         "readMore": "Leer más",
-        "readingTime": "min lectura"
+        "readingTime": "min lectura",
+        "trending": "Trending",
+        "promoted": "Destacado",
+        "news": "Noticia",
+        "expiresToday": "Expira hoy",
+        "expiresIn": "Expira en {{count}} días",
+        "expiresIn_one": "Expira en {{count}} día",
+        "about": "Sobre"
     },
     "list": {
         "title": "Notas y artículos"
@@ -54,7 +61,15 @@
         "share": "Compartir",
         "tags": "Etiquetas",
         "readingTime": "min de lectura",
-        "home": "Inicio"
+        "home": "Inicio",
+        "tableOfContents": "En este artículo",
+        "aboutAuthor": "Sobre el autor",
+        "moreFromAuthor": "Más artículos del autor",
+        "viewMore": "Ver más",
+        "viewLess": "Ver menos",
+        "sponsoredContent": "Contenido patrocinado",
+        "expiresOn": "Esta publicación expira el {{date}}",
+        "expiredOn": "Publicación expirada el {{date}}"
     },
     "tagPage": {
         "title": "Publicaciones etiquetadas con \"{tag}\"",
@@ -82,6 +97,15 @@
             "events": "Eventos",
             "gastronomy": "Gastronomía",
             "tips": "Consejos"
+        }
+    },
+    "empty": {
+        "withFilters": {
+            "title": "No encontramos publicaciones con esos filtros",
+            "cta": "Limpiar filtros"
+        },
+        "noFilters": {
+            "title": "Aún no hay publicaciones disponibles"
         }
     }
 }

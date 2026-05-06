@@ -26,15 +26,17 @@ const { chips, ariaLabel } = Astro.props;
 ---
 
 <nav class="tag-chips" aria-label={ariaLabel}>
-    <ul class="tag-chips__list" role="list">
-        {chips.map(({ label, href }) => (
-            <li class="tag-chips__item">
-                <a href={href} class="tag-chips__chip">
-                    {label}
-                </a>
-            </li>
-        ))}
-    </ul>
+    <div class="tag-chips__fade-wrapper">
+        <ul class="tag-chips__list" role="list">
+            {chips.map(({ label, href }) => (
+                <li class="tag-chips__item">
+                    <a href={href} class="tag-chips__chip">
+                        {label}
+                    </a>
+                </li>
+            ))}
+        </ul>
+    </div>
 </nav>
 
 <style>
@@ -46,6 +48,11 @@ const { chips, ariaLabel } = Astro.props;
         overflow: hidden;
     }
 
+    .tag-chips__fade-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
     .tag-chips__list {
         display: flex;
         flex-direction: row;
@@ -54,11 +61,23 @@ const { chips, ariaLabel } = Astro.props;
         padding-block: var(--space-2, 8px);
         padding-inline: 2px;
         overflow-x: auto;
-        /* Smooth scroll on iOS */
         -webkit-overflow-scrolling: touch;
-        /* Hide scrollbar on webkit while keeping functionality */
         scrollbar-width: none;
         list-style: none;
+        mask-image: linear-gradient(
+            to right,
+            transparent 0,
+            black 48px,
+            black calc(100% - 48px),
+            transparent 100%
+        );
+        -webkit-mask-image: linear-gradient(
+            to right,
+            transparent 0,
+            black 48px,
+            black calc(100% - 48px),
+            transparent 100%
+        );
     }
 
     .tag-chips__list::-webkit-scrollbar {

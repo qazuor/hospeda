@@ -1,34 +1,40 @@
 ---
 /**
  * @file ArticleCard.astro
- * @description Standard article card for the 3-column secondary row.
- * Shows category accent bar, image with overlays, category badge, tags,
- * title, excerpt, optional related entity link, author meta row and
- * a "Leer más" CTA link. Replaces VerticalArticleCard and CompactArticleCard.
+ * @description Standard article card. The entire card is a link to the post.
+ * Supports category color theming, overlay badges (trending / promoted),
+ * a FavoriteButton island, related-entity context chip, and a compact meta row.
  */
 
 import type { ArticleCardBaseProps } from '@/data/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { formatDate } from '@/lib/format-utils';
 import {
     truncateTags,
     truncateExcerpt,
     resolveEntityLink,
     resolveEntityIcon,
-    formatReadingTime,
 } from '@/lib/article-card-utils';
 import Badge from '@/components/shared/ui/Badge.astro';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
-import { getPostCategoryColor, getPostCategoryLabel, getPostCategoryEmoji, getBadgeStatusColor, getMutedColorScheme } from '@/lib/colors';
+import {
+    getPostCategoryColor,
+    getPostCategoryLabel,
+    getPostCategoryEmoji,
+    getBadgeStatusColor,
+    getMutedColorScheme,
+} from '@/lib/colors';
+import CardImage from './CardImage.astro';
+import CardMeta from './CardMeta.astro';
+import { getExpiryStatus } from '@/lib/format-expires';
 
 interface Props {
     /** Full article card data. */
     readonly data: ArticleCardBaseProps;
     /** Active locale for URL building and translations. */
     readonly locale: SupportedLocale;
-    /** Show the "🔥 Trending" overlay badge on the image. */
+    /** Show the trending overlay badge on the image. */
     readonly isTrending?: boolean;
     /**
      * Whether the current user is authenticated.
@@ -40,18 +46,26 @@ interface Props {
 
 const { data, locale, isTrending = false, isAuthenticated = false } = Astro.props;
 const { t } = createTranslations(locale);
-const trendingColors = getBadgeStatusColor({ status: 'trending' });
-const promotedColors = getBadgeStatusColor({ status: 'promoted' });
+const newsColors = { bg: 'var(--brand-info, #0ea5e9)', text: '#fff' };
+
+const expiryStatus = getExpiryStatus({ expiresAt: data.expiresAt });
+const showExpiryBadge = expiryStatus.status === 'expiring-soon';
+const expiryDays = expiryStatus.daysRemaining ?? 0;
+const expiryLabel =
+    expiryDays === 0
+        ? t('blog.card.expiresToday', 'Expira hoy')
+        : t('blog.card.expiresIn', `Expira en ${expiryDays} días`).replace('{{count}}', String(expiryDays));
 
 const articleUrl = buildUrl({ locale, path: `/publicaciones/${data.slug}/` });
 const categoryColor = getPostCategoryColor({ category: data.category });
 const categoryLabel = getPostCategoryLabel({ category: data.category, t });
 const categoryEmoji = getPostCategoryEmoji({ category: data.category });
-const hasImage = Boolean(data.featuredImage?.url);
+const trendingColors = getBadgeStatusColor({ status: 'trending' });
+const promotedColors = getBadgeStatusColor({ status: 'promoted' });
+const mutedColorScheme = getMutedColorScheme();
 
 const { visible: visibleTags } = truncateTags({ tags: data.tags ?? [], maxVisible: 2 });
 const { text: excerpt } = truncateExcerpt({ text: data.summary, variant: 'standard' });
-const { text: readingTime } = formatReadingTime({ minutes: data.readingTimeMinutes, locale });
 
 const entityLink = data.relatedEntity
     ? resolveEntityLink({ entity: data.relatedEntity, locale })
@@ -60,147 +74,100 @@ const entityIcon = data.relatedEntity
     ? resolveEntityIcon({ type: data.relatedEntity.type }).icon
     : null;
 
-const publishedDate = data.publishedAt
-    ? formatDate({
-        date: data.publishedAt,
-        locale,
-        options: { day: 'numeric', month: 'short', year: 'numeric' },
-    })
-    : '';
-
-/** Muted color scheme for tag chips (secondary/faded style). */
-const mutedColorScheme = getMutedColorScheme();
+const readingTimeSuffix = t('blog.detail.readingTime', 'min de lectura');
 ---
 
-<article class="article-card">
-    <!-- Category accent bar -->
-    <div
-        class="article-card__accent-bar"
-        style={`background-color: ${categoryColor.text};`}
-        aria-hidden="true"
-    ></div>
-
-    <!-- Image -->
-    <div class="article-card__image-wrapper">
-        <!-- Placeholder always rendered behind the image -->
-        <div class="article-card__placeholder" style={`background-color: ${categoryColor.bg};`} aria-hidden="true">
-            <span class="article-card__placeholder-emoji">{categoryEmoji}</span>
-        </div>
-        {hasImage && (
-            <img
-                src={data.featuredImage?.url}
-                alt={data.featuredImage?.caption ?? data.title}
-                loading="lazy"
-                class="article-card__img"
-                width="400"
-                height="225"
-                data-hide-on-error
-            />
-        )}
-        {isTrending && (
-            <span
-                class="article-card__overlay-badge article-card__overlay-badge--trending"
-                aria-label={t('articles.trending', 'Trending')}
-                style={`background-color: ${trendingColors.bg}; color: ${trendingColors.text};`}
-            >
-                🔥 {t('articles.trending', 'Trending')}
-            </span>
-        )}
-        {data.isPromoted && (
-            <span
-                class="article-card__overlay-badge article-card__overlay-badge--promoted"
-                aria-label={t('articles.promoted', 'Destacado')}
-                style={`background-color: ${promotedColors.bg}; color: ${promotedColors.text};`}
-            >
-                {t('articles.promoted', 'Destacado')}
-            </span>
-        )}
-        <!-- FavoriteButton island: top-right over image, no wrapping <a> here -->
-        {data.id && (
-            <div class="article-card__fav-wrapper">
-                <FavoriteButton
-                    client:load
-                    entityId={data.id}
-                    entityType="POST"
-                    initialIsFavorited={data.isFavorited}
-                    initialBookmarkId={data.favoriteBookmarkId ?? null}
-                    count={data.bookmarkCount}
-                    variant="standalone"
-                    showCount={true}
-                    locale={locale}
-                    isAuthenticated={isAuthenticated}
-                />
-            </div>
-        )}
-    </div>
-
-    <!-- Content -->
-    <div class="article-card__content">
-        <!-- Category badge -->
-        <div class="article-card__category">
-            <Badge
-                label={categoryLabel}
-                colorScheme={categoryColor}
-                size="sm"
-            />
-        </div>
-
-        <!-- Tags -->
-        {visibleTags.length > 0 && (
-            <div class="article-card__tags" aria-label={t('articles.tags', 'Etiquetas')}>
-                {visibleTags.map((tag) => (
-                    <Badge
-                        label={tag}
-                        colorScheme={mutedColorScheme}
-                        size="sm"
+<article
+    class="article-card"
+    style={`--card-accent: ${categoryColor.text};`}
+>
+    <a href={articleUrl} class="article-card__link" aria-label={data.title}>
+        <CardImage
+            src={data.featuredImage?.url ?? ''}
+            alt={data.featuredImage?.caption ?? data.title}
+            placeholderContent={categoryEmoji}
+        >
+            <Fragment slot="badges">
+                {isTrending && (
+                    <span
+                        class="article-card__overlay-badge"
+                        style={`background-color: ${trendingColors.bg}; color: ${trendingColors.text};`}
+                    >
+                        🔥 {t('blog.card.trending', 'Trending')}
+                    </span>
+                )}
+                {data.isPromoted && (
+                    <span
+                        class="article-card__overlay-badge"
+                        style={`background-color: ${promotedColors.bg}; color: ${promotedColors.text};`}
+                    >
+                        {t('blog.card.promoted', 'Destacado')}
+                    </span>
+                )}
+                {data.isNews && (
+                    <span
+                        class="article-card__overlay-badge"
+                        style={`background-color: ${newsColors.bg}; color: ${newsColors.text};`}
+                    >
+                        {t('blog.card.news', 'Noticia')}
+                    </span>
+                )}
+            </Fragment>
+            <Fragment slot="actions">
+                {data.id && (
+                    <FavoriteButton
+                        client:visible
+                        entityId={data.id}
+                        entityType="POST"
+                        initialIsFavorited={data.isFavorited}
+                        initialBookmarkId={data.favoriteBookmarkId ?? null}
+                        count={data.bookmarkCount}
+                        variant="standalone"
+                        showCount={true}
+                        locale={locale}
+                        isAuthenticated={isAuthenticated}
                     />
+                )}
+            </Fragment>
+        </CardImage>
+
+        <div class="article-card__body">
+            <div class="article-card__badges">
+                <Badge label={categoryLabel} colorScheme={categoryColor} size="sm" />
+                {visibleTags.map((tag) => (
+                    <Badge label={tag} colorScheme={mutedColorScheme} size="sm" />
                 ))}
             </div>
-        )}
 
-        <!-- Title -->
-        <h3 class="article-card__title">{data.title}</h3>
+            {showExpiryBadge && (
+                <span class="article-card__expiry-badge" aria-label={expiryLabel}>
+                    ⏰ {expiryLabel}
+                </span>
+            )}
 
-        <!-- Excerpt -->
-        <p class="article-card__excerpt">{excerpt}</p>
+            <h3 class="article-card__title">{data.title}</h3>
 
-        <!-- Related entity -->
-        {entityLink && entityIcon && (
-            <a
-                href={entityLink.href}
-                class="article-card__entity-link"
-                data-stop-propagation
-            >
-                <span aria-hidden="true">{entityIcon}</span>
-                {entityLink.label}
-            </a>
-        )}
+            <p class="article-card__excerpt">{excerpt}</p>
 
-        <!-- Meta row -->
-        <div class="article-card__meta">
-            {data.authorName && (
-                <span class="article-card__author">{data.authorName}</span>
+            <CardMeta
+                author={{ name: data.authorName }}
+                date={data.publishedAt}
+                readingTimeMinutes={data.readingTimeMinutes}
+                locale={locale}
+                readingTimeSuffix={readingTimeSuffix}
+            />
+
+            {entityLink && entityIcon && (
+                <div class="article-card__context-chip">
+                    <span aria-hidden="true">{entityIcon}</span>
+                    <span>
+                        {t('blog.card.about', 'Sobre')}:
+                        <strong>{entityLink.label}</strong>
+                    </span>
+                </div>
             )}
-            {data.authorName && publishedDate && (
-                <span class="article-card__meta-sep" aria-hidden="true">&middot;</span>
-            )}
-            {publishedDate && (
-                <time datetime={data.publishedAt} class="article-card__date">
-                    {publishedDate}
-                </time>
-            )}
-            {(data.authorName || publishedDate) && (
-                <span class="article-card__meta-sep" aria-hidden="true">&middot;</span>
-            )}
-            <span class="article-card__reading-time">{readingTime}</span>
         </div>
-
-        <!-- CTA link -->
-        <a href={articleUrl} class="article-card__cta" aria-label={`${t('articles.readMore', 'Leer más')} — ${data.title}`}>
-            {t('articles.readMore', 'Leer más')}
-            <span class="article-card__cta-arrow" aria-hidden="true">&rarr;</span>
-        </a>
-    </div>
+    </a>
 </article>
 
 <style>
@@ -228,116 +195,63 @@ const mutedColorScheme = getMutedColorScheme();
         outline-offset: 2px;
     }
 
-    /* Accent bar */
-    .article-card__accent-bar {
-        height: 4px;
-        width: 100%;
-        flex-shrink: 0;
-    }
-
-    /* Image */
-    .article-card__image-wrapper {
-        position: relative;
-        aspect-ratio: 16 / 9;
-        overflow: hidden;
-        border-radius: 0;
-    }
-
-    .article-card__img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform var(--duration-normal) ease;
-    }
-
-    .article-card:hover .article-card__img {
-        transform: scale(1.04);
-    }
-
-    /* Placeholder (behind image, visible when image absent or fails) */
-    .article-card__placeholder {
-        position: absolute;
-        inset: 0;
+    .article-card__link {
         display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 0;
+        flex-direction: column;
+        height: 100%;
+        text-decoration: none;
+        color: inherit;
     }
 
-    .article-card__placeholder-emoji {
-        font-size: 3rem;
-        line-height: 1;
-        filter: grayscale(0.15);
-        transition: transform var(--duration-normal) ease;
+    .article-card__link:focus-visible {
+        outline: none;
     }
 
-    .article-card:hover .article-card__placeholder-emoji {
-        transform: scale(1.15);
-    }
-
-    .article-card__img {
-        position: relative;
-        z-index: 1;
-    }
-
-    /* FavoriteButton: top-right over image */
-    .article-card__fav-wrapper {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        z-index: 2;
-    }
-
-    /* Overlay badges */
     .article-card__overlay-badge {
-        position: absolute;
+        display: inline-block;
         font-family: var(--font-sans);
         font-size: var(--text-caption);
         font-weight: 600;
         padding: 0.25rem 0.625rem;
         border-radius: var(--radius-pill);
         line-height: 1;
+        white-space: nowrap;
     }
 
-    .article-card__overlay-badge--trending {
-        top: 0.625rem;
-        right: 0.625rem;
-    }
-
-    .article-card__overlay-badge--promoted {
-        top: 0.625rem;
-        left: 0.625rem;
-    }
-
-    /* Content */
-    .article-card__content {
+    .article-card__body {
         display: flex;
         flex-direction: column;
         flex: 1;
-        padding: 1.25rem 1.5rem;
-        padding-bottom: 1.75rem;
-        gap: 0.75rem;
+        padding: 1.25rem 1.5rem 1.5rem;
+        gap: 0.625rem;
     }
 
-    /* Category */
-    .article-card__category {
+    .article-card__badges {
         display: flex;
         flex-wrap: wrap;
         gap: 0.375rem;
     }
 
-    /* Tags */
-    .article-card__tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.25rem;
+    .article-card__expiry-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+        font-family: var(--font-sans);
+        font-size: var(--text-caption);
+        font-weight: 600;
+        color: var(--brand-warning, #f59e0b);
+        background-color: oklch(from var(--brand-warning, #f59e0b) l c h / 0.12);
+        border: 1px solid oklch(from var(--brand-warning, #f59e0b) l c h / 0.35);
+        border-radius: var(--radius-pill);
+        padding: 0.2rem 0.5rem;
+        line-height: 1;
+        white-space: nowrap;
     }
 
-    /* Title */
     .article-card__title {
         font-family: var(--font-heading);
         font-weight: 700;
-        font-size: 1.125rem; /* 18px */
+        font-size: 1.125rem;
         color: var(--core-foreground);
         line-height: 1.3;
         margin: 0;
@@ -349,10 +263,9 @@ const mutedColorScheme = getMutedColorScheme();
     }
 
     .article-card:hover .article-card__title {
-        color: var(--brand-primary);
+        color: var(--card-accent, var(--brand-primary));
     }
 
-    /* Excerpt */
     .article-card__excerpt {
         font-family: var(--font-sans);
         font-size: var(--text-body-sm);
@@ -365,76 +278,31 @@ const mutedColorScheme = getMutedColorScheme();
         overflow: hidden;
     }
 
-    /* Related entity */
-    .article-card__entity-link {
+    .article-card__context-chip {
         display: inline-flex;
         align-items: center;
         gap: 0.3rem;
         font-family: var(--font-sans);
         font-size: var(--text-caption);
-        color: var(--brand-primary);
-        text-decoration: none;
-        font-weight: 500;
-        width: fit-content;
-        transition: text-decoration var(--duration-fast) ease;
-    }
-
-    .article-card__entity-link:hover {
-        text-decoration: underline;
-    }
-
-    /* Meta row */
-    .article-card__meta {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0.375rem;
+        color: var(--core-muted-foreground);
         margin-top: auto;
-        font-family: var(--font-sans);
-        font-size: var(--text-caption);
-        color: var(--core-muted-foreground);
+        padding-top: 0.25rem;
     }
 
-    .article-card__author {
-        font-weight: 500;
+    .article-card__context-chip strong {
         color: var(--core-foreground);
-    }
-
-    .article-card__meta-sep {
-        color: var(--core-muted-foreground);
-    }
-
-    .article-card__date,
-    .article-card__reading-time {
-        white-space: nowrap;
-    }
-
-    /* CTA */
-    .article-card__cta {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.375rem;
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm);
         font-weight: 500;
-        color: var(--brand-primary);
-        text-decoration: none;
-        width: fit-content;
-        transition: color var(--duration-fast) ease;
     }
 
-    .article-card__cta:focus-visible {
-        outline: 2px solid var(--brand-primary);
-        outline-offset: 2px;
-        border-radius: 2px;
+    .article-card :global(.card-image__img) {
+        transition: transform var(--duration-normal) ease;
     }
 
-    .article-card__cta-arrow {
-        display: inline-block;
-        transition: transform var(--duration-fast) ease;
+    .article-card:hover :global(.card-image__img) {
+        transform: scale(1.04);
     }
 
-    .article-card:hover .article-card__cta-arrow {
-        transform: translateX(4px);
+    .article-card:hover :global(.card-image__placeholder-content) {
+        transform: scale(1.15);
     }
 </style>

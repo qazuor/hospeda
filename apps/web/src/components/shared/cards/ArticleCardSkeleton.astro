@@ -1,0 +1,147 @@
+---
+/**
+ * @file ArticleCardSkeleton.astro
+ * @description Placeholder skeleton card matching ArticleCard dimensions.
+ * Renders a pulse-animated layout with: 4px accent bar + 16:9 image area +
+ * badge chip + 2-line title + 2-line excerpt + meta row.
+ *
+ * Usage: render a grid of 9 skeletons when the posts API call fails (SSR
+ * error/timeout). Since all pagination is server-side (URL-based), there is no
+ * client-side loading state — skeletons are only shown in the `hasError` branch
+ * of the listing page as a visual placeholder while an ErrorBanner explains
+ * what went wrong.
+ */
+---
+
+<div class="article-skeleton" aria-hidden="true">
+	<!-- Category accent bar -->
+	<div class="article-skeleton__bar"></div>
+
+	<!-- Image area (16:9) -->
+	<div class="article-skeleton__image"></div>
+
+	<!-- Content -->
+	<div class="article-skeleton__content">
+		<!-- Category badge chip -->
+		<div class="article-skeleton__badge"></div>
+
+		<!-- Title: 2 lines -->
+		<div class="article-skeleton__title-line article-skeleton__title-line--full"></div>
+		<div class="article-skeleton__title-line article-skeleton__title-line--short"></div>
+
+		<!-- Excerpt: 2 lines -->
+		<div class="article-skeleton__text-line article-skeleton__text-line--full"></div>
+		<div class="article-skeleton__text-line article-skeleton__text-line--mid"></div>
+
+		<!-- Meta row -->
+		<div class="article-skeleton__meta">
+			<div class="article-skeleton__meta-chip"></div>
+			<div class="article-skeleton__meta-chip article-skeleton__meta-chip--wide"></div>
+		</div>
+	</div>
+</div>
+
+<style>
+	/* === Pulse animation === */
+	@keyframes skeleton-pulse {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.4; }
+	}
+
+	.article-skeleton {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		border-radius: var(--radius-card);
+		background-color: var(--core-card);
+		box-shadow: var(--shadow-card);
+		overflow: hidden;
+		animation: skeleton-pulse 1.8s ease-in-out infinite;
+	}
+
+	/* Accent bar — same height as ArticleCard (4px) */
+	.article-skeleton__bar {
+		height: 4px;
+		width: 100%;
+		background-color: var(--core-muted-foreground);
+		opacity: 0.25;
+		flex-shrink: 0;
+	}
+
+	/* Image area: 16:9 ratio */
+	.article-skeleton__image {
+		aspect-ratio: 16 / 9;
+		width: 100%;
+		background-color: var(--core-muted-foreground);
+		opacity: 0.15;
+	}
+
+	/* Content padding — mirrors ArticleCard */
+	.article-skeleton__content {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		padding: 1.25rem 1.5rem 1.75rem;
+		gap: 0.75rem;
+	}
+
+	/* Generic shimmer block base */
+	.article-skeleton__badge,
+	.article-skeleton__title-line,
+	.article-skeleton__text-line,
+	.article-skeleton__meta-chip {
+		background-color: var(--core-muted-foreground);
+		opacity: 0.2;
+		border-radius: var(--radius-pill);
+	}
+
+	/* Category badge chip */
+	.article-skeleton__badge {
+		width: 5rem;
+		height: 1.25rem;
+		border-radius: var(--radius-pill);
+	}
+
+	/* Title lines */
+	.article-skeleton__title-line {
+		height: 1.125rem;
+		border-radius: 4px;
+	}
+	.article-skeleton__title-line--full { width: 100%; }
+	.article-skeleton__title-line--short { width: 65%; }
+
+	/* Excerpt lines */
+	.article-skeleton__text-line {
+		height: 0.875rem;
+		border-radius: 4px;
+	}
+	.article-skeleton__text-line--full { width: 100%; }
+	.article-skeleton__text-line--mid { width: 80%; }
+
+	/* Meta row */
+	.article-skeleton__meta {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-top: auto;
+	}
+
+	.article-skeleton__meta-chip {
+		height: 0.75rem;
+		width: 3rem;
+		border-radius: 4px;
+	}
+
+	.article-skeleton__meta-chip--wide {
+		width: 5rem;
+	}
+
+	/* Respect reduced motion */
+	@media (prefers-reduced-motion: reduce) {
+		.article-skeleton {
+			animation: none;
+			opacity: 0.6;
+		}
+	}
+</style>

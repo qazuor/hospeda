@@ -1,0 +1,140 @@
+---
+/**
+ * @file CardImage.astro
+ * @description Reusable card image with aspect-ratio container, placeholder fallback,
+ * and two named slots for overlay badges (top-left) and actions (top-right).
+ */
+
+interface Props {
+    /** Image source URL. Falls back to placeholder SVG when empty or on error. */
+    readonly src: string;
+    /** Accessible alt text for the image. */
+    readonly alt: string;
+    /** Aspect ratio of the image container. Defaults to '16:9'. */
+    readonly aspectRatio?: '16:9' | '4:3' | '1:1';
+    /** Loading strategy. Defaults to 'lazy'. */
+    readonly loading?: 'lazy' | 'eager';
+    /** Intrinsic width hint for the browser. Defaults to 400. */
+    readonly width?: number;
+    /** Intrinsic height hint. Calculated from aspectRatio when omitted. */
+    readonly height?: number;
+    /** Optional emoji or text to render in the placeholder (e.g. category emoji). */
+    readonly placeholderContent?: string;
+}
+
+const {
+    src,
+    alt,
+    aspectRatio = '16:9',
+    loading = 'lazy',
+    width = 400,
+    height,
+    placeholderContent,
+} = Astro.props;
+
+const hasImage = Boolean(src);
+
+const RATIO_MAP: Record<string, number> = {
+    '16:9': 9 / 16,
+    '4:3': 3 / 4,
+    '1:1': 1,
+};
+
+const resolvedHeight = height ?? Math.round(width * RATIO_MAP[aspectRatio]);
+
+const RATIO_CLASS: Record<string, string> = {
+    '16:9': 'card-image--ratio-16-9',
+    '4:3': 'card-image--ratio-4-3',
+    '1:1': 'card-image--ratio-1-1',
+};
+---
+
+<div class:list={['card-image', RATIO_CLASS[aspectRatio]]}>
+    <div class="card-image__placeholder" aria-hidden="true">
+        {placeholderContent && (
+            <span class="card-image__placeholder-content">{placeholderContent}</span>
+        )}
+    </div>
+
+    {hasImage && (
+        <img
+            src={src}
+            alt={alt}
+            loading={loading}
+            class="card-image__img"
+            width={width}
+            height={resolvedHeight}
+            data-hide-on-error
+        />
+    )}
+
+    <div class="card-image__badges" aria-hidden="true">
+        <slot name="badges" />
+    </div>
+
+    <div class="card-image__actions">
+        <slot name="actions" />
+    </div>
+</div>
+
+<style>
+    .card-image {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+    }
+
+    .card-image--ratio-16-9 { aspect-ratio: 16 / 9; }
+    .card-image--ratio-4-3  { aspect-ratio: 4 / 3; }
+    .card-image--ratio-1-1  { aspect-ratio: 1 / 1; }
+
+    .card-image__placeholder {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--surface-warm);
+        z-index: 0;
+        transition: transform var(--duration-normal) ease;
+    }
+
+    .card-image__placeholder-content {
+        font-size: 3rem;
+        line-height: 1;
+        filter: grayscale(0.15);
+        transition: transform var(--duration-normal) ease;
+    }
+
+    .card-image__img {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform var(--duration-normal) ease;
+        display: block;
+    }
+
+    .card-image__badges {
+        position: absolute;
+        top: 0.625rem;
+        left: 0.625rem;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+        align-items: flex-start;
+    }
+
+    .card-image__actions {
+        position: absolute;
+        top: 0.625rem;
+        right: 0.625rem;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+        align-items: center;
+    }
+</style>

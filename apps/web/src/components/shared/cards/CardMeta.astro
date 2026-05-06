@@ -1,0 +1,115 @@
+---
+/**
+ * @file CardMeta.astro
+ * @description Reusable meta row for cards: displays author, published date and
+ * reading time separated by aria-hidden dots. Renders nothing when all props
+ * are undefined. Safe to use in any card that needs a compact attribution line.
+ */
+
+import { formatDate } from '@/lib/format-utils';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface AuthorData {
+    /** Author display name. */
+    readonly name: string;
+    /** Optional URL for an author detail page. */
+    readonly href?: string;
+}
+
+interface Props {
+    /** Author data. Omit entirely to hide the author segment. */
+    readonly author?: AuthorData;
+    /** Published date as ISO string or Date object. */
+    readonly date?: string | Date;
+    /** Estimated reading time in minutes. Omit to hide the segment. */
+    readonly readingTimeMinutes?: number;
+    /** Active locale used to format the date. */
+    readonly locale: SupportedLocale;
+    /** i18n suffix for reading time (e.g. "min de lectura"). */
+    readonly readingTimeSuffix?: string;
+}
+
+const { author, date, readingTimeMinutes, locale, readingTimeSuffix = 'min' } = Astro.props;
+
+const hasAuthor = Boolean(author?.name);
+const hasDate = Boolean(date);
+const hasReadingTime = typeof readingTimeMinutes === 'number' && readingTimeMinutes > 0;
+
+const isEmpty = !hasAuthor && !hasDate && !hasReadingTime;
+
+const formattedDate = hasDate
+    ? formatDate({
+          date: date!,
+          locale,
+          options: { day: 'numeric', month: 'short', year: 'numeric' },
+      })
+    : '';
+---
+
+{!isEmpty && (
+    <div class="card-meta">
+        {hasAuthor && (
+            author!.href
+                ? <a href={author!.href} class="card-meta__author card-meta__author--link">{author!.name}</a>
+                : <span class="card-meta__author">{author!.name}</span>
+        )}
+
+        {hasAuthor && hasDate && (
+            <span class="card-meta__sep" aria-hidden="true">&middot;</span>
+        )}
+
+        {hasDate && (
+            <time datetime={typeof date === 'string' ? date : (date as Date).toISOString()} class="card-meta__date">
+                {formattedDate}
+            </time>
+        )}
+
+        {(hasAuthor || hasDate) && hasReadingTime && (
+            <span class="card-meta__sep" aria-hidden="true">&middot;</span>
+        )}
+
+        {hasReadingTime && (
+            <span class="card-meta__reading-time">
+                {readingTimeMinutes} {readingTimeSuffix}
+            </span>
+        )}
+    </div>
+)}
+
+<style>
+    .card-meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.375rem;
+        font-family: var(--font-sans);
+        font-size: var(--text-caption);
+        color: var(--core-muted-foreground);
+    }
+
+    .card-meta__author {
+        font-weight: 500;
+        color: var(--core-foreground);
+        white-space: nowrap;
+    }
+
+    .card-meta__author--link {
+        text-decoration: none;
+        transition: color var(--duration-fast) ease;
+    }
+
+    .card-meta__author--link:hover {
+        color: var(--brand-primary);
+        text-decoration: underline;
+    }
+
+    .card-meta__sep {
+        color: var(--core-muted-foreground);
+        user-select: none;
+    }
+
+    .card-meta__date,
+    .card-meta__reading-time {
+        white-space: nowrap;
+    }
+</style>

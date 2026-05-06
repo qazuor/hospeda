@@ -17,6 +17,7 @@ import type {
     CardAmenityFeature,
     DestinationCardData,
     EventCardData,
+    EventDetailData,
     ReviewCardData
 } from '@/data/types';
 import { getInitialsFromName } from '../avatar-utils';
@@ -38,6 +39,7 @@ export type {
     CardPrice,
     DestinationCardData,
     EventCardData,
+    EventDetailData,
     EventLocation,
     ReviewCardData
 } from '@/data/types';
@@ -475,6 +477,8 @@ export function toArticleCardProps({
         authorName,
         authorAvatar,
         isFeatured: Boolean(item.isFeatured),
+        isNews: item.isNews ? Boolean(item.isNews) : false,
+        expiresAt: item.expiresAt ? String(item.expiresAt) : undefined,
         tags: Array.isArray(item.tags) ? item.tags.map(String) : undefined,
         isFavorited: item.isFavorited !== undefined ? Boolean(item.isFavorited) : undefined,
         favoriteBookmarkId:
@@ -806,5 +810,253 @@ export function processEntityImages<T extends Record<string, unknown>>({
         item,
         featuredImage: extractFeaturedImage(item, { fallback }),
         galleryUrls: extractGalleryUrls(item)
+    };
+}
+
+// --- Event Detail Page ---
+
+/**
+ * Transforms a raw API event response (from getBySlug) into
+ * EventDetailData for the event detail page.
+ *
+ * All fields default gracefully — missing API fields produce undefined/null
+ * rather than throwing, so older API payloads remain renderable.
+ *
+ * @param item - Raw event object from the API (getBySlug response)
+ * @returns Typed EventDetailData for the event detail page components
+ */
+export function toEventDetailProps({
+    item
+}: { readonly item: Record<string, unknown> }): EventDetailData {
+    // --- Identity ---
+    const id = String(item.id || '');
+    if (!id) {
+        webLogger.warn(
+            'transforms.toEventDetailProps: event has no UUID id — FavoriteButton entityId will be empty',
+            { slug: String(item.slug || '') }
+        );
+    }
+
+    // --- Tags ---
+    const rawTags = item.tags;
+    const tags: readonly string[] = Array.isArray(rawTags) ? rawTags.map(String) : [];
+
+    // --- Dates ---
+    const dateObj = item.date as { start?: string; end?: string } | undefined;
+    const startDate = String(dateObj?.start || item.startDate || '');
+    const endDate = dateObj?.end
+        ? String(dateObj.end)
+        : item.endDate
+          ? String(item.endDate)
+          : undefined;
+    const isAllDay = Boolean(item.isAllDay);
+
+    // --- Status flags ---
+    const isCancelled = Boolean(item.isCancelled);
+    const isRescheduled = Boolean(item.isRescheduled);
+    const isPast = startDate ? new Date(startDate) < new Date() : false;
+    const eventStatus: EventDetailData['eventStatus'] = isCancelled
+        ? 'EventCancelled'
+        : isRescheduled
+          ? 'EventRescheduled'
+          : 'EventScheduled';
+
+    // --- Media ---
+    const { featuredImage, galleryUrls } = processEntityImages({
+        item,
+        entity: 'event',
+        id: String(item.slug || id),
+        extract: true,
+        fallback: '/assets/images/placeholder-event.svg'
+    });
+
+    // Build gallery with alt text. Use name as fallback alt.
+    const eventName = String(item.name || item.title || '');
+    const mediaObj = item.media as
+        | {
+              gallery?: ReadonlyArray<{
+                  url?: string;
+                  caption?: string;
+              }>;
+          }
+        | undefined;
+
+    const gallery: ReadonlyArray<EventDetailData['gallery'][number]> =
+        mediaObj?.gallery && mediaObj.gallery.length > 0
+            ? mediaObj.gallery
+                  .filter((g) => g.url)
+                  .map((g) => ({
+                      url: String(g.url),
+                      alt: g.caption || eventName,
+                      caption: g.caption
+                  }))
+            : galleryUrls.map((url) => ({ url, alt: eventName }));
+
+    // --- Location ---
+    const locationObj = item.location as Record<string, unknown> | undefined;
+    const locationName = String(
+        locationObj?.placeName || locationObj?.name || locationObj?.venueName || ''
+    );
+    const locationCity = String(locationObj?.city || '');
+    const locationStreet = String(locationObj?.street || '');
+    const locationNumber = String(locationObj?.number || '');
+    const locationFloor = String(locationObj?.floor || '');
+    const locationApartment = String(locationObj?.apartment || '');
+
+    const addressParts = [
+        locationStreet && locationNumber ? `${locationStreet} ${locationNumber}` : locationStreet,
+        locationFloor ? `Piso ${locationFloor}` : '',
+        locationApartment ? `Dpto. ${locationApartment}` : ''
+    ].filter(Boolean);
+    const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : undefined;
+
+    const coordsRaw = locationObj?.coordinates as
+        | { lat?: string | number; lng?: string | number; long?: string | number }
+        | undefined;
+    const coordLat = coordsRaw?.lat != null ? Number(coordsRaw.lat) : null;
+    const coordLng =
+        coordsRaw?.lng != null
+            ? Number(coordsRaw.lng)
+            : coordsRaw?.long != null
+              ? Number(coordsRaw.long)
+              : null;
+    const coordinates =
+        coordLat !== null && coordLng !== null && !Number.isNaN(coordLat) && !Number.isNaN(coordLng)
+            ? { lat: coordLat, lng: coordLng }
+            : null;
+
+    // --- Pricing ---
+    const priceObj = item.price as Record<string, unknown> | undefined;
+    const hasPriceData = priceObj != null;
+    const pricingIsFree = hasPriceData
+        ? Boolean(priceObj.isFree ?? (priceObj.amount == null && priceObj.price == null))
+        : true;
+
+    const rawPrice = priceObj?.amount != null ? priceObj.amount : priceObj?.price;
+    const flatPrice = rawPrice != null ? Number(rawPrice) : undefined;
+
+    const earlyBirdDeadlineRaw = priceObj?.earlyBirdDeadline
+        ? String(priceObj.earlyBirdDeadline)
+        : undefined;
+    const earlyBirdIsUpcoming = earlyBirdDeadlineRaw
+        ? new Date(earlyBirdDeadlineRaw) > new Date()
+        : false;
+
+    const pricing: EventDetailData['pricing'] = {
+        price: flatPrice,
+        priceFrom: priceObj?.priceFrom != null ? Number(priceObj.priceFrom) : undefined,
+        priceTo: priceObj?.priceTo != null ? Number(priceObj.priceTo) : undefined,
+        currency: priceObj?.currency ? String(priceObj.currency) : 'ARS',
+        isFree: pricingIsFree,
+        earlyBirdPrice:
+            earlyBirdIsUpcoming && priceObj?.earlyBirdPrice != null
+                ? Number(priceObj.earlyBirdPrice)
+                : undefined,
+        earlyBirdDeadline: earlyBirdIsUpcoming ? earlyBirdDeadlineRaw : undefined,
+        groupDiscountThreshold:
+            priceObj?.groupDiscountThreshold != null
+                ? Number(priceObj.groupDiscountThreshold)
+                : undefined,
+        groupDiscountPercent:
+            priceObj?.groupDiscountPercent != null
+                ? Number(priceObj.groupDiscountPercent)
+                : undefined,
+        pricePerGroup: priceObj?.pricePerGroup != null ? Number(priceObj.pricePerGroup) : undefined
+    };
+
+    // --- Organizer ---
+    const organizerObj = item.organizer as Record<string, unknown> | undefined;
+    let organizer: EventDetailData['organizer'];
+
+    if (organizerObj && String(organizerObj.name || '')) {
+        const contactRaw = organizerObj.contactInfo as Record<string, unknown> | undefined;
+        const socialRaw = organizerObj.socialNetworks as Record<string, unknown> | undefined;
+
+        organizer = {
+            name: String(organizerObj.name),
+            slug: organizerObj.slug ? String(organizerObj.slug) : undefined,
+            description: organizerObj.description ? String(organizerObj.description) : undefined,
+            logo: organizerObj.logo ? String(organizerObj.logo) : undefined,
+            contactInfo:
+                contactRaw && (contactRaw.email || contactRaw.phone || contactRaw.website)
+                    ? {
+                          email: contactRaw.email ? String(contactRaw.email) : undefined,
+                          phone: contactRaw.phone ? String(contactRaw.phone) : undefined,
+                          website: contactRaw.website ? String(contactRaw.website) : undefined
+                      }
+                    : undefined,
+            socialNetworks:
+                socialRaw &&
+                (socialRaw.facebook ||
+                    socialRaw.instagram ||
+                    socialRaw.twitter ||
+                    socialRaw.youtube ||
+                    socialRaw.linkedin)
+                    ? {
+                          facebook: socialRaw.facebook ? String(socialRaw.facebook) : undefined,
+                          instagram: socialRaw.instagram ? String(socialRaw.instagram) : undefined,
+                          twitter: socialRaw.twitter ? String(socialRaw.twitter) : undefined,
+                          youtube: socialRaw.youtube ? String(socialRaw.youtube) : undefined,
+                          linkedin: socialRaw.linkedin ? String(socialRaw.linkedin) : undefined
+                      }
+                    : undefined
+        };
+    }
+
+    // --- SEO ---
+    const seoObj = item.seo as Record<string, unknown> | undefined;
+    const rawKeywords = seoObj?.keywords;
+    const seo: EventDetailData['seo'] = {
+        title: seoObj?.title ? String(seoObj.title) : undefined,
+        description: seoObj?.description ? String(seoObj.description) : undefined,
+        keywords: Array.isArray(rawKeywords) ? rawKeywords.map(String) : undefined
+    };
+
+    // --- Contact (event-level, not organizer) ---
+    const contactObj = item.contact as Record<string, unknown> | undefined;
+
+    return {
+        id,
+        slug: String(item.slug || ''),
+        name: eventName,
+        summary: String(item.summary || item.description || ''),
+        description: String(item.description || ''),
+        contentHtml: item.contentHtml ? String(item.contentHtml) : undefined,
+        category: String(item.category || ''),
+        isFeatured: Boolean(item.isFeatured),
+        tags,
+        startDate,
+        endDate,
+        isAllDay,
+        pricing,
+        featuredImage,
+        gallery,
+        location: {
+            name: locationName || undefined,
+            city: locationCity || undefined,
+            fullAddress,
+            coordinates
+        },
+        organizer,
+        contactEmail: contactObj?.email
+            ? String(contactObj.email)
+            : item.contactEmail
+              ? String(item.contactEmail)
+              : undefined,
+        contactPhone: contactObj?.phone
+            ? String(contactObj.phone)
+            : item.contactPhone
+              ? String(item.contactPhone)
+              : undefined,
+        contactWebsite: contactObj?.website
+            ? String(contactObj.website)
+            : item.contactWebsite
+              ? String(item.contactWebsite)
+              : undefined,
+        seo,
+        isCancelled,
+        isRescheduled,
+        isPast,
+        eventStatus
     };
 }

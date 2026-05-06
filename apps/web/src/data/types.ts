@@ -469,6 +469,10 @@ export interface ArticleCardData {
     readonly authorAvatar?: string;
     /** Whether this post appears in featured/promoted slots. */
     readonly isFeatured: boolean;
+    /** Whether this post is classified as a news item. */
+    readonly isNews?: boolean;
+    /** Optional ISO 8601 expiration date. Present only on posts with a set expiry. */
+    readonly expiresAt?: string;
     /** Optional list of tag slugs associated with the post. */
     readonly tags?: readonly string[];
     /**
@@ -604,4 +608,160 @@ export interface AccommodationDetailData {
     readonly amenities: readonly DetailAmenity[];
     readonly features: readonly DetailFeature[];
     readonly faqs: readonly DetailFaq[];
+}
+
+// ---------------------------------------------------------------------------
+// Event detail page data
+// ---------------------------------------------------------------------------
+
+/**
+ * Gallery image for the event detail page.
+ * Mirrors `GalleryImage` from ImageGallery.client.tsx but defined here
+ * as the canonical type so components import from `@/data/types`, not from
+ * the island file directly.
+ */
+export interface EventGalleryImage {
+    /** Absolute or relative URL of the full-size image. */
+    readonly url: string;
+    /** Alt text for accessibility. */
+    readonly alt: string;
+    /** Optional caption shown in lightbox. */
+    readonly caption?: string;
+}
+
+/**
+ * Organizer contact info nested in {@link EventDetailData}.
+ */
+export interface EventOrganizerContact {
+    readonly email?: string;
+    readonly phone?: string;
+    readonly website?: string;
+}
+
+/**
+ * Organizer social networks nested in {@link EventDetailData}.
+ */
+export interface EventOrganizerSocial {
+    readonly facebook?: string;
+    readonly instagram?: string;
+    readonly twitter?: string;
+    readonly youtube?: string;
+    readonly linkedin?: string;
+}
+
+/**
+ * Organizer data nested in {@link EventDetailData}.
+ */
+export interface EventDetailOrganizer {
+    readonly name: string;
+    readonly slug?: string;
+    readonly description?: string;
+    readonly logo?: string;
+    readonly contactInfo?: EventOrganizerContact;
+    readonly socialNetworks?: EventOrganizerSocial;
+}
+
+/**
+ * Rich pricing data for the event detail page.
+ */
+export interface EventDetailPricing {
+    /** Flat price in the smallest currency unit (centavos for ARS). */
+    readonly price?: number;
+    /** Lower bound of a price range. */
+    readonly priceFrom?: number;
+    /** Upper bound of a price range. */
+    readonly priceTo?: number;
+    /** ISO 4217 currency code. Defaults to `'ARS'`. */
+    readonly currency: string;
+    /** Whether the event is free. When true, ignore all price fields. */
+    readonly isFree: boolean;
+    /** Early-bird price in centavos. Only show if deadline is in the future. */
+    readonly earlyBirdPrice?: number;
+    /** ISO 8601 deadline for early-bird pricing. */
+    readonly earlyBirdDeadline?: string;
+    /** Minimum group size to qualify for the group discount. */
+    readonly groupDiscountThreshold?: number;
+    /** Group discount percentage (e.g. 10 = 10%). */
+    readonly groupDiscountPercent?: number;
+    /** Price per group in centavos. */
+    readonly pricePerGroup?: number;
+}
+
+/**
+ * Location data for the event detail page.
+ */
+export interface EventDetailLocation {
+    /** Venue or place name. */
+    readonly name?: string;
+    /** City where the event takes place. */
+    readonly city?: string;
+    /**
+     * Full street address built from the individual components returned by
+     * the API (`street`, `number`, `floor`, `apartment`).
+     */
+    readonly fullAddress?: string;
+    /** GPS coordinates — `null` when not provided. */
+    readonly coordinates: { readonly lat: number; readonly lng: number } | null;
+}
+
+/**
+ * SEO metadata nested in {@link EventDetailData}.
+ */
+export interface EventSeoData {
+    readonly title?: string;
+    readonly description?: string;
+    readonly keywords?: readonly string[];
+}
+
+/**
+ * Typed data shape for the event detail page.
+ * Produced by `toEventDetailProps()` in `transforms.ts`.
+ */
+export interface EventDetailData {
+    // --- Identity ---
+    readonly id: string;
+    readonly slug: string;
+    readonly name: string;
+    readonly summary: string;
+    readonly description: string;
+    /** Raw HTML content from TipTap / markdown renderer. */
+    readonly contentHtml?: string;
+    readonly category: string;
+    readonly isFeatured: boolean;
+    /** Tag slugs associated with the event. */
+    readonly tags: readonly string[];
+
+    // --- Date ---
+    readonly startDate: string;
+    readonly endDate?: string;
+    readonly isAllDay: boolean;
+
+    // --- Pricing ---
+    readonly pricing: EventDetailPricing;
+
+    // --- Media ---
+    readonly featuredImage: { readonly url: string; readonly caption?: string };
+    readonly gallery: readonly EventGalleryImage[];
+
+    // --- Location ---
+    readonly location: EventDetailLocation;
+
+    // --- Organizer ---
+    readonly organizer?: EventDetailOrganizer;
+
+    // --- Event contact ---
+    readonly contactEmail?: string;
+    readonly contactPhone?: string;
+    readonly contactWebsite?: string;
+
+    // --- SEO ---
+    readonly seo: EventSeoData;
+
+    // --- Status flags ---
+    readonly isCancelled: boolean;
+    readonly isRescheduled: boolean;
+    /** Whether the event start date is in the past. Computed by the transform. */
+    readonly isPast: boolean;
+    /** Schema.org EventStatus value. */
+    readonly eventStatus: 'EventScheduled' | 'EventCancelled' | 'EventRescheduled';
 }

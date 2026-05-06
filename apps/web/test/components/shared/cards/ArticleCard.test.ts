@@ -64,8 +64,8 @@ describe('ArticleCard.astro', () => {
     });
 
     describe('FavoriteButton island integration (SPEC-098)', () => {
-        it('should render FavoriteButton with client:load directive', () => {
-            expect(src).toContain('client:load');
+        it('should render FavoriteButton with client:visible directive', () => {
+            expect(src).toContain('client:visible');
         });
 
         it('should pass entityId from data.id', () => {
@@ -104,8 +104,25 @@ describe('ArticleCard.astro', () => {
             expect(src).toContain('data.id');
         });
 
-        it('should position FavoriteButton wrapper inside the image area', () => {
-            expect(src).toContain('article-card__fav-wrapper');
+        it('should position FavoriteButton inside the CardImage actions slot', () => {
+            // FavoriteButton must live inside <CardImage>...</CardImage> so it
+            // overlays the image area, and specifically inside the
+            // `actions` slot fragment.
+            const cardImageStart = src.indexOf('<CardImage');
+            const cardImageEnd = src.indexOf('</CardImage>');
+            expect(cardImageStart).toBeGreaterThan(-1);
+            expect(cardImageEnd).toBeGreaterThan(cardImageStart);
+
+            const cardImageBlock = src.slice(cardImageStart, cardImageEnd);
+            expect(cardImageBlock).toContain('slot="actions"');
+            expect(cardImageBlock).toContain('FavoriteButton');
+
+            // The FavoriteButton must be inside the actions slot, not the
+            // badges slot. Check that the actions slot opens before the
+            // FavoriteButton appears.
+            const actionsSlotIdx = cardImageBlock.indexOf('slot="actions"');
+            const favoriteButtonIdx = cardImageBlock.indexOf('FavoriteButton');
+            expect(actionsSlotIdx).toBeLessThan(favoriteButtonIdx);
         });
     });
 
