@@ -1,0 +1,19 @@
+---
+/**
+ * @file suscriptores/checkout/index.astro
+ * @description Redirect from /checkout/ to /planes/. Direct navigation to the
+ * checkout root has no meaning for a user — checkout is a MercadoPago return
+ * target with sub-routes (success/failure/pending), never a destination on its
+ * own. Bookmarks or mistyped links should land on the pricing page instead.
+ *
+ * @route /{lang}/suscriptores/checkout/
+ * @rendering SSR (executes redirect)
+ */
+
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale;
+return Astro.redirect(buildUrl({ locale, path: 'suscriptores/planes' }), 302);
+---
