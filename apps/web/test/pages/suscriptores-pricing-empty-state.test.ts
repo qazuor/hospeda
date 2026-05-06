@@ -5,6 +5,11 @@
  * empty, and otherwise render the plan grid.
  *
  * SPEC-096 / REQ-096-43 (T-054).
+ *
+ * The pricing card UI was extracted into <PricingCardsGrid>, so the page-
+ * level assertions check that the wrapper passes the right empty-state and
+ * label props to the grid component, and the component-level assertions
+ * confirm the fallback behavior actually lives in PricingCardsGrid.
  */
 
 import { readFileSync } from 'node:fs';
@@ -21,10 +26,15 @@ const ownerSrc = readFileSync(
     'utf8'
 );
 
+const gridSrc = readFileSync(
+    resolve(__dirname, '../../src/components/billing/PricingCardsGrid.astro'),
+    'utf8'
+);
+
 describe('Tourist pricing page (turistas/index.astro)', () => {
-    it('imports the EmptyState component', () => {
+    it('imports the shared PricingCardsGrid component', () => {
         expect(touristSrc).toContain(
-            "import EmptyState from '@/components/shared/feedback/EmptyState.astro'"
+            "import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro'"
         );
     });
 
@@ -32,34 +42,21 @@ describe('Tourist pricing page (turistas/index.astro)', () => {
         expect(touristSrc).toContain("import { buildUrl } from '@/lib/urls'");
     });
 
-    it('computes a hasPlans flag from touristPlans length', () => {
-        expect(touristSrc).toContain('const hasPlans = touristPlans.length > 0');
-    });
-
-    it('renders EmptyState in the no-plans branch', () => {
-        expect(touristSrc).toContain('<EmptyState');
-        expect(touristSrc).toContain('variant="empty"');
-    });
-
-    it('points the EmptyState CTA at /contacto/', () => {
+    it('passes an empty-state message and contact action to the grid', () => {
+        expect(touristSrc).toContain('emptyMessage=');
+        expect(touristSrc).toContain("t('pricing.tourist.empty'");
         expect(touristSrc).toMatch(/buildUrl\(\{\s*locale,\s*path:\s*'contacto'\s*\}\)/);
     });
 
-    it('uses an i18n key for the empty-state message', () => {
-        expect(touristSrc).toContain("t('pricing.tourist.empty'");
-    });
-
-    it('still renders the pricing grid when plans exist', () => {
-        expect(touristSrc).toContain('class="pricing-cards__grid"');
-        // The fallback is in the !hasPlans branch.
-        expect(touristSrc).toMatch(/!hasPlans\s*\?/);
+    it('passes the tourist plan list to the grid', () => {
+        expect(touristSrc).toContain('plans={touristPlans}');
     });
 });
 
 describe('Owner pricing page (planes/index.astro)', () => {
-    it('imports the EmptyState component', () => {
+    it('imports the shared PricingCardsGrid component', () => {
         expect(ownerSrc).toContain(
-            "import EmptyState from '@/components/shared/feedback/EmptyState.astro'"
+            "import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro'"
         );
     });
 
@@ -67,25 +64,31 @@ describe('Owner pricing page (planes/index.astro)', () => {
         expect(ownerSrc).toContain("import { buildUrl } from '@/lib/urls'");
     });
 
-    it('computes a hasPlans flag from ownerPlans length', () => {
-        expect(ownerSrc).toContain('const hasPlans = ownerPlans.length > 0');
-    });
-
-    it('renders EmptyState in the no-plans branch', () => {
-        expect(ownerSrc).toContain('<EmptyState');
-        expect(ownerSrc).toContain('variant="empty"');
-    });
-
-    it('points the EmptyState CTA at /contacto/', () => {
+    it('passes an empty-state message and contact action to the grid', () => {
+        expect(ownerSrc).toContain('emptyMessage=');
+        expect(ownerSrc).toContain("t('pricing.owner.empty'");
         expect(ownerSrc).toMatch(/buildUrl\(\{\s*locale,\s*path:\s*'contacto'\s*\}\)/);
     });
 
-    it('uses an i18n key for the empty-state message', () => {
-        expect(ownerSrc).toContain("t('pricing.owner.empty'");
+    it('passes the owner plan list to the grid', () => {
+        expect(ownerSrc).toContain('plans={ownerPlans}');
+    });
+});
+
+describe('PricingCardsGrid (shared component)', () => {
+    it('imports the EmptyState component', () => {
+        expect(gridSrc).toContain(
+            "import EmptyState from '@/components/shared/feedback/EmptyState.astro'"
+        );
+    });
+
+    it('renders EmptyState in the no-plans branch', () => {
+        expect(gridSrc).toContain('<EmptyState');
+        expect(gridSrc).toContain('variant="empty"');
     });
 
     it('still renders the pricing grid when plans exist', () => {
-        expect(ownerSrc).toContain('class="pricing-cards__grid"');
-        expect(ownerSrc).toMatch(/!hasPlans\s*\?/);
+        expect(gridSrc).toContain('class="pricing-cards__grid"');
+        expect(gridSrc).toMatch(/!hasPlans\s*\?/);
     });
 });

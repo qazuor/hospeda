@@ -1,0 +1,312 @@
+---
+/**
+ * @file PricingCardsGrid.astro
+ * @description Renders a grid of subscription plan cards (name, description,
+ * price, entitlements, CTA). Shared between the owner pricing page
+ * (/suscriptores/planes/) and the tourist pricing page (/suscriptores/turistas/).
+ *
+ * The two pricing pages target completely different audiences with separate
+ * URLs (intentional, for SEO and conversion-focused copy), but the visual
+ * presentation of the plan cards themselves is identical. Keeping that UI in
+ * one component prevents drift between the pages and makes future visual
+ * tweaks land in both places at once.
+ */
+
+import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import { getEntitlementName, getPlanDescription, getPlanName } from '@/lib/billing-i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import type { PlanDefinition } from '@repo/billing';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly plans: ReadonlyArray<PlanDefinition>;
+	readonly highlightedSlug: string;
+	readonly intlLocale: string;
+	/** Section heading text (rendered sr-only as h2 for accessibility). */
+	readonly sectionHeading: string;
+	/** Aria label for the section. */
+	readonly sectionAriaLabel?: string;
+	/** Message rendered inside EmptyState when `plans` is empty. */
+	readonly emptyMessage: string;
+	readonly emptyActionUrl: string;
+	readonly emptyActionLabel: string;
+	/** Currency period label rendered next to the price (e.g. "/mes"). */
+	readonly periodLabel: string;
+	/** CTA button text on each card. */
+	readonly ctaText: string;
+}
+
+const {
+	locale,
+	plans,
+	highlightedSlug,
+	intlLocale,
+	sectionHeading,
+	emptyMessage,
+	emptyActionUrl,
+	emptyActionLabel,
+	periodLabel,
+	ctaText,
+} = Astro.props;
+
+const { t } = createTranslations(locale);
+const hasPlans = plans.length > 0;
+
+const recommendedLabel = t('pricing.recommended', 'Recomendado');
+const featuresLabel = t('pricing.features.label', 'Incluye');
+const trialFallback = t('pricing.trial', '{days} días gratis');
+
+/**
+ * Format ARS cents to a locale-aware currency string. Mirrors the helper that
+ * was previously inlined in each pricing page; keeping it here so both pages
+ * share the same formatting logic.
+ */
+function formatPriceArs(cents: number): string {
+	const pesos = cents / 100;
+	try {
+		return new Intl.NumberFormat(intlLocale, {
+			style: 'currency',
+			currency: 'ARS',
+			maximumFractionDigits: 0,
+			minimumFractionDigits: 0,
+		}).format(pesos);
+	} catch {
+		return `$${pesos.toLocaleString('es-AR')}`;
+	}
+}
+---
+
+<div class="pricing-cards__container">
+	<h2 class="sr-only">{sectionHeading}</h2>
+	{!hasPlans ? (
+		<EmptyState
+			locale={locale}
+			variant="empty"
+			message={emptyMessage}
+			actionUrl={emptyActionUrl}
+			actionLabel={emptyActionLabel}
+		/>
+	) : (
+		<div class="pricing-cards__grid">
+			{plans.map((plan, i) => {
+				const isHighlighted = plan.slug === highlightedSlug;
+				const formattedPrice =
+					plan.monthlyPriceArs === 0
+						? t('pricing.free', 'Gratis')
+						: formatPriceArs(plan.monthlyPriceArs);
+
+				return (
+					<div
+						class:list={['pricing-card', { 'pricing-card--highlighted': isHighlighted }]}
+						data-reveal="up"
+						data-recommended-label={isHighlighted ? recommendedLabel : null}
+						style={`transition-delay: ${i * 100}ms`}
+					>
+						<h3 class="pricing-card__name">{getPlanName({ plan, t })}</h3>
+						<p class="pricing-card__desc">{getPlanDescription({ plan, t })}</p>
+						<div class="pricing-card__price">
+							<span class="pricing-card__amount">{formattedPrice}</span>
+							{plan.monthlyPriceArs > 0 && (
+								<span class="pricing-card__period">{periodLabel}</span>
+							)}
+						</div>
+						{plan.hasTrial && plan.trialDays > 0 && (
+							<p class="pricing-card__trial">
+								{trialFallback.replace('{days}', String(plan.trialDays))}
+							</p>
+						)}
+						{plan.entitlements.length > 0 && (
+							<ul class="pricing-card__features" aria-label={featuresLabel}>
+								{plan.entitlements.map((entitlementKey) => (
+									<li class="pricing-card__feature">
+										<svg
+											class="pricing-card__feature-icon"
+											xmlns="http://www.w3.org/2000/svg"
+											width="18"
+											height="18"
+											viewBox="0 0 24 24"
+											fill="none"
+											aria-hidden="true"
+										>
+											<path
+												d="M5 12.5l4.5 4.5L19 7"
+												stroke="currentColor"
+												stroke-width="2.5"
+												stroke-linecap="round"
+												stroke-linejoin="round"
+											/>
+										</svg>
+										<span>{getEntitlementName({ key: entitlementKey, t })}</span>
+									</li>
+								))}
+							</ul>
+						)}
+						<div class="pricing-card__btn-wrapper">
+							<PlanPurchaseButton
+								client:load
+								planId={plan.slug}
+								price={plan.monthlyPriceArs}
+								currency="ARS"
+								ctaText={ctaText}
+								locale={locale}
+							/>
+						</div>
+					</div>
+				);
+			})}
+		</div>
+	)}
+</div>
+
+<style>
+	.pricing-cards__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+	}
+
+	.pricing-cards__grid {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: var(--space-card-gap);
+		align-items: stretch;
+		max-width: 1140px;
+		margin: 0 auto;
+	}
+
+	.pricing-card {
+		background-color: var(--core-card);
+		border-radius: var(--radius-card);
+		padding: var(--space-8);
+		box-shadow: var(--shadow-card);
+		border: 2px solid transparent;
+		display: flex;
+		flex-direction: column;
+		transition:
+			transform var(--duration-normal) ease,
+			box-shadow var(--duration-normal) ease,
+			border-color var(--duration-normal) ease;
+	}
+
+	.pricing-card:hover {
+		transform: translateY(-4px);
+		box-shadow: var(--shadow-card-hover);
+	}
+
+	.pricing-card--highlighted {
+		border-color: var(--brand-accent);
+		transform: scale(1.02);
+		position: relative;
+	}
+
+	.pricing-card--highlighted:hover {
+		transform: scale(1.02) translateY(-4px);
+	}
+
+	.pricing-card--highlighted::before {
+		content: attr(data-recommended-label);
+		position: absolute;
+		top: calc(var(--space-3) * -1);
+		left: 50%;
+		transform: translateX(-50%);
+		background-color: var(--brand-accent);
+		color: var(--accent-foreground);
+		font-family: var(--font-sans);
+		font-weight: 600;
+		font-size: var(--text-caption);
+		padding: var(--space-1) var(--space-3);
+		border-radius: var(--radius-pill);
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		white-space: nowrap;
+	}
+
+	.pricing-card__name {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-xl);
+		color: var(--core-foreground);
+		margin: 0 0 var(--space-2);
+	}
+
+	.pricing-card__desc {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+		margin: 0 0 var(--space-4);
+	}
+
+	.pricing-card__price {
+		margin-bottom: var(--space-4);
+	}
+
+	.pricing-card__amount {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 3vw, 2.25rem);
+		color: var(--core-foreground);
+	}
+
+	.pricing-card__period {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+		margin-left: var(--space-1);
+	}
+
+	.pricing-card__trial {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--brand-accent);
+		font-weight: 600;
+		margin: 0 0 var(--space-4);
+	}
+
+	.pricing-card__features {
+		list-style: none;
+		padding: 0;
+		margin: 0 0 var(--space-6);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		flex-grow: 1;
+	}
+
+	.pricing-card__feature {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-2);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-foreground);
+		line-height: 1.5;
+	}
+
+	.pricing-card__feature-icon {
+		flex-shrink: 0;
+		color: var(--success);
+		margin-top: 2px;
+	}
+
+	.pricing-card__btn-wrapper {
+		display: flex;
+		justify-content: center;
+		margin-top: auto;
+	}
+
+	@media (max-width: 768px) {
+		.pricing-cards__grid {
+			grid-template-columns: 1fr;
+			max-width: 400px;
+			margin: 0 auto;
+		}
+		.pricing-card--highlighted {
+			transform: none;
+		}
+		.pricing-card--highlighted:hover {
+			transform: translateY(-4px);
+		}
+	}
+</style>

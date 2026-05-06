@@ -1,22 +1,25 @@
 ---
 /**
  * @file suscriptores/turistas/index.astro
- * @description Tourist pricing page showing tourist plan cards.
+ * @description Tourist pricing page. Thin wrapper around <PricingCardsGrid>;
+ * page-specific copy, metadata, and JSON-LD live here, the card UI itself
+ * is shared with /suscriptores/planes/.
+ *
  * Reads pricing directly from @repo/billing config (single source of truth).
+ *
  * @route /{lang}/suscriptores/turistas/
  * @rendering SSG (prerender=true) — billing config lives in code; price changes
  *   ship via deploy and SSG regenerates automatically.
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
-import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
-import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro';
 import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { getIntlLocale } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import { ALL_PLANS } from '@repo/billing';
-import { getEntitlementName, getPlanDescription, getPlanName } from '@/lib/billing-i18n';
 import type { GetStaticPaths } from 'astro';
 
 export const prerender = true;
@@ -25,50 +28,18 @@ export const getStaticPaths = (() => {
 	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
 }) satisfies GetStaticPaths;
 
-const lang = (Astro.params.lang ?? 'es') as SupportedLocale;
-const locale = lang;
+const locale = (Astro.params.lang ?? 'es') as SupportedLocale;
 const { t } = createTranslations(locale);
 
 // Read tourist plans straight from the billing config. Same source the rest
 // of the system reads from (checkout, entitlements, admin viewer).
-const touristPlans = ALL_PLANS
-	.filter((plan) => plan.category === 'tourist' && plan.isActive)
+const touristPlans = ALL_PLANS.filter((plan) => plan.category === 'tourist' && plan.isActive)
 	.slice()
 	.sort((a, b) => a.sortOrder - b.sortOrder);
 
-// ─── Price formatting ──────────────────────────────────────────────────────
-
-/**
- * Format ARS cents to a locale-aware currency string.
- * e.g. 500_000 → "$ 5.000" for es-AR
- */
-function formatPriceArs(cents: number, displayLocale: string): string {
-	const pesos = cents / 100;
-	try {
-		return new Intl.NumberFormat(displayLocale, {
-			style: 'currency',
-			currency: 'ARS',
-			maximumFractionDigits: 0,
-			minimumFractionDigits: 0,
-		}).format(pesos);
-	} catch {
-		return `$${pesos.toLocaleString('es-AR')}`;
-	}
-}
-
-// Map locale param to BCP47 tag for Intl
-const BCP47_MAP: Record<SupportedLocale, string> = {
-	es: 'es-AR',
-	en: 'en-AR',
-	pt: 'pt-BR',
-};
-const intlLocale = BCP47_MAP[locale] ?? 'es-AR';
-
-// Highlighted plan is the second one (tourist-plus / index 1) by convention
+const intlLocale = getIntlLocale(locale);
 const highlightedSlug = touristPlans[1]?.slug ?? 'tourist-plus';
-
-const ctaText = t('pricing.cta', 'Empezar');
-const periodLabel = t('pricing.tourist.period', '/mes');
+const hasPlans = touristPlans.length > 0;
 
 // Build absolute URL for each plan (used by JSON-LD Offer entries).
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
@@ -78,111 +49,52 @@ const jsonLdPlans = touristPlans.map((plan) => ({
 	name: plan.name,
 	description: plan.description,
 	priceCurrency: 'ARS',
-	// schema.org `price` expects major currency units (pesos), not cents.
 	price: plan.monthlyPriceArs / 100,
-	url: planPageUrl
+	url: planPageUrl,
 }));
-
-const hasPlans = touristPlans.length > 0;
 ---
 
 <MarketingLayout
 	locale={locale}
 	title={t('pricing.tourist.title', 'Planes para turistas')}
-	description={t('pricing.tourist.description', 'Elegí el plan ideal para tu próximo viaje al Litoral.')}
+	description={t(
+		'pricing.tourist.description',
+		'Suscribite y disfrutá de beneficios exclusivos en tus viajes por el litoral.'
+	)}
 >
 	{hasPlans && <PriceSpecificationJsonLd slot="head-extra" plans={jsonLdPlans} />}
 
 	<section class="pricing-hero section section--warm">
 		<div class="pricing-hero__container" data-reveal="up">
 			<p class="pricing-hero__tagline">{t('pricing.tourist.tagline', 'Planes y precios')}</p>
-			<h1 class="pricing-hero__title">{t('pricing.tourist.heading', 'Planes para turistas')}</h1>
+			<h1 class="pricing-hero__title">
+				{t('pricing.tourist.heading', 'Planes para turistas')}
+			</h1>
 			<p class="pricing-hero__subtitle">
-				{t('pricing.tourist.subtitle', 'Elegí el plan que mejor se adapte a tu forma de viajar.')}
+				{t(
+					'pricing.tourist.subtitle',
+					'Elegí el plan que mejor se adapte a tu forma de viajar.'
+				)}
 			</p>
 		</div>
 	</section>
 
 	<section class="pricing-cards section" aria-labelledby="pricing-cards-heading">
-		<div class="pricing-cards__container">
-			<h2 id="pricing-cards-heading" class="sr-only">
-				{t('pricing.tourist.cardsHeading', 'Comparativa de planes para turistas')}
-			</h2>
-			{!hasPlans ? (
-				<EmptyState
-					locale={locale}
-					variant="empty"
-					message={t('pricing.tourist.empty', 'Planes no disponibles en este momento.')}
-					actionUrl={buildUrl({ locale, path: 'contacto' })}
-					actionLabel={t('pricing.empty.contact', 'Contactanos')}
-				/>
-			) : (
-				<div class="pricing-cards__grid">
-					{touristPlans.map((plan, i) => {
-						const isHighlighted = plan.slug === highlightedSlug;
-						const formattedPrice = plan.monthlyPriceArs === 0
-							? t('pricing.free', 'Gratis')
-							: formatPriceArs(plan.monthlyPriceArs, intlLocale);
-
-						return (
-							<div
-								class:list={['pricing-card', { 'pricing-card--highlighted': isHighlighted }]}
-								data-reveal="up"
-								data-recommended-label={isHighlighted ? t('pricing.recommended', 'Recomendado') : null}
-								style={`transition-delay: ${i * 100}ms`}
-							>
-								<h3 class="pricing-card__name">{getPlanName({ plan, t })}</h3>
-								<p class="pricing-card__desc">{getPlanDescription({ plan, t })}</p>
-								<div class="pricing-card__price">
-									<span class="pricing-card__amount">
-										{formattedPrice}
-									</span>
-									{plan.monthlyPriceArs > 0 && (
-										<span class="pricing-card__period">{periodLabel}</span>
-									)}
-								</div>
-								{plan.entitlements.length > 0 && (
-									<ul class="pricing-card__features" aria-label={t('pricing.features.label', 'Incluye')}>
-										{plan.entitlements.map((entitlementKey) => (
-											<li class="pricing-card__feature">
-												<svg
-													class="pricing-card__feature-icon"
-													xmlns="http://www.w3.org/2000/svg"
-													width="18"
-													height="18"
-													viewBox="0 0 24 24"
-													fill="none"
-													aria-hidden="true"
-												>
-													<path
-														d="M5 12.5l4.5 4.5L19 7"
-														stroke="currentColor"
-														stroke-width="2.5"
-														stroke-linecap="round"
-														stroke-linejoin="round"
-													/>
-												</svg>
-												<span>{getEntitlementName({ key: entitlementKey, t })}</span>
-											</li>
-										))}
-									</ul>
-								)}
-								<div class="pricing-card__btn-wrapper">
-									<PlanPurchaseButton
-										client:load
-										planId={plan.slug}
-										price={plan.monthlyPriceArs}
-										currency="ARS"
-										ctaText={ctaText}
-										locale={locale}
-									/>
-								</div>
-							</div>
-						);
-					})}
-				</div>
+		<PricingCardsGrid
+			locale={locale}
+			plans={touristPlans}
+			highlightedSlug={highlightedSlug}
+			intlLocale={intlLocale}
+			sectionHeading={t(
+				'pricing.tourist.cardsHeading',
+				'Comparativa de planes para turistas'
 			)}
-		</div>
+			emptyMessage={t('pricing.tourist.empty', 'Planes no disponibles en este momento.')}
+			emptyActionUrl={buildUrl({ locale, path: 'contacto' })}
+			emptyActionLabel={t('pricing.empty.contact', 'Contactanos')}
+			periodLabel={t('pricing.tourist.period', '/mes')}
+			ctaText={t('pricing.cta', 'Empezar')}
+		/>
 	</section>
 </MarketingLayout>
 
@@ -216,144 +128,5 @@ const hasPlans = touristPlans.length > 0;
 		color: var(--core-muted-foreground);
 		max-width: 50ch;
 		margin: 0 auto;
-	}
-
-	.pricing-cards__container {
-		max-width: var(--container-max);
-		margin: 0 auto;
-		padding: 0 var(--space-container-x);
-	}
-
-	.pricing-cards__grid {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: var(--space-card-gap);
-		align-items: stretch;
-		max-width: 1140px;
-		margin: 0 auto;
-	}
-
-	.pricing-card {
-		background-color: var(--core-card);
-		border-radius: var(--radius-card);
-		padding: var(--space-8);
-		box-shadow: var(--shadow-card);
-		border: 2px solid transparent;
-		display: flex;
-		flex-direction: column;
-		transition:
-			transform var(--duration-normal) ease,
-			box-shadow var(--duration-normal) ease,
-			border-color var(--duration-normal) ease;
-	}
-
-	.pricing-card:hover {
-		transform: translateY(-4px);
-		box-shadow: var(--shadow-card-hover);
-	}
-
-	.pricing-card--highlighted {
-		border-color: var(--brand-accent);
-		position: relative;
-		transform: scale(1.02);
-	}
-
-	.pricing-card--highlighted:hover {
-		transform: scale(1.02) translateY(-4px);
-	}
-
-	.pricing-card--highlighted::before {
-		content: attr(data-recommended-label);
-		position: absolute;
-		top: calc(var(--space-3) * -1);
-		left: 50%;
-		transform: translateX(-50%);
-		background-color: var(--brand-accent);
-		color: var(--accent-foreground);
-		font-family: var(--font-sans);
-		font-weight: 600;
-		font-size: var(--text-caption);
-		padding: var(--space-1) var(--space-3);
-		border-radius: var(--radius-pill);
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		white-space: nowrap;
-	}
-
-	.pricing-card__name {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: var(--text-xl);
-		color: var(--core-foreground);
-		margin: 0 0 var(--space-2);
-	}
-
-	.pricing-card__desc {
-		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
-		color: var(--core-muted-foreground);
-		margin: 0 0 var(--space-4);
-	}
-
-	.pricing-card__price {
-		margin-bottom: var(--space-6);
-	}
-
-	.pricing-card__amount {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: clamp(1.75rem, 3vw, 2.25rem);
-		color: var(--core-foreground);
-	}
-
-	.pricing-card__period {
-		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
-		color: var(--core-muted-foreground);
-		margin-left: var(--space-1);
-	}
-
-	.pricing-card__features {
-		list-style: none;
-		padding: 0;
-		margin: 0 0 var(--space-6);
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
-		flex-grow: 1;
-	}
-
-	.pricing-card__feature {
-		display: flex;
-		align-items: flex-start;
-		gap: var(--space-2);
-		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
-		color: var(--core-foreground);
-		line-height: 1.5;
-	}
-
-	.pricing-card__feature-icon {
-		flex-shrink: 0;
-		color: var(--success);
-		margin-top: 2px;
-	}
-
-	.pricing-card__btn-wrapper {
-		display: flex;
-		justify-content: center;
-		margin-top: auto;
-	}
-
-	@media (max-width: 768px) {
-		.pricing-cards__grid {
-			grid-template-columns: 1fr;
-			max-width: 400px;
-			margin: 0 auto;
-		}
-
-		.pricing-card--highlighted {
-			transform: none;
-		}
 	}
 </style>
