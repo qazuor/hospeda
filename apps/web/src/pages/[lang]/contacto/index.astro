@@ -113,6 +113,40 @@ const socialLinks = [
 	{ key: 'facebook', label: 'Facebook', href: 'https://facebook.com/hospeda', Icon: FacebookIcon },
 	{ key: 'whatsapp', label: 'WhatsApp', href: `https://wa.me/${whatsappHref}`, Icon: WhatsappIcon }
 ];
+
+// ─── JSON-LD: ContactPage + ContactPoint ──────────────────────────────────────
+const siteBase = import.meta.env.SITE ?? Astro.url.origin;
+const contactPageJsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'ContactPage',
+	name: t('contact.title', 'Contacto - Hospeda'),
+	description: t('contact.description', 'Contactate con el equipo de Hospeda.'),
+	url: new URL(Astro.url.pathname, siteBase).href,
+	inLanguage: locale,
+	mainEntity: {
+		'@type': 'Organization',
+		name: 'Hospeda',
+		url: siteBase,
+		email: emailValue,
+		telephone: phoneRaw,
+		address: {
+			'@type': 'PostalAddress',
+			addressLocality: 'Concepción del Uruguay',
+			addressRegion: 'Entre Ríos',
+			addressCountry: 'AR'
+		},
+		contactPoint: [
+			{
+				'@type': 'ContactPoint',
+				contactType: 'customer support',
+				email: emailValue,
+				telephone: phoneRaw,
+				availableLanguage: ['Spanish', 'English', 'Portuguese'],
+				areaServed: 'AR'
+			}
+		]
+	}
+};
 ---
 
 <DefaultLayout
@@ -120,6 +154,12 @@ const socialLinks = [
 	title={t('contact.title', 'Contacto')}
 	description={t('contact.description', 'Contactate con el equipo de Hospeda. Estamos para ayudarte.')}
 >
+	<script
+		slot="head-extra"
+		type="application/ld+json"
+		set:html={JSON.stringify(contactPageJsonLd)}
+	></script>
+
 	<!-- ───── Section 1 — Hero with form ─────────────────────────────────── -->
 	<section class="contact-hero section">
 		<div class="contact-hero__decoratives" aria-hidden="true">

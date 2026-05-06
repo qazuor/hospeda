@@ -112,6 +112,18 @@ export function ContactForm({ locale }: ContactFormProps) {
             });
 
             if (!res.ok) {
+                // Surface rate-limit (429) as a dedicated, friendlier message so
+                // the user understands why the request was rejected rather than
+                // seeing a generic error.
+                if (res.status === 429) {
+                    throw new Error(
+                        t(
+                            'contact.form.errorRateLimit',
+                            'Demasiados intentos. Esperá un minuto y volvé a intentar.'
+                        )
+                    );
+                }
+
                 const body = (await res.json().catch(() => ({}))) as {
                     error?: { message?: string };
                 };
