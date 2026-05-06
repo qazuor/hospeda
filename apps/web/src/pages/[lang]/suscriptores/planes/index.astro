@@ -16,6 +16,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { ALL_PLANS } from '@repo/billing';
+import { getEntitlementName, getPlanDescription, getPlanName } from '@/lib/billing-i18n';
 import type { GetStaticPaths } from 'astro';
 
 export const prerender = true;
@@ -128,10 +129,11 @@ const hasPlans = ownerPlans.length > 0;
 						<div
 							class:list={['pricing-card', { 'pricing-card--highlighted': isHighlighted }]}
 							data-reveal="up"
+							data-recommended-label={isHighlighted ? t('pricing.recommended', 'Recomendado') : null}
 							style={`transition-delay: ${i * 100}ms`}
 						>
-							<h3 class="pricing-card__name">{plan.name}</h3>
-							<p class="pricing-card__desc">{plan.description}</p>
+							<h3 class="pricing-card__name">{getPlanName({ plan, t })}</h3>
+							<p class="pricing-card__desc">{getPlanDescription({ plan, t })}</p>
 							<div class="pricing-card__price">
 								<span class="pricing-card__amount">
 									{formattedPrice}
@@ -142,8 +144,37 @@ const hasPlans = ownerPlans.length > 0;
 							</div>
 							{plan.hasTrial && plan.trialDays > 0 && (
 								<p class="pricing-card__trial">
-									{t('pricing.trial', `${plan.trialDays} días gratis`)}
+									{t('pricing.trial', '{days} días gratis').replace(
+										'{days}',
+										String(plan.trialDays)
+									)}
 								</p>
+							)}
+							{plan.entitlements.length > 0 && (
+								<ul class="pricing-card__features" aria-label={t('pricing.features.label', 'Incluye')}>
+									{plan.entitlements.map((entitlementKey) => (
+										<li class="pricing-card__feature">
+											<svg
+												class="pricing-card__feature-icon"
+												xmlns="http://www.w3.org/2000/svg"
+												width="18"
+												height="18"
+												viewBox="0 0 24 24"
+												fill="none"
+												aria-hidden="true"
+											>
+												<path
+													d="M5 12.5l4.5 4.5L19 7"
+													stroke="currentColor"
+													stroke-width="2.5"
+													stroke-linecap="round"
+													stroke-linejoin="round"
+												/>
+											</svg>
+											<span>{getEntitlementName({ key: entitlementKey, t })}</span>
+										</li>
+									))}
+								</ul>
 							)}
 							<div class="pricing-card__btn-wrapper">
 								<PlanPurchaseButton
@@ -204,9 +235,11 @@ const hasPlans = ownerPlans.length > 0;
 
 	.pricing-cards__grid {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: var(--space-card-gap);
-		align-items: start;
+		align-items: stretch;
+		max-width: 1140px;
+		margin: 0 auto;
 	}
 
 	.pricing-card {
@@ -217,11 +250,43 @@ const hasPlans = ownerPlans.length > 0;
 		border: 2px solid transparent;
 		display: flex;
 		flex-direction: column;
+		transition:
+			transform var(--duration-normal) ease,
+			box-shadow var(--duration-normal) ease,
+			border-color var(--duration-normal) ease;
+	}
+
+	.pricing-card:hover {
+		transform: translateY(-4px);
+		box-shadow: var(--shadow-card-hover);
 	}
 
 	.pricing-card--highlighted {
 		border-color: var(--brand-accent);
 		transform: scale(1.02);
+		position: relative;
+	}
+
+	.pricing-card--highlighted:hover {
+		transform: scale(1.02) translateY(-4px);
+	}
+
+	.pricing-card--highlighted::before {
+		content: attr(data-recommended-label);
+		position: absolute;
+		top: calc(var(--space-3) * -1);
+		left: 50%;
+		transform: translateX(-50%);
+		background-color: var(--brand-accent);
+		color: var(--accent-foreground);
+		font-family: var(--font-sans);
+		font-weight: 600;
+		font-size: var(--text-caption);
+		padding: var(--space-1) var(--space-3);
+		border-radius: var(--radius-pill);
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		white-space: nowrap;
 	}
 
 	.pricing-card__name {
@@ -259,7 +324,34 @@ const hasPlans = ownerPlans.length > 0;
 		font-family: var(--font-sans);
 		font-size: var(--text-body-sm);
 		color: var(--brand-accent);
+		font-weight: 600;
+		margin: 0 0 var(--space-4);
+	}
+
+	.pricing-card__features {
+		list-style: none;
+		padding: 0;
 		margin: 0 0 var(--space-6);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		flex-grow: 1;
+	}
+
+	.pricing-card__feature {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-2);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-foreground);
+		line-height: 1.5;
+	}
+
+	.pricing-card__feature-icon {
+		flex-shrink: 0;
+		color: var(--success);
+		margin-top: 2px;
 	}
 
 	.pricing-card__btn-wrapper {
