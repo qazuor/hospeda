@@ -187,7 +187,7 @@ describe('CategoryTiles.astro', () => {
         });
 
         it('uses --accent for tagline colour', () => {
-            expect(src).toContain('var(--accent)');
+            expect(src).toContain('var(--brand-accent)');
         });
 
         it('includes focus-visible rule for keyboard navigation', () => {
@@ -199,7 +199,7 @@ describe('CategoryTiles.astro', () => {
         });
 
         it('uses --card for tile background', () => {
-            expect(src).toContain('var(--card)');
+            expect(src).toContain('var(--core-card)');
         });
     });
 });

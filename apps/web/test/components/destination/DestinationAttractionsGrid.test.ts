@@ -104,8 +104,8 @@ describe('DestinationAttractionsGrid.astro', () => {
             expect(src).not.toMatch(/#[0-9a-fA-F]{3,6}\b/);
         });
 
-        it('should use --radius-organic-sm on cards', () => {
-            expect(src).toContain('var(--radius-organic-sm)');
+        it('should use --radius-card on cards', () => {
+            expect(src).toContain('var(--radius-card)');
         });
 
         it('should use --shadow-card', () => {

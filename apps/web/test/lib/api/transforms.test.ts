@@ -293,7 +293,7 @@ describe('toArticleCardProps', () => {
 
     it('featuredImage.url should be fallback placeholder when no media found', () => {
         const result = toArticleCardProps({ item: {} });
-        expect(result.featuredImage.url).toBe('/images/placeholder-post.svg');
+        expect(result.featuredImage.url).toBe('/assets/images/placeholder-blog.svg');
         expect(result.featuredImage.caption).toBeUndefined();
     });
 

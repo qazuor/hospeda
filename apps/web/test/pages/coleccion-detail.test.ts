@@ -229,8 +229,8 @@ describe('collection detail page — T-051b (SPEC-098)', () => {
     describe('styling', () => {
         it('uses CSS custom properties (no hardcoded hex/rgb colors)', () => {
             expect(pageSrc).toContain('var(--brand-primary)');
-            expect(pageSrc).toContain('var(--muted-foreground)');
-            expect(pageSrc).toContain('var(--card)');
+            expect(pageSrc).toContain('var(--core-muted-foreground)');
+            expect(pageSrc).toContain('var(--core-card)');
         });
 
         it('does not use standalone Tailwind utility classes', () => {

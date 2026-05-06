@@ -88,8 +88,8 @@ describe('DestinationClimatePlaceholder.astro', () => {
             expect(src).not.toMatch(/#[0-9a-fA-F]{3,6}\b/);
         });
 
-        it('should use --radius-organic-sm on the placeholder container', () => {
-            expect(src).toContain('var(--radius-organic-sm)');
+        it('should use --radius-card on the placeholder container', () => {
+            expect(src).toContain('var(--radius-card)');
         });
 
         it('should use a dashed border style', () => {

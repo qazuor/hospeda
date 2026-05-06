@@ -119,7 +119,7 @@ describe('favoritos page — collection usage counter (T-UI-CL1)', () => {
         it('uses CSS custom properties for colors (no hardcoded values)', () => {
             // Should use var(--brand-primary), var(--core-muted-foreground), etc.
             expect(src).toContain('var(--brand-primary)');
-            expect(src).toContain('var(--muted-foreground)');
+            expect(src).toContain('var(--core-muted-foreground)');
         });
 
         it('uses var(--radius-pill) for bar border-radius', () => {

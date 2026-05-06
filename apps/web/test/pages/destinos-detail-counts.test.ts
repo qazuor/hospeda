@@ -78,10 +78,9 @@ describe('destinos/[...path].astro — real counts (T-045)', () => {
     });
 
     describe('New section components are wired', () => {
-        it('imports DestinationGallery, DestinationAttractionsGrid, DestinationRatingBreakdown', () => {
+        it('imports DestinationGallery and DestinationReviewsSection (which encapsulates RatingBreakdown)', () => {
             expect(src).toContain('DestinationGallery');
-            expect(src).toContain('DestinationAttractionsGrid');
-            expect(src).toContain('DestinationRatingBreakdown');
+            expect(src).toContain('DestinationReviewsSection');
         });
 
         it('imports DestinationFaqPlaceholder and DestinationClimatePlaceholder', () => {

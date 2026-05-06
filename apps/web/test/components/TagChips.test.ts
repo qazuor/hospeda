@@ -118,7 +118,7 @@ describe('TagChips.astro', () => {
         });
 
         it('uses --card for chip background', () => {
-            expect(src).toContain('var(--card)');
+            expect(src).toContain('var(--core-card)');
         });
 
         it('uses --font-sans for chip text', () => {
@@ -130,7 +130,7 @@ describe('TagChips.astro', () => {
         });
 
         it('uses --accent for hover state', () => {
-            expect(src).toContain('var(--accent)');
+            expect(src).toContain('var(--brand-accent)');
         });
 
         it('uses --duration-normal for transitions', () => {
