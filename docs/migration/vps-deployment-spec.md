@@ -2589,18 +2589,44 @@ Lista chequeable manual. **No marques completo hasta validar TODO.**
 
 ## Fase 16 — Cleanup
 
-**Solo después de 1-2 semanas estables:**
+### Paso 16.1 — Migrar email provider de Resend a Brevo (URGENTE post-cutover)
 
-### Vercel
+> 🔴 **Prioridad ALTA — hacer inmediatamente después de validar Fase 15**. NO esperar 1-2 semanas como el resto del cleanup. Sin esto los emails transaccionales (signup confirmation, password reset, booking notifications, etc.) NO se envían.
+
+**Contexto**: en Fase 0.5 cambiamos el provider de email de Resend a Brevo (multi-domain en free tier). El dominio `hospeda.com.ar` está autenticado en Brevo (DKIM+DMARC+brevo-code en Cloudflare DNS). Pero `packages/email/` y `packages/config/src/env-registry.hospeda.ts` siguen referenciando Resend SDK y env vars `HOSPEDA_RESEND_*`. En Fase 9 se setearon placeholders en Coolify (`re_placeholder_pending_brevo_migration`) para que zod validation pase, pero `sendEmail()` falla en runtime.
+
+**Pasos**:
+
+1. **Refactorear `packages/email/`** para usar Brevo SDK (`@getbrevo/brevo`) o SMTP genérico vía `nodemailer`.
+2. **Renombrar env vars** `HOSPEDA_RESEND_*` → `HOSPEDA_BREVO_*` (o `HOSPEDA_EMAIL_*` para neutralidad de provider futuro).
+3. **Actualizar registry**: `packages/config/src/env-registry.hospeda.ts` — cambiar `name: 'HOSPEDA_RESEND_*'` y descripciones.
+4. **Actualizar Zod schemas**: `apps/api/src/utils/env.ts`, `apps/web/src/utils/env.ts` (si aplica), etc.
+5. **Buscar y reemplazar usos**: `grep -rn "HOSPEDA_RESEND_" apps/ packages/` y migrar cada referencia.
+6. **Actualizar Coolify env vars**: reemplazar los 3 placeholders por los valores reales de Brevo (API key real está en password manager con clave `Hospeda - Brevo API key production`).
+7. **Smoke test**: signup new user → verificar que recibe welcome email. Password reset request → verificar email. Si tenés email de bookings, probar uno.
+
+**Verificación**:
+
+- [ ] `packages/email/src/client.ts` usa Brevo SDK (no Resend)
+- [ ] `grep -rn "HOSPEDA_RESEND" apps/ packages/` devuelve 0 matches en código (puede quedar en docs/CHANGELOG)
+- [ ] Coolify env vars: `HOSPEDA_BREVO_API_KEY` con valor real, sin placeholder
+- [ ] Signup E2E manda email a inbox real
+- [ ] Brevo dashboard muestra el email enviado en `Statistics → Transactional`
+
+### Paso 16.2 — Cleanup post-cutover (1-2 semanas después)
+
+**Solo después de 1-2 semanas estables corriendo en VPS:**
+
+#### Vercel
 
 1. Cancelar projects en Vercel dashboard
 2. Plan: downgrade a Hobby (mantiene gratis si no usás)
 
-### Neon
+#### Neon
 
 1. Eliminar el proyecto en Neon dashboard
 
-### Upstash
+#### Upstash
 
 1. Eliminar Redis y QStash en Upstash dashboard
 
