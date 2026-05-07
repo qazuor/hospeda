@@ -21,10 +21,18 @@ import {
     TreeIcon,
     UsersIcon
 } from '@repo/icons';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import styles from './SearchBar.module.css';
-import { SearchBarCalendar } from './SearchBarCalendar.client';
+
+/**
+ * Lazy-loaded date-range calendar. The chunk (react-day-picker + locales +
+ * style.css) is fetched only when the user opens the dates panel for the
+ * first time, keeping the hero island bundle small for LCP.
+ */
+const SearchBarCalendar = lazy(() =>
+    import('./SearchBarCalendar.client').then((mod) => ({ default: mod.SearchBarCalendar }))
+);
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -618,11 +626,13 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                     role="dialog"
                     aria-label={t('home.searchBar.datesLabel', 'Fechas')}
                 >
-                    <SearchBarCalendar
-                        locale={locale}
-                        selected={dateRange}
-                        onSelect={setDateRange}
-                    />
+                    <Suspense fallback={null}>
+                        <SearchBarCalendar
+                            locale={locale}
+                            selected={dateRange}
+                            onSelect={setDateRange}
+                        />
+                    </Suspense>
                 </div>
             )}
 
