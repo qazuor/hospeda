@@ -5,9 +5,9 @@
     "created": "2026-05-07T00:00:00.000Z",
     "summary": {
         "totalTasks": 92,
-        "completed": 56,
+        "completed": 57,
         "inProgress": 0,
-        "pending": 36,
+        "pending": 35,
         "blocked": 0,
         "criticalPath": [
             "T-001",
@@ -1226,7 +1226,7 @@
             "id": "T-052",
             "title": "Widen filter pills scroll mask fade from 3% to 12% in FeaturedAccommodationsSection (V-3')",
             "description": "In apps/web/src/components/sections/FeaturedAccommodationsSection.astro:112-127, update the mask-image gradient stops to widen the right-side fade from 97% to ~88%, making the scroll affordance visible at 375/414/768px. Also add `padding-inline-end: 1rem` to ensure the last pill is never flush against the edge. Acceptance: visible fade indicator on right edge at all 3 small viewports.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -1241,7 +1241,8 @@
             "files": ["apps/web/src/components/sections/FeaturedAccommodationsSection.astro"],
             "timestamps": {
                 "created": "2026-05-07T00:00:00.000Z"
-            }
+            },
+            "completedAt": "2026-05-07T22:42:10.069Z"
         },
         {
             "id": "T-053",
