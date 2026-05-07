@@ -106,6 +106,10 @@ export function HeroImageRotator({ images, interval = 5000 }: HeroImageRotatorPr
                         transition: reducedMotion ? 'none' : 'opacity 1.5s ease-in-out'
                     }}
                     loading={index === 0 ? 'eager' : 'lazy'}
+                    // Only the first hero image is the LCP candidate; mark it
+                    // high priority so the browser fetches it before non-critical
+                    // resources. Subsequent rotated images stay at default.
+                    fetchPriority={index === 0 ? 'high' : 'auto'}
                     width="480"
                     height="540"
                 />
