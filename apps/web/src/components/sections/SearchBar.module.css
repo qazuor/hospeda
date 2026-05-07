@@ -35,6 +35,11 @@
     background: oklch(from var(--brand-primary) l c h / 0.05);
 }
 
+.col:focus-visible {
+    outline: 3px solid var(--brand-accent);
+    outline-offset: 3px;
+}
+
 .colDivider {
     border-right: 1px solid var(--border);
 }
