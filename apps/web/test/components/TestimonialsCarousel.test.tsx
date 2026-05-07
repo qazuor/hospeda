@@ -14,7 +14,7 @@
  * Tasks: T-086 (S-11c), T-087 (S-11d)
  */
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReviewCardData } from '../../src/data/types';
 
@@ -170,5 +170,70 @@ describe('TestimonialsCarousel — dot count', () => {
         const dots = tablist.querySelectorAll('button[role="tab"]');
         expect(dots).toHaveLength(embla.scrollSnapList().length);
         expect(dots).toHaveLength(3);
+    });
+});
+
+// ─── T-087: next button + autoplay pause ──────────────────────────────────────
+
+describe('TestimonialsCarousel — next button and autoplay pause', () => {
+    beforeEach(() => {
+        embla.scrollNext.mockClear();
+        embla.scrollPrev.mockClear();
+        embla.scrollTo.mockClear();
+        embla.on.mockClear();
+        embla.off.mockClear();
+        autoplayStub.play.mockClear();
+        autoplayStub.stop.mockClear();
+    });
+
+    afterEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('calls scrollNext exactly once when the next arrow button is clicked', async () => {
+        const { TestimonialsCarousel } = await importComponent();
+
+        render(
+            <TestimonialsCarousel
+                reviews={SIX_REVIEWS}
+                locale="es"
+            />
+        );
+
+        // The component labels the next arrow with the i18n key; the stable
+        // mock t() returns the fallback "Next testimonial".
+        const nextButton = screen.getByRole('button', { name: 'Next testimonial' });
+
+        fireEvent.click(nextButton);
+
+        expect(embla.scrollNext).toHaveBeenCalledTimes(1);
+    });
+
+    it('pauses autoplay (calls plugin.stop) when the carousel is hovered', async () => {
+        const { TestimonialsCarousel } = await importComponent();
+
+        render(
+            <TestimonialsCarousel
+                reviews={SIX_REVIEWS}
+                locale="es"
+            />
+        );
+
+        // The wrapper is the outermost <div> rendered by the component. It
+        // hosts the onMouseEnter/onMouseLeave handlers. We grab it via the
+        // tablist's parent (sibling of the carousel area).
+        const tablist = screen.getByRole('tablist');
+        const wrapper = tablist.parentElement as HTMLElement;
+        expect(wrapper).not.toBeNull();
+
+        // Sanity: stop has not been invoked yet from setup.
+        expect(autoplayStub.stop).not.toHaveBeenCalled();
+
+        fireEvent.mouseEnter(wrapper);
+        expect(autoplayStub.stop).toHaveBeenCalledTimes(1);
+
+        // Leaving the carousel resumes autoplay.
+        fireEvent.mouseLeave(wrapper);
+        expect(autoplayStub.play).toHaveBeenCalledTimes(1);
     });
 });

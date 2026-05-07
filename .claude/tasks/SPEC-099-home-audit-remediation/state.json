@@ -5,9 +5,9 @@
     "created": "2026-05-07T00:00:00.000Z",
     "summary": {
         "totalTasks": 92,
-        "completed": 89,
+        "completed": 90,
         "inProgress": 0,
-        "pending": 2,
+        "pending": 1,
         "blocked": 0,
         "criticalPath": [
             "T-001",
@@ -2037,7 +2037,7 @@
             "id": "T-087",
             "title": "Write TestimonialsCarousel test \u2014 next button click calls scrollNext; hover pauses autoplay (S-11d)",
             "description": "Extend apps/web/test/components/TestimonialsCarousel.test.tsx: (1) click the next arrow button and assert the Embla mock's scrollNext was called once. (2) simulate mouseenter on the carousel container and assert the autoplay interval is cleared (spy on clearInterval or mock timer). Acceptance: 2 behavioral tests pass; total coverage for TestimonialsCarousel \u226580%.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-086"],
             "blocks": [],
@@ -2051,7 +2051,8 @@
             },
             "files": ["apps/web/test/components/TestimonialsCarousel.test.tsx"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T23:25:00.000Z"
             }
         },
         {
