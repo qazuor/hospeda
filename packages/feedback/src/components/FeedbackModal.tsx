@@ -86,10 +86,12 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
  * @param props - See {@link FeedbackModalProps}
  */
 export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps) {
-    const [isMobile, setIsMobile] = useState<boolean>(() => {
-        if (typeof window === 'undefined') return false;
-        return window.innerWidth < MOBILE_BREAKPOINT;
-    });
+    // SPEC-099 B-1: always start with `false` so SSR and the first client
+    // render produce identical markup (no drag handle). The post-mount
+    // `useEffect` below syncs the real value from window.matchMedia and
+    // rerenders into the correct mobile/desktop layout without tripping a
+    // hydration mismatch.
+    const [isMobile, setIsMobile] = useState<boolean>(false);
 
     const dialogRef = useRef<HTMLDialogElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
