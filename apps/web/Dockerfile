@@ -45,14 +45,20 @@ COPY --from=deps /repo /repo
 RUN pnpm turbo run build --filter=hospeda-web
 
 # ----- runner stage ----------------------------------------------------------
+# Preserve the monorepo directory layout (/repo/...) so pnpm's relative
+# symlinks resolve at runtime. See apps/api/Dockerfile runner stage for full
+# rationale. Astro Node standalone still expects workspace deps to be
+# resolvable from apps/web/node_modules, hence the full layout copy.
 FROM node:22-alpine AS runner
-WORKDIR /app
+WORKDIR /repo
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=4321
-COPY --from=build /repo/apps/web/dist ./dist
-COPY --from=build /repo/apps/web/package.json ./
+# curl is required for Coolify/Traefik healthcheck probes inside the container.
+RUN apk add --no-cache curl
 COPY --from=build /repo/node_modules ./node_modules
 COPY --from=build /repo/packages ./packages
+COPY --from=build /repo/apps/web ./apps/web
+WORKDIR /repo/apps/web
 EXPOSE 4321
 CMD ["node", "dist/server/entry.mjs"]

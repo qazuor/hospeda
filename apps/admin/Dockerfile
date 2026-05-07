@@ -48,6 +48,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=3000
+# curl is required for Coolify/Traefik healthcheck probes inside the container.
+RUN apk add --no-cache curl
 COPY --from=build /repo/apps/admin/.output ./.output
 EXPOSE 3000
 CMD ["node", ".output/server/index.mjs"]
