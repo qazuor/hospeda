@@ -165,10 +165,7 @@ function DestinationsIslandInner({
     return (
         <div className={styles.island}>
             {/* ---- Left column: interactive map ---- */}
-            <div
-                className={styles.mapColumn}
-                aria-hidden="false"
-            >
+            <div className={styles.mapColumn}>
                 <DestinationsMap
                     activeIndex={activeIndex}
                     onSelectDestination={setActiveIndex}
