@@ -10,6 +10,7 @@
  */
 
 import { AccommodationTypeEnum } from '@repo/schemas';
+import { AccommodationIcon } from '@repo/icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -18,6 +19,7 @@ import type { AccommodationCardData } from '@/lib/api/transforms';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { webLogger } from '@/lib/logger';
 
 interface Props {
@@ -77,18 +79,26 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
     </div>
 
     <!-- Cards grid: 3 columns (3×2), 6 cards -->
-    <div class="grid-cards--3col accommodations__grid">
-      {items.length === 0 ? (
-        <div class="section__empty-state">
-          <p class="section__empty-text">{t('home.featuredAccommodations.emptyState')}</p>
-        </div>
-      ) : null}
-      {items.map((accommodation, i) => (
-        <div data-reveal="up" class="accommodations__card-wrapper" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
-          <AccommodationCard data={accommodation} locale={locale} />
-        </div>
-      ))}
-    </div>
+    {items.length === 0 ? (
+      <EmptyState
+        locale={locale}
+        variant="empty"
+        message={t('home.featuredAccommodations.emptyState')}
+        actionUrl={seeAllHref}
+        actionLabel={t('home.featuredAccommodations.emptyAction')}
+        tone="warm"
+      >
+        <AccommodationIcon size={48} weight="duotone" />
+      </EmptyState>
+    ) : (
+      <div class="grid-cards--3col accommodations__grid">
+        {items.map((accommodation, i) => (
+          <div data-reveal="up" class="accommodations__card-wrapper" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
+            <AccommodationCard data={accommodation} locale={locale} />
+          </div>
+        ))}
+      </div>
+    )}
 
   </div>
 </section>
