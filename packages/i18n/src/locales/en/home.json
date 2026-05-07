@@ -6,7 +6,11 @@
         "subtitle": "Discover the best accommodations, destinations and experiences in the litoral.",
         "tagline": "Your next getaway",
         "secondaryCta": "Explore our destinations",
-        "imageAlt": "Featured accommodation in the Litoral region",
+        "imageAlt": {
+            "playa": "Beach on the Argentine Litoral at midday",
+            "atardecer": "Golden sunset over the river",
+            "isla": "River island with native vegetation"
+        },
         "destination": {
             "title": "Destination",
             "placeHolder": "Where are you going?"

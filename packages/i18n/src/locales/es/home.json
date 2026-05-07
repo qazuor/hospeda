@@ -6,7 +6,11 @@
         "subtitle": "Descubrí los mejores alojamientos, destinos y experiencias del litoral.",
         "tagline": "Descubrí el Litoral",
         "secondaryCta": "¿No sabés qué buscar? Explorá los destinos",
-        "imageAlt": "Alojamiento destacado en el Litoral Entrerriano",
+        "imageAlt": {
+            "playa": "Playa del Litoral argentino al mediodía",
+            "atardecer": "Atardecer dorado sobre el río",
+            "isla": "Isla fluvial con vegetación nativa"
+        },
         "destination": {
             "title": "Destino",
             "placeHolder": "¿Adónde vas?"

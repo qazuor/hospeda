@@ -6,7 +6,11 @@
         "subtitle": "Descubra as melhores hospedagens, destinos e experiencias do litoral.",
         "tagline": "Sua proxima escapada",
         "secondaryCta": "Conheca nossos destinos",
-        "imageAlt": "Hospedagem em destaque no Litoral",
+        "imageAlt": {
+            "playa": "Praia do Litoral argentino ao meio-dia",
+            "atardecer": "Pôr do sol dourado sobre o rio",
+            "isla": "Ilha fluvial com vegetação nativa"
+        },
         "destination": {
             "title": "Destino",
             "placeHolder": "Para onde voce vai?"
