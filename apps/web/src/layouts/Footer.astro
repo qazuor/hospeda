@@ -714,6 +714,14 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
         text-align: center;
     }
 
+    /* Reserve right padding on mobile so the copyright text is not hidden
+       behind the ScrollToTop fixed button (bottom:4rem; right:1rem). */
+    @media (max-width: 48rem) {
+        .footer__bottom-inner {
+            padding-inline-end: 3.5rem;
+        }
+    }
+
     .footer__bottom-contact {
         display: flex;
         flex-wrap: wrap;
