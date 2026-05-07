@@ -75,7 +75,7 @@ const isSparse = posts.length < 2;
             subtitle={t('home.latestPosts.subtitle', 'Historias, guías y secretos del litoral entrerriano para inspirar tu próxima aventura.')}
             alignment="left"
             actionLabel={t('home.latestPosts.viewAll', 'Ver todos los artículos')}
-            actionHref={buildUrl({ locale, path: 'publicaciones' })}
+            actionHref={buildUrl({ locale, path: '/publicaciones/' })}
         />
 
         {posts.length === 0 ? (

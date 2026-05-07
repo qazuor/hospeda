@@ -160,7 +160,7 @@ function DestinationsIslandInner({
         [emblaApi]
     );
 
-    const ctaHref = buildUrl({ locale, path: 'destinos' });
+    const ctaHref = buildUrl({ locale, path: '/destinos/' });
 
     return (
         <div className={styles.island}>
