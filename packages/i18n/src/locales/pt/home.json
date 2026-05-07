@@ -92,7 +92,37 @@
     },
     "categoryTiles": {
         "sectionTitle": "Explore por categoria",
-        "sectionTagline": "Para todos os gostos"
+        "sectionTagline": "Para todos os gostos",
+        "tiles": {
+            "cabins": {
+                "title": "Cabanas",
+                "description": "Cerque-se de natureza nas melhores cabanas do Litoral"
+            },
+            "hotels": {
+                "title": "Hotéis",
+                "description": "Conforto e serviço premium no coração da cidade"
+            },
+            "houses": {
+                "title": "Casas",
+                "description": "Sinta-se em casa com todo o espaço que você precisa"
+            },
+            "music": {
+                "title": "Música",
+                "description": "Festivais e shows ao vivo para todos os gostos"
+            },
+            "culture": {
+                "title": "Cultura",
+                "description": "Arte, história e patrimônio do Litoral de Entre Ríos"
+            },
+            "gastronomy": {
+                "title": "Gastronomia",
+                "description": "Sabores únicos da culinária regional e nacional"
+            },
+            "posts": {
+                "title": "Artigos",
+                "description": "Histórias, dicas e inspiração para sua próxima viagem"
+            }
+        }
     },
     "categories": {
         "title": "Tipos de hospedagem",

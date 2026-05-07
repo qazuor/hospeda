@@ -92,7 +92,37 @@
     },
     "categoryTiles": {
         "sectionTitle": "Explore by category",
-        "sectionTagline": "For every taste"
+        "sectionTagline": "For every taste",
+        "tiles": {
+            "cabins": {
+                "title": "Cabins",
+                "description": "Surround yourself with nature in the best cabins of the Litoral"
+            },
+            "hotels": {
+                "title": "Hotels",
+                "description": "Comfort and premium service at the heart of the city"
+            },
+            "houses": {
+                "title": "Houses",
+                "description": "Feel at home with all the space you need"
+            },
+            "music": {
+                "title": "Music",
+                "description": "Festivals and live shows for every taste"
+            },
+            "culture": {
+                "title": "Culture",
+                "description": "Art, history and heritage of the Entre Ríos Litoral"
+            },
+            "gastronomy": {
+                "title": "Gastronomy",
+                "description": "Unique flavors of regional and national cuisine"
+            },
+            "posts": {
+                "title": "Articles",
+                "description": "Stories, tips and inspiration for your next trip"
+            }
+        }
     },
     "categories": {
         "title": "Accommodation types",

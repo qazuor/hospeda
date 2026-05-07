@@ -92,7 +92,37 @@
     },
     "categoryTiles": {
         "sectionTitle": "Explorá por categoría",
-        "sectionTagline": "Para cada gusto"
+        "sectionTagline": "Para cada gusto",
+        "tiles": {
+            "cabins": {
+                "title": "Cabañas",
+                "description": "Rodeate de naturaleza en las mejores cabañas del Litoral"
+            },
+            "hotels": {
+                "title": "Hoteles",
+                "description": "Comodidad y servicio premium en el corazón de la ciudad"
+            },
+            "houses": {
+                "title": "Casas",
+                "description": "Sentite como en casa con todo el espacio que necesitás"
+            },
+            "music": {
+                "title": "Música",
+                "description": "Festivales y shows en vivo para todos los gustos"
+            },
+            "culture": {
+                "title": "Cultura",
+                "description": "Arte, historia y patrimonio del Litoral Entrerriano"
+            },
+            "gastronomy": {
+                "title": "Gastronomía",
+                "description": "Sabores únicos de la cocina regional y nacional"
+            },
+            "posts": {
+                "title": "Artículos",
+                "description": "Historias, consejos e inspiración para tu próximo viaje"
+            }
+        }
     },
     "categories": {
         "title": "Tipos de alojamiento",
