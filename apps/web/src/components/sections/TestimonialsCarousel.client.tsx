@@ -110,16 +110,17 @@ function TestimonialsCarouselInner({
 
     /**
      * Check if a slide index is one of the 2 active (non-peek) slides.
-     * With slidesToScroll:2 and loop, Embla maps each snap to a group of 2 slides.
-     * We use the snap's slide indices from the engine for accuracy.
+     * With slidesToScroll:2 and loop, each snap groups 2 consecutive slides:
+     * snap `g` maps to indices `[g*2, g*2+1]`. The arithmetic uses the public
+     * Embla API only (no internalEngine access) and accounts for the final
+     * orphan slide when `reviews.length` is odd.
      */
     const isActiveSlide = useCallback(
         (index: number): boolean => {
             if (!mainApi) return false;
-            const snapSlides = mainApi.internalEngine().slideRegistry;
-            const currentGroup = snapSlides[selectedSnap];
-            if (!currentGroup) return false;
-            return currentGroup.includes(index);
+            const SLIDES_PER_GROUP = 2;
+            const groupStart = selectedSnap * SLIDES_PER_GROUP;
+            return index === groupStart || index === groupStart + 1;
         },
         [mainApi, selectedSnap]
     );
