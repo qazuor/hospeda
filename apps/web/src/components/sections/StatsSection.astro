@@ -190,6 +190,16 @@ const t = createT(locale);
     });
   }
 
+  // Debounce helper: defers execution until `wait` ms after the last call.
+  // Inlined to avoid pulling a util dependency into this small island.
+  function debounce(fn: () => void, wait: number): () => void {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    return () => {
+      if (timeoutId !== null) clearTimeout(timeoutId);
+      timeoutId = setTimeout(fn, wait);
+    };
+  }
+
   let resizeHandler: (() => void) | null = null;
 
   function setupWave() {
@@ -198,7 +208,9 @@ const t = createT(locale);
     if (resizeHandler) {
       window.removeEventListener('resize', resizeHandler);
     }
-    resizeHandler = initWave;
+    // Debounce the resize redraw to ~150ms after the last resize event so we
+    // don't trigger a recompute on every browser tick during window dragging.
+    resizeHandler = debounce(initWave, 150);
     window.addEventListener('resize', resizeHandler);
   }
 
