@@ -2438,42 +2438,122 @@ Si MP empieza a fallar tras el cutover y no hay tiempo de debuggear, **revertí 
 
 ## Fase 13 — Backups
 
-**Tiempo estimado**: 1 hora
+**Tiempo estimado**: 30-45 minutos
 
-### Paso 13.1 — Crear bucket Cloudflare R2
+> **Approach**: scripts propios versionados en `scripts/backup/` en lugar de los backups built-in de Coolify. Razones: (a) versionados en el repo y review-ables, (b) restore no depende de Coolify funcionando, (c) portables a cualquier hosting si migramos en el futuro, (d) más control sobre formato y validación.
 
-1. En Cloudflare dashboard → **R2** (sidebar)
-2. Activar R2 (te pide tarjeta pero free hasta 10GB)
-3. **Create bucket**: `hospeda-backups`
-4. Crear API token: **Manage R2 API Tokens** → **Create API token**
-5. **Permissions**: Object Read & Write
-6. **Bucket**: solo `hospeda-backups`
-7. Anotar Access Key ID + Secret Access Key + Endpoint URL
+### Paso 13.1 — Crear bucket Cloudflare R2 + API token
 
-### Paso 13.2 — Configurar backups en Coolify
+1. En Cloudflare dashboard → **R2** (sidebar).
+2. Activar R2 (te pide tarjeta pero free tier 10GB sin cargos hasta llenarlo).
+3. **Create bucket**: `hospeda-backups` (region default: auto).
+4. **Manage R2 API Tokens** → **Create API token**.
+5. **Permissions**: `Object Read & Write` (NO admin token — principle of least privilege).
+6. **Specify bucket**: `hospeda-backups` (scoped, no acceso a otros buckets).
+7. Guardar **Access Key ID** + **Secret Access Key** + **Account ID** en password manager.
 
-1. En el Postgres `hospeda-postgres` → pestaña **"Backups"**
-2. **+ Add Backup**:
-   - **Schedule**: daily at 03:00 (cron `0 3 * * *`)
-   - **Destination**: S3-compatible
-   - **Endpoint**: tu R2 endpoint URL
-   - **Access Key / Secret**: del paso anterior
-   - **Bucket**: `hospeda-backups`
-   - **Retention**: 30 days
+### Paso 13.2 — Deploy de scripts en el VPS
 
-### Paso 13.3 — Test de restore
+Los scripts viven en `scripts/backup/` del repo. Hay 3:
 
-Después del primer backup nocturno, validar:
+- `postgres-to-r2.sh` — backup diario via cron.
+- `restore-from-r2.sh` — restore manual con confirmación explícita.
+- `install-on-vps.sh` — bootstrap del VPS (instala awscli, copia scripts, configura logrotate).
 
-1. En Coolify → backup → click **"Restore to..."**
-2. Restaurar a una DB temporal de testing
-3. Verificar count de tablas matches
+Detalles completos: ver `scripts/backup/README.md`.
+
+```bash
+# 1. Desde tu laptop, copiar scripts al VPS
+scp -P 2222 -r scripts/backup qazuor@<vps-ip>:/tmp/hospeda-backup-install
+
+# 2. SSH al VPS y correr el installer
+ssh -p 2222 qazuor@<vps-ip>
+sudo /tmp/hospeda-backup-install/install-on-vps.sh
+```
+
+El installer:
+
+- Verifica que docker exista, instala `awscli` si falta.
+- Copia los scripts a `/opt/hospeda-backup/` (modo 750).
+- Crea `/etc/hospeda-backup.env` desde el template (modo 600).
+- Configura `/var/log/hospeda-backup.log` con logrotate semanal (12 weeks history).
+- Imprime el cron line a agregar manualmente.
+
+### Paso 13.3 — Configurar credenciales en el env file
+
+```bash
+sudo nano /etc/hospeda-backup.env
+```
+
+Completar (ver `scripts/backup/.env.example`):
+
+- `R2_ACCOUNT_ID` — del paso 13.1 (Cloudflare account ID, no el access key).
+- `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` — del paso 13.1.
+- `R2_BUCKET=hospeda-backups`.
+- `POSTGRES_CONTAINER` — el nombre del container Coolify Postgres (ej. `yhhqnorqbtw2aslbxy64kjzd`).
+- `POSTGRES_USER=postgres` / `POSTGRES_DB=postgres`.
+
+### Paso 13.4 — Test manual del backup
+
+```bash
+# Primer run — verifica que upload funciona y devuelve filename + size
+sudo /opt/hospeda-backup/postgres-to-r2.sh
+
+# Listar backups en R2
+sudo /opt/hospeda-backup/restore-from-r2.sh
+```
+
+Si `restore-from-r2.sh` lista tu nuevo backup → upload OK. Si falla, ver `/var/log/hospeda-backup.log`.
+
+### Paso 13.5 — Test de restore (smoke check)
+
+> **Por qué**: backups que nunca fueron testeados no son backups. Hacer este check al menos una vez ahora y agendar repetir trimestralmente.
+
+```bash
+# En Postgres del VPS, crear una DB temporal de prueba
+sudo docker exec yhhqnorqbtw2aslbxy64kjzd psql -U postgres -c "CREATE DATABASE postgres_restore_test;"
+
+# Restore del último backup en esa DB temporal
+sudo /opt/hospeda-backup/restore-from-r2.sh hospeda-postgres-<timestamp>.dump postgres_restore_test
+
+# Verificar que las tablas críticas tienen los row counts esperados
+sudo docker exec yhhqnorqbtw2aslbxy64kjzd psql -U postgres -d postgres_restore_test -c "
+SELECT relname, n_live_tup FROM pg_stat_user_tables WHERE n_live_tup > 0 ORDER BY relname;"
+
+# Cleanup: borrar la DB temporal
+sudo docker exec yhhqnorqbtw2aslbxy64kjzd psql -U postgres -c "DROP DATABASE postgres_restore_test;"
+```
+
+Counts esperados deben coincidir con la DB de producción (~595 role_permissions, 9 billing_plans, 27 destinations, etc.).
+
+### Paso 13.6 — Instalar cron entry
+
+```bash
+sudo crontab -e
+```
+
+Agregar al final:
+
+```cron
+# Hospeda Postgres → R2 daily backup (03:00 Argentina = 06:00 UTC)
+0 6 * * * /opt/hospeda-backup/postgres-to-r2.sh >> /var/log/hospeda-backup.log 2>&1
+```
+
+Validar:
+
+```bash
+sudo crontab -l
+```
 
 ### Verificación de fase 13
 
-- [x] Bucket R2 creado
-- [x] Coolify configurado con backups daily
-- [x] Test de restore exitoso
+- [ ] Bucket R2 `hospeda-backups` creado con API token scoped (Object R/W only)
+- [ ] Scripts deployados en `/opt/hospeda-backup/`
+- [ ] `/etc/hospeda-backup.env` con creds reales (chmod 600)
+- [ ] Backup manual exitoso (archivo visible en R2 con `restore-from-r2.sh` listing)
+- [ ] Test de restore exitoso a DB temporal con counts matching
+- [ ] Cron entry instalado
+- [ ] `/var/log/hospeda-backup.log` con logrotate semanal
 
 ✅ Fase 13 completa.
 
