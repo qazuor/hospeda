@@ -5,9 +5,9 @@
     "created": "2026-05-07T00:00:00.000Z",
     "summary": {
         "totalTasks": 92,
-        "completed": 84,
+        "completed": 87,
         "inProgress": 0,
-        "pending": 7,
+        "pending": 4,
         "blocked": 0,
         "criticalPath": [
             "T-001",
@@ -104,8 +104,8 @@
         },
         {
             "id": "T-003",
-            "title": "Capture baseline screenshots at 4 viewports × 2 themes × 3 locales",
-            "description": "Use Playwright (or a script) to take 24 screenshots: viewports 375, 768, 1280, 1920 × light + dark × es/en/pt of the home page. Save to .claude/baseline/screenshots/. These are the regression diff baseline. No code changes.",
+            "title": "Capture baseline screenshots at 4 viewports \u00d7 2 themes \u00d7 3 locales",
+            "description": "Use Playwright (or a script) to take 24 screenshots: viewports 375, 768, 1280, 1920 \u00d7 light + dark \u00d7 es/en/pt of the home page. Save to .claude/baseline/screenshots/. These are the regression diff baseline. No code changes.",
             "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-001"],
@@ -217,7 +217,7 @@
         },
         {
             "id": "T-008",
-            "title": "Investigate PT mobile blank — identify missing i18n key in feedback form",
+            "title": "Investigate PT mobile blank \u2014 identify missing i18n key in feedback form",
             "description": "After documenting the console errors in T-005, open /pt/ in 375px viewport post-B-1 structural fix (T-006+T-007). If a blank page or error persists, capture the specific runtime error. Check packages/feedback/src/locales/pt/ for any missing translation key referenced in the feedback form. Document findings; if a key is missing, add it.",
             "status": "completed",
             "complexity": 1.5,
@@ -239,7 +239,7 @@
         },
         {
             "id": "T-009",
-            "title": "Verify hydration warnings gone across 3 locales × 2 viewports",
+            "title": "Verify hydration warnings gone across 3 locales \u00d7 2 viewports",
             "description": "Open /es/, /en/, /pt/ at 375px and 1280px. Confirm zero React hydration warnings in the browser console. Confirm PT mobile renders the full home page below the navbar. Document result as a comment in FeedbackFAB.tsx. This is a verification task, no new code.",
             "status": "completed",
             "complexity": 1,
@@ -284,7 +284,7 @@
         {
             "id": "T-011",
             "title": "Verify CTA Owners button reachable at 375px and 414px after FAB repositioning",
-            "description": "Open /es/ at 375px. Scroll to the CtaOwners section. Confirm the 'Publicá tu alojamiento' button is fully visible and has no FAB overlay. Also confirm the FAB itself is not pushed off-screen. Verify at 414px. No code change unless FAB is still occluding.",
+            "description": "Open /es/ at 375px. Scroll to the CtaOwners section. Confirm the 'Public\u00e1 tu alojamiento' button is fully visible and has no FAB overlay. Also confirm the FAB itself is not pushed off-screen. Verify at 414px. No code change unless FAB is still occluding.",
             "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-010"],
@@ -328,12 +328,12 @@
                 "created": "2026-05-07T00:00:00.000Z",
                 "completed": "2026-05-07T21:15:00.000Z"
             },
-            "result": "artifact-only — no visible horizontal scroll at 320/375/414/768 (window.scrollX always 0 after scroll attempt). html.scrollWidth is actually LESS than innerWidth at every viewport. body.scrollWidth > innerWidth comes from off-canvas mobile drawer (translated left == innerWidth) and carousel sibling slides, all under overflow-x: clip ancestors. Audit tooling false positive. See .claude/baseline/B-3-overflow-investigation.md."
+            "result": "artifact-only \u2014 no visible horizontal scroll at 320/375/414/768 (window.scrollX always 0 after scroll attempt). html.scrollWidth is actually LESS than innerWidth at every viewport. body.scrollWidth > innerWidth comes from off-canvas mobile drawer (translated left == innerWidth) and carousel sibling slides, all under overflow-x: clip ancestors. Audit tooling false positive. See .claude/baseline/B-3-overflow-investigation.md."
         },
         {
             "id": "T-013",
             "title": "Fix visible horizontal overflow if confirmed by T-012 investigation",
-            "description": "If T-012 found actual horizontal scroll: narrow .hero__visual base width at ≤480px, add word-wrap: break-word + hyphens: auto to .hero__title at ≤640px, and audit .destination-carousel-wrapper edge bleed math. If T-012 found only a clip measurement artifact: add a comment in global.css documenting the scrollWidth/clip artifact. Acceptance: no visible horizontal scroll at 320, 375, 414, 768, 1024 px.",
+            "description": "If T-012 found actual horizontal scroll: narrow .hero__visual base width at \u2264480px, add word-wrap: break-word + hyphens: auto to .hero__title at \u2264640px, and audit .destination-carousel-wrapper edge bleed math. If T-012 found only a clip measurement artifact: add a comment in global.css documenting the scrollWidth/clip artifact. Acceptance: no visible horizontal scroll at 320, 375, 414, 768, 1024 px.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012"],
@@ -492,7 +492,7 @@
         {
             "id": "T-020",
             "title": "Write unit tests for isAllowedRemoteHost in apps/web/test/lib/media.test.ts",
-            "description": "Create apps/web/test/lib/media.test.ts. Add tests: (1) allowed hostname returns true, (2) non-allowed hostname returns false, (3) malformed URL returns false, (4) edge case empty string returns false. Use Vitest. Acceptance: all 4 cases pass; coverage for media.ts ≥90%.",
+            "description": "Create apps/web/test/lib/media.test.ts. Add tests: (1) allowed hostname returns true, (2) non-allowed hostname returns false, (3) malformed URL returns false, (4) edge case empty string returns false. Use Vitest. Acceptance: all 4 cases pass; coverage for media.ts \u226590%.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-016"],
@@ -734,7 +734,7 @@
         {
             "id": "T-031",
             "title": "Check EN and PT for home.title / home.description keys (S-9 prerequisite)",
-            "description": "Read packages/i18n/src/locales/en/home.json and packages/i18n/src/locales/pt/home.json. Verify whether home.title and home.description keys exist. Also read the ES value and confirm whether 'Alojamientos en Entre Ríos' is the correct product title vs 'Inicio'. Document findings. No changes yet — gates T-032.",
+            "description": "Read packages/i18n/src/locales/en/home.json and packages/i18n/src/locales/pt/home.json. Verify whether home.title and home.description keys exist. Also read the ES value and confirm whether 'Alojamientos en Entre R\u00edos' is the correct product title vs 'Inicio'. Document findings. No changes yet \u2014 gates T-032.",
             "status": "completed",
             "complexity": 1,
             "blockedBy": [],
@@ -761,7 +761,7 @@
         {
             "id": "T-032",
             "title": "Replace hardcoded title/description meta with t() calls in index.astro (S-9)",
-            "description": "In apps/web/src/pages/[lang]/index.astro:133-134, replace `title='Inicio'` and the hardcoded Spanish description with `t('home.title')` and `t('home.description')`. If EN/PT keys were missing per T-031, add them first. Reconcile the ES title value ('Alojamientos en Entre Ríos' vs 'Inicio') per product decision. Acceptance: /en/ and /pt/ show localized tab titles.",
+            "description": "In apps/web/src/pages/[lang]/index.astro:133-134, replace `title='Inicio'` and the hardcoded Spanish description with `t('home.title')` and `t('home.description')`. If EN/PT keys were missing per T-031, add them first. Reconcile the ES title value ('Alojamientos en Entre R\u00edos' vs 'Inicio') per product decision. Acceptance: /en/ and /pt/ show localized tab titles.",
             "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-031"],
@@ -838,8 +838,8 @@
         },
         {
             "id": "T-035",
-            "title": "Fix typos próximos and artículos in ES home.json empty state strings (I-3)",
-            "description": "In packages/i18n/src/locales/es/home.json:60 and :69, replace 'proximos' with 'próximos' and 'articulos' with 'artículos'. Verify EN and PT are already correct (no changes needed there per spec). Acceptance: ES strings show correct accented characters in /es/ empty-state renders.",
+            "title": "Fix typos pr\u00f3ximos and art\u00edculos in ES home.json empty state strings (I-3)",
+            "description": "In packages/i18n/src/locales/es/home.json:60 and :69, replace 'proximos' with 'pr\u00f3ximos' and 'articulos' with 'art\u00edculos'. Verify EN and PT are already correct (no changes needed there per spec). Acceptance: ES strings show correct accented characters in /es/ empty-state renders.",
             "status": "completed",
             "complexity": 1,
             "blockedBy": [],
@@ -909,7 +909,7 @@
         {
             "id": "T-038",
             "title": "Add home.searchBar.noDestinationsText key and replace 'Cargando...' empty-list render (I-5)",
-            "description": "Add `home.searchBar.noDestinationsText` key to packages/i18n/src/locales/{es,en,pt}/home.json with values 'No hay destinos disponibles' / 'No destinations available' / 'Nenhum destino disponível'. In apps/web/src/components/sections/SearchBar.client.tsx:502-509, replace the empty-list render using `loadingText` with `t('home.searchBar.noDestinationsText')`. Acceptance: empty destinations list shows locale-appropriate message, not 'Cargando...'.",
+            "description": "Add `home.searchBar.noDestinationsText` key to packages/i18n/src/locales/{es,en,pt}/home.json with values 'No hay destinos disponibles' / 'No destinations available' / 'Nenhum destino dispon\u00edvel'. In apps/web/src/components/sections/SearchBar.client.tsx:502-509, replace the empty-list render using `loadingText` with `t('home.searchBar.noDestinationsText')`. Acceptance: empty destinations list shows locale-appropriate message, not 'Cargando...'.",
             "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
@@ -1001,7 +1001,7 @@
         },
         {
             "id": "T-042",
-            "title": "Apply prefers-reduced-motion to HeroImageRotator — freeze on first image (I-8)",
+            "title": "Apply prefers-reduced-motion to HeroImageRotator \u2014 freeze on first image (I-8)",
             "description": "In apps/web/src/components/sections/HeroImageRotator.client.tsx:57-69, import useReducedMotion from T-041. If reducedMotion is true, skip the 5-second setInterval and freeze on the first image. Acceptance: with OS reduced-motion enabled, hero image does not auto-rotate.",
             "status": "completed",
             "complexity": 1.5,
@@ -1023,7 +1023,7 @@
         },
         {
             "id": "T-043",
-            "title": "Apply prefers-reduced-motion to AnimatedCounter — snap to final value (I-8)",
+            "title": "Apply prefers-reduced-motion to AnimatedCounter \u2014 snap to final value (I-8)",
             "description": "In apps/web/src/components/sections/AnimatedCounter.client.tsx:98-141, import useReducedMotion from T-041. If reducedMotion is true, set the counter to the final value immediately on mount instead of running the RAF count-up animation. Acceptance: with OS reduced-motion enabled, counter shows final value instantly.",
             "status": "completed",
             "complexity": 1.5,
@@ -1093,7 +1093,7 @@
         },
         {
             "id": "T-046",
-            "title": "Audit EmptyState.astro for tone prop and icon slot — extend if missing (V-4 prerequisite)",
+            "title": "Audit EmptyState.astro for tone prop and icon slot \u2014 extend if missing (V-4 prerequisite)",
             "description": "Read apps/web/src/components/shared/feedback/EmptyState.astro. Check whether a `tone` prop (muted|warm|brand) and a custom-icon slot are present. If missing, add them with backward-compatible defaults. Do not change existing callers. Acceptance: EmptyState accepts tone prop and icon slot without breaking existing usage.",
             "status": "completed",
             "complexity": 1.5,
@@ -1182,7 +1182,7 @@
         {
             "id": "T-050",
             "title": "Investigate HeroSection subtitle descender clipping at 375/414px (V-1)",
-            "description": "Open /es/ at 375px and 414px. Inspect .hero__subtitle in DevTools — measure whether the glyph descenders from .hero__title line-height:0.896 are visually bleeding into the description area. Capture screenshots. Determine the fix: (a) bump line-height to 1.0 at ≤640px, or (b) add padding-bottom:4px. Document in a comment. No code changes yet — gates T-051.",
+            "description": "Open /es/ at 375px and 414px. Inspect .hero__subtitle in DevTools \u2014 measure whether the glyph descenders from .hero__title line-height:0.896 are visually bleeding into the description area. Capture screenshots. Determine the fix: (a) bump line-height to 1.0 at \u2264640px, or (b) add padding-bottom:4px. Document in a comment. No code changes yet \u2014 gates T-051.",
             "status": "completed",
             "complexity": 1,
             "blockedBy": [],
@@ -1248,7 +1248,7 @@
         {
             "id": "T-053",
             "title": "Create compact mobile variant of CookieConsentBanner (V-5 layout)",
-            "description": "In apps/web/src/components/legal/CookieConsentBanner.module.css, add a `@media (max-width: 768px)` block: set .inner to flex-direction: row at <768px. Use `-webkit-line-clamp: 2` on .description. Reduce button padding to 6px 12px and height to 32px at <640px. Target total banner height ≤96px. Acceptance: banner ≤96px tall at 375/414; search bar visible above it on first paint.",
+            "description": "In apps/web/src/components/legal/CookieConsentBanner.module.css, add a `@media (max-width: 768px)` block: set .inner to flex-direction: row at <768px. Use `-webkit-line-clamp: 2` on .description. Reduce button padding to 6px 12px and height to 32px at <640px. Target total banner height \u226496px. Acceptance: banner \u226496px tall at 375/414; search bar visible above it on first paint.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": [],
@@ -1269,7 +1269,7 @@
         {
             "id": "T-054",
             "title": "Hide cookie banner title and trim button set to Aceptar+Personalizar at <640px (V-5 content)",
-            "description": "In the CookieConsentBanner component, at <640px: hide the .title element, and show only 'Aceptar' + 'Personalizar' buttons by default (move 'Rechazar' behind the customize panel). Coordinate CSS change in CookieConsentBanner.module.css with JSX/Astro markup. Acceptance: legal content still accessible via Personalizar; banner height remains ≤96px.",
+            "description": "In the CookieConsentBanner component, at <640px: hide the .title element, and show only 'Aceptar' + 'Personalizar' buttons by default (move 'Rechazar' behind the customize panel). Coordinate CSS change in CookieConsentBanner.module.css with JSX/Astro markup. Acceptance: legal content still accessible via Personalizar; banner height remains \u226496px.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-053"],
@@ -1316,7 +1316,7 @@
         {
             "id": "T-056",
             "title": "Update newsletter placeholder copy to remove WhatsApp and rename i18n key (V-7)",
-            "description": "In packages/i18n/src/locales/{es,en,pt}/footer.json, rename key `footer.newsletterPlaceholder` to `footer.newsletterEmailPlaceholder` and update the ES value to 'Tu correo electrónico', EN to 'Your email', PT to 'Seu e-mail'. Update apps/web/src/layouts/Footer.astro:231-254 to use the new key. Acceptance: newsletter input shows email-only placeholder in all 3 locales.",
+            "description": "In packages/i18n/src/locales/{es,en,pt}/footer.json, rename key `footer.newsletterPlaceholder` to `footer.newsletterEmailPlaceholder` and update the ES value to 'Tu correo electr\u00f3nico', EN to 'Your email', PT to 'Seu e-mail'. Update apps/web/src/layouts/Footer.astro:231-254 to use the new key. Acceptance: newsletter input shows email-only placeholder in all 3 locales.",
             "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
@@ -1370,7 +1370,7 @@
         {
             "id": "T-058",
             "title": "Fix accommodation filter pill contrast in dark mode (V-8b)",
-            "description": "In apps/web/src/lib/colors.ts:202-211 (getAccommodationTypeColorSolid), add a dark-mode branch that clamps bg luminance ≥0.55 and sets text to near-black. Preferred approach: CSS-only via `oklch(from var(--acc-type-bg) ...)` in apps/web/src/components/shared/ui/AccommodationTypeBadge.astro. Add a 1px theme-aware outline on .acc-type-badge in dark. Acceptance: pill text contrast ≥4.5:1 in dark mode; pill border visible.",
+            "description": "In apps/web/src/lib/colors.ts:202-211 (getAccommodationTypeColorSolid), add a dark-mode branch that clamps bg luminance \u22650.55 and sets text to near-black. Preferred approach: CSS-only via `oklch(from var(--acc-type-bg) ...)` in apps/web/src/components/shared/ui/AccommodationTypeBadge.astro. Add a 1px theme-aware outline on .acc-type-badge in dark. Acceptance: pill text contrast \u22654.5:1 in dark mode; pill border visible.",
             "status": "completed",
             "complexity": 2.5,
             "blockedBy": ["T-057"],
@@ -1392,12 +1392,12 @@
                 "completed": "2026-05-07T00:00:00.000Z"
             },
             "commit": "6d084140e",
-            "implementationNotes": "Path A (CSS-only) used. colors.ts not modified — chose CSS-only via :global([data-theme='dark']) .acc-type-badge with oklch(from var(--acc-type-bg) max(0.62, l) c h) for bg lift, near-black text, and a 1px outline derived from the lifted bg."
+            "implementationNotes": "Path A (CSS-only) used. colors.ts not modified \u2014 chose CSS-only via :global([data-theme='dark']) .acc-type-badge with oklch(from var(--acc-type-bg) max(0.62, l) c h) for bg lift, near-black text, and a 1px outline derived from the lifted bg."
         },
         {
             "id": "T-059",
             "title": "Tighten About Us heading clamp and add text-wrap:balance for 768px (V-9)",
-            "description": "In apps/web/src/components/sections/AboutUsSection.astro:336-344, change the heading font-size from `clamp(2rem, 4vw, 3rem)` to `clamp(1.5rem, 3.5vw + 0.25rem, 3rem)`. Add `text-wrap: balance` and optionally `max-width: 18ch`. Confirm heading ≤2 lines at 768px in both ES (57+ chars) and EN. Acceptance: heading ≤2 lines at 768; balanced line-breaks.",
+            "description": "In apps/web/src/components/sections/AboutUsSection.astro:336-344, change the heading font-size from `clamp(2rem, 4vw, 3rem)` to `clamp(1.5rem, 3.5vw + 0.25rem, 3rem)`. Add `text-wrap: balance` and optionally `max-width: 18ch`. Confirm heading \u22642 lines at 768px in both ES (57+ chars) and EN. Acceptance: heading \u22642 lines at 768; balanced line-breaks.",
             "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
@@ -1486,7 +1486,7 @@
         {
             "id": "T-063",
             "title": "Update NextEventsSection and DestinationsSection CTAs to use consistent GradientButton (V-10)",
-            "description": "In apps/web/src/components/sections/NextEventsSection.astro and DestinationsSection.astro, confirm or update 'Ver todos' CTAs to pass through SectionHeader's GradientButton (established in T-060). Acceptance: all 'Ver todos' CTAs across the home use the same component, variant, and placement. Note: NextEvents already passes actionLabel/actionHref to SectionHeader (inherits T-060). DestinationsSection has no SectionHeader — its CTA lives inside the React island (DestinationsIsland.client.tsx) and is intentionally island-internal; no .astro-layer change applies.",
+            "description": "In apps/web/src/components/sections/NextEventsSection.astro and DestinationsSection.astro, confirm or update 'Ver todos' CTAs to pass through SectionHeader's GradientButton (established in T-060). Acceptance: all 'Ver todos' CTAs across the home use the same component, variant, and placement. Note: NextEvents already passes actionLabel/actionHref to SectionHeader (inherits T-060). DestinationsSection has no SectionHeader \u2014 its CTA lives inside the React island (DestinationsIsland.client.tsx) and is intentionally island-internal; no .astro-layer change applies.",
             "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-060"],
@@ -1510,8 +1510,8 @@
         },
         {
             "id": "T-064",
-            "title": "Visual review of all Ver todos CTAs — confirm parity across all sections",
-            "description": "Open /es/ at 375, 768, 1280, 1920px after T-061–T-063. Confirm every section's 'Ver todos' CTA uses the same GradientButton shape, size, and placement. Take screenshots. This is a verification task only — code changes belong in earlier tasks. Acceptance: no styling divergence between sections. Verified by code inspection: SectionHeader now renders the canonical GradientButton (variant=outline-primary, size=sm, icon=true). Featured/Events/LatestArticles all flow through that single primitive. DestinationsIsland CTA stays island-internal by design.",
+            "title": "Visual review of all Ver todos CTAs \u2014 confirm parity across all sections",
+            "description": "Open /es/ at 375, 768, 1280, 1920px after T-061\u2013T-063. Confirm every section's 'Ver todos' CTA uses the same GradientButton shape, size, and placement. Take screenshots. This is a verification task only \u2014 code changes belong in earlier tasks. Acceptance: no styling divergence between sections. Verified by code inspection: SectionHeader now renders the canonical GradientButton (variant=outline-primary, size=sm, icon=true). Featured/Events/LatestArticles all flow through that single primitive. DestinationsIsland CTA stays island-internal by design.",
             "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-061", "T-062", "T-063"],
@@ -1533,7 +1533,7 @@
         {
             "id": "T-065",
             "title": "Extract calendar JSX into SearchBarCalendar.client.tsx (P-1 split)",
-            "description": "In apps/web/src/components/sections/SearchBar.client.tsx, identify the calendar/dates panel JSX block (react-day-picker usage). Move that block plus the 3 locale imports and style.css import into a new file apps/web/src/components/sections/SearchBarCalendar.client.tsx. Export a `SearchBarCalendar` component with the necessary props interface. No lazy wiring yet — just the extraction. Acceptance: SearchBar.client.tsx imports SearchBarCalendar normally; build succeeds.",
+            "description": "In apps/web/src/components/sections/SearchBar.client.tsx, identify the calendar/dates panel JSX block (react-day-picker usage). Move that block plus the 3 locale imports and style.css import into a new file apps/web/src/components/sections/SearchBarCalendar.client.tsx. Export a `SearchBarCalendar` component with the necessary props interface. No lazy wiring yet \u2014 just the extraction. Acceptance: SearchBar.client.tsx imports SearchBarCalendar normally; build succeeds.",
             "status": "completed",
             "complexity": 2.5,
             "blockedBy": [],
@@ -1580,7 +1580,7 @@
         {
             "id": "T-067",
             "title": "Move react-day-picker css and locale imports out of SearchBar critical path (P-1 css split)",
-            "description": "After T-065, confirm that the react-day-picker style.css import and locale files (es, en, pt) are inside SearchBarCalendar.client.tsx only — not re-imported in SearchBar.client.tsx. Remove any stale top-level import of these from SearchBar. Acceptance: network waterfall shows calendar CSS loads only after dates-panel opens, not on hero paint. Verified post-T-065/T-066: SearchBar.client.tsx imports nothing from react-day-picker except the erased `import type { DateRange }`. No additional code change required; behavior follows from T-066 lazy chunk.",
+            "description": "After T-065, confirm that the react-day-picker style.css import and locale files (es, en, pt) are inside SearchBarCalendar.client.tsx only \u2014 not re-imported in SearchBar.client.tsx. Remove any stale top-level import of these from SearchBar. Acceptance: network waterfall shows calendar CSS loads only after dates-panel opens, not on hero paint. Verified post-T-065/T-066: SearchBar.client.tsx imports nothing from react-day-picker except the erased `import type { DateRange }`. No additional code change required; behavior follows from T-066 lazy chunk.",
             "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-066"],
@@ -1627,7 +1627,7 @@
         {
             "id": "T-069",
             "title": "Verify hero JS bundle size reduction after SearchBarCalendar lazy split (P-1 verify)",
-            "description": "Build apps/web with `pnpm build` and inspect the chunk output. Confirm that react-day-picker and its locales appear in a separate async chunk, not in the main hero bundle. Record before/after sizes. Acceptance: hero island JS bundle reduced by ≥20KB (target 30-80KB). No code changes unless regression found. Verified: SearchBar's static import of pt-BR.*.js (79,353 B) is gone post-T-066; effective hero island JS reduced ~77 KB. See .claude/baseline/P-1-bundle-sizes.md.",
+            "description": "Build apps/web with `pnpm build` and inspect the chunk output. Confirm that react-day-picker and its locales appear in a separate async chunk, not in the main hero bundle. Record before/after sizes. Acceptance: hero island JS bundle reduced by \u226520KB (target 30-80KB). No code changes unless regression found. Verified: SearchBar's static import of pt-BR.*.js (79,353 B) is gone post-T-066; effective hero island JS reduced ~77 KB. See .claude/baseline/P-1-bundle-sizes.md.",
             "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-067"],
@@ -1900,7 +1900,7 @@
         {
             "id": "T-081",
             "title": "Place placeholder image assets for 7 CategoryTile categories (V-2 assets)",
-            "description": "Place 7 image files (pending marketing approval) at apps/web/public/assets/images/categories/{cabins,hotels,houses,music,culture,gastronomy,posts}.webp. Until marketing-approved images are received, use clearly named placeholder files (e.g. 1×1px transparent webp with correct filenames). Acceptance: all 7 tiles show real or placeholder images (not gradients); wiring from T-080 confirmed working.",
+            "description": "Place 7 image files (pending marketing approval) at apps/web/public/assets/images/categories/{cabins,hotels,houses,music,culture,gastronomy,posts}.webp. Until marketing-approved images are received, use clearly named placeholder files (e.g. 1\u00d71px transparent webp with correct filenames). Acceptance: all 7 tiles show real or placeholder images (not gradients); wiring from T-080 confirmed working.",
             "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-080"],
@@ -1922,8 +1922,8 @@
         {
             "id": "T-082",
             "title": "Add BridgeIcon to @repo/icons and replace emoji bridge marker in DestinationsMap (P-9)",
-            "description": "Add a `BridgeIcon` SVG component (24×24, design-approved silhouette) to packages/icons/src/. Export from the icons package index. In apps/web/src/components/sections/DestinationsMap.tsx:265, replace the 🌉 emoji span with `<BridgeIcon size={...} />`. Acceptance: bridge marker renders identically across Windows/macOS/Linux/iOS/Android; no emoji fallback needed.",
-            "status": "pending",
+            "description": "Add a `BridgeIcon` SVG component (24\u00d724, design-approved silhouette) to packages/icons/src/. Export from the icons package index. In apps/web/src/components/sections/DestinationsMap.tsx:265, replace the \ud83c\udf09 emoji span with `<BridgeIcon size={...} />`. Acceptance: bridge marker renders identically across Windows/macOS/Linux/iOS/Android; no emoji fallback needed.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -1942,7 +1942,8 @@
             ],
             "timestamps": {
                 "created": "2026-05-07T00:00:00.000Z"
-            }
+            },
+            "completedAt": "2026-05-07T23:46:41.920113+00:00"
         },
         {
             "id": "T-083",
@@ -1968,8 +1969,8 @@
         },
         {
             "id": "T-084",
-            "title": "Write AnimatedCounter test — IntersectionObserver mock setup and initial state (S-11a)",
-            "description": "Create apps/web/test/components/AnimatedCounter.test.tsx. Using the IntersectionObserver mock from T-004: verify the counter renders '0' before intersection fires, and does not start animating until the IntersectionObserver callback triggers. Use @testing-library/react. Acceptance: test passes; covers the mount → idle path.",
+            "title": "Write AnimatedCounter test \u2014 IntersectionObserver mock setup and initial state (S-11a)",
+            "description": "Create apps/web/test/components/AnimatedCounter.test.tsx. Using the IntersectionObserver mock from T-004: verify the counter renders '0' before intersection fires, and does not start animating until the IntersectionObserver callback triggers. Use @testing-library/react. Acceptance: test passes; covers the mount \u2192 idle path.",
             "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-004", "T-023"],
@@ -1990,8 +1991,8 @@
         },
         {
             "id": "T-085",
-            "title": "Write AnimatedCounter test — assert text transitions to formatted final value with locale (S-11b)",
-            "description": "Extend apps/web/test/components/AnimatedCounter.test.tsx: fire the IntersectionObserver callback, advance timers with vi.useFakeTimers, and assert the displayed text eventually equals `Intl.NumberFormat(toBcp47Locale('en')).format(finalValue)` for locale='en', and the es-AR equivalent for locale='es'. Acceptance: 2 locale cases pass; coverage for AnimatedCounter ≥90%.",
+            "title": "Write AnimatedCounter test \u2014 assert text transitions to formatted final value with locale (S-11b)",
+            "description": "Extend apps/web/test/components/AnimatedCounter.test.tsx: fire the IntersectionObserver callback, advance timers with vi.useFakeTimers, and assert the displayed text eventually equals `Intl.NumberFormat(toBcp47Locale('en')).format(finalValue)` for locale='en', and the es-AR equivalent for locale='es'. Acceptance: 2 locale cases pass; coverage for AnimatedCounter \u226590%.",
             "status": "pending",
             "complexity": 1.5,
             "blockedBy": ["T-084"],
@@ -2011,7 +2012,7 @@
         },
         {
             "id": "T-086",
-            "title": "Write TestimonialsCarousel test — render with 6 reviews and assert dot count (S-11c)",
+            "title": "Write TestimonialsCarousel test \u2014 render with 6 reviews and assert dot count (S-11c)",
             "description": "Create apps/web/test/components/TestimonialsCarousel.test.tsx. Import Embla mock from T-083. Render TestimonialsCarousel with 6 mock review items. Assert the navigation dot count equals the number of scroll snaps (3 with slidesToScroll:2). Acceptance: dot-count assertion passes.",
             "status": "pending",
             "complexity": 1.5,
@@ -2032,8 +2033,8 @@
         },
         {
             "id": "T-087",
-            "title": "Write TestimonialsCarousel test — next button click calls scrollNext; hover pauses autoplay (S-11d)",
-            "description": "Extend apps/web/test/components/TestimonialsCarousel.test.tsx: (1) click the next arrow button and assert the Embla mock's scrollNext was called once. (2) simulate mouseenter on the carousel container and assert the autoplay interval is cleared (spy on clearInterval or mock timer). Acceptance: 2 behavioral tests pass; total coverage for TestimonialsCarousel ≥80%.",
+            "title": "Write TestimonialsCarousel test \u2014 next button click calls scrollNext; hover pauses autoplay (S-11d)",
+            "description": "Extend apps/web/test/components/TestimonialsCarousel.test.tsx: (1) click the next arrow button and assert the Embla mock's scrollNext was called once. (2) simulate mouseenter on the carousel container and assert the autoplay interval is cleared (spy on clearInterval or mock timer). Acceptance: 2 behavioral tests pass; total coverage for TestimonialsCarousel \u226580%.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-086"],
@@ -2053,7 +2054,7 @@
         },
         {
             "id": "T-096",
-            "title": "Write SearchBar test extension — opening destinations panel (S-11e)",
+            "title": "Write SearchBar test extension \u2014 opening destinations panel (S-11e)",
             "description": "Extend apps/web/test/components/SearchBar.test.tsx (or create it). Render SearchBar in RTL. Click or press Enter on the destinations column trigger. Assert the destinations panel becomes visible (aria-expanded or visible element). Acceptance: panel-open case passes.",
             "status": "completed",
             "complexity": 1.5,
@@ -2075,9 +2076,9 @@
         },
         {
             "id": "T-097",
-            "title": "Write SearchBar test extension — submit builds correct URL (S-11f)",
+            "title": "Write SearchBar test extension \u2014 submit builds correct URL (S-11f)",
             "description": "Extend apps/web/test/components/SearchBar.test.tsx: fill in the search form fields (destination, dates, guests) and click the submit button. Assert the resulting href or navigation call matches the expected `buildSearchUrl` output. Acceptance: URL-build case passes; regression on buildSearchUrl is caught.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-096"],
             "blocks": ["T-098"],
@@ -2089,9 +2090,10 @@
                 "typecheck": "required",
                 "tests": "required"
             },
-            "files": ["apps/web/test/components/SearchBar.test.tsx"],
+            "files": ["apps/web/test/components/sections/SearchBar.test.tsx"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T20:46:00.000Z"
             }
         },
         {
@@ -2117,8 +2119,8 @@
         },
         {
             "id": "T-099",
-            "title": "Spike S-10 cast blast radius — count affected files outside home sections",
-            "description": "Read apps/web/src/lib/api/transforms.ts and check how many consumers outside apps/web/src/components/sections/ import the typed transforms. Count unique files. If blast radius is ≤5 external files, S-10 can proceed in T-100; if >5, document recommendation to split into a separate spec. No code changes.",
+            "title": "Spike S-10 cast blast radius \u2014 count affected files outside home sections",
+            "description": "Read apps/web/src/lib/api/transforms.ts and check how many consumers outside apps/web/src/components/sections/ import the typed transforms. Count unique files. If blast radius is \u22645 external files, S-10 can proceed in T-100; if >5, document recommendation to split into a separate spec. No code changes.",
             "status": "completed",
             "complexity": 1,
             "blockedBy": [],
@@ -2141,7 +2143,7 @@
         {
             "id": "T-100",
             "title": "Type transform item params as *Public types and drop Record<string, unknown> casts (S-10)",
-            "description": "DEFERRED per T-099 spike — external blast radius ~24 files exceeds the 5-file threshold defined in the spec. S-10 should land in a dedicated follow-up spec that retypes the full transform pipeline (transforms.ts + ~24 consumers) end-to-end with its own QA cycle. See .claude/baseline/S-10-spike.md.",
+            "description": "DEFERRED per T-099 spike \u2014 external blast radius ~24 files exceeds the 5-file threshold defined in the spec. S-10 should land in a dedicated follow-up spec that retypes the full transform pipeline (transforms.ts + ~24 consumers) end-to-end with its own QA cycle. See .claude/baseline/S-10-spike.md.",
             "status": "deferred",
             "complexity": 2.5,
             "blockedBy": ["T-099"],

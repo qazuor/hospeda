@@ -11,6 +11,7 @@
  */
 
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchBar, buildSearchUrl } from '../../../src/components/sections/SearchBar.client';
 
@@ -218,4 +219,70 @@ describe('<SearchBar /> destinations panel keyboard interaction', () => {
     });
 });
 
-// Submit flow tests added in T-097.
+describe('<SearchBar /> submit flow', () => {
+    let assignSpy: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+        assignSpy = vi.fn();
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: {
+                assign: assignSpy,
+                href: 'http://localhost/',
+                pathname: '/',
+                search: ''
+            }
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('builds the expected URL when submitting after selecting a destination', async () => {
+        const user = userEvent.setup();
+
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        // Open destinations panel via click and pick "Colón".
+        const destTrigger = screen.getByRole('button', { name: /destino/i });
+        await user.click(destTrigger);
+
+        const colonOption = screen.getByRole('option', { name: 'Colón' });
+        await user.click(colonOption);
+
+        // After selection the panel auto-closes.
+        expect(destTrigger).toHaveAttribute('aria-expanded', 'false');
+
+        // Click the submit button.
+        const submit = screen.getByRole('button', { name: /^buscar$/i });
+        await user.click(submit);
+
+        // The submit handler navigates via window.location.assign.
+        expect(assignSpy).toHaveBeenCalledTimes(1);
+        const navigatedTo = assignSpy.mock.calls[0]?.[0] as string;
+
+        // Compare against buildSearchUrl directly to make the contract explicit.
+        const expected = buildSearchUrl({
+            baseUrl: SEARCH_BASE,
+            destinationId: 'dest-colon',
+            types: new Set(),
+            adults: 2,
+            children: 0
+        });
+        expect(navigatedTo).toBe(expected);
+        expect(navigatedTo).toContain('destinationIds=dest-colon');
+        expect(navigatedTo).toContain('adults=2');
+        // No dates, no children, types omitted.
+        expect(navigatedTo).not.toContain('checkIn=');
+        expect(navigatedTo).not.toContain('checkOut=');
+        expect(navigatedTo).not.toContain('children=');
+        expect(navigatedTo).not.toContain('types=');
+    });
+});
