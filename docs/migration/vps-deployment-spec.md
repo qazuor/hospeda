@@ -2216,7 +2216,9 @@ psql "$HOSPEDA_DATABASE_URL" -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; CRE
    - **Build stage**: pnpm install + turbo build
    - **Runner stage**: COPY de artefactos
    - **Container start**: arranca node, valida env vars (Zod), conecta a DB y Redis, inicializa cron, escucha en :3001
-4. Si todo OK, status pasa a **Running** y health check `/api/v1/health/` responde 200 → Coolify marca "Application is healthy"
+4. Si todo OK, status pasa a **Running** y health check `/health` responde 200 → Coolify marca "Application is healthy"
+
+> **Path correcto del healthcheck es `/health`** (sin prefijo `/api/v1/`). Variantes con trailing slash o con prefijo devuelven 404 — Hono no auto-redirige. Confirmado en cutover 2026-05-07.
 
 #### Si el build falla
 
@@ -2252,7 +2254,7 @@ Coolify le asigna a cada app un dominio temporal tipo `app-id.coolify.hospeda.co
 **Test alternativo** sin cambiar DNS, usando `--resolve`:
 
 ```bash
-curl --resolve api.hospeda.com.ar:443:TU_IP_VPS https://api.hospeda.com.ar/api/v1/health/
+curl --resolve api.hospeda.com.ar:443:TU_IP_VPS https://api.hospeda.com.ar/health
 ```
 
 Esto le dice a curl: "para api.hospeda.com.ar, usá esta IP en vez de la del DNS". Si responde 200, la API está sirviendo bien desde el VPS.
@@ -2289,7 +2291,7 @@ Ahora desde tu browser, los 3 dominios resuelven al VPS. Probá flows reales (lo
 
 #### Pre-checks ANTES del cutover
 
-- [ ] `curl --resolve api.hospeda.com.ar:443:TU_IP_VPS https://api.hospeda.com.ar/api/v1/health/` responde 200
+- [ ] `curl --resolve api.hospeda.com.ar:443:TU_IP_VPS https://api.hospeda.com.ar/health` responde 200
 - [ ] DB tiene todos los datos (si migraste data desde Neon, verificá count de tablas críticas)
 - [ ] El proyecto Vercel de la API sigue activo (rollback fallback)
 - [ ] Tenés la IP del VPS y los DNS records de Cloudflare a la vista
