@@ -12,6 +12,7 @@
  * Tasks: T-064
  */
 
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import { useEffect, useRef, useState } from 'react';
 import styles from './HeroImageRotator.module.css';
 
@@ -53,8 +54,11 @@ interface HeroImageRotatorProps {
 export function HeroImageRotator({ images, interval = 5000 }: HeroImageRotatorProps) {
     const [activeIndex, setActiveIndex] = useState(0);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const reducedMotion = useReducedMotion();
 
     useEffect(() => {
+        // Respect prefers-reduced-motion: freeze on the first image.
+        if (reducedMotion) return;
         if (images.length <= 1) return;
 
         intervalRef.current = setInterval(() => {
@@ -66,7 +70,7 @@ export function HeroImageRotator({ images, interval = 5000 }: HeroImageRotatorPr
                 clearInterval(intervalRef.current);
             }
         };
-    }, [images.length, interval]);
+    }, [images.length, interval, reducedMotion]);
 
     const activeAlt = images[activeIndex]?.alt ?? '';
 
@@ -87,7 +91,7 @@ export function HeroImageRotator({ images, interval = 5000 }: HeroImageRotatorPr
                     className={styles.image}
                     style={{
                         opacity: index === activeIndex ? 1 : 0,
-                        transition: 'opacity 1.5s ease-in-out'
+                        transition: reducedMotion ? 'none' : 'opacity 1.5s ease-in-out'
                     }}
                     loading={index === 0 ? 'eager' : 'lazy'}
                     width="480"
