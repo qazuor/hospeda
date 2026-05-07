@@ -59,11 +59,28 @@ const avatarSlots = Array.from({ length: SOCIAL_PROOF_AVATAR_SLOTS }, (_, index)
 	return url ? { kind: 'image' as const, url } : { kind: 'placeholder' as const, index };
 });
 
-// Process hero images through Astro's optimization pipeline
+// Process hero images through Astro's optimization pipeline.
+// Generate 3 widths for responsive srcset (480w / 800w / 1200w) so the
+// browser can pick the right resolution per viewport. The 800w variant is
+// kept as the default `src` for backwards compatibility.
+const HERO_IMAGE_WIDTHS = [480, 800, 1200] as const;
+const HERO_IMAGE_SIZES = '(max-width: 768px) 100vw, 50vw';
+
+async function buildHeroVariants(rawImage: ImageMetadata) {
+	const variants = await Promise.all(
+		HERO_IMAGE_WIDTHS.map((width) => getImage({ src: rawImage, width, format: 'webp' })),
+	);
+	const srcset = variants
+		.map((variant, index) => `${variant.src} ${HERO_IMAGE_WIDTHS[index]}w`)
+		.join(', ');
+	const defaultIndex = HERO_IMAGE_WIDTHS.indexOf(800);
+	return { src: variants[defaultIndex].src, srcset };
+}
+
 const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
-	getImage({ src: heroPlayaRaw, width: 800, format: 'webp' }),
-	getImage({ src: heroAtardecerRaw, width: 800, format: 'webp' }),
-	getImage({ src: heroIslaRaw, width: 800, format: 'webp' }),
+	buildHeroVariants(heroPlayaRaw),
+	buildHeroVariants(heroAtardecerRaw),
+	buildHeroVariants(heroIslaRaw),
 ]);
 ---
 
@@ -102,9 +119,9 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
 					<HeroImageRotator
 						client:load
 						images={[
-							{ src: heroPlaya.src, alt: t('home.hero.imageAlt.playa', 'Playa del Litoral argentino al mediodía') },
-							{ src: heroAtardecer.src, alt: t('home.hero.imageAlt.atardecer', 'Atardecer dorado sobre el río') },
-							{ src: heroIsla.src, alt: t('home.hero.imageAlt.isla', 'Isla fluvial con vegetación nativa') },
+							{ src: heroPlaya.src, srcset: heroPlaya.srcset, sizes: HERO_IMAGE_SIZES, alt: t('home.hero.imageAlt.playa', 'Playa del Litoral argentino al mediodía') },
+							{ src: heroAtardecer.src, srcset: heroAtardecer.srcset, sizes: HERO_IMAGE_SIZES, alt: t('home.hero.imageAlt.atardecer', 'Atardecer dorado sobre el río') },
+							{ src: heroIsla.src, srcset: heroIsla.srcset, sizes: HERO_IMAGE_SIZES, alt: t('home.hero.imageAlt.isla', 'Isla fluvial con vegetación nativa') },
 						]}
 						interval={5000}
 					/>
