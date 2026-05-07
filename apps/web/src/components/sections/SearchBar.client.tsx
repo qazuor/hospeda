@@ -34,9 +34,7 @@ const SearchBarCalendar = lazy(() =>
     import('./SearchBarCalendar.client').then((mod) => ({ default: mod.SearchBarCalendar }))
 );
 
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
+// Types
 
 /** A city destination option pre-fetched at build time. */
 interface DestinationOption {
@@ -59,9 +57,7 @@ interface SearchBarProps {
 /** Which panel is currently open, or null when all closed. */
 type ActivePanel = 'destination' | 'type' | 'dates' | 'guests' | null;
 
-/* ------------------------------------------------------------------ */
-/*  Accommodation type config                                          */
-/* ------------------------------------------------------------------ */
+// Accommodation type config
 
 const ACCOMMODATION_TYPES = [
     'HOTEL',
@@ -92,9 +88,7 @@ const TYPE_ICONS: Record<AccommodationType, React.ComponentType<IconProps>> = {
     RESORT: BuildingIcon
 };
 
-/* ------------------------------------------------------------------ */
-/*  Component                                                          */
-/* ------------------------------------------------------------------ */
+// Component
 
 /**
  * Interactive search bar with four input columns: destination, accommodation
@@ -172,7 +166,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
     const { t } = createTranslations(locale);
     const barRef = useRef<HTMLDivElement>(null);
 
-    /* --- State --- */
+    // State
     const [activePanel, setActivePanel] = useState<ActivePanel>(null);
     const [openDirection, setOpenDirection] = useState<'down' | 'up'>('down');
     const [selectedDestination, setSelectedDestination] = useState<DestinationOption | null>(null);
@@ -181,7 +175,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
     const [adults, setAdults] = useState(2);
     const [children, setChildren] = useState(0);
 
-    /* --- Click outside / ESC to close --- */
+    // Click outside / ESC to close
     const handleClickOutside = useCallback((event: MouseEvent) => {
         if (barRef.current && !barRef.current.contains(event.target as Node)) {
             setActivePanel(null);
@@ -203,7 +197,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
         };
     }, [handleClickOutside, handleKeyDown]);
 
-    /* --- Panel toggle (measures viewport space to decide direction) --- */
+    // Panel toggle (measures viewport space to decide direction)
     const togglePanel = useCallback((panel: ActivePanel) => {
         setActivePanel((prev) => {
             if (prev === panel) return null;
@@ -218,13 +212,13 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
         });
     }, []);
 
-    /* --- Destination handlers --- */
+    // Destination handlers
     const handleSelectDestination = useCallback((dest: DestinationOption | null) => {
         setSelectedDestination(dest);
         setActivePanel(null);
     }, []);
 
-    /* --- Type handlers --- */
+    // Type handlers
     const handleToggleType = useCallback((type: AccommodationType) => {
         setSelectedTypes((prev) => {
             const next = new Set(prev);
@@ -245,7 +239,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
         setSelectedTypes(new Set());
     }, []);
 
-    /* --- Calendar chunk modulepreload (fires once on first hover/focus of dates column) --- */
+    // Calendar chunk modulepreload (fires once on first hover/focus of dates column)
     const calendarPreloadedRef = useRef(false);
     const preloadCalendar = useCallback(() => {
         if (calendarPreloadedRef.current) return;
@@ -255,14 +249,14 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
         void import('./SearchBarCalendar.client');
     }, []);
 
-    /* --- Date display --- */
+    // Date display
     const formatDateShort = useCallback((date: Date): string => {
         const day = date.getDate().toString().padStart(2, '0');
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
         return `${day}/${month}`;
     }, []);
 
-    /* --- Type display value --- */
+    // Type display value
     const getTypeDisplayValue = useCallback((): string | null => {
         if (selectedTypes.size === 0) return null;
         if (selectedTypes.size === ACCOMMODATION_TYPES.length) {
@@ -275,7 +269,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
         return `${firstName} & ${remaining} +`;
     }, [selectedTypes, t]);
 
-    /* --- Guests display value --- */
+    // Guests display value
     const guestsDisplay = t('home.searchBar.guestsSummary', '{adults} adultos, {children} niños', {
         adults,
         children
@@ -290,7 +284,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
             aria-label={t('home.searchBar.searchAriaLabel', 'Buscar alojamientos')}
         >
             <div className={styles.inner}>
-                {/* --- Col 1: Destination --- */}
+                {/* Col 1: Destination */}
                 <div
                     className={cn(
                         styles.col,
@@ -333,7 +327,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                     </div>
                 </div>
 
-                {/* --- Col 2: Type --- */}
+                {/* Col 2: Type */}
                 <div
                     className={cn(
                         styles.col,
@@ -376,7 +370,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                     </div>
                 </div>
 
-                {/* --- Col 3: Dates --- */}
+                {/* Col 3: Dates */}
                 <div
                     className={cn(
                         styles.col,
@@ -419,7 +413,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                     </div>
                 </div>
 
-                {/* --- Col 4: Guests --- */}
+                {/* Col 4: Guests */}
                 <div
                     className={cn(styles.col, activePanel === 'guests' && styles.colActive)}
                     onClick={() => togglePanel('guests')}
@@ -459,7 +453,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                     </div>
                 </div>
 
-                {/* --- Search button --- */}
+                {/* Search button */}
                 <button
                     type="button"
                     className={styles.button}
@@ -488,9 +482,9 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                 </button>
             </div>
 
-            {/* === Panels (rendered below the bar) === */}
+            {/* Panels (rendered below the bar) */}
 
-            {/* --- Destination panel --- */}
+            {/* Destination panel */}
             {activePanel === 'destination' && (
                 // biome-ignore lint/a11y/useFocusableInteractive: listbox children (buttons) handle focus
                 <div
@@ -542,7 +536,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                 </div>
             )}
 
-            {/* --- Type panel --- */}
+            {/* Type panel */}
             {activePanel === 'type' && (
                 // biome-ignore lint/a11y/useFocusableInteractive: listbox children (buttons) handle focus
                 <div
@@ -626,7 +620,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                 </div>
             )}
 
-            {/* --- Calendar panel --- */}
+            {/* Calendar panel */}
             {activePanel === 'dates' && (
                 <div
                     className={cn(
@@ -648,7 +642,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                 </div>
             )}
 
-            {/* --- Guests panel --- */}
+            {/* Guests panel */}
             {activePanel === 'guests' && (
                 <div
                     className={cn(
