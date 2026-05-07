@@ -50,6 +50,41 @@ export const ALLOWED_REMOTE_HOSTS = [
     'i2.wp.com'
 ] as const;
 
+/**
+ * Returns `true` if the given URL's hostname is in {@link ALLOWED_REMOTE_HOSTS}.
+ * Returns `false` for malformed URLs, empty strings, or hostnames not in
+ * the allowlist.
+ *
+ * Use this BEFORE passing any user-controllable URL to Astro's `getImage()`
+ * to prevent SSRF (Server-Side Request Forgery) during builds or SSR. Astro
+ * will fetch any remote URL it is configured to optimize, so an attacker
+ * who controls the `src` argument can coerce the build/SSR runtime to issue
+ * HTTP requests to arbitrary hosts (including internal/cloud-metadata
+ * endpoints). Always gate `getImage({ src })` calls with this helper when
+ * `src` originates from API/database content.
+ *
+ * @example
+ * ```ts
+ * const url = item.featuredImage.url; // user-controllable
+ * if (isAllowedRemoteHost(url)) {
+ *   const optimized = await getImage({ src: url, width: 300 });
+ *   return optimized.src;
+ * }
+ * return url; // pass through unchanged — no fetch issued
+ * ```
+ *
+ * @param url - URL string to validate
+ * @returns `true` if hostname is allowlisted, `false` otherwise
+ */
+export function isAllowedRemoteHost(url: string): boolean {
+    try {
+        const { hostname } = new URL(url);
+        return (ALLOWED_REMOTE_HOSTS as readonly string[]).includes(hostname);
+    } catch {
+        return false;
+    }
+}
+
 interface MediaImage {
     readonly url?: string;
     readonly caption?: string;
