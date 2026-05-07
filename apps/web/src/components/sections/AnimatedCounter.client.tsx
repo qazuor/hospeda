@@ -8,6 +8,7 @@
  * Tasks: T-072
  */
 
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveWebIcon } from '@/lib/icon-map';
 import { toBcp47Locale } from '@repo/i18n';
@@ -96,6 +97,7 @@ export function AnimatedCounter({
     const containerRef = useRef<HTMLDivElement>(null);
     const hasAnimatedRef = useRef(false);
     const rafRef = useRef<number | null>(null);
+    const reducedMotion = useReducedMotion();
 
     useEffect(() => {
         const element = containerRef.current;
@@ -108,6 +110,12 @@ export function AnimatedCounter({
 
                 hasAnimatedRef.current = true;
                 observer.disconnect();
+
+                // Respect prefers-reduced-motion: snap to final value, skip RAF.
+                if (reducedMotion) {
+                    setDisplayValue(value);
+                    return;
+                }
 
                 const startTime = performance.now();
 
@@ -140,7 +148,7 @@ export function AnimatedCounter({
                 cancelAnimationFrame(rafRef.current);
             }
         };
-    }, [value, duration]);
+    }, [value, duration, reducedMotion]);
 
     const formattedValue = formatNumber(displayValue);
     const ariaLabel = `${prefix ?? ''}${formatNumber(value)}${suffix ?? ''} ${label}`;
