@@ -5,9 +5,9 @@
     "created": "2026-05-07T00:00:00.000Z",
     "summary": {
         "totalTasks": 92,
-        "completed": 14,
+        "completed": 42,
         "inProgress": 0,
-        "pending": 78,
+        "pending": 50,
         "blocked": 0,
         "criticalPath": [
             "T-001",
@@ -382,7 +382,7 @@
             "id": "T-015",
             "title": "Extract ALLOWED_REMOTE_HOSTS constant from astro.config.mjs remotePatterns",
             "description": "In apps/web/src/lib/media.ts (create file if absent), declare an exported ALLOWED_REMOTE_HOSTS readonly string array containing the same 7 hostnames currently listed in apps/web/astro.config.mjs image.remotePatterns. Import and use this constant in astro.config.mjs. This creates the single source of truth used by T-016.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": ["T-016", "T-017", "T-018", "T-019", "T-020"],
@@ -396,14 +396,15 @@
             },
             "files": ["apps/web/src/lib/media.ts", "apps/web/astro.config.mjs"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T21:54:07.476Z"
             }
         },
         {
             "id": "T-016",
             "title": "Implement isAllowedRemoteHost(url) helper in apps/web/src/lib/media.ts",
             "description": "Add an exported function `isAllowedRemoteHost(url: string): boolean` to apps/web/src/lib/media.ts that tries URL parsing and checks whether the hostname is in ALLOWED_REMOTE_HOSTS (from T-015). Returns false on parse error. JSDoc with usage note. Acceptance: unit test in T-021 passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-015"],
             "blocks": ["T-017", "T-018", "T-019", "T-020", "T-021"],
@@ -417,14 +418,15 @@
             },
             "files": ["apps/web/src/lib/media.ts"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T21:54:07.476Z"
             }
         },
         {
             "id": "T-017",
             "title": "Wire isAllowedRemoteHost into DestinationsSection.astro getImage calls",
             "description": "In apps/web/src/components/sections/DestinationsSection.astro:51-64, wrap each `getImage({ src: img })` call: if `!isAllowedRemoteHost(img)` skip getImage and fall back to original URL. Import the helper from apps/web/src/lib/media.ts. Acceptance: build succeeds; non-allowlisted URLs are not passed to getImage.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-016"],
             "blocks": [],
@@ -438,14 +440,15 @@
             },
             "files": ["apps/web/src/components/sections/DestinationsSection.astro"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T21:54:07.476Z"
             }
         },
         {
             "id": "T-018",
             "title": "Wire isAllowedRemoteHost into LatestArticlesSection.astro getImage calls",
             "description": "In apps/web/src/components/sections/LatestArticlesSection.astro:35-48, wrap each `getImage({ src: img })` call: if `!isAllowedRemoteHost(img)` skip getImage and fall back to original URL. Import helper from apps/web/src/lib/media.ts. Acceptance: build succeeds; non-allowlisted URLs bypass getImage.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-016"],
             "blocks": [],
@@ -459,14 +462,15 @@
             },
             "files": ["apps/web/src/components/sections/LatestArticlesSection.astro"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T21:54:07.476Z"
             }
         },
         {
             "id": "T-019",
             "title": "Wire isAllowedRemoteHost into TestimonialsSection.astro getImage calls",
             "description": "In apps/web/src/components/sections/TestimonialsSection.astro:42-55, wrap each `getImage({ src: img })` call: if `!isAllowedRemoteHost(img)` skip getImage and fall back to original URL. Import helper from apps/web/src/lib/media.ts. Acceptance: build succeeds.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-016"],
             "blocks": [],
@@ -480,14 +484,15 @@
             },
             "files": ["apps/web/src/components/sections/TestimonialsSection.astro"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T21:54:07.476Z"
             }
         },
         {
             "id": "T-020",
             "title": "Write unit tests for isAllowedRemoteHost in apps/web/test/lib/media.test.ts",
             "description": "Create apps/web/test/lib/media.test.ts. Add tests: (1) allowed hostname returns true, (2) non-allowed hostname returns false, (3) malformed URL returns false, (4) edge case empty string returns false. Use Vitest. Acceptance: all 4 cases pass; coverage for media.ts ≥90%.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-016"],
             "blocks": [],
@@ -501,14 +506,15 @@
             },
             "files": ["apps/web/test/lib/media.test.ts", "apps/web/src/lib/media.ts"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T21:54:07.476Z"
             }
         },
         {
             "id": "T-021",
             "title": "Tighten averageRating guard in index.astro (S-2)",
             "description": "In apps/web/src/pages/[lang]/index.astro:70, update the social-proof guard from `reviewsCount > 0` to `reviewsCount > 0 && Number.isFinite(averageRating) && averageRating > 0`. Acceptance: when averageRating === 0 and reviewsCount > 0 the hero social-proof block is hidden.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-022"],
@@ -520,16 +526,17 @@
                 "typecheck": "required",
                 "tests": "n/a"
             },
-            "files": ["apps/web/src/pages/[lang]/index.astro"],
+            "files": ["apps/web/src/pages/[lang]/index.astro", "apps/web/src/lib/home-guards.ts"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T22:05:00.000Z"
             }
         },
         {
             "id": "T-022",
             "title": "Write snapshot or unit test for averageRating guard logic",
             "description": "In apps/web/test/ add a test (or inline snapshot) that verifies the guard condition: given averageRating=0 and reviewsCount=5, the block should not render. Given averageRating=4.2 and reviewsCount=5 it should render. Use Vitest + @testing-library or a pure function extraction if practical. Acceptance: test passes and makes the guard non-regressible.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-021"],
             "blocks": [],
@@ -543,14 +550,15 @@
             },
             "files": ["apps/web/test/pages/home-rating-guard.test.ts"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T22:10:00.000Z"
             }
         },
         {
             "id": "T-023",
             "title": "Add locale prop to AnimatedCounter and replace hardcoded 'es-AR'",
             "description": "In apps/web/src/components/sections/AnimatedCounter.client.tsx:25, add a `locale: SupportedLocale` prop to the component. Replace `n.toLocaleString('es-AR')` with `new Intl.NumberFormat(toBcp47Locale(locale)).format(n)`. Import toBcp47Locale from @repo/i18n. Acceptance: TypeScript compiles; EN renders comma-separated thousands.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-024"],
@@ -564,14 +572,15 @@
             },
             "files": ["apps/web/src/components/sections/AnimatedCounter.client.tsx"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
             }
         },
         {
             "id": "T-024",
             "title": "Pass locale prop to AnimatedCounter in StatsSection.astro",
             "description": "In apps/web/src/components/sections/StatsSection.astro:17,71-78, update every `<AnimatedCounter>` call site to pass `locale={locale}` where `locale` comes from Astro.locals.locale or the section's props. Acceptance: typecheck clean; numbers in /en/ render with comma separator.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-023"],
             "blocks": [],
@@ -585,14 +594,15 @@
             },
             "files": ["apps/web/src/components/sections/StatsSection.astro"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
             }
         },
         {
             "id": "T-025",
             "title": "Replace TestimonialsCarousel Embla private internalEngine() call (S-4)",
             "description": "In apps/web/src/components/sections/TestimonialsCarousel.client.tsx:119, replace the `internalEngine().slideRegistry` usage in the `isActiveSlide` helper with public API: use `mainApi.selectedScrollSnap()` + arithmetic based on `slidesToScroll` to identify the active group. Verify with loop:true and cloned-slide handling. Acceptance: active dot opacity still correct; no internalEngine reference.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2.5,
             "blockedBy": [],
             "blocks": [],
@@ -606,14 +616,15 @@
             },
             "files": ["apps/web/src/components/sections/TestimonialsCarousel.client.tsx"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
             }
         },
         {
             "id": "T-026",
             "title": "Drop dead canScrollPrev/Next state in TestimonialsCarousel (S-5)",
             "description": "In apps/web/src/components/sections/TestimonialsCarousel.client.tsx:76-78,85,97-98,161,215, remove the two `useState` declarations for canScrollPrev/canScrollNext, remove the `setCan*` calls inside onSelect, and remove the `disabled` props on the IconButtons (loop:true makes them always enabled). Acceptance: carousel arrows behave identically; no state churn in React Profiler.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": [],
@@ -627,14 +638,15 @@
             },
             "files": ["apps/web/src/components/sections/TestimonialsCarousel.client.tsx"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
             }
         },
         {
             "id": "T-027",
             "title": "Wrap StatsSection resize listener inside astro:page-load and clean up on astro:before-swap (S-6)",
             "description": "In apps/web/src/components/sections/StatsSection.astro:99-198, move the `window.addEventListener('resize', initWave)` registration inside an `astro:page-load` event listener. Remove the listener in `astro:before-swap`. Follow the pattern in BaseLayout.astro:282. Acceptance: repeated SPA navigation does not accumulate resize listeners (verify in DevTools Event Listeners panel).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-028"],
@@ -648,14 +660,15 @@
             },
             "files": ["apps/web/src/components/sections/StatsSection.astro"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
             }
         },
         {
             "id": "T-028",
             "title": "Debounce initWave resize handler in StatsSection (~150ms)",
             "description": "In apps/web/src/components/sections/StatsSection.astro inline script, wrap the `initWave` call inside the resize listener with a debounce of ~150ms (implement a minimal debounce or import from @repo/utils if available). Acceptance: resizing the window does not trigger per-tick canvas redraws; one redraw fires ~150ms after the last resize event.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-027"],
             "blocks": [],
@@ -669,14 +682,15 @@
             },
             "files": ["apps/web/src/components/sections/StatsSection.astro"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
             }
         },
         {
             "id": "T-029",
             "title": "Replace Astro.params.lang cast with Astro.locals.locale in index.astro (S-7)",
             "description": "In apps/web/src/pages/[lang]/index.astro:32-33, replace `const lang = Astro.params.lang as SupportedLocale` with `const locale = Astro.locals.locale as SupportedLocale`. Update all downstream usages of `lang` to `locale` in the file. Validate that Astro.locals.locale is populated during prerender (check dev and build). Acceptance: typecheck clean; page renders correctly in all 3 locales.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": [],
@@ -690,14 +704,15 @@
             },
             "files": ["apps/web/src/pages/[lang]/index.astro"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T22:20:00.000Z"
             }
         },
         {
             "id": "T-030",
             "title": "Renumber section comments in index.astro to match DOM render order (S-8)",
             "description": "In apps/web/src/pages/[lang]/index.astro:137-172, renumber the inline section comments to 1..11 matching DOM render order: Hero(1), Featured(2), CategoryTiles(3), Destinations(4), NextEvents(5), AboutUs(6), LatestArticles(7), CtaOwners(8), Testimonials(9), Stats(10), Partners(11). Acceptance: comments match render order exactly.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -711,14 +726,15 @@
             },
             "files": ["apps/web/src/pages/[lang]/index.astro"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T22:25:00.000Z"
             }
         },
         {
             "id": "T-031",
             "title": "Check EN and PT for home.title / home.description keys (S-9 prerequisite)",
             "description": "Read packages/i18n/src/locales/en/home.json and packages/i18n/src/locales/pt/home.json. Verify whether home.title and home.description keys exist. Also read the ES value and confirm whether 'Alojamientos en Entre Ríos' is the correct product title vs 'Inicio'. Document findings. No changes yet — gates T-032.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-032"],
@@ -733,17 +749,19 @@
             "files": [
                 "packages/i18n/src/locales/es/home.json",
                 "packages/i18n/src/locales/en/home.json",
-                "packages/i18n/src/locales/pt/home.json"
+                "packages/i18n/src/locales/pt/home.json",
+                ".claude/baseline/S-9-meta-keys.md"
             ],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T22:30:00.000Z"
             }
         },
         {
             "id": "T-032",
             "title": "Replace hardcoded title/description meta with t() calls in index.astro (S-9)",
             "description": "In apps/web/src/pages/[lang]/index.astro:133-134, replace `title='Inicio'` and the hardcoded Spanish description with `t('home.title')` and `t('home.description')`. If EN/PT keys were missing per T-031, add them first. Reconcile the ES title value ('Alojamientos en Entre Ríos' vs 'Inicio') per product decision. Acceptance: /en/ and /pt/ show localized tab titles.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-031"],
             "blocks": [],
@@ -761,14 +779,15 @@
                 "packages/i18n/src/locales/pt/home.json"
             ],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T22:35:00.000Z"
             }
         },
         {
             "id": "T-033",
             "title": "Add categoryTiles i18n block (sectionTitle, sectionTagline) to es/en/pt home.json (I-1)",
             "description": "Add the `categoryTiles` block to packages/i18n/src/locales/{es,en,pt}/home.json containing at minimum: `sectionTitle` and `sectionTagline`. ES values: match existing fallback strings in index.astro. EN/PT: translated equivalents. Acceptance: /en/ and /pt/ show translated eyebrow copy in the CategoryTiles section.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": ["T-034"],
@@ -786,14 +805,15 @@
                 "packages/i18n/src/locales/pt/home.json"
             ],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T22:07:28.771Z"
             }
         },
         {
             "id": "T-034",
             "title": "Add categoryTiles.tiles.* keys for all 7 tile types to es/en/pt home.json (I-1)",
             "description": "Extend the categoryTiles block in packages/i18n/src/locales/{es,en,pt}/home.json with tiles.{cabins,hotels,houses,music,culture,gastronomy,posts}.{title,description} for each of the 7 tile categories. Translate all 3 locales. Acceptance: all 7 tiles show localized title and description on /en/ and /pt/.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-033"],
             "blocks": [],
@@ -811,14 +831,15 @@
                 "packages/i18n/src/locales/pt/home.json"
             ],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T22:08:16.012Z"
             }
         },
         {
             "id": "T-035",
             "title": "Fix typos próximos and artículos in ES home.json empty state strings (I-3)",
             "description": "In packages/i18n/src/locales/es/home.json:60 and :69, replace 'proximos' with 'próximos' and 'articulos' with 'artículos'. Verify EN and PT are already correct (no changes needed there per spec). Acceptance: ES strings show correct accented characters in /es/ empty-state renders.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -832,14 +853,15 @@
             },
             "files": ["packages/i18n/src/locales/es/home.json"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T22:08:36.622Z"
             }
         },
         {
             "id": "T-036",
             "title": "Add per-image alt keys (playa, atardecer, isla) to es/en/pt home.json (I-4)",
             "description": "In packages/i18n/src/locales/{es,en,pt}/home.json, add home.hero.imageAlt.playa, home.hero.imageAlt.atardecer, and home.hero.imageAlt.isla with locale-appropriate descriptive alt text for each image. Acceptance: 3 distinct alt keys exist in all 3 locale files.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": ["T-037"],
@@ -857,14 +879,15 @@
                 "packages/i18n/src/locales/pt/home.json"
             ],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T22:09:22.141Z"
             }
         },
         {
             "id": "T-037",
             "title": "Update HeroSection.astro to use per-image alt keys (I-4)",
             "description": "In apps/web/src/components/sections/HeroSection.astro:104-108, replace the single `t('home.hero.imageAlt', '<fallback>')` used for all 3 images with `t('home.hero.imageAlt.playa')`, `t('home.hero.imageAlt.atardecer')`, and `t('home.hero.imageAlt.isla')` on the respective images. Acceptance: each rotated image has a distinct, accurate alt attribute in the DOM.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-036"],
             "blocks": [],
@@ -878,14 +901,15 @@
             },
             "files": ["apps/web/src/components/sections/HeroSection.astro"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T22:10:34.727Z"
             }
         },
         {
             "id": "T-038",
             "title": "Add home.searchBar.noDestinationsText key and replace 'Cargando...' empty-list render (I-5)",
             "description": "Add `home.searchBar.noDestinationsText` key to packages/i18n/src/locales/{es,en,pt}/home.json with values 'No hay destinos disponibles' / 'No destinations available' / 'Nenhum destino disponível'. In apps/web/src/components/sections/SearchBar.client.tsx:502-509, replace the empty-list render using `loadingText` with `t('home.searchBar.noDestinationsText')`. Acceptance: empty destinations list shows locale-appropriate message, not 'Cargando...'.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": [],
@@ -904,14 +928,15 @@
                 "apps/web/src/components/sections/SearchBar.client.tsx"
             ],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T22:12:11.727Z"
             }
         },
         {
             "id": "T-039",
             "title": "Replace var(--border) with semantic token in StatsSection.astro (I-6)",
             "description": "In apps/web/src/components/sections/StatsSection.astro:334, replace the `var(--border)` usage with `oklch(from var(--core-muted-foreground) l c h / 0.3)` to keep the muted dashed-wave aesthetic across themes. Verify the dashed wave still renders visually in both light and dark. Acceptance: no `var(--border)` reference in the file; visual parity.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": [],
@@ -925,14 +950,15 @@
             },
             "files": ["apps/web/src/components/sections/StatsSection.astro"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
             }
         },
         {
             "id": "T-040",
             "title": "Replace var(--radius-organic) deprecated token in CategoryTiles.astro (I-7)",
             "description": "In apps/web/src/components/CategoryTiles.astro:186, replace `var(--radius-organic)` with `border-radius: var(--radius-card) var(--radius-card) 0 0` for uniform card-radius on the top corners and flat bottom. Confirm visually that tiles look correct at 375/768/1280px. Acceptance: no `var(--radius-organic)` reference; tile radii match style-guide pattern.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -946,14 +972,15 @@
             },
             "files": ["apps/web/src/components/CategoryTiles.astro"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
             }
         },
         {
             "id": "T-041",
             "title": "Create useReducedMotion hook in apps/web/src/hooks/use-reduced-motion.ts (I-8 prerequisite)",
             "description": "Before adding the hook, search apps/web/src/{hooks,lib} and packages/ for any existing useReducedMotion or prefers-reduced-motion implementation. If found, import from it. If not, create apps/web/src/hooks/use-reduced-motion.ts exporting a `useReducedMotion(): boolean` hook that reads window.matchMedia('(prefers-reduced-motion: reduce)').matches and subscribes to changes. Acceptance: TypeScript compiles; hook returns correct boolean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": ["T-042", "T-043"],
@@ -967,14 +994,15 @@
             },
             "files": ["apps/web/src/hooks/use-reduced-motion.ts"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
             }
         },
         {
             "id": "T-042",
             "title": "Apply prefers-reduced-motion to HeroImageRotator — freeze on first image (I-8)",
             "description": "In apps/web/src/components/sections/HeroImageRotator.client.tsx:57-69, import useReducedMotion from T-041. If reducedMotion is true, skip the 5-second setInterval and freeze on the first image. Acceptance: with OS reduced-motion enabled, hero image does not auto-rotate.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-041"],
             "blocks": [],
@@ -988,14 +1016,15 @@
             },
             "files": ["apps/web/src/components/sections/HeroImageRotator.client.tsx"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
             }
         },
         {
             "id": "T-043",
             "title": "Apply prefers-reduced-motion to AnimatedCounter — snap to final value (I-8)",
             "description": "In apps/web/src/components/sections/AnimatedCounter.client.tsx:98-141, import useReducedMotion from T-041. If reducedMotion is true, set the counter to the final value immediately on mount instead of running the RAF count-up animation. Acceptance: with OS reduced-motion enabled, counter shows final value instantly.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-041"],
             "blocks": [],
@@ -1009,14 +1038,15 @@
             },
             "files": ["apps/web/src/components/sections/AnimatedCounter.client.tsx"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
             }
         },
         {
             "id": "T-044",
             "title": "Add .col:focus-visible override to SearchBar.module.css (I-10)",
             "description": "In apps/web/src/components/sections/SearchBar.module.css, add a `.col:focus-visible { outline: 3px solid var(--brand-accent); outline-offset: 3px; }` rule (or equivalent scoped selector matching lines 106,200,251,282,463). This ensures the focus ring is visually distinct and meets WCAG 2.4.13 threshold. Acceptance: tabbing through search columns shows a clear 3px ring.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -1030,7 +1060,8 @@
             },
             "files": ["apps/web/src/components/sections/SearchBar.module.css"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
             }
         },
         {
@@ -1209,7 +1240,7 @@
             "id": "T-053",
             "title": "Create compact mobile variant of CookieConsentBanner (V-5 layout)",
             "description": "In apps/web/src/components/legal/CookieConsentBanner.module.css, add a `@media (max-width: 768px)` block: set .inner to flex-direction: row at <768px. Use `-webkit-line-clamp: 2` on .description. Reduce button padding to 6px 12px and height to 32px at <640px. Target total banner height ≤96px. Acceptance: banner ≤96px tall at 375/414; search bar visible above it on first paint.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-054"],
