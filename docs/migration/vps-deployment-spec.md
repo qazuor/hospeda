@@ -2208,6 +2208,42 @@ Tenés que ver: `pgcrypto`, `plpgsql`, `unaccent`, `uuid-ossp`. Si falta alguna,
 psql "$HOSPEDA_DATABASE_URL" -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; CREATE EXTENSION IF NOT EXISTS "pgcrypto"; CREATE EXTENSION IF NOT EXISTS "unaccent";'
 ```
 
+#### 12.1.d — Poblar catálogos esenciales (`seed --required`)
+
+> **Por qué**: la app necesita datos de catálogo (permissions por rol, billing plans, addons, entitlements, limits, amenities, attractions, exchange rate config, system tags, system user) para funcionar. Sin estos datos, admin no puede checar permisos, billing no puede asignar planes, los formularios de alojamientos no muestran amenities, etc. Algunos endpoints van a 500 silenciosamente.
+>
+> **Idempotencia**: los seeds del bucket `required` están diseñados para ser **idempotentes** (cada uno chequea existencia antes de insertar). Es seguro correr este paso múltiples veces — si los datos ya existen, los skipea. Esto significa que también podés correrlo más tarde si te olvidaste antes del deploy.
+>
+> **NO uses `--example` en producción**: el bucket `example` contiene datos de demo (alojamientos fake, usuarios de prueba, posts dummy). En **producción real** NUNCA correrlo. En **staging / preview** SÍ se usa para tener data de demo para testing y demos a stakeholders — ahí el comando es `seed --required --example --continueOnError` (incluso `--reset --required --example` si querés DB limpia cada vez en staging efímero).
+>
+> **NO uses `--reset`** en producción: limpia tablas antes de seedear. Solo para dev / staging efímero.
+
+```bash
+# PRODUCCIÓN: solo catálogos required (idempotente, safe re-run).
+# Desde tu laptop, con HOSPEDA_DATABASE_URL apuntando al VPS:
+pnpm --filter @repo/seed seed --required --continueOnError
+
+# STAGING / PREVIEW: catálogos required + datos de demo example.
+# pnpm --filter @repo/seed seed --required --example --continueOnError
+```
+
+`--continueOnError` evita abortar el batch si un seed individual falla (típico en re-runs idempotentes). Mirá la salida: cada seed reporta `inserted N` o `skipped N existing`.
+
+Verificá count de tablas críticas:
+
+```bash
+psql "$HOSPEDA_DATABASE_URL" -c "
+SELECT 'role_permissions' tabla, count(*) rows FROM role_permissions
+UNION ALL SELECT 'billing_plans', count(*) FROM billing_plans
+UNION ALL SELECT 'billing_addons', count(*) FROM billing_addons
+UNION ALL SELECT 'amenities', count(*) FROM amenities
+UNION ALL SELECT 'attractions', count(*) FROM attractions
+UNION ALL SELECT 'system_tags', count(*) FROM system_tags
+ORDER BY tabla;"
+```
+
+Esperado: `role_permissions` tiene cientos de rows (permisos por rol), `billing_plans` 9, `amenities` ~30, etc. Si alguna está en 0, el seed correspondiente falló — re-correr con `--continueOnError` falso para ver el stack trace.
+
 ### Paso 12.2 — Trigger build de la API
 
 1. En Coolify → `hospeda-api-prod` → click **Deploy**
@@ -2387,6 +2423,7 @@ Si MP empieza a fallar tras el cutover y no hay tiempo de debuggear, **revertí 
 ### Verificación de fase 12
 
 - [ ] DB schema aplicado (drizzle push + 21 manual SQL + extensiones)
+- [ ] DB schema aplicado + seeds `--required` poblados (role_permissions, billing_plans, amenities, etc.) — ver Paso 12.1.d
 - [ ] 3 apps de prod (api, web, admin) deployadas y respondiendo 200 desde dominios reales
 - [ ] DNS de `api` cutover hecho, cert SSL válido
 - [ ] Login E2E funciona (web → SSO con admin)
