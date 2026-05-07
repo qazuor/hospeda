@@ -5,9 +5,9 @@
     "created": "2026-05-07T00:00:00.000Z",
     "summary": {
         "totalTasks": 92,
-        "completed": 7,
+        "completed": 14,
         "inProgress": 0,
-        "pending": 85,
+        "pending": 78,
         "blocked": 0,
         "criticalPath": [
             "T-001",
@@ -149,7 +149,7 @@
             "id": "T-005",
             "title": "Locate FeedbackFAB portal mismatch and capture console error in PT mobile",
             "description": "Read packages/feedback/src/components/FeedbackFAB.tsx:317-318 and FeedbackModal.tsx:88-92. Open the page at /pt/ in a 375px viewport and capture the exact React hydration warning(s) in the console. Document the two mismatch sites (portal structure + isMobile initial state) with inline code comments. No fix yet.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": ["T-006", "T-007", "T-008"],
@@ -166,14 +166,15 @@
                 "packages/feedback/src/components/FeedbackModal.tsx"
             ],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T21:25:00.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Add mounted boolean gate to FeedbackFAB portal render",
             "description": "In packages/feedback/src/components/FeedbackFAB.tsx, introduce a `const [mounted, setMounted] = useState(false)` + `useEffect(() => setMounted(true), [])`. Replace the `typeof document !== 'undefined' ? createPortal(...) : modalContent` ternary with: if not mounted return null from the portal branch. The server now always renders null for the portal; the client renders after mount. Acceptance: no `Prop did not match` warning for the portal.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-009"],
@@ -187,14 +188,15 @@
             },
             "files": ["packages/feedback/src/components/FeedbackFAB.tsx"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T21:30:00.000Z"
             }
         },
         {
             "id": "T-007",
             "title": "Fix isMobile initial state in FeedbackModal with mounted flag",
             "description": "In packages/feedback/src/components/FeedbackModal.tsx:88-92, change the isMobile useState initializer from `() => typeof window === 'undefined' ? false : window.innerWidth < MOBILE_BREAKPOINT` to always initialize as `false`. Add useEffect that sets the real value after mount. This eliminates the server=false / client=true mismatch. Acceptance: drag handle is absent on server HTML and appears on client without hydration warning.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-009"],
@@ -208,14 +210,15 @@
             },
             "files": ["packages/feedback/src/components/FeedbackModal.tsx"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T21:32:00.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "Investigate PT mobile blank — identify missing i18n key in feedback form",
             "description": "After documenting the console errors in T-005, open /pt/ in 375px viewport post-B-1 structural fix (T-006+T-007). If a blank page or error persists, capture the specific runtime error. Check packages/feedback/src/locales/pt/ for any missing translation key referenced in the feedback form. Document findings; if a key is missing, add it.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-005"],
             "blocks": ["T-009"],
@@ -229,14 +232,15 @@
             },
             "files": ["packages/feedback/src/locales/pt/"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T21:42:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Verify hydration warnings gone across 3 locales × 2 viewports",
             "description": "Open /es/, /en/, /pt/ at 375px and 1280px. Confirm zero React hydration warnings in the browser console. Confirm PT mobile renders the full home page below the navbar. Document result as a comment in FeedbackFAB.tsx. This is a verification task, no new code.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-006", "T-007", "T-008"],
             "blocks": [],
@@ -250,14 +254,15 @@
             },
             "files": ["packages/feedback/src/components/FeedbackFAB.tsx"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T21:43:00.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "Add @media (max-width: 768px) bottom override to FeedbackFAB to clear search submit",
             "description": "In packages/feedback/src/components/FeedbackFAB.css:32-36, add a `@media (max-width: 768px)` block that increases the FAB `bottom` value (e.g. to 5.5rem) so it clears the full-width search submit button and the cookie banner height at 375/414px. Acceptance: search submit fully visible and tappable at 375px and 414px.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": ["T-011"],
@@ -271,14 +276,15 @@
             },
             "files": ["packages/feedback/src/components/FeedbackFAB.css"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T21:48:00.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "Verify CTA Owners button reachable at 375px and 414px after FAB repositioning",
             "description": "Open /es/ at 375px. Scroll to the CtaOwners section. Confirm the 'Publicá tu alojamiento' button is fully visible and has no FAB overlay. Also confirm the FAB itself is not pushed off-screen. Verify at 414px. No code change unless FAB is still occluding.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-010"],
             "blocks": [],
@@ -292,7 +298,8 @@
             },
             "files": ["packages/feedback/src/components/FeedbackFAB.css"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T21:50:00.000Z"
             }
         },
         {
