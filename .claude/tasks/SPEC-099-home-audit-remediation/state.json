@@ -5,9 +5,9 @@
     "created": "2026-05-07T00:00:00.000Z",
     "summary": {
         "totalTasks": 92,
-        "completed": 87,
+        "completed": 88,
         "inProgress": 0,
-        "pending": 4,
+        "pending": 3,
         "blocked": 0,
         "criticalPath": [
             "T-001",
@@ -1993,7 +1993,7 @@
             "id": "T-085",
             "title": "Write AnimatedCounter test \u2014 assert text transitions to formatted final value with locale (S-11b)",
             "description": "Extend apps/web/test/components/AnimatedCounter.test.tsx: fire the IntersectionObserver callback, advance timers with vi.useFakeTimers, and assert the displayed text eventually equals `Intl.NumberFormat(toBcp47Locale('en')).format(finalValue)` for locale='en', and the es-AR equivalent for locale='es'. Acceptance: 2 locale cases pass; coverage for AnimatedCounter \u226590%.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-084"],
             "blocks": [],
@@ -2007,7 +2007,8 @@
             },
             "files": ["apps/web/test/components/AnimatedCounter.test.tsx"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T23:10:00.000Z"
             }
         },
         {
