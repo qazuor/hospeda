@@ -33,6 +33,7 @@
         "description": "Os melhores lugares para se hospedar na costa do rio Uruguay, selecionados pelos nossos usuarios. ",
         "accentSubtitle": "O melhor do Litoral",
         "emptyState": "Nenhuma hospedagem disponivel no momento",
+        "emptyAction": "Ver todas as acomodações",
         "noReviews": "Sem avaliacoes",
         "seeAllAction": "Ver todas as hospedagens →"
     },
@@ -61,6 +62,7 @@
         "description": "Nao perca os eventos mais importantes da regiao.",
         "accentSubtitle": "Nao perca",
         "emptyState": "Nenhum evento proximo no momento",
+        "emptyAction": "Ver todos os eventos",
         "viewAll": "Ver todos os eventos →"
     },
     "latestPosts": {
@@ -68,6 +70,7 @@
         "description": "Saiba mais sobre Entre Rios e seus arredores.",
         "accentSubtitle": "Nosso blog",
         "emptyState": "Nenhum artigo disponivel no momento",
+        "emptyAction": "Ver todos os artigos",
         "tagline": "Informe-se, inspire-se, descubra",
         "subtitle": "Histórias, guias e segredos do Litoral para inspirar a sua próxima aventura.",
         "viewAll": "Ver todos os artigos →"

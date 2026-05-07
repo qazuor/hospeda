@@ -33,6 +33,7 @@
         "description": "The best places to stay along the Uruguay River, selected by our users. ",
         "accentSubtitle": "The best of the Litoral",
         "emptyState": "No accommodations available at this time",
+        "emptyAction": "View all accommodations",
         "noReviews": "No reviews",
         "seeAllAction": "View all accommodations →"
     },
@@ -61,6 +62,7 @@
         "description": "Don't miss the most important events in the region.",
         "accentSubtitle": "Don't miss out",
         "emptyState": "No upcoming events at this time",
+        "emptyAction": "View all events",
         "viewAll": "View all events →"
     },
     "latestPosts": {
@@ -68,6 +70,7 @@
         "description": "Learn more about Entre Rios and its surroundings.",
         "accentSubtitle": "Our blog",
         "emptyState": "No articles available at this time",
+        "emptyAction": "View all articles",
         "tagline": "Stay informed, get inspired, discover",
         "subtitle": "Stories, guides and secrets of the Litoral region to inspire your next adventure.",
         "viewAll": "View all articles →"
