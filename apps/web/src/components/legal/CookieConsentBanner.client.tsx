@@ -182,7 +182,7 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
                             </button>
                             <button
                                 type="button"
-                                className={styles.btnGhost}
+                                className={`${styles.btnGhost} ${styles.rejectMain}`}
                                 onClick={handleRejectAll}
                             >
                                 {t('cookieConsent.buttons.rejectAll')}

@@ -5,9 +5,9 @@
     "created": "2026-05-07T00:00:00.000Z",
     "summary": {
         "totalTasks": 92,
-        "completed": 42,
+        "completed": 44,
         "inProgress": 0,
-        "pending": 50,
+        "pending": 48,
         "blocked": 0,
         "criticalPath": [
             "T-001",
@@ -1068,7 +1068,7 @@
             "id": "T-045",
             "title": "Add home.emptyState i18n keys for FeaturedAccommodations, NextEvents, LatestArticles (V-4 prerequisite)",
             "description": "Add home.featuredAccommodations.emptyAction, home.nextEvents.emptyAction, and home.latestArticles.emptyAction keys to packages/i18n/src/locales/{es,en,pt}/home.json. Include a CTA label pointing to the respective listing page. Also add any shared home.emptyState.cta key if reusable. Acceptance: keys exist in all 3 locale files.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": ["T-047", "T-048", "T-049"],
@@ -1086,7 +1086,8 @@
                 "packages/i18n/src/locales/pt/home.json"
             ],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
             }
         },
         {
@@ -1261,7 +1262,7 @@
             "id": "T-054",
             "title": "Hide cookie banner title and trim button set to Aceptar+Personalizar at <640px (V-5 content)",
             "description": "In the CookieConsentBanner component, at <640px: hide the .title element, and show only 'Aceptar' + 'Personalizar' buttons by default (move 'Rechazar' behind the customize panel). Coordinate CSS change in CookieConsentBanner.module.css with JSX/Astro markup. Acceptance: legal content still accessible via Personalizar; banner height remains ≤96px.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-053"],
             "blocks": [],
@@ -1282,7 +1283,7 @@
             "id": "T-055",
             "title": "Add padding-inline-end to footer bottom to clear ScrollToTop button (V-6)",
             "description": "In apps/web/src/layouts/Footer.astro:705-715, add a `@media (max-width: 768px) { .footer__bottom-inner { padding-inline-end: 3.5rem; } }` rule so the copyright text is not hidden behind the ScrollToTop fixed button (bottom:4rem; right:1rem). Also check whether the ScrollToTop position at apps/web/src/components/shared/navigation/ScrollToTop.astro:73-76 should be adjusted to coordinate with V-5 banner offset. Acceptance: copyright fully readable at 375/414.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": [],
@@ -1299,8 +1300,10 @@
                 "apps/web/src/components/shared/navigation/ScrollToTop.astro"
             ],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
-            }
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
+            },
+            "commit": "b4b5f39f4"
         },
         {
             "id": "T-056",
