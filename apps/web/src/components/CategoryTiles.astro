@@ -9,6 +9,9 @@
  * Rendering: Static (no client JavaScript).
  */
 
+import type { IconProps } from '@repo/icons';
+import type { ComponentType } from 'react';
+
 interface TileItem {
     /** Tile heading. */
     readonly title: string;
@@ -18,10 +21,9 @@ interface TileItem {
     readonly href: string;
     /**
      * Optional icon component reference.
-     * Must be a valid Astro/React component accepting `size` and `weight` props.
+     * Must be a valid React component accepting `IconProps` (size, weight, color, etc.).
      */
-    // biome-ignore lint/suspicious/noExplicitAny: icon component type is intentionally flexible
-    readonly icon?: any;
+    readonly icon?: ComponentType<IconProps>;
     /** Optional image URL shown as a background or tile thumbnail. */
     readonly image?: string;
 }
