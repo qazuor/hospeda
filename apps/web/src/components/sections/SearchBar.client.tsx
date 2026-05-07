@@ -245,6 +245,16 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
         setSelectedTypes(new Set());
     }, []);
 
+    /* --- Calendar chunk modulepreload (fires once on first hover/focus of dates column) --- */
+    const calendarPreloadedRef = useRef(false);
+    const preloadCalendar = useCallback(() => {
+        if (calendarPreloadedRef.current) return;
+        calendarPreloadedRef.current = true;
+        // Fire-and-forget speculative import. The browser caches the module
+        // graph so the subsequent React.lazy resolution is instant.
+        void import('./SearchBarCalendar.client');
+    }, []);
+
     /* --- Date display --- */
     const formatDateShort = useCallback((date: Date): string => {
         const day = date.getDate().toString().padStart(2, '0');
@@ -380,6 +390,8 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                             togglePanel('dates');
                         }
                     }}
+                    onPointerEnter={preloadCalendar}
+                    onFocus={preloadCalendar}
                     // biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button>
                     role="button"
                     tabIndex={0}
