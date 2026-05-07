@@ -1,4 +1,3 @@
-import { SendSmtpEmail } from '@getbrevo/brevo';
 import { render } from '@react-email/render';
 import type { EmailClient } from '../../config/resend.config.js';
 import type {
@@ -10,9 +9,10 @@ import type {
 /**
  * Brevo email transport implementation.
  *
- * Sends emails via Brevo's transactional API using React Email components
- * rendered to HTML at send time. Uses dependency injection for the email
- * client to enable testing.
+ * Sends emails via Brevo's transactional REST API (`POST /v3/smtp/email`)
+ * using `fetch` directly. We avoid the official `@getbrevo/brevo` SDK
+ * because it transitively pulls in `axios` -> `form-data` -> `combined-stream`,
+ * which use CommonJS `require('util')` and crash under ESM bundling.
  *
  * The class is exported as `BrevoEmailTransport`. The legacy alias
  * `ResendEmailTransport` is retained as a deprecated re-export so existing
@@ -22,7 +22,6 @@ import type {
  * @example
  * ```ts
  * import { createEmailClient, BrevoEmailTransport } from '@repo/notifications';
- * import { WelcomeEmail } from './emails/welcome';
  *
  * const client = createEmailClient({ apiKey: env.HOSPEDA_EMAIL_API_KEY });
  * const transport = new BrevoEmailTransport(client, {
@@ -45,7 +44,7 @@ export class BrevoEmailTransport implements EmailTransport {
     /**
      * Creates a new Brevo email transport.
      *
-     * @param client - Configured email client (Brevo TransactionalEmailsApi)
+     * @param client - Configured email client
      * @param options - Transport configuration options
      * @param options.fromEmail - Default sender email address (required)
      * @param options.fromName - Default sender display name (required)
@@ -67,28 +66,30 @@ export class BrevoEmailTransport implements EmailTransport {
      *
      * @param input - Email content and metadata
      * @returns Promise resolving to send result with provider message ID
-     * @throws {Error} If the Brevo API call fails or returns no message ID
+     * @throws {Error} If Brevo returns an error response or `fetch` rejects
      */
     async send(input: SendEmailInput): Promise<SendEmailResult> {
         try {
             const htmlContent = await render(input.react);
 
-            const message = new SendSmtpEmail();
-            message.subject = input.subject;
-            message.htmlContent = htmlContent;
-            message.sender = parseSender(input.from, this.defaultFromEmail, this.defaultFromName);
-            message.to = [{ email: input.to }];
+            const body: Record<string, unknown> = {
+                sender: parseSender(input.from, this.defaultFromEmail, this.defaultFromName),
+                to: [{ email: input.to }],
+                subject: input.subject,
+                htmlContent
+            };
 
             if (input.replyTo) {
-                message.replyTo = { email: input.replyTo };
+                body.replyTo = { email: input.replyTo };
             }
 
             if (input.tags && input.tags.length > 0) {
-                message.tags = input.tags.map((t) => `${t.name}:${t.value}`);
+                // Brevo only accepts string tags; encode `name:value` pairs.
+                body.tags = input.tags.map((t) => `${t.name}:${t.value}`);
             }
 
             if (input.attachments && input.attachments.length > 0) {
-                message.attachment = input.attachments.map((att) => ({
+                body.attachment = input.attachments.map((att) => ({
                     name: att.filename,
                     content:
                         typeof att.content === 'string'
@@ -97,16 +98,34 @@ export class BrevoEmailTransport implements EmailTransport {
                 }));
             }
 
-            const response = await this.client.sendTransacEmail(message);
-            const messageId = response.body?.messageId;
+            const response = await fetch(`${this.client.baseUrl}/smtp/email`, {
+                method: 'POST',
+                headers: {
+                    'api-key': this.client.apiKey,
+                    'content-type': 'application/json',
+                    accept: 'application/json'
+                },
+                body: JSON.stringify(body)
+            });
 
-            if (!messageId) {
-                throw new Error('Brevo response missing message ID');
+            if (!response.ok) {
+                const detail = await extractErrorDetail(response);
+                throw new Error(`Failed to send email via Brevo: ${detail}`);
             }
 
-            return { messageId };
+            const data = (await response.json()) as { messageId?: string };
+            if (!data.messageId) {
+                throw new Error('Failed to send email via Brevo: response missing message ID');
+            }
+            return { messageId: data.messageId };
         } catch (error) {
-            const detail = extractErrorDetail(error);
+            if (
+                error instanceof Error &&
+                error.message.startsWith('Failed to send email via Brevo')
+            ) {
+                throw error;
+            }
+            const detail = error instanceof Error ? error.message : 'Unknown error';
             throw new Error(`Failed to send email via Brevo: ${detail}`);
         }
     }
@@ -142,19 +161,17 @@ function parseSender(
 }
 
 /**
- * Extract the most useful error detail from a thrown value. Brevo SDK errors
- * include `err.body` with structured details; everything else falls back to
- * `err.message` and finally a generic label so callers always get a string.
+ * Extract a human-readable error detail from a Brevo error response. Falls
+ * back to status / status text when the body cannot be parsed as JSON.
  */
-function extractErrorDetail(error: unknown): string {
-    if (
-        error &&
-        typeof error === 'object' &&
-        'body' in error &&
-        (error as { body: unknown }).body
-    ) {
-        const body = (error as { body: unknown }).body;
-        return typeof body === 'string' ? body : JSON.stringify(body);
+async function extractErrorDetail(response: Response): Promise<string> {
+    try {
+        const errorJson = (await response.json()) as { message?: string; code?: string };
+        if (errorJson.message) {
+            return errorJson.message;
+        }
+    } catch {
+        // ignore — fall through to status-based detail
     }
-    return error instanceof Error ? error.message : 'Unknown error';
+    return `${response.status} ${response.statusText || 'error'}`;
 }

@@ -1,4 +1,3 @@
-import { SendSmtpEmail } from '@getbrevo/brevo';
 import { render } from '@react-email/render';
 import { createLogger } from '@repo/logger';
 import type { ReactElement } from 'react';
@@ -13,6 +12,11 @@ const logger = createLogger('email');
  */
 const DEFAULT_FROM_EMAIL = 'noreply@hospeda.com.ar';
 const DEFAULT_FROM_NAME = 'Hospeda';
+
+/** Provider response shape on success: `{ messageId }`. */
+interface BrevoSendResponse {
+    readonly messageId?: string;
+}
 
 /**
  * Input parameters for sending an email.
@@ -92,17 +96,11 @@ export interface SendEmailResult {
  *
  * @example
  * ```ts
- * import { sendEmail } from '@repo/email';
- * import { VerifyEmailTemplate } from '@repo/email';
- *
  * const result = await sendEmail({
  *   client,
  *   to: 'user@example.com',
  *   subject: 'Verify your email',
- *   react: VerifyEmailTemplate({
- *     name: 'John Doe',
- *     verificationUrl: 'https://example.com/verify?token=abc123'
- *   })
+ *   react: VerifyEmailTemplate({ name, verificationUrl })
  * });
  *
  * if (!result.success) {
@@ -124,29 +122,48 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
     try {
         const htmlContent = await render(react);
 
-        const message = new SendSmtpEmail();
-        message.subject = subject;
-        message.htmlContent = htmlContent;
-        message.sender = { email: fromEmail, name: fromName };
-        message.to = (Array.isArray(to) ? to : [to]).map((email) => ({ email }));
+        const recipients = (Array.isArray(to) ? to : [to]).map((email) => ({ email }));
+
+        const body: Record<string, unknown> = {
+            sender: { email: fromEmail, name: fromName },
+            to: recipients,
+            subject,
+            htmlContent
+        };
         if (replyTo) {
-            message.replyTo = { email: replyTo };
+            body.replyTo = { email: replyTo };
         }
 
-        const response = await client.sendTransacEmail(message);
-        const messageId = response.body?.messageId;
-        return { success: true, ...(messageId ? { messageId } : {}) };
+        const response = await fetch(`${client.baseUrl}/smtp/email`, {
+            method: 'POST',
+            headers: {
+                'api-key': client.apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            // Brevo returns JSON error bodies like
+            // { "code": "invalid_parameter", "message": "..." }. Fall back
+            // to the raw text when JSON parsing fails so we never lose detail.
+            let detail: string;
+            try {
+                const errorJson = (await response.json()) as { message?: string };
+                detail =
+                    errorJson.message ?? `${response.status} ${response.statusText || 'error'}`;
+            } catch {
+                detail = `${response.status} ${response.statusText || 'error'}`;
+            }
+            logger.error('Failed to send:', detail);
+            return { success: false, error: detail };
+        }
+
+        const data = (await response.json()) as BrevoSendResponse;
+        return { success: true, ...(data.messageId ? { messageId: data.messageId } : {}) };
     } catch (err) {
-        // Brevo SDK surfaces structured errors via `err.body`; fall back to
-        // `err.message` and finally a generic label so callers always get a
-        // string they can log.
-        const fromBody =
-            err && typeof err === 'object' && 'body' in err && err.body
-                ? typeof err.body === 'string'
-                    ? err.body
-                    : JSON.stringify(err.body)
-                : null;
-        const message = fromBody ?? (err instanceof Error ? err.message : 'Unknown error');
+        const message = err instanceof Error ? err.message : 'Unknown error';
         logger.error('Failed to send:', message);
         return { success: false, error: message };
     }

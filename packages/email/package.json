@@ -24,7 +24,6 @@
         "clean": "rm -rf node_modules dist"
     },
     "dependencies": {
-        "@getbrevo/brevo": "^3.0.1",
         "@react-email/components": "^0.0.30",
         "@react-email/render": "^2.0.4",
         "@repo/logger": "workspace:*"

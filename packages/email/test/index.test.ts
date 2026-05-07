@@ -1,18 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
-
-// Mock the Brevo SDK so importing the barrel does not require a runtime
-// connection to the email provider — these tests only verify exports.
-vi.mock('@getbrevo/brevo', () => {
-    class FakeApi {
-        setApiKey() {}
-    }
-    class FakeMessage {}
-    return {
-        TransactionalEmailsApi: FakeApi,
-        TransactionalEmailsApiApiKeys: { apiKey: 'apiKey' },
-        SendSmtpEmail: FakeMessage
-    };
-});
+import { describe, expect, it } from 'vitest';
 
 import {
     BaseLayout,
