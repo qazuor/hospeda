@@ -923,11 +923,57 @@ Por seguridad, queremos acceder al panel desde un dominio con SSL, no desde la I
 
 > **Nota**: este paso lo completamos en la Fase 5 después de configurar DNS. Por ahora, seguís usando `http://TU_IP_VPS:8000`.
 
+### Paso 4.5 — Resolver conflict del wizard con SSH hardenedo (gotcha si hardeneaste con port custom)
+
+> ⚠️ **Aplica solo si en Fase 3 cambiaste el puerto SSH (ej. 22→2222) y/o pusiste `PermitRootLogin no`**. El wizard de Coolify (`Let's go!` → `This Machine`) intenta SSH a `localhost:22` como `root` para validar la conexión al Docker daemon. Si bloqueaste port 22 o root login, el wizard falla con "Server is not reachable".
+
+**Solución** (re-habilitar SSH para tráfico interno sin re-exponer al internet):
+
+1. **Re-activar `Port 22` en sshd_config principal**:
+
+   ```bash
+   sudo sed -i 's|^#Port 22.*|Port 22|' /etc/ssh/sshd_config
+   sudo grep -nE "^Port" /etc/ssh/sshd_config
+   # Debe mostrar: Port 22 y Port 2222 (o el puerto custom que usaste)
+   ```
+
+2. **Permitir root SSH solo desde rangos privados** (localhost + Docker bridge):
+
+   ```bash
+   sudo tee /etc/ssh/sshd_config.d/99-hardening.conf > /dev/null <<'EOF'
+   PasswordAuthentication no
+   PermitRootLogin no
+
+   Match Address 127.0.0.0/8,10.0.0.0/8,172.0.0.0/8,192.168.0.0/16
+       PermitRootLogin prohibit-password
+   EOF
+   ```
+
+3. **UFW: abrir puerto 22 solo a rangos privados** (internet sigue bloqueado):
+
+   ```bash
+   sudo ufw allow from 127.0.0.0/8 to any port 22 proto tcp
+   sudo ufw allow from 10.0.0.0/8 to any port 22 proto tcp
+   sudo ufw allow from 172.0.0.0/8 to any port 22 proto tcp
+   ```
+
+4. **Validar y reiniciar**:
+
+   ```bash
+   sudo sshd -t && sudo systemctl restart ssh
+   ```
+
+5. Volvé al browser y click `Check Again` en el wizard de Coolify. Debería pasar al Step 2 (Connection ✅) y Step 3 (Complete).
+
+> Alternativa más limpia (no implementada por defecto): configurar Coolify para usar el puerto 2222 + un user no-root con permisos de Docker. Más laburo, pero elimina del todo el SSH root. Considerar para un hardening pass post-cutover.
+
 ### Verificación de fase 4
 
 - [x] Podés entrar a `http://TU_IP_VPS:8000`
 - [x] Tenés tu user admin creado
-- [x] Ves el dashboard de Coolify (probablemente vacío al principio)
+- [x] Wizard de Coolify completado (Steps Server / Connection / Complete todos verdes)
+- [x] Skip Setup en el último paso (no creaste proyecto inicial)
+- [x] Ves el dashboard de Coolify
 
 ✅ Fase 4 completa.
 
