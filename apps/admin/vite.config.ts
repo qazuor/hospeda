@@ -186,6 +186,13 @@ export default defineConfig({
         // Code splitting configuration
         rollupOptions: {
             output: {
+                // Force ESM execution order. Without this, Rolldown 1.0.0-rc.17
+                // reorders side-effect imports inside the flattened SSR bundle
+                // (Nitro `node-server` preset), causing routeTree.gen.ts to
+                // call `Route$N.update(...)` before `var Route$N = createFileRoute(...)`
+                // is assigned, producing `Cannot read properties of undefined (reading 'update')`
+                // at runtime. See https://github.com/rolldown/rolldown/issues/8812
+                strictExecutionOrder: true,
                 // Manual chunks for better code splitting
                 manualChunks: (id) => {
                     // Vendor chunks - large external dependencies
