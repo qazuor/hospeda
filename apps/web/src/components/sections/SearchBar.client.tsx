@@ -6,11 +6,6 @@
  */
 
 import { ErrorBoundary } from '@/components/shared/ui/ErrorBoundary';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { DayPicker, getDefaultClassNames } from 'react-day-picker';
-import type { DateRange } from 'react-day-picker';
-import { enUS as enLocale, es as esLocale, ptBR as ptLocale } from 'react-day-picker/locale';
-import 'react-day-picker/style.css';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -26,7 +21,10 @@ import {
     TreeIcon,
     UsersIcon
 } from '@repo/icons';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { DateRange } from 'react-day-picker';
 import styles from './SearchBar.module.css';
+import { SearchBarCalendar } from './SearchBarCalendar.client';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -264,12 +262,6 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
         adults,
         children
     });
-
-    /* --- Date locale for react-day-picker --- */
-    const calendarLocaleMap = { es: esLocale, en: enLocale, pt: ptLocale } as const;
-    const calendarLocale = calendarLocaleMap[locale] ?? esLocale;
-    const defaultClassNames = getDefaultClassNames();
-    const today = new Date();
 
     return (
         <div
@@ -626,24 +618,10 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                     role="dialog"
                     aria-label={t('home.searchBar.datesLabel', 'Fechas')}
                 >
-                    <DayPicker
-                        mode="range"
-                        locale={calendarLocale}
+                    <SearchBarCalendar
+                        locale={locale}
                         selected={dateRange}
                         onSelect={setDateRange}
-                        numberOfMonths={2}
-                        disabled={{ before: today }}
-                        defaultMonth={today}
-                        classNames={{
-                            root: `${defaultClassNames.root} ${styles.calendarRoot}`,
-                            months: styles.calendarMonths,
-                            month_caption: `${defaultClassNames.month_caption} ${styles.calendarCaption}`,
-                            weekday: `${defaultClassNames.weekday} ${styles.calendarWeekday}`,
-                            nav: `${defaultClassNames.nav} ${styles.calendarNav}`,
-                            day_button: `${defaultClassNames.day_button} ${styles.calendarDayButton}`,
-                            today: `${defaultClassNames.today} ${styles.calendarToday}`,
-                            disabled: `${defaultClassNames.disabled} ${styles.calendarDisabled}`
-                        }}
                     />
                 </div>
             )}
