@@ -2655,7 +2655,39 @@ Lista chequeable manual. **No marques completo hasta validar TODO.**
 
 > Si no necesitás Facebook OAuth para launch (alcanza con Email/Password + Google OAuth), podés diferir indefinidamente y borrar las env vars `HOSPEDA_FACEBOOK_CLIENT_*` para que el código no muestre el botón "Login with Facebook".
 
-### Paso 16.3 — Cleanup post-cutover (1-2 semanas después)
+### Paso 16.3 — Switch MercadoPago de SANDBOX a PRODUCTION (al ir a launch público)
+
+> 🔴 **Crítico — antes del launch público real (cuando empieces a cobrar plata real)**.
+
+**Contexto**: en Fase 9 configuramos MercadoPago en modo sandbox (`HOSPEDA_MERCADO_PAGO_SANDBOX=true`) con TEST access token, para poder testear sin cobros reales. El webhook secret quedó vacío porque MP webhooks se configuran en Paso 12.6 post-cutover.
+
+**Pasos**:
+
+1. **Obtener PROD access token** desde el panel de MP:
+   - <https://www.mercadopago.com.ar/developers/panel/app> → tu app → **Credenciales de producción** → copiar Access Token (empieza con `APP_USR-`, igual formato que TEST).
+   - Si MP te bloquea producción y exige homologación, completá los pasos requeridos primero (datos fiscales, validación de cuenta, KYC).
+
+2. **Update env vars en Coolify** → `hospeda-api-prod` → Environment Variables:
+   - `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN`: reemplazar TEST token por PROD token.
+   - `HOSPEDA_MERCADO_PAGO_SANDBOX`: cambiar de `true` a `false`.
+   - Verificar que `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` esté seteado (debió hacerse en Paso 12.6).
+
+3. **Restart** del container de `hospeda-api-prod` (Coolify lo hace automático tras Save).
+
+4. **Smoke test E2E** de un pago real con monto chico ($100 ARS, una tarjeta tuya):
+   - Crear booking → checkout → confirmar pago → verificar que el webhook llega y se procesa OK → verificar que aparece en MP dashboard como `approved`.
+   - Reembolsar inmediatamente vía MP dashboard si todo OK.
+
+5. **Logs check**: en Coolify → API logs, buscar `[billing.webhooks.mercadopago]` y verificar `signature_valid=true` en el evento del test.
+
+**Verificación**:
+
+- [ ] `HOSPEDA_MERCADO_PAGO_SANDBOX=false` en Coolify
+- [ ] `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN` empieza con `APP_USR-` y es el de PROD (no TEST)
+- [ ] `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` no está vacío
+- [ ] Smoke test E2E de pago real reembolsado OK
+
+### Paso 16.4 — Cleanup post-cutover (1-2 semanas después)
 
 **Solo después de 1-2 semanas estables corriendo en VPS:**
 
