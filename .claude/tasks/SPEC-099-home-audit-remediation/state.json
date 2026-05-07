@@ -5,9 +5,9 @@
     "created": "2026-05-07T00:00:00.000Z",
     "summary": {
         "totalTasks": 92,
-        "completed": 78,
+        "completed": 83,
         "inProgress": 0,
-        "pending": 14,
+        "pending": 9,
         "blocked": 0,
         "criticalPath": [
             "T-001",
@@ -2053,7 +2053,7 @@
             "id": "T-096",
             "title": "Write SearchBar test extension \u2014 opening destinations panel (S-11e)",
             "description": "Extend apps/web/test/components/SearchBar.test.tsx (or create it). Render SearchBar in RTL. Click or press Enter on the destinations column trigger. Assert the destinations panel becomes visible (aria-expanded or visible element). Acceptance: panel-open case passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-004", "T-014"],
             "blocks": ["T-097"],
@@ -2065,9 +2065,10 @@
                 "typecheck": "required",
                 "tests": "required"
             },
-            "files": ["apps/web/test/components/SearchBar.test.tsx"],
+            "files": ["apps/web/test/components/sections/SearchBar.test.tsx"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T20:43:00.000Z"
             }
         },
         {
