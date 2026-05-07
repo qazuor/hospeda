@@ -73,8 +73,6 @@ function TestimonialsCarouselInner({
     const { t } = createTranslations(locale);
     const [selectedSnap, setSelectedSnap] = useState(0);
     const [snapCount, setSnapCount] = useState(0);
-    const [canScrollPrev, setCanScrollPrev] = useState(false);
-    const [canScrollNext, setCanScrollNext] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
 
     // Autoplay plugin ref
@@ -90,12 +88,11 @@ function TestimonialsCarouselInner({
         [autoplayPlugin.current]
     );
 
-    // Sync state on slide change
+    // Sync state on slide change. With `loop: true` the prev/next arrows are
+    // always enabled, so we don't track canScrollPrev/canScrollNext.
     const onSelect = useCallback(() => {
         if (!mainApi) return;
         setSelectedSnap(mainApi.selectedScrollSnap());
-        setCanScrollPrev(mainApi.canScrollPrev());
-        setCanScrollNext(mainApi.canScrollNext());
     }, [mainApi]);
 
     useEffect(() => {
@@ -159,7 +156,6 @@ function TestimonialsCarouselInner({
                     variant="outline"
                     size="sm"
                     onClick={scrollPrev}
-                    disabled={!canScrollPrev}
                     className={cn(styles.arrow, styles.arrowPrev)}
                 >
                     <ChevronLeftIcon
@@ -213,7 +209,6 @@ function TestimonialsCarouselInner({
                     variant="outline"
                     size="sm"
                     onClick={scrollNext}
-                    disabled={!canScrollNext}
                     className={cn(styles.arrow, styles.arrowNext)}
                 >
                     <ChevronRightIcon
