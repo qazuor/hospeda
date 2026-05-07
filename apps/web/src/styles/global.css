@@ -276,6 +276,19 @@
     border-radius: var(--radius-md, 10px);
 }
 
+/* --- Horizontal-overflow guard ---
+   `overflow-x: clip` on <html> and <body> intentionally hides any horizontal
+   spillover (e.g., decorative SVGs, off-canvas mobile drawer translated to
+   the right, carousel sibling slides) without creating a scroll container.
+   IMPORTANT for audit tooling: with `clip`, the browser still reports the
+   natural content size via `document.documentElement.scrollWidth` /
+   `document.body.scrollWidth`, so a naive `scrollWidth > innerWidth` check
+   will report false positives. A real horizontal-overflow check MUST also
+   verify `getComputedStyle(html).overflowX !== 'clip'` AND
+   `getComputedStyle(body).overflowX !== 'clip'`, or attempt
+   `window.scrollTo(100, 0)` and confirm `window.scrollX > 0`. See
+   .claude/baseline/B-3-overflow-investigation.md (SPEC-099 T-012).
+*/
 html {
     overflow-x: clip;
 }
