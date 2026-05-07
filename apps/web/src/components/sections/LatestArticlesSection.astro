@@ -17,6 +17,7 @@ import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
 import { postsApi, toArticleCardProps } from '@/lib/api';
 import type { ArticleCardData } from '@/lib/api/transforms';
 import { webLogger } from '@/lib/logger';
+import { isAllowedRemoteHost } from '@/lib/media';
 
 interface Props {
     /** Active locale used to resolve translations and URLs. */
@@ -32,10 +33,15 @@ try {
     const result = await postsApi.list({ sortBy: 'publishedAt', sortOrder: 'desc', pageSize: 4 });
     if (result.ok) {
         const rawPosts = result.data.items.map((raw) => toArticleCardProps({ item: raw as Record<string, unknown> }));
+        // SSRF guard (SPEC-099 S-1): only call getImage() when the avatar
+        // hostname is in the allowlist. Untrusted URLs pass through unchanged.
         posts = await Promise.all(
             rawPosts.map(async (post) => {
                 const raw = post.authorAvatar;
                 if (raw && !raw.includes('placeholder') && !raw.endsWith('.svg')) {
+                    if (!isAllowedRemoteHost(raw)) {
+                        return post;
+                    }
                     try {
                         const optimized = await getImage({ src: raw, width: 64, format: 'webp' });
                         return { ...post, authorAvatar: optimized.src };
