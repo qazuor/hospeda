@@ -16,6 +16,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { testimonialsApi, toTestimonialCardProps } from '@/lib/api';
 import type { ReviewCardData } from '@/data/types';
 import { webLogger } from '@/lib/logger';
+import { isAllowedRemoteHost } from '@/lib/media';
 
 interface Props {
     /** Active locale used to resolve translations. */
@@ -39,10 +40,15 @@ try {
 
 // Pre-optimize reviewer avatar images before passing to the React island.
 // Avatars are small (80px). Skip missing, SVG, or placeholder URLs.
+// SSRF guard (SPEC-099 S-1): only call getImage() when the avatar hostname
+// is in the allowlist. Untrusted URLs pass through unchanged.
 const optimizedReviews = await Promise.all(
     reviews.map(async (review) => {
         const avatar = review.reviewerAvatar;
         if (!avatar || avatar.includes('placeholder') || avatar.endsWith('.svg')) {
+            return review;
+        }
+        if (!isAllowedRemoteHost(avatar)) {
             return review;
         }
         try {
