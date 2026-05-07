@@ -736,36 +736,79 @@ Apretá `q` para salir del status.
 
 Ahora que confirmamos que la SSH key funciona, deshabilitamos el login por password (mucho más seguro).
 
+> ⚠️ **Gotcha crítico de Ubuntu cloud images**: el archivo `/etc/ssh/sshd_config.d/50-cloud-init.conf` (creado por cloud-init) tiene `PasswordAuthentication yes` y **override** lo que pongas en el sshd_config principal. Si solo editás el archivo principal, el password auth queda activo y vas a tener intentos de brute-force que cuentan para fail2ban. Para evitar lockouts, usamos un archivo override con prioridad mayor.
+
+#### 3.6.a — Editar sshd_config principal
+
 ```bash
 sudo nano /etc/ssh/sshd_config
 ```
 
-Se abre un editor. Buscá las siguientes líneas (Ctrl+W para buscar) y cambialas:
+Buscá las siguientes líneas (Ctrl+W para buscar) y cambialas:
 
 | Línea actual | Cambiar a |
 |--------------|-----------|
 | `#PasswordAuthentication yes` o `PasswordAuthentication yes` | `PasswordAuthentication no` |
-| `#PermitRootLogin yes` o `PermitRootLogin yes` | `PermitRootLogin no` |
+| `#PermitRootLogin yes` o `PermitRootLogin yes` o `PermitRootLogin prohibit-password` | `PermitRootLogin no` |
+| `Port 22` (si lo cambiaste a un puerto custom como 2222 antes) | `#Port 22` o sacarla |
 
 Guardar: **Ctrl+O**, Enter, **Ctrl+X**.
 
-Reiniciar SSH:
+#### 3.6.b — Crear override que pisa el cloud-init
 
 ```bash
+sudo tee /etc/ssh/sshd_config.d/99-hardening.conf > /dev/null <<'EOF'
+PasswordAuthentication no
+PermitRootLogin no
+EOF
+```
+
+> Si el `tee <<EOF` falla por indentación de paste, usá nano:
+> `sudo nano /etc/ssh/sshd_config.d/99-hardening.conf`, pegá las 2 líneas SIN indentación, Ctrl+O, Enter, Ctrl+X.
+
+Los archivos en `sshd_config.d/` se cargan alfabéticamente; `99-` gana sobre `50-cloud-init.conf`.
+
+#### 3.6.c — Validar y reiniciar
+
+```bash
+sudo sshd -t                          # Si no devuelve nada, syntax OK
 sudo systemctl restart ssh
 ```
 
 **ADVERTENCIA**: NO cierres la terminal actual hasta verificar que podés conectarte desde otra. En **otra terminal** probá:
 
 ```bash
-ssh qazuor@TU_IP_VPS
+ssh -p TU_PUERTO_SSH qazuor@TU_IP_VPS         # Debe conectar SIN password
+ssh -p TU_PUERTO_SSH -o PasswordAuthentication=no root@TU_IP_VPS   # Debe decir "Permission denied (publickey)"
 ```
 
-Debe conectar SIN preguntarte password (la SSH key autentica sola).
+Si Test 1 conecta y Test 2 falla con `Permission denied (publickey)` (NO `publickey,password`), todo OK ✅.
 
-Si funciona ✅, listo.
+Si el segundo test dice `Permission denied (publickey,password)` → el override del cloud-init no se aplicó. Verificá `cat /etc/ssh/sshd_config.d/99-hardening.conf` y `sudo grep -nH "PasswordAuthentication" /etc/ssh/sshd_config.d/*`.
 
-Si NO funciona: vuelve a la terminal vieja, edita `/etc/ssh/sshd_config` revirtiendo los cambios, reiniciá SSH y revisá qué falló.
+Si NO podés conectar en absoluto: vuelve a la terminal vieja, revertí los cambios y reiniciá SSH.
+
+#### 3.6.d — Si te lockeaste por fail2ban (incidente común)
+
+Si hiciste varios `ssh root@...` testeando, fail2ban probablemente baneó tu IP de casa después de 5 attempts → `Connection refused` desde TODO traffic de tu IP, incluso `qazuor`.
+
+Recuperación:
+
+1. **Vultr Web Console** (VNC, no requiere SSH) → ícono `>_` o `View Console` en la página del server.
+2. Login: `qazuor` + password del user qazuor.
+3. Desbanear:
+
+   ```bash
+   sudo fail2ban-client unban --all
+   ```
+
+4. Verificar SSH:
+
+   ```bash
+   sudo systemctl status ssh | head -5
+   ```
+
+5. Volver a probar desde tu laptop.
 
 ### Paso 3.7 — Configurar swap (memoria virtual)
 
