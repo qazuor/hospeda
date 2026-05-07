@@ -118,3 +118,18 @@ fi
 rm -f "$BACKUP_FILE"
 
 log "Backup completed successfully: ${BACKUP_NAME} (${SIZE} bytes)"
+
+# -----------------------------------------------------------------------------
+# Heartbeat ping (optional)
+# -----------------------------------------------------------------------------
+# Better Stack (or any heartbeat service) URL pinged on success so an external
+# monitor can alert if the cron stops running. Failure to ping does NOT mark
+# the backup as failed — the backup itself already succeeded.
+if [[ -n "${BACKUP_HEARTBEAT_URL:-}" ]]; then
+    log "Pinging heartbeat..."
+    if curl -fsS --max-time 10 -o /dev/null "$BACKUP_HEARTBEAT_URL"; then
+        log "Heartbeat ping OK"
+    else
+        log "WARNING: heartbeat ping failed (backup itself was successful)"
+    fi
+fi

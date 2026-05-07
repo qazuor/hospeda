@@ -2561,60 +2561,126 @@ sudo crontab -l
 
 ## Fase 14 — Monitoring
 
-**Tiempo estimado**: 20 minutos
+**Tiempo estimado**: 30-45 minutos
 
-### Paso 14.1 — Crear cuenta Better Stack
+> **Approach**: 4 HTTP monitors (web, www, api, admin) + 1 heartbeat para el backup cron + status page pública en `status.hospeda.com.ar`. Free tier de Better Stack incluye 10 monitors + heartbeats ilimitados + status page.
 
-1. <https://betterstack.com> → Sign up
-2. Plan: **Free** — incluye 10 HTTP monitors **+ heartbeats ilimitados** (los heartbeats los usamos en 14.4 para validar que cada cron in-process corrió)
+### Paso 14.1 — Cuenta Better Stack
 
-### Paso 14.2 — Crear monitors
+1. <https://betterstack.com> → Sign in (cuenta ya creada).
+2. Plan: **Free** (10 monitors + heartbeats ilimitados + 1 status page).
 
-Para cada uno de los 3 dominios prod + 3 dominios staging:
+### Paso 14.2 — Crear los 4 HTTP monitors
 
-1. **+ Create monitor**
-2. **Name**: `Hospeda API Prod`
-3. **URL**: `https://api.hospeda.com.ar/health`
-4. **Frequency**: 3 minutos (free tier)
-5. **Expected status**: 200
-6. **Expected body** (opcional): contiene `"status":"ok"`
-7. **Locations**: 5 ubicaciones (auto)
-8. Save
+Better Stack → **Monitors** → **Create monitor** para cada uno:
 
-Repetir para los otros 5.
+| Name | URL | Expected status | Expected body |
+|------|-----|-----------------|---------------|
+| `Hospeda Web` | `https://hospeda.com.ar/` | 200 | (vacío) |
+| `Hospeda Web WWW` | `https://www.hospeda.com.ar/` | 200 | (vacío) |
+| `Hospeda API` | `https://api.hospeda.com.ar/health` | 200 | `status` |
+| `Hospeda Admin` | `https://admin.hospeda.com.ar/auth/signin` | 200 | (vacío) |
+
+Configuración común para los 4:
+
+- **Frequency**: 3 minutos (free tier).
+- **Request timeout**: 10 segundos.
+- **Locations**: 3-5 (auto).
+- **Follow redirects**: ON (admin va `/` → `/auth/signin` 307).
+- **HTTP method**: GET.
+- **Recovery period**: 1 (alerta apenas se cae).
+- **Confirmation period**: 2 fallos antes de alertar (evita falsos positivos por blips).
 
 ### Paso 14.3 — Configurar alertas
 
-En Better Stack → **On-call** → **Notification rules**:
+Better Stack → **On-call** → **Notification rules**:
 
-- Email a tu cuenta
-- (Opcional) Telegram, Slack
+1. **Default rule**:
+   - **Severity**: High
+   - **Notification method**: Email → `qazuor@gmail.com`
+   - **Delay**: 0 min (alerta inmediata).
+2. (Opcional) Agregar Telegram bot o Slack si los tenés. SMS y voz son paid tier.
 
-### Paso 14.4 — Heartbeats para los 16 cron jobs (recomendado, opcional)
+### Paso 14.4 — Heartbeat para el backup cron
 
-> **Por qué**: los crons in-process (node-cron) corren dentro de la API. Si la API está OK pero un cron específico tira excepción y se silencia, el monitor HTTP no lo detecta. Un heartbeat por cron se cae si el cron deja de pingar y dispara alerta en minutos.
+> **Por qué**: el backup cron corre 1× al día en VPS. Si el cron muere, deja de correr y nunca sabrías hasta que necesitás restore. Heartbeat alerta apenas el ping diario falta.
 
-1. Better Stack → **Heartbeats** → **+ Create heartbeat**
-2. Por cada cron job (16 en total — ver `apps/api/src/cron/jobs/`), creá uno con:
-   - **Name**: `cron-<job-name>` (ej: `cron-search-index-refresh`)
-   - **Period**: el intervalo del cron + 50% de margen (ej: si corre cada 5 min, period 8 min)
-3. Better Stack te da una URL `https://uptime.betterstack.com/api/v1/heartbeat/<TOKEN>` por cada heartbeat
-4. En el código del cron, después de `runWithLoggingAndValidation()`, agregá:
+1. Better Stack → **Heartbeats** → **Create heartbeat**.
+2. Configurar:
+   - **Name**: `cron-postgres-backup-r2`
+   - **Period**: 25 horas (cron diario + 1h de margen).
+   - **Grace period**: 30 min (no alertar instantáneo, dar margen).
+3. Better Stack te da una URL única tipo `https://uptime.betterstack.com/api/v1/heartbeat/<UUID>`.
+4. **En el VPS**, agregar la URL al env file del backup:
 
-   ```ts
-   await fetch(env.HEARTBEAT_URL_<JOB_NAME>, { method: 'POST' }).catch(() => {});
+   ```bash
+   sudo nano /etc/hospeda-backup.env
    ```
 
-   (`.catch(() => {})` para que un fallo de heartbeat NO mate el cron)
-5. Registrá `HEARTBEAT_URL_*` como env vars opcionales en `packages/config/src/env-registry.hospeda.ts` y en Coolify
+   Descomentar y completar:
 
-> **Costo**: $0. Free tier de Better Stack incluye heartbeats sin límite de cantidad.
+   ```
+   BACKUP_HEARTBEAT_URL="https://uptime.betterstack.com/api/v1/heartbeat/<UUID>"
+   ```
+
+5. **Validar** que el ping funciona corriendo el backup manual:
+
+   ```bash
+   sudo /opt/hospeda-backup/postgres-to-r2.sh
+   ```
+
+   Output debería incluir:
+
+   ```
+   [...] Pinging heartbeat...
+   [...] Heartbeat ping OK
+   ```
+
+   En Better Stack UI verás el heartbeat marcado como "Last ping: just now".
+
+### Paso 14.5 — Status page pública (opcional pero recomendado)
+
+> **Por qué**: page pública para que users vean estado del servicio sin escribir al support. Trust signal + reduce volumen de tickets.
+
+1. Better Stack → **Status pages** → **Create status page**.
+2. Configurar:
+   - **Name**: `Hospeda Status`
+   - **Subdomain**: `hospeda` → te da `hospeda.betteruptime.com` (o similar) como dominio default.
+   - **Custom domain**: `status.hospeda.com.ar` (configurar después en paso 14.6).
+   - **Resources to display**: agregar los 4 monitors creados en 14.2 (NO mostrar el heartbeat — es interno).
+   - **Branding**: subir logo Hospeda + colores de marca si querés.
+   - **Visibility**: Public.
+3. Save.
+
+### Paso 14.6 — Custom domain `status.hospeda.com.ar`
+
+1. Better Stack te da instrucciones de DNS para custom domain. Típicamente un CNAME a `<subdomain>.betteruptime.com`.
+2. **Cloudflare** → zona `hospeda.com.ar` → DNS records:
+   - **Type**: CNAME
+   - **Name**: `status`
+   - **Target**: el que te indique Better Stack (algo tipo `hospeda.betteruptime.com`).
+   - **Proxy**: 🔘 **DNS Only** (Better Stack maneja su propio cert SSL para el custom domain).
+3. Esperar 5-10 min para propagación DNS.
+4. En Better Stack → status page → **Custom domain settings** → **Verify** o **Issue SSL certificate**.
+5. Validar acceso: `https://status.hospeda.com.ar` → debería mostrar la status page.
+
+### Paso 14.7 — Test de alerta (opcional pero recomendado)
+
+> **Por qué**: validar que las alertas realmente llegan ANTES de necesitarlas en una emergencia real.
+
+1. Coolify → `hospeda-api-prod` → **Stop** (parar el container temporalmente).
+2. Esperar 3-6 minutos (2 fallos consecutivos del monitor cada 3 min).
+3. Te debería llegar un email "Hospeda API is DOWN" a `qazuor@gmail.com`.
+4. Status page muestra `Hospeda API` en rojo "Down".
+5. Coolify → `hospeda-api-prod` → **Start**.
+6. Esperar otros 3-6 min → recibís email "Hospeda API is back UP" + status page en verde.
 
 ### Verificación de fase 14
 
-- [ ] 6 HTTP monitors creados, todos UP
-- [ ] Si parás manualmente uno (en Coolify), recibís alerta en <5min
-- [ ] (Opcional) 16 heartbeats creados; cada uno reporta verde tras la primera ejecución del cron
+- [ ] 4 HTTP monitors UP en Better Stack
+- [ ] Heartbeat `cron-postgres-backup-r2` recibió primer ping (corriendo el backup manual)
+- [ ] Status page pública accesible en `https://status.hospeda.com.ar`
+- [ ] Test de alerta: parar/levantar api → email recibido en ambos casos
 
 ✅ Fase 14 completa.
 
