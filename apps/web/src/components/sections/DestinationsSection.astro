@@ -20,6 +20,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { destinationsApi, toDestinationCardProps } from '@/lib/api';
 import type { DestinationCardData } from '@/lib/api/transforms';
 import { webLogger } from '@/lib/logger';
+import { isAllowedRemoteHost } from '@/lib/media';
 
 interface Props {
     /** Active locale used to resolve translations and build internal URLs. */
@@ -48,10 +49,16 @@ try {
 
 // Pre-optimize destination images before passing to the React island.
 // Skip SVG placeholders and fall back to the original URL on any failure.
+// SSRF guard (SPEC-099 S-1): only call getImage() when the hostname is in
+// the allowlist. Untrusted URLs pass through unchanged so the build/SSR
+// runtime never fetches arbitrary hosts on behalf of user content.
 const optimizedDestinations = await Promise.all(
     destinations.map(async (dest) => {
         const img = dest.featuredImage.url;
         if (!img || img.includes('placeholder') || img.endsWith('.svg')) {
+            return dest;
+        }
+        if (!isAllowedRemoteHost(img)) {
             return dest;
         }
         try {
