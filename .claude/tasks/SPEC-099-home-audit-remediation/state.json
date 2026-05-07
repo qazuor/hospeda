@@ -5,9 +5,9 @@
     "created": "2026-05-07T00:00:00.000Z",
     "summary": {
         "totalTasks": 92,
-        "completed": 88,
+        "completed": 89,
         "inProgress": 0,
-        "pending": 3,
+        "pending": 2,
         "blocked": 0,
         "criticalPath": [
             "T-001",
@@ -2015,7 +2015,7 @@
             "id": "T-086",
             "title": "Write TestimonialsCarousel test \u2014 render with 6 reviews and assert dot count (S-11c)",
             "description": "Create apps/web/test/components/TestimonialsCarousel.test.tsx. Import Embla mock from T-083. Render TestimonialsCarousel with 6 mock review items. Assert the navigation dot count equals the number of scroll snaps (3 with slidesToScroll:2). Acceptance: dot-count assertion passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-083", "T-025"],
             "blocks": ["T-087"],
@@ -2029,7 +2029,8 @@
             },
             "files": ["apps/web/test/components/TestimonialsCarousel.test.tsx"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T23:20:00.000Z"
             }
         },
         {
