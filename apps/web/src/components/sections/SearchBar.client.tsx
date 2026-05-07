@@ -288,7 +288,12 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         activePanel === 'destination' && styles.colActive
                     )}
                     onClick={() => togglePanel('destination')}
-                    onKeyDown={(e) => e.key === 'Enter' && togglePanel('destination')}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            togglePanel('destination');
+                        }
+                    }}
                     // biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button>
                     role="button"
                     tabIndex={0}
@@ -326,7 +331,12 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         activePanel === 'type' && styles.colActive
                     )}
                     onClick={() => togglePanel('type')}
-                    onKeyDown={(e) => e.key === 'Enter' && togglePanel('type')}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            togglePanel('type');
+                        }
+                    }}
                     // biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button>
                     role="button"
                     tabIndex={0}
@@ -364,7 +374,12 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         activePanel === 'dates' && styles.colActive
                     )}
                     onClick={() => togglePanel('dates')}
-                    onKeyDown={(e) => e.key === 'Enter' && togglePanel('dates')}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            togglePanel('dates');
+                        }
+                    }}
                     // biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button>
                     role="button"
                     tabIndex={0}
@@ -396,7 +411,12 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                 <div
                     className={cn(styles.col, activePanel === 'guests' && styles.colActive)}
                     onClick={() => togglePanel('guests')}
-                    onKeyDown={(e) => e.key === 'Enter' && togglePanel('guests')}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            togglePanel('guests');
+                        }
+                    }}
                     // biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button>
                     role="button"
                     tabIndex={0}
