@@ -11,7 +11,6 @@ import { startCronScheduler } from './cron';
 import { createEntityResolver } from './lib/entity-resolver';
 import { closeSentry, initializeSentry } from './lib/sentry';
 import { initializeMediaProvider } from './services/media';
-import { warnIfCloudinaryMissingOnPreview } from './utils/cloudinary-preview-warn';
 import { closeDatabase, initializeDatabase } from './utils/database';
 import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
@@ -21,12 +20,6 @@ import { destroyUserPermissionsCache } from './utils/user-permissions-cache';
 
 // Validate environment variables before starting the server
 validateApiEnv();
-
-// SPEC-078-GAPS T-051 / GAP-078-134:
-// On Vercel preview deploys, advise when Cloudinary credentials are missing
-// (upload routes fall back to the in-memory provider — see T-018). No-op
-// outside preview; never throws.
-warnIfCloudinaryMissingOnPreview();
 
 // Initialize Sentry for error tracking (if DSN is configured)
 initializeSentry();
