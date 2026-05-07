@@ -127,4 +127,24 @@ const inlineStyle = `--acc-type-bg: ${colors.bg}; --acc-type-text: ${colors.text
             transform: none;
         }
     }
+
+    /* ----------------------------------------------------------------
+       Dark mode contrast (V-8b)
+       Some accommodation tokens (e.g. --hospeda-river, --secondary, --muted)
+       resolve to dark luminance values in the dark theme, which makes the
+       pill bg blend into --core-background and breaks AA contrast against
+       the default white-ish text. We:
+         - lift the bg luminance via `oklch(from ...)` so it's always >= 0.55
+         - clamp the text to near-black for >= 4.5:1 contrast on the lifted bg
+         - add a 1px outline derived from the bg so the pill edge is visible
+       ---------------------------------------------------------------- */
+    :global([data-theme='dark']) .acc-type-badge {
+        background-color: oklch(
+            from var(--acc-type-bg, var(--brand-accent)) max(0.62, l) c h
+        );
+        color: oklch(0.12 0 0);
+        outline: 1px solid
+            oklch(from var(--acc-type-bg, var(--brand-accent)) calc(max(0.62, l) + 0.18) c h);
+        outline-offset: 0;
+    }
 </style>
