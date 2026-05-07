@@ -20,6 +20,16 @@ import styles from './HeroImageRotator.module.css';
 interface HeroImage {
     readonly src: string;
     readonly alt: string;
+    /**
+     * Optional srcset string for responsive image selection. When provided,
+     * the browser picks the best matching width from the candidates.
+     */
+    readonly srcset?: string;
+    /**
+     * Optional `sizes` attribute paired with `srcset` so the browser knows
+     * the rendered image width per viewport.
+     */
+    readonly sizes?: string;
 }
 
 interface HeroImageRotatorProps {
@@ -86,6 +96,8 @@ export function HeroImageRotator({ images, interval = 5000 }: HeroImageRotatorPr
                 <img
                     key={image.src}
                     src={image.src}
+                    srcSet={image.srcset}
+                    sizes={image.sizes}
                     alt=""
                     aria-hidden="true"
                     className={styles.image}
