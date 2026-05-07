@@ -349,6 +349,8 @@ Copiá la línea entera. En Vultr → **Account** → **SSH Keys** → **Add SSH
 3. **Verificá** que el código de la API actual sigue exponiendo ese endpoint en el mismo path. Si no, necesitamos actualizar MP **después** del cutover.
 4. **NO toques nada** en MP por ahora. Solo documentás.
 
+> **Caso especial — webhooks NO configurados todavía**: si la pantalla de Webhooks dice "Aún no configuraste notificaciones" (no hay ninguna URL registrada), este paso es no-op acá. La configuración de webhooks se hace en **Paso 12.6** (post-cutover), cuando el endpoint del VPS ya esté respondiendo. Ver `Paso 12.6 — Configurar MercadoPago webhooks` más abajo.
+
 ### Paso 0.9 — (Opcional) Cuenta backup admin del VPS
 
 Si querés un segundo punto de acceso de emergencia al VPS (por si tu laptop muere o perdés la SSH key), agregá una segunda SSH key (de otra máquina o de un colega de confianza) en el mismo paso de Vultr → SSH Keys, y agregala al server al crearlo. Los SSH keys se setean SOLO al crear el server por defecto, agregar una después requiere un paso manual.
@@ -387,7 +389,7 @@ Si querés un segundo punto de acceso de emergencia al VPS (por si tu laptop mue
 - [ ] Cuenta Resend creada, dominio agregado, DNS records de email agregados (verificación en background)
 - [ ] R2 bucket `hospeda-backups` creado, API token guardado en password manager (validación de tarjeta resuelta si aplicó)
 - [ ] Cuenta Better Stack creada
-- [ ] URLs de webhook MercadoPago documentadas
+- [ ] Webhooks de MercadoPago: URLs actuales documentadas, O confirmado que no hay webhooks configurados (en cuyo caso se crean en Paso 12.6)
 - [ ] GitHub App policy verificada / admin de org identificado
 - [ ] `drizzle-kit` pineado a versión exacta + commit
 
@@ -2242,6 +2244,55 @@ Coolify a veces no puede pedir el cert hasta que el DNS resuelve hacia él (chic
 3. Vercel sirve de nuevo
 4. Investigá qué falló en VPS, corregí, re-intentá cutover
 
+### Paso 12.6 — Configurar MercadoPago webhooks (post-cutover)
+
+> **Por qué acá**: hasta este punto el endpoint `https://api.hospeda.com.ar/api/v1/protected/billing/webhooks/mercadopago` no estaba garantizado. Recién después del cutover (12.5) responde 200 desde el VPS de manera estable. Configurar MP antes habría mandado eventos a un endpoint inestable o equivocado (Vercel viejo).
+>
+> **Casos**:
+>
+> - **Webhooks YA configurados antes del cutover** (caso documentado en Paso 0.8): no hay nada que hacer acá; MP sigue mandando al MISMO host, que ahora resuelve al VPS. Saltá a "Validación" abajo.
+> - **Webhooks NO configurados todavía** (caso no-op del Paso 0.8): hay que crearlos ahora. Seguí los pasos 1-5.
+
+#### Crear/actualizar webhook en el panel de MP
+
+1. <https://www.mercadopago.com.ar/developers/panel> → tu aplicación → **Webhooks** (sidebar `Notificaciones`)
+2. Si no existe, click **Configurar notificaciones** (o `Editar` si ya hay uno).
+3. Modo: **Productivo** (NO sandbox/test).
+4. **URL de producción**: `https://api.hospeda.com.ar/api/v1/protected/billing/webhooks/mercadopago`
+5. **Eventos a suscribir** (mínimo recomendado para Hospeda):
+   - `payment` (creado/actualizado)
+   - `merchant_order`
+   - `subscription_preapproval` (si usás suscripciones)
+   - `subscription_authorized_payment` (si usás suscripciones recurrentes)
+   - `point_integration_wh` (solo si integrás Point físico, normalmente NO)
+6. **Generá la "Clave secreta"** (signature secret). MP la usa para firmar el header `x-signature` de cada webhook. Copiala en password manager con clave `MP_WEBHOOK_SECRET`.
+7. **Guardá el formulario** en MP.
+
+#### Persistir el secret en el VPS
+
+8. En Coolify → `hospeda-api-prod` → **Environment Variables**
+9. Agregá / actualizá:
+   - `MP_WEBHOOK_SECRET` = el valor copiado en el paso 6
+   - (Si tu código usa otro nombre de env var, alineá según `apps/api/src/utils/env.ts` o `packages/billing` — el registry del proyecto manda)
+10. Click **Restart** o redeploy de la API para que tome la nueva env.
+
+#### Validación
+
+11. Desde MP → Webhooks → **"Simular notificación"** (botón cerca del listado de webhooks). Elegí evento `payment.created` con un ID de prueba.
+12. En Coolify → API logs, mirá si llegó el POST. Tenés que ver:
+
+    ```
+    [billing.webhooks.mercadopago] received event=payment.created id=...
+    [billing.webhooks.mercadopago] signature_valid=true
+    ```
+
+13. Si `signature_valid=false`: el `MP_WEBHOOK_SECRET` no coincide. Repetí desde el paso 6 (regenerar secret y actualizar env var).
+14. Si el log NO muestra nada: probablemente Cloudflare está bloqueando por WAF/Bot Fight Mode. Excepción: en CF → Security → WAF → agregá una regla "Skip" para `api.hospeda.com.ar/api/v1/protected/billing/webhooks/*` o agregá el rango de IPs de MP a la allowlist.
+
+#### Rollback parcial
+
+Si MP empieza a fallar tras el cutover y no hay tiempo de debuggear, **revertí el DNS de `api` a Vercel** (Paso 12.5 rollback). Vercel vuelve a recibir webhooks. Después corregís en VPS y re-cutover.
+
 ### Verificación de fase 12
 
 - [ ] DB schema aplicado (drizzle push + 21 manual SQL + extensiones)
@@ -2251,6 +2302,7 @@ Coolify a veces no puede pedir el cert hasta que el DNS resuelve hacia él (chic
 - [ ] Crear/leer/editar accommodation desde admin → reflejado en web
 - [ ] Logs limpios (sin errores recurrentes en Coolify)
 - [ ] Cron logs muestran `[cron] adapter=node-cron jobs=16 initialized`
+- [ ] MercadoPago webhook configurado (URL prod + secret + simulación 200) — ver Paso 12.6
 
 ✅ Fase 12 completa. **A partir de acá, Hospeda corre en VPS.** El proyecto Vercel sigue activo para rollback de emergencia, lo eliminás en Fase 16.
 
