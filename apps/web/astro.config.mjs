@@ -6,6 +6,7 @@ import vercel from '@astrojs/vercel';
 import sentry from '@sentry/astro';
 import { defineConfig } from 'astro/config';
 import { validateWebEnv } from './src/env.ts';
+import { ALLOWED_REMOTE_HOSTS } from './src/lib/media.ts';
 
 const rootDir = resolve(new URL('.', import.meta.url).pathname, '../../');
 const appDir = resolve(new URL('.', import.meta.url).pathname);
@@ -84,19 +85,17 @@ export default defineConfig({
         port: 4321
     },
     image: {
+        // Built from ALLOWED_REMOTE_HOSTS (single source of truth shared with
+        // the runtime SSRF guard `isAllowedRemoteHost()` in src/lib/media.ts).
+        // `localhost` is HTTP for dev; the rest are HTTPS public CDNs.
+        // The `*.vercel.app` wildcard (preview deploys) and the dynamic
+        // `apiHostname` are appended separately because they are not part of
+        // the runtime allowlist (wildcards / env-derived).
         remotePatterns: [
-            { hostname: 'localhost' },
+            ...ALLOWED_REMOTE_HOSTS.map((hostname) =>
+                hostname === 'localhost' ? { hostname } : { protocol: 'https', hostname }
+            ),
             { hostname: '*.vercel.app' },
-            // Cloudinary CDN for Hospeda-managed media. Required so Astro <Image>
-            // components (e.g. accommodation cover images kept on <Image> after T-048)
-            // can fetch from res.cloudinary.com without a config error.
-            { protocol: 'https', hostname: 'res.cloudinary.com' },
-            // Public stock photo CDNs used by the seed fixtures.
-            { protocol: 'https', hostname: 'images.pexels.com' },
-            { protocol: 'https', hostname: 'images.unsplash.com' },
-            { protocol: 'https', hostname: 'i0.wp.com' },
-            { protocol: 'https', hostname: 'i1.wp.com' },
-            { protocol: 'https', hostname: 'i2.wp.com' },
             ...(apiHostname && apiHostname !== 'localhost' ? [{ hostname: apiHostname }] : [])
         ]
     },

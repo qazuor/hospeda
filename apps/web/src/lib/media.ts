@@ -18,6 +18,38 @@ import type { MediaPreset } from '@repo/media';
 
 const DEFAULT_PLACEHOLDER = '/images/placeholder.svg';
 
+/**
+ * Allowlist of remote hostnames that the web app is permitted to fetch images
+ * from at build/SSR time via Astro's `getImage()`.
+ *
+ * This list is the **single source of truth** for both:
+ *   1. `astro.config.mjs#image.remotePatterns` (Astro's own validation)
+ *   2. {@link isAllowedRemoteHost} runtime SSRF guard for user-controllable URLs
+ *
+ * SECURITY (SPEC-099 S-1): Astro's `getImage()` will fetch any remote URL it is
+ * configured to optimize. If we pass a user-controlled image URL through
+ * `getImage()` without an allowlist check, an attacker can coerce the build
+ * server (or SSR runtime) to issue HTTP requests to arbitrary hosts —
+ * including internal/cloud-metadata endpoints (SSRF). Always validate
+ * user-controllable URLs with {@link isAllowedRemoteHost} before passing
+ * them to `getImage()`.
+ *
+ * Note: `localhost` is allowed for local development. The wildcard pattern
+ * `*.vercel.app` from `remotePatterns` is **not** modeled here — wildcard
+ * subdomain matching is intentionally omitted from the runtime guard to keep
+ * the allowlist explicit and auditable. If a future use case requires it,
+ * extend the helper rather than the constant.
+ */
+export const ALLOWED_REMOTE_HOSTS = [
+    'localhost',
+    'res.cloudinary.com',
+    'images.pexels.com',
+    'images.unsplash.com',
+    'i0.wp.com',
+    'i1.wp.com',
+    'i2.wp.com'
+] as const;
+
 interface MediaImage {
     readonly url?: string;
     readonly caption?: string;
