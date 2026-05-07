@@ -524,7 +524,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                             className={styles.dropdownItem}
                             style={{ cursor: 'default', opacity: 0.5 }}
                         >
-                            {t('home.searchBar.loadingText', 'Cargando...')}
+                            {t('home.searchBar.noDestinationsText', 'No hay destinos disponibles')}
                         </div>
                     )}
                 </div>

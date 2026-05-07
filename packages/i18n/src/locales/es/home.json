@@ -241,6 +241,7 @@
         "guestsSummary": "{adults} adultos, {children} niños",
         "ctaLabel": "Buscar",
         "loadingText": "Cargando...",
+        "noDestinationsText": "No hay destinos disponibles",
         "searchAriaLabel": "Buscar alojamientos",
         "closePanelAriaLabel": "Cerrar panel",
         "moreSelected_one": "& {{count}} más",
