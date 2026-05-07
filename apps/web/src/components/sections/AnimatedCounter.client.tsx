@@ -8,21 +8,15 @@
  * Tasks: T-072
  */
 
+import type { SupportedLocale } from '@/lib/i18n';
 import { resolveWebIcon } from '@/lib/icon-map';
-import { useEffect, useRef, useState } from 'react';
+import { toBcp47Locale } from '@repo/i18n';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './AnimatedCounter.module.css';
 
 /** Easing function: easeOutQuart. */
 function easeOutQuart(t: number): number {
     return 1 - (1 - t) ** 4;
-}
-
-/**
- * Formats a number using the Argentine Spanish locale for proper
- * thousands separator (dot) and decimal separator (comma).
- */
-function formatNumber(n: number): string {
-    return n.toLocaleString('es-AR');
 }
 
 interface AnimatedCounterProps {
@@ -51,6 +45,11 @@ interface AnimatedCounterProps {
      * @default 2000
      */
     readonly duration?: number;
+    /**
+     * Locale used for number formatting (thousands and decimal separators).
+     * Converted to BCP 47 internally via `toBcp47Locale`.
+     */
+    readonly locale: SupportedLocale;
 }
 
 /**
@@ -88,9 +87,12 @@ export function AnimatedCounter({
     prefix,
     suffix,
     variant = 'counter',
-    duration = 2000
+    duration = 2000,
+    locale
 }: AnimatedCounterProps) {
     const [displayValue, setDisplayValue] = useState(0);
+    const numberFormatter = useMemo(() => new Intl.NumberFormat(toBcp47Locale(locale)), [locale]);
+    const formatNumber = (n: number): string => numberFormatter.format(n);
     const containerRef = useRef<HTMLDivElement>(null);
     const hasAnimatedRef = useRef(false);
     const rafRef = useRef<number | null>(null);
