@@ -30,8 +30,7 @@ export const getStaticPaths = (() => {
     return [{ params: { lang: "es" } }, { params: { lang: "en" } }, { params: { lang: "pt" } }];
 }) satisfies GetStaticPaths;
 
-const { lang } = Astro.params;
-const locale = lang as SupportedLocale;
+const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
 // Fetch city destinations for the search bar (SSG — fetched at build time)
