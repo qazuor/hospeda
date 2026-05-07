@@ -2613,7 +2613,49 @@ Lista chequeable manual. **No marques completo hasta validar TODO.**
 - [ ] Signup E2E manda email a inbox real
 - [ ] Brevo dashboard muestra el email enviado en `Statistics → Transactional`
 
-### Paso 16.2 — Cleanup post-cutover (1-2 semanas después)
+### Paso 16.2 — Completar verificación de Facebook App (antes de launch público)
+
+> 🟡 **Prioridad MEDIA — antes de habilitar signup público con Facebook OAuth**. La app de Facebook quedó en estado "Sin publicar" durante Fase 9 (modo Development/Test). En ese estado SOLO vos como admin podés loguearte con Facebook. Cualquier otro user que intente login con Facebook recibe un error tipo "App not available".
+
+**Contexto**: en Fase 9 creamos la Facebook App `Hospeda` (App ID + App Secret en `HOSPEDA_FACEBOOK_CLIENT_ID|SECRET`) y configuramos OAuth Redirect URI a `https://api.hospeda.com.ar/api/auth/callback/facebook`. La app pasa todos los tests internos pero NO está publicada para usuarios externos.
+
+**Pasos para publicar** (en <https://developers.facebook.com/apps/><APP_ID>/dashboard):
+
+1. **Personalizar caso de uso "Autenticar y solicitar datos..."**
+   - Especificar qué scopes de datos pedís (typicamente `email` y `public_profile` alcanzan).
+   - Justificar cada scope con una explicación de uso.
+
+2. **Revisar y completar requisitos de pruebas**
+   - Verificar que el OAuth Redirect URI sea HTTPS (ya lo es: `api.hospeda.com.ar`).
+   - Verificar que el Privacy Policy URL apunte a una URL pública válida (ej. `https://hospeda.com.ar/legal/privacidad`).
+   - Verificar Terms of Service URL.
+
+3. **Verificación del negocio (Business Verification)**
+   - Es el paso más demorado: Meta verifica que tu empresa existe legalmente.
+   - Necesitás: nombre legal de la empresa, número de identificación tributaria (CUIT en Argentina), dirección, persona de contacto.
+   - Puede tomar 1-7 días hábiles.
+   - Si Hospeda es un proyecto personal/freelance sin empresa formalizada, esto puede ser un blocker — considerá:
+     - Registrar la empresa antes (CUIT, AFIP),
+     - O usar tu propia identidad como Individual/Sole Proprietor.
+
+4. **Revisión de la app (App Review)**
+   - Meta revisa que el flujo de OAuth funcione end-to-end y respete las policies de privacidad.
+   - Tenés que grabar un video de pantalla mostrando el flujo completo (signup → consent → return to app → user data displayed).
+   - Puede tomar 1-3 días hábiles.
+
+5. **Publicar la app**
+   - Una vez completados los 4 anteriores, click "Publicar" en el Panel.
+   - A partir de ese momento, cualquier user de Facebook puede loguearse en Hospeda.
+
+**Verificación**:
+
+- [ ] App status: "Publicada" (en lugar de "Sin publicar" / "Sin publicar (modo desarrollo)")
+- [ ] Test E2E con cuenta de Facebook ajena al admin → puede loguearse y verifica datos
+- [ ] No errores tipo "App not active" en logs
+
+> Si no necesitás Facebook OAuth para launch (alcanza con Email/Password + Google OAuth), podés diferir indefinidamente y borrar las env vars `HOSPEDA_FACEBOOK_CLIENT_*` para que el código no muestre el botón "Login with Facebook".
+
+### Paso 16.3 — Cleanup post-cutover (1-2 semanas después)
 
 **Solo después de 1-2 semanas estables corriendo en VPS:**
 
