@@ -28,14 +28,18 @@ COPY --from=deps /repo /repo
 RUN pnpm turbo run build --filter=hospeda-api
 
 # ----- runner stage ----------------------------------------------------------
+# Preserve the monorepo directory layout (/repo/...) so pnpm's relative
+# symlinks (e.g. apps/api/node_modules/X -> ../../node_modules/.pnpm/X@.../...)
+# resolve correctly at runtime. Flattening into a single /app dir would break
+# any direct dep of the app whose symlink lives in apps/api/node_modules.
 FROM node:22-alpine AS runner
-WORKDIR /app
+WORKDIR /repo
 ENV NODE_ENV=production
-COPY --from=build /repo/apps/api/dist ./dist
-COPY --from=build /repo/apps/api/package.json ./
-# Runtime node_modules: workspace packages are symlinked at the repo root, so
-# copy the full hydrated tree from the build stage.
+# curl is required for Coolify/Traefik healthcheck probes inside the container.
+RUN apk add --no-cache curl
 COPY --from=build /repo/node_modules ./node_modules
 COPY --from=build /repo/packages ./packages
+COPY --from=build /repo/apps/api ./apps/api
+WORKDIR /repo/apps/api
 EXPOSE 3001
 CMD ["node", "dist/index.js"]
