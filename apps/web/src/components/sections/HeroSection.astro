@@ -561,7 +561,13 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
 	}
 
 	@media (max-width: 640px) {
-		.hero__description { font-size: 16px; }
+		.hero__title { line-height: 1.0; }
+		.hero__description {
+			font-size: 16px;
+			line-height: 1.5;
+			overflow-wrap: anywhere;
+		}
+		.hero__bottom { margin-top: 0; }
 		.hero__visual { display: none; }
 		.floating-icon { display: none; }
 	}

@@ -5,9 +5,9 @@
     "created": "2026-05-07T00:00:00.000Z",
     "summary": {
         "totalTasks": 92,
-        "completed": 44,
+        "completed": 55,
         "inProgress": 0,
-        "pending": 48,
+        "pending": 37,
         "blocked": 0,
         "criticalPath": [
             "T-001",
@@ -1094,7 +1094,7 @@
             "id": "T-046",
             "title": "Audit EmptyState.astro for tone prop and icon slot — extend if missing (V-4 prerequisite)",
             "description": "Read apps/web/src/components/shared/feedback/EmptyState.astro. Check whether a `tone` prop (muted|warm|brand) and a custom-icon slot are present. If missing, add them with backward-compatible defaults. Do not change existing callers. Acceptance: EmptyState accepts tone prop and icon slot without breaking existing usage.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": ["T-047", "T-048", "T-049"],
@@ -1108,14 +1108,15 @@
             },
             "files": ["apps/web/src/components/shared/feedback/EmptyState.astro"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
             }
         },
         {
             "id": "T-047",
             "title": "Replace inline empty state in FeaturedAccommodationsSection with EmptyState component (V-4)",
             "description": "In apps/web/src/components/sections/FeaturedAccommodationsSection.astro:81-85, replace the bare `.section__empty-state` div with `<EmptyState icon={BedIcon} message={t('home.featuredAccommodations.emptyState')} actionLabel={t('home.featuredAccommodations.emptyAction')} actionHref={buildUrl({path:'/alojamientos/'})} tone='warm' />`. Acceptance: empty state shows icon + message + CTA; visual review at 4 viewports passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-045", "T-046"],
             "blocks": [],
@@ -1129,14 +1130,15 @@
             },
             "files": ["apps/web/src/components/sections/FeaturedAccommodationsSection.astro"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
             }
         },
         {
             "id": "T-048",
             "title": "Replace inline empty state in NextEventsSection with EmptyState component (V-4)",
             "description": "In apps/web/src/components/sections/NextEventsSection.astro:72-75, replace the bare empty-state div with `<EmptyState icon={CalendarIcon} message={...} actionLabel={...} actionHref={...} tone='warm' />`. Use i18n keys added in T-045. Acceptance: empty state shows icon + message + CTA.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-045", "T-046"],
             "blocks": [],
@@ -1150,14 +1152,15 @@
             },
             "files": ["apps/web/src/components/sections/NextEventsSection.astro"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
             }
         },
         {
             "id": "T-049",
             "title": "Replace inline empty state in LatestArticlesSection with EmptyState component (V-4)",
             "description": "In apps/web/src/components/sections/LatestArticlesSection.astro:71-74, replace the bare empty-state div with `<EmptyState icon={ArticleIcon} message={...} actionLabel={...} actionHref={...} tone='warm' />`. Use i18n keys added in T-045. Acceptance: empty state shows icon + message + CTA.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-045", "T-046"],
             "blocks": [],
@@ -1171,14 +1174,15 @@
             },
             "files": ["apps/web/src/components/sections/LatestArticlesSection.astro"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
             }
         },
         {
             "id": "T-050",
             "title": "Investigate HeroSection subtitle descender clipping at 375/414px (V-1)",
             "description": "Open /es/ at 375px and 414px. Inspect .hero__subtitle in DevTools — measure whether the glyph descenders from .hero__title line-height:0.896 are visually bleeding into the description area. Capture screenshots. Determine the fix: (a) bump line-height to 1.0 at ≤640px, or (b) add padding-bottom:4px. Document in a comment. No code changes yet — gates T-051.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-051"],
@@ -1193,7 +1197,8 @@
             "files": ["apps/web/src/components/sections/HeroSection.astro"],
             "timestamps": {
                 "created": "2026-05-07T00:00:00.000Z"
-            }
+            },
+            "completedAt": "2026-05-07T22:41:06.480Z"
         },
         {
             "id": "T-051",
@@ -1309,7 +1314,7 @@
             "id": "T-056",
             "title": "Update newsletter placeholder copy to remove WhatsApp and rename i18n key (V-7)",
             "description": "In packages/i18n/src/locales/{es,en,pt}/footer.json, rename key `footer.newsletterPlaceholder` to `footer.newsletterEmailPlaceholder` and update the ES value to 'Tu correo electrónico', EN to 'Your email', PT to 'Seu e-mail'. Update apps/web/src/layouts/Footer.astro:231-254 to use the new key. Acceptance: newsletter input shows email-only placeholder in all 3 locales.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": [],
@@ -1328,8 +1333,10 @@
                 "apps/web/src/layouts/Footer.astro"
             ],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
-            }
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
+            },
+            "commit": "c6d213803"
         },
         {
             "id": "T-057",
@@ -1383,7 +1390,7 @@
             "id": "T-059",
             "title": "Tighten About Us heading clamp and add text-wrap:balance for 768px (V-9)",
             "description": "In apps/web/src/components/sections/AboutUsSection.astro:336-344, change the heading font-size from `clamp(2rem, 4vw, 3rem)` to `clamp(1.5rem, 3.5vw + 0.25rem, 3rem)`. Add `text-wrap: balance` and optionally `max-width: 18ch`. Confirm heading ≤2 lines at 768px in both ES (57+ chars) and EN. Acceptance: heading ≤2 lines at 768; balanced line-breaks.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": [],
             "blocks": [],
@@ -1397,8 +1404,10 @@
             },
             "files": ["apps/web/src/components/sections/AboutUsSection.astro"],
             "timestamps": {
-                "created": "2026-05-07T00:00:00.000Z"
-            }
+                "created": "2026-05-07T00:00:00.000Z",
+                "completed": "2026-05-07T00:00:00.000Z"
+            },
+            "commit": "ae4dbf652"
         },
         {
             "id": "T-060",
