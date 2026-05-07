@@ -194,7 +194,7 @@ describe('ENV_REGISTRY', () => {
                 'HOSPEDA_EXCHANGE_RATE_API_KEY',
                 'HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN',
                 'HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET',
-                'HOSPEDA_RESEND_API_KEY',
+                'HOSPEDA_EMAIL_API_KEY',
                 'HOSPEDA_SEED_SUPER_ADMIN_PASSWORD',
                 'POSTGRES_PASSWORD'
             ];
@@ -213,8 +213,8 @@ describe('ENV_REGISTRY', () => {
                 'HOSPEDA_BETTER_AUTH_URL',
                 'HOSPEDA_CRON_ADAPTER',
                 'HOSPEDA_DISABLE_AUTH',
-                'HOSPEDA_RESEND_FROM_EMAIL',
-                'HOSPEDA_RESEND_FROM_NAME',
+                'HOSPEDA_EMAIL_FROM_EMAIL',
+                'HOSPEDA_EMAIL_FROM_NAME',
                 'HOSPEDA_COMMIT_SHA',
                 'HOSPEDA_SENTRY_DSN',
                 'API_PORT',

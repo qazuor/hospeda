@@ -2,7 +2,7 @@
  * Tests for createConversationMailer factory.
  *
  * Verifies:
- * - Returns `undefined` when HOSPEDA_RESEND_API_KEY is absent.
+ * - Returns `undefined` when HOSPEDA_EMAIL_API_KEY is absent.
  * - Returns a `ConversationMailer` object when the key is present.
  * - `sendVerificationEmail` invokes `sendEmail` with the correct arguments.
  * - On `sendEmail` failure, errors are logged but the method does NOT throw.
@@ -47,7 +47,7 @@ vi.mock('../../src/utils/logger', () => ({
 // ---------------------------------------------------------------------------
 
 const mockEnv: Record<string, string | undefined> = {
-    HOSPEDA_RESEND_API_KEY: undefined,
+    HOSPEDA_EMAIL_API_KEY: undefined,
     HOSPEDA_BETTER_AUTH_SECRET: 'test-secret-min-32-chars-padding-x',
     HOSPEDA_SITE_URL: 'https://hospeda.com.ar',
     HOSPEDA_API_URL: 'https://api.hospeda.com.ar',
@@ -80,13 +80,13 @@ const SAMPLE_PAYLOAD: VerificationEmailPayload = {
 describe('createConversationMailer', () => {
     afterEach(() => {
         vi.clearAllMocks();
-        mockEnv.HOSPEDA_RESEND_API_KEY = undefined;
+        mockEnv.HOSPEDA_EMAIL_API_KEY = undefined;
     });
 
     // -----------------------------------------------------------------------
-    describe('when HOSPEDA_RESEND_API_KEY is not set', () => {
+    describe('when HOSPEDA_EMAIL_API_KEY is not set', () => {
         it('should return undefined', async () => {
-            mockEnv.HOSPEDA_RESEND_API_KEY = undefined;
+            mockEnv.HOSPEDA_EMAIL_API_KEY = undefined;
             vi.resetModules();
             const { createConversationMailer: factory } = await import(
                 '../../src/lib/conversation-mailer'
@@ -98,7 +98,7 @@ describe('createConversationMailer', () => {
         });
 
         it('should NOT call createEmailClient', async () => {
-            mockEnv.HOSPEDA_RESEND_API_KEY = undefined;
+            mockEnv.HOSPEDA_EMAIL_API_KEY = undefined;
             vi.resetModules();
             const { createConversationMailer: factory } = await import(
                 '../../src/lib/conversation-mailer'
@@ -111,9 +111,9 @@ describe('createConversationMailer', () => {
     });
 
     // -----------------------------------------------------------------------
-    describe('when HOSPEDA_RESEND_API_KEY is set', () => {
+    describe('when HOSPEDA_EMAIL_API_KEY is set', () => {
         it('should return an object with sendVerificationEmail', async () => {
-            mockEnv.HOSPEDA_RESEND_API_KEY = 'test-resend-key-123';
+            mockEnv.HOSPEDA_EMAIL_API_KEY = 'test-resend-key-123';
             vi.resetModules();
             const { createConversationMailer: factory } = await import(
                 '../../src/lib/conversation-mailer'
@@ -126,7 +126,7 @@ describe('createConversationMailer', () => {
         });
 
         it('should call createEmailClient with the API key', async () => {
-            mockEnv.HOSPEDA_RESEND_API_KEY = 'test-resend-key-123';
+            mockEnv.HOSPEDA_EMAIL_API_KEY = 'test-resend-key-123';
             vi.resetModules();
             const { createConversationMailer: factory } = await import(
                 '../../src/lib/conversation-mailer'
@@ -143,7 +143,7 @@ describe('createConversationMailer', () => {
     // -----------------------------------------------------------------------
     describe('sendVerificationEmail', () => {
         async function getMailer() {
-            mockEnv.HOSPEDA_RESEND_API_KEY = 'test-resend-key-123';
+            mockEnv.HOSPEDA_EMAIL_API_KEY = 'test-resend-key-123';
             vi.resetModules();
             const { createConversationMailer: factory } = await import(
                 '../../src/lib/conversation-mailer'

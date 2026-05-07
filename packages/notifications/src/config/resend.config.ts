@@ -1,30 +1,50 @@
-import { Resend } from 'resend';
+import { TransactionalEmailsApi, TransactionalEmailsApiApiKeys } from '@getbrevo/brevo';
 
 /**
- * Input for creating a Resend client instance.
+ * Public type alias for the configured email client used by the notifications
+ * package. Internally this is the Brevo `TransactionalEmailsApi`, but
+ * consumers should treat it as opaque so a future provider swap stays
+ * transparent.
  */
-export interface CreateResendClientInput {
-    /** Resend API key */
+export type EmailClient = TransactionalEmailsApi;
+
+/**
+ * Input for creating an email client instance.
+ */
+export interface CreateEmailClientInput {
+    /** Email provider API key (Brevo: starts with `xkeysib-`). */
     readonly apiKey: string;
 }
 
 /**
- * Creates a Resend client instance using dependency-injected configuration.
+ * Creates an email client instance using dependency-injected configuration.
  *
  * @param input - Configuration with API key
- * @returns Configured Resend client
+ * @returns Configured email client
  *
  * @example
  * ```ts
- * const resend = createResendClient({ apiKey: env.RESEND_API_KEY });
- * await resend.emails.send({
- *   from: 'noreply@hospeda.com.ar',
- *   to: 'user@example.com',
- *   subject: 'Welcome',
- *   html: '<p>Hello!</p>'
+ * const client = createEmailClient({ apiKey: env.HOSPEDA_EMAIL_API_KEY });
+ * const transport = new BrevoEmailTransport(client, {
+ *   fromEmail: 'noreply@hospeda.com.ar',
+ *   fromName: 'Hospeda'
  * });
  * ```
  */
-export function createResendClient({ apiKey }: CreateResendClientInput): Resend {
-    return new Resend(apiKey);
+export function createEmailClient({ apiKey }: CreateEmailClientInput): EmailClient {
+    const api = new TransactionalEmailsApi();
+    api.setApiKey(TransactionalEmailsApiApiKeys.apiKey, apiKey);
+    return api;
 }
+
+/**
+ * @deprecated Use `createEmailClient` instead. Kept as a re-export so call
+ * sites that still import the Resend-named factory keep compiling during the
+ * migration.
+ */
+export const createResendClient = createEmailClient;
+
+/**
+ * @deprecated Use `CreateEmailClientInput` instead.
+ */
+export type CreateResendClientInput = CreateEmailClientInput;

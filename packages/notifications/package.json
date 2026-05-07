@@ -22,13 +22,14 @@
         "test:coverage": "vitest run --coverage"
     },
     "dependencies": {
+        "@getbrevo/brevo": "^3.0.1",
         "@react-email/components": "^0.0.30",
+        "@react-email/render": "^2.0.4",
         "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",
         "ioredis": "^5.4.0",
-        "react": "^19.1.1",
-        "resend": "^4.0.0"
+        "react": "^19.1.1"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",

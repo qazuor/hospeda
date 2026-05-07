@@ -19,7 +19,7 @@
  * );
  * ```
  *
- * When `HOSPEDA_RESEND_API_KEY` is absent this factory returns `undefined`.
+ * When `HOSPEDA_EMAIL_API_KEY` is absent this factory returns `undefined`.
  * `ConversationService` handles a missing mailer by logging a warning and
  * skipping email dispatch, so no routes break in local-dev or test environments.
  *
@@ -37,14 +37,15 @@ import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
 
 /**
- * Creates a `ConversationMailer` implementation backed by Resend.
+ * Creates a `ConversationMailer` implementation backed by the configured
+ * email provider (currently Brevo via `@repo/email`).
  *
- * Returns `undefined` when `HOSPEDA_RESEND_API_KEY` is not configured so the
+ * Returns `undefined` when `HOSPEDA_EMAIL_API_KEY` is not configured so the
  * caller can safely forward it to `ConversationService` as-is — the service
  * already handles `undefined` with a graceful warning log.
  *
- * @returns A `ConversationMailer` instance, or `undefined` when Resend is not
- *   configured.
+ * @returns A `ConversationMailer` instance, or `undefined` when no email
+ *   provider is configured.
  *
  * @example
  * ```ts
@@ -55,7 +56,7 @@ import { apiLogger } from '../utils/logger.js';
  * ```
  */
 export function createConversationMailer(): ConversationMailer | undefined {
-    const apiKey = env.HOSPEDA_RESEND_API_KEY;
+    const apiKey = env.HOSPEDA_EMAIL_API_KEY;
     if (!apiKey) {
         return undefined;
     }
@@ -66,7 +67,7 @@ export function createConversationMailer(): ConversationMailer | undefined {
         /**
          * Sends a verification email to an anonymous guest.
          *
-         * On Resend failure the error is logged at `error` level but is NOT
+         * On provider failure the error is logged at `error` level but is NOT
          * re-thrown. `ConversationService` already tolerates a no-op mailer, so
          * callers do not need to wrap this in a try/catch.
          *

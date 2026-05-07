@@ -416,23 +416,23 @@ export const HOSPEDA_ENV_VARS = [
     // Email
     // -------------------------------------------------------------------------
     {
-        name: 'HOSPEDA_RESEND_API_KEY',
-        description: 'Resend email API key',
-        descriptionEs: 'API key de Resend para envío de mails',
+        name: 'HOSPEDA_EMAIL_API_KEY',
+        description: 'Transactional email provider API key (currently Brevo)',
+        descriptionEs: 'API key del proveedor de email transaccional (actualmente Brevo)',
         type: 'string',
         required: false,
         secret: true,
-        exampleValue: 're_xxxx',
+        exampleValue: 'xkeysib-xxxx',
         apps: ['api'],
         category: 'email',
-        helpUrl: 'https://resend.com/api-keys',
+        helpUrl: 'https://app.brevo.com/settings/keys/api',
         howToObtain:
-            'Sign up at resend.com → API Keys → Create API key → choose "Sending access" → copy the key starting with "re_". Verify your sending domain first under Domains.',
+            'Brevo dashboard → SMTP & API → API Keys → Generate a new API key → copy the value starting with "xkeysib-". Authenticate your sending domain first under Senders, Domains & Dedicated IPs.',
         howToObtainEs:
-            'Registrate en resend.com → API Keys → Create API key → elegí "Sending access" → copiá la key que empieza con "re_". Antes verificá tu dominio de envío en Domains.'
+            'Brevo dashboard → SMTP & API → API Keys → Generate a new API key → copiá el valor que empieza con "xkeysib-". Antes autenticá tu dominio de envío en Senders, Domains & Dedicated IPs.'
     },
     {
-        name: 'HOSPEDA_RESEND_FROM_EMAIL',
+        name: 'HOSPEDA_EMAIL_FROM_EMAIL',
         description: 'Sender email address',
         descriptionEs: 'Dirección de email del remitente',
         type: 'string',
@@ -442,12 +442,12 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'email',
         howToObtain:
-            'A "From" address using a domain you have verified in Resend (e.g. noreply@yourdomain.com). Cannot use a Gmail/Yahoo address — must be your own domain.',
+            'A "From" address using a domain authenticated in your email provider (e.g. noreply@yourdomain.com). Cannot use a free-mail address (Gmail/Yahoo); must be on a domain you control.',
         howToObtainEs:
-            'Dirección "From" usando un dominio que ya verificaste en Resend (ej: noreply@tudominio.com). NO podés usar Gmail/Yahoo; tiene que ser tu propio dominio.'
+            'Dirección "From" usando un dominio autenticado en tu proveedor de email (ej: noreply@tudominio.com). NO podés usar Gmail/Yahoo; tiene que ser un dominio tuyo.'
     },
     {
-        name: 'HOSPEDA_RESEND_FROM_NAME',
+        name: 'HOSPEDA_EMAIL_FROM_NAME',
         description: 'Sender display name',
         descriptionEs: 'Nombre visible del remitente',
         type: 'string',

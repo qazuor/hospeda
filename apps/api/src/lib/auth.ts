@@ -211,11 +211,11 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                 // Fire-and-forget to prevent timing attacks (BA recommendation)
                 void (async () => {
                     try {
-                        const apiKey = env.HOSPEDA_RESEND_API_KEY;
+                        const apiKey = env.HOSPEDA_EMAIL_API_KEY;
                         if (!apiKey) {
                             logger.warn(
                                 { userId: user.id },
-                                'HOSPEDA_RESEND_API_KEY not set - skipping password reset email'
+                                'HOSPEDA_EMAIL_API_KEY not set - skipping password reset email'
                             );
                             return;
                         }
@@ -253,11 +253,11 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                 // Fire-and-forget to prevent timing attacks (BA recommendation)
                 void (async () => {
                     try {
-                        const apiKey = env.HOSPEDA_RESEND_API_KEY;
+                        const apiKey = env.HOSPEDA_EMAIL_API_KEY;
                         if (!apiKey) {
                             logger.warn(
                                 { userId: user.id },
-                                'HOSPEDA_RESEND_API_KEY not set - skipping verification email'
+                                'HOSPEDA_EMAIL_API_KEY not set - skipping verification email'
                             );
                             return;
                         }

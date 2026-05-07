@@ -168,10 +168,10 @@ export const conversationTokenReminderJob: CronJobDefinition = {
                 }
 
                 // Email client — bail early if not configured
-                const resendApiKey = env.HOSPEDA_RESEND_API_KEY;
-                if (!resendApiKey) {
+                const emailApiKey = env.HOSPEDA_EMAIL_API_KEY;
+                if (!emailApiKey) {
                     logger.warn(
-                        'HOSPEDA_RESEND_API_KEY not configured — skipping token reminder dispatch'
+                        'HOSPEDA_EMAIL_API_KEY not configured — skipping token reminder dispatch'
                     );
                     return {
                         skipped: false,
@@ -183,7 +183,7 @@ export const conversationTokenReminderJob: CronJobDefinition = {
                     };
                 }
 
-                const emailClient = createEmailClient({ apiKey: resendApiKey });
+                const emailClient = createEmailClient({ apiKey: emailApiKey });
                 const db = getDb();
                 const accommodationModel = new AccommodationModel();
 

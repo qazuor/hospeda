@@ -328,7 +328,7 @@ export interface ConversationServiceDeps {
  *   {
  *     authSecret: env.HOSPEDA_BETTER_AUTH_SECRET,
  *     siteUrl: env.HOSPEDA_SITE_URL,
- *     resendApiKey: env.HOSPEDA_RESEND_API_KEY,
+ *     resendApiKey: env.HOSPEDA_EMAIL_API_KEY,
  *   }
  * );
  * const result = await svc.initiateAnonymous(actor, { accommodationId, guestName, guestEmail, message });

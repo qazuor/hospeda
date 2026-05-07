@@ -499,13 +499,13 @@ describe('Environment Configuration', () => {
             expect(envModule.env.HOSPEDA_SENTRY_PROJECT).toBe('hospeda-api');
         });
 
-        it('should accept HOSPEDA_RESEND_API_KEY', async () => {
+        it('should accept HOSPEDA_EMAIL_API_KEY', async () => {
             process.env = createValidTestEnv({
-                HOSPEDA_RESEND_API_KEY: 're_test_key_123'
+                HOSPEDA_EMAIL_API_KEY: 're_test_key_123'
             });
             const envModule = await import('../../src/utils/env');
             envModule.validateApiEnv();
-            expect(envModule.env.HOSPEDA_RESEND_API_KEY).toBe('re_test_key_123');
+            expect(envModule.env.HOSPEDA_EMAIL_API_KEY).toBe('re_test_key_123');
         });
 
         it('should leave optional HOSPEDA_* vars undefined when not set', async () => {
@@ -519,7 +519,7 @@ describe('Environment Configuration', () => {
             expect(envModule.env.HOSPEDA_BETTER_AUTH_URL).toBe('http://localhost:3001/api/auth');
             expect(envModule.env.HOSPEDA_ADMIN_URL).toBeUndefined();
             expect(envModule.env.HOSPEDA_SENTRY_DSN).toBeUndefined();
-            expect(envModule.env.HOSPEDA_RESEND_API_KEY).toBeUndefined();
+            expect(envModule.env.HOSPEDA_EMAIL_API_KEY).toBeUndefined();
         });
     });
 

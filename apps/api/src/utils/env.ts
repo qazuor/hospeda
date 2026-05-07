@@ -343,10 +343,10 @@ export const ApiEnvBaseSchema = z.object({
         .optional()
         .transform((v) => v !== 'false'),
 
-    // Email / Notifications
-    HOSPEDA_RESEND_API_KEY: z.string().optional(),
-    HOSPEDA_RESEND_FROM_EMAIL: z.string().email().optional(),
-    HOSPEDA_RESEND_FROM_NAME: z.string().optional(),
+    // Email / Notifications (provider-agnostic; currently Brevo via @repo/email)
+    HOSPEDA_EMAIL_API_KEY: z.string().optional(),
+    HOSPEDA_EMAIL_FROM_EMAIL: z.string().email().optional(),
+    HOSPEDA_EMAIL_FROM_NAME: z.string().optional(),
     /** Comma-separated list of admin emails for system notifications */
     HOSPEDA_ADMIN_NOTIFICATION_EMAILS: z.string().optional(),
 

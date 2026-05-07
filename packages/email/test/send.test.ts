@@ -1,51 +1,65 @@
-import type { Resend } from 'resend';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { sendEmail } from '../src/send.js';
-import type { SendEmailInput } from '../src/send.js';
 
-// Mock Resend module
-vi.mock('resend', () => {
+// Mock @react-email/render so the tests do not depend on actually rendering
+// React components — sendEmail's contract with the renderer is stable enough
+// to be tested through fixed HTML output.
+vi.mock('@react-email/render', () => ({
+    render: vi.fn().mockResolvedValue('<html><body>rendered</body></html>')
+}));
+
+// Mock the Brevo SDK exports we depend on. SendSmtpEmail is treated as a
+// dumb POJO so the tests can inspect what sendEmail wrote into it.
+vi.mock('@getbrevo/brevo', () => {
+    class FakeSendSmtpEmail {
+        public subject?: string;
+        public htmlContent?: string;
+        public sender?: { email: string; name?: string };
+        public to?: { email: string }[];
+        public replyTo?: { email: string };
+    }
+    class FakeApi {
+        sendTransacEmail = vi.fn();
+    }
     return {
-        Resend: vi.fn().mockImplementation(() => ({
-            emails: {
-                send: vi.fn()
-            }
-        }))
+        SendSmtpEmail: FakeSendSmtpEmail,
+        TransactionalEmailsApi: FakeApi,
+        TransactionalEmailsApiApiKeys: { apiKey: 'apiKey' }
     };
 });
 
-/**
- * Creates a mock Resend client with a controllable emails.send method.
- */
-function createMockResendClient(): { client: Resend; sendMock: ReturnType<typeof vi.fn> } {
+import type { EmailClient } from '../src/client.js';
+import { sendEmail } from '../src/send.js';
+import type { SendEmailInput } from '../src/send.js';
+
+type SendMock = ReturnType<typeof vi.fn>;
+
+function createMockClient(): { client: EmailClient; sendMock: SendMock } {
     const sendMock = vi.fn();
-    const client = {
-        emails: {
-            send: sendMock
-        }
-    } as unknown as Resend;
+    // The fake client only needs to expose sendTransacEmail; the type cast is
+    // safe here because EmailClient is an alias for Brevo's API class which
+    // is mocked above.
+    const client = { sendTransacEmail: sendMock } as unknown as EmailClient;
     return { client, sendMock };
 }
 
 describe('sendEmail', () => {
     const mockReact = { type: 'div', props: { children: 'Test' } } as never;
-    let mockResend: ReturnType<typeof createMockResendClient>;
+    let mock: ReturnType<typeof createMockClient>;
 
     beforeEach(() => {
-        mockResend = createMockResendClient();
+        mock = createMockClient();
         vi.clearAllMocks();
     });
 
     describe('when email is sent successfully', () => {
         it('should return success result with message ID', async () => {
             // Arrange
-            mockResend.sendMock.mockResolvedValue({
-                data: { id: 'msg_123456' },
-                error: null
+            mock.sendMock.mockResolvedValue({
+                body: { messageId: '<msg_123456@smtp-relay.brevo.com>' }
             });
 
             const input: SendEmailInput = {
-                client: mockResend.client,
+                client: mock.client,
                 to: 'test@example.com',
                 subject: 'Test Subject',
                 react: mockReact
@@ -56,19 +70,16 @@ describe('sendEmail', () => {
 
             // Assert
             expect(result.success).toBe(true);
-            expect(result.messageId).toBe('msg_123456');
+            expect(result.messageId).toBe('<msg_123456@smtp-relay.brevo.com>');
             expect(result.error).toBeUndefined();
         });
 
         it('should handle multiple recipients', async () => {
             // Arrange
-            mockResend.sendMock.mockResolvedValue({
-                data: { id: 'msg_123456' },
-                error: null
-            });
+            mock.sendMock.mockResolvedValue({ body: { messageId: '<msg@brevo>' } });
 
             const input: SendEmailInput = {
-                client: mockResend.client,
+                client: mock.client,
                 to: ['test1@example.com', 'test2@example.com'],
                 subject: 'Test Subject',
                 react: mockReact
@@ -79,26 +90,24 @@ describe('sendEmail', () => {
 
             // Assert
             expect(result.success).toBe(true);
-            expect(mockResend.sendMock).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    to: ['test1@example.com', 'test2@example.com']
-                })
-            );
+            const message = mock.sendMock.mock.calls[0]?.[0];
+            expect(message.to).toEqual([
+                { email: 'test1@example.com' },
+                { email: 'test2@example.com' }
+            ]);
         });
 
-        it('should use custom from and replyTo when provided', async () => {
+        it('should use custom fromEmail/fromName/replyTo when provided', async () => {
             // Arrange
-            mockResend.sendMock.mockResolvedValue({
-                data: { id: 'msg_123456' },
-                error: null
-            });
+            mock.sendMock.mockResolvedValue({ body: { messageId: '<msg@brevo>' } });
 
             const input: SendEmailInput = {
-                client: mockResend.client,
+                client: mock.client,
                 to: 'test@example.com',
                 subject: 'Test Subject',
                 react: mockReact,
-                from: 'custom@example.com',
+                fromEmail: 'custom@example.com',
+                fromName: 'Custom Sender',
                 replyTo: 'reply@example.com'
             };
 
@@ -106,23 +115,20 @@ describe('sendEmail', () => {
             await sendEmail(input);
 
             // Assert
-            expect(mockResend.sendMock).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    from: 'custom@example.com',
-                    replyTo: 'reply@example.com'
-                })
-            );
+            const message = mock.sendMock.mock.calls[0]?.[0];
+            expect(message.sender).toEqual({
+                email: 'custom@example.com',
+                name: 'Custom Sender'
+            });
+            expect(message.replyTo).toEqual({ email: 'reply@example.com' });
         });
 
-        it('should use default from address when from is not provided', async () => {
+        it('should use default sender when fromEmail/fromName are not provided', async () => {
             // Arrange
-            mockResend.sendMock.mockResolvedValue({
-                data: { id: 'msg_default_from' },
-                error: null
-            });
+            mock.sendMock.mockResolvedValue({ body: { messageId: '<msg_default@brevo>' } });
 
             const input: SendEmailInput = {
-                client: mockResend.client,
+                client: mock.client,
                 to: 'test@example.com',
                 subject: 'Test Subject',
                 react: mockReact
@@ -132,24 +138,44 @@ describe('sendEmail', () => {
             await sendEmail(input);
 
             // Assert
-            expect(mockResend.sendMock).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    from: 'Hospeda <noreply@hospeda.com.ar>'
-                })
-            );
+            const message = mock.sendMock.mock.calls[0]?.[0];
+            expect(message.sender).toEqual({
+                email: 'noreply@hospeda.com.ar',
+                name: 'Hospeda'
+            });
+        });
+
+        it('should pass the rendered HTML to the provider', async () => {
+            // Arrange
+            mock.sendMock.mockResolvedValue({ body: { messageId: '<msg@brevo>' } });
+
+            const input: SendEmailInput = {
+                client: mock.client,
+                to: 'test@example.com',
+                subject: 'Test Subject',
+                react: mockReact
+            };
+
+            // Act
+            await sendEmail(input);
+
+            // Assert
+            const message = mock.sendMock.mock.calls[0]?.[0];
+            expect(message.htmlContent).toBe('<html><body>rendered</body></html>');
+            expect(message.subject).toBe('Test Subject');
         });
     });
 
     describe('when email send fails', () => {
-        it('should return failure result with error message', async () => {
-            // Arrange
-            mockResend.sendMock.mockResolvedValue({
-                data: null,
-                error: { message: 'API rate limit exceeded' }
+        it('should return failure result with structured error body', async () => {
+            // Arrange — Brevo SDK errors expose details via err.body.
+            const sdkError = Object.assign(new Error('Bad Request'), {
+                body: { code: 'invalid_parameter', message: 'API rate limit exceeded' }
             });
+            mock.sendMock.mockRejectedValue(sdkError);
 
             const input: SendEmailInput = {
-                client: mockResend.client,
+                client: mock.client,
                 to: 'test@example.com',
                 subject: 'Test Subject',
                 react: mockReact
@@ -160,16 +186,16 @@ describe('sendEmail', () => {
 
             // Assert
             expect(result.success).toBe(false);
-            expect(result.error).toBe('API rate limit exceeded');
+            expect(result.error).toContain('API rate limit exceeded');
             expect(result.messageId).toBeUndefined();
         });
 
-        it('should handle thrown exceptions', async () => {
+        it('should fall back to err.message when no body is present', async () => {
             // Arrange
-            mockResend.sendMock.mockRejectedValue(new Error('Network error'));
+            mock.sendMock.mockRejectedValue(new Error('Network error'));
 
             const input: SendEmailInput = {
-                client: mockResend.client,
+                client: mock.client,
                 to: 'test@example.com',
                 subject: 'Test Subject',
                 react: mockReact
@@ -185,10 +211,10 @@ describe('sendEmail', () => {
 
         it('should handle non-Error exceptions', async () => {
             // Arrange
-            mockResend.sendMock.mockRejectedValue('String error');
+            mock.sendMock.mockRejectedValue('String error');
 
             const input: SendEmailInput = {
-                client: mockResend.client,
+                client: mock.client,
                 to: 'test@example.com',
                 subject: 'Test Subject',
                 react: mockReact
@@ -200,42 +226,6 @@ describe('sendEmail', () => {
             // Assert
             expect(result.success).toBe(false);
             expect(result.error).toBe('Unknown error');
-        });
-    });
-
-    describe('when using createEmailClient', () => {
-        it('should send email successfully with a client created via createEmailClient', async () => {
-            // Arrange - verify DI works end-to-end with createEmailClient factory
-            const { createEmailClient } = await import('../src/client.js');
-            const { Resend } = await import('resend');
-
-            const mockSend = vi.fn().mockResolvedValue({
-                data: { id: 'msg_di_123' },
-                error: null
-            });
-
-            vi.mocked(Resend).mockImplementation(
-                () =>
-                    ({
-                        emails: { send: mockSend }
-                    }) as never
-            );
-
-            const client = createEmailClient({ apiKey: 'test-api-key' });
-
-            const input: SendEmailInput = {
-                client,
-                to: 'test@example.com',
-                subject: 'Test Subject',
-                react: mockReact
-            };
-
-            // Act
-            const result = await sendEmail(input);
-
-            // Assert
-            expect(result.success).toBe(true);
-            expect(result.messageId).toBe('msg_di_123');
         });
     });
 });
