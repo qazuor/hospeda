@@ -90,6 +90,10 @@
         "events": "Events & activities",
         "subtitle": "The largest tourism community in the Litoral"
     },
+    "categoryTiles": {
+        "sectionTitle": "Explore by category",
+        "sectionTagline": "For every taste"
+    },
     "categories": {
         "title": "Accommodation types",
         "accentSubtitle": "What are you looking for",

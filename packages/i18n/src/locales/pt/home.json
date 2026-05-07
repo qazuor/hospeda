@@ -90,6 +90,10 @@
         "events": "Eventos e atividades",
         "subtitle": "A maior comunidade de turismo do Litoral"
     },
+    "categoryTiles": {
+        "sectionTitle": "Explore por categoria",
+        "sectionTagline": "Para todos os gostos"
+    },
     "categories": {
         "title": "Tipos de hospedagem",
         "accentSubtitle": "O que voce procura",

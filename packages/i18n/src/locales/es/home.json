@@ -90,6 +90,10 @@
         "experience": "Turistas conectados",
         "events": "Eventos y actividades"
     },
+    "categoryTiles": {
+        "sectionTitle": "Explorá por categoría",
+        "sectionTagline": "Para cada gusto"
+    },
     "categories": {
         "title": "Tipos de alojamiento",
         "accentSubtitle": "Que estas buscando",
