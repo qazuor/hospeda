@@ -5,9 +5,9 @@
     "created": "2026-05-07T00:00:00.000Z",
     "summary": {
         "totalTasks": 92,
-        "completed": 55,
+        "completed": 56,
         "inProgress": 0,
-        "pending": 37,
+        "pending": 36,
         "blocked": 0,
         "criticalPath": [
             "T-001",
@@ -1204,7 +1204,7 @@
             "id": "T-051",
             "title": "Fix HeroSection subtitle glyph clipping at mobile viewports (V-1)",
             "description": "Based on T-050 findings, apply the chosen fix in apps/web/src/components/sections/HeroSection.astro:310-324: either add a `@media (max-width: 640px) { .hero__title { line-height: 1.0; } }` rule or `padding-bottom: 4px`. Also add `overflow-wrap: anywhere; line-height: 1.5` to .hero__description explicitly. Acceptance: subtitle fully visible at 375/414 with no glyph clipping.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1.5,
             "blockedBy": ["T-050"],
             "blocks": [],
@@ -1219,7 +1219,8 @@
             "files": ["apps/web/src/components/sections/HeroSection.astro"],
             "timestamps": {
                 "created": "2026-05-07T00:00:00.000Z"
-            }
+            },
+            "completedAt": "2026-05-07T22:41:46.633Z"
         },
         {
             "id": "T-052",
