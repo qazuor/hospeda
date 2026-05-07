@@ -345,7 +345,7 @@ Copiá la línea entera. En Vultr → **Account** → **SSH Keys** → **Add SSH
 > **Por qué este paso**: cuando hagas el cutover de `api.hospeda.com.ar` a VPS (Fase 12), MercadoPago va a seguir mandando webhooks al MISMO host (`api.hospeda.com.ar`), o sea, no hay nada que reconfigurar en MP — pero **tenés que confirmar que está bien y que el path no cambió**.
 
 1. <https://www.mercadopago.com.ar/developers/panel> → tu aplicación
-2. **Webhooks** → anotá las URLs actuales (típicamente `https://api.hospeda.com.ar/api/v1/protected/billing/webhooks/mercadopago` o similar)
+2. **Webhooks** → anotá las URLs actuales (típicamente `https://api.hospeda.com.ar/api/v1/webhooks/mercadopago` o similar)
 3. **Verificá** que el código de la API actual sigue exponiendo ese endpoint en el mismo path. Si no, necesitamos actualizar MP **después** del cutover.
 4. **NO toques nada** en MP por ahora. Solo documentás.
 
@@ -2337,7 +2337,7 @@ Coolify a veces no puede pedir el cert hasta que el DNS resuelve hacia él (chic
 
 ### Paso 12.6 — Configurar MercadoPago webhooks (post-cutover)
 
-> **Por qué acá**: hasta este punto el endpoint `https://api.hospeda.com.ar/api/v1/protected/billing/webhooks/mercadopago` no estaba garantizado. Recién después del cutover (12.5) responde 200 desde el VPS de manera estable. Configurar MP antes habría mandado eventos a un endpoint inestable o equivocado (Vercel viejo).
+> **Por qué acá**: hasta este punto el endpoint `https://api.hospeda.com.ar/api/v1/webhooks/mercadopago` no estaba garantizado. Recién después del cutover (12.5) responde 200 desde el VPS de manera estable. Configurar MP antes habría mandado eventos a un endpoint inestable o equivocado (Vercel viejo).
 >
 > **Casos**:
 >
@@ -2349,7 +2349,7 @@ Coolify a veces no puede pedir el cert hasta que el DNS resuelve hacia él (chic
 1. <https://www.mercadopago.com.ar/developers/panel> → tu aplicación → **Webhooks** (sidebar `Notificaciones`)
 2. Si no existe, click **Configurar notificaciones** (o `Editar` si ya hay uno).
 3. Modo: **Productivo** (NO sandbox/test).
-4. **URL de producción**: `https://api.hospeda.com.ar/api/v1/protected/billing/webhooks/mercadopago`
+4. **URL de producción**: `https://api.hospeda.com.ar/api/v1/webhooks/mercadopago`
 5. **Eventos a suscribir** (mínimo recomendado para Hospeda):
    - `payment` (creado/actualizado)
    - `merchant_order`
@@ -2797,7 +2797,7 @@ Lista chequeable manual. **No marques completo hasta validar TODO.**
 
 #### "Webhooks no llegan"
 
-- Verificar URL configurada en MP dashboard apunta al endpoint correcto: `https://api.hospeda.com.ar/api/v1/protected/billing/webhooks/mercadopago`
+- Verificar URL configurada en MP dashboard apunta al endpoint correcto: `https://api.hospeda.com.ar/api/v1/webhooks/mercadopago`
 - Si hubo cutover de DNS reciente, MP puede tener cache TTL de la IP vieja → reintentar webhooks manualmente desde MP dashboard.
 - Logs de la API deben mostrar el request entrante de MP.
 
