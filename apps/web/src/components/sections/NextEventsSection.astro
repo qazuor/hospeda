@@ -14,6 +14,7 @@
  * the default section bg per the alternating section rule.
  */
 
+import { EventIcon } from '@repo/icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -22,6 +23,7 @@ import type { EventCardData } from '@/lib/api/transforms';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
 import EventCardFeatured from '@/components/shared/cards/EventCardFeatured.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { webLogger } from '@/lib/logger';
 
 interface Props {
@@ -70,9 +72,16 @@ const bottomEvents = remainingEvents.slice(2, 5);
     />
 
     {eventItems.length === 0 ? (
-      <div class="section__empty-state">
-        <p class="section__empty-text">{t('home.upcomingEvents.emptyState')}</p>
-      </div>
+      <EmptyState
+        locale={locale}
+        variant="empty"
+        message={t('home.upcomingEvents.emptyState')}
+        actionUrl={buildUrl({ locale, path: '/eventos/' })}
+        actionLabel={t('home.upcomingEvents.emptyAction')}
+        tone="warm"
+      >
+        <EventIcon size={48} weight="duotone" />
+      </EmptyState>
     ) : (
       <div class="events__bento">
 
