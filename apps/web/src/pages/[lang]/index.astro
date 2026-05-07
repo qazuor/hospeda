@@ -18,6 +18,7 @@ import TestimonialsSection from "@/components/sections/TestimonialsSection.astro
 import type { StatItemData } from "@/data/types";
 import DefaultLayout from "@/layouts/DefaultLayout.astro";
 import { destinationsApi, statsApi } from "@/lib/api/endpoints";
+import { shouldShowSocialProof } from "@/lib/home-guards";
 import { createTranslations } from "@/lib/i18n";
 import type { SupportedLocale } from "@/lib/i18n";
 import { buildUrl } from "@/lib/urls";
@@ -63,11 +64,12 @@ const platformStats: readonly StatItemData[] = statsResult.ok
 const socialProof = (() => {
     if (!statsResult.ok) return undefined;
     const reviewsCount = statsResult.data.reviews;
-    if (reviewsCount <= 0) return undefined;
+    const averageRating = statsResult.data.averageRating;
+    if (!shouldShowSocialProof({ reviewsCount, averageRating })) return undefined;
     const reviewsLabel = formatSocialProofCount(reviewsCount);
     return {
         count: reviewsLabel,
-        rating: `${statsResult.data.averageRating.toFixed(1)}/5`,
+        rating: `${averageRating.toFixed(1)}/5`,
         ratingOf: reviewsLabel,
         avatars: statsResult.data.recentReviewerAvatars,
     } as const;
