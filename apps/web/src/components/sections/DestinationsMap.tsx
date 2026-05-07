@@ -12,6 +12,7 @@
 
 import type { DestinationCardData } from '@/data/types';
 import { cn } from '@/lib/cn';
+import { BridgeIcon } from '@repo/icons';
 import styles from './DestinationsMap.module.css';
 
 // ---------------------------------------------------------------------------
@@ -262,7 +263,11 @@ export function DestinationsMap({
                                 className={styles.bridgeIcon}
                                 aria-hidden="true"
                             >
-                                🌉
+                                <BridgeIcon
+                                    size={20}
+                                    weight="regular"
+                                    aria-hidden="true"
+                                />
                             </span>
                             <div className={styles.bridgeLabels}>
                                 <span className={styles.bridgeName}>{bridge.name}</span>
