@@ -11,7 +11,6 @@ import { PostIcon } from '@repo/icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import FeaturedArticleCard from '@/components/shared/cards/FeaturedArticleCard.astro';
 import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
@@ -74,6 +73,9 @@ const isSparse = posts.length < 2;
             tagline={t('home.latestPosts.tagline', 'Informate, Inspirate, Conoce')}
             title={t('home.latestPosts.title', 'Últimos artículos')}
             subtitle={t('home.latestPosts.subtitle', 'Historias, guías y secretos del litoral entrerriano para inspirar tu próxima aventura.')}
+            alignment="left"
+            actionLabel={t('home.latestPosts.viewAll', 'Ver todos los artículos')}
+            actionHref={buildUrl({ locale, path: 'publicaciones' })}
         />
 
         {posts.length === 0 ? (
@@ -112,16 +114,6 @@ const isSparse = posts.length < 2;
                 )}
             </div>
         )}
-
-        <!-- CTA button -->
-        <div class="posts__cta">
-            <GradientButton
-                href={buildUrl({ locale, path: 'publicaciones' })}
-                label={t('home.latestPosts.viewAll', 'Ver todos los artículos')}
-                variant="primary"
-                icon="true"
-            />
-        </div>
 
     </div>
 </section>
@@ -173,11 +165,4 @@ const isSparse = posts.length < 2;
     }
 
     /* Empty state styles are in components.css (.section__empty-state, .section__empty-text) */
-
-    /* CTA */
-    .posts__cta {
-        display: flex;
-        justify-content: center;
-        margin-top: 3rem;
-    }
 </style>
