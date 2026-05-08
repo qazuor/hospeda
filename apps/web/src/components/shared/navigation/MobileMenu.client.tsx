@@ -199,23 +199,31 @@ export function MobileMenu({
     }, []);
 
     // ------------------------------------------------------------------
-    // Body scroll lock
+    // Scroll lock
+    //
+    // Applied to <html>, NOT <body>. Setting `overflow: hidden` on the
+    // body breaks the header's `position: sticky` because the body is the
+    // sticky scroll container — the header collapses back to its natural
+    // y=0 position and scrolls off-screen with the rest of the page,
+    // creating a visible flicker mid-animation when the menu opens after
+    // the user has scrolled. Locking the html element preserves the
+    // sticky context while still preventing background scroll.
     // ------------------------------------------------------------------
     useEffect(() => {
-        const previousOverflow = document.body.style.overflow;
+        const previousOverflow = document.documentElement.style.overflow;
 
         if (isOpen) {
-            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
             document.documentElement.setAttribute('data-mobile-menu-open', '');
             // Move focus to the close button for accessibility
             closeButtonRef.current?.focus();
         } else {
-            document.body.style.overflow = previousOverflow;
+            document.documentElement.style.overflow = previousOverflow;
             document.documentElement.removeAttribute('data-mobile-menu-open');
         }
 
         return () => {
-            document.body.style.overflow = previousOverflow;
+            document.documentElement.style.overflow = previousOverflow;
             document.documentElement.removeAttribute('data-mobile-menu-open');
         };
     }, [isOpen]);
