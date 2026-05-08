@@ -200,6 +200,11 @@ export function getAuth(): ReturnType<typeof betterAuth> {
 
         emailAndPassword: {
             enabled: true,
+            // Require users to verify their email address before they can sign in.
+            // Better Auth blocks sign-in attempts for unverified accounts and
+            // returns an EMAIL_NOT_VERIFIED error so the frontend can guide them
+            // back to the verification flow.
+            requireEmailVerification: true,
             password: {
                 hash: async (password: string) => hash(password, BCRYPT_SALT_ROUNDS),
                 verify: async ({

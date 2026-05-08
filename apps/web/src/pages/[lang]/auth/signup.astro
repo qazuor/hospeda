@@ -4,8 +4,9 @@
  * @description Sign-up page — allows users to create a new account.
  *
  * Authenticated users are immediately redirected to /mi-cuenta/.
- * After a successful registration the user is automatically signed in
- * and redirected to the account dashboard.
+ * After a successful registration, the API does NOT auto sign-in the user
+ * (email verification is required). The user is sent to verify-email-sent
+ * where they are instructed to click the verification link in their inbox.
  *
  * @route    /[lang]/auth/signup/
  * @rendering SSR (auth state from locals)
@@ -33,9 +34,15 @@ const description = t('auth-ui.pages.signup.description', 'Crea tu cuenta en Hos
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
-// After registration, redirect user to their account dashboard.
+// After registration, redirect user to a "check your email" page since
+// the account is created without an active session (email verification is
+// required before sign-in). The verify-email-sent page reassures the user
+// and offers to resend the verification email.
 const siteOrigin = getSiteUrl();
-const redirectTo = new URL(buildUrl({ locale, path: 'mi-cuenta' }), siteOrigin).href;
+const redirectTo = new URL(
+    buildUrl({ locale, path: 'auth/verify-email-sent' }),
+    siteOrigin
+).href;
 
 // Localized secondary link labels via i18n
 const haveAccountLabel = t('auth-ui.signUp.alreadyHaveAccount', 'Already have an account?');
