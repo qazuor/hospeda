@@ -51,7 +51,10 @@
     flex: 1;
     min-width: 0; /* prevent overflow in flex context */
     padding-block: 1.5rem;
-    overflow: hidden;
+    /* Clip horizontal overflow only — the active card uses transform:
+       scale(1.06) which adds vertical bleed that must NOT be cropped,
+       otherwise the top/bottom edges of the focused card get cut off. */
+    overflow-x: hidden;
 }
 
 /* C-2: full width when map is hidden (below 1024px) */
@@ -107,15 +110,21 @@
 
 .carouselRoot {
     position: relative;
-    overflow: hidden;
+    /* Same reasoning as .contentColumn: clip the horizontal peek of
+       neighbouring slides but keep vertical room for the scale(1.06)
+       transform applied to the active card. */
+    overflow-x: hidden;
     width: 100%;
     flex: 1;
     display: flex;
     align-items: center;
+    /* Reserve a bit of vertical breathing room so the scaled active
+       card doesn't kiss the header or the controls below. */
+    padding-block: 14px;
 }
 
 .carouselViewport {
-    overflow: hidden;
+    overflow-x: hidden;
     width: 100%;
 }
 
@@ -155,7 +164,7 @@
     cursor: pointer;
     /* M-15: transition includes transform for scale-based active state */
     transition: box-shadow var(--duration-normal) ease, transform var(--duration-normal) ease;
-    height: 463px;
+    height: 420px;
     width: 100%;
     background-color: var(--core-card);
     text-decoration: none;
