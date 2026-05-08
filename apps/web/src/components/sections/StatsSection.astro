@@ -112,9 +112,36 @@ const t = createT(locale);
     svg.removeAttribute('viewBox');
     cards.forEach((c) => { (c as HTMLElement).style.transform = ''; });
 
+    const waveWrap = section.querySelector('.stats-section__wave-wrap') as HTMLElement | null;
+    if (waveWrap) waveWrap.style.top = '';
+
     if (window.innerWidth < 1024) {
       path.setAttribute('d', '');
       return;
+    }
+
+    // Position the wave vertically so it passes BETWEEN the icon circle and
+    // the number on each card (rather than through the middle of the section,
+    // which makes the number sit on top of the line).
+    if (waveWrap) {
+      const sectionRect = section.getBoundingClientRect();
+      let sumY = 0;
+      let count = 0;
+      cards.forEach((card) => {
+        const iconCircle = card.querySelector('[class*="iconCircle"]');
+        const counterValue = card.querySelector('[class*="counterValue"]');
+        if (iconCircle && counterValue) {
+          const iconRect = iconCircle.getBoundingClientRect();
+          const valueRect = counterValue.getBoundingClientRect();
+          const midpoint = (iconRect.bottom + valueRect.top) / 2;
+          sumY += midpoint - sectionRect.top;
+          count += 1;
+        }
+      });
+      if (count > 0) {
+        const avgY = sumY / count;
+        waveWrap.style.top = `${avgY}px`;
+      }
     }
 
     const svgBox = svg.getBoundingClientRect();

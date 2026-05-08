@@ -41,7 +41,7 @@
     background-color: oklch(from var(--brand-accent) l c h / 0.1);
     width: 72px;
     height: 72px;
-    margin-bottom: 2.5rem;
+    margin-bottom: 5rem;
 }
 
 .iconFallback {
