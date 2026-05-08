@@ -779,10 +779,8 @@ export const HOSPEDA_ENV_VARS = [
     },
     {
         name: 'HOSPEDA_MEDIA_MAX_FILE_SIZE_MB',
-        description:
-            'Maximum upload file size in megabytes (values above 4.5 require Vercel Pro plan)',
-        descriptionEs:
-            'Tamaño máximo de archivo a subir en megabytes (valores arriba de 4.5 requieren plan Vercel Pro)',
+        description: 'Maximum upload file size in megabytes',
+        descriptionEs: 'Tamaño máximo de archivo a subir en megabytes',
         type: 'number',
         required: false,
         secret: false,
@@ -791,9 +789,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api', 'seed'],
         category: 'integrations',
         howToObtain:
-            'Cap on a single uploaded file size in MB. Default 10. Vercel Hobby plan caps requests at 4.5MB — use 4 there.',
+            'Cap on a single uploaded file size in MB. Default 10. Must stay at or below the global API_BODY_LIMIT bodyLimit (currently 10MB). Lower it if a tighter cap suits your storage plan.',
         howToObtainEs:
-            'Tope al tamaño de un archivo subido en MB. Por defecto 10. El plan Hobby de Vercel limita los requests a 4.5MB; en ese caso usá 4.'
+            'Tope al tamaño de un archivo subido en MB. Por defecto 10. Tiene que ser igual o menor al bodyLimit global de la API (actualmente 10MB). Bajalo si conviene un tope más ajustado por tu plan de almacenamiento.'
     },
 
     // -------------------------------------------------------------------------

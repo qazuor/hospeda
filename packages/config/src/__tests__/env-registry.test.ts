@@ -17,7 +17,7 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *  - PUBLIC_*     :  6 vars (Astro web app, browser-exposed)
  *  - VITE_*       : 23 vars (TanStack admin, Vite-exposed)
  *  - Docker       :  5 vars (docker-compose services)
- *  - System       :  6 vars (runtime/CI/Vercel)
+ *  - System       :  runtime/CI variables
  */
 const EXPECTED_VAR_COUNT = 183;
 
