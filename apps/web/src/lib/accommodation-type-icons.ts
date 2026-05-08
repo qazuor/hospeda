@@ -15,12 +15,13 @@ import {
     BedroomsIcon,
     BuildingIcon,
     BuildingsIcon,
-    CampingAreaIcon,
     CarIcon,
     HistoricHouseIcon,
     HomeIcon,
     type IconProps,
+    PoolIcon,
     TentIcon,
+    TreeIcon,
     UsersIcon
 } from '@repo/icons';
 import type { ComponentType } from 'react';
@@ -29,13 +30,13 @@ const ACCOMMODATION_TYPE_ICONS: Readonly<Record<string, ComponentType<IconProps>
     apartment: BuildingsIcon,
     house: HomeIcon,
     country_house: HistoricHouseIcon,
-    cabin: TentIcon,
+    cabin: TreeIcon,
     hotel: BuildingIcon,
     hostel: UsersIcon,
-    camping: CampingAreaIcon,
+    camping: TentIcon,
     room: BedroomsIcon,
     motel: CarIcon,
-    resort: AccommodationIcon
+    resort: PoolIcon
 };
 
 interface GetAccommodationTypeIconParams {

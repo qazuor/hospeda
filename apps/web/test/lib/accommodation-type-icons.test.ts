@@ -10,11 +10,12 @@ import {
     BedroomsIcon,
     BuildingIcon,
     BuildingsIcon,
-    CampingAreaIcon,
     CarIcon,
     HistoricHouseIcon,
     HomeIcon,
+    PoolIcon,
     TentIcon,
+    TreeIcon,
     UsersIcon
 } from '@repo/icons';
 import { AccommodationTypeEnum } from '@repo/schemas';
@@ -34,8 +35,8 @@ describe('getAccommodationTypeIcon', () => {
         expect(getAccommodationTypeIcon({ type: 'country_house' })).toBe(HistoricHouseIcon);
     });
 
-    it('returns TentIcon for CABIN', () => {
-        expect(getAccommodationTypeIcon({ type: 'cabin' })).toBe(TentIcon);
+    it('returns TreeIcon for CABIN', () => {
+        expect(getAccommodationTypeIcon({ type: 'cabin' })).toBe(TreeIcon);
     });
 
     it('returns BuildingIcon for HOTEL', () => {
@@ -46,8 +47,8 @@ describe('getAccommodationTypeIcon', () => {
         expect(getAccommodationTypeIcon({ type: 'hostel' })).toBe(UsersIcon);
     });
 
-    it('returns CampingAreaIcon for CAMPING', () => {
-        expect(getAccommodationTypeIcon({ type: 'camping' })).toBe(CampingAreaIcon);
+    it('returns TentIcon for CAMPING', () => {
+        expect(getAccommodationTypeIcon({ type: 'camping' })).toBe(TentIcon);
     });
 
     it('returns BedroomsIcon for ROOM', () => {
@@ -58,8 +59,16 @@ describe('getAccommodationTypeIcon', () => {
         expect(getAccommodationTypeIcon({ type: 'motel' })).toBe(CarIcon);
     });
 
-    it('returns AccommodationIcon for RESORT', () => {
-        expect(getAccommodationTypeIcon({ type: 'resort' })).toBe(AccommodationIcon);
+    it('returns PoolIcon for RESORT', () => {
+        expect(getAccommodationTypeIcon({ type: 'resort' })).toBe(PoolIcon);
+    });
+
+    it('uses each icon at most once across the canonical mapping (no duplicates)', () => {
+        const icons = Object.values(AccommodationTypeEnum).map((type) =>
+            getAccommodationTypeIcon({ type })
+        );
+        const unique = new Set(icons);
+        expect(unique.size).toBe(icons.length);
     });
 
     it('is case-insensitive for the input type', () => {
