@@ -211,7 +211,11 @@ export function ReviewCard({ data, locale, className }: ReviewCardProps) {
                 </div>
             </div>
 
-            {/* Author info */}
+            {/* Author info — three-line hierarchy so the entity reviewed is
+                no longer indistinguishable from the reviewer name and the date.
+                Line 1 (bold): who left the review.
+                Line 2 (highlighted, linked): which entity it is about.
+                Line 3 (muted, small): when. */}
             <figcaption className={styles.caption}>
                 <ReviewerAvatar
                     url={data.reviewerAvatar ?? null}
@@ -220,27 +224,35 @@ export function ReviewCard({ data, locale, className }: ReviewCardProps) {
                 />
                 <div className={styles.authorInfo}>
                     <span className={styles.authorName}>{data.reviewerName}</span>
-                    <span className={styles.authorMeta}>
-                        {entityUrl ? (
-                            <a
-                                href={entityUrl}
-                                className={styles.authorOriginLink}
-                                aria-label={`Ver ${data.entityName ?? data.reviewerOrigin}`}
-                            >
-                                {data.reviewerOrigin}
-                            </a>
-                        ) : (
-                            <span className={styles.authorOrigin}>{data.reviewerOrigin}</span>
-                        )}
-                        {data.date && (
-                            <>
-                                {' · '}
-                                <span className={styles.reviewDate}>
-                                    {formatReviewDate(data.date, locale)}
+                    {(data.entityName || data.reviewerOrigin) && (
+                        <span className={styles.authorAbout}>
+                            <span className={styles.authorAboutLabel}>
+                                {locale === 'en'
+                                    ? 'Review of'
+                                    : locale === 'pt'
+                                      ? 'Avaliação de'
+                                      : 'Reseña sobre'}
+                            </span>{' '}
+                            {entityUrl ? (
+                                <a
+                                    href={entityUrl}
+                                    className={styles.authorEntityLink}
+                                    aria-label={`Ver ${data.entityName ?? data.reviewerOrigin}`}
+                                >
+                                    {data.entityName ?? data.reviewerOrigin}
+                                </a>
+                            ) : (
+                                <span className={styles.authorEntity}>
+                                    {data.entityName ?? data.reviewerOrigin}
                                 </span>
-                            </>
-                        )}
-                    </span>
+                            )}
+                        </span>
+                    )}
+                    {data.date && (
+                        <span className={styles.reviewDate}>
+                            {formatReviewDate(data.date, locale)}
+                        </span>
+                    )}
                 </div>
             </figcaption>
         </figure>

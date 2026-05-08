@@ -106,42 +106,60 @@
 .authorInfo {
     display: flex;
     flex-direction: column;
+    gap: 2px;
+    min-width: 0;
 }
 
 .authorName {
-    font-weight: 600;
+    font-weight: 700;
     color: var(--core-foreground);
     line-height: 1.25;
+    font-size: 0.9375rem;
 }
 
-/* Inline container for origin + date separator */
-.authorMeta {
-    display: flex;
-    align-items: center;
-    gap: 0;
+/* "Review of <entity>" line. The fixed label is muted so the entity name
+   itself dominates and clearly answers the 'review of what' question. */
+.authorAbout {
     font-size: var(--text-meta);
     color: var(--core-muted-foreground);
-    flex-wrap: wrap;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.authorOrigin {
-    font-size: var(--text-meta);
+.authorAboutLabel {
     color: var(--core-muted-foreground);
+    font-style: italic;
 }
 
-.authorOriginLink {
-    font-size: var(--text-meta);
-    color: var(--brand-accent);
+.authorEntity {
+    color: var(--core-foreground);
+    font-weight: 600;
+}
+
+.authorEntityLink {
+    color: var(--brand-primary);
+    font-weight: 600;
     text-decoration: none;
-    transition: text-decoration var(--duration-normal) ease;
+    transition: color var(--duration-fast) ease, text-decoration var(--duration-fast) ease;
 }
 
-.authorOriginLink:hover {
+.authorEntityLink:hover {
+    color: var(--brand-primary-dark);
     text-decoration: underline;
 }
 
-/* Review date — same weight as authorOrigin, separated visually by · dot */
+.authorEntityLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* Review date — pushed to its own line as supporting metadata */
 .reviewDate {
     font-size: var(--text-meta);
     color: var(--core-muted-foreground);
+    opacity: 0.85;
+    line-height: 1.2;
 }
