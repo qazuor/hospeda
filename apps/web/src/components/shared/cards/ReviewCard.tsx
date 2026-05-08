@@ -11,17 +11,11 @@
  * - Review date formatted as short month + year (e.g. "mar 2024")
  */
 
-import { Badge } from '@/components/shared/ui/Badge';
 import type { ReviewCardData } from '@/data/types';
 import { getInitialsFromName } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
-import {
-    getAccommodationTypeColor,
-    getDestinationBadgeColor,
-    getMutedColorScheme
-} from '@/lib/colors';
 import type { SupportedLocale } from '@/lib/i18n';
-import { QuotesIcon, StarIcon } from '@repo/icons';
+import { AccommodationIcon, CompassIcon, QuotesIcon, StarIcon } from '@repo/icons';
 import { useState } from 'react';
 import styles from './ReviewCard.module.css';
 
@@ -126,37 +120,29 @@ function buildEntityUrl(
 export function ReviewCard({ data, locale, className }: ReviewCardProps) {
     const filledStars = Math.floor(data.rating);
     const initials = data.initials ?? getInitialsFromName(data.reviewerName);
-    const badgeLabel =
-        data.badge ??
-        (data.entityType === 'accommodation'
-            ? 'Alojamiento'
-            : data.entityType === 'destination'
-              ? 'Destino'
-              : undefined);
 
     const entityUrl = buildEntityUrl(locale, data.entityType, data.entitySlug);
+    const entityName = data.entityName ?? data.reviewerOrigin;
 
     /**
-     * Contextual colour scheme for the entity badge.
-     * Accommodation reviews reuse the "hotel" accent (we don't know the real
-     * subtype at review-list time). Destination reviews use the dedicated
-     * destination badge colour. Anything else falls back to the muted scheme.
+     * Eyebrow label + icon for the entity-type pill above the title.
+     * Communicates whether the review targets an accommodation or a
+     * destination at a glance, replacing the previous tiny top-right
+     * badge that was easy to miss.
      */
-    const entityBadgeColorScheme = (() => {
-        if (data.entityType === 'accommodation') {
-            return getAccommodationTypeColor({ type: 'hotel' });
-        }
-        if (data.entityType === 'destination') {
-            return getDestinationBadgeColor();
-        }
-        return getMutedColorScheme();
-    })();
-
-    const entityBadgeAriaLabel = entityUrl
-        ? `Ver ${badgeLabel}: ${data.entityName ?? badgeLabel}`
-        : `Tipo: ${badgeLabel}`;
-
-    const entityName = data.entityName ?? data.reviewerOrigin;
+    const isAccommodation = data.entityType === 'accommodation';
+    const isDestination = data.entityType === 'destination';
+    const typeLabel = isAccommodation
+        ? locale === 'en'
+            ? 'Accommodation'
+            : locale === 'pt'
+              ? 'Hospedagem'
+              : 'Alojamiento'
+        : isDestination
+          ? locale === 'en'
+              ? 'Destination'
+              : 'Destino'
+          : null;
 
     return (
         <figure
@@ -171,24 +157,38 @@ export function ReviewCard({ data, locale, className }: ReviewCardProps) {
                 aria-hidden="true"
             />
 
-            {/* Entity type badge — positioned slot owns layout; Badge owns colours. */}
-            {badgeLabel && (
-                <div className={styles.entityBadgeSlot}>
-                    <Badge
-                        label={badgeLabel}
-                        href={entityUrl ?? undefined}
-                        colorScheme={entityBadgeColorScheme}
-                        size="xs"
-                        ariaLabel={entityBadgeAriaLabel}
-                    />
-                </div>
-            )}
-
             {/* Entity header — the most important question on a review card is
-                'review of WHAT?'. Promote the entity name to an H3 at the top
-                so it's the first thing the eye lands on. */}
+                'review of WHAT?'. The eyebrow row tells the reader the entity
+                type (accommodation vs destination) with an icon, the H3 below
+                names it. */}
             {entityName && (
                 <div className={styles.entityHeader}>
+                    {typeLabel && (
+                        <p
+                            className={cn(
+                                styles.entityType,
+                                isDestination
+                                    ? styles.entityTypeDestination
+                                    : styles.entityTypeAccommodation
+                            )}
+                        >
+                            {isAccommodation && (
+                                <AccommodationIcon
+                                    size={14}
+                                    weight="fill"
+                                    aria-hidden="true"
+                                />
+                            )}
+                            {isDestination && (
+                                <CompassIcon
+                                    size={14}
+                                    weight="fill"
+                                    aria-hidden="true"
+                                />
+                            )}
+                            <span>{typeLabel}</span>
+                        </p>
+                    )}
                     <h3 className={styles.entityName}>
                         {entityUrl ? (
                             <a

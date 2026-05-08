@@ -108,6 +108,12 @@
     transition: box-shadow var(--duration-normal) ease;
     position: relative;
     overflow: hidden;
+    /* Make the slide a vertical flex container so the figure inside can
+       stretch to fill it. This is what allows the figcaption inside the
+       review card to anchor at the bottom via margin-top: auto, regardless
+       of how short or long the quote is. */
+    display: flex;
+    flex-direction: column;
 }
 
 .slideCard:hover {
