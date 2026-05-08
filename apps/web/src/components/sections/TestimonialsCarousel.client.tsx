@@ -65,6 +65,9 @@ export function TestimonialsCarousel(props: TestimonialsCarouselProps) {
     );
 }
 
+/** Breakpoint at which the carousel switches from 1 to 2 active slides. */
+const DESKTOP_MEDIA_QUERY = '(min-width: 768px)';
+
 function TestimonialsCarouselInner({
     reviews,
     locale,
@@ -73,6 +76,13 @@ function TestimonialsCarouselInner({
     const { t } = createTranslations(locale);
     const [selectedSnap, setSelectedSnap] = useState(0);
     const [snapCount, setSnapCount] = useState(0);
+    /**
+     * Slides per snap group. 1 on mobile (only one card centered), 2 on
+     * desktop (two cards visible side-by-side). Defaults to desktop on the
+     * server so SSR markup matches what desktop users render first; the
+     * matchMedia listener corrects it on mount for mobile clients.
+     */
+    const [slidesPerGroup, setSlidesPerGroup] = useState<1 | 2>(2);
     const wrapperRef = useRef<HTMLDivElement>(null);
 
     // Autoplay plugin ref
@@ -83,10 +93,24 @@ function TestimonialsCarouselInner({
             loop: true,
             align: 'center',
             containScroll: false,
-            slidesToScroll: 2
+            slidesToScroll: 1,
+            breakpoints: {
+                [DESKTOP_MEDIA_QUERY]: { slidesToScroll: 2 }
+            }
         },
         [autoplayPlugin.current]
     );
+
+    // Track viewport so isActiveSlide and snap-count math match Embla's own
+    // breakpoint-driven slidesToScroll value.
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const mq = window.matchMedia(DESKTOP_MEDIA_QUERY);
+        setSlidesPerGroup(mq.matches ? 2 : 1);
+        const handler = (e: MediaQueryListEvent) => setSlidesPerGroup(e.matches ? 2 : 1);
+        mq.addEventListener('change', handler);
+        return () => mq.removeEventListener('change', handler);
+    }, []);
 
     // Sync state on slide change. With `loop: true` the prev/next arrows are
     // always enabled, so we don't track canScrollPrev/canScrollNext.
@@ -99,27 +123,36 @@ function TestimonialsCarouselInner({
         if (!mainApi) return;
         setSnapCount(mainApi.scrollSnapList().length);
         mainApi.on('select', onSelect);
+        mainApi.on('reInit', onSelect);
         onSelect();
         return () => {
             mainApi.off('select', onSelect);
+            mainApi.off('reInit', onSelect);
         };
     }, [mainApi, onSelect]);
 
+    // Refresh snap count whenever Embla re-runs at a breakpoint change.
+    useEffect(() => {
+        if (!mainApi) return;
+        const handler = () => setSnapCount(mainApi.scrollSnapList().length);
+        mainApi.on('reInit', handler);
+        return () => {
+            mainApi.off('reInit', handler);
+        };
+    }, [mainApi]);
+
     /**
-     * Check if a slide index is one of the 2 active (non-peek) slides.
-     * With slidesToScroll:2 and loop, each snap groups 2 consecutive slides:
-     * snap `g` maps to indices `[g*2, g*2+1]`. The arithmetic uses the public
-     * Embla API only (no internalEngine access) and accounts for the final
-     * orphan slide when `reviews.length` is odd.
+     * Check whether a slide is part of the currently active (non-peek)
+     * group. The group size matches Embla's `slidesToScroll` for the
+     * current viewport: 1 slide on mobile, 2 on desktop.
      */
     const isActiveSlide = useCallback(
         (index: number): boolean => {
             if (!mainApi) return false;
-            const SLIDES_PER_GROUP = 2;
-            const groupStart = selectedSnap * SLIDES_PER_GROUP;
-            return index === groupStart || index === groupStart + 1;
+            const groupStart = selectedSnap * slidesPerGroup;
+            return index >= groupStart && index < groupStart + slidesPerGroup;
         },
-        [mainApi, selectedSnap]
+        [mainApi, selectedSnap, slidesPerGroup]
     );
 
     // Navigation callbacks
