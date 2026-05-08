@@ -2863,8 +2863,18 @@ Lista chequeable manual. **No marques completo hasta validar TODO.**
 
 - [ ] Redeploy de `hospeda-api-prod` desde Coolify (manual, auto-deploy off).
 - [ ] Logs muestran `✅ QZPay billing initialized successfully` sin errores.
-- [ ] Signup nuevo de prueba → en logs no aparece "Unauthorized use of credentials" ni equivalente.
-- [ ] El `billing_customer` correspondiente aparece en DB (`SELECT * FROM billing_customers WHERE email='<email-de-prueba>'`).
+- [ ] Logs muestran `[QZPay] QZPayBilling initialized {"livemode":false,...}` confirmando que la env var manda el flag.
+- [ ] Signup nuevo de prueba → HTTP 200 + el `billing_customer` aparece en DB (`SELECT * FROM billing_customers WHERE email='<email-de-prueba>'`).
+- [ ] Verification email de Brevo llega correctamente.
+- [ ] Login post-verification funciona OK.
+
+> ⚠️ **Esperado en sandbox — NO es bug**: en signups con sandbox activo va a aparecer en logs `[ERROR] Provider sync failed during customer creation - Unauthorized use of live credentials [code 300]` seguido de `[WARN] Continuing customer creation without provider sync`. Esto es **una limitación estructural del modelo de test users de MP**: las credenciales que MP da en "Credenciales de prueba" están atadas físicamente a un test user (User ID en ese panel coincide con un test user de "Test users"), y los test users no pueden invocar `POST /v1/customers` — MP los bloquea con error 300 sin importar el formato del email (probado empíricamente con 3 emails distintos, incluyendo `test_payer_[0-9]+@testuser.com` que es el formato documentado).
+>
+> **QZPay maneja esto bien** con `providerSyncErrorStrategy: 'log'` — el customer se crea en NUESTRA DB y el signup completa OK; solo falla la sincronización con MP, que en sandbox no es necesaria.
+>
+> **Cuándo desaparece el error**: al cambiar a credenciales prod en Paso 16.3.b. El merchant token real no tiene esa limitación.
+>
+> **Diagnóstico rápido si reaparece después**: `curl /users/me` con el token. Si devuelve `nickname: "TESTUSER..."` y `test_data.test_user: true`, es el modelo de test user; el error es estructural, dropearlo.
 
 #### 16.3.b — Switch a PRODUCTION (al ir a launch público real)
 
