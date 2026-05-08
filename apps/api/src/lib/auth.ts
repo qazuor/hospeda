@@ -212,7 +212,7 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                     password
                 }: { hash: string; password: string }) => compare(password, storedHash)
             },
-            sendResetPassword: async ({ user, url }) => {
+            sendResetPassword: async ({ user, token }) => {
                 // Fire-and-forget to prevent timing attacks (BA recommendation)
                 void (async () => {
                     try {
@@ -225,13 +225,18 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                             return;
                         }
                         const client = createEmailClient({ apiKey });
+                        // Build a web-app URL so the user lands on the SPA reset-password
+                        // page (which calls the BA reset endpoint via the auth-client),
+                        // instead of hitting the API directly.
+                        const siteOrigin = env.HOSPEDA_SITE_URL.replace(/\/$/, '');
+                        const resetUrl = `${siteOrigin}/es/auth/reset-password?token=${encodeURIComponent(token)}`;
                         const result = await sendEmail({
                             client,
                             to: user.email,
                             subject: 'Restablece tu contraseña de Hospeda',
                             react: ResetPasswordTemplate({
                                 name: user.name || user.email,
-                                resetUrl: url
+                                resetUrl
                             })
                         });
                         if (result.success) {
@@ -259,7 +264,7 @@ export function getAuth(): ReturnType<typeof betterAuth> {
         },
 
         emailVerification: {
-            sendVerificationEmail: async ({ user, url }) => {
+            sendVerificationEmail: async ({ user, token }) => {
                 // Fire-and-forget to prevent timing attacks (BA recommendation)
                 void (async () => {
                     try {
@@ -272,13 +277,19 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                             return;
                         }
                         const client = createEmailClient({ apiKey });
+                        // Build a web-app URL so the user lands on the SPA verify-email
+                        // page (which calls the BA verify endpoint via the auth-client
+                        // and shows a polished success/error UI), instead of hitting
+                        // the API directly and seeing the JSON response.
+                        const siteOrigin = env.HOSPEDA_SITE_URL.replace(/\/$/, '');
+                        const verificationUrl = `${siteOrigin}/es/auth/verify-email?token=${encodeURIComponent(token)}`;
                         const result = await sendEmail({
                             client,
                             to: user.email,
                             subject: 'Verifica tu cuenta de Hospeda',
                             react: VerifyEmailTemplate({
                                 name: user.name || user.email,
-                                verificationUrl: url
+                                verificationUrl
                             })
                         });
                         if (result.success) {
