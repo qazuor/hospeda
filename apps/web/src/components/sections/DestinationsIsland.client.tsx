@@ -214,7 +214,16 @@ function DestinationsIslandInner({
                         <div className={styles.carouselTrack}>
                             {destinations.map((destination, i) => {
                                 const isActive = i === activeIndex;
-                                const href = buildUrl({ locale, path: destination.path });
+                                // Match the URL convention used by DestinationCard.astro and
+                                // /destinos pages: destination detail lives under
+                                // /<locale>/destinos/<slug>. The raw `destination.path` from
+                                // the API encodes the geographical hierarchy
+                                // (argentina/litoral-argentino/...) and would resolve to a 404
+                                // if appended directly under /<locale>/.
+                                const href = buildUrl({
+                                    locale,
+                                    path: `destinos/${destination.slug}`
+                                });
                                 const accommodationsLabel =
                                     destination.accommodationsCount === 1
                                         ? t(
