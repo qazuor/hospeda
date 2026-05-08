@@ -226,18 +226,22 @@
     pointer-events: auto;
 }
 
-/* Gradient overlay (transparent top → light bottom, matching Figma) */
+/* Gradient overlay (transparent top → opaque-black bottom). Reading the
+   text against any photo requires a guaranteed-dark surface; the previous
+   light-coloured gradient mixed with sunlit/sky-heavy photos to a muted
+   grey that lost contrast. Black at >=0.7 alpha gives WCAG AA against
+   white text on every cover image we ship. */
 .cardGradient {
     position: absolute;
     inset: 0;
     background: linear-gradient(
         180deg,
         transparent 0%,
-        transparent 35%,
-        oklch(from var(--core-background) l c h / 0.15) 50%,
-        oklch(from var(--core-background) l c h / 0.45) 65%,
-        oklch(from var(--core-background) l c h / 0.72) 80%,
-        oklch(from var(--core-background) l c h / 0.9) 100%
+        transparent 30%,
+        oklch(0 0 0 / 0.25) 45%,
+        oklch(0 0 0 / 0.55) 60%,
+        oklch(0 0 0 / 0.78) 75%,
+        oklch(0 0 0 / 0.92) 100%
     );
     pointer-events: none;
 }
@@ -258,27 +262,33 @@
     font-family: var(--font-heading);
     font-size: 1.5rem; /* 24px */
     font-weight: 700;
-    color: var(--core-foreground);
+    color: var(--primary-foreground);
     line-height: 1.15;
     margin: 0;
+    /* Soft text-shadow keeps the title legible even on the rare case
+       where a photo's bottom band is unusually busy (high-contrast
+       foreground objects bleeding into the gradient). */
+    text-shadow: 0 1px 2px oklch(0 0 0 / 0.4);
 }
 
 .cardCount {
     font-family: var(--font-sans);
     font-size: 1rem; /* 16px */
     font-weight: 400;
-    color: var(--core-foreground);
-    opacity: 0.9;
+    color: var(--primary-foreground);
+    opacity: 0.92;
     margin: 0;
+    text-shadow: 0 1px 2px oklch(0 0 0 / 0.4);
 }
 
 .cardDescription {
     font-family: var(--font-sans);
     font-size: 0.8125rem; /* 13px */
-    color: var(--brand-secondary-foreground);
-    opacity: 0.85;
+    color: var(--primary-foreground);
+    opacity: 0.88;
     line-height: 1.5;
     margin: 0;
+    text-shadow: 0 1px 2px oklch(0 0 0 / 0.4);
     /* Clamp to 2 lines */
     display: -webkit-box;
     -webkit-line-clamp: 2;
