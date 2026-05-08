@@ -8,13 +8,13 @@
 import {
     AccommodationIcon,
     BedroomsIcon,
-    BuildingIcon,
+    BellIcon,
     BuildingsIcon,
     CarIcon,
-    HistoricHouseIcon,
     HomeIcon,
     PoolIcon,
     TentIcon,
+    TouristRanchIcon,
     TreeIcon,
     UsersIcon
 } from '@repo/icons';
@@ -31,16 +31,16 @@ describe('getAccommodationTypeIcon', () => {
         expect(getAccommodationTypeIcon({ type: 'house' })).toBe(HomeIcon);
     });
 
-    it('returns HistoricHouseIcon for COUNTRY_HOUSE', () => {
-        expect(getAccommodationTypeIcon({ type: 'country_house' })).toBe(HistoricHouseIcon);
+    it('returns TouristRanchIcon for COUNTRY_HOUSE', () => {
+        expect(getAccommodationTypeIcon({ type: 'country_house' })).toBe(TouristRanchIcon);
     });
 
     it('returns TreeIcon for CABIN', () => {
         expect(getAccommodationTypeIcon({ type: 'cabin' })).toBe(TreeIcon);
     });
 
-    it('returns BuildingIcon for HOTEL', () => {
-        expect(getAccommodationTypeIcon({ type: 'hotel' })).toBe(BuildingIcon);
+    it('returns BellIcon for HOTEL', () => {
+        expect(getAccommodationTypeIcon({ type: 'hotel' })).toBe(BellIcon);
     });
 
     it('returns UsersIcon for HOSTEL', () => {
@@ -72,8 +72,8 @@ describe('getAccommodationTypeIcon', () => {
     });
 
     it('is case-insensitive for the input type', () => {
-        expect(getAccommodationTypeIcon({ type: 'HOTEL' })).toBe(BuildingIcon);
-        expect(getAccommodationTypeIcon({ type: 'Country_House' })).toBe(HistoricHouseIcon);
+        expect(getAccommodationTypeIcon({ type: 'HOTEL' })).toBe(BellIcon);
+        expect(getAccommodationTypeIcon({ type: 'Country_House' })).toBe(TouristRanchIcon);
     });
 
     it('falls back to AccommodationIcon for unknown types', () => {

@@ -13,14 +13,14 @@
 import {
     AccommodationIcon,
     BedroomsIcon,
-    BuildingIcon,
+    BellIcon,
     BuildingsIcon,
     CarIcon,
-    HistoricHouseIcon,
     HomeIcon,
     type IconProps,
     PoolIcon,
     TentIcon,
+    TouristRanchIcon,
     TreeIcon,
     UsersIcon
 } from '@repo/icons';
@@ -29,9 +29,9 @@ import type { ComponentType } from 'react';
 const ACCOMMODATION_TYPE_ICONS: Readonly<Record<string, ComponentType<IconProps>>> = {
     apartment: BuildingsIcon,
     house: HomeIcon,
-    country_house: HistoricHouseIcon,
+    country_house: TouristRanchIcon,
     cabin: TreeIcon,
-    hotel: BuildingIcon,
+    hotel: BellIcon,
     hostel: UsersIcon,
     camping: TentIcon,
     room: BedroomsIcon,
