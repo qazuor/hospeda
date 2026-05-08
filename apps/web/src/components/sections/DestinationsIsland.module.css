@@ -289,11 +289,44 @@
     line-height: 1.5;
     margin: 0;
     text-shadow: 0 1px 2px oklch(0 0 0 / 0.4);
-    /* Clamp to 2 lines */
+    /* Clamp to 1 line — the attractions chip row above carries most
+       of the at-a-glance content, so the description acts as a
+       supporting tagline. */
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+/* ==========================================================================
+   Attractions chip row (between count and description)
+   ========================================================================== */
+.cardAttractions {
+    list-style: none;
+    margin: 2px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.cardAttraction {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    background: oklch(1 0 0 / 0.18);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: var(--primary-foreground);
+    border: 1px solid oklch(1 0 0 / 0.22);
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-size: 0.6875rem; /* 11px */
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-shadow: 0 1px 1px oklch(0 0 0 / 0.3);
 }
 
 .cardRating {

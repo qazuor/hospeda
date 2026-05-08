@@ -17,7 +17,7 @@ import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { StarIcon } from '@repo/icons';
+import { LocationIcon, StarIcon } from '@repo/icons';
 import useEmblaCarousel from 'embla-carousel-react';
 import { type ReactElement, useCallback, useEffect, useState } from 'react';
 import styles from './DestinationsIsland.module.css';
@@ -318,6 +318,33 @@ function DestinationsIslandInner({
                                                     {destination.accommodationsCount}{' '}
                                                     {accommodationsLabel}
                                                 </p>
+                                                {destination.attractions.length > 0 && (
+                                                    <ul
+                                                        className={styles.cardAttractions}
+                                                        aria-label={t(
+                                                            'destination.card.attractionsLabel',
+                                                            'Atracciones'
+                                                        )}
+                                                    >
+                                                        {destination.attractions
+                                                            .slice(0, 3)
+                                                            .map((attraction) => (
+                                                                <li
+                                                                    key={attraction.id}
+                                                                    className={
+                                                                        styles.cardAttraction
+                                                                    }
+                                                                >
+                                                                    <LocationIcon
+                                                                        size={11}
+                                                                        weight="fill"
+                                                                        aria-hidden="true"
+                                                                    />
+                                                                    <span>{attraction.name}</span>
+                                                                </li>
+                                                            ))}
+                                                    </ul>
+                                                )}
                                                 <p className={styles.cardDescription}>
                                                     {destination.summary}
                                                 </p>
