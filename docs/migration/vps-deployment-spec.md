@@ -2911,9 +2911,35 @@ Lista chequeable manual. **No marques completo hasta validar TODO.**
 - [ ] `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` corresponde a las credenciales prod (si aplica separación)
 - [ ] Smoke test E2E de pago real reembolsado OK
 
-### Paso 16.4 — Cleanup completo de Vercel + Neon + Upstash (1-2 semanas después)
+### Paso 16.4 — Cleanup completo de Vercel + Neon + Upstash
 
-**Solo después de 1-2 semanas estables corriendo en VPS:**
+> **Decisión revisada (2026-05-08)**: el cleanup ya no se difiere a 1-2 semanas. Los proyectos en Vercel/Neon/Upstash nunca llegaron a un estado deployado y estable, así que no son rollback path real. El teardown es prioritario y se ejecuta junto con el grupo de cleanup de código del repo (Grupo A) y de plataformas externas (Grupo B).
+
+#### Grupo A — Limpieza de código en el repo (✅ mayormente hecho en commits `e51ce4c..ca3fe19`)
+
+Hecho en `chore/vps-migration` (2026-05-08):
+
+- `packages/service-core/src/revalidation/adapters/`: `VercelRevalidationAdapter` reemplazado por `CloudflareRevalidationAdapter` (real refactor — el adapter previo estaba estructuralmente roto contra el endpoint web).
+- `apps/api/src/utils/env.ts`: removidos `VERCEL` y `VERCEL_GIT_COMMIT_SHA` del schema.
+- `apps/api/src/lib/sentry.ts` + `apps/api/src/utils/user-cache.ts` + `apps/api/src/utils/env-config-helpers.ts` + `apps/api/src/utils/create-app.ts` + `apps/api/src/middlewares/rate-limit.ts`: sacado el código `isServerless`/`process.env.VERCEL` y los branches específicos para serverless.
+- `apps/web/astro.config.mjs`: `PUBLIC_SENTRY_RELEASE` ahora prefiere `HOSPEDA_COMMIT_SHA` antes que `VERCEL_GIT_COMMIT_SHA`.
+- `packages/media/src/server/environment.ts`: resolver Cloudinary basado en `HOSPEDA_DEPLOY_ENV` (con fallback a `NODE_ENV`) en lugar de `VERCEL_ENV`.
+- Cron jobs (`apps/api/src/cron/jobs/*.job.ts`) + manifest: comentarios "Neon's transaction pooling" → "transaction-mode connection poolers", "QStash" eliminado.
+- `packages/config/src/env-registry.*.ts`: descripciones actualizadas (Coolify/Cloudflare/Traefik en lugar de Vercel/Neon/Upstash).
+- `CLAUDE.md` raíz, `README.md` raíz, README + CLAUDE.md de las 3 apps: deployment retargeted al stack VPS.
+
+**Pendientes Grupo A (follow-up, no bloquea launch)**:
+
+- [ ] **`docs/`** — ~30 archivos en `docs/runbooks/`, `docs/deployment/`, `docs/architecture/`, `docs/security/`, `docs/performance/`, `docs/decisions/` con menciones a Vercel/Neon/Upstash. Requiere review por párrafo (algunas son contexto histórico legítimo, otras obsoletas). Lista exacta: `grep -rln "vercel\|qstash\|upstash\|neon" --include='*.md' docs/`.
+- [ ] **`apps/api/docs/cron-system.md`** — necesita rewrite del modelo de scheduling (era QStash-based, ahora node-cron in-process).
+- [ ] **`docs/decisions/ADR-007-vercel-deployment.md`** — escribir un follow-up ADR (`ADR-NNN-vps-coolify-deployment.md`) que explique el flip a VPS, o archivar el ADR-007 marcándolo "superseded".
+- [ ] **`.github/workflows/ci.yml`** — un comentario sobre Turbo Remote Cache que dice "Vercel's Remote Cache" (cosmético — Turborepo Remote Cache es un servicio independiente del deploy target). El pre-edit hook bloquea cambios a workflows desde el agente; aplicar manualmente.
+- [ ] **`package.json` (raíz)** — confirmar que NO existen aliases `pnpm deploy:api/web/admin` apuntando a `vercel deploy`. Si existen, removerlos o reapuntar al flow Coolify.
+- [ ] **`packages/config/dist/`** — artefactos build con texto Vercel; se regeneran al build, no requiere edición manual pero conviene un rebuild después del teardown para que la doc generada no muestre referencias obsoletas.
+
+#### Grupo B — Acciones destructivas en plataformas externas
+
+**Solo después de validar 1-2 semanas estables corriendo en VPS** (esto sigue siendo prudente — eliminar proyectos externos es irreversible).
 
 #### Vercel — limpieza completa
 
