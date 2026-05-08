@@ -14,6 +14,7 @@ import {
     AccommodationIcon,
     BuildingIcon,
     CalendarDotsIcon,
+    CloseIcon,
     HomeIcon,
     LocationIcon,
     SearchIcon,
@@ -196,6 +197,35 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
             document.removeEventListener('keydown', handleKeyDown);
         };
     }, [handleClickOutside, handleKeyDown]);
+
+    /**
+     * Expose panel open state on <html> so global UI (e.g. the feedback FAB)
+     * can hide itself while a search panel covers the bottom of the viewport
+     * on mobile. Also locks <html> scroll while the bottom-sheet is open so
+     * background scroll doesn't bleed through the drawer.
+     */
+    useEffect(() => {
+        const isOpen = activePanel !== null;
+        const previousOverflow = document.documentElement.style.overflow;
+        if (isOpen) {
+            document.documentElement.setAttribute('data-search-panel-open', '');
+            // Only lock scroll on mobile sheet sizes — desktop dropdowns are
+            // popovers and shouldn't block page scroll.
+            if (window.matchMedia('(max-width: 900px)').matches) {
+                document.documentElement.style.overflow = 'hidden';
+            }
+        } else {
+            document.documentElement.removeAttribute('data-search-panel-open');
+            document.documentElement.style.overflow = previousOverflow;
+        }
+        return () => {
+            document.documentElement.removeAttribute('data-search-panel-open');
+            document.documentElement.style.overflow = previousOverflow;
+        };
+    }, [activePanel]);
+
+    /** Close the active panel (used by the mobile X button). */
+    const closePanel = useCallback(() => setActivePanel(null), []);
 
     // Panel toggle (measures viewport space to decide direction)
     const togglePanel = useCallback((panel: ActivePanel) => {
@@ -496,43 +526,52 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                     // biome-ignore lint/a11y/useSemanticElements: custom styled dropdown cannot use native <select>
                     role="listbox"
                 >
-                    {/* Clear option */}
-                    {selectedDestination && (
-                        <button
-                            type="button"
-                            className={cn(styles.dropdownItem, styles.dropdownItemClear)}
-                            onClick={() => handleSelectDestination(null)}
-                            // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
-                            role="option"
-                            aria-selected={false}
-                        >
-                            {t('home.searchBar.clearTypes', 'Limpiar')}
-                        </button>
-                    )}
-                    {destinations.map((dest) => (
-                        <button
-                            key={dest.id}
-                            type="button"
-                            className={cn(
-                                styles.dropdownItem,
-                                selectedDestination?.id === dest.id && styles.dropdownItemActive
-                            )}
-                            onClick={() => handleSelectDestination(dest)}
-                            // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
-                            role="option"
-                            aria-selected={selectedDestination?.id === dest.id}
-                        >
-                            {dest.name}
-                        </button>
-                    ))}
-                    {destinations.length === 0 && (
-                        <div
-                            className={styles.dropdownItem}
-                            style={{ cursor: 'default', opacity: 0.5 }}
-                        >
-                            {t('home.searchBar.noDestinationsText', 'No hay destinos disponibles')}
-                        </div>
-                    )}
+                    <PanelCloseHeader
+                        ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
+                        onClose={closePanel}
+                    />
+                    <div className={styles.panelBody}>
+                        {/* Clear option */}
+                        {selectedDestination && (
+                            <button
+                                type="button"
+                                className={cn(styles.dropdownItem, styles.dropdownItemClear)}
+                                onClick={() => handleSelectDestination(null)}
+                                // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
+                                role="option"
+                                aria-selected={false}
+                            >
+                                {t('home.searchBar.clearTypes', 'Limpiar')}
+                            </button>
+                        )}
+                        {destinations.map((dest) => (
+                            <button
+                                key={dest.id}
+                                type="button"
+                                className={cn(
+                                    styles.dropdownItem,
+                                    selectedDestination?.id === dest.id && styles.dropdownItemActive
+                                )}
+                                onClick={() => handleSelectDestination(dest)}
+                                // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
+                                role="option"
+                                aria-selected={selectedDestination?.id === dest.id}
+                            >
+                                {dest.name}
+                            </button>
+                        ))}
+                        {destinations.length === 0 && (
+                            <div
+                                className={styles.dropdownItem}
+                                style={{ cursor: 'default', opacity: 0.5 }}
+                            >
+                                {t(
+                                    'home.searchBar.noDestinationsText',
+                                    'No hay destinos disponibles'
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
 
@@ -549,6 +588,10 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                     role="listbox"
                     aria-multiselectable="true"
                 >
+                    <PanelCloseHeader
+                        ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
+                        onClose={closePanel}
+                    />
                     <div className={styles.typeActions}>
                         <button
                             type="button"
@@ -632,13 +675,19 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                     role="dialog"
                     aria-label={t('home.searchBar.datesLabel', 'Fechas')}
                 >
-                    <Suspense fallback={null}>
-                        <SearchBarCalendar
-                            locale={locale}
-                            selected={dateRange}
-                            onSelect={setDateRange}
-                        />
-                    </Suspense>
+                    <PanelCloseHeader
+                        ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
+                        onClose={closePanel}
+                    />
+                    <div className={styles.panelBody}>
+                        <Suspense fallback={null}>
+                            <SearchBarCalendar
+                                locale={locale}
+                                selected={dateRange}
+                                onSelect={setDateRange}
+                            />
+                        </Suspense>
+                    </div>
                 </div>
             )}
 
@@ -654,62 +703,99 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                     role="dialog"
                     aria-label={t('home.searchBar.guestsLabel', 'Huéspedes')}
                 >
-                    {/* Adults row */}
-                    <div className={styles.guestRow}>
-                        <span className={styles.guestLabel}>
-                            {t('home.searchBar.adultsLabel', 'Adultos')}
-                        </span>
-                        <div className={styles.stepper}>
-                            <button
-                                type="button"
-                                className={styles.stepperButton}
-                                onClick={() => setAdults((prev) => Math.max(1, prev - 1))}
-                                disabled={adults <= 1}
-                                aria-label={t('search.fewerAdults', 'Fewer adults')}
-                            >
-                                -
-                            </button>
-                            <span className={styles.stepperValue}>{adults}</span>
-                            <button
-                                type="button"
-                                className={styles.stepperButton}
-                                onClick={() => setAdults((prev) => Math.min(10, prev + 1))}
-                                disabled={adults >= 10}
-                                aria-label={t('search.moreAdults', 'More adults')}
-                            >
-                                +
-                            </button>
+                    <PanelCloseHeader
+                        ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
+                        onClose={closePanel}
+                    />
+                    <div className={styles.panelBody}>
+                        {/* Adults row */}
+                        <div className={styles.guestRow}>
+                            <span className={styles.guestLabel}>
+                                {t('home.searchBar.adultsLabel', 'Adultos')}
+                            </span>
+                            <div className={styles.stepper}>
+                                <button
+                                    type="button"
+                                    className={styles.stepperButton}
+                                    onClick={() => setAdults((prev) => Math.max(1, prev - 1))}
+                                    disabled={adults <= 1}
+                                    aria-label={t('search.fewerAdults', 'Fewer adults')}
+                                >
+                                    -
+                                </button>
+                                <span className={styles.stepperValue}>{adults}</span>
+                                <button
+                                    type="button"
+                                    className={styles.stepperButton}
+                                    onClick={() => setAdults((prev) => Math.min(10, prev + 1))}
+                                    disabled={adults >= 10}
+                                    aria-label={t('search.moreAdults', 'More adults')}
+                                >
+                                    +
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    {/* Children row */}
-                    <div className={styles.guestRow}>
-                        <span className={styles.guestLabel}>
-                            {t('home.searchBar.childrenLabel', 'Niños')}
-                        </span>
-                        <div className={styles.stepper}>
-                            <button
-                                type="button"
-                                className={styles.stepperButton}
-                                onClick={() => setChildren((prev) => Math.max(0, prev - 1))}
-                                disabled={children <= 0}
-                                aria-label={t('search.fewerChildren', 'Fewer children')}
-                            >
-                                -
-                            </button>
-                            <span className={styles.stepperValue}>{children}</span>
-                            <button
-                                type="button"
-                                className={styles.stepperButton}
-                                onClick={() => setChildren((prev) => Math.min(6, prev + 1))}
-                                disabled={children >= 6}
-                                aria-label={t('search.moreChildren', 'More children')}
-                            >
-                                +
-                            </button>
+                        {/* Children row */}
+                        <div className={styles.guestRow}>
+                            <span className={styles.guestLabel}>
+                                {t('home.searchBar.childrenLabel', 'Niños')}
+                            </span>
+                            <div className={styles.stepper}>
+                                <button
+                                    type="button"
+                                    className={styles.stepperButton}
+                                    onClick={() => setChildren((prev) => Math.max(0, prev - 1))}
+                                    disabled={children <= 0}
+                                    aria-label={t('search.fewerChildren', 'Fewer children')}
+                                >
+                                    -
+                                </button>
+                                <span className={styles.stepperValue}>{children}</span>
+                                <button
+                                    type="button"
+                                    className={styles.stepperButton}
+                                    onClick={() => setChildren((prev) => Math.min(6, prev + 1))}
+                                    disabled={children >= 6}
+                                    aria-label={t('search.moreChildren', 'More children')}
+                                >
+                                    +
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
+        </div>
+    );
+}
+
+/**
+ * Sticky panel header rendered at the top of every mobile bottom-sheet
+ * variant. Holds a close (X) button so users can dismiss the sheet without
+ * tapping outside it. CSS hides it on viewports >900px where panels render
+ * as desktop popovers and a dedicated close button is unnecessary.
+ */
+function PanelCloseHeader({
+    ariaLabel,
+    onClose
+}: {
+    readonly ariaLabel: string;
+    readonly onClose: () => void;
+}) {
+    return (
+        <div className={styles.panelHeader}>
+            <button
+                type="button"
+                className={styles.panelClose}
+                onClick={onClose}
+                aria-label={ariaLabel}
+            >
+                <CloseIcon
+                    size={18}
+                    weight="bold"
+                    aria-hidden="true"
+                />
+            </button>
         </div>
     );
 }
