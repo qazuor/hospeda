@@ -156,10 +156,12 @@ export function ReviewCard({ data, locale, className }: ReviewCardProps) {
         ? `Ver ${badgeLabel}: ${data.entityName ?? badgeLabel}`
         : `Tipo: ${badgeLabel}`;
 
+    const entityName = data.entityName ?? data.reviewerOrigin;
+
     return (
         <figure
             className={cn(styles.card, className)}
-            aria-label={`Reseña de ${data.reviewerName}`}
+            aria-label={`Reseña sobre ${entityName} de ${data.reviewerName}`}
         >
             {/* Decorative large quote icon — background, low opacity */}
             <QuotesIcon
@@ -182,8 +184,29 @@ export function ReviewCard({ data, locale, className }: ReviewCardProps) {
                 </div>
             )}
 
+            {/* Entity header — the most important question on a review card is
+                'review of WHAT?'. Promote the entity name to an H3 at the top
+                so it's the first thing the eye lands on. */}
+            {entityName && (
+                <div className={styles.entityHeader}>
+                    <h3 className={styles.entityName}>
+                        {entityUrl ? (
+                            <a
+                                href={entityUrl}
+                                className={styles.entityNameLink}
+                                aria-label={`Ver ${entityName}`}
+                            >
+                                {entityName}
+                            </a>
+                        ) : (
+                            entityName
+                        )}
+                    </h3>
+                </div>
+            )}
+
             {/* Quote text */}
-            <blockquote>
+            <blockquote className={styles.quoteWrapper}>
                 <p className={styles.quoteText}>&ldquo;{data.quote}&rdquo;</p>
             </blockquote>
 
@@ -211,49 +234,30 @@ export function ReviewCard({ data, locale, className }: ReviewCardProps) {
                 </div>
             </div>
 
-            {/* Author info — three-line hierarchy so the entity reviewed is
-                no longer indistinguishable from the reviewer name and the date.
-                Line 1 (bold): who left the review.
-                Line 2 (highlighted, linked): which entity it is about.
-                Line 3 (muted, small): when. */}
+            {/* Reviewer footer — compact: avatar + name · date in a single row.
+                The entity has its own H3 above so this row is supporting metadata. */}
             <figcaption className={styles.caption}>
                 <ReviewerAvatar
                     url={data.reviewerAvatar ?? null}
                     alt={data.reviewerName}
                     initials={initials}
                 />
-                <div className={styles.authorInfo}>
+                <span className={styles.authorRow}>
                     <span className={styles.authorName}>{data.reviewerName}</span>
-                    {(data.entityName || data.reviewerOrigin) && (
-                        <span className={styles.authorAbout}>
-                            <span className={styles.authorAboutLabel}>
-                                {locale === 'en'
-                                    ? 'Review of'
-                                    : locale === 'pt'
-                                      ? 'Avaliação de'
-                                      : 'Reseña sobre'}
-                            </span>{' '}
-                            {entityUrl ? (
-                                <a
-                                    href={entityUrl}
-                                    className={styles.authorEntityLink}
-                                    aria-label={`Ver ${data.entityName ?? data.reviewerOrigin}`}
-                                >
-                                    {data.entityName ?? data.reviewerOrigin}
-                                </a>
-                            ) : (
-                                <span className={styles.authorEntity}>
-                                    {data.entityName ?? data.reviewerOrigin}
-                                </span>
-                            )}
-                        </span>
-                    )}
                     {data.date && (
-                        <span className={styles.reviewDate}>
-                            {formatReviewDate(data.date, locale)}
-                        </span>
+                        <>
+                            <span
+                                className={styles.authorSeparator}
+                                aria-hidden="true"
+                            >
+                                ·
+                            </span>
+                            <span className={styles.reviewDate}>
+                                {formatReviewDate(data.date, locale)}
+                            </span>
+                        </>
                     )}
-                </div>
+                </span>
             </figcaption>
         </figure>
     );
