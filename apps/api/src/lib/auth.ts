@@ -225,9 +225,10 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                             return;
                         }
                         const client = createEmailClient({ apiKey });
-                        // Build a web-app URL so the user lands on the SPA reset-password
-                        // page (which calls the BA reset endpoint via the auth-client),
-                        // instead of hitting the API directly.
+                        // The reset-password page is a SPA that consumes the token via
+                        // ?token= and calls the BA reset endpoint from the React island.
+                        // BA itself does not perform a redirect for reset, so we link
+                        // straight to the web page.
                         const siteOrigin = env.HOSPEDA_SITE_URL.replace(/\/$/, '');
                         const resetUrl = `${siteOrigin}/es/auth/reset-password?token=${encodeURIComponent(token)}`;
                         const result = await sendEmail({
@@ -277,12 +278,15 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                             return;
                         }
                         const client = createEmailClient({ apiKey });
-                        // Build a web-app URL so the user lands on the SPA verify-email
-                        // page (which calls the BA verify endpoint via the auth-client
-                        // and shows a polished success/error UI), instead of hitting
-                        // the API directly and seeing the JSON response.
+                        // Use Better Auth's native verify-email handler with a
+                        // callbackURL pointing back to the web sign-in page.
+                        // Better Auth verifies the token server-side and 302s the user
+                        // to the callback URL — no SPA round-trip needed (avoids CORS
+                        // and the lack of POST support on /api/auth/verify-email).
+                        const apiOrigin = env.HOSPEDA_API_URL.replace(/\/$/, '');
                         const siteOrigin = env.HOSPEDA_SITE_URL.replace(/\/$/, '');
-                        const verificationUrl = `${siteOrigin}/es/auth/verify-email?token=${encodeURIComponent(token)}`;
+                        const callbackURL = `${siteOrigin}/es/auth/signin?verified=1`;
+                        const verificationUrl = `${apiOrigin}/api/auth/verify-email?token=${encodeURIComponent(token)}&callbackURL=${encodeURIComponent(callbackURL)}`;
                         const result = await sendEmail({
                             client,
                             to: user.email,
