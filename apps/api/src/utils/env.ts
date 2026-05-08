@@ -334,6 +334,18 @@ export const ApiEnvBaseSchema = z.object({
     /** MercadoPago webhook signature secret for verifying incoming IPN notifications */
     HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: z.string().optional(),
     /**
+     * MercadoPago sandbox/test mode flag. Defaults to true (safer default).
+     * Set to 'false' explicitly to enable production charges.
+     * Note: MP test and production access tokens both use the `APP_USR-` prefix —
+     * sandbox vs prod is determined by this flag plus which credentials section
+     * the token was copied from in the MP dashboard.
+     */
+    HOSPEDA_MERCADO_PAGO_SANDBOX: z
+        .string()
+        .optional()
+        .default('true')
+        .transform((v) => v !== 'false'),
+    /**
      * Feature flag for addon lifecycle processing (cancellations, plan changes, expiry).
      * Set to 'false' to disable all addon lifecycle side-effects without deploying code.
      * Default: true (enabled).
