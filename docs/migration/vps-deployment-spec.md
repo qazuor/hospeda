@@ -2872,22 +2872,84 @@ Lista chequeable manual. **No marques completo hasta validar TODO.**
 - [ ] `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` no está vacío
 - [ ] Smoke test E2E de pago real reembolsado OK
 
-### Paso 16.4 — Cleanup post-cutover (1-2 semanas después)
+### Paso 16.4 — Cleanup completo de Vercel + Neon + Upstash (1-2 semanas después)
 
 **Solo después de 1-2 semanas estables corriendo en VPS:**
 
-#### Vercel
+#### Vercel — limpieza completa
 
-1. Cancelar projects en Vercel dashboard
-2. Plan: downgrade a Hobby (mantiene gratis si no usás)
+1. **Cancelar deployments protected**: Vercel dashboard → cada project → Deployments → marcar último prod como "remove protection" si tiene.
+2. **Eliminar 3 proyectos**: hospeda-api, hospeda-web, hospeda-admin → Settings → "Delete project" (irreversible).
+3. **Cancelar suscripciones de marketplace**:
+   - Vercel → Integrations → uninstallar Sentry, Cloudinary, Better Stack si están como marketplace integrations (pueden moverse a accounts standalone fuera de Vercel).
+4. **Eliminar Vercel domain claims**: si Vercel todavía tiene claim sobre `hospeda.com.ar` o subdominios, removerlo en Domains.
+5. **GitHub Apps**: revocar la GitHub App "Vercel" del repo (Settings → Integrations → Vercel → Remove). Revocar también de la org si aplica.
+6. **OAuth tokens**: Vercel → Account Settings → Tokens → revocar todos los tokens de CLI/CI emitidos durante el período Vercel.
+7. **Plan**: downgrade a Hobby (mantiene gratis sin actividad). NO cancelar la cuenta a menos que estés 100% seguro — el plan free no cuesta y deja la cuenta accesible para futuras pruebas.
 
-#### Neon
+#### Neon — eliminar DB
 
-1. Eliminar el proyecto en Neon dashboard
+1. Confirmar que NO hay clones / branches activos.
+2. Backup final manual: `pg_dump` desde Neon → archivo local cifrado guardado offline (por las dudas, 1 año de retención).
+3. Settings → Delete Project → confirm.
 
-#### Upstash
+#### Upstash — eliminar Redis + QStash
 
-1. Eliminar Redis y QStash en Upstash dashboard
+1. **Redis**: Upstash → Redis → Delete database. Verificar que NO hay apps activas conectadas (en VPS usamos Redis nuevo de Coolify).
+2. **QStash**: Upstash → QStash → eliminar todos los schedules. Verificar que en `apps/api/src/cron` NO queda referencia a QStash (en código actual debería usar `node-cron` adapter).
+3. Cerrar workspace si no lo usás para nada más.
+
+#### Repo: eliminar referencias a Vercel/Neon/Upstash
+
+1. `grep -rln "vercel\|neon\|upstash\|qstash" --include='*.ts' --include='*.json' --include='*.md' apps/ packages/` y limpiar las referencias residuales (env-registry vars no usadas, comentarios outdated, links rotos en docs).
+2. CI: revisar `.github/workflows/*` por referencias a Vercel CLI / preview URLs.
+3. README / CLAUDE.md de cada app — remover instrucciones que asumen Vercel.
+
+#### Validar que nada se rompió
+
+Después del cleanup, correr `scripts/smoke-test.sh` y validar 11/11 PASS.
+
+---
+
+## Fase 17 — Operations & Hardening (post-launch)
+
+> **Cuándo**: después de validar 1-2 semanas estable en VPS. NO bloqueante para launch público; agenda como hardening incremental.
+
+### Paso 17.1 — Staging environment
+
+3 apps + DB Postgres dedicada para staging. Subdominios: `staging.hospeda.com.ar`, `staging-api.hospeda.com.ar`, `staging-admin.hospeda.com.ar`. Branch GitHub: `develop`. Coolify deploy on push para esos. **NO compartir DB con prod** (decisión del usuario). Costo extra: $0 si comparte VPS, ~$6-12/mes si VPS separado. Decidir según RAM disponible (VPS prod tiene 3.8 GB RAM total, ahora a ~50% usage; staging suma ~600-800 MB con apps idle). Ver Task #20.
+
+### Paso 17.2 — Toolkit `scripts/server-tools/`
+
+CLIs versionadas en repo para automatizar lo que se hizo a mano repetido durante la migración. Includes: `docker-by-name <prefix>` (resolver UUID→nombre), `db-exec <sql>` / `db-shell`, `db-counts`, `logs-tail <app>`, `seed --required`, `restart <app>` / `redeploy <app>` via Coolify API, `free-mem-status`. Cada tool con `--help`. Documentación en README dentro del directorio. Ver Task #21.
+
+### Paso 17.3 — Migración de tools `env:sync`
+
+Scripts existentes (`pnpm env:pull/push/sync`) apuntan a Vercel API. Decidir: (a) reescribir contra Coolify API (REST con bearer token, GET/PUT env vars per app — preferido), (b) eliminar y manejar manualmente en Coolify UI, (c) git-based con sops/age. Recomendado: opción (a). Documentar en `docs/guides/env-management.md`. Ver Task #22.
+
+### Paso 17.4 — Audit + management de crons
+
+Verificar que TODOS los crons productivos corren desde el VPS (no quedaron en QStash/Vercel orphans). Crear `scripts/server-tools/cron-manage.ts` para list/enable/disable/reschedule de crons in-process (vía endpoints admin de la api) y crons VPS (vía `crontab -l/-e` wrappers). Documentar en `docs/guides/cron-management.md`. Ver Task #23.
+
+### Paso 17.5 — Disaster recovery playbook
+
+Documento `docs/migration/disaster-recovery.md` con runbooks para 4 scenarios: (1) VPS muere completo, (2) Postgres corrupto pero VPS OK, (3) Coolify muere, (4) 1 sola app en crash loop. RTO target prod < 1h, RPO 24h. Test trimestral del runbook contra DB temporal en staging para validar que los pasos siguen funcionando. Ver Task #24.
+
+### Paso 17.6 — Restart schedule semanal
+
+Schedule cron VPS los domingos 04:00 UTC-3 (low traffic) que hace `coolify restart` de api/web/admin para limpiar memory leaks acumulados + connection pools stale. Antes del restart confirmar que el backup diario corrió OK. Implementación: `scripts/server-tools/weekly-restart.sh` + crontab entry. Sessions Better Auth deben sobrevivir (DB-backed). Ver Task #25.
+
+### Paso 17.7 — Disable auto-deploy on push
+
+Coolify por default hace auto-deploy ni bien detecta push a la branch configurada. Cambiar a manual: cada app → Configuration → toggle "Auto Deploy" OFF. Razón: control total sobre cuándo va a prod, evitar deploys accidentales en push de docs/wip/refactor. Para deploy: Coolify UI → Deploy button (manual). Ver Task #26.
+
+### Paso 17.8 — Recepción de emails `@hospeda.com.ar`
+
+Cloudflare Email Routing ya está activo (usado para `noreply@hospeda.com.ar` durante setup Brevo). Agregar custom routes para inboxes operativos: `hello@`, `contact@`, `support@`, `qazuor@`, etc → forward a `qazuor@gmail.com`. Catch-all opcional. Brevo es solo OUTBOUND, Cloudflare es INBOUND. Documentar las routes activas en `docs/guides/email-routing.md`. Ver Task #27.
+
+### Paso 17.9 — Better Stack monitor admin (false positive)
+
+El monitor "Hospeda Admin" reporta DOWN intermitentemente aunque `curl https://admin.hospeda.com.ar/auth/signin` devuelve 200. Investigar: (a) ¿el monitor sigue redirects? El root path `/` da 307 → `/auth/signin` (200). Sin follow-redirects, BS ve 307 y reporta down. (b) Timeout muy corto para admin SSR. Aumentar a 15s. (c) Cambiar URL del monitor de `/` a `/auth/signin` directo. Ver Task #28.
 
 ---
 
