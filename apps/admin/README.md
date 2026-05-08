@@ -14,7 +14,7 @@ Full-featured admin dashboard for managing accommodations, destinations, events,
 - **Forms**: TanStack Form with Zod validation
 - **UI**: React 19, Tailwind CSS, Shadcn/Radix UI
 - **Authentication**: Better Auth with RBAC
-- **Deployment**: Vercel
+- **Deployment**: Coolify on a self-hosted VPS
 
 ## Quick Start
 
@@ -110,7 +110,7 @@ Topics covered in detailed docs:
 - **[Forms](./docs/development/forms.md)**: TanStack Form with validation
 - **[Tables](./docs/development/tables.md)**: TanStack Table implementation
 - **[Authentication](./docs/AUTH_SYSTEM.md)**: Better Auth integration and RBAC
-- **[Deployment](../../docs/deployment/apps/admin.md)**: Vercel deployment guide
+- **[Deployment](../../docs/deployment/apps/admin.md)**: Coolify deployment guide
 
 For cross-app documentation:
 

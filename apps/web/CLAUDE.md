@@ -8,7 +8,7 @@ This file provides **prescriptive guidelines** for building the Hospeda Web appl
 
 ## Overview
 
-Astro 5 public-facing website for the Hospeda platform. SSR with Vercel adapter, React islands for selective interactivity, semantic CSS with Astro scoped styles and CSS Modules (fully tokenized design system via CSS custom properties), and i18n support for Spanish (primary), English, and Portuguese.
+Astro 5 public-facing website for the Hospeda platform. SSR with the Astro Node adapter (running long-lived in a Docker container managed by Coolify), React islands for selective interactivity, semantic CSS with Astro scoped styles and CSS Modules (fully tokenized design system via CSS custom properties), and i18n support for Spanish (primary), English, and Portuguese.
 
 It uses a warm palette and Geologica/Roboto/Caveat typography. Cards and images use uniform border-radius (`--radius-card`); do NOT use asymmetric/organic radius.
 
@@ -89,7 +89,7 @@ src/
 |----------|------------|---------------|
 | **SSR** (default) | Dynamic content, auth-aware, search, fresh data | `/busqueda/`, `/mi-cuenta/*`, `/auth/*` |
 | **SSG** (`prerender = true`) | Static content that rarely changes | `/nosotros/`, `/faq/`, `/legal/*`, `/contacto/` |
-| **ISR** (via Vercel adapter) | Content-heavy pages that change via CMS | `/alojamientos/`, `/destinos/`, `/eventos/`, `/publicaciones/` |
+| **SSR + Cloudflare cache** | Content-heavy pages that change via CMS — pages re-render on demand and Cloudflare caches the response; the API triggers `/api/revalidate` to purge the cache when data changes | `/alojamientos/`, `/destinos/`, `/eventos/`, `/publicaciones/` |
 | **Server Islands** (`server:defer`) | Auth-dependent fragments on otherwise static pages | FavoriteButton, UserNav, ReviewList |
 
 ```astro
@@ -827,7 +827,7 @@ Files in `src/lib/` come from the previous web app iteration with varying levels
 |---------|---------|
 | `astro` | Core framework |
 | `@astrojs/react` | React island integration |
-| `@astrojs/vercel` | SSR adapter with ISR |
+| `@astrojs/node` | SSR adapter (standalone, long-running Node server) |
 | `clsx` | Conditional CSS class joining |
 | `@repo/i18n` | Translations + date/number/currency formatting |
 | `@repo/schemas` | Zod validation schemas (source of truth for types) |
