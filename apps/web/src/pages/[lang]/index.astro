@@ -6,9 +6,9 @@
  */
 import AboutUsSection from "@/components/sections/AboutUsSection.astro";
 import CategoryTiles from "@/components/CategoryTiles.astro";
-import cabinsImg from "@/assets/images/categories/cabins.jpg";
+import countryHousesImg from "@/assets/images/categories/country-houses.jpg";
 import hotelsImg from "@/assets/images/categories/hotels.jpg";
-import housesImg from "@/assets/images/categories/houses.jpg";
+import apartmentsImg from "@/assets/images/categories/apartments.jpg";
 import musicImg from "@/assets/images/categories/music.jpg";
 import cultureImg from "@/assets/images/categories/culture.jpg";
 import gastronomyImg from "@/assets/images/categories/gastronomy.jpg";
@@ -99,10 +99,10 @@ function formatSocialProofCount(value: number): string {
 /** Category tiles for the "Explorá por categoría" section. */
 const categoryTiles = [
     {
-        title: t("home.categoryTiles.cabins.title", "Cabañas"),
-        description: t("home.categoryTiles.cabins.description", "Rodeate de naturaleza en las mejores cabañas del Litoral"),
-        href: buildUrl({ locale, path: "/alojamientos/tipo/cabin/" }),
-        image: cabinsImg,
+        title: t("home.categoryTiles.countryHouses.title", "Casas quintas"),
+        description: t("home.categoryTiles.countryHouses.description", "Espacio, parque y quincho para escapadas en familia"),
+        href: buildUrl({ locale, path: "/alojamientos/tipo/country-house/" }),
+        image: countryHousesImg,
     },
     {
         title: t("home.categoryTiles.hotels.title", "Hoteles"),
@@ -111,10 +111,10 @@ const categoryTiles = [
         image: hotelsImg,
     },
     {
-        title: t("home.categoryTiles.houses.title", "Casas"),
-        description: t("home.categoryTiles.houses.description", "Sentite como en casa con todo el espacio que necesitás"),
-        href: buildUrl({ locale, path: "/alojamientos/tipo/house/" }),
-        image: housesImg,
+        title: t("home.categoryTiles.apartments.title", "Departamentos"),
+        description: t("home.categoryTiles.apartments.description", "Comodidad urbana cerca de todo, ideales para parejas y escapadas cortas"),
+        href: buildUrl({ locale, path: "/alojamientos/tipo/apartment/" }),
+        image: apartmentsImg,
     },
     {
         title: t("home.categoryTiles.music.title", "Música"),

@@ -101,17 +101,17 @@
         "sectionTitle": "Explore por categoria",
         "sectionTagline": "Para todos os gostos",
         "tiles": {
-            "cabins": {
-                "title": "Cabanas",
-                "description": "Cerque-se de natureza nas melhores cabanas do Litoral"
+            "countryHouses": {
+                "title": "Casas de Campo",
+                "description": "Espaço, jardim e churrasqueira para escapadas em família"
             },
             "hotels": {
                 "title": "Hotéis",
                 "description": "Conforto e serviço premium no coração da cidade"
             },
-            "houses": {
-                "title": "Casas",
-                "description": "Sinta-se em casa com todo o espaço que você precisa"
+            "apartments": {
+                "title": "Apartamentos",
+                "description": "Conforto urbano perto de tudo, ideais para casais e escapadas curtas"
             },
             "music": {
                 "title": "Música",

@@ -4,13 +4,13 @@ All images sourced from [Pexels](https://www.pexels.com/) under the [Pexels Lice
 
 | Tile | File | Photographer | Source |
 |------|------|--------------|--------|
-| Cabins | `cabins.jpg` | Sean Valentine | <https://www.pexels.com/photo/a-scenic-view-of-a-wooden-cabin-surrounded-with-trees-near-a-river-7212851/> |
-| Hotels | `hotels.jpg` | Romawi Namaasli | <https://www.pexels.com/photo/architectural-design-of-a-resort-5586610/> |
-| Houses | `houses.jpg` | Elina Volkova | <https://www.pexels.com/photo/a-house-and-garden-in-the-countryside-17922976/> |
-| Music | `music.jpg` | Bence Szemerey | <https://www.pexels.com/photo/large-crowd-on-a-music-festival-15203359/> |
-| Culture | `culture.jpg` | Uğurcan Özmen | <https://www.pexels.com/photo/people-looking-at-painting-in-art-gallery-16842473/> |
-| Gastronomy | `gastronomy.jpg` | Pixabay | <https://www.pexels.com/photo/grilled-meats-236887/> |
-| Posts | `posts.jpg` | Karola G (kaboompics) | <https://www.pexels.com/photo/wooden-table-with-coffee-and-notebook-with-pen-4195334/> |
+| Country Houses | `country-houses.jpg` | John Photography | <https://www.pexels.com/photo/a-swimming-pool-in-a-backyard-24205634/> |
+| Hotels | `hotels.jpg` | Pure House on the Lake | <https://www.pexels.com/photo/luxury-palm-lined-poolside-resort-at-sunset-35023296/> |
+| Apartments | `apartments.jpg` | Artbovich | <https://www.pexels.com/photo/photo-of-a-room-with-chairs-and-a-sofa-6969990/> |
+| Music | `music.jpg` | Andrew Kota | <https://www.pexels.com/photo/man-playing-guitar-sitting-on-brown-log-4083503/> |
+| Culture | `culture.jpg` | Marcelo Gonzalez | <https://www.pexels.com/photo/historic-mansion-in-lobos-argentina-surrounded-by-lush-trees-31705744/> |
+| Gastronomy | `gastronomy.jpg` | Alex Dos Santos | <https://www.pexels.com/photo/traditional-argentine-asado-on-open-grill-37057972/> |
+| Posts | `posts.jpg` | Sandy Rondon | <https://www.pexels.com/photo/yerba-mate-gourd-and-thermos-in-montevideo-park-34449869/> |
 
 ## License Summary
 
@@ -22,4 +22,4 @@ Per the Pexels License:
 
 ## Optimization
 
-These source files are downloaded at 1200-1600px wide and processed by Astro's `astro:assets` pipeline at build time, which generates responsive variants (300w / 600w / 900w) and modern formats (AVIF / WebP) automatically.
+These source files are downloaded at 1600px wide and processed by Astro's `astro:assets` pipeline at build time, which generates responsive variants (300w / 600w / 900w) and modern formats (AVIF / WebP) automatically.

@@ -101,17 +101,17 @@
         "sectionTitle": "Explore by category",
         "sectionTagline": "For every taste",
         "tiles": {
-            "cabins": {
-                "title": "Cabins",
-                "description": "Surround yourself with nature in the best cabins of the Litoral"
+            "countryHouses": {
+                "title": "Country Houses",
+                "description": "Space, gardens and grills for family getaways"
             },
             "hotels": {
                 "title": "Hotels",
                 "description": "Comfort and premium service at the heart of the city"
             },
-            "houses": {
-                "title": "Houses",
-                "description": "Feel at home with all the space you need"
+            "apartments": {
+                "title": "Apartments",
+                "description": "Urban comfort close to everything, ideal for couples and short getaways"
             },
             "music": {
                 "title": "Music",
