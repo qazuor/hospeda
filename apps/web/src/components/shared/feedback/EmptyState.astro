@@ -104,7 +104,7 @@ const hasIconSlot = Astro.slots.has('default');
 	<p class="empty-state__message">{resolvedMessage}</p>
 
 	{actionUrl && (
-		<a href={actionUrl} class="empty-state__action">
+		<a href={actionUrl} class="btn-gradient btn-gradient--outline-accent">
 			{resolvedActionLabel}
 		</a>
 	)}
@@ -153,25 +153,5 @@ const hasIconSlot = Astro.slots.has('default');
 		max-width: 40ch;
 		line-height: 1.6;
 		margin: 0;
-	}
-
-	.empty-state__action {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.75rem 1.5rem;
-		border-radius: var(--radius-button);
-		font-family: var(--font-sans);
-		font-size: var(--text-body);
-		font-weight: 500;
-		text-decoration: none;
-		color: var(--brand-accent);
-		border: 1px solid var(--brand-accent);
-		transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
-	}
-
-	.empty-state__action:hover {
-		background-color: var(--brand-accent);
-		color: var(--accent-foreground, #fff);
 	}
 </style>
