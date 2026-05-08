@@ -2840,36 +2840,65 @@ Lista chequeable manual. **No marques completo hasta validar TODO.**
 
 > Si no necesitás Facebook OAuth para launch (alcanza con Email/Password + Google OAuth), podés diferir indefinidamente y borrar las env vars `HOSPEDA_FACEBOOK_CLIENT_*` para que el código no muestre el botón "Login with Facebook".
 
-### Paso 16.3 — Switch MercadoPago de SANDBOX a PRODUCTION (al ir a launch público)
+### Paso 16.3 — Fix del bug env + switch MercadoPago a PRODUCTION
 
-> 🔴 **Crítico — antes del launch público real (cuando empieces a cobrar plata real)**.
+> ⚠️ **Gotcha permanente sobre credenciales MP**: tanto las credenciales **TEST** como las **PRODUCTION** de MercadoPago usan el prefijo `APP_USR-`. **No existe el prefijo `TEST-` en credenciales actuales de MP** (solo aparece como legacy en código de validación). El string es opaco — el modo se determina **únicamente** por la env var `HOSPEDA_MERCADO_PAGO_SANDBOX` y por de qué sección del dashboard MP copiaste el token (Test credentials vs Production credentials).
 
-**Contexto**: en Fase 9 configuramos MercadoPago en modo sandbox (`HOSPEDA_MERCADO_PAGO_SANDBOX=true`) con TEST access token, para poder testear sin cobros reales. El webhook secret quedó vacío porque MP webhooks se configuran en Paso 12.6 post-cutover.
+**Contexto**: en Fase 9 configuramos MercadoPago en modo sandbox (`HOSPEDA_MERCADO_PAGO_SANDBOX=true`) con TEST access token, para poder testear sin cobros reales. El webhook secret se configuró en Paso 12.6 post-cutover.
+
+#### 16.3.a — Fix del hardcode de NODE_ENV en billing middleware (prerequisito)
+
+> 🔴 **Crítico — bloquea signup en VPS independiente de sandbox/prod**.
+
+**Síntoma**: signup nuevo en `/api/auth/sign-up/email` falla cuando el código intenta crear el billing customer porque MP rechaza con "Unauthorized use of credentials".
+
+**Root cause**: `apps/api/src/middlewares/billing.ts` hardcodeaba `sandbox: env.NODE_ENV !== 'production'` y `livemode: env.NODE_ENV === 'production'`, ignorando la env var `HOSPEDA_MERCADO_PAGO_SANDBOX`. En VPS (NODE_ENV=production) esto fuerza `sandbox=false` aunque tengas TEST token cargado, generando el mismatch que MP rechaza.
+
+**Fix aplicado** (commit en `chore/vps-migration`):
+
+1. `apps/api/src/utils/env.ts`: agregada `HOSPEDA_MERCADO_PAGO_SANDBOX` al schema Zod (`z.string().optional().default('true').transform((v) => v !== 'false')`).
+2. `apps/api/src/middlewares/billing.ts`: removido el hardcode. Ahora `sandbox = env.HOSPEDA_MERCADO_PAGO_SANDBOX` y `livemode = !sandbox`. La factory `createMercadoPagoAdapter()` se llama sin args y lee la env var por su cuenta.
+
+**Validación post-deploy**:
+
+- [ ] Redeploy de `hospeda-api-prod` desde Coolify (manual, auto-deploy off).
+- [ ] Logs muestran `✅ QZPay billing initialized successfully` sin errores.
+- [ ] Signup nuevo de prueba → en logs no aparece "Unauthorized use of credentials" ni equivalente.
+- [ ] El `billing_customer` correspondiente aparece en DB (`SELECT * FROM billing_customers WHERE email='<email-de-prueba>'`).
+
+#### 16.3.b — Switch a PRODUCTION (al ir a launch público real)
+
+> 🔴 **Crítico — antes del launch público real (cuando empieces a cobrar plata real)**. Solo después de validar 16.3.a en sandbox.
 
 **Pasos**:
 
 1. **Obtener PROD access token** desde el panel de MP:
-   - <https://www.mercadopago.com.ar/developers/panel/app> → tu app → **Credenciales de producción** → copiar Access Token (empieza con `APP_USR-`, igual formato que TEST).
+   - <https://www.mercadopago.com.ar/developers/panel/app> → tu app → **Credenciales de producción** → copiar Access Token (empieza con `APP_USR-`, mismo formato que TEST — recordar el gotcha).
    - Si MP te bloquea producción y exige homologación, completá los pasos requeridos primero (datos fiscales, validación de cuenta, KYC).
 
-2. **Update env vars en Coolify** → `hospeda-api-prod` → Environment Variables:
+2. **Obtener PROD webhook secret** (puede requerir investigación):
+   - MP dashboard → tu app → **Webhooks** → buscar selector "Production credentials" / "Test credentials" arriba del panel.
+   - Si tu cuenta MP tiene la separación: copiar el "Secret signature" del panel Production (se muestra una sola vez al generarlo).
+   - Si NO ves la separación: tu cuenta puede estar en el modelo unificado (un único secret para ambos modos). Consultar docs MP o soporte para confirmar.
+
+3. **Update env vars en Coolify** → `hospeda-api-prod` → Environment Variables:
    - `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN`: reemplazar TEST token por PROD token.
    - `HOSPEDA_MERCADO_PAGO_SANDBOX`: cambiar de `true` a `false`.
-   - Verificar que `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` esté seteado (debió hacerse en Paso 12.6).
+   - `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET`: actualizar al secret de prod (si aplica separación).
 
-3. **Restart** del container de `hospeda-api-prod` (Coolify lo hace automático tras Save).
+4. **Restart** del container de `hospeda-api-prod` (Coolify lo hace automático tras Save).
 
-4. **Smoke test E2E** de un pago real con monto chico ($100 ARS, una tarjeta tuya):
+5. **Smoke test E2E** de un pago real con monto chico ($100 ARS, una tarjeta tuya):
    - Crear booking → checkout → confirmar pago → verificar que el webhook llega y se procesa OK → verificar que aparece en MP dashboard como `approved`.
    - Reembolsar inmediatamente vía MP dashboard si todo OK.
 
-5. **Logs check**: en Coolify → API logs, buscar `[billing.webhooks.mercadopago]` y verificar `signature_valid=true` en el evento del test.
+6. **Logs check**: en Coolify → API logs, buscar `[billing.webhooks.mercadopago]` y verificar `signature_valid=true` en el evento del test.
 
-**Verificación**:
+**Verificación 16.3.b**:
 
 - [ ] `HOSPEDA_MERCADO_PAGO_SANDBOX=false` en Coolify
-- [ ] `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN` empieza con `APP_USR-` y es el de PROD (no TEST)
-- [ ] `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` no está vacío
+- [ ] `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN` es el copiado de la sección Production credentials del dashboard MP
+- [ ] `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` corresponde a las credenciales prod (si aplica separación)
 - [ ] Smoke test E2E de pago real reembolsado OK
 
 ### Paso 16.4 — Cleanup completo de Vercel + Neon + Upstash (1-2 semanas después)
