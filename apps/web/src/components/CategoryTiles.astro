@@ -9,6 +9,8 @@
  * Rendering: Static (no client JavaScript).
  */
 
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
 import type { IconProps } from '@repo/icons';
 import type { ComponentType } from 'react';
 
@@ -24,8 +26,11 @@ interface TileItem {
      * Must be a valid React component accepting `IconProps` (size, weight, color, etc.).
      */
     readonly icon?: ComponentType<IconProps>;
-    /** Optional image URL shown as a background or tile thumbnail. */
-    readonly image?: string;
+    /**
+     * Optional imported image asset (via `astro:assets`). When present, Astro
+     * generates responsive variants and modern formats (AVIF/WebP) at build time.
+     */
+    readonly image?: ImageMetadata;
 }
 
 interface Props {
@@ -58,9 +63,11 @@ const { tiles, sectionTitle, sectionTagline } = Astro.props;
                     {/* Visual area: image or icon */}
                     <div class="category-tiles__visual" aria-hidden="true">
                         {image && (
-                            <img
+                            <Image
                                 src={image}
                                 alt=""
+                                widths={[300, 600, 900]}
+                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
                                 class="category-tiles__image"
                                 loading="lazy"
                                 aria-hidden="true"
