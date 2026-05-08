@@ -397,14 +397,11 @@ describe('ENV_REGISTRY', () => {
             expect(entry?.category).toBe('system');
         });
 
-        it('should include CI, VERCEL, and VERCEL_GIT_COMMIT_SHA', () => {
-            const systemVarNames = ['CI', 'VERCEL', 'VERCEL_GIT_COMMIT_SHA'];
-            for (const name of systemVarNames) {
-                const entry = REGISTRY.find((e) => e.name === name);
-                expect(entry, `${name} not found in registry`).toBeDefined();
-                expect(entry?.category).toBe('system');
-                expect(entry?.secret).toBe(false);
-            }
+        it('should include CI as a system var', () => {
+            const entry = REGISTRY.find((e) => e.name === 'CI');
+            expect(entry, 'CI not found in registry').toBeDefined();
+            expect(entry?.category).toBe('system');
+            expect(entry?.secret).toBe(false);
         });
     });
 

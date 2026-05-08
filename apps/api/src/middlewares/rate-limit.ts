@@ -306,7 +306,8 @@ export const getClientIp = ({ c }: { c: Context }): string => {
     if (!trustProxy) {
         // When proxy is not trusted, use the socket remote address instead of
         // a shared bucket so each real client gets its own rate limit window.
-        // NOTE: trustProxy=true should only be enabled behind Vercel/Cloudflare.
+        // NOTE: trustProxy=true should only be enabled behind a trusted reverse proxy
+        // (Cloudflare, Nginx, Coolify's Traefik, etc.).
         const socketIp =
             c.req.raw && 'socket' in c.req.raw
                 ? (c.req.raw as { socket?: { remoteAddress?: string } }).socket?.remoteAddress
@@ -551,7 +552,7 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
             apiLogger.warn(
                 'Rate limiting: API_RATE_LIMIT_TRUST_PROXY is false. ' +
                     'All requests share one rate limit bucket. ' +
-                    'Set to true when behind a trusted reverse proxy (Vercel, Cloudflare, etc.)'
+                    'Set to true when behind a trusted reverse proxy (Cloudflare, Nginx, Coolify Traefik, etc.)'
             );
             await store.set(
                 '__proxy_warning_logged__',
@@ -813,8 +814,8 @@ export interface SlidingWindowPerUserOptions {
  * sweep below removes stale keys that have had no recent activity.
  *
  * NOTE: This store is PROCESS-LOCAL. When the API runs across multiple instances
- * (Vercel / Fluid Compute) each instance maintains its own counters, so the
- * effective per-user limit is `max * instanceCount`.
+ * (e.g. multiple Coolify replicas behind a load balancer) each instance maintains
+ * its own counters, so the effective per-user limit is `max * instanceCount`.
  *
  * TODO(SPEC-079-redis): Replace the in-memory backend with a Redis sorted-set
  * implementation (ZADD / ZREMRANGEBYSCORE / ZCARD) when multi-instance traffic

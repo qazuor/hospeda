@@ -598,13 +598,6 @@ describe('Environment Configuration', () => {
     });
 
     describe('Platform-Injected Variables', () => {
-        it('should accept VERCEL flag', async () => {
-            process.env = createValidTestEnv({ VERCEL: '1' });
-            const envModule = await import('../../src/utils/env');
-            envModule.validateApiEnv();
-            expect(envModule.env.VERCEL).toBe('1');
-        });
-
         it('should accept CI flag', async () => {
             process.env = createValidTestEnv({ CI: 'true' });
             const envModule = await import('../../src/utils/env');
@@ -612,22 +605,11 @@ describe('Environment Configuration', () => {
             expect(envModule.env.CI).toBe('true');
         });
 
-        it('should accept VERCEL_GIT_COMMIT_SHA', async () => {
-            process.env = createValidTestEnv({
-                VERCEL_GIT_COMMIT_SHA: 'abc123def456'
-            });
-            const envModule = await import('../../src/utils/env');
-            envModule.validateApiEnv();
-            expect(envModule.env.VERCEL_GIT_COMMIT_SHA).toBe('abc123def456');
-        });
-
         it('should leave platform vars undefined when not set', async () => {
             process.env = createValidTestEnv();
             const envModule = await import('../../src/utils/env');
             envModule.validateApiEnv();
-            expect(envModule.env.VERCEL).toBeUndefined();
             expect(envModule.env.CI).toBeUndefined();
-            expect(envModule.env.VERCEL_GIT_COMMIT_SHA).toBeUndefined();
         });
     });
 

@@ -140,13 +140,9 @@ export const ApiEnvBaseSchema = z.object({
         .optional()
         .transform((v) => v === 'true'),
 
-    // Platform-injected (set by Vercel/CI, not user-configured)
-    /** Set to "1" by Vercel when running in their platform */
-    VERCEL: z.string().optional(),
+    // Platform-injected (set by CI, not user-configured)
     /** Set to "true" by CI environments (GitHub Actions, etc.) */
     CI: z.string().optional(),
-    /** Git commit SHA injected by Vercel at deploy time */
-    VERCEL_GIT_COMMIT_SHA: z.string().optional(),
 
     // Build metadata
     /** Git commit SHA for health endpoint and Sentry release tagging */
@@ -211,7 +207,7 @@ export const ApiEnvBaseSchema = z.object({
      */
     API_RATE_LIMIT_HEADERS: z.enum(['standard', 'legacy', 'both', 'none']).default('standard'),
     API_RATE_LIMIT_MESSAGE: z.string().default('Too many requests, please try again later.'),
-    /** Trust x-forwarded-for / cf-connecting-ip. Default true — matches Vercel/Cloudflare/Nginx deploy targets. Set false ONLY for direct-exposed local dev runs. */
+    /** Trust x-forwarded-for / cf-connecting-ip. Default true — matches Cloudflare/Nginx/Coolify Traefik deploy targets. Set false ONLY for direct-exposed local dev runs. */
     API_RATE_LIMIT_TRUST_PROXY: z.coerce.boolean().default(true),
     API_RATE_LIMIT_TRUSTED_PROXIES: z.string().default(''),
 

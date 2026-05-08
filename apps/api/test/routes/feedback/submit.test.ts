@@ -444,7 +444,7 @@ describe('POST /api/v1/public/feedback', () => {
 
     it('returns 400 when attachment exceeds 10MB', async () => {
         // Use a file slightly over the per-file limit (10MB) but under the global bodyLimit.
-        // The global bodyLimit middleware (10MB for local, 4.5MB for Vercel) may intercept
+        // The global bodyLimit middleware (10MB) may intercept
         // very large payloads before formData() can parse them. We use a ~10.1MB file
         // which exceeds FEEDBACK_CONFIG.maxFileSize (10_485_760 bytes) when the bodyLimit
         // does not block it first. Either way the response must be 400.

@@ -152,17 +152,16 @@ startServer();
 /**
  * Handle uncaught exceptions.
  *
- * SPEC-020 US-14 originally required process.exit(1) here for the Fly.io VM deployment,
- * where a long-running Node process with corrupted state could silently serve bad responses.
+ * SPEC-020 US-14 required process.exit(1) here so a long-running Node process
+ * with corrupted state could not silently serve bad responses; the original
+ * deployment target was Fly.io VMs.
  *
- * After migrating to Vercel serverless (commit 437513a1), process.exit() is intentionally
- * omitted because:
- *   - Each request runs in an isolated function invocation.
- *   - Calling process.exit() kills the function mid-request, causing 502 errors.
- *   - The serverless runtime automatically manages process lifecycle and cold starts.
- *
- * WARNING: If the API is re-deployed on a long-running VM (Docker, EC2, etc.),
- * process.exit(1) MUST be re-enabled to prevent corrupted state from persisting.
+ * The handler currently logs without exiting. That was acceptable on Vercel
+ * serverless (each request was isolated, process.exit mid-request would cause
+ * 502s), but is NOT correct for the current VPS Coolify Docker target where
+ * the process is long-running. TODO: re-enable process.exit(1) once the
+ * supervisor's restart policy has been validated end-to-end on the VPS so a
+ * corrupted process is killed and replaced rather than left to serve traffic.
  */
 process.on('uncaughtException', (error) => {
     apiLogger.error(

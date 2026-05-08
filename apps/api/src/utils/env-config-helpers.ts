@@ -229,15 +229,12 @@ export const getResponseConfig = () => ({
 
 /**
  * Returns the resolved database pool configuration.
- * In serverless environments (Vercel), defaults to max 3 connections
- * to stay within Neon pooler limits.
+ * Defaults are tuned for the long-running Node server on the VPS — override
+ * via env vars when scaling up or running test fixtures.
  */
 export const getDatabasePoolConfig = () => {
-    const isServerless = !!process.env.VERCEL;
-    const defaultMax = isServerless ? 3 : 10;
-
     return {
-        max: _safe.getNumber('HOSPEDA_DB_POOL_MAX_CONNECTIONS', defaultMax),
+        max: _safe.getNumber('HOSPEDA_DB_POOL_MAX_CONNECTIONS', 10),
         idleTimeoutMillis: _safe.getNumber('HOSPEDA_DB_POOL_IDLE_TIMEOUT_MS', 30000),
         connectionTimeoutMillis: _safe.getNumber('HOSPEDA_DB_POOL_CONNECTION_TIMEOUT_MS', 2000)
     };

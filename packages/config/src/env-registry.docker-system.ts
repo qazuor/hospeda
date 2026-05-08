@@ -138,34 +138,6 @@ export const SYSTEM_ENV_VARS = [
         howToObtainEs:
             'Lo setean automáticamente GitHub Actions / Vercel / etc. NO lo seteés a mano. El código lo usa para apagar prompts interactivos en scripts.'
     },
-    {
-        name: 'VERCEL',
-        description: 'Automatically set to 1 when running on Vercel serverless infrastructure',
-        descriptionEs: 'Se setea en 1 automáticamente cuando corre en infraestructura de Vercel',
-        type: 'boolean',
-        required: false,
-        secret: false,
-        exampleValue: 'false',
-        apps: ['api'],
-        category: 'system',
-        howToObtain: 'Auto-set by Vercel runtime to 1. Do NOT set manually.',
-        howToObtainEs: 'Lo setea Vercel automáticamente en 1. NO lo seteés a mano.'
-    },
-    {
-        name: 'VERCEL_GIT_COMMIT_SHA',
-        description: 'Full Git commit SHA injected by Vercel at build time',
-        descriptionEs: 'SHA completo del commit Git que inyecta Vercel al momento del build',
-        type: 'string',
-        required: false,
-        secret: false,
-        exampleValue: 'abc123def456',
-        apps: ['api'],
-        category: 'system',
-        howToObtain:
-            'Auto-set by Vercel at build time to the deployed git SHA. Use it as the Sentry release identifier so each deploy is uniquely tagged.',
-        howToObtainEs:
-            'Vercel lo setea al hacer el build con el SHA del commit deployado. Conectalo al "release" de Sentry así cada deploy queda etiquetado único.'
-    },
     // SENTRY_ENVIRONMENT: Deferred.. use import.meta.env.MODE or NODE_ENV instead
     {
         name: 'TEST_DB_URL',
