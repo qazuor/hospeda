@@ -15,8 +15,8 @@ const src = readFileSync(
 
 describe('AccommodationTypeBadge.astro', () => {
     describe('imports + helpers', () => {
-        it('imports getAccommodationTypeColorSolid (per-type identity)', () => {
-            expect(src).toContain('getAccommodationTypeColorSolid');
+        it('imports getAccommodationTypeIcon (per-type icon)', () => {
+            expect(src).toContain('getAccommodationTypeIcon');
         });
 
         it('imports getAccommodationTypeLabel (i18n label)', () => {
@@ -78,18 +78,45 @@ describe('AccommodationTypeBadge.astro', () => {
     });
 
     describe('rendering', () => {
-        it('renders the colour scheme via inline custom properties', () => {
-            expect(src).toContain('--acc-type-bg:');
-            expect(src).toContain('--acc-type-text:');
+        it('renders the leading icon resolved from the type', () => {
+            expect(src).toMatch(/<Icon\s+size=\{iconSize\}/);
+            expect(src).toContain('weight="bold"');
         });
 
-        it('lowercases the type before resolving colours', () => {
+        it('marks the icon as decorative via aria-hidden', () => {
+            expect(src).toMatch(/<Icon[\s\S]*?aria-hidden="true"/);
+        });
+
+        it('lowercases the type before resolving icon and label', () => {
             expect(src).toContain('type.toLowerCase()');
         });
 
-        it('renders a <span> with the base + size classes', () => {
+        it('renders the base + size classes', () => {
             expect(src).toContain('acc-type-badge');
             expect(src).toContain('acc-type-badge--size-${size}');
+        });
+
+        it('uses smaller icon (14px) for the xs density and 16px for sm', () => {
+            expect(src).toMatch(/iconSize\s*=\s*size === 'xs' \? 14 : 16/);
+        });
+    });
+
+    describe('unified colour identity', () => {
+        it('uses brand-primary as the badge surface for every type', () => {
+            expect(src).toMatch(/background-color:\s*var\(--brand-primary\)/);
+        });
+
+        it('uses the primary foreground token for the label colour', () => {
+            expect(src).toMatch(/color:\s*var\(--primary-foreground/);
+        });
+
+        it('does not import the per-type colour helper anymore', () => {
+            expect(src).not.toContain('getAccommodationTypeColorSolid');
+        });
+
+        it('does not expose --acc-type-bg / --acc-type-text inline custom properties', () => {
+            expect(src).not.toContain('--acc-type-bg:');
+            expect(src).not.toContain('--acc-type-text:');
         });
     });
 
