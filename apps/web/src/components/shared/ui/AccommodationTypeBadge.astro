@@ -66,7 +66,7 @@ const iconSize = size === 'xs' ? 14 : 16;
         display: inline-flex;
         align-items: center;
         gap: 0.4em;
-        background-color: var(--brand-primary);
+        background-color: var(--brand-primary-dark);
         color: var(--primary-foreground, #fff);
         border: none;
         border-radius: var(--radius-pill, 9999px);
@@ -118,7 +118,7 @@ const iconSize = size === 'xs' ? 14 : 16;
     }
     a.acc-type-badge:hover {
         transform: translateY(-1px);
-        background-color: oklch(from var(--brand-primary) calc(l * 0.92) c h);
+        background-color: oklch(from var(--brand-primary-dark) calc(l - 0.05) c h);
         box-shadow:
             0 2px 4px oklch(0 0 0 / 0.1),
             0 4px 10px oklch(0 0 0 / 0.08);

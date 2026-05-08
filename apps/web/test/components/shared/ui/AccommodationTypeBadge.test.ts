@@ -102,8 +102,8 @@ describe('AccommodationTypeBadge.astro', () => {
     });
 
     describe('unified colour identity', () => {
-        it('uses brand-primary as the badge surface for every type', () => {
-            expect(src).toMatch(/background-color:\s*var\(--brand-primary\)/);
+        it('uses brand-primary-dark as the badge surface for every type', () => {
+            expect(src).toMatch(/background-color:\s*var\(--brand-primary-dark\)/);
         });
 
         it('uses the primary foreground token for the label colour', () => {
