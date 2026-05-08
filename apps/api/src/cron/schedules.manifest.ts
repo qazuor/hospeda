@@ -26,9 +26,9 @@
 export interface CronScheduleEntry {
     /** Stable kebab-case identifier; matches `name` on the job definition. */
     readonly name: string;
-    /** 5-field cron expression interpreted by both the in-process scheduler and Upstash QStash. */
+    /** 5-field cron expression interpreted by the in-process node-cron scheduler. */
     readonly schedule: string;
-    /** Human-readable summary used in QStash dashboard descriptions. */
+    /** Human-readable summary used in admin dashboards and audit reports. */
     readonly description: string;
 }
 

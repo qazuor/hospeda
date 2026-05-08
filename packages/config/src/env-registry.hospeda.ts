@@ -32,9 +32,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api', 'web', 'admin'],
         category: 'core',
         howToObtain:
-            'Where the Hono API lives. Local: http://localhost:3001. Preview: https://api-<branch>-<team>.vercel.app. Production: https://api.hospeda.com.ar (or your real domain).',
+            'Where the Hono API lives. Local: http://localhost:3001. Production: https://api.hospeda.com.ar (Coolify-managed deployment on the VPS).',
         howToObtainEs:
-            'Donde corre la API de Hono. Local: http://localhost:3001. Preview: https://api-<branch>-<team>.vercel.app. Producción: https://api.hospeda.com.ar (o tu dominio real).'
+            'Donde corre la API de Hono. Local: http://localhost:3001. Producción: https://api.hospeda.com.ar (deploy gestionado por Coolify en el VPS).'
     },
     {
         name: 'HOSPEDA_SITE_URL',
@@ -81,9 +81,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api', 'seed'],
         category: 'database',
         howToObtain:
-            'Format: postgresql://USER:PASSWORD@HOST:PORT/DBNAME. For local dev use the Docker compose values (default: postgresql://hospeda_user:hospeda_pass@localhost:5436/hospeda_dev). For prod/preview use the Neon connection string from the Vercel Marketplace integration.',
+            'Format: postgresql://USER:PASSWORD@HOST:PORT/DBNAME. For local dev use the Docker compose values (default: postgresql://hospeda_user:hospeda_pass@localhost:5436/hospeda_dev). In production read the connection string from the Coolify-managed Postgres service on the VPS.',
         howToObtainEs:
-            'Formato: postgresql://USUARIO:PASSWORD@HOST:PUERTO/BASE. Para dev local usá los valores del Docker compose (default: postgresql://hospeda_user:hospeda_pass@localhost:5436/hospeda_dev). Para prod/preview usá la connection string de Neon que te da la integración de Vercel Marketplace.'
+            'Formato: postgresql://USUARIO:PASSWORD@HOST:PUERTO/BASE. Para dev local usá los valores del Docker compose (default: postgresql://hospeda_user:hospeda_pass@localhost:5436/hospeda_dev). En producción tomá la connection string del servicio Postgres gestionado por Coolify en el VPS.'
     },
     {
         name: 'HOSPEDA_DB_POOL_MAX_CONNECTIONS',
@@ -97,9 +97,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'database',
         howToObtain:
-            'Max simultaneous Postgres connections per app instance. Default 10. Lower it if your DB has a hard cap (Neon free tier = 100 total).',
+            'Max simultaneous Postgres connections per app instance. Default 10. Lower it if your Postgres instance has a hard cap or if you run multiple replicas of the API.',
         howToObtainEs:
-            'Conexiones simultáneas máximas a Postgres por instancia de la app. Por defecto 10. Bajalo si tu DB tiene un tope (Neon free tier = 100 total).'
+            'Conexiones simultáneas máximas a Postgres por instancia de la app. Por defecto 10. Bajalo si tu Postgres tiene un tope o si corrés varias réplicas de la API.'
     },
     {
         name: 'HOSPEDA_DB_POOL_IDLE_TIMEOUT_MS',
@@ -129,9 +129,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'database',
         howToObtain:
-            'How long to wait for a free connection before failing the request (ms). Default 5000 (5s) — chosen as a sane balance for serverless cold starts on Neon. Lower it on warm long-running instances if you want faster fail-fast.',
+            'How long to wait for a free connection before failing the request (ms). Default 5000 (5s) — fine for the long-running Node server on the VPS. Lower it if you want faster fail-fast under load.',
         howToObtainEs:
-            'Cuánto tiempo esperar una conexión libre antes de fallar el request (ms). Por defecto 5000 (5s) — elegido como balance sano para cold starts en serverless con Neon. Bajalo en instancias warm largas si querés fail-fast más rápido.'
+            'Cuánto tiempo esperar una conexión libre antes de fallar el request (ms). Por defecto 5000 (5s) — adecuado para el server Node long-running en el VPS. Bajalo si querés fail-fast más rápido bajo carga.'
     },
     {
         name: 'HOSPEDA_SEED_SUPER_ADMIN_PASSWORD',
@@ -296,9 +296,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'cache',
         howToObtain:
-            'Format: redis://[user:pass@]host:port. Local: redis://localhost:6381 (Docker compose — port offset from default 6379 to avoid clashing with system Redis). Production: use Vercel Marketplace → Upstash Redis (gives you a redis://default:TOKEN@... URL). NOTE: hard-required in production — startup will fail if missing.',
+            'Format: redis://[user:pass@]host:port. Local: redis://localhost:6381 (Docker compose — port offset from default 6379 to avoid clashing with system Redis). Production: use the Coolify-managed Redis service on the VPS (internal docker network URL). NOTE: hard-required in production — startup will fail if missing.',
         howToObtainEs:
-            'Formato: redis://[usuario:pass@]host:puerto. Local: redis://localhost:6381 (Docker compose — puerto desplazado del default 6379 para no chocar con un Redis del sistema). Producción: usá Vercel Marketplace → Upstash Redis (te da una URL tipo redis://default:TOKEN@...). OJO: en producción es obligatoria — el startup falla si queda vacía.'
+            'Formato: redis://[usuario:pass@]host:puerto. Local: redis://localhost:6381 (Docker compose — puerto desplazado del default 6379 para no chocar con un Redis del sistema). Producción: usá el servicio Redis gestionado por Coolify en el VPS (URL de la red docker interna). OJO: en producción es obligatoria — el startup falla si queda vacía.'
     },
     {
         name: 'HOSPEDA_RATE_LIMIT_BACKEND',
@@ -888,9 +888,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'monitoring',
         howToObtain:
-            'Free-text version label that groups errors per deploy. Standard practice on Vercel: wire it to VERCEL_GIT_COMMIT_SHA so each deploy gets a unique release identifier (commit hash like "abc123def456"). Avoid semver "1.0.0" — every preview deploy would collide on the same release.',
+            'Free-text version label that groups errors per deploy. Recommended: wire it to HOSPEDA_COMMIT_SHA in CI/CD so each deploy gets a unique release identifier ("abc123def456"). Avoid semver "1.0.0" — every preview/staging deploy would collide on the same release.',
         howToObtainEs:
-            'Etiqueta de versión en texto libre que agrupa errores por deploy. Práctica estándar en Vercel: conectala a VERCEL_GIT_COMMIT_SHA así cada deploy es un release único (hash de commit tipo "abc123def456"). Evitá semver "1.0.0" — cada preview tendría colisión en el mismo release.'
+            'Etiqueta de versión en texto libre que agrupa errores por deploy. Recomendado: conectala a HOSPEDA_COMMIT_SHA en CI/CD así cada deploy es un release único ("abc123def456"). Evitá semver "1.0.0" — cada preview/staging tendría colisión en el mismo release.'
     },
     {
         name: 'HOSPEDA_SENTRY_PROJECT',
@@ -1019,9 +1019,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'build',
         howToObtain:
-            'On Vercel this is auto-set from VERCEL_GIT_COMMIT_SHA — usually leave blank locally. Used to tie API responses to a specific git commit (helps debugging "which version was running").',
+            'In CI/CD set this to the deployed git SHA (Coolify on the VPS does this automatically when wired up). Local: leave blank. Used to tie API responses to a specific commit so "which version was running?" is answerable from any error report.',
         howToObtainEs:
-            'En Vercel se autocompleta desde VERCEL_GIT_COMMIT_SHA; en local típicamente lo dejás vacío. Sirve para atar las respuestas de la API a un commit de git específico (ayuda a debuggear "qué versión estaba corriendo").'
+            'En CI/CD seteala al SHA del commit deployado (Coolify lo hace solo en el VPS si está conectado). En local: dejala vacía. Sirve para atar las respuestas de la API a un commit específico, así "qué versión estaba corriendo" se puede responder desde cualquier reporte de error.'
     },
     {
         name: 'HOSPEDA_SUPPORTED_LOCALES',
