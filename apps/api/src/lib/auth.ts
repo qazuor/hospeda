@@ -229,7 +229,12 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                                 resetUrl: url
                             })
                         });
-                        if (!result.success) {
+                        if (result.success) {
+                            logger.info(
+                                { userId: user.id },
+                                'Password reset email dispatched to provider'
+                            );
+                        } else {
                             logger.warn(
                                 { userId: user.id, error: result.error },
                                 'Failed to send password reset email'
@@ -271,7 +276,12 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                                 verificationUrl: url
                             })
                         });
-                        if (!result.success) {
+                        if (result.success) {
+                            logger.info(
+                                { userId: user.id },
+                                'Verification email dispatched to provider'
+                            );
+                        } else {
                             logger.warn(
                                 { userId: user.id, error: result.error },
                                 'Failed to send verification email'
