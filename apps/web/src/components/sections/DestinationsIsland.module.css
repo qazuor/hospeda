@@ -52,9 +52,12 @@
     min-width: 0; /* prevent overflow in flex context */
     padding-block: 1.5rem;
     /* Clip horizontal overflow only — the active card uses transform:
-       scale(1.06) which adds vertical bleed that must NOT be cropped,
-       otherwise the top/bottom edges of the focused card get cut off. */
-    overflow-x: hidden;
+       scale(1.06) which adds vertical bleed that must NOT be cropped.
+       `overflow: hidden` on either axis silently forces the other axis
+       to `auto`, so we use `overflow-x: clip` (single-axis clipping
+       without forcing scrollbars) and explicitly leave Y as visible. */
+    overflow-x: clip;
+    overflow-y: visible;
 }
 
 /* C-2: full width when map is hidden (below 1024px) */
@@ -112,8 +115,11 @@
     position: relative;
     /* Same reasoning as .contentColumn: clip the horizontal peek of
        neighbouring slides but keep vertical room for the scale(1.06)
-       transform applied to the active card. */
-    overflow-x: hidden;
+       transform applied to the active card. `overflow-x: clip` lets us
+       single-axis-clip without the browser silently promoting Y to
+       `auto` (the default overflow behaviour for `overflow-x: hidden`). */
+    overflow-x: clip;
+    overflow-y: visible;
     width: 100%;
     flex: 1;
     display: flex;
@@ -124,7 +130,8 @@
 }
 
 .carouselViewport {
-    overflow-x: hidden;
+    overflow-x: clip;
+    overflow-y: visible;
     width: 100%;
 }
 
