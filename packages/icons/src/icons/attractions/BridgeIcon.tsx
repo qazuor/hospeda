@@ -1,6 +1,6 @@
 /**
  * @file BridgeIcon.tsx
- * @description Custom hand-crafted SVG icon depicting a bridge silhouette.
+ * @description Custom hand-crafted SVG icon depicting a cable-stayed bridge.
  *
  * Used as a cross-OS-consistent replacement for the bridge emoji (🌉),
  * which renders inconsistently across platforms (Windows / Linux fallback
@@ -11,8 +11,12 @@
  * surface API still mirrors the rest of `@repo/icons`: it accepts the
  * standard `IconProps` (size, color, weight, etc.) for drop-in usage.
  *
- * The artwork is a simplified girder / suspension bridge: a curved upper
- * cable, a horizontal deck, and four vertical struts.
+ * The artwork is a simplified cable-stayed bridge: a central pylon
+ * (vertical tower), four diagonal stays fanning out from its top, the
+ * horizontal deck, and two short anchoring piers on either side.
+ * Visually inspired by the Puente General Artigas (Colón–Paysandú) and
+ * the Puente Internacional Libertador General San Martín
+ * (Concordia–Salto) — bridges of the Argentine Litoral region.
  */
 import { ICON_SIZES } from '../../types';
 import type { IconProps } from '../../types';
@@ -52,15 +56,18 @@ export function BridgeIcon({
             style={mirrored ? { transform: 'scaleX(-1)' } : undefined}
             {...props}
         >
-            {/* Upper cable / arc */}
-            <path d="M2 8c4-3 16-3 20 0" />
+            {/* Central pylon (tower) */}
+            <path d="M12 4v13" />
+            {/* Diagonal stays fanning out from the pylon top */}
+            <path d="M12 4 5 17" />
+            <path d="M12 4 9 17" />
+            <path d="M12 4 15 17" />
+            <path d="M12 4 19 17" />
             {/* Bridge deck */}
-            <path d="M2 16h20" />
-            {/* Vertical struts */}
-            <path d="M5 16V8" />
-            <path d="M9 16v-5" />
-            <path d="M15 16v-5" />
-            <path d="M19 16V8" />
+            <path d="M2 17h20" />
+            {/* Anchoring piers below the deck */}
+            <path d="M4 17v3" />
+            <path d="M20 17v3" />
         </svg>
     );
 }
