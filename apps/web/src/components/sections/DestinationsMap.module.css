@@ -91,24 +91,42 @@
     border: 2px solid var(--core-card);
     box-shadow: 0 1px 4px oklch(from var(--core-foreground) l c h / 0.2);
     transition: width var(--duration-fast) ease, height var(--duration-fast) ease, background-color
-        var(--duration-fast) ease, transform var(--duration-fast) ease;
+        var(--duration-fast) ease, transform var(--duration-fast) ease, opacity var(--duration-fast) ease;
     flex-shrink: 0;
+    /* Inactive pins fade back so the active one can dominate. */
+    opacity: 0.55;
+}
+
+.mainPin:hover .mainDot {
+    opacity: 0.85;
 }
 
 .mainDotActive {
-    width: 16px;
-    height: 16px;
+    width: 22px;
+    height: 22px;
     background-color: var(--brand-accent);
-    border-color: var(--core-card);
-    box-shadow: 0 2px 8px oklch(from var(--brand-accent) l c h / 0.55);
-    transform: scale(1.1);
+    border: 3px solid var(--core-card);
+    box-shadow: 0 0 0 4px oklch(from var(--brand-accent) l c h / 0.28),
+        0 4px 14px oklch(from var(--brand-accent) l c h / 0.6);
+    opacity: 1;
 }
 
-/* Pulsing ring for active main pin */
+/* Solid halo ring permanently visible around the active pin so it
+   reads even before the pulse animation cycles. */
+.mainDotActive::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background: oklch(from var(--brand-accent) l c h / 0.18);
+    z-index: -1;
+}
+
+/* Pulsing ring for active main pin (extra motion on top of the halo) */
 .mainDotActive::after {
     content: "";
     position: absolute;
-    inset: -6px;
+    inset: -10px;
     border-radius: 50%;
     border: 2px solid var(--brand-accent);
     animation: pinPulse 1.6s ease-out infinite;
@@ -144,12 +162,22 @@
     text-shadow: 0 0 4px oklch(from var(--core-card) l c h / 0.9), 0 0 4px
         oklch(from var(--core-card) l c h / 0.9);
     pointer-events: none;
-    transition: color var(--duration-fast) ease;
+    transition: color var(--duration-fast) ease, opacity var(--duration-fast) ease,
+        font-weight var(--duration-fast) ease;
     max-width: 90px;
+    /* Inactive labels fade back so the active one dominates. */
+    opacity: 0.6;
+}
+
+.mainPin:hover .mainLabel {
+    opacity: 0.95;
 }
 
 .mainLabelActive {
     color: var(--brand-accent);
+    font-weight: 800;
+    font-size: 15px;
+    opacity: 1;
 }
 
 /* Label positioned to the left side of the pin */
@@ -223,18 +251,32 @@
     background-color: var(--core-muted-foreground);
     border: 1.5px solid var(--core-card);
     flex-shrink: 0;
-    opacity: 0.85;
+    opacity: 0.5;
     transition: background-color var(--duration-fast) ease, opacity var(--duration-fast) ease, width
         var(--duration-fast) ease, height var(--duration-fast) ease;
 }
 
+.secondaryPin:hover .secondaryDot {
+    opacity: 0.8;
+}
+
 .secondaryDotActive {
-    width: 10px;
-    height: 10px;
+    width: 16px;
+    height: 16px;
     background-color: var(--brand-accent);
-    border-color: var(--core-card);
+    border: 2.5px solid var(--core-card);
     opacity: 1;
-    box-shadow: 0 1px 5px oklch(from var(--brand-accent) l c h / 0.45);
+    box-shadow: 0 0 0 4px oklch(from var(--brand-accent) l c h / 0.25),
+        0 3px 10px oklch(from var(--brand-accent) l c h / 0.5);
+}
+
+.secondaryDotActive::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    background: oklch(from var(--brand-accent) l c h / 0.15);
+    z-index: -1;
 }
 
 .secondaryLabel {
@@ -245,7 +287,7 @@
     line-height: 1.2;
     text-shadow: 0 0 4px oklch(from var(--core-card) l c h / 0.9), 0 0 4px
         oklch(from var(--core-card) l c h / 0.9);
-    opacity: 0.85;
+    opacity: 0.55;
     max-width: 80px;
     white-space: normal;
     text-align: center;
@@ -256,6 +298,12 @@
 .secondaryLabelActive {
     color: var(--brand-accent);
     opacity: 1;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.secondaryPin:hover .secondaryLabel {
+    opacity: 0.85;
 }
 
 .secondaryPinLeft {
