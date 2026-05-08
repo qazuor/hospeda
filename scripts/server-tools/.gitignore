@@ -1,0 +1,7 @@
+.env.local
+.env
+node_modules/
+dist/
+hctl-bin
+hctl-bin.exe
+*.log
