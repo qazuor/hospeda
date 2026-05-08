@@ -2937,9 +2937,16 @@ Hecho en `chore/vps-migration` (2026-05-08):
 - [ ] **`package.json` (raíz)** — confirmar que NO existen aliases `pnpm deploy:api/web/admin` apuntando a `vercel deploy`. Si existen, removerlos o reapuntar al flow Coolify.
 - [ ] **`packages/config/dist/`** — artefactos build con texto Vercel; se regeneran al build, no requiere edición manual pero conviene un rebuild después del teardown para que la doc generada no muestre referencias obsoletas.
 
-#### Grupo B — Acciones destructivas en plataformas externas
+#### Grupo B — Acciones destructivas en plataformas externas (✅ ejecutado 2026-05-08)
 
-**Solo después de validar 1-2 semanas estables corriendo en VPS** (esto sigue siendo prudente — eliminar proyectos externos es irreversible).
+> **Estado**: cerrado. Ejecutado en orden Vercel → Upstash → Neon, validando entre cada paso que `https://hospeda.com.ar` / `https://api.hospeda.com.ar` / `https://admin.hospeda.com.ar` siguieran respondiendo 200 desde el VPS.
+>
+> **Lecciones que valen la pena recordar (capturadas en engram `vps-migration/fase-16.4-teardown-complete`)**:
+>
+> - **Vercel**: detach dominios ANTES del delete project, si no Vercel deja claim residual.
+> - **Upstash**: borrar QStash schedules ANTES de Redis, si no QStash sigue golpeando endpoints muertos y ensucia logs.
+> - **Neon delete project es totalmente irreversible**: no hay trash. El backup `pg_dump` cifrado offline es la única red de seguridad post-delete; no saltees ese paso.
+> - **Antes de cualquier delete**, validar con `docker exec $API printenv | grep -E "DATABASE_URL|REDIS_URL"` que la env var de la app YA apunta al servicio interno de Coolify, no al externo. Sin ese check podés cortar tráfico vivo.
 
 #### Vercel — limpieza completa
 
