@@ -1,8 +1,8 @@
 /**
- * `hctl find <kind>` — resolve a Coolify-managed container by kind
+ * `hops find <kind>` — resolve a Coolify-managed container by kind
  * (api / web / admin / postgres / redis / coolify) using label-,
  * image-, and port-based strategies. Prints the resolved name, useful
- * for shell scripts: `CONTAINER=$(hctl find api)`.
+ * for shell scripts: `CONTAINER=$(hops find api)`.
  */
 
 import * as p from '@clack/prompts';
@@ -12,9 +12,10 @@ import { die, log } from '../lib/log.ts';
 const KINDS: ReadonlyArray<ContainerKind> = ['api', 'web', 'admin', 'postgres', 'redis', 'coolify'];
 
 const HELP = `
-hctl find <kind> [--verbose]
+hops find <kind> [--verbose]
 
-Resolve a single running container by role.
+Resolve a single running container by role and print its name. Useful
+in shell scripts: CONTAINER=$(hops find api).
 
 Kinds:
   api         the long-running Hono API container
@@ -24,9 +25,17 @@ Kinds:
   redis       the Coolify-managed Redis instance
   coolify     the Coolify orchestrator itself
 
+Flags:
+  --verbose       Also print which lookup strategy matched and the
+                  Coolify labels found on the container.
+  --help, -h      Show this help.
+
 Examples:
-  hctl find api                 # prints just the name
-  hctl find postgres --verbose  # also prints which lookup strategy matched + labels
+  hops find api
+  hops find postgres --verbose
+
+Notes:
+  Without <kind>, opens an interactive picker.
 `.trim();
 
 function isKind(value: string): value is ContainerKind {

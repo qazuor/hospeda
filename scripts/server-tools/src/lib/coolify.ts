@@ -1,7 +1,7 @@
 /**
  * Thin REST client for the Coolify v4 API.
  *
- * Only models the endpoints `hctl` actually calls — list applications,
+ * Only models the endpoints `hops` actually calls — list applications,
  * trigger redeploy, list / patch / create env vars. Everything else is
  * intentionally absent so the surface area we have to keep in sync
  * with Coolify version drift stays small.

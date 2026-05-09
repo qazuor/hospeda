@@ -1,5 +1,5 @@
 /**
- * `hctl env-list <api|web|admin>` — list Coolify env vars for an app
+ * `hops env-list <api|web|admin>` — list Coolify env vars for an app
  * with values redacted by default. Pass `--reveal` to show actual
  * values (requires the API token to have `read:sensitive` scope).
  *
@@ -17,19 +17,19 @@ const KINDS = ['api', 'web', 'admin'] as const;
 type App = (typeof KINDS)[number];
 
 const HELP = `
-hctl env-list <api|web|admin> [--reveal] [--match <regex>]
+hops env-list <api|web|admin> [--reveal] [--match <regex>]
 
 List Coolify env vars for the given app. Values are redacted by default.
 
 Flags:
   --reveal           Show real values (token must have read:sensitive scope).
   --match <regex>    Only show vars whose key matches the regex (case-insensitive).
-  --help             Show this help.
+  --help, -h         Show this help.
 
 Examples:
-  hctl env-list api
-  hctl env-list api --match '^HOSPEDA_(MERCADO|EMAIL)_'
-  hctl env-list api --reveal --match BREVO
+  hops env-list api
+  hops env-list api --match '^HOSPEDA_(MERCADO|EMAIL)_'
+  hops env-list api --reveal --match BREVO
 `.trim();
 
 function isApp(value: string): value is App {

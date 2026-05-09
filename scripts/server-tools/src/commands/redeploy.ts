@@ -1,5 +1,5 @@
 /**
- * `hctl redeploy <api|web|admin>` — trigger a Coolify redeploy for a
+ * `hops redeploy <api|web|admin>` — trigger a Coolify redeploy for a
  * running app via the Coolify v4 REST API. Resolves the application
  * UUID from the running container's `coolify.name` label so we never
  * hard-code UUIDs into the toolkit (they would drift on every Coolify
@@ -16,18 +16,18 @@ const KINDS = ['api', 'web', 'admin'] as const;
 type App = (typeof KINDS)[number];
 
 const HELP = `
-hctl redeploy <api|web|admin> [--yes]
+hops redeploy <api|web|admin> [--yes]
 
 Trigger a Coolify redeploy for the given app. Resolves the application
 UUID from the running container's coolify.name label.
 
 Flags:
-  --yes        Skip the confirmation prompt (for automation).
-  --help       Show this help.
+  --yes         Skip the confirmation prompt (for automation).
+  --help, -h    Show this help.
 
 Examples:
-  hctl redeploy api
-  hctl redeploy web --yes
+  hops redeploy api
+  hops redeploy web --yes
 `.trim();
 
 function isApp(value: string): value is App {

@@ -2,6 +2,6 @@
 .env
 node_modules/
 dist/
-hctl-bin
-hctl-bin.exe
+hops-bin
+hops-bin.exe
 *.log

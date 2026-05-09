@@ -2,14 +2,14 @@
     "name": "@hospeda/server-tools",
     "version": "0.1.0",
     "private": true,
-    "description": "Operational CLI for the Hospeda VPS — wraps Docker, Coolify API, R2 backups, and DB ops behind a single `hctl` command.",
+    "description": "Operational CLI for the Hospeda VPS — wraps Docker, Coolify API, R2 backups, and DB ops behind a single `hops` command.",
     "type": "module",
     "bin": {
-        "hctl": "./bin/hctl"
+        "hops": "./bin/hops"
     },
     "scripts": {
         "dev": "bun run src/index.ts",
-        "build": "bun build src/index.ts --compile --outfile=hctl-bin",
+        "build": "bun build src/index.ts --compile --outfile=hops-bin",
         "typecheck": "tsc --noEmit",
         "test": "bun test"
     },

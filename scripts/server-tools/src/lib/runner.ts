@@ -68,7 +68,7 @@ export interface Runner {
 }
 
 /**
- * Local runner — exec on the same host hctl is running on. This is the
+ * Local runner — exec on the same host hops is running on. This is the
  * default for V1 since the toolkit is launched on the VPS via SSH.
  */
 export class LocalRunner implements Runner {

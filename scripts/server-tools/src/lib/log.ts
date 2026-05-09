@@ -1,5 +1,5 @@
 /**
- * Tiny structured logger for hctl. Writes everything to stderr so tool
+ * Tiny structured logger for hops. Writes everything to stderr so tool
  * stdout (the actual command output) stays pipe-friendly.
  *
  * The intent is not feature-parity with pino/winston — it's just the

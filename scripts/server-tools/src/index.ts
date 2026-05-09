@@ -1,5 +1,5 @@
 /**
- * `hctl` entrypoint. Either dispatches a sub-command from argv or, when
+ * `hops` entrypoint. Either dispatches a sub-command from argv or, when
  * called with no arguments, opens the interactive @clack menu so the
  * operator can pick a command, fill in any required parameters, and
  * execute — without memorising tool names.
@@ -20,6 +20,9 @@ import { psql } from './commands/psql.ts';
 import { redeploy } from './commands/redeploy.ts';
 import { log } from './lib/log.ts';
 
+/** Toolkit version. Keep in sync with package.json `version`. */
+const VERSION = '0.1.0';
+
 interface Command {
     /** kebab-case name; matches the CLI invocation. */
     readonly name: string;
@@ -27,7 +30,7 @@ interface Command {
     readonly summary: string;
     /**
      * Run the command. Receives argv WITHOUT the command name (so a
-     * call `hctl docker-by-name j4luw` arrives here as `['j4luw']`).
+     * call `hops docker-by-name j4luw` arrives here as `['j4luw']`).
      */
     run(argv: ReadonlyArray<string>): Promise<void>;
 }
@@ -71,13 +74,14 @@ const COMMANDS: ReadonlyArray<Command> = [
 ];
 
 const TOP_LEVEL_HELP = `
-hctl — Hospeda server-tools CLI.
+hops — Hospeda server-tools CLI.
 
 Usage:
-  hctl                       Open the interactive command picker.
-  hctl <command> [args]      Run a command directly.
-  hctl <command> --help      Help for a single command.
-  hctl --help, -h            Show this help.
+  hops                       Open the interactive command picker.
+  hops <command> [args]      Run a command directly.
+  hops <command> --help      Help for a single command.
+  hops --help, -h            Show this help.
+  hops --version, -v         Print version and exit.
 
 Available commands:
 ${COMMANDS.map((c) => `  ${c.name.padEnd(20)} ${c.summary}`).join('\n')}
@@ -112,6 +116,11 @@ async function main(): Promise<void> {
 
     if (first === '--help' || first === '-h') {
         process.stdout.write(`${TOP_LEVEL_HELP}\n`);
+        return;
+    }
+
+    if (first === '--version' || first === '-v') {
+        process.stdout.write(`${VERSION}\n`);
         return;
     }
 

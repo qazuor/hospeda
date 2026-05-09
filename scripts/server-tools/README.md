@@ -1,8 +1,8 @@
-# Hospeda server-tools (`hctl`)
+# Hospeda server-tools (`hops`)
 
 Operational CLI for the Hospeda VPS. Wraps the recurring `docker exec`,
 `pg-dump/restore`, Coolify dashboard clicks, and R2 bucket pokes behind
-a single `hctl` command. Built in TypeScript, runs on `bun`, ships as
+a single `hops` command. Built in TypeScript, runs on `bun`, ships as
 a compiled binary so the VPS only needs the binary on PATH.
 
 ## Status
@@ -18,7 +18,7 @@ follow-up commits.
 On the VPS itself. The expected workflow is:
 
 1. SSH to the VPS (`ssh -p 2222 qazuor@216.238.103.219`).
-2. Run `hctl` interactively or `hctl <command> [args]` directly.
+2. Run `hops` interactively or `hops <command> [args]` directly.
 3. Exit the SSH session when done.
 
 A future V2 will add a remote-runner mode so the same binary can be
@@ -27,39 +27,60 @@ invoked from a laptop and proxy commands over SSH transparently. The
 
 ## Install on the VPS (one-time)
 
-The toolkit needs `bun` for development; for production usage on the VPS
-the easiest path is the compiled binary.
+The toolkit needs `bun` to compile; once compiled it ships as a single
+self-contained binary that does not require bun on the target machine.
 
-### Option A — compiled binary (recommended for the VPS)
+### Option A — installer (recommended)
 
-From your dev machine, with bun installed:
+The repo ships an `install.sh` that handles the whole flow: `bun install`,
+`bun build --compile`, drops the binary in your chosen location, and
+warns if it is not on `PATH`.
+
+```bash
+ssh -p 2222 qazuor@216.238.103.219
+curl -fsSL https://bun.sh/install | bash      # only the first time
+exec $SHELL
+cd ~ && git clone https://github.com/qazuor/hospeda.git    # or pull the existing checkout
+cd hospeda/scripts/server-tools
+./install.sh                                   # interactive; pick ~/.local/bin or /usr/local/bin
+hops --version
+```
+
+Non-interactive form (CI / automation):
+
+```bash
+HOPS_TARGET=~/.local/bin ./install.sh
+```
+
+To remove:
+
+```bash
+./uninstall.sh                # prompts before removing
+HOPS_FORCE=1 ./uninstall.sh   # skip the confirmation prompt
+```
+
+### Option B — manual binary copy
+
+If you prefer to compile on a dev machine and `scp` the result:
 
 ```bash
 cd scripts/server-tools
 bun install
-bun run build       # produces ./hctl-bin
-scp -P 2222 hctl-bin qazuor@216.238.103.219:/usr/local/bin/hctl
-ssh -p 2222 qazuor@216.238.103.219 'sudo chmod +x /usr/local/bin/hctl'
+bun run build       # produces ./hops-bin
+scp -P 2222 hops-bin qazuor@216.238.103.219:/usr/local/bin/hops
+ssh -p 2222 qazuor@216.238.103.219 'sudo chmod +x /usr/local/bin/hops'
 ```
 
-Then on the VPS:
-
-```bash
-hctl --help
-```
-
-### Option B — bun + repo checkout on the VPS
+### Option C — run from source on the VPS (development only)
 
 ```bash
 ssh -p 2222 qazuor@216.238.103.219
 curl -fsSL https://bun.sh/install | bash
-exec bash   # reload PATH
-cd ~ && git clone https://github.com/qazuor/hospeda.git
-cd hospeda/scripts/server-tools
-bun install
-echo 'alias hctl="bun /home/qazuor/hospeda/scripts/server-tools/src/index.ts"' >> ~/.bashrc
 exec bash
-hctl --help
+cd ~/hospeda/scripts/server-tools
+bun install
+echo 'alias hops="bun /home/qazuor/hospeda/scripts/server-tools/src/index.ts"' >> ~/.bashrc
+exec bash
 ```
 
 ## Configuration

@@ -1,5 +1,5 @@
 /**
- * `hctl docker-by-name <prefix>` — print details for any running
+ * `hops docker-by-name <prefix>` — print details for any running
  * container whose name starts with the given prefix. Equivalent to the
  * docker-ps + grep dance we kept typing during the migration, with a
  * clear error message when there is no match.
@@ -10,24 +10,29 @@ import { dockerPs } from '../lib/docker.ts';
 import { die, log } from '../lib/log.ts';
 
 const HELP = `
-hctl docker-by-name <prefix>
+hops docker-by-name <prefix>
 
 Print details for any running container whose name starts with <prefix>.
-
 Output columns: NAMES, STATUS, IMAGE, PORTS.
 
+Flags:
+  --help, -h     Show this help.
+
 Examples:
-  hctl docker-by-name coolify
-  hctl docker-by-name j4luw
+  hops docker-by-name coolify
+  hops docker-by-name j4luw
+
+Notes:
+  Without <prefix>, opens an interactive prompt to enter one.
 `.trim();
 
 export async function dockerByName(argv: ReadonlyArray<string>): Promise<void> {
-    let [prefix] = argv;
-
-    if (prefix === '--help' || prefix === '-h') {
+    if (argv.includes('--help') || argv.includes('-h')) {
         process.stdout.write(`${HELP}\n`);
         return;
     }
+
+    let [prefix] = argv;
 
     if (!prefix) {
         const answer = await p.text({

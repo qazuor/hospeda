@@ -64,17 +64,17 @@ const KIND_CONFIG: Readonly<
     >
 > = {
     api: {
-        resourceNameEnv: 'HCTL_APP_RESOURCE_API',
+        resourceNameEnv: 'HOPS_APP_RESOURCE_API',
         resourceNameDefault: 'hospeda-api-prod',
         exposedPort: 3001
     },
     web: {
-        resourceNameEnv: 'HCTL_APP_RESOURCE_WEB',
+        resourceNameEnv: 'HOPS_APP_RESOURCE_WEB',
         resourceNameDefault: 'hospeda-web-prod',
         exposedPort: 4321
     },
     admin: {
-        resourceNameEnv: 'HCTL_APP_RESOURCE_ADMIN',
+        resourceNameEnv: 'HOPS_APP_RESOURCE_ADMIN',
         resourceNameDefault: 'hospeda-admin-prod',
         exposedPort: 3000
     },
@@ -223,7 +223,7 @@ export async function findContainer(kind: ContainerKind): Promise<string> {
             config.imagePatterns
                 ? `  - image starts-with ${config.imagePatterns.join(' / ')}\n`
                 : ''
-        }${config.exposedPort ? `  - exposed port ${config.exposedPort}\n` : ''}${config.nameFallback ? `  - name starts-with '${config.nameFallback}'\n` : ''}Run \`hctl docker-by-name <prefix>\` to inspect what is running and adjust KIND_CONFIG in scripts/server-tools/src/lib/container-lookup.ts.`
+        }${config.exposedPort ? `  - exposed port ${config.exposedPort}\n` : ''}${config.nameFallback ? `  - name starts-with '${config.nameFallback}'\n` : ''}Run \`hops docker-by-name <prefix>\` to inspect what is running and adjust KIND_CONFIG in scripts/server-tools/src/lib/container-lookup.ts.`
     );
 }
 
@@ -246,7 +246,7 @@ export async function getApplicationUuid(container: string): Promise<string> {
 
 /**
  * Verbose variant that reports which strategy hit. Useful for debugging
- * misconfigured environments (`hctl find api --verbose`).
+ * misconfigured environments (`hops find api --verbose`).
  */
 export async function findContainerVerbose(kind: ContainerKind): Promise<{
     readonly name: string;

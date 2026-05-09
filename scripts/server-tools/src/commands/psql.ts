@@ -1,13 +1,13 @@
 /**
- * `hctl psql [sql] [-f file] [--stdin]` — Postgres helper that runs
+ * `hops psql [sql] [-f file] [--stdin]` — Postgres helper that runs
  * one-shot SQL against the Coolify-managed DB without typing the
  * `docker exec -it $PG psql -U postgres -d postgres` chain by hand.
  *
  * Modes (mutually exclusive):
- *   - inline  : `hctl psql 'SELECT count(*) FROM users;'`
- *   - file    : `hctl psql -f path/to/script.sql`
- *   - stdin   : `hctl psql --stdin <<EOF ... EOF`
- *   - shell   : `hctl psql` (no args) → interactive psql session
+ *   - inline  : `hops psql 'SELECT count(*) FROM users;'`
+ *   - file    : `hops psql -f path/to/script.sql`
+ *   - stdin   : `hops psql --stdin <<EOF ... EOF`
+ *   - shell   : `hops psql` (no args) → interactive psql session
  */
 
 import { readFileSync } from 'node:fs';
@@ -17,27 +17,36 @@ import { get } from '../lib/env.ts';
 import { die, log } from '../lib/log.ts';
 
 const HELP = `
-hctl psql                     Open an interactive psql session.
-hctl psql '<sql>'             Run a single statement (psql -c).
-hctl psql -f <path>           Run a SQL file (psql -f /dev/stdin streamed in).
-hctl psql --stdin             Read SQL from stdin (heredoc-friendly).
+hops psql                     Open an interactive psql session.
+hops psql '<sql>'             Run a single statement (psql -c).
+hops psql -f <path>           Run a SQL file from disk.
+hops psql --stdin             Read SQL from stdin (heredoc-friendly).
+
+Flags:
+  -f <path>       Read SQL from the given file.
+  --stdin         Read SQL from stdin until EOF.
+  --help, -h      Show this help.
 
 Defaults:
   user = $PG_USER  (env var; defaults to 'postgres')
   db   = $PG_DB    (env var; defaults to 'postgres')
 
 Examples:
-  hctl psql 'SELECT count(*) FROM users;'
-  hctl psql -f scripts/db/cleanup-test-users.sql
-  hctl psql --stdin <<EOF
+  hops psql 'SELECT count(*) FROM users;'
+  hops psql -f scripts/db/cleanup-test-users.sql
+  hops psql --stdin <<EOF
 BEGIN;
 DELETE FROM sessions WHERE created_at < NOW() - INTERVAL '90 days';
 COMMIT;
 EOF
+
+Notes:
+  Inline / -f / --stdin are mutually exclusive. Without any of them,
+  drops into an interactive psql session.
 `.trim();
 
 export async function psql(argv: ReadonlyArray<string>): Promise<void> {
-    if (argv[0] === '--help' || argv[0] === '-h') {
+    if (argv.includes('--help') || argv.includes('-h')) {
         process.stdout.write(`${HELP}\n`);
         return;
     }

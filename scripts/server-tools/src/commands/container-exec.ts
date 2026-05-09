@@ -1,5 +1,5 @@
 /**
- * `hctl exec <kind> [cmd...]` — run a command inside the running
+ * `hops exec <kind> [cmd...]` — run a command inside the running
  * container of the given kind. With no command, opens an interactive
  * shell. With `--env <prefix>`, prints env vars whose name starts with
  * the prefix, values redacted.
@@ -17,9 +17,9 @@ import { die, log } from '../lib/log.ts';
 const KINDS: ReadonlyArray<ContainerKind> = ['api', 'web', 'admin', 'postgres', 'redis'];
 
 const HELP = `
-hctl exec <kind> [cmd...]
-hctl exec <kind> --shell
-hctl exec <kind> --env <prefix>
+hops exec <kind> [cmd...]
+hops exec <kind> --shell
+hops exec <kind> --env <prefix>
 
 Kinds:
   api          long-running Hono API container
@@ -28,12 +28,17 @@ Kinds:
   postgres     Coolify-managed Postgres
   redis        Coolify-managed Redis
 
-Modes:
-  hctl exec api node -v               Run an inline command, capture output.
-  hctl exec api -- ls /app            Use '--' to separate hctl flags from cmd.
-  hctl exec api --shell               Open an interactive sh inside the container.
-  hctl exec api --env HOSPEDA_EMAIL_  Print env vars matching the prefix,
-                                       values redacted.
+Flags:
+  --shell            Open an interactive sh inside the container.
+  --env <prefix>     Print env vars whose name starts with <prefix>,
+                     values redacted.
+  --help, -h         Show this help.
+
+Examples:
+  hops exec api node -v               Run an inline command, capture output.
+  hops exec api -- ls /app            Use '--' to separate hops flags from cmd.
+  hops exec api --shell               Open an interactive shell.
+  hops exec api --env HOSPEDA_EMAIL_  List env vars under that prefix.
 
 Notes:
   --shell and --env are mutually exclusive with an inline cmd.
@@ -49,7 +54,7 @@ function isKind(value: string): value is ContainerKind {
 export async function runContainerExec(argv: ReadonlyArray<string>): Promise<void> {
     const args = [...argv];
 
-    if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
+    if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
         process.stdout.write(`${HELP}\n`);
         return;
     }

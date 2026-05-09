@@ -1,5 +1,5 @@
 /**
- * `hctl logs <kind> [-f] [-n N] [-g REGEX] [--since DURATION]` — tail
+ * `hops logs <kind> [-f] [-n N] [-g REGEX] [--since DURATION]` — tail
  * docker logs for a Hospeda app with sensible defaults and optional
  * grep filtering. One command for api / web / admin so the surface
  * area stays small.
@@ -14,7 +14,7 @@ import { die } from '../lib/log.ts';
 const KINDS: ReadonlyArray<ContainerKind> = ['api', 'web', 'admin'];
 
 const HELP = `
-hctl logs <kind> [-n <N>] [-f] [-g <REGEX>] [--since <DURATION>]
+hops logs <kind> [-n <N>] [-f] [-g <REGEX>] [--since <DURATION>]
 
 Kinds:
   api      long-running Hono API container
@@ -26,13 +26,13 @@ Flags:
   -f              Follow new lines (Ctrl+C to exit).
   -g <REGEX>      Pipe through grep -iE <REGEX> (case-insensitive ERE).
   --since <D>     Only lines newer than <D> — Docker syntax (5m, 30s, 1h).
-  --help          Show this help.
+  --help, -h      Show this help.
 
 Examples:
-  hctl logs api
-  hctl logs api -n 1000
-  hctl logs api -f -g 'billing|qzpay|mercadopago'
-  hctl logs web --since 5m
+  hops logs api
+  hops logs api -n 1000
+  hops logs api -f -g 'billing|qzpay|mercadopago'
+  hops logs web --since 5m
 `.trim();
 
 function isKind(value: string): value is ContainerKind {
@@ -42,7 +42,7 @@ function isKind(value: string): value is ContainerKind {
 export async function logs(argv: ReadonlyArray<string>): Promise<void> {
     const args = [...argv];
 
-    if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
+    if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
         process.stdout.write(`${HELP}\n`);
         return;
     }
