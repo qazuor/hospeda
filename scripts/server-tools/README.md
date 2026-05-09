@@ -83,16 +83,10 @@ The example file documents which command needs which value.
 | `find`             | shipped  | Resolve container by kind (api/web/admin/postgres/redis/coolify).        |
 | `redeploy`         | shipped  | Trigger a Coolify redeploy via the v4 REST API.                          |
 | `env-list`         | shipped  | List Coolify env vars on an app (redacted by default; `--reveal` shows values). |
-| `api-exec`         | planned  | Run a command inside the API container.                                  |
-| `web-exec`         | planned  | Run a command inside the web container.                                  |
-| `admin-exec`       | planned  | Run a command inside the admin container.                                |
-| `api-logs`         | planned  | Tail / follow / grep API logs.                                           |
-| `web-logs`         | planned  | Tail / follow / grep web logs.                                           |
-| `admin-logs`       | planned  | Tail / follow / grep admin logs.                                         |
-| `tail`             | planned  | Alias for `*-logs` keyed by app name.                                    |
+| `exec`             | shipped  | Run a command / open a shell / inspect env inside an app or DB container. |
+| `logs`             | shipped  | Tail / follow / grep logs for api / web / admin (replaces `*-logs`).     |
+| `psql`             | shipped  | One-shot or interactive psql against the Postgres container.             |
 | `app-restart`      | planned  | `docker restart` an app container without a full Coolify redeploy.       |
-| `pg-exec`          | planned  | One-shot SQL against the Postgres container (`-f`, `--stdin`, inline).   |
-| `pg-shell`         | planned  | Interactive psql.                                                        |
 | `db-counts`        | planned  | Row-count snapshot for the seeded reference tables.                      |
 | `db-backup-now`    | planned  | Trigger a `pg_dump` to R2 outside the daily schedule.                    |
 | `db-restore`       | planned  | List backups in R2 numbered, restore by number with confirmation.        |
