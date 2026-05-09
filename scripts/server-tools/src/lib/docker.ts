@@ -16,8 +16,13 @@ let cachedSudoPrefix: ReadonlyArray<string> | null = null;
  *
  * Result is cached for the lifetime of the process — docker group
  * membership doesn't change mid-run.
+ *
+ * Exported so commands that need to call `docker` outside the runner
+ * abstraction (notably the streaming pipeline in `logs`, which uses
+ * raw `child_process.spawn` to keep the log flow line-by-line) can
+ * still respect the sudo decision the rest of the toolkit made.
  */
-async function dockerPrefix(): Promise<ReadonlyArray<string>> {
+export async function dockerPrefix(): Promise<ReadonlyArray<string>> {
     if (cachedSudoPrefix !== null) {
         return cachedSudoPrefix;
     }

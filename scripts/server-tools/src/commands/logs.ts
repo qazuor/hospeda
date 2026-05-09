@@ -7,7 +7,7 @@
 
 import { spawn } from 'node:child_process';
 import { type ContainerKind, findContainer } from '../lib/container-lookup.ts';
-import { dockerLogs } from '../lib/docker.ts';
+import { dockerLogs, dockerPrefix } from '../lib/docker.ts';
 import { die, log } from '../lib/log.ts';
 
 const KINDS: ReadonlyArray<ContainerKind> = ['api', 'web', 'admin'];
@@ -104,13 +104,22 @@ export async function logs(argv: ReadonlyArray<string>): Promise<void> {
 
     // Streaming mode — spawn `docker logs` directly so we can pipe its
     // stdout/stderr into grep without loading them into memory.
+    //
+    // Resolve the same sudo prefix the rest of the toolkit uses so we
+    // don't silently fail when the operator is not in the docker group.
+    const prefix = await dockerPrefix();
     const dockerArgs: string[] = ['logs'];
     if (follow) dockerArgs.push('-f');
     if (since) dockerArgs.push('--since', since);
     else dockerArgs.push('--tail', String(tail));
     dockerArgs.push(container);
 
-    const dockerProc = spawn('docker', dockerArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const [program, ...programArgs] =
+        prefix.length > 0 ? [...prefix, 'docker', ...dockerArgs] : ['docker', ...dockerArgs];
+    if (!program) {
+        die('Could not resolve a docker invocation prefix.');
+    }
+    const dockerProc = spawn(program, programArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
 
     if (pattern !== undefined) {
         const grep = spawn('grep', ['--line-buffered', '-iE', pattern], {
