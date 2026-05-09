@@ -45,20 +45,38 @@
     padding: 0 1.5rem 0 1.25rem;
     background-color: var(--fb-primary);
     color: var(--fb-primary-foreground);
-    box-shadow: var(--fb-shadow-fab),
-        0 0 0 4px rgba(255, 255, 255, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: var(--fb-shadow-fab), 0 0 0 4px rgba(255, 255, 255, 0.1), inset 0 1px 0
+        rgba(255, 255, 255, 0.2);
     font-family: var(--fb-font-family);
     font-size: var(--fb-font-size-lg);
     font-weight: var(--fb-font-weight-semibold);
     letter-spacing: 0.01em;
     /* Animate every property that changes on collapse/expand. */
-    transition: transform var(--fb-duration-normal) var(--fb-easing),
+    transition:
+        transform var(--fb-duration-normal) var(--fb-easing),
         background-color var(--fb-duration-fast) var(--fb-easing),
         box-shadow var(--fb-duration-fast) var(--fb-easing),
         width var(--fb-duration-normal) var(--fb-easing),
         padding var(--fb-duration-normal) var(--fb-easing),
         gap var(--fb-duration-normal) var(--fb-easing);
+}
+
+/*
+ * SPEC-099 B-2: on narrow viewports (<=768px) the package default
+ * `bottom: var(--fb-space-6)` (~24px) collides with full-width sticky
+ * controls that host apps render at the bottom of the page (search
+ * submit, sticky CTA) plus the cookie consent banner. Lift the FAB to
+ * 5.5rem (88px) so those controls stay tappable and the FAB itself
+ * stays fully on-screen above any sticky bottom UI.
+ *
+ * Host apps may layer additional rules on top (e.g. cookie-banner-aware
+ * lifts in apps/web/src/styles/feedback-overrides.css) — this is just a
+ * sane package-level default.
+ */
+@media (max-width: 768px) {
+    .feedback-root .fab {
+        bottom: 5.5rem;
+    }
 }
 
 /* Force the icon to inherit the button's text color (white) regardless of
@@ -86,8 +104,8 @@
     max-width: 12rem;
     opacity: 1;
     overflow: hidden;
-    transition: max-width var(--fb-duration-normal) var(--fb-easing),
-        opacity var(--fb-duration-fast) var(--fb-easing);
+    transition: max-width var(--fb-duration-normal) var(--fb-easing), opacity
+        var(--fb-duration-fast) var(--fb-easing);
 }
 
 /* ------------------------------------------------------------------ */
@@ -130,9 +148,8 @@
 .feedback-root .fab:hover {
     transform: translateY(-2px);
     background-color: var(--fb-primary-hover);
-    box-shadow: 0 16px 36px var(--fb-shadow-fab-color, rgba(0, 0, 0, 0.35)),
-        0 0 0 4px rgba(255, 255, 255, 0.18),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    box-shadow: 0 16px 36px var(--fb-shadow-fab-color, rgba(0, 0, 0, 0.35)), 0 0 0 4px
+        rgba(255, 255, 255, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .feedback-root .fab:focus-visible {

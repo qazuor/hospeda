@@ -4,8 +4,14 @@
  * @description Reusable section header with tagline, title, and optional subtitle.
  * Supports center (default) and left alignment variants. When `actionLabel` and
  * `actionHref` are provided the header renders as a flex row with the text block
- * on the left and a pill action button on the right.
+ * on the left and a `GradientButton` (the canonical "Ver todos" CTA) on the right.
+ *
+ * SPEC-099 V-10: the inline pill anchor was replaced by a `GradientButton` so
+ * every "Ver todos" CTA across the home renders with the same shape, size, and
+ * outline-primary treatment.
  */
+
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
 
 interface Props {
   /** Decorative tagline rendered in the Caveat handwritten font above the title. */
@@ -22,7 +28,7 @@ interface Props {
    */
   readonly variant?: 'light' | 'dark';
   /**
-   * Label for an optional pill action button rendered to the right of the header.
+   * Label for an optional `GradientButton` rendered to the right of the header.
    * Requires `actionHref`. Only rendered when `alignment` is 'left'.
    */
   readonly actionLabel?: string;
@@ -59,10 +65,16 @@ const hasAction = Boolean(actionLabel && actionHref && alignment === 'left');
     {subtitle && <p class="section-header__subtitle">{subtitle}</p>}
   </div>
   {
-    hasAction && (
-      <a href={actionHref} class="section-header__action">
-        {actionLabel}
-      </a>
+    hasAction && actionLabel && actionHref && (
+      <div class="section-header__action">
+        <GradientButton
+          href={actionHref}
+          label={actionLabel}
+          variant="outline-primary"
+          size="sm"
+          icon="true"
+        />
+      </div>
     )
   }
 </div>
@@ -84,29 +96,6 @@ const hasAction = Boolean(actionLabel && actionHref && alignment === 'left');
     flex-shrink: 0;
     align-self: flex-start;
     margin-top: clamp(0.25rem, 1vw, 0.75rem);
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 12px 24px;
-    border-radius: var(--radius-pill);
-    border: none;
-    background: linear-gradient(135deg, var(--brand-secondary-foreground), var(--core-foreground));
-    color: var(--core-background);
-    font-family: var(--font-sans);
-    font-size: 0.75rem;
-    font-weight: 500;
-    text-decoration: none;
-    white-space: nowrap;
-    transition: opacity var(--duration-normal) ease;
     margin-bottom: var(--space-section-header-mb);
-  }
-
-  .section-header__action:hover {
-    opacity: 0.85;
-  }
-
-  .section-header__action:focus-visible {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 2px;
   }
 </style>

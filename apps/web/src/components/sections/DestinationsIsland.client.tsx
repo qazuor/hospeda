@@ -17,7 +17,7 @@ import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { StarIcon } from '@repo/icons';
+import { LocationIcon, StarIcon } from '@repo/icons';
 import useEmblaCarousel from 'embla-carousel-react';
 import { type ReactElement, useCallback, useEffect, useState } from 'react';
 import styles from './DestinationsIsland.module.css';
@@ -160,15 +160,12 @@ function DestinationsIslandInner({
         [emblaApi]
     );
 
-    const ctaHref = buildUrl({ locale, path: 'destinos' });
+    const ctaHref = buildUrl({ locale, path: '/destinos/' });
 
     return (
         <div className={styles.island}>
             {/* ---- Left column: interactive map ---- */}
-            <div
-                className={styles.mapColumn}
-                aria-hidden="false"
-            >
+            <div className={styles.mapColumn}>
                 <DestinationsMap
                     activeIndex={activeIndex}
                     onSelectDestination={setActiveIndex}
@@ -217,7 +214,16 @@ function DestinationsIslandInner({
                         <div className={styles.carouselTrack}>
                             {destinations.map((destination, i) => {
                                 const isActive = i === activeIndex;
-                                const href = buildUrl({ locale, path: destination.path });
+                                // Match the URL convention used by DestinationCard.astro and
+                                // /destinos pages: destination detail lives under
+                                // /<locale>/destinos/<slug>. The raw `destination.path` from
+                                // the API encodes the geographical hierarchy
+                                // (argentina/litoral-argentino/...) and would resolve to a 404
+                                // if appended directly under /<locale>/.
+                                const href = buildUrl({
+                                    locale,
+                                    path: `destinos/${destination.slug}`
+                                });
                                 const accommodationsLabel =
                                     destination.accommodationsCount === 1
                                         ? t(
@@ -312,6 +318,33 @@ function DestinationsIslandInner({
                                                     {destination.accommodationsCount}{' '}
                                                     {accommodationsLabel}
                                                 </p>
+                                                {destination.attractions.length > 0 && (
+                                                    <ul
+                                                        className={styles.cardAttractions}
+                                                        aria-label={t(
+                                                            'destination.card.attractionsLabel',
+                                                            'Atracciones'
+                                                        )}
+                                                    >
+                                                        {destination.attractions
+                                                            .slice(0, 3)
+                                                            .map((attraction) => (
+                                                                <li
+                                                                    key={attraction.id}
+                                                                    className={
+                                                                        styles.cardAttraction
+                                                                    }
+                                                                >
+                                                                    <LocationIcon
+                                                                        size={11}
+                                                                        weight="fill"
+                                                                        aria-hidden="true"
+                                                                    />
+                                                                    <span>{attraction.name}</span>
+                                                                </li>
+                                                            ))}
+                                                    </ul>
+                                                )}
                                                 <p className={styles.cardDescription}>
                                                     {destination.summary}
                                                 </p>

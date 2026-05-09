@@ -233,7 +233,7 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
                 data-prevent-submit
             >
                 <label for="newsletter-email" class="sr-only">
-                    {t("footer.newsletterPlaceholder")}
+                    {t("footer.newsletterEmailPlaceholder")}
                 </label>
                 <input
                     id="newsletter-email"
@@ -241,8 +241,8 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
                     name="email"
                     autocomplete="email"
                     class="footer__newsletter-input"
-                    placeholder={t("footer.newsletterPlaceholder")}
-                    aria-label={t("footer.newsletterPlaceholder")}
+                    placeholder={t("footer.newsletterEmailPlaceholder")}
+                    aria-label={t("footer.newsletterEmailPlaceholder")}
                 />
                 <GradientButton
                     as="button"
@@ -712,6 +712,14 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
         gap: 0.75rem;
         align-items: center;
         text-align: center;
+    }
+
+    /* Reserve right padding on mobile so the copyright text is not hidden
+       behind the ScrollToTop fixed button (bottom:4rem; right:1rem). */
+    @media (max-width: 48rem) {
+        .footer__bottom-inner {
+            padding-inline-end: 3.5rem;
+        }
     }
 
     .footer__bottom-contact {

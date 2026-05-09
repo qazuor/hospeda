@@ -459,9 +459,12 @@ const adminPanelUrl = getAdminUrl();
         }
     }
 
-    :global([data-mobile-menu-open]) :global(.header__hamburger) {
-        display: none !important;
-    }
+    /*
+     * Don't hide the hamburger when the menu opens — let the overlay's
+     * higher z-index (9100) cover it naturally as it slides in. Hiding
+     * it via display:none caused a visual gap in the header during the
+     * ~300ms slide-in animation.
+     */
 
     /* ── Mobile tweaks ─────────────────────────────────────────────── */
 
@@ -479,6 +482,31 @@ const adminPanelUrl = getAdminUrl();
         .header__cta {
             font-size: 12px;
             padding-inline: 0.75rem;
+        }
+    }
+
+</style>
+
+<style is:global>
+    /*
+     * Very narrow screens (<480px): collapse the "Publicar" CTA to an
+     * icon-only button so the hamburger stays inside the viewport. These
+     * rules must be global because `.header__cta` is applied via the
+     * GradientButton component's `class` prop and never receives the
+     * Header's scoped `data-astro-cid`.
+     */
+    @media (max-width: 479px) {
+        .header__cta.btn-gradient {
+            padding-inline: 0.5rem;
+            aspect-ratio: 1 / 1;
+        }
+
+        .btn-gradient.header__cta .gradient-btn__label {
+            display: none;
+        }
+
+        .btn-gradient.header__cta .gradient-btn__icon--leading {
+            margin: 0;
         }
     }
 </style>

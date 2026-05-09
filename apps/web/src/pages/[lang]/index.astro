@@ -6,6 +6,13 @@
  */
 import AboutUsSection from "@/components/sections/AboutUsSection.astro";
 import CategoryTiles from "@/components/CategoryTiles.astro";
+import countryHousesImg from "@/assets/images/categories/country-houses.jpg";
+import hotelsImg from "@/assets/images/categories/hotels.jpg";
+import apartmentsImg from "@/assets/images/categories/apartments.jpg";
+import musicImg from "@/assets/images/categories/music.jpg";
+import cultureImg from "@/assets/images/categories/culture.jpg";
+import gastronomyImg from "@/assets/images/categories/gastronomy.jpg";
+import postsImg from "@/assets/images/categories/posts.jpg";
 import CtaOwnersSection from "@/components/sections/CtaOwnersSection.astro";
 import DestinationsSection from "@/components/sections/DestinationsSection.astro";
 import FeaturedAccommodationsSection from "@/components/sections/FeaturedAccommodationsSection.astro";
@@ -18,6 +25,7 @@ import TestimonialsSection from "@/components/sections/TestimonialsSection.astro
 import type { StatItemData } from "@/data/types";
 import DefaultLayout from "@/layouts/DefaultLayout.astro";
 import { destinationsApi, statsApi } from "@/lib/api/endpoints";
+import { shouldShowSocialProof } from "@/lib/home-guards";
 import { createTranslations } from "@/lib/i18n";
 import type { SupportedLocale } from "@/lib/i18n";
 import { buildUrl } from "@/lib/urls";
@@ -29,8 +37,7 @@ export const getStaticPaths = (() => {
     return [{ params: { lang: "es" } }, { params: { lang: "en" } }, { params: { lang: "pt" } }];
 }) satisfies GetStaticPaths;
 
-const { lang } = Astro.params;
-const locale = lang as SupportedLocale;
+const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
 // Fetch city destinations for the search bar (SSG — fetched at build time)
@@ -63,11 +70,12 @@ const platformStats: readonly StatItemData[] = statsResult.ok
 const socialProof = (() => {
     if (!statsResult.ok) return undefined;
     const reviewsCount = statsResult.data.reviews;
-    if (reviewsCount <= 0) return undefined;
+    const averageRating = statsResult.data.averageRating;
+    if (!shouldShowSocialProof({ reviewsCount, averageRating })) return undefined;
     const reviewsLabel = formatSocialProofCount(reviewsCount);
     return {
         count: reviewsLabel,
-        rating: `${statsResult.data.averageRating.toFixed(1)}/5`,
+        rating: `${averageRating.toFixed(1)}/5`,
         ratingOf: reviewsLabel,
         avatars: statsResult.data.recentReviewerAvatars,
     } as const;
@@ -91,47 +99,54 @@ function formatSocialProofCount(value: number): string {
 /** Category tiles for the "Explorá por categoría" section. */
 const categoryTiles = [
     {
-        title: t("home.categoryTiles.cabins.title", "Cabañas"),
-        description: t("home.categoryTiles.cabins.description", "Rodeate de naturaleza en las mejores cabañas del Litoral"),
-        href: buildUrl({ locale, path: "/alojamientos/tipo/cabin/" }),
+        title: t("home.categoryTiles.countryHouses.title", "Casas quintas"),
+        description: t("home.categoryTiles.countryHouses.description", "Espacio, parque y quincho para escapadas en familia"),
+        href: buildUrl({ locale, path: "/alojamientos/tipo/country-house/" }),
+        image: countryHousesImg,
     },
     {
         title: t("home.categoryTiles.hotels.title", "Hoteles"),
         description: t("home.categoryTiles.hotels.description", "Comodidad y servicio premium en el corazón de la ciudad"),
         href: buildUrl({ locale, path: "/alojamientos/tipo/hotel/" }),
+        image: hotelsImg,
     },
     {
-        title: t("home.categoryTiles.houses.title", "Casas"),
-        description: t("home.categoryTiles.houses.description", "Sentite como en casa con todo el espacio que necesitás"),
-        href: buildUrl({ locale, path: "/alojamientos/tipo/house/" }),
+        title: t("home.categoryTiles.apartments.title", "Departamentos"),
+        description: t("home.categoryTiles.apartments.description", "Comodidad urbana cerca de todo, ideales para parejas y escapadas cortas"),
+        href: buildUrl({ locale, path: "/alojamientos/tipo/apartment/" }),
+        image: apartmentsImg,
     },
     {
         title: t("home.categoryTiles.music.title", "Música"),
         description: t("home.categoryTiles.music.description", "Festivales y shows en vivo para todos los gustos"),
         href: buildUrl({ locale, path: "/eventos/categoria/music/" }),
+        image: musicImg,
     },
     {
         title: t("home.categoryTiles.culture.title", "Cultura"),
         description: t("home.categoryTiles.culture.description", "Arte, historia y patrimonio del Litoral Entrerriano"),
         href: buildUrl({ locale, path: "/eventos/categoria/culture/" }),
+        image: cultureImg,
     },
     {
         title: t("home.categoryTiles.gastronomy.title", "Gastronomía"),
         description: t("home.categoryTiles.gastronomy.description", "Sabores únicos de la cocina regional y nacional"),
         href: buildUrl({ locale, path: "/eventos/categoria/gastronomy/" }),
+        image: gastronomyImg,
     },
     {
         title: t("home.categoryTiles.posts.title", "Artículos"),
         description: t("home.categoryTiles.posts.description", "Historias, consejos e inspiración para tu próximo viaje"),
         href: buildUrl({ locale, path: "/publicaciones/" }),
+        image: postsImg,
     },
 ] as const;
 ---
 
 <DefaultLayout
     locale={locale}
-    title="Inicio"
-    description="Descubrí los mejores alojamientos, destinos y experiencias del Litoral Entrerriano."
+    title={t("home.title")}
+    description={t("home.description")}
     canonicalPath={`/${locale}/`}
 >
     <!-- 1. Hero -->
@@ -153,21 +168,21 @@ const categoryTiles = [
     <!-- 5. Next Events -->
     <NextEventsSection locale={locale} />
 
-    <!-- 5. About Us -->
+    <!-- 6. About Us -->
     <AboutUsSection locale={locale} />
 
-    <!-- 6. Latest Articles -->
+    <!-- 7. Latest Articles -->
     <LatestArticlesSection locale={locale} />
 
     <!-- 8. CTA Owners -->
     <CtaOwnersSection locale={locale} />
 
-    <!-- 7. Testimonials -->
+    <!-- 9. Testimonials -->
     <TestimonialsSection locale={locale} />
 
-    <!-- 9. Stats -->
+    <!-- 10. Stats -->
     <StatsSection locale={locale} stats={platformStats} suffixes={["+", "+", "+", "+", "+"]} />
 
-    <!-- 10. Partners -->
+    <!-- 11. Partners -->
     <PartnersSection locale={locale} />
 </DefaultLayout>

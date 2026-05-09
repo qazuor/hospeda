@@ -12,6 +12,7 @@
  * Tasks: T-064
  */
 
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import { useEffect, useRef, useState } from 'react';
 import styles from './HeroImageRotator.module.css';
 
@@ -19,6 +20,16 @@ import styles from './HeroImageRotator.module.css';
 interface HeroImage {
     readonly src: string;
     readonly alt: string;
+    /**
+     * Optional srcset string for responsive image selection. When provided,
+     * the browser picks the best matching width from the candidates.
+     */
+    readonly srcset?: string;
+    /**
+     * Optional `sizes` attribute paired with `srcset` so the browser knows
+     * the rendered image width per viewport.
+     */
+    readonly sizes?: string;
 }
 
 interface HeroImageRotatorProps {
@@ -53,8 +64,11 @@ interface HeroImageRotatorProps {
 export function HeroImageRotator({ images, interval = 5000 }: HeroImageRotatorProps) {
     const [activeIndex, setActiveIndex] = useState(0);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const reducedMotion = useReducedMotion();
 
     useEffect(() => {
+        // Respect prefers-reduced-motion: freeze on the first image.
+        if (reducedMotion) return;
         if (images.length <= 1) return;
 
         intervalRef.current = setInterval(() => {
@@ -66,7 +80,7 @@ export function HeroImageRotator({ images, interval = 5000 }: HeroImageRotatorPr
                 clearInterval(intervalRef.current);
             }
         };
-    }, [images.length, interval]);
+    }, [images.length, interval, reducedMotion]);
 
     const activeAlt = images[activeIndex]?.alt ?? '';
 
@@ -82,14 +96,20 @@ export function HeroImageRotator({ images, interval = 5000 }: HeroImageRotatorPr
                 <img
                     key={image.src}
                     src={image.src}
+                    srcSet={image.srcset}
+                    sizes={image.sizes}
                     alt=""
                     aria-hidden="true"
                     className={styles.image}
                     style={{
                         opacity: index === activeIndex ? 1 : 0,
-                        transition: 'opacity 1.5s ease-in-out'
+                        transition: reducedMotion ? 'none' : 'opacity 1.5s ease-in-out'
                     }}
                     loading={index === 0 ? 'eager' : 'lazy'}
+                    // Only the first hero image is the LCP candidate; mark it
+                    // high priority so the browser fetches it before non-critical
+                    // resources. Subsequent rotated images stay at default.
+                    fetchPriority={index === 0 ? 'high' : 'auto'}
                     width="480"
                     height="540"
                 />

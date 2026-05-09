@@ -51,7 +51,13 @@
     flex: 1;
     min-width: 0; /* prevent overflow in flex context */
     padding-block: 1.5rem;
-    overflow: hidden;
+    /* Clip horizontal overflow only — the active card uses transform:
+       scale(1.06) which adds vertical bleed that must NOT be cropped.
+       `overflow: hidden` on either axis silently forces the other axis
+       to `auto`, so we use `overflow-x: clip` (single-axis clipping
+       without forcing scrollbars) and explicitly leave Y as visible. */
+    overflow-x: clip;
+    overflow-y: visible;
 }
 
 /* C-2: full width when map is hidden (below 1024px) */
@@ -107,15 +113,25 @@
 
 .carouselRoot {
     position: relative;
-    overflow: hidden;
+    /* Same reasoning as .contentColumn: clip the horizontal peek of
+       neighbouring slides but keep vertical room for the scale(1.06)
+       transform applied to the active card. `overflow-x: clip` lets us
+       single-axis-clip without the browser silently promoting Y to
+       `auto` (the default overflow behaviour for `overflow-x: hidden`). */
+    overflow-x: clip;
+    overflow-y: visible;
     width: 100%;
     flex: 1;
     display: flex;
     align-items: center;
+    /* Reserve a bit of vertical breathing room so the scaled active
+       card doesn't kiss the header or the controls below. */
+    padding-block: 14px;
 }
 
 .carouselViewport {
-    overflow: hidden;
+    overflow-x: clip;
+    overflow-y: visible;
     width: 100%;
 }
 
@@ -155,7 +171,7 @@
     cursor: pointer;
     /* M-15: transition includes transform for scale-based active state */
     transition: box-shadow var(--duration-normal) ease, transform var(--duration-normal) ease;
-    height: 463px;
+    height: 420px;
     width: 100%;
     background-color: var(--core-card);
     text-decoration: none;
@@ -210,18 +226,22 @@
     pointer-events: auto;
 }
 
-/* Gradient overlay (transparent top → light bottom, matching Figma) */
+/* Gradient overlay (transparent top → opaque-black bottom). Reading the
+   text against any photo requires a guaranteed-dark surface; the previous
+   light-coloured gradient mixed with sunlit/sky-heavy photos to a muted
+   grey that lost contrast. Black at >=0.7 alpha gives WCAG AA against
+   white text on every cover image we ship. */
 .cardGradient {
     position: absolute;
     inset: 0;
     background: linear-gradient(
         180deg,
         transparent 0%,
-        transparent 35%,
-        oklch(from var(--core-background) l c h / 0.15) 50%,
-        oklch(from var(--core-background) l c h / 0.45) 65%,
-        oklch(from var(--core-background) l c h / 0.72) 80%,
-        oklch(from var(--core-background) l c h / 0.9) 100%
+        transparent 30%,
+        oklch(0 0 0 / 0.25) 45%,
+        oklch(0 0 0 / 0.55) 60%,
+        oklch(0 0 0 / 0.78) 75%,
+        oklch(0 0 0 / 0.92) 100%
     );
     pointer-events: none;
 }
@@ -242,32 +262,71 @@
     font-family: var(--font-heading);
     font-size: 1.5rem; /* 24px */
     font-weight: 700;
-    color: var(--core-foreground);
+    color: var(--primary-foreground);
     line-height: 1.15;
     margin: 0;
+    /* Soft text-shadow keeps the title legible even on the rare case
+       where a photo's bottom band is unusually busy (high-contrast
+       foreground objects bleeding into the gradient). */
+    text-shadow: 0 1px 2px oklch(0 0 0 / 0.4);
 }
 
 .cardCount {
     font-family: var(--font-sans);
     font-size: 1rem; /* 16px */
     font-weight: 400;
-    color: var(--core-foreground);
-    opacity: 0.9;
+    color: var(--primary-foreground);
+    opacity: 0.92;
     margin: 0;
+    text-shadow: 0 1px 2px oklch(0 0 0 / 0.4);
 }
 
 .cardDescription {
     font-family: var(--font-sans);
     font-size: 0.8125rem; /* 13px */
-    color: var(--brand-secondary-foreground);
-    opacity: 0.85;
+    color: var(--primary-foreground);
+    opacity: 0.88;
     line-height: 1.5;
     margin: 0;
-    /* Clamp to 2 lines */
+    text-shadow: 0 1px 2px oklch(0 0 0 / 0.4);
+    /* Clamp to 1 line — the attractions chip row above carries most
+       of the at-a-glance content, so the description acts as a
+       supporting tagline. */
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+/* ==========================================================================
+   Attractions chip row (between count and description)
+   ========================================================================== */
+.cardAttractions {
+    list-style: none;
+    margin: 2px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.cardAttraction {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    background: oklch(1 0 0 / 0.18);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: var(--primary-foreground);
+    border: 1px solid oklch(1 0 0 / 0.22);
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-size: 0.6875rem; /* 11px */
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-shadow: 0 1px 1px oklch(0 0 0 / 0.3);
 }
 
 .cardRating {

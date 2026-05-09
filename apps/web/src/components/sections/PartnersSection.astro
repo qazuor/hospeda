@@ -46,8 +46,10 @@ const { t } = createTranslations(locale);
   <div class="partners-marquee" data-reveal="up">
     <div class="partners-track">
       <!-- First set of logos (visible, accessible) -->
-      {partners.map((partner) => (
-        partner.url ? (
+      {partners.map((partner) => {
+        const logoWidth = Math.round(60 * partner.aspectRatio);
+        const aspectStyle = `aspect-ratio: ${partner.aspectRatio}`;
+        return partner.url ? (
           <a
             href={partner.url}
             target="_blank"
@@ -60,7 +62,9 @@ const { t } = createTranslations(locale);
               alt={`Logo de ${partner.name}`}
               class="partner-logo"
               loading="lazy"
+              width={logoWidth}
               height="60"
+              style={aspectStyle}
             />
           </a>
         ) : (
@@ -70,14 +74,18 @@ const { t } = createTranslations(locale);
               alt={`Logo de ${partner.name}`}
               class="partner-logo"
               loading="lazy"
+              width={logoWidth}
               height="60"
+              style={aspectStyle}
             />
           </div>
-        )
-      ))}
+        );
+      })}
       <!-- Duplicate set for seamless infinite loop (decorative, hidden from AT) -->
-      {partners.map((partner) => (
-        partner.url ? (
+      {partners.map((partner) => {
+        const logoWidth = Math.round(60 * partner.aspectRatio);
+        const aspectStyle = `aspect-ratio: ${partner.aspectRatio}`;
+        return partner.url ? (
           <a
             href={partner.url}
             target="_blank"
@@ -91,7 +99,9 @@ const { t } = createTranslations(locale);
               alt=""
               class="partner-logo"
               loading="lazy"
+              width={logoWidth}
               height="60"
+              style={aspectStyle}
             />
           </a>
         ) : (
@@ -101,11 +111,13 @@ const { t } = createTranslations(locale);
               alt=""
               class="partner-logo"
               loading="lazy"
+              width={logoWidth}
               height="60"
+              style={aspectStyle}
             />
           </div>
-        )
-      ))}
+        );
+      })}
     </div>
   </div>
 </section>

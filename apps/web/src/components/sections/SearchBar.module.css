@@ -35,6 +35,11 @@
     background: oklch(from var(--brand-primary) l c h / 0.05);
 }
 
+.col:focus-visible {
+    outline: 3px solid var(--brand-accent);
+    outline-offset: 3px;
+}
+
 .colDivider {
     border-right: 1px solid var(--border);
 }
@@ -474,6 +479,15 @@
     font-family: var(--font-sans);
 }
 
+/* === Panel close button (mobile only) === */
+.panelClose {
+    display: none;
+}
+
+.panelHeader {
+    display: none;
+}
+
 /* === Mobile (<=900px) === */
 @media (max-width: 900px) {
     .inner {
@@ -512,16 +526,33 @@
         left: 0;
         right: 0;
         border-radius: 16px 16px 0 0;
-        max-height: 70vh;
+        max-height: 80vh;
         min-width: 0;
         width: 100%;
+        padding-top: 0;
+        display: flex;
+        flex-direction: column;
     }
 
-    .calendarPanel {
+    /*
+     * Force-reset the centering transform that the desktop calendar uses.
+     * Without this override, `.panelUp.calendarPanel` (applied when the bar
+     * has no room below it) re-applies `translateX(-50%)`, dragging the
+     * mobile bottom-sheet half-off the left edge of the viewport.
+     *
+     * Also drop the desktop `max-width: 95vw` cap — it leaves a 5vw gap on
+     * the right edge of the viewport (panel anchors to `left: 0`) which
+     * looks like the panel is shifted off-center.
+     */
+    .calendarPanel,
+    .panelUp.calendarPanel {
         min-width: 0;
+        max-width: none;
+        width: 100%;
         transform: none;
         left: 0;
-        overflow-y: auto;
+        right: 0;
+        overflow: hidden;
     }
 
     .calendarMonths {
@@ -532,5 +563,53 @@
     .guestsPanel {
         right: 0;
         left: 0;
+    }
+
+    /* Sticky header inside each mobile panel with a close (X) button. */
+    .panelHeader {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 8px 8px 0 16px;
+        position: sticky;
+        top: 0;
+        background: var(--core-card);
+        z-index: 1;
+        flex-shrink: 0;
+    }
+
+    .panelClose {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        min-height: 36px;
+        border-radius: 50%;
+        border: none;
+        background: oklch(from var(--core-foreground) l c h / 0.06);
+        color: var(--core-foreground);
+        cursor: pointer;
+        transition: background 0.15s ease;
+        padding: 0;
+    }
+
+    .panelClose:hover {
+        background: oklch(from var(--core-foreground) l c h / 0.12);
+    }
+
+    .panelClose:focus-visible {
+        outline: 2px solid var(--brand-accent);
+        outline-offset: 2px;
+    }
+
+    /* Body wrapper inside the panel so the X header doesn't push content
+       off-screen and the body can scroll independently. */
+    .panelBody {
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
+        padding-bottom: env(safe-area-inset-bottom, 0);
     }
 }

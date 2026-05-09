@@ -202,4 +202,13 @@ export interface PartnerData {
     readonly logoPath: string;
     /** Optional external URL the logo links to. */
     readonly url?: string;
+    /**
+     * Intrinsic aspect ratio of the logo image (width / height). Used by the
+     * marquee to reserve correct horizontal space and set `aspect-ratio` on
+     * each `<img>` so logos do not cause CLS while decoding.
+     *
+     * Common defaults: ~3.5 for typical wide logos, ~1 for square emblems.
+     * Supply the actual value when known to keep the layout pixel-stable.
+     */
+    readonly aspectRatio: number;
 }

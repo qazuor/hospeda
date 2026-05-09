@@ -5,19 +5,17 @@
  * across listing cards, detail headers, and any other UI surface that needs
  * to communicate accommodation type.
  *
- * Colour identity per type comes from `getAccommodationTypeColorSolid` (token
- * hue + chroma with luminance clamped to ≤ 0.6 so the pill stays legible on
- * any warm/light surface). Label comes from `getAccommodationTypeLabel`
- * (i18n-aware).
+ * The pill ships with a small leading icon (resolved via
+ * `getAccommodationTypeIcon`) followed by an i18n label
+ * (`getAccommodationTypeLabel`). All pills use the brand-primary surface so
+ * the row reads as a unified filter chip group rather than a colour parade.
  *
  * The component exposes `--acc-type-padding` and `--acc-type-font-size` CSS
  * custom properties so ancestor scopes (e.g. the wave-header compact mode)
  * can override the size without `!important`.
  */
-import {
-    getAccommodationTypeColorSolid,
-    getAccommodationTypeLabel
-} from '@/lib/colors';
+import { getAccommodationTypeLabel } from '@/lib/colors';
+import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
@@ -39,7 +37,7 @@ const { t } = createTranslations(locale);
 
 const normalizedType = type.toLowerCase();
 const label = getAccommodationTypeLabel({ type, t });
-const colors = getAccommodationTypeColorSolid({ type: normalizedType });
+const Icon = getAccommodationTypeIcon({ type: normalizedType });
 
 const classList = [
     'acc-type-badge',
@@ -47,16 +45,19 @@ const classList = [
     href ? 'acc-type-badge--interactive' : null,
     extraClass
 ];
-const inlineStyle = `--acc-type-bg: ${colors.bg}; --acc-type-text: ${colors.text};`;
+
+const iconSize = size === 'xs' ? 14 : 16;
 ---
 
 {href ? (
-    <a class:list={classList} style={inlineStyle} href={href}>
-        {label}
+    <a class:list={classList} href={href}>
+        <Icon size={iconSize} weight="bold" aria-hidden="true" />
+        <span class="acc-type-badge__label">{label}</span>
     </a>
 ) : (
-    <span class:list={classList} style={inlineStyle}>
-        {label}
+    <span class:list={classList}>
+        <Icon size={iconSize} weight="bold" aria-hidden="true" />
+        <span class="acc-type-badge__label">{label}</span>
     </span>
 )}
 
@@ -64,8 +65,9 @@ const inlineStyle = `--acc-type-bg: ${colors.bg}; --acc-type-text: ${colors.text
     .acc-type-badge {
         display: inline-flex;
         align-items: center;
-        background-color: var(--acc-type-bg, var(--brand-accent));
-        color: var(--acc-type-text, var(--core-card));
+        gap: 0.4em;
+        background-color: var(--brand-primary-dark);
+        color: var(--primary-foreground, #fff);
         border: none;
         border-radius: var(--radius-pill, 9999px);
         font-family: var(--font-sans);
@@ -81,7 +83,8 @@ const inlineStyle = `--acc-type-bg: ${colors.bg}; --acc-type-text: ${colors.text
         transition:
             padding 0.3s ease,
             font-size 0.3s ease,
-            box-shadow 0.3s ease;
+            box-shadow 0.3s ease,
+            background-color 0.2s ease;
     }
     .acc-type-badge--size-xs {
         --acc-type-padding: 4px 10px;
@@ -92,6 +95,10 @@ const inlineStyle = `--acc-type-bg: ${colors.bg}; --acc-type-text: ${colors.text
     .acc-type-badge--size-sm {
         --acc-type-padding: 4px 14px;
         --acc-type-font-size: 0.7rem;
+    }
+
+    .acc-type-badge__label {
+        line-height: 1;
     }
 
     /* Interactive (anchor) variant: tap target, hover/focus affordance.
@@ -106,17 +113,18 @@ const inlineStyle = `--acc-type-bg: ${colors.bg}; --acc-type-text: ${colors.text
             filter 200ms ease-out,
             box-shadow 200ms ease-out,
             padding 0.3s ease,
-            font-size 0.3s ease;
+            font-size 0.3s ease,
+            background-color 0.2s ease;
     }
     a.acc-type-badge:hover {
         transform: translateY(-1px);
-        filter: brightness(1.05);
+        background-color: oklch(from var(--brand-primary-dark) calc(l - 0.05) c h);
         box-shadow:
             0 2px 4px oklch(0 0 0 / 0.1),
             0 4px 10px oklch(0 0 0 / 0.08);
     }
     a.acc-type-badge:focus-visible {
-        outline: 2px solid var(--brand-primary);
+        outline: 2px solid var(--brand-accent);
         outline-offset: 2px;
     }
     @media (prefers-reduced-motion: reduce) {

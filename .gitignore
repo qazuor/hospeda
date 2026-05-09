@@ -134,3 +134,11 @@ node_modules
 .claude/worktrees/
 apps/web-test
 apps/web-old
+
+# =========================
+# Audit baseline artifacts
+# (debugging/traceability only — screenshots, lighthouse runs,
+# investigation notes, capture scripts. Belong in the PR description
+# / Notion / S3, not the repo.)
+# =========================
+.claude/baseline/

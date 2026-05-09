@@ -75,6 +75,7 @@ const t = createT(locale);
             icon={stat.icon}
             suffix={suffixes[i]}
             variant="counter"
+            locale={locale}
           />
         </div>
       ))}
@@ -111,9 +112,36 @@ const t = createT(locale);
     svg.removeAttribute('viewBox');
     cards.forEach((c) => { (c as HTMLElement).style.transform = ''; });
 
+    const waveWrap = section.querySelector('.stats-section__wave-wrap') as HTMLElement | null;
+    if (waveWrap) waveWrap.style.top = '';
+
     if (window.innerWidth < 1024) {
       path.setAttribute('d', '');
       return;
+    }
+
+    // Position the wave vertically so it passes BETWEEN the icon circle and
+    // the number on each card (rather than through the middle of the section,
+    // which makes the number sit on top of the line).
+    if (waveWrap) {
+      const sectionRect = section.getBoundingClientRect();
+      let sumY = 0;
+      let count = 0;
+      cards.forEach((card) => {
+        const iconCircle = card.querySelector('[class*="iconCircle"]');
+        const counterValue = card.querySelector('[class*="counterValue"]');
+        if (iconCircle && counterValue) {
+          const iconRect = iconCircle.getBoundingClientRect();
+          const valueRect = counterValue.getBoundingClientRect();
+          const midpoint = (iconRect.bottom + valueRect.top) / 2;
+          sumY += midpoint - sectionRect.top;
+          count += 1;
+        }
+      });
+      if (count > 0) {
+        const avgY = sumY / count;
+        waveWrap.style.top = `${avgY}px`;
+      }
     }
 
     const svgBox = svg.getBoundingClientRect();
@@ -189,12 +217,41 @@ const t = createT(locale);
     });
   }
 
-  if (document.readyState === 'complete') {
-    initWave();
-  } else {
-    window.addEventListener('load', initWave);
+  // Debounce helper: defers execution until `wait` ms after the last call.
+  // Inlined to avoid pulling a util dependency into this small island.
+  function debounce(fn: () => void, wait: number): () => void {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    return () => {
+      if (timeoutId !== null) clearTimeout(timeoutId);
+      timeoutId = setTimeout(fn, wait);
+    };
   }
-  window.addEventListener('resize', initWave);
+
+  let resizeHandler: (() => void) | null = null;
+
+  function setupWave() {
+    initWave();
+    // Avoid double-binding if astro:page-load fires repeatedly
+    if (resizeHandler) {
+      window.removeEventListener('resize', resizeHandler);
+    }
+    // Debounce the resize redraw to ~150ms after the last resize event so we
+    // don't trigger a recompute on every browser tick during window dragging.
+    resizeHandler = debounce(initWave, 150);
+    window.addEventListener('resize', resizeHandler);
+  }
+
+  function teardownWave() {
+    if (resizeHandler) {
+      window.removeEventListener('resize', resizeHandler);
+      resizeHandler = null;
+    }
+  }
+
+  // Runs on initial page load AND after every client-side navigation.
+  document.addEventListener('astro:page-load', setupWave);
+  // Cleanup before view transitions to avoid leaking listeners.
+  document.addEventListener('astro:before-swap', teardownWave);
 </script>
 
 <style>
@@ -331,7 +388,7 @@ const t = createT(locale);
       right: 0;
       height: 80px;
       transform: translateY(-50%);
-      color: var(--border);
+      color: oklch(from var(--core-muted-foreground) l c h / 0.3);
       pointer-events: none;
       z-index: 1;
     }

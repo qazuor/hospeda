@@ -251,3 +251,51 @@
     background-color: var(--core-card);
     border-top-color: var(--border);
 }
+
+/* ── Compact mobile bottom-sheet variant (V-5) ─────────────────────────────── */
+/* At <768px, lay the banner out as a single compact row so the search bar
+   above it remains visible on first paint. Target total height ≤96px. */
+
+@media (max-width: 768px) {
+    .banner {
+        padding: var(--space-3, 12px) var(--space-4, 16px);
+    }
+
+    .inner {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--space-2, 8px);
+    }
+
+    .content {
+        gap: var(--space-1, 4px);
+    }
+
+    .description {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+}
+
+@media (max-width: 640px) {
+    .btnPrimary,
+    .btnSecondary,
+    .btnGhost {
+        padding: 6px 12px;
+        min-height: 32px;
+    }
+
+    /* Hide the heading on narrow screens — the description is self-explanatory. */
+    .title {
+        display: none;
+    }
+
+    /* Trim the main-view button row to Aceptar + Personalizar.
+       Rechazar remains accessible inside the Personalizar (customize) panel. */
+    .rejectMain {
+        display: none;
+    }
+}

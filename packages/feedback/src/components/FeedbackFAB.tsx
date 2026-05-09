@@ -188,6 +188,15 @@ export function FeedbackFAB({
     const [isPulsing, setIsPulsing] = useState<boolean>(false);
     const [sentryEventId, setSentryEventId] = useState<string | undefined>(undefined);
 
+    // SPEC-099 B-1: gate the portal render with a post-mount flag so SSR and
+    // the first client render both emit `null` for the modal subtree. Once
+    // hydration completes we flip `mounted` and createPortal moves the modal
+    // into document.body without React seeing a structural diff.
+    const [mounted, setMounted] = useState<boolean>(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     // ------------------------------------------------------------------
     // Keyboard shortcut
     // ------------------------------------------------------------------
@@ -314,8 +323,10 @@ export function FeedbackFAB({
 
     // Render the modal via portal to document.body so it escapes any
     // ancestor `overflow: hidden` or `transform` that would clip it.
-    const modalElement =
-        typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
+    // SPEC-099 B-1: emit `null` on SSR + first client render, then portal
+    // after mount. This keeps the hydrated tree identical to the server
+    // tree and avoids React re-rendering the entire FAB subtree.
+    const modalElement = mounted ? createPortal(modalContent, document.body) : null;
 
     // ------------------------------------------------------------------
     // Render: single labelled pill that auto-collapses to icon-only after a

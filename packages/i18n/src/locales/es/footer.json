@@ -38,7 +38,7 @@
     "contactPhone": "+54 3442 453797",
     "followUs": "Seguinos",
     "contactTitle": "Contacto",
-    "newsletterPlaceholder": "Tu email o WhatsApp",
+    "newsletterEmailPlaceholder": "Tu correo electrónico",
     "newsletterErrorMessage": "Por favor ingresa un email valido",
     "subscribe": "Suscribirse →",
     "subscribeShort": "Suscribirme",

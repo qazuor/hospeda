@@ -3,13 +3,15 @@
  * @file FeaturedAccommodationsSection.astro
  * @description Homepage featured accommodations section. Displays a left-aligned
  * section header with a "Ver todos" action pill, a row of clickable
- * `AccommodationTypeBadge` chips (per-type colour identity, link to the
- * filtered listing) and a 3-column responsive grid of AccommodationCard
- * components (3×2 layout, 6 cards).
+ * `AccommodationTypeBadge` chips (each with an icon, all sharing the
+ * brand-primary surface) and a responsive grid of AccommodationCard
+ * components that scales from 1 column on mobile to 4 columns on desktop
+ * (4×2 layout, 8 cards).
  * Background uses `var(--core-background)` per the section alternation rule.
  */
 
 import { AccommodationTypeEnum } from '@repo/schemas';
+import { AccommodationIcon } from '@repo/icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -18,6 +20,7 @@ import type { AccommodationCardData } from '@/lib/api/transforms';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { webLogger } from '@/lib/logger';
 
 interface Props {
@@ -37,7 +40,7 @@ const ACCOMMODATION_TYPES = Object.values(AccommodationTypeEnum).map(
 // Fetch from API - empty array if unavailable
 let items: AccommodationCardData[] = [];
 try {
-  const result = await accommodationsApi.list({ isFeatured: true, pageSize: 6, includeAmenities: true, includeFeatures: true, sortBy: 'averageRating', sortOrder: 'desc' });
+  const result = await accommodationsApi.list({ isFeatured: true, pageSize: 8, includeAmenities: true, includeFeatures: true, sortBy: 'averageRating', sortOrder: 'desc' });
   if (result.ok) {
     items = result.data.items.map((raw) => toAccommodationCardProps({ item: raw as Record<string, unknown> }));
   }
@@ -76,19 +79,27 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
       ))}
     </div>
 
-    <!-- Cards grid: 3 columns (3×2), 6 cards -->
-    <div class="grid-cards--3col accommodations__grid">
-      {items.length === 0 ? (
-        <div class="section__empty-state">
-          <p class="section__empty-text">{t('home.featuredAccommodations.emptyState')}</p>
-        </div>
-      ) : null}
-      {items.map((accommodation, i) => (
-        <div data-reveal="up" class="accommodations__card-wrapper" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
-          <AccommodationCard data={accommodation} locale={locale} />
-        </div>
-      ))}
-    </div>
+    <!-- Cards grid: scales 1→2→3→4 columns by viewport (4×2 on desktop, 8 cards). -->
+    {items.length === 0 ? (
+      <EmptyState
+        locale={locale}
+        variant="empty"
+        message={t('home.featuredAccommodations.emptyState')}
+        actionUrl={seeAllHref}
+        actionLabel={t('home.featuredAccommodations.emptyAction')}
+        tone="warm"
+      >
+        <AccommodationIcon size={48} weight="duotone" />
+      </EmptyState>
+    ) : (
+      <div class="grid-cards accommodations__grid">
+        {items.map((accommodation, i) => (
+          <div data-reveal="up" class="accommodations__card-wrapper" style={`transition-delay: ${Math.min(i, 7) * 100}ms`}>
+            <AccommodationCard data={accommodation} locale={locale} />
+          </div>
+        ))}
+      </div>
+    )}
 
   </div>
 </section>
@@ -118,8 +129,9 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
       scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
       padding-bottom: 4px;
-      mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
-      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
+      padding-inline-end: 1rem;
+      mask-image: linear-gradient(to right, transparent 0%, black 6%, black 88%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 6%, black 88%, transparent 100%);
     }
     .accommodations__types::-webkit-scrollbar {
       display: none;

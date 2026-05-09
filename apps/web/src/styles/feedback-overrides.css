@@ -106,3 +106,15 @@ html[data-mobile-menu-open] .feedback-root .minimizedDot {
     visibility: hidden;
     pointer-events: none;
 }
+
+/*
+ * Same idea while a hero search bar bottom-sheet is open on mobile: the FAB
+ * sits in the bottom-right corner of the viewport and overlaps the sheet's
+ * stepper buttons. The SearchBar island sets [data-search-panel-open] on
+ * <html> while any of its panels are active.
+ */
+html[data-search-panel-open] .feedback-root .fab,
+html[data-search-panel-open] .feedback-root .minimizedDot {
+    visibility: hidden;
+    pointer-events: none;
+}

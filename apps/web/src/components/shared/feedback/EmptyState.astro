@@ -3,6 +3,25 @@
  * @file EmptyState.astro
  * @description Empty state component shown when no results match filters
  * or a collection is genuinely empty. Two variants: "no-results" and "empty".
+ *
+ * Optional `tone` prop tints the surface (`muted` default, `warm`, or `brand`).
+ *
+ * Optional default slot replaces the built-in SVG icon. Use it to inject a
+ * Phosphor/`@repo/icons` component for richer visuals.
+ *
+ * @example
+ * ```astro
+ * <EmptyState
+ *   locale={locale}
+ *   variant="empty"
+ *   message="No upcoming events"
+ *   actionUrl="/events"
+ *   actionLabel="View all events"
+ *   tone="warm"
+ * >
+ *   <CalendarIcon size={48} weight="duotone" />
+ * </EmptyState>
+ * ```
  */
 
 import type { SupportedLocale } from '@/lib/i18n';
@@ -18,6 +37,8 @@ interface Props {
 	readonly actionUrl?: string;
 	/** Link label for the action button. */
 	readonly actionLabel?: string;
+	/** Visual tone of the empty state surface. Defaults to "muted". */
+	readonly tone?: 'muted' | 'warm' | 'brand';
 	readonly class?: string;
 }
 
@@ -27,6 +48,7 @@ const {
 	message,
 	actionUrl,
 	actionLabel,
+	tone = 'muted',
 	class: className,
 } = Astro.props;
 
@@ -44,30 +66,45 @@ const defaultActions = {
 
 const resolvedMessage = message ?? defaultMessages[variant];
 const resolvedActionLabel = actionLabel ?? defaultActions[variant];
+
+/**
+ * Detect whether the caller passed a custom icon via the default slot. When
+ * present, it replaces the built-in SVG fallback.
+ */
+const hasIconSlot = Astro.slots.has('default');
 ---
 
-<div class:list={['empty-state', `empty-state--${variant}`, className]}>
+<div class:list={[
+	'empty-state',
+	`empty-state--${variant}`,
+	`empty-state--tone-${tone}`,
+	className,
+]}>
 	<div class="empty-state__icon" aria-hidden="true">
-		<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-			{variant === 'no-results' ? (
-				<>
-					<circle cx="28" cy="28" r="18" stroke="var(--core-muted-foreground)" stroke-width="2" opacity="0.3" />
-					<line x1="40" y1="40" x2="54" y2="54" stroke="var(--core-muted-foreground)" stroke-width="2" stroke-linecap="round" opacity="0.3" />
-				</>
-			) : (
-				<>
-					<rect x="12" y="16" width="40" height="32" rx="8" stroke="var(--core-muted-foreground)" stroke-width="2" opacity="0.3" />
-					<line x1="24" y1="30" x2="40" y2="30" stroke="var(--core-muted-foreground)" stroke-width="2" stroke-linecap="round" opacity="0.3" />
-					<line x1="24" y1="38" x2="34" y2="38" stroke="var(--core-muted-foreground)" stroke-width="2" stroke-linecap="round" opacity="0.3" />
-				</>
-			)}
-		</svg>
+		{hasIconSlot ? (
+			<slot />
+		) : (
+			<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+				{variant === 'no-results' ? (
+					<>
+						<circle cx="28" cy="28" r="18" stroke="var(--core-muted-foreground)" stroke-width="2" opacity="0.3" />
+						<line x1="40" y1="40" x2="54" y2="54" stroke="var(--core-muted-foreground)" stroke-width="2" stroke-linecap="round" opacity="0.3" />
+					</>
+				) : (
+					<>
+						<rect x="12" y="16" width="40" height="32" rx="8" stroke="var(--core-muted-foreground)" stroke-width="2" opacity="0.3" />
+						<line x1="24" y1="30" x2="40" y2="30" stroke="var(--core-muted-foreground)" stroke-width="2" stroke-linecap="round" opacity="0.3" />
+						<line x1="24" y1="38" x2="34" y2="38" stroke="var(--core-muted-foreground)" stroke-width="2" stroke-linecap="round" opacity="0.3" />
+					</>
+				)}
+			</svg>
+		)}
 	</div>
 
 	<p class="empty-state__message">{resolvedMessage}</p>
 
 	{actionUrl && (
-		<a href={actionUrl} class="empty-state__action">
+		<a href={actionUrl} class="btn-gradient btn-gradient--outline-accent">
 			{resolvedActionLabel}
 		</a>
 	)}
@@ -82,6 +119,31 @@ const resolvedActionLabel = actionLabel ?? defaultActions[variant];
 		text-align: center;
 		padding: var(--space-12) var(--space-6);
 		gap: var(--space-4);
+		border-radius: var(--radius-card, 12px);
+	}
+
+	/* Tone variants — surface tints layered on top of the section background. */
+	.empty-state--tone-muted {
+		background-color: transparent;
+	}
+
+	.empty-state--tone-warm {
+		background-color: oklch(from var(--brand-accent) l c h / 0.06);
+	}
+
+	.empty-state--tone-brand {
+		background-color: oklch(from var(--brand-primary) l c h / 0.08);
+	}
+
+	.empty-state__icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--brand-accent);
+	}
+
+	.empty-state--tone-brand .empty-state__icon {
+		color: var(--brand-primary);
 	}
 
 	.empty-state__message {
@@ -91,25 +153,5 @@ const resolvedActionLabel = actionLabel ?? defaultActions[variant];
 		max-width: 40ch;
 		line-height: 1.6;
 		margin: 0;
-	}
-
-	.empty-state__action {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.75rem 1.5rem;
-		border-radius: var(--radius-button);
-		font-family: var(--font-sans);
-		font-size: var(--text-body);
-		font-weight: 500;
-		text-decoration: none;
-		color: var(--brand-accent);
-		border: 1px solid var(--brand-accent);
-		transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
-	}
-
-	.empty-state__action:hover {
-		background-color: var(--brand-accent);
-		color: var(--accent-foreground, #fff);
 	}
 </style>

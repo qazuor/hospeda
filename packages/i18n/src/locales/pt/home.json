@@ -6,7 +6,11 @@
         "subtitle": "Descubra as melhores hospedagens, destinos e experiencias do litoral.",
         "tagline": "Sua proxima escapada",
         "secondaryCta": "Conheca nossos destinos",
-        "imageAlt": "Hospedagem em destaque no Litoral",
+        "imageAlt": {
+            "playa": "Praia do Litoral argentino ao meio-dia",
+            "atardecer": "Pôr do sol dourado sobre o rio",
+            "isla": "Ilha fluvial com vegetação nativa"
+        },
         "destination": {
             "title": "Destino",
             "placeHolder": "Para onde voce vai?"
@@ -29,6 +33,7 @@
         "description": "Os melhores lugares para se hospedar na costa do rio Uruguay, selecionados pelos nossos usuarios. ",
         "accentSubtitle": "O melhor do Litoral",
         "emptyState": "Nenhuma hospedagem disponivel no momento",
+        "emptyAction": "Ver todas as acomodações",
         "noReviews": "Sem avaliacoes",
         "seeAllAction": "Ver todas as hospedagens →"
     },
@@ -57,6 +62,7 @@
         "description": "Nao perca os eventos mais importantes da regiao.",
         "accentSubtitle": "Nao perca",
         "emptyState": "Nenhum evento proximo no momento",
+        "emptyAction": "Ver todos os eventos",
         "viewAll": "Ver todos os eventos →"
     },
     "latestPosts": {
@@ -64,6 +70,7 @@
         "description": "Saiba mais sobre Entre Rios e seus arredores.",
         "accentSubtitle": "Nosso blog",
         "emptyState": "Nenhum artigo disponivel no momento",
+        "emptyAction": "Ver todos os artigos",
         "tagline": "Informe-se, inspire-se, descubra",
         "subtitle": "Histórias, guias e segredos do Litoral para inspirar a sua próxima aventura.",
         "viewAll": "Ver todos os artigos →"
@@ -89,6 +96,40 @@
         "posts": "Publicaciones",
         "events": "Eventos e atividades",
         "subtitle": "A maior comunidade de turismo do Litoral"
+    },
+    "categoryTiles": {
+        "sectionTitle": "Explore por categoria",
+        "sectionTagline": "Para todos os gostos",
+        "tiles": {
+            "countryHouses": {
+                "title": "Casas de Campo",
+                "description": "Espaço, jardim e churrasqueira para escapadas em família"
+            },
+            "hotels": {
+                "title": "Hotéis",
+                "description": "Conforto e serviço premium no coração da cidade"
+            },
+            "apartments": {
+                "title": "Apartamentos",
+                "description": "Conforto urbano perto de tudo, ideais para casais e escapadas curtas"
+            },
+            "music": {
+                "title": "Música",
+                "description": "Festivais e shows ao vivo para todos os gostos"
+            },
+            "culture": {
+                "title": "Cultura",
+                "description": "Arte, história e patrimônio do Litoral de Entre Ríos"
+            },
+            "gastronomy": {
+                "title": "Gastronomia",
+                "description": "Sabores únicos da culinária regional e nacional"
+            },
+            "posts": {
+                "title": "Artigos",
+                "description": "Histórias, dicas e inspiração para sua próxima viagem"
+            }
+        }
     },
     "categories": {
         "title": "Tipos de hospedagem",
@@ -199,6 +240,7 @@
         "guestsSummary": "{adults} adultos, {children} crianças",
         "ctaLabel": "Buscar",
         "loadingText": "Carregando...",
+        "noDestinationsText": "Nenhum destino disponível",
         "searchAriaLabel": "Buscar acomodações",
         "closePanelAriaLabel": "Fechar painel",
         "moreSelected_one": "& {{count}} mais",

@@ -56,8 +56,8 @@ describe('CategoryTiles.astro', () => {
             expect(src).toContain('readonly icon?:');
         });
 
-        it('defines optional image property', () => {
-            expect(src).toContain('readonly image?: string');
+        it('defines optional image property typed as Astro ImageMetadata', () => {
+            expect(src).toContain('readonly image?: ImageMetadata');
         });
     });
 
@@ -139,24 +139,16 @@ describe('CategoryTiles.astro', () => {
         });
     });
 
-    describe('responsive grid', () => {
-        it('uses single column on mobile', () => {
-            expect(src).toContain('grid-template-columns: 1fr');
+    describe('responsive layout', () => {
+        it('uses flex-wrap so the last row centres instead of left-aligning', () => {
+            expect(src).toMatch(/\.category-tiles__grid[\s\S]*?display:\s*flex/);
+            expect(src).toMatch(/\.category-tiles__grid[\s\S]*?flex-wrap:\s*wrap/);
+            expect(src).toMatch(/\.category-tiles__grid[\s\S]*?justify-content:\s*center/);
         });
 
-        it('uses 2-column layout on tablet (640px)', () => {
-            expect(src).toContain('grid-template-columns: repeat(2, 1fr)');
-            expect(src).toContain('min-width: 640px');
-        });
-
-        it('uses 3-column layout on desktop (1024px)', () => {
-            expect(src).toContain('grid-template-columns: repeat(3, 1fr)');
-            expect(src).toContain('min-width: 1024px');
-        });
-
-        it('uses 4-column layout on wide desktop (1280px)', () => {
-            expect(src).toContain('grid-template-columns: repeat(4, 1fr)');
-            expect(src).toContain('min-width: 1280px');
+        it('sets a flex-basis and max-width on each tile so they stay compact', () => {
+            expect(src).toMatch(/\.category-tiles__tile[\s\S]*?flex:\s*1\s+1\s+\d+px/);
+            expect(src).toMatch(/\.category-tiles__tile[\s\S]*?max-width:\s*\d+px/);
         });
     });
 

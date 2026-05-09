@@ -6,7 +6,11 @@
         "subtitle": "Discover the best accommodations, destinations and experiences in the litoral.",
         "tagline": "Your next getaway",
         "secondaryCta": "Explore our destinations",
-        "imageAlt": "Featured accommodation in the Litoral region",
+        "imageAlt": {
+            "playa": "Beach on the Argentine Litoral at midday",
+            "atardecer": "Golden sunset over the river",
+            "isla": "River island with native vegetation"
+        },
         "destination": {
             "title": "Destination",
             "placeHolder": "Where are you going?"
@@ -29,6 +33,7 @@
         "description": "The best places to stay along the Uruguay River, selected by our users. ",
         "accentSubtitle": "The best of the Litoral",
         "emptyState": "No accommodations available at this time",
+        "emptyAction": "View all accommodations",
         "noReviews": "No reviews",
         "seeAllAction": "View all accommodations →"
     },
@@ -57,6 +62,7 @@
         "description": "Don't miss the most important events in the region.",
         "accentSubtitle": "Don't miss out",
         "emptyState": "No upcoming events at this time",
+        "emptyAction": "View all events",
         "viewAll": "View all events →"
     },
     "latestPosts": {
@@ -64,6 +70,7 @@
         "description": "Learn more about Entre Rios and its surroundings.",
         "accentSubtitle": "Our blog",
         "emptyState": "No articles available at this time",
+        "emptyAction": "View all articles",
         "tagline": "Stay informed, get inspired, discover",
         "subtitle": "Stories, guides and secrets of the Litoral region to inspire your next adventure.",
         "viewAll": "View all articles →"
@@ -89,6 +96,40 @@
         "posts": "Publicaciones",
         "events": "Events & activities",
         "subtitle": "The largest tourism community in the Litoral"
+    },
+    "categoryTiles": {
+        "sectionTitle": "Explore by category",
+        "sectionTagline": "For every taste",
+        "tiles": {
+            "countryHouses": {
+                "title": "Country Houses",
+                "description": "Space, gardens and grills for family getaways"
+            },
+            "hotels": {
+                "title": "Hotels",
+                "description": "Comfort and premium service at the heart of the city"
+            },
+            "apartments": {
+                "title": "Apartments",
+                "description": "Urban comfort close to everything, ideal for couples and short getaways"
+            },
+            "music": {
+                "title": "Music",
+                "description": "Festivals and live shows for every taste"
+            },
+            "culture": {
+                "title": "Culture",
+                "description": "Art, history and heritage of the Entre Ríos Litoral"
+            },
+            "gastronomy": {
+                "title": "Gastronomy",
+                "description": "Unique flavors of regional and national cuisine"
+            },
+            "posts": {
+                "title": "Articles",
+                "description": "Stories, tips and inspiration for your next trip"
+            }
+        }
     },
     "categories": {
         "title": "Accommodation types",
@@ -199,6 +240,7 @@
         "guestsSummary": "{adults} adults, {children} children",
         "ctaLabel": "Search",
         "loadingText": "Loading...",
+        "noDestinationsText": "No destinations available",
         "searchAriaLabel": "Search accommodations",
         "closePanelAriaLabel": "Close panel",
         "moreSelected_one": "& {{count}} more",

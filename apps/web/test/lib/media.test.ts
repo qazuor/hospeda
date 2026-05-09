@@ -5,10 +5,12 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    ALLOWED_REMOTE_HOSTS,
     extractFeaturedImage,
     extractFeaturedImageUrl,
     extractGalleryItems,
-    extractGalleryUrls
+    extractGalleryUrls,
+    isAllowedRemoteHost
 } from '../../src/lib/media';
 
 // ---------------------------------------------------------------------------
@@ -303,5 +305,36 @@ describe('extractGalleryItems', () => {
         const result = extractGalleryItems(item);
         expect(result).toHaveLength(1);
         expect(result[0]).toEqual({ url: 'https://example.com/valid.jpg', caption: 'ok' });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// isAllowedRemoteHost (SPEC-099 S-1: SSRF allowlist guard)
+// ---------------------------------------------------------------------------
+
+describe('isAllowedRemoteHost', () => {
+    it('returns true for an allowlisted hostname', () => {
+        // Use a hostname pulled directly from the constant to avoid drift.
+        const allowed = ALLOWED_REMOTE_HOSTS[1]; // res.cloudinary.com
+        expect(isAllowedRemoteHost(`https://${allowed}/path/to/image.jpg`)).toBe(true);
+    });
+
+    it('returns false for a non-allowlisted hostname', () => {
+        expect(isAllowedRemoteHost('http://attacker.com/x')).toBe(false);
+    });
+
+    it('returns false for a malformed URL', () => {
+        expect(isAllowedRemoteHost('not-a-url')).toBe(false);
+    });
+
+    it('returns false for an empty string', () => {
+        expect(isAllowedRemoteHost('')).toBe(false);
+    });
+
+    it('returns true for an allowlisted host regardless of path or protocol', () => {
+        // Same host, different path — must still validate.
+        expect(isAllowedRemoteHost('https://images.unsplash.com/photo-123?w=800&q=75')).toBe(true);
+        // Same host, http protocol — hostname is still allowlisted.
+        expect(isAllowedRemoteHost('http://images.unsplash.com/photo-123')).toBe(true);
     });
 });

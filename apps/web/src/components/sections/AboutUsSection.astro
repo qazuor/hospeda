@@ -333,17 +333,20 @@ const { t } = createTranslations(locale);
         margin: 0;
     }
 
-    /* Heading: Geologica Bold, clamp for fluid scaling */
+    /* Heading: Geologica Bold, clamp for fluid scaling.
+       Tightened lower bound (V-9) so heading stays ≤2 lines at 768px (tablet).
+       text-wrap: balance evenly distributes lines; max-width caps line length. */
     .about-us__title {
         font-family: var(--font-heading);
         font-weight: 700;
-        font-size: clamp(2rem, 4vw, 3rem);
+        font-size: clamp(1.5rem, 3.5vw + 0.25rem, 3rem);
         line-height: 1.2;
         color: var(--core-foreground);
         margin: 0;
+        text-wrap: balance;
+        max-width: 18ch;
     }
 
-    /* Body: Inter Regular 16px, 4px horizontal + 10px vertical padding per Figma */
     .about-us__body {
         font-family: var(--font-sans);
         font-size: 1rem;

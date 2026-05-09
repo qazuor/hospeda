@@ -1,0 +1,13 @@
+{
+    "specId": "SPEC-100",
+    "title": "API Transform Pipeline Type Safety",
+    "type": "refactor",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-05-07T00:00:00.000Z",
+    "tags": ["web", "typescript", "type-safety", "refactor", "transforms", "schemas"],
+    "branch": "TBD",
+    "worktree": "TBD",
+    "effort_estimate_hours": "20-32",
+    "origin": "Deferred from SPEC-099 Phase 8 (S-10) — see apps/web/.claude/baseline/S-10-spike.md"
+}

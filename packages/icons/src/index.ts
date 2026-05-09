@@ -221,6 +221,7 @@ export { AviariumIcon } from './icons/attractions/AviariumIcon';
 export { BallroomIcon } from './icons/attractions/BallroomIcon';
 export { BeachIcon } from './icons/attractions/BeachIcon';
 export { BirdWatchingIcon } from './icons/attractions/BirdWatchingIcon';
+export { BridgeIcon } from './icons/attractions/BridgeIcon';
 export { CarnavalHeadquartersIcon } from './icons/attractions/CarnavalHeadquartersIcon';
 export { CarnavalMuseumIcon } from './icons/attractions/CarnavalMuseumIcon';
 export { CarnavalVenueIcon } from './icons/attractions/CarnavalVenueIcon';

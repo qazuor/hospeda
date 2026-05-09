@@ -7,16 +7,18 @@
  */
 
 import { getImage } from 'astro:assets';
+import { PostIcon } from '@repo/icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import FeaturedArticleCard from '@/components/shared/cards/FeaturedArticleCard.astro';
 import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { postsApi, toArticleCardProps } from '@/lib/api';
 import type { ArticleCardData } from '@/lib/api/transforms';
 import { webLogger } from '@/lib/logger';
+import { isAllowedRemoteHost } from '@/lib/media';
 
 interface Props {
     /** Active locale used to resolve translations and URLs. */
@@ -32,10 +34,15 @@ try {
     const result = await postsApi.list({ sortBy: 'publishedAt', sortOrder: 'desc', pageSize: 4 });
     if (result.ok) {
         const rawPosts = result.data.items.map((raw) => toArticleCardProps({ item: raw as Record<string, unknown> }));
+        // SSRF guard (SPEC-099 S-1): only call getImage() when the avatar
+        // hostname is in the allowlist. Untrusted URLs pass through unchanged.
         posts = await Promise.all(
             rawPosts.map(async (post) => {
                 const raw = post.authorAvatar;
                 if (raw && !raw.includes('placeholder') && !raw.endsWith('.svg')) {
+                    if (!isAllowedRemoteHost(raw)) {
+                        return post;
+                    }
                     try {
                         const optimized = await getImage({ src: raw, width: 64, format: 'webp' });
                         return { ...post, authorAvatar: optimized.src };
@@ -66,12 +73,22 @@ const isSparse = posts.length < 2;
             tagline={t('home.latestPosts.tagline', 'Informate, Inspirate, Conoce')}
             title={t('home.latestPosts.title', 'Últimos artículos')}
             subtitle={t('home.latestPosts.subtitle', 'Historias, guías y secretos del litoral entrerriano para inspirar tu próxima aventura.')}
+            alignment="left"
+            actionLabel={t('home.latestPosts.viewAll', 'Ver todos los artículos')}
+            actionHref={buildUrl({ locale, path: '/publicaciones/' })}
         />
 
         {posts.length === 0 ? (
-            <div class="section__empty-state">
-                <p class="section__empty-text">{t('home.latestPosts.emptyState')}</p>
-            </div>
+            <EmptyState
+                locale={locale}
+                variant="empty"
+                message={t('home.latestPosts.emptyState')}
+                actionUrl={buildUrl({ locale, path: '/publicaciones/' })}
+                actionLabel={t('home.latestPosts.emptyAction')}
+                tone="warm"
+            >
+                <PostIcon size={48} weight="duotone" />
+            </EmptyState>
         ) : (
             <div class="articles__layout">
                 <!-- Featured card: full-width top row -->
@@ -97,16 +114,6 @@ const isSparse = posts.length < 2;
                 )}
             </div>
         )}
-
-        <!-- CTA button -->
-        <div class="posts__cta">
-            <GradientButton
-                href={buildUrl({ locale, path: 'publicaciones' })}
-                label={t('home.latestPosts.viewAll', 'Ver todos los artículos')}
-                variant="primary"
-                icon="true"
-            />
-        </div>
 
     </div>
 </section>
@@ -158,11 +165,4 @@ const isSparse = posts.length < 2;
     }
 
     /* Empty state styles are in components.css (.section__empty-state, .section__empty-text) */
-
-    /* CTA */
-    .posts__cta {
-        display: flex;
-        justify-content: center;
-        margin-top: 3rem;
-    }
 </style>

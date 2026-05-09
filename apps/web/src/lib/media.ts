@@ -18,6 +18,73 @@ import type { MediaPreset } from '@repo/media';
 
 const DEFAULT_PLACEHOLDER = '/images/placeholder.svg';
 
+/**
+ * Allowlist of remote hostnames that the web app is permitted to fetch images
+ * from at build/SSR time via Astro's `getImage()`.
+ *
+ * This list is the **single source of truth** for both:
+ *   1. `astro.config.mjs#image.remotePatterns` (Astro's own validation)
+ *   2. {@link isAllowedRemoteHost} runtime SSRF guard for user-controllable URLs
+ *
+ * SECURITY (SPEC-099 S-1): Astro's `getImage()` will fetch any remote URL it is
+ * configured to optimize. If we pass a user-controlled image URL through
+ * `getImage()` without an allowlist check, an attacker can coerce the build
+ * server (or SSR runtime) to issue HTTP requests to arbitrary hosts —
+ * including internal/cloud-metadata endpoints (SSRF). Always validate
+ * user-controllable URLs with {@link isAllowedRemoteHost} before passing
+ * them to `getImage()`.
+ *
+ * Note: `localhost` is allowed for local development. The wildcard pattern
+ * `*.vercel.app` from `remotePatterns` is **not** modeled here — wildcard
+ * subdomain matching is intentionally omitted from the runtime guard to keep
+ * the allowlist explicit and auditable. If a future use case requires it,
+ * extend the helper rather than the constant.
+ */
+export const ALLOWED_REMOTE_HOSTS = [
+    'localhost',
+    'res.cloudinary.com',
+    'images.pexels.com',
+    'images.unsplash.com',
+    'i0.wp.com',
+    'i1.wp.com',
+    'i2.wp.com'
+] as const;
+
+/**
+ * Returns `true` if the given URL's hostname is in {@link ALLOWED_REMOTE_HOSTS}.
+ * Returns `false` for malformed URLs, empty strings, or hostnames not in
+ * the allowlist.
+ *
+ * Use this BEFORE passing any user-controllable URL to Astro's `getImage()`
+ * to prevent SSRF (Server-Side Request Forgery) during builds or SSR. Astro
+ * will fetch any remote URL it is configured to optimize, so an attacker
+ * who controls the `src` argument can coerce the build/SSR runtime to issue
+ * HTTP requests to arbitrary hosts (including internal/cloud-metadata
+ * endpoints). Always gate `getImage({ src })` calls with this helper when
+ * `src` originates from API/database content.
+ *
+ * @example
+ * ```ts
+ * const url = item.featuredImage.url; // user-controllable
+ * if (isAllowedRemoteHost(url)) {
+ *   const optimized = await getImage({ src: url, width: 300 });
+ *   return optimized.src;
+ * }
+ * return url; // pass through unchanged — no fetch issued
+ * ```
+ *
+ * @param url - URL string to validate
+ * @returns `true` if hostname is allowlisted, `false` otherwise
+ */
+export function isAllowedRemoteHost(url: string): boolean {
+    try {
+        const { hostname } = new URL(url);
+        return (ALLOWED_REMOTE_HOSTS as readonly string[]).includes(hostname);
+    } catch {
+        return false;
+    }
+}
+
 interface MediaImage {
     readonly url?: string;
     readonly caption?: string;
