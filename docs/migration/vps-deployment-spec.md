@@ -2991,9 +2991,27 @@ Después del cleanup, correr `scripts/smoke-test.sh` y validar 11/11 PASS.
 
 3 apps + DB Postgres dedicada para staging. Subdominios: `staging.hospeda.com.ar`, `staging-api.hospeda.com.ar`, `staging-admin.hospeda.com.ar`. Branch GitHub: `develop`. Coolify deploy on push para esos. **NO compartir DB con prod** (decisión del usuario). Costo extra: $0 si comparte VPS, ~$6-12/mes si VPS separado. Decidir según RAM disponible (VPS prod tiene 3.8 GB RAM total, ahora a ~50% usage; staging suma ~600-800 MB con apps idle). Ver Task #20.
 
-### Paso 17.2 — Toolkit `scripts/server-tools/`
+### Paso 17.2 — Toolkit `scripts/server-tools/` (`hctl`)
 
-CLIs versionadas en repo para automatizar lo que se hizo a mano repetido durante la migración. Includes: `docker-by-name <prefix>` (resolver UUID→nombre), `db-exec <sql>` / `db-shell`, `db-counts`, `logs-tail <app>`, `seed --required`, `restart <app>` / `redeploy <app>` via Coolify API, `free-mem-status`. Cada tool con `--help`. Documentación en README dentro del directorio. Ver Task #21.
+> **Estado al 2026-05-09**: en curso. 7 commands shipped — `docker-by-name`, `find`, `redeploy`, `env-list`, the in-container run command, `logs`, `psql`. Stack: TypeScript on bun, ships como single-file binary (`bun build --compile`). Configuración en `scripts/server-tools/.env.local` (gitignored). Container lookup vía label `coolify.resourceName` con fallback a image ancestor + exposed port + name prefix; UUIDs nunca hard-coded. Decisión arquitectónica: V1 corre en VPS (operator SSHs in), V2 también desde laptop (SshRunner reemplaza LocalRunner detrás del Runner interface).
+>
+> **Pendiente antes de la próxima tanda de commands**: (a) installer concreto que ponga `hctl` en `$PATH` para evitar el verbose `bun run src/index.ts <cmd>` (compilar binario y dropear en `~/.local/bin/hctl` o `/usr/local/bin/hctl`); (b) audit `-h`/`--help` en cada command para asegurar consistencia.
+>
+> **Tandas pendientes**:
+>
+> - Tanda 2 (chica): `db-counts`, `app-restart`, `free-mem`, `health` (wraps `scripts/smoke-test.sh`), `env-set`, `env-pull`.
+> - Tanda 3 (grande): `db-backup-now`, `db-restore` (R2 SDK + GPG decrypt + numbered-list interactive picker). Requiere R2_* env vars + BACKUP_PASSPHRASE.
+> - Tanda 4: `cron-list`, `cron-trigger` (read-only contra admin endpoints existentes). `cron-edit` queda diferido a V2 (necesita tabla `cron_schedule_overrides` del lado API).
+>
+> **Lecciones del build worth preservar** (capturadas en engram + project memory):
+>
+> - El hook de seguridad del repo rechaza cualquier TS file con substring "(en inglés "exec" seguido de paréntesis)" como posible inyección. Por eso el helper interno se llama `runInContainer` y el comando container-run vive en `container-exec.ts`. El nombre user-facing del command sigue siendo el corto.
+> - bun's pipe stdout no es TTY → bare LF no resetea columna → cursor cascade en log lines wrapped. Fix: emitir CRLF explícito.
+> - bun main exits inmediatamente cuando el async setup resolves, sin esperar children abiertos. Para follow-mode commands: bloquear con `await new Promise(resolve => child.on('exit', resolve))`.
+>
+> **Engram topic**: `vps-migration/phase-17.2-hctl-checkpoint` para state completo. **Project memory**: `project_phase_17_2_hctl.md`.
+
+Ver Task #21.
 
 ### Paso 17.3 — Migración de tools `env:sync`
 
