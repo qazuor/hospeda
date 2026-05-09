@@ -35,10 +35,10 @@ Flags:
   --help, -h         Show this help.
 
 Examples:
-  hops exec api node -v               Run an inline command, capture output.
-  hops exec api -- ls /app            Use '--' to separate hops flags from cmd.
-  hops exec api --shell               Open an interactive shell.
-  hops exec api --env HOSPEDA_EMAIL_  List env vars under that prefix.
+  hops exec api node -v                  Run an inline command, capture output.
+  hops exec api -- ls /repo/apps/api     Use '--' to separate hops flags from cmd.
+  hops exec api --shell                  Open an interactive shell.
+  hops exec api --env HOSPEDA_EMAIL_     List env vars under that prefix.
 
 Notes:
   --shell and --env are mutually exclusive with an inline cmd.

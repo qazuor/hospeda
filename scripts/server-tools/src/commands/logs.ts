@@ -187,10 +187,16 @@ export async function logs(argv: ReadonlyArray<string>): Promise<void> {
  * Used by the captured-output path to keep terminal rendering
  * consistent regardless of whether stdout is a TTY (which controls
  * whether the kernel's onlcr translation kicks in for bare LF).
+ *
+ * Always ends in CRLF when there is any content — execa strips the
+ * trailing newline by default, which would otherwise leave the last
+ * log line glued to the next shell prompt.
  */
 function normaliseLines(text: string): string {
-    return text
+    if (!text) return '';
+    const normalised = text
         .split('\n')
         .map((line) => line.replace(/\s+$/, ''))
         .join('\r\n');
+    return normalised.endsWith('\r\n') ? normalised : `${normalised}\r\n`;
 }
