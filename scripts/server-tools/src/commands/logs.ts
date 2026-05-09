@@ -161,14 +161,24 @@ export async function logs(argv: ReadonlyArray<string>): Promise<void> {
     rlOut.on('line', (line) => writeOutLine(line, process.stdout));
     rlErr.on('line', (line) => writeOutLine(line, process.stderr));
 
-    dockerProc.on('exit', (code) => {
-        if (code !== null && code !== 0) process.exitCode = code;
-    });
-
     // Forward Ctrl+C to the docker process so the follow stream terminates
-    // cleanly when the operator hits ^C.
+    // cleanly when the operator hits ^C. The handler must be installed
+    // before the await below so the SIGINT lands on the child rather
+    // than the bun runtime.
     process.on('SIGINT', () => {
         dockerProc.kill('SIGINT');
+    });
+
+    // Block until docker exits so the script keeps the process alive
+    // through the entire stream. Without this await, bun's main returns
+    // as soon as the synchronous setup completes (the open spawn + open
+    // readline handles are not enough to keep bun's event loop pinned),
+    // causing follow mode to terminate immediately on its own.
+    await new Promise<void>((resolve) => {
+        dockerProc.on('exit', (code) => {
+            if (code !== null && code !== 0) process.exitCode = code;
+            resolve();
+        });
     });
 }
 
