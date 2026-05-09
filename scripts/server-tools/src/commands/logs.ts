@@ -6,6 +6,7 @@
  */
 
 import { spawn } from 'node:child_process';
+import * as readline from 'node:readline';
 import { type ContainerKind, findContainer } from '../lib/container-lookup.ts';
 import { dockerLogs, dockerPrefix } from '../lib/docker.ts';
 import { die, log } from '../lib/log.ts';
@@ -125,12 +126,34 @@ export async function logs(argv: ReadonlyArray<string>): Promise<void> {
         const grep = spawn('grep', ['--line-buffered', '-iE', pattern], {
             stdio: ['pipe', 'inherit', 'inherit']
         });
-        // Merge docker stdout + stderr so timestamped error lines also
-        // get filtered.
-        dockerProc.stdout.pipe(grep.stdin);
-        dockerProc.stderr.pipe(grep.stdin);
+
+        // Bytewise piping both streams into grep.stdin causes inter-stream
+        // chunk interleaving (a stdout chunk that doesn't end at a newline
+        // gets followed by a stderr chunk, and grep treats the combined
+        // bytes as one mangled line). Run each stream through readline so
+        // we only ever write *complete* lines into grep.stdin.
+        const rlOut = readline.createInterface({
+            input: dockerProc.stdout,
+            crlfDelay: Number.POSITIVE_INFINITY
+        });
+        const rlErr = readline.createInterface({
+            input: dockerProc.stderr,
+            crlfDelay: Number.POSITIVE_INFINITY
+        });
+        const writeLine = (line: string): void => {
+            grep.stdin.write(`${line}\n`);
+        };
+        rlOut.on('line', writeLine);
+        rlErr.on('line', writeLine);
+
+        let closed = 0;
+        const tryClose = (): void => {
+            if (++closed === 2) grep.stdin.end();
+        };
+        rlOut.on('close', tryClose);
+        rlErr.on('close', tryClose);
+
         dockerProc.on('exit', (code) => {
-            grep.stdin.end();
             if (code !== null && code !== 0) process.exitCode = code;
         });
         grep.on('exit', (code) => {
@@ -139,6 +162,9 @@ export async function logs(argv: ReadonlyArray<string>): Promise<void> {
             log.warn(`grep exited with status ${code}`);
         });
     } else {
+        // No-grep streaming: each output stream goes to its matching
+        // terminal stream. The OS treats these as independent so there is
+        // no inter-stream interleaving for the operator to deal with.
         dockerProc.stdout.pipe(process.stdout);
         dockerProc.stderr.pipe(process.stderr);
         dockerProc.on('exit', (code) => {
