@@ -9,7 +9,7 @@ import { spawn } from 'node:child_process';
 import * as readline from 'node:readline';
 import { type ContainerKind, findContainer } from '../lib/container-lookup.ts';
 import { dockerLogs, dockerPrefix } from '../lib/docker.ts';
-import { die, log } from '../lib/log.ts';
+import { die } from '../lib/log.ts';
 
 const KINDS: ReadonlyArray<ContainerKind> = ['api', 'web', 'admin'];
 
@@ -97,12 +97,13 @@ export async function logs(argv: ReadonlyArray<string>): Promise<void> {
 
     if (!useStream) {
         const result = await dockerLogs({ container, tail, since });
-        // Strip trailing whitespace per line so log lines that the API
-        // logger pads to a fixed column width don't wrap-cascade in the
-        // operator's terminal. Empty trailing line preserved as-is so a
-        // capture that ended on '\n' still ends on '\n'.
-        process.stdout.write(stripTrailingPad(result.stdout));
-        if (result.stderr) process.stderr.write(stripTrailingPad(result.stderr));
+        // Normalise to CRLF per line for the same reason the streaming
+        // path does — bun's pipe stdout is not always a TTY, so the
+        // terminal driver may not translate bare LF into "carriage
+        // return + line feed". Writing CRLF ourselves makes the output
+        // render consistently regardless.
+        process.stdout.write(normaliseLines(result.stdout));
+        if (result.stderr) process.stderr.write(normaliseLines(result.stderr));
         if (result.exitCode !== 0) process.exit(result.exitCode);
         return;
     }
@@ -126,72 +127,43 @@ export async function logs(argv: ReadonlyArray<string>): Promise<void> {
     }
     const dockerProc = spawn(program, programArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
 
-    if (pattern !== undefined) {
-        const grep = spawn('grep', ['--line-buffered', '-iE', pattern], {
-            stdio: ['pipe', 'inherit', 'inherit']
-        });
+    // Match in Node directly. The earlier implementation spawned a
+    // grep child and piped stdout/stderr into it, but that pipeline
+    // produced cascading line offsets in the operator's terminal —
+    // most likely because (a) bytewise piping interleaved chunks
+    // across the two source streams, and (b) bun's pipe-mode stdout
+    // may not be a TTY so terminal driver \\n→\\r\\n translation
+    // doesn't kick in, leaving the cursor mid-line on each linefeed.
+    // Doing the regex test in Node and writing CRLF terminated lines
+    // sidesteps both problems and removes the grep dependency.
+    const matcher = pattern !== undefined ? new RegExp(pattern, 'i') : null;
+    const writeOutLine = (line: string, target: NodeJS.WriteStream): void => {
+        // Trim trailing whitespace defensively even though docker logs
+        // do not appear to add any — keeps output predictable across
+        // future log-format changes.
+        const cleaned = line.replace(/\s+$/, '');
+        if (matcher && !matcher.test(cleaned)) return;
+        // CRLF rather than bare LF so the terminal returns to column 1
+        // even when stdout is not a TTY (e.g. when bun runs the script
+        // and onlcr translation is disabled by the parent stdio).
+        target.write(`${cleaned}\r\n`);
+    };
 
-        // Bytewise piping both streams into grep.stdin causes inter-stream
-        // chunk interleaving (a stdout chunk that doesn't end at a newline
-        // gets followed by a stderr chunk, and grep treats the combined
-        // bytes as one mangled line). Run each stream through readline so
-        // we only ever write *complete* lines into grep.stdin.
-        const rlOut = readline.createInterface({
-            input: dockerProc.stdout,
-            crlfDelay: Number.POSITIVE_INFINITY
-        });
-        const rlErr = readline.createInterface({
-            input: dockerProc.stderr,
-            crlfDelay: Number.POSITIVE_INFINITY
-        });
-        const writeLine = (line: string): void => {
-            // Trim trailing whitespace so the API logger's fixed-width
-            // padding doesn't push the next log line into the previous
-            // line's column when the terminal wraps.
-            grep.stdin.write(`${line.replace(/\s+$/, '')}\n`);
-        };
-        rlOut.on('line', writeLine);
-        rlErr.on('line', writeLine);
+    const rlOut = readline.createInterface({
+        input: dockerProc.stdout,
+        crlfDelay: Number.POSITIVE_INFINITY
+    });
+    const rlErr = readline.createInterface({
+        input: dockerProc.stderr,
+        crlfDelay: Number.POSITIVE_INFINITY
+    });
 
-        let closed = 0;
-        const tryClose = (): void => {
-            if (++closed === 2) grep.stdin.end();
-        };
-        rlOut.on('close', tryClose);
-        rlErr.on('close', tryClose);
+    rlOut.on('line', (line) => writeOutLine(line, process.stdout));
+    rlErr.on('line', (line) => writeOutLine(line, process.stderr));
 
-        dockerProc.on('exit', (code) => {
-            if (code !== null && code !== 0) process.exitCode = code;
-        });
-        grep.on('exit', (code) => {
-            // grep exit 1 means "no matches" which is fine for follow mode.
-            if (code === 0 || code === 1) return;
-            log.warn(`grep exited with status ${code}`);
-        });
-    } else {
-        // No-grep streaming: route each output stream through readline
-        // + trim so we strip the API logger's trailing-whitespace
-        // padding the same way the grep path does. Without this the
-        // long padded lines wrap mid-row in the operator's terminal
-        // and the next line cascades out from the wrap point.
-        const rlOut = readline.createInterface({
-            input: dockerProc.stdout,
-            crlfDelay: Number.POSITIVE_INFINITY
-        });
-        const rlErr = readline.createInterface({
-            input: dockerProc.stderr,
-            crlfDelay: Number.POSITIVE_INFINITY
-        });
-        rlOut.on('line', (line) => {
-            process.stdout.write(`${line.replace(/\s+$/, '')}\n`);
-        });
-        rlErr.on('line', (line) => {
-            process.stderr.write(`${line.replace(/\s+$/, '')}\n`);
-        });
-        dockerProc.on('exit', (code) => {
-            if (code !== null && code !== 0) process.exitCode = code;
-        });
-    }
+    dockerProc.on('exit', (code) => {
+        if (code !== null && code !== 0) process.exitCode = code;
+    });
 
     // Forward Ctrl+C to the docker process so the follow stream terminates
     // cleanly when the operator hits ^C.
@@ -201,14 +173,14 @@ export async function logs(argv: ReadonlyArray<string>): Promise<void> {
 }
 
 /**
- * Remove trailing whitespace from every line of `text`, preserving the
- * line breaks themselves. Used in the captured-output path so output
- * does not cascade due to the API logger padding lines to a fixed
- * column width that exceeds the operator's terminal width.
+ * Trim trailing whitespace and ensure every line ends with CRLF.
+ * Used by the captured-output path to keep terminal rendering
+ * consistent regardless of whether stdout is a TTY (which controls
+ * whether the kernel's onlcr translation kicks in for bare LF).
  */
-function stripTrailingPad(text: string): string {
+function normaliseLines(text: string): string {
     return text
         .split('\n')
         .map((line) => line.replace(/\s+$/, ''))
-        .join('\n');
+        .join('\r\n');
 }
