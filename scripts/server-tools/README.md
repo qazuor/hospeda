@@ -105,20 +105,18 @@ The example file documents which command needs which value.
 | `redeploy`         | shipped  | Trigger a Coolify redeploy via the v4 REST API.                          |
 | `env-list`         | shipped  | List Coolify env vars on an app (redacted by default; `--reveal` shows values). |
 | `exec`             | shipped  | Run a command / open a shell / inspect env inside an app or DB container. |
-| `logs`             | shipped  | Tail / follow / grep logs for api / web / admin (replaces `*-logs`).     |
+| `logs`             | shipped  | Tail / follow / grep logs for api / web / admin.                         |
 | `psql`             | shipped  | One-shot or interactive psql against the Postgres container.             |
-| `app-restart`      | planned  | `docker restart` an app container without a full Coolify redeploy.       |
-| `db-counts`        | planned  | Row-count snapshot for the seeded reference tables.                      |
+| `db-counts`        | shipped  | Approximate row counts for every user table in the Postgres DB.          |
+| `app-restart`      | shipped  | `docker restart` an app container without a full Coolify redeploy.       |
+| `free-mem`         | shipped  | Host + per-container memory snapshot with warn threshold.                |
+| `health`           | shipped  | Run `scripts/smoke-test.sh` and report (prod / staging).                 |
+| `env-set`          | shipped  | Upsert a Coolify env var (creates or updates); `--secret` prompt mode.   |
+| `env-pull`         | shipped  | Export Coolify env vars to a local file (mode 0600; redacted by default). |
 | `db-backup-now`    | planned  | Trigger a `pg_dump` to R2 outside the daily schedule.                    |
 | `db-restore`       | planned  | List backups in R2 numbered, restore by number with confirmation.        |
-| `redeploy`         | planned  | Trigger a Coolify redeploy for api/web/admin via the Coolify REST API.   |
-| `env-list`         | planned  | List Coolify env vars for an app, values redacted.                       |
-| `env-set`          | planned  | Update a single Coolify env var; secret values prompt for confirmation.  |
-| `env-pull`         | planned  | Export Coolify env vars to a local file (redacted by default).           |
 | `cron-list`        | planned  | Numbered list of in-process node-cron jobs (name, schedule, last run).   |
 | `cron-trigger`     | planned  | Trigger a cron by its number from `cron-list`.                           |
-| `health`           | planned  | Run `scripts/smoke-test.sh` and report.                                  |
-| `free-mem`         | planned  | Host + per-container memory snapshot with warn threshold.                |
 
 `cron-edit` is intentionally NOT in V1 — overriding a schedule at runtime
 needs a `cron_schedule_overrides` table on the API side. Tracked as a V2

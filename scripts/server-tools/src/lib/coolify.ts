@@ -76,16 +76,21 @@ export function createCoolifyClient(options: CoolifyClientOptions = {}): Coolify
 
 class CoolifyClient {
     constructor(
-        private readonly baseUrl: string,
+        private readonly _baseUrl: string,
         private readonly token: string
     ) {}
+
+    /** Base URL the client is talking to (host + scheme, no trailing slash). */
+    baseUrl(): string {
+        return this._baseUrl;
+    }
 
     private async request<T>(
         method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
         path: string,
         init: { body?: unknown; query?: Record<string, string> } = {}
     ): Promise<T> {
-        const url = new URL(`${this.baseUrl}${path}`);
+        const url = new URL(`${this._baseUrl}${path}`);
         for (const [k, v] of Object.entries(init.query ?? {})) {
             url.searchParams.set(k, v);
         }

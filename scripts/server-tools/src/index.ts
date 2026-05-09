@@ -11,10 +11,16 @@
  */
 
 import * as p from '@clack/prompts';
+import { appRestart } from './commands/app-restart.ts';
 import { runContainerExec } from './commands/container-exec.ts';
+import { dbCounts } from './commands/db-counts.ts';
 import { dockerByName } from './commands/docker-by-name.ts';
 import { envList } from './commands/env-list.ts';
+import { envPull } from './commands/env-pull.ts';
+import { envSet } from './commands/env-set.ts';
 import { findCommand } from './commands/find.ts';
+import { freeMem } from './commands/free-mem.ts';
+import { health } from './commands/health.ts';
 import { logs } from './commands/logs.ts';
 import { psql } from './commands/psql.ts';
 import { redeploy } from './commands/redeploy.ts';
@@ -70,6 +76,36 @@ const COMMANDS: ReadonlyArray<Command> = [
         name: 'psql',
         summary: 'Run SQL against the Postgres container (inline / -f / --stdin / interactive).',
         run: psql
+    },
+    {
+        name: 'db-counts',
+        summary: 'Approximate row counts for every user table in the Postgres DB.',
+        run: dbCounts
+    },
+    {
+        name: 'app-restart',
+        summary: 'docker restart an app container without going through Coolify redeploy.',
+        run: appRestart
+    },
+    {
+        name: 'free-mem',
+        summary: 'Host RAM (free -m) + per-container CPU / memory snapshot.',
+        run: freeMem
+    },
+    {
+        name: 'health',
+        summary: 'Run scripts/smoke-test.sh against prod or staging.',
+        run: health
+    },
+    {
+        name: 'env-set',
+        summary: 'Upsert a Coolify env var (creates or updates).',
+        run: envSet
+    },
+    {
+        name: 'env-pull',
+        summary: 'Dump Coolify env vars to a local .env file (mode 0600).',
+        run: envPull
     }
 ];
 
