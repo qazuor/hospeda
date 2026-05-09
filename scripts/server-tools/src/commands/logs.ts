@@ -97,8 +97,12 @@ export async function logs(argv: ReadonlyArray<string>): Promise<void> {
 
     if (!useStream) {
         const result = await dockerLogs({ container, tail, since });
-        process.stdout.write(result.stdout);
-        if (result.stderr) process.stderr.write(result.stderr);
+        // Strip trailing whitespace per line so log lines that the API
+        // logger pads to a fixed column width don't wrap-cascade in the
+        // operator's terminal. Empty trailing line preserved as-is so a
+        // capture that ended on '\n' still ends on '\n'.
+        process.stdout.write(stripTrailingPad(result.stdout));
+        if (result.stderr) process.stderr.write(stripTrailingPad(result.stderr));
         if (result.exitCode !== 0) process.exit(result.exitCode);
         return;
     }
@@ -141,7 +145,10 @@ export async function logs(argv: ReadonlyArray<string>): Promise<void> {
             crlfDelay: Number.POSITIVE_INFINITY
         });
         const writeLine = (line: string): void => {
-            grep.stdin.write(`${line}\n`);
+            // Trim trailing whitespace so the API logger's fixed-width
+            // padding doesn't push the next log line into the previous
+            // line's column when the terminal wraps.
+            grep.stdin.write(`${line.replace(/\s+$/, '')}\n`);
         };
         rlOut.on('line', writeLine);
         rlErr.on('line', writeLine);
@@ -162,11 +169,25 @@ export async function logs(argv: ReadonlyArray<string>): Promise<void> {
             log.warn(`grep exited with status ${code}`);
         });
     } else {
-        // No-grep streaming: each output stream goes to its matching
-        // terminal stream. The OS treats these as independent so there is
-        // no inter-stream interleaving for the operator to deal with.
-        dockerProc.stdout.pipe(process.stdout);
-        dockerProc.stderr.pipe(process.stderr);
+        // No-grep streaming: route each output stream through readline
+        // + trim so we strip the API logger's trailing-whitespace
+        // padding the same way the grep path does. Without this the
+        // long padded lines wrap mid-row in the operator's terminal
+        // and the next line cascades out from the wrap point.
+        const rlOut = readline.createInterface({
+            input: dockerProc.stdout,
+            crlfDelay: Number.POSITIVE_INFINITY
+        });
+        const rlErr = readline.createInterface({
+            input: dockerProc.stderr,
+            crlfDelay: Number.POSITIVE_INFINITY
+        });
+        rlOut.on('line', (line) => {
+            process.stdout.write(`${line.replace(/\s+$/, '')}\n`);
+        });
+        rlErr.on('line', (line) => {
+            process.stderr.write(`${line.replace(/\s+$/, '')}\n`);
+        });
         dockerProc.on('exit', (code) => {
             if (code !== null && code !== 0) process.exitCode = code;
         });
@@ -177,4 +198,17 @@ export async function logs(argv: ReadonlyArray<string>): Promise<void> {
     process.on('SIGINT', () => {
         dockerProc.kill('SIGINT');
     });
+}
+
+/**
+ * Remove trailing whitespace from every line of `text`, preserving the
+ * line breaks themselves. Used in the captured-output path so output
+ * does not cascade due to the API logger padding lines to a fixed
+ * column width that exceeds the operator's terminal width.
+ */
+function stripTrailingPad(text: string): string {
+    return text
+        .split('\n')
+        .map((line) => line.replace(/\s+$/, ''))
+        .join('\n');
 }
