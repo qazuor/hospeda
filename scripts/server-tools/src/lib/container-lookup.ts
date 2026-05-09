@@ -42,6 +42,13 @@ type Strategy = () => Promise<ReadonlyArray<string>>;
  * `coolify.serviceName` (same value in this version). `coolify.name`
  * holds the application UUID, NOT the human name — do not use it for
  * label-based lookup.
+ *
+ * `excludeNamePrefixes` is a fail-safe used by the image / port
+ * strategies: Coolify deploys its own Postgres + Redis for its metadata
+ * store (`coolify-db`, `coolify-redis`, …) on the same Docker daemon,
+ * which would otherwise collide with the user-managed services. Every
+ * Coolify infrastructure container is named with the literal `coolify-`
+ * prefix, so excluding it cleanly separates infra from workload.
  */
 const KIND_CONFIG: Readonly<
     Record<
@@ -52,6 +59,7 @@ const KIND_CONFIG: Readonly<
             readonly imagePatterns?: ReadonlyArray<string>;
             readonly exposedPort?: number;
             readonly nameFallback?: string;
+            readonly excludeNamePrefixes?: ReadonlyArray<string>;
         }
     >
 > = {
@@ -73,13 +81,16 @@ const KIND_CONFIG: Readonly<
     postgres: {
         // Coolify-managed Postgres services do not always carry an
         // application-style resourceName label — fall back to the image
-        // pin first, then the standard exposed port.
+        // pin first, then the standard exposed port. Exclude `coolify-*`
+        // so we never accidentally pick Coolify's internal metadata DB.
         imagePatterns: ['postgres:17', 'postgres:16', 'postgres:15'],
-        exposedPort: 5432
+        exposedPort: 5432,
+        excludeNamePrefixes: ['coolify-', 'coolify']
     },
     redis: {
         imagePatterns: ['redis:7'],
-        exposedPort: 6379
+        exposedPort: 6379,
+        excludeNamePrefixes: ['coolify-', 'coolify']
     },
     coolify: {
         nameFallback: 'coolify'
@@ -112,20 +123,29 @@ async function strategyByLabel(resourceName: string): Promise<ReadonlyArray<stri
     return [...matches];
 }
 
-async function strategyByImage(patterns: ReadonlyArray<string>): Promise<ReadonlyArray<string>> {
+async function strategyByImage(
+    patterns: ReadonlyArray<string>,
+    excludeNamePrefixes: ReadonlyArray<string> = []
+): Promise<ReadonlyArray<string>> {
     const rows = await dockerPs({ format: '{{.Names}}\t{{.Image}}' });
     return rows
         .map((line) => line.split('\t'))
         .filter((parts): parts is [string, string] => parts.length === 2)
         .filter(([, image]) => patterns.some((p) => image.startsWith(p)))
+        .filter(([name]) => !excludeNamePrefixes.some((p) => name.startsWith(p)))
         .map(([name]) => name);
 }
 
-async function strategyByExposedPort(port: number): Promise<ReadonlyArray<string>> {
-    return dockerPs({
+async function strategyByExposedPort(
+    port: number,
+    excludeNamePrefixes: ReadonlyArray<string> = []
+): Promise<ReadonlyArray<string>> {
+    const matches = await dockerPs({
         format: '{{.Names}}',
         filters: [`expose=${port}`]
     });
+    if (excludeNamePrefixes.length === 0) return matches;
+    return matches.filter((name) => !excludeNamePrefixes.some((p) => name.startsWith(p)));
 }
 
 async function strategyByNamePrefix(prefix: string): Promise<ReadonlyArray<string>> {
@@ -167,14 +187,20 @@ export async function findContainer(kind: ContainerKind): Promise<string> {
     // Strategy 2: image ancestor.
     if (config.imagePatterns) {
         const patterns = config.imagePatterns;
-        const found = await tryStrategy(`image~=${patterns[0]}`, () => strategyByImage(patterns));
+        const exclude = config.excludeNamePrefixes ?? [];
+        const found = await tryStrategy(`image~=${patterns[0]}`, () =>
+            strategyByImage(patterns, exclude)
+        );
         if (found) return found;
     }
 
     // Strategy 3: exposed port.
     if (config.exposedPort !== undefined) {
         const port = config.exposedPort;
-        const found = await tryStrategy(`expose=${port}`, () => strategyByExposedPort(port));
+        const exclude = config.excludeNamePrefixes ?? [];
+        const found = await tryStrategy(`expose=${port}`, () =>
+            strategyByExposedPort(port, exclude)
+        );
         if (found) return found;
     }
 
