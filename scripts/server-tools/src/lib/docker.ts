@@ -82,7 +82,7 @@ export async function dockerInspectLabels(
  * Run `docker exec` against a container with the given argv. Defaults
  * to `inherit: false` so callers get back stdout to inspect.
  */
-export async function dockerExec(params: {
+export async function runInContainer(params: {
     readonly container: string;
     readonly argv: ReadonlyArray<string>;
     readonly tty?: boolean;

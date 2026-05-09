@@ -11,9 +11,12 @@
  */
 
 import * as p from '@clack/prompts';
+import { runContainerExec } from './commands/container-exec.ts';
 import { dockerByName } from './commands/docker-by-name.ts';
 import { envList } from './commands/env-list.ts';
 import { findCommand } from './commands/find.ts';
+import { logs } from './commands/logs.ts';
+import { psql } from './commands/psql.ts';
 import { redeploy } from './commands/redeploy.ts';
 import { log } from './lib/log.ts';
 
@@ -49,6 +52,21 @@ const COMMANDS: ReadonlyArray<Command> = [
         name: 'env-list',
         summary: 'List Coolify env vars for an app (redacted by default).',
         run: envList
+    },
+    {
+        name: 'exec',
+        summary: 'Run a command (or open a shell) inside an app/postgres/redis container.',
+        run: runContainerExec
+    },
+    {
+        name: 'logs',
+        summary: 'Tail / follow / grep app logs (api / web / admin).',
+        run: logs
+    },
+    {
+        name: 'psql',
+        summary: 'Run SQL against the Postgres container (inline / -f / --stdin / interactive).',
+        run: psql
     }
 ];
 
