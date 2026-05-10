@@ -15,6 +15,7 @@ import { appRestart } from './commands/app-restart.ts';
 import { runContainerExec } from './commands/container-exec.ts';
 import { dbCounts } from './commands/db-counts.ts';
 import { dockerByName } from './commands/docker-by-name.ts';
+import { envDelete } from './commands/env-delete.ts';
 import { envList } from './commands/env-list.ts';
 import { envPull } from './commands/env-pull.ts';
 import { envSet } from './commands/env-set.ts';
@@ -99,12 +100,17 @@ const COMMANDS: ReadonlyArray<Command> = [
     },
     {
         name: 'env-set',
-        summary: 'Upsert a Coolify env var (creates or updates).',
+        summary: 'Upsert a Coolify env var (creates or updates; production by default).',
         run: envSet
     },
     {
+        name: 'env-delete',
+        summary: 'Delete one or more Coolify env vars by key.',
+        run: envDelete
+    },
+    {
         name: 'env-pull',
-        summary: 'Dump Coolify env vars to a local .env file (mode 0600).',
+        summary: 'Dump Coolify env vars to a local dotenv file (mode 0600).',
         run: envPull
     }
 ];

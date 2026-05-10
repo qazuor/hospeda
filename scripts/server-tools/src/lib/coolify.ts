@@ -150,16 +150,32 @@ class CoolifyClient {
         );
     }
 
-    /** Update one env var by its UUID; pass only the fields you want to change. */
+    /**
+     * Update an env var. Coolify v4 identifies the var by `key` in the
+     * request body — NOT by env-var UUID in the path. Pass `is_preview`
+     * explicitly to scope the patch to a single environment; without it,
+     * Coolify updates whichever entry matches the key.
+     */
     updateEnvVar(
         applicationUuid: string,
-        envVarUuid: string,
+        key: string,
         patch: Partial<Pick<CoolifyEnvVar, 'value' | 'is_preview' | 'is_build_time' | 'is_literal'>>
     ): Promise<CoolifyEnvVar> {
         return this.request<CoolifyEnvVar>(
             'PATCH',
-            `/api/v1/applications/${applicationUuid}/envs/${envVarUuid}`,
-            { body: patch }
+            `/api/v1/applications/${applicationUuid}/envs`,
+            { body: { key, ...patch } }
+        );
+    }
+
+    /** Delete a single env var by its UUID. */
+    deleteEnvVar(
+        applicationUuid: string,
+        envVarUuid: string
+    ): Promise<{ readonly message: string }> {
+        return this.request<{ readonly message: string }>(
+            'DELETE',
+            `/api/v1/applications/${applicationUuid}/envs/${envVarUuid}`
         );
     }
 

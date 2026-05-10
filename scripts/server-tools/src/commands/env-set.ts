@@ -23,9 +23,13 @@ hops env-set <api|web|admin> <KEY> <VALUE>
 hops env-set <api|web|admin> <KEY> --secret
 
 Set or update a single Coolify env var. Creates the var if it does not
-exist; otherwise PATCHes its value.
+exist; otherwise PATCHes its value. By default targets the production
+environment only.
 
 Flags:
+  --preview     Target the preview environment instead of production.
+                Coolify keeps preview and production env vars
+                separate; this flag picks which one to write.
   --secret      Prompt for the value with masked input instead of
                 taking it on the command line (avoids logging the
                 value to your shell history).
@@ -36,6 +40,7 @@ Examples:
   hops env-set api FOO bar
   hops env-set api MERCADO_PAGO_TOKEN --secret
   hops env-set api LOG_LEVEL info --yes
+  hops env-set api EXPERIMENTAL_FLAG true --preview
 
 Notes:
   Coolify does NOT auto-restart the running container after a single
@@ -57,6 +62,7 @@ export async function envSet(argv: ReadonlyArray<string>): Promise<void> {
 
     const skipConfirm = args.includes('--yes');
     const useSecretPrompt = args.includes('--secret');
+    const targetIsPreview = args.includes('--preview');
     const positional = args.filter((a) => !a.startsWith('--'));
 
     const [kindRaw, key, valueArg] = positional;
@@ -104,18 +110,22 @@ export async function envSet(argv: ReadonlyArray<string>): Promise<void> {
         throw err;
     }
 
-    const match = existing.find((v) => v.key === key);
+    // Match against the requested environment (production by default,
+    // preview when --preview was passed). Coolify keeps separate entries
+    // per (key, is_preview) tuple so we have to filter by both.
+    const match = existing.find((v) => v.key === key && Boolean(v.is_preview) === targetIsPreview);
     const action = match ? 'UPDATE' : 'CREATE';
-    const preview = useSecretPrompt
+    const valuePreview = useSecretPrompt
         ? '***SECRET***'
         : value.length > 60
           ? `${value.slice(0, 57)}...`
           : value;
+    const envLabel = targetIsPreview ? 'preview' : 'production';
 
-    log.info(`${action} on ${kindRaw}: ${key} = ${preview}`);
+    log.info(`${action} on ${kindRaw} [${envLabel}]: ${key} = ${valuePreview}`);
 
     if (!skipConfirm) {
-        const ok = await confirm(`${action} env var '${key}' on '${kindRaw}'?`);
+        const ok = await confirm(`${action} env var '${key}' on '${kindRaw}' [${envLabel}]?`);
         if (!ok) {
             log.warn('Aborted.');
             return;
@@ -124,9 +134,9 @@ export async function envSet(argv: ReadonlyArray<string>): Promise<void> {
 
     try {
         if (match) {
-            await client.updateEnvVar(uuid, match.uuid, { value });
+            await client.updateEnvVar(uuid, key, { value, is_preview: targetIsPreview });
         } else {
-            await client.createEnvVar(uuid, { key, value });
+            await client.createEnvVar(uuid, { key, value, is_preview: targetIsPreview });
         }
     } catch (err) {
         if (err instanceof CoolifyApiError) {
@@ -135,7 +145,7 @@ export async function envSet(argv: ReadonlyArray<string>): Promise<void> {
         throw err;
     }
 
-    log.ok(`${key} ${match ? 'updated' : 'created'} on ${kindRaw}.`);
+    log.ok(`${key} ${match ? 'updated' : 'created'} on ${kindRaw} [${envLabel}].`);
     log.hint(
         'Run `hops redeploy <kind>` or `hops app-restart <kind>` for the change to take effect.'
     );

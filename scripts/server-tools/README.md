@@ -111,7 +111,8 @@ The example file documents which command needs which value.
 | `app-restart`      | shipped  | `docker restart` an app container without a full Coolify redeploy.       |
 | `free-mem`         | shipped  | Host + per-container memory snapshot with warn threshold.                |
 | `health`           | shipped  | Run `scripts/smoke-test.sh` and report (prod / staging).                 |
-| `env-set`          | shipped  | Upsert a Coolify env var (creates or updates); `--secret` prompt mode.   |
+| `env-set`          | shipped  | Upsert a Coolify env var (production by default; `--preview`, `--secret`, `--yes`). |
+| `env-delete`       | shipped  | Delete Coolify env vars by key; `--preview` / `--production` to scope.   |
 | `env-pull`         | shipped  | Export Coolify env vars to a local file (mode 0600; redacted by default). |
 | `db-backup-now`    | planned  | Trigger a `pg_dump` to R2 outside the daily schedule.                    |
 | `db-restore`       | planned  | List backups in R2 numbered, restore by number with confirmation.        |

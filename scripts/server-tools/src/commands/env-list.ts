@@ -107,9 +107,16 @@ export async function envList(argv: ReadonlyArray<string>): Promise<void> {
         return;
     }
 
-    const sorted = [...filtered].sort((a, b) => a.key.localeCompare(b.key));
+    const sorted = [...filtered].sort((a, b) => {
+        const byKey = a.key.localeCompare(b.key);
+        if (byKey !== 0) return byKey;
+        // Stable secondary sort so production entries always come before
+        // their preview siblings — easier to scan when both exist.
+        return Number(Boolean(a.is_preview)) - Number(Boolean(b.is_preview));
+    });
     for (const v of sorted) {
         const value = reveal ? (v.value ?? '') : v.value ? '***REDACTED***' : '<empty>';
-        process.stdout.write(`${v.key}=${value}\n`);
+        const env = v.is_preview ? '[preview]' : '[prod]   ';
+        process.stdout.write(`${env} ${v.key}=${value}\n`);
     }
 }
