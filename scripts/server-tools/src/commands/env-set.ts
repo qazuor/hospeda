@@ -22,14 +22,19 @@ const HELP = `
 hops env-set <api|web|admin> <KEY> <VALUE>
 hops env-set <api|web|admin> <KEY> --secret
 
-Set or update a single Coolify env var. Creates the var if it does not
-exist; otherwise PATCHes its value. By default targets the production
-environment only.
+Set or update a single Coolify env var.
+
+  CREATE: Coolify v4 mirrors a new env var into BOTH the production
+          and preview environments regardless of is_preview in the
+          POST body. After the create, run \`hops env-delete <kind>
+          <KEY> --preview\` if you want the preview copy gone.
+
+  UPDATE: scoped to whichever environment matches. By default targets
+          production; pass --preview to target the preview entry.
 
 Flags:
-  --preview     Target the preview environment instead of production.
-                Coolify keeps preview and production env vars
-                separate; this flag picks which one to write.
+  --preview     Target the preview environment instead of production
+                (UPDATE only — see CREATE caveat above).
   --secret      Prompt for the value with masked input instead of
                 taking it on the command line (avoids logging the
                 value to your shell history).
@@ -146,6 +151,11 @@ export async function envSet(argv: ReadonlyArray<string>): Promise<void> {
     }
 
     log.ok(`${key} ${match ? 'updated' : 'created'} on ${kindRaw} [${envLabel}].`);
+    if (!match) {
+        log.hint(
+            `Coolify mirrors new env vars into BOTH production and preview environments. Use \`hops env-delete ${kindRaw} ${key} --preview\` to drop the preview copy.`
+        );
+    }
     log.hint(
         'Run `hops redeploy <kind>` or `hops app-restart <kind>` for the change to take effect.'
     );

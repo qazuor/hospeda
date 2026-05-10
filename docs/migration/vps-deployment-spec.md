@@ -2993,13 +2993,15 @@ Después del cleanup, correr `scripts/smoke-test.sh` y validar 11/11 PASS.
 
 ### Paso 17.2 — Toolkit `scripts/server-tools/` (`hops`)
 
-> **Estado al 2026-05-09**: en curso. 7 commands shipped — `docker-by-name`, `find`, `redeploy`, `env-list`, the in-container run command, `logs`, `psql`. Stack: TypeScript on bun, ships como single-file binary (`bun build --compile`). Configuración en `scripts/server-tools/.env.local` (gitignored). Container lookup vía label `coolify.resourceName` con fallback a image ancestor + exposed port + name prefix; UUIDs nunca hard-coded. Decisión arquitectónica: V1 corre en VPS (operator SSHs in), V2 también desde laptop (SshRunner reemplaza LocalRunner detrás del Runner interface).
+> **Estado al 2026-05-10**: en curso. **14 commands shipped y smoke-tested en VPS prod**:
 >
-> **Pendiente antes de la próxima tanda de commands**: (a) installer concreto que ponga `hops` en `$PATH` para evitar el verbose `bun run src/index.ts <cmd>` (compilar binario y dropear en `~/.local/bin/hops` o `/usr/local/bin/hops`); (b) audit `-h`/`--help` en cada command para asegurar consistencia.
+> - **Tanda 1** (round 1, smoke 2026-05-09): `docker-by-name`, `find`, `redeploy`, `env-list`, `exec` (in-container run), `logs`, `psql`. Plus `--version`, `--help` standardized en todos, `install.sh` + `uninstall.sh`.
+> - **Tanda 2** (round 2, smoke 2026-05-10): `db-counts`, `app-restart`, `free-mem`, `health` (wraps `scripts/smoke-test.sh`), `env-set`, `env-pull`. Mid-smoke fix: Coolify v4 PATCH endpoint para env vars usa key-in-body, no env_uuid in path. DELETE sí usa env_uuid in path. Bonus: `env-delete` agregado para limpiar env vars con un comando.
+>
+> Stack: TypeScript on bun, ships como single-file binary (`bun build --compile`, ~98 MB con runtime embedded). Configuración en `scripts/server-tools/.env.local` (gitignored). Container lookup vía label `coolify.resourceName` con fallback a image ancestor + exposed port + name prefix; UUIDs nunca hard-coded. Decisión arquitectónica: V1 corre en VPS (operator SSHs in), V2 también desde laptop (SshRunner reemplaza LocalRunner detrás del Runner interface).
 >
 > **Tandas pendientes**:
 >
-> - Tanda 2 (chica): `db-counts`, `app-restart`, `free-mem`, `health` (wraps `scripts/smoke-test.sh`), `env-set`, `env-pull`.
 > - Tanda 3 (grande): `db-backup-now`, `db-restore` (R2 SDK + GPG decrypt + numbered-list interactive picker). Requiere R2_* env vars + BACKUP_PASSPHRASE.
 > - Tanda 4: `cron-list`, `cron-trigger` (read-only contra admin endpoints existentes). `cron-edit` queda diferido a V2 (necesita tabla `cron_schedule_overrides` del lado API).
 >
@@ -3008,8 +3010,11 @@ Después del cleanup, correr `scripts/smoke-test.sh` y validar 11/11 PASS.
 > - El hook de seguridad del repo rechaza cualquier TS file con substring "(en inglés "exec" seguido de paréntesis)" como posible inyección. Por eso el helper interno se llama `runInContainer` y el comando container-run vive en `container-exec.ts`. El nombre user-facing del command sigue siendo el corto.
 > - bun's pipe stdout no es TTY → bare LF no resetea columna → cursor cascade en log lines wrapped. Fix: emitir CRLF explícito.
 > - bun main exits inmediatamente cuando el async setup resolves, sin esperar children abiertos. Para follow-mode commands: bloquear con `await new Promise(resolve => child.on('exit', resolve))`.
+> - execa `stripFinalNewline: true` (default) cortaba el último `\n` del output capturado. Resultado: el último log/SQL row quedaba pegado al prompt del shell. Fix: `normaliseLines` garantiza CRLF final cuando hay contenido.
+> - Coolify v4 env API tiene path asimétrico: PATCH va a `/applications/{uuid}/envs` (key en body), DELETE va a `/applications/{uuid}/envs/{env_uuid}` (uuid en path).
+> - Coolify v4 mirror-creates env vars en BOTH production and preview envs sobre POST, ignorando el `is_preview` flag del body. Confirmado por smoke 2026-05-10. Solo UPDATE respeta `is_preview` para targetear una entry. `env-delete` y `env-list` reflejan esto con marcador `[prod]` / `[preview]` por entry.
 >
-> **Engram topic**: `vps-migration/phase-17.2-hops-checkpoint` para state completo. **Project memory**: `project_phase_17_2_hops.md`.
+> **Engram topic**: `vps-migration/phase-17.2-hops-checkpoint` para state completo.
 
 Ver Task #21.
 
