@@ -25,6 +25,7 @@ import { health } from './commands/health.ts';
 import { logs } from './commands/logs.ts';
 import { psql } from './commands/psql.ts';
 import { redeploy } from './commands/redeploy.ts';
+import { update } from './commands/update.ts';
 import { log } from './lib/log.ts';
 
 /** Toolkit version. Keep in sync with package.json `version`. */
@@ -112,6 +113,11 @@ const COMMANDS: ReadonlyArray<Command> = [
         name: 'env-pull',
         summary: 'Dump Coolify env vars to a local dotenv file (mode 0600).',
         run: envPull
+    },
+    {
+        name: 'update',
+        summary: 'git pull the repo and reinstall the hops binary in one step.',
+        run: update
     }
 ];
 
