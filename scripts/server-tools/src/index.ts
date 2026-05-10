@@ -13,7 +13,9 @@
 import * as p from '@clack/prompts';
 import { appRestart } from './commands/app-restart.ts';
 import { runContainerExec } from './commands/container-exec.ts';
+import { dbBackupNow } from './commands/db-backup-now.ts';
 import { dbCounts } from './commands/db-counts.ts';
+import { dbRestore } from './commands/db-restore.ts';
 import { dockerByName } from './commands/docker-by-name.ts';
 import { envDelete } from './commands/env-delete.ts';
 import { envList } from './commands/env-list.ts';
@@ -83,6 +85,16 @@ const COMMANDS: ReadonlyArray<Command> = [
         name: 'db-counts',
         summary: 'Approximate row counts for every user table in the Postgres DB.',
         run: dbCounts
+    },
+    {
+        name: 'db-backup-now',
+        summary: 'Trigger a Postgres backup outside the daily cron and upload to R2.',
+        run: dbBackupNow
+    },
+    {
+        name: 'db-restore',
+        summary: 'Pick an R2 backup and restore it into the Postgres container (destructive).',
+        run: dbRestore
     },
     {
         name: 'app-restart',

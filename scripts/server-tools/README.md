@@ -115,8 +115,8 @@ The example file documents which command needs which value.
 | `env-delete`       | shipped  | Delete Coolify env vars by key; `--preview` / `--production` to scope.   |
 | `env-pull`         | shipped  | Export Coolify env vars to a local file (mode 0600; redacted by default). |
 | `update`           | shipped  | git pull the repo and reinstall the hops binary in one step.             |
-| `db-backup-now`    | planned  | Trigger a `pg_dump` to R2 outside the daily schedule.                    |
-| `db-restore`       | planned  | List backups in R2 numbered, restore by number with confirmation.        |
+| `db-backup-now`    | shipped  | Trigger a `pg_dump` to R2 (`manual/` prefix) outside the daily schedule. |
+| `db-restore`       | shipped  | Pick a backup from R2 and `pg_restore` into the container (auto pre-restore snapshot, destructive). |
 | `cron-list`        | planned  | Numbered list of in-process node-cron jobs (name, schedule, last run).   |
 | `cron-trigger`     | planned  | Trigger a cron by its number from `cron-list`.                           |
 
