@@ -3024,19 +3024,60 @@ Ver Task #21.
 
 ### Paso 17.3 — Migración de tools `env:sync`
 
-Scripts existentes (`pnpm env:pull/push/sync`) apuntan a Vercel API. Decidir: (a) reescribir contra Coolify API (REST con bearer token, GET/PUT env vars per app — preferido), (b) eliminar y manejar manualmente en Coolify UI, (c) git-based con sops/age. Recomendado: opción (a). Documentar en `docs/guides/env-management.md`. Ver Task #22.
+**DONE** (2026-05-11). Decisión final: **opción (b) modificada — deprecar los scripts Vercel-based, reemplazar workflow con `hops env-*` en VPS**. Razones para no rewrittear contra Coolify API: (a) hops env-list/env-set/env-pull/env-delete ya cubre el flow completo y está smoke-tested, (b) ejecutar env management desde laptop tiene peor security posture (secrets cruzando red), (c) el workflow real post-VPS es ops-from-VPS no dev-from-laptop.
+
+Cambios:
+
+- `scripts/env/{pull,push,sync,check}.ts` → reemplazados por **deprecation stubs** con mensajes accionables que apuntan a hops + `docs/guides/env-management.md`.
+- `scripts/env/utils/{vercel-api,dotenv,formatters,prompts,registry}.ts` y `__tests__/check.test.ts` → eliminados (Vercel-coupled, sin replacement directo).
+- `pnpm env:check:registry` (bash → vitest cross-validation) **se mantiene** — local, no remote, válido como CI gate.
+- `scripts/cli/registry.ts` — removidas entradas `env:pull` y `env:push`, reemplazada `env:check` por `env:check:registry`.
+- `CLAUDE.md` — sección "Adding a new environment variable" actualizada con el flow `hops env-set` o Coolify UI.
+- Nuevo doc: [`docs/guides/env-management.md`](../guides/env-management.md) — three layers (registry / schema / values), local dev, prod via hops o Coolify UI, deprecated commands table, audit checklist quarterly.
 
 ### Paso 17.4 — Audit + management de crons
 
-Verificar que TODOS los crons productivos corren desde el VPS (no quedaron en QStash/Vercel orphans). Crear `scripts/server-tools/cron-manage.ts` para list/enable/disable/reschedule de crons in-process (vía endpoints admin de la api) y crons VPS (vía `crontab -l/-e` wrappers). Documentar en `docs/guides/cron-management.md`. Ver Task #23.
+**DONE doc + tooling parcial** (2026-05-11). Documento vive en [`docs/guides/cron-management.md`](../guides/cron-management.md) y cubre: inventory de los 2 layers (in-process API + VPS host), comandos de inspección, audit checklist quarterly, y procedimiento para agregar nuevos crons.
+
+In-process management ya cubierto por `hops cron-list` y `hops cron-trigger` (Tanda 4 toolkit). Enable/disable/reschedule **runtime** quedan diferidos a V2 (necesitan tabla `cron_schedule_overrides` API-side); para cambiarlos hoy hay que editar `apps/api/src/cron/jobs/<name>.ts` + redeploy.
+
+VPS-host management vive en `crontab -l/-e` directo. Wrapper hops adicional descartado por low value (operator puede usar crontab nativo). Inventory actualizado:
+
+- Daily backup (06:00 UTC = 03:00 ART)
+- Weekly restart (07:00 UTC dom = 04:00 ART dom — pendiente install crontab, ver Paso 17.6)
+
+Audit de orphans (Vercel scheduled functions, QStash schedules, GitHub Actions cron) documentado como check semestral.
 
 ### Paso 17.5 — Disaster recovery playbook
 
-Documento `docs/migration/disaster-recovery.md` con runbooks para 4 scenarios: (1) VPS muere completo, (2) Postgres corrupto pero VPS OK, (3) Coolify muere, (4) 1 sola app en crash loop. RTO target prod < 1h, RPO 24h. Test trimestral del runbook contra DB temporal en staging para validar que los pasos siguen funcionando. Ver Task #24.
+**DONE** (2026-05-11). Documento vive en [`docs/migration/disaster-recovery.md`](./disaster-recovery.md). Cubre 5 scenarios (los 4 originales + scenario 5: backup chain broken) con runbooks numerados step-by-step, verification, y rollback path para cada uno. Cross-references todos los hops commands relevantes. Incluye comms templates y un quarterly tabletop test usando `hops db-restore --target-db postgres_restore_test` para validar el flow sin tocar prod. RTO target prod < 1h, RPO 24h.
 
 ### Paso 17.6 — Restart schedule semanal
 
-Schedule cron VPS los domingos 04:00 UTC-3 (low traffic) que hace `coolify restart` de api/web/admin para limpiar memory leaks acumulados + connection pools stale. Antes del restart confirmar que el backup diario corrió OK. Implementación: `scripts/server-tools/weekly-restart.sh` + crontab entry. Sessions Better Auth deben sobrevivir (DB-backed). Ver Task #25.
+**DONE script** (2026-05-11), pendiente install crontab en VPS. Script vive en [`scripts/server-tools/weekly-restart.sh`](../../scripts/server-tools/weekly-restart.sh). Hace `hops app-restart api/web/admin --yes` secuencialmente con 30s settle + smoke (`curl --max-time 15`) entre cada uno. **Backup safety check**: aborta el restart si el backup log (`/var/log/hospeda-backup.log`) tiene mtime > 28h. Logs a `/var/log/hospeda-weekly-restart.log`. Optional heartbeat via `WEEKLY_RESTART_HEARTBEAT_URL`.
+
+**Para activar en VPS** (operator action):
+
+```bash
+ssh -p 2222 qazuor@216.238.103.219
+# Asegurate que el script está executable
+chmod +x ~/hospeda/scripts/server-tools/weekly-restart.sh
+
+# Agregá la entry de crontab
+crontab -e
+# Agregá la línea:
+0 7 * * 0 /home/qazuor/hospeda/scripts/server-tools/weekly-restart.sh >> /var/log/hospeda-weekly-restart.log 2>&1
+# (07:00 UTC = 04:00 ART domingo, low traffic window)
+
+# Validación manual primero:
+~/hospeda/scripts/server-tools/weekly-restart.sh
+# debería: chequear backup log → restart api → smoke api → restart web → smoke web → restart admin → smoke admin → exit 0
+
+# Opcional: agregá heartbeat URL en /etc/environment o en el cron entry:
+# 0 7 * * 0 WEEKLY_RESTART_HEARTBEAT_URL=https://... /home/qazuor/.../weekly-restart.sh
+```
+
+Sessions Better Auth sobreviven (DB-backed en `sessions` table).
 
 ### Paso 17.7 — Disable auto-deploy on push
 
