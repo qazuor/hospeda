@@ -13,6 +13,8 @@
 import * as p from '@clack/prompts';
 import { appRestart } from './commands/app-restart.ts';
 import { runContainerExec } from './commands/container-exec.ts';
+import { cronList } from './commands/cron-list.ts';
+import { cronTrigger } from './commands/cron-trigger.ts';
 import { dbBackupNow } from './commands/db-backup-now.ts';
 import { dbCounts } from './commands/db-counts.ts';
 import { dbRestore } from './commands/db-restore.ts';
@@ -130,6 +132,16 @@ const COMMANDS: ReadonlyArray<Command> = [
         name: 'update',
         summary: 'git pull the repo and reinstall the hops binary in one step.',
         run: update
+    },
+    {
+        name: 'cron-list',
+        summary: 'Numbered list of node-cron jobs registered in the running API process.',
+        run: cronList
+    },
+    {
+        name: 'cron-trigger',
+        summary: 'Trigger a registered cron job by index, name, or interactive picker.',
+        run: cronTrigger
     }
 ];
 

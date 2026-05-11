@@ -117,8 +117,8 @@ The example file documents which command needs which value.
 | `update`           | shipped  | git pull the repo and reinstall the hops binary in one step.             |
 | `db-backup-now`    | shipped  | Trigger a `pg_dump` to R2 (`manual/` prefix) outside the daily schedule. |
 | `db-restore`       | shipped  | Pick a backup from R2 and `pg_restore` into the container (auto pre-restore snapshot, destructive). |
-| `cron-list`        | planned  | Numbered list of in-process node-cron jobs (name, schedule, last run).   |
-| `cron-trigger`     | planned  | Trigger a cron by its number from `cron-list`.                           |
+| `cron-list`        | shipped  | Numbered list of node-cron jobs registered in the running API process.   |
+| `cron-trigger`     | shipped  | Trigger a cron by index, name, or interactive picker (`--dry-run`, `--yes`). |
 
 `cron-edit` is intentionally NOT in V1 — overriding a schedule at runtime
 needs a `cron_schedule_overrides` table on the API side. Tracked as a V2
