@@ -29,14 +29,21 @@
     background-color: rgba(255 255 255 / 0.18);
 }
 
+/* When the header is in scrolled state (white background), the sign-in CTA
+   needs to stand out against the surface — the previous ghost-button look
+   (border at 20% opacity, transparent fill) was almost invisible in light
+   mode because both border and text use --core-foreground in the same
+   value space as the surface. Switch to a filled primary button so the
+   action reads clearly. Matches the SettingsDropdown sign-in link styling
+   for consistency across the navbar entry points. */
 .signInLinkScrolled {
-    border: 1px solid oklch(from var(--core-foreground) l c h / 0.2);
-    color: var(--core-foreground);
-    background-color: transparent;
+    border: 1px solid transparent;
+    color: var(--primary-foreground, #fff);
+    background-color: var(--brand-primary);
 }
 
 .signInLinkScrolled:hover {
-    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+    background-color: oklch(from var(--brand-primary) calc(l - 0.05) c h);
 }
 
 .signInLink:focus-visible {
