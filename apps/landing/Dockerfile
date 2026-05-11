@@ -20,10 +20,14 @@ RUN pnpm install --frozen-lockfile
 
 # ----- build stage -----------------------------------------------------------
 # Astro static build. The site URL is baked into canonical/OG tags at build
-# time; Coolify injects HOSPEDA_LANDING_SITE_URL via --build-arg.
+# time and the API URL is baked into the client-side newsletter form. Coolify
+# injects both via --build-arg so the same Dockerfile can target staging or
+# production by switching the API base.
 FROM base AS build
 ARG HOSPEDA_LANDING_SITE_URL=https://hospeda.com.ar
-ENV HOSPEDA_LANDING_SITE_URL=$HOSPEDA_LANDING_SITE_URL
+ARG PUBLIC_API_URL=https://api.hospeda.com.ar
+ENV HOSPEDA_LANDING_SITE_URL=$HOSPEDA_LANDING_SITE_URL \
+    PUBLIC_API_URL=$PUBLIC_API_URL
 COPY --from=deps /repo /repo
 RUN pnpm turbo run build --filter=hospeda-landing
 
