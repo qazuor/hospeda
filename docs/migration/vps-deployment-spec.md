@@ -3021,17 +3021,32 @@ staging-api.hospeda.com.ar  → API staging cuando llegue tracción
 **Estado**:
 
 - **Phase 1: DONE (2026-05-11)**. `apps/landing/` Astro static creada (commit `ef77db902`), Coolify resource `hospeda-landing-prod` provisionado y sirviendo `hospeda.com.ar` + `www.hospeda.com.ar`. Web movido a `staging.hospeda.com.ar` con cert Let's Encrypt válido. robots.txt dinámico (`apps/web/src/pages/robots.txt.ts`, commit `a5cdd30b0`) devuelve `Disallow: /` cuando host coincide con `HOSPEDA_NOINDEX_HOSTS` (default `staging.hospeda.com.ar`); permissive en cualquier otro host. Cloudflare Managed Content bonus blockea AI scrapers (GPTBot, ClaudeBot, Bytespider, etc.) gratis en apex.
-- **Phase 2: pendiente**. Refinamiento de landing (hero copy, value prop, features, footer real, /gracias) + endpoint `POST /api/v1/public/newsletter` con Brevo + crear lista en Brevo (user task) + activar form.
+- **Phase 2: DONE (2026-05-11)**. Newsletter endpoint `POST /api/v1/public/newsletter` con Zod + sanitization + honeypot + Brevo Contacts API (`updateEnabled: true` para idempotency) + 6 tests integration (commit `b1ead7d6c`). Env var `HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID` (renamed para separar de futuro post-launch list, commit `5d24f08c4`). Form funcional en `apps/landing/src/components/NewsletterForm.astro` (progressive enhancement, loading/error states, honeypot CSS-hidden) + `/gracias` page con echo del email (commit `ffea56a09`). ValueProp + Features (3 cards con inline SVG icons) + JSON-LD Organization schema (commit `810da7ae6`). OG image 1200x630 generada con sharp + gradient overlay (commit `8c2901a41`). Validado end-to-end: form en hospeda.com.ar → endpoint → Brevo list (2 signups confirmados).
+- **Defense-in-depth**: X-Robots-Tag via Traefik labels en los 3 staging hosts (web global label porque solo sirve staging; admin/api router-level porque también sirven prod-naming). Validado con curls que prod-naming NO recibe el header.
 - **Staging real con DB separada**: deferred indefinidamente hasta "first paying customer + RAM bump".
+- **Pendiente menor**: seed de example data en staging (DB tiene solo super-admin + system + test users de signups, faltan destinations/accommodations/events/posts para demo realistic). Tracked en engram `vps-migration/pre-launch-sprint-final-state` paso 2.
 
-**Lecciones de Phase 1**:
+**Lecciones de Phase 1 + 2**:
 
 - **Coolify Domains field**: SIEMPRE usar formato URL completa `https://dominio.com`. Sin `https://` Coolify parsea como `PathPrefix` y genera rule Traefik con `Host('')` vacío que rompe routing y emisión de cert.
-- **Let's Encrypt + Cloudflare proxy**: HTTP-01 challenge no llega al origin si CF proxy está 🟠. Workaround manual: bajar proxy a 🔘 DNS only por ~5 min, restart container, esperar emisión, volver a 🟠. **Phase 2 backlog**: configurar DNS-01 challenge con Cloudflare API token en Coolify para que la emisión sea independiente del estado del proxy.
-- **Astro `output: 'server'` + middleware**: páginas prerenderizadas se sirven via `serve-static` ANTES del global middleware. Headers seteados ahí (CSP, X-Robots-Tag) NO aplican a esas rutas. Para policies de host (noindex), usar endpoints dinámicos con `prerender = false`. **Phase 2 backlog**: agregar Traefik label para inyectar `X-Robots-Tag` en TODAS las responses staging (HTML, JSON, assets) como defense-in-depth.
-- **Disk + memoria**: 56GB de Docker build cache acumulado bloqueó el primer deploy del web (no por disk full sino por memoria reservada por el cache). `docker system prune -f` resolvió. **Backlog**: cron mensual con `prune` automático.
+- **Let's Encrypt + Cloudflare proxy**: HTTP-01 challenge no llega al origin si CF proxy está 🟠. Workaround manual: bajar proxy a 🔘 DNS only por ~5 min, restart container, esperar emisión, volver a 🟠.
+- **Astro `output: 'server'` + middleware**: páginas prerenderizadas se sirven via `serve-static` ANTES del global middleware. Headers seteados ahí (CSP, X-Robots-Tag) NO aplican a esas rutas. Para policies de host (noindex), usar endpoints dinámicos con `prerender = false`.
+- **Defense-in-depth router-level Traefik labels**: para un container que sirve múltiples dominios (admin/api con prod-naming + staging alias), atar el middleware noindex solo al router específico del staging (índice del dominio en Coolify UI). Web es seguro aplicar global porque solo sirve staging post-Phase-1.
+- **Disk + memoria**: 56GB de Docker build cache acumulado bloqueó el primer deploy del web (no por disk full sino por memoria reservada por el cache). `docker system prune -f` resolvió. `hops prune` agregado on-demand + step en `weekly-restart.sh`.
+- **OAuth callbackURL behind reverse proxy** (Phase 2): Astro Node detrás de Traefik, `Astro.url.origin` server-side puede resolver a `https://localhost` porque el proxy no siempre forwardea el Host header. URLs absolutas construidas server-side terminan como `https://localhost/...` y Better Auth las rechaza con `INVALID_CALLBACKURL`. Solución robusta: construir callbackURL en el CLIENT (`window.location.origin`), NUNCA en el server.
+- **Component duplication trap**: `apps/web/src/components/auth/SignIn.client.tsx` y `SignUp.client.tsx` son STANDALONE forks que NO usan `@repo/auth-ui` (comment explícito). Cambios en auth-ui no se reflejan en web hasta que se duplican manualmente. Auditar AMBOS cuando se toca el auth flow.
+- **Better Auth `accountLinking.trustedProviders`**: necesario para que mismo email cross-provider (Google + Facebook) linkee automáticamente. Sin esto, el segundo provider falla con `account_not_linked`.
+- **CORS allow-list ≠ Better Auth trustedOrigins**: dos listas separadas. Hospeda las unifica via `HOSPEDA_EXTRA_TRUSTED_ORIGINS` que se mergea con `API_CORS_ORIGINS` en `getCorsConfig()` y se appendea a Better Auth `parseTrustedOrigins()`.
 
-**Engram**: `vps-migration/pre-launch-landing-strategy` para state completo + lecciones learned.
+**Backlog Phase 3 / pre-merge audit**:
+
+1. **Tanda 4 hops smoke** (cron-list + cron-trigger): código done pre-sprint, smoke blocked en VPS prod auth. Requiere user SUPER_ADMIN + cookie pasted-from-browser en `~/scripts/server-tools/.env.local`. Detalle paso a paso en engram `vps-migration/pre-launch-sprint-final-state` (sección "1. Tanda 4 hops smoke").
+2. **Seed de example data en staging**: la DB de staging (= prod, comparte schema) está casi vacía después de la migración. Faltan destinations/accommodations/events/posts para demo. Correr `pnpm db:seed` o equivalente con BACKUP previo (`hops db-backup-now`).
+3. **Audit exhaustivo pre-merge**: leer spec doc full + cross-check vs código en `chore/vps-migration`. Verificar (a) cada Paso está realmente done en código, (b) no quedan TODOs/FIXMEs significativos del sprint, (c) no hay items deferred que se cierran fácil ahora, (d) sin gaps de seguridad. Detalle en engram.
+4. **DNS-01 challenge con Cloudflare API token en Coolify**: elimina el baile manual de bajar proxy cada vez que se agrega subdominio. ~1-2h setup con riesgo de troubleshooting. Defer until next subdomain addition feels painful.
+5. **Stale comment en `ci.yml` cd-production**: arreglado durante el sprint (commit `db6c7ff75`). Done.
+
+**Engram**: `vps-migration/pre-launch-sprint-final-state` (état completo + 3 pendientes detallados). Otros: `pre-launch-landing-strategy`, `staging-environment-complete`, `defense-in-depth-staging`, `phase-2-newsletter`, `oauth-alias-host-debugging`.
 
 ### Paso 17.2 — Toolkit `scripts/server-tools/` (`hops`)
 
