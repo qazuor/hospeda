@@ -98,16 +98,31 @@ export const SignInForm = ({
         try {
             setIsLoading(true);
             setError(null);
-            // Build absolute callback URLs so Better Auth honors the
-            // browser's current origin (e.g. staging.hospeda.com.ar)
-            // instead of falling back to HOSPEDA_SITE_URL. The success
-            // and error callbacks both point back at the page that
-            // initiated the flow so the user lands where they expect.
+            // Build absolute callback URLs on the CLIENT, never on the
+            // server. When the web app runs Astro Node behind a reverse
+            // proxy, `Astro.url.origin` in SSR can resolve to
+            // `https://localhost` because the proxy doesn't always
+            // forward the original Host header — and any absolute URL
+            // built from that ends up rejected by Better Auth as
+            // INVALID_CALLBACKURL. The browser always knows its real
+            // origin, so we anchor on `window.location.origin` here and
+            // strip any host that may have leaked into `redirectTo`
+            // (keeping only the path / query / hash).
             const origin = window.location.origin;
-            const successPath = redirectTo ?? window.location.pathname ?? '/';
-            const callbackURL = successPath.startsWith('http')
-                ? successPath
-                : `${origin}${successPath.startsWith('/') ? '' : '/'}${successPath}`;
+            const rawTarget = redirectTo ?? window.location.pathname ?? '/';
+            let path = rawTarget;
+            if (path.startsWith('http')) {
+                try {
+                    const parsed = new URL(path);
+                    path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
+                } catch {
+                    path = '/';
+                }
+            }
+            if (!path.startsWith('/')) {
+                path = `/${path}`;
+            }
+            const callbackURL = `${origin}${path}`;
             const errorCallbackURL = `${origin}${window.location.pathname || '/'}`;
             await signIn.social({ provider, callbackURL, errorCallbackURL });
         } catch (err) {

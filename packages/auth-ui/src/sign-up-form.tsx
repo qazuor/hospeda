@@ -102,16 +102,27 @@ export const SignUpForm = ({
         try {
             setIsLoading(true);
             setError(null);
-            // Build absolute callback URLs so Better Auth honors the
-            // browser's current origin (e.g. staging.hospeda.com.ar)
-            // instead of falling back to HOSPEDA_SITE_URL. Both success
-            // and error callbacks anchor on the same origin so the user
-            // lands back where they started the flow.
+            // Build absolute callback URLs on the CLIENT. Astro SSR
+            // behind a reverse proxy can resolve `Astro.url.origin` to
+            // `https://localhost`, and any absolute URL built from that
+            // is rejected by Better Auth as INVALID_CALLBACKURL. The
+            // browser always knows its real origin — anchor on it and
+            // strip any host that may have leaked into `redirectTo`.
             const origin = window.location.origin;
-            const successPath = redirectTo ?? window.location.pathname ?? '/';
-            const callbackURL = successPath.startsWith('http')
-                ? successPath
-                : `${origin}${successPath.startsWith('/') ? '' : '/'}${successPath}`;
+            const rawTarget = redirectTo ?? window.location.pathname ?? '/';
+            let path = rawTarget;
+            if (path.startsWith('http')) {
+                try {
+                    const parsed = new URL(path);
+                    path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
+                } catch {
+                    path = '/';
+                }
+            }
+            if (!path.startsWith('/')) {
+                path = `/${path}`;
+            }
+            const callbackURL = `${origin}${path}`;
             const errorCallbackURL = `${origin}${window.location.pathname || '/'}`;
             await signIn.social({ provider, callbackURL, errorCallbackURL });
         } catch (err) {
