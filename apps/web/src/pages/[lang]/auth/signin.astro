@@ -14,7 +14,6 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { getSiteUrl } from '@/lib/env';
 import AuthLayout from '@/layouts/AuthLayout.astro';
 import { SignIn } from '@/components/auth/SignIn.client';
 
@@ -37,10 +36,15 @@ const description = t(
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 // Determine post-login redirect target from `returnUrl` query param.
+// Anchor on `Astro.url.origin` (the actual request host — e.g.
+// staging.hospeda.com.ar when the page is served from there) instead of
+// HOSPEDA_SITE_URL, so OAuth flows initiated on a host alias don't
+// silently redirect users to the canonical apex post-login. The client
+// island still falls back to window.location.origin if redirectTo is
+// undefined, but here we want a known-good absolute URL up front.
 const returnPath =
     Astro.url.searchParams.get('returnUrl') || buildUrl({ locale, path: 'mi-cuenta' });
-const siteOrigin = getSiteUrl();
-const redirectTo = new URL(returnPath, siteOrigin).href;
+const redirectTo = new URL(returnPath, Astro.url.origin).href;
 
 // Localized secondary link labels via i18n
 const noAccountLabel = t('auth-ui.signIn.dontHaveAccount', "Don't have an account?");

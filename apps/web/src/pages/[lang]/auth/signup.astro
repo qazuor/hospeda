@@ -15,7 +15,6 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { getSiteUrl } from '@/lib/env';
 import AuthLayout from '@/layouts/AuthLayout.astro';
 import { SignUp } from '@/components/auth/SignUp.client';
 
@@ -38,10 +37,13 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 // the account is created without an active session (email verification is
 // required before sign-in). The verify-email-sent page reassures the user
 // and offers to resend the verification email.
-const siteOrigin = getSiteUrl();
+//
+// Anchor on `Astro.url.origin` (the actual request host) so users
+// signing up from staging.hospeda.com.ar don't get bounced to the
+// canonical apex post-registration.
 const redirectTo = new URL(
     buildUrl({ locale, path: 'auth/verify-email-sent' }),
-    siteOrigin
+    Astro.url.origin
 ).href;
 
 // Localized secondary link labels via i18n
