@@ -395,6 +395,27 @@ for (const card of cards) {
 		cursor: default;
 	}
 
+	/* Mobile: fixed bottom tab bar — see alojamientos/index.astro for the
+	 * full rationale (Airbnb/Booking pattern, z-index choices, hide rules). */
+	@media (max-width: 767px) {
+		.view-toggle {
+			position: fixed;
+			bottom: 1.5rem;
+			left: 50%;
+			transform: translateX(-50%);
+			z-index: 150;
+			margin: 0;
+			box-shadow: 0 4px 16px oklch(0 0 0 / 0.18);
+		}
+
+		:global(html[data-filters-drawer-open]) .view-toggle,
+		:global(html[data-search-panel-open]) .view-toggle,
+		:global(html[data-mobile-menu-open]) .view-toggle {
+			visibility: hidden;
+			pointer-events: none;
+		}
+	}
+
 	.acc-listing-map {
 		width: 100%;
 		min-height: 600px;

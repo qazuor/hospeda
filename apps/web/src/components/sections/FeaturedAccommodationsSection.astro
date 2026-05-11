@@ -19,6 +19,7 @@ import { accommodationsApi, toAccommodationCardProps } from '@/lib/api';
 import type { AccommodationCardData } from '@/lib/api/transforms';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
+import ScrollableNav from '@/components/shared/ui/ScrollableNav.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { webLogger } from '@/lib/logger';
@@ -68,7 +69,10 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
 
     <!-- Accommodation type filter badges: per-type colour identity,
          clickable links to the filtered listing. -->
-    <div class="accommodations__types" aria-label={t('home.featuredAccommodations.typesLabel', 'Filtrar por tipo')}>
+    <ScrollableNav
+      ariaLabel={t('home.featuredAccommodations.typesLabel', 'Filtrar por tipo')}
+      innerClass="accommodations__types"
+    >
       {ACCOMMODATION_TYPES.map((type) => (
         <AccommodationTypeBadge
           type={type}
@@ -77,7 +81,7 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
           href={buildUrl({ locale, path: `/alojamientos/tipo/${type}/` })}
         />
       ))}
-    </div>
+    </ScrollableNav>
 
     <!-- Cards grid: scales 1→2→3→4 columns by viewport (4×2 on desktop, 8 cards). -->
     {items.length === 0 ? (
@@ -111,30 +115,11 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
   .accommodations__card-wrapper {
     height: 100%;
   }
-  /* Mirrors the BadgeRow ergonomics: centered wrap on desktop, horizontal
-   * scroll snap on narrow viewports so all type pills stay reachable. */
+  /* Type pills row spacing only — overflow + fade + arrows come from
+   * ScrollableNav (see apps/web/src/components/shared/ui/ScrollableNav.astro). */
   .accommodations__types {
-    display: flex;
-    flex-wrap: wrap;
     justify-content: center;
     gap: 0.5rem;
     margin-bottom: 2rem;
-  }
-  @media (max-width: 767px) {
-    .accommodations__types {
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      overflow-y: hidden;
-      justify-content: flex-start;
-      scroll-snap-type: x mandatory;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 4px;
-      padding-inline-end: 1rem;
-      mask-image: linear-gradient(to right, transparent 0%, black 6%, black 88%, transparent 100%);
-      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 6%, black 88%, transparent 100%);
-    }
-    .accommodations__types::-webkit-scrollbar {
-      display: none;
-    }
   }
 </style>

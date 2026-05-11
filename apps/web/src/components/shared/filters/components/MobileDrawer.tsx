@@ -33,15 +33,21 @@ export interface MobileDrawerProps {
 export function MobileDrawer({ isOpen, onClose, children, ariaLabel }: MobileDrawerProps) {
     const panelRef = useRef<HTMLDialogElement>(null);
 
-    // Lock body scroll while drawer is open
+    // Lock body scroll while drawer is open + publish a flag on <html> so other
+    // floating UI (e.g. the global feedback FAB) can hide itself while a drawer
+    // overlay is active. Mirrors the existing `data-mobile-menu-open` /
+    // `data-search-panel-open` conventions used elsewhere in the app.
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
+            document.documentElement.dataset.filtersDrawerOpen = '';
         } else {
             document.body.style.overflow = '';
+            delete document.documentElement.dataset.filtersDrawerOpen;
         }
         return () => {
             document.body.style.overflow = '';
+            delete document.documentElement.dataset.filtersDrawerOpen;
         };
     }, [isOpen]);
 

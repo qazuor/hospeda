@@ -280,6 +280,30 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 
 			// Runs on initial page load AND after every client-side navigation
 			document.addEventListener('astro:page-load', initPage);
+
+			/*
+			 * After paginating to /page/N/ inside a listing, the browser keeps
+			 * the previous scroll position by default, which on mobile leaves
+			 * the user 500-700px above the first card (header + breadcrumbs +
+			 * wave header + type badges + view toggle all stacked on top).
+			 * Auto-scroll to the results grid so the new page lands on cards.
+			 *
+			 * `astro:after-swap` runs after the DOM swap but before the browser
+			 * paints, so the scroll appears instant. Page 1 (no /page/ segment)
+			 * is intentionally NOT auto-scrolled because users arriving via
+			 * direct link or header should see the page header first.
+			 */
+			document.addEventListener('astro:after-swap', () => {
+				if (!location.pathname.includes('/page/')) return;
+				const target = document.querySelector<HTMLElement>('.listing-content, .acc-grid');
+				if (!target) return;
+				const navbarHeight = parseInt(
+					getComputedStyle(document.documentElement).getPropertyValue('--navbar-height') || '80',
+					10
+				);
+				const offset = target.getBoundingClientRect().top + window.scrollY - navbarHeight - 16;
+				window.scrollTo({ top: Math.max(0, offset), behavior: 'instant' });
+			});
 		</script>
 	</body>
 </html>

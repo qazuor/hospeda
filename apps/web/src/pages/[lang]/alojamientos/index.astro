@@ -11,12 +11,14 @@ import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
+import AccommodationGridSkeleton from '@/components/skeletons/AccommodationGridSkeleton.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import SearchContextBanner from '@/components/shared/feedback/SearchContextBanner.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
+import ScrollableNav from '@/components/shared/ui/ScrollableNav.astro';
 import { AccommodationTypeEnum } from '@repo/schemas';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
@@ -418,6 +420,129 @@ if (checkIn) initialParams.checkIn = checkIn;
 if (checkOut) initialParams.checkOut = checkOut;
 if (adults !== undefined && !Number.isNaN(adults)) initialParams.adults = String(adults);
 if (childrenCount !== undefined && !Number.isNaN(childrenCount)) initialParams.children = String(childrenCount);
+
+// ---------------------------------------------------------------------------
+// Empty state recovery: removable filter chips + secondary suggestions.
+// Only built when there are zero results AND at least one filter is active.
+// ---------------------------------------------------------------------------
+const activeFilterChips: { label: string; removeUrl: string }[] = [];
+
+/** Build a URL identical to the current one minus the given keys. */
+const urlWithoutKeys = (keys: readonly string[]): string => {
+	const sp = new URLSearchParams(url.searchParams);
+	for (const k of keys) sp.delete(k);
+	sp.delete('page');
+	const qs = sp.toString();
+	return qs ? `${baseUrl}?${qs}` : baseUrl;
+};
+
+/** Build a URL with a single value removed from a comma-separated list param. */
+const urlWithoutListValue = (key: string, value: string): string => {
+	const sp = new URLSearchParams(url.searchParams);
+	const current = (sp.get(key) ?? '').split(',').filter(Boolean);
+	const next = current.filter((v) => v !== value);
+	if (next.length > 0) sp.set(key, next.join(','));
+	else sp.delete(key);
+	sp.delete('page');
+	const qs = sp.toString();
+	return qs ? `${baseUrl}?${qs}` : baseUrl;
+};
+
+if (q) {
+	activeFilterChips.push({ label: `"${q}"`, removeUrl: urlWithoutKeys(['q']) });
+}
+for (const typeValue of typesArray) {
+	activeFilterChips.push({
+		label: getAccommodationTypeLabel({ type: typeValue, t }),
+		removeUrl: urlWithoutListValue('types', typeValue),
+	});
+}
+if (destinationIds) {
+	for (const id of destinationIds.split(',').filter(Boolean)) {
+		const dest = destinations.find((d) => d.id === id);
+		if (dest) {
+			activeFilterChips.push({
+				label: dest.name,
+				removeUrl: urlWithoutListValue('destinationIds', id),
+			});
+		}
+	}
+}
+if (amenitiesParam) {
+	for (const id of amenitiesParam.split(',').filter(Boolean)) {
+		const a = amenities.find((x) => x.id === id);
+		if (a) {
+			activeFilterChips.push({
+				label: a.name,
+				removeUrl: urlWithoutListValue('amenities', id),
+			});
+		}
+	}
+}
+if (featuresParam) {
+	for (const id of featuresParam.split(',').filter(Boolean)) {
+		const f = features.find((x) => x.id === id);
+		if (f) {
+			activeFilterChips.push({
+				label: f.name,
+				removeUrl: urlWithoutListValue('features', id),
+			});
+		}
+	}
+}
+if (minPrice !== undefined || maxPrice !== undefined) {
+	const priceLabel = t('accommodations.emptyChip.price', 'Precio');
+	activeFilterChips.push({
+		label: priceLabel,
+		removeUrl: urlWithoutKeys(['minPrice', 'maxPrice', 'includeNoPrice']),
+	});
+}
+if (isFeatured) {
+	activeFilterChips.push({
+		label: t('accommodations.emptyChip.featured', 'Solo destacados'),
+		removeUrl: urlWithoutKeys(['isFeatured']),
+	});
+}
+if (minRating !== undefined) {
+	activeFilterChips.push({
+		label: `${minRating}+ ★`,
+		removeUrl: urlWithoutKeys(['minRating', 'includeNoReviews']),
+	});
+}
+if (minGuests !== undefined && minGuests > 0) {
+	activeFilterChips.push({
+		label: `${minGuests}+ ${t('accommodations.chips.guests', 'huéspedes')}`,
+		removeUrl: urlWithoutKeys(['minGuests']),
+	});
+}
+if (minBedrooms !== undefined && minBedrooms > 0) {
+	activeFilterChips.push({
+		label: `${minBedrooms}+ ${t('accommodations.sidebar.bedrooms', 'Dormitorios')}`,
+		removeUrl: urlWithoutKeys(['minBedrooms']),
+	});
+}
+if (minBathrooms !== undefined && minBathrooms > 0) {
+	activeFilterChips.push({
+		label: `${minBathrooms}+ ${t('accommodations.sidebar.bathrooms', 'Baños')}`,
+		removeUrl: urlWithoutKeys(['minBathrooms']),
+	});
+}
+
+/** Secondary recovery links shown alongside the "clear all" CTA. */
+const emptyStateSuggestions = [
+	{
+		label: t('accommodations.emptySuggestion.viewMap', 'Ver en mapa'),
+		url: buildUrl({ locale, path: 'alojamientos/mapa' }),
+	},
+	{
+		label: t('accommodations.emptySuggestion.popular', 'Ver más reservados'),
+		url: `${baseUrl}?sortBy=mostSaved`,
+	},
+	{
+		label: t('accommodations.emptySuggestion.allDestinations', 'Explorar destinos'),
+		url: buildUrl({ locale, path: 'destinos' }),
+	},
+];
 ---
 
 <ListingLayout
@@ -453,14 +578,14 @@ if (childrenCount !== undefined && !Number.isNaN(childrenCount)) initialParams.c
 		initialParams={initialParams}
 	/>
 
-	<nav
-		class="acc-type-badges"
-		aria-label={t('accommodations.typeChips.ariaLabel', 'Filtrar por tipo de alojamiento')}
+	<ScrollableNav
+		ariaLabel={t('accommodations.typeChips.ariaLabel', 'Filtrar por tipo de alojamiento')}
+		innerClass="acc-type-badges"
 	>
 		{typeBadges.map(({ type, href }) => (
 			<AccommodationTypeBadge type={type} locale={locale} size="sm" href={href} />
 		))}
-	</nav>
+	</ScrollableNav>
 
 	{!hasError && cards.length > 0 && (
 		<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
@@ -497,6 +622,8 @@ if (childrenCount !== undefined && !Number.isNaN(childrenCount)) initialParams.c
 			locale={locale}
 			variant="no-results"
 			actionUrl={baseUrl}
+			activeFilters={activeFilterChips}
+			suggestions={emptyStateSuggestions}
 		/>
 	)}
 
@@ -509,18 +636,28 @@ if (childrenCount !== undefined && !Number.isNaN(childrenCount)) initialParams.c
 	/>
 
 	{!hasError && cards.length > 0 && (
-		<div class="acc-grid">
-			{cards.map((card, i) => (
-				<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
-					<AccommodationCard
-						data={card}
-						locale={locale}
-						isAuthenticated={isAuthenticated}
-						linkQuery={contextQuery}
-					/>
-				</div>
-			))}
-		</div>
+		<>
+			<div class="acc-grid">
+				{cards.map((card, i) => (
+					<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
+						<AccommodationCard
+							data={card}
+							locale={locale}
+							isAuthenticated={isAuthenticated}
+							linkQuery={contextQuery}
+						/>
+					</div>
+				))}
+			</div>
+			{/*
+			 * Skeleton swaps in while a filter navigation is in flight
+			 * (html[data-filters-loading]). Stays in the DOM so it renders
+			 * instantly when the flag flips — no JS needed at swap time.
+			 */}
+			<div class="acc-grid-skeleton" aria-hidden="true">
+				<AccommodationGridSkeleton />
+			</div>
+		</>
 	)}
 
 	{totalPages > 1 && (
@@ -577,36 +714,29 @@ if (childrenCount !== undefined && !Number.isNaN(childrenCount)) initialParams.c
 		}
 	}
 
-	/* Dim the grid while a filter navigation is in flight */
+	/*
+	 * Filter navigation feedback: while filtering, hide the (now stale) real
+	 * grid and surface the skeleton so the user sees instant "loading"
+	 * feedback instead of a dimmed list with the old results showing through.
+	 */
+	.acc-grid-skeleton {
+		display: none;
+	}
+
 	:global([data-filters-loading]) .acc-grid {
-		opacity: 0.4;
-		pointer-events: none;
-		transition: opacity 0.2s ease;
+		display: none;
+	}
+
+	:global([data-filters-loading]) .acc-grid-skeleton {
+		display: block;
 	}
 
 	/* Quick-filter type badges row above the listing grid.
-	 * Mirrors the home featured-section ergonomics: wrap on desktop,
-	 * horizontal scroll-snap on narrow viewports. */
+	 * Scroll affordance (overflow/fade/arrows) is provided by the
+	 * <ScrollableNav> wrapper — this rule only sets the row spacing. */
 	.acc-type-badges {
-		display: flex;
-		flex-wrap: wrap;
 		gap: 0.5rem;
 		margin-bottom: var(--space-4, 16px);
-	}
-	@media (max-width: 767px) {
-		.acc-type-badges {
-			flex-wrap: nowrap;
-			overflow-x: auto;
-			overflow-y: hidden;
-			scroll-snap-type: x mandatory;
-			-webkit-overflow-scrolling: touch;
-			padding-bottom: 4px;
-			mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
-			-webkit-mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
-		}
-		.acc-type-badges::-webkit-scrollbar {
-			display: none;
-		}
 	}
 
 	/* View toggle (Lista / Mapa) */
@@ -636,5 +766,37 @@ if (childrenCount !== undefined && !Number.isNaN(childrenCount)) initialParams.c
 		color: white;
 		font-weight: 500;
 		cursor: default;
+	}
+
+	/*
+	 * Mobile: turn the toggle into a fixed bottom tab bar (Airbnb / Booking
+	 * pattern) so users can switch views from any scroll position. Stays
+	 * solid (opaque background + shadow) to read against cards behind it.
+	 *
+	 * z-index 150 sits above page content but below:
+	 * - drawer overlay (300) / drawer panel (400) — drawer covers it
+	 * - mobile menu overlay (9100) — menu covers it
+	 * - feedback FAB (max int) — feedback FAB is now hidden whenever those
+	 *   surfaces open, so no overlap conflict.
+	 *
+	 * Hidden while any blocking overlay is open via `:global(html[...])`.
+	 */
+	@media (max-width: 767px) {
+		.view-toggle {
+			position: fixed;
+			bottom: 1.5rem;
+			left: 50%;
+			transform: translateX(-50%);
+			z-index: 150;
+			margin: 0;
+			box-shadow: 0 4px 16px oklch(0 0 0 / 0.18);
+		}
+
+		:global(html[data-filters-drawer-open]) .view-toggle,
+		:global(html[data-search-panel-open]) .view-toggle,
+		:global(html[data-mobile-menu-open]) .view-toggle {
+			visibility: hidden;
+			pointer-events: none;
+		}
 	}
 </style>

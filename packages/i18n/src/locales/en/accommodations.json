@@ -378,5 +378,14 @@
             "guestsAdultsOnly": "{adults} adults",
             "guestsChildrenOnly": "{children} children"
         }
+    },
+    "emptyChip": {
+        "price": "Price",
+        "featured": "Featured only"
+    },
+    "emptySuggestion": {
+        "viewMap": "View on map",
+        "popular": "Most saved",
+        "allDestinations": "Explore destinations"
     }
 }

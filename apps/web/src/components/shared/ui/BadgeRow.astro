@@ -11,6 +11,7 @@
  */
 
 import Badge from './Badge.astro';
+import ScrollableNav from './ScrollableNav.astro';
 import type { BadgeColorScheme } from './badge.types';
 
 /** A single badge descriptor used in the badges array. */
@@ -38,7 +39,7 @@ interface Props {
 const { badges, uniformDark = false } = Astro.props;
 ---
 
-<div class="badge-row">
+<ScrollableNav innerClass="badge-row">
     {badges.map((badge) => (
         <Badge
             label={badge.label}
@@ -49,32 +50,13 @@ const { badges, uniformDark = false } = Astro.props;
             variant={uniformDark ? 'filled-dark' : 'default'}
         />
     ))}
-</div>
+</ScrollableNav>
 
 <style>
+    /* Spacing only — overflow + fade + arrows are provided by ScrollableNav. */
     .badge-row {
-        display: flex;
-        flex-wrap: wrap;
         justify-content: center;
         gap: 0.5rem;
         margin-bottom: 2rem;
-    }
-
-    @media (max-width: 767px) {
-        .badge-row {
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            overflow-y: hidden;
-            justify-content: flex-start;
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-            padding-bottom: 4px;
-            mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
-        }
-
-        .badge-row::-webkit-scrollbar {
-            display: none;
-        }
     }
 </style>

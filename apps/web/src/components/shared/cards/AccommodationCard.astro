@@ -616,4 +616,29 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 	.acc-card:hover .acc-card__cta-btn {
 		opacity: 0.85;
 	}
+
+	/*
+	 * Mobile density tweaks (kept at the bottom so they override the base
+	 * rules above by source order — Astro scoped styles emit the same
+	 * specificity for `.acc-card__content` etc., so the later declaration
+	 * wins inside a matching media query).
+	 *
+	 * Tighter content area + 1-line description + hidden reviews count.
+	 * Net effect: ~2.4 cards per viewport vs ~1.9 before, without losing
+	 * amenities, stars, the numeric rating, or the price block.
+	 */
+	@media (max-width: 767px) {
+		.acc-card__content {
+			gap: 6px;
+			padding-bottom: 12px;
+		}
+
+		.acc-card__description {
+			-webkit-line-clamp: 1;
+		}
+
+		.acc-card__reviews-count {
+			display: none;
+		}
+	}
 </style>
