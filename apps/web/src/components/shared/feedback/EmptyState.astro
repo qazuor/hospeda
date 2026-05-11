@@ -27,6 +27,24 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 
+/**
+ * A removable chip showing one of the filters currently applied.
+ * Tapping the chip navigates to a URL without that filter.
+ */
+export interface ActiveFilterChip {
+	readonly label: string;
+	readonly removeUrl: string;
+}
+
+/**
+ * A secondary recovery action shown below the primary "clear filters"
+ * button when the user lands on an empty result set with filters applied.
+ */
+export interface EmptyStateSuggestion {
+	readonly label: string;
+	readonly url: string;
+}
+
 interface Props {
 	readonly locale: SupportedLocale;
 	/** "no-results" shows clear-filters link, "empty" shows a link to related content. */
@@ -37,6 +55,16 @@ interface Props {
 	readonly actionUrl?: string;
 	/** Link label for the action button. */
 	readonly actionLabel?: string;
+	/**
+	 * Currently-applied filters rendered as removable chips above the
+	 * primary action. Empty / omitted hides the chip group entirely.
+	 */
+	readonly activeFilters?: ReadonlyArray<ActiveFilterChip>;
+	/**
+	 * Secondary recovery links rendered below the primary action.
+	 * Useful for "browse popular", "open map view", "see all destinations".
+	 */
+	readonly suggestions?: ReadonlyArray<EmptyStateSuggestion>;
 	/** Visual tone of the empty state surface. Defaults to "muted". */
 	readonly tone?: 'muted' | 'warm' | 'brand';
 	readonly class?: string;
@@ -48,6 +76,8 @@ const {
 	message,
 	actionUrl,
 	actionLabel,
+	activeFilters,
+	suggestions,
 	tone = 'muted',
 	class: className,
 } = Astro.props;
@@ -66,6 +96,16 @@ const defaultActions = {
 
 const resolvedMessage = message ?? defaultMessages[variant];
 const resolvedActionLabel = actionLabel ?? defaultActions[variant];
+
+const activeFiltersHeading = t(
+	'ui.emptyState.activeFiltersHeading',
+	'Filtros aplicados (tocá uno para quitarlo):',
+);
+const removeFilterAriaPrefix = t('ui.emptyState.removeFilter', 'Quitar filtro');
+const suggestionsHeading = t('ui.emptyState.suggestionsHeading', 'O probá:');
+
+const hasActiveFilters = Array.isArray(activeFilters) && activeFilters.length > 0;
+const hasSuggestions = Array.isArray(suggestions) && suggestions.length > 0;
 
 /**
  * Detect whether the caller passed a custom icon via the default slot. When
@@ -103,10 +143,43 @@ const hasIconSlot = Astro.slots.has('default');
 
 	<p class="empty-state__message">{resolvedMessage}</p>
 
+	{hasActiveFilters && (
+		<div class="empty-state__filters" role="group" aria-label={activeFiltersHeading}>
+			<p class="empty-state__filters-heading">{activeFiltersHeading}</p>
+			<ul class="empty-state__chip-list">
+				{activeFilters!.map((filter) => (
+					<li>
+						<a
+							href={filter.removeUrl}
+							class="empty-state__chip"
+							aria-label={`${removeFilterAriaPrefix}: ${filter.label}`}
+						>
+							<span>{filter.label}</span>
+							<span class="empty-state__chip-x" aria-hidden="true">&times;</span>
+						</a>
+					</li>
+				))}
+			</ul>
+		</div>
+	)}
+
 	{actionUrl && (
 		<a href={actionUrl} class="btn-gradient btn-gradient--outline-accent">
 			{resolvedActionLabel}
 		</a>
+	)}
+
+	{hasSuggestions && (
+		<div class="empty-state__suggestions">
+			<p class="empty-state__suggestions-heading">{suggestionsHeading}</p>
+			<ul class="empty-state__suggestion-list">
+				{suggestions!.map((s) => (
+					<li>
+						<a href={s.url} class="empty-state__suggestion-link">{s.label}</a>
+					</li>
+				))}
+			</ul>
+		</div>
 	)}
 </div>
 
@@ -170,5 +243,104 @@ const hasIconSlot = Astro.slots.has('default');
 		max-width: 40ch;
 		line-height: 1.6;
 		margin: 0;
+	}
+
+	/* Active filters: removable chips */
+	.empty-state__filters {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.5rem;
+		max-width: 60ch;
+	}
+
+	.empty-state__filters-heading {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+		margin: 0;
+	}
+
+	.empty-state__chip-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.5rem;
+	}
+
+	.empty-state__chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.4rem 0.75rem;
+		min-height: 36px;
+		background-color: oklch(from var(--brand-accent) l c h / 0.1);
+		color: var(--brand-accent);
+		border: 1px solid oklch(from var(--brand-accent) l c h / 0.3);
+		border-radius: var(--radius-pill);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		font-weight: 500;
+		text-decoration: none;
+		transition: background-color var(--duration-fast) ease,
+			border-color var(--duration-fast) ease;
+	}
+
+	.empty-state__chip:hover {
+		background-color: oklch(from var(--brand-accent) l c h / 0.18);
+		border-color: oklch(from var(--brand-accent) l c h / 0.5);
+	}
+
+	.empty-state__chip-x {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1rem;
+		height: 1rem;
+		font-size: 1rem;
+		line-height: 1;
+		font-weight: 700;
+	}
+
+	/* Secondary recovery links */
+	.empty-state__suggestions {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.375rem;
+		margin-top: 0.25rem;
+	}
+
+	.empty-state__suggestions-heading {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+		margin: 0;
+	}
+
+	.empty-state__suggestion-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.75rem 1.25rem;
+	}
+
+	.empty-state__suggestion-link {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--brand-primary);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+		transition: color var(--duration-fast) ease;
+	}
+
+	.empty-state__suggestion-link:hover {
+		color: var(--core-foreground);
 	}
 </style>

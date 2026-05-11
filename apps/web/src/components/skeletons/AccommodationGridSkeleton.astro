@@ -77,15 +77,17 @@
   .skeleton-image {
     background-color: var(--border);
     width: 100%;
-    border-radius: var(--radius-organic);
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
   }
 
+  /* Match AccommodationCard's image-area height clamp so the skeleton
+   * doesn't visually "stretch" the layout when it swaps in. */
   .skeleton-image--4-3 {
-    aspect-ratio: 4 / 3;
+    height: clamp(160px, 30vw, 220px);
   }
 
   .skeleton-content {
-    padding: var(--space-card-content);
+    padding: 1rem 1rem 1.25rem;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;

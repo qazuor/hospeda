@@ -1,0 +1,282 @@
+---
+/**
+ * @file ScrollableNav.astro
+ * @description Horizontal scroll container with smart affordance:
+ *
+ *  - Mobile (`<768px`): asymmetric fade on the side(s) that still have content.
+ *  - Desktop (`>=768px`): when contents overflow the container, optional
+ *    tappable arrow buttons fade in over the leading/trailing edge; they
+ *    auto-hide when the viewport reaches the corresponding edge. Mouse users
+ *    don't naturally swipe, so the arrows are the primary affordance there.
+ *
+ * Both modes are driven by a single `passive` scroll/resize listener that
+ * toggles `data-scroll-start`, `data-scroll-end`, `data-overflow` flags on
+ * the container; CSS does the rest.
+ *
+ * Use this around any horizontally scrollable row of chips/badges/tabs so
+ * the affordance behavior stays consistent across the app. The component
+ * never imposes its own item layout — children render inside via the
+ * default slot and own their gap/typography.
+ *
+ * @example
+ * ```astro
+ * <ScrollableNav ariaLabel="Categorías">
+ *   <a href="...">Hotel</a>
+ *   <a href="...">Cabaña</a>
+ *   ...
+ * </ScrollableNav>
+ * ```
+ */
+
+interface Props {
+	/** Accessible label for the <nav> wrapper. */
+	readonly ariaLabel?: string;
+	/** Additional class merged onto the inner scrollable element. */
+	readonly innerClass?: string;
+}
+
+const { ariaLabel, innerClass } = Astro.props;
+---
+
+<div class="scrollable-nav" data-scrollable-nav>
+	<button
+		type="button"
+		class="scrollable-nav__arrow scrollable-nav__arrow--prev"
+		aria-label="Anterior"
+		data-scrollable-nav-prev
+		tabindex="-1"
+	>
+		&lsaquo;
+	</button>
+
+	<nav
+		class:list={['scrollable-nav__inner', innerClass]}
+		aria-label={ariaLabel}
+		data-scrollable-nav-inner
+	>
+		<slot />
+	</nav>
+
+	<button
+		type="button"
+		class="scrollable-nav__arrow scrollable-nav__arrow--next"
+		aria-label="Siguiente"
+		data-scrollable-nav-next
+		tabindex="-1"
+	>
+		&rsaquo;
+	</button>
+</div>
+
+<script>
+	/*
+	 * Wire one scroll/resize listener per ScrollableNav instance. The listener
+	 * is `passive: true` so it never blocks scrolling, and uses requestAnimation
+	 * Frame to coalesce rapid scroll events. Re-runs on `astro:page-load` so
+	 * navigations through ClientRouter pick up freshly mounted instances.
+	 *
+	 * Container data flags consumed by CSS:
+	 *   data-overflow      — `true` only when scrollWidth > clientWidth.
+	 *   data-scroll-start  — at the leftmost scroll position.
+	 *   data-scroll-end    — at the rightmost scroll position.
+	 */
+	function initScrollableNav(): void {
+		const containers = document.querySelectorAll<HTMLElement>('[data-scrollable-nav]:not([data-scrollable-nav-init])');
+		for (const container of containers) {
+			container.dataset.scrollableNavInit = 'true';
+			const inner = container.querySelector<HTMLElement>('[data-scrollable-nav-inner]');
+			const prev = container.querySelector<HTMLButtonElement>('[data-scrollable-nav-prev]');
+			const next = container.querySelector<HTMLButtonElement>('[data-scrollable-nav-next]');
+			if (!inner) continue;
+
+			let ticking = false;
+			const sync = (): void => {
+				const hasOverflow = inner.scrollWidth - inner.clientWidth > 2;
+				container.dataset.overflow = hasOverflow ? 'true' : 'false';
+				const atStart = inner.scrollLeft <= 1;
+				const atEnd = inner.scrollLeft + inner.clientWidth >= inner.scrollWidth - 1;
+				container.dataset.scrollStart = atStart ? 'true' : 'false';
+				container.dataset.scrollEnd = atEnd ? 'true' : 'false';
+			};
+
+			const requestSync = (): void => {
+				if (ticking) return;
+				ticking = true;
+				requestAnimationFrame(() => {
+					sync();
+					ticking = false;
+				});
+			};
+
+			sync();
+			inner.addEventListener('scroll', requestSync, { passive: true });
+			window.addEventListener('resize', requestSync, { passive: true });
+
+			// Scroll by ~70% of the visible width on arrow click so users see new
+			// content while keeping a couple of badges as visual anchor.
+			const scrollByViewport = (direction: 1 | -1): void => {
+				const amount = inner.clientWidth * 0.7 * direction;
+				inner.scrollBy({ left: amount, behavior: 'smooth' });
+			};
+			prev?.addEventListener('click', () => scrollByViewport(-1));
+			next?.addEventListener('click', () => scrollByViewport(1));
+		}
+	}
+
+	initScrollableNav();
+	document.addEventListener('astro:page-load', initScrollableNav);
+</script>
+
+<style>
+	.scrollable-nav {
+		position: relative;
+	}
+
+	.scrollable-nav__inner {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	/* ============================================================
+	   Mobile: enable horizontal scroll + asymmetric fade
+	   ============================================================ */
+	@media (max-width: 767px) {
+		.scrollable-nav__inner {
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			overflow-y: hidden;
+			scroll-snap-type: x mandatory;
+			-webkit-overflow-scrolling: touch;
+			padding-bottom: 4px;
+		}
+
+		.scrollable-nav__inner::-webkit-scrollbar {
+			display: none;
+		}
+
+		/* Default state (both ends visible): symmetric fade. The mask is
+		 * stronger than before (8% / 92% vs 3% / 97%) so it actually reads
+		 * on a 360-500px viewport. */
+		.scrollable-nav[data-overflow='true'] .scrollable-nav__inner {
+			mask-image: linear-gradient(
+				to right,
+				transparent 0%,
+				black 8%,
+				black 92%,
+				transparent 100%
+			);
+			-webkit-mask-image: linear-gradient(
+				to right,
+				transparent 0%,
+				black 8%,
+				black 92%,
+				transparent 100%
+			);
+		}
+
+		/* Asymmetric fade — only fade the side with more content. */
+		.scrollable-nav[data-scroll-start='true'][data-overflow='true']
+			.scrollable-nav__inner {
+			mask-image: linear-gradient(
+				to right,
+				black 0%,
+				black 92%,
+				transparent 100%
+			);
+			-webkit-mask-image: linear-gradient(
+				to right,
+				black 0%,
+				black 92%,
+				transparent 100%
+			);
+		}
+
+		.scrollable-nav[data-scroll-end='true'][data-overflow='true']
+			.scrollable-nav__inner {
+			mask-image: linear-gradient(
+				to right,
+				transparent 0%,
+				black 8%,
+				black 100%
+			);
+			-webkit-mask-image: linear-gradient(
+				to right,
+				transparent 0%,
+				black 8%,
+				black 100%
+			);
+		}
+
+		/* Arrows are touch-redundant in mobile (swipe is the natural gesture). */
+		.scrollable-nav__arrow {
+			display: none;
+		}
+	}
+
+	/* ============================================================
+	   Desktop: arrows are the primary affordance (mouse can't swipe)
+	   ============================================================ */
+	@media (min-width: 768px) {
+		.scrollable-nav__inner {
+			overflow-x: auto;
+			overflow-y: hidden;
+			flex-wrap: nowrap;
+			scrollbar-width: none;
+		}
+
+		.scrollable-nav__inner::-webkit-scrollbar {
+			display: none;
+		}
+
+		.scrollable-nav__arrow {
+			position: absolute;
+			top: 50%;
+			transform: translateY(-50%);
+			z-index: 2;
+			width: 36px;
+			height: 36px;
+			padding: 0;
+			border-radius: 9999px;
+			border: 1px solid var(--border);
+			background-color: var(--core-card);
+			box-shadow: 0 2px 8px oklch(0 0 0 / 0.12);
+			font-size: 1.25rem;
+			line-height: 1;
+			font-weight: 700;
+			color: var(--core-foreground);
+			cursor: pointer;
+			opacity: 0;
+			pointer-events: none;
+			transition: opacity var(--duration-fast) ease,
+				background-color var(--duration-fast) ease;
+		}
+
+		.scrollable-nav__arrow:hover {
+			background-color: var(--brand-primary);
+			color: var(--primary-foreground);
+		}
+
+		.scrollable-nav__arrow:focus-visible {
+			outline: 2px solid var(--brand-primary);
+			outline-offset: 2px;
+		}
+
+		.scrollable-nav__arrow--prev {
+			left: -4px;
+		}
+
+		.scrollable-nav__arrow--next {
+			right: -4px;
+		}
+
+		/* Show only when there's overflow AND we're not already at that edge. */
+		.scrollable-nav[data-overflow='true']:not([data-scroll-start='true'])
+			.scrollable-nav__arrow--prev,
+		.scrollable-nav[data-overflow='true']:not([data-scroll-end='true'])
+			.scrollable-nav__arrow--next {
+			opacity: 1;
+			pointer-events: auto;
+		}
+	}
+</style>
