@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-102",
+    "title": "Admin API Bearer Token Authentication",
+    "type": "feature",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-11T00:30:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["api", "security", "auth", "admin", "ops", "hops", "vps"]
+}
