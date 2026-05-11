@@ -66,6 +66,23 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'Donde corre el dashboard de admin (TanStack Start). Local: http://localhost:3000. Producción: https://admin.hospeda.com.ar (o tu subdominio real). La API la usa para CORS.'
     },
+    {
+        name: 'HOSPEDA_EXTRA_TRUSTED_ORIGINS',
+        description:
+            'Comma-separated extra trusted origins for Better Auth beyond HOSPEDA_SITE_URL and HOSPEDA_ADMIN_URL. Used for hostname aliases (e.g. staging.hospeda.com.ar) that the same containers serve. Without this, sign-up and OAuth flows from those aliases get rejected with a CORS / origin-not-trusted error.',
+        descriptionEs:
+            'Lista CSV de orígenes trusted adicionales para Better Auth, además de HOSPEDA_SITE_URL y HOSPEDA_ADMIN_URL. Se usa para alias de hostname (ej: staging.hospeda.com.ar) que sirven los mismos containers. Sin esto, signup y OAuth desde esos alias se rechazan con CORS / origin-not-trusted.',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'https://staging.hospeda.com.ar,https://staging-admin.hospeda.com.ar',
+        apps: ['api'],
+        category: 'core',
+        howToObtain:
+            'Comma-separated list of full URLs (with https:// prefix, no trailing slash). Include any hostname aliased to the same prod containers that initiates auth requests. Example for pre-launch: https://staging.hospeda.com.ar,https://staging-admin.hospeda.com.ar',
+        howToObtainEs:
+            'Lista CSV de URLs completas (con https://, sin trailing slash). Incluí cualquier hostname aliased a los containers prod que inicie requests de auth. Ejemplo pre-launch: https://staging.hospeda.com.ar,https://staging-admin.hospeda.com.ar'
+    },
 
     // -------------------------------------------------------------------------
     // Database

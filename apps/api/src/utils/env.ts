@@ -351,6 +351,17 @@ export const ApiEnvBaseSchema = z.object({
         .optional()
         .transform((v) => v !== 'false'),
 
+    /**
+     * Extra trusted origins for Better Auth (CSV of full URLs).
+     * Used for hostname aliases beyond the canonical HOSPEDA_SITE_URL /
+     * HOSPEDA_ADMIN_URL — e.g. staging.hospeda.com.ar and
+     * staging-admin.hospeda.com.ar during pre-launch, where the same
+     * containers serve both a prod-naming and a staging hostname.
+     * Without this, sign-up and OAuth flows from those aliases get
+     * rejected with a CORS / origin-not-trusted error.
+     */
+    HOSPEDA_EXTRA_TRUSTED_ORIGINS: z.string().optional(),
+
     // Email / Notifications (provider-agnostic; currently Brevo via @repo/email)
     HOSPEDA_EMAIL_API_KEY: z.string().optional(),
     HOSPEDA_EMAIL_FROM_EMAIL: z.string().email().optional(),

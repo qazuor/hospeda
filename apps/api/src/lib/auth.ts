@@ -622,6 +622,21 @@ function parseTrustedOrigins(): string[] {
         origins.push(adminUrl);
     }
 
+    // Extra origins via comma-separated env var. Used for aliases like
+    // staging.hospeda.com.ar / staging-admin.hospeda.com.ar where the
+    // canonical HOSPEDA_SITE_URL stays at the prod-naming hostname but
+    // the same containers also serve a staging hostname that needs to
+    // be a trusted origin for sign-up and OAuth flows.
+    const extra = env.HOSPEDA_EXTRA_TRUSTED_ORIGINS;
+    if (extra) {
+        for (const raw of extra.split(',')) {
+            const value = raw.trim();
+            if (value.length > 0 && !origins.includes(value)) {
+                origins.push(value);
+            }
+        }
+    }
+
     // Default development origins
     if (origins.length === 0) {
         if (env.NODE_ENV === 'production') {
