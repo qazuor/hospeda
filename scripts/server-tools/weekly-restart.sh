@@ -71,7 +71,9 @@ SETTLE_SECONDS="${SETTLE_SECONDS:-30}"
 SMOKE_TIMEOUT="${SMOKE_TIMEOUT:-15}"
 
 # Smoke URLs per app. Override via env if subdomains change.
-API_HEALTH_URL="${API_HEALTH_URL:-https://api.hospeda.com.ar/api/v1/health/}"
+# The API health endpoint is mounted at /health (no /api/v1/ prefix) —
+# see apps/api/src/routes/index.ts and the canonical scripts/smoke-test.sh.
+API_HEALTH_URL="${API_HEALTH_URL:-https://api.hospeda.com.ar/health}"
 WEB_HOME_URL="${WEB_HOME_URL:-https://hospeda.com.ar/}"
 ADMIN_LOGIN_URL="${ADMIN_LOGIN_URL:-https://admin.hospeda.com.ar/auth/signin}"
 
