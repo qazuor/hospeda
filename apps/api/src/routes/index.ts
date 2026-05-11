@@ -75,6 +75,7 @@ import { mediaHealthRoutes } from './health/media';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
+import { newsletterRoutes } from './newsletter';
 import { revalidationRouter } from './revalidation';
 import { publicSearchRoutes } from './search/public';
 import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorship';
@@ -172,6 +173,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Other public routes (read-only)
         app.route('/api/v1/public/plans', publicBillingRoutes);
         app.route('/api/v1/public', contactRoutes);
+        app.route('/api/v1/public', newsletterRoutes);
         app.route('/api/v1/public/feedback', publicFeedbackRoutes);
 
         // Conversations (guest-owner messaging — SPEC-085)

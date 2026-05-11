@@ -432,6 +432,24 @@ export const HOSPEDA_ENV_VARS = [
             'Brevo dashboard → SMTP & API → API Keys → Generate a new API key → copiá el valor que empieza con "xkeysib-". Antes autenticá tu dominio de envío en Senders, Domains & Dedicated IPs.'
     },
     {
+        name: 'HOSPEDA_BREVO_NEWSLETTER_LIST_ID',
+        description:
+            'Numeric Brevo Contacts list ID where pre-launch newsletter signups (POST /api/v1/public/newsletter) get added. Reuses HOSPEDA_EMAIL_API_KEY for auth.',
+        descriptionEs:
+            'ID numérico de la lista de Contactos Brevo donde van los signups del newsletter pre-launch (POST /api/v1/public/newsletter). Reusa HOSPEDA_EMAIL_API_KEY para autenticarse.',
+        type: 'number',
+        required: false,
+        secret: false,
+        exampleValue: '7',
+        apps: ['api'],
+        category: 'email',
+        helpUrl: 'https://app.brevo.com/contact/list-listing',
+        howToObtain:
+            'Brevo dashboard → Contacts → Lists → create or open the target list → the numeric ID is shown in the URL (.../list/<ID>) and in the list header. Copy that integer. The same HOSPEDA_EMAIL_API_KEY is used to authenticate the request.',
+        howToObtainEs:
+            'Dashboard de Brevo → Contacts → Lists → crear o abrir la lista destino → el ID numérico aparece en la URL (.../list/<ID>) y en el header de la lista. Copiá ese entero. Se usa la misma HOSPEDA_EMAIL_API_KEY para autenticar el request.'
+    },
+    {
         name: 'HOSPEDA_EMAIL_FROM_EMAIL',
         description: 'Sender email address',
         descriptionEs: 'Dirección de email del remitente',
