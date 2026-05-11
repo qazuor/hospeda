@@ -30,11 +30,28 @@ env:
   HOSPEDA_CLOUDINARY_CLOUD_NAME: ${{ secrets.HOSPEDA_CLOUDINARY_CLOUD_NAME }}
   HOSPEDA_CLOUDINARY_API_KEY: ${{ secrets.HOSPEDA_CLOUDINARY_API_KEY }}
   HOSPEDA_CLOUDINARY_API_SECRET: ${{ secrets.HOSPEDA_CLOUDINARY_API_SECRET }}
-  # Turbo Remote Cache. When TURBO_TOKEN is set as a repo secret and
-  # TURBO_TEAM as a repo variable, every job restores build, lint, and
-  # typecheck artifacts from Vercel's Remote Cache instead of recomputing
-  # them. Missing values transparently fall back to local cache (no
-  # failure). See docs/guides/ci-cd.md for setup.
+  # Turbo Remote Cache (OPTIONAL).
+  #
+  # This is a CACHE service for Turborepo build/lint/typecheck artifacts,
+  # NOT a deployment platform. Hospeda's hosting moved off Vercel to
+  # Coolify on a VPS in Phase 16.3, but Turbo Remote Cache (provided by
+  # Vercel as an independent service) still accelerates CI ~30-50% by
+  # reusing artifacts across runs. The repo retains the option to use it.
+  #
+  # Behavior when TURBO_TOKEN / TURBO_TEAM are NOT set as repo secrets:
+  # every job falls back to local cache silently (no failure, just
+  # slower). To disable the remote cache entirely, leave both secrets
+  # unset on the repository. To rotate keys, update the secrets in
+  # Settings → Secrets and variables → Actions.
+  #
+  # Token provisioning (only needed when enabling Remote Cache):
+  #   1. Sign up at vercel.com (or use an existing Vercel account — no
+  #      project needs to be deployed there).
+  #   2. Go to Account Settings → Tokens → create a token scoped to a
+  #      team. Copy it to the TURBO_TOKEN repo secret.
+  #   3. Set TURBO_TEAM as a repo variable to the team slug.
+  #   4. (Optional) Generate a TURBO_REMOTE_CACHE_SIGNATURE_KEY (any
+  #      32+ byte secret) for cache artifact signature verification.
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
   TURBO_REMOTE_CACHE_SIGNATURE_KEY: ${{ secrets.TURBO_REMOTE_CACHE_SIGNATURE_KEY }}
@@ -363,8 +380,14 @@ jobs:
           fi
 
   # ------------------------------------------------------------------
-  # Aggregator job. Used by cd-production.yml as a single dependency
-  # via `needs: ci` so we don't have to list every leaf job there.
+  # Aggregator job. Reports a single PASS/FAIL after every CI leaf job
+  # completes. Originally also gated a CD workflow (cd-production.yml)
+  # that was retired when deploys moved off Vercel to Coolify (VPS) in
+  # Phase 16.3 — deploys are now triggered manually via the Coolify UI
+  # (or `hops redeploy <app>` from inside the VPS), NOT from this repo's
+  # workflows. The aggregator stays because it makes branch-protection
+  # rules simpler: one required status check ("CI Pass") instead of
+  # nine independent ones.
   # ------------------------------------------------------------------
   ci-pass:
     name: CI Pass
