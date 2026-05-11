@@ -75,10 +75,34 @@ export function SignIn({ locale, redirectTo, showOAuth = true }: SignInProps) {
         setOauthLoading(provider);
 
         try {
-            await signIn.social({
-                provider,
-                callbackURL: redirectTo || window.location.pathname
-            });
+            // Build the absolute callbackURL on the client and anchor it on
+            // the browser's real origin. The `redirectTo` prop is computed
+            // server-side in signin.astro; when the web app runs Astro Node
+            // behind Traefik, `Astro.url.origin` can resolve to
+            // 'https://localhost' because the reverse proxy doesn't always
+            // forward the original Host header. Any absolute URL built on
+            // top of that gets rejected by Better Auth as
+            // INVALID_CALLBACKURL. We strip the host (if any) from
+            // redirectTo and reattach the browser's origin so the resulting
+            // URL matches whatever host the user opened (staging.* in
+            // pre-launch, hospeda.com.ar post-launch, etc.).
+            const origin = window.location.origin;
+            const rawTarget = redirectTo || window.location.pathname || '/';
+            let path = rawTarget;
+            if (path.startsWith('http')) {
+                try {
+                    const parsed = new URL(path);
+                    path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
+                } catch {
+                    path = '/';
+                }
+            }
+            if (!path.startsWith('/')) {
+                path = `/${path}`;
+            }
+            const callbackURL = `${origin}${path}`;
+            const errorCallbackURL = `${origin}${window.location.pathname || '/'}`;
+            await signIn.social({ provider, callbackURL, errorCallbackURL });
         } catch {
             setError(t('auth.signIn.error', 'Error al iniciar sesión'));
             setOauthLoading(null);

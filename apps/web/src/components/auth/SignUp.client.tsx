@@ -84,10 +84,30 @@ export function SignUp({ locale, redirectTo, showOAuth = true }: SignUpProps) {
         setOauthLoading(provider);
 
         try {
-            await signIn.social({
-                provider,
-                callbackURL: redirectTo || window.location.pathname
-            });
+            // Build the absolute callbackURL on the client so the host
+            // matches the browser's real origin. The server-built
+            // redirectTo can carry 'https://localhost' when Astro Node
+            // runs behind a reverse proxy that doesn't forward the
+            // original Host header — and Better Auth rejects any
+            // callbackURL whose origin isn't in trustedOrigins. Strip
+            // the host (if any) and reattach window.location.origin.
+            const origin = window.location.origin;
+            const rawTarget = redirectTo || window.location.pathname || '/';
+            let path = rawTarget;
+            if (path.startsWith('http')) {
+                try {
+                    const parsed = new URL(path);
+                    path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
+                } catch {
+                    path = '/';
+                }
+            }
+            if (!path.startsWith('/')) {
+                path = `/${path}`;
+            }
+            const callbackURL = `${origin}${path}`;
+            const errorCallbackURL = `${origin}${window.location.pathname || '/'}`;
+            await signIn.social({ provider, callbackURL, errorCallbackURL });
         } catch {
             setError(t('auth.signUp.error', 'Error al crear la cuenta'));
             setOauthLoading(null);
