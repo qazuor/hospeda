@@ -3020,11 +3020,18 @@ staging-api.hospeda.com.ar  → API staging cuando llegue tracción
 
 **Estado**:
 
-- Phase 1: en construcción (next session arranca acá).
-- Phase 2: pendiente Phase 1.
-- Staging real con DB separada: deferred indefinidamente hasta "first paying customer + RAM bump".
+- **Phase 1: DONE (2026-05-11)**. `apps/landing/` Astro static creada (commit `ef77db902`), Coolify resource `hospeda-landing-prod` provisionado y sirviendo `hospeda.com.ar` + `www.hospeda.com.ar`. Web movido a `staging.hospeda.com.ar` con cert Let's Encrypt válido. robots.txt dinámico (`apps/web/src/pages/robots.txt.ts`, commit `a5cdd30b0`) devuelve `Disallow: /` cuando host coincide con `HOSPEDA_NOINDEX_HOSTS` (default `staging.hospeda.com.ar`); permissive en cualquier otro host. Cloudflare Managed Content bonus blockea AI scrapers (GPTBot, ClaudeBot, Bytespider, etc.) gratis en apex.
+- **Phase 2: pendiente**. Refinamiento de landing (hero copy, value prop, features, footer real, /gracias) + endpoint `POST /api/v1/public/newsletter` con Brevo + crear lista en Brevo (user task) + activar form.
+- **Staging real con DB separada**: deferred indefinidamente hasta "first paying customer + RAM bump".
 
-**Engram**: `vps-migration/pre-launch-landing-strategy` para state completo.
+**Lecciones de Phase 1**:
+
+- **Coolify Domains field**: SIEMPRE usar formato URL completa `https://dominio.com`. Sin `https://` Coolify parsea como `PathPrefix` y genera rule Traefik con `Host('')` vacío que rompe routing y emisión de cert.
+- **Let's Encrypt + Cloudflare proxy**: HTTP-01 challenge no llega al origin si CF proxy está 🟠. Workaround manual: bajar proxy a 🔘 DNS only por ~5 min, restart container, esperar emisión, volver a 🟠. **Phase 2 backlog**: configurar DNS-01 challenge con Cloudflare API token en Coolify para que la emisión sea independiente del estado del proxy.
+- **Astro `output: 'server'` + middleware**: páginas prerenderizadas se sirven via `serve-static` ANTES del global middleware. Headers seteados ahí (CSP, X-Robots-Tag) NO aplican a esas rutas. Para policies de host (noindex), usar endpoints dinámicos con `prerender = false`. **Phase 2 backlog**: agregar Traefik label para inyectar `X-Robots-Tag` en TODAS las responses staging (HTML, JSON, assets) como defense-in-depth.
+- **Disk + memoria**: 56GB de Docker build cache acumulado bloqueó el primer deploy del web (no por disk full sino por memoria reservada por el cache). `docker system prune -f` resolvió. **Backlog**: cron mensual con `prune` automático.
+
+**Engram**: `vps-migration/pre-launch-landing-strategy` para state completo + lecciones learned.
 
 ### Paso 17.2 — Toolkit `scripts/server-tools/` (`hops`)
 
