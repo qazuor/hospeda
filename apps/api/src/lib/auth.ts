@@ -369,6 +369,23 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                 })())
         },
 
+        /**
+         * Account linking: if a user already exists with a given email and
+         * the same email comes back through a different OAuth provider, link
+         * the new provider to the existing user instead of rejecting with
+         * `account_not_linked`. Both Google and Facebook verify the email
+         * on their side before returning it, so trusting them here is safe.
+         * Without this, the second provider attempt dead-ends with an error
+         * and the user has to manually figure out which provider they used
+         * the first time.
+         */
+        account: {
+            accountLinking: {
+                enabled: true,
+                trustedProviders: ['google', 'facebook']
+            }
+        },
+
         plugins: [
             admin({
                 defaultRole: RoleEnum.HOST,

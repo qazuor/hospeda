@@ -102,8 +102,18 @@ export const SignUpForm = ({
         try {
             setIsLoading(true);
             setError(null);
-            const callbackURL = redirectTo ?? window.location.pathname ?? '/';
-            await signIn.social({ provider, callbackURL });
+            // Build absolute callback URLs so Better Auth honors the
+            // browser's current origin (e.g. staging.hospeda.com.ar)
+            // instead of falling back to HOSPEDA_SITE_URL. Both success
+            // and error callbacks anchor on the same origin so the user
+            // lands back where they started the flow.
+            const origin = window.location.origin;
+            const successPath = redirectTo ?? window.location.pathname ?? '/';
+            const callbackURL = successPath.startsWith('http')
+                ? successPath
+                : `${origin}${successPath.startsWith('/') ? '' : '/'}${successPath}`;
+            const errorCallbackURL = `${origin}${window.location.pathname || '/'}`;
+            await signIn.social({ provider, callbackURL, errorCallbackURL });
         } catch (err) {
             authLogger.error('OAuth error', err);
             setError(err instanceof Error ? err.message : 'OAuth authentication failed');

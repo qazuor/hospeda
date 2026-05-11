@@ -29,8 +29,16 @@ vi.mock('../src/logger', () => ({
     }
 }));
 
-// Mock window.location
-const locationMock = { replace: vi.fn(), href: '', pathname: '/' };
+// Mock window.location. `origin` is required because the OAuth handlers
+// now build absolute callback URLs from `window.location.origin` so
+// Better Auth respects the browser's host (e.g. staging.hospeda.com.ar)
+// instead of falling back to HOSPEDA_SITE_URL.
+const locationMock = {
+    replace: vi.fn(),
+    href: '',
+    pathname: '/',
+    origin: 'http://localhost:3000'
+};
 Object.defineProperty(window, 'location', { value: locationMock, writable: true });
 
 /**
@@ -473,7 +481,8 @@ describe('SignInForm', () => {
             await waitFor(() => {
                 expect(mockSignIn.social).toHaveBeenCalledWith({
                     provider: 'google',
-                    callbackURL: '/home'
+                    callbackURL: 'http://localhost:3000/home',
+                    errorCallbackURL: 'http://localhost:3000/'
                 });
             });
         });
@@ -503,7 +512,8 @@ describe('SignInForm', () => {
             await waitFor(() => {
                 expect(mockSignIn.social).toHaveBeenCalledWith({
                     provider: 'facebook',
-                    callbackURL: '/profile'
+                    callbackURL: 'http://localhost:3000/profile',
+                    errorCallbackURL: 'http://localhost:3000/'
                 });
             });
         });
@@ -585,11 +595,14 @@ describe('SignInForm', () => {
             // Act
             await user.click(screen.getByRole('button', { name: 'Continue with Google' }));
 
-            // Assert - callbackURL = redirectTo ?? window.location.pathname ?? '/'
+            // Assert - callbackURL is built from origin + (redirectTo ?? pathname ?? '/'),
+            // errorCallbackURL is origin + pathname so OAuth errors come back to
+            // where the flow started.
             await waitFor(() => {
                 expect(mockSignIn.social).toHaveBeenCalledWith({
                     provider: 'google',
-                    callbackURL: '/current-page'
+                    callbackURL: 'http://localhost:3000/current-page',
+                    errorCallbackURL: 'http://localhost:3000/current-page'
                 });
             });
         });
