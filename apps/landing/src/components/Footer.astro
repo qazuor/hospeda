@@ -1,0 +1,58 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+    <div class="container footer-inner">
+        <p class="footer-brand">
+            <span class="footer-brand-mark">Hospeda</span>
+            <span class="footer-brand-tag">Concepción del Uruguay · Litoral</span>
+        </p>
+        <p class="footer-meta">© {year} Hospeda. Todos los derechos reservados.</p>
+    </div>
+</footer>
+
+<style>
+    .footer {
+        background: var(--surface-dark);
+        color: var(--surface-dark-foreground);
+        padding-block: var(--space-8);
+    }
+
+    .footer-inner {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-4);
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .footer-brand {
+        display: inline-flex;
+        flex-direction: column;
+        gap: var(--space-1);
+    }
+
+    .footer-brand-mark {
+        font-family: var(--font-heading);
+        font-size: 1.125rem;
+        font-weight: 600;
+    }
+
+    .footer-brand-tag {
+        font-size: var(--text-body-sm);
+        color: oklch(from var(--surface-dark-foreground) l c h / 0.6);
+    }
+
+    .footer-meta {
+        font-size: var(--text-body-sm);
+        color: oklch(from var(--surface-dark-foreground) l c h / 0.6);
+    }
+
+    @media (max-width: 540px) {
+        .footer-inner {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+</style>
