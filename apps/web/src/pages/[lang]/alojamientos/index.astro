@@ -637,4 +637,36 @@ if (childrenCount !== undefined && !Number.isNaN(childrenCount)) initialParams.c
 		font-weight: 500;
 		cursor: default;
 	}
+
+	/*
+	 * Mobile: turn the toggle into a fixed bottom tab bar (Airbnb / Booking
+	 * pattern) so users can switch views from any scroll position. Stays
+	 * solid (opaque background + shadow) to read against cards behind it.
+	 *
+	 * z-index 150 sits above page content but below:
+	 * - drawer overlay (300) / drawer panel (400) — drawer covers it
+	 * - mobile menu overlay (9100) — menu covers it
+	 * - feedback FAB (max int) — feedback FAB is now hidden whenever those
+	 *   surfaces open, so no overlap conflict.
+	 *
+	 * Hidden while any blocking overlay is open via `:global(html[...])`.
+	 */
+	@media (max-width: 767px) {
+		.view-toggle {
+			position: fixed;
+			bottom: 1.5rem;
+			left: 50%;
+			transform: translateX(-50%);
+			z-index: 150;
+			margin: 0;
+			box-shadow: 0 4px 16px oklch(0 0 0 / 0.18);
+		}
+
+		:global(html[data-filters-drawer-open]) .view-toggle,
+		:global(html[data-search-panel-open]) .view-toggle,
+		:global(html[data-mobile-menu-open]) .view-toggle {
+			visibility: hidden;
+			pointer-events: none;
+		}
+	}
 </style>
