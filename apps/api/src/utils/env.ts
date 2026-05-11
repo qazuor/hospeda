@@ -352,13 +352,17 @@ export const ApiEnvBaseSchema = z.object({
         .transform((v) => v !== 'false'),
 
     /**
-     * Extra trusted origins for Better Auth (CSV of full URLs).
+     * Extra trusted origins (CSV of full URLs). Applied to BOTH the
+     * Hono CORS allow-list and the Better Auth `trustedOrigins` so
+     * operators don't have to keep two lists in sync.
+     *
      * Used for hostname aliases beyond the canonical HOSPEDA_SITE_URL /
      * HOSPEDA_ADMIN_URL — e.g. staging.hospeda.com.ar and
      * staging-admin.hospeda.com.ar during pre-launch, where the same
      * containers serve both a prod-naming and a staging hostname.
      * Without this, sign-up and OAuth flows from those aliases get
-     * rejected with a CORS / origin-not-trusted error.
+     * rejected: CORS preflight 204 with no Access-Control-Allow-Origin
+     * header (Hono), or origin-not-trusted (Better Auth).
      */
     HOSPEDA_EXTRA_TRUSTED_ORIGINS: z.string().optional(),
 

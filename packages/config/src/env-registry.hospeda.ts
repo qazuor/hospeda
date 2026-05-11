@@ -69,9 +69,9 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_EXTRA_TRUSTED_ORIGINS',
         description:
-            'Comma-separated extra trusted origins for Better Auth beyond HOSPEDA_SITE_URL and HOSPEDA_ADMIN_URL. Used for hostname aliases (e.g. staging.hospeda.com.ar) that the same containers serve. Without this, sign-up and OAuth flows from those aliases get rejected with a CORS / origin-not-trusted error.',
+            'Comma-separated extra trusted origins. Applied to BOTH the Hono CORS allow-list and the Better Auth trustedOrigins (single source of truth). Used for hostname aliases beyond HOSPEDA_SITE_URL / HOSPEDA_ADMIN_URL — e.g. staging.hospeda.com.ar during pre-launch. Without this, sign-up and OAuth flows from those aliases get rejected with a CORS / origin-not-trusted error.',
         descriptionEs:
-            'Lista CSV de orígenes trusted adicionales para Better Auth, además de HOSPEDA_SITE_URL y HOSPEDA_ADMIN_URL. Se usa para alias de hostname (ej: staging.hospeda.com.ar) que sirven los mismos containers. Sin esto, signup y OAuth desde esos alias se rechazan con CORS / origin-not-trusted.',
+            'Lista CSV de orígenes trusted adicionales. Se aplica TANTO al allow-list de CORS de Hono COMO a Better Auth trustedOrigins (única fuente de verdad). Se usa para alias de hostname más allá de HOSPEDA_SITE_URL / HOSPEDA_ADMIN_URL — ej: staging.hospeda.com.ar durante pre-launch. Sin esto, signup y OAuth desde esos alias se rechazan con CORS / origin-not-trusted.',
         type: 'string',
         required: false,
         secret: false,
