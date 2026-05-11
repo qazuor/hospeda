@@ -27,6 +27,7 @@ import { findCommand } from './commands/find.ts';
 import { freeMem } from './commands/free-mem.ts';
 import { health } from './commands/health.ts';
 import { logs } from './commands/logs.ts';
+import { prune } from './commands/prune.ts';
 import { psql } from './commands/psql.ts';
 import { redeploy } from './commands/redeploy.ts';
 import { update } from './commands/update.ts';
@@ -102,6 +103,19 @@ const COMMANDS: ReadonlyArray<Command> = [
         name: 'app-restart',
         summary: 'docker restart an app container without going through Coolify redeploy.',
         run: appRestart
+    },
+    {
+        // Convenience alias for `app-restart`. Operators reach for `restart`
+        // by muscle memory; advertising both names in the menu avoids the
+        // 'why does my command not exist' moment.
+        name: 'restart',
+        summary: 'Alias for `app-restart` — restart an app container in place.',
+        run: appRestart
+    },
+    {
+        name: 'prune',
+        summary: 'docker system prune -f — free build cache + dangling images on demand.',
+        run: prune
     },
     {
         name: 'free-mem',
