@@ -115,7 +115,7 @@ See [`scripts/backup/README.md`](../../scripts/backup/README.md) for the
 backup spec and [`docs/migration/disaster-recovery.md`](../migration/disaster-recovery.md)
 scenario 5 for the recovery runbook when this stops running.
 
-#### Weekly app restart
+#### Weekly maintenance (restart + Docker prune)
 
 | Field | Value |
 |---|---|
@@ -123,9 +123,21 @@ scenario 5 for the recovery runbook when this stops running.
 | Command | `/home/qazuor/hospeda/scripts/server-tools/weekly-restart.sh` |
 | Log file | `/var/log/hospeda-weekly-restart.log` |
 | Source | [`scripts/server-tools/weekly-restart.sh`](../../scripts/server-tools/weekly-restart.sh) |
-| What it does | `hops app-restart api/web/admin --yes` sequentially with smoke between, only if backup ran < 28h ago |
+| What it does | (1) `hops app-restart api/web/admin --yes` sequentially with smoke between, only if backup ran < 28h ago. (2) `sudo docker system prune -f` to free build cache + dangling images + stopped containers + unused networks. |
 | Heartbeat | Optional via `WEEKLY_RESTART_HEARTBEAT_URL` env |
 | Manual trigger | Run the script directly: `~/hospeda/scripts/server-tools/weekly-restart.sh` |
+
+The Docker prune step is **safe** by design: it only removes
+dangling/unused resources, never running containers, named volumes
+(databases), or tagged images currently in use. The reason it lives
+inside the weekly cadence and not in a separate cron is operational
+simplicity (one entry, one log file, one heartbeat) and because both
+operations belong to the same maintenance window.
+
+We learned the hard way (2026-05-11) that an unbounded build cache can
+silently grow past 50 GB and starve the host of memory during the next
+deploy — the cache layers reserve RAM in the daemon's index even when
+disk has headroom. Pruning weekly keeps the cache in single-digit GB.
 
 ### Editing host crons
 

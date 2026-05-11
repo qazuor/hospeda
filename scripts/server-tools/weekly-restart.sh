@@ -2,10 +2,16 @@
 #
 # weekly-restart.sh
 #
-# Restarts the api / web / admin containers on a weekly cadence to clear
-# accumulated memory leaks and stale connection pools. Designed to run
-# unattended from the operator's crontab on Sundays at 04:00 ART
-# (07:00 UTC) when traffic is at its weekly low.
+# Weekly maintenance script that does two things in sequence:
+#
+#   1. Restarts the api / web / admin containers to clear accumulated
+#      memory leaks and stale connection pools.
+#   2. Prunes Docker's dangling images, stopped containers, unused
+#      networks, and build cache to free disk and the RAM that the
+#      build-cache layer index reserves.
+#
+# Designed to run unattended from the operator's crontab on Sundays at
+# 04:00 ART (07:00 UTC) when traffic is at its weekly low.
 #
 # Safety net: refuses to restart if the daily backup did not run in the
 # last 28 hours. The combination of "fresh backup + low traffic" means
@@ -15,15 +21,24 @@
 # Better Auth sessions survive the restart because they are persisted
 # to the Postgres `sessions` table — users do NOT get logged out.
 #
+# The Docker prune step uses `docker system prune -f` (no `-a`, no
+# `--volumes`): it only removes dangling images, stopped containers,
+# unused networks, and build cache. It does NOT touch running
+# containers, tagged images in use, named volumes (databases), or
+# anything currently referenced by a running stack. Safe to run
+# unattended.
+#
 # Logs to /var/log/hospeda-weekly-restart.log. Optional heartbeat ping
 # via WEEKLY_RESTART_HEARTBEAT_URL so an external monitor can alert if
 # the cron stops firing.
 #
 # Exit codes:
-#   0 - success (all three apps restarted)
+#   0 - success (all three apps restarted; prune is best-effort)
 #   1 - configuration error (hops binary missing, etc.)
 #   2 - backup safety check failed (no recent backup) — restart aborted
-#   3 - one or more app restarts failed (logged, partial state)
+#   3 - one or more app restarts failed (logged, partial state). Prune
+#       still runs because cleanup helps recover from disk-induced
+#       failures.
 #
 
 set -euo pipefail
@@ -126,10 +141,33 @@ restart_one web "$WEB_HOME_URL"
 restart_one admin "$ADMIN_LOGIN_URL"
 
 # -----------------------------------------------------------------------------
+# Docker prune (free build cache + dangling images)
+# -----------------------------------------------------------------------------
+# Best-effort: failures here are logged but do not change the exit code.
+# A failed prune is annoying but not dangerous; a failed restart is the
+# real signal we want to surface.
+#
+# Runs without `sudo` because cron jobs cannot type a password. The
+# operator running this script must be a member of the `docker` group
+# (the same access hops uses for app-restart). If the prune step
+# permission-denies, fix it once with `sudo usermod -aG docker
+# <operator>` and re-login.
+log "Pruning Docker dangling images / stopped containers / build cache..."
+if prune_output=$(docker system prune -f 2>&1); then
+    # The prune output ends with a "Total reclaimed space: X" line. Pull it
+    # out so the log is informative without dumping the full prune verbiage.
+    reclaimed=$(echo "$prune_output" | grep -i "Total reclaimed space" | tail -1)
+    log "Docker prune OK. ${reclaimed:-(no space reclaimed this run)}"
+else
+    log "WARNING: docker system prune failed. Output:"
+    echo "$prune_output" | tee -a "$LOG_FILE"
+fi
+
+# -----------------------------------------------------------------------------
 # Summary + heartbeat
 # -----------------------------------------------------------------------------
 if [[ "$failures" -eq 0 ]]; then
-    log "Weekly restart completed successfully (3/3 apps restarted and smoked)"
+    log "Weekly maintenance completed successfully (3/3 apps restarted and smoked, prune ran)"
     if [[ -n "${WEEKLY_RESTART_HEARTBEAT_URL:-}" ]]; then
         if curl -fsS --max-time 10 -o /dev/null "$WEEKLY_RESTART_HEARTBEAT_URL"; then
             log "Heartbeat ping OK"
@@ -139,6 +177,6 @@ if [[ "$failures" -eq 0 ]]; then
     fi
     exit 0
 else
-    log "Weekly restart finished with $failures failure(s). Check the log above."
+    log "Weekly maintenance finished with $failures restart failure(s). Check the log above."
     exit 3
 fi
