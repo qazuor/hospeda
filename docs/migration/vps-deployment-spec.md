@@ -2987,9 +2987,44 @@ Después del cleanup, correr `scripts/smoke-test.sh` y validar 11/11 PASS.
 
 > **Cuándo**: después de validar 1-2 semanas estable en VPS. NO bloqueante para launch público; agenda como hardening incremental.
 
-### Paso 17.1 — Staging environment
+### Paso 17.1 — Staging environment + pre-launch landing strategy
 
-3 apps + DB Postgres dedicada para staging. Subdominios: `staging.hospeda.com.ar`, `staging-api.hospeda.com.ar`, `staging-admin.hospeda.com.ar`. Branch GitHub: `develop`. Coolify deploy on push para esos. **NO compartir DB con prod** (decisión del usuario). Costo extra: $0 si comparte VPS, ~$6-12/mes si VPS separado. Decidir según RAM disponible (VPS prod tiene 3.8 GB RAM total, ahora a ~50% usage; staging suma ~600-800 MB con apps idle). Ver Task #20.
+**REDEFINIDO** (2026-05-11). El paso original asumía que la app real ya estaba en `hospeda.com.ar` y que staging iba en otro lugar. Una vez detectado que MercadoPago está en PRODUCTION mode (Phase 16.3) y que la app sigue en pre-beta activo, la exposición a transacciones reales en `hospeda.com.ar` es inaceptable. Se cambia el modelo:
+
+**Modelo nuevo (HOY hasta launch oficial)**:
+
+```
+hospeda.com.ar              → landing coming-soon (NUEVA apps/landing/) con form newsletter Brevo
+staging.hospeda.com.ar      → la app real (apps/web), con header X-Robots-Tag: noindex
+api.hospeda.com.ar          → API (compartida, no se indexa)
+admin.hospeda.com.ar        → admin (gated por auth, no se indexa)
+```
+
+**Modelo POST-LAUNCH** (cuando Hospeda salga oficialmente):
+
+```
+hospeda.com.ar              → la app real (cambio DNS, 5 min)
+staging.hospeda.com.ar      → ahora SÍ es staging real (separate Coolify project + DB)
+api.hospeda.com.ar          → API real
+staging-api.hospeda.com.ar  → API staging cuando llegue tracción
+```
+
+**Beneficio**: la decisión "VPS shared vs separado para staging" queda **diferida hasta first paying customer + bump VPS a $48/mo (8GB RAM)**. Hoy ahorrás $6-12/mo. Hoy también ya tenés el subdomain en uso, así que cuando promovés el modelo no hay nuevo DNS / Cloudflare config.
+
+**Plan de ejecución pre-launch (Phase 1 + 2)**:
+
+- **Phase 1 — Crítico (cerrar exposición)**: crear apps/landing skeleton (Astro static, mismo design system que apps/web), DNS staging.hospeda.com.ar, Coolify routing. Resultado: `hospeda.com.ar` sirve landing, `staging.hospeda.com.ar` sirve la app real con noindex. Estimado 2h split user/agent.
+- **Phase 2 — Polish (landing real + newsletter)**: refinar landing con secciones reales (hero/value prop/features/newsletter form/footer), endpoint `POST /api/v1/public/newsletter` en apps/api, integración Brevo (reusa `HOSPEDA_EMAIL_PROVIDER_API_KEY`, agrega `HOSPEDA_BREVO_NEWSLETTER_LIST_ID`). Estimado 1-2 días.
+
+**Decisiones del usuario para la landing**: copy basado en tono apps/web (voseo, "Tu escapada empieza acá"), Brevo list a crear durante Phase 2, mismos visuales que apps/web (logo + hero images), launch ETA "Próximamente" sin fecha, solo idioma ES.
+
+**Estado**:
+
+- Phase 1: en construcción (next session arranca acá).
+- Phase 2: pendiente Phase 1.
+- Staging real con DB separada: deferred indefinidamente hasta "first paying customer + RAM bump".
+
+**Engram**: `vps-migration/pre-launch-landing-strategy` para state completo.
 
 ### Paso 17.2 — Toolkit `scripts/server-tools/` (`hops`)
 
