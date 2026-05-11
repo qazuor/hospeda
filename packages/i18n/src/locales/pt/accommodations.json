@@ -378,5 +378,14 @@
             "guestsAdultsOnly": "{adults} adultos",
             "guestsChildrenOnly": "{children} crianças"
         }
+    },
+    "emptyChip": {
+        "price": "Preço",
+        "featured": "Apenas destacados"
+    },
+    "emptySuggestion": {
+        "viewMap": "Ver no mapa",
+        "popular": "Mais salvos",
+        "allDestinations": "Explorar destinos"
     }
 }

@@ -195,5 +195,14 @@
     },
     "sort": {
         "most_bookmarked": "Mais salvos"
+    },
+    "emptyState": {
+        "noResults": "Nenhum resultado encontrado para os filtros selecionados.",
+        "empty": "Nenhum conteúdo disponível no momento.",
+        "clearFilters": "Limpar filtros",
+        "explore": "Explorar",
+        "activeFiltersHeading": "Filtros aplicados (toque um para remover):",
+        "removeFilter": "Remover filtro",
+        "suggestionsHeading": "Ou tente:"
     }
 }
