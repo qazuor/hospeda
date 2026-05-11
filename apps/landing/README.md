@@ -40,8 +40,8 @@ pnpm --filter hospeda-landing preview
   Build target: `hospeda.com.ar` + `www.hospeda.com.ar`.
 - **Phase 2 (next)** — refine copy + sections, wire newsletter form to
   `POST /api/v1/public/newsletter` (Brevo integration), add `/gracias`,
-  JSON-LD, sitemap. Requires `HOSPEDA_BREVO_NEWSLETTER_LIST_ID` env var
-  on the API side.
+  JSON-LD, sitemap. Requires `HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID`
+  env var on the API side.
 
 ## Deploy on Coolify
 

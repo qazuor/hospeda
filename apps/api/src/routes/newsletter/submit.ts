@@ -154,12 +154,12 @@ export const submitNewsletterRoute = createSimpleRoute({
         // Pre-launch we cannot risk the form returning errors that confuse
         // visitors. If the API key or list ID is missing, we log loudly so
         // the operator knows to wire it up, but return success to the user.
-        if (!env.HOSPEDA_EMAIL_API_KEY || !env.HOSPEDA_BREVO_NEWSLETTER_LIST_ID) {
+        if (!env.HOSPEDA_EMAIL_API_KEY || !env.HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID) {
             apiLogger.warn(
                 {
                     emailDomain,
                     hasApiKey: Boolean(env.HOSPEDA_EMAIL_API_KEY),
-                    hasListId: Boolean(env.HOSPEDA_BREVO_NEWSLETTER_LIST_ID)
+                    hasListId: Boolean(env.HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID)
                 },
                 'Newsletter submission persisted in logs only (Brevo not configured)'
             );
@@ -172,7 +172,7 @@ export const submitNewsletterRoute = createSimpleRoute({
         // ── 6. Forward to Brevo ───────────────────────────────────────────────
         const brevoResult = await addContactToBrevoList({
             email: sanitizedEmail,
-            listId: env.HOSPEDA_BREVO_NEWSLETTER_LIST_ID,
+            listId: env.HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID,
             apiKey: env.HOSPEDA_EMAIL_API_KEY
         });
 
@@ -193,7 +193,7 @@ export const submitNewsletterRoute = createSimpleRoute({
                 {
                     emailDomain,
                     brevoStatus: brevoResult.status,
-                    listId: env.HOSPEDA_BREVO_NEWSLETTER_LIST_ID
+                    listId: env.HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID
                 },
                 'Newsletter subscription forwarded to Brevo'
             );

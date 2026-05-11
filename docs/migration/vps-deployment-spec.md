@@ -3014,7 +3014,7 @@ staging-api.hospeda.com.ar  → API staging cuando llegue tracción
 **Plan de ejecución pre-launch (Phase 1 + 2)**:
 
 - **Phase 1 — Crítico (cerrar exposición)**: crear apps/landing skeleton (Astro static, mismo design system que apps/web), DNS staging.hospeda.com.ar, Coolify routing. Resultado: `hospeda.com.ar` sirve landing, `staging.hospeda.com.ar` sirve la app real con noindex. Estimado 2h split user/agent.
-- **Phase 2 — Polish (landing real + newsletter)**: refinar landing con secciones reales (hero/value prop/features/newsletter form/footer), endpoint `POST /api/v1/public/newsletter` en apps/api, integración Brevo (reusa `HOSPEDA_EMAIL_PROVIDER_API_KEY`, agrega `HOSPEDA_BREVO_NEWSLETTER_LIST_ID`). Estimado 1-2 días.
+- **Phase 2 — Polish (landing real + newsletter)**: refinar landing con secciones reales (hero/value prop/features/newsletter form/footer), endpoint `POST /api/v1/public/newsletter` en apps/api, integración Brevo (reusa `HOSPEDA_EMAIL_API_KEY`, agrega `HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID` para mantener cohorte pre-launch separada de cualquier newsletter post-launch). Estimado 1-2 días.
 
 **Decisiones del usuario para la landing**: copy basado en tono apps/web (voseo, "Tu escapada empieza acá"), Brevo list a crear durante Phase 2, mismos visuales que apps/web (logo + hero images), launch ETA "Próximamente" sin fecha, solo idioma ES.
 

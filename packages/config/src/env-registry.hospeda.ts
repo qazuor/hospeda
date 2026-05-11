@@ -432,11 +432,11 @@ export const HOSPEDA_ENV_VARS = [
             'Brevo dashboard → SMTP & API → API Keys → Generate a new API key → copiá el valor que empieza con "xkeysib-". Antes autenticá tu dominio de envío en Senders, Domains & Dedicated IPs.'
     },
     {
-        name: 'HOSPEDA_BREVO_NEWSLETTER_LIST_ID',
+        name: 'HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID',
         description:
-            'Numeric Brevo Contacts list ID where pre-launch newsletter signups (POST /api/v1/public/newsletter) get added. Reuses HOSPEDA_EMAIL_API_KEY for auth.',
+            'Numeric Brevo Contacts list ID for PRE-LAUNCH newsletter signups (the coming-soon landing form at hospeda.com.ar, POST /api/v1/public/newsletter). Distinct from any post-launch newsletter list so cohorts stay separated. Reuses HOSPEDA_EMAIL_API_KEY for auth.',
         descriptionEs:
-            'ID numérico de la lista de Contactos Brevo donde van los signups del newsletter pre-launch (POST /api/v1/public/newsletter). Reusa HOSPEDA_EMAIL_API_KEY para autenticarse.',
+            'ID numérico de la lista de Contactos Brevo para los signups del newsletter PRE-LAUNCH (form de coming-soon en hospeda.com.ar, POST /api/v1/public/newsletter). Distinta de cualquier lista post-launch para mantener cohortes separadas. Reusa HOSPEDA_EMAIL_API_KEY para autenticarse.',
         type: 'number',
         required: false,
         secret: false,
