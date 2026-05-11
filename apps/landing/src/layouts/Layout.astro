@@ -13,6 +13,25 @@ const {
 
 const siteUrl = Astro.site?.toString().replace(/\/$/, '') ?? 'https://hospeda.com.ar';
 const ogImage = `${siteUrl}/logo.webp`;
+
+// JSON-LD Organization schema. Helps search engines understand who runs
+// the site and where it operates. Keep the structure minimal at
+// pre-launch — we'll add LodgingBusiness, address, contact, etc. once
+// the product is real and there's something to verify.
+const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Hospeda',
+    url: siteUrl,
+    logo: `${siteUrl}/logo.webp`,
+    description:
+        'Hospedajes seleccionados en Concepción del Uruguay y el Litoral entrerriano. Reserva directa, sin intermediarios.',
+    areaServed: {
+        '@type': 'Place',
+        name: 'Concepción del Uruguay y Litoral entrerriano, Argentina'
+    },
+    email: 'hola@hospeda.com.ar'
+};
 ---
 
 <!doctype html>
@@ -56,6 +75,11 @@ const ogImage = `${siteUrl}/logo.webp`;
         <link
             rel="stylesheet"
             href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Geologica:wght@500;600;700&family=Caveat:wght@500;600&display=swap"
+        />
+
+        <script
+            type="application/ld+json"
+            set:html={JSON.stringify(organizationSchema)}
         />
     </head>
     <body>

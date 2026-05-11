@@ -1,13 +1,37 @@
 ---
 const year = new Date().getFullYear();
+const contactEmail = 'hola@hospeda.com.ar';
 ---
 
 <footer class="footer">
     <div class="container footer-inner">
-        <p class="footer-brand">
-            <span class="footer-brand-mark">Hospeda</span>
-            <span class="footer-brand-tag">Concepción del Uruguay · Litoral</span>
-        </p>
+        <div class="footer-brand">
+            <p class="footer-brand-mark">Hospeda</p>
+            <p class="footer-brand-tag">
+                Concepción del Uruguay · Entre Ríos · Argentina
+            </p>
+        </div>
+
+        <nav class="footer-nav" aria-label="Enlaces del pie de página">
+            <a href={`mailto:${contactEmail}`} class="footer-link">
+                <svg
+                    aria-hidden="true"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22 6 12 13 2 6" />
+                </svg>
+                {contactEmail}
+            </a>
+        </nav>
+
         <p class="footer-meta">© {year} Hospeda. Todos los derechos reservados.</p>
     </div>
 </footer>
@@ -16,26 +40,31 @@ const year = new Date().getFullYear();
     .footer {
         background: var(--surface-dark);
         color: var(--surface-dark-foreground);
-        padding-block: var(--space-8);
+        padding-block: var(--space-10);
     }
 
     .footer-inner {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-4);
+        display: grid;
+        gap: var(--space-6);
+        grid-template-columns: 1fr;
         align-items: center;
-        justify-content: space-between;
+    }
+
+    @media (min-width: 720px) {
+        .footer-inner {
+            grid-template-columns: 1fr auto 1fr;
+        }
     }
 
     .footer-brand {
-        display: inline-flex;
+        display: flex;
         flex-direction: column;
         gap: var(--space-1);
     }
 
     .footer-brand-mark {
         font-family: var(--font-heading);
-        font-size: 1.125rem;
+        font-size: 1.25rem;
         font-weight: 600;
     }
 
@@ -44,15 +73,45 @@ const year = new Date().getFullYear();
         color: oklch(from var(--surface-dark-foreground) l c h / 0.6);
     }
 
-    .footer-meta {
-        font-size: var(--text-body-sm);
-        color: oklch(from var(--surface-dark-foreground) l c h / 0.6);
+    .footer-nav {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-4);
+        justify-self: center;
     }
 
-    @media (max-width: 540px) {
-        .footer-inner {
-            flex-direction: column;
+    .footer-link {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-4);
+        color: oklch(from var(--surface-dark-foreground) l c h / 0.85);
+        font-size: var(--text-body-sm);
+        font-weight: 500;
+        border-radius: var(--radius-pill);
+        background: oklch(1 0 0 / 0.06);
+        transition:
+            background-color var(--duration-fast) var(--ease-out),
+            color var(--duration-fast) var(--ease-out);
+    }
+
+    .footer-link:hover {
+        background: oklch(1 0 0 / 0.12);
+        color: white;
+    }
+
+    .footer-meta {
+        font-size: var(--text-body-sm);
+        color: oklch(from var(--surface-dark-foreground) l c h / 0.55);
+        text-align: right;
+    }
+
+    @media (max-width: 720px) {
+        .footer-brand,
+        .footer-nav,
+        .footer-meta {
             text-align: center;
+            justify-self: center;
         }
     }
 </style>
