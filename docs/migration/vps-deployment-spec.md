@@ -2993,17 +2993,21 @@ Después del cleanup, correr `scripts/smoke-test.sh` y validar 11/11 PASS.
 
 ### Paso 17.2 — Toolkit `scripts/server-tools/` (`hops`)
 
-> **Estado al 2026-05-11**: en curso. **17 commands shipped y smoke-tested en VPS prod**:
+> **Estado al 2026-05-11**: V1 código completo. **19 commands shipped** (17 smoke-tested en VPS prod, 2 nuevos pendientes de smoke):
 >
 > - **Tanda 1** (round 1, smoke 2026-05-09): `docker-by-name`, `find`, `redeploy`, `env-list`, `exec` (in-container run), `logs`, `psql`. Plus `--version`, `--help` standardized en todos, `install.sh` + `uninstall.sh`.
 > - **Tanda 2** (round 2, smoke 2026-05-10): `db-counts`, `app-restart`, `free-mem`, `health` (wraps `scripts/smoke-test.sh`), `env-set`, `env-pull`. Mid-smoke fix: Coolify v4 PATCH endpoint para env vars usa key-in-body, no env_uuid in path. DELETE sí usa env_uuid in path. Bonus: `env-delete` agregado para limpiar env vars con un comando, y `update` (git pull + reinstall en un paso) agregado al cierre del round.
 > - **Tanda 3** (round 3, código + smoke 2026-05-10/11): `db-backup-now`, `db-restore`. Reusan `lib/r2.ts` (wrapper sobre `@aws-sdk/client-s3`) y `lib/postgres.ts` (`pgDumpToBuffer` que captura binary stdout vía `child_process.spawn` para no corromper el `pg_dump -Fc`). `db-backup-now` escribe a `s3://hospeda-backups/manual/hospeda-postgres-<TS>.dump` para distinguir del daily cron en root del bucket. `db-restore` lista todos los backups newest-first vía `@clack` picker, hace **pre-restore snapshot automático** a `manual/pre-restore-<TS>.dump` antes de pisar la DB (opt-out con `--no-snapshot-first`), después `docker cp` + `pg_restore --clean --if-exists`. Smoke validado end-to-end: backup 401.3 KB → upload manual/ → pre-restore snapshot → download → docker cp → pg_restore exit 0 → cleanup, todo contra `--target-db postgres_restore_test` para no tocar prod. **Decisiones diferidas** (capturadas en engram `vps-migration/backup-hardening-deferred`): (a) **GPG encryption** — el daily cron tampoco encripta; agregar GPG es follow-up que debe cubrir AMBOS paths en un cambio coherente, (b) **R2 retention/lifecycle** — `manual/*` queda sin auto-delete por ahora, eventualmente lifecycle rule en CF dashboard.
+> - **Tanda 4** (round 4, código 2026-05-11, smoke pendiente VPS): `cron-list`, `cron-trigger`. Reusan `lib/api-client.ts` (wrapper sobre `fetch` que envía `Cookie:` header desde `HOPS_ADMIN_COOKIE`). Hit los endpoints `GET /api/v1/admin/cron` y `POST /api/v1/admin/cron/{name}?dryRun=`. `cron-list` muestra tabla numerada (`#`, `name`, `schedule`, `enabled`, `description`); `cron-trigger` acepta índice posicional, nombre exacto, o picker `@clack` (con `--dry-run` y `--yes` para automation). **Decisión de auth**: Better Auth session cookie pasted from browser DevTools — el operator copia el valor de `__Secure-better-auth.session_token` y lo pega en `.env.local`. Simple, zero cambios al API, costo: cookie expira cada 7-30 días → operator refresca cuando hops retorna 401 (mensaje de error es accionable). **Bearer-token alternativa formal**: tracked en SPEC-102 (admin-api-bearer-token) para implementar sin presión de tiempo.
 >
-> Stack: TypeScript on bun, ships como single-file binary (`bun build --compile`, ~98 MB con runtime embedded). Configuración en `scripts/server-tools/.env.local` (gitignored). Container lookup vía label `coolify.resourceName` con fallback a image ancestor + exposed port + name prefix; UUIDs nunca hard-coded. Decisión arquitectónica: V1 corre en VPS (operator SSHs in), V2 también desde laptop (SshRunner reemplaza LocalRunner detrás del Runner interface).
+> Stack: TypeScript on bun, ships como single-file binary (`bun build --compile`, ~99 MB con runtime embedded). Configuración en `scripts/server-tools/.env.local` (gitignored). Container lookup vía label `coolify.resourceName` con fallback a image ancestor + exposed port + name prefix; UUIDs nunca hard-coded. Decisión arquitectónica: V1 corre en VPS (operator SSHs in), V2 también desde laptop (SshRunner reemplaza LocalRunner detrás del Runner interface).
 >
-> **Tandas pendientes**:
+> **V2 backlog** (no urgente, sin presión de tiempo):
 >
-> - Tanda 4: `cron-list`, `cron-trigger` (read-only contra admin endpoints existentes). `cron-edit` queda diferido a V2 (necesita tabla `cron_schedule_overrides` del lado API).
+> - `cron-edit` — override de schedule en runtime. Necesita tabla `cron_schedule_overrides` del lado API. Spec aparte cuando aparezca el caso de uso.
+> - SshRunner — correr hops desde laptop sin SSH-in. La interface `Runner` en `src/lib/runner.ts` ya está, falta la impl.
+> - SPEC-102 (admin-api-bearer-token) — reemplazar el cookie pasted-from-browser pattern con un token rotado para `cron-list` / `cron-trigger`.
+> - SPEC `vps-migration/backup-hardening-deferred` (engram) — GPG encryption + R2 lifecycle para los backups, debe cubrir tanto el daily cron como `db-backup-now`/`db-restore`.
 >
 > **Lecciones del build worth preservar** (capturadas en engram + project memory):
 >
