@@ -135,15 +135,27 @@ const hasTopFilters = showFilters && filterPosition === 'top';
 		margin-top: var(--space-8);
 	}
 
-	/* Mobile: sidebar hidden, single column */
+	/* Mobile: collapse sidebar to zero, single column content. */
 	@media (max-width: 768px) {
 		.listing-body__grid--with-sidebar {
 			grid-template-columns: 1fr;
 		}
 
+		/*
+		 * Do NOT use `display: none` here. FilterSidebar renders its mobile UI
+		 * (floating trigger button + drawer dialog, both `position: fixed`) as
+		 * descendants of this <aside>. `display: none` would propagate to those
+		 * fixed descendants and silently kill the mobile filter UX. Collapsing
+		 * to zero size keeps the fixed-positioned children visible because they
+		 * escape the parent's layout box.
+		 */
 		.listing-sidebar {
 			position: static;
-			display: none; /* FilterSidebar component handles mobile toggle */
+			width: 0;
+			height: 0;
+			margin: 0;
+			padding: 0;
+			overflow: visible;
 		}
 	}
 </style>

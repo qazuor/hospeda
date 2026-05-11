@@ -110,6 +110,23 @@ const hasIconSlot = Astro.slots.has('default');
 	)}
 </div>
 
+<script>
+	/*
+	 * Publish a flag on <html> while the EmptyState is mounted so the global
+	 * feedback FAB can hide itself and not overlap the action button on mobile.
+	 * Cleared on the next Astro page swap; the next page's own script (if any)
+	 * re-publishes the flag if it also renders an EmptyState.
+	 */
+	document.documentElement.dataset.emptyStateVisible = '';
+	document.addEventListener(
+		'astro:before-swap',
+		() => {
+			delete document.documentElement.dataset.emptyStateVisible;
+		},
+		{ once: true }
+	);
+</script>
+
 <style>
 	.empty-state {
 		display: flex;

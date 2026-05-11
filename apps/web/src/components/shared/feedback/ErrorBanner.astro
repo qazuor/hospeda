@@ -173,6 +173,20 @@ const detailsJson = showDevDetails && error?.details !== undefined
 		});
 	}
 	document.addEventListener('astro:page-load', initErrorBanner);
+
+	/*
+	 * Publish a flag on <html> while the ErrorBanner is mounted so the global
+	 * feedback FAB hides itself instead of overlapping the "Reportar problema"
+	 * action button (same CTA as the FAB). Cleared on the next Astro page swap.
+	 */
+	document.documentElement.dataset.errorBannerVisible = '';
+	document.addEventListener(
+		'astro:before-swap',
+		() => {
+			delete document.documentElement.dataset.errorBannerVisible;
+		},
+		{ once: true }
+	);
 </script>
 
 <style>

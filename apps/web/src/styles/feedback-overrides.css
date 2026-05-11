@@ -95,26 +95,32 @@ body.cookie-banner-open .feedback-root .minimizedDot {
 }
 
 /*
- * Hide the FAB while the fullscreen mobile menu is open. The package's FAB
- * uses the maximum int z-index by design (so it always wins over normal page
- * content), but that conflicts with the fullscreen menu — the FAB ends up
- * floating on top of the menu drawer. When MobileMenu opens it sets
- * [data-mobile-menu-open] on <html>; we hide the FAB while that flag is set.
+ * Hide the FAB while another full-screen / blocking surface is active. The
+ * package's FAB uses the maximum int z-index by design (so it always wins
+ * over normal page content), but that conflicts with overlays — without
+ * these rules the FAB ends up floating on top of menu drawers, search
+ * bottom sheets, the filter drawer on listing pages, and primary action
+ * buttons inside empty/error states.
+ *
+ * Producers of these flags (each component publishes its own on <html>):
+ *   [data-mobile-menu-open]      — Header mobile hamburger menu open.
+ *   [data-search-panel-open]     — Hero SearchBar bottom sheet open.
+ *   [data-filters-drawer-open]   — FilterSidebar MobileDrawer open.
+ *   [data-empty-state-visible]   — EmptyState mounted (would overlap CTA).
+ *   [data-error-banner-visible]  — ErrorBanner mounted (would overlap CTA).
+ *
+ * Add a new flag here whenever a surface needs the FAB out of the way.
  */
 html[data-mobile-menu-open] .feedback-root .fab,
-html[data-mobile-menu-open] .feedback-root .minimizedDot {
-    visibility: hidden;
-    pointer-events: none;
-}
-
-/*
- * Same idea while a hero search bar bottom-sheet is open on mobile: the FAB
- * sits in the bottom-right corner of the viewport and overlaps the sheet's
- * stepper buttons. The SearchBar island sets [data-search-panel-open] on
- * <html> while any of its panels are active.
- */
+html[data-mobile-menu-open] .feedback-root .minimizedDot,
 html[data-search-panel-open] .feedback-root .fab,
-html[data-search-panel-open] .feedback-root .minimizedDot {
+html[data-search-panel-open] .feedback-root .minimizedDot,
+html[data-filters-drawer-open] .feedback-root .fab,
+html[data-filters-drawer-open] .feedback-root .minimizedDot,
+html[data-empty-state-visible] .feedback-root .fab,
+html[data-empty-state-visible] .feedback-root .minimizedDot,
+html[data-error-banner-visible] .feedback-root .fab,
+html[data-error-banner-visible] .feedback-root .minimizedDot {
     visibility: hidden;
     pointer-events: none;
 }
