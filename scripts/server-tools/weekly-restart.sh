@@ -46,7 +46,24 @@ set -euo pipefail
 # -----------------------------------------------------------------------------
 # Configuration
 # -----------------------------------------------------------------------------
-LOG_FILE="${WEEKLY_RESTART_LOG:-/var/log/hospeda-weekly-restart.log}"
+# Resolve a writable log file. The conventional `/var/log/...` path needs
+# `sudo touch + chown` once before a non-root operator can write to it,
+# which is awkward to enforce inside a cron entry. Fall back to the
+# operator's home so the script Just Works whether `/var/log` was
+# pre-provisioned or not. Operator can override either path via env.
+PRIMARY_LOG="${WEEKLY_RESTART_LOG:-/var/log/hospeda-weekly-restart.log}"
+FALLBACK_LOG="${WEEKLY_RESTART_FALLBACK_LOG:-$HOME/hospeda-weekly-restart.log}"
+if touch "$PRIMARY_LOG" 2>/dev/null; then
+    LOG_FILE="$PRIMARY_LOG"
+elif touch "$FALLBACK_LOG" 2>/dev/null; then
+    LOG_FILE="$FALLBACK_LOG"
+    echo "[weekly-restart] WARNING: $PRIMARY_LOG not writable, falling back to $FALLBACK_LOG."
+    echo "[weekly-restart] Hint: sudo touch $PRIMARY_LOG && sudo chown $(id -un) $PRIMARY_LOG"
+else
+    echo "[weekly-restart] FATAL: cannot write to either $PRIMARY_LOG or $FALLBACK_LOG. Aborting."
+    exit 1
+fi
+
 BACKUP_LOG="${HOSPEDA_BACKUP_LOG:-/var/log/hospeda-backup.log}"
 MAX_BACKUP_AGE_HOURS="${MAX_BACKUP_AGE_HOURS:-28}"
 HOPS_BIN="${HOPS_BIN:-/home/qazuor/.local/bin/hops}"
