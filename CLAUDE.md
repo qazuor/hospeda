@@ -105,7 +105,10 @@ pnpm build:api        # Build API for production
 # button click in Coolify after CI is green.
 
 # Environment
-pnpm env:check        # Validate env vars against the registry in packages/config
+pnpm env:check:registry  # Local: confirm app schemas match @repo/config registry (CI gate)
+# Note: pnpm env:pull / env:push / env:sync / env:check are deprecated stubs.
+# They targeted Vercel (gone after Phase 16.4). Use hops env-* on the VPS for
+# remote env management. Full workflow: docs/guides/env-management.md.
 ```
 
 ### Coding Standards
@@ -206,9 +209,9 @@ Common biome errors that block commits:
 
 ## Environment Configuration
 
-See [docs/guides/environment-variables.md](docs/guides/environment-variables.md) for the full reference. Each app has its own `.env.example` in its directory (e.g., `apps/api/.env.example`).
+See [docs/guides/environment-variables.md](docs/guides/environment-variables.md) for the full reference and [docs/guides/env-management.md](docs/guides/env-management.md) for the operational workflow (local dev + Coolify prod). Each app has its own `.env.example` in its directory (e.g., `apps/api/.env.example`).
 
-The canonical registry of all env vars lives in `packages/config`. Use `pnpm env:check` to validate your local env against it.
+The canonical registry of all env vars lives in `packages/config`. Use `pnpm env:check:registry` to validate that app schemas are in sync with the registry (this is the CI gate; runs three per-app vitest suites). The legacy `pnpm env:check / env:pull / env:push / env:sync` commands are deprecated stubs that targeted the Vercel API (gone after Phase 16.4); they print a pointer to the new workflow and exit.
 
 ### Adding a new environment variable (workflow)
 
@@ -218,9 +221,11 @@ When introducing a new env var, ALL of the following must happen in the same cha
 2. **Add Zod validation** in the consuming app's `env.ts` (e.g., `apps/api/src/utils/env.ts`).
 3. **Update `.env.example`** in each consuming app with a safe placeholder value.
 4. **Document it** if its purpose is non-obvious (in the relevant `docs/` guide or app `CLAUDE.md`).
-5. **Set the value in Coolify** for every environment that needs it (production, plus staging/preview when those exist). Open `https://coolify.hospeda.com.ar` → app (`hospeda-api-prod`, `hospeda-web-prod`, `hospeda-admin-prod`) → Environment Variables → add the new key. After saving, redeploy the app so the new var is picked up by the next container build. The legacy `pnpm env:sync` script targeted the Vercel API and is being replaced by a Coolify-API-driven equivalent under Phase 17.3 (see `docs/migration/vps-deployment-spec.md`); until that lands, Coolify env vars are managed via the UI.
+5. **Set the value in Coolify** for every environment that needs it. Two equivalent paths:
+   - **CLI (preferred for ops):** SSH to the VPS and run `hops env-set <kind> KEY VALUE` (or `--secret` for a masked prompt). Then `hops redeploy <kind>` to pick up the change.
+   - **UI:** Open `https://coolify.hospeda.com.ar` → app (`hospeda-api-prod`, `hospeda-web-prod`, `hospeda-admin-prod`) → Environment Variables → add the new key → Save → Redeploy.
 
-> Claude operating rule: when adding/modifying env vars, after step 4 STOP and tell the user "I added env var X to the registry — please set it in Coolify for `<app>` and trigger a redeploy". Never leave a registered var unset on the deployment platform.
+> Claude operating rule: when adding/modifying env vars, after step 4 STOP and tell the user "I added env var X to the registry — please set it in Coolify for `<app>` and trigger a redeploy (use `hops env-set <kind> KEY VALUE` from the VPS or the Coolify UI)". Never leave a registered var unset on the deployment platform.
 
 Key environment variables:
 
