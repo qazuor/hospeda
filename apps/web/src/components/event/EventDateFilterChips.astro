@@ -14,6 +14,7 @@
 
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import ScrollableNav from '@/components/shared/ui/ScrollableNav.astro';
 
 /** Valid temporal filter values for the `when` query param. */
 export type EventDateFilter = 'all' | 'today' | 'week' | 'month' | 'next60' | 'past';
@@ -81,74 +82,37 @@ function buildChipHref(value: EventDateFilter): string {
 }
 ---
 
-<nav
-    class="event-date-chips"
-    aria-label={t('events.dateFilters.ariaLabel', 'Filtrar eventos por fecha')}
+<ScrollableNav
+    ariaLabel={t('events.dateFilters.ariaLabel', 'Filtrar eventos por fecha')}
+    innerClass="event-date-chips__list"
 >
-    <ul class="event-date-chips__list" role="list">
-        {DATE_FILTERS.map(({ value, label }) => {
-            const isActive = current === value;
-            return (
-                <li class="event-date-chips__item">
-                    <a
-                        href={buildChipHref(value)}
-                        class:list={[
-                            'event-date-chips__chip',
-                            { 'event-date-chips__chip--active': isActive },
-                        ]}
-                        aria-pressed={isActive ? 'true' : 'false'}
-                        rel="nofollow"
-                    >
-                        {label}
-                    </a>
-                </li>
-            );
-        })}
-    </ul>
-</nav>
+    {DATE_FILTERS.map(({ value, label }) => {
+        const isActive = current === value;
+        return (
+            <a
+                href={buildChipHref(value)}
+                class:list={[
+                    'event-date-chips__chip',
+                    { 'event-date-chips__chip--active': isActive },
+                ]}
+                aria-pressed={isActive ? 'true' : 'false'}
+                rel="nofollow"
+            >
+                {label}
+            </a>
+        );
+    })}
+</ScrollableNav>
 
 <style>
     /* ============================================================
        EventDateFilterChips — temporal quick-filter chips row
+       Scroll affordance (overflow/fade/arrows) comes from ScrollableNav.
+       This file only owns chip spacing + chip-level visuals.
        ============================================================ */
-    .event-date-chips {
-        width: 100%;
-        overflow: hidden;
-    }
-
     .event-date-chips__list {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: nowrap;
         gap: var(--space-3, 12px);
         padding-block: var(--space-2, 8px);
-        padding-inline: 2px;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        /* Fade out the edges to hint horizontal scroll */
-        mask-image: linear-gradient(
-            to right,
-            transparent 0,
-            black 32px,
-            black calc(100% - 32px),
-            transparent 100%
-        );
-        -webkit-mask-image: linear-gradient(
-            to right,
-            transparent 0,
-            black 32px,
-            black calc(100% - 32px),
-            transparent 100%
-        );
-        padding-inline: 32px;
-    }
-
-    .event-date-chips__list::-webkit-scrollbar {
-        display: none;
     }
 
     .event-date-chips__chip {
