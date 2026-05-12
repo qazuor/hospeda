@@ -25,6 +25,7 @@ import { admin, createAccessControl } from 'better-auth/plugins';
 import { getQZPayBilling } from '../middlewares/billing';
 import { BillingCustomerSyncService } from '../services/billing-customer-sync';
 import { env } from '../utils/env';
+import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
 
 const logger = createLogger('auth');
 
@@ -621,71 +622,23 @@ export function getAuth(): ReturnType<typeof betterAuth> {
 }
 
 /**
- * Parse trusted origins from environment variables.
- * Falls back to default development origins if none are configured.
+ * Module-level adapter that wires the runtime `env` + `logger` to the
+ * pure {@link parseTrustedOriginsFromConfig} parser. The actual auth
+ * config call site uses this; tests target the pure function from
+ * `./auth-trusted-origins` directly.
  *
- * @returns Array of trusted origin URLs
+ * @see SPEC-103 T-055
  */
 function parseTrustedOrigins(): string[] {
-    const origins: string[] = [];
-
-    const siteUrl = env.HOSPEDA_SITE_URL;
-    if (siteUrl) {
-        origins.push(siteUrl);
-    }
-
-    const adminUrl = env.HOSPEDA_ADMIN_URL;
-    if (adminUrl) {
-        origins.push(adminUrl);
-    }
-
-    // Extra origins via comma-separated env var. Used for aliases like
-    // staging.hospeda.com.ar / staging-admin.hospeda.com.ar where the
-    // canonical HOSPEDA_SITE_URL stays at the prod-naming hostname but
-    // the same containers also serve a staging hostname that needs to
-    // be a trusted origin for sign-up and OAuth flows.
-    //
-    // Each entry must be a full URL (with scheme). Better Auth expects
-    // origin format like `https://example.com`; bare hostnames are
-    // silently rejected by some validation paths and may also break the
-    // CORS plumbing downstream. Validate the format up front and warn
-    // on malformed entries instead of pushing them silently.
-    const extra = env.HOSPEDA_EXTRA_TRUSTED_ORIGINS;
-    if (extra) {
-        for (const raw of extra.split(',')) {
-            const value = raw.trim();
-            if (value.length === 0 || origins.includes(value)) continue;
-            try {
-                const parsed = new URL(value);
-                if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-                    logger.warn(
-                        { value, protocol: parsed.protocol },
-                        'Ignoring HOSPEDA_EXTRA_TRUSTED_ORIGINS entry with non-http(s) scheme'
-                    );
-                    continue;
-                }
-                origins.push(value);
-            } catch {
-                logger.warn(
-                    { value },
-                    'Ignoring malformed HOSPEDA_EXTRA_TRUSTED_ORIGINS entry (must be a full URL like https://staging.hospeda.com.ar)'
-                );
-            }
+    return parseTrustedOriginsFromConfig({
+        siteUrl: env.HOSPEDA_SITE_URL,
+        adminUrl: env.HOSPEDA_ADMIN_URL,
+        extraOrigins: env.HOSPEDA_EXTRA_TRUSTED_ORIGINS,
+        nodeEnv: env.NODE_ENV,
+        onWarn: ({ value, reason }) => {
+            logger.warn({ value, reason }, 'Ignoring HOSPEDA_EXTRA_TRUSTED_ORIGINS entry');
         }
-    }
-
-    // Default development origins
-    if (origins.length === 0) {
-        if (env.NODE_ENV === 'production') {
-            throw new Error(
-                'HOSPEDA_SITE_URL and HOSPEDA_ADMIN_URL must be configured in production. ' +
-                    'Cannot fall back to localhost origins in production environment.'
-            );
-        }
-        origins.push('http://localhost:3000', 'http://localhost:4321');
-    }
-
-    return origins;
+    });
 }
 
 /**
