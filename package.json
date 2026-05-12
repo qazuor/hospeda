@@ -141,7 +141,7 @@
             "flatted": ">=3.4.2",
             "picomatch": ">=2.3.2",
             "picomatch@^4.0.0": ">=4.0.4",
-            "kysely": ">=0.28.14",
+            "kysely": ">=0.28.17",
             "svgo": ">=4.0.1",
             "next": ">=16.2.3",
             "drizzle-orm": ">=0.45.2",
@@ -157,7 +157,10 @@
         "patchedDependencies": {
             "@tanstack/start-plugin-core@1.131.26": "patches/@tanstack__start-plugin-core@1.131.26.patch"
         },
-        "publicHoistPattern": ["react", "react-dom", "*react*"]
+        "publicHoistPattern": ["react", "react-dom", "*react*"],
+        "auditConfig": {
+            "ignoreGhsas": ["GHSA-rmmr-r34h-pfm5"]
+        }
     },
     "lint-staged": {
         "*.{ts,tsx}": ["biome check --write --no-errors-on-unmatched"],

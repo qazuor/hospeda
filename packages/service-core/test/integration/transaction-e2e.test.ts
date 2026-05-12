@@ -149,7 +149,6 @@ class TestTagService extends BaseCrudService<
     protected _canCount(): void {}
     protected _canUpdateVisibility(): void {}
 
-    // biome-ignore lint/suspicious/noExplicitAny: base class uses any for search return type compatibility
     protected async _executeSearch(): Promise<PaginatedListOutput<TestTag>> {
         return { items: [], total: 0 };
     }

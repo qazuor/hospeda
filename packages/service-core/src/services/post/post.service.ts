@@ -109,6 +109,7 @@ export class PostService extends BaseCrudService<
      */
     private flattenPostTagsRelation<T extends Post | null | undefined>(entity: T): T {
         if (!entity) return entity;
+        // TYPE-WORKAROUND: Post type does not surface the raw `postTags` join shape, but Drizzle's `with` clause attaches it at runtime; cast to read the runtime-only field.
         const raw = (entity as unknown as { postTags?: unknown }).postTags;
         if (!Array.isArray(raw)) return entity;
         const flat: PostTag[] = raw
@@ -120,6 +121,7 @@ export class PostService extends BaseCrudService<
                 return (row as PostTag | null | undefined) ?? null;
             })
             .filter((tag): tag is PostTag => tag !== null && tag !== undefined);
+        // TYPE-WORKAROUND: Mutate the runtime `postTags` field with the flattened shape Post consumers expect; canonical Post type already declares it as `PostTag[]` so this aligns runtime with type.
         (entity as unknown as { postTags: PostTag[] }).postTags = flat;
         return entity;
     }

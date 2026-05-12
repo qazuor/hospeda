@@ -28,7 +28,9 @@ const REGISTRY_KEYS_FOR_API = new Set<string>(
 const KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA = new Set<string>([
     // Billing — registered for tooling/docs but not yet validated as required.
     // Track as TODO: add to ApiEnvSchema once billing integration is stable.
-    'HOSPEDA_MERCADO_PAGO_SANDBOX',
+    // Note: HOSPEDA_MERCADO_PAGO_SANDBOX is already validated by ApiEnvSchema
+    // (added during the VPS migration sprint so Coolify env validation catches
+    // a missing sandbox toggle); kept out of this gap set.
     'HOSPEDA_MERCADO_PAGO_TIMEOUT',
     'HOSPEDA_MERCADO_PAGO_PLATFORM_ID',
     'HOSPEDA_MERCADO_PAGO_INTEGRATOR_ID',

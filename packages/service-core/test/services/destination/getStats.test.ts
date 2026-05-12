@@ -43,6 +43,7 @@ describe('DestinationService.getStats', () => {
             })
             .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
+        asMock((modelMock as any).getAttractionsMap).mockResolvedValue(new Map());
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
         const params: GetDestinationStatsInput = { destinationId: destination.id };
 
@@ -97,6 +98,7 @@ describe('DestinationService.getStats', () => {
             })
             .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
+        asMock((modelMock as any).getAttractionsMap).mockResolvedValue(new Map());
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
         const params: GetDestinationStatsInput = { destinationId: destination.id };
 

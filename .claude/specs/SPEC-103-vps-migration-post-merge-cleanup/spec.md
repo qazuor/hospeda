@@ -374,6 +374,37 @@ error TS2769: No overload matches this call.
 
 ---
 
+### 3.B.6 — [MEDIUM · ops · 4-6h] CI minutes optimization (deferred from 2026-05-12 sprint)
+
+**Where:** `.github/workflows/ci.yml`, `.github/workflows/docs.yml`, `.github/workflows/e2e-nightly.yml`, plus 40+ test files that still use `await import()`.
+
+**Current state (after 2026-05-12 quick wins):** Already applied — `staging` added to CI triggers, E2E Nightly cron disabled until the suite is fixed, unit-test coverage skipped on PRs and staging pushes (coverage only on `main` because that is where the threshold gate runs). Estimated ongoing savings: ~600 min/month vs the pre-fix baseline.
+
+**Still pending — bigger items, all explicitly deferred to keep the green-build gate sprint focused:**
+
+1. **Build artifact between jobs**. Every `needs: build` job (`typecheck`, `test-unit` × 4 shards, `test-integration`) currently re-runs `pnpm build` to "warm the turbo cache". GitHub Actions does not share fs between jobs, so this is 6 full builds per run (~5 min each). Estimated savings: ~20 min CPU per run → ~600 min/month at 30 runs/month.
+
+   Approach: have the `build` job upload `.turbo/`, `apps/*/dist/`, `apps/web/.astro/`, `apps/admin/.output/`, `apps/admin/.tanstack/`, `apps/admin/src/routeTree.gen.ts`, and `packages/*/dist/` as a single `build-outputs` artifact with `retention-days: 1`. Each downstream job calls `actions/download-artifact@v4` before its task and drops its own `pnpm build` step. Verify on a feature branch first because turbo's content hashing is sensitive to filesystem timestamps and could produce false cache misses.
+
+2. **Investigate `docs.yml` hangs**. The "Documentation CI" workflow has been logging individual runs that span **1–6 hours** before timing out or being cancelled (audit on 2026-05-12 found at least 5 such runs in the previous week). The runs cost more Actions minutes than every other workflow combined while delivering no signal. Read the workflow, identify the step that hangs (likely a `tsx scripts/check-links.ts` or `tsx scripts/validate-examples.ts` invocation that fetches every external link with no timeout), add a hard timeout, and fail fast on the first stuck request.
+
+3. **Re-enable E2E Nightly with the underlying suite fixed**. The cron is currently commented out in `.github/workflows/e2e-nightly.yml`. Investigate why every nightly run since the VPS migration sprint failed (likely Brevo/MercadoPago credential drift, missing seed data, or a connection-string assumption baked into the test runner), fix the root cause, and re-enable the cron. Until then we lose nightly regression coverage of the P0+P1+RES paths.
+
+4. **Static imports across the rest of the test suite**. The 2026-05-12 TestimonialsCarousel fix established the pattern (replace per-test `await import('../../src/...')` with a top-level static `import`; vitest's `vi.mock` hoisting still wires the mocks correctly). Apply it to the other ~40 files that still use the dynamic-import pattern (13 in `apps/web/test`, 6 in `apps/admin/test`, ~25 across `packages/*/test`). Each one is a low-risk mechanical edit and shaves a few hundred ms off CI under coverage instrumentation. Estimated savings: ~90 min/month.
+
+5. **Consolidate `guards` + `docs` jobs**. Both jobs are ~1 min of script work each. Running them in a single ~2 min job instead of two ~1 min jobs saves the per-job setup overhead (checkout + pnpm install). Minor (~30 min/month) but cheap to do.
+
+**Why MEDIUM:** none of this is launch-blocking; the quick wins already brought CI back inside the free-tier budget. Schedule when the operator has 4–6 h of focused time and wants to compound the savings.
+
+**Acceptance:**
+- One CI run on a feature branch with each change shows the expected minute savings.
+- `coverage-check` still passes on main pushes after build-artifact landing.
+- The E2E nightly cron is restored OR documented as a permanent on-demand workflow.
+
+**Effort:** ~4–6 h total (1.5 h build artifact, 1–2 h docs.yml triage, 1–2 h E2E nightly triage, 30 min static imports sweep, 30 min consolidate guards+docs).
+
+---
+
 ## 3.C — Hops toolkit hardening
 
 ### 3.C.1 — [MEDIUM · test · 3-4h] Add unit tests for hops `src/lib/`

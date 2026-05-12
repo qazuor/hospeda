@@ -248,7 +248,6 @@ function reportAndExit(result: CheckResult): void {
     }
 
     if (!hasError) {
-        // biome-ignore lint/suspicious/noConsoleLog: CLI script intentionally writes summary to stdout
         console.log('✅ i18n parity OK across all locales (es/en/pt)');
     }
 

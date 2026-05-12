@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - staging
   pull_request:
     branches:
       - main
+      - staging
   workflow_call:
 
 # Cancel in-progress runs for the same PR when a new push arrives.
@@ -200,10 +202,22 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Build (turbo cache)
         run: pnpm build
+      # Coverage is expensive (v8 instrumentation is ~3x slower than a
+      # plain vitest run). We only need it on main pushes — that is where
+      # coverage-check enforces the per-package threshold gate. PRs and
+      # pushes to staging run the cheaper `test` script instead.
+      #
+      # `VITEST_SHARD` is part of the turbo cache key (see turbo.json),
+      # so different shards never share a cache entry. That means we no
+      # longer need `--force`, which previously invalidated the BUILD
+      # cache too and made every shard re-build the entire monorepo
+      # (~4 min per shard). With `VITEST_SHARD` in the key the build
+      # warm-up from the previous step stays warm and the test step
+      # starts immediately.
       - name: Run tests with coverage (shard ${{ matrix.shard }}/4)
-        # --force bypasses turbo cache reads. The shard arg is passed via
-        # `--` and is NOT part of the cache key, so without --force a
-        # later shard would receive the previous shard's cached output.
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          VITEST_SHARD: ${{ matrix.shard }}/4
         # --passWithNoTests is required because some packages have fewer
         # test files than shards (e.g. @repo/icons has 2 files; shards 3
         # and 4 receive nothing and would otherwise fail).
@@ -212,15 +226,25 @@ jobs:
         # threshold check is enforced by the coverage-check job below
         # against the merged coverage from all shards.
         run: |
-          pnpm turbo run test:coverage --concurrency=4 --force -- \
+          pnpm turbo run test:coverage --concurrency=4 -- \
             --shard=${{ matrix.shard }}/4 \
             --passWithNoTests \
             --coverage.thresholds.lines=0 \
             --coverage.thresholds.functions=0 \
             --coverage.thresholds.branches=0 \
             --coverage.thresholds.statements=0
+      - name: Run tests without coverage (shard ${{ matrix.shard }}/4)
+        if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+        env:
+          VITEST_SHARD: ${{ matrix.shard }}/4
+        # Cheaper run for PRs and pushes to staging. No coverage artifact
+        # produced, so coverage-check is skipped (and accepted by ci-pass).
+        run: |
+          pnpm turbo run test --concurrency=4 -- \
+            --shard=${{ matrix.shard }}/4 \
+            --passWithNoTests
       - name: Upload coverage artifacts (shard ${{ matrix.shard }})
-        if: always()
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-shard-${{ matrix.shard }}
@@ -277,6 +301,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: test-unit
+    # Coverage artifacts only exist on main pushes (see test-unit job).
+    # On PRs and staging pushes this job is skipped and ci-pass treats
+    # the skipped result as acceptable.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node.js
@@ -405,6 +433,10 @@ jobs:
       - coverage-check
     steps:
       - name: Aggregate result
+        # coverage-check is intentionally skipped on PRs and staging
+        # pushes (the threshold gate only applies on main), so accept
+        # "skipped" as a passing result for that one job. Every other
+        # job must report "success".
         run: |
           if [ "${{ needs.lint.result }}" != "success" ] \
             || [ "${{ needs.security.result }}" != "success" ] \
@@ -414,7 +446,8 @@ jobs:
             || [ "${{ needs.typecheck.result }}" != "success" ] \
             || [ "${{ needs.test-unit.result }}" != "success" ] \
             || [ "${{ needs.test-integration.result }}" != "success" ] \
-            || [ "${{ needs.coverage-check.result }}" != "success" ]; then
+            || ( [ "${{ needs.coverage-check.result }}" != "success" ] \
+                 && [ "${{ needs.coverage-check.result }}" != "skipped" ] ); then
             echo "❌ One or more checks failed"
             exit 1
           fi

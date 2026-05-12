@@ -33,6 +33,7 @@ import ReactLeafletClusterImport from 'react-leaflet-cluster';
 //    `ListingMap`."
 // Unwrap defensively: prefer `.default` when present, fall back to the import
 // when the bundler already unwrapped it.
+// TYPE-WORKAROUND: react-leaflet-cluster ships CJS exporting the component on `module.exports.default`; Vite+React 19 may resolve the default import to the wrapper `{ default: Component }` instead of the component, so we peek at `.default` defensively and the cast tells TS the wrapper shape exists at runtime.
 const MarkerClusterGroup = ((
     ReactLeafletClusterImport as unknown as {
         default?: typeof ReactLeafletClusterImport;
