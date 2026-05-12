@@ -14,6 +14,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parse as parseDotenv } from 'dotenv';
 
 /**
  * Resolve the `.env.local` path, trying several strategies in order so the
@@ -73,22 +74,14 @@ function loadOnce(): void {
     if (!existsSync(envPath)) {
         return; // Tools that need values will surface a clear error.
     }
+    // Use the `dotenv` package's parser (SPEC-103 T-053). It handles
+    // edge cases the previous hand-rolled loop missed: inline comments
+    // (`FOO=bar # tail`), multi-line values with escape sequences, and
+    // escaped quotes inside values. Behaviour preserved: existing
+    // `process.env` entries take precedence over file contents.
     const raw = readFileSync(envPath, 'utf-8');
-    for (const line of raw.split('\n')) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) continue;
-        const eq = trimmed.indexOf('=');
-        if (eq === -1) continue;
-        const key = trimmed.slice(0, eq).trim();
-        let value = trimmed.slice(eq + 1).trim();
-        // Strip a single layer of surrounding quotes — common in dotenv
-        // files (`FOO="bar"`).
-        if (
-            (value.startsWith('"') && value.endsWith('"')) ||
-            (value.startsWith("'") && value.endsWith("'"))
-        ) {
-            value = value.slice(1, -1);
-        }
+    const parsed = parseDotenv(raw);
+    for (const [key, value] of Object.entries(parsed)) {
         if (process.env[key] === undefined) {
             process.env[key] = value;
         }
