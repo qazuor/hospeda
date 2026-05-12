@@ -644,12 +644,32 @@ function parseTrustedOrigins(): string[] {
     // canonical HOSPEDA_SITE_URL stays at the prod-naming hostname but
     // the same containers also serve a staging hostname that needs to
     // be a trusted origin for sign-up and OAuth flows.
+    //
+    // Each entry must be a full URL (with scheme). Better Auth expects
+    // origin format like `https://example.com`; bare hostnames are
+    // silently rejected by some validation paths and may also break the
+    // CORS plumbing downstream. Validate the format up front and warn
+    // on malformed entries instead of pushing them silently.
     const extra = env.HOSPEDA_EXTRA_TRUSTED_ORIGINS;
     if (extra) {
         for (const raw of extra.split(',')) {
             const value = raw.trim();
-            if (value.length > 0 && !origins.includes(value)) {
+            if (value.length === 0 || origins.includes(value)) continue;
+            try {
+                const parsed = new URL(value);
+                if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+                    logger.warn(
+                        { value, protocol: parsed.protocol },
+                        'Ignoring HOSPEDA_EXTRA_TRUSTED_ORIGINS entry with non-http(s) scheme'
+                    );
+                    continue;
+                }
                 origins.push(value);
+            } catch {
+                logger.warn(
+                    { value },
+                    'Ignoring malformed HOSPEDA_EXTRA_TRUSTED_ORIGINS entry (must be a full URL like https://staging.hospeda.com.ar)'
+                );
             }
         }
     }
