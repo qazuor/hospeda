@@ -5,9 +5,9 @@
     "created": "2026-05-11T00:00:00.000Z",
     "summary": {
         "totalTasks": 60,
-        "completed": 9,
+        "completed": 10,
         "inProgress": 0,
-        "pending": 51,
+        "pending": 50,
         "deferred": 0,
         "blocked": 0,
         "criticalPath": [
@@ -400,13 +400,13 @@
             "phase": "phase1_foundation",
             "layer": "service",
             "complexity": 3,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-08"],
             "blocks": ["T-101-12", "T-101-20"],
             "tags": ["phase1_foundation", "service", "security"],
             "files": [
                 "packages/service-core/src/services/newsletter/newsletter-token.helpers.ts",
-                "packages/service-core/src/services/newsletter/newsletter-token.helpers.test.ts"
+                "packages/service-core/test/services/newsletter/newsletter-token.helpers.test.ts"
             ],
             "acceptanceCriteria": [
                 "generateVerificationToken({ subscriberId, channel, subscribedAt, secret }) returns base64url string",
@@ -421,13 +421,14 @@
             "qualityGate": {
                 "lint": "pass",
                 "typecheck": "pass",
-                "tests": "unit tests required, 90% coverage"
+                "tests": "15/15 unit tests passing"
             },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-12T21:10:00.000Z",
+                "completed": "2026-05-12T21:25:00.000Z"
+            },
+            "notes": "Test file lives under packages/service-core/test/services/newsletter/ rather than colocated under src/ — the service-core vitest config only globs test/**/*.test.ts. Token format is base64url(<payload>.<sig>) with HMAC-SHA256. Verification tokens include iat for the 72h TTL check (configurable via ttlHours) and reject any token whose iat is more than 60s in the future (caps tampering). Unsubscribe tokens omit iat and are stable and deterministic. Both flows accept an optional secretPrev for HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV-style rotation."
         },
         {
             "id": "T-101-11",
