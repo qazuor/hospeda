@@ -75,7 +75,12 @@ import { mediaHealthRoutes } from './health/media';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
-import { newsletterProtectedRoutes, newsletterPublicRoutes, newsletterRoutes } from './newsletter';
+import {
+    newsletterAdminRoutes,
+    newsletterProtectedRoutes,
+    newsletterPublicRoutes,
+    newsletterRoutes
+} from './newsletter';
 import { revalidationRouter } from './revalidation';
 import { publicSearchRoutes } from './search/public';
 import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorship';
@@ -86,7 +91,11 @@ import { publicTestimonialRoutes } from './testimonials/public';
 import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
 import { protectedUserBookmarkRoutes, publicUserBookmarkRoutes } from './user-bookmark';
 import { protectedUserBookmarkCollectionRoutes } from './user-bookmark-collection';
-import { createMercadoPagoWebhookRoutes, webhookHealthRoutes } from './webhooks';
+import {
+    brevoWebhookRoutes,
+    createMercadoPagoWebhookRoutes,
+    webhookHealthRoutes
+} from './webhooks';
 import { adminWebhookRouter } from './webhooks/admin';
 
 import { ApiInfoSchema } from '@repo/schemas';
@@ -239,6 +248,13 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // /newsletter/<verb> so we don't double-prefix here).
         app.route('/api/v1/protected', newsletterProtectedRoutes);
 
+        // Newsletter admin routes (SPEC-101 T-101-27 / T-101-28 — campaign CRUD +
+        // actions + metrics). Mounted separately from admin billing/user/etc because
+        // the newsletter feature is self-contained.
+        // Note: more-specific action paths (/:id/send, /:id/cancel, etc.) are
+        // registered BEFORE /:id in the sub-router, so Hono resolves them correctly.
+        app.route('/api/v1/admin/newsletter', newsletterAdminRoutes);
+
         apiLogger.debug('✅ Protected routes registered successfully');
 
         // ═══════════════════════════════════════════════════════════════════════
@@ -334,6 +350,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
             apiLogger.warn('⚠️ MercadoPago webhook routes not registered - billing not configured');
         }
         app.route('/api/v1/webhooks', webhookHealthRoutes);
+
+        // SPEC-101 T-101-32: Brevo email-event webhook. Public + token-gated
+        // (X-Sib-Webhook-Token matched against HOSPEDA_BREVO_WEBHOOK_SECRET).
+        app.route('/api/v1/public/webhooks', brevoWebhookRoutes);
 
         // SPEC-092 T-036: QZPay test-only control endpoint.
         // Mounted ONLY when both env gates are open. Accidental enablement
