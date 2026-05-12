@@ -18,10 +18,10 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { findContainer } from '../lib/container-lookup.ts';
+import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
 import { runInContainer } from '../lib/docker.ts';
-import { get } from '../lib/env.ts';
 import { die, log } from '../lib/log.ts';
+import { getDbCredentials } from '../lib/target.ts';
 
 const HELP = `
 hops psql                     Open an interactive psql session.
@@ -43,9 +43,11 @@ Other flags:
   --stdin            Read SQL from stdin until EOF.
   --help, -h         Show this help.
 
-Defaults:
-  user = $PG_USER  (env var; defaults to 'postgres')
-  db   = $PG_DB    (env var; defaults to 'postgres')
+Defaults (per --target):
+  prod    → user=postgres, db=postgres (override with PG_USER / PG_DB
+            or HOPS_PROD_PG_USER / HOPS_PROD_PG_DB).
+  staging → user=hospeda_staging_user, db=hospeda_staging (override with
+            HOPS_STAGING_PG_USER / HOPS_STAGING_PG_DB).
 
 Examples:
   hops psql 'SELECT count(*) FROM users;'
@@ -130,8 +132,9 @@ export async function psql(argv: ReadonlyArray<string>): Promise<void> {
     }
 
     const container = await findContainer('postgres');
-    const user = get('PG_USER') ?? 'postgres';
-    const db = get('PG_DB') ?? 'postgres';
+    const credentials = getDbCredentials(getActiveTarget());
+    const user = credentials.user;
+    const db = credentials.database;
 
     // ── Parse formatting flags + strip them from argv ─────────────────────
     const expanded = argv.includes('-x') || argv.includes('--expanded');

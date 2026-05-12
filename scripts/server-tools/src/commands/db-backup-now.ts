@@ -13,12 +13,12 @@
  * coherent change. See engram topic `vps-migration/backup-hardening-deferred`.
  */
 
-import { findContainer } from '../lib/container-lookup.ts';
-import { get } from '../lib/env.ts';
+import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
 import { die, log } from '../lib/log.ts';
 import { pgDumpToBuffer } from '../lib/postgres.ts';
 import { confirm } from '../lib/prompt.ts';
 import { createR2Client, humanSize, utcBackupTimestamp } from '../lib/r2.ts';
+import { getDbCredentials } from '../lib/target.ts';
 
 /** Minimum acceptable dump size in bytes (sanity check against partial dumps). */
 const MIN_BACKUP_SIZE = 100 * 1024;
@@ -58,8 +58,9 @@ export async function dbBackupNow(argv: ReadonlyArray<string>): Promise<void> {
     const skipConfirm = argv.includes('--yes');
 
     const container = await findContainer('postgres');
-    const user = get('PG_USER') ?? 'postgres';
-    const db = get('PG_DB') ?? 'postgres';
+    const credentials = getDbCredentials(getActiveTarget());
+    const user = credentials.user;
+    const db = credentials.database;
 
     const r2 = createR2Client();
     const timestamp = utcBackupTimestamp();

@@ -19,13 +19,13 @@
 import { unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { findContainer } from '../lib/container-lookup.ts';
+import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
 import { docker, runInContainer } from '../lib/docker.ts';
-import { get } from '../lib/env.ts';
 import { die, log } from '../lib/log.ts';
 import { pgDumpToBuffer } from '../lib/postgres.ts';
 import { confirm, pickOne, resolveNumberArg } from '../lib/prompt.ts';
 import { type R2Object, createR2Client, humanSize, utcBackupTimestamp } from '../lib/r2.ts';
+import { getDbCredentials } from '../lib/target.ts';
 
 const HELP = `
 hops db-restore [N] [--target-db <name>] [--no-snapshot-first] [--yes]
@@ -109,8 +109,9 @@ export async function dbRestore(argv: ReadonlyArray<string>): Promise<void> {
     const parsed = parseArgs(argv);
 
     const container = await findContainer('postgres');
-    const user = get('PG_USER') ?? 'postgres';
-    const db = get('PG_DB') ?? 'postgres';
+    const credentials = getDbCredentials(getActiveTarget());
+    const user = credentials.user;
+    const db = credentials.database;
     const targetDb = parsed.targetDb ?? db;
 
     const r2 = createR2Client();

@@ -140,3 +140,55 @@ export function getDbResourceName(target: Target, kind: 'postgres' | 'redis'): s
     const prefix = kind === 'postgres' ? 'postgresql-database' : 'redis-database';
     return `${prefix}-${uuid}`;
 }
+
+/**
+ * Default Postgres role + database name per target. The defaults match
+ * how each environment was provisioned in Coolify:
+ *
+ *   prod    — bare-bones Postgres service with the built-in `postgres`
+ *             superuser and `postgres` database (no custom values set
+ *             when the service was first created).
+ *   staging — created later with explicit user/db `hospeda_staging_user`
+ *             / `hospeda_staging` to clarify which env is being used.
+ *
+ * Operators can override per target via env vars
+ *   HOPS_<TARGET>_PG_USER / HOPS_<TARGET>_PG_DB
+ * in `.env.local`. The legacy `PG_USER` / `PG_DB` env vars (without
+ * target prefix) are also honoured for backwards compatibility but only
+ * for prod.
+ */
+const DB_CREDENTIAL_DEFAULTS: Readonly<
+    Record<Target, Readonly<{ user: string; database: string }>>
+> = {
+    prod: { user: 'postgres', database: 'postgres' },
+    staging: { user: 'hospeda_staging_user', database: 'hospeda_staging' }
+};
+
+/**
+ * Resolved Postgres credentials for a given target.
+ */
+export interface DbCredentials {
+    readonly user: string;
+    readonly database: string;
+}
+
+/**
+ * Resolve the Postgres role + database name for the given target. Reads
+ * env var overrides first, then falls back to the defaults documented in
+ * {@link DB_CREDENTIAL_DEFAULTS}.
+ */
+export function getDbCredentials(target: Target): DbCredentials {
+    const upper = target.toUpperCase();
+    const targetedUser = get(`HOPS_${upper}_PG_USER`);
+    const targetedDb = get(`HOPS_${upper}_PG_DB`);
+
+    // Legacy PG_USER / PG_DB only apply to prod (back-compat with the
+    // pre-target-flag world where there was a single environment).
+    const legacyUser = target === 'prod' ? get('PG_USER') : undefined;
+    const legacyDb = target === 'prod' ? get('PG_DB') : undefined;
+
+    return {
+        user: targetedUser ?? legacyUser ?? DB_CREDENTIAL_DEFAULTS[target].user,
+        database: targetedDb ?? legacyDb ?? DB_CREDENTIAL_DEFAULTS[target].database
+    };
+}

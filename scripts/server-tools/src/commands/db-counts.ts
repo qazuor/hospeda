@@ -8,10 +8,10 @@
  * the operator can fall back to `hops psql 'SELECT count(*) FROM ...'`.
  */
 
-import { findContainer } from '../lib/container-lookup.ts';
+import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
 import { runInContainer } from '../lib/docker.ts';
-import { get } from '../lib/env.ts';
 import { die } from '../lib/log.ts';
+import { getDbCredentials } from '../lib/target.ts';
 
 const HELP = `
 hops db-counts [--include-empty]
@@ -55,8 +55,9 @@ export async function dbCounts(argv: ReadonlyArray<string>): Promise<void> {
     const sql = includeEmpty ? QUERY_ALL : QUERY_NON_EMPTY;
 
     const container = await findContainer('postgres');
-    const user = get('PG_USER') ?? 'postgres';
-    const db = get('PG_DB') ?? 'postgres';
+    const credentials = getDbCredentials(getActiveTarget());
+    const user = credentials.user;
+    const db = credentials.database;
 
     const result = await runInContainer({
         container,
