@@ -113,7 +113,13 @@ export default defineConfig({
         react(),
         sitemap({
             filter: (page) => {
-                const excludePatterns = ['/auth/', '/mi-cuenta/', '/busqueda/', '/feedback/'];
+                const excludePatterns = [
+                    '/auth/',
+                    '/mi-cuenta/',
+                    '/busqueda/',
+                    '/feedback/',
+                    '/beta/'
+                ];
                 return !excludePatterns.some((pattern) => page.includes(pattern));
             },
             // Include the dynamic sitemap (published entities × 3 locales) so

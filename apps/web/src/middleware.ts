@@ -22,6 +22,7 @@ import {
     extractLocaleFromPath,
     generateCspNonce,
     isAuthRoute,
+    isBetaRoute,
     isProtectedRoute,
     isServerIslandRoute,
     isSessionOptionalRoute,
@@ -61,6 +62,31 @@ export const onRequest = defineMiddleware(async (context, next) => {
     if (path !== '/' && !path.endsWith('/')) {
         const search = context.url.search;
         return context.redirect(`${path}/${search}`, 301);
+    }
+
+    // Step 3.5: Beta tester docs live under `/beta` outside the `/{lang}/` namespace.
+    // Skip locale enforcement, session parsing, and auth checks. Still attach the
+    // CSP header below (security) and stamp `X-Robots-Tag: noindex, nofollow` so
+    // crawlers don't index the private docs even if the URL leaks.
+    if (isBetaRoute({ path })) {
+        (context.locals as { user: null }).user = null;
+        const betaResponse = await next();
+
+        betaResponse.headers.set('X-Robots-Tag', 'noindex, nofollow');
+
+        const betaContentType = betaResponse.headers.get('content-type') ?? '';
+        if (betaContentType.includes('text/html')) {
+            const sentryDsn = import.meta.env.PUBLIC_SENTRY_DSN as string | undefined;
+            const sentryReportUri = sentryDsn ? buildSentryReportUri({ dsn: sentryDsn }) : null;
+            const directives = buildCspHeader({
+                nonce: cspNonce,
+                apiUrl: (import.meta.env.PUBLIC_API_URL as string | undefined) ?? undefined,
+                sentryReportUri
+            });
+            betaResponse.headers.set('Content-Security-Policy-Report-Only', directives);
+        }
+
+        return betaResponse;
     }
 
     // Step 4: Extract and validate locale from the URL path.
