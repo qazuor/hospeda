@@ -75,7 +75,7 @@ import { mediaHealthRoutes } from './health/media';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
-import { newsletterRoutes } from './newsletter';
+import { newsletterProtectedRoutes, newsletterRoutes } from './newsletter';
 import { revalidationRouter } from './revalidation';
 import { publicSearchRoutes } from './search/public';
 import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorship';
@@ -231,6 +231,11 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Media (avatar uploads for authenticated users)
         app.route('/api/v1/protected/media', protectedMediaRoutes);
+
+        // Newsletter (SPEC-101 — subscribe / status / resend / unsubscribe live
+        // under /api/v1/protected/newsletter/*, the routes mount themselves at
+        // /newsletter/<verb> so we don't double-prefix here).
+        app.route('/api/v1/protected', newsletterProtectedRoutes);
 
         apiLogger.debug('✅ Protected routes registered successfully');
 
