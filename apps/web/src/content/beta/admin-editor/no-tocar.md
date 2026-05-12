@@ -3,10 +3,15 @@ title: Lo que NO tenés que tocar
 description: Secciones del panel admin que no debés probar — pueden romper el sistema.
 order: 8
 role: admin-editor
-section: Si sos Admin
+section: Solo admin
 ---
 
 # Lo que NO tenés que tocar
+
+<aside class="beta-callout beta-callout--info beta-callout--compact">
+  <span class="beta-callout__icon" aria-hidden="true">ℹ️</span>
+  <div class="beta-callout__body">Sección solo para testers preseleccionados de admin / editor. Si no es tu caso, podés ignorarla. <a href="/beta/admin-editor/acceso-y-roles/">Más info</a>.</div>
+</aside>
 
 Estas secciones existen pero **NO las pruebes**:
 

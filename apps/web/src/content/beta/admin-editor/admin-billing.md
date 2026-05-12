@@ -3,10 +3,15 @@ title: Admin — Billing y monetización
 description: Planes, suscripciones, add-ons, códigos promo, pagos, facturas, métricas y más.
 order: 4
 role: admin-editor
-section: Si sos Admin
+section: Solo admin
 ---
 
 # Admin — Billing y monetización
+
+<aside class="beta-callout beta-callout--info beta-callout--compact">
+  <span class="beta-callout__icon" aria-hidden="true">ℹ️</span>
+  <div class="beta-callout__body">Sección solo para testers preseleccionados de admin / editor. Si no es tu caso, podés ignorarla. <a href="/beta/admin-editor/acceso-y-roles/">Más info</a>.</div>
+</aside>
 
 Esta sección es **clave** y muy grande. Tomate tu tiempo.
 

@@ -3,10 +3,15 @@ title: Editor — publicaciones y tags
 description: Gestión completa de posts del blog y etiquetas — solo para el rol de Editor.
 order: 2
 role: admin-editor
-section: Si sos Editor
+section: Solo editor
 ---
 
 # Editor — publicaciones, tags y eventos
+
+<aside class="beta-callout beta-callout--info beta-callout--compact">
+  <span class="beta-callout__icon" aria-hidden="true">ℹ️</span>
+  <div class="beta-callout__body">Sección solo para testers preseleccionados de admin / editor. Si no es tu caso, podés ignorarla. <a href="/beta/admin-editor/acceso-y-roles/">Más info</a>.</div>
+</aside>
 
 Como editor vas a ver y gestionar **Publicaciones (blog)**, **Etiquetas (tags)** y **Eventos** (creación, edición, publicación, ubicaciones y organizadores). No tenés acceso a usuarios, billing ni configuración.
 

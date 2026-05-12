@@ -3,10 +3,18 @@ title: Acceso al panel y diferencia entre roles
 description: Cómo conseguir acceso de admin o editor — registro + promoción manual.
 order: 1
 role: admin-editor
-section: Empezar como admin / editor
+section: Para todos (editor y admin)
 ---
 
 # Acceso al panel y roles
+
+<aside class="beta-callout beta-callout--warning">
+  <span class="beta-callout__icon" aria-hidden="true">⚠️</span>
+  <div class="beta-callout__body">
+    <strong class="beta-callout__title">Esta sección es solo para testers preseleccionados</strong>
+    Si no te avisamos expresamente por WhatsApp que ibas a probar el <strong>panel de administración</strong>, podés <strong>ignorar toda esta sección</strong> tranquilo. Seguí con la guía de tu rol (turista / host) y listo. Si tenés dudas de si te tocaba o no, preguntá en el grupo.
+  </div>
+</aside>
 
 Te elegimos para probar el **panel de administración** de Hospeda. Es la parte que solo ven los administradores y editores (no los usuarios comunes). Es donde se gestiona todo el contenido y la operación del sitio.
 

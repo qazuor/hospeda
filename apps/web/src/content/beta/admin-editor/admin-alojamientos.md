@@ -3,10 +3,15 @@ title: Admin — alojamientos, destinos y eventos
 description: CRUD completo de alojamientos, destinos y eventos en el panel de administración.
 order: 3
 role: admin-editor
-section: Si sos Admin
+section: Solo admin
 ---
 
 # Admin — alojamientos, destinos y eventos
+
+<aside class="beta-callout beta-callout--info beta-callout--compact">
+  <span class="beta-callout__icon" aria-hidden="true">ℹ️</span>
+  <div class="beta-callout__body">Sección solo para testers preseleccionados de admin / editor. Si no es tu caso, podés ignorarla. <a href="/beta/admin-editor/acceso-y-roles/">Más info</a>.</div>
+</aside>
 
 Como admin tenés **mucho más** que un editor. Te recomendamos hacer también todo lo del [editor](/beta/admin-editor/editor-publicaciones-tags/).
 

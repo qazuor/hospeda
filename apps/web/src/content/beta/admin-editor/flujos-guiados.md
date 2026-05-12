@@ -3,10 +3,15 @@ title: Flujos guiados (paso a paso)
 description: Cuatro flujos completos de uso real que combinan varios módulos del panel.
 order: 7
 role: admin-editor
-section: Si sos Admin
+section: Solo admin
 ---
 
 # Flujos guiados
+
+<aside class="beta-callout beta-callout--info beta-callout--compact">
+  <span class="beta-callout__icon" aria-hidden="true">ℹ️</span>
+  <div class="beta-callout__body">Sección solo para testers preseleccionados de admin / editor. Si no es tu caso, podés ignorarla. <a href="/beta/admin-editor/acceso-y-roles/">Más info</a>.</div>
+</aside>
 
 Estos son flujos completos de uso real. Hacelos completos al menos una vez.
 
