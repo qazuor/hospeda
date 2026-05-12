@@ -75,8 +75,11 @@ export interface UserMenuProps {
     readonly currentPath: string;
     /** Visual variant matching the navbar's scroll state. Defaults to "scrolled". */
     readonly variant?: UserMenuVariant;
-    /** Admin panel base URL for the "Panel de administración" link. */
-    readonly adminPanelUrl: string;
+    /**
+     * Admin panel base URL for the "Panel de administración" link.
+     * When undefined (env var not configured), the admin link is hidden.
+     */
+    readonly adminPanelUrl: string | undefined;
 }
 
 interface MenuItem {
@@ -240,7 +243,7 @@ function buildMenuItems({
 }: {
     readonly texts: (typeof TEXTS)[keyof typeof TEXTS];
     readonly locale: SupportedLocale;
-    readonly adminPanelUrl: string;
+    readonly adminPanelUrl: string | undefined;
 }): ReadonlyArray<MenuItem> {
     return [
         {
@@ -286,15 +289,19 @@ function buildMenuItems({
             href: buildUrl({ locale, path: 'mi-cuenta/preferencias' }),
             icon: SettingsIcon
         },
-        {
-            id: 'admin-panel',
-            label: texts.items.adminPanel,
-            href: adminPanelUrl,
-            icon: ShieldIcon,
-            external: true,
-            requiredPermission: 'access.panelAdmin',
-            separatorBefore: true
-        }
+        ...(adminPanelUrl
+            ? ([
+                  {
+                      id: 'admin-panel',
+                      label: texts.items.adminPanel,
+                      href: adminPanelUrl,
+                      icon: ShieldIcon,
+                      external: true,
+                      requiredPermission: 'access.panelAdmin',
+                      separatorBefore: true
+                  }
+              ] as const)
+            : [])
     ];
 }
 

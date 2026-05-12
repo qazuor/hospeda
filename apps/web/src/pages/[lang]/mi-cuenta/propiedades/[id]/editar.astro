@@ -14,7 +14,7 @@
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
-import { getAdminUrl } from '@/lib/env';
+import { getAdminUrlOrThrow } from '@/lib/env';
 
 export const prerender = false;
 
@@ -24,6 +24,6 @@ if (!id) {
     return Astro.redirect('/404');
 }
 
-const adminUrl = getAdminUrl();
+const adminUrl = getAdminUrlOrThrow();
 return Astro.redirect(`${adminUrl}/accommodations/${id}/edit`);
 ---
