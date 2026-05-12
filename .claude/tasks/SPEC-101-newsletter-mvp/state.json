@@ -5,9 +5,9 @@
     "created": "2026-05-11T00:00:00.000Z",
     "summary": {
         "totalTasks": 60,
-        "completed": 28,
+        "completed": 29,
         "inProgress": 0,
-        "pending": 32,
+        "pending": 31,
         "deferred": 0,
         "blocked": 0,
         "criticalPath": [
@@ -1228,7 +1228,7 @@
             "phase": "phase2_subscription_flow",
             "layer": "web-ui",
             "complexity": 2,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-25"],
             "blocks": [],
             "tags": ["phase2_subscription_flow", "web-ui"],

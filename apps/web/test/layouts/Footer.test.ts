@@ -155,13 +155,18 @@ describe('Footer.astro', () => {
     });
 
     describe('newsletter zone', () => {
-        it('renders the email input', () => {
-            expect(src).toContain('type="email"');
-            expect(src).toContain('footer__newsletter-input');
+        it('mounts the NewsletterForm React island (SPEC-101 T-101-33)', () => {
+            // The inert static form was replaced by the live double opt-in
+            // island so we no longer assert on type="email" / button copy.
+            expect(src).toContain('@/components/newsletter/NewsletterForm.client');
+            expect(src).toMatch(/<NewsletterForm[\s\S]+client:visible/);
         });
 
-        it('renders the subscribe button label via i18n', () => {
-            expect(src).toContain('footer.subscribeShort');
+        it('passes auth state, email, apiUrl and locale to the island', () => {
+            expect(src).toContain('isAuthenticated={isAuthenticated}');
+            expect(src).toContain('userEmail={userEmail}');
+            expect(src).toContain('apiUrl={apiUrl}');
+            expect(src).toContain('locale={locale}');
         });
 
         it('uses the newsletter short title i18n key', () => {

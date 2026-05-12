@@ -21,7 +21,7 @@
  */
 
 import { Image } from "astro:assets";
-import GradientButton from "@/components/shared/ui/GradientButton.astro";
+import { NewsletterForm } from "@/components/newsletter/NewsletterForm.client";
 import SocialLinks from "@/components/shared/SocialLinks.astro";
 import { statsApi } from "@/lib/api/endpoints";
 import type { SupportedLocale } from "@/lib/i18n";
@@ -35,6 +35,17 @@ interface Props {
 
 const { locale } = Astro.props;
 const { t } = createTranslations(locale);
+
+// Auth state for the NewsletterForm island (SPEC-101 T-101-33). The App.Locals
+// type does not yet declare `user` — narrowed cast matches the workaround used
+// in MobileMenuIsland.astro and the verify/unsubscribe pages.
+const locals = Astro.locals as { user?: { id: string; email: string } | null };
+const isAuthenticated = Boolean(locals.user);
+const userEmail = locals.user?.email;
+
+// Public API base URL the island fetches against. Falls back to the same
+// host so dev/preview environments without the public var still load.
+const apiUrl = import.meta.env.PUBLIC_API_URL ?? Astro.url.origin;
 
 const currentYear = new Date().getFullYear();
 
@@ -228,30 +239,18 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
                     {t("footer.newsletterShortDescription", "Novedades y ofertas en tu correo.")}
                 </p>
             </div>
-            <form
-                class="footer__newsletter"
-                data-prevent-submit
-            >
-                <label for="newsletter-email" class="sr-only">
-                    {t("footer.newsletterEmailPlaceholder")}
-                </label>
-                <input
-                    id="newsletter-email"
-                    type="email"
-                    name="email"
-                    autocomplete="email"
-                    class="footer__newsletter-input"
-                    placeholder={t("footer.newsletterEmailPlaceholder")}
-                    aria-label={t("footer.newsletterEmailPlaceholder")}
-                />
-                <GradientButton
-                    as="button"
-                    label={t("footer.subscribeShort", "Suscribirme")}
-                    variant="accent"
-                    size="sm"
-                    class="footer__newsletter-btn"
-                />
-            </form>
+            {/* SPEC-101 T-101-33: live double opt-in flow. The island
+                handles all 6 states (idle-guest, idle-auth, pending,
+                pending-verification, already-active, error). Hydration
+                is deferred via client:visible so the footer above the
+                fold paints without blocking on the island JS. */}
+            <NewsletterForm
+                client:visible
+                isAuthenticated={isAuthenticated}
+                userEmail={userEmail}
+                apiUrl={apiUrl}
+                locale={locale}
+            />
         </div>
     </section>
 
