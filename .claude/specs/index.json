@@ -706,6 +706,14 @@
             "complexity": "medium",
             "status": "draft",
             "path": "SPEC-102-admin-api-bearer-token"
+        },
+        {
+            "specId": "SPEC-103",
+            "title": "VPS Migration Post-Merge Cleanup & Hardening Backlog",
+            "type": "chore",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-103-vps-migration-post-merge-cleanup"
         }
     ]
 }

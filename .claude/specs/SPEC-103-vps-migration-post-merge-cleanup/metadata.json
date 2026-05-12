@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-103",
+    "title": "VPS Migration Post-Merge Cleanup & Hardening Backlog",
+    "type": "chore",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-12T03:30:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["vps", "ops", "hops", "auth", "oauth", "tests", "docs", "post-merge", "backlog"]
+}
