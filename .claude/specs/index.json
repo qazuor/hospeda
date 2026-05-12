@@ -711,6 +711,17 @@
             "archived": false
         },
         {
+            "specId": "SPEC-101",
+            "title": "Newsletter MVP (email-only)",
+            "type": "feature",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-101-newsletter-mvp",
+            "created": "2026-05-11T00:00:00.000Z",
+            "archived": false,
+            "dependencies": ["chore/vps-migration merged to main"]
+        },
+        {
             "specId": "SPEC-102",
             "title": "Admin API Bearer Token Authentication",
             "type": "feature",
