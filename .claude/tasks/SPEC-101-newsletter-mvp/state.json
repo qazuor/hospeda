@@ -5,9 +5,9 @@
     "created": "2026-05-11T00:00:00.000Z",
     "summary": {
         "totalTasks": 60,
-        "completed": 15,
-        "inProgress": 1,
-        "pending": 44,
+        "completed": 17,
+        "inProgress": 0,
+        "pending": 43,
         "deferred": 0,
         "blocked": 0,
         "criticalPath": [
@@ -621,7 +621,7 @@
             "phase": "phase1_foundation",
             "layer": "service",
             "complexity": 4,
-            "status": "in_progress",
+            "status": "completed",
             "dependsOn": ["T-101-15", "T-101-14"],
             "blocks": ["T-101-44", "T-101-45"],
             "tags": ["phase1_foundation", "service", "notifications"],
@@ -648,9 +648,10 @@
             },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-12T23:55:00.000Z",
+                "completed": "2026-05-13T00:30:00.000Z"
+            },
+            "notes": "Delivered via node-typescript-engineer sub-agent (background, ~33min). Files: newsletter-delivery.service.ts 907 lines + test 703 lines (19 tests), brevo-batch.ts 330 lines + test 341 lines (13 tests). Coverage: delivery service ~99% statements/lines, brevo-batch ~100%. Sub-agent violated 'do not commit' instruction and committed as f326a988e — message and content are clean (conventional commits, no AI attribution), so kept the commit. Key design choices: (1) processBatch THROWS on Brevo HTTP failure (does NOT return Result<T>) — BullMQ worker (T-101-44) must wrap in try/catch as retry signal. (2) processBatch is NOT on INewsletterDeliveryService interface — it's a plain async method the worker calls directly with (campaignId, deliveryIds, actor). (3) Each Brevo recipient gets X-Newsletter-Delivery-Id header so webhook handler (T-101-32) resolves delivery by header rather than DB lookup. (4) trackOpens/trackClicks live inside requestBody.params (nested) per Brevo's v3 API shape. (5) DI: queue, sendBatchFn, emailTransport, renderTiptapEmailFn, buildCampaignReactElementFn — all injected to avoid circular deps between service-core and notifications."
         },
         {
             "id": "T-101-17",
@@ -658,7 +659,7 @@
             "phase": "phase1_foundation",
             "layer": "service",
             "complexity": 3,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-16"],
             "blocks": ["T-101-32"],
             "tags": ["phase1_foundation", "service", "webhook"],
@@ -683,9 +684,10 @@
             },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-13T00:30:00.000Z",
+                "completed": "2026-05-13T00:55:00.000Z"
+            },
+            "notes": "Implemented inline (not delegated, complexity 3). NewsletterTrackingService at packages/service-core/src/services/newsletter/newsletter-tracking.service.ts (411 lines). Maps all 9 Brevo event types per tech-analysis §4.4. Open/click use WHERE *_at IS NULL for first-event idempotency. Hard bounce updates BOTH delivery (status=FAILED) and subscriber (status=BOUNCED). Spam/complained/unsubscribed/invalid_email update subscriber only. Lookup strategy: providerMessageId for delivery events, email for subscriber events. Also created packages/service-core/src/services/newsletter/index.ts barrel re-exporting all newsletter services. Test file: 20 tests covering each event type + edge cases (missing messageId, no match, lowercased email, invalid input). All gates pass: typecheck, lint (zero warnings), service-core newsletter suite 120/120."
         },
         {
             "id": "T-101-18",
