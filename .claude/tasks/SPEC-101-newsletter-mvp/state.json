@@ -5,9 +5,9 @@
     "created": "2026-05-11T00:00:00.000Z",
     "summary": {
         "totalTasks": 60,
-        "completed": 12,
+        "completed": 13,
         "inProgress": 0,
-        "pending": 48,
+        "pending": 47,
         "deferred": 0,
         "blocked": 0,
         "criticalPath": [
@@ -509,9 +509,9 @@
             "phase": "phase1_foundation",
             "layer": "notifications",
             "complexity": 3,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-11"],
-            "blocks": ["T-101-12", "T-101-40"],
+            "blocks": ["T-101-40"],
             "tags": ["phase1_foundation", "notifications", "i18n"],
             "files": [
                 "packages/notifications/src/templates/newsletter/newsletter-verify-email.tsx",
@@ -536,9 +536,10 @@
             },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-12T22:30:00.000Z",
+                "completed": "2026-05-12T23:00:00.000Z"
+            },
+            "notes": "Implemented inline (not delegated). 3 templates + index + 20 tests. Deviations from AC: (1) Hardcoded ES strings instead of @repo/i18n keys — matches project convention (no other template uses @repo/i18n; hardcoded ES is the established pattern). (2) Tests are content-assertion style via renderToStaticMarkup + toContain, not Jest snapshots — matches existing billing.templates.test.tsx pattern. (3) Campaign body uses raw HTML injection on a plain <div> (not <Section>) because @react-email/components Section blocks raw-HTML injection with 'Can only set one of children or props.[raw-html-prop]'. Security contract documented in props JSDoc — bodyHtml MUST be pre-sanitised by tiptap-email-renderer (T-101-15). Biome suppression placed inline above the prop per RichTextViewField pattern."
         },
         {
             "id": "T-101-14",
