@@ -5,9 +5,9 @@
     "created": "2026-05-11T00:00:00.000Z",
     "summary": {
         "totalTasks": 60,
-        "completed": 10,
+        "completed": 11,
         "inProgress": 0,
-        "pending": 50,
+        "pending": 49,
         "deferred": 0,
         "blocked": 0,
         "criticalPath": [
@@ -436,31 +436,34 @@
             "phase": "phase1_foundation",
             "layer": "notifications",
             "complexity": 2,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-08"],
             "blocks": ["T-101-12", "T-101-13"],
             "tags": ["phase1_foundation", "notifications"],
             "files": [
                 "packages/notifications/src/types/notification.types.ts",
-                "packages/notifications/src/constants/notification-category-map.ts"
+                "packages/notifications/src/config/notification-categories.ts",
+                "packages/notifications/src/utils/subject-builder.ts"
             ],
             "acceptanceCriteria": [
                 "NotificationType gains NEWSLETTER_VERIFICATION, NEWSLETTER_WELCOME, NEWSLETTER_CAMPAIGN",
                 "NotificationCategory gains NEWSLETTER",
                 "NOTIFICATION_CATEGORY_MAP maps NEWSLETTER_VERIFICATION to TRANSACTIONAL, NEWSLETTER_WELCOME and NEWSLETTER_CAMPAIGN to NEWSLETTER",
-                "pnpm typecheck passes in packages/notifications"
+                "Subject lines added for the 3 new notification types",
+                "pnpm typecheck passes in packages/notifications + 329/329 tests still pass"
             ],
-            "description": "Add the three new NotificationType values and the NEWSLETTER category per tech-analysis §6.2. Update NOTIFICATION_CATEGORY_MAP. This is a prerequisite for creating the email templates in T-101-13.",
+            "description": "Add the three new NotificationType values and the NEWSLETTER category per tech-analysis §6.2. Update NOTIFICATION_CATEGORY_MAP and SUBJECT_PATTERNS. This is a prerequisite for creating the email templates in T-101-13.",
             "qualityGate": {
                 "lint": "pass",
                 "typecheck": "pass",
-                "tests": "n/a — type-only additions"
+                "tests": "329 existing tests still pass"
             },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-12T21:30:00.000Z",
+                "completed": "2026-05-12T21:40:00.000Z"
+            },
+            "notes": "Map file path is packages/notifications/src/config/notification-categories.ts (not src/constants/notification-category-map.ts per the original task). NEWSLETTER_VERIFICATION categorised as TRANSACTIONAL because Ley 25.326 AR mandates delivery regardless of opt-out — the user just asked for it. NEWSLETTER_WELCOME + NEWSLETTER_CAMPAIGN live in the new NEWSLETTER category so the preference service can route them via the dedicated unsubscribe flow. Subject pattern for NEWSLETTER_CAMPAIGN is the literal {subject} placeholder so dispatch can interpolate the admin-authored subject at send time."
         },
         {
             "id": "T-101-12",
