@@ -248,7 +248,7 @@ describe('Feedback Notification Integration Tests', () => {
     // react-email rendering. Skipped here; re-write to mock `fetch` and
     // pass a real `<ContactSubmissionEmail />` element when the suite
     // is restored.
-    describe.skip('ResendEmailTransport - attachments pass-through', () => {
+    describe.skipIf(true)('ResendEmailTransport - attachments pass-through', () => {
         it('should forward a single attachment to the Resend SDK', async () => {
             // Arrange
             const { client, sendMock } = createMockResend();

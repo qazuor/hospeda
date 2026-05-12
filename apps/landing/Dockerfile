@@ -35,9 +35,18 @@ RUN pnpm turbo run build --filter=hospeda-landing
 # nginx alpine serves the static output. Tiny image (~25 MB) compared to a
 # Node runtime. Healthcheck via curl on / for Coolify/Traefik probes.
 FROM nginx:1.27-alpine AS runner
-RUN apk add --no-cache curl
+# `libcap` provides setcap so the nginx binary can keep CAP_NET_BIND_SERVICE
+# when the master process runs as the unprivileged `nginx` user.
+RUN apk add --no-cache curl libcap \
+    && setcap 'cap_net_bind_service=+ep' /usr/sbin/nginx
 COPY --from=build /repo/apps/landing/dist /usr/share/nginx/html
 COPY apps/landing/nginx.conf /etc/nginx/conf.d/default.conf
+# Drop runtime ownership of the directories nginx writes during startup.
+RUN chown -R nginx:nginx /var/cache/nginx /var/log/nginx \
+    && touch /var/run/nginx.pid && chown nginx:nginx /var/run/nginx.pid
+# Run as the unprivileged `nginx` user (Semgrep
+# `dockerfile.security.missing-user.missing-user`).
+USER nginx
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -fsS http://127.0.0.1/ > /dev/null || exit 1
