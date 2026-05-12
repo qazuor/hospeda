@@ -1,6 +1,6 @@
 # SPEC-103: VPS Migration Post-Merge Cleanup & Hardening Backlog
 
-## Progress: 6/91 tasks (7%)
+## Progress: 10/92 tasks (11%)
 
 **Average Complexity:** 2.1 / 4 (max)
 **Total effort estimate:** ~57-90h spread over weeks-months post-merge
@@ -62,7 +62,7 @@
 ## 3.B — Repo hygiene (~3h)
 
 - [x] **T-027** (1) — Update `scripts/server-tools/README.md` Status section to "V1 shipped". ✅ Commit `2a5ea036f`.
-- [ ] **T-028** (2) — Update app-specific CLAUDE.md files with new Coolify resourceNames (hospeda-{api,web,admin}-{prod,staging}).
+- [x] **T-028** (2) — Add "Deployment (Coolify)" section to apps/{api,admin,web}/CLAUDE.md with prod/staging split + pointer to docs. ✅
 - [x] **T-029** (1) — Remove husky v10 deprecation warning lines from `.husky/pre-commit` + `.husky/post-commit`. ✅ Commit `d5380068e`.
 - [x] **T-030** (2) — Fix `grep: conflicting matchers` warning in `.husky/pre-commit` secrets scan (location was husky, not lint-staged config). ✅ Commit `d5380068e`.
 - [x] **T-031** (1) — Verify `linear.service.ts:342` Buffer→Blob typecheck fix. ✅ Done in commit `a7e323dd2` (post-merge gate).
@@ -105,8 +105,8 @@
 
 ### Code cleanup
 
-- [ ] **T-053** (2) — Replace bespoke dotenv parser with `dotenv` package. Blocked by: T-040.
-- [ ] **T-054** (1) — Document `setActiveTarget` single-invocation contract via JSDoc.
+- [x] **T-053** (2) — Replace bespoke dotenv parser with `dotenv` package. Decoupled from T-040 (drop-in replacement). ✅
+- [x] **T-054** (1) — Document `setActiveTarget` single-invocation contract via JSDoc. ✅
 
 ---
 
@@ -181,6 +181,7 @@ These tasks were not in the original 33-item spec. They were uncovered when CI b
 - [ ] **T-089** (3) — Investigate + fix `apps/api/test/routes/tag/post-tag.test.ts:296` (`?withCounts=true` spy never invoked). Likely SPEC-086 Tag System regression.
 - [ ] **T-090** (3) — Investigate + fix `apps/admin/test/integration/plan-dialog.test.tsx:220` (5000ms timeout before form fields located). Likely RTL/Radix Select/userEvent issue.
 - [ ] **T-091** (3) — Investigate + fix `apps/api/test/routes/user-bookmark/checkBulkAndNotesAndCount.test.ts:502` (entire `publicCount` describe block now skipped — 5 inner tests TC16-TC21 fail because route bypasses mock AND validation). Likely public-path mock/factory gap.
+- [x] **T-092** (1) — Remove husky v10 deprecation lines from `.husky/post-checkout` (follow-up to T-029 which only covered pre-commit + post-commit). ✅
 
 ---
 
