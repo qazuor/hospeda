@@ -151,7 +151,12 @@ jobs:
 
   # ------------------------------------------------------------------
   # Build all packages and apps. Required by typecheck and tests.
-  # ~5 min.
+  # ~5 min. Uploads build outputs as a single `build-outputs` artifact
+  # so downstream jobs (typecheck, test-unit shards, test-integration)
+  # can skip their own `pnpm build` step (SPEC-103 T-032). Saves
+  # ~5 min per downstream job (~20 min CPU per run before the change
+  # because every needs:build job re-ran the full build to warm the
+  # turbo cache, which is per-runner-fs and never shared across jobs).
   # ------------------------------------------------------------------
   build:
     name: Build
@@ -162,6 +167,20 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Build all packages and apps
         run: pnpm build
+      - name: Upload build outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-outputs
+          retention-days: 1
+          include-hidden-files: true
+          path: |
+            .turbo
+            apps/*/dist
+            apps/web/.astro
+            apps/admin/.output
+            apps/admin/.tanstack
+            apps/admin/src/routeTree.gen.ts
+            packages/*/dist
 
   # ------------------------------------------------------------------
   # TypeScript validation. Depends on build because some packages emit
@@ -175,8 +194,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
-      - name: Build (turbo cache)
-        run: pnpm build
+      - name: Download build outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: build-outputs
       - name: Type check
         run: pnpm typecheck
 
@@ -191,13 +212,14 @@ jobs:
   test-unit:
     name: Unit Tests (shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    # Band-aid bump: shards currently re-run package builds inside the test
-    # job because GH Actions does not share fs between jobs and turbo remote
-    # cache is not hitting reliably. SPEC-103 T-032 tracks the proper fix
-    # (upload build-outputs artifact from `build` job, download in shards).
-    # Until then 30 min absorbs the worst-case shard cost (~22 min observed
-    # in run 25756807810 on 2026-05-12).
-    timeout-minutes: 30
+    # SPEC-103 T-032 landed: shards now download build-outputs artifact
+    # from the `build` job instead of rebuilding. The 30-min band-aid
+    # from commit ca0fbb675 is back to the original 15-min budget;
+    # observed worst-case was ~22 min when shards rebuilt hospeda-api
+    # (tsup DTS ~200s inside the shard). With download-artifact the
+    # shard should land in the 5-8 min range. If a shard hits the
+    # 15-min ceiling, investigate before raising again.
+    timeout-minutes: 15
     needs: build
     strategy:
       fail-fast: false
@@ -206,8 +228,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
-      - name: Build (turbo cache)
-        run: pnpm build
+      - name: Download build outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: build-outputs
       # Coverage is expensive (v8 instrumentation is ~3x slower than a
       # plain vitest run). We only need it on main pushes — that is where
       # coverage-check enforces the per-package threshold gate. PRs and
@@ -293,8 +317,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
-      - name: Build (turbo cache)
-        run: pnpm build
+      - name: Download build outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: build-outputs
       - name: Run integration tests (SPEC-061 db + SPEC-080 service-core)
         run: pnpm test:integration
         env:
