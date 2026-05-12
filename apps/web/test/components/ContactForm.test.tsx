@@ -113,27 +113,33 @@ describe('ContactForm', () => {
         });
     });
 
-    describe('Accommodation ID field visibility', () => {
-        it('does NOT show accommodationId field when type=general (default)', () => {
-            renderContactForm();
-            expect(screen.queryByLabelText(/id del alojamiento/i)).not.toBeInTheDocument();
-        });
-
-        it('shows accommodationId field when type=accommodation is selected', () => {
+    describe('Contact type options', () => {
+        it('does NOT render the accommodationId input under any type', () => {
             renderContactForm();
             const typeSelect = screen.getByLabelText(/tipo de consulta/i);
-            fireEvent.change(typeSelect, { target: { value: 'accommodation' } });
-
-            expect(screen.getByLabelText(/id del alojamiento/i)).toBeInTheDocument();
+            // Pick a few of the available types and confirm the legacy
+            // accommodationId input never appears.
+            for (const value of ['general', 'support', 'subscriptions', 'press']) {
+                fireEvent.change(typeSelect, { target: { value } });
+                expect(screen.queryByLabelText(/id del alojamiento/i)).not.toBeInTheDocument();
+            }
         });
 
-        it('hides accommodationId field when switching back to general', () => {
+        it('renders the 9 expected contact-type options', () => {
             renderContactForm();
-            const typeSelect = screen.getByLabelText(/tipo de consulta/i);
-            fireEvent.change(typeSelect, { target: { value: 'accommodation' } });
-            fireEvent.change(typeSelect, { target: { value: 'general' } });
-
-            expect(screen.queryByLabelText(/id del alojamiento/i)).not.toBeInTheDocument();
+            const typeSelect = screen.getByLabelText(/tipo de consulta/i) as HTMLSelectElement;
+            const values = Array.from(typeSelect.options).map((o) => o.value);
+            expect(values).toEqual([
+                'general',
+                'support',
+                'publish_accommodation',
+                'subscriptions',
+                'suggestions',
+                'report',
+                'press',
+                'partnerships',
+                'event_submission'
+            ]);
         });
     });
 
@@ -189,7 +195,7 @@ describe('ContactForm', () => {
 
             await waitFor(() => {
                 expect(global.fetch).toHaveBeenCalledWith(
-                    '/api/v1/public/contact',
+                    expect.stringMatching(/\/api\/v1\/public\/contact$/),
                     expect.objectContaining({ method: 'POST' })
                 );
             });

@@ -29,6 +29,24 @@ const FIELD_LIMITS = {
 } as const;
 
 /**
+ * Human-readable Spanish labels for each contact type. Used in the email
+ * subject so triage in the inbox is faster than parsing the raw slug.
+ * Falls back to the slug if a new type is added and not yet mapped.
+ */
+const CONTACT_TYPE_LABELS: Record<string, string> = {
+    general: 'Consulta general',
+    support: 'Soporte técnico',
+    publish_accommodation: 'Publicar alojamiento',
+    subscriptions: 'Suscripciones y pagos',
+    suggestions: 'Sugerencias',
+    report: 'Reporte',
+    press: 'Prensa',
+    partnerships: 'Alianzas comerciales',
+    event_submission: 'Sumar evento',
+    accommodation: 'Consulta sobre alojamiento'
+};
+
+/**
  * Resolve the support inbox to which contact form submissions should be sent.
  *
  * Order of precedence:
@@ -150,12 +168,13 @@ export const submitContactRoute = createSimpleRoute({
 
         // ── 5. Send email to support inbox via @repo/notifications ───────────
         const supportInbox = resolveSupportInbox();
+        const contactTypeLabel = CONTACT_TYPE_LABELS[sanitized.type] ?? sanitized.type;
         const payload: NotificationPayload = {
             type: NotificationType.CONTACT_SUBMISSION,
             recipientEmail: supportInbox,
             recipientName: 'Hospeda Support',
             userId: null,
-            contactType: sanitized.type,
+            contactType: contactTypeLabel,
             senderFirstName: sanitized.firstName,
             senderLastName: sanitized.lastName,
             senderEmail: sanitized.email,
