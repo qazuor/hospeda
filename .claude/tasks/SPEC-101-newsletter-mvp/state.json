@@ -5,8 +5,8 @@
     "created": "2026-05-11T00:00:00.000Z",
     "summary": {
         "totalTasks": 60,
-        "completed": 14,
-        "inProgress": 1,
+        "completed": 15,
+        "inProgress": 0,
         "pending": 45,
         "deferred": 0,
         "blocked": 0,
@@ -547,7 +547,7 @@
             "phase": "phase1_foundation",
             "layer": "service",
             "complexity": 4,
-            "status": "in_progress",
+            "status": "completed",
             "dependsOn": ["T-101-09", "T-101-12"],
             "blocks": ["T-101-26", "T-101-27", "T-101-28", "T-101-29", "T-101-30", "T-101-31"],
             "tags": ["phase1_foundation", "service"],
@@ -574,9 +574,10 @@
             },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-12T22:30:00.000Z",
+                "completed": "2026-05-12T23:55:00.000Z"
+            },
+            "notes": "Delivered via node-typescript-engineer sub-agent (background, ~18min). Files: newsletter-campaign.service.ts 1217 lines (similar to NewsletterSubscriberService 1261; both extend BaseService not BaseCrudService — the project convention), newsletter-campaign.permissions.ts 112 lines (3 pure guards), test file 851 lines (31 unit tests). Coverage: 100% statements/functions/lines, 60.41% branches (gap is defensive warn-and-continue paths around enqueueResult.error and the sql.join conditional in closeSentCampaigns — not core logic). Deviations: (1) ignoreSoftCap=true implemented as softCapWindowDays=99999 instead of skipping the NOT EXISTS query (semantically equivalent). (2) closeSentCampaigns uses sql.join with sql`${id}::uuid` for the bulk UPDATE WHERE clause because Drizzle inArray() requires a typed column. (3) INewsletterDeliveryService interface declared inline in newsletter-campaign.service.ts (not extracted to a shared types file) for cohesion — T-101-16 will import the interface from here. Gotchas for T-101-16: (a) enqueueBatches signature is { campaignId, deliveryIds, batchSize } all required; (b) sendTestEmail signature is { campaignId, toEmail } returning ServiceOutput<{ sentTo: string }>; (c) bulkSkipPending returns ServiceOutput<number> (plain number); (d) Zod v4 UUID validation requires version digit 1-8 — system actor uses inline construction to bypass parse."
         },
         {
             "id": "T-101-15",
