@@ -24,6 +24,7 @@ import type { AuthState } from '@/lib/auth-session';
 import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { CampaignEditor } from './-components/CampaignEditor';
+import { CampaignMetricsPanel } from './-components/CampaignMetricsPanel';
 
 // ─── Route ────────────────────────────────────────────────────────────────────
 
@@ -80,27 +81,6 @@ function StatusBadge({ status }: StatusBadgeProps) {
 }
 
 // ─── Metrics placeholder ──────────────────────────────────────────────────────
-
-/**
- * Placeholder for the metrics panel (T-101-41).
- *
- * TODO(T-101-41): Replace this placeholder with the real MetricsPanel component
- * from apps/admin/src/routes/_authed/newsletter/campaigns/-components/MetricsPanel.tsx
- * The MetricsPanel uses useCampaignMetrics(id, status) which already polls every 10s
- * when status='sending'.
- */
-function MetricsPanelPlaceholder({ campaignId }: { readonly campaignId: string }) {
-    return (
-        <div
-            data-testid="metrics-placeholder"
-            data-campaign-id={campaignId}
-            className="rounded-lg border border-border border-dashed p-6 text-center text-muted-foreground text-sm"
-        >
-            {/* TODO(T-101-41): MetricsPanel will be mounted here */}
-            Panel de métricas (T-101-41)
-        </div>
-    );
-}
 
 // ─── CampaignDetailPage ───────────────────────────────────────────────────────
 
@@ -169,10 +149,10 @@ function CampaignDetailPage() {
 
                 {/* Metrics panel — rendered for sending/sent/cancelled campaigns */}
                 {showMetrics && (
-                    <section aria-label="Métricas de la campaña">
-                        <h2 className="mb-3 font-semibold text-lg">Métricas</h2>
-                        <MetricsPanelPlaceholder campaignId={campaignId} />
-                    </section>
+                    <CampaignMetricsPanel
+                        campaignId={campaignId}
+                        status={campaign.status}
+                    />
                 )}
             </div>
         </SidebarPageLayout>

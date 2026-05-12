@@ -5,9 +5,9 @@
     "created": "2026-05-11T00:00:00.000Z",
     "summary": {
         "totalTasks": 60,
-        "completed": 40,
+        "completed": 43,
         "inProgress": 0,
-        "pending": 20,
+        "pending": 17,
         "deferred": 0,
         "blocked": 0,
         "criticalPath": [
@@ -1508,7 +1508,7 @@
             "phase": "phase3_admin_ui",
             "layer": "admin-ui",
             "complexity": 2,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-28", "T-101-30"],
             "blocks": ["T-101-40"],
             "tags": ["phase3_admin_ui", "admin-ui"],
@@ -1544,7 +1544,7 @@
             "phase": "phase3_admin_ui",
             "layer": "admin-ui",
             "complexity": 1,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-38", "T-101-39", "T-101-40"],
             "blocks": [],
             "tags": ["phase3_admin_ui", "admin-ui", "permissions"],
@@ -1579,7 +1579,7 @@
             "phase": "phase3_admin_ui",
             "layer": "test",
             "complexity": 1,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": [
                 "T-101-03",
                 "T-101-19",
