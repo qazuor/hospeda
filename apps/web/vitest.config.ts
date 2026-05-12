@@ -13,6 +13,13 @@ export default defineConfig(
                     maxForks: 3
                 }
             },
+            // 15s instead of the 5s default. Dynamic `await import()` of
+            // React components plus v8 coverage instrumentation routinely
+            // pushes the import+render path over 5s on the GitHub Actions
+            // shared runners when 4 shards execute in parallel, even though
+            // each test finishes in <500ms locally. Raising the budget
+            // removes the flake without masking genuine hangs.
+            testTimeout: 15000,
             css: {
                 modules: {
                     classNameStrategy: 'non-scoped'
