@@ -1,0 +1,259 @@
+---
+/**
+ * @file BetaDocLayout.astro
+ * @description Standalone HTML shell for the private beta tester docs site.
+ *
+ * **Why isolated**: This layout deliberately does NOT extend `BaseLayout`. It
+ * has its own `<head>`, header, sidebar and footer. If the main site
+ * (`Header.astro`, `Footer.astro`, etc.) regresses, the beta docs keep
+ * working. Shared surface is limited to CSS tokens (`global.css`), fonts,
+ * and the `@repo/icons` package.
+ *
+ * **Why no i18n**: Beta docs are Spanish-only by product decision (40
+ * Argentine testers). The route lives outside the `/{lang}/` namespace and
+ * middleware skips locale enforcement for `/beta/*`.
+ */
+
+import BetaFooter from '@/components/beta/BetaFooter.astro';
+import BetaHeader from '@/components/beta/BetaHeader.astro';
+import BetaSidebar from '@/components/beta/BetaSidebar.astro';
+import FontsLoader from '@/components/shared/FontsLoader.astro';
+import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
+import '@/styles/global.css';
+
+interface Props {
+    readonly title: string;
+    readonly description?: string;
+    readonly currentSlug?: string;
+    readonly hideToc?: boolean;
+}
+
+const {
+    title,
+    description = 'Documentación privada para beta testers de Hospeda.',
+    currentSlug,
+    hideToc = false
+} = Astro.props;
+
+const cspNonce = Astro.locals.cspNonce ?? '';
+const pageTitle = `${title} · Beta Hospeda`;
+---
+
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content={description} />
+        <meta name="robots" content="noindex, nofollow" />
+        <title>{pageTitle}</title>
+
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
+        <FontsLoader cspNonce={cspNonce} />
+        <ThemeFoucScript cspNonce={cspNonce} />
+
+        <script is:inline nonce={cspNonce}>
+            if (document.fonts.status !== 'loaded') {
+                document.documentElement.classList.add('fonts-loading');
+            }
+            document.fonts.ready.then(function () {
+                document.documentElement.classList.remove('fonts-loading');
+            });
+        </script>
+        <style is:inline nonce={cspNonce}>
+            .fonts-loading body {
+                opacity: 0;
+            }
+            body {
+                transition: opacity 0.2s ease;
+            }
+        </style>
+    </head>
+    <body class="beta-doc-body">
+        <BetaHeader />
+
+        <div class="beta-doc-shell" data-beta-shell>
+            <div class="beta-doc-shell__sidebar" id="beta-sidebar-drawer">
+                <BetaSidebar currentSlug={currentSlug} />
+            </div>
+
+            <main id="main-content" class="beta-doc-main">
+                <article class="beta-doc-article">
+                    <slot />
+                </article>
+            </main>
+
+            {!hideToc && (
+                <div class="beta-doc-shell__toc">
+                    <slot name="toc" />
+                </div>
+            )}
+        </div>
+
+        <BetaFooter />
+    </body>
+</html>
+
+<style is:global>
+    :root {
+        --beta-header-offset: 64px;
+    }
+
+    .beta-doc-body {
+        background: var(--core-background);
+        color: var(--core-foreground);
+        font-family: var(--font-sans);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .beta-no-scroll {
+        overflow: hidden;
+    }
+
+    .beta-doc-shell {
+        flex: 1;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-5, 1.25rem);
+        max-width: 1200px;
+        width: 100%;
+        margin: 0 auto;
+        padding: var(--space-5, 1.25rem);
+        position: relative;
+    }
+
+    .beta-doc-shell__sidebar {
+        min-width: 0;
+    }
+
+    .beta-doc-shell__toc {
+        min-width: 0;
+    }
+
+    .beta-doc-main {
+        min-width: 0;
+    }
+
+    .beta-doc-article {
+        max-width: 760px;
+    }
+
+    @media (min-width: 960px) {
+        .beta-doc-shell {
+            grid-template-columns: 240px minmax(0, 1fr) 200px;
+            gap: var(--space-6, 2rem);
+        }
+    }
+
+    @media (max-width: 959px) {
+        .beta-doc-shell__sidebar {
+            display: none;
+        }
+        .beta-doc-shell__toc {
+            display: none;
+        }
+        .beta-doc-shell--drawer-open .beta-doc-shell__sidebar {
+            display: block;
+            position: fixed;
+            inset: var(--beta-header-offset) 0 0 0;
+            z-index: 40;
+            background: var(--core-background);
+            padding: var(--space-4, 1rem);
+            overflow-y: auto;
+            border-top: 1px solid var(--core-border, rgba(0, 0, 0, 0.08));
+        }
+    }
+
+    .beta-doc-article h1,
+    .beta-doc-article h2,
+    .beta-doc-article h3,
+    .beta-doc-article h4 {
+        font-family: var(--font-heading);
+        color: var(--core-foreground);
+        line-height: 1.2;
+        margin-top: 1.8em;
+        margin-bottom: 0.6em;
+        scroll-margin-top: calc(var(--beta-header-offset, 80px) + 1rem);
+    }
+
+    .beta-doc-article h1 {
+        font-size: clamp(1.75rem, 3vw, 2.25rem);
+        margin-top: 0;
+    }
+
+    .beta-doc-article h2 {
+        font-size: clamp(1.35rem, 2.2vw, 1.65rem);
+    }
+
+    .beta-doc-article h3 {
+        font-size: 1.15rem;
+    }
+
+    .beta-doc-article p,
+    .beta-doc-article ul,
+    .beta-doc-article ol {
+        font-size: 1rem;
+        line-height: 1.7;
+        color: var(--core-foreground);
+    }
+
+    .beta-doc-article code {
+        font-family: ui-monospace, SFMono-Regular, monospace;
+        font-size: 0.9em;
+        background: var(--surface-warm);
+        padding: 0.1em 0.35em;
+        border-radius: var(--radius-button, 8px);
+    }
+
+    .beta-doc-article pre {
+        background: var(--surface-warm);
+        padding: var(--space-3, 0.75rem);
+        border-radius: var(--radius-md, 10px);
+        overflow-x: auto;
+    }
+
+    .beta-doc-article pre code {
+        background: transparent;
+        padding: 0;
+    }
+
+    .beta-doc-article a {
+        color: var(--brand-primary);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    .beta-doc-article a:hover {
+        color: var(--brand-accent);
+    }
+
+    .beta-doc-article blockquote {
+        border-left: 3px solid var(--brand-accent);
+        padding: 0.25rem 0 0.25rem 1rem;
+        margin: 1.25rem 0;
+        color: var(--core-muted-foreground);
+        font-style: italic;
+    }
+
+    .beta-doc-article table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.25rem 0;
+        font-size: 0.9rem;
+    }
+
+    .beta-doc-article th,
+    .beta-doc-article td {
+        text-align: left;
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--core-border, rgba(0, 0, 0, 0.08));
+    }
+
+    .beta-doc-article th {
+        font-weight: 600;
+        background: var(--surface-warm);
+    }
+</style>

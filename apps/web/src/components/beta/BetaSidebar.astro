@@ -1,0 +1,149 @@
+---
+/**
+ * @file BetaSidebar.astro
+ * @description Sidebar navigation for the beta docs site.
+ *
+ * Builds the nav tree at build time from the `beta` Content Collection and
+ * groups entries by role. The current page is highlighted via `currentSlug`.
+ */
+
+import { getCollection } from 'astro:content';
+import { buildBetaNav } from '@/lib/beta-nav';
+
+interface Props {
+    readonly currentSlug?: string;
+}
+
+const { currentSlug } = Astro.props;
+
+const docs = await getCollection('beta', (entry) => !entry.data.draft);
+const groups = buildBetaNav(docs);
+---
+
+<aside class="beta-sidebar" aria-label="Navegación de documentación beta">
+    <nav class="beta-sidebar__nav">
+        <a href="/beta/" class:list={['beta-sidebar__home', { 'beta-sidebar__home--active': currentSlug === 'index' || !currentSlug }]}>
+            <span class="beta-sidebar__home-icon" aria-hidden="true">←</span>
+            Bienvenida
+        </a>
+
+        {groups.map((group) => (
+            <div class="beta-sidebar__group">
+                <h3 class="beta-sidebar__group-title">{group.label}</h3>
+                <ul class="beta-sidebar__list">
+                    {group.entries.map((entry) => {
+                        const isActive = entry.id === currentSlug;
+                        return (
+                            <li class="beta-sidebar__item">
+                                <a
+                                    href={entry.url}
+                                    class:list={[
+                                        'beta-sidebar__link',
+                                        { 'beta-sidebar__link--active': isActive }
+                                    ]}
+                                    aria-current={isActive ? 'page' : undefined}
+                                >
+                                    {entry.title}
+                                </a>
+                            </li>
+                        );
+                    })}
+                </ul>
+            </div>
+        ))}
+    </nav>
+</aside>
+
+<style>
+    .beta-sidebar {
+        align-self: start;
+        max-height: calc(100vh - var(--beta-header-offset, 80px));
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+
+    .beta-sidebar__nav {
+        padding: var(--space-4, 1rem) 0.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 1rem);
+    }
+
+    .beta-sidebar__home {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 0.75rem;
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--core-muted-foreground);
+        text-decoration: none;
+        border-radius: var(--radius-button, 8px);
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .beta-sidebar__home:hover {
+        background: var(--surface-warm);
+        color: var(--core-foreground);
+    }
+
+    .beta-sidebar__home--active {
+        color: var(--brand-primary);
+        font-weight: 600;
+    }
+
+    .beta-sidebar__home-icon {
+        font-size: 0.9rem;
+    }
+
+    .beta-sidebar__group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .beta-sidebar__group-title {
+        font-family: var(--font-heading);
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--core-foreground);
+        padding: 0 0.75rem;
+        margin: 0;
+    }
+
+    .beta-sidebar__list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    .beta-sidebar__link {
+        display: block;
+        padding: 0.4rem 0.75rem;
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        line-height: 1.35;
+        color: var(--core-foreground);
+        text-decoration: none;
+        border-left: 2px solid transparent;
+        border-radius: 0 var(--radius-button, 8px) var(--radius-button, 8px) 0;
+        transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .beta-sidebar__link:hover {
+        background: var(--surface-warm);
+        color: var(--brand-primary);
+    }
+
+    .beta-sidebar__link--active {
+        background: var(--surface-warm);
+        color: var(--brand-primary);
+        font-weight: 600;
+        border-left-color: var(--brand-accent);
+    }
+</style>
