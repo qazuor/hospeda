@@ -1,0 +1,95 @@
+/* WhatsAppCTA.module.css
+ *
+ * Warm-surface invite block for the WhatsApp broadcast channel.
+ * All themed values come from CSS custom properties defined in
+ * apps/web/src/styles/global.css. WhatsApp brand green is hard-coded
+ * (no system token for it).
+ */
+
+.wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+    margin: var(--space-6) 0;
+    border-radius: var(--radius-lg);
+    background-color: var(--surface-warm);
+    border: 1px solid var(--border);
+    color: var(--surface-warm-foreground);
+}
+
+.iconWrap {
+    flex: 0 0 auto;
+    width: 48px;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #25d366;
+    color: #ffffff;
+}
+
+.body {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.title {
+    margin: 0;
+    font-size: var(--text-body);
+    line-height: 1.3;
+    font-weight: 600;
+    color: var(--surface-warm-foreground);
+}
+
+.description {
+    margin: 0;
+    font-size: var(--text-body-sm);
+    line-height: 1.5;
+    color: var(--surface-warm-foreground);
+    opacity: 0.85;
+}
+
+.cta {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    background-color: #25d366;
+    color: #ffffff;
+    font-size: var(--text-body-sm);
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 150ms ease;
+    white-space: nowrap;
+}
+
+.cta:hover,
+.cta:focus-visible {
+    background-color: #1ebe5d;
+}
+
+.cta:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+
+/* ── Mobile breakpoint ─────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+    .wrapper {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-3);
+    }
+
+    .cta {
+        width: 100%;
+    }
+}
