@@ -180,7 +180,7 @@ These tasks were not in the original 33-item spec. They were uncovered when CI b
 
 - [ ] **T-089** (3) — Investigate + fix `apps/api/test/routes/tag/post-tag.test.ts:296` (`?withCounts=true` spy never invoked). Likely SPEC-086 Tag System regression.
 - [ ] **T-090** (3) — Investigate + fix `apps/admin/test/integration/plan-dialog.test.tsx:220` (5000ms timeout before form fields located). Likely RTL/Radix Select/userEvent issue.
-- [ ] **T-091** (3) — Investigate + fix `apps/api/test/routes/user-bookmark/checkBulkAndNotesAndCount.test.ts:543` (TC16 mock returns 5 instead of mocked 42). Likely public-path mock factory gap.
+- [ ] **T-091** (3) — Investigate + fix `apps/api/test/routes/user-bookmark/checkBulkAndNotesAndCount.test.ts:502` (entire `publicCount` describe block now skipped — 5 inner tests TC16-TC21 fail because route bypasses mock AND validation). Likely public-path mock/factory gap.
 
 ---
 
