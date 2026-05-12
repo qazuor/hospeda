@@ -300,10 +300,14 @@ Unit tests in `apps/api/test/middlewares/actor.test.ts`:
 
 Integration smoke (manual, post-deploy):
 
-1. With token set, `hops cron-list` returns the job table.
-2. With token set, `hops cron-trigger 1 --dry-run --yes` runs and returns success.
-3. Unset token on API side via Coolify env-delete, redeploy, `hops cron-list` returns 401 with the actionable message.
+These smokes are **the deferred validation for Phase 17.2 tanda 4** (commits `1aefb6b7f` + `33174ad78`, `chore/vps-migration` branch). When tanda 4 shipped, the cookie-based path was the only auth mechanism available and required browser-derived `HOPS_ADMIN_COOKIE`. Rather than smoke testing with a workflow that this spec is about to retire, validation was deferred until the bearer-token path lands. **Marking SPEC-102 as done requires running these four smokes successfully against prod.**
+
+1. With token set, `hops cron-list` returns the job table (revalidation, addon-lifecycle, etc.).
+2. With token set, `hops cron-trigger revalidation --dry-run` and `hops cron-trigger 1 --dry-run --yes` both run and return success without executing the job.
+3. Unset token on API side via Coolify env-delete, redeploy, `hops cron-list` returns 401 with the actionable message (mentions both `HOPS_ADMIN_API_TOKEN` and `HOPS_ADMIN_COOKIE` paths).
 4. Restore token, smoke again, table returns.
+
+After all four pass: update `docs/migration/vps-deployment-spec.md` Phase 17.2 tanda 4 entry to mark smoke DONE and reference SPEC-102 as the closure.
 
 ### 9. Performance
 
