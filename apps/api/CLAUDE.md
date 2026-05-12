@@ -381,6 +381,15 @@ const schema = createOpenAPISchema({
 });
 ```
 
+## Deployment (Coolify)
+
+This app runs as two Coolify resources on the self-hosted VPS:
+
+- `hospeda-api-prod` — production, served at `https://api.hospeda.com.ar`
+- `hospeda-api-staging` — staging, served at `https://staging-api.hospeda.com.ar`
+
+Each resource has its own database, env vars, and (eventually, see SPEC-103 T-056) its own OAuth credentials. The operational toolkit (`scripts/server-tools/`, command `hops`) is target-aware via `--target=prod|staging` (defaults to prod). See [docs/migration/staging-prod-db-separation.md](../../docs/migration/staging-prod-db-separation.md) for the full split rationale + the beta-to-prod migration plan.
+
 ## Environment Variables
 
 See `apps/api/.env.example` for a full list. All variables are validated at startup by the `env` object exported from `src/utils/env.ts` (Zod-validated, typed). Access env values exclusively through that object.
