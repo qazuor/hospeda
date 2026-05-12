@@ -178,8 +178,18 @@ export interface FeedbackReportPayload extends BaseNotificationPayload {
  */
 export interface ContactSubmissionPayload extends BaseNotificationPayload {
     type: NotificationType.CONTACT_SUBMISSION;
-    /** "general" or "accommodation" — drives subject line and template variant */
-    readonly contactType: 'general' | 'accommodation';
+    /**
+     * Localized human-readable label for the contact type (e.g. "Soporte
+     * técnico", "Quiero publicar mi alojamiento"). Used directly in the
+     * subject line and email template. Sourced from `CONTACT_TYPE_LABELS`
+     * in the API submit route, so the schema enum can grow without this
+     * type having to track it.
+     *
+     * Pre-2026-05 this was the raw enum value (`'general' | 'accommodation'`).
+     * After expanding ContactTypeEnumSchema to 9 categories, switching to a
+     * label-string keeps the notification payload decoupled from the enum.
+     */
+    readonly contactType: string;
     /** First name supplied by the form */
     readonly senderFirstName: string;
     /** Last name supplied by the form */

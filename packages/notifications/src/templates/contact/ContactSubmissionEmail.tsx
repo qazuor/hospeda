@@ -15,9 +15,15 @@ export interface ContactSubmissionEmailProps {
     readonly senderEmail: string;
     /** Sanitized plain-text message body (may contain newlines) */
     readonly message: string;
-    /** Inquiry type — "general" or "accommodation" */
-    readonly contactType: 'general' | 'accommodation';
-    /** Optional accommodation UUID when contactType is "accommodation" */
+    /**
+     * Pre-localized inquiry-type label rendered verbatim in the badge
+     * (e.g. "Soporte técnico", "Quiero publicar mi alojamiento", or
+     * the legacy "Consulta general" / "Consulta de alojamiento"). The
+     * caller resolves the label from the contact-type enum so this
+     * template stays decoupled from the enum's evolution.
+     */
+    readonly contactType: string;
+    /** Optional accommodation UUID when contactType refers to a specific listing */
     readonly accommodationId?: string;
     /** ISO 8601 timestamp of when the form was submitted */
     readonly submittedAt: string;
@@ -37,8 +43,13 @@ function formatTimestamp(timestamp: string): string {
     });
 }
 
-function resolveContactTypeLabel(contactType: 'general' | 'accommodation'): string {
-    return contactType === 'accommodation' ? 'Consulta de alojamiento' : 'Consulta general';
+function resolveContactTypeLabel(contactType: string): string {
+    // The contactType prop is already a localized human label resolved
+    // upstream from the contact-type enum (see CONTACT_TYPE_LABELS in
+    // apps/api/src/routes/contact/submit.ts). Render it as-is. Kept as
+    // a function for backward compatibility with previous templates that
+    // mapped the raw enum here.
+    return contactType;
 }
 
 const styles = {
