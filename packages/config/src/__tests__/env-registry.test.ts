@@ -19,7 +19,13 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *  - Docker       :  5 vars (docker-compose services)
  *  - System       :  runtime/CI variables
  */
-const EXPECTED_VAR_COUNT = 183;
+/**
+ * Updated 2026-05-12 to 179 after the VPS-migration sprint removed
+ * Vercel-coupled env vars (deploy scripts, preview URLs, QStash). When
+ * adding or removing variables, bump this constant in the same commit
+ * and regenerate the snapshot below (`vitest -u`).
+ */
+const EXPECTED_VAR_COUNT = 179;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

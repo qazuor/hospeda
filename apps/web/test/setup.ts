@@ -22,6 +22,29 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
             return [];
         }
     }
-    // biome-ignore lint/suspicious/noExplicitAny: minimal jsdom polyfill shim
-    (globalThis as any).IntersectionObserver = MockIntersectionObserver;
+    (
+        globalThis as unknown as { IntersectionObserver: typeof MockIntersectionObserver }
+    ).IntersectionObserver = MockIntersectionObserver;
+}
+
+// jsdom also lacks `window.matchMedia`. Several islands consult it for
+// responsive behaviour (TestimonialsCarousel reads `prefers-reduced-motion`,
+// SearchBar uses media queries for the destinations panel, etc.). Tests fail
+// with `window.matchMedia is not a function` without this shim. The mock
+// always reports "no match"; tests that need a specific media-query result
+// override it locally with `vi.spyOn(window, 'matchMedia')`.
+if (typeof window !== 'undefined' && typeof window.matchMedia === 'undefined') {
+    Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: (query: string) => ({
+            matches: false,
+            media: query,
+            onchange: null,
+            addListener: () => {},
+            removeListener: () => {},
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            dispatchEvent: () => false
+        })
+    });
 }
