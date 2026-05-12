@@ -169,23 +169,11 @@ describe('POST /api/v1/public/contact (T-033)', () => {
             expect([400, 429]).toContain(res.status);
         });
 
-        it('returns 400 for type="accommodation" without accommodationId', async () => {
-            const res = await app.request(URL, {
-                method: 'POST',
-                headers: {
-                    'content-type': 'application/json',
-                    'user-agent': 'vitest',
-                    accept: 'application/json'
-                },
-                body: JSON.stringify({
-                    ...VALID_BODY,
-                    type: 'accommodation'
-                    // accommodationId omitted on purpose
-                })
-            });
-
-            expect([400, 429]).toContain(res.status);
-        });
+        // NOTE: removed the "type=accommodation requires accommodationId"
+        // case because the submit schema no longer enforces that link
+        // (see packages/schemas/src/contact/submit.ts). The form no
+        // longer surfaces an accommodation-bound flow and accommodationId
+        // is a free-standing optional field.
 
         it('returns 400 for an invalid email', async () => {
             const res = await app.request(URL, {

@@ -26,6 +26,16 @@
  * - Linear not configured (no API key) triggers email fallback
  */
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// `validateApiEnv()` runs at module top-level (transitively imported from
+// src/middlewares/response-validator.ts), so we must set HOSPEDA_EMAIL_API_KEY
+// BEFORE the first import that reaches that file — otherwise `env.HOSPEDA_EMAIL_API_KEY`
+// stays undefined and the route's email-fallback branch short-circuits to a 503.
+// vi.hoisted() runs before all imports, which is the only safe place for this.
+vi.hoisted(() => {
+    process.env.HOSPEDA_EMAIL_API_KEY = process.env.HOSPEDA_EMAIL_API_KEY ?? 'test-fallback-key';
+});
+
 import { initApp } from '../../../src/app.js';
 import { clearRateLimitStore } from '../../../src/middlewares/rate-limit.js';
 import type { AppOpenAPI } from '../../../src/types.js';
@@ -137,6 +147,10 @@ describe('POST /api/v1/public/feedback', () => {
     let app: AppOpenAPI;
 
     beforeAll(async () => {
+        // HOSPEDA_EMAIL_API_KEY is set via vi.hoisted() above so that the
+        // route's email-fallback branch runs against the mocked
+        // `sendNotification` (vi.mock of notification-helper) instead of
+        // short-circuiting to a 503.
         app = initApp();
     });
 
