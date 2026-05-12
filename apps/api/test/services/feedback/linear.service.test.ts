@@ -202,7 +202,7 @@ describe('LinearFeedbackService', () => {
                     body: expect.any(Blob)
                 })
             );
-            const callArg = mockFetch.mock.calls[0][1];
+            const callArg = mockFetch.mock.calls[0]?.[1];
             expect(callArg.body.size).toBe(file.buffer.length);
         });
 
