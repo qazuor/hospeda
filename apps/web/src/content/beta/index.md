@@ -9,7 +9,18 @@ role: common
 
 Si estás leyendo esto es porque te invitamos a ser una de las **40 personas** que van a probar Hospeda antes de que salga al público. Gracias por darte el tiempo. Tu mirada nos importa muchísimo.
 
-## ¿Qué rol te asignaron?
+## Paso 1: Empezá por acá (no te lo saltees)
+
+Antes de meterte con tu rol, leé estas cuatro páginas. Son cortas y te van a ahorrar dudas más adelante:
+
+1. **[Qué es el beta](/beta/empezar/que-es-el-beta/)** — De qué se trata esto y qué esperamos de vos.
+2. **[Cómo funciona el beta](/beta/empezar/como-funciona/)** — La dinámica, los tiempos, cómo nos organizamos.
+3. **[Cómo entrar](/beta/empezar/como-entrar/)** — Configurá tu acceso al sitio de prueba.
+4. **[Glosario](/beta/empezar/glosario/)** — Palabras que vas a ver y qué significan acá.
+
+Y cuando encuentres algo raro: **[Cómo reportar](/beta/reportar-bugs/como-reportar/)**.
+
+## Paso 2: ¿Qué rol te asignaron?
 
 Te lo dijimos por WhatsApp cuando te sumamos. Si no te acordás, escribinos al grupo. Elegí abajo:
 
@@ -17,13 +28,6 @@ Te lo dijimos por WhatsApp cuando te sumamos. Si no te acordás, escribinos al g
 - **[Soy host / propietario](/beta/host/onboarding/)** — Querés publicar tu alojamiento. **Hacé también la parte de turista.**
 - **[Soy admin o editor](/beta/admin-editor/acceso-y-roles/)** — Vas a probar el panel de administración. Hacé también las dos anteriores.
 - **[Probás con pago real](/beta/pago-real/introduccion/)** — Te avisamos por privado. Hacé también las anteriores.
-
-## Antes de cualquier cosa
-
-1. **Mirá el video corto** (2 minutos): **[VIDEO_LINK]**
-2. **Leé [Cómo funciona el beta](/beta/empezar/como-funciona/)** para entender la dinámica.
-3. **Configurá tu acceso** siguiendo [Cómo entrar](/beta/empezar/como-entrar/).
-4. **Cuando encuentres algo raro**, mirá [Cómo reportar](/beta/reportar-bugs/como-reportar/).
 
 ## Lo más importante en 5 puntos
 
