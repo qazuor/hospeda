@@ -83,6 +83,72 @@ with **zero failures**. CI passing on the merge commit is the same gate, but a l
 
 ---
 
+### 3.A.0.1 — [CRITICAL · ops · 30 min] Branch protection rules on `main` and `staging`
+
+**Where:** GitHub repo Settings → Branches → Branch protection rules.
+
+**Current:** No protection. Anyone with push access (= the operator today) can push directly to either branch, force-push, delete, or merge a PR with red CI.
+
+**When:** IMMEDIATELY after creating the `staging` branch from a green `main` (3.A.0). Before any other team member is invited to the repo, before any non-trivial PR lands.
+
+**Rules to apply (identical for both `main` and `staging`)**:
+
+1. **Require a pull request before merging**
+   - Require approvals: 1 (or 0 if solo developer with self-review discipline; bump to 1 when a second contributor joins).
+   - Dismiss stale pull request approvals when new commits are pushed: ON.
+
+2. **Require status checks to pass before merging**
+   - Require branches to be up to date before merging: ON.
+   - Required status checks (pick the actual job names from `.github/workflows/ci.yml`):
+     - lint
+     - typecheck
+     - test
+     - any other CI gate jobs (security scan, etc.)
+
+3. **Require conversation resolution before merging**: ON.
+
+4. **Require linear history**: depends on merge style choice (3.A.0 settled on `--no-ff`, so leave this OFF; if the team later switches to squash/rebase-only, turn it ON).
+
+5. **Restrict who can push to matching branches**: ON. Limit to the owner. Branches still receive PR-merged commits.
+
+6. **Allow force pushes**: OFF. Force-pushing a protected branch destroys history and breaks any collaborator's local copy.
+
+7. **Allow deletions**: OFF.
+
+8. **Lock branch**: leave OFF (lock would prevent ALL pushes including PR merges; only useful for archived branches).
+
+**Implementation:**
+
+Either via GitHub UI (Settings → Branches → Add rule) or via `gh` CLI:
+
+```bash
+gh api -X PUT "repos/qazuor/hospeda/branches/main/protection" \
+  --input - <<'EOF'
+{
+  "required_status_checks": { "strict": true, "contexts": ["lint", "typecheck", "test"] },
+  "enforce_admins": false,
+  "required_pull_request_reviews": { "dismiss_stale_reviews": true, "required_approving_review_count": 0 },
+  "restrictions": null,
+  "allow_force_pushes": false,
+  "allow_deletions": false,
+  "required_conversation_resolution": true
+}
+EOF
+
+# Same for staging — replace "main" with "staging" in the URL.
+```
+
+Adjust the `contexts` array to match the actual CI job names. Run `gh api repos/qazuor/hospeda/actions/runs --jq '.workflow_runs[0].jobs_url'` to inspect the latest run and lift the names from there.
+
+**Acceptance:**
+- A `git push origin main` (direct, no PR) is rejected by GitHub with "protected branch" message.
+- A PR with failing CI cannot be merged via the UI button (it is greyed out).
+- A force-push attempt is rejected.
+
+**Why CRITICAL:** without protection, the green-build gate from 3.A.0 is just a gentlemen's agreement. A future PR that breaks `main` and gets merged anyway poisons every subsequent PR's baseline. Protection makes the gate enforceable instead of aspirational.
+
+---
+
 ### 3.A.1 — [CRITICAL · ops · 30 min] Toggle MercadoPago to production mode in `hospeda-api-prod`
 
 **Where:** Coolify → `hospeda-api-prod` → Environment Variables → `HOSPEDA_MERCADO_PAGO_SANDBOX`.
@@ -639,7 +705,7 @@ Things considered for this spec but kept out:
 
 | Section | Items | Total effort |
 |---|---|---|
-| 3.A pre-launch | 7 | ~10-17 h |
+| 3.A pre-launch | 8 | ~11-18 h |
 | 3.B repo hygiene | 5 | ~3 h |
 | 3.C hops hardening | 4 | ~5-7 h |
 | 3.D auth | 3 | ~2 h + SPEC-102 (12-20h) |
@@ -648,10 +714,13 @@ Things considered for this spec but kept out:
 | 3.G future | 6 | ~10 h |
 | 3.H long-term | 4 | ~5-12 h |
 
-**Critical path to public launch (3.A only):** ~10-17 h.
-**Total backlog:** ~57-89 h spread over weeks-months post-merge.
+**Critical path to public launch (3.A only):** ~11-18 h.
+**Total backlog:** ~58-90 h spread over weeks-months post-merge.
 
-**Hard sequencing inside 3.A:** `3.A.0` (green-build gate) MUST happen before creating the `staging` branch. The other 3.A items can run in any order after that, in parallel with each other where the operator has bandwidth.
+**Hard sequencing inside 3.A:**
+1. `3.A.0` (green-build gate) MUST pass on `main` before creating the `staging` branch.
+2. `3.A.0.1` (branch protection on main + staging) IMMEDIATELY after staging branch creation.
+3. The other 3.A items can run in any order after that, in parallel with each other where the operator has bandwidth.
 
 ---
 
