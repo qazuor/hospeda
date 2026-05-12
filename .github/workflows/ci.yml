@@ -191,7 +191,13 @@ jobs:
   test-unit:
     name: Unit Tests (shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Band-aid bump: shards currently re-run package builds inside the test
+    # job because GH Actions does not share fs between jobs and turbo remote
+    # cache is not hitting reliably. SPEC-103 T-032 tracks the proper fix
+    # (upload build-outputs artifact from `build` job, download in shards).
+    # Until then 30 min absorbs the worst-case shard cost (~22 min observed
+    # in run 25756807810 on 2026-05-12).
+    timeout-minutes: 30
     needs: build
     strategy:
       fail-fast: false
