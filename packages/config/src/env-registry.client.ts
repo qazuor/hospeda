@@ -128,6 +128,23 @@ export const CLIENT_WEB_ENV_VARS = [
             'Same value as HOSPEDA_ADMIN_URL but exposed to the browser. Local: http://localhost:3000. Production: https://admin.hospeda.com.ar.',
         howToObtainEs:
             'El mismo valor que HOSPEDA_ADMIN_URL pero expuesto al navegador. Local: http://localhost:3000. Producción: https://admin.hospeda.com.ar.'
+    },
+    {
+        name: 'PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL',
+        description:
+            'WhatsApp broadcast channel invite URL exposed to the browser. When set, the web WhatsAppCTA component renders a join CTA; when unset, the block is hidden.',
+        descriptionEs:
+            'URL de invitación al canal de WhatsApp expuesta al navegador. Si está seteada, el componente WhatsAppCTA de la web muestra un CTA para sumarse; si no, se oculta.',
+        type: 'url',
+        required: false,
+        secret: false,
+        exampleValue: 'https://whatsapp.com/channel/0029Va6S3oPxxxxxxxxxxxx',
+        apps: ['web'],
+        category: 'client-web',
+        howToObtain:
+            'Mirror of HOSPEDA_NEWSLETTER_WA_CHANNEL_URL (server-side, for the welcome email). WhatsApp → Channels → your channel → Channel link → copy the public invite URL. Leave unset to hide the CTA entirely.',
+        howToObtainEs:
+            'Mirror del valor server-side HOSPEDA_NEWSLETTER_WA_CHANNEL_URL (que usa el email de bienvenida). WhatsApp → Channels → tu canal → Channel link → copiá la URL pública. Dejala vacía para ocultar el CTA.'
     }
 ] as const satisfies readonly EnvVarDefinition[];
 

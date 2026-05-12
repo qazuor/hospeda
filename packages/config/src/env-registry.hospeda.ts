@@ -514,6 +514,132 @@ export const HOSPEDA_ENV_VARS = [
     },
 
     // -------------------------------------------------------------------------
+    // Newsletter (SPEC-101)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_NEWSLETTER_HMAC_SECRET',
+        description:
+            'HMAC-SHA256 secret used to sign newsletter verification and unsubscribe tokens. Must be at least 32 bytes of entropy.',
+        descriptionEs:
+            'Secreto HMAC-SHA256 que firma los tokens de verificación y de baja del newsletter. Mínimo 32 bytes de entropía.',
+        type: 'string',
+        required: true,
+        secret: true,
+        exampleValue: 'change-me-to-a-32-byte-random-secret-xxxxxxxx',
+        apps: ['api'],
+        category: 'newsletter',
+        howToObtain:
+            'Generate a random 32-byte string: `openssl rand -base64 48`. Treat as a long-lived secret — rotating it invalidates every outstanding verification email and unsubscribe link. Use HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV for graceful rotation.',
+        howToObtainEs:
+            'Generá un string random de 32 bytes: `openssl rand -base64 48`. Tratalo como secreto de larga vida — rotarlo invalida todos los emails de verificación pendientes y links de baja. Usá HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV para una rotación con ventana de gracia.'
+    },
+    {
+        name: 'HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV',
+        description:
+            'Previous newsletter HMAC secret, accepted during the rotation window. Verification falls back to this when the current secret rejects a token.',
+        descriptionEs:
+            'Secreto HMAC anterior del newsletter, aceptado durante la ventana de rotación. La verificación cae a este si el secreto actual rechaza el token.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'old-32-byte-random-secret-from-previous-rotation',
+        apps: ['api'],
+        category: 'newsletter',
+        howToObtain:
+            'Set only during a key rotation. Workflow: (1) keep current value, copy it to HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV; (2) generate a new HOSPEDA_NEWSLETTER_HMAC_SECRET; (3) after 72h (verification token TTL), unset HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV. Leave blank in steady state.',
+        howToObtainEs:
+            'Solo se setea durante una rotación de clave. Pasos: (1) guardás el valor actual en HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV; (2) generás un nuevo HOSPEDA_NEWSLETTER_HMAC_SECRET; (3) pasadas 72h (TTL del token de verificación), borrás HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV. En estado normal, dejala vacía.'
+    },
+    {
+        name: 'HOSPEDA_BREVO_WEBHOOK_SECRET',
+        description:
+            'Static secret Brevo sends in the `X-Sib-Webhook-Token` header so the API can verify webhook authenticity. Min 10 bytes.',
+        descriptionEs:
+            'Secreto estático que Brevo envía en el header `X-Sib-Webhook-Token` para que la API valide la autenticidad de los webhooks. Mínimo 10 bytes.',
+        type: 'string',
+        required: true,
+        secret: true,
+        exampleValue: 'replace-with-brevo-webhook-token',
+        apps: ['api'],
+        category: 'newsletter',
+        howToObtain:
+            'Brevo dashboard → Transactional → Email → Settings → Webhook → create a webhook and set a custom "token". Brevo will then send that exact value in every X-Sib-Webhook-Token header. Compare with timingSafeEqual on the receiving end.',
+        howToObtainEs:
+            'Dashboard de Brevo → Transactional → Email → Settings → Webhook → creá un webhook y poné un "token" custom. Brevo va a enviar ese valor exacto en cada header X-Sib-Webhook-Token. Comparalo con timingSafeEqual del lado del receptor.'
+    },
+    {
+        name: 'HOSPEDA_NEWSLETTER_SOFTCAP_DAYS',
+        description:
+            'Rolling window (in days) for the per-subscriber send-frequency soft cap. A subscriber that received a campaign within this many days is excluded from the next dispatch unless the admin opts to bypass.',
+        descriptionEs:
+            'Ventana móvil (en días) para el soft cap de frecuencia por suscriptor. Un suscriptor que recibió una campaña dentro de esa ventana queda fuera del próximo dispatch salvo que el admin lo bypasee.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '7',
+        exampleValue: '7',
+        apps: ['api'],
+        category: 'newsletter',
+        howToObtain:
+            'Number of days (1-365). Default 7 means "do not email the same subscriber more than once per week". Increase to be more conservative; decrease for higher-cadence campaigns.',
+        howToObtainEs:
+            'Número de días (1-365). Default 7 = "no mandar más de un email por semana al mismo suscriptor". Subilo si querés ser más conservador, bajalo para campañas con cadencia más alta.'
+    },
+    {
+        name: 'HOSPEDA_NEWSLETTER_BATCH_SIZE',
+        description:
+            'Number of recipients per Brevo `messageVersions` batch call (1-100). Brevo enforces a hard ceiling of 100 per batch.',
+        descriptionEs:
+            'Cantidad de destinatarios por llamada batch a Brevo (`messageVersions`, 1-100). Brevo impone un tope duro de 100 por batch.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '100',
+        exampleValue: '100',
+        apps: ['api'],
+        category: 'newsletter',
+        howToObtain:
+            'Integer 1-100. Lower values fan out more BullMQ jobs (better parallelism but more API calls); higher values send more recipients per call (fewer requests but larger blast radius on a single failure). Default 100 = Brevo limit.',
+        howToObtainEs:
+            'Entero 1-100. Valores más bajos abren más jobs en BullMQ (más paralelismo pero más calls a la API); valores más altos mandan más destinatarios por call (menos requests pero más impacto si uno falla). Default 100 = límite de Brevo.'
+    },
+    {
+        name: 'HOSPEDA_NEWSLETTER_WORKER_CONCURRENCY',
+        description:
+            'BullMQ worker concurrency for the newsletter dispatch queue — number of batch jobs the worker processes in parallel.',
+        descriptionEs:
+            'Concurrencia del worker BullMQ del newsletter — cantidad de jobs batch que el worker procesa en paralelo.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '5',
+        exampleValue: '5',
+        apps: ['api'],
+        category: 'newsletter',
+        howToObtain:
+            'Integer 1-20. Bound by Brevo throughput limits and DB connection budget. Default 5 is conservative; raise carefully and watch for Brevo 429s.',
+        howToObtainEs:
+            'Entero 1-20. Acotado por los limits de throughput de Brevo y el budget de conexiones a la DB. Default 5 es conservador; subilo con cuidado y monitoreá los 429 de Brevo.'
+    },
+    {
+        name: 'HOSPEDA_NEWSLETTER_WA_CHANNEL_URL',
+        description:
+            'WhatsApp broadcast channel invite URL. When set, the post-verification welcome email shows a CTA to join the channel; otherwise the block is hidden.',
+        descriptionEs:
+            'URL de invitación al canal de difusión de WhatsApp. Si está seteada, el email de bienvenida muestra un CTA para sumarse; si no, se oculta.',
+        type: 'url',
+        required: false,
+        secret: false,
+        exampleValue: 'https://whatsapp.com/channel/0029Va6S3oPxxxxxxxxxxxx',
+        apps: ['api'],
+        category: 'newsletter',
+        howToObtain:
+            'WhatsApp → Channels → your channel → Channel link → copy the public invite URL. Leave unset to hide the CTA entirely. Mirrors the client-side value of PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL (web).',
+        howToObtainEs:
+            'WhatsApp → Channels → tu canal → Channel link → copiá la URL pública. Dejala vacía para ocultar el CTA. Mirror del valor cliente PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL (web).'
+    },
+
+    // -------------------------------------------------------------------------
     // Cron
     // -------------------------------------------------------------------------
     {

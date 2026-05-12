@@ -382,6 +382,22 @@ export const ApiEnvBaseSchema = z.object({
      */
     HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID: z.coerce.number().int().positive().optional(),
 
+    // Newsletter (SPEC-101)
+    /** HMAC-SHA256 secret for verification + unsubscribe tokens. Min 32 bytes. */
+    HOSPEDA_NEWSLETTER_HMAC_SECRET: z.string().min(32).optional(),
+    /** Previous HMAC secret, accepted during the rotation window. */
+    HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV: z.string().min(32).optional(),
+    /** Static secret Brevo echoes in X-Sib-Webhook-Token. Min 10 bytes. */
+    HOSPEDA_BREVO_WEBHOOK_SECRET: z.string().min(10).optional(),
+    /** Rolling window (days) for the per-subscriber send frequency soft cap. */
+    HOSPEDA_NEWSLETTER_SOFTCAP_DAYS: z.coerce.number().int().min(1).max(365).default(7),
+    /** Recipients per Brevo `messageVersions` batch call (Brevo limit 100). */
+    HOSPEDA_NEWSLETTER_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(100),
+    /** BullMQ worker concurrency for the newsletter dispatch queue. */
+    HOSPEDA_NEWSLETTER_WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(20).default(5),
+    /** WhatsApp channel invite URL. When unset, the welcome-email CTA is hidden. */
+    HOSPEDA_NEWSLETTER_WA_CHANNEL_URL: z.string().url().optional(),
+
     // Sentry
     HOSPEDA_SENTRY_DSN: z.string().optional(),
     HOSPEDA_SENTRY_RELEASE: z.string().optional(),
