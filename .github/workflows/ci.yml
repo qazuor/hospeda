@@ -191,7 +191,13 @@ jobs:
   test-unit:
     name: Unit Tests (shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Band-aid bump: shards currently re-run package builds inside the test
+    # job because GH Actions does not share fs between jobs and turbo remote
+    # cache is not hitting reliably. SPEC-103 T-032 tracks the proper fix
+    # (upload build-outputs artifact from `build` job, download in shards).
+    # Until then 30 min absorbs the worst-case shard cost (~22 min observed
+    # in run 25756807810 on 2026-05-12).
+    timeout-minutes: 30
     needs: build
     strategy:
       fail-fast: false
@@ -218,9 +224,13 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           VITEST_SHARD: ${{ matrix.shard }}/4
-        # --passWithNoTests is required because some packages have fewer
-        # test files than shards (e.g. @repo/icons has 2 files; shards 3
-        # and 4 receive nothing and would otherwise fail).
+        # --passWithNoTests is NOT injected from CI here — every package's
+        # `test` / `test:coverage` script in its own package.json already
+        # includes it. vitest 3.2.4+ rejects duplicated flags with
+        # "Expected a single value for option --passWithNoTests", so the
+        # CI must only inject what is shard-specific. New packages must
+        # carry `--passWithNoTests` in their own script (sensible local
+        # default + safety against shards landing on an empty file set).
         # --coverage.thresholds.* are zeroed because per-package vitest
         # thresholds cannot be met by a single shard. The aggregated
         # threshold check is enforced by the coverage-check job below
@@ -228,7 +238,6 @@ jobs:
         run: |
           pnpm turbo run test:coverage --concurrency=4 -- \
             --shard=${{ matrix.shard }}/4 \
-            --passWithNoTests \
             --coverage.thresholds.lines=0 \
             --coverage.thresholds.functions=0 \
             --coverage.thresholds.branches=0 \
@@ -239,10 +248,11 @@ jobs:
           VITEST_SHARD: ${{ matrix.shard }}/4
         # Cheaper run for PRs and pushes to staging. No coverage artifact
         # produced, so coverage-check is skipped (and accepted by ci-pass).
+        # See coverage variant above for why --passWithNoTests is NOT
+        # injected here from CI.
         run: |
           pnpm turbo run test --concurrency=4 -- \
-            --shard=${{ matrix.shard }}/4 \
-            --passWithNoTests
+            --shard=${{ matrix.shard }}/4
       - name: Upload coverage artifacts (shard ${{ matrix.shard }})
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
