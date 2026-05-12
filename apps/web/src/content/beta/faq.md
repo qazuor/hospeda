@@ -138,7 +138,7 @@ Es una pastilla flotante **"Reportar problema"** abajo a la derecha de todas las
 
 ### ¿Cómo saco una captura de pantalla?
 
-Mirá la tabla en el **[Glosario](/beta/empezar/glosario/)**.
+Mirá la tabla completa en el **[Glosario](/beta/empezar/glosario/#cómo-sacar-una-captura-de-pantalla)** o la sección **[Herramientas para testear](#herramientas-para-testear)** más abajo.
 
 ### ¿Tengo que escribir mucho en el reporte?
 
@@ -214,6 +214,123 @@ Como sos beta tester, sí. **No pongas datos reales sensibles tuyos** (DNI real,
 
 ---
 
+## Herramientas para testear
+
+> Esta sección es para que tengas a mano cómo hacer las cosas básicas que vas a necesitar mientras probás (capturas, video, ver errores, etc.). **No tenés que ser técnico para usar nada de esto.**
+
+### Captura de pantalla en celular
+
+| Equipo | Atajo |
+| --- | --- |
+| Android | **Volumen abajo + Encendido** al mismo tiempo |
+| iPhone con botón Home | **Home + Encendido** al mismo tiempo |
+| iPhone sin Home | **Subir volumen + Encendido** al mismo tiempo |
+
+La captura queda en la galería de fotos.
+
+### Captura de pantalla en compu
+
+| Sistema | Atajo |
+| --- | --- |
+| **Windows** (pantalla completa) | Tecla `PrtSc` (a veces se llama "Impr Pant"). Después pegala con `Ctrl + V` en cualquier lado. |
+| **Windows** (seleccionar área) | `Win + Shift + S`. Te deja recortar un pedazo. Queda en el portapapeles. |
+| **Mac** (seleccionar área) | `Cmd + Shift + 4`. Te deja arrastrar y elegir la zona. Queda en el escritorio. |
+| **Mac** (pantalla completa) | `Cmd + Shift + 3`. Queda en el escritorio. |
+| **Linux** | Tecla `PrtSc` o la app "Captura de pantalla" que viene con el sistema. |
+
+### Grabar un video corto de la pantalla
+
+A veces un bug solo se entiende en movimiento (animación rara, transición que falla, algo que solo pasa al hacer scroll). Para eso:
+
+| Equipo | Cómo |
+| --- | --- |
+| **Android** | Deslizá las notificaciones para abajo y buscá "Grabar pantalla" (también llamado "Captura de pantalla" en algunos modelos). |
+| **iPhone** | Centro de control (deslizar desde arriba a la derecha) → ícono de círculo dentro de un círculo. Si no te aparece, lo activás en `Ajustes → Centro de control → Grabación de pantalla`. |
+| **Windows 10/11** | `Win + G` abre la barra de juegos, que tiene un botón para grabar. |
+| **Mac** | `Cmd + Shift + 5` te muestra opciones para grabar pantalla completa o un área. |
+| **Cualquier sistema (online)** | <https://www.loom.com> (gratis, instalás la extensión de Chrome). Sube el video y te da un link para pegar en el reporte. |
+
+> No grabes más de **30 segundos** por reporte. Si necesitás más, hacé varios videos cortos.
+
+### Ver errores de la consola del navegador
+
+Esto suena técnico pero es fácil. Si te pedimos que veas "qué dice la consola":
+
+1. Apretá la tecla **`F12`** (en compu).
+2. Se abre un panel con varias pestañas: clickeá **"Consola"** o **"Console"**.
+3. Si hay texto **en rojo**, sacale captura entera (incluyendo la consola abierta).
+4. Cerralo con `F12` de nuevo.
+
+> En Mac usá `Cmd + Option + I`. En Firefox podés usar `Ctrl + Shift + K` (`Cmd + Option + K`).
+
+### Ver qué carga la página (Network tab)
+
+Si te pedimos "mirá qué llamadas hace la página":
+
+1. Apretá `F12`.
+2. Clickeá la pestaña **"Red"** o **"Network"**.
+3. Recargá la página (`F5`).
+4. Si ves líneas en rojo, esa es una llamada que falló. Sacale captura.
+
+No necesitás entender qué significa cada línea. Con la captura nos alcanza.
+
+### Atajos útiles del navegador
+
+| Atajo | Qué hace |
+| --- | --- |
+| `F5` o `Ctrl + R` / `Cmd + R` | Recargar la página |
+| `Ctrl + Shift + R` / `Cmd + Shift + R` | Recargar **forzando que no use caché** (ver punto siguiente) |
+| `Ctrl + F` / `Cmd + F` | Buscar texto dentro de la página actual |
+| `Ctrl + N` / `Cmd + N` | Abrir ventana nueva |
+| `Ctrl + Shift + N` / `Cmd + Shift + N` | Abrir ventana en **modo incógnito / privado** |
+| `Ctrl + T` / `Cmd + T` | Abrir pestaña nueva |
+| `Ctrl + W` / `Cmd + W` | Cerrar pestaña actual |
+| `Ctrl + L` / `Cmd + L` | Saltar a la barra de direcciones (para copiar la URL rápido) |
+
+### "Algo se ve raro pero no entiendo qué"
+
+**Probá esto en orden** antes de reportar (a veces se arregla solo):
+
+1. **Recargar fuerte**: `Ctrl + Shift + R` (Windows/Linux) o `Cmd + Shift + R` (Mac). Esto ignora caché y baja todo de nuevo.
+2. **Modo incógnito**: abrí la página en una ventana de incógnito (`Ctrl + Shift + N`). Si en incógnito anda bien, probablemente sea cache o una extensión tuya.
+3. **Otro navegador**: si solo pasa en uno, **decinos cuál**.
+4. **Otro equipo / celular**: si solo pasa en tu compu pero no en el celular, **también es info útil**.
+
+Si después de probar todo eso el problema sigue, **ese es un buen bug para reportar** y agregale como dato: "ya probé recargar fuerte / incógnito / otro navegador, y sigue."
+
+### Cómo copio la URL exacta donde estoy
+
+- **Compu**: `Ctrl + L` (`Cmd + L` en Mac) selecciona la URL, después `Ctrl + C` (`Cmd + C`) la copia.
+- **Celular**: tocá la barra de dirección, te aparece la opción "Copiar".
+
+Pegala en el reporte. Nos sirve un montón para encontrar la página exacta.
+
+### ¿Cómo limpio el caché?
+
+Si te pedimos "limpiá caché":
+
+- **Chrome / Edge**: `Ctrl + Shift + Supr` (`Cmd + Shift + Suprimir` en Mac) → marcá "Imágenes y archivos en caché" → "Borrar datos".
+- **Firefox**: `Ctrl + Shift + Supr` → "Caché".
+- **Safari**: `Cmd + Option + E` (borra caché). O en Preferencias → Avanzado → activá "Mostrar el menú Desarrollo en la barra de menús" y de ahí "Vaciar cachés".
+
+> En la mayoría de los casos NO hace falta limpiar caché entero. Probá primero **recargar fuerte** (`Ctrl + Shift + R`). Es menos invasivo.
+
+### ¿Cómo veo en qué versión / build estoy?
+
+Si te lo pedimos: clickeá derecho en cualquier parte vacía de la página → **"Ver código fuente de la página"** (o `Ctrl + U` / `Cmd + Option + U`). Arriba de todo suele aparecer una línea tipo `<!-- build: abc123 -->`. Si no la encontrás, no pasa nada.
+
+### Probar como "usuario nuevo" (cuenta limpia)
+
+Si querés ver cómo se ve todo desde cero (sin tu historial, sin sesión iniciada):
+
+1. Abrí una **ventana de incógnito** (`Ctrl + Shift + N` / `Cmd + Shift + N`).
+2. Andá a `staging.hospeda.com.ar`.
+3. Vas a estar deslogueado, sin caché, sin nada. Como un visitante nuevo.
+
+Esto es **especialmente útil** para los onboarding (turista, host) y para detectar cosas que solo aparecen "la primera vez".
+
+---
+
 ## Otras
 
 ### Tengo un familiar que también quiere probar, ¿puedo sumarlo?
@@ -223,10 +340,6 @@ Mejor consultanos primero. El beta tiene cupo de 40 personas seleccionadas.
 ### ¿Puedo compartir capturas en redes sociales?
 
 **No por ahora.** El sitio todavía no es público. Cuando lancemos, ahí sí.
-
-### ¿Hay video tutorial?
-
-Sí. Te lo dejamos en la **[bienvenida](/beta/)** del docs site. Son 2 minutos. **Velo.**
 
 ### ¿Cuándo lanza Hospeda al público?
 
