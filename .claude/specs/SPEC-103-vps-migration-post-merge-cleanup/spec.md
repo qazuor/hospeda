@@ -44,6 +44,45 @@ Items are tagged with severity (CRITICAL / HIGH / MEDIUM / LOW), area (security,
 
 ## 3.A — Pre-public-launch (block public launch until done)
 
+### 3.A.0 — [CRITICAL · ops · 2-4 h] Green-build gate before creating the `staging` branch
+
+**Where:** root of the monorepo on `main` immediately after the merge.
+
+**Current:** The merge of `chore/vps-migration` → `main` carries forward at least one known typecheck error (`apps/api/src/services/feedback/linear.service.ts:342` — preexisting `Buffer` vs `BodyInit` mismatch) plus possibly other red lint / test signals that accumulated over the 3-month branch life. Creating the `staging` branch from a red `main` would copy the failures into staging, polluting CI for both branches.
+
+**Hard rule:** Do NOT create the `staging` branch until `main` passes:
+
+```bash
+pnpm lint        # turbo run lint    — biome across the entire monorepo
+pnpm typecheck   # turbo run typecheck — tsc per workspace
+pnpm test        # turbo run test    — vitest across all packages + apps
+```
+
+with **zero failures**. CI passing on the merge commit is the same gate, but a local run before pushing main saves a CI roundtrip.
+
+**Steps:**
+1. Merge the branch.
+2. Run the three commands above on `main`. Capture any errors.
+3. For each failure, either:
+   - Fix it inline in `main` (small typecheck nits, missing imports, deterministic test failures).
+   - File it as a new sub-item in section 3.B and apply a **temporary** suppression (`// @ts-expect-error`, `it.skip`, `biome-ignore`) with a comment pointing back to this spec item.
+4. Re-run all three commands. Confirm green.
+5. Push `main`.
+6. ONLY THEN create `staging` branch from `main`.
+
+**Why CRITICAL:**
+- A red `main` blocks every future PR's CI (every PR's pipeline starts from main + the PR diff).
+- Cherry-picking fixes between `main` and `staging` becomes harder if both diverge on red signals.
+- Public-launch confidence requires "the build is green, period" as a baseline.
+
+**Known starter list (from audit 2026-05-12):**
+- `apps/api/src/services/feedback/linear.service.ts:342` — `Buffer` not assignable to `BodyInit`. Either convert to `Uint8Array`/`Blob`/`ReadableStream` before `fetch(body)`, or relax the call signature.
+- (Run `pnpm lint`, `pnpm typecheck`, `pnpm test` to discover the rest — capture here as a checklist when you hit them.)
+
+**Acceptance:** the three commands return exit 0 on `main` HEAD. CI on the merge commit is green. Staging branch is created from that green commit.
+
+---
+
 ### 3.A.1 — [CRITICAL · ops · 30 min] Toggle MercadoPago to production mode in `hospeda-api-prod`
 
 **Where:** Coolify → `hospeda-api-prod` → Environment Variables → `HOSPEDA_MERCADO_PAGO_SANDBOX`.
@@ -600,7 +639,7 @@ Things considered for this spec but kept out:
 
 | Section | Items | Total effort |
 |---|---|---|
-| 3.A pre-launch | 6 | ~8-13 h |
+| 3.A pre-launch | 7 | ~10-17 h |
 | 3.B repo hygiene | 5 | ~3 h |
 | 3.C hops hardening | 4 | ~5-7 h |
 | 3.D auth | 3 | ~2 h + SPEC-102 (12-20h) |
@@ -609,8 +648,10 @@ Things considered for this spec but kept out:
 | 3.G future | 6 | ~10 h |
 | 3.H long-term | 4 | ~5-12 h |
 
-**Critical path to public launch (3.A only):** ~8-13 h (was ~3-5 h before adding the comprehensive auth review in 3.A.5).
-**Total backlog:** ~55-85 h spread over weeks-months post-merge.
+**Critical path to public launch (3.A only):** ~10-17 h.
+**Total backlog:** ~57-89 h spread over weeks-months post-merge.
+
+**Hard sequencing inside 3.A:** `3.A.0` (green-build gate) MUST happen before creating the `staging` branch. The other 3.A items can run in any order after that, in parallel with each other where the operator has bandwidth.
 
 ---
 
