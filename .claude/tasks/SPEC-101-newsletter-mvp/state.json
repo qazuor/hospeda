@@ -6,8 +6,8 @@
     "summary": {
         "totalTasks": 60,
         "completed": 15,
-        "inProgress": 0,
-        "pending": 45,
+        "inProgress": 1,
+        "pending": 44,
         "deferred": 0,
         "blocked": 0,
         "criticalPath": [
@@ -621,7 +621,7 @@
             "phase": "phase1_foundation",
             "layer": "service",
             "complexity": 4,
-            "status": "pending",
+            "status": "in_progress",
             "dependsOn": ["T-101-15", "T-101-14"],
             "blocks": ["T-101-44", "T-101-45"],
             "tags": ["phase1_foundation", "service", "notifications"],
