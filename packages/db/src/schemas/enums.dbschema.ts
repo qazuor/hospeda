@@ -17,6 +17,9 @@ import {
     MessageSenderTypeEnum,
     MessageStatusEnum,
     ModerationStatusEnum,
+    NewsletterChannelEnum,
+    NewsletterSourceEnum,
+    NewsletterSubscriberStatusEnum,
     NotificationRecipientSideEnum,
     OwnerPromotionDiscountTypeEnum,
     PaymentStatusEnum,
@@ -103,6 +106,21 @@ export const RolePgEnum = pgEnum('role_enum', enumToTuple(RoleEnum));
 export const ModerationStatusPgEnum = pgEnum(
     'moderation_status_enum',
     enumToTuple(ModerationStatusEnum)
+);
+
+export const NewsletterChannelPgEnum = pgEnum(
+    'newsletter_channel_enum',
+    enumToTuple(NewsletterChannelEnum)
+);
+
+export const NewsletterSourcePgEnum = pgEnum(
+    'newsletter_source_enum',
+    enumToTuple(NewsletterSourceEnum)
+);
+
+export const NewsletterSubscriberStatusPgEnum = pgEnum(
+    'newsletter_subscriber_status_enum',
+    enumToTuple(NewsletterSubscriberStatusEnum)
 );
 
 export const TagColorPgEnum = pgEnum('tag_color_enum', enumToTuple(TagColorEnum));

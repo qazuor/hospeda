@@ -5,9 +5,9 @@
     "created": "2026-05-11T00:00:00.000Z",
     "summary": {
         "totalTasks": 60,
-        "completed": 2,
+        "completed": 3,
         "inProgress": 0,
-        "pending": 58,
+        "pending": 57,
         "deferred": 0,
         "blocked": 0,
         "criticalPath": [
@@ -158,22 +158,32 @@
             "phase": "phase1_foundation",
             "layer": "db",
             "complexity": 2,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-01"],
             "blocks": ["T-101-07", "T-101-08"],
             "tags": ["phase1_foundation", "db", "schema"],
             "files": [
-                "packages/db/src/schemas/newsletter/newsletter-subscriber.table.ts",
-                "packages/db/src/schemas/newsletter/index.ts"
+                "packages/schemas/src/enums/newsletter-channel.enum.ts",
+                "packages/schemas/src/enums/newsletter-channel.schema.ts",
+                "packages/schemas/src/enums/newsletter-source.enum.ts",
+                "packages/schemas/src/enums/newsletter-source.schema.ts",
+                "packages/schemas/src/enums/newsletter-subscriber-status.enum.ts",
+                "packages/schemas/src/enums/newsletter-subscriber-status.schema.ts",
+                "packages/schemas/src/enums/index.ts",
+                "packages/db/src/schemas/enums.dbschema.ts",
+                "packages/db/src/schemas/newsletter/newsletter_subscribers.dbschema.ts",
+                "packages/db/src/schemas/newsletter/index.ts",
+                "packages/db/src/schemas/index.ts"
             ],
             "acceptanceCriteria": [
-                "All enum types declared (channel, status, source, locale)",
-                "Table columns match tech-analysis §2.1 exactly (id, userId, email, channel, status, locale, source, consent fields, all timestamps)",
+                "Enum types declared (channel, status, source) in @repo/schemas + matching PgEnums in @repo/db",
+                "Locale stored as varchar(10) following conversation.locale pattern (NOT pgEnum — codebase convention)",
+                "Table columns match tech-analysis §2.1 (id, userId, email, channel, status, locale, source, consent fields, all timestamps)",
                 "Drizzle-managed indexes declared (status, locale, channel, email BTREEs)",
-                "File exported from packages/db/src/schemas/index.ts",
-                "pnpm typecheck passes in packages/db"
+                "File exported from packages/db/src/schemas/index.ts and packages/schemas/src/enums/index.ts",
+                "pnpm typecheck passes in @repo/schemas and @repo/db"
             ],
-            "description": "Create packages/db/src/schemas/newsletter/newsletter-subscriber.table.ts following the exact schema from tech-analysis §2.1. Declare the four pgEnum types. Add Drizzle-managed indexes. Export from the newsletter index.ts and the main schemas index.ts. No manual SQL here — that is handled by T-101-06 and T-101-03.",
+            "description": "Create packages/db/src/schemas/newsletter/newsletter_subscribers.dbschema.ts following tech-analysis §2.1 + codebase conventions. Locale uses varchar(10) (matches conversation.locale), other discrete fields use pgEnum. Partial unique index defers to T-101-06 manual SQL (0022).",
             "qualityGate": {
                 "lint": "pass",
                 "typecheck": "pass",
@@ -181,9 +191,10 @@
             },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-12T19:10:00.000Z",
+                "completed": "2026-05-12T19:25:00.000Z"
+            },
+            "notes": "Deviation from tech-analysis: locale stored as varchar(10) with default 'es' (NOT a dedicated pgEnum). Matches conversation.locale pattern at packages/db/src/schemas/conversation/conversations.dbschema.ts:66. Trade-off: less type safety at DB level, but avoids ALTER TYPE migrations if we ever need to add a locale. Zod-level validation via LanguageEnumSchema (already in user.settings.schema.ts) is the enforcement layer. Filename uses snake_case (newsletter_subscribers.dbschema.ts) matching codebase convention (conversation_access_tokens.dbschema.ts, etc.), not the kebab-case 'newsletter-subscriber.table.ts' in the original task spec."
         },
         {
             "id": "T-101-05",

@@ -5,6 +5,7 @@ export * from './destination/index.ts';
 export * from './enums.dbschema.ts';
 export * from './event/index.ts';
 export * from './exchange-rate/index.ts';
+export * from './newsletter/index.ts';
 export * from './owner-promotion/index.ts';
 export * from './post/index.ts';
 export * from './revalidation/index.ts';

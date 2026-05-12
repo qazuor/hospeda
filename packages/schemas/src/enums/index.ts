@@ -61,6 +61,15 @@ export * from './message-status.schema.js';
 export * from './moderation-status.enum.js';
 export * from './moderation-status.schema.js';
 
+export * from './newsletter-channel.enum.js';
+export * from './newsletter-channel.schema.js';
+
+export * from './newsletter-source.enum.js';
+export * from './newsletter-source.schema.js';
+
+export * from './newsletter-subscriber-status.enum.js';
+export * from './newsletter-subscriber-status.schema.js';
+
 export * from './notification-recipient-side.enum.js';
 export * from './notification-recipient-side.schema.js';
 
