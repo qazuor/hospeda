@@ -106,9 +106,7 @@ describe('AccommodationService hookState concurrency', () => {
 
     it('instance fields _lastDeletedEntity and _lastRestoredAccommodation should not exist', () => {
         // Assert - these mutable instance fields should not exist after hookState migration
-        // biome-ignore lint/suspicious/noExplicitAny: testing private fields
         expect((service as any)._lastDeletedEntity).toBeUndefined();
-        // biome-ignore lint/suspicious/noExplicitAny: testing private fields
         expect((service as any)._lastRestoredAccommodation).toBeUndefined();
     });
 });

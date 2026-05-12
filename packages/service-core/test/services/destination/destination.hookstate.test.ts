@@ -23,19 +23,14 @@ describe('DestinationService hookState concurrency', () => {
 
     it('instance fields should not exist after construction', () => {
         // Assert - mutable instance fields should not exist after hookState migration
-        // biome-ignore lint/suspicious/noExplicitAny: testing private fields
         expect((service as any)._updateId).toBeUndefined();
-        // biome-ignore lint/suspicious/noExplicitAny: testing private fields
         expect((service as any)._pendingPathUpdate).toBeUndefined();
-        // biome-ignore lint/suspicious/noExplicitAny: testing private fields
         expect((service as any)._lastDeletedDestinationSlug).toBeUndefined();
-        // biome-ignore lint/suspicious/noExplicitAny: testing private fields
         expect((service as any)._lastRestoredDestinationSlug).toBeUndefined();
     });
 
     it('should store updateId on ctx.hookState, not instance field', () => {
         // Assert - verify no mutable state leaks to instance
-        // biome-ignore lint/suspicious/noExplicitAny: testing private fields
         const instance = service as any;
         expect(instance._updateId).toBeUndefined();
         expect(instance._pendingPathUpdate).toBeUndefined();
