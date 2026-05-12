@@ -5,9 +5,9 @@
     "created": "2026-05-11T00:00:00.000Z",
     "summary": {
         "totalTasks": 60,
-        "completed": 18,
+        "completed": 19,
         "inProgress": 0,
-        "pending": 42,
+        "pending": 41,
         "deferred": 0,
         "blocked": 0,
         "criticalPath": [
@@ -736,7 +736,7 @@
             "phase": "phase1_foundation",
             "layer": "i18n",
             "complexity": 2,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-18"],
             "blocks": ["T-101-33", "T-101-34", "T-101-35", "T-101-36", "T-101-37"],
             "tags": ["phase1_foundation", "i18n"],
@@ -763,9 +763,10 @@
             },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-13T01:15:00.000Z",
+                "completed": "2026-05-13T01:35:00.000Z"
+            },
+            "notes": "Implemented inline. Added 6 of 8 nested blocks per tech-analysis §13: newsletter.{authPopover, verify, errorPage, unsubscribePage, whatsapp}, footer.newsletter, account.newsletter. Naming deviation: tech-analysis §13 used keys 'newsletter.error' and 'newsletter.unsubscribe' but those COLLIDE with existing flat keys (newsletter.error from the landing app's pre-launch form, newsletter.unsubscribe verb). Renamed the new nested blocks to 'errorPage' and 'unsubscribePage' to coexist without breaking landing app. All 3 locales updated (es, en, pt); per NFR 6.5 en/pt receive the same ES strings as fallback. Skipped 2 blocks: (a) email.newsletter.* — would require creating a new email namespace (4 files + config.ts wiring) for keys that won't be consumed (templates use hardcoded ES per established project convention, see T-101-13 deviation). Will be added when/if templates migrate to i18n. (b) admin.newsletter.* — task AC did not list it; will be added by T-101-38/39/40 (admin UI tasks) as part of their work. Quality gates: @repo/i18n typecheck OK, 575/575 tests pass."
         },
         {
             "id": "T-101-20",
