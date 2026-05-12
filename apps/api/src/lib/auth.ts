@@ -200,6 +200,11 @@ export function getAuth(): ReturnType<typeof betterAuth> {
 
         emailAndPassword: {
             enabled: true,
+            // Require users to verify their email address before they can sign in.
+            // Better Auth blocks sign-in attempts for unverified accounts and
+            // returns an EMAIL_NOT_VERIFIED error so the frontend can guide them
+            // back to the verification flow.
+            requireEmailVerification: true,
             password: {
                 hash: async (password: string) => hash(password, BCRYPT_SALT_ROUNDS),
                 verify: async ({
@@ -207,29 +212,40 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                     password
                 }: { hash: string; password: string }) => compare(password, storedHash)
             },
-            sendResetPassword: async ({ user, url }) => {
+            sendResetPassword: async ({ user, token }) => {
                 // Fire-and-forget to prevent timing attacks (BA recommendation)
                 void (async () => {
                     try {
-                        const apiKey = env.HOSPEDA_RESEND_API_KEY;
+                        const apiKey = env.HOSPEDA_EMAIL_API_KEY;
                         if (!apiKey) {
                             logger.warn(
                                 { userId: user.id },
-                                'HOSPEDA_RESEND_API_KEY not set - skipping password reset email'
+                                'HOSPEDA_EMAIL_API_KEY not set - skipping password reset email'
                             );
                             return;
                         }
                         const client = createEmailClient({ apiKey });
+                        // The reset-password page is a SPA that consumes the token via
+                        // ?token= and calls the BA reset endpoint from the React island.
+                        // BA itself does not perform a redirect for reset, so we link
+                        // straight to the web page.
+                        const siteOrigin = env.HOSPEDA_SITE_URL.replace(/\/$/, '');
+                        const resetUrl = `${siteOrigin}/es/auth/reset-password?token=${encodeURIComponent(token)}`;
                         const result = await sendEmail({
                             client,
                             to: user.email,
                             subject: 'Restablece tu contraseña de Hospeda',
                             react: ResetPasswordTemplate({
                                 name: user.name || user.email,
-                                resetUrl: url
+                                resetUrl
                             })
                         });
-                        if (!result.success) {
+                        if (result.success) {
+                            logger.info(
+                                { userId: user.id },
+                                'Password reset email dispatched to provider'
+                            );
+                        } else {
                             logger.warn(
                                 { userId: user.id, error: result.error },
                                 'Failed to send password reset email'
@@ -249,29 +265,43 @@ export function getAuth(): ReturnType<typeof betterAuth> {
         },
 
         emailVerification: {
-            sendVerificationEmail: async ({ user, url }) => {
+            sendVerificationEmail: async ({ user, token }) => {
                 // Fire-and-forget to prevent timing attacks (BA recommendation)
                 void (async () => {
                     try {
-                        const apiKey = env.HOSPEDA_RESEND_API_KEY;
+                        const apiKey = env.HOSPEDA_EMAIL_API_KEY;
                         if (!apiKey) {
                             logger.warn(
                                 { userId: user.id },
-                                'HOSPEDA_RESEND_API_KEY not set - skipping verification email'
+                                'HOSPEDA_EMAIL_API_KEY not set - skipping verification email'
                             );
                             return;
                         }
                         const client = createEmailClient({ apiKey });
+                        // Use Better Auth's native verify-email handler with a
+                        // callbackURL pointing back to the web sign-in page.
+                        // Better Auth verifies the token server-side and 302s the user
+                        // to the callback URL — no SPA round-trip needed (avoids CORS
+                        // and the lack of POST support on /api/auth/verify-email).
+                        const apiOrigin = env.HOSPEDA_API_URL.replace(/\/$/, '');
+                        const siteOrigin = env.HOSPEDA_SITE_URL.replace(/\/$/, '');
+                        const callbackURL = `${siteOrigin}/es/auth/signin?verified=1`;
+                        const verificationUrl = `${apiOrigin}/api/auth/verify-email?token=${encodeURIComponent(token)}&callbackURL=${encodeURIComponent(callbackURL)}`;
                         const result = await sendEmail({
                             client,
                             to: user.email,
                             subject: 'Verifica tu cuenta de Hospeda',
                             react: VerifyEmailTemplate({
                                 name: user.name || user.email,
-                                verificationUrl: url
+                                verificationUrl
                             })
                         });
-                        if (!result.success) {
+                        if (result.success) {
+                            logger.info(
+                                { userId: user.id },
+                                'Verification email dispatched to provider'
+                            );
+                        } else {
                             logger.warn(
                                 { userId: user.id, error: result.error },
                                 'Failed to send verification email'
@@ -339,6 +369,23 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                 })())
         },
 
+        /**
+         * Account linking: if a user already exists with a given email and
+         * the same email comes back through a different OAuth provider, link
+         * the new provider to the existing user instead of rejecting with
+         * `account_not_linked`. Both Google and Facebook verify the email
+         * on their side before returning it, so trusting them here is safe.
+         * Without this, the second provider attempt dead-ends with an error
+         * and the user has to manually figure out which provider they used
+         * the first time.
+         */
+        account: {
+            accountLinking: {
+                enabled: true,
+                trustedProviders: ['google', 'facebook']
+            }
+        },
+
         plugins: [
             admin({
                 defaultRole: RoleEnum.HOST,
@@ -364,7 +411,18 @@ export function getAuth(): ReturnType<typeof betterAuth> {
             disableCSRFCheck: false,
             /** Explicitly enable origin validation for redirects */
             disableOriginCheck: false,
-            useSecureCookies: env.NODE_ENV === 'production'
+            useSecureCookies: env.NODE_ENV === 'production',
+            /**
+             * SSO across subdomains (web, admin, api). In production the cookie is
+             * scoped to the apex `hospeda.com.ar` so a session minted on
+             * `hospeda.com.ar` is also valid on `admin.hospeda.com.ar` and
+             * `api.hospeda.com.ar`. In dev `domain` stays undefined so cookies
+             * fall back to per-host scoping (localhost:3000 vs localhost:4321).
+             */
+            crossSubDomainCookies: {
+                enabled: true,
+                domain: env.NODE_ENV === 'production' ? 'hospeda.com.ar' : undefined
+            }
         },
 
         databaseHooks: {
@@ -579,6 +637,41 @@ function parseTrustedOrigins(): string[] {
     const adminUrl = env.HOSPEDA_ADMIN_URL;
     if (adminUrl) {
         origins.push(adminUrl);
+    }
+
+    // Extra origins via comma-separated env var. Used for aliases like
+    // staging.hospeda.com.ar / staging-admin.hospeda.com.ar where the
+    // canonical HOSPEDA_SITE_URL stays at the prod-naming hostname but
+    // the same containers also serve a staging hostname that needs to
+    // be a trusted origin for sign-up and OAuth flows.
+    //
+    // Each entry must be a full URL (with scheme). Better Auth expects
+    // origin format like `https://example.com`; bare hostnames are
+    // silently rejected by some validation paths and may also break the
+    // CORS plumbing downstream. Validate the format up front and warn
+    // on malformed entries instead of pushing them silently.
+    const extra = env.HOSPEDA_EXTRA_TRUSTED_ORIGINS;
+    if (extra) {
+        for (const raw of extra.split(',')) {
+            const value = raw.trim();
+            if (value.length === 0 || origins.includes(value)) continue;
+            try {
+                const parsed = new URL(value);
+                if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+                    logger.warn(
+                        { value, protocol: parsed.protocol },
+                        'Ignoring HOSPEDA_EXTRA_TRUSTED_ORIGINS entry with non-http(s) scheme'
+                    );
+                    continue;
+                }
+                origins.push(value);
+            } catch {
+                logger.warn(
+                    { value },
+                    'Ignoring malformed HOSPEDA_EXTRA_TRUSTED_ORIGINS entry (must be a full URL like https://staging.hospeda.com.ar)'
+                );
+            }
+        }
     }
 
     // Default development origins

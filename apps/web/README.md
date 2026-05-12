@@ -1,6 +1,6 @@
 # Hospeda Web2
 
-New public-facing website for the Hospeda tourism accommodation platform, targeting the Litoral Entrerriano region of Argentina. Built with Astro 5, React 19 islands, Tailwind CSS v4, and deployed on Vercel.
+New public-facing website for the Hospeda tourism accommodation platform, targeting the Litoral Entrerriano region of Argentina. Built with Astro 5, React 19 islands, Tailwind CSS v4, and deployed on a self-hosted Coolify VPS behind Cloudflare.
 
 This app will eventually **replace `apps/web`** with a fresh design based on the TravHub reference template, featuring organic shapes, warm peach tones, Geologica + Roboto + Caveat typography, and a fully tokenized design system.
 
@@ -30,7 +30,7 @@ The app runs at `http://localhost:4322`. Requires the API (`apps/api`) running o
 | Framework | Astro 5 (SSR + SSG hybrid) |
 | UI Islands | React 19 (interactive components only) |
 | Styling | Tailwind CSS v4 with CSS custom properties |
-| Adapter | @astrojs/vercel (ISR, image optimization) |
+| Adapter | @astrojs/node (standalone, long-running Node server in a Docker container) |
 | Auth | Better Auth via @repo/auth-ui |
 | i18n | @repo/i18n (es, en, pt) |
 | Validation | Zod via @repo/schemas |

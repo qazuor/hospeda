@@ -75,9 +75,9 @@ export const CLIENT_WEB_ENV_VARS = [
         apps: ['web'],
         category: 'client-web',
         howToObtain:
-            'Free-text version label per deploy. Standard practice on Vercel: wire it to VERCEL_GIT_COMMIT_SHA so each deploy gets a unique release identifier (commit hash like "abc123def456"). Avoid semver strings like "1.0.0" because every preview deploy would collide.',
+            'Free-text version label per deploy. Recommended: wire it to the deployed git commit SHA (e.g. via HOSPEDA_COMMIT_SHA in CI/CD) so each deploy gets a unique release identifier ("abc123def456"). Avoid semver strings like "1.0.0" because every preview/staging deploy would collide on the same release in Sentry.',
         howToObtainEs:
-            'Etiqueta de versión libre por deploy. Práctica estándar en Vercel: conectala a VERCEL_GIT_COMMIT_SHA así cada deploy es un release único (hash de commit tipo "abc123def456"). Evitá strings semver tipo "1.0.0" porque cada preview tendría colisión.'
+            'Etiqueta de versión libre por deploy. Recomendado: conectala al SHA del commit deployado (por ejemplo vía HOSPEDA_COMMIT_SHA en CI/CD) así cada deploy es un release único ("abc123def456"). Evitá strings semver tipo "1.0.0" porque cada preview/staging tendría colisión en el mismo release en Sentry.'
     },
     {
         name: 'PUBLIC_ENABLE_LOGGING',
@@ -108,9 +108,9 @@ export const CLIENT_WEB_ENV_VARS = [
         apps: ['web'],
         category: 'client-web',
         howToObtain:
-            'Free-text version shown in feedback submissions and bug reports. On Vercel auto-fill from VERCEL_GIT_COMMIT_SHA. Local: pick anything ("dev").',
+            'Free-text version shown in feedback submissions and bug reports. In CI/CD set it to HOSPEDA_COMMIT_SHA so it changes per deploy. Local: pick anything ("dev").',
         howToObtainEs:
-            'Versión en texto libre que se muestra en envíos de feedback y reportes de bugs. En Vercel autocompletala desde VERCEL_GIT_COMMIT_SHA. Local: poné cualquier cosa ("dev").'
+            'Versión en texto libre que se muestra en envíos de feedback y reportes de bugs. En CI/CD seteala desde HOSPEDA_COMMIT_SHA así cambia por deploy. Local: poné cualquier cosa ("dev").'
     },
     {
         name: 'PUBLIC_ADMIN_URL',
@@ -213,9 +213,9 @@ export const CLIENT_ADMIN_ENV_VARS = [
         apps: ['admin'],
         category: 'client-admin',
         howToObtain:
-            'Free-text version shown in the admin footer. On Vercel wire to VERCEL_GIT_COMMIT_SHA. Local: pick anything.',
+            'Free-text version shown in the admin footer. In CI/CD wire it to HOSPEDA_COMMIT_SHA so it tracks the deployed git SHA. Local: pick anything.',
         howToObtainEs:
-            'Versión en texto libre que se muestra en el footer del admin. En Vercel conectala a VERCEL_GIT_COMMIT_SHA. Local: cualquier cosa.'
+            'Versión en texto libre que se muestra en el footer del admin. En CI/CD conectala a HOSPEDA_COMMIT_SHA así trackea el SHA del commit deployado. Local: cualquier cosa.'
     },
     {
         name: 'VITE_APP_DESCRIPTION',
@@ -339,9 +339,9 @@ export const CLIENT_ADMIN_ENV_VARS = [
         apps: ['admin'],
         category: 'client-admin',
         howToObtain:
-            'Free-text version per deploy. Standard practice on Vercel: wire it to VERCEL_GIT_COMMIT_SHA so each deploy is a unique release in Sentry (commit hash like "abc123def456"). Avoid semver "1.0.0" — every preview would collide.',
+            'Free-text version per deploy. Recommended: wire it to HOSPEDA_COMMIT_SHA in CI/CD so each deploy is a unique release in Sentry ("abc123def456"). Avoid semver "1.0.0" — every preview/staging would collide.',
         howToObtainEs:
-            'Versión en texto libre por deploy. Práctica estándar en Vercel: conectala a VERCEL_GIT_COMMIT_SHA así cada deploy es un release único en Sentry (hash de commit tipo "abc123def456"). Evitá semver "1.0.0" — cada preview tendría colisión.'
+            'Versión en texto libre por deploy. Recomendado: conectala a HOSPEDA_COMMIT_SHA en CI/CD así cada deploy es un release único en Sentry ("abc123def456"). Evitá semver "1.0.0" — cada preview/staging tendría colisión.'
     },
     {
         name: 'VITE_SENTRY_PROJECT',

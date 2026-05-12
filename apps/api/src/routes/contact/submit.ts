@@ -185,8 +185,9 @@ export const submitContactRoute = createSimpleRoute({
 
         // Treat missing API key as a soft failure — the submission is still
         // logged above and we return success so the user is not blocked.
-        // Once HOSPEDA_RESEND_API_KEY is set in Vercel, real delivery kicks in.
-        if (env.HOSPEDA_RESEND_API_KEY) {
+        // Once HOSPEDA_EMAIL_API_KEY is set in the runtime env, real delivery
+        // kicks in.
+        if (env.HOSPEDA_EMAIL_API_KEY) {
             try {
                 await sendNotification(payload, { skipDb: true, skipLogging: true });
                 apiLogger.info(
@@ -208,7 +209,7 @@ export const submitContactRoute = createSimpleRoute({
             }
         } else {
             apiLogger.warn(
-                'HOSPEDA_RESEND_API_KEY not set — contact submission stored in logs only'
+                'HOSPEDA_EMAIL_API_KEY not set — contact submission stored in logs only'
             );
         }
 

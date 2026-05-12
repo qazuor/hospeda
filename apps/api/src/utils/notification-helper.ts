@@ -9,11 +9,11 @@
 
 import { getDb } from '@repo/db';
 import {
+    BrevoEmailTransport,
     NotificationService,
     PreferenceService,
-    ResendEmailTransport,
     type RetryService,
-    createResendClient
+    createEmailClient
 } from '@repo/notifications';
 import type { NotificationPayload, SendNotificationOptions } from '@repo/notifications';
 import { env } from './env';
@@ -52,21 +52,21 @@ function getNotificationService(): NotificationService | null {
     }
 
     try {
-        // Check if HOSPEDA_RESEND_API_KEY is set
-        if (!env.HOSPEDA_RESEND_API_KEY) {
+        // Check if HOSPEDA_EMAIL_API_KEY is set
+        if (!env.HOSPEDA_EMAIL_API_KEY) {
             apiLogger.warn(
-                'HOSPEDA_RESEND_API_KEY not set in environment. Notifications will not be sent.'
+                'HOSPEDA_EMAIL_API_KEY not set in environment. Notifications will not be sent.'
             );
             return null;
         }
 
-        // Create Resend client with validated env config
-        const resendClient = createResendClient({ apiKey: env.HOSPEDA_RESEND_API_KEY });
+        // Create email client with validated env config
+        const emailClient = createEmailClient({ apiKey: env.HOSPEDA_EMAIL_API_KEY });
 
         // Create email transport with validated env config
-        const emailTransport = new ResendEmailTransport(resendClient, {
-            fromEmail: env.HOSPEDA_RESEND_FROM_EMAIL ?? 'noreply@hospeda.com.ar',
-            fromName: env.HOSPEDA_RESEND_FROM_NAME ?? 'Hospeda'
+        const emailTransport = new BrevoEmailTransport(emailClient, {
+            fromEmail: env.HOSPEDA_EMAIL_FROM_EMAIL ?? 'noreply@hospeda.com.ar',
+            fromName: env.HOSPEDA_EMAIL_FROM_NAME ?? 'Hospeda'
         });
 
         // Create preference service with mock functions

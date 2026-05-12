@@ -1,0 +1,29 @@
+{
+    "name": "@hospeda/server-tools",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Operational CLI for the Hospeda VPS — wraps Docker, Coolify API, R2 backups, and DB ops behind a single `hops` command.",
+    "type": "module",
+    "bin": {
+        "hops": "./bin/hops"
+    },
+    "scripts": {
+        "dev": "bun run src/index.ts",
+        "build": "bun build src/index.ts --compile --outfile=hops-bin",
+        "typecheck": "tsc --noEmit",
+        "test": "bun test"
+    },
+    "dependencies": {
+        "@aws-sdk/client-s3": "^3.700.0",
+        "@clack/prompts": "^0.8.2",
+        "execa": "^9.5.2"
+    },
+    "devDependencies": {
+        "@types/bun": "^1.1.14",
+        "@types/node": "^22.10.0",
+        "typescript": "^5.7.2"
+    },
+    "engines": {
+        "bun": ">=1.1.0"
+    }
+}

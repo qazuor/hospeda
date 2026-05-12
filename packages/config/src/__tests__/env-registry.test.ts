@@ -17,7 +17,7 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *  - PUBLIC_*     :  6 vars (Astro web app, browser-exposed)
  *  - VITE_*       : 23 vars (TanStack admin, Vite-exposed)
  *  - Docker       :  5 vars (docker-compose services)
- *  - System       :  6 vars (runtime/CI/Vercel)
+ *  - System       :  runtime/CI variables
  */
 const EXPECTED_VAR_COUNT = 183;
 
@@ -194,8 +194,7 @@ describe('ENV_REGISTRY', () => {
                 'HOSPEDA_EXCHANGE_RATE_API_KEY',
                 'HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN',
                 'HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET',
-                'HOSPEDA_RESEND_API_KEY',
-                'HOSPEDA_CRON_SECRET',
+                'HOSPEDA_EMAIL_API_KEY',
                 'HOSPEDA_SEED_SUPER_ADMIN_PASSWORD',
                 'POSTGRES_PASSWORD'
             ];
@@ -214,8 +213,8 @@ describe('ENV_REGISTRY', () => {
                 'HOSPEDA_BETTER_AUTH_URL',
                 'HOSPEDA_CRON_ADAPTER',
                 'HOSPEDA_DISABLE_AUTH',
-                'HOSPEDA_RESEND_FROM_EMAIL',
-                'HOSPEDA_RESEND_FROM_NAME',
+                'HOSPEDA_EMAIL_FROM_EMAIL',
+                'HOSPEDA_EMAIL_FROM_NAME',
                 'HOSPEDA_COMMIT_SHA',
                 'HOSPEDA_SENTRY_DSN',
                 'API_PORT',
@@ -265,15 +264,12 @@ describe('ENV_REGISTRY', () => {
     });
 
     describe('HOSPEDA_CRON_ADAPTER enum', () => {
-        it('should list manual, vercel, qstash, and node-cron as valid values', () => {
+        it('should list only manual and node-cron as valid values', () => {
             const entry = REGISTRY.find((e) => e.name === 'HOSPEDA_CRON_ADAPTER');
 
             expect(entry).toBeDefined();
             expect(entry?.type).toBe('enum');
-            expect(entry?.enumValues).toContain('manual');
-            expect(entry?.enumValues).toContain('vercel');
-            expect(entry?.enumValues).toContain('qstash');
-            expect(entry?.enumValues).toContain('node-cron');
+            expect(entry?.enumValues).toEqual(['manual', 'node-cron']);
         });
     });
 
@@ -401,14 +397,11 @@ describe('ENV_REGISTRY', () => {
             expect(entry?.category).toBe('system');
         });
 
-        it('should include CI, VERCEL, and VERCEL_GIT_COMMIT_SHA', () => {
-            const systemVarNames = ['CI', 'VERCEL', 'VERCEL_GIT_COMMIT_SHA'];
-            for (const name of systemVarNames) {
-                const entry = REGISTRY.find((e) => e.name === name);
-                expect(entry, `${name} not found in registry`).toBeDefined();
-                expect(entry?.category).toBe('system');
-                expect(entry?.secret).toBe(false);
-            }
+        it('should include CI as a system var', () => {
+            const entry = REGISTRY.find((e) => e.name === 'CI');
+            expect(entry, 'CI not found in registry').toBeDefined();
+            expect(entry?.category).toBe('system');
+            expect(entry?.secret).toBe(false);
         });
     });
 

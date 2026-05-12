@@ -32,8 +32,6 @@ process.env.HOSPEDA_DISABLE_AUTH = 'true';
 process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
 // Mock exchange rate API key for tests
 process.env.HOSPEDA_EXCHANGE_RATE_API_KEY = 'test_exchange_rate_api_key';
-// Cron secret must be >= 32 chars
-process.env.HOSPEDA_CRON_SECRET = 'test_cron_secret_key_that_is_at_least_32_characters_long';
 // Revalidation secret must be >= 32 chars
 process.env.HOSPEDA_REVALIDATION_SECRET = 'test_revalidation_secret_key_at_least_32_characters';
 // Trusted origins

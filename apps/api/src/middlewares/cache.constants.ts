@@ -42,12 +42,11 @@ export const PRIVATE_CACHE_ENDPOINTS = [
 
 /**
  * Path prefixes that must always hit the origin (no-store).
- * Diagnostics, docs, cron, webhooks, admin metrics, and Better Auth (cookie-bound).
+ * Diagnostics, docs, webhooks, admin metrics, and Better Auth (cookie-bound).
  */
 export const NO_CACHE_ENDPOINTS = [
     '/health/db',
     '/docs',
-    '/api/v1/cron',
     '/api/v1/webhooks',
     '/api/v1/admin/metrics',
     '/api/auth'

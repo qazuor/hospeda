@@ -1,0 +1,7 @@
+.env.local
+.env
+node_modules/
+dist/
+hops-bin
+hops-bin.exe
+*.log

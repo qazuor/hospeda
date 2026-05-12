@@ -27,7 +27,11 @@ export interface AuthResult {
  */
 export interface SignInMethods {
     email: (params: { email: string; password: string }) => Promise<AuthResult>;
-    social: (params: { provider: string; callbackURL: string }) => Promise<unknown>;
+    social: (params: {
+        provider: string;
+        callbackURL: string;
+        errorCallbackURL?: string;
+    }) => Promise<unknown>;
 }
 
 /**

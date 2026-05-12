@@ -32,8 +32,8 @@ export interface RevalidatePathResult {
  *
  * @example
  * ```ts
- * const adapter: RevalidationAdapter = new VercelRevalidationAdapter({
- *   bypassToken: process.env.HOSPEDA_ISR_BYPASS_TOKEN,
+ * const adapter: RevalidationAdapter = new CloudflareRevalidationAdapter({
+ *   secret: process.env.HOSPEDA_REVALIDATION_SECRET,
  *   siteUrl: process.env.HOSPEDA_SITE_URL,
  * });
  *

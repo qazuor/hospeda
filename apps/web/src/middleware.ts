@@ -11,6 +11,7 @@
  * 7. Protect /mi-cuenta/* routes (redirect to login if unauthenticated)
  * 8. Rewrite 404 responses to the custom 404 page
  * 9. Set Content-Security-Policy-Report-Only header on HTML responses
+ * 10. Set X-Robots-Tag noindex on hosts in HOSPEDA_NOINDEX_HOSTS (e.g. staging)
  */
 
 import { defineMiddleware } from 'astro:middleware';
@@ -26,8 +27,19 @@ import {
     isServerIslandRoute,
     isSessionOptionalRoute,
     isStaticAssetRoute,
+    parseNoindexHosts,
     parseSessionUser
 } from './lib/middleware-helpers';
+
+/**
+ * Hosts whose responses must include `X-Robots-Tag: noindex, nofollow`.
+ * The same list also drives the restrictive `robots.txt` body served
+ * by `pages/robots.txt.ts`; `parseNoindexHosts` is the single source of
+ * truth so the two mechanisms can never drift.
+ */
+const NOINDEX_HOSTS = parseNoindexHosts(
+    import.meta.env.HOSPEDA_NOINDEX_HOSTS as string | undefined
+);
 
 /**
  * Main middleware handler for all requests in the web2 application.
@@ -124,6 +136,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
         });
 
         response.headers.set(CSP_HEADER_NAME, directives);
+    }
+
+    // Step 10: Mark staging-style hosts as non-indexable. The header takes
+    // precedence over any permissive `robots.txt` so it's enough on its own
+    // to keep search engines out while we share the real app on a subdomain
+    // before the official launch.
+    if (NOINDEX_HOSTS.length > 0) {
+        const requestHost = (
+            context.request.headers.get('host') ?? context.url.hostname
+        ).toLowerCase();
+        if (NOINDEX_HOSTS.includes(requestHost)) {
+            response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+        }
     }
 
     return response;

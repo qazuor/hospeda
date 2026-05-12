@@ -16,7 +16,7 @@ Hospeda is a web platform for discovering and managing tourist accommodations in
 | Testing | Vitest | Fast, ESM-native, monorepo-compatible |
 | Linting | Biome | Single tool for lint + format |
 | Build | TurboRepo + pnpm | Fast builds, workspace isolation |
-| Deployment | Vercel | Serverless, preview environments ([ADR-007](docs/decisions/ADR-007-vercel-deployment.md)) |
+| Deployment | Self-hosted Coolify on a VPS, behind Cloudflare | Long-running Node + Astro + TanStack Start containers, predictable cost, full control over runtime ([docs/migration/vps-deployment-spec.md](docs/migration/vps-deployment-spec.md)) |
 
 ## Repository Structure
 

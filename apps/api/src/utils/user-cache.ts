@@ -2,11 +2,7 @@ import type { User } from '@repo/schemas';
 import { UserService } from '@repo/service-core';
 import { LRUCache } from 'lru-cache';
 import { createSystemActor } from './actor.js';
-import { env } from './env.js';
 import { apiLogger } from './logger.js';
-
-/** Whether running in Vercel serverless environment */
-const isServerless = !!env.VERCEL;
 
 /**
  * Cached user data with metadata
@@ -32,24 +28,17 @@ interface CacheStats {
 /**
  * High-performance user cache with LRU eviction and query deduplication.
  *
- * In serverless environments (Vercel), the LRU cache and stats interval are
- * disabled since each invocation is ephemeral. Users are queried directly
- * from the database. Query deduplication is still active within a single
- * request lifecycle.
- *
  * Features:
- * - LRU cache with configurable size and TTL (long-running only)
+ * - LRU cache with configurable size and TTL
  * - Query deduplication to prevent duplicate DB calls
  * - Manual invalidation for data consistency
  * - Comprehensive stats and logging
  */
 export class UserCache {
-    private cache: LRUCache<string, CachedUser> | null = isServerless
-        ? null
-        : new LRUCache<string, CachedUser>({
-              max: 1000, // Maximum 1000 users cached
-              ttl: 5 * 60 * 1000 // 5 minutes TTL
-          });
+    private cache: LRUCache<string, CachedUser> = new LRUCache<string, CachedUser>({
+        max: 1000, // Maximum 1000 users cached
+        ttl: 5 * 60 * 1000 // 5 minutes TTL
+    });
 
     private pendingQueries = new Map<string, Promise<User | null>>();
     private stats = {
@@ -63,20 +52,18 @@ export class UserCache {
     constructor() {
         this.userService = new UserService({ logger: apiLogger });
 
-        // Log cache stats every 5 minutes (long-running only)
-        if (!isServerless) {
-            this.statsIntervalId = setInterval(
-                () => {
-                    const stats = this.getStats();
-                    if (stats.hitCount > 0 || stats.missCount > 0) {
-                        apiLogger.info(
-                            `UserCache Stats: hitRate=${(stats.hitRate * 100).toFixed(1)}% size=${stats.size}/${stats.maxSize} hits=${stats.hitCount} misses=${stats.missCount} pending=${stats.pendingQueries}`
-                        );
-                    }
-                },
-                5 * 60 * 1000
-            );
-        }
+        // Log cache stats every 5 minutes
+        this.statsIntervalId = setInterval(
+            () => {
+                const stats = this.getStats();
+                if (stats.hitCount > 0 || stats.missCount > 0) {
+                    apiLogger.info(
+                        `UserCache Stats: hitRate=${(stats.hitRate * 100).toFixed(1)}% size=${stats.size}/${stats.maxSize} hits=${stats.hitCount} misses=${stats.missCount} pending=${stats.pendingQueries}`
+                    );
+                }
+            },
+            5 * 60 * 1000
+        );
     }
 
     /**
@@ -89,25 +76,19 @@ export class UserCache {
             this.statsIntervalId = null;
             apiLogger.debug('UserCache stats interval cleared');
         }
-        this.cache?.clear();
+        this.cache.clear();
         this.pendingQueries.clear();
     }
 
     /**
-     * Get user by database user ID (UUID), using cache when possible.
-     * In serverless mode, always queries the database directly.
+     * Get user by database user ID (UUID), using the LRU cache when possible.
      *
      * @param userId - Database user UUID
      * @returns User object or null if not found
      */
     async getUser(userId: string): Promise<User | null> {
-        // In serverless mode, query DB directly (with deduplication)
-        if (isServerless) {
-            return this.queryWithDeduplication(userId);
-        }
-
         // Check cache first
-        const cached = this.cache?.get(userId);
+        const cached = this.cache.get(userId);
         if (cached) {
             this.stats.hitCount++;
             cached.hitCount++;
@@ -138,7 +119,7 @@ export class UserCache {
 
             if (user) {
                 // Cache the result
-                this.cache?.set(userId, {
+                this.cache.set(userId, {
                     user,
                     timestamp: Date.now(),
                     hitCount: 0
@@ -163,13 +144,10 @@ export class UserCache {
     /**
      * Manually invalidate a user from cache.
      * Call this when user data is updated.
-     * No-op in serverless mode.
      *
      * @param userId - Database user UUID to invalidate
      */
     invalidate(userId: string): void {
-        if (!this.cache) return;
-
         const wasInCache = this.cache.has(userId);
         this.cache.delete(userId);
 
@@ -179,13 +157,10 @@ export class UserCache {
     }
 
     /**
-     * Invalidate all cached users
-     * Use sparingly, only for major system changes
-     * No-op in serverless mode.
+     * Invalidate all cached users.
+     * Use sparingly, only for major system changes.
      */
     invalidateAll(): void {
-        if (!this.cache) return;
-
         const size = this.cache.size;
         this.cache.clear();
         apiLogger.info(`Cache cleared, removed ${size} users`);
@@ -198,8 +173,8 @@ export class UserCache {
         const totalRequests = this.stats.hitCount + this.stats.missCount;
 
         return {
-            size: this.cache?.size ?? 0,
-            maxSize: this.cache?.max ?? 0,
+            size: this.cache.size,
+            maxSize: this.cache.max,
             hitCount: this.stats.hitCount,
             missCount: this.stats.missCount,
             hitRate: totalRequests > 0 ? this.stats.hitCount / totalRequests : 0,
@@ -213,29 +188,6 @@ export class UserCache {
     resetStats(): void {
         this.stats.hitCount = 0;
         this.stats.missCount = 0;
-    }
-
-    /**
-     * Query user with deduplication (for serverless mode).
-     * Prevents concurrent duplicate DB queries within a single invocation.
-     */
-    private async queryWithDeduplication(userId: string): Promise<User | null> {
-        const pending = this.pendingQueries.get(userId);
-        if (pending) return pending;
-
-        const queryPromise = this.queryDatabase(userId);
-        this.pendingQueries.set(userId, queryPromise);
-
-        try {
-            return await queryPromise;
-        } catch (error) {
-            apiLogger.error(
-                `DB query error for user ${userId}: ${error instanceof Error ? error.message : String(error)}`
-            );
-            return null;
-        } finally {
-            this.pendingQueries.delete(userId);
-        }
     }
 
     /**

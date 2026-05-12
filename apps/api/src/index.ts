@@ -11,7 +11,6 @@ import { startCronScheduler } from './cron';
 import { createEntityResolver } from './lib/entity-resolver';
 import { closeSentry, initializeSentry } from './lib/sentry';
 import { initializeMediaProvider } from './services/media';
-import { warnIfCloudinaryMissingOnPreview } from './utils/cloudinary-preview-warn';
 import { closeDatabase, initializeDatabase } from './utils/database';
 import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
@@ -21,12 +20,6 @@ import { destroyUserPermissionsCache } from './utils/user-permissions-cache';
 
 // Validate environment variables before starting the server
 validateApiEnv();
-
-// SPEC-078-GAPS T-051 / GAP-078-134:
-// On Vercel preview deploys, advise when Cloudinary credentials are missing
-// (upload routes fall back to the in-memory provider — see T-018). No-op
-// outside preview; never throws.
-warnIfCloudinaryMissingOnPreview();
 
 // Initialize Sentry for error tracking (if DSN is configured)
 initializeSentry();
@@ -84,7 +77,7 @@ const startServer = async (): Promise<void> => {
 
                 // Start cron scheduler (only in non-test environments)
                 if (env.NODE_ENV !== 'test') {
-                    startCronScheduler(port).catch((error) => {
+                    startCronScheduler().catch((error) => {
                         apiLogger.error(
                             'Failed to start cron scheduler:',
                             error instanceof Error ? error.message : String(error)
@@ -159,17 +152,16 @@ startServer();
 /**
  * Handle uncaught exceptions.
  *
- * SPEC-020 US-14 originally required process.exit(1) here for the Fly.io VM deployment,
- * where a long-running Node process with corrupted state could silently serve bad responses.
+ * SPEC-020 US-14 required process.exit(1) here so a long-running Node process
+ * with corrupted state could not silently serve bad responses; the original
+ * deployment target was Fly.io VMs.
  *
- * After migrating to Vercel serverless (commit 437513a1), process.exit() is intentionally
- * omitted because:
- *   - Each request runs in an isolated function invocation.
- *   - Calling process.exit() kills the function mid-request, causing 502 errors.
- *   - The serverless runtime automatically manages process lifecycle and cold starts.
- *
- * WARNING: If the API is re-deployed on a long-running VM (Docker, EC2, etc.),
- * process.exit(1) MUST be re-enabled to prevent corrupted state from persisting.
+ * The handler currently logs without exiting. That was acceptable on Vercel
+ * serverless (each request was isolated, process.exit mid-request would cause
+ * 502s), but is NOT correct for the current VPS Coolify Docker target where
+ * the process is long-running. TODO: re-enable process.exit(1) once the
+ * supervisor's restart policy has been validated end-to-end on the VPS so a
+ * corrupted process is killed and replaced rather than left to serve traffic.
  */
 process.on('uncaughtException', (error) => {
     apiLogger.error(

@@ -345,9 +345,11 @@ Copiá la línea entera. En Vultr → **Account** → **SSH Keys** → **Add SSH
 > **Por qué este paso**: cuando hagas el cutover de `api.hospeda.com.ar` a VPS (Fase 12), MercadoPago va a seguir mandando webhooks al MISMO host (`api.hospeda.com.ar`), o sea, no hay nada que reconfigurar en MP — pero **tenés que confirmar que está bien y que el path no cambió**.
 
 1. <https://www.mercadopago.com.ar/developers/panel> → tu aplicación
-2. **Webhooks** → anotá las URLs actuales (típicamente `https://api.hospeda.com.ar/api/v1/protected/billing/webhooks/mercadopago` o similar)
+2. **Webhooks** → anotá las URLs actuales (típicamente `https://api.hospeda.com.ar/api/v1/webhooks/mercadopago` o similar)
 3. **Verificá** que el código de la API actual sigue exponiendo ese endpoint en el mismo path. Si no, necesitamos actualizar MP **después** del cutover.
 4. **NO toques nada** en MP por ahora. Solo documentás.
+
+> **Caso especial — webhooks NO configurados todavía**: si la pantalla de Webhooks dice "Aún no configuraste notificaciones" (no hay ninguna URL registrada), este paso es no-op acá. La configuración de webhooks se hace en **Paso 12.6** (post-cutover), cuando el endpoint del VPS ya esté respondiendo. Ver `Paso 12.6 — Configurar MercadoPago webhooks` más abajo.
 
 ### Paso 0.9 — (Opcional) Cuenta backup admin del VPS
 
@@ -387,7 +389,7 @@ Si querés un segundo punto de acceso de emergencia al VPS (por si tu laptop mue
 - [ ] Cuenta Resend creada, dominio agregado, DNS records de email agregados (verificación en background)
 - [ ] R2 bucket `hospeda-backups` creado, API token guardado en password manager (validación de tarjeta resuelta si aplicó)
 - [ ] Cuenta Better Stack creada
-- [ ] URLs de webhook MercadoPago documentadas
+- [ ] Webhooks de MercadoPago: URLs actuales documentadas, O confirmado que no hay webhooks configurados (en cuyo caso se crean en Paso 12.6)
 - [ ] GitHub App policy verificada / admin de org identificado
 - [ ] `drizzle-kit` pineado a versión exacta + commit
 
@@ -734,36 +736,79 @@ Apretá `q` para salir del status.
 
 Ahora que confirmamos que la SSH key funciona, deshabilitamos el login por password (mucho más seguro).
 
+> ⚠️ **Gotcha crítico de Ubuntu cloud images**: el archivo `/etc/ssh/sshd_config.d/50-cloud-init.conf` (creado por cloud-init) tiene `PasswordAuthentication yes` y **override** lo que pongas en el sshd_config principal. Si solo editás el archivo principal, el password auth queda activo y vas a tener intentos de brute-force que cuentan para fail2ban. Para evitar lockouts, usamos un archivo override con prioridad mayor.
+
+#### 3.6.a — Editar sshd_config principal
+
 ```bash
 sudo nano /etc/ssh/sshd_config
 ```
 
-Se abre un editor. Buscá las siguientes líneas (Ctrl+W para buscar) y cambialas:
+Buscá las siguientes líneas (Ctrl+W para buscar) y cambialas:
 
 | Línea actual | Cambiar a |
 |--------------|-----------|
 | `#PasswordAuthentication yes` o `PasswordAuthentication yes` | `PasswordAuthentication no` |
-| `#PermitRootLogin yes` o `PermitRootLogin yes` | `PermitRootLogin no` |
+| `#PermitRootLogin yes` o `PermitRootLogin yes` o `PermitRootLogin prohibit-password` | `PermitRootLogin no` |
+| `Port 22` (si lo cambiaste a un puerto custom como 2222 antes) | `#Port 22` o sacarla |
 
 Guardar: **Ctrl+O**, Enter, **Ctrl+X**.
 
-Reiniciar SSH:
+#### 3.6.b — Crear override que pisa el cloud-init
 
 ```bash
+sudo tee /etc/ssh/sshd_config.d/99-hardening.conf > /dev/null <<'EOF'
+PasswordAuthentication no
+PermitRootLogin no
+EOF
+```
+
+> Si el `tee <<EOF` falla por indentación de paste, usá nano:
+> `sudo nano /etc/ssh/sshd_config.d/99-hardening.conf`, pegá las 2 líneas SIN indentación, Ctrl+O, Enter, Ctrl+X.
+
+Los archivos en `sshd_config.d/` se cargan alfabéticamente; `99-` gana sobre `50-cloud-init.conf`.
+
+#### 3.6.c — Validar y reiniciar
+
+```bash
+sudo sshd -t                          # Si no devuelve nada, syntax OK
 sudo systemctl restart ssh
 ```
 
 **ADVERTENCIA**: NO cierres la terminal actual hasta verificar que podés conectarte desde otra. En **otra terminal** probá:
 
 ```bash
-ssh qazuor@TU_IP_VPS
+ssh -p TU_PUERTO_SSH qazuor@TU_IP_VPS         # Debe conectar SIN password
+ssh -p TU_PUERTO_SSH -o PasswordAuthentication=no root@TU_IP_VPS   # Debe decir "Permission denied (publickey)"
 ```
 
-Debe conectar SIN preguntarte password (la SSH key autentica sola).
+Si Test 1 conecta y Test 2 falla con `Permission denied (publickey)` (NO `publickey,password`), todo OK ✅.
 
-Si funciona ✅, listo.
+Si el segundo test dice `Permission denied (publickey,password)` → el override del cloud-init no se aplicó. Verificá `cat /etc/ssh/sshd_config.d/99-hardening.conf` y `sudo grep -nH "PasswordAuthentication" /etc/ssh/sshd_config.d/*`.
 
-Si NO funciona: vuelve a la terminal vieja, edita `/etc/ssh/sshd_config` revirtiendo los cambios, reiniciá SSH y revisá qué falló.
+Si NO podés conectar en absoluto: vuelve a la terminal vieja, revertí los cambios y reiniciá SSH.
+
+#### 3.6.d — Si te lockeaste por fail2ban (incidente común)
+
+Si hiciste varios `ssh root@...` testeando, fail2ban probablemente baneó tu IP de casa después de 5 attempts → `Connection refused` desde TODO traffic de tu IP, incluso `qazuor`.
+
+Recuperación:
+
+1. **Vultr Web Console** (VNC, no requiere SSH) → ícono `>_` o `View Console` en la página del server.
+2. Login: `qazuor` + password del user qazuor.
+3. Desbanear:
+
+   ```bash
+   sudo fail2ban-client unban --all
+   ```
+
+4. Verificar SSH:
+
+   ```bash
+   sudo systemctl status ssh | head -5
+   ```
+
+5. Volver a probar desde tu laptop.
 
 ### Paso 3.7 — Configurar swap (memoria virtual)
 
@@ -878,11 +923,57 @@ Por seguridad, queremos acceder al panel desde un dominio con SSL, no desde la I
 
 > **Nota**: este paso lo completamos en la Fase 5 después de configurar DNS. Por ahora, seguís usando `http://TU_IP_VPS:8000`.
 
+### Paso 4.5 — Resolver conflict del wizard con SSH hardenedo (gotcha si hardeneaste con port custom)
+
+> ⚠️ **Aplica solo si en Fase 3 cambiaste el puerto SSH (ej. 22→2222) y/o pusiste `PermitRootLogin no`**. El wizard de Coolify (`Let's go!` → `This Machine`) intenta SSH a `localhost:22` como `root` para validar la conexión al Docker daemon. Si bloqueaste port 22 o root login, el wizard falla con "Server is not reachable".
+
+**Solución** (re-habilitar SSH para tráfico interno sin re-exponer al internet):
+
+1. **Re-activar `Port 22` en sshd_config principal**:
+
+   ```bash
+   sudo sed -i 's|^#Port 22.*|Port 22|' /etc/ssh/sshd_config
+   sudo grep -nE "^Port" /etc/ssh/sshd_config
+   # Debe mostrar: Port 22 y Port 2222 (o el puerto custom que usaste)
+   ```
+
+2. **Permitir root SSH solo desde rangos privados** (localhost + Docker bridge):
+
+   ```bash
+   sudo tee /etc/ssh/sshd_config.d/99-hardening.conf > /dev/null <<'EOF'
+   PasswordAuthentication no
+   PermitRootLogin no
+
+   Match Address 127.0.0.0/8,10.0.0.0/8,172.0.0.0/8,192.168.0.0/16
+       PermitRootLogin prohibit-password
+   EOF
+   ```
+
+3. **UFW: abrir puerto 22 solo a rangos privados** (internet sigue bloqueado):
+
+   ```bash
+   sudo ufw allow from 127.0.0.0/8 to any port 22 proto tcp
+   sudo ufw allow from 10.0.0.0/8 to any port 22 proto tcp
+   sudo ufw allow from 172.0.0.0/8 to any port 22 proto tcp
+   ```
+
+4. **Validar y reiniciar**:
+
+   ```bash
+   sudo sshd -t && sudo systemctl restart ssh
+   ```
+
+5. Volvé al browser y click `Check Again` en el wizard de Coolify. Debería pasar al Step 2 (Connection ✅) y Step 3 (Complete).
+
+> Alternativa más limpia (no implementada por defecto): configurar Coolify para usar el puerto 2222 + un user no-root con permisos de Docker. Más laburo, pero elimina del todo el SSH root. Considerar para un hardening pass post-cutover.
+
 ### Verificación de fase 4
 
 - [x] Podés entrar a `http://TU_IP_VPS:8000`
 - [x] Tenés tu user admin creado
-- [x] Ves el dashboard de Coolify (probablemente vacío al principio)
+- [x] Wizard de Coolify completado (Steps Server / Connection / Complete todos verdes)
+- [x] Skip Setup en el último paso (no creaste proyecto inicial)
+- [x] Ves el dashboard de Coolify
 
 ✅ Fase 4 completa.
 
@@ -2117,6 +2208,42 @@ Tenés que ver: `pgcrypto`, `plpgsql`, `unaccent`, `uuid-ossp`. Si falta alguna,
 psql "$HOSPEDA_DATABASE_URL" -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; CREATE EXTENSION IF NOT EXISTS "pgcrypto"; CREATE EXTENSION IF NOT EXISTS "unaccent";'
 ```
 
+#### 12.1.d — Poblar catálogos esenciales (`seed --required`)
+
+> **Por qué**: la app necesita datos de catálogo (permissions por rol, billing plans, addons, entitlements, limits, amenities, attractions, exchange rate config, system tags, system user) para funcionar. Sin estos datos, admin no puede checar permisos, billing no puede asignar planes, los formularios de alojamientos no muestran amenities, etc. Algunos endpoints van a 500 silenciosamente.
+>
+> **Idempotencia**: los seeds del bucket `required` están diseñados para ser **idempotentes** (cada uno chequea existencia antes de insertar). Es seguro correr este paso múltiples veces — si los datos ya existen, los skipea. Esto significa que también podés correrlo más tarde si te olvidaste antes del deploy.
+>
+> **NO uses `--example` en producción**: el bucket `example` contiene datos de demo (alojamientos fake, usuarios de prueba, posts dummy). En **producción real** NUNCA correrlo. En **staging / preview** SÍ se usa para tener data de demo para testing y demos a stakeholders — ahí el comando es `seed --required --example --continueOnError` (incluso `--reset --required --example` si querés DB limpia cada vez en staging efímero).
+>
+> **NO uses `--reset`** en producción: limpia tablas antes de seedear. Solo para dev / staging efímero.
+
+```bash
+# PRODUCCIÓN: solo catálogos required (idempotente, safe re-run).
+# Desde tu laptop, con HOSPEDA_DATABASE_URL apuntando al VPS:
+pnpm --filter @repo/seed seed --required --continueOnError
+
+# STAGING / PREVIEW: catálogos required + datos de demo example.
+# pnpm --filter @repo/seed seed --required --example --continueOnError
+```
+
+`--continueOnError` evita abortar el batch si un seed individual falla (típico en re-runs idempotentes). Mirá la salida: cada seed reporta `inserted N` o `skipped N existing`.
+
+Verificá count de tablas críticas:
+
+```bash
+psql "$HOSPEDA_DATABASE_URL" -c "
+SELECT 'role_permissions' tabla, count(*) rows FROM role_permissions
+UNION ALL SELECT 'billing_plans', count(*) FROM billing_plans
+UNION ALL SELECT 'billing_addons', count(*) FROM billing_addons
+UNION ALL SELECT 'amenities', count(*) FROM amenities
+UNION ALL SELECT 'attractions', count(*) FROM attractions
+UNION ALL SELECT 'system_tags', count(*) FROM system_tags
+ORDER BY tabla;"
+```
+
+Esperado: `role_permissions` tiene cientos de rows (permisos por rol), `billing_plans` 9, `amenities` ~30, etc. Si alguna está en 0, el seed correspondiente falló — re-correr con `--continueOnError` falso para ver el stack trace.
+
 ### Paso 12.2 — Trigger build de la API
 
 1. En Coolify → `hospeda-api-prod` → click **Deploy**
@@ -2125,7 +2252,9 @@ psql "$HOSPEDA_DATABASE_URL" -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; CRE
    - **Build stage**: pnpm install + turbo build
    - **Runner stage**: COPY de artefactos
    - **Container start**: arranca node, valida env vars (Zod), conecta a DB y Redis, inicializa cron, escucha en :3001
-4. Si todo OK, status pasa a **Running** y health check `/api/v1/health/` responde 200 → Coolify marca "Application is healthy"
+4. Si todo OK, status pasa a **Running** y health check `/health` responde 200 → Coolify marca "Application is healthy"
+
+> **Path correcto del healthcheck es `/health`** (sin prefijo `/api/v1/`). Variantes con trailing slash o con prefijo devuelven 404 — Hono no auto-redirige. Confirmado en cutover 2026-05-07.
 
 #### Si el build falla
 
@@ -2161,7 +2290,7 @@ Coolify le asigna a cada app un dominio temporal tipo `app-id.coolify.hospeda.co
 **Test alternativo** sin cambiar DNS, usando `--resolve`:
 
 ```bash
-curl --resolve api.hospeda.com.ar:443:TU_IP_VPS https://api.hospeda.com.ar/api/v1/health/
+curl --resolve api.hospeda.com.ar:443:TU_IP_VPS https://api.hospeda.com.ar/health
 ```
 
 Esto le dice a curl: "para api.hospeda.com.ar, usá esta IP en vez de la del DNS". Si responde 200, la API está sirviendo bien desde el VPS.
@@ -2198,7 +2327,7 @@ Ahora desde tu browser, los 3 dominios resuelven al VPS. Probá flows reales (lo
 
 #### Pre-checks ANTES del cutover
 
-- [ ] `curl --resolve api.hospeda.com.ar:443:TU_IP_VPS https://api.hospeda.com.ar/api/v1/health/` responde 200
+- [ ] `curl --resolve api.hospeda.com.ar:443:TU_IP_VPS https://api.hospeda.com.ar/health` responde 200
 - [ ] DB tiene todos los datos (si migraste data desde Neon, verificá count de tablas críticas)
 - [ ] El proyecto Vercel de la API sigue activo (rollback fallback)
 - [ ] Tenés la IP del VPS y los DNS records de Cloudflare a la vista
@@ -2242,15 +2371,66 @@ Coolify a veces no puede pedir el cert hasta que el DNS resuelve hacia él (chic
 3. Vercel sirve de nuevo
 4. Investigá qué falló en VPS, corregí, re-intentá cutover
 
+### Paso 12.6 — Configurar MercadoPago webhooks (post-cutover)
+
+> **Por qué acá**: hasta este punto el endpoint `https://api.hospeda.com.ar/api/v1/webhooks/mercadopago` no estaba garantizado. Recién después del cutover (12.5) responde 200 desde el VPS de manera estable. Configurar MP antes habría mandado eventos a un endpoint inestable o equivocado (Vercel viejo).
+>
+> **Casos**:
+>
+> - **Webhooks YA configurados antes del cutover** (caso documentado en Paso 0.8): no hay nada que hacer acá; MP sigue mandando al MISMO host, que ahora resuelve al VPS. Saltá a "Validación" abajo.
+> - **Webhooks NO configurados todavía** (caso no-op del Paso 0.8): hay que crearlos ahora. Seguí los pasos 1-5.
+
+#### Crear/actualizar webhook en el panel de MP
+
+1. <https://www.mercadopago.com.ar/developers/panel> → tu aplicación → **Webhooks** (sidebar `Notificaciones`)
+2. Si no existe, click **Configurar notificaciones** (o `Editar` si ya hay uno).
+3. Modo: **Productivo** (NO sandbox/test).
+4. **URL de producción**: `https://api.hospeda.com.ar/api/v1/webhooks/mercadopago`
+5. **Eventos a suscribir** (mínimo recomendado para Hospeda):
+   - `payment` (creado/actualizado)
+   - `merchant_order`
+   - `subscription_preapproval` (si usás suscripciones)
+   - `subscription_authorized_payment` (si usás suscripciones recurrentes)
+   - `point_integration_wh` (solo si integrás Point físico, normalmente NO)
+6. **Generá la "Clave secreta"** (signature secret). MP la usa para firmar el header `x-signature` de cada webhook. Copiala en password manager con clave `MP_WEBHOOK_SECRET`.
+7. **Guardá el formulario** en MP.
+
+#### Persistir el secret en el VPS
+
+8. En Coolify → `hospeda-api-prod` → **Environment Variables**
+9. Agregá / actualizá:
+   - `MP_WEBHOOK_SECRET` = el valor copiado en el paso 6
+   - (Si tu código usa otro nombre de env var, alineá según `apps/api/src/utils/env.ts` o `packages/billing` — el registry del proyecto manda)
+10. Click **Restart** o redeploy de la API para que tome la nueva env.
+
+#### Validación
+
+11. Desde MP → Webhooks → **"Simular notificación"** (botón cerca del listado de webhooks). Elegí evento `payment.created` con un ID de prueba.
+12. En Coolify → API logs, mirá si llegó el POST. Tenés que ver:
+
+    ```
+    [billing.webhooks.mercadopago] received event=payment.created id=...
+    [billing.webhooks.mercadopago] signature_valid=true
+    ```
+
+13. Si `signature_valid=false`: el `MP_WEBHOOK_SECRET` no coincide. Repetí desde el paso 6 (regenerar secret y actualizar env var).
+14. Si el log NO muestra nada: probablemente Cloudflare está bloqueando por WAF/Bot Fight Mode. Excepción: en CF → Security → WAF → agregá una regla "Skip" para `api.hospeda.com.ar/api/v1/protected/billing/webhooks/*` o agregá el rango de IPs de MP a la allowlist.
+
+#### Rollback parcial
+
+Si MP empieza a fallar tras el cutover y no hay tiempo de debuggear, **revertí el DNS de `api` a Vercel** (Paso 12.5 rollback). Vercel vuelve a recibir webhooks. Después corregís en VPS y re-cutover.
+
 ### Verificación de fase 12
 
 - [ ] DB schema aplicado (drizzle push + 21 manual SQL + extensiones)
+- [ ] DB schema aplicado + seeds `--required` poblados (role_permissions, billing_plans, amenities, etc.) — ver Paso 12.1.d
 - [ ] 3 apps de prod (api, web, admin) deployadas y respondiendo 200 desde dominios reales
 - [ ] DNS de `api` cutover hecho, cert SSL válido
 - [ ] Login E2E funciona (web → SSO con admin)
 - [ ] Crear/leer/editar accommodation desde admin → reflejado en web
 - [ ] Logs limpios (sin errores recurrentes en Coolify)
 - [ ] Cron logs muestran `[cron] adapter=node-cron jobs=16 initialized`
+- [ ] MercadoPago webhook configurado (URL prod + secret + simulación 200) — ver Paso 12.6
 
 ✅ Fase 12 completa. **A partir de acá, Hospeda corre en VPS.** El proyecto Vercel sigue activo para rollback de emergencia, lo eliminás en Fase 16.
 
@@ -2258,42 +2438,122 @@ Coolify a veces no puede pedir el cert hasta que el DNS resuelve hacia él (chic
 
 ## Fase 13 — Backups
 
-**Tiempo estimado**: 1 hora
+**Tiempo estimado**: 30-45 minutos
 
-### Paso 13.1 — Crear bucket Cloudflare R2
+> **Approach**: scripts propios versionados en `scripts/backup/` en lugar de los backups built-in de Coolify. Razones: (a) versionados en el repo y review-ables, (b) restore no depende de Coolify funcionando, (c) portables a cualquier hosting si migramos en el futuro, (d) más control sobre formato y validación.
 
-1. En Cloudflare dashboard → **R2** (sidebar)
-2. Activar R2 (te pide tarjeta pero free hasta 10GB)
-3. **Create bucket**: `hospeda-backups`
-4. Crear API token: **Manage R2 API Tokens** → **Create API token**
-5. **Permissions**: Object Read & Write
-6. **Bucket**: solo `hospeda-backups`
-7. Anotar Access Key ID + Secret Access Key + Endpoint URL
+### Paso 13.1 — Crear bucket Cloudflare R2 + API token
 
-### Paso 13.2 — Configurar backups en Coolify
+1. En Cloudflare dashboard → **R2** (sidebar).
+2. Activar R2 (te pide tarjeta pero free tier 10GB sin cargos hasta llenarlo).
+3. **Create bucket**: `hospeda-backups` (region default: auto).
+4. **Manage R2 API Tokens** → **Create API token**.
+5. **Permissions**: `Object Read & Write` (NO admin token — principle of least privilege).
+6. **Specify bucket**: `hospeda-backups` (scoped, no acceso a otros buckets).
+7. Guardar **Access Key ID** + **Secret Access Key** + **Account ID** en password manager.
 
-1. En el Postgres `hospeda-postgres` → pestaña **"Backups"**
-2. **+ Add Backup**:
-   - **Schedule**: daily at 03:00 (cron `0 3 * * *`)
-   - **Destination**: S3-compatible
-   - **Endpoint**: tu R2 endpoint URL
-   - **Access Key / Secret**: del paso anterior
-   - **Bucket**: `hospeda-backups`
-   - **Retention**: 30 days
+### Paso 13.2 — Deploy de scripts en el VPS
 
-### Paso 13.3 — Test de restore
+Los scripts viven en `scripts/backup/` del repo. Hay 3:
 
-Después del primer backup nocturno, validar:
+- `postgres-to-r2.sh` — backup diario via cron.
+- `restore-from-r2.sh` — restore manual con confirmación explícita.
+- `install-on-vps.sh` — bootstrap del VPS (instala awscli, copia scripts, configura logrotate).
 
-1. En Coolify → backup → click **"Restore to..."**
-2. Restaurar a una DB temporal de testing
-3. Verificar count de tablas matches
+Detalles completos: ver `scripts/backup/README.md`.
+
+```bash
+# 1. Desde tu laptop, copiar scripts al VPS
+scp -P 2222 -r scripts/backup qazuor@<vps-ip>:/tmp/hospeda-backup-install
+
+# 2. SSH al VPS y correr el installer
+ssh -p 2222 qazuor@<vps-ip>
+sudo /tmp/hospeda-backup-install/install-on-vps.sh
+```
+
+El installer:
+
+- Verifica que docker exista, instala `awscli` si falta.
+- Copia los scripts a `/opt/hospeda-backup/` (modo 750).
+- Crea `/etc/hospeda-backup.env` desde el template (modo 600).
+- Configura `/var/log/hospeda-backup.log` con logrotate semanal (12 weeks history).
+- Imprime el cron line a agregar manualmente.
+
+### Paso 13.3 — Configurar credenciales en el env file
+
+```bash
+sudo nano /etc/hospeda-backup.env
+```
+
+Completar (ver `scripts/backup/.env.example`):
+
+- `R2_ACCOUNT_ID` — del paso 13.1 (Cloudflare account ID, no el access key).
+- `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` — del paso 13.1.
+- `R2_BUCKET=hospeda-backups`.
+- `POSTGRES_CONTAINER` — el nombre del container Coolify Postgres (ej. `yhhqnorqbtw2aslbxy64kjzd`).
+- `POSTGRES_USER=postgres` / `POSTGRES_DB=postgres`.
+
+### Paso 13.4 — Test manual del backup
+
+```bash
+# Primer run — verifica que upload funciona y devuelve filename + size
+sudo /opt/hospeda-backup/postgres-to-r2.sh
+
+# Listar backups en R2
+sudo /opt/hospeda-backup/restore-from-r2.sh
+```
+
+Si `restore-from-r2.sh` lista tu nuevo backup → upload OK. Si falla, ver `/var/log/hospeda-backup.log`.
+
+### Paso 13.5 — Test de restore (smoke check)
+
+> **Por qué**: backups que nunca fueron testeados no son backups. Hacer este check al menos una vez ahora y agendar repetir trimestralmente.
+
+```bash
+# En Postgres del VPS, crear una DB temporal de prueba
+sudo docker exec yhhqnorqbtw2aslbxy64kjzd psql -U postgres -c "CREATE DATABASE postgres_restore_test;"
+
+# Restore del último backup en esa DB temporal
+sudo /opt/hospeda-backup/restore-from-r2.sh hospeda-postgres-<timestamp>.dump postgres_restore_test
+
+# Verificar que las tablas críticas tienen los row counts esperados
+sudo docker exec yhhqnorqbtw2aslbxy64kjzd psql -U postgres -d postgres_restore_test -c "
+SELECT relname, n_live_tup FROM pg_stat_user_tables WHERE n_live_tup > 0 ORDER BY relname;"
+
+# Cleanup: borrar la DB temporal
+sudo docker exec yhhqnorqbtw2aslbxy64kjzd psql -U postgres -c "DROP DATABASE postgres_restore_test;"
+```
+
+Counts esperados deben coincidir con la DB de producción (~595 role_permissions, 9 billing_plans, 27 destinations, etc.).
+
+### Paso 13.6 — Instalar cron entry
+
+```bash
+sudo crontab -e
+```
+
+Agregar al final:
+
+```cron
+# Hospeda Postgres → R2 daily backup (03:00 Argentina = 06:00 UTC)
+0 6 * * * /opt/hospeda-backup/postgres-to-r2.sh >> /var/log/hospeda-backup.log 2>&1
+```
+
+Validar:
+
+```bash
+sudo crontab -l
+```
 
 ### Verificación de fase 13
 
-- [x] Bucket R2 creado
-- [x] Coolify configurado con backups daily
-- [x] Test de restore exitoso
+- [ ] Bucket R2 `hospeda-backups` creado con API token scoped (Object R/W only)
+- [ ] Scripts deployados en `/opt/hospeda-backup/`
+- [ ] `/etc/hospeda-backup.env` con creds reales (chmod 600)
+- [ ] Backup manual exitoso (archivo visible en R2 con `restore-from-r2.sh` listing)
+- [ ] Test de restore exitoso a DB temporal con counts matching
+- [ ] Cron entry instalado
+- [ ] `/var/log/hospeda-backup.log` con logrotate semanal
 
 ✅ Fase 13 completa.
 
@@ -2301,60 +2561,126 @@ Después del primer backup nocturno, validar:
 
 ## Fase 14 — Monitoring
 
-**Tiempo estimado**: 20 minutos
+**Tiempo estimado**: 30-45 minutos
 
-### Paso 14.1 — Crear cuenta Better Stack
+> **Approach**: 4 HTTP monitors (web, www, api, admin) + 1 heartbeat para el backup cron + status page pública en `status.hospeda.com.ar`. Free tier de Better Stack incluye 10 monitors + heartbeats ilimitados + status page.
 
-1. <https://betterstack.com> → Sign up
-2. Plan: **Free** — incluye 10 HTTP monitors **+ heartbeats ilimitados** (los heartbeats los usamos en 14.4 para validar que cada cron in-process corrió)
+### Paso 14.1 — Cuenta Better Stack
 
-### Paso 14.2 — Crear monitors
+1. <https://betterstack.com> → Sign in (cuenta ya creada).
+2. Plan: **Free** (10 monitors + heartbeats ilimitados + 1 status page).
 
-Para cada uno de los 3 dominios prod + 3 dominios staging:
+### Paso 14.2 — Crear los 4 HTTP monitors
 
-1. **+ Create monitor**
-2. **Name**: `Hospeda API Prod`
-3. **URL**: `https://api.hospeda.com.ar/health`
-4. **Frequency**: 3 minutos (free tier)
-5. **Expected status**: 200
-6. **Expected body** (opcional): contiene `"status":"ok"`
-7. **Locations**: 5 ubicaciones (auto)
-8. Save
+Better Stack → **Monitors** → **Create monitor** para cada uno:
 
-Repetir para los otros 5.
+| Name | URL | Expected status | Expected body |
+|------|-----|-----------------|---------------|
+| `Hospeda Web` | `https://hospeda.com.ar/` | 200 | (vacío) |
+| `Hospeda Web WWW` | `https://www.hospeda.com.ar/` | 200 | (vacío) |
+| `Hospeda API` | `https://api.hospeda.com.ar/health` | 200 | `status` |
+| `Hospeda Admin` | `https://admin.hospeda.com.ar/auth/signin` | 200 | (vacío) |
+
+Configuración común para los 4:
+
+- **Frequency**: 3 minutos (free tier).
+- **Request timeout**: 10 segundos.
+- **Locations**: 3-5 (auto).
+- **Follow redirects**: ON (admin va `/` → `/auth/signin` 307).
+- **HTTP method**: GET.
+- **Recovery period**: 1 (alerta apenas se cae).
+- **Confirmation period**: 2 fallos antes de alertar (evita falsos positivos por blips).
 
 ### Paso 14.3 — Configurar alertas
 
-En Better Stack → **On-call** → **Notification rules**:
+Better Stack → **On-call** → **Notification rules**:
 
-- Email a tu cuenta
-- (Opcional) Telegram, Slack
+1. **Default rule**:
+   - **Severity**: High
+   - **Notification method**: Email → `qazuor@gmail.com`
+   - **Delay**: 0 min (alerta inmediata).
+2. (Opcional) Agregar Telegram bot o Slack si los tenés. SMS y voz son paid tier.
 
-### Paso 14.4 — Heartbeats para los 16 cron jobs (recomendado, opcional)
+### Paso 14.4 — Heartbeat para el backup cron
 
-> **Por qué**: los crons in-process (node-cron) corren dentro de la API. Si la API está OK pero un cron específico tira excepción y se silencia, el monitor HTTP no lo detecta. Un heartbeat por cron se cae si el cron deja de pingar y dispara alerta en minutos.
+> **Por qué**: el backup cron corre 1× al día en VPS. Si el cron muere, deja de correr y nunca sabrías hasta que necesitás restore. Heartbeat alerta apenas el ping diario falta.
 
-1. Better Stack → **Heartbeats** → **+ Create heartbeat**
-2. Por cada cron job (16 en total — ver `apps/api/src/cron/jobs/`), creá uno con:
-   - **Name**: `cron-<job-name>` (ej: `cron-search-index-refresh`)
-   - **Period**: el intervalo del cron + 50% de margen (ej: si corre cada 5 min, period 8 min)
-3. Better Stack te da una URL `https://uptime.betterstack.com/api/v1/heartbeat/<TOKEN>` por cada heartbeat
-4. En el código del cron, después de `runWithLoggingAndValidation()`, agregá:
+1. Better Stack → **Heartbeats** → **Create heartbeat**.
+2. Configurar:
+   - **Name**: `cron-postgres-backup-r2`
+   - **Period**: 25 horas (cron diario + 1h de margen).
+   - **Grace period**: 30 min (no alertar instantáneo, dar margen).
+3. Better Stack te da una URL única tipo `https://uptime.betterstack.com/api/v1/heartbeat/<UUID>`.
+4. **En el VPS**, agregar la URL al env file del backup:
 
-   ```ts
-   await fetch(env.HEARTBEAT_URL_<JOB_NAME>, { method: 'POST' }).catch(() => {});
+   ```bash
+   sudo nano /etc/hospeda-backup.env
    ```
 
-   (`.catch(() => {})` para que un fallo de heartbeat NO mate el cron)
-5. Registrá `HEARTBEAT_URL_*` como env vars opcionales en `packages/config/src/env-registry.hospeda.ts` y en Coolify
+   Descomentar y completar:
 
-> **Costo**: $0. Free tier de Better Stack incluye heartbeats sin límite de cantidad.
+   ```
+   BACKUP_HEARTBEAT_URL="https://uptime.betterstack.com/api/v1/heartbeat/<UUID>"
+   ```
+
+5. **Validar** que el ping funciona corriendo el backup manual:
+
+   ```bash
+   sudo /opt/hospeda-backup/postgres-to-r2.sh
+   ```
+
+   Output debería incluir:
+
+   ```
+   [...] Pinging heartbeat...
+   [...] Heartbeat ping OK
+   ```
+
+   En Better Stack UI verás el heartbeat marcado como "Last ping: just now".
+
+### Paso 14.5 — Status page pública (opcional pero recomendado)
+
+> **Por qué**: page pública para que users vean estado del servicio sin escribir al support. Trust signal + reduce volumen de tickets.
+
+1. Better Stack → **Status pages** → **Create status page**.
+2. Configurar:
+   - **Name**: `Hospeda Status`
+   - **Subdomain**: `hospeda` → te da `hospeda.betteruptime.com` (o similar) como dominio default.
+   - **Custom domain**: `status.hospeda.com.ar` (configurar después en paso 14.6).
+   - **Resources to display**: agregar los 4 monitors creados en 14.2 (NO mostrar el heartbeat — es interno).
+   - **Branding**: subir logo Hospeda + colores de marca si querés.
+   - **Visibility**: Public.
+3. Save.
+
+### Paso 14.6 — Custom domain `status.hospeda.com.ar`
+
+1. Better Stack te da instrucciones de DNS para custom domain. Típicamente un CNAME a `<subdomain>.betteruptime.com`.
+2. **Cloudflare** → zona `hospeda.com.ar` → DNS records:
+   - **Type**: CNAME
+   - **Name**: `status`
+   - **Target**: el que te indique Better Stack (algo tipo `hospeda.betteruptime.com`).
+   - **Proxy**: 🔘 **DNS Only** (Better Stack maneja su propio cert SSL para el custom domain).
+3. Esperar 5-10 min para propagación DNS.
+4. En Better Stack → status page → **Custom domain settings** → **Verify** o **Issue SSL certificate**.
+5. Validar acceso: `https://status.hospeda.com.ar` → debería mostrar la status page.
+
+### Paso 14.7 — Test de alerta (opcional pero recomendado)
+
+> **Por qué**: validar que las alertas realmente llegan ANTES de necesitarlas en una emergencia real.
+
+1. Coolify → `hospeda-api-prod` → **Stop** (parar el container temporalmente).
+2. Esperar 3-6 minutos (2 fallos consecutivos del monitor cada 3 min).
+3. Te debería llegar un email "Hospeda API is DOWN" a `qazuor@gmail.com`.
+4. Status page muestra `Hospeda API` en rojo "Down".
+5. Coolify → `hospeda-api-prod` → **Start**.
+6. Esperar otros 3-6 min → recibís email "Hospeda API is back UP" + status page en verde.
 
 ### Verificación de fase 14
 
-- [ ] 6 HTTP monitors creados, todos UP
-- [ ] Si parás manualmente uno (en Coolify), recibís alerta en <5min
-- [ ] (Opcional) 16 heartbeats creados; cada uno reporta verde tras la primera ejecución del cron
+- [ ] 4 HTTP monitors UP en Better Stack
+- [ ] Heartbeat `cron-postgres-backup-r2` recibió primer ping (corriendo el backup manual)
+- [ ] Status page pública accesible en `https://status.hospeda.com.ar`
+- [ ] Test de alerta: parar/levantar api → email recibido en ambos casos
 
 ✅ Fase 14 completa.
 
@@ -2448,20 +2774,379 @@ Lista chequeable manual. **No marques completo hasta validar TODO.**
 
 ## Fase 16 — Cleanup
 
-**Solo después de 1-2 semanas estables:**
+### Paso 16.1 — Migrar email provider de Resend a Brevo (URGENTE post-cutover)
 
-### Vercel
+> 🔴 **Prioridad ALTA — hacer inmediatamente después de validar Fase 15**. NO esperar 1-2 semanas como el resto del cleanup. Sin esto los emails transaccionales (signup confirmation, password reset, booking notifications, etc.) NO se envían.
 
-1. Cancelar projects en Vercel dashboard
-2. Plan: downgrade a Hobby (mantiene gratis si no usás)
+**Contexto**: en Fase 0.5 cambiamos el provider de email de Resend a Brevo (multi-domain en free tier). El dominio `hospeda.com.ar` está autenticado en Brevo (DKIM+DMARC+brevo-code en Cloudflare DNS). Pero `packages/email/` y `packages/config/src/env-registry.hospeda.ts` siguen referenciando Resend SDK y env vars `HOSPEDA_RESEND_*`. En Fase 9 se setearon placeholders en Coolify (`re_placeholder_pending_brevo_migration`) para que zod validation pase, pero `sendEmail()` falla en runtime.
 
-### Neon
+**Pasos**:
 
-1. Eliminar el proyecto en Neon dashboard
+1. **Refactorear `packages/email/`** para usar Brevo SDK (`@getbrevo/brevo`) o SMTP genérico vía `nodemailer`.
+2. **Renombrar env vars** `HOSPEDA_RESEND_*` → `HOSPEDA_BREVO_*` (o `HOSPEDA_EMAIL_*` para neutralidad de provider futuro).
+3. **Actualizar registry**: `packages/config/src/env-registry.hospeda.ts` — cambiar `name: 'HOSPEDA_RESEND_*'` y descripciones.
+4. **Actualizar Zod schemas**: `apps/api/src/utils/env.ts`, `apps/web/src/utils/env.ts` (si aplica), etc.
+5. **Buscar y reemplazar usos**: `grep -rn "HOSPEDA_RESEND_" apps/ packages/` y migrar cada referencia.
+6. **Actualizar Coolify env vars**: reemplazar los 3 placeholders por los valores reales de Brevo (API key real está en password manager con clave `Hospeda - Brevo API key production`).
+7. **Smoke test**: signup new user → verificar que recibe welcome email. Password reset request → verificar email. Si tenés email de bookings, probar uno.
 
-### Upstash
+**Verificación**:
 
-1. Eliminar Redis y QStash en Upstash dashboard
+- [ ] `packages/email/src/client.ts` usa Brevo SDK (no Resend)
+- [ ] `grep -rn "HOSPEDA_RESEND" apps/ packages/` devuelve 0 matches en código (puede quedar en docs/CHANGELOG)
+- [ ] Coolify env vars: `HOSPEDA_BREVO_API_KEY` con valor real, sin placeholder
+- [ ] Signup E2E manda email a inbox real
+- [ ] Brevo dashboard muestra el email enviado en `Statistics → Transactional`
+
+### Paso 16.2 — Completar verificación de Facebook App (antes de launch público)
+
+> 🟡 **Prioridad MEDIA — antes de habilitar signup público con Facebook OAuth**. La app de Facebook quedó en estado "Sin publicar" durante Fase 9 (modo Development/Test). En ese estado SOLO vos como admin podés loguearte con Facebook. Cualquier otro user que intente login con Facebook recibe un error tipo "App not available".
+
+**Contexto**: en Fase 9 creamos la Facebook App `Hospeda` (App ID + App Secret en `HOSPEDA_FACEBOOK_CLIENT_ID|SECRET`) y configuramos OAuth Redirect URI a `https://api.hospeda.com.ar/api/auth/callback/facebook`. La app pasa todos los tests internos pero NO está publicada para usuarios externos.
+
+**Pasos para publicar** (en <https://developers.facebook.com/apps/><APP_ID>/dashboard):
+
+1. **Personalizar caso de uso "Autenticar y solicitar datos..."**
+   - Especificar qué scopes de datos pedís (typicamente `email` y `public_profile` alcanzan).
+   - Justificar cada scope con una explicación de uso.
+
+2. **Revisar y completar requisitos de pruebas**
+   - Verificar que el OAuth Redirect URI sea HTTPS (ya lo es: `api.hospeda.com.ar`).
+   - Verificar que el Privacy Policy URL apunte a una URL pública válida (ej. `https://hospeda.com.ar/legal/privacidad`).
+   - Verificar Terms of Service URL.
+
+3. **Verificación del negocio (Business Verification)**
+   - Es el paso más demorado: Meta verifica que tu empresa existe legalmente.
+   - Necesitás: nombre legal de la empresa, número de identificación tributaria (CUIT en Argentina), dirección, persona de contacto.
+   - Puede tomar 1-7 días hábiles.
+   - Si Hospeda es un proyecto personal/freelance sin empresa formalizada, esto puede ser un blocker — considerá:
+     - Registrar la empresa antes (CUIT, AFIP),
+     - O usar tu propia identidad como Individual/Sole Proprietor.
+
+4. **Revisión de la app (App Review)**
+   - Meta revisa que el flujo de OAuth funcione end-to-end y respete las policies de privacidad.
+   - Tenés que grabar un video de pantalla mostrando el flujo completo (signup → consent → return to app → user data displayed).
+   - Puede tomar 1-3 días hábiles.
+
+5. **Publicar la app**
+   - Una vez completados los 4 anteriores, click "Publicar" en el Panel.
+   - A partir de ese momento, cualquier user de Facebook puede loguearse en Hospeda.
+
+**Verificación**:
+
+- [ ] App status: "Publicada" (en lugar de "Sin publicar" / "Sin publicar (modo desarrollo)")
+- [ ] Test E2E con cuenta de Facebook ajena al admin → puede loguearse y verifica datos
+- [ ] No errores tipo "App not active" en logs
+
+> Si no necesitás Facebook OAuth para launch (alcanza con Email/Password + Google OAuth), podés diferir indefinidamente y borrar las env vars `HOSPEDA_FACEBOOK_CLIENT_*` para que el código no muestre el botón "Login with Facebook".
+
+### Paso 16.3 — Fix del bug env + switch MercadoPago a PRODUCTION
+
+> ⚠️ **Gotcha permanente sobre credenciales MP**: tanto las credenciales **TEST** como las **PRODUCTION** de MercadoPago usan el prefijo `APP_USR-`. **No existe el prefijo `TEST-` en credenciales actuales de MP** (solo aparece como legacy en código de validación). El string es opaco — el modo se determina **únicamente** por la env var `HOSPEDA_MERCADO_PAGO_SANDBOX` y por de qué sección del dashboard MP copiaste el token (Test credentials vs Production credentials).
+
+**Contexto**: en Fase 9 configuramos MercadoPago en modo sandbox (`HOSPEDA_MERCADO_PAGO_SANDBOX=true`) con TEST access token, para poder testear sin cobros reales. El webhook secret se configuró en Paso 12.6 post-cutover.
+
+#### 16.3.a — Fix del hardcode de NODE_ENV en billing middleware (prerequisito)
+
+> 🔴 **Crítico — bloquea signup en VPS independiente de sandbox/prod**.
+
+**Síntoma**: signup nuevo en `/api/auth/sign-up/email` falla cuando el código intenta crear el billing customer porque MP rechaza con "Unauthorized use of credentials".
+
+**Root cause**: `apps/api/src/middlewares/billing.ts` hardcodeaba `sandbox: env.NODE_ENV !== 'production'` y `livemode: env.NODE_ENV === 'production'`, ignorando la env var `HOSPEDA_MERCADO_PAGO_SANDBOX`. En VPS (NODE_ENV=production) esto fuerza `sandbox=false` aunque tengas TEST token cargado, generando el mismatch que MP rechaza.
+
+**Fix aplicado** (commit en `chore/vps-migration`):
+
+1. `apps/api/src/utils/env.ts`: agregada `HOSPEDA_MERCADO_PAGO_SANDBOX` al schema Zod (`z.string().optional().default('true').transform((v) => v !== 'false')`).
+2. `apps/api/src/middlewares/billing.ts`: removido el hardcode. Ahora `sandbox = env.HOSPEDA_MERCADO_PAGO_SANDBOX` y `livemode = !sandbox`. La factory `createMercadoPagoAdapter()` se llama sin args y lee la env var por su cuenta.
+
+**Validación post-deploy**:
+
+- [ ] Redeploy de `hospeda-api-prod` desde Coolify (manual, auto-deploy off).
+- [ ] Logs muestran `✅ QZPay billing initialized successfully` sin errores.
+- [ ] Logs muestran `[QZPay] QZPayBilling initialized {"livemode":false,...}` confirmando que la env var manda el flag.
+- [ ] Signup nuevo de prueba → HTTP 200 + el `billing_customer` aparece en DB (`SELECT * FROM billing_customers WHERE email='<email-de-prueba>'`).
+- [ ] Verification email de Brevo llega correctamente.
+- [ ] Login post-verification funciona OK.
+
+> ⚠️ **Esperado en sandbox — NO es bug**: en signups con sandbox activo va a aparecer en logs `[ERROR] Provider sync failed during customer creation - Unauthorized use of live credentials [code 300]` seguido de `[WARN] Continuing customer creation without provider sync`. Esto es **una limitación estructural del modelo de test users de MP**: las credenciales que MP da en "Credenciales de prueba" están atadas físicamente a un test user (User ID en ese panel coincide con un test user de "Test users"), y los test users no pueden invocar `POST /v1/customers` — MP los bloquea con error 300 sin importar el formato del email (probado empíricamente con 3 emails distintos, incluyendo `test_payer_[0-9]+@testuser.com` que es el formato documentado).
+>
+> **QZPay maneja esto bien** con `providerSyncErrorStrategy: 'log'` — el customer se crea en NUESTRA DB y el signup completa OK; solo falla la sincronización con MP, que en sandbox no es necesaria.
+>
+> **Cuándo desaparece el error**: al cambiar a credenciales prod en Paso 16.3.b. El merchant token real no tiene esa limitación.
+>
+> **Diagnóstico rápido si reaparece después**: `curl /users/me` con el token. Si devuelve `nickname: "TESTUSER..."` y `test_data.test_user: true`, es el modelo de test user; el error es estructural, dropearlo.
+
+#### 16.3.b — Switch a PRODUCTION (al ir a launch público real)
+
+> 🔴 **Crítico — antes del launch público real (cuando empieces a cobrar plata real)**. Solo después de validar 16.3.a en sandbox.
+
+**Pasos**:
+
+1. **Obtener PROD access token** desde el panel de MP:
+   - <https://www.mercadopago.com.ar/developers/panel/app> → tu app → **Credenciales de producción** → copiar Access Token (empieza con `APP_USR-`, mismo formato que TEST — recordar el gotcha).
+   - Si MP te bloquea producción y exige homologación, completá los pasos requeridos primero (datos fiscales, validación de cuenta, KYC).
+
+2. **Obtener PROD webhook secret** (puede requerir investigación):
+   - MP dashboard → tu app → **Webhooks** → buscar selector "Production credentials" / "Test credentials" arriba del panel.
+   - Si tu cuenta MP tiene la separación: copiar el "Secret signature" del panel Production (se muestra una sola vez al generarlo).
+   - Si NO ves la separación: tu cuenta puede estar en el modelo unificado (un único secret para ambos modos). Consultar docs MP o soporte para confirmar.
+
+3. **Update env vars en Coolify** → `hospeda-api-prod` → Environment Variables:
+   - `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN`: reemplazar TEST token por PROD token.
+   - `HOSPEDA_MERCADO_PAGO_SANDBOX`: cambiar de `true` a `false`.
+   - `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET`: actualizar al secret de prod (si aplica separación).
+
+4. **Restart** del container de `hospeda-api-prod` (Coolify lo hace automático tras Save).
+
+5. **Smoke test E2E** de un pago real con monto chico ($100 ARS, una tarjeta tuya):
+   - Crear booking → checkout → confirmar pago → verificar que el webhook llega y se procesa OK → verificar que aparece en MP dashboard como `approved`.
+   - Reembolsar inmediatamente vía MP dashboard si todo OK.
+
+6. **Logs check**: en Coolify → API logs, buscar `[billing.webhooks.mercadopago]` y verificar `signature_valid=true` en el evento del test.
+
+**Verificación 16.3.b**:
+
+- [ ] `HOSPEDA_MERCADO_PAGO_SANDBOX=false` en Coolify
+- [ ] `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN` es el copiado de la sección Production credentials del dashboard MP
+- [ ] `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` corresponde a las credenciales prod (si aplica separación)
+- [ ] Smoke test E2E de pago real reembolsado OK
+
+### Paso 16.4 — Cleanup completo de Vercel + Neon + Upstash
+
+> **Decisión revisada (2026-05-08)**: el cleanup ya no se difiere a 1-2 semanas. Los proyectos en Vercel/Neon/Upstash nunca llegaron a un estado deployado y estable, así que no son rollback path real. El teardown es prioritario y se ejecuta junto con el grupo de cleanup de código del repo (Grupo A) y de plataformas externas (Grupo B).
+
+#### Grupo A — Limpieza de código en el repo (✅ mayormente hecho en commits `e51ce4c..ca3fe19`)
+
+Hecho en `chore/vps-migration` (2026-05-08):
+
+- `packages/service-core/src/revalidation/adapters/`: `VercelRevalidationAdapter` reemplazado por `CloudflareRevalidationAdapter` (real refactor — el adapter previo estaba estructuralmente roto contra el endpoint web).
+- `apps/api/src/utils/env.ts`: removidos `VERCEL` y `VERCEL_GIT_COMMIT_SHA` del schema.
+- `apps/api/src/lib/sentry.ts` + `apps/api/src/utils/user-cache.ts` + `apps/api/src/utils/env-config-helpers.ts` + `apps/api/src/utils/create-app.ts` + `apps/api/src/middlewares/rate-limit.ts`: sacado el código `isServerless`/`process.env.VERCEL` y los branches específicos para serverless.
+- `apps/web/astro.config.mjs`: `PUBLIC_SENTRY_RELEASE` ahora prefiere `HOSPEDA_COMMIT_SHA` antes que `VERCEL_GIT_COMMIT_SHA`.
+- `packages/media/src/server/environment.ts`: resolver Cloudinary basado en `HOSPEDA_DEPLOY_ENV` (con fallback a `NODE_ENV`) en lugar de `VERCEL_ENV`.
+- Cron jobs (`apps/api/src/cron/jobs/*.job.ts`) + manifest: comentarios "Neon's transaction pooling" → "transaction-mode connection poolers", "QStash" eliminado.
+- `packages/config/src/env-registry.*.ts`: descripciones actualizadas (Coolify/Cloudflare/Traefik en lugar de Vercel/Neon/Upstash).
+- `CLAUDE.md` raíz, `README.md` raíz, README + CLAUDE.md de las 3 apps: deployment retargeted al stack VPS.
+
+**Pendientes Grupo A (follow-up, no bloquea launch)**:
+
+- [ ] **`docs/`** — ~30 archivos en `docs/runbooks/`, `docs/deployment/`, `docs/architecture/`, `docs/security/`, `docs/performance/`, `docs/decisions/` con menciones a Vercel/Neon/Upstash. Requiere review por párrafo (algunas son contexto histórico legítimo, otras obsoletas). Lista exacta: `grep -rln "vercel\|qstash\|upstash\|neon" --include='*.md' docs/`.
+- [ ] **`apps/api/docs/cron-system.md`** — necesita rewrite del modelo de scheduling (era QStash-based, ahora node-cron in-process).
+- [ ] **`docs/decisions/ADR-007-vercel-deployment.md`** — escribir un follow-up ADR (`ADR-NNN-vps-coolify-deployment.md`) que explique el flip a VPS, o archivar el ADR-007 marcándolo "superseded".
+- [ ] **`.github/workflows/ci.yml`** — un comentario sobre Turbo Remote Cache que dice "Vercel's Remote Cache" (cosmético — Turborepo Remote Cache es un servicio independiente del deploy target). El pre-edit hook bloquea cambios a workflows desde el agente; aplicar manualmente.
+- [ ] **`package.json` (raíz)** — confirmar que NO existen aliases `pnpm deploy:api/web/admin` apuntando a `vercel deploy`. Si existen, removerlos o reapuntar al flow Coolify.
+- [ ] **`packages/config/dist/`** — artefactos build con texto Vercel; se regeneran al build, no requiere edición manual pero conviene un rebuild después del teardown para que la doc generada no muestre referencias obsoletas.
+
+#### Grupo B — Acciones destructivas en plataformas externas (✅ ejecutado 2026-05-08)
+
+> **Estado**: cerrado. Ejecutado en orden Vercel → Upstash → Neon, validando entre cada paso que `https://hospeda.com.ar` / `https://api.hospeda.com.ar` / `https://admin.hospeda.com.ar` siguieran respondiendo 200 desde el VPS.
+>
+> **Lecciones que valen la pena recordar (capturadas en engram `vps-migration/fase-16.4-teardown-complete`)**:
+>
+> - **Vercel**: detach dominios ANTES del delete project, si no Vercel deja claim residual.
+> - **Upstash**: borrar QStash schedules ANTES de Redis, si no QStash sigue golpeando endpoints muertos y ensucia logs.
+> - **Neon delete project es totalmente irreversible**: no hay trash. El backup `pg_dump` cifrado offline es la única red de seguridad post-delete; no saltees ese paso.
+> - **Antes de cualquier delete**, validar con `docker exec $API printenv | grep -E "DATABASE_URL|REDIS_URL"` que la env var de la app YA apunta al servicio interno de Coolify, no al externo. Sin ese check podés cortar tráfico vivo.
+
+#### Vercel — limpieza completa
+
+1. **Cancelar deployments protected**: Vercel dashboard → cada project → Deployments → marcar último prod como "remove protection" si tiene.
+2. **Eliminar 3 proyectos**: hospeda-api, hospeda-web, hospeda-admin → Settings → "Delete project" (irreversible).
+3. **Cancelar suscripciones de marketplace**:
+   - Vercel → Integrations → uninstallar Sentry, Cloudinary, Better Stack si están como marketplace integrations (pueden moverse a accounts standalone fuera de Vercel).
+4. **Eliminar Vercel domain claims**: si Vercel todavía tiene claim sobre `hospeda.com.ar` o subdominios, removerlo en Domains.
+5. **GitHub Apps**: revocar la GitHub App "Vercel" del repo (Settings → Integrations → Vercel → Remove). Revocar también de la org si aplica.
+6. **OAuth tokens**: Vercel → Account Settings → Tokens → revocar todos los tokens de CLI/CI emitidos durante el período Vercel.
+7. **Plan**: downgrade a Hobby (mantiene gratis sin actividad). NO cancelar la cuenta a menos que estés 100% seguro — el plan free no cuesta y deja la cuenta accesible para futuras pruebas.
+
+#### Neon — eliminar DB
+
+1. Confirmar que NO hay clones / branches activos.
+2. Backup final manual: `pg_dump` desde Neon → archivo local cifrado guardado offline (por las dudas, 1 año de retención).
+3. Settings → Delete Project → confirm.
+
+#### Upstash — eliminar Redis + QStash
+
+1. **Redis**: Upstash → Redis → Delete database. Verificar que NO hay apps activas conectadas (en VPS usamos Redis nuevo de Coolify).
+2. **QStash**: Upstash → QStash → eliminar todos los schedules. Verificar que en `apps/api/src/cron` NO queda referencia a QStash (en código actual debería usar `node-cron` adapter).
+3. Cerrar workspace si no lo usás para nada más.
+
+#### Repo: eliminar referencias a Vercel/Neon/Upstash
+
+1. `grep -rln "vercel\|neon\|upstash\|qstash" --include='*.ts' --include='*.json' --include='*.md' apps/ packages/` y limpiar las referencias residuales (env-registry vars no usadas, comentarios outdated, links rotos en docs).
+2. CI: revisar `.github/workflows/*` por referencias a Vercel CLI / preview URLs.
+3. README / CLAUDE.md de cada app — remover instrucciones que asumen Vercel.
+
+#### Validar que nada se rompió
+
+Después del cleanup, correr `scripts/smoke-test.sh` y validar 11/11 PASS.
+
+---
+
+## Fase 17 — Operations & Hardening (post-launch)
+
+> **Cuándo**: después de validar 1-2 semanas estable en VPS. NO bloqueante para launch público; agenda como hardening incremental.
+
+### Paso 17.1 — Staging environment + pre-launch landing strategy
+
+**REDEFINIDO** (2026-05-11). El paso original asumía que la app real ya estaba en `hospeda.com.ar` y que staging iba en otro lugar. Una vez detectado que MercadoPago está en PRODUCTION mode (Phase 16.3) y que la app sigue en pre-beta activo, la exposición a transacciones reales en `hospeda.com.ar` es inaceptable. Se cambia el modelo:
+
+**Modelo nuevo (HOY hasta launch oficial)**:
+
+```
+hospeda.com.ar              → landing coming-soon (NUEVA apps/landing/) con form newsletter Brevo
+staging.hospeda.com.ar      → la app real (apps/web), con header X-Robots-Tag: noindex
+api.hospeda.com.ar          → API (compartida, no se indexa)
+admin.hospeda.com.ar        → admin (gated por auth, no se indexa)
+```
+
+**Modelo POST-LAUNCH** (cuando Hospeda salga oficialmente):
+
+```
+hospeda.com.ar              → la app real (cambio DNS, 5 min)
+staging.hospeda.com.ar      → ahora SÍ es staging real (separate Coolify project + DB)
+api.hospeda.com.ar          → API real
+staging-api.hospeda.com.ar  → API staging cuando llegue tracción
+```
+
+**Beneficio**: la decisión "VPS shared vs separado para staging" queda **diferida hasta first paying customer + bump VPS a $48/mo (8GB RAM)**. Hoy ahorrás $6-12/mo. Hoy también ya tenés el subdomain en uso, así que cuando promovés el modelo no hay nuevo DNS / Cloudflare config.
+
+**Plan de ejecución pre-launch (Phase 1 + 2)**:
+
+- **Phase 1 — Crítico (cerrar exposición)**: crear apps/landing skeleton (Astro static, mismo design system que apps/web), DNS staging.hospeda.com.ar, Coolify routing. Resultado: `hospeda.com.ar` sirve landing, `staging.hospeda.com.ar` sirve la app real con noindex. Estimado 2h split user/agent.
+- **Phase 2 — Polish (landing real + newsletter)**: refinar landing con secciones reales (hero/value prop/features/newsletter form/footer), endpoint `POST /api/v1/public/newsletter` en apps/api, integración Brevo (reusa `HOSPEDA_EMAIL_API_KEY`, agrega `HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID` para mantener cohorte pre-launch separada de cualquier newsletter post-launch). Estimado 1-2 días.
+
+**Decisiones del usuario para la landing**: copy basado en tono apps/web (voseo, "Tu escapada empieza acá"), Brevo list a crear durante Phase 2, mismos visuales que apps/web (logo + hero images), launch ETA "Próximamente" sin fecha, solo idioma ES.
+
+**Estado**:
+
+- **Phase 1: DONE (2026-05-11)**. `apps/landing/` Astro static creada (commit `ef77db902`), Coolify resource `hospeda-landing-prod` provisionado y sirviendo `hospeda.com.ar` + `www.hospeda.com.ar`. Web movido a `staging.hospeda.com.ar` con cert Let's Encrypt válido. robots.txt dinámico (`apps/web/src/pages/robots.txt.ts`, commit `a5cdd30b0`) devuelve `Disallow: /` cuando host coincide con `HOSPEDA_NOINDEX_HOSTS` (default `staging.hospeda.com.ar`); permissive en cualquier otro host. Cloudflare Managed Content bonus blockea AI scrapers (GPTBot, ClaudeBot, Bytespider, etc.) gratis en apex.
+- **Phase 2: DONE (2026-05-11)**. Newsletter endpoint `POST /api/v1/public/newsletter` con Zod + sanitization + honeypot + Brevo Contacts API (`updateEnabled: true` para idempotency) + 6 tests integration (commit `b1ead7d6c`). Env var `HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID` (renamed para separar de futuro post-launch list, commit `5d24f08c4`). Form funcional en `apps/landing/src/components/NewsletterForm.astro` (progressive enhancement, loading/error states, honeypot CSS-hidden) + `/gracias` page con echo del email (commit `ffea56a09`). ValueProp + Features (3 cards con inline SVG icons) + JSON-LD Organization schema (commit `810da7ae6`). OG image 1200x630 generada con sharp + gradient overlay (commit `8c2901a41`). Validado end-to-end: form en hospeda.com.ar → endpoint → Brevo list (2 signups confirmados).
+- **Defense-in-depth**: X-Robots-Tag via Traefik labels en los 3 staging hosts (web global label porque solo sirve staging; admin/api router-level porque también sirven prod-naming). Validado con curls que prod-naming NO recibe el header.
+- **Staging real con DB separada**: deferred indefinidamente hasta "first paying customer + RAM bump".
+- **Pendiente menor**: seed de example data en staging (DB tiene solo super-admin + system + test users de signups, faltan destinations/accommodations/events/posts para demo realistic). Tracked en engram `vps-migration/pre-launch-sprint-final-state` paso 2.
+
+**Lecciones de Phase 1 + 2**:
+
+- **Coolify Domains field**: SIEMPRE usar formato URL completa `https://dominio.com`. Sin `https://` Coolify parsea como `PathPrefix` y genera rule Traefik con `Host('')` vacío que rompe routing y emisión de cert.
+- **Let's Encrypt + Cloudflare proxy**: HTTP-01 challenge no llega al origin si CF proxy está 🟠. Workaround manual: bajar proxy a 🔘 DNS only por ~5 min, restart container, esperar emisión, volver a 🟠.
+- **Astro `output: 'server'` + middleware**: páginas prerenderizadas se sirven via `serve-static` ANTES del global middleware. Headers seteados ahí (CSP, X-Robots-Tag) NO aplican a esas rutas. Para policies de host (noindex), usar endpoints dinámicos con `prerender = false`.
+- **Defense-in-depth router-level Traefik labels**: para un container que sirve múltiples dominios (admin/api con prod-naming + staging alias), atar el middleware noindex solo al router específico del staging (índice del dominio en Coolify UI). Web es seguro aplicar global porque solo sirve staging post-Phase-1.
+- **Disk + memoria**: 56GB de Docker build cache acumulado bloqueó el primer deploy del web (no por disk full sino por memoria reservada por el cache). `docker system prune -f` resolvió. `hops prune` agregado on-demand + step en `weekly-restart.sh`.
+- **OAuth callbackURL behind reverse proxy** (Phase 2): Astro Node detrás de Traefik, `Astro.url.origin` server-side puede resolver a `https://localhost` porque el proxy no siempre forwardea el Host header. URLs absolutas construidas server-side terminan como `https://localhost/...` y Better Auth las rechaza con `INVALID_CALLBACKURL`. Solución robusta: construir callbackURL en el CLIENT (`window.location.origin`), NUNCA en el server.
+- **Component duplication trap**: `apps/web/src/components/auth/SignIn.client.tsx` y `SignUp.client.tsx` son STANDALONE forks que NO usan `@repo/auth-ui` (comment explícito). Cambios en auth-ui no se reflejan en web hasta que se duplican manualmente. Auditar AMBOS cuando se toca el auth flow.
+- **Better Auth `accountLinking.trustedProviders`**: necesario para que mismo email cross-provider (Google + Facebook) linkee automáticamente. Sin esto, el segundo provider falla con `account_not_linked`.
+- **CORS allow-list ≠ Better Auth trustedOrigins**: dos listas separadas. Hospeda las unifica via `HOSPEDA_EXTRA_TRUSTED_ORIGINS` que se mergea con `API_CORS_ORIGINS` en `getCorsConfig()` y se appendea a Better Auth `parseTrustedOrigins()`.
+
+**Backlog Phase 3 / pre-merge audit**:
+
+1. **Tanda 4 hops smoke** (cron-list + cron-trigger): **DEFERRED a SPEC-102**. Código done pre-sprint, smoke pendiente. Decisión 2026-05-11: en vez de hacer un smoke con el path de cookie pasted-from-browser que SPEC-102 está por retirar, los integration smokes de Section 8 de SPEC-102 cubren `cron-list` + `cron-trigger` end-to-end usando el bearer-token nuevo. Marcar SPEC-102 como done requiere correr esos 4 smokes — y al hacerlo, esta línea queda cerrada automáticamente. No requiere ningún user SUPER_ADMIN nuevo en la DB de prod hasta entonces.
+2. **Separación de DBs staging/prod + seed example en staging**: la DB original es compartida entre staging.*y prod.*. Antes de seedear example data hay que separar las DBs para que el seed no contamine prod y los beta testers tengan su propio sandbox. Decisión 2026-05-11: ir con **DB separada** (no flag column en schema compartido). Reset prod a fresh post-split. Plan completo + playbook de migración beta→prod en [`staging-prod-db-separation.md`](./staging-prod-db-separation.md). Effort estimado: ~2h hoy + ~5-8h al cierre de la beta.
+3. **Audit exhaustivo pre-merge**: leer spec doc full + cross-check vs código en `chore/vps-migration`. Verificar (a) cada Paso está realmente done en código, (b) no quedan TODOs/FIXMEs significativos del sprint, (c) no hay items deferred que se cierran fácil ahora, (d) sin gaps de seguridad. Detalle en engram.
+4. **DNS-01 challenge con Cloudflare API token en Coolify**: elimina el baile manual de bajar proxy cada vez que se agrega subdominio. ~1-2h setup con riesgo de troubleshooting. Defer until next subdomain addition feels painful.
+5. **Stale comment en `ci.yml` cd-production**: arreglado durante el sprint (commit `db6c7ff75`). Done.
+
+**Engram**: `vps-migration/pre-launch-sprint-final-state` (état completo + 3 pendientes detallados). Otros: `pre-launch-landing-strategy`, `staging-environment-complete`, `defense-in-depth-staging`, `phase-2-newsletter`, `oauth-alias-host-debugging`.
+
+### Paso 17.2 — Toolkit `scripts/server-tools/` (`hops`)
+
+> **Estado al 2026-05-11**: V1 código completo. **19 commands shipped** (17 smoke-tested en VPS prod, 2 nuevos pendientes de smoke):
+>
+> - **Tanda 1** (round 1, smoke 2026-05-09): `docker-by-name`, `find`, `redeploy`, `env-list`, `exec` (in-container run), `logs`, `psql`. Plus `--version`, `--help` standardized en todos, `install.sh` + `uninstall.sh`.
+> - **Tanda 2** (round 2, smoke 2026-05-10): `db-counts`, `app-restart`, `free-mem`, `health` (wraps `scripts/smoke-test.sh`), `env-set`, `env-pull`. Mid-smoke fix: Coolify v4 PATCH endpoint para env vars usa key-in-body, no env_uuid in path. DELETE sí usa env_uuid in path. Bonus: `env-delete` agregado para limpiar env vars con un comando, y `update` (git pull + reinstall en un paso) agregado al cierre del round.
+> - **Tanda 3** (round 3, código + smoke 2026-05-10/11): `db-backup-now`, `db-restore`. Reusan `lib/r2.ts` (wrapper sobre `@aws-sdk/client-s3`) y `lib/postgres.ts` (`pgDumpToBuffer` que captura binary stdout vía `child_process.spawn` para no corromper el `pg_dump -Fc`). `db-backup-now` escribe a `s3://hospeda-backups/manual/hospeda-postgres-<TS>.dump` para distinguir del daily cron en root del bucket. `db-restore` lista todos los backups newest-first vía `@clack` picker, hace **pre-restore snapshot automático** a `manual/pre-restore-<TS>.dump` antes de pisar la DB (opt-out con `--no-snapshot-first`), después `docker cp` + `pg_restore --clean --if-exists`. Smoke validado end-to-end: backup 401.3 KB → upload manual/ → pre-restore snapshot → download → docker cp → pg_restore exit 0 → cleanup, todo contra `--target-db postgres_restore_test` para no tocar prod. **Decisiones diferidas** (capturadas en engram `vps-migration/backup-hardening-deferred`): (a) **GPG encryption** — el daily cron tampoco encripta; agregar GPG es follow-up que debe cubrir AMBOS paths en un cambio coherente, (b) **R2 retention/lifecycle** — `manual/*` queda sin auto-delete por ahora, eventualmente lifecycle rule en CF dashboard.
+> - **Tanda 4** (round 4, código 2026-05-11, smoke **deferred a SPEC-102**): `cron-list`, `cron-trigger`. Reusan `lib/api-client.ts` (wrapper sobre `fetch` que envía `Cookie:` header desde `HOPS_ADMIN_COOKIE`). Hit los endpoints `GET /api/v1/admin/cron` y `POST /api/v1/admin/cron/{name}?dryRun=`. `cron-list` muestra tabla numerada (`#`, `name`, `schedule`, `enabled`, `description`); `cron-trigger` acepta índice posicional, nombre exacto, o picker `@clack` (con `--dry-run` y `--yes` para automation). **Decisión de auth**: Better Auth session cookie pasted from browser DevTools — el operator copia el valor de `__Secure-better-auth.session_token` y lo pega en `.env.local`. Simple, zero cambios al API, costo: cookie expira cada 7-30 días → operator refresca cuando hops retorna 401 (mensaje de error es accionable). **Smoke decisión 2026-05-11**: smoke tests deferred a SPEC-102. Crear un user SUPER_ADMIN dedicado + sacar cookie de browser para validar un path que SPEC-102 está por retirar = trabajo descartable. Los integration smokes en SPEC-102 Section 8 cubren `cron-list` + `cron-trigger` end-to-end con el bearer token nuevo. Cuando SPEC-102 se marque done, esta línea cierra. **Bearer-token alternativa formal**: tracked en SPEC-102 (admin-api-bearer-token) para implementar sin presión de tiempo.
+>
+> Stack: TypeScript on bun, ships como single-file binary (`bun build --compile`, ~99 MB con runtime embedded). Configuración en `scripts/server-tools/.env.local` (gitignored). Container lookup vía label `coolify.resourceName` con fallback a image ancestor + exposed port + name prefix; UUIDs nunca hard-coded. Decisión arquitectónica: V1 corre en VPS (operator SSHs in), V2 también desde laptop (SshRunner reemplaza LocalRunner detrás del Runner interface).
+>
+> **V2 backlog** (no urgente, sin presión de tiempo):
+>
+> - `cron-edit` — override de schedule en runtime. Necesita tabla `cron_schedule_overrides` del lado API. Spec aparte cuando aparezca el caso de uso.
+> - SshRunner — correr hops desde laptop sin SSH-in. La interface `Runner` en `src/lib/runner.ts` ya está, falta la impl.
+> - SPEC-102 (admin-api-bearer-token) — reemplazar el cookie pasted-from-browser pattern con un token rotado para `cron-list` / `cron-trigger`.
+> - SPEC `vps-migration/backup-hardening-deferred` (engram) — GPG encryption + R2 lifecycle para los backups, debe cubrir tanto el daily cron como `db-backup-now`/`db-restore`.
+>
+> **Lecciones del build worth preservar** (capturadas en engram + project memory):
+>
+> - El hook de seguridad del repo rechaza cualquier TS file con substring "(en inglés "exec" seguido de paréntesis)" como posible inyección. Por eso el helper interno se llama `runInContainer` y el comando container-run vive en `container-exec.ts`. El nombre user-facing del command sigue siendo el corto.
+> - bun's pipe stdout no es TTY → bare LF no resetea columna → cursor cascade en log lines wrapped. Fix: emitir CRLF explícito.
+> - bun main exits inmediatamente cuando el async setup resolves, sin esperar children abiertos. Para follow-mode commands: bloquear con `await new Promise(resolve => child.on('exit', resolve))`.
+> - execa `stripFinalNewline: true` (default) cortaba el último `\n` del output capturado. Resultado: el último log/SQL row quedaba pegado al prompt del shell. Fix: `normaliseLines` garantiza CRLF final cuando hay contenido.
+> - Coolify v4 env API tiene path asimétrico: PATCH va a `/applications/{uuid}/envs` (key en body), DELETE va a `/applications/{uuid}/envs/{env_uuid}` (uuid en path).
+> - Coolify v4 mirror-creates env vars en BOTH production and preview envs sobre POST, ignorando el `is_preview` flag del body. Confirmado por smoke 2026-05-10. Solo UPDATE respeta `is_preview` para targetear una entry. `env-delete` y `env-list` reflejan esto con marcador `[prod]` / `[preview]` por entry.
+>
+> **Engram topic**: `vps-migration/phase-17.2-hops-checkpoint` para state completo.
+
+Ver Task #21.
+
+### Paso 17.3 — Migración de tools `env:sync`
+
+**DONE** (2026-05-11). Decisión final: **opción (b) modificada — deprecar los scripts Vercel-based, reemplazar workflow con `hops env-*` en VPS**. Razones para no rewrittear contra Coolify API: (a) hops env-list/env-set/env-pull/env-delete ya cubre el flow completo y está smoke-tested, (b) ejecutar env management desde laptop tiene peor security posture (secrets cruzando red), (c) el workflow real post-VPS es ops-from-VPS no dev-from-laptop.
+
+Cambios:
+
+- `scripts/env/{pull,push,sync,check}.ts` → reemplazados por **deprecation stubs** con mensajes accionables que apuntan a hops + `docs/guides/env-management.md`.
+- `scripts/env/utils/{vercel-api,dotenv,formatters,prompts,registry}.ts` y `__tests__/check.test.ts` → eliminados (Vercel-coupled, sin replacement directo).
+- `pnpm env:check:registry` (bash → vitest cross-validation) **se mantiene** — local, no remote, válido como CI gate.
+- `scripts/cli/registry.ts` — removidas entradas `env:pull` y `env:push`, reemplazada `env:check` por `env:check:registry`.
+- `CLAUDE.md` — sección "Adding a new environment variable" actualizada con el flow `hops env-set` o Coolify UI.
+- Nuevo doc: [`docs/guides/env-management.md`](../guides/env-management.md) — three layers (registry / schema / values), local dev, prod via hops o Coolify UI, deprecated commands table, audit checklist quarterly.
+
+### Paso 17.4 — Audit + management de crons
+
+**DONE doc + tooling parcial** (2026-05-11). Documento vive en [`docs/guides/cron-management.md`](../guides/cron-management.md) y cubre: inventory de los 2 layers (in-process API + VPS host), comandos de inspección, audit checklist quarterly, y procedimiento para agregar nuevos crons.
+
+In-process management ya cubierto por `hops cron-list` y `hops cron-trigger` (Tanda 4 toolkit). Enable/disable/reschedule **runtime** quedan diferidos a V2 (necesitan tabla `cron_schedule_overrides` API-side); para cambiarlos hoy hay que editar `apps/api/src/cron/jobs/<name>.ts` + redeploy.
+
+VPS-host management vive en `crontab -l/-e` directo. Wrapper hops adicional descartado por low value (operator puede usar crontab nativo). Inventory actualizado:
+
+- Daily backup (06:00 UTC = 03:00 ART)
+- Weekly restart (07:00 UTC dom = 04:00 ART dom — pendiente install crontab, ver Paso 17.6)
+
+Audit de orphans (Vercel scheduled functions, QStash schedules, GitHub Actions cron) documentado como check semestral.
+
+### Paso 17.5 — Disaster recovery playbook
+
+**DONE** (2026-05-11). Documento vive en [`docs/migration/disaster-recovery.md`](./disaster-recovery.md). Cubre 5 scenarios (los 4 originales + scenario 5: backup chain broken) con runbooks numerados step-by-step, verification, y rollback path para cada uno. Cross-references todos los hops commands relevantes. Incluye comms templates y un quarterly tabletop test usando `hops db-restore --target-db postgres_restore_test` para validar el flow sin tocar prod. RTO target prod < 1h, RPO 24h.
+
+### Paso 17.6 — Restart schedule semanal
+
+**DONE script** (2026-05-11), pendiente install crontab en VPS. Script vive en [`scripts/server-tools/weekly-restart.sh`](../../scripts/server-tools/weekly-restart.sh). Hace `hops app-restart api/web/admin --yes` secuencialmente con 30s settle + smoke (`curl --max-time 15`) entre cada uno. **Backup safety check**: aborta el restart si el backup log (`/var/log/hospeda-backup.log`) tiene mtime > 28h. Logs a `/var/log/hospeda-weekly-restart.log`. Optional heartbeat via `WEEKLY_RESTART_HEARTBEAT_URL`.
+
+**Para activar en VPS** (operator action):
+
+```bash
+ssh -p 2222 qazuor@216.238.103.219
+# Asegurate que el script está executable
+chmod +x ~/hospeda/scripts/server-tools/weekly-restart.sh
+
+# Agregá la entry de crontab
+crontab -e
+# Agregá la línea:
+0 7 * * 0 /home/qazuor/hospeda/scripts/server-tools/weekly-restart.sh >> /var/log/hospeda-weekly-restart.log 2>&1
+# (07:00 UTC = 04:00 ART domingo, low traffic window)
+
+# Validación manual primero:
+~/hospeda/scripts/server-tools/weekly-restart.sh
+# debería: chequear backup log → restart api → smoke api → restart web → smoke web → restart admin → smoke admin → exit 0
+
+# Opcional: agregá heartbeat URL en /etc/environment o en el cron entry:
+# 0 7 * * 0 WEEKLY_RESTART_HEARTBEAT_URL=https://... /home/qazuor/.../weekly-restart.sh
+```
+
+Sessions Better Auth sobreviven (DB-backed en `sessions` table).
+
+### Paso 17.7 — Disable auto-deploy on push
+
+Coolify por default hace auto-deploy ni bien detecta push a la branch configurada. Cambiar a manual: cada app → Configuration → toggle "Auto Deploy" OFF. Razón: control total sobre cuándo va a prod, evitar deploys accidentales en push de docs/wip/refactor. Para deploy: Coolify UI → Deploy button (manual). Ver Task #26.
+
+### Paso 17.8 — Recepción de emails `@hospeda.com.ar`
+
+Cloudflare Email Routing ya está activo (usado para `noreply@hospeda.com.ar` durante setup Brevo). Agregar custom routes para inboxes operativos: `hello@`, `contact@`, `support@`, `qazuor@`, etc → forward a `qazuor@gmail.com`. Catch-all opcional. Brevo es solo OUTBOUND, Cloudflare es INBOUND. Documentar las routes activas en `docs/guides/email-routing.md`. Ver Task #27.
+
+### Paso 17.9 — Better Stack monitor admin (false positive)
+
+El monitor "Hospeda Admin" reporta DOWN intermitentemente aunque `curl https://admin.hospeda.com.ar/auth/signin` devuelve 200. Investigar: (a) ¿el monitor sigue redirects? El root path `/` da 307 → `/auth/signin` (200). Sin follow-redirects, BS ve 307 y reporta down. (b) Timeout muy corto para admin SSR. Aumentar a 15s. (c) Cambiar URL del monitor de `/` a `/auth/signin` directo. Ver Task #28.
 
 ---
 
@@ -2554,7 +3239,7 @@ Lista chequeable manual. **No marques completo hasta validar TODO.**
 
 #### "Webhooks no llegan"
 
-- Verificar URL configurada en MP dashboard apunta al endpoint correcto: `https://api.hospeda.com.ar/api/v1/protected/billing/webhooks/mercadopago`
+- Verificar URL configurada en MP dashboard apunta al endpoint correcto: `https://api.hospeda.com.ar/api/v1/webhooks/mercadopago`
 - Si hubo cutover de DNS reciente, MP puede tener cache TTL de la IP vieja → reintentar webhooks manualmente desde MP dashboard.
 - Logs de la API deben mostrar el request entrante de MP.
 

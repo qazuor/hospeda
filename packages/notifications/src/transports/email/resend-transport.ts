@@ -1,4 +1,5 @@
-import type { Resend } from 'resend';
+import { render } from '@react-email/render';
+import type { EmailClient } from '../../config/resend.config.js';
 import type {
     EmailTransport,
     SendEmailInput,
@@ -6,18 +7,24 @@ import type {
 } from './email-transport.interface.js';
 
 /**
- * Resend email transport implementation
+ * Brevo email transport implementation.
  *
- * Sends emails using the Resend API with React Email components.
- * Uses dependency injection for the Resend client to enable testing.
+ * Sends emails via Brevo's transactional REST API (`POST /v3/smtp/email`)
+ * using `fetch` directly. We avoid the official `@getbrevo/brevo` SDK
+ * because it transitively pulls in `axios` -> `form-data` -> `combined-stream`,
+ * which use CommonJS `require('util')` and crash under ESM bundling.
+ *
+ * The class is exported as `BrevoEmailTransport`. The legacy alias
+ * `ResendEmailTransport` is retained as a deprecated re-export so existing
+ * call sites keep compiling during the migration; new code should import
+ * `BrevoEmailTransport`.
  *
  * @example
  * ```ts
- * import { createResendClient } from '@repo/notifications';
- * import { WelcomeEmail } from './emails/welcome';
+ * import { createEmailClient, BrevoEmailTransport } from '@repo/notifications';
  *
- * const resend = createResendClient({ apiKey: env.RESEND_API_KEY });
- * const transport = new ResendEmailTransport(resend, {
+ * const client = createEmailClient({ apiKey: env.HOSPEDA_EMAIL_API_KEY });
+ * const transport = new BrevoEmailTransport(client, {
  *   fromEmail: 'noreply@hospeda.com.ar',
  *   fromName: 'Hospeda'
  * });
@@ -27,74 +34,144 @@ import type {
  *   subject: 'Welcome to Hospeda',
  *   react: <WelcomeEmail userName="John" />
  * });
- *
- * console.log('Email sent:', result.messageId);
  * ```
  */
-export class ResendEmailTransport implements EmailTransport {
-    private readonly resend: Resend;
-    private readonly defaultFrom: string;
+export class BrevoEmailTransport implements EmailTransport {
+    private readonly client: EmailClient;
+    private readonly defaultFromEmail: string;
+    private readonly defaultFromName: string;
 
     /**
-     * Creates a new Resend email transport
+     * Creates a new Brevo email transport.
      *
-     * @param resend - Configured Resend client instance
+     * @param client - Configured email client
      * @param options - Transport configuration options
      * @param options.fromEmail - Default sender email address (required)
      * @param options.fromName - Default sender display name (required)
      */
     constructor(
-        resend: Resend,
+        client: EmailClient,
         options: {
             fromEmail: string;
             fromName: string;
         }
     ) {
-        this.resend = resend;
-        this.defaultFrom = `${options.fromName} <${options.fromEmail}>`;
+        this.client = client;
+        this.defaultFromEmail = options.fromEmail;
+        this.defaultFromName = options.fromName;
     }
 
     /**
-     * Send an email via Resend
+     * Send an email via Brevo.
      *
      * @param input - Email content and metadata
-     * @returns Promise resolving to send result with message ID
-     * @throws {Error} If Resend API call fails
+     * @returns Promise resolving to send result with provider message ID
+     * @throws {Error} If Brevo returns an error response or `fetch` rejects
      */
     async send(input: SendEmailInput): Promise<SendEmailResult> {
         try {
-            const response = await this.resend.emails.send({
-                from: input.from || this.defaultFrom,
-                to: input.to,
+            const htmlContent = await render(input.react);
+
+            const body: Record<string, unknown> = {
+                sender: parseSender(input.from, this.defaultFromEmail, this.defaultFromName),
+                to: [{ email: input.to }],
                 subject: input.subject,
-                react: input.react,
-                replyTo: input.replyTo,
-                tags: input.tags,
-                attachments: input.attachments
+                htmlContent
+            };
+
+            if (input.replyTo) {
+                body.replyTo = { email: input.replyTo };
+            }
+
+            if (input.tags && input.tags.length > 0) {
+                // Brevo only accepts string tags; encode `name:value` pairs.
+                body.tags = input.tags.map((t) => `${t.name}:${t.value}`);
+            }
+
+            if (input.attachments && input.attachments.length > 0) {
+                body.attachment = input.attachments.map((att) => ({
+                    name: att.filename,
+                    content:
+                        typeof att.content === 'string'
+                            ? att.content
+                            : att.content.toString('base64')
+                }));
+            }
+
+            const response = await fetch(`${this.client.baseUrl}/smtp/email`, {
+                method: 'POST',
+                headers: {
+                    'api-key': this.client.apiKey,
+                    'content-type': 'application/json',
+                    accept: 'application/json'
+                },
+                body: JSON.stringify(body)
             });
 
-            // Resend returns { data: { id: string } } on success or { error: Error } on failure
-            // TypeScript has trouble narrowing this union, so we check both cases explicitly
-            if ('error' in response) {
-                const errorResponse = response as { error: Error | string | null };
-                const errorMsg =
-                    typeof errorResponse.error === 'string'
-                        ? errorResponse.error
-                        : errorResponse.error?.message || 'Unknown error';
-                throw new Error(`Resend API error: ${errorMsg}`);
+            if (!response.ok) {
+                const detail = await extractErrorDetail(response);
+                throw new Error(`Failed to send email via Brevo: ${detail}`);
             }
 
-            const successResponse = response as { data: { id: string } | null };
-            if (!successResponse.data?.id) {
-                throw new Error('Resend response missing message ID');
+            const data = (await response.json()) as { messageId?: string };
+            if (!data.messageId) {
+                throw new Error('Failed to send email via Brevo: response missing message ID');
             }
-
-            return {
-                messageId: successResponse.data.id
-            };
+            return { messageId: data.messageId };
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            throw new Error(`Failed to send email via Resend: ${errorMessage}`);
+            if (
+                error instanceof Error &&
+                error.message.startsWith('Failed to send email via Brevo')
+            ) {
+                throw error;
+            }
+            const detail = error instanceof Error ? error.message : 'Unknown error';
+            throw new Error(`Failed to send email via Brevo: ${detail}`);
         }
     }
+}
+
+/**
+ * @deprecated Use `BrevoEmailTransport` instead. The legacy alias is kept so
+ * existing call sites keep compiling during the migration.
+ */
+export const ResendEmailTransport = BrevoEmailTransport;
+
+/**
+ * Parse a `from` value into a Brevo `{ email, name }` sender. The legacy
+ * Resend-style format `"Name <email>"` is supported for backward compat with
+ * call sites that still pass a combined string.
+ */
+function parseSender(
+    from: string | undefined,
+    defaultEmail: string,
+    defaultName: string
+): { email: string; name?: string } {
+    if (!from) {
+        return { email: defaultEmail, name: defaultName };
+    }
+
+    const match = from.match(/^\s*(.+?)\s*<([^>]+)>\s*$/);
+    if (match) {
+        const [, name, email] = match;
+        return { email: email as string, name: name as string };
+    }
+
+    return { email: from };
+}
+
+/**
+ * Extract a human-readable error detail from a Brevo error response. Falls
+ * back to status / status text when the body cannot be parsed as JSON.
+ */
+async function extractErrorDetail(response: Response): Promise<string> {
+    try {
+        const errorJson = (await response.json()) as { message?: string; code?: string };
+        if (errorJson.message) {
+            return errorJson.message;
+        }
+    } catch {
+        // ignore — fall through to status-based detail
+    }
+    return `${response.status} ${response.statusText || 'error'}`;
 }

@@ -130,9 +130,10 @@ export const dunningJob: CronJobDefinition = {
         try {
             // Prevent overlapping cron executions via PostgreSQL advisory lock (GAP-035).
             // Lock key 1003 is reserved for this job. Uses pg_try_advisory_xact_lock
-            // (transaction-level) instead of pg_try_advisory_lock (session-level) for
-            // compatibility with Neon's transaction pooling (PgBouncer). Transaction-level
-            // locks auto-release on commit/rollback — no manual unlock needed.
+            // (transaction-level) instead of pg_try_advisory_lock (session-level) so the
+            // lock survives correctly under transaction-mode connection poolers
+            // (PgBouncer, Coolify's pooled clients, etc.). Transaction-level locks
+            // auto-release on commit/rollback — no manual unlock needed.
             const cronResult = await withTransaction<CronTransactionResult>(async (_tx) => {
                 const lockResult = await _tx.execute(
                     sql`SELECT pg_try_advisory_xact_lock(1003) AS acquired`

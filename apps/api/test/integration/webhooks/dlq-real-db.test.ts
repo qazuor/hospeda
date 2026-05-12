@@ -65,11 +65,10 @@ function dlqRetryPath(id: string): string {
  * Minimal admin session cookie value used to satisfy the Better Auth
  * middleware in test mode. Tests that touch admin routes require some form
  * of identity. Because unit/integration tests bypass the full auth flow, we
- * set the HOSPEDA_CRON_SECRET env var and reuse it as an admin bearer token
- * where the route factory allows it. The dead-letter routes use
- * createAdminRoute which requires a real authenticated admin session, so in
- * this test file we confirm the auth rejection (401/403) and then exercise
- * the underlying DB state directly using testDb.
+ * exercise the underlying DB state directly using testDb. The dead-letter
+ * routes use createAdminRoute which requires a real authenticated admin
+ * session, so in this test file we confirm the auth rejection (401/403)
+ * and then verify state via the DB directly.
  *
  * A comment block explains this trade-off inline in each test.
  */

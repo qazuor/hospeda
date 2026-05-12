@@ -5,36 +5,36 @@ import { createEmailClient } from '../src/client.js';
  * Unit tests for createEmailClient factory function.
  */
 describe('createEmailClient', () => {
-    it('should return an instance with emails.send available', () => {
+    it('should set the apiKey passed by the caller verbatim', () => {
         // Arrange
-        const apiKey = 'test-key';
+        const apiKey = 'xkeysib-test-key';
 
         // Act
         const client = createEmailClient({ apiKey });
 
         // Assert
-        expect(client).toBeDefined();
-        expect(client.emails).toBeDefined();
-        expect(typeof client.emails.send).toBe('function');
+        expect(client.apiKey).toBe(apiKey);
     });
 
-    it('should create client with the provided API key', () => {
+    it('should use the default Brevo base URL when none is provided', () => {
         // Arrange
-        const apiKey = 're_test_abc123';
+        const apiKey = 'xkeysib-test-key';
 
         // Act
         const client = createEmailClient({ apiKey });
 
         // Assert
-        expect(client).toBeDefined();
-        expect(client.emails).toBeDefined();
+        expect(client.baseUrl).toBe('https://api.brevo.com/v3');
     });
 
-    it('should throw "Missing API key" error when apiKey is empty', () => {
+    it('should accept a baseUrl override (used by tests)', () => {
         // Arrange
-        const apiKey = '';
+        const apiKey = 'xkeysib-test-key';
 
-        // Act & Assert
-        expect(() => createEmailClient({ apiKey })).toThrow('Missing API key');
+        // Act
+        const client = createEmailClient({ apiKey, baseUrl: 'https://test.example/v3' });
+
+        // Assert
+        expect(client.baseUrl).toBe('https://test.example/v3');
     });
 });

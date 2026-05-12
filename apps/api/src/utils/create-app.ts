@@ -131,14 +131,12 @@ export function createApp() {
         .use(wrapMiddleware(compressionMiddleware()))
 
         // Body size limit (enforced at stream level, covers chunked transfer encoding)
-        // Vercel serverless has a 4.5MB payload limit; local dev allows 10MB
+        // 10MB matches the long-running Node server on the VPS; tune via env if
+        // a specific upload flow needs a different ceiling.
         .use(
             wrapMiddleware(
                 bodyLimit({
-                    // pre-validation: createApp() may be called before validateApiEnv() in tests
-                    maxSize: process.env.VERCEL
-                        ? 4.5 * 1024 * 1024 // 4.5MB for Vercel serverless
-                        : 10 * 1024 * 1024, // 10MB for long-running server
+                    maxSize: 10 * 1024 * 1024, // 10MB
                     onError: (c) => {
                         return c.json(
                             {

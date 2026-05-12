@@ -95,7 +95,7 @@ vi.mock('drizzle-orm', () => ({
 
 vi.mock('../../src/utils/env.js', () => ({
     env: {
-        HOSPEDA_RESEND_API_KEY: 'test-resend-key',
+        HOSPEDA_EMAIL_API_KEY: 'test-resend-key',
         HOSPEDA_SITE_URL: 'https://hospeda.test'
     }
 }));

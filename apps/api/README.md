@@ -13,7 +13,7 @@ Production-ready backend service providing comprehensive endpoints for accommoda
 - **Authentication**: Better Auth
 - **Validation**: Zod schemas
 - **Testing**: Vitest (>90% coverage)
-- **Deployment**: Vercel (serverless)
+- **Deployment**: Coolify on a self-hosted VPS (long-running Node container behind Cloudflare)
 
 ## Quick Start
 

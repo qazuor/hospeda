@@ -102,8 +102,29 @@ export const SignUpForm = ({
         try {
             setIsLoading(true);
             setError(null);
-            const callbackURL = redirectTo ?? window.location.pathname ?? '/';
-            await signIn.social({ provider, callbackURL });
+            // Build absolute callback URLs on the CLIENT. Astro SSR
+            // behind a reverse proxy can resolve `Astro.url.origin` to
+            // `https://localhost`, and any absolute URL built from that
+            // is rejected by Better Auth as INVALID_CALLBACKURL. The
+            // browser always knows its real origin — anchor on it and
+            // strip any host that may have leaked into `redirectTo`.
+            const origin = window.location.origin;
+            const rawTarget = redirectTo ?? window.location.pathname ?? '/';
+            let path = rawTarget;
+            if (path.startsWith('http')) {
+                try {
+                    const parsed = new URL(path);
+                    path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
+                } catch {
+                    path = '/';
+                }
+            }
+            if (!path.startsWith('/')) {
+                path = `/${path}`;
+            }
+            const callbackURL = `${origin}${path}`;
+            const errorCallbackURL = `${origin}${window.location.pathname || '/'}`;
+            await signIn.social({ provider, callbackURL, errorCallbackURL });
         } catch (err) {
             authLogger.error('OAuth error', err);
             setError(err instanceof Error ? err.message : 'OAuth authentication failed');

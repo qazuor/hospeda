@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
-import vercel from '@astrojs/vercel';
+import node from '@astrojs/node';
 import sentry from '@sentry/astro';
 import { defineConfig } from 'astro/config';
 import { validateWebEnv } from './src/env.ts';
@@ -62,19 +62,8 @@ export default defineConfig({
     site: HOSPEDA_SITE_URL,
     output: 'server',
     trailingSlash: 'always',
-    adapter: vercel({
-        isr: {
-            expiration: 86400,
-            bypassToken: process.env.HOSPEDA_REVALIDATION_SECRET,
-            // Exclude SSR-only routes from ISR caching.
-            // Pattern breakdown:
-            //   (\/(?:en|pt))?  - optional locale prefix for /en/ or /pt/ (es has no prefix)
-            //   \/(auth|mi-cuenta|busqueda|feedback)  - route segment requiring fresh SSR
-            //   (\/.*)?$        - optional sub-paths under that segment
-            // This keeps listing pages like /alojamientos/tipo/cabin/ in the ISR cache.
-            exclude: [/^(\/(?:en|pt))?\/(auth|mi-cuenta|busqueda|feedback)(\/.*)?$/]
-        },
-        imageService: true
+    adapter: node({
+        mode: 'standalone'
     }),
 
     prefetch: {
@@ -95,7 +84,6 @@ export default defineConfig({
             ...ALLOWED_REMOTE_HOSTS.map((hostname) =>
                 hostname === 'localhost' ? { hostname } : { protocol: 'https', hostname }
             ),
-            { hostname: '*.vercel.app' },
             ...(apiHostname && apiHostname !== 'localhost' ? [{ hostname: apiHostname }] : [])
         ]
     },
@@ -163,7 +151,10 @@ export default defineConfig({
             'import.meta.env.PUBLIC_API_URL': JSON.stringify(HOSPEDA_API_URL),
             'import.meta.env.PUBLIC_SITE_URL': JSON.stringify(HOSPEDA_SITE_URL),
             'import.meta.env.PUBLIC_SENTRY_RELEASE': JSON.stringify(
-                process.env.VERCEL_GIT_COMMIT_SHA || process.env.PUBLIC_SENTRY_RELEASE || ''
+                process.env.HOSPEDA_COMMIT_SHA ||
+                    process.env.HOSPEDA_GIT_SHA ||
+                    process.env.PUBLIC_SENTRY_RELEASE ||
+                    ''
             )
         }
     }

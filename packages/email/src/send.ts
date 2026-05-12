@@ -1,17 +1,31 @@
+import { render } from '@react-email/render';
 import { createLogger } from '@repo/logger';
 import type { ReactElement } from 'react';
-import type { Resend } from 'resend';
+import type { EmailClient } from './client.js';
 
 const logger = createLogger('email');
+
+/**
+ * Default sender used when the caller does not specify one. The address must
+ * belong to a domain authenticated in the email provider (Brevo) — otherwise
+ * delivery fails or lands in spam.
+ */
+const DEFAULT_FROM_EMAIL = 'noreply@hospeda.com.ar';
+const DEFAULT_FROM_NAME = 'Hospeda';
+
+/** Provider response shape on success: `{ messageId }`. */
+interface BrevoSendResponse {
+    readonly messageId?: string;
+}
 
 /**
  * Input parameters for sending an email.
  */
 export interface SendEmailInput {
     /**
-     * Configured Resend client instance (dependency-injected).
+     * Configured email client instance (dependency-injected).
      */
-    readonly client: Resend;
+    readonly client: EmailClient;
 
     /**
      * Recipient email address(es).
@@ -25,18 +39,24 @@ export interface SendEmailInput {
     readonly subject: string;
 
     /**
-     * React Email component to render as email body.
+     * React Email component to render as email body. The component is
+     * rendered to HTML at send time.
      */
     readonly react: ReactElement;
 
     /**
-     * Sender email address.
-     * Defaults to "Hospeda <noreply@hospeda.com.ar>".
+     * Sender email address. Must be on a domain authenticated in the email
+     * provider. Defaults to `noreply@hospeda.com.ar`.
      */
-    readonly from?: string;
+    readonly fromEmail?: string;
 
     /**
-     * Reply-to email address.
+     * Sender display name. Defaults to `Hospeda`.
+     */
+    readonly fromName?: string;
+
+    /**
+     * Reply-to email address. When omitted, replies go to the sender address.
      */
     readonly replyTo?: string;
 }
@@ -46,12 +66,14 @@ export interface SendEmailInput {
  */
 export interface SendEmailResult {
     /**
-     * Whether the email was sent successfully.
+     * Whether the email was accepted by the provider.
      */
     readonly success: boolean;
 
     /**
-     * Unique message ID from Resend (on success).
+     * Provider-assigned message ID (on success). Format depends on the
+     * provider; Brevo emits an RFC-2822 Message-Id like
+     * `<202401151234.abc123@smtp-relay.brevo.com>`.
      */
     readonly messageId?: string;
 
@@ -62,58 +84,84 @@ export interface SendEmailResult {
 }
 
 /**
- * Default sender email address for all emails.
- */
-const DEFAULT_FROM = 'Hospeda <noreply@hospeda.com.ar>';
-
-/**
- * Send an email using Resend.
+ * Send an email through the configured provider.
  *
- * This function is non-blocking and handles errors gracefully.
- * Errors are logged to console but not thrown.
+ * The function never throws: provider failures, network errors and rendering
+ * errors are caught and surfaced via the `success`/`error` fields of the
+ * result. Callers are expected to log/branch on the result rather than wrap
+ * the call in try/catch.
  *
  * @param input - Email configuration (to, subject, react component, etc.)
  * @returns Result object with success status and message ID or error
  *
  * @example
  * ```ts
- * import { sendEmail } from '@repo/email';
- * import { VerifyEmailTemplate } from '@repo/email';
- *
  * const result = await sendEmail({
+ *   client,
  *   to: 'user@example.com',
  *   subject: 'Verify your email',
- *   react: VerifyEmailTemplate({
- *     name: 'John Doe',
- *     verificationUrl: 'https://example.com/verify?token=abc123'
- *   })
+ *   react: VerifyEmailTemplate({ name, verificationUrl })
  * });
  *
- * if (result.success) {
- *   console.log('Email sent:', result.messageId);
- * } else {
- *   console.error('Failed to send email:', result.error);
+ * if (!result.success) {
+ *   logger.error('Failed to send email:', result.error);
  * }
  * ```
  */
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
-    const { client, to, subject, react, from = DEFAULT_FROM, replyTo } = input;
+    const {
+        client,
+        to,
+        subject,
+        react,
+        fromEmail = DEFAULT_FROM_EMAIL,
+        fromName = DEFAULT_FROM_NAME,
+        replyTo
+    } = input;
 
     try {
-        const { data, error } = await client.emails.send({
-            from,
-            to: Array.isArray(to) ? [...to] : [to],
-            subject,
-            react,
-            ...(replyTo ? { replyTo } : {})
-        });
+        const htmlContent = await render(react);
 
-        if (error) {
-            logger.error('Failed to send:', error.message);
-            return { success: false, error: error.message };
+        const recipients = (Array.isArray(to) ? to : [to]).map((email) => ({ email }));
+
+        const body: Record<string, unknown> = {
+            sender: { email: fromEmail, name: fromName },
+            to: recipients,
+            subject,
+            htmlContent
+        };
+        if (replyTo) {
+            body.replyTo = { email: replyTo };
         }
 
-        return { success: true, messageId: data?.id };
+        const response = await fetch(`${client.baseUrl}/smtp/email`, {
+            method: 'POST',
+            headers: {
+                'api-key': client.apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            // Brevo returns JSON error bodies like
+            // { "code": "invalid_parameter", "message": "..." }. Fall back
+            // to the raw text when JSON parsing fails so we never lose detail.
+            let detail: string;
+            try {
+                const errorJson = (await response.json()) as { message?: string };
+                detail =
+                    errorJson.message ?? `${response.status} ${response.statusText || 'error'}`;
+            } catch {
+                detail = `${response.status} ${response.statusText || 'error'}`;
+            }
+            logger.error('Failed to send:', detail);
+            return { success: false, error: detail };
+        }
+
+        const data = (await response.json()) as BrevoSendResponse;
+        return { success: true, ...(data.messageId ? { messageId: data.messageId } : {}) };
     } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         logger.error('Failed to send:', message);

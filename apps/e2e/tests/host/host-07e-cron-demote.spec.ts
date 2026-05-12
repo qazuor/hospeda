@@ -5,11 +5,13 @@
  *         `archive-abandoned-drafts` cron job.
  * Tags: @p0 @host @onboarding @cron
  *
- * Preconditions:
- *   - `HOSPEDA_CRON_SECRET` set on the API (read at runtime by the
- *     cron-execution endpoint).
- *   - `archive-abandoned-drafts` job registered and reachable via
- *     `POST /api/v1/cron/archive-abandoned-drafts`.
+ * **Status (2026-05-07)**: temporarily disabled via `test.fixme`. The HTTP
+ * trigger endpoint `POST /api/v1/cron/:name` was removed during the VPS
+ * migration (cron jobs now run in-process via node-cron). To restore this
+ * test, rewrite the trigger to POST `/api/v1/admin/cron/archive-abandoned-drafts`
+ * with an authenticated admin session (see `apps/api/src/routes/cron-admin/`).
+ * The underlying job logic is still covered by unit/integration tests in
+ * `apps/api/test/cron/`.
  *
  * What this validates (two scenarios in one test):
  *
@@ -68,10 +70,10 @@ test.describe('HOST-07e: cron demotes HOST → USER @p0 @host @onboarding @cron'
     });
 
     test('A: single stale DRAFT → archived + role demoted to USER', async () => {
-        if (!CRON_SECRET) {
-            test.fixme(true, 'HOSPEDA_CRON_SECRET not set in test env — cannot trigger cron');
-            return;
-        }
+        test.fixme(
+            true,
+            'HTTP cron trigger removed in VPS migration; rewrite via /api/v1/admin/cron with admin session.'
+        );
 
         const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userIdsToCleanup.push(host.id);
@@ -103,10 +105,10 @@ test.describe('HOST-07e: cron demotes HOST → USER @p0 @host @onboarding @cron'
     });
 
     test('B: stale + fresh drafts → only stale archived, role stays HOST', async () => {
-        if (!CRON_SECRET) {
-            test.fixme(true, 'HOSPEDA_CRON_SECRET not set in test env — cannot trigger cron');
-            return;
-        }
+        test.fixme(
+            true,
+            'HTTP cron trigger removed in VPS migration; rewrite via /api/v1/admin/cron with admin session.'
+        );
 
         const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userIdsToCleanup.push(host.id);

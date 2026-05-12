@@ -72,22 +72,27 @@ function getBillingInstance(): QZPayBilling | null {
         // Get database instance
         const db = getDb();
 
-        // Create storage adapter
-        const storageAdapter = createBillingAdapter(db, {
-            livemode: env.NODE_ENV === 'production'
-        });
+        // Single source of truth for billing mode: HOSPEDA_MERCADO_PAGO_SANDBOX.
+        // If MP runs in sandbox, the storage and billing instance must run in
+        // test mode too — mixing live records with sandbox charges is invalid.
+        // NODE_ENV is intentionally NOT consulted here so staging/preview can
+        // run prod NODE_ENV with sandbox credentials and vice versa.
+        const sandbox = env.HOSPEDA_MERCADO_PAGO_SANDBOX;
+        const livemode = !sandbox;
 
-        // Create payment adapter
-        const paymentAdapter = createMercadoPagoAdapter({
-            sandbox: env.NODE_ENV !== 'production'
-        });
+        // Create storage adapter
+        const storageAdapter = createBillingAdapter(db, { livemode });
+
+        // Create payment adapter — factory reads HOSPEDA_MERCADO_PAGO_SANDBOX
+        // directly from the environment when no explicit override is passed.
+        const paymentAdapter = createMercadoPagoAdapter();
 
         // Create billing instance
         billingInstance = createQZPayBilling({
             storage: storageAdapter,
             paymentAdapter,
             defaultCurrency: 'ARS',
-            livemode: env.NODE_ENV === 'production'
+            livemode
         });
 
         apiLogger.info('✅ QZPay billing initialized successfully');

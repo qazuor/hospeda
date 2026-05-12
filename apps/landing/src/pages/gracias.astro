@@ -1,0 +1,243 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Image } from 'astro:assets';
+import logo from '../assets/logo.webp';
+import heroIsla from '../assets/hero/hero-isla.jpg';
+
+const title = '¡Gracias! — Hospeda';
+const description =
+    'Tu suscripción al newsletter de Hospeda quedó confirmada. Te avisamos en cuanto estemos listos.';
+---
+
+<Layout title={title} description={description}>
+    <main class="thanks">
+        <div class="thanks-image" aria-hidden="true">
+            <Image
+                src={heroIsla}
+                alt=""
+                widths={[640, 960, 1280, 1920]}
+                sizes="100vw"
+                loading="eager"
+                decoding="async"
+                format="webp"
+                quality={70}
+            />
+        </div>
+        <div class="thanks-overlay" aria-hidden="true"></div>
+
+        <div class="thanks-content container">
+            <a href="/" class="thanks-logo" aria-label="Hospeda — inicio">
+                <Image
+                    src={logo}
+                    alt="Hospeda"
+                    width={140}
+                    height={45}
+                    loading="eager"
+                    decoding="async"
+                />
+            </a>
+
+            <div class="thanks-card">
+                <div class="thanks-check" aria-hidden="true">
+                    <svg
+                        width="48"
+                        height="48"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+
+                <h1 class="thanks-title">¡Gracias por sumarte!</h1>
+
+                <p class="thanks-tagline">
+                    Te anotamos en la lista de
+                    <span id="thanks-email" class="thanks-email">los primeros</span>.
+                    En cuanto abramos las puertas, te llega un mail con todo lo que
+                    armamos para vos.
+                </p>
+
+                <p class="thanks-note">
+                    Mientras tanto, ya estamos preparando las mejores escapadas del
+                    Litoral entrerriano. Concepción del Uruguay te espera.
+                </p>
+
+                <a href="/" class="thanks-back">
+                    <svg
+                        aria-hidden="true"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Volver al inicio
+                </a>
+            </div>
+        </div>
+    </main>
+</Layout>
+
+<script>
+    // Echo back the email from ?email= for a personal touch — purely
+    // cosmetic, the actual signup happened before this page rendered.
+    const params = new URLSearchParams(window.location.search);
+    const email = params.get('email')?.trim();
+    if (email && email.includes('@')) {
+        const target = document.getElementById('thanks-email');
+        if (target) {
+            // Sanitize basic — strip anything that isn't a plausible email char.
+            const safe = email.replace(/[^a-zA-Z0-9._%+-@]/g, '').slice(0, 254);
+            if (safe) target.textContent = safe;
+        }
+    }
+</script>
+
+<style>
+    .thanks {
+        position: relative;
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        isolation: isolate;
+    }
+
+    .thanks-image {
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+    }
+
+    .thanks-image :global(img) {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .thanks-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background: linear-gradient(
+            135deg,
+            oklch(0.18 0.04 250 / 0.82) 0%,
+            oklch(0.22 0.06 220 / 0.72) 50%,
+            oklch(0.18 0.04 200 / 0.82) 100%
+        );
+    }
+
+    .thanks-content {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        padding-block: var(--space-12);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-8);
+    }
+
+    .thanks-logo {
+        display: inline-flex;
+    }
+
+    .thanks-logo :global(img) {
+        height: 44px;
+        width: auto;
+        filter: drop-shadow(0 2px 8px oklch(0 0 0 / 0.3));
+    }
+
+    .thanks-card {
+        background: oklch(1 0 0 / 0.96);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: var(--radius-card);
+        padding: var(--space-12) var(--space-10);
+        text-align: center;
+        max-width: 560px;
+        box-shadow: var(--shadow-soft);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-4);
+    }
+
+    .thanks-check {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: oklch(from var(--hospeda-forest) l c h / 0.12);
+        color: var(--hospeda-forest);
+        margin-bottom: var(--space-2);
+    }
+
+    .thanks-title {
+        font-size: var(--text-display);
+        color: var(--core-foreground);
+        margin-bottom: var(--space-2);
+    }
+
+    .thanks-tagline {
+        font-size: var(--text-tagline);
+        color: var(--core-muted-foreground);
+        max-width: 42ch;
+    }
+
+    .thanks-email {
+        color: var(--hospeda-river);
+        font-weight: 600;
+        word-break: break-word;
+    }
+
+    .thanks-note {
+        font-size: var(--text-body);
+        color: var(--core-muted-foreground);
+        max-width: 42ch;
+    }
+
+    .thanks-back {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-3) var(--space-6);
+        color: var(--hospeda-river);
+        font-weight: 500;
+        border-radius: var(--radius-pill);
+        transition:
+            background-color var(--duration-fast) var(--ease-out),
+            transform var(--duration-fast) var(--ease-out);
+        margin-top: var(--space-4);
+    }
+
+    .thanks-back:hover {
+        background: oklch(from var(--hospeda-river) l c h / 0.08);
+        transform: translateX(-2px);
+    }
+
+    @media (max-width: 540px) {
+        .thanks-card {
+            padding: var(--space-10) var(--space-6);
+        }
+
+        .thanks-check {
+            width: 64px;
+            height: 64px;
+        }
+    }
+</style>

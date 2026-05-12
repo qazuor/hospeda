@@ -1,30 +1,58 @@
-import { Resend } from 'resend';
-
 /**
- * Input for creating a Resend client instance.
+ * Public type alias for the configured email client used by the notifications
+ * package. Implemented as a small config object that the transport uses to
+ * build authenticated requests against the provider's REST API. Kept opaque
+ * to consumers so a future provider swap stays transparent.
  */
-export interface CreateResendClientInput {
-    /** Resend API key */
+export interface EmailClient {
+    /** Provider API key used in `api-key` header on each request. */
     readonly apiKey: string;
+    /** Provider base URL (e.g. `https://api.brevo.com/v3`). */
+    readonly baseUrl: string;
 }
 
 /**
- * Creates a Resend client instance using dependency-injected configuration.
+ * Input for creating an email client instance.
+ */
+export interface CreateEmailClientInput {
+    /** Email provider API key (Brevo: starts with `xkeysib-`). */
+    readonly apiKey: string;
+    /**
+     * Override for the provider base URL. Mostly useful for tests pointing at
+     * a fake server. Defaults to Brevo production.
+     */
+    readonly baseUrl?: string;
+}
+
+const DEFAULT_BASE_URL = 'https://api.brevo.com/v3';
+
+/**
+ * Creates an email client using dependency-injected configuration.
+ *
+ * Returns a plain config object rather than an SDK instance because the
+ * Brevo Node SDK pulls in `axios` -> `form-data` -> `combined-stream`, which
+ * use CommonJS `require('util')` and fail under ESM bundling. We talk to the
+ * REST API directly with `fetch` instead — same surface, zero dynamic
+ * requires.
  *
  * @param input - Configuration with API key
- * @returns Configured Resend client
- *
- * @example
- * ```ts
- * const resend = createResendClient({ apiKey: env.RESEND_API_KEY });
- * await resend.emails.send({
- *   from: 'noreply@hospeda.com.ar',
- *   to: 'user@example.com',
- *   subject: 'Welcome',
- *   html: '<p>Hello!</p>'
- * });
- * ```
+ * @returns Configured email client
  */
-export function createResendClient({ apiKey }: CreateResendClientInput): Resend {
-    return new Resend(apiKey);
+export function createEmailClient({ apiKey, baseUrl }: CreateEmailClientInput): EmailClient {
+    return {
+        apiKey,
+        baseUrl: baseUrl ?? DEFAULT_BASE_URL
+    };
 }
+
+/**
+ * @deprecated Use `createEmailClient` instead. Kept as a re-export so call
+ * sites that still import the Resend-named factory keep compiling during the
+ * migration.
+ */
+export const createResendClient = createEmailClient;
+
+/**
+ * @deprecated Use `CreateEmailClientInput` instead.
+ */
+export type CreateResendClientInput = CreateEmailClientInput;

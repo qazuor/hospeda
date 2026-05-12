@@ -35,7 +35,7 @@ import { HOSPEDA_ENV_VARS } from './env-registry.hospeda.js';
  * - `PUBLIC_*`  — browser-exposed variables for `apps/web` (Astro)
  * - `VITE_*`    — browser-exposed variables for `apps/admin` (TanStack / Vite)
  * - Docker      — `docker-compose.yml` service configuration
- * - System      — runtime variables set by Node.js, CI, or Vercel
+ * - System      — runtime variables set by Node.js or CI
  *
  * Use this registry as the single source of truth when:
  * - Generating `.env.example` files

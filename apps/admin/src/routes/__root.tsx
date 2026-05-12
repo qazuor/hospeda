@@ -65,8 +65,12 @@ validateAdminEnv();
 // Initialize Sentry for error tracking (only in production with valid DSN)
 initSentry();
 
-// Initialize navigation sections (register all sections with the registry)
-initializeSections();
+// Sections must be initialized lazily on the first render of RootDocument.
+// Top-level invocation breaks the Nitro/Rolldown SSR bundle: the bundler
+// emits the call before the `sections` array is assigned, producing
+// `TypeError: e is not iterable` at runtime. Module-scope guard ensures
+// it runs exactly once per process (idempotent across SSR requests).
+let sectionsInitialized = false;
 
 import appCss from '../styles.css?url';
 
@@ -125,6 +129,18 @@ export const Route = createRootRoute({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+    // Lazy section registration: ensures the `sections` array is fully
+    // assigned before `registerSections` iterates it. The module-scope
+    // guard avoids re-registering on subsequent SSR requests in the
+    // same Node process. See top-of-file note for the underlying bundle bug.
+    useState(() => {
+        if (!sectionsInitialized) {
+            initializeSections();
+            sectionsInitialized = true;
+        }
+        return null;
+    });
+
     const { data: session } = useSession();
 
     // Use useState with lazy initializer to prevent QueryClient recreation on every render

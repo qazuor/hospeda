@@ -15,7 +15,7 @@
 - **Database**: PostgreSQL with Drizzle ORM
 - **Authentication**: Better Auth
 - **Monitoring**: Sentry
-- **Deployment**: Vercel (API, Web, Admin)
+- **Deployment**: Coolify on a self-hosted VPS (API, Web, Admin) behind Cloudflare
 
 ### Architecture
 
@@ -98,16 +98,17 @@ pnpm db:fresh-dev     # Reset + push schema + seed (dev shortcut)
 pnpm build            # Build all packages
 pnpm build:api        # Build API for production
 
-# Deploy (manual fallback — normal deploys go through CI/CD)
-pnpm deploy:api       # Deploy API to Vercel production
-pnpm deploy:web       # Deploy web app to Vercel production
-pnpm deploy:admin     # Deploy admin app to Vercel production
-pnpm deploy:all       # Deploy all three apps sequentially
+# Deploy
+# Production deploys are triggered manually from the Coolify dashboard
+# (https://coolify.hospeda.com.ar) per app — auto-deploy on push is disabled
+# by policy. CI runs lint/typecheck/test only; the deploy itself is a
+# button click in Coolify after CI is green.
 
 # Environment
-pnpm env:pull         # Pull env vars from remote (Vercel / secret store)
-pnpm env:push         # Push local env vars to remote
-pnpm env:check        # Validate env vars against the registry in packages/config
+pnpm env:check:registry  # Local: confirm app schemas match @repo/config registry (CI gate)
+# Note: pnpm env:pull / env:push / env:sync / env:check are deprecated stubs.
+# They targeted Vercel (gone after Phase 16.4). Use hops env-* on the VPS for
+# remote env management. Full workflow: docs/guides/env-management.md.
 ```
 
 ### Coding Standards
@@ -208,9 +209,9 @@ Common biome errors that block commits:
 
 ## Environment Configuration
 
-See [docs/guides/environment-variables.md](docs/guides/environment-variables.md) for the full reference. Each app has its own `.env.example` in its directory (e.g., `apps/api/.env.example`).
+See [docs/guides/environment-variables.md](docs/guides/environment-variables.md) for the full reference and [docs/guides/env-management.md](docs/guides/env-management.md) for the operational workflow (local dev + Coolify prod). Each app has its own `.env.example` in its directory (e.g., `apps/api/.env.example`).
 
-The canonical registry of all env vars lives in `packages/config`. Use `pnpm env:check` to validate your local env against it.
+The canonical registry of all env vars lives in `packages/config`. Use `pnpm env:check:registry` to validate that app schemas are in sync with the registry (this is the CI gate; runs three per-app vitest suites). The legacy `pnpm env:check / env:pull / env:push / env:sync` commands are deprecated stubs that targeted the Vercel API (gone after Phase 16.4); they print a pointer to the new workflow and exit.
 
 ### Adding a new environment variable (workflow)
 
@@ -220,9 +221,11 @@ When introducing a new env var, ALL of the following must happen in the same cha
 2. **Add Zod validation** in the consuming app's `env.ts` (e.g., `apps/api/src/utils/env.ts`).
 3. **Update `.env.example`** in each consuming app with a safe placeholder value.
 4. **Document it** if its purpose is non-obvious (in the relevant `docs/` guide or app `CLAUDE.md`).
-5. **Push to Vercel** by running `pnpm env:sync` (interactive: prompts per missing var per app/env). Do this for every environment that needs the var (dev/preview/prod).
+5. **Set the value in Coolify** for every environment that needs it. Two equivalent paths:
+   - **CLI (preferred for ops):** SSH to the VPS and run `hops env-set <kind> KEY VALUE` (or `--secret` for a masked prompt). Then `hops redeploy <kind>` to pick up the change.
+   - **UI:** Open `https://coolify.hospeda.com.ar` → app (`hospeda-api-prod`, `hospeda-web-prod`, `hospeda-admin-prod`) → Environment Variables → add the new key → Save → Redeploy.
 
-> Claude operating rule: when adding/modifying env vars, after step 4 either run `pnpm env:sync` directly or, if running it would be intrusive (prompts the user), STOP and tell the user "I added env var X to the registry — run `pnpm env:sync --app=<app> --env=<env>` to push it to Vercel". Never leave a registered var without a Vercel entry.
+> Claude operating rule: when adding/modifying env vars, after step 4 STOP and tell the user "I added env var X to the registry — please set it in Coolify for `<app>` and trigger a redeploy (use `hops env-set <kind> KEY VALUE` from the VPS or the Coolify UI)". Never leave a registered var unset on the deployment platform.
 
 Key environment variables:
 
@@ -278,7 +281,7 @@ Full details: [docs/guides/dependency-policy.md](docs/guides/dependency-policy.m
 - **Billing DB schema**: `billing_customers` uses `segment` column, not `category`
 - **Pagination**: Admin routes use `page`+`pageSize` (NOT `limit`). `createAdminListRoute` rejects unknown params
 - **Env vars**: Server-side use `HOSPEDA_` prefix, client-side use `PUBLIC_` prefix (web) or `VITE_` prefix (admin)
-- **No legacy env aliasing**: Per SPEC-035, env vars are validated by Zod against `HOSPEDA_*` names exclusively in `apps/api/src/utils/env.ts` (`ApiEnvBaseSchema`). There is NO runtime mapping from unprefixed names. The only accepted exceptions are platform-injected vars (`NODE_ENV`, `CI`, `VERCEL`, `VERCEL_GIT_COMMIT_SHA`, `API_PORT`, `API_HOST`) which are read as-is. See [docs/guides/environment-variables.md](docs/guides/environment-variables.md) for the full policy.
+- **No legacy env aliasing**: Per SPEC-035, env vars are validated by Zod against `HOSPEDA_*` names exclusively in `apps/api/src/utils/env.ts` (`ApiEnvBaseSchema`). There is NO runtime mapping from unprefixed names. The only accepted exceptions are platform-injected vars (`NODE_ENV`, `CI`, `API_PORT`, `API_HOST`) which are read as-is. See [docs/guides/environment-variables.md](docs/guides/environment-variables.md) for the full policy.
 - **Auth**: NEVER check roles directly.. always use `PermissionEnum`
 - **`drizzle-kit push` is not enough**: triggers, materialized views (`search_index`), and JSONB CHECK constraints on `billing_addon_purchases` are invisible to Drizzle. After any `drizzle-kit push` or `pnpm db:fresh-dev`, run `packages/db/scripts/apply-postgres-extras.sh`. See [ADR-017](docs/decisions/ADR-017-postgres-specific-features.md) and [triggers manifest](packages/db/docs/triggers-manifest.md).
 - **LIKE wildcard injection**: NEVER use raw `ilike()` from `drizzle-orm`. Always use `safeIlike()` from `@repo/db`, which auto-escapes `%`, `_`, and `\` metacharacters. CI will reject PRs with raw `ilike()` in production source. See `packages/db/src/utils/drizzle-helpers.ts`.
