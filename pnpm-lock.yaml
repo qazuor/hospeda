@@ -1213,6 +1213,9 @@ importers:
       '@repo/logger':
         specifier: workspace:*
         version: link:../logger
+      '@repo/utils':
+        specifier: workspace:*
+        version: link:../utils
       ioredis:
         specifier: ^5.4.0
         version: 5.10.0

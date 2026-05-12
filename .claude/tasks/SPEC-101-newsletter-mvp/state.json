@@ -5,9 +5,9 @@
     "created": "2026-05-11T00:00:00.000Z",
     "summary": {
         "totalTasks": 60,
-        "completed": 13,
-        "inProgress": 0,
-        "pending": 47,
+        "completed": 14,
+        "inProgress": 1,
+        "pending": 45,
         "deferred": 0,
         "blocked": 0,
         "criticalPath": [
@@ -547,7 +547,7 @@
             "phase": "phase1_foundation",
             "layer": "service",
             "complexity": 4,
-            "status": "pending",
+            "status": "in_progress",
             "dependsOn": ["T-101-09", "T-101-12"],
             "blocks": ["T-101-26", "T-101-27", "T-101-28", "T-101-29", "T-101-30", "T-101-31"],
             "tags": ["phase1_foundation", "service"],
@@ -584,7 +584,7 @@
             "phase": "phase1_foundation",
             "layer": "service",
             "complexity": 3,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-08"],
             "blocks": ["T-101-16", "T-101-14"],
             "tags": ["phase1_foundation", "service", "notifications"],
@@ -609,9 +609,10 @@
             },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-12T22:30:00.000Z",
+                "completed": "2026-05-12T23:40:00.000Z"
+            },
+            "notes": "Implemented inline (not delegated). Renderer moved to packages/utils/src/tiptap-renderer.ts with new horizontalRule case. Re-exported from packages/utils index. Email transformer added at packages/notifications/src/utils/tiptap-email-renderer.ts: regex-based inline style injection for <p>/<h1-h4>/<img>/<ul>/<ol>/<li>/<blockquote>/<pre>/<code>/<a>/<hr/>; defence-in-depth strip of <script>/<style>/<iframe>/<object>/<embed>/<form>/<link>/<meta>/on* handlers. Added @repo/utils to @repo/notifications deps. Deleted apps/web/src/lib/tiptap-renderer.ts (had ZERO importers — only listed in vitest.config.ts coverage exclusions, which was also cleaned). Tests: 28 for base renderer in @repo/utils, 12 for email transformer in @repo/notifications. Build chain note: @repo/utils consumes via dist/index.js so notifications needs a `pnpm --filter @repo/utils build` after any source change to utils before its tests can import the new exports."
         },
         {
             "id": "T-101-16",
