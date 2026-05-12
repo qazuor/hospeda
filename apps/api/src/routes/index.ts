@@ -75,7 +75,7 @@ import { mediaHealthRoutes } from './health/media';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
-import { newsletterProtectedRoutes, newsletterRoutes } from './newsletter';
+import { newsletterProtectedRoutes, newsletterPublicRoutes, newsletterRoutes } from './newsletter';
 import { revalidationRouter } from './revalidation';
 import { publicSearchRoutes } from './search/public';
 import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorship';
@@ -174,6 +174,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/plans', publicBillingRoutes);
         app.route('/api/v1/public', contactRoutes);
         app.route('/api/v1/public', newsletterRoutes);
+        // SPEC-101 public newsletter — token-gated verify + unsubscribe redirects.
+        app.route('/api/v1/public/newsletter', newsletterPublicRoutes);
         app.route('/api/v1/public/feedback', publicFeedbackRoutes);
 
         // Conversations (guest-owner messaging — SPEC-085)
