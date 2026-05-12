@@ -130,12 +130,15 @@ const SIX_REVIEWS: readonly ReviewCardData[] = Array.from({ length: 6 }, (_, i) 
     makeReview(`r${i + 1}`)
 );
 
-// ─── Lazy import (after mocks) ────────────────────────────────────────────────
+// ─── Component import (vi.mock is hoisted, so mocks are wired before this) ──
 
-// Importing the SUT after vi.mock calls ensures the mocks are wired.
-async function importComponent() {
-    return await import('../../src/components/sections/TestimonialsCarousel.client');
-}
+// Vitest hoists `vi.mock` / `vi.hoisted` above all imports, so the SUT can be
+// imported statically here without breaking the mocks. The previous version
+// of this file used a lazy `await import()` per test, but on CI's sharded
+// coverage runs the v8 instrumentation pushed the first dynamic import past
+// the 5–15s test timeout. Resolving the module once at file load eliminates
+// the flake without losing mock determinism.
+import { TestimonialsCarousel } from '../../src/components/sections/TestimonialsCarousel.client';
 
 // ─── T-086: dot count ─────────────────────────────────────────────────────────
 
@@ -156,8 +159,6 @@ describe('TestimonialsCarousel — dot count', () => {
     });
 
     it('renders one navigation dot per scroll snap (3 dots for 6 reviews @ slidesToScroll:2)', async () => {
-        const { TestimonialsCarousel } = await importComponent();
-
         render(
             <TestimonialsCarousel
                 reviews={SIX_REVIEWS}
@@ -191,8 +192,6 @@ describe('TestimonialsCarousel — next button and autoplay pause', () => {
     });
 
     it('calls scrollNext exactly once when the next arrow button is clicked', async () => {
-        const { TestimonialsCarousel } = await importComponent();
-
         render(
             <TestimonialsCarousel
                 reviews={SIX_REVIEWS}
@@ -210,8 +209,6 @@ describe('TestimonialsCarousel — next button and autoplay pause', () => {
     });
 
     it('pauses autoplay (calls plugin.stop) when the carousel is hovered', async () => {
-        const { TestimonialsCarousel } = await importComponent();
-
         render(
             <TestimonialsCarousel
                 reviews={SIX_REVIEWS}
