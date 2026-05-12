@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 76 24" role="img" aria-label="Mercado Pago">
+  <rect x="0.5" y="0.5" width="75" height="23" rx="3" fill="none" stroke="currentColor" stroke-opacity="0.35"/>
+  <g transform="translate(6 6)">
+    <path d="M2 6 Q4 1 8 3 Q12 5 14 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="9" cy="6" r="1" fill="currentColor"/>
+  </g>
+  <text x="48" y="16" font-family="'Geologica', system-ui, sans-serif" font-size="7.5" font-weight="700" text-anchor="middle" fill="currentColor" letter-spacing="0.4">MERCADO PAGO</text>
+</svg>
