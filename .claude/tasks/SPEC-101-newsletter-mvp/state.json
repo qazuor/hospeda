@@ -5,9 +5,9 @@
     "created": "2026-05-11T00:00:00.000Z",
     "summary": {
         "totalTasks": 60,
-        "completed": 4,
+        "completed": 5,
         "inProgress": 0,
-        "pending": 56,
+        "pending": 55,
         "deferred": 0,
         "blocked": 0,
         "criticalPath": [
@@ -242,24 +242,29 @@
             "phase": "phase1_foundation",
             "layer": "db",
             "complexity": 3,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-04", "T-101-05"],
             "blocks": ["T-101-07", "T-101-08"],
             "tags": ["phase1_foundation", "db", "schema", "migration"],
             "files": [
-                "packages/db/src/schemas/newsletter/newsletter-campaign-delivery.table.ts",
-                "packages/db/src/migrations/manual/0027_newsletter_subscriber_unique_active.sql",
-                "packages/db/src/migrations/manual/0028_newsletter_delivery_constraints.sql"
+                "packages/schemas/src/enums/newsletter-delivery-status.enum.ts",
+                "packages/schemas/src/enums/newsletter-delivery-status.schema.ts",
+                "packages/schemas/src/enums/index.ts",
+                "packages/db/src/schemas/enums.dbschema.ts",
+                "packages/db/src/schemas/newsletter/newsletter_campaign_deliveries.dbschema.ts",
+                "packages/db/src/schemas/newsletter/index.ts",
+                "packages/db/src/migrations/manual/0022_newsletter_subscriber_unique_active.sql",
+                "packages/db/src/migrations/manual/0023_newsletter_delivery_constraints.sql"
             ],
             "acceptanceCriteria": [
                 "Delivery table has all columns from tech-analysis §2.1 (no deletedAt — immutable)",
-                "newsletterDeliveryStatusEnum declared",
-                "Manual SQL 0027 creates partial unique index on newsletter_subscribers(user_id, channel) WHERE deleted_at IS NULL",
-                "Manual SQL 0028 creates unique index on newsletter_campaign_deliveries(campaign_id, subscriber_id, channel) and partial pending index",
-                "Both SQL files added to apply-postgres-extras.sh in order before 0029",
-                "pnpm typecheck passes in packages/db"
+                "NewsletterDeliveryStatusEnum declared in @repo/schemas + PgEnum in @repo/db",
+                "Manual SQL 0022 creates partial unique index on newsletter_subscribers(user_id, channel) WHERE deleted_at IS NULL",
+                "Manual SQL 0023 creates unique index on newsletter_campaign_deliveries(campaign_id, subscriber_id, channel) and partial pending index on (campaign_id) WHERE status='pending'",
+                "Manual SQL files apply automatically via apply-postgres-extras.sh (script iterates *.sql in lex order)",
+                "pnpm typecheck passes in @repo/schemas and @repo/db"
             ],
-            "description": "Create newsletter-campaign-delivery.table.ts per tech-analysis §2.1. Create manual SQL files 0027 and 0028. Register them in apply-postgres-extras.sh. The delivery table has no deletedAt — records are immutable, cancelled via status='skipped'. Partial unique indexes cannot be expressed in Drizzle and must go in manual SQL.",
+            "description": "Create newsletter_campaign_deliveries.dbschema.ts per tech-analysis §2.1. Create manual SQL files 0022 (subscriber partial unique) and 0023 (delivery constraints). The delivery table has no deletedAt — records are immutable, cancelled via status='skipped'.",
             "qualityGate": {
                 "lint": "pass",
                 "typecheck": "pass",
@@ -267,9 +272,10 @@
             },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-12T19:45:00.000Z",
+                "completed": "2026-05-12T19:55:00.000Z"
+            },
+            "notes": "SQL numbers SHIFTED from tech-analysis 0027/0028 to 0022/0023 because the live main branch only had files up to 0021 (no gap to skip). apply-postgres-extras.sh auto-iterates by lexical order so no shell-script edit was needed. Delivery `channel` column intentionally stored as varchar(20) not the NewsletterChannelPgEnum — keeps the future UNIQUE expression simple and matches partial-index column type expectations."
         },
         {
             "id": "T-101-07",
