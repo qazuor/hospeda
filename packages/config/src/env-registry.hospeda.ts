@@ -32,9 +32,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api', 'web', 'admin'],
         category: 'core',
         howToObtain:
-            'Where the Hono API lives. Local: http://localhost:3001. Preview: https://api-<branch>-<team>.vercel.app. Production: https://api.hospeda.com.ar (or your real domain).',
+            'Where the Hono API lives. Local: http://localhost:3001. Production: https://api.hospeda.com.ar (Coolify-managed deployment on the VPS).',
         howToObtainEs:
-            'Donde corre la API de Hono. Local: http://localhost:3001. Preview: https://api-<branch>-<team>.vercel.app. Producción: https://api.hospeda.com.ar (o tu dominio real).'
+            'Donde corre la API de Hono. Local: http://localhost:3001. Producción: https://api.hospeda.com.ar (deploy gestionado por Coolify en el VPS).'
     },
     {
         name: 'HOSPEDA_SITE_URL',
@@ -66,6 +66,23 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'Donde corre el dashboard de admin (TanStack Start). Local: http://localhost:3000. Producción: https://admin.hospeda.com.ar (o tu subdominio real). La API la usa para CORS.'
     },
+    {
+        name: 'HOSPEDA_EXTRA_TRUSTED_ORIGINS',
+        description:
+            'Comma-separated extra trusted origins. Applied to BOTH the Hono CORS allow-list and the Better Auth trustedOrigins (single source of truth). Used for hostname aliases beyond HOSPEDA_SITE_URL / HOSPEDA_ADMIN_URL — e.g. staging.hospeda.com.ar during pre-launch. Without this, sign-up and OAuth flows from those aliases get rejected with a CORS / origin-not-trusted error.',
+        descriptionEs:
+            'Lista CSV de orígenes trusted adicionales. Se aplica TANTO al allow-list de CORS de Hono COMO a Better Auth trustedOrigins (única fuente de verdad). Se usa para alias de hostname más allá de HOSPEDA_SITE_URL / HOSPEDA_ADMIN_URL — ej: staging.hospeda.com.ar durante pre-launch. Sin esto, signup y OAuth desde esos alias se rechazan con CORS / origin-not-trusted.',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'https://staging.hospeda.com.ar,https://staging-admin.hospeda.com.ar',
+        apps: ['api'],
+        category: 'core',
+        howToObtain:
+            'Comma-separated list of full URLs (with https:// prefix, no trailing slash). Include any hostname aliased to the same prod containers that initiates auth requests. Example for pre-launch: https://staging.hospeda.com.ar,https://staging-admin.hospeda.com.ar',
+        howToObtainEs:
+            'Lista CSV de URLs completas (con https://, sin trailing slash). Incluí cualquier hostname aliased a los containers prod que inicie requests de auth. Ejemplo pre-launch: https://staging.hospeda.com.ar,https://staging-admin.hospeda.com.ar'
+    },
 
     // -------------------------------------------------------------------------
     // Database
@@ -81,9 +98,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api', 'seed'],
         category: 'database',
         howToObtain:
-            'Format: postgresql://USER:PASSWORD@HOST:PORT/DBNAME. For local dev use the Docker compose values (default: postgresql://hospeda_user:hospeda_pass@localhost:5436/hospeda_dev). For prod/preview use the Neon connection string from the Vercel Marketplace integration.',
+            'Format: postgresql://USER:PASSWORD@HOST:PORT/DBNAME. For local dev use the Docker compose values (default: postgresql://hospeda_user:hospeda_pass@localhost:5436/hospeda_dev). In production read the connection string from the Coolify-managed Postgres service on the VPS.',
         howToObtainEs:
-            'Formato: postgresql://USUARIO:PASSWORD@HOST:PUERTO/BASE. Para dev local usá los valores del Docker compose (default: postgresql://hospeda_user:hospeda_pass@localhost:5436/hospeda_dev). Para prod/preview usá la connection string de Neon que te da la integración de Vercel Marketplace.'
+            'Formato: postgresql://USUARIO:PASSWORD@HOST:PUERTO/BASE. Para dev local usá los valores del Docker compose (default: postgresql://hospeda_user:hospeda_pass@localhost:5436/hospeda_dev). En producción tomá la connection string del servicio Postgres gestionado por Coolify en el VPS.'
     },
     {
         name: 'HOSPEDA_DB_POOL_MAX_CONNECTIONS',
@@ -97,9 +114,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'database',
         howToObtain:
-            'Max simultaneous Postgres connections per app instance. Default 10. Lower it if your DB has a hard cap (Neon free tier = 100 total).',
+            'Max simultaneous Postgres connections per app instance. Default 10. Lower it if your Postgres instance has a hard cap or if you run multiple replicas of the API.',
         howToObtainEs:
-            'Conexiones simultáneas máximas a Postgres por instancia de la app. Por defecto 10. Bajalo si tu DB tiene un tope (Neon free tier = 100 total).'
+            'Conexiones simultáneas máximas a Postgres por instancia de la app. Por defecto 10. Bajalo si tu Postgres tiene un tope o si corrés varias réplicas de la API.'
     },
     {
         name: 'HOSPEDA_DB_POOL_IDLE_TIMEOUT_MS',
@@ -129,9 +146,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'database',
         howToObtain:
-            'How long to wait for a free connection before failing the request (ms). Default 5000 (5s) — chosen as a sane balance for serverless cold starts on Neon. Lower it on warm long-running instances if you want faster fail-fast.',
+            'How long to wait for a free connection before failing the request (ms). Default 5000 (5s) — fine for the long-running Node server on the VPS. Lower it if you want faster fail-fast under load.',
         howToObtainEs:
-            'Cuánto tiempo esperar una conexión libre antes de fallar el request (ms). Por defecto 5000 (5s) — elegido como balance sano para cold starts en serverless con Neon. Bajalo en instancias warm largas si querés fail-fast más rápido.'
+            'Cuánto tiempo esperar una conexión libre antes de fallar el request (ms). Por defecto 5000 (5s) — adecuado para el server Node long-running en el VPS. Bajalo si querés fail-fast más rápido bajo carga.'
     },
     {
         name: 'HOSPEDA_SEED_SUPER_ADMIN_PASSWORD',
@@ -296,9 +313,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'cache',
         howToObtain:
-            'Format: redis://[user:pass@]host:port. Local: redis://localhost:6381 (Docker compose — port offset from default 6379 to avoid clashing with system Redis). Production: use Vercel Marketplace → Upstash Redis (gives you a redis://default:TOKEN@... URL). NOTE: hard-required in production — startup will fail if missing.',
+            'Format: redis://[user:pass@]host:port. Local: redis://localhost:6381 (Docker compose — port offset from default 6379 to avoid clashing with system Redis). Production: use the Coolify-managed Redis service on the VPS (internal docker network URL). NOTE: hard-required in production — startup will fail if missing.',
         howToObtainEs:
-            'Formato: redis://[usuario:pass@]host:puerto. Local: redis://localhost:6381 (Docker compose — puerto desplazado del default 6379 para no chocar con un Redis del sistema). Producción: usá Vercel Marketplace → Upstash Redis (te da una URL tipo redis://default:TOKEN@...). OJO: en producción es obligatoria — el startup falla si queda vacía.'
+            'Formato: redis://[usuario:pass@]host:puerto. Local: redis://localhost:6381 (Docker compose — puerto desplazado del default 6379 para no chocar con un Redis del sistema). Producción: usá el servicio Redis gestionado por Coolify en el VPS (URL de la red docker interna). OJO: en producción es obligatoria — el startup falla si queda vacía.'
     },
     {
         name: 'HOSPEDA_RATE_LIMIT_BACKEND',
@@ -416,23 +433,41 @@ export const HOSPEDA_ENV_VARS = [
     // Email
     // -------------------------------------------------------------------------
     {
-        name: 'HOSPEDA_RESEND_API_KEY',
-        description: 'Resend email API key',
-        descriptionEs: 'API key de Resend para envío de mails',
+        name: 'HOSPEDA_EMAIL_API_KEY',
+        description: 'Transactional email provider API key (currently Brevo)',
+        descriptionEs: 'API key del proveedor de email transaccional (actualmente Brevo)',
         type: 'string',
         required: false,
         secret: true,
-        exampleValue: 're_xxxx',
+        exampleValue: 'xkeysib-xxxx',
         apps: ['api'],
         category: 'email',
-        helpUrl: 'https://resend.com/api-keys',
+        helpUrl: 'https://app.brevo.com/settings/keys/api',
         howToObtain:
-            'Sign up at resend.com → API Keys → Create API key → choose "Sending access" → copy the key starting with "re_". Verify your sending domain first under Domains.',
+            'Brevo dashboard → SMTP & API → API Keys → Generate a new API key → copy the value starting with "xkeysib-". Authenticate your sending domain first under Senders, Domains & Dedicated IPs.',
         howToObtainEs:
-            'Registrate en resend.com → API Keys → Create API key → elegí "Sending access" → copiá la key que empieza con "re_". Antes verificá tu dominio de envío en Domains.'
+            'Brevo dashboard → SMTP & API → API Keys → Generate a new API key → copiá el valor que empieza con "xkeysib-". Antes autenticá tu dominio de envío en Senders, Domains & Dedicated IPs.'
     },
     {
-        name: 'HOSPEDA_RESEND_FROM_EMAIL',
+        name: 'HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID',
+        description:
+            'Numeric Brevo Contacts list ID for PRE-LAUNCH newsletter signups (the coming-soon landing form at hospeda.com.ar, POST /api/v1/public/newsletter). Distinct from any post-launch newsletter list so cohorts stay separated. Reuses HOSPEDA_EMAIL_API_KEY for auth.',
+        descriptionEs:
+            'ID numérico de la lista de Contactos Brevo para los signups del newsletter PRE-LAUNCH (form de coming-soon en hospeda.com.ar, POST /api/v1/public/newsletter). Distinta de cualquier lista post-launch para mantener cohortes separadas. Reusa HOSPEDA_EMAIL_API_KEY para autenticarse.',
+        type: 'number',
+        required: false,
+        secret: false,
+        exampleValue: '7',
+        apps: ['api'],
+        category: 'email',
+        helpUrl: 'https://app.brevo.com/contact/list-listing',
+        howToObtain:
+            'Brevo dashboard → Contacts → Lists → create or open the target list → the numeric ID is shown in the URL (.../list/<ID>) and in the list header. Copy that integer. The same HOSPEDA_EMAIL_API_KEY is used to authenticate the request.',
+        howToObtainEs:
+            'Dashboard de Brevo → Contacts → Lists → crear o abrir la lista destino → el ID numérico aparece en la URL (.../list/<ID>) y en el header de la lista. Copiá ese entero. Se usa la misma HOSPEDA_EMAIL_API_KEY para autenticar el request.'
+    },
+    {
+        name: 'HOSPEDA_EMAIL_FROM_EMAIL',
         description: 'Sender email address',
         descriptionEs: 'Dirección de email del remitente',
         type: 'string',
@@ -442,12 +477,12 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'email',
         howToObtain:
-            'A "From" address using a domain you have verified in Resend (e.g. noreply@yourdomain.com). Cannot use a Gmail/Yahoo address — must be your own domain.',
+            'A "From" address using a domain authenticated in your email provider (e.g. noreply@yourdomain.com). Cannot use a free-mail address (Gmail/Yahoo); must be on a domain you control.',
         howToObtainEs:
-            'Dirección "From" usando un dominio que ya verificaste en Resend (ej: noreply@tudominio.com). NO podés usar Gmail/Yahoo; tiene que ser tu propio dominio.'
+            'Dirección "From" usando un dominio autenticado en tu proveedor de email (ej: noreply@tudominio.com). NO podés usar Gmail/Yahoo; tiene que ser un dominio tuyo.'
     },
     {
-        name: 'HOSPEDA_RESEND_FROM_NAME',
+        name: 'HOSPEDA_EMAIL_FROM_NAME',
         description: 'Sender display name',
         descriptionEs: 'Nombre visible del remitente',
         type: 'string',
@@ -482,89 +517,22 @@ export const HOSPEDA_ENV_VARS = [
     // Cron
     // -------------------------------------------------------------------------
     {
-        name: 'HOSPEDA_CRON_SECRET',
-        description:
-            'Cron endpoint auth secret. Min 32 chars enforced by Zod. REQUIRED in production (superRefine in apps/api/src/utils/env.ts rejects startup if empty when NODE_ENV=production).',
-        descriptionEs:
-            'Secreto de autenticación para los endpoints de cron. Mínimo 32 caracteres validado por Zod. OBLIGATORIO en producción (un superRefine en apps/api/src/utils/env.ts rechaza el startup si queda vacío con NODE_ENV=production).',
-        type: 'string',
-        required: false,
-        secret: true,
-        exampleValue: 'Tg7L9m2N0p1Q3r4S5t6U7v8W9x0Y1z2A3b4C5d6E7f8=',
-        apps: ['api'],
-        category: 'cron',
-        howToObtain:
-            'Generate with:  openssl rand -base64 32  — protects /api/cron/* endpoints from being triggered by anyone outside your scheduler. Must match what you configure in QStash (or Vercel Cron). Required in production: startup will fail if missing.',
-        howToObtainEs:
-            'Generalo con:  openssl rand -base64 32  — protege los endpoints /api/cron/* para que solo los pueda disparar tu scheduler. Tiene que coincidir con lo que configures en QStash (o Vercel Cron). Obligatorio en producción: el startup falla si queda vacío.'
-    },
-    {
         name: 'HOSPEDA_CRON_ADAPTER',
-        description: 'Cron scheduler type',
-        descriptionEs: 'Tipo de scheduler de cron',
+        description:
+            'Cron scheduler type. Use "node-cron" in production (in-process scheduling on the VPS) and "manual" in dev/tests/CI when a human or test harness triggers jobs.',
+        descriptionEs:
+            'Tipo de scheduler de cron. Usá "node-cron" en producción (scheduling in-process en el VPS) y "manual" en dev/tests/CI cuando los jobs los dispara una persona o el test harness.',
         type: 'enum',
         required: false,
         secret: false,
         exampleValue: 'manual',
-        enumValues: ['manual', 'vercel', 'qstash', 'node-cron'] as const,
+        enumValues: ['manual', 'node-cron'] as const,
         apps: ['api'],
         category: 'cron',
         howToObtain:
-            'Pick one: "manual" (no scheduler, dev only), "vercel" (Vercel Cron — free tier limited), "qstash" (Upstash QStash — recommended for prod), "node-cron" (in-process, single instance only).',
+            'Pick "node-cron" for production VPS deploys (the API process schedules and runs all jobs itself). Pick "manual" for dev/tests/CI where jobs are triggered through the admin panel or test fixtures.',
         howToObtainEs:
-            'Elegí uno: "manual" (sin scheduler, solo dev), "vercel" (Vercel Cron, free tier limitado), "qstash" (Upstash QStash — recomendado para prod), "node-cron" (in-process, solo single-instance).'
-    },
-    {
-        name: 'QSTASH_TOKEN',
-        description:
-            'Upstash QStash bearer token. Used by scripts/setup-qstash-schedules.ts to provision schedules; not consumed at runtime.',
-        descriptionEs:
-            'Token bearer de Upstash QStash. Lo usa scripts/setup-qstash-schedules.ts para provisionar schedules; no se consume en runtime.',
-        type: 'string',
-        required: false,
-        secret: true,
-        exampleValue: 'eyJ...',
-        apps: ['api'],
-        category: 'cron',
-        helpUrl: 'https://console.upstash.com/qstash',
-        howToObtain:
-            'Upstash Console → QStash → "Details" tab → copy the QSTASH_TOKEN. Free tier: 500 messages/day. Required only when HOSPEDA_CRON_ADAPTER=qstash.',
-        howToObtainEs:
-            'Consola de Upstash → QStash → tab "Details" → copiá el QSTASH_TOKEN. Free tier: 500 mensajes/día. Solo es necesario cuando HOSPEDA_CRON_ADAPTER=qstash.'
-    },
-    {
-        name: 'QSTASH_CURRENT_SIGNING_KEY',
-        description: 'Current Upstash QStash signing key. Verifies incoming cron signatures.',
-        descriptionEs:
-            'Signing key actual de Upstash QStash. Verifica las firmas de los cron entrantes.',
-        type: 'string',
-        required: false,
-        secret: true,
-        exampleValue: 'sig_...',
-        apps: ['api'],
-        category: 'cron',
-        helpUrl: 'https://console.upstash.com/qstash',
-        howToObtain:
-            'Upstash Console → QStash → "Details" tab → "Signing Keys" section → copy "Current Signing Key". Used to verify that incoming cron POSTs really came from QStash.',
-        howToObtainEs:
-            'Consola de Upstash → QStash → tab "Details" → sección "Signing Keys" → copiá "Current Signing Key". Sirve para verificar que los POSTs entrantes realmente vienen de QStash.'
-    },
-    {
-        name: 'QSTASH_NEXT_SIGNING_KEY',
-        description: 'Next Upstash QStash signing key. Accepted during key rotation.',
-        descriptionEs:
-            'Próxima signing key de Upstash QStash. Se acepta durante la rotación de keys.',
-        type: 'string',
-        required: false,
-        secret: true,
-        exampleValue: 'sig_...',
-        apps: ['api'],
-        category: 'cron',
-        helpUrl: 'https://console.upstash.com/qstash',
-        howToObtain:
-            'Upstash Console → QStash → "Details" tab → "Signing Keys" section → copy "Next Signing Key". Used during key rotation; both keys are accepted simultaneously.',
-        howToObtainEs:
-            'Consola de Upstash → QStash → tab "Details" → sección "Signing Keys" → copiá "Next Signing Key". Se usa durante la rotación; ambas keys se aceptan simultáneamente.'
+            'Elegí "node-cron" para deploys productivos en el VPS (el proceso de la API agenda y ejecuta los jobs). Elegí "manual" para dev/tests/CI donde los jobs los dispara el panel admin o los fixtures de tests.'
     },
     {
         name: 'HOSPEDA_REVALIDATION_SECRET',
@@ -595,9 +563,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'cron',
         howToObtain:
-            'Standard 5-field cron expression. Default "0 * * * *" = top of every hour. Hospeda uses QStash (HOSPEDA_CRON_ADAPTER=qstash) which has no per-day quota, so the hourly default is the right value. Use crontab.guru to compose other schedules. Examples: "*/15 * * * *" (every 15 min), "0 3 * * *" (3 AM daily). NOTE: if you switch to Vercel Cron on a Hobby plan you must lower the frequency — Hobby caps at 1 run/day.',
+            'Standard 5-field cron expression. Default "0 * * * *" = top of every hour. Hospeda runs cron in-process via node-cron on the VPS, so there is no per-day quota — the hourly default is fine. Use crontab.guru to compose other schedules. Examples: "*/15 * * * *" (every 15 min), "0 3 * * *" (3 AM daily).',
         howToObtainEs:
-            'Expresión cron estándar de 5 campos. Por defecto "0 * * * *" = inicio de cada hora. Hospeda usa QStash (HOSPEDA_CRON_ADAPTER=qstash) que no tiene quota por día, así que el default por hora es el valor correcto. Usá crontab.guru para otros schedules. Ejemplos: "*/15 * * * *" (cada 15 min), "0 3 * * *" (3 AM diario). OJO: si cambiás a Vercel Cron en plan Hobby tenés que bajar la frecuencia — Hobby limita a 1 run/día.'
+            'Expresión cron estándar de 5 campos. Por defecto "0 * * * *" = inicio de cada hora. Hospeda corre cron in-process con node-cron en el VPS, así que no hay quota por día — el default por hora va bien. Usá crontab.guru para otros schedules. Ejemplos: "*/15 * * * *" (cada 15 min), "0 3 * * *" (3 AM diario).'
     },
 
     // -------------------------------------------------------------------------
@@ -846,10 +814,8 @@ export const HOSPEDA_ENV_VARS = [
     },
     {
         name: 'HOSPEDA_MEDIA_MAX_FILE_SIZE_MB',
-        description:
-            'Maximum upload file size in megabytes (values above 4.5 require Vercel Pro plan)',
-        descriptionEs:
-            'Tamaño máximo de archivo a subir en megabytes (valores arriba de 4.5 requieren plan Vercel Pro)',
+        description: 'Maximum upload file size in megabytes',
+        descriptionEs: 'Tamaño máximo de archivo a subir en megabytes',
         type: 'number',
         required: false,
         secret: false,
@@ -858,9 +824,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api', 'seed'],
         category: 'integrations',
         howToObtain:
-            'Cap on a single uploaded file size in MB. Default 10. Vercel Hobby plan caps requests at 4.5MB — use 4 there.',
+            'Cap on a single uploaded file size in MB. Default 10. Must stay at or below the global API_BODY_LIMIT bodyLimit (currently 10MB). Lower it if a tighter cap suits your storage plan.',
         howToObtainEs:
-            'Tope al tamaño de un archivo subido en MB. Por defecto 10. El plan Hobby de Vercel limita los requests a 4.5MB; en ese caso usá 4.'
+            'Tope al tamaño de un archivo subido en MB. Por defecto 10. Tiene que ser igual o menor al bodyLimit global de la API (actualmente 10MB). Bajalo si conviene un tope más ajustado por tu plan de almacenamiento.'
     },
 
     // -------------------------------------------------------------------------
@@ -955,9 +921,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'monitoring',
         howToObtain:
-            'Free-text version label that groups errors per deploy. Standard practice on Vercel: wire it to VERCEL_GIT_COMMIT_SHA so each deploy gets a unique release identifier (commit hash like "abc123def456"). Avoid semver "1.0.0" — every preview deploy would collide on the same release.',
+            'Free-text version label that groups errors per deploy. Recommended: wire it to HOSPEDA_COMMIT_SHA in CI/CD so each deploy gets a unique release identifier ("abc123def456"). Avoid semver "1.0.0" — every preview/staging deploy would collide on the same release.',
         howToObtainEs:
-            'Etiqueta de versión en texto libre que agrupa errores por deploy. Práctica estándar en Vercel: conectala a VERCEL_GIT_COMMIT_SHA así cada deploy es un release único (hash de commit tipo "abc123def456"). Evitá semver "1.0.0" — cada preview tendría colisión en el mismo release.'
+            'Etiqueta de versión en texto libre que agrupa errores por deploy. Recomendado: conectala a HOSPEDA_COMMIT_SHA en CI/CD así cada deploy es un release único ("abc123def456"). Evitá semver "1.0.0" — cada preview/staging tendría colisión en el mismo release.'
     },
     {
         name: 'HOSPEDA_SENTRY_PROJECT',
@@ -1086,9 +1052,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'build',
         howToObtain:
-            'On Vercel this is auto-set from VERCEL_GIT_COMMIT_SHA — usually leave blank locally. Used to tie API responses to a specific git commit (helps debugging "which version was running").',
+            'In CI/CD set this to the deployed git SHA (Coolify on the VPS does this automatically when wired up). Local: leave blank. Used to tie API responses to a specific commit so "which version was running?" is answerable from any error report.',
         howToObtainEs:
-            'En Vercel se autocompleta desde VERCEL_GIT_COMMIT_SHA; en local típicamente lo dejás vacío. Sirve para atar las respuestas de la API a un commit de git específico (ayuda a debuggear "qué versión estaba corriendo").'
+            'En CI/CD seteala al SHA del commit deployado (Coolify lo hace solo en el VPS si está conectado). En local: dejala vacía. Sirve para atar las respuestas de la API a un commit específico, así "qué versión estaba corriendo" se puede responder desde cualquier reporte de error.'
     },
     {
         name: 'HOSPEDA_SUPPORTED_LOCALES',

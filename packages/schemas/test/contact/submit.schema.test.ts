@@ -93,24 +93,22 @@ describe('ContactSubmitSchema', () => {
         });
     });
 
-    describe('accommodationId conditional requirement', () => {
-        it('should reject type=accommodation without accommodationId', () => {
-            // Arrange
+    describe('accommodationId is optional regardless of type', () => {
+        // Historical note: pre-2026-05 the schema enforced
+        //   type === 'accommodation' → accommodationId required.
+        // The contact form expansion (9 categories) removed that
+        // constraint — `accommodation` is now a DEPRECATED legacy
+        // value kept for schema-compat, and the form no longer
+        // surfaces an accommodation-specific flow. accommodationId
+        // is plain-optional now.
+        it('should accept type=accommodation without accommodationId', () => {
             const input = {
                 ...VALID_GENERAL,
                 type: 'accommodation' as const
                 // accommodationId intentionally absent
             };
-
-            // Act
             const result = ContactSubmitSchema.safeParse(input);
-
-            // Assert
-            expect(result.success).toBe(false);
-            if (!result.success) {
-                const paths = result.error.issues.map((i) => i.path.join('.'));
-                expect(paths).toContain('accommodationId');
-            }
+            expect(result.success).toBe(true);
         });
 
         it('should accept type=general without accommodationId', () => {
@@ -216,9 +214,11 @@ describe('ContactSubmitSchema', () => {
 
     describe('type validation', () => {
         it('should reject an unknown type value', () => {
+            // `support` is now a VALID enum value (added with the 9-category
+            // expansion). Use a clearly bogus string instead.
             const result = ContactSubmitSchema.safeParse({
                 ...VALID_GENERAL,
-                type: 'support' as 'general'
+                type: 'this-is-not-a-valid-contact-type' as 'general'
             });
             expect(result.success).toBe(false);
         });

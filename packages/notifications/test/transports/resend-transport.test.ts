@@ -1,40 +1,39 @@
 /**
- * Resend Email Transport Test Suite
+ * BrevoEmailTransport (formerly ResendEmailTransport) test suite.
  *
- * Tests for the Resend email transport implementation including:
- * - Successful email sending with message ID
- * - API error handling (Error object, string, null)
- * - Missing message ID in response
- * - Network error handling
- * - From override vs default from address
- * - replyTo and tags passthrough
+ * Validates the email transport against the Brevo REST API, mocked through
+ * a fake `fetch`. We don't depend on a real network; we just check that the
+ * transport encodes the request correctly and surfaces both success and
+ * error responses cleanly.
  *
  * @module test/transports/resend-transport.test
  */
 
 import type { ReactElement } from 'react';
-import type { Resend } from 'resend';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('@react-email/render', () => ({
+    render: vi.fn().mockResolvedValue('<html><body>rendered</body></html>')
+}));
+
+import type { EmailClient } from '../../src/config/resend.config';
 import { NOTIFICATION_CONSTANTS } from '../../src/constants/notification.constants';
 import type { SendEmailInput } from '../../src/transports/email/email-transport.interface';
-import { ResendEmailTransport } from '../../src/transports/email/resend-transport';
+import { BrevoEmailTransport } from '../../src/transports/email/resend-transport';
 
-/**
- * Creates a mock Resend client with a controllable emails.send method
- */
-function createMockResend(): { client: Resend; sendMock: ReturnType<typeof vi.fn> } {
-    const sendMock = vi.fn();
-    const client = {
-        emails: {
-            send: sendMock
-        }
-    } as unknown as Resend;
-    return { client, sendMock };
+const TEST_CLIENT: EmailClient = {
+    apiKey: 'xkeysib-test',
+    baseUrl: 'https://api.test.example/v3'
+};
+
+function jsonResponse(body: unknown, init?: ResponseInit): Response {
+    return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        ...init
+    });
 }
 
-/**
- * Creates a valid SendEmailInput for testing
- */
 function createTestInput(overrides?: Partial<SendEmailInput>): SendEmailInput {
     return {
         to: 'recipient@example.com',
@@ -44,362 +43,226 @@ function createTestInput(overrides?: Partial<SendEmailInput>): SendEmailInput {
     };
 }
 
-/**
- * Default options used in tests that match NOTIFICATION_CONSTANTS defaults.
- * These are required because ResendEmailTransport constructor mandates options.
- */
 const DEFAULT_TRANSPORT_OPTIONS = {
     fromEmail: NOTIFICATION_CONSTANTS.DEFAULT_FROM_EMAIL,
     fromName: NOTIFICATION_CONSTANTS.DEFAULT_FROM_NAME
 } as const;
 
-describe('ResendEmailTransport', () => {
-    let mockResend: ReturnType<typeof createMockResend>;
+describe('BrevoEmailTransport', () => {
+    let fetchMock: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-        mockResend = createMockResend();
-        vi.unstubAllEnvs();
+        fetchMock = vi.fn();
+        vi.stubGlobal('fetch', fetchMock);
     });
 
-    describe('constructor', () => {
-        it('should use default from address when options match NOTIFICATION_CONSTANTS', async () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        vi.clearAllMocks();
+    });
+
+    describe('successful send', () => {
+        it('should resolve with the provider message ID', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(
-                mockResend.client,
-                DEFAULT_TRANSPORT_OPTIONS
-            );
-            const input = createTestInput();
-            mockResend.sendMock.mockResolvedValue({ data: { id: 'msg_123' } });
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
 
             // Act
-            await transport.send(input);
+            const result = await transport.send(createTestInput());
 
             // Assert
-            expect(mockResend.sendMock).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    from: `${NOTIFICATION_CONSTANTS.DEFAULT_FROM_NAME} <${NOTIFICATION_CONSTANTS.DEFAULT_FROM_EMAIL}>`
+            expect(result.messageId).toBe('<msg@brevo>');
+        });
+
+        it('should POST to /smtp/email with auth headers', async () => {
+            // Arrange
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            // Act
+            await transport.send(createTestInput());
+
+            // Assert
+            const [url, init] = fetchMock.mock.calls[0] ?? [];
+            expect(url).toBe('https://api.test.example/v3/smtp/email');
+            expect((init as RequestInit).method).toBe('POST');
+            const headers = (init as RequestInit).headers as Record<string, string>;
+            expect(headers['api-key']).toBe('xkeysib-test');
+            expect(headers['content-type']).toBe('application/json');
+        });
+
+        it('should default to fromEmail/fromName when no `from` is provided', async () => {
+            // Arrange
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            // Act
+            await transport.send(createTestInput());
+
+            // Assert
+            const [, init] = fetchMock.mock.calls[0] ?? [];
+            const body = JSON.parse((init as RequestInit).body as string);
+            expect(body.sender).toEqual({
+                email: NOTIFICATION_CONSTANTS.DEFAULT_FROM_EMAIL,
+                name: NOTIFICATION_CONSTANTS.DEFAULT_FROM_NAME
+            });
+        });
+
+        it('should accept Resend-style "Name <email>" override and split it', async () => {
+            // Arrange
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            // Act
+            await transport.send(
+                createTestInput({ from: 'Custom Sender <custom@hospeda.com.ar>' })
+            );
+
+            // Assert
+            const [, init] = fetchMock.mock.calls[0] ?? [];
+            const body = JSON.parse((init as RequestInit).body as string);
+            expect(body.sender).toEqual({
+                email: 'custom@hospeda.com.ar',
+                name: 'Custom Sender'
+            });
+        });
+
+        it('should accept a plain email override without a name', async () => {
+            // Arrange
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            // Act
+            await transport.send(createTestInput({ from: 'plain@hospeda.com.ar' }));
+
+            // Assert
+            const [, init] = fetchMock.mock.calls[0] ?? [];
+            const body = JSON.parse((init as RequestInit).body as string);
+            expect(body.sender).toEqual({ email: 'plain@hospeda.com.ar' });
+        });
+
+        it('should pass replyTo when provided', async () => {
+            // Arrange
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            // Act
+            await transport.send(createTestInput({ replyTo: 'reply@hospeda.com.ar' }));
+
+            // Assert
+            const [, init] = fetchMock.mock.calls[0] ?? [];
+            const body = JSON.parse((init as RequestInit).body as string);
+            expect(body.replyTo).toEqual({ email: 'reply@hospeda.com.ar' });
+        });
+
+        it('should encode tags as `name:value` strings (Brevo format)', async () => {
+            // Arrange
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            // Act
+            await transport.send(
+                createTestInput({
+                    tags: [
+                        { name: 'category', value: 'transactional' },
+                        { name: 'env', value: 'prod' }
+                    ]
                 })
             );
-        });
-
-        it('should use custom from options when provided', async () => {
-            // Arrange
-            const transport = new ResendEmailTransport(mockResend.client, {
-                fromEmail: 'custom@hospeda.com.ar',
-                fromName: 'Custom Sender'
-            });
-            const input = createTestInput();
-            mockResend.sendMock.mockResolvedValue({ data: { id: 'msg_123' } });
-
-            // Act
-            await transport.send(input);
 
             // Assert
-            expect(mockResend.sendMock).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    from: 'Custom Sender <custom@hospeda.com.ar>'
+            const [, init] = fetchMock.mock.calls[0] ?? [];
+            const body = JSON.parse((init as RequestInit).body as string);
+            expect(body.tags).toEqual(['category:transactional', 'env:prod']);
+        });
+
+        it('should pass attachments converting Buffer content to base64', async () => {
+            // Arrange
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            const buf = Buffer.from('hello world');
+
+            // Act
+            await transport.send(
+                createTestInput({
+                    attachments: [
+                        { filename: 'a.txt', content: buf },
+                        { filename: 'b.txt', content: 'already-base64-string' }
+                    ]
                 })
             );
-        });
-
-        it('should use provided options over any other source', async () => {
-            // Arrange - Options are injected via constructor (DI pattern)
-            const transport = new ResendEmailTransport(mockResend.client, {
-                fromEmail: 'injected@hospeda.com.ar',
-                fromName: 'Injected Sender'
-            });
-            const input = createTestInput();
-            mockResend.sendMock.mockResolvedValue({ data: { id: 'msg_123' } });
-
-            // Act
-            await transport.send(input);
 
             // Assert
-            expect(mockResend.sendMock).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    from: 'Injected Sender <injected@hospeda.com.ar>'
-                })
-            );
+            const [, init] = fetchMock.mock.calls[0] ?? [];
+            const body = JSON.parse((init as RequestInit).body as string);
+            expect(body.attachment).toEqual([
+                { name: 'a.txt', content: buf.toString('base64') },
+                { name: 'b.txt', content: 'already-base64-string' }
+            ]);
         });
     });
 
-    describe('send - success', () => {
-        it('should return message ID on successful send', async () => {
+    describe('failure modes', () => {
+        it('should throw when Brevo returns 4xx with structured error message', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(
-                mockResend.client,
-                DEFAULT_TRANSPORT_OPTIONS
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockResolvedValue(
+                jsonResponse(
+                    { code: 'invalid_parameter', message: 'API key revoked' },
+                    { status: 400, statusText: 'Bad Request' }
+                )
             );
-            const input = createTestInput();
-            mockResend.sendMock.mockResolvedValue({ data: { id: 'msg_abc123' } });
-
-            // Act
-            const result = await transport.send(input);
-
-            // Assert
-            expect(result).toEqual({ messageId: 'msg_abc123' });
-        });
-
-        it('should pass all input fields to Resend client', async () => {
-            // Arrange
-            const transport = new ResendEmailTransport(
-                mockResend.client,
-                DEFAULT_TRANSPORT_OPTIONS
-            );
-            const input = createTestInput({
-                to: 'user@test.com',
-                subject: 'Important Email',
-                replyTo: 'support@hospeda.com.ar',
-                tags: [
-                    { name: 'category', value: 'billing' },
-                    { name: 'type', value: 'payment_success' }
-                ]
-            });
-            mockResend.sendMock.mockResolvedValue({ data: { id: 'msg_456' } });
-
-            // Act
-            await transport.send(input);
-
-            // Assert
-            expect(mockResend.sendMock).toHaveBeenCalledWith({
-                from: expect.any(String),
-                to: 'user@test.com',
-                subject: 'Important Email',
-                react: expect.anything(),
-                replyTo: 'support@hospeda.com.ar',
-                tags: [
-                    { name: 'category', value: 'billing' },
-                    { name: 'type', value: 'payment_success' }
-                ]
-            });
-        });
-    });
-
-    describe('send - from override', () => {
-        it('should use input from address when provided', async () => {
-            // Arrange
-            const transport = new ResendEmailTransport(
-                mockResend.client,
-                DEFAULT_TRANSPORT_OPTIONS
-            );
-            const input = createTestInput({
-                from: 'Override Sender <override@hospeda.com.ar>'
-            });
-            mockResend.sendMock.mockResolvedValue({ data: { id: 'msg_789' } });
-
-            // Act
-            await transport.send(input);
-
-            // Assert
-            expect(mockResend.sendMock).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    from: 'Override Sender <override@hospeda.com.ar>'
-                })
-            );
-        });
-
-        it('should use default from when input from is undefined', async () => {
-            // Arrange
-            const transport = new ResendEmailTransport(
-                mockResend.client,
-                DEFAULT_TRANSPORT_OPTIONS
-            );
-            const input = createTestInput({ from: undefined });
-            mockResend.sendMock.mockResolvedValue({ data: { id: 'msg_000' } });
-
-            // Act
-            await transport.send(input);
-
-            // Assert
-            expect(mockResend.sendMock).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    from: `${NOTIFICATION_CONSTANTS.DEFAULT_FROM_NAME} <${NOTIFICATION_CONSTANTS.DEFAULT_FROM_EMAIL}>`
-                })
-            );
-        });
-    });
-
-    describe('send - replyTo and tags passthrough', () => {
-        it('should pass replyTo to Resend client', async () => {
-            // Arrange
-            const transport = new ResendEmailTransport(
-                mockResend.client,
-                DEFAULT_TRANSPORT_OPTIONS
-            );
-            const input = createTestInput({ replyTo: 'reply@hospeda.com.ar' });
-            mockResend.sendMock.mockResolvedValue({ data: { id: 'msg_reply' } });
-
-            // Act
-            await transport.send(input);
-
-            // Assert
-            expect(mockResend.sendMock).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    replyTo: 'reply@hospeda.com.ar'
-                })
-            );
-        });
-
-        it('should pass tags array to Resend client', async () => {
-            // Arrange
-            const transport = new ResendEmailTransport(
-                mockResend.client,
-                DEFAULT_TRANSPORT_OPTIONS
-            );
-            const tags = [{ name: 'environment', value: 'production' }];
-            const input = createTestInput({ tags });
-            mockResend.sendMock.mockResolvedValue({ data: { id: 'msg_tags' } });
-
-            // Act
-            await transport.send(input);
-
-            // Assert
-            expect(mockResend.sendMock).toHaveBeenCalledWith(expect.objectContaining({ tags }));
-        });
-
-        it('should pass undefined replyTo and tags when not provided', async () => {
-            // Arrange
-            const transport = new ResendEmailTransport(
-                mockResend.client,
-                DEFAULT_TRANSPORT_OPTIONS
-            );
-            const input = createTestInput();
-            mockResend.sendMock.mockResolvedValue({ data: { id: 'msg_none' } });
-
-            // Act
-            await transport.send(input);
-
-            // Assert
-            expect(mockResend.sendMock).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    replyTo: undefined,
-                    tags: undefined
-                })
-            );
-        });
-    });
-
-    describe('send - API error (Error object)', () => {
-        it('should throw with error message when API returns Error object', async () => {
-            // Arrange
-            const transport = new ResendEmailTransport(
-                mockResend.client,
-                DEFAULT_TRANSPORT_OPTIONS
-            );
-            const input = createTestInput();
-            mockResend.sendMock.mockResolvedValue({
-                error: new Error('Rate limit exceeded')
-            });
 
             // Act & Assert
-            await expect(transport.send(input)).rejects.toThrow(
-                'Failed to send email via Resend: Resend API error: Rate limit exceeded'
-            );
-        });
-    });
-
-    describe('send - API error (string)', () => {
-        it('should throw with string error when API returns string', async () => {
-            // Arrange
-            const transport = new ResendEmailTransport(
-                mockResend.client,
-                DEFAULT_TRANSPORT_OPTIONS
-            );
-            const input = createTestInput();
-            mockResend.sendMock.mockResolvedValue({
-                error: 'Invalid API key'
-            });
-
-            // Act & Assert
-            await expect(transport.send(input)).rejects.toThrow(
-                'Failed to send email via Resend: Resend API error: Invalid API key'
-            );
-        });
-    });
-
-    describe('send - API error (null)', () => {
-        it('should throw with unknown error when API returns null error', async () => {
-            // Arrange
-            const transport = new ResendEmailTransport(
-                mockResend.client,
-                DEFAULT_TRANSPORT_OPTIONS
-            );
-            const input = createTestInput();
-            mockResend.sendMock.mockResolvedValue({
-                error: null
-            });
-
-            // Act & Assert
-            await expect(transport.send(input)).rejects.toThrow(
-                'Failed to send email via Resend: Resend API error: Unknown error'
-            );
-        });
-    });
-
-    describe('send - missing message ID', () => {
-        it('should throw when response data is null', async () => {
-            // Arrange
-            const transport = new ResendEmailTransport(
-                mockResend.client,
-                DEFAULT_TRANSPORT_OPTIONS
-            );
-            const input = createTestInput();
-            mockResend.sendMock.mockResolvedValue({
-                data: null
-            });
-
-            // Act & Assert
-            await expect(transport.send(input)).rejects.toThrow(
-                'Failed to send email via Resend: Resend response missing message ID'
+            await expect(transport.send(createTestInput())).rejects.toThrow(
+                'Failed to send email via Brevo: API key revoked'
             );
         });
 
-        it('should throw when response data has no id', async () => {
+        it('should throw with status text when body is not JSON', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(
-                mockResend.client,
-                DEFAULT_TRANSPORT_OPTIONS
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockResolvedValue(
+                new Response('not json', { status: 503, statusText: 'Service Unavailable' })
             );
-            const input = createTestInput();
-            mockResend.sendMock.mockResolvedValue({
-                data: {}
-            });
 
             // Act & Assert
-            await expect(transport.send(input)).rejects.toThrow(
-                'Failed to send email via Resend: Resend response missing message ID'
-            );
-        });
-    });
-
-    describe('send - network error', () => {
-        it('should wrap network errors with transport context', async () => {
-            // Arrange
-            const transport = new ResendEmailTransport(
-                mockResend.client,
-                DEFAULT_TRANSPORT_OPTIONS
-            );
-            const input = createTestInput();
-            mockResend.sendMock.mockRejectedValue(new Error('Network timeout'));
-
-            // Act & Assert
-            await expect(transport.send(input)).rejects.toThrow(
-                'Failed to send email via Resend: Network timeout'
+            await expect(transport.send(createTestInput())).rejects.toThrow(
+                'Failed to send email via Brevo: 503 Service Unavailable'
             );
         });
 
-        it('should handle non-Error thrown values', async () => {
+        it('should throw when response is missing messageId', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(
-                mockResend.client,
-                DEFAULT_TRANSPORT_OPTIONS
-            );
-            const input = createTestInput();
-            mockResend.sendMock.mockRejectedValue('string error');
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockResolvedValue(jsonResponse({}));
 
             // Act & Assert
-            await expect(transport.send(input)).rejects.toThrow(
-                'Failed to send email via Resend: Unknown error'
+            await expect(transport.send(createTestInput())).rejects.toThrow(
+                'Failed to send email via Brevo: response missing message ID'
+            );
+        });
+
+        it('should throw with the network error message when fetch rejects', async () => {
+            // Arrange
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockRejectedValue(new Error('Network timeout'));
+
+            // Act & Assert
+            await expect(transport.send(createTestInput())).rejects.toThrow(
+                'Failed to send email via Brevo: Network timeout'
+            );
+        });
+
+        it('should fall back to "Unknown error" for non-Error throws', async () => {
+            // Arrange
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockRejectedValue('string error');
+
+            // Act & Assert
+            await expect(transport.send(createTestInput())).rejects.toThrow(
+                'Failed to send email via Brevo: Unknown error'
             );
         });
     });

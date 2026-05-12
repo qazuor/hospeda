@@ -182,7 +182,9 @@ describe('buildCspHeader', () => {
     it('should restrict img-src to specific domains', () => {
         const header = buildCspHeader({ nonce: 'x' });
         expect(header).toContain('img-src');
-        expect(header).toContain('vercel-storage.com');
+        // The CSP only allowlists the origins we actually fetch from (Cloudinary,
+        // simpleicons, OpenStreetMap tiles, plus any apiUrl). It does NOT fall
+        // back to a generic `data: https:` allowlist.
         expect(header).not.toContain("img-src 'self' data: https:");
     });
 

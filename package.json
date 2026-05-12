@@ -44,10 +44,10 @@
         "lint:md": "markdownlint-cli2 '**/*.md'",
         "prepare": "husky install",
         "build:api": "pnpm --filter hospeda-api build",
-        "deploy:api": "vercel deploy --prod --cwd apps/api",
-        "deploy:web": "vercel deploy --prod --cwd apps/web",
-        "deploy:admin": "vercel deploy --prod --cwd apps/admin",
-        "deploy:all": "pnpm deploy:api && pnpm deploy:web && pnpm deploy:admin",
+        "deploy:api": "node -e \"console.error('\\x1b[33m[deprecated]\\x1b[0m Deployments moved off Vercel to Coolify (VPS) in Phase 16.3. Trigger a deploy from Coolify UI or:  hops redeploy api'); process.exit(2)\"",
+        "deploy:web": "node -e \"console.error('\\x1b[33m[deprecated]\\x1b[0m Deployments moved off Vercel to Coolify (VPS) in Phase 16.3. Trigger a deploy from Coolify UI or:  hops redeploy web'); process.exit(2)\"",
+        "deploy:admin": "node -e \"console.error('\\x1b[33m[deprecated]\\x1b[0m Deployments moved off Vercel to Coolify (VPS) in Phase 16.3. Trigger a deploy from Coolify UI or:  hops redeploy admin'); process.exit(2)\"",
+        "deploy:all": "node -e \"console.error('\\x1b[33m[deprecated]\\x1b[0m Use Coolify UI per resource, or:  hops redeploy api && hops redeploy web && hops redeploy admin'); process.exit(2)\"",
         "db:start": "docker compose --env-file docker/.env up -d postgres redis",
         "db:stop": "docker compose --env-file docker/.env stop postgres redis",
         "db:restart": "pnpm db:stop && pnpm db:start",
@@ -83,7 +83,6 @@
         "@playwright/test": "^1.58.2",
         "@repo/config": "workspace:*",
         "@types/node": "^22.15.3",
-        "@upstash/qstash": "^2.10.1",
         "@vitest/coverage-v8": "^3.1.3",
         "ajv": "^8.18.0",
         "ajv-formats": "^3.0.1",
@@ -142,7 +141,7 @@
             "flatted": ">=3.4.2",
             "picomatch": ">=2.3.2",
             "picomatch@^4.0.0": ">=4.0.4",
-            "kysely": ">=0.28.14",
+            "kysely": ">=0.28.17",
             "svgo": ">=4.0.1",
             "next": ">=16.2.3",
             "drizzle-orm": ">=0.45.2",
@@ -158,7 +157,10 @@
         "patchedDependencies": {
             "@tanstack/start-plugin-core@1.131.26": "patches/@tanstack__start-plugin-core@1.131.26.patch"
         },
-        "publicHoistPattern": ["react", "react-dom", "*react*"]
+        "publicHoistPattern": ["react", "react-dom", "*react*"],
+        "auditConfig": {
+            "ignoreGhsas": ["GHSA-rmmr-r34h-pfm5"]
+        }
     },
     "lint-staged": {
         "*.{ts,tsx}": ["biome check --write --no-errors-on-unmatched"],

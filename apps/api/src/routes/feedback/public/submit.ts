@@ -503,7 +503,7 @@ export const submitFeedbackRoute = createSimpleRoute({
         // and `emailFallbackOk = true` would mislead the caller. Treat the
         // missing key as an email failure right away.
         let emailFallbackOk = false;
-        const emailDeliveryAvailable = Boolean(env.HOSPEDA_RESEND_API_KEY);
+        const emailDeliveryAvailable = Boolean(env.HOSPEDA_EMAIL_API_KEY);
 
         if (emailDeliveryAvailable) {
             try {
@@ -531,7 +531,7 @@ export const submitFeedbackRoute = createSimpleRoute({
         } else {
             apiLogger.error(
                 { linearError: linearLastError },
-                'Email fallback unavailable: HOSPEDA_RESEND_API_KEY not configured'
+                'Email fallback unavailable: HOSPEDA_EMAIL_API_KEY not configured'
             );
         }
 

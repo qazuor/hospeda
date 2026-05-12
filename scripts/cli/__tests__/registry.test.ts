@@ -10,14 +10,14 @@ const DANGEROUS_IDS = new Set(
         .map((c) => c.id)
 );
 
-const REQUIRED_IDS = ['db:start', 'dev:all', 'test', 'lint', 'build', 'env:check'];
+const REQUIRED_IDS = ['db:start', 'dev:all', 'test', 'lint', 'build', 'env:check:registry'];
 
 const VALID_CATEGORIES = new Set<CommandCategory>(CATEGORY_DISPLAY_ORDER);
 
 describe('getCuratedCommands', () => {
-    it('should return exactly 46 commands', () => {
+    it('should return exactly 44 commands', () => {
         const commands = getCuratedCommands();
-        expect(commands).toHaveLength(46);
+        expect(commands).toHaveLength(44);
     });
 
     it('should have no duplicate IDs', () => {
@@ -27,11 +27,11 @@ describe('getCuratedCommands', () => {
         expect(uniqueIds.size).toBe(ids.length);
     });
 
-    it('should have dangerMessage set on all 7 dangerous commands', () => {
+    it('should have dangerMessage set on all 6 dangerous commands', () => {
         const commands = getCuratedCommands();
         const dangerousCommands = commands.filter((c) => c.dangerous);
 
-        expect(dangerousCommands).toHaveLength(7);
+        expect(dangerousCommands).toHaveLength(6);
 
         for (const cmd of dangerousCommands) {
             expect(cmd.dangerous).toBe(true);
@@ -47,7 +47,6 @@ describe('getCuratedCommands', () => {
             'db:fresh-dev',
             'db:migrate:prod',
             'db:push',
-            'env:push',
             'clean'
         ];
         for (const id of expectedDangerous) {

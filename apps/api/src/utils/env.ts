@@ -140,13 +140,9 @@ export const ApiEnvBaseSchema = z.object({
         .optional()
         .transform((v) => v === 'true'),
 
-    // Platform-injected (set by Vercel/CI, not user-configured)
-    /** Set to "1" by Vercel when running in their platform */
-    VERCEL: z.string().optional(),
+    // Platform-injected (set by CI, not user-configured)
     /** Set to "true" by CI environments (GitHub Actions, etc.) */
     CI: z.string().optional(),
-    /** Git commit SHA injected by Vercel at deploy time */
-    VERCEL_GIT_COMMIT_SHA: z.string().optional(),
 
     // Build metadata
     /** Git commit SHA for health endpoint and Sentry release tagging */
@@ -211,7 +207,7 @@ export const ApiEnvBaseSchema = z.object({
      */
     API_RATE_LIMIT_HEADERS: z.enum(['standard', 'legacy', 'both', 'none']).default('standard'),
     API_RATE_LIMIT_MESSAGE: z.string().default('Too many requests, please try again later.'),
-    /** Trust x-forwarded-for / cf-connecting-ip. Default true — matches Vercel/Cloudflare/Nginx deploy targets. Set false ONLY for direct-exposed local dev runs. */
+    /** Trust x-forwarded-for / cf-connecting-ip. Default true — matches Cloudflare/Nginx/Coolify Traefik deploy targets. Set false ONLY for direct-exposed local dev runs. */
     API_RATE_LIMIT_TRUST_PROXY: z.coerce.boolean().default(true),
     API_RATE_LIMIT_TRUSTED_PROXIES: z.string().default(''),
 
@@ -317,23 +313,12 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_EXCHANGE_RATE_API_BASE_URL: z.string().url().optional(),
 
     // Cron
-    /** Shared secret for authenticating cron HTTP requests. Required in production (min 32 chars). */
-    HOSPEDA_CRON_SECRET: z
-        .string()
-        .min(32, 'HOSPEDA_CRON_SECRET must be at least 32 characters for security')
-        .optional(),
-    /** Cron adapter: manual (default), vercel, qstash, or node-cron */
-    HOSPEDA_CRON_ADAPTER: z.enum(['manual', 'vercel', 'qstash', 'node-cron']).default('manual'),
     /**
-     * Upstash QStash bearer token used by the schedule-provisioning
-     * script (`scripts/setup-qstash-schedules.ts`). Not needed at API
-     * runtime — cron requests are verified via the signing keys below.
+     * Cron scheduler adapter:
+     * - 'node-cron': in-process scheduling (production VPS path)
+     * - 'manual': no scheduler — used in dev/tests/CI
      */
-    QSTASH_TOKEN: z.string().optional(),
-    /** Current Upstash QStash signing key — verifies incoming cron signatures. */
-    QSTASH_CURRENT_SIGNING_KEY: z.string().optional(),
-    /** Next Upstash QStash signing key — accepted during key rotation. */
-    QSTASH_NEXT_SIGNING_KEY: z.string().optional(),
+    HOSPEDA_CRON_ADAPTER: z.enum(['manual', 'node-cron']).default('manual'),
     /** Shared secret for authenticating ISR revalidation requests from the API. Must be at least 32 characters. */
     HOSPEDA_REVALIDATION_SECRET: z.string().min(32).optional(),
     /** Cron schedule for automatic page revalidation (default: every hour) */
@@ -345,6 +330,18 @@ export const ApiEnvBaseSchema = z.object({
     /** MercadoPago webhook signature secret for verifying incoming IPN notifications */
     HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: z.string().optional(),
     /**
+     * MercadoPago sandbox/test mode flag. Defaults to true (safer default).
+     * Set to 'false' explicitly to enable production charges.
+     * Note: MP test and production access tokens both use the `APP_USR-` prefix —
+     * sandbox vs prod is determined by this flag plus which credentials section
+     * the token was copied from in the MP dashboard.
+     */
+    HOSPEDA_MERCADO_PAGO_SANDBOX: z
+        .string()
+        .optional()
+        .default('true')
+        .transform((v) => v !== 'false'),
+    /**
      * Feature flag for addon lifecycle processing (cancellations, plan changes, expiry).
      * Set to 'false' to disable all addon lifecycle side-effects without deploying code.
      * Default: true (enabled).
@@ -354,12 +351,36 @@ export const ApiEnvBaseSchema = z.object({
         .optional()
         .transform((v) => v !== 'false'),
 
-    // Email / Notifications
-    HOSPEDA_RESEND_API_KEY: z.string().optional(),
-    HOSPEDA_RESEND_FROM_EMAIL: z.string().email().optional(),
-    HOSPEDA_RESEND_FROM_NAME: z.string().optional(),
+    /**
+     * Extra trusted origins (CSV of full URLs). Applied to BOTH the
+     * Hono CORS allow-list and the Better Auth `trustedOrigins` so
+     * operators don't have to keep two lists in sync.
+     *
+     * Used for hostname aliases beyond the canonical HOSPEDA_SITE_URL /
+     * HOSPEDA_ADMIN_URL — e.g. staging.hospeda.com.ar and
+     * staging-admin.hospeda.com.ar during pre-launch, where the same
+     * containers serve both a prod-naming and a staging hostname.
+     * Without this, sign-up and OAuth flows from those aliases get
+     * rejected: CORS preflight 204 with no Access-Control-Allow-Origin
+     * header (Hono), or origin-not-trusted (Better Auth).
+     */
+    HOSPEDA_EXTRA_TRUSTED_ORIGINS: z.string().optional(),
+
+    // Email / Notifications (provider-agnostic; currently Brevo via @repo/email)
+    HOSPEDA_EMAIL_API_KEY: z.string().optional(),
+    HOSPEDA_EMAIL_FROM_EMAIL: z.string().email().optional(),
+    HOSPEDA_EMAIL_FROM_NAME: z.string().optional(),
     /** Comma-separated list of admin emails for system notifications */
     HOSPEDA_ADMIN_NOTIFICATION_EMAILS: z.string().optional(),
+    /**
+     * Numeric Brevo Contacts list ID for PRE-LAUNCH newsletter signups
+     * (the coming-soon landing form at hospeda.com.ar, POST
+     * /api/v1/public/newsletter). Distinct from any post-launch newsletter
+     * list so the pre-launch cohort stays separated. Reuses
+     * HOSPEDA_EMAIL_API_KEY for authentication. When unset the endpoint
+     * short-circuits to a logged fake-success so the form never blocks the user.
+     */
+    HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID: z.coerce.number().int().positive().optional(),
 
     // Sentry
     HOSPEDA_SENTRY_DSN: z.string().optional(),
@@ -413,16 +434,6 @@ export const ApiEnvBaseSchema = z.object({
 const ApiEnvSchema = ApiEnvBaseSchema.superRefine((data, ctx) => {
     if (
         data.NODE_ENV === 'production' &&
-        (!data.HOSPEDA_CRON_SECRET || data.HOSPEDA_CRON_SECRET.trim() === '')
-    ) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['HOSPEDA_CRON_SECRET'],
-            message: 'HOSPEDA_CRON_SECRET is required in production environment'
-        });
-    }
-    if (
-        data.NODE_ENV === 'production' &&
         (!data.HOSPEDA_REDIS_URL || data.HOSPEDA_REDIS_URL.trim() === '')
     ) {
         ctx.addIssue({
@@ -431,45 +442,6 @@ const ApiEnvSchema = ApiEnvBaseSchema.superRefine((data, ctx) => {
             message:
                 'HOSPEDA_REDIS_URL is required in production for rate limiting to work across instances'
         });
-    }
-    // QSTash cross-validation: signing keys ship in pairs and are both
-    // required by the verifier. Setting one without the other is almost
-    // always a misconfiguration that would leave cron requests un-
-    // authenticatable in production.
-    if (data.QSTASH_CURRENT_SIGNING_KEY && !data.QSTASH_NEXT_SIGNING_KEY) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['QSTASH_NEXT_SIGNING_KEY'],
-            message:
-                'QSTASH_NEXT_SIGNING_KEY is required when QSTASH_CURRENT_SIGNING_KEY is set (key rotation pair)'
-        });
-    }
-    if (data.QSTASH_NEXT_SIGNING_KEY && !data.QSTASH_CURRENT_SIGNING_KEY) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['QSTASH_CURRENT_SIGNING_KEY'],
-            message:
-                'QSTASH_CURRENT_SIGNING_KEY is required when QSTASH_NEXT_SIGNING_KEY is set (key rotation pair)'
-        });
-    }
-    // When the cron adapter is set to qstash, both signing keys MUST be
-    // configured so incoming production cron requests can be verified.
-    if (data.HOSPEDA_CRON_ADAPTER === 'qstash') {
-        if (!data.QSTASH_CURRENT_SIGNING_KEY) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['QSTASH_CURRENT_SIGNING_KEY'],
-                message:
-                    'QSTASH_CURRENT_SIGNING_KEY is required when HOSPEDA_CRON_ADAPTER is "qstash"'
-            });
-        }
-        if (!data.QSTASH_NEXT_SIGNING_KEY) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['QSTASH_NEXT_SIGNING_KEY'],
-                message: 'QSTASH_NEXT_SIGNING_KEY is required when HOSPEDA_CRON_ADAPTER is "qstash"'
-            });
-        }
     }
     // OAuth cross-validation: require secret when client ID is set
     if (data.HOSPEDA_GOOGLE_CLIENT_ID && !data.HOSPEDA_GOOGLE_CLIENT_SECRET) {

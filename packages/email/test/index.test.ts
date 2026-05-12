@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import {
     BaseLayout,
     ResetPasswordTemplate,
@@ -9,6 +10,7 @@ import {
 import type {
     BaseLayoutProps,
     CreateEmailClientInput,
+    EmailClient,
     ResetPasswordTemplateProps,
     SendEmailInput,
     SendEmailResult,
@@ -53,6 +55,7 @@ describe('email barrel exports', () => {
     it('should export all expected type definitions', () => {
         // Arrange - verify type exports compile correctly by using satisfies
         const clientInput: CreateEmailClientInput = { apiKey: 'test' };
+        const client = {} as EmailClient;
         const sendInput = {} as SendEmailInput;
         const sendResult = {} as SendEmailResult;
         const baseProps = {} as BaseLayoutProps;
@@ -61,6 +64,7 @@ describe('email barrel exports', () => {
 
         // Assert - all type imports resolved without compile errors
         expect(clientInput).toBeDefined();
+        expect(client).toBeDefined();
         expect(sendInput).toBeDefined();
         expect(sendResult).toBeDefined();
         expect(baseProps).toBeDefined();

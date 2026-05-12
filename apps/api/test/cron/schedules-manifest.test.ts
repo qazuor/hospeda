@@ -1,12 +1,12 @@
 /**
  * Sync test for the cron schedule manifest.
  *
- * `apps/api/src/cron/schedules.manifest.ts` is the data file consumed
- * by external schedule provisioners (the QStash setup script). It must
- * stay in lockstep with the live cron registry: every enabled job must
- * have a manifest entry, and every manifest entry must reference a
- * registered job. Missing or extra entries cause schedules in QStash
- * to drift from production behaviour.
+ * `apps/api/src/cron/schedules.manifest.ts` is the source of truth for
+ * what gets registered with the in-process node-cron scheduler at API
+ * startup. It must stay in lockstep with the live cron registry: every
+ * enabled job must have a manifest entry, and every manifest entry must
+ * reference a registered job. Drift here means jobs either silently fail
+ * to schedule or schedule with the wrong expression.
  *
  * @see apps/api/src/cron/schedules.manifest.ts
  * @see apps/api/src/cron/registry.ts

@@ -1,7 +1,7 @@
 /**
  * @fileoverview
  * Unit tests for RevalidationAdapter implementations:
- * - VercelRevalidationAdapter: production HTTP-based revalidation
+ * - CloudflareRevalidationAdapter: production HTTP-based cache purge
  * - NoOpRevalidationAdapter: dev/test no-op adapter
  * - createRevalidationAdapter: factory function for environment-based selection
  *
@@ -11,28 +11,28 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRevalidationAdapter } from '../../src/revalidation/adapters/adapter-factory.js';
+import { CloudflareRevalidationAdapter } from '../../src/revalidation/adapters/cloudflare-revalidation.adapter.js';
 import { NoOpRevalidationAdapter } from '../../src/revalidation/adapters/noop-revalidation.adapter.js';
-import { VercelRevalidationAdapter } from '../../src/revalidation/adapters/vercel-revalidation.adapter.js';
 
-const BYPASS_TOKEN = 'test-token-32-chars-min-required-here';
+const SECRET = 'test-secret-32-chars-min-required-here';
 const SITE_URL = 'https://example.com';
 const TEST_PATH = '/alojamientos/';
 
-describe('VercelRevalidationAdapter', () => {
+describe('CloudflareRevalidationAdapter', () => {
     beforeEach(() => {
         vi.resetAllMocks();
     });
 
-    it('throws when bypassToken is empty', () => {
-        expect(() => new VercelRevalidationAdapter({ bypassToken: '', siteUrl: SITE_URL })).toThrow(
-            'bypassToken is required and cannot be empty'
+    it('throws when secret is empty', () => {
+        expect(() => new CloudflareRevalidationAdapter({ secret: '', siteUrl: SITE_URL })).toThrow(
+            'secret is required and cannot be empty'
         );
     });
 
-    it('throws when bypassToken is whitespace-only', () => {
+    it('throws when secret is whitespace-only', () => {
         expect(
-            () => new VercelRevalidationAdapter({ bypassToken: '   ', siteUrl: SITE_URL })
-        ).toThrow('bypassToken is required and cannot be empty');
+            () => new CloudflareRevalidationAdapter({ secret: '   ', siteUrl: SITE_URL })
+        ).toThrow('secret is required and cannot be empty');
     });
 
     it('returns success when fetch returns 200', async () => {
@@ -40,8 +40,8 @@ describe('VercelRevalidationAdapter', () => {
             'fetch',
             vi.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK' })
         );
-        const adapter = new VercelRevalidationAdapter({
-            bypassToken: BYPASS_TOKEN,
+        const adapter = new CloudflareRevalidationAdapter({
+            secret: SECRET,
             siteUrl: SITE_URL
         });
         const result = await adapter.revalidate({ path: TEST_PATH });
@@ -55,8 +55,8 @@ describe('VercelRevalidationAdapter', () => {
             'fetch',
             vi.fn().mockResolvedValue({ ok: false, status: 404, statusText: 'Not Found' })
         );
-        const adapter = new VercelRevalidationAdapter({
-            bypassToken: BYPASS_TOKEN,
+        const adapter = new CloudflareRevalidationAdapter({
+            secret: SECRET,
             siteUrl: SITE_URL
         });
         const result = await adapter.revalidate({ path: TEST_PATH });
@@ -66,8 +66,8 @@ describe('VercelRevalidationAdapter', () => {
 
     it('returns failure on network error without throwing', async () => {
         vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')));
-        const adapter = new VercelRevalidationAdapter({
-            bypassToken: BYPASS_TOKEN,
+        const adapter = new CloudflareRevalidationAdapter({
+            secret: SECRET,
             siteUrl: SITE_URL
         });
         const result = await adapter.revalidate({ path: TEST_PATH });
@@ -75,32 +75,30 @@ describe('VercelRevalidationAdapter', () => {
         expect(result.error).toContain('ECONNREFUSED');
     });
 
-    it('sends x-prerender-revalidate header', async () => {
+    it('POSTs to /api/revalidate with the secret in the query string', async () => {
         const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK' });
         vi.stubGlobal('fetch', mockFetch);
-        const adapter = new VercelRevalidationAdapter({
-            bypassToken: BYPASS_TOKEN,
-            siteUrl: SITE_URL
-        });
-        await adapter.revalidate({ path: TEST_PATH });
-        expect(mockFetch).toHaveBeenCalledWith(
-            expect.stringContaining(TEST_PATH),
-            expect.objectContaining({
-                headers: expect.objectContaining({ 'x-prerender-revalidate': BYPASS_TOKEN })
-            })
-        );
-    });
-
-    it('constructs the URL from siteUrl and path', async () => {
-        const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK' });
-        vi.stubGlobal('fetch', mockFetch);
-        const adapter = new VercelRevalidationAdapter({
-            bypassToken: BYPASS_TOKEN,
+        const adapter = new CloudflareRevalidationAdapter({
+            secret: SECRET,
             siteUrl: SITE_URL
         });
         await adapter.revalidate({ path: TEST_PATH });
         const calledUrl = mockFetch.mock.calls[0]![0] as string;
-        expect(calledUrl).toBe(`${SITE_URL}${TEST_PATH}`);
+        const calledOpts = mockFetch.mock.calls[0]![1] as { method: string };
+        expect(calledOpts.method).toBe('POST');
+        expect(calledUrl).toBe(`${SITE_URL}/api/revalidate?secret=${encodeURIComponent(SECRET)}`);
+    });
+
+    it('strips a trailing slash from siteUrl when building the request URL', async () => {
+        const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK' });
+        vi.stubGlobal('fetch', mockFetch);
+        const adapter = new CloudflareRevalidationAdapter({
+            secret: SECRET,
+            siteUrl: `${SITE_URL}/`
+        });
+        await adapter.revalidate({ path: TEST_PATH });
+        const calledUrl = mockFetch.mock.calls[0]![0] as string;
+        expect(calledUrl).toBe(`${SITE_URL}/api/revalidate?secret=${encodeURIComponent(SECRET)}`);
     });
 
     it('returns the path in the result', async () => {
@@ -108,8 +106,8 @@ describe('VercelRevalidationAdapter', () => {
             'fetch',
             vi.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK' })
         );
-        const adapter = new VercelRevalidationAdapter({
-            bypassToken: BYPASS_TOKEN,
+        const adapter = new CloudflareRevalidationAdapter({
+            secret: SECRET,
             siteUrl: SITE_URL
         });
         const result = await adapter.revalidate({ path: TEST_PATH });
@@ -121,8 +119,8 @@ describe('VercelRevalidationAdapter', () => {
             'fetch',
             vi.fn().mockResolvedValue({ ok: false, status: 503, statusText: 'Service Unavailable' })
         );
-        const adapter = new VercelRevalidationAdapter({
-            bypassToken: BYPASS_TOKEN,
+        const adapter = new CloudflareRevalidationAdapter({
+            secret: SECRET,
             siteUrl: SITE_URL
         });
         const result = await adapter.revalidate({ path: TEST_PATH });
@@ -145,8 +143,8 @@ describe('VercelRevalidationAdapter', () => {
             )
         );
         vi.useFakeTimers();
-        const adapter = new VercelRevalidationAdapter({
-            bypassToken: BYPASS_TOKEN,
+        const adapter = new CloudflareRevalidationAdapter({
+            secret: SECRET,
             siteUrl: SITE_URL
         });
         const resultPromise = adapter.revalidate({ path: TEST_PATH });
@@ -157,77 +155,77 @@ describe('VercelRevalidationAdapter', () => {
         vi.useRealTimers();
     });
 
-    it('has a name property set to VercelRevalidationAdapter', () => {
-        const adapter = new VercelRevalidationAdapter({
-            bypassToken: BYPASS_TOKEN,
+    it('has a name property set to CloudflareRevalidationAdapter', () => {
+        const adapter = new CloudflareRevalidationAdapter({
+            secret: SECRET,
             siteUrl: SITE_URL
         });
-        expect(adapter.name).toBe('VercelRevalidationAdapter');
+        expect(adapter.name).toBe('CloudflareRevalidationAdapter');
     });
 
     describe('revalidateMany', () => {
-        it('revalidates all paths and returns results array', async () => {
-            vi.stubGlobal(
-                'fetch',
-                vi.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK' })
-            );
-            const adapter = new VercelRevalidationAdapter({
-                bypassToken: BYPASS_TOKEN,
+        it('makes a single purge call for many paths and reports the same result for each', async () => {
+            const mockFetch = vi
+                .fn()
+                .mockResolvedValue({ ok: true, status: 200, statusText: 'OK' });
+            vi.stubGlobal('fetch', mockFetch);
+            const adapter = new CloudflareRevalidationAdapter({
+                secret: SECRET,
                 siteUrl: SITE_URL
             });
             const paths = ['/path-a/', '/path-b/', '/path-c/'];
             const results = await adapter.revalidateMany({ paths });
             expect(results).toHaveLength(3);
+            // Cloudflare purge_everything invalidates the whole zone — one
+            // call covers all paths.
+            expect(mockFetch).toHaveBeenCalledTimes(1);
             for (const r of results) {
                 expect(r.success).toBe(true);
             }
         });
 
-        it('processes paths in chunks of 10 with delay between chunks', async () => {
-            const callTimestamps: number[] = [];
+        it('returns failure for every path when the single purge call fails', async () => {
             vi.stubGlobal(
                 'fetch',
-                vi.fn().mockImplementation(() => {
-                    callTimestamps.push(Date.now());
-                    return Promise.resolve({ ok: true, status: 200, statusText: 'OK' });
-                })
+                vi.fn().mockResolvedValue({ ok: false, status: 502, statusText: 'Bad Gateway' })
             );
-            const adapter = new VercelRevalidationAdapter({
-                bypassToken: BYPASS_TOKEN,
+            const adapter = new CloudflareRevalidationAdapter({
+                secret: SECRET,
                 siteUrl: SITE_URL
             });
-            const paths = Array.from({ length: 15 }, (_, i) => `/path-${i}/`);
+            const paths = ['/p1/', '/p2/', '/p3/'];
             const results = await adapter.revalidateMany({ paths });
-
-            // All 15 paths should be processed
-            expect(results).toHaveLength(15);
+            expect(results).toHaveLength(3);
             for (const r of results) {
-                expect(r.success).toBe(true);
+                expect(r.success).toBe(false);
+                expect(r.error).toContain('502');
             }
-
-            // fetch should have been called 15 times total
-            expect(vi.mocked(fetch)).toHaveBeenCalledTimes(15);
         });
 
-        it('continues revalidating other paths when one fails', async () => {
-            let callCount = 0;
-            vi.stubGlobal(
-                'fetch',
-                vi.fn().mockImplementation(() => {
-                    callCount++;
-                    if (callCount === 2) return Promise.reject(new Error('network fail'));
-                    return Promise.resolve({ ok: true, status: 200, statusText: 'OK' });
-                })
-            );
-            const adapter = new VercelRevalidationAdapter({
-                bypassToken: BYPASS_TOKEN,
+        it('returns empty array for empty paths without making fetch calls', async () => {
+            const mockFetch = vi.fn();
+            vi.stubGlobal('fetch', mockFetch);
+            const adapter = new CloudflareRevalidationAdapter({
+                secret: SECRET,
                 siteUrl: SITE_URL
             });
-            const results = await adapter.revalidateMany({ paths: ['/p1/', '/p2/', '/p3/'] });
-            expect(results).toHaveLength(3);
-            expect(results[0]!.success).toBe(true);
-            expect(results[1]!.success).toBe(false);
-            expect(results[2]!.success).toBe(true);
+            const results = await adapter.revalidateMany({ paths: [] });
+            expect(results).toEqual([]);
+            expect(mockFetch).not.toHaveBeenCalled();
+        });
+
+        it('echoes input paths into result objects', async () => {
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK' })
+            );
+            const adapter = new CloudflareRevalidationAdapter({
+                secret: SECRET,
+                siteUrl: SITE_URL
+            });
+            const paths = ['/foo/', '/bar/', '/baz/'];
+            const results = await adapter.revalidateMany({ paths });
+            expect(results.map((r) => r.path)).toEqual(paths);
         });
     });
 
@@ -239,8 +237,8 @@ describe('VercelRevalidationAdapter', () => {
                     .fn()
                     .mockResolvedValue({ ok: false, status: 429, statusText: 'Too Many Requests' })
             );
-            const adapter = new VercelRevalidationAdapter({
-                bypassToken: BYPASS_TOKEN,
+            const adapter = new CloudflareRevalidationAdapter({
+                secret: SECRET,
                 siteUrl: SITE_URL
             });
             const result = await adapter.revalidate({ path: TEST_PATH });
@@ -249,70 +247,19 @@ describe('VercelRevalidationAdapter', () => {
             expect(result.error).toContain('Too Many Requests');
         });
 
-        it('returns failure with error message on HTTP 403 auth failure', async () => {
+        it('returns failure with error message on HTTP 401 missing secret', async () => {
             vi.stubGlobal(
                 'fetch',
-                vi.fn().mockResolvedValue({ ok: false, status: 403, statusText: 'Forbidden' })
+                vi.fn().mockResolvedValue({ ok: false, status: 401, statusText: 'Unauthorized' })
             );
-            const adapter = new VercelRevalidationAdapter({
-                bypassToken: BYPASS_TOKEN,
+            const adapter = new CloudflareRevalidationAdapter({
+                secret: SECRET,
                 siteUrl: SITE_URL
             });
             const result = await adapter.revalidate({ path: TEST_PATH });
             expect(result.success).toBe(false);
-            expect(result.error).toContain('403');
-            expect(result.error).toContain('Forbidden');
-        });
-    });
-
-    describe('revalidateMany edge cases', () => {
-        it('returns empty array for empty paths without making fetch calls', async () => {
-            const mockFetch = vi.fn();
-            vi.stubGlobal('fetch', mockFetch);
-            const adapter = new VercelRevalidationAdapter({
-                bypassToken: BYPASS_TOKEN,
-                siteUrl: SITE_URL
-            });
-            const results = await adapter.revalidateMany({ paths: [] });
-            expect(results).toEqual([]);
-            expect(mockFetch).not.toHaveBeenCalled();
-        });
-
-        it('handles partial success when some paths fail with HTTP 500', async () => {
-            let callCount = 0;
-            vi.stubGlobal(
-                'fetch',
-                vi.fn().mockImplementation(() => {
-                    callCount++;
-                    // Paths 3, 4, 5 fail with 500
-                    if (callCount >= 3 && callCount <= 5) {
-                        return Promise.resolve({
-                            ok: false,
-                            status: 500,
-                            statusText: 'Internal Server Error'
-                        });
-                    }
-                    return Promise.resolve({ ok: true, status: 200, statusText: 'OK' });
-                })
-            );
-            const adapter = new VercelRevalidationAdapter({
-                bypassToken: BYPASS_TOKEN,
-                siteUrl: SITE_URL
-            });
-            const paths = Array.from({ length: 7 }, (_, i) => `/path-${i}/`);
-            const results = await adapter.revalidateMany({ paths });
-
-            expect(results).toHaveLength(7);
-            // First two succeed
-            expect(results[0]!.success).toBe(true);
-            expect(results[1]!.success).toBe(true);
-            // Next three fail
-            expect(results[2]!.success).toBe(false);
-            expect(results[3]!.success).toBe(false);
-            expect(results[4]!.success).toBe(false);
-            // Last two succeed
-            expect(results[5]!.success).toBe(true);
-            expect(results[6]!.success).toBe(true);
+            expect(result.error).toContain('401');
+            expect(result.error).toContain('Unauthorized');
         });
     });
 });
@@ -366,22 +313,22 @@ describe('NoOpRevalidationAdapter', () => {
 });
 
 describe('createRevalidationAdapter', () => {
-    it('returns VercelRevalidationAdapter in production with secret', () => {
+    it('returns CloudflareRevalidationAdapter in production with secret', () => {
         const adapter = createRevalidationAdapter({
             nodeEnv: 'production',
             revalidationSecret: 'x'.repeat(32),
             siteUrl: SITE_URL
         });
-        expect(adapter).toBeInstanceOf(VercelRevalidationAdapter);
+        expect(adapter).toBeInstanceOf(CloudflareRevalidationAdapter);
     });
 
-    it('returns VercelRevalidationAdapter in staging with secret', () => {
+    it('returns CloudflareRevalidationAdapter in staging with secret', () => {
         const adapter = createRevalidationAdapter({
             nodeEnv: 'staging',
             revalidationSecret: 'x'.repeat(32),
             siteUrl: SITE_URL
         });
-        expect(adapter).toBeInstanceOf(VercelRevalidationAdapter);
+        expect(adapter).toBeInstanceOf(CloudflareRevalidationAdapter);
     });
 
     it('returns NoOpRevalidationAdapter in development', () => {

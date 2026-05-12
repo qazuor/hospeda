@@ -196,8 +196,8 @@ describe('Admin media routes — route-level permission gate (smoke)', () => {
  *   - GAP-078-034 + GAP-078-173: schema-level path-traversal rejection (raw `..`
  *     and URL-encoded `%2E%2E`) surfaces as HTTP 422.
  *
- * The runtime environment under Vitest is `'test'` (NODE_ENV=test, no
- * VERCEL_ENV), so `resolveEnvironment()` yields `'test'`. All test paths use
+ * The runtime environment under Vitest is `'test'` (NODE_ENV=test), so
+ * `resolveEnvironment()` yields `'test'`. All test paths use
  * either `hospeda/test/...` (allowed prefix) or `hospeda/prod/...` (forbidden).
  */
 describe('DELETE /api/v1/admin/media — security hardening (T-005)', () => {

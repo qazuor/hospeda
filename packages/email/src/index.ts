@@ -1,13 +1,17 @@
 /**
  * Email service module for centralized email functionality.
- * Provides email sending via Resend with React Email templates.
+ *
+ * Provider-agnostic at the API surface: callers receive an opaque
+ * {@link EmailClient} from {@link createEmailClient} and pass it to
+ * {@link sendEmail}. The current implementation uses Brevo as the underlying
+ * transactional email provider.
  *
  * @module email
  */
 
 // Client
 export { createEmailClient } from './client.js';
-export type { CreateEmailClientInput } from './client.js';
+export type { CreateEmailClientInput, EmailClient } from './client.js';
 
 // Send functionality
 export { sendEmail } from './send.js';

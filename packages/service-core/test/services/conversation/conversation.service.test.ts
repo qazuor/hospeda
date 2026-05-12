@@ -626,7 +626,6 @@ describe('ConversationService', () => {
 
         it('should return VERIFICATION_TOKEN_EXPIRED when JWT is expired (AC-002-03)', async () => {
             // Arrange — throw a JWTExpired error (matches jose's error class via instanceof)
-            // biome-ignore lint/suspicious/noExplicitAny: accessing mocked jose.errors for test
             const JWTExpiredCtor = (jose as any).errors.JWTExpired;
             asMock(jose.jwtVerify).mockRejectedValue(new JWTExpiredCtor('Token expired'));
 

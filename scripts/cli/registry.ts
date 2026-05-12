@@ -337,32 +337,15 @@ const CURATED_COMMANDS: readonly CliCommand[] = [
             'Remove all build artifacts (dist/, .output/, node_modules/.cache/) across the monorepo.'
     },
 
-    // ── Environment (3) ──────────────────────────────────────
+    // ── Environment (1) ──────────────────────────────────────
+    // env:pull / env:push / env:sync / env:check are deprecated — they
+    // targeted Vercel which is gone (Phase 16.4). Use hops env-* on the
+    // VPS instead. See docs/guides/env-management.md.
     {
-        id: 'env:pull',
-        description: 'Pull env vars from Vercel to local',
+        id: 'env:check:registry',
+        description: 'Validate env schemas match @repo/config registry (local)',
         category: 'environment',
-        execution: { type: 'pnpm-root', script: 'env:pull' },
-        source: 'root',
-        mode: 'interactive',
-        curated: true
-    },
-    {
-        id: 'env:push',
-        description: 'Push local env vars to Vercel',
-        category: 'environment',
-        execution: { type: 'pnpm-root', script: 'env:push' },
-        source: 'root',
-        mode: 'interactive',
-        curated: true,
-        dangerous: true,
-        dangerMessage: 'Overwrites remote environment variables. This affects production.'
-    },
-    {
-        id: 'env:check',
-        description: 'Validate env vars against registry',
-        category: 'environment',
-        execution: { type: 'pnpm-root', script: 'env:check' },
+        execution: { type: 'pnpm-root', script: 'env:check:registry' },
         source: 'root',
         mode: 'one-shot',
         curated: true

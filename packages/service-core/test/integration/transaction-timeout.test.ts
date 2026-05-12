@@ -208,7 +208,6 @@ describe('withServiceTransaction — timeoutMs option (SPEC-059)', () => {
             withServiceTransaction(
                 async (ctx) => {
                     // Simulate a slow query by calling execute on the transaction client.
-                    // biome-ignore lint/suspicious/noExplicitAny: test-only access to tx internals
                     await (ctx.tx as any).execute({ sql: 'SELECT pg_sleep(1)' });
                     return 'should not reach here';
                 },

@@ -35,7 +35,7 @@ export function buildCspDirectives({
         // Can be removed if @qazuor/qzpay-core does not load security.js.
         // 'unsafe-inline' ignored by CSP2+ when nonce is present (serves as CSP1 fallback).
         // Previously included 'https:' as a CSP1 blanket fallback — removed because no
-        // external script CDNs are actually used (Sentry, MercadoPago, Vercel are all bundled
+        // external script CDNs are actually used (Sentry, MercadoPago are bundled
         // via npm), and 'strict-dynamic' already neutralized it in CSP2+ browsers.
         `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' 'unsafe-inline'`,
         // 'unsafe-inline' required for Sentry Replay (rrweb uses inline style attributes).
@@ -51,7 +51,7 @@ export function buildCspDirectives({
         // them, but the explicit entry future-proofs the directive when the
         // blanket gets removed.
         "img-src 'self' data: blob: https: https://res.cloudinary.com https://*.mlstatic.com https://*.tile.openstreetmap.org https://*.openstreetmap.org",
-        "connect-src 'self' https://*.sentry.io https://*.vercel.app https://api.mercadopago.com https://sdk.mercadopago.com https://www.mercadopago.com https://api.mercadolibre.com https://api-static.mercadopago.com",
+        "connect-src 'self' https://*.sentry.io https://api.mercadopago.com https://sdk.mercadopago.com https://www.mercadopago.com https://api.mercadolibre.com https://api-static.mercadopago.com",
         'frame-src https://www.mercadopago.com',
         "worker-src 'self' blob:",
         'child-src blob:',

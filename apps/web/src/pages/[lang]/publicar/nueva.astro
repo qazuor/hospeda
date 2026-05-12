@@ -18,7 +18,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { buildUrl } from '@/lib/urls';
-import { getAdminUrl } from '@/lib/env';
+import { getAdminUrlOrThrow } from '@/lib/env';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { CreatePropertyMiniForm } from '@/components/host/CreatePropertyMiniForm.client';
 
@@ -44,7 +44,7 @@ const pageDescription = t(
 
 // Public env vars are safe to send to the client island.
 const apiUrl = import.meta.env.PUBLIC_API_URL as string;
-const adminUrl = getAdminUrl();
+const adminUrl = getAdminUrlOrThrow();
 ---
 
 <MarketingLayout

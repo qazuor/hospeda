@@ -110,7 +110,7 @@ const CONFIG_CACHE_TTL_MS = 60_000; // 60 seconds
  * - Reads per-entity-type config from `revalidation_config` (with 60 s in-memory cache)
  * - Debounces rapid successive change events for the same entity (keyed by entityType:entityId)
  * - Writes audit entries to `revalidation_log` after every revalidation attempt
- * - Uses the injected adapter for actual HTTP calls (Vercel or no-op)
+ * - Uses the injected adapter for actual HTTP calls (Cloudflare cache purge or no-op)
  *
  * All revalidation triggered by hooks is fire-and-forget -- never blocks CRUD operations.
  */

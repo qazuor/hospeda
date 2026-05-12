@@ -318,7 +318,7 @@ function DestinationsIslandInner({
                                                     {destination.accommodationsCount}{' '}
                                                     {accommodationsLabel}
                                                 </p>
-                                                {destination.attractions.length > 0 && (
+                                                {(destination.attractions?.length ?? 0) > 0 && (
                                                     <ul
                                                         className={styles.cardAttractions}
                                                         aria-label={t(
@@ -327,7 +327,7 @@ function DestinationsIslandInner({
                                                         )}
                                                     >
                                                         {destination.attractions
-                                                            .slice(0, 3)
+                                                            ?.slice(0, 3)
                                                             .map((attraction) => (
                                                                 <li
                                                                     key={attraction.id}

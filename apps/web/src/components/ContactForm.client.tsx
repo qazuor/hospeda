@@ -18,6 +18,12 @@ import { ContactSubmitSchema } from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, useState } from 'react';
 import styles from './ContactForm.module.css';
 
+// API base URL — must be absolute because the web app (host A) and the API
+// (host B) live on different origins both in dev (4321 vs 3001) and prod
+// (hospeda.com.ar vs api.hospeda.com.ar). A relative path resolves against
+// the web origin and 404s.
+const API_BASE = (import.meta.env.PUBLIC_API_URL ?? '').replace(/\/$/, '');
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /** Props for the ContactForm island. */
@@ -40,6 +46,44 @@ const INITIAL_FIELDS: FormFields = {
     accommodationId: undefined,
     website: ''
 };
+
+/**
+ * Ordered list of contact-type options surfaced to the public form.
+ * Order is roughly by expected volume so high-frequency cases sit at the top.
+ * `accommodation` is intentionally excluded — host inquiries go through the
+ * dedicated ContactHost flow on the accommodation detail page instead.
+ */
+const CONTACT_TYPE_OPTIONS = [
+    { value: 'general', i18nKey: 'contact.form.typeGeneral', fallback: 'Consulta general' },
+    { value: 'support', i18nKey: 'contact.form.typeSupport', fallback: 'Soporte técnico' },
+    {
+        value: 'publish_accommodation',
+        i18nKey: 'contact.form.typePublishAccommodation',
+        fallback: 'Quiero publicar mi alojamiento'
+    },
+    {
+        value: 'subscriptions',
+        i18nKey: 'contact.form.typeSubscriptions',
+        fallback: 'Suscripciones y pagos'
+    },
+    {
+        value: 'suggestions',
+        i18nKey: 'contact.form.typeSuggestions',
+        fallback: 'Sugerencias y mejoras'
+    },
+    { value: 'report', i18nKey: 'contact.form.typeReport', fallback: 'Reportar un problema' },
+    { value: 'press', i18nKey: 'contact.form.typePress', fallback: 'Prensa y medios' },
+    {
+        value: 'partnerships',
+        i18nKey: 'contact.form.typePartnerships',
+        fallback: 'Alianzas comerciales'
+    },
+    {
+        value: 'event_submission',
+        i18nKey: 'contact.form.typeEventSubmission',
+        fallback: 'Sumar mi evento'
+    }
+] as const;
 
 /**
  * Extracts Zod field-level errors from a ZodError and maps them to
@@ -90,11 +134,11 @@ export function ContactForm({ locale }: ContactFormProps) {
         e.preventDefault();
         setFormError(null);
 
-        // Validate with Zod
+        // Validate with Zod. accommodationId is no longer surfaced by the form,
+        // so it is always omitted from the submission payload.
         const parsed = ContactSubmitSchema.safeParse({
             ...fields,
-            // Omit undefined accommodationId if not accommodation type
-            accommodationId: fields.type === 'accommodation' ? fields.accommodationId : undefined
+            accommodationId: undefined
         });
 
         if (!parsed.success) {
@@ -105,7 +149,7 @@ export function ContactForm({ locale }: ContactFormProps) {
         setIsSubmitting(true);
 
         try {
-            const res = await fetch('/api/v1/public/contact', {
+            const res = await fetch(`${API_BASE}/api/v1/public/contact`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(parsed.data)
@@ -335,61 +379,16 @@ export function ContactForm({ locale }: ContactFormProps) {
                     className={styles.select}
                     required
                 >
-                    <option value="general">
-                        {t('contact.form.typeGeneral', 'Consulta general')}
-                    </option>
-                    <option value="accommodation">
-                        {t('contact.form.typeAccommodation', 'Consulta sobre un alojamiento')}
-                    </option>
+                    {CONTACT_TYPE_OPTIONS.map((opt) => (
+                        <option
+                            key={opt.value}
+                            value={opt.value}
+                        >
+                            {t(opt.i18nKey, opt.fallback)}
+                        </option>
+                    ))}
                 </select>
             </div>
-
-            {/* Accommodation ID — visible only when type = accommodation */}
-            {fields.type === 'accommodation' && (
-                <div className={styles.field}>
-                    <label
-                        className={styles.label}
-                        htmlFor="cf-accommodationId"
-                    >
-                        {t('contact.form.accommodationId', 'ID del alojamiento')}
-                        <span
-                            className={styles.required}
-                            aria-label={t('ui.required', 'requerido')}
-                        >
-                            *
-                        </span>
-                    </label>
-                    <input
-                        id="cf-accommodationId"
-                        type="text"
-                        name="accommodationId"
-                        value={fields.accommodationId ?? ''}
-                        onChange={handleChange}
-                        className={`${styles.input}${errors.accommodationId ? ` ${styles.inputError}` : ''}`}
-                        placeholder={t(
-                            'contact.form.accommodationIdPlaceholder',
-                            'UUID del alojamiento (ej: 550e8400-...)'
-                        )}
-                        aria-describedby={
-                            errors.accommodationId ? 'cf-accommodationId-error' : undefined
-                        }
-                        aria-invalid={!!errors.accommodationId}
-                        required={fields.type === 'accommodation'}
-                    />
-                    {errors.accommodationId && (
-                        <p
-                            id="cf-accommodationId-error"
-                            className={styles.errorMsg}
-                            role="alert"
-                        >
-                            {t(
-                                'contact.form.accommodationIdError',
-                                'El ID del alojamiento es requerido y debe ser un UUID válido'
-                            )}
-                        </p>
-                    )}
-                </div>
-            )}
 
             {/* Message */}
             <div className={styles.field}>

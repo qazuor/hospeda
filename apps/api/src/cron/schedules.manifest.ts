@@ -1,13 +1,13 @@
 /**
  * Pure-data manifest of cron jobs and their schedules.
  *
- * Exists alongside `registry.ts` because external schedule provisioners
- * (e.g. `scripts/setup-qstash-schedules.ts`) need to know
- * "which jobs exist and at what cron expression" WITHOUT loading the
- * job handlers. The handlers transitively import workspace packages
- * (`@repo/db`, `@repo/billing`, …) whose CommonJS build artefacts use
- * dynamic `require()`, which is incompatible with the pure-ESM context
- * the provisioning script runs in.
+ * Exists alongside `registry.ts` so tooling that needs the
+ * "(name, schedule)" pair can read it WITHOUT loading the job handlers.
+ * The handlers transitively import workspace packages (`@repo/db`,
+ * `@repo/billing`, …) whose CommonJS build artefacts use dynamic
+ * `require()`, which is incompatible with the pure-ESM contexts where
+ * a manifest is sometimes consumed (docs generators, validation
+ * scripts, etc.).
  *
  * Single source of truth: this file. The cron registry imports it for
  * the `(name, schedule)` pair and tests assert that every entry here
@@ -26,9 +26,9 @@
 export interface CronScheduleEntry {
     /** Stable kebab-case identifier; matches `name` on the job definition. */
     readonly name: string;
-    /** 5-field cron expression interpreted by both the in-process scheduler and Upstash QStash. */
+    /** 5-field cron expression interpreted by the in-process node-cron scheduler. */
     readonly schedule: string;
-    /** Human-readable summary used in QStash dashboard descriptions. */
+    /** Human-readable summary used in admin dashboards and audit reports. */
     readonly description: string;
 }
 

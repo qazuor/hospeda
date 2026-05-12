@@ -221,10 +221,10 @@ export const conversationNotificationJob: CronJobDefinition = {
                 }
 
                 // Email client — bail early if not configured
-                const resendApiKey = env.HOSPEDA_RESEND_API_KEY;
+                const resendApiKey = env.HOSPEDA_EMAIL_API_KEY;
                 if (!resendApiKey) {
                     logger.warn(
-                        'HOSPEDA_RESEND_API_KEY not configured — skipping notification dispatch'
+                        'HOSPEDA_EMAIL_API_KEY not configured — skipping notification dispatch'
                     );
                     return {
                         skipped: false,

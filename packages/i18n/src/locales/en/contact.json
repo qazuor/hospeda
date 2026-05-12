@@ -66,7 +66,15 @@
         "successTitle": "Message sent!",
         "type": "Inquiry type",
         "typeAccommodation": "Accommodation inquiry",
-        "typeGeneral": "General inquiry"
+        "typeGeneral": "General inquiry",
+        "typeSupport": "Technical support",
+        "typePublishAccommodation": "I want to list my accommodation",
+        "typeSubscriptions": "Subscriptions & billing",
+        "typeSuggestions": "Suggestions & feedback",
+        "typeReport": "Report a problem",
+        "typePress": "Press & media",
+        "typePartnerships": "Commercial partnerships",
+        "typeEventSubmission": "Submit an event"
     },
     "info": {
         "title": "Contact information",

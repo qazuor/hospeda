@@ -72,23 +72,46 @@ export const getCacheConfig = () => ({
 
 /**
  * Returns the resolved CORS configuration from environment variables.
+ *
+ * The `origins` list merges two env vars so operators don't have to keep
+ * two lists in sync:
+ *   - `API_CORS_ORIGINS` — canonical CORS allow-list. Localhost dev
+ *     origins live here.
+ *   - `HOSPEDA_EXTRA_TRUSTED_ORIGINS` — same value also wires Better
+ *     Auth's `trustedOrigins`. Used for hostname aliases (e.g. staging)
+ *     that the same containers serve.
+ *
+ * Result is deduplicated and trimmed.
  */
-export const getCorsConfig = () => ({
-    origins: parseCorsOrigins(
+export const getCorsConfig = () => {
+    const primary = parseCorsOrigins(
         _safe.get('API_CORS_ORIGINS', 'http://localhost:3000,http://localhost:4321')
-    ),
-    allowCredentials: _safe.getBoolean('API_CORS_ALLOW_CREDENTIALS', true),
-    maxAge: _safe.getNumber('API_CORS_MAX_AGE', 86400),
-    allowMethods: parseCommaSeparated(
-        _safe.get('API_CORS_ALLOW_METHODS', 'GET,POST,PUT,DELETE,PATCH,OPTIONS')
-    ),
-    allowHeaders: parseCommaSeparated(
-        _safe.get('API_CORS_ALLOW_HEADERS', 'Content-Type,Authorization,X-Requested-With')
-    ),
-    exposeHeaders: parseCommaSeparated(
-        _safe.get('API_CORS_EXPOSE_HEADERS', 'Content-Length,X-Request-ID')
-    )
-});
+    );
+    const extraRaw = _safe.get('HOSPEDA_EXTRA_TRUSTED_ORIGINS', '');
+    const extra = extraRaw ? parseCorsOrigins(extraRaw) : [];
+
+    const merged: string[] = [...primary];
+    for (const origin of extra) {
+        if (!merged.includes(origin)) {
+            merged.push(origin);
+        }
+    }
+
+    return {
+        origins: merged,
+        allowCredentials: _safe.getBoolean('API_CORS_ALLOW_CREDENTIALS', true),
+        maxAge: _safe.getNumber('API_CORS_MAX_AGE', 86400),
+        allowMethods: parseCommaSeparated(
+            _safe.get('API_CORS_ALLOW_METHODS', 'GET,POST,PUT,DELETE,PATCH,OPTIONS')
+        ),
+        allowHeaders: parseCommaSeparated(
+            _safe.get('API_CORS_ALLOW_HEADERS', 'Content-Type,Authorization,X-Requested-With')
+        ),
+        exposeHeaders: parseCommaSeparated(
+            _safe.get('API_CORS_EXPOSE_HEADERS', 'Content-Length,X-Request-ID')
+        )
+    };
+};
 
 /**
  * Returns the resolved compression configuration from environment variables.
@@ -229,15 +252,12 @@ export const getResponseConfig = () => ({
 
 /**
  * Returns the resolved database pool configuration.
- * In serverless environments (Vercel), defaults to max 3 connections
- * to stay within Neon pooler limits.
+ * Defaults are tuned for the long-running Node server on the VPS — override
+ * via env vars when scaling up or running test fixtures.
  */
 export const getDatabasePoolConfig = () => {
-    const isServerless = !!process.env.VERCEL;
-    const defaultMax = isServerless ? 3 : 10;
-
     return {
-        max: _safe.getNumber('HOSPEDA_DB_POOL_MAX_CONNECTIONS', defaultMax),
+        max: _safe.getNumber('HOSPEDA_DB_POOL_MAX_CONNECTIONS', 10),
         idleTimeoutMillis: _safe.getNumber('HOSPEDA_DB_POOL_IDLE_TIMEOUT_MS', 30000),
         connectionTimeoutMillis: _safe.getNumber('HOSPEDA_DB_POOL_CONNECTION_TIMEOUT_MS', 2000)
     };

@@ -98,7 +98,6 @@ describe('BaseCrudRead: _executeAdminSearch — ctx.tx forwarding (SPEC-059 T-05
 
     it('documents that _executeAdminSearch forwards ctx.tx to model (see SPEC-059 T-059G-005)', async () => {
         // Arrange
-        // biome-ignore lint/suspicious/noExplicitAny: mock tx for forwarding assertion
         const mockTx = { execute: vi.fn() } as any;
         const ctx: ServiceContext = { tx: mockTx, hookState: {} };
         const service = createServiceTestInstance(NoRelationsService, modelMock);
@@ -115,7 +114,6 @@ describe('BaseCrudRead: _executeAdminSearch — ctx.tx forwarding (SPEC-059 T-05
 
     it('forwards ctx.tx to model.findAll when no default relations are configured', async () => {
         // Arrange
-        // biome-ignore lint/suspicious/noExplicitAny: mock tx for forwarding assertion
         const mockTx = { execute: vi.fn() } as any;
         const ctx: ServiceContext = { tx: mockTx, hookState: {} };
         const service = createServiceTestInstance(NoRelationsService, modelMock);
@@ -132,7 +130,6 @@ describe('BaseCrudRead: _executeAdminSearch — ctx.tx forwarding (SPEC-059 T-05
 
     it('forwards ctx.tx to model.findAllWithRelations when default relations are configured', async () => {
         // Arrange
-        // biome-ignore lint/suspicious/noExplicitAny: mock tx for forwarding assertion
         const mockTx = { execute: vi.fn() } as any;
         const ctx: ServiceContext = { tx: mockTx, hookState: {} };
         const service = createServiceTestInstance(WithRelationsService, modelMock);

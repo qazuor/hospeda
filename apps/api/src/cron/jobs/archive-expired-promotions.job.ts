@@ -97,8 +97,8 @@ export const archiveExpiredPromotionsJob: CronJobDefinition = {
             const result = await withTransaction<CronTransactionResult>(async (tx) => {
                 // Acquire a transaction-level advisory lock to prevent overlapping runs.
                 // `pg_try_advisory_xact_lock` is non-blocking and auto-releases on
-                // commit/rollback — required by project policy (Neon/PgBouncer compatibility,
-                // see packages/db/docs/advisory-locks.md).
+                // commit/rollback — required by project policy (PgBouncer / pooled-client
+                // compatibility, see packages/db/docs/advisory-locks.md).
                 const lockResult = await tx.execute(
                     sql`SELECT pg_try_advisory_xact_lock(${ADVISORY_LOCK_ID}) as acquired`
                 );

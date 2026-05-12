@@ -368,9 +368,10 @@ export const webhookRetryJob: CronJobDefinition = {
         try {
             // Prevent overlapping cron executions via PostgreSQL advisory lock (GAP-009).
             // Lock key 1001 is reserved for this job. Uses pg_try_advisory_xact_lock
-            // (transaction-level) instead of pg_try_advisory_lock (session-level) for
-            // compatibility with Neon's transaction pooling (PgBouncer). Transaction-level
-            // locks auto-release on commit/rollback — no manual unlock needed.
+            // (transaction-level) instead of pg_try_advisory_lock (session-level) so the
+            // lock survives correctly under transaction-mode connection poolers
+            // (PgBouncer, Coolify pooled clients, etc.). Transaction-level locks
+            // auto-release on commit/rollback — no manual unlock needed.
             const cronResult = await withTransaction<CronTransactionResult>(async (tx) => {
                 const lockResult = await tx.execute(
                     sql`SELECT pg_try_advisory_xact_lock(1001) AS acquired`

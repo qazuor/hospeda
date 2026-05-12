@@ -32,7 +32,6 @@ describe('BaseCrudService: hookState initialization edge cases', () => {
         // Arrange
         asMock(modelMock.findById).mockResolvedValue({ ...mockEntity, deletedAt: null });
         asMock(modelMock.softDelete).mockResolvedValue(1);
-        // biome-ignore lint/suspicious/noExplicitAny: Mock tx for testing purposes
         const mockTx = { execute: vi.fn() } as any;
         const ctx: ServiceContext = { tx: mockTx };
 
@@ -107,7 +106,6 @@ describe('BaseCrudService: hookState initialization edge cases', () => {
 
     it('resolvedCtx spread: ctx without hookState adds empty {}', () => {
         // Arrange - ctx exists but has no hookState
-        // biome-ignore lint/suspicious/noExplicitAny: Mock tx for testing purposes
         const ctx: ServiceContext = { tx: { execute: vi.fn() } as any };
 
         // Act - simulate the resolvedCtx pattern

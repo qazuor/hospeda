@@ -51,7 +51,13 @@ describe('SignUpForm', () => {
 
     const createMockSignIn = (): Pick<SignInMethods, 'social'> => ({
         social: vi
-            .fn<(params: { provider: string; callbackURL: string }) => Promise<unknown>>()
+            .fn<
+                (params: {
+                    provider: string;
+                    callbackURL: string;
+                    errorCallbackURL?: string;
+                }) => Promise<unknown>
+            >()
             .mockResolvedValue({})
     });
 
@@ -62,7 +68,8 @@ describe('SignUpForm', () => {
             value: {
                 replace: mockLocationReplace,
                 href: '',
-                pathname: '/'
+                pathname: '/',
+                origin: 'http://localhost:3000'
             },
             writable: true,
             configurable: true
@@ -261,7 +268,8 @@ describe('SignUpForm', () => {
         await waitFor(() => {
             expect(mockSignIn.social).toHaveBeenCalledWith({
                 provider: 'google',
-                callbackURL: '/'
+                callbackURL: 'http://localhost:3000/',
+                errorCallbackURL: 'http://localhost:3000/'
             });
         });
     });
@@ -287,7 +295,8 @@ describe('SignUpForm', () => {
         await waitFor(() => {
             expect(mockSignIn.social).toHaveBeenCalledWith({
                 provider: 'facebook',
-                callbackURL: '/'
+                callbackURL: 'http://localhost:3000/',
+                errorCallbackURL: 'http://localhost:3000/'
             });
         });
     });
@@ -587,7 +596,8 @@ describe('SignUpForm', () => {
         await waitFor(() => {
             expect(mockSignIn.social).toHaveBeenCalledWith({
                 provider: 'google',
-                callbackURL: '/my-redirect'
+                callbackURL: 'http://localhost:3000/my-redirect',
+                errorCallbackURL: 'http://localhost:3000/'
             });
         });
     });

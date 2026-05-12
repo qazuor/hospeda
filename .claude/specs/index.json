@@ -41,7 +41,7 @@
         },
         {
             "specId": "SPEC-090",
-            "title": "Env-Var Schema SSOT — Eliminate the Manual Key-Mirror in Cross-Validation",
+            "title": "Env-Var Schema SSOT \u2014 Eliminate the Manual Key-Mirror in Cross-Validation",
             "status": "completed",
             "complexity": "medium",
             "path": "SPEC-090-env-schema-ssot",
@@ -139,7 +139,7 @@
             "created": "2026-04-01T00:00:00.000Z",
             "archived": true,
             "archivedAt": "2026-04-29T19:30:00.000Z",
-            "archiveNote": "Phase A shipped: vitest.config.integration.ts (globalSetup + maxForks 3), global-setup.ts (create/drop hospeda_integration_test, drizzle-kit push, apply-postgres-extras), helpers.ts (withTestTransaction/withCleanSlate/closeTestPool/getTestDb/testData), tx-propagation.test.ts (10 core tests), CI Postgres service container, root + db package scripts, turbo pipeline, CLAUDE.md docs. 26/26 integration tests pass against real PG. Phase B (model-tx-propagation.test.ts) and Phase C (service-tx via SPEC-059 Phase 4) deferred — Phase B now unblocked since SPEC-058/060 merged; Phase C still gated on SPEC-059. Test 6 uses tags table (not users) to bypass a pre-existing enum-vs-text comparison bug in the delete_entity_bookmarks trigger (manual migration 0014) that's unrelated to SPEC-061."
+            "archiveNote": "Phase A shipped: vitest.config.integration.ts (globalSetup + maxForks 3), global-setup.ts (create/drop hospeda_integration_test, drizzle-kit push, apply-postgres-extras), helpers.ts (withTestTransaction/withCleanSlate/closeTestPool/getTestDb/testData), tx-propagation.test.ts (10 core tests), CI Postgres service container, root + db package scripts, turbo pipeline, CLAUDE.md docs. 26/26 integration tests pass against real PG. Phase B (model-tx-propagation.test.ts) and Phase C (service-tx via SPEC-059 Phase 4) deferred \u2014 Phase B now unblocked since SPEC-058/060 merged; Phase C still gated on SPEC-059. Test 6 uses tags table (not users) to bypass a pre-existing enum-vs-text comparison bug in the delete_entity_bookmarks trigger (manual migration 0014) that's unrelated to SPEC-061."
         },
         {
             "specId": "SPEC-080",
@@ -709,6 +709,22 @@
             "created": "2026-05-07T00:00:00.000Z",
             "completed": "2026-05-08T00:00:00.000Z",
             "archived": false
+        },
+        {
+            "specId": "SPEC-102",
+            "title": "Admin API Bearer Token Authentication",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-102-admin-api-bearer-token"
+        },
+        {
+            "specId": "SPEC-103",
+            "title": "VPS Migration Post-Merge Cleanup & Hardening Backlog",
+            "type": "chore",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-103-vps-migration-post-merge-cleanup"
         }
     ]
 }

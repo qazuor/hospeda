@@ -29,6 +29,24 @@ const FIELD_LIMITS = {
 } as const;
 
 /**
+ * Human-readable Spanish labels for each contact type. Used in the email
+ * subject so triage in the inbox is faster than parsing the raw slug.
+ * Falls back to the slug if a new type is added and not yet mapped.
+ */
+const CONTACT_TYPE_LABELS: Record<string, string> = {
+    general: 'Consulta general',
+    support: 'Soporte técnico',
+    publish_accommodation: 'Publicar alojamiento',
+    subscriptions: 'Suscripciones y pagos',
+    suggestions: 'Sugerencias',
+    report: 'Reporte',
+    press: 'Prensa',
+    partnerships: 'Alianzas comerciales',
+    event_submission: 'Sumar evento',
+    accommodation: 'Consulta sobre alojamiento'
+};
+
+/**
  * Resolve the support inbox to which contact form submissions should be sent.
  *
  * Order of precedence:
@@ -150,12 +168,13 @@ export const submitContactRoute = createSimpleRoute({
 
         // ── 5. Send email to support inbox via @repo/notifications ───────────
         const supportInbox = resolveSupportInbox();
+        const contactTypeLabel = CONTACT_TYPE_LABELS[sanitized.type] ?? sanitized.type;
         const payload: NotificationPayload = {
             type: NotificationType.CONTACT_SUBMISSION,
             recipientEmail: supportInbox,
             recipientName: 'Hospeda Support',
             userId: null,
-            contactType: sanitized.type,
+            contactType: contactTypeLabel,
             senderFirstName: sanitized.firstName,
             senderLastName: sanitized.lastName,
             senderEmail: sanitized.email,
@@ -166,8 +185,9 @@ export const submitContactRoute = createSimpleRoute({
 
         // Treat missing API key as a soft failure — the submission is still
         // logged above and we return success so the user is not blocked.
-        // Once HOSPEDA_RESEND_API_KEY is set in Vercel, real delivery kicks in.
-        if (env.HOSPEDA_RESEND_API_KEY) {
+        // Once HOSPEDA_EMAIL_API_KEY is set in the runtime env, real delivery
+        // kicks in.
+        if (env.HOSPEDA_EMAIL_API_KEY) {
             try {
                 await sendNotification(payload, { skipDb: true, skipLogging: true });
                 apiLogger.info(
@@ -189,7 +209,7 @@ export const submitContactRoute = createSimpleRoute({
             }
         } else {
             apiLogger.warn(
-                'HOSPEDA_RESEND_API_KEY not set — contact submission stored in logs only'
+                'HOSPEDA_EMAIL_API_KEY not set — contact submission stored in logs only'
             );
         }
 

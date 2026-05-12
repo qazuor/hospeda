@@ -12,13 +12,14 @@ export interface InitRevalidationParams {
     /** Node.js environment (e.g. 'production', 'staging', 'development', 'test') */
     readonly nodeEnv?: string;
     /**
-     * Revalidation bypass token (HOSPEDA_ISR_BYPASS_TOKEN).
-     * Required to activate the Vercel adapter in non-local environments.
+     * Revalidation shared secret (HOSPEDA_REVALIDATION_SECRET).
+     * Required to activate the Cloudflare cache-purge adapter in non-local
+     * environments. Must match the secret configured on the web app.
      */
     readonly revalidationSecret?: string;
     /**
      * Base site URL (e.g. `https://hospeda.com.ar`).
-     * Used by the Vercel adapter to build revalidation request URLs.
+     * Used to build the cache-purge request URL (`${siteUrl}/api/revalidate`).
      */
     readonly siteUrl: string;
     /**
@@ -67,7 +68,7 @@ export interface InitRevalidationParams {
  * ```ts
  * const service = initializeRevalidationService({
  *   nodeEnv: process.env.NODE_ENV,
- *   revalidationSecret: process.env.HOSPEDA_ISR_BYPASS_TOKEN,
+ *   revalidationSecret: process.env.HOSPEDA_REVALIDATION_SECRET,
  *   siteUrl: process.env.HOSPEDA_SITE_URL,
  * });
  * ```

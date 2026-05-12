@@ -1979,6 +1979,12 @@
             "min": "El within debe tener al menos {{min}} caracteres"
         }
     },
+    "newsletter": {
+        "email": {
+            "invalid": "El email no es válido",
+            "max": "El email es demasiado largo (máximo 254 caracteres)"
+        }
+    },
     "ownerPromotion": {
         "currentRedemptions": {
             "int": "El current redemptions debe ser un número entero",

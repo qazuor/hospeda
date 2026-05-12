@@ -5,8 +5,7 @@
     "globalEnv": [
         "NODE_ENV",
         "CI",
-        "VERCEL_GIT_COMMIT_SHA",
-        "VERCEL_ENV",
+        "HOSPEDA_GIT_SHA",
         "HOSPEDA_API_URL",
         "HOSPEDA_SITE_URL",
         "HOSPEDA_ADMIN_URL",
@@ -41,7 +40,7 @@
         "admin#build": {
             "dependsOn": ["^build"],
             "inputs": ["$TURBO_DEFAULT$", ".env*"],
-            "outputs": [".output/**", ".tanstack/**", ".vercel/output/**", "src/routeTree.gen.ts"]
+            "outputs": [".output/**", ".tanstack/**", "src/routeTree.gen.ts"]
         },
         "lint": {
             "outputs": []
@@ -62,7 +61,8 @@
         "test": {
             "dependsOn": ["build"],
             "outputs": [],
-            "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
+            "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"],
+            "env": ["VITEST_SHARD"]
         },
         "test:watch": {
             "cache": false,
@@ -70,7 +70,8 @@
         },
         "test:coverage": {
             "dependsOn": ["build"],
-            "outputs": ["coverage/**"]
+            "outputs": ["coverage/**"],
+            "env": ["VITEST_SHARD"]
         },
         "test:integration": {
             "dependsOn": ["^build"],

@@ -66,7 +66,6 @@ describe('BillingCustomerSyncService', () => {
 
     beforeEach(() => {
         // Reset withTransaction to its default passthrough behaviour.
-        // biome-ignore lint/suspicious/noExplicitAny: test mock — real type not needed
         vi.mocked(withTransaction).mockImplementation((callback: (tx: any) => Promise<unknown>) =>
             callback(mockTx)
         );

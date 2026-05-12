@@ -1,19 +1,14 @@
 /**
  * @file og.ts
  * @description Dynamic OG image generation endpoint.
- * Generates 1200x630 PNG images with Hospeda branding for social media previews.
+ * Returns a 1200x630 SVG with Hospeda branding for social media previews.
  *
  * Usage: GET /api/og?title=Page+Title&description=Optional+description
- *
- * Requires `@vercel/og` package. Install with: pnpm add @vercel/og --filter hospeda-web
  *
  * @route GET /api/og
  */
 
 import type { APIRoute } from 'astro';
-
-// TODO: Uncomment when @vercel/og is installed
-// import { ImageResponse } from '@vercel/og';
 
 /**
  * OG image generation endpoint.
@@ -23,7 +18,6 @@ export const GET: APIRoute = async ({ url }) => {
     const title = url.searchParams.get('title') || 'Hospeda';
     const description = url.searchParams.get('description') || '';
 
-    // Fallback SVG-based implementation (works without @vercel/og)
     const svg = `
     <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
         <defs>

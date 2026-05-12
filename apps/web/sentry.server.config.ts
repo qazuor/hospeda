@@ -8,6 +8,7 @@ if (dsn) {
         environment: import.meta.env.MODE || 'development',
         release:
             import.meta.env.PUBLIC_SENTRY_RELEASE ||
+            process.env.HOSPEDA_GIT_SHA ||
             process.env.VERCEL_GIT_COMMIT_SHA ||
             'development',
 

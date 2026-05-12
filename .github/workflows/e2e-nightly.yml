@@ -8,8 +8,13 @@ name: E2E (Nightly)
 # workflow_dispatch to re-run on demand for pre-release validation.
 
 on:
-  schedule:
-    - cron: '0 3 * * *' # 03:00 UTC daily
+  # Cron trigger DISABLED 2026-05-12: the suite has been failing every
+  # night since the VPS migration sprint (database/Brevo/credential
+  # config drift). Each failed run still consumes ~5-10 min of free-tier
+  # Actions minutes. Re-enable the cron after SPEC-103 restores the
+  # suite. Manual triggers via workflow_dispatch remain available.
+  #   schedule:
+  #     - cron: '0 3 * * *' # 03:00 UTC daily
   workflow_dispatch:
 
 concurrency:

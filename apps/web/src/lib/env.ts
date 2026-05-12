@@ -60,16 +60,39 @@ export function getSiteUrl(): string {
  * and for any other deep link from the public site into the admin panel.
  * Strips the trailing slash so callers can append paths safely.
  *
- * @returns The admin base URL without a trailing slash
- * @throws {Error} If neither PUBLIC_ADMIN_URL nor HOSPEDA_ADMIN_URL is configured
+ * Returns `undefined` when neither env var is set so display-only callers
+ * (header menu, dashboard widgets) can render without an admin link instead
+ * of crashing the page. Runtime-critical callers that must redirect to the
+ * admin app should use `getAdminUrlOrThrow()` and return a 500 / 404 when
+ * the URL is missing.
+ *
+ * @returns The admin base URL without a trailing slash, or undefined
  */
-export function getAdminUrl(): string {
+export function getAdminUrl(): string | undefined {
     const env = getEnv();
     const url = env.PUBLIC_ADMIN_URL ?? env.HOSPEDA_ADMIN_URL;
     if (!url) {
-        throw new Error('[web2] Neither PUBLIC_ADMIN_URL nor HOSPEDA_ADMIN_URL is configured');
+        return undefined;
     }
     return url.replace(/\/$/, '');
+}
+
+/**
+ * Get the admin panel base URL, throwing when it is not configured.
+ *
+ * Use this in flows that REQUIRE the admin URL at runtime (e.g. server-side
+ * redirects to the admin app). Display-only callers should use
+ * `getAdminUrl()` and degrade gracefully when it returns undefined.
+ *
+ * @returns The admin base URL without a trailing slash
+ * @throws {Error} If neither PUBLIC_ADMIN_URL nor HOSPEDA_ADMIN_URL is configured
+ */
+export function getAdminUrlOrThrow(): string {
+    const url = getAdminUrl();
+    if (!url) {
+        throw new Error('[web2] Neither PUBLIC_ADMIN_URL nor HOSPEDA_ADMIN_URL is configured');
+    }
+    return url;
 }
 
 /**

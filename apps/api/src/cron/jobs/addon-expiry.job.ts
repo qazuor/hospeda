@@ -163,9 +163,10 @@ export const addonExpiryJob: CronJobDefinition = {
 
         // Prevent overlapping cron executions via PostgreSQL advisory lock (GAP-043-10).
         // Lock key 43001 is reserved for this job. Uses pg_try_advisory_xact_lock (transaction-level)
-        // instead of pg_try_advisory_lock (session-level) for compatibility with Neon's transaction
-        // pooling (PgBouncer). Transaction-level locks auto-release on commit/rollback — no manual
-        // unlock needed. If a previous run still holds the lock, we skip immediately.
+        // instead of pg_try_advisory_lock (session-level) so the lock survives correctly
+        // under transaction-mode connection poolers (PgBouncer, Coolify pooled clients, etc.).
+        // Transaction-level locks auto-release on commit/rollback — no manual unlock needed.
+        // If a previous run still holds the lock, we skip immediately.
         //
         // The entire cron body runs inside withTransaction so the lock remains held until
         // the transaction commits at the end. This keeps the lock valid across all DB phases.
@@ -183,7 +184,7 @@ export const addonExpiryJob: CronJobDefinition = {
                 // Acquire transaction-level advisory lock (non-blocking).
                 // pg_try_advisory_xact_lock holds the lock for the duration of the
                 // enclosing transaction, then releases automatically on commit/rollback.
-                // Compatible with Neon serverless and PgBouncer transaction-mode pooling.
+                // Compatible with transaction-mode connection poolers (PgBouncer, etc.).
                 const lockResult = await tx.execute(
                     sql`SELECT pg_try_advisory_xact_lock(43001) as acquired`
                 );

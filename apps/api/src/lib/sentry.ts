@@ -64,7 +64,6 @@ export function initializeSentry(config: SentryConfig = {}): boolean {
 
     // Compute environment-dependent flags using validated env (called after validateApiEnv())
     const isDev = env.NODE_ENV !== 'production';
-    const isServerless = !!env.VERCEL;
 
     const resolvedDefaults: SentryConfig = {
         ...DEFAULT_CONFIG,
@@ -80,7 +79,7 @@ export function initializeSentry(config: SentryConfig = {}): boolean {
         Sentry.init({
             dsn: sentryDsn,
             environment: finalConfig.environment,
-            release: env.HOSPEDA_SENTRY_RELEASE || env.VERCEL_GIT_COMMIT_SHA || 'development',
+            release: env.HOSPEDA_SENTRY_RELEASE || env.HOSPEDA_COMMIT_SHA || 'development',
             debug: finalConfig.debug,
 
             // Performance monitoring
@@ -95,10 +94,9 @@ export function initializeSentry(config: SentryConfig = {}): boolean {
                 }
             },
 
-            // Integrations - skip profiling in development and serverless (native bindings unsupported)
-            // Profiling integration disabled in dev/serverless (native bindings unsupported).
+            // Integrations - skip profiling in development (cheap & noisy locally).
             // Cast needed: @sentry/profiling-node pins @sentry/core@10.38, @sentry/node uses 10.40.
-            ...(isDev || isServerless
+            ...(isDev
                 ? {}
                 : // biome-ignore lint/suspicious/noExplicitAny: Sentry version mismatch between profiling-node and node packages
                   { integrations: [nodeProfilingIntegration()] as any }),

@@ -2,8 +2,7 @@
  * Notification helpers for MercadoPago webhook payment events.
  *
  * All notification sends are best-effort: failures are logged but
- * do not interrupt webhook processing. Functions are async so they
- * can be properly awaited in serverless environments (Vercel).
+ * do not interrupt webhook processing.
  *
  * @module routes/webhooks/mercadopago/notifications
  */

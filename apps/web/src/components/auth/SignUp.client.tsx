@@ -19,8 +19,22 @@ import styles from './SignUp.module.css';
 export interface SignUpProps {
     /** Active locale — used for translations. */
     readonly locale: SupportedLocale;
-    /** URL to redirect to after a successful sign-up. */
+    /**
+     * URL to redirect to after a successful EMAIL sign-up. Email
+     * sign-up requires verification, so this typically points at
+     * `/auth/verify-email-sent/`.
+     */
     readonly redirectTo: string;
+    /**
+     * Optional URL to redirect to after a successful OAuth sign-up.
+     * OAuth providers (Google, Facebook) verify the email themselves,
+     * so the user is already authenticated and should land on the
+     * account dashboard, NOT the "check your inbox" page that the
+     * email path uses. Defaults to {@link redirectTo} for backwards
+     * compatibility, but pages should override this with the dashboard
+     * path to give OAuth users the correct landing experience.
+     */
+    readonly oauthRedirectTo?: string;
     /** Whether to show OAuth provider buttons. Defaults to true. */
     readonly showOAuth?: boolean;
 }
@@ -36,7 +50,7 @@ export interface SignUpProps {
  * <SignUp client:load locale={locale} redirectTo="/es/mi-cuenta/" showOAuth={true} />
  * ```
  */
-export function SignUp({ locale, redirectTo, showOAuth = true }: SignUpProps) {
+export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }: SignUpProps) {
     const { t } = createTranslations(locale);
 
     const [name, setName] = useState('');
@@ -84,11 +98,42 @@ export function SignUp({ locale, redirectTo, showOAuth = true }: SignUpProps) {
         setOauthLoading(provider);
 
         try {
-            await signIn.social({
-                provider,
-                callbackURL: redirectTo || window.location.pathname
-            });
-        } catch {
+            // Build the absolute callbackURL on the client so the host
+            // matches the browser's real origin. The server-built
+            // redirectTo can carry 'https://localhost' when Astro Node
+            // runs behind a reverse proxy that doesn't forward the
+            // original Host header — and Better Auth rejects any
+            // callbackURL whose origin isn't in trustedOrigins. Strip
+            // the host (if any) and reattach window.location.origin.
+            //
+            // For OAuth, prefer `oauthRedirectTo` over `redirectTo`:
+            // OAuth providers verify the email themselves, so the
+            // user is already authenticated and should land on the
+            // account dashboard, NOT the "check your inbox" page that
+            // the email signup path uses (`verify-email-sent`).
+            const origin = window.location.origin;
+            const rawTarget = oauthRedirectTo ?? redirectTo ?? window.location.pathname ?? '/';
+            let path = rawTarget;
+            if (path.startsWith('http')) {
+                try {
+                    const parsed = new URL(path);
+                    path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
+                } catch {
+                    path = '/';
+                }
+            }
+            if (!path.startsWith('/')) {
+                path = `/${path}`;
+            }
+            const callbackURL = `${origin}${path}`;
+            const errorCallbackURL = `${origin}${window.location.pathname || '/'}`;
+            await signIn.social({ provider, callbackURL, errorCallbackURL });
+        } catch (err) {
+            // Surface the actual Better Auth error to console so the
+            // operator can distinguish INVALID_CALLBACKURL vs
+            // account_not_linked vs network errors. Without this,
+            // every OAuth failure looks identical to "user cancelled".
+            console.error(`OAuth ${provider} sign-up failed`, err);
             setError(t('auth.signUp.error', 'Error al crear la cuenta'));
             setOauthLoading(null);
         }

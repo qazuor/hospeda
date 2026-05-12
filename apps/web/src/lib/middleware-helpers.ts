@@ -380,8 +380,8 @@ export function buildCspHeader({
         `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
         `style-src 'self' https://fonts.googleapis.com 'nonce-${nonce}'`,
         "font-src 'self' https://fonts.gstatic.com",
-        `img-src 'self' data: blob: https://res.cloudinary.com https://cdn.simpleicons.org https://*.vercel-storage.com https://*.public.blob.vercel-storage.com https://*.tile.openstreetmap.org https://*.openstreetmap.org${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
-        `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''} https://*.sentry.io https://*.vercel.app https://*.tile.openstreetmap.org`,
+        `img-src 'self' data: blob: https://res.cloudinary.com https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
+        `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''} https://*.sentry.io https://*.tile.openstreetmap.org`,
         "worker-src 'self' blob:",
         'child-src blob:',
         "object-src 'none'",
@@ -400,3 +400,36 @@ export function buildCspHeader({
 
 // Re-export from shared package for backward compatibility
 export { buildSentryReportUri } from '@repo/utils';
+
+/**
+ * Default noindex host (used when `HOSPEDA_NOINDEX_HOSTS` is unset).
+ * Kept narrow on purpose: a missing env var is safer to default to the
+ * known pre-launch staging host than to leave indexing wide open.
+ */
+const DEFAULT_NOINDEX_HOST = 'staging.hospeda.com.ar';
+
+/**
+ * Parse the `HOSPEDA_NOINDEX_HOSTS` env var (comma-separated host list)
+ * into a normalised lowercase array. Used by both the global middleware
+ * (which sets `X-Robots-Tag: noindex, nofollow`) and the dynamic
+ * `robots.txt` endpoint (which serves `Disallow: /` for those hosts).
+ *
+ * Centralising the parser here means a future host alias only needs the
+ * env var update — no risk of one mechanism updating without the other
+ * (header sent but robots.txt still permissive, or vice versa).
+ *
+ * @param raw - Raw string from `import.meta.env.HOSPEDA_NOINDEX_HOSTS`.
+ *              Pass `undefined` to fall back to the default.
+ * @returns Lowercase, trimmed, deduplicated host list. Always non-empty
+ *          (falls back to {@link DEFAULT_NOINDEX_HOST} when input is
+ *          undefined / empty / all-whitespace).
+ */
+export function parseNoindexHosts(raw: string | undefined): ReadonlyArray<string> {
+    const source = raw && raw.trim().length > 0 ? raw : DEFAULT_NOINDEX_HOST;
+    const seen = new Set<string>();
+    for (const part of source.split(',')) {
+        const host = part.trim().toLowerCase();
+        if (host.length > 0) seen.add(host);
+    }
+    return [...seen];
+}

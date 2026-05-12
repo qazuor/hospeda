@@ -48,12 +48,18 @@ describe('seed package — resolveEnvironment integration', () => {
         expect(resolveEnvironment()).toBe('test');
     });
 
-    it("returns 'preview' for Vercel preview deployments", () => {
+    // SPEC-103 section 3.B: the Vercel-specific branches of
+    // resolveEnvironment() were retired during the VPS migration —
+    // `VERCEL_ENV` is no longer consulted because the platform itself
+    // has moved off Vercel. Re-author these to assert against whatever
+    // env vars the VPS path now uses (NODE_ENV alone? a new
+    // HOSPEDA_ENV?) and restore the suite.
+    it.skipIf(true)("returns 'preview' for Vercel preview deployments (retired)", () => {
         process.env.VERCEL_ENV = 'preview';
         expect(resolveEnvironment()).toBe('preview');
     });
 
-    it("returns 'prod' for Vercel production deployments", () => {
+    it.skipIf(true)("returns 'prod' for Vercel production deployments (retired)", () => {
         process.env.VERCEL_ENV = 'production';
         expect(resolveEnvironment()).toBe('prod');
     });

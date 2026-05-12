@@ -1,0 +1,316 @@
+---
+// Newsletter signup form for the pre-launch coming-soon landing.
+//
+// Submits to POST /api/v1/public/newsletter on the API host. On success
+// the visitor is redirected to /gracias/ with the email as a query param
+// so the thank-you page can echo it back. Validation/rate-limit errors
+// are shown inline so the user can correct and retry without losing context.
+
+const apiUrl = (import.meta.env.PUBLIC_API_URL ?? 'https://api.hospeda.com.ar').replace(/\/$/, '');
+const newsletterEndpoint = `${apiUrl}/api/v1/public/newsletter`;
+---
+
+<section id="newsletter" class="newsletter" aria-labelledby="newsletter-title">
+    <div class="container newsletter-inner">
+        <p class="newsletter-eyebrow">Newsletter</p>
+        <h2 id="newsletter-title" class="newsletter-title">
+            Enterate primero cuando lance
+        </h2>
+        <p class="newsletter-tagline">
+            Sin spam. Solo te avisamos cuando podamos abrirte las puertas y, de vez en
+            cuando, te compartimos las mejores escapadas del Litoral.
+        </p>
+
+        <form
+            class="newsletter-form"
+            method="post"
+            action={newsletterEndpoint}
+            data-endpoint={newsletterEndpoint}
+            data-state="idle"
+            aria-label="Suscribirme al newsletter de Hospeda"
+            novalidate
+        >
+            <label class="sr-only" for="newsletter-email">Email</label>
+            <input
+                id="newsletter-email"
+                type="email"
+                name="email"
+                class="newsletter-input"
+                placeholder="tu-email@ejemplo.com"
+                autocomplete="email"
+                inputmode="email"
+                required
+                aria-describedby="newsletter-feedback"
+            />
+            {/* Honeypot — visually hidden, bots fill it, humans don't. */}
+            <label class="newsletter-honeypot" aria-hidden="true">
+                <span>Sitio web</span>
+                <input
+                    type="text"
+                    name="website"
+                    tabindex="-1"
+                    autocomplete="off"
+                />
+            </label>
+            <button type="submit" class="newsletter-button">
+                <span class="newsletter-button-label">Avisame</span>
+                <span class="newsletter-button-spinner" aria-hidden="true"></span>
+            </button>
+        </form>
+
+        <p id="newsletter-feedback" class="newsletter-feedback" role="status" aria-live="polite"></p>
+    </div>
+</section>
+
+<script>
+    /**
+     * Newsletter form: progressive enhancement.
+     *
+     * - Without JS: native form POSTs to the API endpoint and the user
+     *   sees the raw JSON response. Not ideal but never blocks.
+     * - With JS: intercepts submit, POSTs via fetch, redirects to
+     *   /gracias/ on success, shows inline errors on failure.
+     */
+    const form = document.querySelector<HTMLFormElement>('.newsletter-form');
+    const input = document.querySelector<HTMLInputElement>('#newsletter-email');
+    const feedback = document.querySelector<HTMLParagraphElement>('#newsletter-feedback');
+    const button = form?.querySelector<HTMLButtonElement>('.newsletter-button');
+
+    if (form && input && feedback && button) {
+        const endpoint = form.dataset.endpoint ?? form.action;
+
+        const setState = (state: 'idle' | 'loading' | 'error') => {
+            form.dataset.state = state;
+            input.disabled = state === 'loading';
+            button.disabled = state === 'loading';
+            if (state !== 'error') {
+                feedback.textContent = '';
+                feedback.dataset.tone = '';
+            }
+        };
+
+        const showError = (message: string) => {
+            setState('error');
+            feedback.textContent = message;
+            feedback.dataset.tone = 'error';
+        };
+
+        const goToThanks = (email: string) => {
+            const params = new URLSearchParams({ email });
+            // Preserve the trailing slash convention of the rest of the site.
+            window.location.href = `/gracias/?${params.toString()}`;
+        };
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const email = input.value.trim();
+
+            // Soft client-side check — the API does the real validation.
+            if (!email || !email.includes('@')) {
+                showError('Ingresá un email válido para suscribirte.');
+                input.focus();
+                return;
+            }
+
+            setState('loading');
+
+            // Honeypot value (browser autofill paranoia: read it but never
+            // hide the request based on its value — let the API decide).
+            const honeypot = (
+                form.elements.namedItem('website') as HTMLInputElement | null
+            )?.value ?? '';
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'content-type': 'application/json',
+                        accept: 'application/json'
+                    },
+                    body: JSON.stringify({ email, website: honeypot })
+                });
+
+                if (response.ok) {
+                    goToThanks(email);
+                    return;
+                }
+
+                if (response.status === 429) {
+                    showError('Probá de nuevo en un momento — recibimos muchas solicitudes.');
+                    return;
+                }
+
+                if (response.status === 400) {
+                    showError('El email no parece válido. Revisalo e intentá de nuevo.');
+                    return;
+                }
+
+                showError('Hubo un problema. Intentá de nuevo en unos minutos.');
+            } catch {
+                showError('No pudimos conectar con el servidor. Revisá tu conexión.');
+            }
+        });
+    }
+</script>
+
+<style>
+    .newsletter {
+        background: linear-gradient(
+            180deg,
+            var(--core-background) 0%,
+            var(--hospeda-sand) 100%
+        );
+        padding-block: var(--space-section);
+    }
+
+    .newsletter-inner {
+        max-width: var(--container-narrow);
+        text-align: center;
+    }
+
+    .newsletter-eyebrow {
+        font-size: var(--text-body-sm);
+        font-weight: 500;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--hospeda-river);
+        margin-bottom: var(--space-3);
+    }
+
+    .newsletter-title {
+        font-size: var(--text-display);
+        margin-bottom: var(--space-4);
+    }
+
+    .newsletter-tagline {
+        font-size: var(--text-tagline);
+        color: var(--core-muted-foreground);
+        margin-bottom: var(--space-10);
+        max-width: 52ch;
+        margin-inline: auto;
+    }
+
+    .newsletter-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3);
+        max-width: 520px;
+        margin: 0 auto var(--space-4);
+        background: white;
+        padding: var(--space-2);
+        border-radius: var(--radius-pill);
+        box-shadow: var(--shadow-card);
+        position: relative;
+    }
+
+    .newsletter-input {
+        flex: 1 1 240px;
+        min-width: 0;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-family: inherit;
+        font-size: var(--text-body);
+        color: var(--core-foreground);
+        padding: var(--space-3) var(--space-4);
+    }
+
+    .newsletter-input::placeholder {
+        color: oklch(from var(--core-muted-foreground) l c h / 0.6);
+    }
+
+    .newsletter-input:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .newsletter-button {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+        padding: var(--space-3) var(--space-6);
+        background: var(--brand-primary);
+        color: var(--primary-foreground);
+        border: none;
+        border-radius: var(--radius-pill);
+        font-family: inherit;
+        font-size: var(--text-button);
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color var(--duration-fast) var(--ease-out);
+        min-width: 120px;
+    }
+
+    .newsletter-button:hover:not(:disabled) {
+        background: oklch(from var(--brand-primary) calc(l + 0.05) c h);
+    }
+
+    .newsletter-button:disabled {
+        cursor: wait;
+        opacity: 0.85;
+    }
+
+    .newsletter-button-spinner {
+        display: none;
+        width: 16px;
+        height: 16px;
+        border: 2px solid oklch(1 0 0 / 0.4);
+        border-top-color: var(--primary-foreground);
+        border-radius: 50%;
+        animation: newsletter-spin 0.8s linear infinite;
+    }
+
+    .newsletter-form[data-state='loading'] .newsletter-button-label {
+        opacity: 0.7;
+    }
+
+    .newsletter-form[data-state='loading'] .newsletter-button-spinner {
+        display: inline-block;
+    }
+
+    @keyframes newsletter-spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .newsletter-honeypot {
+        position: absolute;
+        left: -10000px;
+        top: auto;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+    }
+
+    .newsletter-feedback {
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+        font-style: italic;
+        min-height: 1.5em;
+    }
+
+    .newsletter-feedback[data-tone='error'] {
+        color: var(--destructive, oklch(0.577 0.245 27.325));
+        font-style: normal;
+    }
+
+    @media (max-width: 540px) {
+        .newsletter-form {
+            border-radius: var(--radius-lg);
+            flex-direction: column;
+            padding: var(--space-3);
+        }
+
+        .newsletter-input {
+            text-align: center;
+            padding-block: var(--space-3);
+        }
+
+        .newsletter-button {
+            width: 100%;
+        }
+    }
+</style>

@@ -3,7 +3,7 @@
  *
  * Docker variables configure the `docker-compose.yml` services (PostgreSQL,
  * Redis). System variables are injected by the runtime environment (Node.js,
- * CI, Vercel) and are not set manually in `.env` files.
+ * CI) and are not set manually in `.env` files.
  *
  * @module env-registry.docker-system
  */
@@ -98,7 +98,7 @@ export const DOCKER_ENV_VARS = [
 ] as const satisfies readonly EnvVarDefinition[];
 
 /**
- * System/runtime environment variables set by Node.js, CI systems, or Vercel.
+ * System/runtime environment variables set by Node.js or CI systems.
  *
  * @example
  * ```ts
@@ -119,9 +119,9 @@ export const SYSTEM_ENV_VARS = [
         apps: ['api', 'web', 'admin'],
         category: 'system',
         howToObtain:
-            'Auto-set by the runtime. Vercel sets "production" for prod builds and "development" for the dev server. Do NOT set it manually in Vercel — the platform rejects it.',
+            'Auto-set by the runtime. In Coolify the platform-level NODE_ENV is "production"; locally use "development" or leave it unset and pnpm scripts pick the right value.',
         howToObtainEs:
-            'Lo setea el runtime automáticamente. Vercel pone "production" para builds de prod y "development" para el dev server. NO lo seteés manualmente en Vercel; la plataforma lo rechaza.'
+            'Lo setea el runtime automáticamente. En Coolify queda en "production" a nivel plataforma; en local usá "development" o dejala vacía y los scripts de pnpm eligen el valor correcto.'
     },
     {
         name: 'CI',
@@ -134,37 +134,9 @@ export const SYSTEM_ENV_VARS = [
         apps: ['api'],
         category: 'system',
         howToObtain:
-            'Auto-set by GitHub Actions / Vercel / etc. Do NOT set manually. Code uses it to disable interactive prompts in scripts.',
+            'Auto-set by GitHub Actions and most CI runners. Do NOT set manually. Code uses it to disable interactive prompts in scripts.',
         howToObtainEs:
-            'Lo setean automáticamente GitHub Actions / Vercel / etc. NO lo seteés a mano. El código lo usa para apagar prompts interactivos en scripts.'
-    },
-    {
-        name: 'VERCEL',
-        description: 'Automatically set to 1 when running on Vercel serverless infrastructure',
-        descriptionEs: 'Se setea en 1 automáticamente cuando corre en infraestructura de Vercel',
-        type: 'boolean',
-        required: false,
-        secret: false,
-        exampleValue: 'false',
-        apps: ['api'],
-        category: 'system',
-        howToObtain: 'Auto-set by Vercel runtime to 1. Do NOT set manually.',
-        howToObtainEs: 'Lo setea Vercel automáticamente en 1. NO lo seteés a mano.'
-    },
-    {
-        name: 'VERCEL_GIT_COMMIT_SHA',
-        description: 'Full Git commit SHA injected by Vercel at build time',
-        descriptionEs: 'SHA completo del commit Git que inyecta Vercel al momento del build',
-        type: 'string',
-        required: false,
-        secret: false,
-        exampleValue: 'abc123def456',
-        apps: ['api'],
-        category: 'system',
-        howToObtain:
-            'Auto-set by Vercel at build time to the deployed git SHA. Use it as the Sentry release identifier so each deploy is uniquely tagged.',
-        howToObtainEs:
-            'Vercel lo setea al hacer el build con el SHA del commit deployado. Conectalo al "release" de Sentry así cada deploy queda etiquetado único.'
+            'Lo setean automáticamente GitHub Actions y la mayoría de los runners de CI. NO lo seteés a mano. El código lo usa para apagar prompts interactivos en scripts.'
     },
     // SENTRY_ENVIRONMENT: Deferred.. use import.meta.env.MODE or NODE_ENV instead
     {

@@ -4,8 +4,9 @@
  * @description Sign-up page — allows users to create a new account.
  *
  * Authenticated users are immediately redirected to /mi-cuenta/.
- * After a successful registration the user is automatically signed in
- * and redirected to the account dashboard.
+ * After a successful registration, the API does NOT auto sign-in the user
+ * (email verification is required). The user is sent to verify-email-sent
+ * where they are instructed to click the verification link in their inbox.
  *
  * @route    /[lang]/auth/signup/
  * @rendering SSR (auth state from locals)
@@ -14,7 +15,6 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { getSiteUrl } from '@/lib/env';
 import AuthLayout from '@/layouts/AuthLayout.astro';
 import { SignUp } from '@/components/auth/SignUp.client';
 
@@ -33,9 +33,28 @@ const description = t('auth-ui.pages.signup.description', 'Crea tu cuenta en Hos
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
-// After registration, redirect user to their account dashboard.
-const siteOrigin = getSiteUrl();
-const redirectTo = new URL(buildUrl({ locale, path: 'mi-cuenta' }), siteOrigin).href;
+// After registration, redirect user to a "check your email" page since
+// the account is created without an active session (email verification is
+// required before sign-in). The verify-email-sent page reassures the user
+// and offers to resend the verification email.
+//
+// Anchor on `Astro.url.origin` (the actual request host) so users
+// signing up from staging.hospeda.com.ar don't get bounced to the
+// canonical apex post-registration.
+const redirectTo = new URL(
+    buildUrl({ locale, path: 'auth/verify-email-sent' }),
+    Astro.url.origin
+).href;
+
+// OAuth providers (Google, Facebook) verify email themselves, so the
+// user is fully authenticated when the callback returns. Sending them
+// to /auth/verify-email-sent/ would be confusing ("check your inbox"
+// when there's no email to check). Land them on the account dashboard
+// instead.
+const oauthRedirectTo = new URL(
+    buildUrl({ locale, path: 'mi-cuenta' }),
+    Astro.url.origin
+).href;
 
 // Localized secondary link labels via i18n
 const haveAccountLabel = t('auth-ui.signUp.alreadyHaveAccount', 'Already have an account?');
@@ -43,7 +62,13 @@ const signInLabel = t('auth-ui.signUp.signInLink', 'Sign In');
 ---
 
 <AuthLayout locale={locale} title={title} description={description}>
-    <SignUp client:load locale={locale} redirectTo={redirectTo} showOAuth={true} />
+    <SignUp
+        client:load
+        locale={locale}
+        redirectTo={redirectTo}
+        oauthRedirectTo={oauthRedirectTo}
+        showOAuth={true}
+    />
 
     <div class="auth-page__footer">
         <span class="auth-page__footer-text">{haveAccountLabel}</span>

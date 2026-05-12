@@ -1,7 +1,7 @@
 import { createLogger } from '@repo/logger';
+import { CloudflareRevalidationAdapter } from './cloudflare-revalidation.adapter.js';
 import { NoOpRevalidationAdapter } from './noop-revalidation.adapter.js';
 import type { RevalidationAdapter } from './revalidation.adapter.js';
-import { VercelRevalidationAdapter } from './vercel-revalidation.adapter.js';
 
 const logger = createLogger('revalidation-adapter-factory');
 
@@ -12,18 +12,19 @@ export interface AdapterFactoryParams {
     /** Node.js environment (e.g. 'production', 'staging', 'development', 'test') */
     readonly nodeEnv: string;
     /**
-     * Revalidation bypass token — required to activate the Vercel adapter.
+     * Revalidation shared secret — required to activate the Cloudflare adapter.
      * When absent or empty, the no-op adapter is returned regardless of environment.
+     * Must match `HOSPEDA_REVALIDATION_SECRET` on the web app.
      */
     readonly revalidationSecret?: string;
-    /** Base site URL forwarded to the Vercel adapter (e.g. `https://hospeda.com.ar`) */
+    /** Base site URL forwarded to the adapter (e.g. `https://hospeda.com.ar`) */
     readonly siteUrl: string;
 }
 
 /**
  * Creates the appropriate {@link RevalidationAdapter} based on environment.
  *
- * Returns {@link VercelRevalidationAdapter} when:
+ * Returns {@link CloudflareRevalidationAdapter} when:
  *  - `revalidationSecret` is non-empty, AND
  *  - `nodeEnv` is NOT `'development'` or `'test'` (works in staging and production)
  *
@@ -37,7 +38,7 @@ export interface AdapterFactoryParams {
  * ```ts
  * const adapter = createRevalidationAdapter({
  *   nodeEnv: process.env.NODE_ENV,
- *   revalidationSecret: process.env.HOSPEDA_ISR_BYPASS_TOKEN,
+ *   revalidationSecret: process.env.HOSPEDA_REVALIDATION_SECRET,
  *   siteUrl: process.env.HOSPEDA_SITE_URL,
  * });
  * ```
@@ -49,14 +50,14 @@ export function createRevalidationAdapter(params: AdapterFactoryParams): Revalid
     const hasSecret = Boolean(revalidationSecret);
 
     if (isNonLocalEnv && hasSecret) {
-        return new VercelRevalidationAdapter({
-            bypassToken: revalidationSecret as string,
+        return new CloudflareRevalidationAdapter({
+            secret: revalidationSecret as string,
             siteUrl
         });
     }
 
     if (isNonLocalEnv && !hasSecret) {
-        logger.warn('ISR revalidation DISABLED: missing HOSPEDA_REVALIDATION_SECRET');
+        logger.warn('Cache revalidation DISABLED: missing HOSPEDA_REVALIDATION_SECRET');
     }
 
     return new NoOpRevalidationAdapter();

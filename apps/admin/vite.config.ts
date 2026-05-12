@@ -22,6 +22,19 @@ for (const [key, value] of Object.entries(rawEnv)) {
     }
 }
 
+// Map shared HOSPEDA_* names onto the VITE_* names this app expects when
+// only the HOSPEDA_* versions are present. The rest of the monorepo
+// (api, web, scripts) consumes the HOSPEDA_* aliases from a single
+// `.env.local`, and the CI workflow already mirrors the values into
+// VITE_* via job-level `env:`. This block reproduces that mapping for
+// local builds so a freshly-cloned dev environment does not need to
+// duplicate the same URL under two different keys.
+process.env.VITE_API_URL ??= process.env.HOSPEDA_API_URL;
+process.env.VITE_SITE_URL ??= process.env.HOSPEDA_SITE_URL;
+process.env.VITE_BETTER_AUTH_URL ??=
+    process.env.HOSPEDA_BETTER_AUTH_URL ??
+    (process.env.HOSPEDA_API_URL ? `${process.env.HOSPEDA_API_URL}/api/auth` : undefined);
+
 // Validate required environment variables for the Admin App.
 const AdminViteEnvSchema = z.object({
     VITE_API_URL: z.string().url('Must be a valid API URL'),
@@ -124,7 +137,8 @@ export default defineConfig({
                             process.env.VITE_DEFAULT_LOCALE || 'es'
                         ),
                         'import.meta.env.VITE_SENTRY_RELEASE': JSON.stringify(
-                            process.env.VERCEL_GIT_COMMIT_SHA ||
+                            process.env.HOSPEDA_GIT_SHA ||
+                                process.env.VERCEL_GIT_COMMIT_SHA ||
                                 process.env.VITE_SENTRY_RELEASE ||
                                 ''
                         )
@@ -185,6 +199,13 @@ export default defineConfig({
         // Code splitting configuration
         rollupOptions: {
             output: {
+                // Force ESM execution order. Without this, Rolldown 1.0.0-rc.17
+                // reorders side-effect imports inside the flattened SSR bundle
+                // (Nitro `node-server` preset), causing routeTree.gen.ts to
+                // call `Route$N.update(...)` before `var Route$N = createFileRoute(...)`
+                // is assigned, producing `Cannot read properties of undefined (reading 'update')`
+                // at runtime. See https://github.com/rolldown/rolldown/issues/8812
+                strictExecutionOrder: true,
                 // Manual chunks for better code splitting
                 manualChunks: (id) => {
                     // Vendor chunks - large external dependencies

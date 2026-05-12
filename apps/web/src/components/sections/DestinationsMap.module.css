@@ -90,7 +90,8 @@
     background-color: var(--core-muted-foreground);
     border: 2px solid var(--core-card);
     box-shadow: 0 1px 4px oklch(from var(--core-foreground) l c h / 0.2);
-    transition: width var(--duration-fast) ease, height var(--duration-fast) ease, background-color
+    transition:
+        width var(--duration-fast) ease, height var(--duration-fast) ease, background-color
         var(--duration-fast) ease, transform var(--duration-fast) ease, opacity var(--duration-fast) ease;
     flex-shrink: 0;
     /* Inactive pins fade back hard so the active one can dominate. */
@@ -106,8 +107,8 @@
     height: 30px;
     background-color: var(--brand-accent);
     border: 4px solid var(--core-card);
-    box-shadow: 0 0 0 6px oklch(from var(--brand-accent) l c h / 0.32),
-        0 6px 20px oklch(from var(--brand-accent) l c h / 0.7);
+    box-shadow: 0 0 0 6px oklch(from var(--brand-accent) l c h / 0.32), 0 6px 20px
+        oklch(from var(--brand-accent) l c h / 0.7);
     opacity: 1;
 }
 
@@ -167,8 +168,8 @@
     text-shadow: 0 0 4px oklch(from var(--core-card) l c h / 0.9), 0 0 4px
         oklch(from var(--core-card) l c h / 0.9);
     pointer-events: none;
-    transition: color var(--duration-fast) ease, opacity var(--duration-fast) ease,
-        font-weight var(--duration-fast) ease;
+    transition: color var(--duration-fast) ease, opacity var(--duration-fast) ease, font-weight
+        var(--duration-fast) ease;
     max-width: 90px;
     /* Inactive labels fade back hard so the active one dominates. */
     opacity: 0.4;
@@ -184,8 +185,8 @@
     font-size: 17px;
     letter-spacing: 0.01em;
     opacity: 1;
-    text-shadow: 0 0 8px oklch(from var(--core-card) l c h / 1),
-        0 0 4px oklch(from var(--core-card) l c h / 1);
+    text-shadow: 0 0 8px oklch(from var(--core-card) l c h / 1), 0 0 4px
+        oklch(from var(--core-card) l c h / 1);
 }
 
 /* Label positioned to the left side of the pin */
@@ -274,8 +275,8 @@
     background-color: var(--brand-accent);
     border: 3px solid var(--core-card);
     opacity: 1;
-    box-shadow: 0 0 0 5px oklch(from var(--brand-accent) l c h / 0.28),
-        0 5px 14px oklch(from var(--brand-accent) l c h / 0.55);
+    box-shadow: 0 0 0 5px oklch(from var(--brand-accent) l c h / 0.28), 0 5px 14px
+        oklch(from var(--brand-accent) l c h / 0.55);
 }
 
 .secondaryDotActive::before {
@@ -314,8 +315,8 @@
     font-weight: 800;
     font-size: 15px;
     letter-spacing: 0.01em;
-    text-shadow: 0 0 8px oklch(from var(--core-card) l c h / 1),
-        0 0 4px oklch(from var(--core-card) l c h / 1);
+    text-shadow: 0 0 8px oklch(from var(--core-card) l c h / 1), 0 0 4px
+        oklch(from var(--core-card) l c h / 1);
 }
 
 .secondaryPin:hover .secondaryLabel {

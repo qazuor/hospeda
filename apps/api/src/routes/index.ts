@@ -58,7 +58,6 @@ import { adminOwnerPromotionRoutes, protectedOwnerPromotionRoutes } from './owne
 import { adminPostSponsorRoutes } from './postSponsor';
 
 // ─── Non-entity route imports ─────────────────────────────────────────────────
-import { cronRoutes } from '../cron';
 import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
 import { createBillingRoutesHandler } from './billing';
@@ -76,6 +75,7 @@ import { mediaHealthRoutes } from './health/media';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
+import { newsletterRoutes } from './newsletter';
 import { revalidationRouter } from './revalidation';
 import { publicSearchRoutes } from './search/public';
 import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorship';
@@ -173,6 +173,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Other public routes (read-only)
         app.route('/api/v1/public/plans', publicBillingRoutes);
         app.route('/api/v1/public', contactRoutes);
+        app.route('/api/v1/public', newsletterRoutes);
         app.route('/api/v1/public/feedback', publicFeedbackRoutes);
 
         // Conversations (guest-owner messaging — SPEC-085)
@@ -317,9 +318,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Billing routes (user-facing: trial, addons, promo-codes, subscriptions, etc.)
         app.route('/api/v1/protected/billing', createBillingRoutesHandler());
-
-        // Internal: Vercel cron scheduler (requires CRON_SECRET, not a public API)
-        app.route('/api/v1/cron', cronRoutes);
 
         // Webhook routes (public endpoints with signature verification)
         const mercadoPagoWebhookRoutes = createMercadoPagoWebhookRoutes();

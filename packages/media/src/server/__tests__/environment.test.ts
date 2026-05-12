@@ -22,85 +22,65 @@ describe('resolveEnvironment', () => {
         vi.unstubAllEnvs();
     });
 
-    describe('when VERCEL_ENV=production', () => {
-        it("should return 'prod'", () => {
-            // Arrange
-            vi.stubEnv('VERCEL_ENV', 'production');
+    describe('when HOSPEDA_DEPLOY_ENV is set', () => {
+        it("should return 'prod' for HOSPEDA_DEPLOY_ENV=prod", () => {
+            vi.stubEnv('HOSPEDA_DEPLOY_ENV', 'prod');
+            expect(resolveEnvironment()).toBe('prod');
+        });
 
-            // Act
-            const result = resolveEnvironment();
+        it("should return 'preview' for HOSPEDA_DEPLOY_ENV=preview", () => {
+            vi.stubEnv('HOSPEDA_DEPLOY_ENV', 'preview');
+            expect(resolveEnvironment()).toBe('preview');
+        });
 
-            // Assert
-            expect(result).toBe('prod');
+        it("should return 'test' for HOSPEDA_DEPLOY_ENV=test", () => {
+            vi.stubEnv('HOSPEDA_DEPLOY_ENV', 'test');
+            expect(resolveEnvironment()).toBe('test');
+        });
+
+        it("should return 'dev' for HOSPEDA_DEPLOY_ENV=dev", () => {
+            vi.stubEnv('HOSPEDA_DEPLOY_ENV', 'dev');
+            expect(resolveEnvironment()).toBe('dev');
+        });
+
+        it('should ignore HOSPEDA_DEPLOY_ENV when value is unrecognised', () => {
+            vi.stubEnv('HOSPEDA_DEPLOY_ENV', 'staging-7');
+            vi.stubEnv('NODE_ENV', 'production');
+            expect(resolveEnvironment()).toBe('prod');
         });
     });
 
-    describe('when VERCEL_ENV=preview', () => {
-        it("should return 'preview'", () => {
-            // Arrange
-            vi.stubEnv('VERCEL_ENV', 'preview');
-
-            // Act
-            const result = resolveEnvironment();
-
-            // Assert
-            expect(result).toBe('preview');
+    describe('when HOSPEDA_DEPLOY_ENV is empty and NODE_ENV is set', () => {
+        it("should return 'prod' for NODE_ENV=production", () => {
+            vi.stubEnv('HOSPEDA_DEPLOY_ENV', '');
+            vi.stubEnv('NODE_ENV', 'production');
+            expect(resolveEnvironment()).toBe('prod');
         });
-    });
 
-    describe('when NODE_ENV=test and VERCEL_ENV is empty', () => {
-        it("should return 'test'", () => {
-            // Arrange — explicit empty string for VERCEL_ENV (not 'production'/'preview'),
-            // and NODE_ENV='test'. vi.stubEnv with empty string yields '' rather than
-            // undefined, which the resolver treats as "not production / not preview".
-            vi.stubEnv('VERCEL_ENV', '');
+        it("should return 'test' for NODE_ENV=test", () => {
+            vi.stubEnv('HOSPEDA_DEPLOY_ENV', '');
             vi.stubEnv('NODE_ENV', 'test');
-
-            // Act
-            const result = resolveEnvironment();
-
-            // Assert
-            expect(result).toBe('test');
+            expect(resolveEnvironment()).toBe('test');
         });
-    });
 
-    describe('when neither VERCEL_ENV nor NODE_ENV indicate a known environment', () => {
-        it("should return 'dev'", () => {
-            // Arrange
-            vi.stubEnv('VERCEL_ENV', '');
+        it("should return 'dev' for NODE_ENV=development", () => {
+            vi.stubEnv('HOSPEDA_DEPLOY_ENV', '');
             vi.stubEnv('NODE_ENV', 'development');
-
-            // Act
-            const result = resolveEnvironment();
-
-            // Assert
-            expect(result).toBe('dev');
+            expect(resolveEnvironment()).toBe('dev');
         });
     });
 
-    describe('when VERCEL_ENV takes precedence over NODE_ENV', () => {
-        it("should return 'prod' when VERCEL_ENV=production and NODE_ENV=test", () => {
-            // Arrange
-            vi.stubEnv('VERCEL_ENV', 'production');
-            vi.stubEnv('NODE_ENV', 'test');
-
-            // Act
-            const result = resolveEnvironment();
-
-            // Assert
-            expect(result).toBe('prod');
+    describe('when HOSPEDA_DEPLOY_ENV takes precedence over NODE_ENV', () => {
+        it("should return 'preview' when HOSPEDA_DEPLOY_ENV=preview and NODE_ENV=production", () => {
+            vi.stubEnv('HOSPEDA_DEPLOY_ENV', 'preview');
+            vi.stubEnv('NODE_ENV', 'production');
+            expect(resolveEnvironment()).toBe('preview');
         });
 
-        it("should return 'preview' when VERCEL_ENV=preview and NODE_ENV=test", () => {
-            // Arrange
-            vi.stubEnv('VERCEL_ENV', 'preview');
-            vi.stubEnv('NODE_ENV', 'test');
-
-            // Act
-            const result = resolveEnvironment();
-
-            // Assert
-            expect(result).toBe('preview');
+        it("should return 'prod' when HOSPEDA_DEPLOY_ENV=prod and NODE_ENV=development", () => {
+            vi.stubEnv('HOSPEDA_DEPLOY_ENV', 'prod');
+            vi.stubEnv('NODE_ENV', 'development');
+            expect(resolveEnvironment()).toBe('prod');
         });
     });
 });
@@ -115,7 +95,7 @@ describe('resolveEnvironment', () => {
  */
 describe('resolveEnvironment when NODE_ENV is deleted from process.env', () => {
     let originalNodeEnv: string | undefined;
-    let originalVercelEnv: string | undefined;
+    let originalDeployEnv: string | undefined;
 
     afterEach(() => {
         // Manually restore both keys to their pre-test values. The `delete`
@@ -129,27 +109,22 @@ describe('resolveEnvironment when NODE_ENV is deleted from process.env', () => {
         } else {
             process.env.NODE_ENV = originalNodeEnv;
         }
-        if (originalVercelEnv === undefined) {
+        if (originalDeployEnv === undefined) {
             // biome-ignore lint/performance/noDelete: GAP-078-203 requires actual deletion semantics.
-            delete process.env.VERCEL_ENV;
+            delete process.env.HOSPEDA_DEPLOY_ENV;
         } else {
-            process.env.VERCEL_ENV = originalVercelEnv;
+            process.env.HOSPEDA_DEPLOY_ENV = originalDeployEnv;
         }
     });
 
-    it("should return 'dev' when NODE_ENV is deleted and VERCEL_ENV is unset", () => {
-        // Arrange
+    it("should return 'dev' when NODE_ENV is deleted and HOSPEDA_DEPLOY_ENV is unset", () => {
         originalNodeEnv = process.env.NODE_ENV;
-        originalVercelEnv = process.env.VERCEL_ENV;
+        originalDeployEnv = process.env.HOSPEDA_DEPLOY_ENV;
         // biome-ignore lint/performance/noDelete: GAP-078-203 requires actual deletion semantics.
         delete process.env.NODE_ENV;
         // biome-ignore lint/performance/noDelete: GAP-078-203 requires actual deletion semantics.
-        delete process.env.VERCEL_ENV;
+        delete process.env.HOSPEDA_DEPLOY_ENV;
 
-        // Act
-        const result = resolveEnvironment();
-
-        // Assert
-        expect(result).toBe('dev');
+        expect(resolveEnvironment()).toBe('dev');
     });
 });

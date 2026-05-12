@@ -1,0 +1,53 @@
+# syntax=docker/dockerfile:1.4
+# Multi-stage build for hospeda-landing (Astro static + nginx).
+# Built and run by Coolify on the VPS. Pure static output, served by nginx.
+
+FROM node:22-alpine AS base
+WORKDIR /repo
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+RUN corepack enable
+
+# ----- deps stage ------------------------------------------------------------
+# Install ALL workspace deps. The landing app has minimal runtime deps but
+# pnpm needs the whole workspace to resolve symlinks.
+FROM base AS deps
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
+COPY patches ./patches
+COPY apps apps
+COPY packages packages
+RUN pnpm install --frozen-lockfile
+
+# ----- build stage -----------------------------------------------------------
+# Astro static build. The site URL is baked into canonical/OG tags at build
+# time and the API URL is baked into the client-side newsletter form. Coolify
+# injects both via --build-arg so the same Dockerfile can target staging or
+# production by switching the API base.
+FROM base AS build
+ARG HOSPEDA_LANDING_SITE_URL=https://hospeda.com.ar
+ARG PUBLIC_API_URL=https://api.hospeda.com.ar
+ENV HOSPEDA_LANDING_SITE_URL=$HOSPEDA_LANDING_SITE_URL \
+    PUBLIC_API_URL=$PUBLIC_API_URL
+COPY --from=deps /repo /repo
+RUN pnpm turbo run build --filter=hospeda-landing
+
+# ----- runner stage ----------------------------------------------------------
+# nginx alpine serves the static output. Tiny image (~25 MB) compared to a
+# Node runtime. Healthcheck via curl on / for Coolify/Traefik probes.
+FROM nginx:1.27-alpine AS runner
+# `libcap` provides setcap so the nginx binary can keep CAP_NET_BIND_SERVICE
+# when the master process runs as the unprivileged `nginx` user.
+RUN apk add --no-cache curl libcap \
+    && setcap 'cap_net_bind_service=+ep' /usr/sbin/nginx
+COPY --from=build /repo/apps/landing/dist /usr/share/nginx/html
+COPY apps/landing/nginx.conf /etc/nginx/conf.d/default.conf
+# Drop runtime ownership of the directories nginx writes during startup.
+RUN chown -R nginx:nginx /var/cache/nginx /var/log/nginx \
+    && touch /var/run/nginx.pid && chown nginx:nginx /var/run/nginx.pid
+# Run as the unprivileged `nginx` user (Semgrep
+# `dockerfile.security.missing-user.missing-user`).
+USER nginx
+EXPOSE 80
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -fsS http://127.0.0.1/ > /dev/null || exit 1
+CMD ["nginx", "-g", "daemon off;"]

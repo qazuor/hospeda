@@ -35,9 +35,9 @@ export const API_CONFIG_ENV_VARS = [
         apps: ['api'],
         category: 'api-config',
         howToObtain:
-            'TCP port for local dev. Default 3001. On Vercel this is ignored — the platform decides the port. Pick a free port if 3001 is taken.',
+            'TCP port the API binds to. Default 3001. On Coolify the container exposes this port internally and Traefik proxies external traffic to it; pick a free port locally if 3001 is taken.',
         howToObtainEs:
-            'Puerto TCP para dev local. Por defecto 3001. En Vercel se ignora; la plataforma decide el puerto. Elegí un puerto libre si el 3001 está ocupado.'
+            'Puerto TCP al que se bindea la API. Por defecto 3001. En Coolify el container expone este puerto internamente y Traefik proxea el tráfico externo a él; en local elegí un puerto libre si el 3001 está ocupado.'
     },
     {
         name: 'API_HOST',
@@ -51,9 +51,9 @@ export const API_CONFIG_ENV_VARS = [
         apps: ['api'],
         category: 'api-config',
         howToObtain:
-            'Default "localhost". Use "0.0.0.0" if you need other devices on your network to reach the dev API. Vercel ignores this.',
+            'Default "localhost" for local dev. Use "0.0.0.0" inside Docker / Coolify so the container listens on every interface and the orchestrator can reach it.',
         howToObtainEs:
-            'Por defecto "localhost". Usá "0.0.0.0" si necesitás que otros dispositivos de tu red puedan llegar a la API de dev. En Vercel se ignora.'
+            'Por defecto "localhost" en dev local. Usá "0.0.0.0" dentro de Docker / Coolify así el container escucha en todas las interfaces y el orquestador lo puede alcanzar.'
     },
     // -------------------------------------------------------------------------
     // Logging
@@ -103,9 +103,9 @@ export const API_CONFIG_ENV_VARS = [
         apps: ['api'],
         category: 'api-config',
         howToObtain:
-            'Default true — adds "2026-05-04T18:32:01.123Z" prefix. Vercel adds its own timestamps so you can set false there to avoid duplication.',
+            'Default true — adds an ISO-8601 timestamp prefix. Set false in environments that already prepend their own timestamp (some log aggregators) to avoid duplication.',
         howToObtainEs:
-            'Por defecto true; agrega un prefijo tipo "2026-05-04T18:32:01.123Z". Vercel agrega sus propios timestamps, así que ahí podés ponerlo en false para evitar duplicar.'
+            'Por defecto true; agrega un prefijo ISO-8601 a cada línea. Ponelo en false en entornos que ya agregan su propio timestamp (algunos agregadores de logs) para evitar duplicar.'
     },
     {
         name: 'API_LOG_INCLUDE_LEVEL',
@@ -133,9 +133,9 @@ export const API_CONFIG_ENV_VARS = [
         apps: ['api'],
         category: 'api-config',
         howToObtain:
-            'Default true (colored). Set false on Vercel/CI to avoid garbled ANSI escape sequences in log files.',
+            'Default true (colored, friendly for local dev terminals). Set false in CI / production log aggregators that capture stdout to files, otherwise the ANSI escape sequences end up rendered as literal noise.',
         howToObtainEs:
-            'Por defecto true (con colores). Poné false en Vercel/CI para evitar caracteres de escape ANSI feos en los archivos de log.'
+            'Por defecto true (con colores, cómodo para terminales de dev). Ponelo en false en CI / agregadores que capturan stdout a archivos, si no las secuencias ANSI quedan como ruido literal.'
     },
     {
         name: 'API_LOG_SAVE',
@@ -149,9 +149,9 @@ export const API_CONFIG_ENV_VARS = [
         apps: ['api'],
         category: 'api-config',
         howToObtain:
-            'Default false (stdout only). Setting true writes logs to a local file — only useful in container/VPS deploys, not on serverless (Vercel discards local files).',
+            'Default false (stdout only — Docker / Coolify will capture stdout and ship it to whatever log aggregator you wire up). Set true if you specifically need a local log file inside the container; remember the file goes away when the container is recreated.',
         howToObtainEs:
-            'Por defecto false (solo stdout). En true escribe los logs a un archivo local; sirve solo en deploys de container/VPS, no en serverless (Vercel descarta los archivos locales).'
+            'Por defecto false (solo stdout — Docker / Coolify capturan stdout y lo mandan al agregador que conectes). En true escribe los logs a un archivo local dentro del container; recordá que el archivo se pierde si recreás el container.'
     },
     {
         name: 'API_LOG_EXPAND_OBJECTS',
@@ -436,9 +436,9 @@ export const API_CONFIG_ENV_VARS = [
         apps: ['api'],
         category: 'api-config',
         howToObtain:
-            'Default true. Compresses responses with gzip/deflate. Vercel does this at the edge automatically — you can leave true (no harm) or set false in prod to avoid double-compression.',
+            'Default true. Compresses responses with gzip/deflate. Cloudflare and most reverse proxies will gzip again at the edge — leaving this true is fine (the edge usually short-circuits when the body is already compressed); set false only if you have proof of double-compression overhead.',
         howToObtainEs:
-            'Por defecto true. Comprime respuestas con gzip/deflate. Vercel ya lo hace en el edge automáticamente; podés dejar true (no hace daño) o poner false en prod para evitar doble compresión.'
+            'Por defecto true. Comprime respuestas con gzip/deflate. Cloudflare y la mayoría de los reverse proxies vuelven a hacer gzip en el edge — dejarlo true es seguro (el edge habitualmente saltea cuando el body ya viene comprimido); ponelo en false solo si tenés evidencia de overhead por doble compresión.'
     },
     {
         name: 'API_COMPRESSION_LEVEL',
@@ -622,9 +622,9 @@ export const API_CONFIG_ENV_VARS = [
         apps: ['api'],
         category: 'api-config',
         howToObtain:
-            'Default true (matches the deploy target — Vercel/Cloudflare/Nginx all set X-Forwarded-For). With true the rate-limiter sees the real client IP. Set to false ONLY for direct-exposed local dev runs without a proxy in front.',
+            'Default true (matches the deploy target — Cloudflare/Nginx/Coolify Traefik all set X-Forwarded-For). With true the rate-limiter sees the real client IP. Set to false ONLY for direct-exposed local dev runs without a proxy in front.',
         howToObtainEs:
-            'Por defecto true (matchea el target de deploy — Vercel/Cloudflare/Nginx todos setean X-Forwarded-For). Con true el rate-limiter ve la IP real del cliente. Ponelo en false SOLO para runs de dev local expuestos directamente sin proxy adelante.'
+            'Por defecto true (matchea el target de deploy — Cloudflare/Nginx/Coolify Traefik todos setean X-Forwarded-For). Con true el rate-limiter ve la IP real del cliente. Ponelo en false SOLO para runs de dev local expuestos directamente sin proxy adelante.'
     },
     {
         name: 'API_RATE_LIMIT_TRUSTED_PROXIES',
@@ -638,9 +638,9 @@ export const API_CONFIG_ENV_VARS = [
         apps: ['api'],
         category: 'api-config',
         howToObtain:
-            'Comma-separated list of proxy IPs/CIDRs whose X-Forwarded-For headers are trusted. Empty means "trust the immediate proxy". On Vercel leave blank.',
+            'Comma-separated list of proxy IPs/CIDRs whose X-Forwarded-For headers are trusted. Empty means "trust the immediate proxy". Leave blank when running behind Cloudflare + Coolify Traefik (the default deploy stack); only fill it in if you have a custom multi-hop proxy chain you specifically need to allowlist.',
         howToObtainEs:
-            'Lista separada por comas de IPs/CIDRs de proxies cuyos X-Forwarded-For son confiables. Vacío = "confiá en el proxy inmediato". En Vercel dejalo vacío.'
+            'Lista separada por comas de IPs/CIDRs de proxies cuyos X-Forwarded-For son confiables. Vacío = "confiá en el proxy inmediato". Dejalo vacío si corrés detrás de Cloudflare + Coolify Traefik (el stack default del deploy); completalo solo si tenés una cadena de proxies custom multi-hop que necesitás allowlistear.'
     },
     {
         name: 'API_RATE_LIMIT_AUTH_ENABLED',
@@ -1102,9 +1102,9 @@ export const API_CONFIG_ENV_VARS = [
         apps: ['api'],
         category: 'api-config',
         howToObtain:
-            'Max request body in bytes. Default 10485760 (10MB). On Vercel Hobby cap is 4.5MB — set 4500000 there.',
+            'Max request body in bytes. Default 10485760 (10MB). Lower it if your reverse proxy or upstream service has a tighter cap (e.g. Cloudflare Free tier maxes uploads around 100MB but tighten if your storage plan is smaller).',
         howToObtainEs:
-            'Body máximo del request en bytes. Por defecto 10485760 (10MB). En Vercel Hobby el límite es 4.5MB; ahí poné 4500000.'
+            'Body máximo del request en bytes. Por defecto 10485760 (10MB). Bajalo si tu reverse proxy o un servicio upstream tienen un tope más bajo (Cloudflare Free permite uploads hasta ~100MB, pero ajustalo si tu plan de almacenamiento es menor).'
     },
     {
         name: 'API_VALIDATION_MAX_REQUEST_TIME',
@@ -1118,9 +1118,9 @@ export const API_CONFIG_ENV_VARS = [
         apps: ['api'],
         category: 'api-config',
         howToObtain:
-            'Max request duration in ms. Default 30000 (30s). On Vercel default function timeout is 300s — keep this lower than the platform timeout.',
+            'Max request duration in ms. Default 30000 (30s). Keep this below any upstream proxy/load-balancer timeout (Cloudflare default is 100s) so the API fails fast and predictably instead of being killed mid-request.',
         howToObtainEs:
-            'Duración máxima del request en ms. Por defecto 30000 (30s). En Vercel el timeout default de la función es 300s; mantené este valor por debajo del timeout de la plataforma.'
+            'Duración máxima del request en ms. Por defecto 30000 (30s). Mantenelo por debajo del timeout del proxy/load balancer upstream (el default de Cloudflare es 100s) así la API falla rápido y predecible en vez de ser matada a mitad del request.'
     },
     {
         name: 'API_VALIDATION_ALLOWED_CONTENT_TYPES',

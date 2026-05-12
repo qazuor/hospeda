@@ -18,11 +18,30 @@ import { z } from 'zod';
 /**
  * Discriminator for the contact form type.
  *
- * - `'general'` — general inquiry, no accommodation reference required.
- * - `'accommodation'` — inquiry about a specific accommodation;
- *   `accommodationId` is required when this value is selected.
+ * - `'general'` — general inquiry, no specific category.
+ * - `'support'` — technical support (bugs, login issues, broken features).
+ * - `'publish_accommodation'` — host onboarding lead (wants to list a place).
+ * - `'subscriptions'` — billing, plans, payments, MercadoPago issues.
+ * - `'suggestions'` — product feedback, ideas, improvements.
+ * - `'report'` — report wrong/abusive content, fake reviews, etc.
+ * - `'press'` — press, media, editorial collaborations.
+ * - `'partnerships'` — B2B deals, agencies, local governments.
+ * - `'event_submission'` — operators wanting to publish events.
+ * - `'accommodation'` — DEPRECATED legacy value kept for schema compatibility
+ *   (additive-only policy). Not exposed by the public form anymore.
  */
-export const ContactTypeEnumSchema = z.enum(['general', 'accommodation']);
+export const ContactTypeEnumSchema = z.enum([
+    'general',
+    'support',
+    'publish_accommodation',
+    'subscriptions',
+    'suggestions',
+    'report',
+    'press',
+    'partnerships',
+    'event_submission',
+    'accommodation'
+]);
 
 /** Inferred TypeScript type for {@link ContactTypeEnumSchema}. */
 export type ContactTypeEnum = z.infer<typeof ContactTypeEnumSchema>;
@@ -34,10 +53,11 @@ export type ContactTypeEnum = z.infer<typeof ContactTypeEnumSchema>;
 /**
  * Schema for a contact form submission.
  *
- * The `accommodationId` field is conditionally required:
- * it must be present (and a valid UUID) when `type === 'accommodation'`,
- * and must be absent (or undefined) when `type === 'general'`.
- * This invariant is enforced via `.superRefine()`.
+ * `accommodationId` is fully optional and not tied to any specific `type`.
+ * Older versions enforced `type === 'accommodation' → accommodationId required`,
+ * but the form no longer surfaces that flow. The field is kept in the schema
+ * for backward compatibility (additive-only policy) so historical fixtures
+ * continue to parse.
  *
  * @example
  * ```ts
@@ -50,79 +70,60 @@ export type ContactTypeEnum = z.infer<typeof ContactTypeEnumSchema>;
  *   type: 'general',
  * });
  *
- * // Valid — accommodation-specific inquiry
+ * // Valid — typed category (e.g., support, suggestions, press, etc.)
  * ContactSubmitSchema.parse({
  *   firstName: 'Carlos',
  *   lastName: 'Ramírez',
  *   email: 'carlos@example.com',
- *   message: 'Me interesa reservar esta cabaña para el fin de semana largo.',
- *   type: 'accommodation',
- *   accommodationId: '550e8400-e29b-41d4-a716-446655440000',
+ *   message: 'No puedo iniciar sesión desde el lunes pasado.',
+ *   type: 'support',
  * });
- *
- * // Invalid — type='accommodation' but accommodationId missing
- * ContactSubmitSchema.parse({
- *   firstName: 'X', lastName: 'Y', email: 'x@y.com',
- *   message: 'Mensaje de prueba con suficiente longitud',
- *   type: 'accommodation',
- * });
- * // → ZodError: accommodationId is required when type is 'accommodation'
  * ```
  */
-export const ContactSubmitSchema = z
-    .object({
-        /** Sender's first name. Between 1 and 100 characters. */
-        firstName: z
-            .string()
-            .min(1, { message: 'zodError.contact.firstName.min' })
-            .max(100, { message: 'zodError.contact.firstName.max' }),
+export const ContactSubmitSchema = z.object({
+    /** Sender's first name. Between 1 and 100 characters. */
+    firstName: z
+        .string()
+        .min(1, { message: 'zodError.contact.firstName.min' })
+        .max(100, { message: 'zodError.contact.firstName.max' }),
 
-        /** Sender's last name. Between 1 and 100 characters. */
-        lastName: z
-            .string()
-            .min(1, { message: 'zodError.contact.lastName.min' })
-            .max(100, { message: 'zodError.contact.lastName.max' }),
+    /** Sender's last name. Between 1 and 100 characters. */
+    lastName: z
+        .string()
+        .min(1, { message: 'zodError.contact.lastName.min' })
+        .max(100, { message: 'zodError.contact.lastName.max' }),
 
-        /** Sender's email address. Must be a syntactically valid email. */
-        email: z.string().email({ message: 'zodError.contact.email.invalid' }),
+    /** Sender's email address. Must be a syntactically valid email. */
+    email: z.string().email({ message: 'zodError.contact.email.invalid' }),
 
-        /**
-         * Message body. Between 10 and 2000 characters.
-         * The lower bound ensures the message contains at least minimal content.
-         */
-        message: z
-            .string()
-            .min(10, { message: 'zodError.contact.message.min' })
-            .max(2000, { message: 'zodError.contact.message.max' }),
+    /**
+     * Message body. Between 10 and 2000 characters.
+     * The lower bound ensures the message contains at least minimal content.
+     */
+    message: z
+        .string()
+        .min(10, { message: 'zodError.contact.message.min' })
+        .max(2000, { message: 'zodError.contact.message.max' }),
 
-        /** Contact type discriminator. See {@link ContactTypeEnumSchema}. */
-        type: ContactTypeEnumSchema,
+    /** Contact type discriminator. See {@link ContactTypeEnumSchema}. */
+    type: ContactTypeEnumSchema,
 
-        /**
-         * UUID of the referenced accommodation.
-         * Required when `type === 'accommodation'`, forbidden otherwise.
-         * Validated by the `.superRefine()` below.
-         */
-        accommodationId: z.string().uuid().optional(),
+    /**
+     * UUID of the referenced accommodation. Optional and decoupled from
+     * `type`. Kept for backward compatibility with submissions that still
+     * carry it; the current form does not surface this field.
+     */
+    accommodationId: z.string().uuid().optional(),
 
-        /**
-         * Honeypot field — hidden from human users via CSS.
-         * Any non-empty value indicates an automated submission; the API
-         * handler should silently discard the request.
-         * This field is not validated further; it is simply forwarded so the
-         * handler can inspect it without schema modification.
-         */
-        website: z.string().optional()
-    })
-    .superRefine((data, ctx) => {
-        if (data.type === 'accommodation' && !data.accommodationId) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['accommodationId'],
-                message: 'zodError.contact.accommodationId.required'
-            });
-        }
-    });
+    /**
+     * Honeypot field — hidden from human users via CSS.
+     * Any non-empty value indicates an automated submission; the API
+     * handler should silently discard the request.
+     * This field is not validated further; it is simply forwarded so the
+     * handler can inspect it without schema modification.
+     */
+    website: z.string().optional()
+});
 
 // ============================================================================
 // TYPES

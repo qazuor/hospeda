@@ -1,40 +1,29 @@
 /**
  * Cron System
- * HTTP-first cron job system for scheduled tasks
- * @module cron
  *
- * Architecture:
- * - Jobs are HTTP endpoints that can be triggered externally
- * - Support for multiple adapters: node-cron, Vercel Cron, manual
- * - All jobs authenticated via shared secret
- * - Standardized job interface with context and result types
+ * In-process cron job runner. Scheduled jobs are registered in
+ * {@link ./registry.ts} and dispatched by {@link ./bootstrap.ts} via
+ * `node-cron`. Job handlers run inside the API process — there are no
+ * HTTP cron endpoints in production.
+ *
+ * Manual triggers (admin panel, operator one-shots) live under
+ * `/api/v1/admin/cron/*` and use the standard admin auth path; see
+ * `apps/api/src/routes/cron-admin/`.
+ *
+ * @module cron
  *
  * Usage:
  * 1. Define a job in ./jobs/ directory
- * 2. Register job in ./registry.ts
- * 3. Jobs are auto-scheduled based on CRON_ADAPTER
- * 4. Jobs can be triggered via POST /api/v1/cron/:jobName
- *
- * @example
- * ```typescript
- * // Trigger a job manually
- * curl -X POST \
- *   -H "X-Cron-Secret: your-secret" \
- *   http://localhost:3001/api/v1/cron/cleanup-sessions
- * ```
+ * 2. Register the job in ./registry.ts
+ * 3. The scheduler picks it up automatically when
+ *    `HOSPEDA_CRON_ADAPTER=node-cron` and the API boots.
  */
 
 // Export all types
 export type { CronJobContext, CronJobDefinition, CronJobHandler, CronJobResult } from './types';
-
-// Export middleware
-export { cronAuthMiddleware } from './middleware';
 
 // Export registry functions
 export { cronJobs, getCronJob, getEnabledCronJobs } from './registry';
 
 // Export bootstrap function
 export { startCronScheduler } from './bootstrap';
-
-// Export routes
-export { cronRoutes } from './routes';

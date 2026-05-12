@@ -1,0 +1,165 @@
+/* ==========================================================================
+   Hospeda Landing — Global Styles
+   Subset of design tokens from apps/web for the pre-launch coming-soon page.
+   Keep in sync with apps/web/src/styles/global.css when brand evolves.
+   ========================================================================== */
+
+:root {
+    /* --- Core palette --- */
+    --core-background: oklch(0.985 0.002 210);
+    --core-foreground: oklch(0.2 0.02 220);
+    --core-muted-foreground: oklch(0.45 0.03 261);
+
+    --brand-primary: oklch(0.63 0.19 259);
+    --primary-foreground: oklch(0.99 0 0);
+    --brand-accent: oklch(0.7 0.18 55);
+    --accent-foreground: oklch(0.99 0 0);
+
+    --border: oklch(0.9 0.02 210);
+    --ring: oklch(0.63 0.19 259);
+    --overlay: oklch(0.2 0.02 220 / 0.55);
+
+    /* --- Hospeda brand colors --- */
+    --hospeda-sky: oklch(0.8 0.08 259);
+    --hospeda-sky-light: oklch(0.88 0.06 259);
+    --hospeda-river: oklch(0.63 0.19 259);
+    --hospeda-forest: oklch(0.5 0.14 155);
+    --hospeda-sand: oklch(0.93 0.03 85);
+
+    /* --- Surface tokens --- */
+    --surface-dark: oklch(0.15 0.02 160);
+    --surface-dark-foreground: oklch(0.92 0.01 210);
+
+    /* --- Font families --- */
+    --font-sans: "Roboto", system-ui, sans-serif;
+    --font-heading: "Geologica", system-ui, sans-serif;
+    --font-decorative: "Caveat", cursive;
+
+    /* --- Radius --- */
+    --radius: 0.75rem;
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-pill: 9999px;
+    --radius-button: 8px;
+    --radius-card: 24px;
+
+    /* --- Spacing --- */
+    --space-section: clamp(3rem, 8vw, 7.5rem);
+    --space-container-x: clamp(0.75rem, 3vw, 1.5rem);
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+
+    /* --- Typography --- */
+    --text-hero: clamp(2.75rem, 2rem + 5vw, 5.25rem);
+    --text-display: clamp(2rem, 1.5rem + 3vw, 3rem);
+    --text-tagline: clamp(1.125rem, 1rem + 0.625vw, 1.5rem);
+    --text-body: 1rem;
+    --text-body-sm: 0.875rem;
+    --text-button: 1rem;
+
+    /* --- Shadows --- */
+    --shadow-card: 0 4px 12px -2px oklch(from var(--core-foreground) l c h / 0.08);
+    --shadow-soft: 0 8px 32px -8px oklch(from var(--core-foreground) l c h / 0.18);
+
+    /* --- Transitions --- */
+    --duration-fast: 0.2s;
+    --duration-normal: 0.4s;
+    --duration-slow: 0.8s;
+    --ease-out: cubic-bezier(0.1, 0, 0.3, 1);
+
+    /* --- Layout --- */
+    --container-max: 1200px;
+    --container-narrow: 720px;
+}
+
+/* --- Base resets --- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+* {
+    border-color: var(--border);
+}
+
+:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-md);
+}
+
+html {
+    overflow-x: clip;
+    scroll-behavior: smooth;
+}
+
+body {
+    min-height: 100vh;
+    font-family: var(--font-sans);
+    color: var(--core-foreground);
+    background-color: var(--core-background);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: clip;
+}
+
+img,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+h1,
+h2,
+h3 {
+    font-family: var(--font-heading);
+    line-height: 1.15;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.container {
+    width: 100%;
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding-inline: var(--space-container-x);
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
