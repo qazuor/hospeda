@@ -92,8 +92,61 @@ const pageTitle = `${title} · Beta Hospeda`;
         </div>
 
         <BetaFooter />
+
+        <dialog class="beta-lightbox" id="beta-lightbox" aria-label="Imagen ampliada">
+            <button type="button" class="beta-lightbox__close" data-beta-lightbox-close aria-label="Cerrar imagen ampliada">
+                <span aria-hidden="true">×</span>
+            </button>
+            <img class="beta-lightbox__img" alt="" />
+            <p class="beta-lightbox__caption"></p>
+        </dialog>
     </body>
 </html>
+
+<script>
+    /**
+     * Lightbox for `.beta-figure img` — opens the image in a native <dialog>
+     * with caption pulled from the sibling <figcaption>. Closes with the X
+     * button, the Escape key, or clicking on the backdrop.
+     */
+    function initBetaLightbox() {
+        const dialog = document.getElementById('beta-lightbox') as HTMLDialogElement | null;
+        if (!dialog) return;
+
+        const imgEl = dialog.querySelector<HTMLImageElement>('.beta-lightbox__img');
+        const captionEl = dialog.querySelector<HTMLParagraphElement>('.beta-lightbox__caption');
+        const closeBtn = dialog.querySelector<HTMLButtonElement>('[data-beta-lightbox-close]');
+        if (!imgEl || !captionEl) return;
+
+        const figures = document.querySelectorAll<HTMLImageElement>('.beta-figure img');
+        figures.forEach((img) => {
+            // Avoid double-binding when astro:page-load fires on the same DOM
+            if (img.dataset.lightboxBound === 'true') return;
+            img.dataset.lightboxBound = 'true';
+
+            img.addEventListener('click', () => {
+                imgEl.src = img.currentSrc || img.src;
+                imgEl.alt = img.alt;
+                const caption = img.closest('.beta-figure')?.querySelector('figcaption');
+                captionEl.textContent = caption?.textContent?.trim() ?? '';
+                captionEl.hidden = captionEl.textContent.length === 0;
+                dialog.showModal();
+            });
+        });
+
+        closeBtn?.addEventListener('click', () => dialog.close());
+
+        // Click outside the image (on the backdrop) OR on the image itself closes
+        dialog.addEventListener('click', (event) => {
+            if (event.target === dialog || event.target === imgEl) {
+                dialog.close();
+            }
+        });
+    }
+
+    initBetaLightbox();
+    document.addEventListener('astro:page-load', initBetaLightbox);
+</script>
 
 <style is:global>
     :root {
@@ -328,6 +381,134 @@ const pageTitle = `${title} · Beta Hospeda`;
 
     .beta-callout--compact .beta-callout__icon {
         font-size: 1rem;
+    }
+
+    .beta-figure {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin: 1.75rem 0;
+        padding: 0;
+    }
+
+    .beta-figure img {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        border-radius: var(--radius-md, 10px);
+        border: 1px solid var(--core-border, rgba(0, 0, 0, 0.08));
+        box-shadow: var(--shadow-card, 0 4px 12px rgba(0, 0, 0, 0.06));
+        background: var(--surface-warm);
+        cursor: zoom-in;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .beta-figure img:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .beta-lightbox {
+        width: 95vw;
+        max-width: 1800px;
+        max-height: 95vh;
+        margin: auto;
+        padding: 0;
+        border: none;
+        border-radius: var(--radius-md, 10px);
+        background: var(--core-background);
+        overflow: hidden;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+    }
+
+    .beta-lightbox::backdrop {
+        background: rgba(0, 0, 0, 0.78);
+        backdrop-filter: blur(4px);
+    }
+
+    .beta-lightbox__img {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: calc(95vh - 3rem);
+        object-fit: contain;
+        cursor: zoom-out;
+        background: var(--surface-warm);
+    }
+
+    .beta-lightbox__caption {
+        margin: 0;
+        padding: 0.65rem 1rem;
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        line-height: 1.4;
+        font-style: italic;
+        text-align: center;
+        color: var(--core-muted-foreground);
+        background: var(--core-background);
+        border-top: 1px solid var(--core-border, rgba(0, 0, 0, 0.08));
+    }
+
+    .beta-lightbox__caption[hidden] {
+        display: none;
+    }
+
+    .beta-lightbox__close {
+        position: absolute;
+        top: 0.6rem;
+        right: 0.6rem;
+        width: 2.25rem;
+        height: 2.25rem;
+        padding: 0;
+        border: none;
+        background: rgba(0, 0, 0, 0.65);
+        color: white;
+        font-size: 1.6rem;
+        line-height: 1;
+        border-radius: 50%;
+        cursor: pointer;
+        z-index: 2;
+        transition: background-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .beta-lightbox__close:hover {
+        background: rgba(0, 0, 0, 0.85);
+        transform: scale(1.05);
+    }
+
+    .beta-lightbox__close:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+
+    .beta-figure figcaption {
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        line-height: 1.5;
+        color: var(--core-muted-foreground);
+        font-style: italic;
+        text-align: center;
+        padding: 0 0.5rem;
+    }
+
+    /* Pair: desktop + mobile shown side by side on wide viewports */
+    .beta-figure-group {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+        margin: 1.75rem 0;
+    }
+
+    @media (min-width: 720px) {
+        .beta-figure-group {
+            grid-template-columns: 2fr 1fr;
+            align-items: start;
+        }
+    }
+
+    .beta-figure-group > .beta-figure {
+        margin: 0;
     }
 
     .beta-doc-article table {
