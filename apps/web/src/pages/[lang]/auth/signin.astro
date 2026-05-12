@@ -42,8 +42,21 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 // silently redirect users to the canonical apex post-login. The client
 // island still falls back to window.location.origin if redirectTo is
 // undefined, but here we want a known-good absolute URL up front.
-const returnPath =
-    Astro.url.searchParams.get('returnUrl') || buildUrl({ locale, path: 'mi-cuenta' });
+//
+// SECURITY: `returnUrl` is attacker-controlled query input. The naive
+// `new URL(returnPath, origin)` resolution does NOT enforce the base
+// origin when `returnPath` is an absolute URL — it returns the absolute
+// URL verbatim. That makes it a textbook open-redirect vector usable
+// for phishing. Reject anything that isn't an obviously-safe relative
+// path (single leading slash, no second slash that could be parsed as
+// `//evil.com`, no scheme prefix). Fall back to the account dashboard
+// when the input looks suspicious.
+const rawReturn = Astro.url.searchParams.get('returnUrl') ?? '';
+const isSafeRelativePath =
+    rawReturn.startsWith('/') &&
+    !rawReturn.startsWith('//') &&
+    !rawReturn.startsWith('/\\');
+const returnPath = isSafeRelativePath ? rawReturn : buildUrl({ locale, path: 'mi-cuenta' });
 const redirectTo = new URL(returnPath, Astro.url.origin).href;
 
 // Localized secondary link labels via i18n
