@@ -1,6 +1,6 @@
 # SPEC-103: VPS Migration Post-Merge Cleanup & Hardening Backlog
 
-## Progress: 10/92 tasks (11%)
+## Progress: 11/92 tasks (12%)
 
 **Average Complexity:** 2.1 / 4 (max)
 **Total effort estimate:** ~57-90h spread over weeks-months post-merge
@@ -69,7 +69,7 @@
 
 ### CI minutes optimization (3.B.6)
 
-- [ ] **T-032** (4) — CI: upload build artifact from `build` job, download in downstream jobs.
+- [x] **T-032** (4) — CI: upload build artifact from `build` job, download in downstream jobs. ✅ test-unit timeout reverted 30→15.
 - [ ] **T-033** (3) — Investigate `docs.yml` hangs + add hard timeout.
 - [ ] **T-034** (4) — Re-enable E2E nightly cron after diagnosing root cause.
 - [ ] **T-035** (3) — Replace dynamic `await import()` with static imports across ~40 test files.
