@@ -1,6 +1,6 @@
 ---
 title: Qué cosas estamos buscando
-description: Las 6 categorías de bugs que nos interesa que encuentres durante el beta.
+description: Las categorías de bugs que nos interesa que encuentres durante el beta.
 order: 2
 role: reportar-bugs
 section: Reportar bugs
@@ -8,43 +8,90 @@ section: Reportar bugs
 
 # Qué cosas estamos buscando
 
-Estas son las **6 categorías** de cosas que nos interesa que encuentres.
+Estas son las **categorías** de cosas que nos interesa que encuentres. La primera es la más importante: **¿el sistema funciona?**. Las otras son sobre cómo se ve, se siente y rinde.
 
-## a) Performance — ¿el sitio anda lento?
+## a) Funcionamiento — ¿hace lo que dice que hace?
+
+**Esta es la categoría más importante.** Antes de fijarte en colores o velocidad, queremos saber si las cosas **andan**. Si un flujo no se completa, **es bug crítico**.
+
+Probá los flujos completos, de punta a punta, y fijate si:
+
+### Cuenta y sesión
+
+- Te podés **registrar** y te llega el email de confirmación
+- Podés **iniciar sesión** con email/contraseña, con Google y con Facebook
+- Podés **cerrar sesión** y volver a entrar
+- "Olvidé mi contraseña" te manda el email y podés resetearla
+- Podés **editar tu perfil** y los cambios se guardan
+- Cambiás el **idioma** o el **tema** y se acuerda la próxima vez
+
+### Como turista
+
+- Podés **buscar alojamientos** y te devuelve resultados
+- Los **filtros** funcionan (precio, capacidad, amenidades, fecha)
+- Entrás al **detalle** de un alojamiento y se ve la galería, descripción, precio, mapa
+- Podés **contactar al host** desde el detalle y le llega el mensaje
+- Marcás un alojamiento como **favorito** y aparece en tu cuenta
+- Podés **crear una colección** y mover favoritos adentro
+- Navegás **destinos**, **eventos** y **blog** y todo abre bien
+- El **cambio de página** (paginación) funciona
+
+### Como host
+
+- Podés **registrarte como host** y completar el onboarding sin trabarte
+- Podés **crear un alojamiento** entero (todos los pasos, todos los campos)
+- Podés **subir fotos** y se ven en el detalle público
+- Podés **editar** un alojamiento ya creado y los cambios se reflejan
+- Podés **publicar** y **despublicar** (pasar de borrador a publicado)
+- El alojamiento publicado **aparece** en la búsqueda pública
+- Te llega el **mensaje** del turista que te contactó
+- Podés **responder** y la conversación se ve completa
+- Podés **suscribirte a un plan** y la suscripción queda activa
+- Podés **comprar un add-on** y se aplica
+
+### Como admin / editor *(si te tocó)*
+
+- Podés crear / editar / eliminar lo que te corresponde según tu rol
+- Los cambios que hacés en el panel **aparecen** en el sitio público
+- Los **flujos guiados** del rol completan sin trabarse
+
+> **Si algo de esto no anda, reportalo con prioridad alta.** "Intenté crear un alojamiento y al llegar al paso 4 se rompió" vale más que veinte detalles cosméticos.
+
+## b) Performance — ¿el sitio anda lento?
 
 - Una página tarda mucho en cargar
 - Hago clic en un botón y tarda en responder
 - El scroll va a saltitos, no es fluido
 - Las imágenes tardan en aparecer
 
-## b) Accesibilidad — ¿se puede usar bien?
+## c) Accesibilidad — ¿se puede usar bien?
 
 - El texto es muy chico, no se lee
 - Los botones son chiquitos, no le pego
 - No hay contraste entre el texto y el fondo, no se distingue
 - Si tenés un familiar mayor que usa el sitio: ¿le costaría?
 
-## c) Visuales — ¿se ve bien?
+## d) Visuales — ¿se ve bien?
 
 - Algo está cortado, mal alineado, desbordado
 - Una imagen rota o que no carga
 - Un color que no pega, queda feo
 - Texto que se sale de su caja, se superpone con algo
 
-## d) Idiomas (i18n) — ¿están bien las traducciones?
+## e) Idiomas (i18n) — ¿están bien las traducciones?
 
 - Hay palabras en inglés cuando elegiste español
 - Una traducción al portugués o inglés es rara, suena mal
 - Falta traducir algo (queda en español aunque elegiste otro idioma)
 - Errores de ortografía o tipeo
 
-## e) Responsive — ¿se ve bien en distintos tamaños?
+## f) Responsive — ¿se ve bien en distintos tamaños?
 
 - En el celular se ve perfecto pero en la compu no
 - En la compu queda re bien pero en el celular se rompe
 - Si achicás la ventana del navegador, algo se desarma
 
-## f) Pagos y suscripciones — ¿el pago funciona?
+## g) Pagos y suscripciones — ¿el pago funciona?
 
 - Quise pagar y dio error
 - El monto no era el que decía
