@@ -132,7 +132,6 @@ export function CollectionIconPicker({
             {/* "Sin ícono" option */}
             <button
                 type="button"
-                // biome-ignore lint/a11y/useSemanticElements: button[role=radio] is the canonical pattern for icon swatch pickers (cannot use native <input type=radio> with custom icon visuals).
                 role="radio"
                 aria-checked={value === ''}
                 aria-label={t('account.favorites.collections.fields.iconNone', 'Sin ícono')}
@@ -153,7 +152,6 @@ export function CollectionIconPicker({
                 <button
                     key={key}
                     type="button"
-                    // biome-ignore lint/a11y/useSemanticElements: button[role=radio] is the canonical pattern for icon swatch pickers (cannot use native <input type=radio> with custom icon visuals).
                     role="radio"
                     aria-checked={value === key}
                     aria-label={label}

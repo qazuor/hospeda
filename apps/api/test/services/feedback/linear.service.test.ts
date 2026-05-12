@@ -185,6 +185,12 @@ describe('LinearFeedbackService', () => {
             await service.uploadFile(file);
 
             // Assert
+            // Linear uploadFile wraps the Buffer in a Blob before PUT-ing
+            // because fetch's BodyInit typing rejects Buffer directly under
+            // current @types/node + lib.dom.d.ts. The test asserts the
+            // request shape and that the body carries the same byte count as
+            // the source buffer — comparing Blob instances directly is brittle
+            // because Blob lacks structural equality.
             expect(mockFetch).toHaveBeenCalledWith(
                 'https://linear-uploads.s3.us-east-1.amazonaws.com/upload',
                 expect.objectContaining({
@@ -193,9 +199,11 @@ describe('LinearFeedbackService', () => {
                         'Content-Type': 'image/png',
                         'x-amz-acl': 'public-read'
                     }),
-                    body: file.buffer
+                    body: expect.any(Blob)
                 })
             );
+            const callArg = mockFetch.mock.calls[0]?.[1];
+            expect(callArg.body.size).toBe(file.buffer.length);
         });
 
         it('should return the assetUrl from Linear', async () => {

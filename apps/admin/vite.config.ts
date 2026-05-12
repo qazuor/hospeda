@@ -22,6 +22,19 @@ for (const [key, value] of Object.entries(rawEnv)) {
     }
 }
 
+// Map shared HOSPEDA_* names onto the VITE_* names this app expects when
+// only the HOSPEDA_* versions are present. The rest of the monorepo
+// (api, web, scripts) consumes the HOSPEDA_* aliases from a single
+// `.env.local`, and the CI workflow already mirrors the values into
+// VITE_* via job-level `env:`. This block reproduces that mapping for
+// local builds so a freshly-cloned dev environment does not need to
+// duplicate the same URL under two different keys.
+process.env.VITE_API_URL ??= process.env.HOSPEDA_API_URL;
+process.env.VITE_SITE_URL ??= process.env.HOSPEDA_SITE_URL;
+process.env.VITE_BETTER_AUTH_URL ??=
+    process.env.HOSPEDA_BETTER_AUTH_URL ??
+    (process.env.HOSPEDA_API_URL ? `${process.env.HOSPEDA_API_URL}/api/auth` : undefined);
+
 // Validate required environment variables for the Admin App.
 const AdminViteEnvSchema = z.object({
     VITE_API_URL: z.string().url('Must be a valid API URL'),

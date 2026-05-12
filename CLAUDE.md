@@ -150,12 +150,26 @@ pnpm env:check:registry  # Local: confirm app schemas match @repo/config registr
 ### Git Conventions
 
 - **Conventional Commits**: `type(scope): description`
-- Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+- Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`, `ci`, `build`, `revert`, `workflow`, `types`, `del`, `misc`
 - Atomic, focused commits
 - Stage files individually (never `git add .` or `git add -A`)
 - **Commit immediately after staging**.. never accumulate multiple `git add` groups without committing between them
 - Exclude documentation/CLAUDE.md files from code commits (commit them separately if needed)
 - Pre-commit hooks (husky + lint-staged + biome) run on ALL staged files.. if the hook fails, fix the issue and create a NEW commit (never amend)
+- **Merge commit messages**: commitlint rejects `merge:` as a type. Use `chore: merge <source> into <target> (...)` instead.
+
+### Branch Workflow (since 2026-05-12)
+
+ALL new work follows this 6-step flow (full reference: [`.claude/docs/git-branch-workflow.md`](.claude/docs/git-branch-workflow.md)):
+
+1. Cut worktree/branch from **`staging`** (NOT `main`).
+2. Make changes in that branch.
+3. Leave everything green (typecheck + lint + test) on that branch.
+4. Open PR targeting `staging`.
+5. Merge PR into `staging`.
+6. ONLY when the user explicitly says so (after soak time in staging), merge `staging` → `main`.
+
+`main` is the validated baseline; `staging` is the integration line. Never branch features from `main`, never PR features into `main`. The only exception is a production hotfix (branch from `main`, fix, PR to `main`, then back-merge `main` → `staging`).
 
 ### Biome Lint Gotchas
 
