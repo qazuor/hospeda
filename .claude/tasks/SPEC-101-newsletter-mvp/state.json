@@ -5,9 +5,9 @@
     "created": "2026-05-11T00:00:00.000Z",
     "summary": {
         "totalTasks": 60,
-        "completed": 1,
+        "completed": 2,
         "inProgress": 0,
-        "pending": 59,
+        "pending": 58,
         "deferred": 0,
         "blocked": 0,
         "criticalPath": [
@@ -93,32 +93,33 @@
             "phase": "phase0_cleanup",
             "layer": "api",
             "complexity": 2,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": [],
             "blocks": [],
             "tags": ["phase0_cleanup", "bugfix", "api"],
             "files": [
                 "apps/api/src/routes/user/protected/newsletter.ts",
-                "apps/api/test/routes/user/newsletter.test.ts"
+                "apps/api/test/routes/user/newsletter-toggle.test.ts"
             ],
             "acceptanceCriteria": [
-                "PATCH /api/v1/protected/user/newsletter writes to user.settings.newsletter (not settings.notifications.allowEmails)",
+                "POST /me/newsletter/toggle writes to user.settings.newsletter (not settings.notifications.allowEmails)",
                 "Endpoint is annotated with @deprecated JSDoc noting V2 removal",
-                "Regression test: POST with { newsletter: true } reads back settings.newsletter=true",
-                "Regression test: previous wrong field settings.notifications.allowEmails is NOT modified",
+                "Regression test: handler toggles settings.newsletter and result reflects new state",
+                "Regression test: previous wrong field settings.notifications.allowEmails is NOT modified by the toggle",
                 "pnpm typecheck passes in apps/api"
             ],
             "description": "Fix the existing buggy endpoint at apps/api/src/routes/user/protected/newsletter.ts. The current code writes to the wrong JSONB path (notifications.allowEmails instead of newsletter). Fix the JSONB path update to target settings.newsletter. Add @deprecated JSDoc. Write a regression test that verifies the correct field is written and the wrong field is untouched. This is a bug fix per AC-101-14.1.",
             "qualityGate": {
                 "lint": "pass",
                 "typecheck": "pass",
-                "tests": "regression test required"
+                "tests": "5 unit tests passing"
             },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-12T18:50:00.000Z",
+                "completed": "2026-05-12T19:00:00.000Z"
+            },
+            "notes": "Endpoint live path is POST /me/newsletter/toggle (toggle semantics, no body — task title said PATCH but the live code is POST). Handler extracted as exported pure function (newsletterToggleHandler) for direct unit testing with a stub UserService, sidestepping initApp/full-service-core machinery. 5 unit tests passing: toggle false->true preserves notifications.allowEmails=true; toggle true->false preserves notifications.allowEmails=false; undefined-settings init; getById error propagation; NOT_FOUND on null user."
         },
         {
             "id": "T-101-03",
