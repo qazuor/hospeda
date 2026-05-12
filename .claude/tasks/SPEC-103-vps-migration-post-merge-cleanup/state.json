@@ -25,29 +25,29 @@
         {
             "id": "T-002",
             "title": "Configure branch protection on main via gh api",
-            "description": "Apply branch protection on main: required status checks (lint, typecheck, test), require PR, dismiss stale reviews, no force-push, no deletions, conversation resolution required. Use gh api PUT repos/qazuor/hospeda/branches/main/protection per spec 3.A.0.1 payload. Verify: direct push to main is rejected by GitHub.",
-            "status": "pending",
+            "description": "Apply branch protection on main: required status checks (CI Pass), require PR, dismiss stale reviews, no force-push, no deletions, conversation resolution required. Verify: direct push to main is rejected by GitHub. BLOCKED 2026-05-12: Repository is private on GitHub Free plan, which does NOT support classic branch protection rules NOR rulesets for private repos. Both APIs return HTTP 403 'Upgrade to GitHub Pro'. Until plan upgrade, protection is enforced AGENT-SIDE via .claude/settings.json deny patterns + CLAUDE.md behavioral rule (see section 'Protected Branches — main and staging'). To unblock: upgrade to GitHub Pro (~$4/mo) and reapply via gh api with the original payload from spec 3.A.0.1.",
+            "status": "blocked",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": [],
-            "tags": ["ops", "security", "section-3.A"],
+            "tags": ["ops", "security", "section-3.A", "needs-gh-pro"],
             "phase": "setup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
-                "started": null,
+                "started": "2026-05-12T21:30:00.000Z",
                 "completed": null
             }
         },
         {
             "id": "T-003",
             "title": "Configure branch protection on staging via gh api",
-            "description": "Mirror T-002 protection rules on staging branch. Same payload, swap URL to staging. Verify: direct push to staging is rejected. Spec ref: 3.A.0.1.",
-            "status": "pending",
+            "description": "Mirror T-002 protection rules on staging branch. Same payload, swap URL to staging. Verify: direct push to staging is rejected. Spec ref: 3.A.0.1. BLOCKED 2026-05-12: Same root cause as T-002 — GitHub Free + private repo does not support branch protection or rulesets. Agent-side enforcement applied via .claude/settings.json + CLAUDE.md.",
+            "status": "blocked",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": [],
-            "tags": ["ops", "security", "section-3.A"],
+            "tags": ["ops", "security", "section-3.A", "needs-gh-pro"],
             "phase": "setup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
             "timestamps": {
@@ -1585,10 +1585,10 @@
     ],
     "summary": {
         "total": 91,
-        "pending": 85,
+        "pending": 83,
         "inProgress": 0,
         "completed": 6,
-        "blocked": 0,
+        "blocked": 2,
         "averageComplexity": 2.1
     }
 }

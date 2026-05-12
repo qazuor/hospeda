@@ -16,8 +16,8 @@
 ### Green-build gate + branch protection (3.A.0 / 3.A.0.1)
 
 - [x] **T-001** (1) — Verify CI green. ✅ All checks green on PR #1057 run `25762100080` (commit `09d10676e`). Required 4 sub-fixes during verification; CI job names confirmed for branch protection: Lint, Security, Guards, Docs and i18n, Build, Typecheck, Unit Tests (shard N/4), Integration Tests, CI Pass.
-- [ ] **T-002** (2) — Configure branch protection on `main` via `gh api`. Blocked by: T-001.
-- [ ] **T-003** (2) — Configure branch protection on `staging` via `gh api`. Blocked by: T-001.
+- [!] **T-002** (2) — Configure branch protection on `main`. **BLOCKED**: GitHub Free + private repo doesn't support classic branch protection nor rulesets (HTTP 403 from both APIs). Agent-side enforcement applied via `.claude/settings.json` deny patterns + `CLAUDE.md` "Protected Branches" section. Unblock = upgrade to GitHub Pro (~$4/mo).
+- [!] **T-003** (2) — Configure branch protection on `staging`. **BLOCKED**: same root cause as T-002.
 
 ### MercadoPago prod toggle (3.A.1)
 

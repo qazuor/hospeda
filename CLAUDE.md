@@ -158,6 +158,17 @@ pnpm env:check:registry  # Local: confirm app schemas match @repo/config registr
 - Pre-commit hooks (husky + lint-staged + biome) run on ALL staged files.. if the hook fails, fix the issue and create a NEW commit (never amend)
 - **Merge commit messages**: commitlint rejects `merge:` as a type. Use `chore: merge <source> into <target> (...)` instead.
 
+### Protected Branches — `main` and `staging`
+
+`main` and `staging` are protected by convention. GitHub-side branch protection is currently NOT available (private repo on the Free plan; tracked as SPEC-103 T-002 / T-003 blocked on a plan upgrade). Until then, protection is enforced AGENT-SIDE by these rules — read them as non-negotiable:
+
+1. **NEVER** `git push` directly to `main` or `staging` (including `*:main` / `*:staging` ref forms, force pushes, and `-u` initial setups). `.claude/settings.json` enforces this with `deny` patterns; if you find yourself reasoning about how to bypass them, STOP and re-read this section.
+2. **NEVER** merge a PR to `main` or `staging` unless the PR's last CI run is fully green. "CI Pass" being SUCCESS is the gate. Skipped jobs are OK; failed or cancelled jobs are NOT. Verify via `gh pr view <N> --json statusCheckRollup` before any `gh pr merge`.
+3. **NEVER** use `gh pr merge --admin` to bypass failing CI on `main` or `staging`. Admin override on these branches is a last-resort human decision, not an agent decision.
+4. **NEVER** `git commit --amend` on `main` or `staging`. Always create new commits.
+5. The only path to change `main` / `staging`: branch → PR (targeting that protected branch) → wait for CI green → `gh pr merge --merge` (preserves history via `--no-ff`).
+6. Hotfix exception: if `main` needs an emergency fix and `staging` has soak-time work that cannot be promoted, branch from `main`, fix, PR to `main`, then back-merge `main` → `staging` via PR.
+
 ### Branch Workflow (since 2026-05-12)
 
 ALL new work follows this 6-step flow (full reference: [`.claude/docs/git-branch-workflow.md`](.claude/docs/git-branch-workflow.md)):
