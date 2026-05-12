@@ -44,6 +44,14 @@ export const BETA_ROLE_LABELS: Record<BetaRole, string> = {
     faq: 'FAQ'
 };
 
+/**
+ * Optional discreet subtitle per role, shown under the group title in the
+ * sidebar. Used to flag restricted-audience sections.
+ */
+export const BETA_ROLE_SUBTITLES: Partial<Record<BetaRole, string>> = {
+    'admin-editor': 'Solo testers preseleccionados'
+};
+
 export interface BetaNavEntry {
     readonly id: string;
     readonly title: string;
@@ -52,10 +60,19 @@ export interface BetaNavEntry {
     readonly section: string;
 }
 
+export interface BetaNavSection {
+    readonly label: string;
+    readonly entries: ReadonlyArray<BetaNavEntry>;
+}
+
 export interface BetaNavGroup {
     readonly role: BetaRole;
     readonly label: string;
+    readonly subtitle?: string;
+    /** Flat ordered entries — used for prev/next navigation. */
     readonly entries: ReadonlyArray<BetaNavEntry>;
+    /** Same entries split by `section` in insertion order — used for the sidebar UI. */
+    readonly sections: ReadonlyArray<BetaNavSection>;
 }
 
 function toUrl(id: string): string {
@@ -93,14 +110,40 @@ export function buildBetaNav(
     for (const role of BETA_ROLES_ORDER) {
         const entries = byRole.get(role);
         if (!entries || entries.length === 0) continue;
+        const sorted = entries.slice().sort((a, b) => a.order - b.order);
         groups.push({
             role,
             label: BETA_ROLE_LABELS[role],
-            entries: entries.slice().sort((a, b) => a.order - b.order)
+            subtitle: BETA_ROLE_SUBTITLES[role],
+            entries: sorted,
+            sections: groupBySection(sorted)
         });
     }
 
     return groups;
+}
+
+/**
+ * Splits an ordered list of entries into preserved-order sections, keyed by
+ * the `section` frontmatter value. Entries without a section default to ''.
+ */
+function groupBySection(entries: ReadonlyArray<BetaNavEntry>): ReadonlyArray<BetaNavSection> {
+    const order: string[] = [];
+    const buckets = new Map<string, BetaNavEntry[]>();
+    for (const entry of entries) {
+        const label = entry.section ?? '';
+        const bucket = buckets.get(label);
+        if (bucket) {
+            bucket.push(entry);
+        } else {
+            buckets.set(label, [entry]);
+            order.push(label);
+        }
+    }
+    return order.map((label) => ({
+        label,
+        entries: buckets.get(label) ?? []
+    }));
 }
 
 /**
