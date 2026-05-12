@@ -61,6 +61,12 @@ export * from './message-status.schema.js';
 export * from './moderation-status.enum.js';
 export * from './moderation-status.schema.js';
 
+export * from './newsletter-campaign-locale-filter.enum.js';
+export * from './newsletter-campaign-locale-filter.schema.js';
+
+export * from './newsletter-campaign-status.enum.js';
+export * from './newsletter-campaign-status.schema.js';
+
 export * from './newsletter-channel.enum.js';
 export * from './newsletter-channel.schema.js';
 

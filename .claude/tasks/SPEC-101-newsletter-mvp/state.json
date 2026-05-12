@@ -5,9 +5,9 @@
     "created": "2026-05-11T00:00:00.000Z",
     "summary": {
         "totalTasks": 60,
-        "completed": 3,
+        "completed": 4,
         "inProgress": 0,
-        "pending": 57,
+        "pending": 56,
         "deferred": 0,
         "blocked": 0,
         "criticalPath": [
@@ -202,19 +202,28 @@
             "phase": "phase1_foundation",
             "layer": "db",
             "complexity": 2,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-01"],
             "blocks": ["T-101-07", "T-101-08"],
             "tags": ["phase1_foundation", "db", "schema"],
-            "files": ["packages/db/src/schemas/newsletter/newsletter-campaign.table.ts"],
+            "files": [
+                "packages/schemas/src/enums/newsletter-campaign-status.enum.ts",
+                "packages/schemas/src/enums/newsletter-campaign-status.schema.ts",
+                "packages/schemas/src/enums/newsletter-campaign-locale-filter.enum.ts",
+                "packages/schemas/src/enums/newsletter-campaign-locale-filter.schema.ts",
+                "packages/schemas/src/enums/index.ts",
+                "packages/db/src/schemas/enums.dbschema.ts",
+                "packages/db/src/schemas/newsletter/newsletter_campaigns.dbschema.ts",
+                "packages/db/src/schemas/newsletter/index.ts"
+            ],
             "acceptanceCriteria": [
-                "newsletterCampaignStatusEnum and newsletterCampaignLocaleFilterEnum declared",
-                "All columns present: id, title, subject, bodyJson (jsonb), status, localeFilter, totalRecipients, totalSoftcapped, sentAt, scheduledFor, createdBy, audit timestamps",
+                "newsletterCampaignStatusEnum and newsletterCampaignLocaleFilterEnum declared in @repo/schemas + PgEnums in @repo/db",
+                "All columns present: id, title, subject, bodyJson (jsonb), status, localeFilter, totalRecipients, totalSoftcapped, sentAt, scheduledFor, createdBy, audit timestamps, deletedAt (soft delete)",
                 "Status and createdBy indexes declared",
                 "Exported from newsletter schema index",
-                "pnpm typecheck passes in packages/db"
+                "pnpm typecheck passes in @repo/schemas and @repo/db"
             ],
-            "description": "Create packages/db/src/schemas/newsletter/newsletter-campaign.table.ts per tech-analysis §2.1. Include both enums. Note scheduledFor column exists but is unused in MVP (reserved for V2). Export from newsletter index.",
+            "description": "Create packages/db/src/schemas/newsletter/newsletter_campaigns.dbschema.ts per tech-analysis §2.1. Include both enums. scheduledFor reserved for V2 (unused in MVP).",
             "qualityGate": {
                 "lint": "pass",
                 "typecheck": "pass",
@@ -222,9 +231,10 @@
             },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-12T19:30:00.000Z",
+                "completed": "2026-05-12T19:40:00.000Z"
+            },
+            "notes": "Soft-delete via deletedAt added (tech-analysis §2.1 had it too). createdBy FK uses ON DELETE RESTRICT — admins who authored campaigns cannot be hard-deleted while campaigns exist, preserving audit trail. Filename uses snake_case convention (newsletter_campaigns.dbschema.ts)."
         },
         {
             "id": "T-101-06",

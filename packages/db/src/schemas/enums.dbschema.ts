@@ -17,6 +17,8 @@ import {
     MessageSenderTypeEnum,
     MessageStatusEnum,
     ModerationStatusEnum,
+    NewsletterCampaignLocaleFilterEnum,
+    NewsletterCampaignStatusEnum,
     NewsletterChannelEnum,
     NewsletterSourceEnum,
     NewsletterSubscriberStatusEnum,
@@ -106,6 +108,16 @@ export const RolePgEnum = pgEnum('role_enum', enumToTuple(RoleEnum));
 export const ModerationStatusPgEnum = pgEnum(
     'moderation_status_enum',
     enumToTuple(ModerationStatusEnum)
+);
+
+export const NewsletterCampaignLocaleFilterPgEnum = pgEnum(
+    'newsletter_campaign_locale_filter_enum',
+    enumToTuple(NewsletterCampaignLocaleFilterEnum)
+);
+
+export const NewsletterCampaignStatusPgEnum = pgEnum(
+    'newsletter_campaign_status_enum',
+    enumToTuple(NewsletterCampaignStatusEnum)
 );
 
 export const NewsletterChannelPgEnum = pgEnum(
