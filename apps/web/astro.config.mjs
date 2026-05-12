@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import node from '@astrojs/node';
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
-import node from '@astrojs/node';
 import sentry from '@sentry/astro';
 import { defineConfig } from 'astro/config';
 import { validateWebEnv } from './src/env.ts';

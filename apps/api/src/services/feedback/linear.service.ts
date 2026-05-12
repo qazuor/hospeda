@@ -333,13 +333,18 @@ export class LinearFeedbackService {
             'PUT file to Linear presigned URL'
         );
 
+        // Wrap the Buffer in a Blob so fetch's BodyInit typing accepts it
+        // across @types/node + lib.dom.d.ts (Buffer's underlying type is
+        // ArrayBufferLike which the fetch overloads reject directly).
+        // Blob copies the byte view, no allocation overhead beyond a
+        // single wrapper. Avoid `Uint8Array.from(buffer)` which iterates
+        // byte-by-byte and has produced empty/corrupt bodies in undici.
+        const uploadBlob = new Blob([new Uint8Array(file.buffer)]);
+
         const uploadResponse = await fetch(uploadData.uploadUrl, {
             method: 'PUT',
             headers,
-            // Buffer is a Uint8Array subclass — pass it directly. Avoid
-            // `Uint8Array.from(buffer)` which iterates byte-by-byte and has
-            // produced empty/corrupt bodies in undici fetch.
-            body: file.buffer
+            body: uploadBlob
         });
 
         if (!uploadResponse.ok) {
