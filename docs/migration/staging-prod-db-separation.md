@@ -1,8 +1,10 @@
 # Staging / Prod Database Separation
 
-> **Status**: planned, execution pending. Created 2026-05-11 as part of pre-launch sprint wrap-up.
+> **Status**: SHIPPED (Phases 1-6 + hops targeting). Executed 2026-05-11 / 2026-05-12.
 > **Owner**: ops (qazuor).
-> **Related**: `docs/migration/vps-deployment-spec.md` (Phase 17.x), engram `vps-migration/pre-launch-sprint-final-state`.
+> **Related**: `docs/migration/vps-deployment-spec.md` (Phase 17.x), engrams `vps-migration/staging-prod-db-separation`, `vps-migration/hops-target-flag-shipped`, `vps-migration/staging-db-seed-timestamp`.
+>
+> **Remaining**: Beta → prod migration playbook (Section 10) executes at public launch, not now. Branch strategy (post-merge `chore/vps-migration` → `main`, create `staging` branch, retarget Coolify apps to their respective branches) is the next step.
 
 ---
 
@@ -507,16 +509,18 @@ prod DB ──[snapshot]──▶ staging DB ──[sanitize PII]──▶ teste
 
 ## 12. Acceptance criteria for "DB split is done"
 
-- [ ] `hospeda-staging-postgres` and `hospeda-staging-redis` running in Coolify.
-- [ ] `staging-api` env vars updated and redeployed.
-- [ ] Staging DB has full seed: `SELECT COUNT(*) FROM users WHERE role='HOST'` returns 30+.
-- [ ] Prod DB has required-only seed: same query returns 0.
-- [ ] OAuth signup on `staging-admin.hospeda.com.ar` creates row in staging DB only.
-- [ ] OAuth signup on `admin.hospeda.com.ar` creates row in prod DB only.
-- [ ] Cookies between the two are independent (verified by signing into both with same browser session — both work, neither leaks).
-- [ ] Section 10 (migration playbook) is in this doc and reviewed.
-- [ ] SEED_TIMESTAMP from Section 7.1 captured in engram + this doc.
-- [ ] Backups configured for `hospeda-staging-postgres`.
+- [x] `hospeda-staging-postgres` and `hospeda-staging-redis` running in Coolify.
+- [x] `hospeda-api-staging`, `hospeda-admin-staging`, `hospeda-web-staging` created and serving the `staging-*` hosts (separate from the prod apps).
+- [x] `hospeda-api-prod` reverted to prod DB and `staging-api.hospeda.com.ar` host removed from its labels.
+- [x] Staging DB has full seed: `users=41`, `accommodations=104`, `destinations=27`, `posts=18`, `events=24` (verified 2026-05-11 21:00 UTC).
+- [x] Prod DB has required-only seed: `accommodations=0`, `posts=0`, `destinations=23` (required cities only, no example bumps).
+- [x] OAuth signup flow CORS verified — `staging-api` returns `access-control-allow-origin: https://staging.hospeda.com.ar` for `/api/v1/public/auth/me`; prod-api correctly rejects same origin (no leak).
+- [x] Cookies between the two are independent (separate `HOSPEDA_BETTER_AUTH_SECRET`, sha256 hashes `8a65856048d4aaa1` staging vs `0b86c54a6a2cbccb` prod).
+- [x] Section 10 (migration playbook) drafted and reviewed.
+- [x] SEED_TIMESTAMP captured: `2026-05-11 21:00:00.490193+00`. Stored in engram `vps-migration/staging-db-seed-timestamp`.
+- [x] `hops --target=prod|staging` flag shipped (Section 11.1) with target-aware DB credentials.
+- [ ] Backups configured for `hospeda-staging-postgres` (deferred — set up Coolify scheduled backup for the new service before the beta opens).
+- [ ] OAuth provider consoles (Google + Facebook) updated with staging redirect URIs (in-progress — see Section 14).
 
 ---
 
@@ -526,6 +530,82 @@ prod DB ──[snapshot]──▶ staging DB ──[sanitize PII]──▶ teste
 - Phase 3-4 (migrate + seed staging): ~30 min including troubleshooting tunnels
 - Phase 5 (reset prod): ~20 min
 - Phase 6 (validation): ~30 min
+- Hops targeting (Section 11.1): ~2h code + smoke + 3 follow-up commits to fix compiled-binary dotenv loader and target-aware DB credentials.
 - Phase 10 setup work (curated prod destinations + script): deferred to ~1 week before cutover.
 
-**Total today**: ~2h. Migration script + cutover prep: ~5-8h done close to launch.
+**Total today**: ~5h end-to-end. Migration script + cutover prep: ~5-8h done close to launch.
+
+## 14. OAuth provider console updates (Google + Facebook)
+
+Better Auth resolves callback URLs as `<HOSPEDA_BETTER_AUTH_URL>/callback/<provider>`. With prod + staging running, BOTH sets of URLs must be allow-listed in the corresponding OAuth provider consoles, or staging signups fail with `redirect_uri_mismatch`.
+
+The OAuth client IDs / secrets themselves are SHARED between prod and staging (same `HOSPEDA_GOOGLE_CLIENT_ID` etc. in both api containers' env vars). The provider consoles simply need to know about both redirect URIs.
+
+### 14.1 Google Cloud Console
+
+URL: `https://console.cloud.google.com/apis/credentials` → project where the Hospeda OAuth client lives → click the OAuth 2.0 Client ID matching `HOSPEDA_GOOGLE_CLIENT_ID`.
+
+**Authorized JavaScript origins** — add staging hosts alongside existing prod entries:
+
+```
+https://hospeda.com.ar
+https://admin.hospeda.com.ar
+https://staging.hospeda.com.ar          <-- new
+https://staging-admin.hospeda.com.ar    <-- new
+```
+
+**Authorized redirect URIs** — add staging api callback alongside prod:
+
+```
+https://api.hospeda.com.ar/api/auth/callback/google
+https://staging-api.hospeda.com.ar/api/auth/callback/google    <-- new
+```
+
+Save. Google takes ~1 minute to propagate.
+
+### 14.2 Facebook Developers Console
+
+URL: `https://developers.facebook.com/apps/` → the Hospeda app → **Facebook Login → Settings**.
+
+**Valid OAuth Redirect URIs** — add staging alongside prod:
+
+```
+https://api.hospeda.com.ar/api/auth/callback/facebook
+https://staging-api.hospeda.com.ar/api/auth/callback/facebook    <-- new
+```
+
+Then in **App Settings → Basic → App Domains**, add:
+
+```
+hospeda.com.ar
+admin.hospeda.com.ar
+staging.hospeda.com.ar          <-- new
+staging-admin.hospeda.com.ar    <-- new
+```
+
+**Site URL** in App Settings → Basic stays `https://hospeda.com.ar` (single canonical site, the rest are aliases).
+
+Save. Facebook can take 2-5 minutes to propagate.
+
+### 14.3 Smoke
+
+After both consoles propagate:
+
+```bash
+# Prod OAuth still works (unchanged behaviour)
+# Open https://admin.hospeda.com.ar/auth/signin → click Google → complete flow → land back
+
+# Staging OAuth now works
+# Open https://staging-admin.hospeda.com.ar/auth/signin → click Google → complete flow → land back
+# Repeat with Facebook
+```
+
+If `redirect_uri_mismatch` fires:
+
+1. Re-check the URI added in the console matches **exactly** (trailing slash, scheme, casing).
+2. Re-check `HOSPEDA_BETTER_AUTH_URL` in `hospeda-api-staging` env is `https://staging-api.hospeda.com.ar/api/auth`.
+3. Wait another 1-2 minutes for propagation.
+
+### 14.4 Future: separate OAuth apps per env
+
+For full isolation between prod and staging, the long-term play is **two separate OAuth apps** (one per env). Pros: revoking staging client_id doesn't impact prod, dashboards / metrics separated, can ship staging-specific consent screens. Cons: more setup, two sets of secrets to rotate. Defer until the current setup proves limiting.
