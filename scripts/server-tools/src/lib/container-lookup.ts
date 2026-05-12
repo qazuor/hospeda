@@ -17,12 +17,35 @@
  */
 
 import { dockerInspectLabels, dockerPs } from './docker.ts';
+import { type Target, getAppResourceName, getDbResourceName } from './target.ts';
 
 /**
  * The set of container roles the toolkit knows about. Add new entries
  * here when introducing tools for additional services.
  */
 export type ContainerKind = 'api' | 'web' | 'admin' | 'postgres' | 'redis' | 'coolify';
+
+/**
+ * Current target environment for resolution. Set once during CLI startup
+ * by {@link setActiveTarget}. Commands then call `findContainer(kind)`
+ * without needing to thread the target through every callsite.
+ */
+let activeTarget: Target = 'prod';
+
+/**
+ * Override the target used by subsequent {@link findContainer} calls.
+ * Called by `src/index.ts` after parsing the `--target=<env>` flag.
+ */
+export function setActiveTarget(target: Target): void {
+    activeTarget = target;
+}
+
+/**
+ * Current active target (for diagnostic / verbose output).
+ */
+export function getActiveTarget(): Target {
+    return activeTarget;
+}
 
 /**
  * One lookup strategy. Returns a list of container names that matched.
@@ -50,12 +73,33 @@ type Strategy = () => Promise<ReadonlyArray<string>>;
  * Coolify infrastructure container is named with the literal `coolify-`
  * prefix, so excluding it cleanly separates infra from workload.
  */
+/**
+ * Resolve the `coolify.resourceName` label value to look up for a given
+ * (kind, target) pair. Apps use stable hardcoded names; DBs use
+ * UUID-suffixed names sourced from env vars (UUIDs differ per Coolify
+ * deployment).
+ *
+ * Returns `undefined` for kinds that don't have a label-based resolution
+ * path (e.g. `coolify` infrastructure container).
+ */
+function resolveResourceName(kind: ContainerKind, target: Target): string | undefined {
+    switch (kind) {
+        case 'api':
+        case 'web':
+        case 'admin':
+            return getAppResourceName(target, kind);
+        case 'postgres':
+        case 'redis':
+            return getDbResourceName(target, kind);
+        case 'coolify':
+            return undefined;
+    }
+}
+
 const KIND_CONFIG: Readonly<
     Record<
         ContainerKind,
         {
-            readonly resourceNameEnv?: string;
-            readonly resourceNameDefault?: string;
             readonly imagePatterns?: ReadonlyArray<string>;
             readonly exposedPort?: number;
             readonly nameFallback?: string;
@@ -64,25 +108,20 @@ const KIND_CONFIG: Readonly<
     >
 > = {
     api: {
-        resourceNameEnv: 'HOPS_APP_RESOURCE_API',
-        resourceNameDefault: 'hospeda-api-prod',
         exposedPort: 3001
     },
     web: {
-        resourceNameEnv: 'HOPS_APP_RESOURCE_WEB',
-        resourceNameDefault: 'hospeda-web-prod',
         exposedPort: 4321
     },
     admin: {
-        resourceNameEnv: 'HOPS_APP_RESOURCE_ADMIN',
-        resourceNameDefault: 'hospeda-admin-prod',
         exposedPort: 3000
     },
     postgres: {
-        // Coolify-managed Postgres services do not always carry an
-        // application-style resourceName label — fall back to the image
-        // pin first, then the standard exposed port. Exclude `coolify-*`
-        // so we never accidentally pick Coolify's internal metadata DB.
+        // Image patterns + exposed port are fallbacks only — with two
+        // Postgres services (prod + staging) running on the same daemon,
+        // image / port strategies match BOTH and fail loud. Label
+        // resolution via target-aware resourceName is the only reliable
+        // path; the fallbacks remain for single-environment setups.
         imagePatterns: ['postgres:17', 'postgres:16', 'postgres:15'],
         exposedPort: 5432,
         excludeNamePrefixes: ['coolify-', 'coolify']
@@ -176,10 +215,10 @@ async function tryStrategy(label: string, strategy: Strategy): Promise<string | 
  */
 export async function findContainer(kind: ContainerKind): Promise<string> {
     const config = KIND_CONFIG[kind];
+    const labelValue = resolveResourceName(kind, activeTarget);
 
     // Strategy 1: Coolify resource-name label, when applicable.
-    if (config.resourceNameEnv && config.resourceNameDefault) {
-        const labelValue = process.env[config.resourceNameEnv] ?? config.resourceNameDefault;
+    if (labelValue) {
         const found = await tryStrategy(`label=${labelValue}`, () => strategyByLabel(labelValue));
         if (found) return found;
     }
@@ -215,15 +254,13 @@ export async function findContainer(kind: ContainerKind): Promise<string> {
     }
 
     throw new Error(
-        `No running container resolves to kind '${kind}'. Strategies tried in order:\n${
-            config.resourceNameDefault
-                ? `  - Coolify resourceName label '${config.resourceNameDefault}'\n`
-                : ''
+        `No running container resolves to kind '${kind}' for target '${activeTarget}'. Strategies tried in order:\n${
+            labelValue ? `  - Coolify resourceName label '${labelValue}'\n` : ''
         }${
             config.imagePatterns
                 ? `  - image starts-with ${config.imagePatterns.join(' / ')}\n`
                 : ''
-        }${config.exposedPort ? `  - exposed port ${config.exposedPort}\n` : ''}${config.nameFallback ? `  - name starts-with '${config.nameFallback}'\n` : ''}Run \`hops docker-by-name <prefix>\` to inspect what is running and adjust KIND_CONFIG in scripts/server-tools/src/lib/container-lookup.ts.`
+        }${config.exposedPort ? `  - exposed port ${config.exposedPort}\n` : ''}${config.nameFallback ? `  - name starts-with '${config.nameFallback}'\n` : ''}Run \`hops docker-by-name <prefix>\` to inspect what is running. To switch target, pass \`--target=prod|staging\` or set HOPS_TARGET in .env.local.`
     );
 }
 

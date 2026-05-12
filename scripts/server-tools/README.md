@@ -96,6 +96,41 @@ $EDITOR scripts/server-tools/.env.local
 
 The example file documents which command needs which value.
 
+### Target environment (prod vs staging)
+
+`hops` runs the same command against either environment via a single
+binary. The active target is resolved in this order, first hit wins:
+
+1. `--target=<prod|staging>` flag on the command line.
+2. `HOPS_DEFAULT_TARGET` env var in `.env.local`.
+3. Default: `prod`.
+
+```bash
+hops psql 'select 1'                         # prod (default)
+hops --target=staging psql 'select 1'        # staging override
+hops --target=staging db-counts              # row counts in staging DB
+hops --target=staging redeploy api           # redeploy hospeda-api-staging
+```
+
+App container names are stable (`hospeda-<api|web|admin>-<prod|staging>`)
+and hardcoded in the code. Database service UUIDs differ per Coolify
+deployment, so they live in `.env.local`:
+
+```
+HOPS_PROD_POSTGRES_UUID=<paste from `docker inspect ... coolify.resourceName`>
+HOPS_PROD_REDIS_UUID=<...>
+HOPS_STAGING_POSTGRES_UUID=<...>
+HOPS_STAGING_REDIS_UUID=<...>
+```
+
+Find a UUID via the container name (the prefix before any hash suffix)
+or by inspecting the `coolify.resourceName` label — it looks like
+`postgresql-database-<UUID>` or `redis-database-<UUID>`.
+
+> Note: `HOPS_DEFAULT_TARGET` is NOT the same as `HOPS_TARGET`. The
+> latter is read only by `install.sh` for the binary install path —
+> renaming was easier than overloading.
+
 ## Catalogue (planned and shipped)
 
 | Command            | Status   | Summary                                                                  |

@@ -31,7 +31,9 @@ import { prune } from './commands/prune.ts';
 import { psql } from './commands/psql.ts';
 import { redeploy } from './commands/redeploy.ts';
 import { update } from './commands/update.ts';
+import { setActiveTarget } from './lib/container-lookup.ts';
 import { log } from './lib/log.ts';
+import { resolveTarget } from './lib/target.ts';
 
 /** Toolkit version. Keep in sync with package.json `version`. */
 const VERSION = '0.1.0';
@@ -169,6 +171,11 @@ Usage:
   hops --help, -h            Show this help.
   hops --version, -v         Print version and exit.
 
+Global flags (apply to every command):
+  --target=<prod|staging>    Pick the target environment for container
+                             lookup. Defaults to HOPS_TARGET in .env.local,
+                             then 'prod' if neither is set.
+
 Available commands:
 ${COMMANDS.map((c) => `  ${c.name.padEnd(20)} ${c.summary}`).join('\n')}
 `.trim();
@@ -193,7 +200,13 @@ async function interactivePicker(): Promise<void> {
 }
 
 async function main(): Promise<void> {
-    const [first, ...rest] = process.argv.slice(2);
+    // Parse the global --target=<env> flag first so every downstream
+    // container lookup honours it. The flag is stripped from argv before
+    // the command-level parsing sees it.
+    const { target, remainingArgv } = resolveTarget(process.argv.slice(2));
+    setActiveTarget(target);
+
+    const [first, ...rest] = remainingArgv;
 
     if (!first) {
         await interactivePicker();
@@ -210,13 +223,13 @@ async function main(): Promise<void> {
         return;
     }
 
-    const target = COMMANDS.find((c) => c.name === first);
-    if (!target) {
+    const command = COMMANDS.find((c) => c.name === first);
+    if (!command) {
         log.error(`Unknown command: ${first}`);
         process.stderr.write(`\n${TOP_LEVEL_HELP}\n`);
         process.exit(1);
     }
-    await target.run(rest);
+    await command.run(rest);
 }
 
 main().catch((err: unknown) => {
