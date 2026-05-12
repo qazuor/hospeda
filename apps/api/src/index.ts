@@ -4,8 +4,10 @@
  */
 import { serve } from '@hono/node-server';
 import { validateBillingConfigOrThrow } from '@repo/billing';
+import { getDb, rolePermission } from '@repo/db';
 import { locales } from '@repo/i18n';
 import { ensureDefaultPromoCodes, initializeRevalidationService } from '@repo/service-core';
+import { count } from 'drizzle-orm';
 import { initApp } from './app';
 import { startCronScheduler } from './cron';
 import { createEntityResolver } from './lib/entity-resolver';
@@ -40,6 +42,28 @@ const startServer = async (): Promise<void> => {
 
         // Initialize database connection before starting the server
         await initializeDatabase();
+
+        // SPEC-103 T-073: fail-fast healthcheck against an essential table.
+        // The /health endpoint does NOT touch the DB by design, so an
+        // empty DB previously booted "healthy" and only surfaced as 500s
+        // when the first auth-requiring request hit the actor middleware.
+        // role_permission is the cleanest tripwire: it must be populated
+        // by the seed (~600+ rows) for any actor resolution to succeed.
+        // If the count is 0 the deploy is broken — crash-loop so the
+        // supervisor surfaces the misconfiguration immediately.
+        const [{ value: rolePermissionCount }] = await getDb()
+            .select({ value: count() })
+            .from(rolePermission);
+        if (rolePermissionCount === 0) {
+            apiLogger.error(
+                'STARTUP HEALTHCHECK FAILED: role_permission table is empty. ' +
+                    'The DB is unseeded or pointed at the wrong host. ' +
+                    'Run `pnpm db:seed` against the target DB before redeploying. ' +
+                    'Refusing to start the server.'
+            );
+            process.exit(1);
+        }
+        apiLogger.info(`Startup healthcheck OK: role_permission has ${rolePermissionCount} rows`);
 
         // Validate billing configuration
         validateBillingConfigOrThrow();
