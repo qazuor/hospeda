@@ -308,7 +308,7 @@
             "specId": "SPEC-103",
             "title": "VPS Migration Post-Merge Cleanup & Hardening Backlog",
             "status": "in-progress",
-            "progress": "5/91",
+            "progress": "6/91",
             "path": "SPEC-103-vps-migration-post-merge-cleanup"
         }
     ],

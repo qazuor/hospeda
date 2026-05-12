@@ -1,6 +1,6 @@
 # SPEC-103: VPS Migration Post-Merge Cleanup & Hardening Backlog
 
-## Progress: 5/91 tasks (5%)
+## Progress: 6/91 tasks (7%)
 
 **Average Complexity:** 2.1 / 4 (max)
 **Total effort estimate:** ~57-90h spread over weeks-months post-merge
@@ -15,7 +15,7 @@
 
 ### Green-build gate + branch protection (3.A.0 / 3.A.0.1)
 
-- [ ] **T-001** (1) — Verify CI green on staging HEAD `3a86aa0a7`. Blocks: T-002, T-003.
+- [x] **T-001** (1) — Verify CI green. ✅ All checks green on PR #1057 run `25762100080` (commit `09d10676e`). Required 4 sub-fixes during verification; CI job names confirmed for branch protection: Lint, Security, Guards, Docs and i18n, Build, Typecheck, Unit Tests (shard N/4), Integration Tests, CI Pass.
 - [ ] **T-002** (2) — Configure branch protection on `main` via `gh api`. Blocked by: T-001.
 - [ ] **T-003** (2) — Configure branch protection on `staging` via `gh api`. Blocked by: T-001.
 
