@@ -715,6 +715,15 @@ describe('FilterChip', () => {
 - Use `it.skipIf(condition)` for legitimate conditional test skipping
 - Run `pnpm test` before committing
 
+## Deployment (Coolify)
+
+This app runs as two Coolify resources on the self-hosted VPS:
+
+- `hospeda-web-prod` — production. Currently serves `apps/landing/` (coming-soon Astro static) at `https://hospeda.com.ar` + `www.hospeda.com.ar`. At public launch the resource will be reconfigured to build this `apps/web/` Astro Node app (tracked as SPEC-103 T-087).
+- `hospeda-web-staging` — staging, served at `https://staging.hospeda.com.ar`. Serves this `apps/web/` Astro Node app today with `noindex` via Traefik labels + dynamic `robots.txt`.
+
+The operational toolkit (`scripts/server-tools/`, command `hops`) is target-aware via `--target=prod|staging` (defaults to prod). See [docs/migration/staging-prod-db-separation.md](../../docs/migration/staging-prod-db-separation.md) for the full split rationale.
+
 ## Environment Variables
 
 Validated at startup by `src/lib/env.ts` (Zod schema). If a required variable is missing, the app fails fast with a clear error message.
