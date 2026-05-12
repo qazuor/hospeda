@@ -103,7 +103,12 @@ export function SignIn({ locale, redirectTo, showOAuth = true }: SignInProps) {
             const callbackURL = `${origin}${path}`;
             const errorCallbackURL = `${origin}${window.location.pathname || '/'}`;
             await signIn.social({ provider, callbackURL, errorCallbackURL });
-        } catch {
+        } catch (err) {
+            // Surface the actual Better Auth error to console so the
+            // operator can distinguish INVALID_CALLBACKURL vs
+            // account_not_linked vs network errors. Without this,
+            // every OAuth failure looks identical to "user cancelled".
+            console.error(`OAuth ${provider} sign-in failed`, err);
             setError(t('auth.signIn.error', 'Error al iniciar sesión'));
             setOauthLoading(null);
         }

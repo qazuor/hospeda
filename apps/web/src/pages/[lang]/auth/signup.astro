@@ -46,13 +46,29 @@ const redirectTo = new URL(
     Astro.url.origin
 ).href;
 
+// OAuth providers (Google, Facebook) verify email themselves, so the
+// user is fully authenticated when the callback returns. Sending them
+// to /auth/verify-email-sent/ would be confusing ("check your inbox"
+// when there's no email to check). Land them on the account dashboard
+// instead.
+const oauthRedirectTo = new URL(
+    buildUrl({ locale, path: 'mi-cuenta' }),
+    Astro.url.origin
+).href;
+
 // Localized secondary link labels via i18n
 const haveAccountLabel = t('auth-ui.signUp.alreadyHaveAccount', 'Already have an account?');
 const signInLabel = t('auth-ui.signUp.signInLink', 'Sign In');
 ---
 
 <AuthLayout locale={locale} title={title} description={description}>
-    <SignUp client:load locale={locale} redirectTo={redirectTo} showOAuth={true} />
+    <SignUp
+        client:load
+        locale={locale}
+        redirectTo={redirectTo}
+        oauthRedirectTo={oauthRedirectTo}
+        showOAuth={true}
+    />
 
     <div class="auth-page__footer">
         <span class="auth-page__footer-text">{haveAccountLabel}</span>
