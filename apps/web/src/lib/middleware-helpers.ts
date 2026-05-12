@@ -378,3 +378,36 @@ export function buildCspHeader({
 
 // Re-export from shared package for backward compatibility
 export { buildSentryReportUri } from '@repo/utils';
+
+/**
+ * Default noindex host (used when `HOSPEDA_NOINDEX_HOSTS` is unset).
+ * Kept narrow on purpose: a missing env var is safer to default to the
+ * known pre-launch staging host than to leave indexing wide open.
+ */
+const DEFAULT_NOINDEX_HOST = 'staging.hospeda.com.ar';
+
+/**
+ * Parse the `HOSPEDA_NOINDEX_HOSTS` env var (comma-separated host list)
+ * into a normalised lowercase array. Used by both the global middleware
+ * (which sets `X-Robots-Tag: noindex, nofollow`) and the dynamic
+ * `robots.txt` endpoint (which serves `Disallow: /` for those hosts).
+ *
+ * Centralising the parser here means a future host alias only needs the
+ * env var update — no risk of one mechanism updating without the other
+ * (header sent but robots.txt still permissive, or vice versa).
+ *
+ * @param raw - Raw string from `import.meta.env.HOSPEDA_NOINDEX_HOSTS`.
+ *              Pass `undefined` to fall back to the default.
+ * @returns Lowercase, trimmed, deduplicated host list. Always non-empty
+ *          (falls back to {@link DEFAULT_NOINDEX_HOST} when input is
+ *          undefined / empty / all-whitespace).
+ */
+export function parseNoindexHosts(raw: string | undefined): ReadonlyArray<string> {
+    const source = raw && raw.trim().length > 0 ? raw : DEFAULT_NOINDEX_HOST;
+    const seen = new Set<string>();
+    for (const part of source.split(',')) {
+        const host = part.trim().toLowerCase();
+        if (host.length > 0) seen.add(host);
+    }
+    return [...seen];
+}

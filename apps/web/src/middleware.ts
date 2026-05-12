@@ -27,22 +27,19 @@ import {
     isServerIslandRoute,
     isSessionOptionalRoute,
     isStaticAssetRoute,
+    parseNoindexHosts,
     parseSessionUser
 } from './lib/middleware-helpers';
 
 /**
  * Hosts whose responses must include `X-Robots-Tag: noindex, nofollow`.
- * Sourced from `HOSPEDA_NOINDEX_HOSTS` (CSV) so different deploys can
- * tune the list without code changes. Default covers the pre-launch
- * staging subdomain so search engines don't index the real app while
- * `hospeda.com.ar` still serves the coming-soon landing.
+ * The same list also drives the restrictive `robots.txt` body served
+ * by `pages/robots.txt.ts`; `parseNoindexHosts` is the single source of
+ * truth so the two mechanisms can never drift.
  */
-const NOINDEX_HOSTS = (
-    (import.meta.env.HOSPEDA_NOINDEX_HOSTS as string | undefined) ?? 'staging.hospeda.com.ar'
-)
-    .split(',')
-    .map((host) => host.trim().toLowerCase())
-    .filter(Boolean);
+const NOINDEX_HOSTS = parseNoindexHosts(
+    import.meta.env.HOSPEDA_NOINDEX_HOSTS as string | undefined
+);
 
 /**
  * Main middleware handler for all requests in the web2 application.
