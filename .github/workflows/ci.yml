@@ -205,13 +205,19 @@ jobs:
       # Coverage is expensive (v8 instrumentation is ~3x slower than a
       # plain vitest run). We only need it on main pushes — that is where
       # coverage-check enforces the per-package threshold gate. PRs and
-      # pushes to staging run the cheaper `test` script instead. Re-enable
-      # by promoting to main; the gate runs there.
+      # pushes to staging run the cheaper `test` script instead.
+      #
+      # `VITEST_SHARD` is part of the turbo cache key (see turbo.json),
+      # so different shards never share a cache entry. That means we no
+      # longer need `--force`, which previously invalidated the BUILD
+      # cache too and made every shard re-build the entire monorepo
+      # (~4 min per shard). With `VITEST_SHARD` in the key the build
+      # warm-up from the previous step stays warm and the test step
+      # starts immediately.
       - name: Run tests with coverage (shard ${{ matrix.shard }}/4)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        # --force bypasses turbo cache reads. The shard arg is passed via
-        # `--` and is NOT part of the cache key, so without --force a
-        # later shard would receive the previous shard's cached output.
+        env:
+          VITEST_SHARD: ${{ matrix.shard }}/4
         # --passWithNoTests is required because some packages have fewer
         # test files than shards (e.g. @repo/icons has 2 files; shards 3
         # and 4 receive nothing and would otherwise fail).
@@ -220,7 +226,7 @@ jobs:
         # threshold check is enforced by the coverage-check job below
         # against the merged coverage from all shards.
         run: |
-          pnpm turbo run test:coverage --concurrency=4 --force -- \
+          pnpm turbo run test:coverage --concurrency=4 -- \
             --shard=${{ matrix.shard }}/4 \
             --passWithNoTests \
             --coverage.thresholds.lines=0 \
@@ -229,10 +235,12 @@ jobs:
             --coverage.thresholds.statements=0
       - name: Run tests without coverage (shard ${{ matrix.shard }}/4)
         if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+        env:
+          VITEST_SHARD: ${{ matrix.shard }}/4
         # Cheaper run for PRs and pushes to staging. No coverage artifact
         # produced, so coverage-check is skipped (and accepted by ci-pass).
         run: |
-          pnpm turbo run test --concurrency=4 --force -- \
+          pnpm turbo run test --concurrency=4 -- \
             --shard=${{ matrix.shard }}/4 \
             --passWithNoTests
       - name: Upload coverage artifacts (shard ${{ matrix.shard }})

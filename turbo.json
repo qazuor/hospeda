@@ -61,7 +61,8 @@
         "test": {
             "dependsOn": ["build"],
             "outputs": [],
-            "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
+            "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"],
+            "env": ["VITEST_SHARD"]
         },
         "test:watch": {
             "cache": false,
@@ -69,7 +70,8 @@
         },
         "test:coverage": {
             "dependsOn": ["build"],
-            "outputs": ["coverage/**"]
+            "outputs": ["coverage/**"],
+            "env": ["VITEST_SHARD"]
         },
         "test:integration": {
             "dependsOn": ["^build"],
