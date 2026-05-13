@@ -1,0 +1,137 @@
+---
+/**
+ * @file [lang]/newsletter/confirmado.astro
+ * @description Verification success page (SPEC-101 T-101-35).
+ *
+ * Landing page the API redirects the user to after a successful double
+ * opt-in flow:
+ *   GET /api/v1/public/newsletter/verify?token=… → 302 → here.
+ *
+ * Server-rendered. No client-side JavaScript required. The only
+ * interactive piece is the WhatsAppCTA block (analytics hook), which
+ * the component manages itself.
+ *
+ * Marked noindex — no SEO value, post-action landing.
+ */
+
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import WhatsAppCTA from '@/components/newsletter/WhatsAppCTA.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+const lang = (Astro.params.lang ?? 'es') as SupportedLocale;
+const { t } = createTranslations(lang);
+
+const pageTitle = t(
+    'newsletter.verify.successTitle',
+    '¡Bienvenido! Tu suscripción fue confirmada.'
+);
+const pageDescription = t(
+    'newsletter.verify.successDescription',
+    'A partir de ahora recibirás novedades de Hospeda en tu email.'
+);
+const homeLink = t('newsletter.verify.homeLink', 'Ir al sitio');
+const preferencesLink = t('newsletter.verify.preferencesLink', 'Gestionar preferencias');
+---
+
+<DefaultLayout
+    locale={lang}
+    title={pageTitle}
+    description={pageDescription}
+    noindex={true}
+>
+    <main class="newsletter-confirm">
+        <div class="newsletter-confirm__card">
+            <span class="newsletter-confirm__icon" aria-hidden="true">✓</span>
+            <h1 class="newsletter-confirm__title">{pageTitle}</h1>
+            <p class="newsletter-confirm__description">{pageDescription}</p>
+
+            <WhatsAppCTA locale={lang} source="verification_success" />
+
+            <div class="newsletter-confirm__actions">
+                <a class="newsletter-confirm__link-primary" href={`/${lang}/`}>{homeLink}</a>
+                <a
+                    class="newsletter-confirm__link-secondary"
+                    href={`/${lang}/mi-cuenta/newsletter/`}
+                >
+                    {preferencesLink}
+                </a>
+            </div>
+        </div>
+    </main>
+</DefaultLayout>
+
+<style>
+    .newsletter-confirm {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: var(--space-12) var(--space-4);
+    }
+
+    .newsletter-confirm__card {
+        background-color: var(--surface-elevated);
+        border-radius: var(--radius-lg);
+        padding: var(--space-8) var(--space-6);
+        text-align: center;
+        box-shadow: 0 4px 24px oklch(0 0 0 / 0.06);
+    }
+
+    .newsletter-confirm__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 64px;
+        margin-bottom: var(--space-4);
+        border-radius: 50%;
+        background-color: var(--surface-warm);
+        color: var(--surface-warm-foreground);
+        font-size: 36px;
+        font-weight: 700;
+    }
+
+    .newsletter-confirm__title {
+        margin: 0 0 var(--space-3);
+        font-family: var(--font-heading);
+        font-size: var(--text-h3);
+        line-height: 1.2;
+    }
+
+    .newsletter-confirm__description {
+        margin: 0 0 var(--space-6);
+        font-size: var(--text-body);
+        line-height: 1.5;
+        color: var(--surface-warm-foreground);
+    }
+
+    .newsletter-confirm__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3);
+        justify-content: center;
+        margin-top: var(--space-6);
+    }
+
+    .newsletter-confirm__link-primary,
+    .newsletter-confirm__link-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-2) var(--space-5);
+        border-radius: var(--radius-button);
+        font-size: var(--text-button);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .newsletter-confirm__link-primary {
+        background-color: var(--primary);
+        color: var(--primary-foreground);
+    }
+
+    .newsletter-confirm__link-secondary {
+        background-color: transparent;
+        color: var(--primary);
+        border: 1px solid var(--primary);
+    }
+</style>

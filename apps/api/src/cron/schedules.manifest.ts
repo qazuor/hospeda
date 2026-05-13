@@ -88,6 +88,12 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Weekly sweep of orphaned media assets (no parent entity).'
     },
     {
+        name: 'newsletter-close-campaigns',
+        schedule: '*/5 * * * *',
+        description:
+            'Close newsletter campaigns whose deliveries have all resolved (status sending → sent).'
+    },
+    {
         name: 'notification-log-purge',
         schedule: '0 3 * * *',
         description: 'Drop notification log rows older than the retention window.'

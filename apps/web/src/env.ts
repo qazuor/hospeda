@@ -36,6 +36,11 @@ export const serverEnvBaseSchema = z.object({
         .string()
         .optional()
         .transform((v) => v === 'true'),
+    /**
+     * WhatsApp broadcast channel invite URL. Used by the web WhatsAppCTA
+     * island (SPEC-101 T-101-24). When unset the CTA block is hidden.
+     */
+    PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL: z.string().url().optional(),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
 });
 

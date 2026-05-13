@@ -353,6 +353,24 @@ export function createDbMock() {
             createdAt: 'createdAt'
         },
 
+        // Newsletter campaigns table stubs (SPEC-101 T-101-27)
+        newsletterCampaigns: {
+            id: 'id',
+            title: 'title',
+            subject: 'subject',
+            bodyJson: 'body_json',
+            status: 'status',
+            localeFilter: 'locale_filter',
+            totalRecipients: 'total_recipients',
+            totalSoftcapped: 'total_softcapped',
+            sentAt: 'sent_at',
+            scheduledFor: 'scheduled_for',
+            createdBy: 'created_by',
+            createdAt: 'created_at',
+            updatedAt: 'updated_at',
+            deletedAt: 'deleted_at'
+        },
+
         // Subscription webhook processing stubs
         billingSubscriptions: {
             id: 'id',

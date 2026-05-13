@@ -11,5 +11,35 @@
     "authMessage": "Faça login para assinar a newsletter",
     "successSubscribe": "Você se inscreveu na newsletter",
     "successUnsubscribe": "Você cancelou a assinatura da newsletter",
-    "errorMessage": "Não foi possível atualizar a assinatura"
+    "errorMessage": "Não foi possível atualizar a assinatura",
+    "authPopover": {
+        "title": "Iniciá sesión para suscribirte",
+        "message": "Creá una cuenta gratuita y recibí novedades del Litoral en tu email.",
+        "registerCta": "Registrarse",
+        "loginLink": "Ya tengo cuenta"
+    },
+    "verify": {
+        "successTitle": "¡Bienvenido! Tu suscripción fue confirmada.",
+        "successDescription": "A partir de ahora recibirás novedades de Hospeda en tu email.",
+        "homeLink": "Ir al sitio",
+        "preferencesLink": "Gestionar preferencias"
+    },
+    "errorPage": {
+        "tokenExpiredTitle": "El enlace expiró",
+        "tokenExpiredDescription": "El enlace de confirmación expiró. Podés solicitar uno nuevo.",
+        "resendButton": "Reenviar email de confirmación",
+        "resendSuccess": "Reenviamos el email de confirmación. Revisá tu bandeja de entrada.",
+        "invalidTokenTitle": "Enlace inválido",
+        "invalidTokenDescription": "El enlace de confirmación no es válido."
+    },
+    "unsubscribePage": {
+        "title": "Tu suscripción fue cancelada.",
+        "description": "Ya no recibirás emails de Hospeda.",
+        "resubscribeLink": "Si fue un error, volver a suscribirme"
+    },
+    "whatsapp": {
+        "title": "Sumate al canal de WhatsApp de Hospeda",
+        "description": "Recibí ofertas exclusivas y novedades del Litoral en tu WhatsApp.",
+        "ctaButton": "Unirse al canal"
+    }
 }

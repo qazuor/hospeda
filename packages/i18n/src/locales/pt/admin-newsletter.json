@@ -1,0 +1,42 @@
+{
+    "subscribers": {
+        "title": "Suscriptores",
+        "filterStatus": "Estado",
+        "filterLocale": "Idioma",
+        "filterSource": "Origen",
+        "filterChannel": "Canal",
+        "searchEmail": "Buscar por email",
+        "noResults": "No hay suscriptores que coincidan con los filtros."
+    },
+    "campaigns": {
+        "title": "Campañas",
+        "newCampaign": "Nueva campaña",
+        "titleField": "Título interno",
+        "subjectField": "Asunto del email",
+        "bodyField": "Contenido",
+        "localeFilterField": "Audiencia",
+        "saveDraft": "Guardar borrador",
+        "savedDraftToast": "Borrador guardado.",
+        "testSend": "Enviar email de prueba",
+        "testSendConfirm": "Se enviará a {email}. ¿Confirmar?",
+        "testSentToast": "Email de prueba enviado a {email}.",
+        "sendCampaign": "Enviar campaña",
+        "readOnlyBanner": "Esta campaña ya fue enviada y no puede editarse.",
+        "confirmSendTitle": "Confirmar envío",
+        "confirmSendAudience": "{count} suscriptores activos en {locale}",
+        "confirmSendSoftcapNote": "Los suscriptores que recibieron un email en los últimos 7 días serán omitidos. {softcapped} excluidos.",
+        "confirmSendButton": "Confirmar envío",
+        "ignoreSoftCap": "Ignorar límite de frecuencia",
+        "noEligibleSubscribers": "No hay suscriptores elegibles para esta campaña.",
+        "cancelSend": "Cancelar envío",
+        "metrics": {
+            "totalRecipients": "Destinatarios",
+            "totalSoftcapped": "Excluidos (frecuencia)",
+            "delivered": "Entregados",
+            "failed": "Fallidos",
+            "openRate": "Tasa de apertura",
+            "clickRate": "Tasa de clics",
+            "viewErrors": "Ver errores"
+        }
+    }
+}

@@ -100,7 +100,6 @@ export default defineConfig(
                     // and page integration paths.
                     'src/lib/accommodation-card-utils.ts',
                     'src/lib/icon-map.ts',
-                    'src/lib/tiptap-renderer.ts',
                     'src/scripts/dom-helpers.ts',
                     'src/data/available-features.ts'
                 ]

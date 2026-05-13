@@ -41,5 +41,14 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     [NotificationType.PAYMENT_RETRY_WARNING]: NotificationCategory.TRANSACTIONAL,
 
     // Addon cancellation - Transactional
-    [NotificationType.ADDON_CANCELLATION]: NotificationCategory.TRANSACTIONAL
+    [NotificationType.ADDON_CANCELLATION]: NotificationCategory.TRANSACTIONAL,
+
+    // Newsletter (SPEC-101)
+    // Verification is transactional: required by Ley 25.326 AR / GDPR — must
+    // be delivered regardless of preferences (the user just asked for it).
+    [NotificationType.NEWSLETTER_VERIFICATION]: NotificationCategory.TRANSACTIONAL,
+    // Welcome and campaign deliveries respect the opt-out and live in the
+    // dedicated NEWSLETTER category so the preference service can route them.
+    [NotificationType.NEWSLETTER_WELCOME]: NotificationCategory.NEWSLETTER,
+    [NotificationType.NEWSLETTER_CAMPAIGN]: NotificationCategory.NEWSLETTER
 };

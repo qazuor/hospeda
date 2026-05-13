@@ -43,36 +43,38 @@ function extractInternalLinks(input: {
     const { content, sourceFile } = input;
     const links: Array<{ linkText: string; targetPath: string; line: number }> = [];
 
-    // Regex to match markdown links: [text](path) or [text](path#anchor)
+    // Regex to match markdown links: [text](path) or [text](path#anchor).
+    // `matchAll` is used (instead of `exec` + `continue` in a while loop)
+    // because the earlier implementation could infinite-loop: any `continue`
+    // path skipped the `lastIndex` advance and `match` stayed non-null.
     const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
 
     const lines = content.split('\n');
 
     for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
         const line = lines[lineIndex];
-        let match: RegExpExecArray | null = linkRegex.exec(line);
 
-        while (match !== null) {
+        for (const match of line.matchAll(linkRegex)) {
             const linkText = match[1];
             const linkPath = match[2];
 
             // Remove anchor from path
             const pathWithoutAnchor = linkPath.split('#')[0];
 
-            // Skip external links (http://, https://, mailto:, etc.)
+            // Skip external links (http://, https://, mailto:, etc.) and
+            // anchor-only references (empty path before the hash).
             if (
                 pathWithoutAnchor.startsWith('http://') ||
                 pathWithoutAnchor.startsWith('https://') ||
                 pathWithoutAnchor.startsWith('mailto:') ||
                 pathWithoutAnchor.startsWith('tel:') ||
-                pathWithoutAnchor === '' // Empty link (anchor only)
+                pathWithoutAnchor === ''
             ) {
                 continue;
             }
 
-            // Skip absolute paths (starting with /)
+            // Absolute paths (starting with /) are resolved against the repo root.
             if (pathWithoutAnchor.startsWith('/')) {
-                // Convert absolute path to relative from project root
                 const projectRoot = process.cwd();
                 const absolutePath = path.join(projectRoot, pathWithoutAnchor);
 
@@ -84,7 +86,7 @@ function extractInternalLinks(input: {
                 continue;
             }
 
-            // Only process relative links
+            // Relative links are resolved against the directory of the source file.
             if (pathWithoutAnchor.startsWith('./') || pathWithoutAnchor.startsWith('../')) {
                 const sourceDir = path.dirname(sourceFile);
                 const targetPath = path.resolve(sourceDir, pathWithoutAnchor);
@@ -95,8 +97,6 @@ function extractInternalLinks(input: {
                     line: lineIndex + 1
                 });
             }
-
-            match = linkRegex.exec(line);
         }
     }
 

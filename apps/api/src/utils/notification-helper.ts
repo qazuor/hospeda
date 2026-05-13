@@ -12,12 +12,13 @@ import {
     BrevoEmailTransport,
     NotificationService,
     PreferenceService,
-    type RetryService,
+    RetryService,
     createEmailClient
 } from '@repo/notifications';
 import type { NotificationPayload, SendNotificationOptions } from '@repo/notifications';
 import { env } from './env';
 import { apiLogger } from './logger';
+import { getRedisClient } from './redis';
 
 /**
  * Lazy singleton for NotificationService
@@ -43,9 +44,14 @@ const mockUpdateUserSettings = async (
 /**
  * Get or create NotificationService instance
  *
+ * Connects RetryService to the shared Redis client so transactional retry
+ * logic is live. If Redis is not configured (HOSPEDA_REDIS_URL unset),
+ * RetryService is instantiated with `null` and degrades to logging-only
+ * behavior per its own contract.
+ *
  * @returns NotificationService instance or null if initialization failed
  */
-function getNotificationService(): NotificationService | null {
+async function getNotificationService(): Promise<NotificationService | null> {
     // Return existing instance if already initialized
     if (notificationServiceInstance) {
         return notificationServiceInstance;
@@ -75,9 +81,13 @@ function getNotificationService(): NotificationService | null {
             updateUserSettings: mockUpdateUserSettings
         });
 
-        // Retry service is optional (requires Redis)
-        // For now, we pass null - notifications will be logged but not retried
-        const retryService: RetryService | null = null;
+        // Connect RetryService to the shared Redis client (T-101-46 / SPEC-101 §8.1).
+        // If Redis is unavailable, RetryService gracefully no-ops instead of throwing.
+        const redis = await getRedisClient();
+        const retryService = new RetryService(redis ?? null);
+        if (!redis) {
+            apiLogger.warn('Redis client unavailable; RetryService will skip retries silently.');
+        }
 
         // Get database instance
         const db = getDb();
@@ -149,7 +159,7 @@ export async function sendNotification(
         );
 
         // Get NotificationService instance
-        const notificationService = getNotificationService();
+        const notificationService = await getNotificationService();
 
         // If service not available, log and skip gracefully
         if (!notificationService) {

@@ -20,12 +20,14 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *  - System       :  runtime/CI variables
  */
 /**
- * Updated 2026-05-12 to 179 after the VPS-migration sprint removed
- * Vercel-coupled env vars (deploy scripts, preview URLs, QStash). When
+ * Updated 2026-05-12 to 187 after SPEC-101 (Newsletter MVP) added 7 server
+ * `HOSPEDA_NEWSLETTER_*` / `HOSPEDA_BREVO_WEBHOOK_SECRET` vars and one
+ * client `PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL`. Previous value 179 came from
+ * the VPS-migration sprint that removed Vercel-coupled env vars. When
  * adding or removing variables, bump this constant in the same commit
  * and regenerate the snapshot below (`vitest -u`).
  */
-const EXPECTED_VAR_COUNT = 179;
+const EXPECTED_VAR_COUNT = 187;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -38,6 +40,7 @@ const EXPECTED_CATEGORIES = [
     'cache',
     'billing',
     'email',
+    'newsletter',
     'cron',
     'integrations',
     'monitoring',

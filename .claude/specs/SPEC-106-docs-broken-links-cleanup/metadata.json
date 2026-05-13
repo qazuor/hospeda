@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-106",
+    "title": "Docs CI — Baseline Cleanup (Broken Links + Validate-Examples Hang)",
+    "type": "chore",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-13T03:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["docs", "ci", "tech-debt", "cleanup"]
+}

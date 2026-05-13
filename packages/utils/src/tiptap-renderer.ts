@@ -2,8 +2,10 @@
  * TipTap/ProseMirror JSON to HTML renderer
  *
  * Converts TipTap document JSON structure to safe HTML strings.
- * Supports common rich text nodes (headings, lists, blockquotes, code blocks)
- * and inline marks (bold, italic, links, code, underline).
+ * Supports common rich text nodes (headings, lists, blockquotes, code blocks,
+ * horizontal rules) and inline marks (bold, italic, links, code, underline).
+ *
+ * All text content is HTML-escaped to prevent XSS attacks.
  *
  * @module tiptap-renderer
  */
@@ -38,7 +40,8 @@ export interface TiptapDocument {
 /**
  * Escapes HTML special characters to prevent XSS attacks.
  *
- * @param text - Text to escape
+ * @param params - Parameters object
+ * @param params.text - Text to escape
  * @returns HTML-safe escaped text
  */
 function escapeHtml({ text }: { text: string }): string {
@@ -56,17 +59,12 @@ function escapeHtml({ text }: { text: string }): string {
 /**
  * Wraps text with HTML tags for a single mark.
  *
- * @param mark - Mark to render
- * @param content - Inner HTML content
+ * @param params - Parameters object
+ * @param params.mark - Mark to render
+ * @param params.content - Inner HTML content
  * @returns HTML string with mark applied
  */
-function renderMark({
-    mark,
-    content
-}: {
-    mark: TiptapMark;
-    content: string;
-}): string {
+function renderMark({ mark, content }: { mark: TiptapMark; content: string }): string {
     switch (mark.type) {
         case 'bold':
             return `<strong>${content}</strong>`;
@@ -91,8 +89,9 @@ function renderMark({
  * Marks are applied in reverse order so that the first mark in the array
  * becomes the outermost wrapper (e.g., [bold, italic] -> <strong><em>text</em></strong>).
  *
- * @param marks - Array of marks to apply
- * @param text - Text content to wrap
+ * @param params - Parameters object
+ * @param params.marks - Array of marks to apply
+ * @param params.text - Text content to wrap
  * @returns HTML string with all marks applied
  */
 function applyMarks({
@@ -108,7 +107,8 @@ function applyMarks({
 /**
  * Renders a single TipTap node to HTML.
  *
- * @param node - Node to render
+ * @param params - Parameters object
+ * @param params.node - Node to render
  * @returns HTML string representation of the node
  */
 function renderNode({ node }: { node: TiptapNode }): string {
@@ -154,6 +154,9 @@ function renderNode({ node }: { node: TiptapNode }): string {
 
         case 'hardBreak':
             return '<br />';
+
+        case 'horizontalRule':
+            return '<hr />';
 
         case 'image': {
             const src = node.attrs?.src ? escapeHtml({ text: String(node.attrs.src) }) : '';

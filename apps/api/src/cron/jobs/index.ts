@@ -30,3 +30,4 @@ export { cloudinaryE2eCleanupJob } from './cloudinary-e2e-cleanup.job.js';
 export { conversationNotificationJob } from './conversation-notification.job.js';
 export { conversationTokenReminderJob } from './conversation-token-reminder.job.js';
 export { conversationTokenCleanupJob } from './conversation-token-cleanup.job.js';
+export { newsletterCloseCampaignsJob } from './newsletter-close-campaigns.job.js';

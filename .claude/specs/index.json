@@ -711,6 +711,17 @@
             "archived": false
         },
         {
+            "specId": "SPEC-101",
+            "title": "Newsletter MVP (email-only)",
+            "type": "feature",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-101-newsletter-mvp",
+            "created": "2026-05-11T00:00:00.000Z",
+            "archived": false,
+            "dependencies": ["chore/vps-migration merged to main"]
+        },
+        {
             "specId": "SPEC-102",
             "title": "Admin API Bearer Token Authentication",
             "type": "feature",
@@ -743,12 +754,28 @@
             "path": "SPEC-105-e2e-nightly-suite-repair"
         },
         {
+            "specId": "SPEC-106",
+            "title": "Docs CI \u2014 Baseline Cleanup (Broken Links + Validate-Examples Hang)",
+            "type": "chore",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-106-docs-broken-links-cleanup"
+        },
+        {
             "specId": "SPEC-107",
             "title": "Beta Tester Docs Screenshots Rollout",
             "type": "docs",
             "complexity": "medium",
             "status": "draft",
             "path": "SPEC-107-beta-tester-docs-screenshots"
+        },
+        {
+            "specId": "SPEC-108",
+            "title": "Newsletter MVP \u2014 Post-Merge Follow-Ups",
+            "type": "chore",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-108-newsletter-mvp-followups"
         }
     ]
 }
