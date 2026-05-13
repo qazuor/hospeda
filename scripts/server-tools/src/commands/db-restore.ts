@@ -21,6 +21,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
 import { docker, runInContainer } from '../lib/docker.ts';
+import { get } from '../lib/env.ts';
+import {
+    ENCRYPTED_SUFFIX,
+    gpgSymmetricDecrypt,
+    gpgSymmetricEncrypt,
+    isEncryptedBackup
+} from '../lib/gpg.ts';
 import { die, log } from '../lib/log.ts';
 import { pgDumpToBuffer } from '../lib/postgres.ts';
 import { confirm, pickOne, resolveNumberArg } from '../lib/prompt.ts';
@@ -119,8 +126,11 @@ export async function dbRestore(argv: ReadonlyArray<string>): Promise<void> {
     log.info(`Listing backups from s3://${r2.bucket}/...`);
     const all = await r2.list();
 
+    // SPEC-103 T-080: accept both raw `.dump` and encrypted `.dump.gpg`
+    // suffixes. Encrypted backups are decrypted in-process after
+    // download (see gpgSymmetricDecrypt call below).
     const backups = [...all]
-        .filter((o) => o.key.endsWith('.dump'))
+        .filter((o) => o.key.endsWith('.dump') || o.key.endsWith(`.dump${ENCRYPTED_SUFFIX}`))
         .sort((a, b) => {
             const at = a.lastModified?.getTime() ?? 0;
             const bt = b.lastModified?.getTime() ?? 0;
@@ -169,11 +179,24 @@ export async function dbRestore(argv: ReadonlyArray<string>): Promise<void> {
         }
     }
 
+    const passphrase = get('BACKUP_PASSPHRASE');
+    const passphraseAvailable = passphrase !== undefined && passphrase.length > 0;
+    const chosenIsEncrypted = isEncryptedBackup(chosen.key);
+    if (chosenIsEncrypted && !passphraseAvailable) {
+        die(
+            `The selected backup is encrypted (${chosen.key}) but BACKUP_PASSPHRASE is not set in scripts/server-tools/local secrets. Add it and retry.`
+        );
+    }
+
     // Pre-restore snapshot — happens BEFORE we touch the live DB so a
-    // botched restore never leaves us empty-handed.
+    // botched restore never leaves us empty-handed. Encrypted when the
+    // passphrase is available (matches the daily cron's behaviour and
+    // keeps every R2 object consistently encrypted).
     if (!parsed.skipSnapshot) {
         const ts = utcBackupTimestamp();
-        const snapshotKey = `manual/pre-restore-${ts}.dump`;
+        const snapshotKey = passphraseAvailable
+            ? `manual/pre-restore-${ts}.dump${ENCRYPTED_SUFFIX}`
+            : `manual/pre-restore-${ts}.dump`;
         log.info(`Taking pre-restore snapshot to ${snapshotKey}...`);
         const dump = await pgDumpToBuffer({ container, user, db });
         if (dump.exitCode !== 0) {
@@ -181,20 +204,34 @@ export async function dbRestore(argv: ReadonlyArray<string>): Promise<void> {
                 `Pre-restore snapshot pg_dump failed (exit ${dump.exitCode}): ${dump.stderr.trim()}. Refusing to proceed with destructive restore without a safety net. Re-run with --no-snapshot-first ONLY if you have a fresh manual backup.`
             );
         }
-        await r2.putBuffer(snapshotKey, dump.stdout);
+        let snapshotBuffer: Buffer = dump.stdout;
+        if (passphraseAvailable && passphrase) {
+            log.info('Encrypting pre-restore snapshot...');
+            snapshotBuffer = await gpgSymmetricEncrypt(dump.stdout, passphrase);
+        }
+        await r2.putBuffer(snapshotKey, snapshotBuffer);
         log.ok(
-            `Pre-restore snapshot uploaded: s3://${r2.bucket}/${snapshotKey} (${humanSize(dump.stdout.length)})`
+            `Pre-restore snapshot uploaded: s3://${r2.bucket}/${snapshotKey} (${humanSize(snapshotBuffer.length)})`
         );
     }
 
-    // Download chosen backup → local temp file → docker cp into container.
+    // Download chosen backup → decrypt (if needed) → local temp file →
+    // docker cp into container.
     const localPath = join(tmpdir(), `hops-restore-${Date.now()}.dump`);
     const inContainerPath = `/tmp/hops-restore-${Date.now()}.dump`;
 
     log.info(`Downloading ${chosen.key} from R2...`);
-    const body = await r2.getBuffer(chosen.key);
+    const downloaded = await r2.getBuffer(chosen.key);
+    log.ok(`Downloaded ${humanSize(downloaded.length)}`);
+
+    let body: Buffer = downloaded;
+    if (chosenIsEncrypted && passphrase) {
+        log.info('Decrypting backup with GPG...');
+        body = await gpgSymmetricDecrypt(downloaded, passphrase);
+        log.ok(`Decrypted: ${humanSize(body.length)} (${body.length} bytes).`);
+    }
     await writeFile(localPath, body);
-    log.ok(`Downloaded ${humanSize(body.length)} to ${localPath}`);
+    log.ok(`Wrote ${humanSize(body.length)} to ${localPath}`);
 
     try {
         log.info(`Copying dump into ${container}:${inContainerPath}...`);
