@@ -471,6 +471,15 @@ export function useTheme() {
 }
 ```
 
+## Deployment (Coolify)
+
+This app runs as two Coolify resources on the self-hosted VPS:
+
+- `hospeda-admin-prod` — production, served at `https://admin.hospeda.com.ar`
+- `hospeda-admin-staging` — staging, served at `https://staging-admin.hospeda.com.ar`
+
+Each resource has its own database, env vars, and OAuth client. The operational toolkit (`scripts/server-tools/`, command `hops`) is target-aware via `--target=prod|staging` (defaults to prod). See [docs/migration/staging-prod-db-separation.md](../../docs/migration/staging-prod-db-separation.md) for the full split rationale.
+
 ## Environment Variables
 
 See `apps/admin/.env.example` for a full list. Client-side variables use the `VITE_` prefix (required by Vite to expose them to the browser). Server-side secrets that the admin build process needs use the `HOSPEDA_` prefix.

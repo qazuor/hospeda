@@ -8,12 +8,17 @@
  * format with built-in zlib). Matches what `scripts/backup/postgres-to-r2.sh`
  * produces, so `hops db-restore` can read either source uniformly.
  *
- * NOT encrypted with GPG. The daily cron is not encrypted either —
- * adding GPG is a deferred follow-up that must cover BOTH paths in one
- * coherent change. See engram topic `vps-migration/backup-hardening-deferred`.
+ * SPEC-103 T-079: optional GPG symmetric AES256 encryption when the
+ * BACKUP_PASSPHRASE env var is set (via scripts/server-tools/.env.local).
+ * The resulting R2 object key carries the `.dump.gpg` suffix; `hops
+ * db-restore` (T-080) detects the suffix and pipes through gpg decrypt
+ * before pg_restore. The daily cron (T-078) implements the same
+ * convention so both paths produce uniformly-named artifacts.
  */
 
 import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
+import { get } from '../lib/env.ts';
+import { ENCRYPTED_SUFFIX, gpgSymmetricEncrypt } from '../lib/gpg.ts';
 import { die, log } from '../lib/log.ts';
 import { pgDumpToBuffer } from '../lib/postgres.ts';
 import { confirm } from '../lib/prompt.ts';
@@ -64,10 +69,22 @@ export async function dbBackupNow(argv: ReadonlyArray<string>): Promise<void> {
 
     const r2 = createR2Client();
     const timestamp = utcBackupTimestamp();
-    const key = `manual/hospeda-postgres-${timestamp}.dump`;
+
+    const passphrase = get('BACKUP_PASSPHRASE');
+    const encrypt = passphrase !== undefined && passphrase.length > 0;
+    const key = encrypt
+        ? `manual/hospeda-postgres-${timestamp}.dump${ENCRYPTED_SUFFIX}`
+        : `manual/hospeda-postgres-${timestamp}.dump`;
 
     log.info(`Source : container=${container} db=${db} user=${user}`);
     log.info(`Target : s3://${r2.bucket}/${key}`);
+    if (encrypt) {
+        log.info('Encryption: GPG symmetric AES256 (BACKUP_PASSPHRASE set)');
+    } else {
+        log.warn(
+            'Encryption DISABLED — BACKUP_PASSPHRASE not set in scripts/server-tools/local secrets. Raw pg_dump will land in R2.'
+        );
+    }
 
     if (!skipConfirm) {
         const ok = await confirm(`Trigger a manual pg_dump and upload to R2 (${key})?`, {
@@ -88,18 +105,25 @@ export async function dbBackupNow(argv: ReadonlyArray<string>): Promise<void> {
         );
     }
 
-    const size = result.stdout.length;
-    if (size < MIN_BACKUP_SIZE) {
+    const rawSize = result.stdout.length;
+    if (rawSize < MIN_BACKUP_SIZE) {
         die(
-            `pg_dump produced a suspiciously small file (${size} bytes < ${MIN_BACKUP_SIZE}). Aborting upload to avoid uploading a corrupt backup.`
+            `pg_dump produced a suspiciously small file (${rawSize} bytes < ${MIN_BACKUP_SIZE}). Aborting upload to avoid uploading a corrupt backup.`
         );
     }
 
-    log.ok(`pg_dump produced ${humanSize(size)} (${size} bytes).`);
+    log.ok(`pg_dump produced ${humanSize(rawSize)} (${rawSize} bytes).`);
+
+    let uploadBuffer: Buffer = result.stdout;
+    if (encrypt && passphrase) {
+        log.info('Encrypting with GPG symmetric AES256...');
+        uploadBuffer = await gpgSymmetricEncrypt(result.stdout, passphrase);
+        log.ok(`Encrypted: ${humanSize(uploadBuffer.length)} (${uploadBuffer.length} bytes).`);
+    }
 
     log.info('Uploading to R2...');
-    await r2.putBuffer(key, result.stdout);
+    await r2.putBuffer(key, uploadBuffer);
 
-    log.ok(`Backup uploaded: s3://${r2.bucket}/${key} (${humanSize(size)})`);
+    log.ok(`Backup uploaded: s3://${r2.bucket}/${key} (${humanSize(uploadBuffer.length)})`);
     log.hint('Restore with `hops db-restore` (interactive picker lists all backups).');
 }

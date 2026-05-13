@@ -1,3 +1,8 @@
+import { sql } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { integer, pgTable, text, uuid } from 'drizzle-orm/pg-core';
+import { Pool } from 'pg';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 /**
  * Tests for T-015: opt-in JSONB merge semantics in BaseModel.update()
  *
@@ -11,11 +16,7 @@
  *
  * Group 3 tests are skipped automatically when HOSPEDA_DATABASE_URL is not set.
  */
-import { sql } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { integer, pgTable, text, uuid } from 'drizzle-orm/pg-core';
-import { Pool } from 'pg';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { BaseModelImpl } from '../../src/base/base.model';
 import * as clientModule from '../../src/client';
 import { setDb } from '../../src/client';
 import type { DrizzleClient } from '../../src/types';
@@ -188,8 +189,6 @@ describe('BaseModel.update() JSONB merge dispatch — unit', () => {
         const mockDb = buildMockPlainDb();
         setDb(mockDb as unknown as DrizzleClient);
 
-        const { BaseModelImpl } = await import('../../src/base/base.model');
-
         class NoMergeModel extends BaseModelImpl<{ id: string; name: string }> {
             protected table = tableWithMedia as unknown as import('drizzle-orm').Table;
             public entityName = 'no_merge';
@@ -215,8 +214,6 @@ describe('BaseModel.update() JSONB merge dispatch — unit', () => {
         const withTransactionSpy = vi.spyOn(clientModule, 'withTransaction');
         const mockDb = buildMockPlainDb();
         setDb(mockDb as unknown as DrizzleClient);
-
-        const { BaseModelImpl } = await import('../../src/base/base.model');
 
         class MergeModelNoIntersect extends BaseModelImpl<{
             id: string;
@@ -254,8 +251,6 @@ describe('BaseModel.update() JSONB merge dispatch — unit', () => {
 
         // setDb to something minimal so getDb() doesn't throw (plain path won't be used)
         setDb({} as unknown as DrizzleClient);
-
-        const { BaseModelImpl } = await import('../../src/base/base.model');
 
         class MergeModel extends BaseModelImpl<{ id: string; media: unknown }> {
             protected table = tableWithMedia as unknown as import('drizzle-orm').Table;
@@ -313,8 +308,6 @@ describe('BaseModel.update() JSONB merge dispatch — unit', () => {
 
         setDb({} as unknown as DrizzleClient);
 
-        const { BaseModelImpl } = await import('../../src/base/base.model');
-
         class MergeModelNotFound extends BaseModelImpl<{ id: string; media: unknown }> {
             protected table = tableWithMedia as unknown as import('drizzle-orm').Table;
             public entityName = 'merge_not_found';
@@ -348,8 +341,6 @@ describe('BaseModel.update() JSONB merge dispatch — unit', () => {
         const outerTx = { _isOuterTx: true } as unknown as DrizzleClient;
 
         setDb({} as unknown as DrizzleClient);
-
-        const { BaseModelImpl } = await import('../../src/base/base.model');
 
         class MergeModelWithTx extends BaseModelImpl<{ id: string; media: unknown }> {
             protected table = tableWithMedia as unknown as import('drizzle-orm').Table;

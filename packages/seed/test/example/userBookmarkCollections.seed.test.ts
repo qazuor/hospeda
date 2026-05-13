@@ -22,14 +22,18 @@
  * References: SPEC-098 T-S06, seedFactory-media-validation.test.ts (pattern)
  */
 
+import { readFileSync } from 'node:fs';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { join as pathJoin, resolve } from 'node:path';
 import { join } from 'node:path';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { seedUserBookmarkCollections } from '../../src/example/userBookmarkCollections.seed.js';
 import { IdMapper } from '../../src/utils/idMapper.js';
 import { type SeedContext, createImageProcessingCounters } from '../../src/utils/seedContext.js';
+import { createSeedFactory } from '../../src/utils/seedFactory.js';
 
 // ---------------------------------------------------------------------------
 // Silence logger and summaryTracker in all tests.
@@ -90,9 +94,6 @@ vi.mock('@repo/service-core', () => ({
 }));
 
 // Import AFTER the mock is registered so the seed file sees the stub.
-const { seedUserBookmarkCollections } = await import(
-    '../../src/example/userBookmarkCollections.seed.js'
-);
 
 // ---------------------------------------------------------------------------
 // Fixture helpers
@@ -357,7 +358,6 @@ afterEach(() => {
 async function buildTestSeed(options?: {
     readonly missingUserSeedIds?: readonly string[];
 }): Promise<{ seed: (ctx: SeedContext) => Promise<void>; context: SeedContext }> {
-    const { createSeedFactory } = await import('../../src/utils/seedFactory.js');
     const { collectionNormalizerForTest, preProcessCollectionForTest } = await importTestHelpers();
 
     const files = FIXTURE_DEFINITIONS.map((f) => `${f.id}.json`);
@@ -685,8 +685,6 @@ describe('preProcessCollection — missing user mapping', () => {
 describe('execution order in src/example/index.ts', () => {
     it('should call seedUserBookmarkCollections before seedBookmarks in runExampleSeeds', async () => {
         // Arrange — read the source text of index.ts and extract call order
-        const { readFileSync } = await import('node:fs');
-        const { join: pathJoin, resolve } = await import('node:path');
 
         const indexPath = resolve(
             pathJoin(import.meta.url.replace('file://', ''), '../../../src/example/index.ts')

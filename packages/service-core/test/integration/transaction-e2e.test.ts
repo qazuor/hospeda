@@ -20,6 +20,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { BaseCrudService } from '../../src/base/base.crud.service';
 import type { Actor, BaseModel, ServiceConfig, ServiceContext } from '../../src/types';
+import { withServiceTransaction } from '../../src/utils/transaction';
 import '../setupTest';
 
 // ---------------------------------------------------------------------------
@@ -50,7 +51,6 @@ vi.mock('drizzle-orm', () => ({
 }));
 
 // Must be imported after mocks are registered (dynamic import required).
-const { withServiceTransaction } = await import('../../src/utils/transaction');
 
 // ---------------------------------------------------------------------------
 // Minimal entity type used across all test cases

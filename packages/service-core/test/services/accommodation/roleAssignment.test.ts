@@ -22,6 +22,7 @@ import {
     createMockAccommodation,
     createMockAccommodationUpdateInput
 } from '../../factories/accommodationFactory';
+import { createActor } from '../../factories/actorFactory';
 import { createAdminActor } from '../../factories/actorFactory';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
@@ -464,7 +465,7 @@ describe('AccommodationService — HOST role auto-assignment hook', () => {
 describe('AccommodationService.update — permission prerequisite for HOST assignment tests', () => {
     it('should require update permission before any hook runs (role assignment never fires on FORBIDDEN)', async () => {
         // Arrange — actor has NO permissions
-        const { createActor } = await import('../../factories/actorFactory');
+
         const actor = createActor({ permissions: [] });
         const accommodationModel = createMockBaseModel();
         const userModel = createUserModelMock();

@@ -1,6 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 # post-checkout hook - Check registry consistency after branch changes
 # Args: $1 = previous HEAD, $2 = new HEAD, $3 = flag (1 = branch checkout, 0 = file checkout)
 

@@ -35,8 +35,14 @@ import { setActiveTarget } from './lib/container-lookup.ts';
 import { log } from './lib/log.ts';
 import { resolveTarget } from './lib/target.ts';
 
-/** Toolkit version. Keep in sync with package.json `version`. */
-const VERSION = '0.1.0';
+/**
+ * Toolkit version. MUST stay in sync with `scripts/server-tools/package.json`
+ * `version` field — they are bumped together. We do not import from
+ * package.json at runtime because `bun build --compile` produces a standalone
+ * binary and JSON imports add a bundler-specific code path; hardcoding the
+ * string is the simpler contract.
+ */
+const VERSION = '1.0.0';
 
 interface Command {
     /** kebab-case name; matches the CLI invocation. */

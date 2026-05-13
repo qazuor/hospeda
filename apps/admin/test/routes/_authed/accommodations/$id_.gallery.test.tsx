@@ -8,6 +8,7 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
+import * as mod from '../../../../src/routes/_authed/accommodations/$id_.gallery';
 
 vi.mock('@tanstack/react-router', () => {
     return {
@@ -29,7 +30,6 @@ vi.mock('@tanstack/react-router', () => {
 
 describe('Route /_authed/accommodations/$id_/gallery', () => {
     it('redirects to the edit page anchored at the gallery section', async () => {
-        const mod = await import('../../../../src/routes/_authed/accommodations/$id_.gallery');
         const route = mod.Route as unknown as {
             beforeLoad: (ctx: { params: { id: string } }) => void;
             component: () => null;
@@ -59,7 +59,6 @@ describe('Route /_authed/accommodations/$id_/gallery', () => {
     });
 
     it('exposes a no-op fallback component', async () => {
-        const mod = await import('../../../../src/routes/_authed/accommodations/$id_.gallery');
         const route = mod.Route as unknown as { component: () => null };
 
         expect(route.component()).toBeNull();

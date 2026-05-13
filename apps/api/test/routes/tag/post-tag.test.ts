@@ -20,6 +20,7 @@ import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app.js';
+import { clearCache } from '../../../src/middlewares/cache';
 import type { AppOpenAPI } from '../../../src/types.js';
 
 // ─── Hoisted mocks (accessible in vi.mock factories) ─────────────────────────
@@ -215,6 +216,12 @@ describe('PostTag API routes (SPEC-086 T-024)', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // SPEC-103 T-089: prevent cross-test cache pollution. The public
+        // tag list endpoint caches by `${path}?${query}` (cacheTTL: 600);
+        // without this clear, the first test request seeds a cache
+        // entry that subsequent tests in the same describe block would
+        // hit even with different mock setups.
+        clearCache();
     });
 
     // =========================================================================
@@ -293,6 +300,12 @@ describe('PostTag API routes (SPEC-086 T-024)', () => {
             }
         });
 
+        // SPEC-103 T-089 RESOLVED: same root cause as T-091 — the public
+        // cache middleware keyed entries by path-only, so a prior test
+        // request to `/api/v1/public/posts/tags` (no ?withCounts) cached
+        // a response, and this test's `?withCounts=true` request hit
+        // that cache slot instead of invoking the mock. Fixed in
+        // cache.ts by including the query string in the cache key.
         it('?withCounts=true calls listPublic(true) and returns usageCount', async () => {
             // Arrange
             const tagWithCount = { ...ACTIVE_TAG, usageCount: 5 };

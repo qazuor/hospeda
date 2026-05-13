@@ -8,7 +8,9 @@
  * - Error handling
  */
 
+import { createEntityApi } from '@/components/entity-list/api/createEntityApi';
 import type { FilterBarConfig } from '@/components/entity-list/filters/filter-types';
+import { fetchApi } from '@/lib/api/client';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -522,7 +524,7 @@ describe('Real createEntityApi - filter mode-switching (GAP-054-045)', () => {
 
     beforeEach(async () => {
         capturedPath = '';
-        const { fetchApi } = await import('@/lib/api/client');
+
         (fetchApi as ReturnType<typeof vi.fn>).mockImplementation(({ path }: { path: string }) => {
             capturedPath = path;
             return Promise.resolve({ data: mockPaginatedResponse });
@@ -530,7 +532,6 @@ describe('Real createEntityApi - filter mode-switching (GAP-054-045)', () => {
     });
 
     it('with filterBarConfig: applies filters from params, ignores defaultFilters', async () => {
-        const { createEntityApi } = await import('@/components/entity-list/api/createEntityApi');
         const api = createEntityApi({
             endpoint: '/api/v1/admin/test',
             itemSchema: TestEntitySchema,
@@ -550,7 +551,6 @@ describe('Real createEntityApi - filter mode-switching (GAP-054-045)', () => {
     });
 
     it('with filterBarConfig and empty filters: sends no filter params (user cleared all)', async () => {
-        const { createEntityApi } = await import('@/components/entity-list/api/createEntityApi');
         const api = createEntityApi({
             endpoint: '/api/v1/admin/test',
             itemSchema: TestEntitySchema,
@@ -570,7 +570,6 @@ describe('Real createEntityApi - filter mode-switching (GAP-054-045)', () => {
     });
 
     it('with filterBarConfig: skips undefined/null/empty filter values', async () => {
-        const { createEntityApi } = await import('@/components/entity-list/api/createEntityApi');
         const api = createEntityApi({
             endpoint: '/api/v1/admin/test',
             itemSchema: TestEntitySchema,
@@ -590,7 +589,6 @@ describe('Real createEntityApi - filter mode-switching (GAP-054-045)', () => {
     });
 
     it('without filterBarConfig: applies defaultFilters as static params', async () => {
-        const { createEntityApi } = await import('@/components/entity-list/api/createEntityApi');
         const api = createEntityApi({
             endpoint: '/api/v1/admin/test',
             itemSchema: TestEntitySchema,
@@ -608,7 +606,6 @@ describe('Real createEntityApi - filter mode-switching (GAP-054-045)', () => {
     });
 
     it('without filterBarConfig or defaultFilters: only pagination params', async () => {
-        const { createEntityApi } = await import('@/components/entity-list/api/createEntityApi');
         const api = createEntityApi({
             endpoint: '/api/v1/admin/test',
             itemSchema: TestEntitySchema

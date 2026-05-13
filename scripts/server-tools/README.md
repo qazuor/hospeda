@@ -7,11 +7,11 @@ a compiled binary so the VPS only needs the binary on PATH.
 
 ## Status
 
-V1 is in active build. The first commits ship the core scaffolding
-(runner + docker wrapper + container lookup) plus the two simplest
-commands (`docker-by-name`, `find`). The rest of the catalogue (api-exec,
-api-logs, pg-exec, db-restore, redeploy, env-set, cron-list, …) lands in
-follow-up commits.
+V1 shipped. 19 commands across 4 tandas, target-aware (`--target=prod|staging`,
+or `HOPS_DEFAULT_TARGET` env var, defaulting to `prod`) since 2026-05-12. See
+the catalogue below for the full list. The `Runner` interface in
+`src/lib/runner.ts` still marks the seam for a future V2 SshRunner that would
+let the binary proxy commands over SSH from a laptop.
 
 ## Where it runs (V1)
 

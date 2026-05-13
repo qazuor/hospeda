@@ -1,3 +1,5 @@
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 /**
  * Unit tests for the INTERNAL tags seed (SPEC-086 R-2).
  *
@@ -9,8 +11,7 @@
  *
  * References: AC-F20, R-2, tag-seeds.md
  */
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { resolve } from 'node:path';
 import { join } from 'node:path';
 import { TagTypeEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -352,7 +353,7 @@ describe('seedInternalTags (SPEC-086 R-2)', () => {
     describe('counts matching the canonical tag-seeds.md list', () => {
         it('should create exactly 25 rows when seeding the real data directory', async () => {
             // Use the real data dir — no DB needed because we use a counting stub
-            const { resolve } = await import('node:path');
+
             const realDataDir = resolve(import.meta.dirname, '../../src/data/tag');
 
             const model = buildStubModel();

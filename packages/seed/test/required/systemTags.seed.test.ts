@@ -1,3 +1,5 @@
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 /**
  * Unit tests for the SYSTEM tags seed (SPEC-086 R-3).
  *
@@ -10,8 +12,7 @@
  *
  * References: AC-F20, R-3, tag-seeds.md
  */
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { resolve } from 'node:path';
 import { join } from 'node:path';
 import { TagTypeEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -308,7 +309,6 @@ describe('seedSystemTags (SPEC-086 R-3)', () => {
 
     describe('counts matching the canonical tag-seeds.md list', () => {
         it('should create exactly 30 rows when seeding the real data directory', async () => {
-            const { resolve } = await import('node:path');
             const realDataDir = resolve(import.meta.dirname, '../../src/data/tag');
 
             const model = buildStubModel();

@@ -8,6 +8,7 @@
  * @module test/billing/migrate-addon-purchases
  */
 
+import { createQZPayBilling } from '@qazuor/qzpay-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 
@@ -516,7 +517,7 @@ describe('migrateAddonPurchases', () => {
 
         it('should throw when billing initialization fails', async () => {
             // Force billing init failure by making createQZPayBilling throw
-            const { createQZPayBilling } = await import('@qazuor/qzpay-core');
+
             vi.mocked(createQZPayBilling).mockImplementationOnce(() => {
                 throw new Error('Missing storage adapter');
             });

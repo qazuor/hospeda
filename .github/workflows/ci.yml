@@ -96,8 +96,9 @@ jobs:
           SEMGREP_RULES: p/typescript p/nodejs p/owasp-top-ten p/secrets
 
   # ------------------------------------------------------------------
-  # Repository-wide guard scripts. Independent of build, runs in
-  # parallel for fast feedback. ~2 min.
+  # Repository-wide guard scripts + i18n/docs parity checks (SPEC-103
+  # T-036: consolidated from `guards` + `docs` jobs to amortise the
+  # ~30s setup overhead per job. ~3 min total.
   # ------------------------------------------------------------------
   guards:
     name: Guards
@@ -133,17 +134,6 @@ jobs:
             exit 1
           fi
           echo "No disabled tests found."
-
-  # ------------------------------------------------------------------
-  # i18n parity: locale completeness + Zod key sync. ~1 min.
-  # ------------------------------------------------------------------
-  docs:
-    name: Docs and i18n
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
       - name: Verify i18n key sync (GAP-010)
         run: npx tsx scripts/extract-zod-keys.ts --verify
       - name: Verify i18n locale parity (SPEC-096 T-065)
@@ -151,7 +141,12 @@ jobs:
 
   # ------------------------------------------------------------------
   # Build all packages and apps. Required by typecheck and tests.
-  # ~5 min.
+  # ~5 min. Uploads build outputs as a single `build-outputs` artifact
+  # so downstream jobs (typecheck, test-unit shards, test-integration)
+  # can skip their own `pnpm build` step (SPEC-103 T-032). Saves
+  # ~5 min per downstream job (~20 min CPU per run before the change
+  # because every needs:build job re-ran the full build to warm the
+  # turbo cache, which is per-runner-fs and never shared across jobs).
   # ------------------------------------------------------------------
   build:
     name: Build
@@ -162,6 +157,20 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Build all packages and apps
         run: pnpm build
+      - name: Upload build outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-outputs
+          retention-days: 1
+          include-hidden-files: true
+          path: |
+            .turbo
+            apps/*/dist
+            apps/web/.astro
+            apps/admin/.output
+            apps/admin/.tanstack
+            apps/admin/src/routeTree.gen.ts
+            packages/*/dist
 
   # ------------------------------------------------------------------
   # TypeScript validation. Depends on build because some packages emit
@@ -175,8 +184,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
-      - name: Build (turbo cache)
-        run: pnpm build
+      - name: Download build outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: build-outputs
       - name: Type check
         run: pnpm typecheck
 
@@ -191,7 +202,16 @@ jobs:
   test-unit:
     name: Unit Tests (shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # SPEC-103 T-032 landed: shards now download build-outputs artifact
+    # instead of rebuilding. Observed shard runtime on PR #1060 was
+    # 13-15 min (vitest startup + jsdom init per file still dominates,
+    # the build was never the only cost). Bumping the cap from 15 to
+    # 20 min absorbs the 1-2 min margin shards 1 and 2 needed without
+    # ceding the win T-032 delivered (the band-aid was 30 min). If a
+    # shard hits 20 min, look at uneven shard distribution first — the
+    # other shards landing in 13 min suggests test file slicing, not a
+    # systemic regression.
+    timeout-minutes: 20
     needs: build
     strategy:
       fail-fast: false
@@ -200,8 +220,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
-      - name: Build (turbo cache)
-        run: pnpm build
+      - name: Download build outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: build-outputs
       # Coverage is expensive (v8 instrumentation is ~3x slower than a
       # plain vitest run). We only need it on main pushes — that is where
       # coverage-check enforces the per-package threshold gate. PRs and
@@ -218,9 +240,13 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           VITEST_SHARD: ${{ matrix.shard }}/4
-        # --passWithNoTests is required because some packages have fewer
-        # test files than shards (e.g. @repo/icons has 2 files; shards 3
-        # and 4 receive nothing and would otherwise fail).
+        # --passWithNoTests is NOT injected from CI here — every package's
+        # `test` / `test:coverage` script in its own package.json already
+        # includes it. vitest 3.2.4+ rejects duplicated flags with
+        # "Expected a single value for option --passWithNoTests", so the
+        # CI must only inject what is shard-specific. New packages must
+        # carry `--passWithNoTests` in their own script (sensible local
+        # default + safety against shards landing on an empty file set).
         # --coverage.thresholds.* are zeroed because per-package vitest
         # thresholds cannot be met by a single shard. The aggregated
         # threshold check is enforced by the coverage-check job below
@@ -228,7 +254,6 @@ jobs:
         run: |
           pnpm turbo run test:coverage --concurrency=4 -- \
             --shard=${{ matrix.shard }}/4 \
-            --passWithNoTests \
             --coverage.thresholds.lines=0 \
             --coverage.thresholds.functions=0 \
             --coverage.thresholds.branches=0 \
@@ -239,10 +264,11 @@ jobs:
           VITEST_SHARD: ${{ matrix.shard }}/4
         # Cheaper run for PRs and pushes to staging. No coverage artifact
         # produced, so coverage-check is skipped (and accepted by ci-pass).
+        # See coverage variant above for why --passWithNoTests is NOT
+        # injected here from CI.
         run: |
           pnpm turbo run test --concurrency=4 -- \
-            --shard=${{ matrix.shard }}/4 \
-            --passWithNoTests
+            --shard=${{ matrix.shard }}/4
       - name: Upload coverage artifacts (shard ${{ matrix.shard }})
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
@@ -283,8 +309,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
-      - name: Build (turbo cache)
-        run: pnpm build
+      - name: Download build outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: build-outputs
       - name: Run integration tests (SPEC-061 db + SPEC-080 service-core)
         run: pnpm test:integration
         env:
@@ -425,7 +453,6 @@ jobs:
       - lint
       - security
       - guards
-      - docs
       - build
       - typecheck
       - test-unit
@@ -441,7 +468,6 @@ jobs:
           if [ "${{ needs.lint.result }}" != "success" ] \
             || [ "${{ needs.security.result }}" != "success" ] \
             || [ "${{ needs.guards.result }}" != "success" ] \
-            || [ "${{ needs.docs.result }}" != "success" ] \
             || [ "${{ needs.build.result }}" != "success" ] \
             || [ "${{ needs.typecheck.result }}" != "success" ] \
             || [ "${{ needs.test-unit.result }}" != "success" ] \

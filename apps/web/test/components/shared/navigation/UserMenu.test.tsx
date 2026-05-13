@@ -10,6 +10,7 @@ import type {
     UserMenuProps,
     UserMenuUser
 } from '../../../../src/components/shared/navigation/UserMenu.client';
+import { signOut } from '../../../../src/lib/auth-client';
 
 vi.mock('../../../../src/lib/auth-client', () => ({
     signOut: vi.fn().mockResolvedValue(undefined)
@@ -244,7 +245,6 @@ describe('UserMenu — sign out', () => {
     });
 
     it('calls signOut when "Cerrar sesión" is clicked', async () => {
-        const { signOut } = await import('../../../../src/lib/auth-client');
         renderMenu();
         open();
         const signOutBtn = screen.getByRole('menuitem', { name: /cerrar sesión/i });
