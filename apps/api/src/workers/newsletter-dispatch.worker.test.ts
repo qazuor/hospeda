@@ -87,6 +87,12 @@ function makeDeliveryService(
         processBatch: vi.fn(
             processBatchImpl ??
                 (() => Promise.resolve({ data: { delivered: 2, skipped: 0, failed: 0 } }))
+        ),
+        // bulkMarkFailed is called from worker.on('failed') when attempts exhaust.
+        // Default: succeed and return the count.
+        bulkMarkFailed: vi.fn(
+            (input: { campaignId: string; deliveryIds: string[]; reason: string }) =>
+                Promise.resolve({ data: input.deliveryIds.length })
         )
     } as unknown as NewsletterWorkerDeps['deliveryService'];
 }
@@ -348,6 +354,78 @@ describe('startNewsletterWorker', () => {
             expect(logger.warn).toHaveBeenCalledWith(
                 expect.objectContaining({ errorMessage: 'Campaign not found' }),
                 'newsletter.batch.soft-failure'
+            );
+        });
+    });
+
+    describe('failed event handler — retry exhaustion', () => {
+        it('should call deliveryService.bulkMarkFailed once attempts are exhausted', async () => {
+            startNewsletterWorker({ redis: makeRedis(), deliveryService, logger, concurrency: 5 });
+
+            // Pull the failed handler registered via worker.on('failed', ...)
+            const failedHandler = (
+                mockWorkerInstance as unknown as {
+                    _handlers: Record<string, (...args: unknown[]) => Promise<void>>;
+                }
+            )._handlers.failed as (...args: unknown[]) => Promise<void>;
+            expect(failedHandler).toBeDefined();
+
+            const exhaustedJob = makeJob({
+                attemptsMade: 3, // JOB_ATTEMPTS = 3 → exhausted
+                data: { campaignId: 'campaign-x', deliveryIds: ['d1', 'd2', 'd3'] }
+            });
+            const err = new Error('Brevo 503');
+
+            await failedHandler(exhaustedJob, err);
+
+            expect(deliveryService.bulkMarkFailed).toHaveBeenCalledOnce();
+            expect(deliveryService.bulkMarkFailed).toHaveBeenCalledWith({
+                campaignId: 'campaign-x',
+                deliveryIds: ['d1', 'd2', 'd3'],
+                reason: expect.stringContaining('exhausted retries')
+            });
+        });
+
+        it('should NOT call bulkMarkFailed when attempts are not yet exhausted', async () => {
+            startNewsletterWorker({ redis: makeRedis(), deliveryService, logger, concurrency: 5 });
+
+            const failedHandler = (
+                mockWorkerInstance as unknown as {
+                    _handlers: Record<string, (...args: unknown[]) => Promise<void>>;
+                }
+            )._handlers.failed as (...args: unknown[]) => Promise<void>;
+
+            // attemptsMade=1 < JOB_ATTEMPTS=3 → BullMQ will retry, do not mark failed.
+            const retryJob = makeJob({ attemptsMade: 1 });
+            const err = new Error('Brevo 500 transient');
+
+            await failedHandler(retryJob, err);
+
+            expect(deliveryService.bulkMarkFailed).not.toHaveBeenCalled();
+        });
+
+        it('should log bulkMarkFailed errors without throwing out of the failed handler', async () => {
+            // bulkMarkFailed itself returns a ServiceOutput error (soft failure path).
+            deliveryService = makeDeliveryService();
+            (
+                deliveryService.bulkMarkFailed as unknown as ReturnType<typeof vi.fn>
+            ).mockResolvedValueOnce({
+                error: { code: 'INTERNAL_ERROR' as never, message: 'DB unavailable' }
+            });
+
+            startNewsletterWorker({ redis: makeRedis(), deliveryService, logger, concurrency: 5 });
+            const failedHandler = (
+                mockWorkerInstance as unknown as {
+                    _handlers: Record<string, (...args: unknown[]) => Promise<void>>;
+                }
+            )._handlers.failed as (...args: unknown[]) => Promise<void>;
+
+            const exhaustedJob = makeJob({ attemptsMade: 3 });
+            await failedHandler(exhaustedJob, new Error('Brevo 503'));
+
+            expect(logger.error).toHaveBeenCalledWith(
+                expect.objectContaining({ errorMessage: 'DB unavailable' }),
+                'newsletter.batch.mark-failed-error'
             );
         });
     });

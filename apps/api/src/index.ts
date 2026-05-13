@@ -14,7 +14,10 @@ import { startCronScheduler } from './cron';
 import { createEntityResolver } from './lib/entity-resolver';
 import { closeSentry, initializeSentry } from './lib/sentry';
 import { initializeMediaProvider } from './services/media';
-import { getNewsletterDeliveryService } from './services/newsletter/delivery-factory';
+import {
+    closeNewsletterDispatchResources,
+    getNewsletterDeliveryService
+} from './services/newsletter/delivery-factory';
 import { closeDatabase, initializeDatabase } from './utils/database';
 import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
@@ -121,17 +124,27 @@ const startServer = async (): Promise<void> => {
                     // skips startup otherwise so dev environments without Docker
                     // continue to boot the API normally.
                     void (async () => {
+                        // In production a missing prerequisite is a hard
+                        // configuration error (admin "Send campaign" will
+                        // surface SERVICE_UNAVAILABLE without anyone watching
+                        // the logs). Escalate to error so monitoring picks it
+                        // up; demote to warn in dev/test where it's expected
+                        // to boot without Redis or Brevo.
+                        const skipLog =
+                            env.NODE_ENV === 'production'
+                                ? apiLogger.error.bind(apiLogger)
+                                : apiLogger.warn.bind(apiLogger);
                         try {
                             const redis = await getRedisClient();
                             if (!redis) {
-                                apiLogger.warn(
-                                    'Newsletter dispatch worker not started — HOSPEDA_REDIS_URL is unset.'
+                                skipLog(
+                                    'Newsletter dispatch worker not started — HOSPEDA_REDIS_URL is unset. Admin send campaign WILL fail with SERVICE_UNAVAILABLE.'
                                 );
                                 return;
                             }
                             if (!env.HOSPEDA_EMAIL_API_KEY) {
-                                apiLogger.warn(
-                                    'Newsletter dispatch worker not started — HOSPEDA_EMAIL_API_KEY is unset.'
+                                skipLog(
+                                    'Newsletter dispatch worker not started — HOSPEDA_EMAIL_API_KEY is unset. Admin send campaign WILL fail with SERVICE_UNAVAILABLE.'
                                 );
                                 return;
                             }
@@ -184,6 +197,19 @@ const startServer = async (): Promise<void> => {
                     }
                 }
 
+                // Close the BullMQ Queue (and drop cached delivery-service
+                // singleton). The Queue holds its own Redis connection
+                // separate from the Worker's; closing it explicitly avoids
+                // an abrupt connection reset when disconnectRedis() runs.
+                try {
+                    await closeNewsletterDispatchResources();
+                } catch (error) {
+                    apiLogger.error(
+                        'Error closing newsletter dispatch queue:',
+                        error instanceof Error ? error.message : String(error)
+                    );
+                }
+
                 // Flush Sentry events
                 await closeSentry(2000);
 
@@ -209,12 +235,13 @@ const startServer = async (): Promise<void> => {
                 process.exit(1);
             }
 
-            // Force close after 30 seconds — BullMQ worker.close() can take up
-            // to ~30s to drain in-flight jobs on a rolling deploy.
+            // Force close after 60 seconds. BullMQ worker.close() drains
+            // in-flight jobs for up to ~30s; we add a 30s buffer so the
+            // force-exit cannot race the drain and kill the process mid-batch.
             setTimeout(() => {
                 apiLogger.error('Force closing server after timeout');
                 process.exit(1);
-            }, 30_000);
+            }, 60_000);
         };
 
         // Handle shutdown signals

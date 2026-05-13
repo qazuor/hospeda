@@ -262,6 +262,12 @@ const BulkSkipPendingInputSchema = z.object({
     campaignId: z.string().uuid()
 });
 
+const BulkMarkFailedInputSchema = z.object({
+    campaignId: z.string().uuid(),
+    deliveryIds: z.array(z.string().uuid()).min(1),
+    reason: z.string().min(1).max(500)
+});
+
 const SendTestEmailInputSchema = z.object({
     campaignId: z.string().uuid(),
     toEmail: z.string().email()
@@ -760,6 +766,73 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
                     .where(
                         and(
                             eq(newsletterCampaignDeliveries.campaignId, validated.campaignId),
+                            eq(newsletterCampaignDeliveries.status, 'pending')
+                        )
+                    )
+                    .returning({ id: newsletterCampaignDeliveries.id });
+
+                return result.length;
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // bulkMarkFailed
+    // -------------------------------------------------------------------------
+
+    /**
+     * Bulk-updates the specified pending deliveries for a campaign to
+     * `status='failed'` with the supplied reason recorded in `errorMessage`.
+     *
+     * Called by the BullMQ dispatch worker when a job exhausts its retry
+     * budget (e.g. Brevo down for the full 3-attempt window). Without this
+     * write, the deliveries would remain `pending` forever, and the
+     * `closeSentCampaigns` cron would never transition the campaign to
+     * `sent` because pending rows persist.
+     *
+     * Only rows whose current status is `pending` are flipped — already-
+     * terminal rows (`delivered` / `skipped` / `failed`) are left untouched
+     * so a delayed exhaustion signal cannot overwrite a successful delivery
+     * recorded by a different attempt or worker.
+     *
+     * @param input.campaignId - Campaign whose deliveries to mark failed.
+     * @param input.deliveryIds - The exact delivery rows to flip (only those still pending).
+     * @param input.reason - 1-sentence reason written to `errorMessage`.
+     * @returns Number of rows actually flipped to `failed`.
+     *
+     * @example
+     * ```ts
+     * const result = await svc.bulkMarkFailed({
+     *   campaignId,
+     *   deliveryIds: job.data.deliveryIds,
+     *   reason: 'Brevo dispatch exhausted retries: HTTP 503'
+     * });
+     * ```
+     */
+    public async bulkMarkFailed(input: {
+        campaignId: string;
+        deliveryIds: string[];
+        reason: string;
+    }): Promise<ServiceOutput<number>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'bulkMarkFailed',
+            input: { actor: SYSTEM_ACTOR, ...input },
+            schema: BulkMarkFailedInputSchema,
+            execute: async (validated) => {
+                const db = getDb();
+                const now = new Date();
+
+                const result = await db
+                    .update(newsletterCampaignDeliveries)
+                    .set({
+                        status: 'failed',
+                        errorMessage: validated.reason,
+                        updatedAt: now
+                    })
+                    .where(
+                        and(
+                            eq(newsletterCampaignDeliveries.campaignId, validated.campaignId),
+                            inArray(newsletterCampaignDeliveries.id, validated.deliveryIds),
                             eq(newsletterCampaignDeliveries.status, 'pending')
                         )
                     )

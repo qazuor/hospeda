@@ -125,6 +125,28 @@ export function getNewsletterDeliveryService(redis: ConnectionOptions): Newslett
 }
 
 /**
+ * Closes the cached BullMQ dispatch queue (if any) and drops the cached
+ * delivery-service singleton. Used by `gracefulShutdown` in apps/api/src/index.ts
+ * so the queue's Redis connection is closed cleanly BEFORE the shared Redis
+ * client is disconnected.
+ *
+ * The Worker is closed separately by its host (see index.ts), so this only
+ * needs to worry about the Queue side of the connection.
+ *
+ * Safe to call when nothing was constructed — no-op in that case.
+ */
+export async function closeNewsletterDispatchResources(): Promise<void> {
+    if (cachedQueue) {
+        try {
+            await cachedQueue.close();
+        } finally {
+            cachedQueue = null;
+        }
+    }
+    cachedService = null;
+}
+
+/**
  * Resets the cached singletons. **Only for tests.**
  */
 export function _resetNewsletterDeliveryFactory(): void {

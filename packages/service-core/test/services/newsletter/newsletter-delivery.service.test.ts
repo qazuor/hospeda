@@ -598,6 +598,47 @@ describe('bulkSkipPending', () => {
 });
 
 // ===========================================================================
+// bulkMarkFailed
+// ===========================================================================
+
+describe('bulkMarkFailed', () => {
+    it('should update pending deliveries to failed and return the count', async () => {
+        queryBuilderResponses = [
+            [{ id: DELIVERY_ID_1 }, { id: DELIVERY_ID_2 }] // UPDATE returning
+        ];
+
+        const svc = makeService();
+
+        const result = await svc.bulkMarkFailed({
+            campaignId: CAMPAIGN_ID,
+            deliveryIds: [DELIVERY_ID_1, DELIVERY_ID_2],
+            reason: 'BullMQ exhausted retries (3 attempts): Brevo 503'
+        });
+
+        expect(result.error).toBeUndefined();
+        expect(result.data).toBe(2);
+    });
+
+    it('should return 0 when no rows are still pending (idempotency)', async () => {
+        // Already-terminal rows are filtered by the status='pending' guard in WHERE.
+        queryBuilderResponses = [
+            [] // UPDATE returning — 0 rows matched
+        ];
+
+        const svc = makeService();
+
+        const result = await svc.bulkMarkFailed({
+            campaignId: CAMPAIGN_ID,
+            deliveryIds: [DELIVERY_ID_1],
+            reason: 'Late exhaustion after retry'
+        });
+
+        expect(result.error).toBeUndefined();
+        expect(result.data).toBe(0);
+    });
+});
+
+// ===========================================================================
 // sendTestEmail
 // ===========================================================================
 

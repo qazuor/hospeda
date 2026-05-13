@@ -225,7 +225,7 @@ export function startNewsletterWorker(deps: NewsletterWorkerDeps): Worker {
         );
     });
 
-    worker.on('failed', (job: Job<NewsletterDispatchJobData> | undefined, err: Error) => {
+    worker.on('failed', async (job: Job<NewsletterDispatchJobData> | undefined, err: Error) => {
         if (!job) {
             logger.error({ error: err.message }, 'newsletter.worker.unknown-job-failed');
             return;
@@ -246,11 +246,6 @@ export function startNewsletterWorker(deps: NewsletterWorkerDeps): Worker {
         );
 
         if (isExhausted) {
-            // TODO(SPEC-101): Call deliveryService.bulkMarkFailed({ deliveryIds, reason })
-            // once that method is added to NewsletterDeliveryService to bulk-update
-            // affected deliveries to status='failed'.  The method does not yet exist —
-            // tracked for a follow-up task.  For now we log + capture to Sentry so
-            // the failure is visible and actionable.
             Sentry.captureException(err, {
                 tags: {
                     subsystem: 'newsletter',
@@ -263,6 +258,61 @@ export function startNewsletterWorker(deps: NewsletterWorkerDeps): Worker {
                     deliveryIds: job.data.deliveryIds
                 }
             });
+
+            // Flip the still-pending deliveries to status='failed' so the
+            // `closeSentCampaigns` cron can transition the campaign to `sent`
+            // once every row reaches a terminal state. Without this write,
+            // exhausted batches leave deliveries permanently `pending` and
+            // the campaign would never close.
+            try {
+                const reason =
+                    `BullMQ exhausted retries (${job.attemptsMade} attempts): ${err.message}`.slice(
+                        0,
+                        500
+                    );
+                const markResult = await deliveryService.bulkMarkFailed({
+                    campaignId: job.data.campaignId,
+                    deliveryIds: job.data.deliveryIds as string[],
+                    reason
+                });
+
+                if (markResult.error) {
+                    logger.error(
+                        {
+                            jobId: job.id,
+                            campaignId: job.data.campaignId,
+                            errorCode: markResult.error.code,
+                            errorMessage: markResult.error.message
+                        },
+                        'newsletter.batch.mark-failed-error'
+                    );
+                } else {
+                    logger.info(
+                        {
+                            jobId: job.id,
+                            campaignId: job.data.campaignId,
+                            markedFailed: markResult.data
+                        },
+                        'newsletter.batch.marked-failed'
+                    );
+                }
+            } catch (markErr) {
+                logger.error(
+                    {
+                        jobId: job.id,
+                        campaignId: job.data.campaignId,
+                        error: markErr instanceof Error ? markErr.message : String(markErr)
+                    },
+                    'newsletter.batch.mark-failed-threw'
+                );
+                Sentry.captureException(markErr, {
+                    tags: {
+                        subsystem: 'newsletter',
+                        action: 'bulk_mark_failed_threw',
+                        campaignId: job.data.campaignId
+                    }
+                });
+            }
         }
     });
 
