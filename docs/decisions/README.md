@@ -27,6 +27,8 @@ This directory contains Architecture Decision Records for the Hospeda platform. 
 | [ADR-023](ADR-023-soft-deleted-related-entities.md) | Soft-Deleted Related Entities Behavior Policy | Accepted |
 | [ADR-024](ADR-024-env-schema-ssot.md) | Env-Var Schema as Single Source of Truth | Accepted |
 | [ADR-025](ADR-025-factory-level-strict-response-strip.md) | Factory-Level Strict Response Strip | Accepted |
+| [ADR-026](ADR-026-collections-limit-strategy.md) | Collections Limit Strategy | Accepted |
+| [ADR-027](ADR-027-newsletter-dispatch-architecture.md) | Newsletter Dispatch Architecture | Accepted |
 
 ## Format
 
