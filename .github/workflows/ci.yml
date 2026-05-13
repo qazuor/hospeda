@@ -203,13 +203,15 @@ jobs:
     name: Unit Tests (shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
     # SPEC-103 T-032 landed: shards now download build-outputs artifact
-    # from the `build` job instead of rebuilding. The 30-min band-aid
-    # from commit ca0fbb675 is back to the original 15-min budget;
-    # observed worst-case was ~22 min when shards rebuilt hospeda-api
-    # (tsup DTS ~200s inside the shard). With download-artifact the
-    # shard should land in the 5-8 min range. If a shard hits the
-    # 15-min ceiling, investigate before raising again.
-    timeout-minutes: 15
+    # instead of rebuilding. Observed shard runtime on PR #1060 was
+    # 13-15 min (vitest startup + jsdom init per file still dominates,
+    # the build was never the only cost). Bumping the cap from 15 to
+    # 20 min absorbs the 1-2 min margin shards 1 and 2 needed without
+    # ceding the win T-032 delivered (the band-aid was 30 min). If a
+    # shard hits 20 min, look at uneven shard distribution first — the
+    # other shards landing in 13 min suggests test file slicing, not a
+    # systemic regression.
+    timeout-minutes: 20
     needs: build
     strategy:
       fail-fast: false
