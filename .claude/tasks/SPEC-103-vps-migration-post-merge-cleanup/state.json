@@ -14,7 +14,11 @@
             "blocks": ["T-002", "T-003"],
             "tags": ["ops", "ci", "section-3.A"],
             "phase": "setup",
-            "qualityGate": { "lint": "passed", "typecheck": "passed", "tests": "passed" },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "completedInCommit": "09d10676e",
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
@@ -32,7 +36,11 @@
             "blocks": [],
             "tags": ["ops", "security", "section-3.A", "needs-gh-pro"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": "2026-05-12T21:30:00.000Z",
@@ -49,7 +57,11 @@
             "blocks": [],
             "tags": ["ops", "security", "section-3.A", "needs-gh-pro"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -66,7 +78,11 @@
             "blocks": ["T-005"],
             "tags": ["ops", "billing", "section-3.A", "critical"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -83,7 +99,11 @@
             "blocks": [],
             "tags": ["ops", "billing", "section-3.A"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -100,7 +120,11 @@
             "blocks": ["T-007"],
             "tags": ["ops", "backups", "section-3.A"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -117,7 +141,11 @@
             "blocks": [],
             "tags": ["ops", "backups", "section-3.A"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -134,7 +162,11 @@
             "blocks": ["T-009"],
             "tags": ["ops", "db", "section-3.A"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -151,7 +183,11 @@
             "blocks": ["T-010"],
             "tags": ["ops", "content", "section-3.A"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -168,7 +204,11 @@
             "blocks": ["T-011", "T-063"],
             "tags": ["ops", "db", "section-3.A"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -185,7 +225,11 @@
             "blocks": [],
             "tags": ["docs", "section-3.A"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -202,7 +246,11 @@
             "blocks": ["T-025"],
             "tags": ["auth", "smoke", "section-3.A"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -219,7 +267,11 @@
             "blocks": ["T-025"],
             "tags": ["auth", "oauth", "smoke", "section-3.A"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -236,7 +288,11 @@
             "blocks": ["T-025"],
             "tags": ["auth", "oauth", "smoke", "section-3.A"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -253,7 +309,11 @@
             "blocks": ["T-025"],
             "tags": ["auth", "smoke", "section-3.A"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -270,7 +330,11 @@
             "blocks": ["T-025"],
             "tags": ["auth", "oauth", "smoke", "section-3.A"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -287,7 +351,11 @@
             "blocks": ["T-025"],
             "tags": ["auth", "smoke", "section-3.A"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -304,7 +372,11 @@
             "blocks": ["T-025"],
             "tags": ["auth", "smoke", "section-3.A"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -321,7 +393,11 @@
             "blocks": ["T-025"],
             "tags": ["auth", "smoke", "section-3.A"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -338,7 +414,11 @@
             "blocks": ["T-025"],
             "tags": ["auth", "oauth", "smoke", "section-3.A"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -355,7 +435,11 @@
             "blocks": ["T-025"],
             "tags": ["auth", "smoke", "section-3.A"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -372,7 +456,11 @@
             "blocks": ["T-025"],
             "tags": ["auth", "smoke", "section-3.A"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -389,7 +477,11 @@
             "blocks": ["T-025"],
             "tags": ["auth", "a11y", "smoke", "section-3.A"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -406,7 +498,11 @@
             "blocks": ["T-025"],
             "tags": ["auth", "observability", "smoke", "section-3.A"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -437,7 +533,11 @@
             "blocks": [],
             "tags": ["docs", "auth", "section-3.A"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -454,7 +554,11 @@
             "blocks": [],
             "tags": ["ux", "smoke", "section-3.A"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -471,7 +575,11 @@
             "blocks": [],
             "tags": ["docs", "hops", "section-3.B"],
             "phase": "docs",
-            "qualityGate": { "lint": "passed", "typecheck": "passed", "tests": "passed" },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": "2026-05-12T19:30:00.000Z",
@@ -489,7 +597,11 @@
             "blocks": [],
             "tags": ["docs", "section-3.B"],
             "phase": "docs",
-            "qualityGate": { "lint": "passed", "typecheck": "passed", "tests": "passed" },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": "2026-05-12T22:30:00.000Z",
@@ -506,7 +618,11 @@
             "blocks": [],
             "tags": ["ops", "cleanup", "section-3.B"],
             "phase": "cleanup",
-            "qualityGate": { "lint": "passed", "typecheck": "passed", "tests": "passed" },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": "2026-05-12T19:30:00.000Z",
@@ -524,7 +640,11 @@
             "blocks": [],
             "tags": ["ops", "cleanup", "section-3.B"],
             "phase": "cleanup",
-            "qualityGate": { "lint": "passed", "typecheck": "passed", "tests": "passed" },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": "2026-05-12T19:30:00.000Z",
@@ -542,7 +662,11 @@
             "blocks": [],
             "tags": ["code", "typecheck", "section-3.B"],
             "phase": "core",
-            "qualityGate": { "lint": "passed", "typecheck": "passed", "tests": "passed" },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": "2026-05-12T18:49:09.000Z",
@@ -559,7 +683,11 @@
             "blocks": [],
             "tags": ["ci", "perf", "section-3.B"],
             "phase": "integration",
-            "qualityGate": { "lint": "passed", "typecheck": "passed", "tests": "passed" },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": "2026-05-12T22:55:00.000Z",
@@ -570,30 +698,38 @@
             "id": "T-033",
             "title": "Investigate docs.yml hangs + add hard timeout",
             "description": "Inspect .github/workflows/docs.yml runs (some span 1-6h). Identify the hanging step (likely tsx scripts/check-links.ts fetching external links without timeout). Add per-step timeout-minutes + per-fetch timeout. Fail fast on first stuck request. Spec ref: 3.B.6 item 2.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": [],
             "tags": ["ci", "section-3.B"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-12T22:50:00.000Z",
+                "completed": "2026-05-13T00:30:00.000Z"
             }
         },
         {
             "id": "T-034",
-            "title": "Re-enable E2E nightly cron after diagnosing root cause",
-            "description": "Cron is currently commented out in .github/workflows/e2e-nightly.yml. Investigate why every nightly run since the VPS migration failed (probable: Brevo/MP credential drift, missing seed data, connection-string assumption). Fix root cause. Re-enable cron. Spec ref: 3.B.6 item 3.",
-            "status": "pending",
+            "title": "MOVED TO SPEC-105: Re-enable E2E nightly cron after diagnosing root cause",
+            "description": "MOVED TO SPEC-105 on 2026-05-13. Re-enable E2E nightly cron after diagnosing root cause. The investigation has unbounded scope (estimated 6-30h depending on whether the failures are credential drift, schema drift, or infrastructure drift); deserves its own spec with phased investigation. See .claude/specs/SPEC-105-e2e-nightly-suite-repair/spec.md for the full plan. Original SPEC-103 ref: 3.B.6 item 3.",
+            "status": "blocked",
             "complexity": 4,
             "blockedBy": [],
             "blocks": [],
-            "tags": ["ci", "testing", "section-3.B"],
+            "tags": ["ci", "testing", "section-3.B", "moved-to-spec-105"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -610,7 +746,11 @@
             "blocks": [],
             "tags": ["testing", "perf", "section-3.B"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -621,85 +761,105 @@
             "id": "T-036",
             "title": "Consolidate guards + docs CI jobs into one",
             "description": "Merge the two ~1min jobs into a single ~2min job to amortize checkout+pnpm install overhead. Spec ref: 3.B.6 item 5.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "tags": ["ci", "perf", "section-3.B"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-12T22:50:00.000Z",
+                "completed": "2026-05-13T00:30:00.000Z"
             }
         },
         {
             "id": "T-037",
             "title": "Set up vitest/bun-test config for scripts/server-tools/",
             "description": "Add bun:test or vitest config to scripts/server-tools/. Create scripts/server-tools/test/ directory. Wire up package.json test script. Spec ref: 3.C.1 prep.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-038", "T-039", "T-040"],
             "tags": ["testing", "hops", "section-3.C"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-12T22:50:00.000Z",
+                "completed": "2026-05-13T00:30:00.000Z"
             }
         },
         {
             "id": "T-038",
             "title": "Unit tests for resolveTarget(argv)",
             "description": "Test cases: --target=prod flag, --target=staging flag, HOPS_DEFAULT_TARGET env var fallback, default to prod, invalid input throws helpful error. File: scripts/server-tools/test/target.test.ts. Spec ref: 3.C.1.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-037"],
             "blocks": [],
             "tags": ["testing", "hops", "section-3.C"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-12T22:50:00.000Z",
+                "completed": "2026-05-13T00:30:00.000Z"
             }
         },
         {
             "id": "T-039",
             "title": "Unit tests for getAppResourceName / getDbResourceName / getDbCredentials",
             "description": "Test cases: all (target × kind) permutations for resource names; missing env var throws with actionable message; legacy PG_USER/PG_DB for prod only; target-prefixed override; defaults. File: scripts/server-tools/test/container-lookup.test.ts. Spec ref: 3.C.1.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-037"],
             "blocks": [],
             "tags": ["testing", "hops", "section-3.C"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-12T22:50:00.000Z",
+                "completed": "2026-05-13T00:30:00.000Z"
             }
         },
         {
             "id": "T-040",
             "title": "Unit tests for dotenv parser (scripts/server-tools/src/lib/env.ts)",
             "description": "Test cases: basic key=value, comments skipped, quoted values, missing file, inline comments behaviour documented, multi-line values rejected/handled. File: scripts/server-tools/test/env.test.ts. Spec ref: 3.C.1.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-037"],
             "blocks": ["T-053"],
             "tags": ["testing", "hops", "section-3.C"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-12T22:50:00.000Z",
+                "completed": "2026-05-13T00:30:00.000Z"
             }
         },
         {
@@ -712,7 +872,11 @@
             "blocks": ["T-052"],
             "tags": ["hops", "smoke", "section-3.C"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -729,7 +893,11 @@
             "blocks": ["T-052"],
             "tags": ["hops", "smoke", "section-3.C"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -746,7 +914,11 @@
             "blocks": ["T-052"],
             "tags": ["hops", "smoke", "section-3.C"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -763,7 +935,11 @@
             "blocks": ["T-052"],
             "tags": ["hops", "smoke", "section-3.C"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -780,7 +956,11 @@
             "blocks": ["T-052"],
             "tags": ["hops", "smoke", "section-3.C"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -797,7 +977,11 @@
             "blocks": ["T-052"],
             "tags": ["hops", "smoke", "section-3.C"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -814,7 +998,11 @@
             "blocks": ["T-052"],
             "tags": ["hops", "smoke", "section-3.C"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -831,7 +1019,11 @@
             "blocks": ["T-052"],
             "tags": ["hops", "smoke", "section-3.C"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -848,7 +1040,11 @@
             "blocks": ["T-052"],
             "tags": ["hops", "smoke", "section-3.C"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -865,7 +1061,11 @@
             "blocks": ["T-052"],
             "tags": ["hops", "smoke", "section-3.C"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -882,7 +1082,11 @@
             "blocks": ["T-052"],
             "tags": ["hops", "smoke", "section-3.C"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -911,7 +1115,11 @@
             "blocks": [],
             "tags": ["docs", "hops", "section-3.C"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -928,7 +1136,11 @@
             "blocks": [],
             "tags": ["hops", "cleanup", "section-3.C"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -945,7 +1157,11 @@
             "blocks": [],
             "tags": ["docs", "hops", "section-3.C"],
             "phase": "docs",
-            "qualityGate": { "lint": "passed", "typecheck": "passed", "tests": "passed" },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": "2026-05-12T22:35:00.000Z",
@@ -956,17 +1172,21 @@
             "id": "T-055",
             "title": "Export parseTrustedOrigins + add unit tests",
             "description": "Export the function from apps/api/src/lib/auth.ts:629 (or add a thin wrapper). Add tests covering: well-formed entries, empty string, missing scheme, non-http(s) scheme, duplicates, trailing comma. Assert warnings logged for malformed entries. File: apps/api/test/lib/auth.parseTrustedOrigins.test.ts. Spec ref: 3.D.1.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": [],
             "tags": ["testing", "auth", "section-3.D"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-12T22:50:00.000Z",
+                "completed": "2026-05-13T00:30:00.000Z"
             }
         },
         {
@@ -979,7 +1199,11 @@
             "blocks": ["T-058"],
             "tags": ["auth", "oauth", "ops", "section-3.D"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -996,7 +1220,11 @@
             "blocks": ["T-058"],
             "tags": ["auth", "oauth", "ops", "section-3.D"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1013,7 +1241,11 @@
             "blocks": [],
             "tags": ["auth", "oauth", "smoke", "section-3.D"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1030,7 +1262,11 @@
             "blocks": [],
             "tags": ["meta-spec-ref", "auth", "section-3.D"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1039,15 +1275,19 @@
         },
         {
             "id": "T-060",
-            "title": "Scaffold scripts/migrate-staging-to-prod.ts (CLI + DB connections + SEED_TIMESTAMP filter)",
-            "description": "Create new file. Parse CLI args (--staging-url, --prod-url, --execute (default dry-run)). Connect to both DBs. Read SEED_TIMESTAMP from .env or flag (defaults to 2026-05-11 21:00 per engram). Print plan summary. Spec ref: 3.E.1 + docs/migration/staging-prod-db-separation.md §10.",
-            "status": "pending",
+            "title": "MOVED TO SPEC-104: Scaffold scripts/migrate-staging-to-prod.ts (CLI + DB connections + SEED_TIMESTAMP filter)",
+            "description": "MOVED TO SPEC-104 on 2026-05-13. Beta-to-prod data migration script was extracted to a dedicated spec because it is a delicate data feature (~12h, FK ordering + idempotency + dry-run discipline) not cleanup work. See .claude/specs/SPEC-104-beta-to-prod-data-migration/spec.md for the renumbered task list (T-104-01..T-104-12) and full design. Depends on SPEC-103 T-008/T-009/T-010 (slug parity ops) before execution. Original SPEC-103 ref: 3.E.1.",
+            "status": "blocked",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-061", "T-062", "T-063", "T-064", "T-065", "T-066", "T-067", "T-068"],
-            "tags": ["code", "db", "section-3.E"],
+            "tags": ["code", "db", "section-3.E", "moved-to-spec-104"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1056,15 +1296,19 @@
         },
         {
             "id": "T-061",
-            "title": "Migrate users (filter by created_at > SEED_TIMESTAMP)",
-            "description": "Add users migration step to the script. SELECT staging.users WHERE created_at > SEED_TIMESTAMP + email_verified=true. INSERT INTO prod.users (skip super-admin / system rows). Handle conflicts on email. Spec ref: 3.E.1.",
-            "status": "pending",
+            "title": "MOVED TO SPEC-104: Migrate users (filter by created_at > SEED_TIMESTAMP)",
+            "description": "MOVED TO SPEC-104 on 2026-05-13. Beta-to-prod data migration script was extracted to a dedicated spec because it is a delicate data feature (~12h, FK ordering + idempotency + dry-run discipline) not cleanup work. See .claude/specs/SPEC-104-beta-to-prod-data-migration/spec.md for the renumbered task list (T-104-01..T-104-12) and full design. Depends on SPEC-103 T-008/T-009/T-010 (slug parity ops) before execution. Original SPEC-103 ref: 3.E.1.",
+            "status": "blocked",
             "complexity": 3,
             "blockedBy": ["T-060"],
             "blocks": ["T-062", "T-063"],
-            "tags": ["code", "db", "section-3.E"],
+            "tags": ["code", "db", "section-3.E", "moved-to-spec-104"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1073,15 +1317,19 @@
         },
         {
             "id": "T-062",
-            "title": "Migrate accounts rows linked to migrated users",
-            "description": "For each migrated user from T-061, copy their accounts rows (OAuth provider links). Preserve provider_id + access tokens (or invalidate if env-specific). Spec ref: 3.E.1.",
-            "status": "pending",
+            "title": "MOVED TO SPEC-104: Migrate accounts rows linked to migrated users",
+            "description": "MOVED TO SPEC-104 on 2026-05-13. Beta-to-prod data migration script was extracted to a dedicated spec because it is a delicate data feature (~12h, FK ordering + idempotency + dry-run discipline) not cleanup work. See .claude/specs/SPEC-104-beta-to-prod-data-migration/spec.md for the renumbered task list (T-104-01..T-104-12) and full design. Depends on SPEC-103 T-008/T-009/T-010 (slug parity ops) before execution. Original SPEC-103 ref: 3.E.1.",
+            "status": "blocked",
             "complexity": 3,
             "blockedBy": ["T-061"],
             "blocks": [],
-            "tags": ["code", "db", "auth", "section-3.E"],
+            "tags": ["code", "db", "auth", "section-3.E", "moved-to-spec-104"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1090,15 +1338,19 @@
         },
         {
             "id": "T-063",
-            "title": "Migrate accommodations + remap destination_id by slug",
-            "description": "For each accommodation owned by a migrated user: copy row, but BEFORE insert, look up the new destination_id in prod by matching staging.slug -> prod.slug. If no match: ABORT migration with error (slug parity failure). Depends on T-010 slug parity. Spec ref: 3.E.1.",
-            "status": "pending",
+            "title": "MOVED TO SPEC-104: Migrate accommodations + remap destination_id by slug",
+            "description": "MOVED TO SPEC-104 on 2026-05-13. Beta-to-prod data migration script was extracted to a dedicated spec because it is a delicate data feature (~12h, FK ordering + idempotency + dry-run discipline) not cleanup work. See .claude/specs/SPEC-104-beta-to-prod-data-migration/spec.md for the renumbered task list (T-104-01..T-104-12) and full design. Depends on SPEC-103 T-008/T-009/T-010 (slug parity ops) before execution. Original SPEC-103 ref: 3.E.1.",
+            "status": "blocked",
             "complexity": 4,
             "blockedBy": ["T-061", "T-010"],
             "blocks": ["T-068"],
-            "tags": ["code", "db", "section-3.E"],
+            "tags": ["code", "db", "section-3.E", "moved-to-spec-104"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1107,15 +1359,19 @@
         },
         {
             "id": "T-064",
-            "title": "Migrate posts owned by migrated users",
-            "description": "Copy posts rows. Preserve slug + content. Handle FK references to user_id. Spec ref: 3.E.1.",
-            "status": "pending",
+            "title": "MOVED TO SPEC-104: Migrate posts owned by migrated users",
+            "description": "MOVED TO SPEC-104 on 2026-05-13. Beta-to-prod data migration script was extracted to a dedicated spec because it is a delicate data feature (~12h, FK ordering + idempotency + dry-run discipline) not cleanup work. See .claude/specs/SPEC-104-beta-to-prod-data-migration/spec.md for the renumbered task list (T-104-01..T-104-12) and full design. Depends on SPEC-103 T-008/T-009/T-010 (slug parity ops) before execution. Original SPEC-103 ref: 3.E.1.",
+            "status": "blocked",
             "complexity": 2,
             "blockedBy": ["T-061"],
             "blocks": ["T-068"],
-            "tags": ["code", "db", "section-3.E"],
+            "tags": ["code", "db", "section-3.E", "moved-to-spec-104"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1124,15 +1380,19 @@
         },
         {
             "id": "T-065",
-            "title": "Migrate events owned by migrated users",
-            "description": "Copy events rows. Preserve slug + dates + content. Spec ref: 3.E.1.",
-            "status": "pending",
+            "title": "MOVED TO SPEC-104: Migrate events owned by migrated users",
+            "description": "MOVED TO SPEC-104 on 2026-05-13. Beta-to-prod data migration script was extracted to a dedicated spec because it is a delicate data feature (~12h, FK ordering + idempotency + dry-run discipline) not cleanup work. See .claude/specs/SPEC-104-beta-to-prod-data-migration/spec.md for the renumbered task list (T-104-01..T-104-12) and full design. Depends on SPEC-103 T-008/T-009/T-010 (slug parity ops) before execution. Original SPEC-103 ref: 3.E.1.",
+            "status": "blocked",
             "complexity": 2,
             "blockedBy": ["T-061"],
             "blocks": ["T-068"],
-            "tags": ["code", "db", "section-3.E"],
+            "tags": ["code", "db", "section-3.E", "moved-to-spec-104"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1141,15 +1401,19 @@
         },
         {
             "id": "T-066",
-            "title": "Migrate reviews authored by migrated users",
-            "description": "Copy reviews. Preserve FK to accommodations (depends on T-063 having run first). Spec ref: 3.E.1.",
-            "status": "pending",
+            "title": "MOVED TO SPEC-104: Migrate reviews authored by migrated users",
+            "description": "MOVED TO SPEC-104 on 2026-05-13. Beta-to-prod data migration script was extracted to a dedicated spec because it is a delicate data feature (~12h, FK ordering + idempotency + dry-run discipline) not cleanup work. See .claude/specs/SPEC-104-beta-to-prod-data-migration/spec.md for the renumbered task list (T-104-01..T-104-12) and full design. Depends on SPEC-103 T-008/T-009/T-010 (slug parity ops) before execution. Original SPEC-103 ref: 3.E.1.",
+            "status": "blocked",
             "complexity": 2,
             "blockedBy": ["T-061", "T-063"],
             "blocks": ["T-068"],
-            "tags": ["code", "db", "section-3.E"],
+            "tags": ["code", "db", "section-3.E", "moved-to-spec-104"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1158,15 +1422,19 @@
         },
         {
             "id": "T-067",
-            "title": "Migrate bookmarks of migrated users",
-            "description": "Copy bookmarks. FK to accommodations (depends on T-063). Spec ref: 3.E.1.",
-            "status": "pending",
+            "title": "MOVED TO SPEC-104: Migrate bookmarks of migrated users",
+            "description": "MOVED TO SPEC-104 on 2026-05-13. Beta-to-prod data migration script was extracted to a dedicated spec because it is a delicate data feature (~12h, FK ordering + idempotency + dry-run discipline) not cleanup work. See .claude/specs/SPEC-104-beta-to-prod-data-migration/spec.md for the renumbered task list (T-104-01..T-104-12) and full design. Depends on SPEC-103 T-008/T-009/T-010 (slug parity ops) before execution. Original SPEC-103 ref: 3.E.1.",
+            "status": "blocked",
             "complexity": 2,
             "blockedBy": ["T-061", "T-063"],
             "blocks": ["T-068"],
-            "tags": ["code", "db", "section-3.E"],
+            "tags": ["code", "db", "section-3.E", "moved-to-spec-104"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1175,15 +1443,19 @@
         },
         {
             "id": "T-068",
-            "title": "Add dry-run (default) + --execute flag with confirmation prompt",
-            "description": "Default mode: print SQL plan + counts without writing. --execute: prompt 'type EXECUTE to confirm' before any INSERT. Spec ref: 3.E.1.",
-            "status": "pending",
+            "title": "MOVED TO SPEC-104: Add dry-run (default) + --execute flag with confirmation prompt",
+            "description": "MOVED TO SPEC-104 on 2026-05-13. Beta-to-prod data migration script was extracted to a dedicated spec because it is a delicate data feature (~12h, FK ordering + idempotency + dry-run discipline) not cleanup work. See .claude/specs/SPEC-104-beta-to-prod-data-migration/spec.md for the renumbered task list (T-104-01..T-104-12) and full design. Depends on SPEC-103 T-008/T-009/T-010 (slug parity ops) before execution. Original SPEC-103 ref: 3.E.1.",
+            "status": "blocked",
             "complexity": 2,
             "blockedBy": ["T-063", "T-064", "T-065", "T-066", "T-067"],
             "blocks": ["T-069"],
-            "tags": ["code", "section-3.E"],
+            "tags": ["code", "section-3.E", "moved-to-spec-104"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1192,15 +1464,19 @@
         },
         {
             "id": "T-069",
-            "title": "Add count verification + post-migration summary report",
-            "description": "After execute: query both DBs for migrated entity counts, compare with planned, print summary. Exit non-zero if mismatch. Spec ref: 3.E.1.",
-            "status": "pending",
+            "title": "MOVED TO SPEC-104: Add count verification + post-migration summary report",
+            "description": "MOVED TO SPEC-104 on 2026-05-13. Beta-to-prod data migration script was extracted to a dedicated spec because it is a delicate data feature (~12h, FK ordering + idempotency + dry-run discipline) not cleanup work. See .claude/specs/SPEC-104-beta-to-prod-data-migration/spec.md for the renumbered task list (T-104-01..T-104-12) and full design. Depends on SPEC-103 T-008/T-009/T-010 (slug parity ops) before execution. Original SPEC-103 ref: 3.E.1.",
+            "status": "blocked",
             "complexity": 2,
             "blockedBy": ["T-068"],
             "blocks": ["T-070"],
-            "tags": ["code", "testing", "section-3.E"],
+            "tags": ["code", "testing", "section-3.E", "moved-to-spec-104"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1209,15 +1485,19 @@
         },
         {
             "id": "T-070",
-            "title": "Test migration script against snapshot pair (clone staging into clone prod)",
-            "description": "Create local clones of both DBs from latest R2 backups. Run script --execute. Verify counts + spot-check a few migrated rows. Spec ref: 3.E.1.",
-            "status": "pending",
+            "title": "MOVED TO SPEC-104: Test migration script against snapshot pair (clone staging into clone prod)",
+            "description": "MOVED TO SPEC-104 on 2026-05-13. Beta-to-prod data migration script was extracted to a dedicated spec because it is a delicate data feature (~12h, FK ordering + idempotency + dry-run discipline) not cleanup work. See .claude/specs/SPEC-104-beta-to-prod-data-migration/spec.md for the renumbered task list (T-104-01..T-104-12) and full design. Depends on SPEC-103 T-008/T-009/T-010 (slug parity ops) before execution. Original SPEC-103 ref: 3.E.1.",
+            "status": "blocked",
             "complexity": 3,
             "blockedBy": ["T-069"],
             "blocks": ["T-071"],
-            "tags": ["testing", "db", "section-3.E"],
+            "tags": ["testing", "db", "section-3.E", "moved-to-spec-104"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1226,15 +1506,19 @@
         },
         {
             "id": "T-071",
-            "title": "Document migration runbook",
-            "description": "Add docs/migration/beta-to-prod-runbook.md with prerequisites, dry-run example, execute example, rollback procedure, expected counts. Spec ref: 3.E.1 acceptance.",
-            "status": "pending",
+            "title": "MOVED TO SPEC-104: Document migration runbook",
+            "description": "MOVED TO SPEC-104 on 2026-05-13. Beta-to-prod data migration script was extracted to a dedicated spec because it is a delicate data feature (~12h, FK ordering + idempotency + dry-run discipline) not cleanup work. See .claude/specs/SPEC-104-beta-to-prod-data-migration/spec.md for the renumbered task list (T-104-01..T-104-12) and full design. Depends on SPEC-103 T-008/T-009/T-010 (slug parity ops) before execution. Original SPEC-103 ref: 3.E.1.",
+            "status": "blocked",
             "complexity": 2,
             "blockedBy": ["T-070"],
             "blocks": [],
-            "tags": ["docs", "section-3.E"],
+            "tags": ["docs", "section-3.E", "moved-to-spec-104"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1251,7 +1535,11 @@
             "blocks": [],
             "tags": ["code", "db", "deferred", "section-3.E"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1262,17 +1550,21 @@
             "id": "T-073",
             "title": "Add API startup DB healthcheck on role_permission count",
             "description": "In apps/api/src/index.ts startup phase: execute SELECT COUNT(*) FROM role_permission. If 0 rows: log critical 'DB looks empty - aborting' and process.exit(1). Container restart loop surfaces misconfig immediately. Spec ref: 3.E.3.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-074"],
             "tags": ["code", "api", "section-3.E"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-12T22:50:00.000Z",
+                "completed": "2026-05-13T00:30:00.000Z"
             }
         },
         {
@@ -1285,7 +1577,11 @@
             "blocks": [],
             "tags": ["smoke", "api", "section-3.E"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1302,7 +1598,11 @@
             "blocks": [],
             "tags": ["ops", "observability", "section-3.F"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1319,7 +1619,11 @@
             "blocks": [],
             "tags": ["ops", "observability", "section-3.F"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1336,7 +1640,11 @@
             "blocks": [],
             "tags": ["ops", "dns", "section-3.G"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1347,51 +1655,63 @@
             "id": "T-078",
             "title": "Add GPG symmetric encryption to scripts/backup/postgres-to-r2.sh",
             "description": "Pipe pg_dump through 'gpg --symmetric --cipher-algo AES256 --batch --passphrase $BACKUP_PASSPHRASE' before upload to R2. Output extension becomes .dump.gpg. BACKUP_PASSPHRASE comes from Coolify env. Spec ref: 3.G.2.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-080"],
             "tags": ["ops", "backups", "security", "section-3.G"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-12T22:50:00.000Z",
+                "completed": "2026-05-13T00:30:00.000Z"
             }
         },
         {
             "id": "T-079",
             "title": "Add GPG encryption to scripts/server-tools/src/commands/db-backup-now.ts",
             "description": "Mirror T-078 in the hops on-demand backup. Same passphrase env var. Output suffix .dump.gpg. Spec ref: 3.G.2.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-080"],
             "tags": ["hops", "backups", "security", "section-3.G"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-12T22:50:00.000Z",
+                "completed": "2026-05-13T00:30:00.000Z"
             }
         },
         {
             "id": "T-080",
             "title": "Add GPG decryption to scripts/server-tools/src/commands/db-restore.ts",
             "description": "Detect .dump.gpg suffix. Pipe through 'gpg --decrypt --batch --passphrase $BACKUP_PASSPHRASE' before pg_restore. Spec ref: 3.G.2 acceptance.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-078", "T-079"],
             "blocks": [],
             "tags": ["hops", "backups", "security", "section-3.G"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-12T22:50:00.000Z",
+                "completed": "2026-05-13T00:30:00.000Z"
             }
         },
         {
@@ -1404,7 +1724,11 @@
             "blocks": [],
             "tags": ["ops", "backups", "section-3.G"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1421,7 +1745,11 @@
             "blocks": [],
             "tags": ["hops", "deferred", "section-3.G"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1438,7 +1766,11 @@
             "blocks": [],
             "tags": ["hops", "deferred", "section-3.G"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1455,7 +1787,11 @@
             "blocks": [],
             "tags": ["hops", "cleanup", "section-3.G"],
             "phase": "cleanup",
-            "qualityGate": { "lint": "passed", "typecheck": "passed", "tests": "passed" },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": "2026-05-12T19:30:00.000Z",
@@ -1473,7 +1809,11 @@
             "blocks": [],
             "tags": ["meta-spec-ref", "arch", "section-3.H"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1490,7 +1830,11 @@
             "blocks": [],
             "tags": ["ops", "arch", "section-3.H"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1507,7 +1851,11 @@
             "blocks": [],
             "tags": ["ops", "deferred", "section-3.H"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1524,7 +1872,11 @@
             "blocks": [],
             "tags": ["docs", "deferred", "section-3.H"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
@@ -1535,51 +1887,63 @@
             "id": "T-089",
             "title": "Investigate + fix post-tag.test.ts ?withCounts=true assertion",
             "description": "apps/api/test/routes/tag/post-tag.test.ts line 296 — test `?withCounts=true calls listPublic(true) and returns usageCount` fails because `mockPostTagService.listPublic` is never invoked (0 calls when 1 expected). Currently skipped via `it.skipIf(true)` referencing this task. Hypothesis: route stopped routing the withCounts query string into the service (probable regression from SPEC-086 Tag System refactor). Steps: (1) Read apps/api/src/routes/post-tag/public/list-public.ts (or equivalent). (2) Trace whether withCounts=true triggers listPublic call. (3) Fix route OR fix test. (4) Remove skipIf wrapper. Surfaced by SPEC-103 §3.A.0 gate via CI run 25758581495.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": [],
             "tags": ["testing", "api", "regression", "section-3.B"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T20:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-12T22:50:00.000Z",
+                "completed": "2026-05-13T00:30:00.000Z"
             }
         },
         {
             "id": "T-090",
             "title": "Investigate + fix plan-dialog.test.tsx submit-payload timeout",
             "description": "apps/admin/test/integration/plan-dialog.test.tsx line 220 — test `calls onSubmit with correct payload on valid submit` exceeds 5000ms before locating form fields. Currently skipped via `it.skipIf(true)` referencing this task. Hypothesis: Radix Select or shadcn Dialog mount race, missing await, or userEvent.setup() pointer-event polyfill issue under jsdom. Steps: (1) Reproduce locally with `pnpm --filter admin test plan-dialog`. (2) Inspect mount lifecycle + pointer-events shim. (3) Adjust test (waitFor, increase testTimeout, or different query strategy). (4) Remove skipIf wrapper. Surfaced by SPEC-103 §3.A.0 gate via CI run 25758581495.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": [],
             "tags": ["testing", "admin", "regression", "section-3.B"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T20:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-12T22:50:00.000Z",
+                "completed": "2026-05-13T00:30:00.000Z"
             }
         },
         {
             "id": "T-091",
             "title": "Investigate + fix user-bookmark/checkBulkAndNotesAndCount publicCount block (TC16-TC21)",
             "description": "apps/api/test/routes/user-bookmark/checkBulkAndNotesAndCount.test.ts — describe block at line 502 (`GET /api/v1/public/user-bookmarks/count — publicCount`) currently `describe.skipIf(true)`. 5 of the 6 inner tests fail (TC16, TC17, TC18, TC19, TC20, TC21): TC16-TC17 see count=5 instead of mocked counts (42 / 0); TC18-TC21 expect 400 validation but get 200 with count=5. TC15 (route registration smoke) and TC22 (cache headers) likely pass but are skipped together with the rest for simpler tracking. Hypothesis: the public count route bypasses both the mock AND the validation pipeline that the protected `bulkCheck` path goes through — probably calls a different service method or the mock factory only covers auth-required paths. Steps: (1) Read apps/api/src/routes/user-bookmark/public/count.ts. (2) Identify which service method the public count endpoint calls. (3) Identify why validation is bypassed (missing zValidator?). (4) Fix mock setup OR fix route. (5) Remove describe.skipIf wrapper. Surfaced by SPEC-103 §3.A.0 gate via CI runs 25758581495 + 25760643096.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": [],
             "tags": ["testing", "api", "regression", "section-3.B"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T20:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-12T22:50:00.000Z",
+                "completed": "2026-05-13T00:30:00.000Z"
             }
         },
         {
@@ -1592,7 +1956,11 @@
             "blocks": [],
             "tags": ["ops", "cleanup", "section-3.B"],
             "phase": "cleanup",
-            "qualityGate": { "lint": "passed", "typecheck": "passed", "tests": "passed" },
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
             "timestamps": {
                 "created": "2026-05-12T22:30:00.000Z",
                 "started": "2026-05-12T22:30:00.000Z",
@@ -1602,10 +1970,10 @@
     ],
     "summary": {
         "total": 92,
-        "pending": 79,
+        "pending": 52,
         "inProgress": 0,
-        "completed": 11,
-        "blocked": 2,
-        "averageComplexity": 2.1
+        "completed": 25,
+        "blocked": 15,
+        "averageComplexity": 2.2
     }
 }

@@ -723,8 +723,24 @@
             "title": "VPS Migration Post-Merge Cleanup & Hardening Backlog",
             "type": "chore",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-103-vps-migration-post-merge-cleanup"
+        },
+        {
+            "specId": "SPEC-104",
+            "title": "Beta-to-Prod Data Migration Script",
+            "type": "feature",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-104-beta-to-prod-data-migration"
+        },
+        {
+            "specId": "SPEC-105",
+            "title": "E2E Nightly Test Suite Repair",
+            "type": "chore",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-105-e2e-nightly-suite-repair"
         }
     ]
 }
