@@ -1618,13 +1618,14 @@
             "phase": "phase4_dispatch_engine",
             "layer": "worker",
             "complexity": 3,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-16", "T-101-43"],
             "blocks": ["T-101-45"],
             "tags": ["phase4_dispatch_engine", "worker"],
             "files": [
                 "apps/api/package.json",
-                "apps/api/src/workers/newsletter-dispatch.worker.ts"
+                "apps/api/src/workers/newsletter-dispatch.worker.ts",
+                "apps/api/src/workers/newsletter-dispatch.worker.test.ts"
             ],
             "acceptanceCriteria": [
                 "bullmq ^5.x added to apps/api/package.json",
@@ -1645,8 +1646,8 @@
             },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-13T20:30:00.000Z",
+                "completed": "2026-05-13T20:55:00.000Z"
             }
         },
         {
@@ -1655,11 +1656,17 @@
             "phase": "phase4_dispatch_engine",
             "layer": "infra",
             "complexity": 2,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-44"],
             "blocks": ["T-101-46"],
             "tags": ["phase4_dispatch_engine", "infra"],
-            "files": ["apps/api/src/index.ts"],
+            "files": [
+                "apps/api/src/index.ts",
+                "apps/api/src/services/newsletter/delivery-factory.ts",
+                "apps/api/src/routes/newsletter/admin/_singletons.ts",
+                "apps/api/src/routes/newsletter/admin/campaigns.ts",
+                "apps/api/package.json"
+            ],
             "acceptanceCriteria": [
                 "startNewsletterWorker called after serve() resolves and after startCronScheduler(), gated by NODE_ENV !== 'test'",
                 "Graceful shutdown order updated: stopCronJobs() → await worker.close() → closeSentry → destroyUserPermissionsCache → disconnectRedis → closeDatabase → server.close()",
@@ -1675,8 +1682,8 @@
             },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-13T20:55:00.000Z",
+                "completed": "2026-05-13T21:05:00.000Z"
             }
         },
         {
@@ -1685,7 +1692,7 @@
             "phase": "phase4_dispatch_engine",
             "layer": "service",
             "complexity": 1,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-45"],
             "blocks": [],
             "tags": ["phase4_dispatch_engine", "service"],
@@ -1704,8 +1711,8 @@
             },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-13T20:30:00.000Z",
+                "completed": "2026-05-13T20:40:00.000Z"
             }
         },
         {
@@ -1714,12 +1721,14 @@
             "phase": "phase4_dispatch_engine",
             "layer": "worker",
             "complexity": 2,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-14", "T-101-45"],
             "blocks": [],
             "tags": ["phase4_dispatch_engine", "worker"],
             "files": [
-                "apps/api/src/cron/jobs/newsletter-close-campaigns.ts",
+                "apps/api/src/cron/jobs/newsletter-close-campaigns.job.ts",
+                "apps/api/src/cron/jobs/index.ts",
+                "apps/api/src/cron/registry.ts",
                 "apps/api/src/cron/schedules.manifest.ts"
             ],
             "acceptanceCriteria": [
@@ -1738,8 +1747,8 @@
             },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-13T20:40:00.000Z",
+                "completed": "2026-05-13T21:00:00.000Z"
             }
         },
         {
@@ -1835,23 +1844,26 @@
             "phase": "phase5_polish",
             "layer": "docs",
             "complexity": 1,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-48"],
             "blocks": [],
             "tags": ["phase5_polish", "docs"],
-            "files": ["docs/decisions/ADR-021-newsletter-dispatch-architecture.md"],
+            "files": [
+                "docs/decisions/ADR-027-newsletter-dispatch-architecture.md",
+                "docs/decisions/README.md"
+            ],
             "acceptanceCriteria": [
                 "ADR documents: decision to use BullMQ over QStash, reason for embedded worker vs separate service, Brevo batch API choice, HMAC token design",
                 "Records alternatives considered (QStash, dedicated worker process, Resend)",
                 "Documents tradeoffs and why BullMQ on existing Redis was chosen",
                 "ADR number does not conflict with existing ADRs (verify docs/decisions/ for next available number)"
             ],
-            "description": "Write an Architecture Decision Record documenting the dispatch engine choices. Key decisions: BullMQ over QStash (no new infra, same Redis), embedded worker vs separate process (simpler ops for MVP scale), Brevo batch API (single transport, no extra deps), HMAC token approach. Check existing ADR numbers before choosing ADR-021.",
+            "description": "Write an Architecture Decision Record documenting the dispatch engine choices. Key decisions: BullMQ over QStash (no new infra, same Redis), embedded worker vs separate process (simpler ops for MVP scale), Brevo batch API (single transport, no extra deps), HMAC token approach. ADR-027 selected (ADR-026 was the last assigned).",
             "qualityGate": { "lint": "n/a", "typecheck": "n/a", "tests": "n/a" },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-13T20:35:00.000Z",
+                "completed": "2026-05-13T20:50:00.000Z"
             }
         }
     ],
