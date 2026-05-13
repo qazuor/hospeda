@@ -1,6 +1,6 @@
 {
     "specId": "SPEC-106",
-    "title": "Docs Broken Internal Links — Baseline Cleanup",
+    "title": "Docs CI — Baseline Cleanup (Broken Links + Validate-Examples Hang)",
     "type": "chore",
     "complexity": "medium",
     "status": "draft",

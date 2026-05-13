@@ -1,24 +1,31 @@
 ---
 spec-id: SPEC-106
-title: Docs Broken Internal Links — Baseline Cleanup
+title: Docs CI — Baseline Cleanup (Broken Links + Validate-Examples Hang)
 type: chore
 complexity: medium
 status: draft
 created: 2026-05-13T03:00:00Z
-effort_estimate_hours: 4-12
+effort_estimate_hours: 6-16
 tags: [docs, ci, tech-debt, cleanup]
-extracted_from: SPEC-101 (uncovered by the check-links infinite-loop fix in commit `960aeb5ba`)
+extracted_from: SPEC-101 (uncovered by the check-links infinite-loop fix in commit `960aeb5ba` + post-fix audit revealing `validate-examples.ts` also hangs)
 ---
 
-# SPEC-106: Docs Broken Internal Links — Baseline Cleanup
+# SPEC-106: Docs CI — Baseline Cleanup (Broken Links + Validate-Examples Hang)
 
 ## Part 1 — Functional Specification
 
 ### 1. Overview & Goals
 
-**Goal:** Drive `pnpm docs:check-links` to exit 0 across the repository so the **Documentation CI** workflow stops being a permanent red check on every PR that touches `docs/**`, `apps/**/docs/**`, or `packages/**/docs/**`.
+**Goal:** Bring the **Documentation CI** workflow fully green. Two distinct issues:
+
+1. `pnpm docs:check-links` exits 0 across the repository (currently fails fast on 299 broken internal links).
+2. `pnpm docs:validate-examples` completes within the workflow timeout (currently hangs and gets cancelled at the 10-min cap).
+
+Once both are green, future PRs touching `docs/**`, `apps/**/docs/**`, or `packages/**/docs/**` stop having a permanent red check.
 
 **Why now:** SPEC-101 fixed an infinite-loop bug in `scripts/check-links.ts` (commit `960aeb5ba`). Pre-fix, the script hung on the first markdown file containing an external link, so it never completed and never reported broken internal links. Post-fix, the script runs in ~0.8s and reports **299 broken internal links** distributed across the repo. None of them live in SPEC-101's newsletter docs — they are all pre-existing tech debt that the script simply could not detect before.
+
+Post-fix audit also surfaced that `scripts/validate-examples.ts` was hanging silently in CI for the same 10-min cap. Different root cause (not regex iteration — likely TypeScript compiler API misuse: the script calls `ts.createProgram([virtualFileName], ...)` per code block, and TypeScript walks the filesystem looking for `tsconfig.json` and the virtual file path that does not exist, which is slow at best and may loop). Tracked in scope here so we close out Documentation CI in a single cleanup pass instead of two.
 
 **Why a new spec (not part of SPEC-101 or SPEC-103):**
 
@@ -34,7 +41,20 @@ extracted_from: SPEC-101 (uncovered by the check-links infinite-loop fix in comm
 - Improving the link-check script beyond what's needed to land green (the script already works after `960aeb5ba`).
 - Validating **external** links (http/https). The script only checks internal references; that policy stays.
 - Linting MD style (`pnpm lint:md:docs` is a separate green check).
-- Validating TypeScript code blocks in MD (`pnpm docs:validate-examples` already passes; that path's CI job hits the same 10-min cap as Check Internal Links but for a different — currently unknown — reason; out of scope here, file separately if it surfaces).
+- Adding a Markdown anchor-check (the link checker only resolves the file path, not `#anchor` fragments). Separate spec if we want it.
+
+### 2-bis. In scope — `validate-examples.ts` hang
+
+In addition to the broken-link cleanup, this spec also fixes `scripts/validate-examples.ts` so the workflow's **Validate TypeScript Examples** job lands green. Investigation steps:
+
+1. Reproduce the hang locally with `pnpm docs:validate-examples` against a single markdown file with a TypeScript code block. Confirm timing.
+2. Profile: is the slow path inside `ts.createProgram` (filesystem walk)? Per `createSourceFile`? Per language-service lookup?
+3. Likely root causes to test:
+   - Passing a non-existent virtual file path to `createProgram` triggers a recursive search for `tsconfig.json` from `cwd`.
+   - `getPreEmitDiagnostics` runs the full type-check, including resolving every transitive import — expensive when code blocks reference workspace types.
+   - One-program-per-block instead of a single Program for all blocks.
+4. Likely fix shape: either (a) ditch `getPreEmitDiagnostics` and rely on `sourceFile.parseDiagnostics` alone (syntax-only check, much faster), or (b) build a single Program with all virtual files and re-use it across blocks, or (c) call `ts.transpileModule` (which doesn't type-check but catches syntax errors quickly).
+5. Acceptance: `pnpm docs:validate-examples` finishes in under 60 seconds against the full repo, exits 0 (or surfaces real syntax errors with file:line:reason).
 
 ### 3. Current state (snapshot 2026-05-13)
 
@@ -111,7 +131,8 @@ Order proposed (largest first to maximize incremental progress visible in CI):
 | T-106-09 | Repair broken links in `packages/icons/` (13) | pending | 15-25 min |
 | T-106-10 | Repair broken links in `packages/seed/` + `packages/i18n/` + `docs/guides/` (23) | pending | 20-30 min |
 | T-106-11 | Repair broken links in remaining tail dirs (≤ 50) | pending | 30-45 min |
-| T-106-12 | Phase gate: `pnpm docs:check-links` exits 0 + Documentation CI green on a clean PR | pending | 10 min |
+| T-106-12 | Investigate + fix `validate-examples.ts` hang per §2-bis | pending | 1-3 h |
+| T-106-13 | Phase gate: `pnpm docs:check-links` AND `pnpm docs:validate-examples` exit 0, Documentation CI green on a clean PR | pending | 10 min |
 
 Per-task acceptance: the targeted directory contributes **0 broken links** to the next run of `pnpm docs:check-links`.
 
