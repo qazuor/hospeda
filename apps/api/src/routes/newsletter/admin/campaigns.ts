@@ -375,7 +375,7 @@ export const adminCreateCampaignRoute = createAdminRoute({
     responseSchema: NewsletterCampaignSchema,
     handler: async (ctx: Context, _params, body) => {
         const actor = getActorFromContext(ctx);
-        const campaignSvc = getDefaultCampaignService();
+        const campaignSvc = await getDefaultCampaignService();
         const parsed = CreateNewsletterCampaignSchema.parse(body);
 
         const result = await campaignSvc.create(actor, {
@@ -451,7 +451,7 @@ export const adminUpdateCampaignRoute = createAdminRoute({
     responseSchema: NewsletterCampaignSchema,
     handler: async (ctx: Context, params, body) => {
         const actor = getActorFromContext(ctx);
-        const campaignSvc = getDefaultCampaignService();
+        const campaignSvc = await getDefaultCampaignService();
         const id = params.id as string;
         const parsed = UpdateNewsletterCampaignSchema.parse(body);
 
@@ -488,7 +488,7 @@ export const adminDeleteCampaignRoute = createAdminRoute({
     responseSchema: z.null(),
     handler: async (ctx: Context, params) => {
         const actor = getActorFromContext(ctx);
-        const campaignSvc = getDefaultCampaignService();
+        const campaignSvc = await getDefaultCampaignService();
         const id = params.id as string;
 
         try {
@@ -535,7 +535,7 @@ export const adminTestSendCampaignRoute = createAdminRoute({
     successStatusCode: 200,
     handler: async (ctx: Context, params, body) => {
         const actor = getActorFromContext(ctx);
-        const campaignSvc = getDefaultCampaignService();
+        const campaignSvc = await getDefaultCampaignService();
         const id = params.id as string;
         const parsedBody = TestSendBodySchema.parse(body);
 
@@ -601,7 +601,7 @@ export const adminSendCampaignRoute = createAdminRoute({
     },
     handler: async (ctx: Context, params) => {
         const actor = getActorFromContext(ctx);
-        const campaignSvc = getDefaultCampaignService();
+        const campaignSvc = await getDefaultCampaignService();
         const id = params.id as string;
 
         try {
@@ -656,7 +656,7 @@ export const adminCancelCampaignRoute = createAdminRoute({
     successStatusCode: 200,
     handler: async (ctx: Context, params) => {
         const actor = getActorFromContext(ctx);
-        const campaignSvc = getDefaultCampaignService();
+        const campaignSvc = await getDefaultCampaignService();
         const id = params.id as string;
 
         try {
@@ -693,7 +693,7 @@ export const adminCampaignMetricsRoute = createAdminRoute({
     responseSchema: CampaignMetricsSchema,
     handler: async (ctx: Context, params) => {
         const actor = getActorFromContext(ctx);
-        const campaignSvc = getDefaultCampaignService();
+        const campaignSvc = await getDefaultCampaignService();
         const id = params.id as string;
 
         ctx.header('Cache-Control', 'no-store');
@@ -735,7 +735,7 @@ export const adminCampaignErrorsRoute = createAdminListRoute({
     responseSchema: FailedDeliveryItemSchema,
     handler: async (_ctx: Context, params, _body, query) => {
         const actor = getActorFromContext(_ctx);
-        const campaignSvc = getDefaultCampaignService();
+        const campaignSvc = await getDefaultCampaignService();
         const id = params.id as string;
         const { page, pageSize } = extractPaginationParams(query ?? {});
 

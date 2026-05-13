@@ -6,17 +6,20 @@ import { serve } from '@hono/node-server';
 import { validateBillingConfigOrThrow } from '@repo/billing';
 import { locales } from '@repo/i18n';
 import { ensureDefaultPromoCodes, initializeRevalidationService } from '@repo/service-core';
+import type { Worker } from 'bullmq';
 import { initApp } from './app';
 import { startCronScheduler } from './cron';
 import { createEntityResolver } from './lib/entity-resolver';
 import { closeSentry, initializeSentry } from './lib/sentry';
 import { initializeMediaProvider } from './services/media';
+import { getNewsletterDeliveryService } from './services/newsletter/delivery-factory';
 import { closeDatabase, initializeDatabase } from './utils/database';
 import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
 import { apiLogger } from './utils/logger';
-import { disconnectRedis } from './utils/redis';
+import { disconnectRedis, getRedisClient } from './utils/redis';
 import { destroyUserPermissionsCache } from './utils/user-permissions-cache';
+import { startNewsletterWorker } from './workers/newsletter-dispatch.worker';
 
 // Validate environment variables before starting the server
 validateApiEnv();
@@ -61,6 +64,10 @@ const startServer = async (): Promise<void> => {
 
         const app = initApp();
 
+        // Newsletter dispatch worker handle — populated below after serve() resolves.
+        // Hoisted here so gracefulShutdown can await its drain.
+        let newsletterWorker: Worker | undefined;
+
         // Start the server
         const server = serve(
             {
@@ -83,6 +90,52 @@ const startServer = async (): Promise<void> => {
                             error instanceof Error ? error.message : String(error)
                         );
                     });
+
+                    // Start the embedded BullMQ newsletter dispatch worker.
+                    // Requires Redis + HOSPEDA_EMAIL_API_KEY; logs a warning and
+                    // skips startup otherwise so dev environments without Docker
+                    // continue to boot the API normally.
+                    void (async () => {
+                        try {
+                            const redis = await getRedisClient();
+                            if (!redis) {
+                                apiLogger.warn(
+                                    'Newsletter dispatch worker not started — HOSPEDA_REDIS_URL is unset.'
+                                );
+                                return;
+                            }
+                            if (!env.HOSPEDA_EMAIL_API_KEY) {
+                                apiLogger.warn(
+                                    'Newsletter dispatch worker not started — HOSPEDA_EMAIL_API_KEY is unset.'
+                                );
+                                return;
+                            }
+                            // Cast walks past the pnpm-induced dual-version ioredis
+                            // friction; the runtime instance is structurally
+                            // compatible with BullMQ's ConnectionOptions.
+                            const deliveryService = getNewsletterDeliveryService(
+                                redis as unknown as Parameters<
+                                    typeof getNewsletterDeliveryService
+                                >[0]
+                            );
+                            newsletterWorker = startNewsletterWorker({
+                                redis: redis as unknown as Parameters<
+                                    typeof startNewsletterWorker
+                                >[0]['redis'],
+                                deliveryService,
+                                logger: apiLogger,
+                                concurrency: env.HOSPEDA_NEWSLETTER_WORKER_CONCURRENCY
+                            });
+                            apiLogger.info(
+                                `Newsletter dispatch worker started (concurrency=${env.HOSPEDA_NEWSLETTER_WORKER_CONCURRENCY}).`
+                            );
+                        } catch (error) {
+                            apiLogger.error(
+                                'Failed to start newsletter dispatch worker:',
+                                error instanceof Error ? error.message : String(error)
+                            );
+                        }
+                    })();
                 }
             }
         );
@@ -92,6 +145,21 @@ const startServer = async (): Promise<void> => {
             apiLogger.info(`Received ${signal}, shutting down gracefully...`);
 
             try {
+                // Drain in-flight BullMQ jobs first — must complete BEFORE Redis
+                // disconnects or the worker will throw on its outstanding ops.
+                if (newsletterWorker) {
+                    try {
+                        apiLogger.info('Closing newsletter dispatch worker...');
+                        await newsletterWorker.close();
+                        apiLogger.info('Newsletter dispatch worker closed.');
+                    } catch (error) {
+                        apiLogger.error(
+                            'Error closing newsletter dispatch worker:',
+                            error instanceof Error ? error.message : String(error)
+                        );
+                    }
+                }
+
                 // Flush Sentry events
                 await closeSentry(2000);
 
@@ -117,11 +185,12 @@ const startServer = async (): Promise<void> => {
                 process.exit(1);
             }
 
-            // Force close after 10 seconds
+            // Force close after 30 seconds — BullMQ worker.close() can take up
+            // to ~30s to drain in-flight jobs on a rolling deploy.
             setTimeout(() => {
                 apiLogger.error('Force closing server after timeout');
                 process.exit(1);
-            }, 10000);
+            }, 30_000);
         };
 
         // Handle shutdown signals

@@ -11,29 +11,27 @@
 import { ServiceErrorCode } from '@repo/schemas';
 import { NewsletterCampaignService, ServiceError } from '@repo/service-core';
 import type { INewsletterDeliveryService } from '@repo/service-core/services/newsletter/newsletter-campaign.service';
+import { getNewsletterDeliveryService } from '../../../services/newsletter/delivery-factory';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
+import { getRedisClient } from '../../../utils/redis';
 import { getDefaultNewsletterService } from '../protected/_singletons';
 
 let cachedCampaignService: NewsletterCampaignService | null = null;
 
 /**
- * Stub delivery service used in dev/test routes.
+ * Stub delivery service used as the fallback when Redis is not configured.
  *
- * `enqueueBatches` and `bulkSkipPending` are only reachable through the BullMQ
- * worker path — the route handlers themselves do not call them directly.
- * `sendTestEmail` delegates to the injected transport which is configured from
- * env in production and stubbed in tests.
- *
- * Any call to `enqueueBatches` or `bulkSkipPending` from a route context is a
- * programming error; this stub surfaces it as SERVICE_UNAVAILABLE so it is
- * immediately visible instead of silently discarded.
+ * Triggered when `HOSPEDA_REDIS_URL` is unset (dev without Docker, tests).
+ * Calls to `enqueueBatches` / `bulkSkipPending` / `sendTestEmail` surface
+ * a SERVICE_UNAVAILABLE error so misconfigured environments fail visibly
+ * instead of silently dropping work.
  */
 const stubDeliveryService: INewsletterDeliveryService = {
     async enqueueBatches(_input) {
         throw new ServiceError(
             ServiceErrorCode.SERVICE_UNAVAILABLE,
-            'BullMQ dispatch queue is not available in this context. Use the worker process for real sends.',
+            'BullMQ dispatch queue is not available (Redis not configured).',
             undefined,
             'BULLMQ_NOT_CONFIGURED'
         );
@@ -41,27 +39,15 @@ const stubDeliveryService: INewsletterDeliveryService = {
     async bulkSkipPending(_input) {
         throw new ServiceError(
             ServiceErrorCode.SERVICE_UNAVAILABLE,
-            'BullMQ dispatch queue is not available in this context.',
+            'BullMQ dispatch queue is not available (Redis not configured).',
             undefined,
             'BULLMQ_NOT_CONFIGURED'
         );
     },
     async sendTestEmail(_input) {
-        // In production this will use a real Brevo transport.
-        // For now surface a clear error so mis-configured apps fail visibly.
-        if (!env.HOSPEDA_EMAIL_API_KEY) {
-            throw new ServiceError(
-                ServiceErrorCode.SERVICE_UNAVAILABLE,
-                'Email transport is not configured. HOSPEDA_EMAIL_API_KEY must be set.',
-                undefined,
-                'EMAIL_NOT_CONFIGURED'
-            );
-        }
-        // Placeholder: real BrevoEmailTransport would be wired here (T-101-16).
-        // Until T-101-16 ships the route handler calls this and gets the error.
         throw new ServiceError(
             ServiceErrorCode.SERVICE_UNAVAILABLE,
-            'Test email transport not yet wired (T-101-16 pending). Ensure NewsletterDeliveryService is injected.',
+            'Newsletter delivery service is not configured (Redis or HOSPEDA_EMAIL_API_KEY missing).',
             undefined,
             'DELIVERY_SERVICE_NOT_CONFIGURED'
         );
@@ -72,11 +58,14 @@ const stubDeliveryService: INewsletterDeliveryService = {
  * Returns a process-wide {@link NewsletterCampaignService} instance.
  *
  * First call constructs the service with:
- * - A stub {@link INewsletterDeliveryService} that rejects `enqueueBatches`
- *   and `sendTestEmail` gracefully (test/dev guard) until T-101-16 wires the
- *   real BullMQ + Brevo transport.
- * - The shared {@link NewsletterSubscriberService} singleton from the protected
- *   routes (read-only `getEligibleForCampaign` does not need the HMAC secret).
+ * - The real {@link NewsletterDeliveryService} from the dispatch factory when
+ *   Redis is available — this is the production path; `enqueueBatches` writes
+ *   real BullMQ jobs and `sendTestEmail` uses the live Brevo transport.
+ * - A stub delivery service that rejects all calls with SERVICE_UNAVAILABLE
+ *   when Redis is unreachable — used in local dev without Docker and in tests.
+ * - The shared {@link NewsletterSubscriberService} singleton from the
+ *   protected routes (read-only `getEligibleForCampaign` does not need the
+ *   HMAC secret).
  *
  * Subsequent calls reuse the cached instance.
  *
@@ -84,22 +73,46 @@ const stubDeliveryService: INewsletterDeliveryService = {
  *   {@link env.HOSPEDA_NEWSLETTER_HMAC_SECRET} is unset (inherited from the
  *   subscriber service singleton).
  */
-export function getDefaultCampaignService(): NewsletterCampaignService {
-    if (!cachedCampaignService) {
-        const subscriberService = getDefaultNewsletterService();
-        cachedCampaignService = new NewsletterCampaignService(
-            { logger: apiLogger },
-            {
-                batchSize: env.HOSPEDA_NEWSLETTER_BATCH_SIZE,
-                softCapDays: env.HOSPEDA_NEWSLETTER_SOFTCAP_DAYS,
-                deliveryService: stubDeliveryService,
-                // Cast: getDefaultNewsletterService() returns NewsletterSubscriberService
-                // which is exactly the type expected by the campaign service options.
-                // biome-ignore lint/suspicious/noExplicitAny: subscriber service singleton shares the concrete class
-                subscriberService: subscriberService as any
-            }
+export async function getDefaultCampaignService(): Promise<NewsletterCampaignService> {
+    if (cachedCampaignService) return cachedCampaignService;
+
+    const subscriberService = getDefaultNewsletterService();
+
+    let deliveryService: INewsletterDeliveryService = stubDeliveryService;
+    try {
+        const redis = await getRedisClient();
+        if (redis && env.HOSPEDA_EMAIL_API_KEY) {
+            // Cast: pnpm sometimes resolves ioredis at two patch versions
+            // (5.10.0 here vs the copy bullmq pulls). BullMQ's
+            // `ConnectionOptions` accepts the same instance structurally —
+            // the cast walks past the duplicated-type-identity friction.
+            deliveryService = getNewsletterDeliveryService(
+                redis as unknown as Parameters<typeof getNewsletterDeliveryService>[0]
+            );
+        } else {
+            apiLogger.warn(
+                'Newsletter delivery service falling back to stub (Redis or HOSPEDA_EMAIL_API_KEY missing).'
+            );
+        }
+    } catch (error) {
+        apiLogger.error(
+            'Failed to initialise NewsletterDeliveryService — falling back to stub',
+            error instanceof Error ? error.message : String(error)
         );
     }
+
+    cachedCampaignService = new NewsletterCampaignService(
+        { logger: apiLogger },
+        {
+            batchSize: env.HOSPEDA_NEWSLETTER_BATCH_SIZE,
+            softCapDays: env.HOSPEDA_NEWSLETTER_SOFTCAP_DAYS,
+            deliveryService,
+            // Cast: getDefaultNewsletterService() returns NewsletterSubscriberService
+            // which is exactly the type expected by the campaign service options.
+            // biome-ignore lint/suspicious/noExplicitAny: subscriber service singleton shares the concrete class
+            subscriberService: subscriberService as any
+        }
+    );
     return cachedCampaignService;
 }
 
