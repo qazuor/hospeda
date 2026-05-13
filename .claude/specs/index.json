@@ -752,6 +752,14 @@
             "complexity": "high",
             "status": "draft",
             "path": "SPEC-105-e2e-nightly-suite-repair"
+        },
+        {
+            "specId": "SPEC-106",
+            "title": "Docs Broken Internal Links \u2014 Baseline Cleanup",
+            "type": "chore",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-106-docs-broken-links-cleanup"
         }
     ]
 }
