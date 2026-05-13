@@ -739,22 +739,22 @@
         {
             "id": "T-035",
             "title": "Replace dynamic 'await import()' with static imports across ~40 test files",
-            "description": "Apply the pattern established in TestimonialsCarousel fix: replace per-test 'await import(...)' with a top-level static import; vitest's vi.mock hoisting still wires mocks. Targets: ~13 in apps/web/test, ~6 in apps/admin/test, ~25 across packages/*/test. Each is a low-risk mechanical edit. Spec ref: 3.B.6 item 4.",
-            "status": "pending",
+            "description": "Apply the pattern established in TestimonialsCarousel fix: replace per-test 'await import(...)' with a top-level static import; vitest's vi.mock hoisting still wires mocks. Targets: ~13 in apps/web/test, ~6 in apps/admin/test, ~25 across packages/*/test. Each is a low-risk mechanical edit. Spec ref: 3.B.6 item 4. RESOLVED 2026-05-13: 42 test files transformed via /tmp/t035-transform.py. Reference pattern (TestimonialsCarousel.test.tsx) had no transformable patterns left — already done in original fix. The only remaining `await import(` in the test tree is a JSON import with `assert: { type: json }` at packages/seed/test/example/userBookmarkCollections.seed.test.ts:720, deliberately left dynamic. Biome lint clean post auto-fix (38 files needed import-order + blank-line normalization).",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": [],
             "tags": ["testing", "perf", "section-3.B"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
+                "lint": "passed",
                 "typecheck": null,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-13T01:20:00.000Z",
+                "completed": "2026-05-13T01:35:00.000Z"
             }
         },
         {
@@ -1970,9 +1970,9 @@
     ],
     "summary": {
         "total": 92,
-        "pending": 52,
+        "pending": 51,
         "inProgress": 0,
-        "completed": 25,
+        "completed": 26,
         "blocked": 15,
         "averageComplexity": 2.2
     }

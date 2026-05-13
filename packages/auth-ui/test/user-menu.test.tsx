@@ -8,6 +8,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { authLogger } from '../src/logger';
 import type { AuthSession, SessionUser } from '../src/types';
 import { UserMenu } from '../src/user-menu';
 import type { UserMenuProps } from '../src/user-menu';
@@ -324,7 +325,7 @@ describe('UserMenu', () => {
         it('handles sign out error gracefully', async () => {
             // Arrange
             const user = userEvent.setup();
-            const { authLogger } = await import('../src/logger');
+
             const error = new Error('Sign out failed');
             const onSignOut = vi.fn().mockRejectedValue(error);
             render(<UserMenu {...createProps({ onSignOut })} />);

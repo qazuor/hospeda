@@ -11,6 +11,7 @@
 import { ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ServiceError } from '../../src/types';
+import { withServiceTransaction } from '../../src/utils/transaction';
 import '../setupTest';
 
 // ---------------------------------------------------------------------------
@@ -38,8 +39,6 @@ vi.mock('drizzle-orm', () => ({
         }
     )
 }));
-
-const { withServiceTransaction } = await import('../../src/utils/transaction');
 
 // ---------------------------------------------------------------------------
 // Tests

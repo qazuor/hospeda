@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 /**
  * T-042: Rate limiting verification tests.
  *
@@ -12,7 +13,7 @@
  * All tests use the same pure async helper pattern established in
  * `test/hooks/useFeedbackSubmit.test.ts` — no DOM rendering required.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { FEEDBACK_CONFIG } from '../../src/config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../../src/config/strings.js';
 import type { FeedbackFormData } from '../../src/schemas/feedback.schema.js';
 
@@ -289,13 +290,11 @@ describe('Rate limiting: submit hook handles 429 responses', () => {
 
 describe('Rate limiting: FEEDBACK_CONFIG rate limit setting', () => {
     it('should have a numeric rateLimit value in FEEDBACK_CONFIG', async () => {
-        const { FEEDBACK_CONFIG } = await import('../../src/config/feedback.config.js');
         expect(typeof FEEDBACK_CONFIG.rateLimit).toBe('number');
         expect(FEEDBACK_CONFIG.rateLimit).toBeGreaterThan(0);
     });
 
     it('FEEDBACK_CONFIG.rateLimit should be 30 (max reports per IP per hour)', async () => {
-        const { FEEDBACK_CONFIG } = await import('../../src/config/feedback.config.js');
         expect(FEEDBACK_CONFIG.rateLimit).toBe(30);
     });
 });

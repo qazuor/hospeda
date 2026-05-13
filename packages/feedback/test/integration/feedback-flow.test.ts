@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 /**
  * Integration tests for @repo/feedback package.
  *
@@ -5,7 +6,7 @@
  * exports are consistent with each other and that the data contracts
  * between modules are aligned. No DOM rendering occurs.
  */
-import { describe, expect, it } from 'vitest';
+import * as exports from '../../src/index';
 
 import {
     APP_SOURCE_IDS,
@@ -27,7 +28,6 @@ import {
 
 describe('Export verification', () => {
     it('should export all component constructors from the package index', async () => {
-        const exports = await import('../../src/index');
         expect(exports.FeedbackFAB).toBeDefined();
         expect(exports.FeedbackForm).toBeDefined();
         expect(exports.FeedbackModal).toBeDefined();
@@ -37,7 +37,6 @@ describe('Export verification', () => {
     });
 
     it('should export all hooks from the package index', async () => {
-        const exports = await import('../../src/index');
         expect(typeof exports.useAutoCollect).toBe('function');
         expect(typeof exports.useConsoleCapture).toBe('function');
         expect(typeof exports.useKeyboardShortcut).toBe('function');
@@ -45,7 +44,6 @@ describe('Export verification', () => {
     });
 
     it('should export all config constants from the package index', async () => {
-        const exports = await import('../../src/index');
         expect(exports.FEEDBACK_CONFIG).toBeDefined();
         expect(exports.FEEDBACK_STRINGS).toBeDefined();
         expect(exports.REPORT_TYPES).toBeDefined();
@@ -55,7 +53,6 @@ describe('Export verification', () => {
     });
 
     it('should export all schemas and schema constants from the package index', async () => {
-        const exports = await import('../../src/index');
         expect(exports.feedbackFormSchema).toBeDefined();
         expect(exports.feedbackEnvironmentSchema).toBeDefined();
         expect(exports.feedbackErrorInfoSchema).toBeDefined();
@@ -65,7 +62,6 @@ describe('Export verification', () => {
     });
 
     it('should export all utility functions from the package index', async () => {
-        const exports = await import('../../src/index');
         expect(typeof exports.collectEnvironmentData).toBe('function');
         expect(typeof exports.serializeFeedbackParams).toBe('function');
         expect(typeof exports.parseFeedbackParams).toBe('function');
@@ -276,7 +272,6 @@ describe('FAB and Form props contract alignment', () => {
         // This is a structural test — we verify both exports exist and are functions.
         // The actual prop type compatibility is enforced at compile time by TypeScript;
         // here we verify the runtime shapes are defined.
-        const exports = await import('../../src/index');
 
         expect(typeof exports.FeedbackFAB).toBe('function');
         expect(typeof exports.FeedbackForm).toBe('function');
