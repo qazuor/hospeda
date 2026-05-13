@@ -51,9 +51,10 @@ const startServer = async (): Promise<void> => {
         // by the seed (~600+ rows) for any actor resolution to succeed.
         // If the count is 0 the deploy is broken — crash-loop so the
         // supervisor surfaces the misconfiguration immediately.
-        const [{ value: rolePermissionCount }] = await getDb()
+        const rolePermissionCountRows = await getDb()
             .select({ value: count() })
             .from(rolePermission);
+        const rolePermissionCount = rolePermissionCountRows[0]?.value ?? 0;
         if (rolePermissionCount === 0) {
             apiLogger.error(
                 'STARTUP HEALTHCHECK FAILED: role_permission table is empty. ' +
