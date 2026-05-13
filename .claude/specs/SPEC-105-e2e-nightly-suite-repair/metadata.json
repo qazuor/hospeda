@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-105",
+    "title": "E2E Nightly Test Suite Repair",
+    "type": "chore",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-05-13T00:27:41Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["e2e", "testing", "ci", "investigation", "test-infrastructure"]
+}

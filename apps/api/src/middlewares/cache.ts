@@ -79,12 +79,15 @@ const CACHEABLE_STATUS_CODES: ReadonlySet<number> = new Set([200, 404]);
  */
 function generateCacheKey({
     path,
+    queryString,
     authorization,
     publicEndpoints,
     privateEndpoints,
     noCacheEndpoints
 }: {
     readonly path: string;
+    /** Normalised query string (no leading `?`), or empty string. */
+    readonly queryString: string;
     readonly authorization: string | undefined;
     readonly publicEndpoints: readonly string[];
     readonly privateEndpoints: readonly string[];
@@ -93,11 +96,17 @@ function generateCacheKey({
     const isNoCache = noCacheEndpoints.some((endpoint) => path.startsWith(endpoint));
     if (isNoCache) return null;
 
+    // SPEC-103 T-089 / T-091: include the query string in the cache key.
+    // Without this, requests to the same path with different query params
+    // (e.g. ?entityId=A vs ?entityId=B, or ?withCounts=true vs without)
+    // collide on a single cache slot and the first response wins.
+    const suffix = queryString.length > 0 ? `?${queryString}` : '';
+
     const isPublic = publicEndpoints.some((endpoint) => path.startsWith(endpoint));
-    if (isPublic) return `public:${path}`;
+    if (isPublic) return `public:${path}${suffix}`;
 
     const isPrivate = privateEndpoints.some((endpoint) => path.startsWith(endpoint));
-    if (isPrivate) return `private:${path}:${authorization ?? 'anonymous'}`;
+    if (isPrivate) return `private:${path}${suffix}:${authorization ?? 'anonymous'}`;
 
     // Unclassified endpoints are not cached
     return null;
@@ -134,9 +143,14 @@ export const createCacheMiddleware = (): MiddlewareHandler<AppBindings> => {
 
         const path = c.req.path;
         const authorization = c.req.header('Authorization');
+        // c.req.url is the full URL including query string. Splitting on
+        // the first `?` gives us the query without the leading mark; an
+        // empty string when there's no query.
+        const queryString = c.req.url.split('?')[1] ?? '';
 
         const key = generateCacheKey({
             path,
+            queryString,
             authorization,
             publicEndpoints: PUBLIC_CACHE_ENDPOINTS,
             privateEndpoints: PRIVATE_CACHE_ENDPOINTS,

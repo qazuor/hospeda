@@ -217,16 +217,18 @@ describe('PlanDialog', () => {
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
         });
 
-        // SPEC-103 T-090: surfaced by post-merge CI run 25758581495 on 2026-05-12.
-        // Test exceeds the 5000ms vitest default before the form fields are
-        // located. Likely a missing await on a Radix Select / shadcn Dialog
-        // mount race, or a userEvent.setup() pointer-event polyfill issue
-        // under jsdom. Repro is consistent in CI; needs local reproduction
-        // + RTL investigation. Skipping inline to keep the green-build gate
-        // of SPEC-103 §3.A.0 unblocked.
-        it.skipIf(true)('calls onSubmit with correct payload on valid submit', async () => {
+        // SPEC-103 T-090 RESOLVED: the original test used `user.type()` 4
+        // times across the form fields (~45 keypresses total). In jsdom
+        // each keystroke triggers a TanStack Form state update + Zod
+        // validation re-render, which compounds well past the 5000ms
+        // vitest default. Replaced with `fireEvent.change` for the
+        // value-setting steps — same final state, single render per
+        // field. userEvent.setup() is still used for the few interactions
+        // (Select dropdowns, button clicks) that genuinely benefit from
+        // the higher-fidelity simulation, but for plain text inputs the
+        // change event is faithful and orders of magnitude faster.
+        it('calls onSubmit with correct payload on valid submit', async () => {
             // Arrange
-            const user = userEvent.setup();
             const onSubmit = vi.fn().mockResolvedValue(undefined);
 
             renderWithProviders(
@@ -238,27 +240,26 @@ describe('PlanDialog', () => {
                 />
             );
 
-            // Act - fill required fields
-            const slugInput = screen.getByLabelText(/admin-billing\.plans\.dialog\.fields\.slug/);
-            const nameInput = screen.getByLabelText(/admin-billing\.plans\.dialog\.fields\.name/);
+            // Act - fill required fields via fireEvent.change (fast path).
+            const slugInput = screen.getByLabelText(
+                /admin-billing\.plans\.dialog\.fields\.slug/
+            ) as HTMLInputElement;
+            const nameInput = screen.getByLabelText(
+                /admin-billing\.plans\.dialog\.fields\.name/
+            ) as HTMLInputElement;
             const descriptionInput = screen.getByLabelText(
                 /admin-billing\.plans\.dialog\.fields\.description/
-            );
+            ) as HTMLInputElement | HTMLTextAreaElement;
             const monthlyArsInput = screen.getByLabelText(
                 /admin-billing\.plans\.dialog\.fields\.monthlyArs/
-            );
+            ) as HTMLInputElement;
 
-            await user.clear(slugInput);
-            await user.type(slugInput, 'test-plan');
-
-            await user.clear(nameInput);
-            await user.type(nameInput, 'Test Plan');
-
-            await user.clear(descriptionInput);
-            await user.type(descriptionInput, 'A test plan description');
-
-            await user.clear(monthlyArsInput);
-            await user.type(monthlyArsInput, '5000');
+            fireEvent.change(slugInput, { target: { value: 'test-plan' } });
+            fireEvent.change(nameInput, { target: { value: 'Test Plan' } });
+            fireEvent.change(descriptionInput, {
+                target: { value: 'A test plan description' }
+            });
+            fireEvent.change(monthlyArsInput, { target: { value: '5000' } });
 
             // Act - submit the form via fireEvent (TanStack Form handleSubmit is async)
             const form = screen.getByRole('dialog').querySelector('form');

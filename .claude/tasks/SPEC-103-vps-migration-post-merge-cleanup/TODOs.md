@@ -1,13 +1,17 @@
 # SPEC-103: VPS Migration Post-Merge Cleanup & Hardening Backlog
 
-## Progress: 11/92 tasks (12%)
+## Progress: 25/92 tasks (27%)
 
-**Average Complexity:** 2.1 / 4 (max)
+**Average Complexity:** 2.2 / 4 (max)
 **Total effort estimate:** ~57-90h spread over weeks-months post-merge
-**Critical path:** T-008 → T-009 → T-010 → T-063 → T-068 → T-069 → T-070 → T-071 (8 steps; beta migration chain)
-**Parallel tracks:** 8 (section 3.A.0/3.A.1/3.A.2/3.A.4/3.A.5/3.B/3.C/3.D/3.E/3.F/3.G/3.H — most are independent)
+**Parallel tracks:** mostly independent across sections 3.A..3.H
 
 **Status legend:** `[ ]` pending · `[~]` in-progress · `[x]` completed · `[!]` blocked
+
+### Tasks moved to new specs (2026-05-13)
+
+- **T-034** (E2E nightly cron re-enable) → moved to [SPEC-105](../../specs/SPEC-105-e2e-nightly-suite-repair/spec.md). Unbounded investigation scope (6-30h estimated); deserves its own phased plan.
+- **T-060 → T-071** (beta migration script, 12 tasks) → moved to [SPEC-104](../../specs/SPEC-104-beta-to-prod-data-migration/spec.md). Delicate data feature with FK ordering / idempotency / dry-run requirements; deserves its own design + testing artifacts. Renumbered T-104-01..T-104-12 in the new spec.
 
 ---
 
@@ -70,10 +74,10 @@
 ### CI minutes optimization (3.B.6)
 
 - [x] **T-032** (4) — CI: upload build artifact from `build` job, download in downstream jobs. ✅ test-unit timeout reverted 30→15.
-- [ ] **T-033** (3) — Investigate `docs.yml` hangs + add hard timeout.
-- [ ] **T-034** (4) — Re-enable E2E nightly cron after diagnosing root cause.
+- [x] **T-033** (3) — Investigate `docs.yml` hangs + add hard timeout. ✅
+- [!] **T-034** (4) — MOVED TO SPEC-105 (was: Re-enable E2E nightly cron after diagnosing root cause.)
 - [ ] **T-035** (3) — Replace dynamic `await import()` with static imports across ~40 test files.
-- [ ] **T-036** (2) — Consolidate guards + docs CI jobs into one.
+- [x] **T-036** (2) — Consolidate guards + docs CI jobs into one. ✅
 
 ---
 
@@ -81,10 +85,10 @@
 
 ### Unit tests (3.C.1)
 
-- [ ] **T-037** (2) — Set up vitest/bun-test config for `scripts/server-tools/`. Blocks: T-038, T-039, T-040.
-- [ ] **T-038** (2) — Unit tests for `resolveTarget(argv)`. Blocked by: T-037.
-- [ ] **T-039** (3) — Unit tests for `getAppResourceName` / `getDbResourceName` / `getDbCredentials`. Blocked by: T-037.
-- [ ] **T-040** (2) — Unit tests for dotenv parser. Blocked by: T-037. Blocks: T-053.
+- [x] **T-037** (2) — Set up vitest/bun-test config for `scripts/server-tools/`. Blocks: T-038, T-039, T-040. ✅
+- [x] **T-038** (2) — Unit tests for `resolveTarget(argv)`. Blocked by: T-037. ✅
+- [x] **T-039** (3) — Unit tests for `getAppResourceName` / `getDbResourceName` / `getDbCredentials`. Blocked by: T-037. ✅
+- [x] **T-040** (2) — Unit tests for dotenv parser. Blocked by: T-037. Blocks: T-053. ✅
 
 ### Smoke 14 hops commands against `--target=staging` (3.C.2)
 
@@ -112,7 +116,7 @@
 
 ## 3.D — Auth / OAuth (~2h + SPEC-102 separate)
 
-- [ ] **T-055** (3) — Export `parseTrustedOrigins` + add unit tests covering 6 cases.
+- [x] **T-055** (3) — Export `parseTrustedOrigins` + add unit tests covering 6 cases. ✅
 - [ ] **T-056** (3) — Create staging-specific Google OAuth client + update hospeda-api-staging env.
 - [ ] **T-057** (3) — Create staging-specific Facebook app + update hospeda-api-staging env.
 - [ ] **T-058** (2) — Validate per-env OAuth isolation: revoking staging client doesn't lock prod. Blocked by: T-056, T-057.
@@ -124,23 +128,23 @@
 
 ### Beta migration script (3.E.1)
 
-- [ ] **T-060** (3) — Scaffold `scripts/migrate-staging-to-prod.ts` (CLI + DB conns + SEED_TIMESTAMP filter). Blocks: T-061..T-068.
-- [ ] **T-061** (3) — Migrate users (filter by `created_at > SEED_TIMESTAMP`). Blocked by: T-060.
-- [ ] **T-062** (3) — Migrate accounts rows linked to migrated users. Blocked by: T-061.
-- [ ] **T-063** (4) — Migrate accommodations + remap `destination_id` by slug. Blocked by: T-061, **T-010**.
-- [ ] **T-064** (2) — Migrate posts owned by migrated users. Blocked by: T-061.
-- [ ] **T-065** (2) — Migrate events owned by migrated users. Blocked by: T-061.
-- [ ] **T-066** (2) — Migrate reviews authored by migrated users. Blocked by: T-061, T-063.
-- [ ] **T-067** (2) — Migrate bookmarks of migrated users. Blocked by: T-061, T-063.
-- [ ] **T-068** (2) — Add dry-run (default) + `--execute` flag with confirmation prompt. Blocked by: T-063..T-067.
-- [ ] **T-069** (2) — Add count verification + post-migration summary report. Blocked by: T-068.
-- [ ] **T-070** (3) — Test migration script against snapshot pair (clone staging into clone prod). Blocked by: T-069.
-- [ ] **T-071** (2) — Document migration runbook. Blocked by: T-070.
+- [!] **T-060** (3) — MOVED TO SPEC-104 (was: Scaffold `scripts/migrate-staging-to-prod.ts` (CLI + DB conns + SEED_TIMESTAMP filter). Blocks: T-061..T-068.)
+- [!] **T-061** (3) — MOVED TO SPEC-104 (was: Migrate users (filter by `created_at > SEED_TIMESTAMP`). Blocked by: T-060.)
+- [!] **T-062** (3) — MOVED TO SPEC-104 (was: Migrate accounts rows linked to migrated users. Blocked by: T-061.)
+- [!] **T-063** (4) — MOVED TO SPEC-104 (was: Migrate accommodations + remap `destination_id` by slug. Blocked by: T-061, **T-010**.)
+- [!] **T-064** (2) — MOVED TO SPEC-104 (was: Migrate posts owned by migrated users. Blocked by: T-061.)
+- [!] **T-065** (2) — MOVED TO SPEC-104 (was: Migrate events owned by migrated users. Blocked by: T-061.)
+- [!] **T-066** (2) — MOVED TO SPEC-104 (was: Migrate reviews authored by migrated users. Blocked by: T-061, T-063.)
+- [!] **T-067** (2) — MOVED TO SPEC-104 (was: Migrate bookmarks of migrated users. Blocked by: T-061, T-063.)
+- [!] **T-068** (2) — MOVED TO SPEC-104 (was: Add dry-run (default) + `--execute` flag with confirmation prompt. Blocked by: T-063..T-067.)
+- [!] **T-069** (2) — MOVED TO SPEC-104 (was: Add count verification + post-migration summary report. Blocked by: T-068.)
+- [!] **T-070** (3) — MOVED TO SPEC-104 (was: Test migration script against snapshot pair (clone staging into clone prod). Blocked by: T-069.)
+- [!] **T-071** (2) — MOVED TO SPEC-104 (was: Document migration runbook. Blocked by: T-070.)
 
 ### Other DB ops
 
 - [ ] **T-072** (4) — **DEFERRED**: Implement prod→staging data sync + sanitize-staging script (post-launch, ~1 month).
-- [ ] **T-073** (3) — Add API startup DB healthcheck on `role_permission` count.
+- [x] **T-073** (3) — Add API startup DB healthcheck on `role_permission` count. ✅
 - [ ] **T-074** (2) — Smoke API startup healthcheck (empty role_permission → crash-loop). Blocked by: T-073.
 
 ---
@@ -155,9 +159,9 @@
 ## 3.G — Future improvements (~10h, mostly deferred)
 
 - [ ] **T-077** (3) — Configure Coolify DNS-01 challenge with Cloudflare API token.
-- [ ] **T-078** (3) — Add GPG symmetric encryption to `scripts/backup/postgres-to-r2.sh`.
-- [ ] **T-079** (3) — Add GPG encryption to `scripts/server-tools/src/commands/db-backup-now.ts`.
-- [ ] **T-080** (3) — Add GPG decryption to `scripts/server-tools/src/commands/db-restore.ts`. Blocked by: T-078, T-079.
+- [x] **T-078** (3) — Add GPG symmetric encryption to `scripts/backup/postgres-to-r2.sh`. ✅
+- [x] **T-079** (3) — Add GPG encryption to `scripts/server-tools/src/commands/db-backup-now.ts`. ✅
+- [x] **T-080** (3) — Add GPG decryption to `scripts/server-tools/src/commands/db-restore.ts`. Blocked by: T-078, T-079. ✅
 - [ ] **T-081** (1) — Add R2 lifecycle rule: delete `manual/*` after 30 days.
 - [ ] **T-082** (4) — **DEFERRED**: Implement hops `cron-edit` command (V2 backlog, requires backend support).
 - [ ] **T-083** (4) — **DEFERRED**: Implement hops SshRunner (laptop-to-VPS ops).
@@ -178,9 +182,9 @@
 
 These tasks were not in the original 33-item spec. They were uncovered when CI billing was restored and the unit-test matrix actually ran for the first time on staging HEAD. Skipped inline with `it.skipIf(true)` referencing each task ID; the failures are pre-existing on `staging @ 3a86aa0a7`, not regressions from SPEC-103 batch 1.
 
-- [ ] **T-089** (3) — Investigate + fix `apps/api/test/routes/tag/post-tag.test.ts:296` (`?withCounts=true` spy never invoked). Likely SPEC-086 Tag System regression.
-- [ ] **T-090** (3) — Investigate + fix `apps/admin/test/integration/plan-dialog.test.tsx:220` (5000ms timeout before form fields located). Likely RTL/Radix Select/userEvent issue.
-- [ ] **T-091** (3) — Investigate + fix `apps/api/test/routes/user-bookmark/checkBulkAndNotesAndCount.test.ts:502` (entire `publicCount` describe block now skipped — 5 inner tests TC16-TC21 fail because route bypasses mock AND validation). Likely public-path mock/factory gap.
+- [x] **T-089** (3) — Investigate + fix `apps/api/test/routes/tag/post-tag.test.ts:296` (`?withCounts=true` spy never invoked). Likely SPEC-086 Tag System regression. ✅
+- [x] **T-090** (3) — Investigate + fix `apps/admin/test/integration/plan-dialog.test.tsx:220` (5000ms timeout before form fields located). Likely RTL/Radix Select/userEvent issue. ✅
+- [x] **T-091** (3) — Investigate + fix `apps/api/test/routes/user-bookmark/checkBulkAndNotesAndCount.test.ts:502` (entire `publicCount` describe block now skipped — 5 inner tests TC16-TC21 fail because route bypasses mock AND validation). Likely public-path mock/factory gap. ✅
 - [x] **T-092** (1) — Remove husky v10 deprecation lines from `.husky/post-checkout` (follow-up to T-029 which only covered pre-commit + post-commit). ✅
 
 ---

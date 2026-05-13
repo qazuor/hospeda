@@ -18,6 +18,7 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app.js';
+import { clearCache } from '../../../src/middlewares/cache';
 import type { AppOpenAPI } from '../../../src/types.js';
 
 // ─── Hoisted mocks ──────────────────────────────────────────────────────────
@@ -499,20 +500,14 @@ describe('PATCH /api/v1/protected/user-bookmarks/:id — updateNotes', () => {
 // GET /api/v1/public/user-bookmarks/count — public count
 // =============================================================================
 
-// SPEC-103 T-091: surfaced by post-merge CI runs 25758581495 + 25760643096.
-// 5 tests in this block fail (TC16, TC17, TC18, TC19, TC20, TC21 in shard 4).
-// `mockBookmarkService.countBookmarksForEntity` is set to resolve with the
-// per-test mocked count, but the response body always returns count=5 — the
-// mock is not being applied to the public path. TC18-TC21 expect a 400
-// validation error but receive 200 with count=5, confirming the public
-// route bypasses both the mock AND the validation pipeline that the bulkCheck
-// path goes through. TC15 (route registration smoke) passes because it only
-// asserts !== 404. Skipping the WHOLE describe block instead of per-test so
-// the next operator picks up a single coherent investigation. Hypothesis:
-// the public count route either calls a different service method than the
-// mock targets, or the mock factory only covers the auth-required paths
-// (TC1-TC14) and was never extended to public. Investigation in T-091.
-describe.skipIf(true)('GET /api/v1/public/user-bookmarks/count — publicCount', () => {
+// SPEC-103 T-091 RESOLVED: the public count route's cache middleware
+// was keying entries by path-only (`public:${path}`), so TC15 cached
+// `{count:5}` and TC16-TC21 (same path, different query params) all
+// served the cached 200 response instead of the per-test mock. Fixed
+// in cache.ts by appending the query string to the cache key. Tests
+// also call `clearCache()` in beforeEach as defense in depth so a
+// future cache regression surfaces here.
+describe('GET /api/v1/public/user-bookmarks/count — publicCount', () => {
     let app: AppOpenAPI;
 
     beforeAll(() => {
@@ -521,6 +516,10 @@ describe.skipIf(true)('GET /api/v1/public/user-bookmarks/count — publicCount',
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // SPEC-103 T-091: the cache middleware persists entries across
+        // tests. Without this, the first test cached response leaks into
+        // subsequent tests despite different query params.
+        clearCache();
     });
 
     // =========================================================================
