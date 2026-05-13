@@ -362,6 +362,52 @@ Before running the migration script, in prod:
 
 Alternative: write a dedicated "prod destinations" seed in `packages/seed/src/data/destination/prod/` separate from `example/`, and a new CLI flag `--prod-destinations` that loads only that file set. Worth doing if the curated prod destinations diverge significantly from the example.
 
+#### Curated prod destinations inventory (as of 2026-05-13)
+
+Verified slug parity between staging and prod: **27 destinations on both sides, diff empty**.
+
+Region: Entre Ríos province (Litoral argentino) and adjacent administrative areas. Curated for the launch market.
+
+| # | Slug | Notes |
+|---|---|---|
+| 1 | `argentina` | Country-level anchor (parent scope) |
+| 2 | `caseros` | |
+| 3 | `ceibas` | |
+| 4 | `chajari` | |
+| 5 | `colon` | |
+| 6 | `concepcion-del-uruguay` | Primary launch city |
+| 7 | `concordia` | |
+| 8 | `departamento-uruguay` | Administrative region containing Concepción del Uruguay |
+| 9 | `entre-rios` | Province-level anchor |
+| 10 | `federacion` | |
+| 11 | `gualeguay` | |
+| 12 | `gualeguaychu` | |
+| 13 | `ibicuy` | |
+| 14 | `larroque` | |
+| 15 | `liebig` | |
+| 16 | `litoral-argentino` | Region-level anchor |
+| 17 | `rosario-del-tala` | |
+| 18 | `san-jose` | |
+| 19 | `san-justo` | |
+| 20 | `san-salvador` | |
+| 21 | `santa-ana` | |
+| 22 | `ubajay` | |
+| 23 | `urdinarrain` | |
+| 24 | `victoria` | |
+| 25 | `villa-elisa` | |
+| 26 | `villa-paranacito` | |
+| 27 | `villaguay` | |
+
+#### Verification command (re-run periodically)
+
+```bash
+hops psql --target=prod -t 'SELECT slug FROM destinations WHERE deleted_at IS NULL ORDER BY slug;' > /tmp/prod-destinations.txt
+hops psql --target=staging -t 'SELECT slug FROM destinations WHERE deleted_at IS NULL ORDER BY slug;' > /tmp/staging-destinations.txt
+diff /tmp/prod-destinations.txt /tmp/staging-destinations.txt
+```
+
+Diff should be empty. If non-empty, the migration script (SPEC-104) will fail to remap `destination_id` for any accommodation whose destination slug only exists on one side. Run this check pre-cutover.
+
 ### 10.5 Reviews ON seed entities (data loss)
 
 Reviews/bookmarks that beta testers create on **seed** accommodations (the demo content) cannot be preserved because:
