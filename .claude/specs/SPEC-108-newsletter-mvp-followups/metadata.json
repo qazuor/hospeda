@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-108",
+    "title": "Newsletter MVP — Post-Merge Follow-Ups",
+    "type": "chore",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-13T07:30:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["newsletter", "tech-debt", "quality", "test-infra"]
+}

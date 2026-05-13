@@ -760,6 +760,14 @@
             "complexity": "medium",
             "status": "draft",
             "path": "SPEC-106-docs-broken-links-cleanup"
+        },
+        {
+            "specId": "SPEC-108",
+            "title": "Newsletter MVP \u2014 Post-Merge Follow-Ups",
+            "type": "chore",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-108-newsletter-mvp-followups"
         }
     ]
 }
