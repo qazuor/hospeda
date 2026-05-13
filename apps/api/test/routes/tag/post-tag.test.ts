@@ -20,6 +20,7 @@ import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app.js';
+import { clearCache } from '../../../src/middlewares/cache';
 import type { AppOpenAPI } from '../../../src/types.js';
 
 // ─── Hoisted mocks (accessible in vi.mock factories) ─────────────────────────
@@ -215,6 +216,12 @@ describe('PostTag API routes (SPEC-086 T-024)', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // SPEC-103 T-089: prevent cross-test cache pollution. The public
+        // tag list endpoint caches by `${path}?${query}` (cacheTTL: 600);
+        // without this clear, the first test request seeds a cache
+        // entry that subsequent tests in the same describe block would
+        // hit even with different mock setups.
+        clearCache();
     });
 
     // =========================================================================
@@ -293,42 +300,37 @@ describe('PostTag API routes (SPEC-086 T-024)', () => {
             }
         });
 
-        // SPEC-103 T-089: surfaced by post-merge CI run 25758581495 on 2026-05-12.
-        // The mock `mockPostTagService.listPublic` is never invoked when the
-        // route receives `?withCounts=true`, so the spy assertion at line 312
-        // fails with "expected 'spy' to be called with arguments: [true], number
-        // of calls: 0". Hypothesis: the route stopped routing the withCounts
-        // query string into the service (probable regression from SPEC-086 Tag
-        // System refactor). Investigation belongs to T-089; skipping inline
-        // here so the green-build gate of SPEC-103 §3.A.0 can complete.
-        it.skipIf(true)(
-            '?withCounts=true calls listPublic(true) and returns usageCount',
-            async () => {
-                // Arrange
-                const tagWithCount = { ...ACTIVE_TAG, usageCount: 5 };
-                mockPostTagService.listPublic.mockResolvedValue({
-                    data: [tagWithCount],
-                    error: undefined
-                });
+        // SPEC-103 T-089 RESOLVED: same root cause as T-091 — the public
+        // cache middleware keyed entries by path-only, so a prior test
+        // request to `/api/v1/public/posts/tags` (no ?withCounts) cached
+        // a response, and this test's `?withCounts=true` request hit
+        // that cache slot instead of invoking the mock. Fixed in
+        // cache.ts by including the query string in the cache key.
+        it('?withCounts=true calls listPublic(true) and returns usageCount', async () => {
+            // Arrange
+            const tagWithCount = { ...ACTIVE_TAG, usageCount: 5 };
+            mockPostTagService.listPublic.mockResolvedValue({
+                data: [tagWithCount],
+                error: undefined
+            });
 
-                // Act
-                const res = await app.request(`${base}?withCounts=true`, {
-                    method: 'GET',
-                    headers: PUBLIC_HEADERS
-                });
+            // Act
+            const res = await app.request(`${base}?withCounts=true`, {
+                method: 'GET',
+                headers: PUBLIC_HEADERS
+            });
 
-                // Assert
-                if (res.status === 200) {
-                    expect(mockPostTagService.listPublic).toHaveBeenCalledWith(true);
-                    const body = await res.json();
-                    const tags: Array<{ usageCount?: number }> = body.data ?? body ?? [];
-                    const firstTag = tags[0];
-                    if (tags.length > 0 && firstTag !== undefined && 'usageCount' in firstTag) {
-                        expect(typeof firstTag.usageCount).toBe('number');
-                    }
+            // Assert
+            if (res.status === 200) {
+                expect(mockPostTagService.listPublic).toHaveBeenCalledWith(true);
+                const body = await res.json();
+                const tags: Array<{ usageCount?: number }> = body.data ?? body ?? [];
+                const firstTag = tags[0];
+                if (tags.length > 0 && firstTag !== undefined && 'usageCount' in firstTag) {
+                    expect(typeof firstTag.usageCount).toBe('number');
                 }
             }
-        );
+        });
 
         it('does not require authentication (no 401)', async () => {
             // Arrange
