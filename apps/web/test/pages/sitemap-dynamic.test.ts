@@ -14,6 +14,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getApiUrl } from '../../src/lib/env';
+import * as mod from '../../src/pages/sitemap-dynamic.xml.js';
 
 // ---------------------------------------------------------------------------
 // Module-level mocks — must be declared before importing the module under test
@@ -59,7 +61,7 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         vi.clearAllMocks();
 
         // Re-import after resetModules to pick up fresh mocks
-        const mod = await import('../../src/pages/sitemap-dynamic.xml.js');
+
         GET = mod.GET as typeof GET;
     });
 
@@ -304,7 +306,6 @@ describe('sitemap-dynamic.xml — GET handler', () => {
     });
 
     it('returns HTTP 503 when env is not configured', async () => {
-        const { getApiUrl } = await import('../../src/lib/env');
         vi.mocked(getApiUrl).mockImplementationOnce(() => {
             throw new Error('env not configured');
         });

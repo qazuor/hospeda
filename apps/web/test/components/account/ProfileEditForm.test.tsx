@@ -15,6 +15,7 @@
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 import { ProfileEditForm } from '../../../src/components/account/ProfileEditForm.client';
 import type { ProfileEditUser } from '../../../src/components/account/ProfileEditForm.client';
 
@@ -42,7 +43,6 @@ vi.mock('../../../src/store/toast-store', () => ({
 }));
 
 vi.mock('@repo/schemas', async () => {
-    const { z } = await import('zod');
     const ProfileEditSchema = z.strictObject({
         displayName: z.string().min(1).max(100),
         firstName: z.string().min(1).max(100),

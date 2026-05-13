@@ -21,6 +21,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditableNote } from '../../../src/components/account/EditableNote';
+import { addToast } from '../../../src/store/toast-store';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
@@ -258,7 +259,6 @@ describe('EditableNote', () => {
     // ── Save failure ──────────────────────────────────────────────────────────
 
     it('shows toast with error message when PATCH fails', async () => {
-        const { addToast } = await import('../../../src/store/toast-store');
         globalThis.fetch = vi.fn().mockResolvedValue(makeErrorResponse());
 
         renderNote({ initialValue: null });

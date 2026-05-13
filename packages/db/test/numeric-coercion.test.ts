@@ -16,6 +16,7 @@
  * @see packages/db/src/schemas/exchange-rate/exchange-rate.dbschema.ts
  */
 
+import { numeric, pgTable } from 'drizzle-orm/pg-core';
 import { getTableConfig } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
 
@@ -237,7 +238,7 @@ describe('Numeric column coercion configuration', () => {
          */
         it('numeric() without mode produces dataType "string"', async () => {
             // Arrange — import inline to avoid polluting module scope
-            const { numeric, pgTable } = await import('drizzle-orm/pg-core');
+
             const testTable = pgTable('__test_string_mode', {
                 value: numeric('value', { precision: 3, scale: 2 })
             });
@@ -253,7 +254,7 @@ describe('Numeric column coercion configuration', () => {
 
         it('numeric() with mode: "number" produces dataType "number"', async () => {
             // Arrange
-            const { numeric, pgTable } = await import('drizzle-orm/pg-core');
+
             const testTable = pgTable('__test_number_mode', {
                 value: numeric('value', { precision: 3, scale: 2, mode: 'number' })
             });

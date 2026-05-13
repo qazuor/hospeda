@@ -29,12 +29,32 @@ export type ContainerKind = 'api' | 'web' | 'admin' | 'postgres' | 'redis' | 'co
  * Current target environment for resolution. Set once during CLI startup
  * by {@link setActiveTarget}. Commands then call `findContainer(kind)`
  * without needing to thread the target through every callsite.
+ *
+ * Single-invocation contract (SPEC-103 T-054):
+ *
+ * This module-level variable assumes EXACTLY ONE `hops` command runs per
+ * process. The CLI parses `--target=<env>` (or `HOPS_DEFAULT_TARGET`) at
+ * startup, calls `setActiveTarget` once, then dispatches a single
+ * command before exiting. The variable is NOT reset between commands.
+ *
+ * If a future invocation pattern needs to run multiple commands in a
+ * single process (e.g. an interactive shell, an HTTP server wrapper, or
+ * a batch driver), this assumption breaks: the second command would
+ * inherit the first command's target unless the caller explicitly
+ * resets via `setActiveTarget('prod')` before dispatch. The correct
+ * fix in that case is to refactor `findContainer(kind, target)` so the
+ * target is threaded through every callsite — the module state then
+ * disappears entirely. Until that pattern actually exists, the simpler
+ * single-invocation contract is preferred (less plumbing, easier to
+ * reason about).
  */
 let activeTarget: Target = 'prod';
 
 /**
  * Override the target used by subsequent {@link findContainer} calls.
  * Called by `src/index.ts` after parsing the `--target=<env>` flag.
+ * See the JSDoc on {@link activeTarget} for the single-invocation
+ * contract this function relies on.
  */
 export function setActiveTarget(target: Target): void {
     activeTarget = target;

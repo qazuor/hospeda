@@ -19,8 +19,10 @@
  *   (b) confirming that when the mock throws a timeout error, it propagates.
  */
 
+import { withTransaction } from '@repo/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ServiceContext } from '../../src/types';
+import { withServiceTransaction } from '../../src/utils/transaction';
 import '../setupTest';
 
 // ---------------------------------------------------------------------------
@@ -53,7 +55,6 @@ vi.mock('drizzle-orm', () => ({
 }));
 
 // Dynamic import must come after mocks are registered.
-const { withServiceTransaction } = await import('../../src/utils/transaction');
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -159,7 +160,7 @@ describe('withServiceTransaction — timeoutMs option (SPEC-059)', () => {
      */
     it('TC-TO-04: when withTransaction aborts with a timeout error, it propagates', async () => {
         // Arrange — reconfigure the withTransaction mock to simulate a driver-level timeout
-        const { withTransaction } = await import('@repo/db');
+
         const withTransactionMock = withTransaction as ReturnType<typeof vi.fn>;
 
         withTransactionMock.mockRejectedValueOnce(

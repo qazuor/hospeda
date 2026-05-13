@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-104",
+    "title": "Beta-to-Prod Data Migration Script",
+    "type": "feature",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-05-13T00:27:41Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["data-migration", "beta-launch", "ops", "db", "scripts"]
+}

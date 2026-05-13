@@ -10,8 +10,10 @@
  * This behavior is intentional and simplifies rollback reasoning.
  */
 
+import { withTransaction } from '@repo/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ServiceContext } from '../../src/types';
+import { withServiceTransaction } from '../../src/utils/transaction';
 import '../setupTest';
 
 // Each call to withTransaction creates a fresh mock tx object, simulating
@@ -38,8 +40,6 @@ vi.mock('drizzle-orm', () => ({
         }
     )
 }));
-
-const { withServiceTransaction } = await import('../../src/utils/transaction');
 
 describe('withServiceTransaction — nested boundary behavior', () => {
     beforeEach(() => {
@@ -108,7 +108,6 @@ describe('withServiceTransaction — nested boundary behavior', () => {
     });
 
     it('each nested call opens a separate withTransaction invocation', async () => {
-        const { withTransaction } = await import('@repo/db');
         const withTransactionSpy = withTransaction as ReturnType<typeof vi.fn>;
 
         await withServiceTransaction(async () => {

@@ -47,11 +47,28 @@ source "$ENV_FILE"
 BACKUP_DIR="${BACKUP_DIR:-/var/tmp/hospeda-backups}"
 MIN_BACKUP_SIZE="${MIN_BACKUP_SIZE:-100000}" # 100 KB — a real Hospeda backup is at least 1-2 MB
 
+# SPEC-103 T-078: GPG symmetric encryption. When BACKUP_PASSPHRASE is set
+# in the env file, pg_dump output is piped through gpg --symmetric
+# (AES256) before landing on disk + uploading to R2. The resulting file
+# carries a .dump.gpg suffix. db-restore detects the suffix and pipes
+# through gpg --decrypt before pg_restore. When unset, the script
+# behaves identically to the pre-T-078 version (raw dumps in R2) and
+# logs a clear warning so the operator knows encryption is disabled.
+ENCRYPT_BACKUPS="false"
+if [[ -n "${BACKUP_PASSPHRASE:-}" ]]; then
+    ENCRYPT_BACKUPS="true"
+fi
+
 # -----------------------------------------------------------------------------
 # Derived values
 # -----------------------------------------------------------------------------
 TIMESTAMP=$(date -u +"%Y-%m-%d_%H%M%SZ")
-BACKUP_NAME="hospeda-postgres-${TIMESTAMP}.dump"
+BACKUP_BASENAME="hospeda-postgres-${TIMESTAMP}.dump"
+if [[ "$ENCRYPT_BACKUPS" == "true" ]]; then
+    BACKUP_NAME="${BACKUP_BASENAME}.gpg"
+else
+    BACKUP_NAME="$BACKUP_BASENAME"
+fi
 BACKUP_FILE="${BACKUP_DIR}/${BACKUP_NAME}"
 R2_ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
 
@@ -68,20 +85,49 @@ mkdir -p "$BACKUP_DIR"
 log "Starting backup: ${BACKUP_NAME}"
 log "Source: container=${POSTGRES_CONTAINER} db=${POSTGRES_DB} user=${POSTGRES_USER}"
 
+if [[ "$ENCRYPT_BACKUPS" == "true" ]]; then
+    log "Encryption: GPG symmetric AES256 (BACKUP_PASSPHRASE set)"
+else
+    log "WARNING: encryption DISABLED (BACKUP_PASSPHRASE not set in env file). Raw pg_dump will land in R2. Set BACKUP_PASSPHRASE to enable GPG AES256 symmetric encryption."
+fi
+
 # pg_dump inside the container, custom format (Fc) with built-in zlib
 # compression. --no-owner / --no-privileges makes the dump portable across
-# Postgres instances with different role layouts.
-if ! docker exec "$POSTGRES_CONTAINER" \
-    pg_dump \
-    -U "$POSTGRES_USER" \
-    -d "$POSTGRES_DB" \
-    -Fc \
-    --no-owner \
-    --no-privileges \
-    >"$BACKUP_FILE"; then
-    log "ERROR: pg_dump failed"
-    rm -f "$BACKUP_FILE"
-    exit 2
+# Postgres instances with different role layouts. When BACKUP_PASSPHRASE
+# is set the dump is piped through `gpg --symmetric` before landing on
+# disk; otherwise it lands raw (back-compat).
+if [[ "$ENCRYPT_BACKUPS" == "true" ]]; then
+    if ! docker exec "$POSTGRES_CONTAINER" \
+        pg_dump \
+        -U "$POSTGRES_USER" \
+        -d "$POSTGRES_DB" \
+        -Fc \
+        --no-owner \
+        --no-privileges \
+        | gpg \
+            --batch \
+            --yes \
+            --symmetric \
+            --cipher-algo AES256 \
+            --passphrase "$BACKUP_PASSPHRASE" \
+            --output "$BACKUP_FILE"; then
+        log "ERROR: pg_dump | gpg pipeline failed"
+        rm -f "$BACKUP_FILE"
+        exit 2
+    fi
+else
+    if ! docker exec "$POSTGRES_CONTAINER" \
+        pg_dump \
+        -U "$POSTGRES_USER" \
+        -d "$POSTGRES_DB" \
+        -Fc \
+        --no-owner \
+        --no-privileges \
+        >"$BACKUP_FILE"; then
+        log "ERROR: pg_dump failed"
+        rm -f "$BACKUP_FILE"
+        exit 2
+    fi
 fi
 
 # Sanity check: a real backup with seeds is at least 1-2 MB. Anything tiny

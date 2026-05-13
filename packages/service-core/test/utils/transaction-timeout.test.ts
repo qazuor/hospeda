@@ -11,6 +11,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { withServiceTransaction } from '../../src/utils/transaction';
 import '../setupTest';
 
 const mockExecute = vi.fn().mockResolvedValue(undefined);
@@ -34,8 +35,6 @@ vi.mock('drizzle-orm', () => ({
         }
     )
 }));
-
-const { withServiceTransaction } = await import('../../src/utils/transaction');
 
 describe('withServiceTransaction — timeoutMs option', () => {
     beforeEach(() => {
