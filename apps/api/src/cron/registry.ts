@@ -15,6 +15,7 @@ import {
     dunningJob,
     exchangeRateFetchJob,
     mediaOrphanCleanupJob,
+    newsletterCloseCampaignsJob,
     notificationLogPurgeJob,
     notificationScheduleJob,
     pageRevalidationJob,
@@ -44,7 +45,8 @@ export const cronJobs: CronJobDefinition[] = [
     cloudinaryE2eCleanupJob,
     conversationNotificationJob,
     conversationTokenReminderJob,
-    conversationTokenCleanupJob
+    conversationTokenCleanupJob,
+    newsletterCloseCampaignsJob
 ];
 
 /**
