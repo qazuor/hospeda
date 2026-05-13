@@ -13,6 +13,7 @@
  * count was checked. Full end-to-end race prevention (AC-F10) requires a real DB
  * and is exercised in the integration test suite. See comment on the race test below.
  */
+import { withTransaction as mockWithTx } from '@repo/db';
 import { REntityTagModel, TagModel } from '@repo/db';
 import {
     LifecycleStatusEnum,
@@ -217,7 +218,6 @@ describe('TagService — USER tag quota enforcement (T-019, SPEC-086)', () => {
     // -------------------------------------------------------------------------
     describe('Advisory lock: SQL is issued inside a transaction', () => {
         it('should call withTransaction when no ctx.tx is provided', async () => {
-            const { withTransaction: mockWithTx } = await import('@repo/db');
             asMock(tagModelMock.countActiveByOwner).mockResolvedValue(0);
             const createdTag = TagFactoryBuilder.createUserTag(OWNER_ID);
             asMock(tagModelMock.create).mockResolvedValue(createdTag);
@@ -228,7 +228,6 @@ describe('TagService — USER tag quota enforcement (T-019, SPEC-086)', () => {
         });
 
         it('should call execute with pg_advisory_xact_lock SQL inside the transaction', async () => {
-            const { withTransaction: mockWithTx } = await import('@repo/db');
             let capturedFakeTx: { execute: ReturnType<typeof vi.fn> } | undefined;
 
             asMock(mockWithTx).mockImplementation(
@@ -257,7 +256,6 @@ describe('TagService — USER tag quota enforcement (T-019, SPEC-086)', () => {
         });
 
         it('should NOT call withTransaction when ctx.tx is already set', async () => {
-            const { withTransaction: mockWithTx } = await import('@repo/db');
             asMock(mockWithTx).mockClear();
 
             const fakeTx = { execute: vi.fn().mockResolvedValue([]) };
@@ -291,8 +289,6 @@ describe('TagService — USER tag quota enforcement (T-019, SPEC-086)', () => {
          * overcounting at the DB level.
          */
         it('should issue advisory lock BEFORE countActiveByOwner (lock-then-count order)', async () => {
-            const { withTransaction: mockWithTx } = await import('@repo/db');
-
             const callOrder: string[] = [];
             const fakeTx = {
                 execute: vi.fn().mockImplementation(() => {
@@ -321,7 +317,6 @@ describe('TagService — USER tag quota enforcement (T-019, SPEC-086)', () => {
         });
 
         it('should not check quota for SYSTEM tags (advisory lock not used)', async () => {
-            const { withTransaction: mockWithTx } = await import('@repo/db');
             asMock(mockWithTx).mockClear();
 
             const systemActor = createActor({

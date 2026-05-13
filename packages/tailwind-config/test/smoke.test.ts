@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { postcssConfig } from '../postcss.config.js';
 
 /** Resolved path to the package root */
 const PACKAGE_ROOT = path.resolve(__dirname, '..');
@@ -65,23 +66,17 @@ describe('shared-styles.css content', () => {
 
 describe('postcss.config.js content', () => {
     it('exports a postcssConfig object', async () => {
-        const { postcssConfig } = await import('../postcss.config.js');
-
         expect(postcssConfig).toBeDefined();
         expect(typeof postcssConfig).toBe('object');
         expect(postcssConfig).not.toBeNull();
     });
 
     it('exported postcssConfig has a plugins property', async () => {
-        const { postcssConfig } = await import('../postcss.config.js');
-
         expect(postcssConfig).toHaveProperty('plugins');
         expect(typeof postcssConfig.plugins).toBe('object');
     });
 
     it('postcssConfig.plugins includes @tailwindcss/postcss', async () => {
-        const { postcssConfig } = await import('../postcss.config.js');
-
         expect(postcssConfig.plugins).toHaveProperty('@tailwindcss/postcss');
     });
 });

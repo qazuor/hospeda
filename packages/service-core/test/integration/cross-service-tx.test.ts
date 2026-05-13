@@ -9,12 +9,14 @@
  * committing a partial write.
  */
 
+import { withTransaction } from '@repo/db';
 import type { ListRelationsConfig, PaginatedListOutput } from '@repo/schemas';
 import { type PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { BaseCrudService } from '../../src/base/base.crud.service';
 import type { Actor, BaseModel, ServiceConfig, ServiceContext } from '../../src/types';
+import { withServiceTransaction } from '../../src/utils/transaction';
 import '../setupTest';
 
 // ---------------------------------------------------------------------------
@@ -44,7 +46,6 @@ vi.mock('drizzle-orm', () => ({
 }));
 
 // Dynamic import must come after mocks are registered.
-const { withServiceTransaction } = await import('../../src/utils/transaction');
 
 // ---------------------------------------------------------------------------
 // Entity types
@@ -331,7 +332,6 @@ describe('cross-service transaction — shared ctx.tx (SPEC-059)', () => {
         modelA.create.mockResolvedValue(entityA);
         modelB.create.mockRejectedValue(new Error('serviceB failure'));
 
-        const { withTransaction } = await import('@repo/db');
         const withTransactionSpy = withTransaction as ReturnType<typeof vi.fn>;
 
         // Act & Assert — the error from serviceB must propagate out

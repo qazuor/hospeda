@@ -762,6 +762,14 @@
             "path": "SPEC-106-docs-broken-links-cleanup"
         },
         {
+            "specId": "SPEC-107",
+            "title": "Beta Tester Docs Screenshots Rollout",
+            "type": "docs",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-107-beta-tester-docs-screenshots"
+        },
+        {
             "specId": "SPEC-108",
             "title": "Newsletter MVP \u2014 Post-Merge Follow-Ups",
             "type": "chore",

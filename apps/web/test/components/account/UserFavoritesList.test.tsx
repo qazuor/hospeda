@@ -36,6 +36,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserFavoritesList } from '../../../src/components/account/UserFavoritesList.client';
+import { addToast } from '../../../src/store/toast-store';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
@@ -357,7 +358,6 @@ describe('UserFavoritesList', () => {
     });
 
     it('reverts optimistic remove and shows toast on DELETE failure', async () => {
-        const { addToast } = await import('../../../src/store/toast-store');
         globalThis.fetch = vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
             const method = opts?.method ?? 'GET';
             if (method === 'DELETE') {
@@ -873,8 +873,6 @@ describe('UserFavoritesList', () => {
     });
 
     it('note editor: shows toast on PATCH failure', async () => {
-        const { addToast } = await import('../../../src/store/toast-store');
-
         globalThis.fetch = makeRoutedFetchMock({
             bookmarksHandler: () => makeListResponse([BOOKMARK_1], 1),
             patchHandler: () =>

@@ -8,6 +8,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { authLogger } from '../src/logger';
 import { SimpleUserMenu } from '../src/simple-user-menu';
 import type { SimpleUserMenuProps } from '../src/simple-user-menu';
 import type { AuthSession, SessionUser } from '../src/types';
@@ -239,7 +240,7 @@ describe('SimpleUserMenu', () => {
         it('handles onSignOut error gracefully', async () => {
             // Arrange
             const user = userEvent.setup();
-            const { authLogger } = await import('../src/logger');
+
             const error = new Error('Sign out failed');
             const onSignOut = vi.fn().mockRejectedValue(error);
             render(<SimpleUserMenu {...createProps({ onSignOut })} />);

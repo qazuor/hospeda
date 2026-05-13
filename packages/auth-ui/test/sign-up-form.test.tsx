@@ -10,6 +10,8 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { authLogger } from '../src/logger';
+import * as mod from '../src/sign-up-form';
 import type { AuthResult, SignInMethods, SignUpMethods } from '../src/types';
 
 // Mock i18n - returns the key as-is
@@ -32,7 +34,6 @@ vi.mock('../src/logger', () => ({
 
 // Helper to import after mocks are set up
 const importSignUpForm = async () => {
-    const mod = await import('../src/sign-up-form');
     return mod.SignUpForm;
 };
 
@@ -361,8 +362,6 @@ describe('SignUpForm', () => {
         vi.mocked(mockSignUp.email).mockRejectedValue(thrownError);
         const SignUpForm = await importSignUpForm();
 
-        const { authLogger } = await import('../src/logger');
-
         render(
             <SignUpForm
                 signUp={mockSignUp}
@@ -389,7 +388,7 @@ describe('SignUpForm', () => {
     it('handles OAuth Error-instance exception showing its message', async () => {
         // Arrange — AUTH-GAP-013: covers `err instanceof Error ? err.message : ...` true branch
         const user = userEvent.setup();
-        const { authLogger } = await import('../src/logger');
+
         const mockSignIn = createMockSignIn();
         vi.mocked(mockSignIn.social).mockRejectedValue(new Error('OAuth error'));
         const SignUpForm = await importSignUpForm();
@@ -522,8 +521,6 @@ describe('SignUpForm', () => {
         const mockSignUp = createMockSignUp();
         vi.mocked(mockSignUp.email).mockRejectedValue('string-thrown-error');
         const SignUpForm = await importSignUpForm();
-
-        const { authLogger } = await import('../src/logger');
 
         render(
             <SignUpForm

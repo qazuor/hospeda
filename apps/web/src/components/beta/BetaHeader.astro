@@ -1,0 +1,168 @@
+---
+/**
+ * @file BetaHeader.astro
+ * @description Sticky header for the beta docs site. Includes brand, search
+ * island (Fuse.js) and a mobile menu toggle that opens the sidebar drawer.
+ */
+
+import { BetaSearch } from './BetaSearch.client';
+---
+
+<header class="beta-header" role="banner">
+    <div class="beta-header__inner">
+        <a href="/beta/" class="beta-header__brand" aria-label="Inicio del beta de Hospeda">
+            <span class="beta-header__brand-mark">Hospeda</span>
+            <span class="beta-header__brand-tag">Beta privado</span>
+        </a>
+
+        <div class="beta-header__search">
+            <BetaSearch client:idle />
+        </div>
+
+        <nav class="beta-header__nav" aria-label="Acciones rápidas del beta">
+            <a class="beta-header__nav-link" href="/beta/empezar/glosario/">Glosario</a>
+            <a class="beta-header__nav-link" href="/beta/faq/">FAQ</a>
+            <a class="beta-header__nav-link" href="/beta/reportar-bugs/como-reportar/">Cómo reportar</a>
+        </nav>
+
+        <button
+            type="button"
+            class="beta-header__menu-toggle"
+            data-beta-menu-toggle
+            aria-label="Abrir navegación"
+            aria-expanded="false"
+            aria-controls="beta-sidebar-drawer"
+        >
+            <span aria-hidden="true">☰</span>
+        </button>
+    </div>
+</header>
+
+<script>
+    function initBetaMenu() {
+        const toggle = document.querySelector<HTMLButtonElement>('[data-beta-menu-toggle]');
+        const shell = document.querySelector<HTMLElement>('[data-beta-shell]');
+        if (!toggle || !shell) return;
+
+        toggle.addEventListener('click', () => {
+            const isOpen = shell.classList.toggle('beta-doc-shell--drawer-open');
+            toggle.setAttribute('aria-expanded', String(isOpen));
+            document.body.classList.toggle('beta-no-scroll', isOpen);
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && shell.classList.contains('beta-doc-shell--drawer-open')) {
+                shell.classList.remove('beta-doc-shell--drawer-open');
+                toggle.setAttribute('aria-expanded', 'false');
+                document.body.classList.remove('beta-no-scroll');
+            }
+        });
+    }
+
+    initBetaMenu();
+    document.addEventListener('astro:page-load', initBetaMenu);
+</script>
+
+<style>
+    .beta-header {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: var(--core-background);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .beta-header__inner {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3, 0.75rem);
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: var(--space-3, 0.75rem) var(--space-5, 1.25rem);
+    }
+
+    .beta-header__brand {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2, 0.5rem);
+        text-decoration: none;
+        color: var(--core-foreground);
+        font-family: var(--font-heading);
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .beta-header__brand-mark {
+        font-size: 1.125rem;
+        letter-spacing: -0.01em;
+    }
+
+    .beta-header__brand-tag {
+        font-family: var(--font-sans);
+        font-size: 0.7rem;
+        font-weight: 500;
+        padding: 0.15rem 0.5rem;
+        border-radius: var(--radius-pill);
+        background: var(--brand-accent);
+        color: var(--accent-foreground);
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+    }
+
+    .beta-header__search {
+        flex: 1;
+        max-width: 360px;
+        margin-left: var(--space-4, 1rem);
+    }
+
+    .beta-header__nav {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4, 1rem);
+        margin-left: auto;
+    }
+
+    .beta-header__nav-link {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--core-muted-foreground);
+        text-decoration: none;
+        transition: color 0.15s ease;
+    }
+
+    .beta-header__nav-link:hover {
+        color: var(--brand-primary);
+    }
+
+    .beta-header__menu-toggle {
+        display: none;
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-button, 8px);
+        padding: 0.4rem 0.7rem;
+        font-size: 1rem;
+        cursor: pointer;
+        color: var(--core-foreground);
+    }
+
+    @media (max-width: 960px) {
+        .beta-header__nav {
+            display: none;
+        }
+        .beta-header__search {
+            max-width: none;
+        }
+        .beta-header__menu-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 540px) {
+        .beta-header__brand-tag {
+            display: none;
+        }
+    }
+</style>

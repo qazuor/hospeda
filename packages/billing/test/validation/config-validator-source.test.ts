@@ -11,6 +11,10 @@ import type { PromoCodeDefinition } from '../../src/config/promo-codes.config.js
 import type { AddonDefinition } from '../../src/types/addon.types.js';
 import { EntitlementKey } from '../../src/types/entitlement.types.js';
 import { LimitKey, type PlanDefinition } from '../../src/types/plan.types.js';
+import {
+    validateBillingConfig,
+    validateBillingConfigOrThrow
+} from '../../src/validation/config-validator.js';
 
 // Mock @repo/logger before importing the module under test
 vi.mock('@repo/logger', () => ({
@@ -40,9 +44,6 @@ vi.mock('../../src/config/index.js', () => ({
 }));
 
 // Import AFTER mocks are set up
-const { validateBillingConfig, validateBillingConfigOrThrow } = await import(
-    '../../src/validation/config-validator.js'
-);
 
 // ─── HELPERS ──────────────────────────────────────────────────────
 

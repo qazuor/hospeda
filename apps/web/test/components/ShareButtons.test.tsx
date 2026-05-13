@@ -7,6 +7,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ShareButtons } from '../../src/components/ShareButtons.client';
+import { addToast } from '../../src/store/toast-store';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
@@ -211,7 +212,6 @@ describe('ShareButtons', () => {
 
     describe('Copy URL', () => {
         it('calls navigator.clipboard.writeText with the url', async () => {
-            const { addToast } = await import('../../src/store/toast-store');
             renderShareButtons();
             fireEvent.click(screen.getByRole('button', { name: /compartir/i }));
 

@@ -5,6 +5,7 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
+import * as mod from '../../src/scripts/image-fallback';
 
 describe('image-fallback', () => {
     beforeEach(() => {
@@ -12,8 +13,6 @@ describe('image-fallback', () => {
     });
 
     it('should replace src with data-fallback value on error', async () => {
-        const mod = await import('../../src/scripts/image-fallback');
-
         const img = document.createElement('img');
         img.src = '/broken.jpg';
         img.dataset.fallback = '/placeholder.svg';
@@ -28,8 +27,6 @@ describe('image-fallback', () => {
     });
 
     it('should remove data-fallback after replacement to prevent loops', async () => {
-        const mod = await import('../../src/scripts/image-fallback');
-
         const img = document.createElement('img');
         img.src = '/broken.jpg';
         img.dataset.fallback = '/placeholder.svg';
@@ -42,8 +39,6 @@ describe('image-fallback', () => {
     });
 
     it('should hide image with data-hide-on-error on error', async () => {
-        const mod = await import('../../src/scripts/image-fallback');
-
         const img = document.createElement('img');
         img.src = '/broken.svg';
         img.setAttribute('data-hide-on-error', '');
@@ -56,8 +51,6 @@ describe('image-fallback', () => {
     });
 
     it('should not affect images without fallback attributes', async () => {
-        const mod = await import('../../src/scripts/image-fallback');
-
         const img = document.createElement('img');
         img.src = '/normal.jpg';
         img.alt = 'test';

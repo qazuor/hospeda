@@ -7,6 +7,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ServiceContext } from '../../src/types';
+import { withServiceTransaction } from '../../src/utils/transaction';
 import '../setupTest';
 
 // Mock @repo/db's withTransaction to capture and execute the callback with a mock tx
@@ -36,7 +37,6 @@ vi.mock('drizzle-orm', () => ({
 }));
 
 // Import after mocks are set up
-const { withServiceTransaction } = await import('../../src/utils/transaction');
 
 describe('withServiceTransaction', () => {
     beforeEach(() => {
