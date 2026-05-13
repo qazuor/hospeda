@@ -108,6 +108,7 @@ export interface NewsletterFormProps {
  */
 function pushDataLayerEvent(event: string, properties?: Record<string, unknown>): void {
     try {
+        // TYPE-WORKAROUND: GTM injects window.dataLayer at runtime when the script loads; the DOM Window type doesn't include it, so we widen here. Wrapped in try/catch so missing GTM degrades silently.
         const dl = (window as unknown as { dataLayer?: unknown[] }).dataLayer;
         if (Array.isArray(dl)) {
             dl.push({ event, ...properties });

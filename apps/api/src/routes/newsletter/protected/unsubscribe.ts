@@ -43,6 +43,7 @@ export const unsubscribeHandler = async (
     const actor = getActorFromContext(ctx);
     const svc =
         deps.newsletterService ??
+        // TYPE-WORKAROUND: route declares a narrow UnsubscribeNewsletterService interface for the testability seam; the singleton returns the full concrete class which structurally satisfies the narrow shape.
         (getDefaultNewsletterService() as unknown as UnsubscribeNewsletterService);
 
     const result = await svc.unsubscribeAuthenticated(actor, actor.id);

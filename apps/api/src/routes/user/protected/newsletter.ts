@@ -58,6 +58,7 @@ export interface NewsletterToggleUserService {
  */
 export const newsletterToggleHandler = async (
     ctx: Context,
+    // TYPE-WORKAROUND: handler declares a narrow NewsletterToggleUserService interface (only getById + update) for the testability seam; UserService structurally satisfies the narrow shape.
     svc: NewsletterToggleUserService = userService as unknown as NewsletterToggleUserService
 ): Promise<{ subscribed: boolean }> => {
     const actor = getActorFromContext(ctx);

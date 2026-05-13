@@ -90,9 +90,11 @@ export const subscribeHandler = async (
 ): Promise<{ status: 'pending_verification' | 'active' | 'already_pending' }> => {
     const actor = getActorFromContext(ctx);
     const userSvc =
+        // TYPE-WORKAROUND: route declares a narrow SubscribeUserService interface (only getById) for the testability seam; UserService structurally satisfies the narrow shape.
         deps.userService ?? (getDefaultUserService() as unknown as SubscribeUserService);
     const newsletterSvc =
         deps.newsletterService ??
+        // TYPE-WORKAROUND: route declares a narrow SubscribeNewsletterService interface for the testability seam; the singleton returns the full concrete class which structurally satisfies the narrow shape.
         (getDefaultNewsletterService() as unknown as SubscribeNewsletterService);
 
     const userResult = await userSvc.getById(actor, actor.id);

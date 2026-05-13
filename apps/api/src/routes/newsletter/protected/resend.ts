@@ -42,6 +42,7 @@ export const resendHandler = async (
     const actor = getActorFromContext(ctx);
     const svc =
         deps.newsletterService ??
+        // TYPE-WORKAROUND: route declares a narrow ResendNewsletterService interface for the testability seam; the singleton returns the full concrete class which structurally satisfies the narrow shape.
         (getDefaultNewsletterService() as unknown as ResendNewsletterService);
 
     const result = await svc.resendVerification(actor, actor.id);

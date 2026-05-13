@@ -127,6 +127,7 @@ function RichHtmlContent({ html }: RichHtmlContentProps) {
     return (
         <div
             className="prose prose-sm max-w-none text-foreground [&_a]:text-primary [&_a]:underline"
+            // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml — input is the output of renderTiptapContent (@repo/utils/tiptap-renderer): whitelist-driven HTML escape of admin-typed campaign body, no raw user input.
             // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted output of renderTiptapContent (controlled escaping in @repo/utils/tiptap-renderer)
             dangerouslySetInnerHTML={{ __html: html }}
         />

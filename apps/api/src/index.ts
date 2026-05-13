@@ -135,14 +135,13 @@ const startServer = async (): Promise<void> => {
                                 );
                                 return;
                             }
-                            // Cast walks past the pnpm-induced dual-version ioredis
-                            // friction; the runtime instance is structurally
-                            // compatible with BullMQ's ConnectionOptions.
+                            // TYPE-WORKAROUND: pnpm resolves ioredis at two patch versions (5.10.0 direct dep vs 5.10.1 pulled by bullmq); the runtime instance is structurally compatible with BullMQ's ConnectionOptions but TS treats the duplicated type identities as incompatible.
                             const deliveryService = getNewsletterDeliveryService(
                                 redis as unknown as Parameters<
                                     typeof getNewsletterDeliveryService
                                 >[0]
                             );
+                            // TYPE-WORKAROUND: same dual-version ioredis friction — BullMQ's Worker ConnectionOptions accepts the ioredis instance at runtime.
                             newsletterWorker = startNewsletterWorker({
                                 redis: redis as unknown as Parameters<
                                     typeof startNewsletterWorker

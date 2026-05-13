@@ -56,6 +56,7 @@ export const statusHandler = async (
     const actor = getActorFromContext(ctx);
     const newsletterSvc =
         deps.newsletterService ??
+        // TYPE-WORKAROUND: route declares a narrow StatusNewsletterService interface (only getStatus) for the testability seam; the singleton returns the full concrete class which structurally satisfies the narrow shape.
         (getDefaultNewsletterService() as unknown as StatusNewsletterService);
 
     const result = await newsletterSvc.getStatus(actor, actor.id);

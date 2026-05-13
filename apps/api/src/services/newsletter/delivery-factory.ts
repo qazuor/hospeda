@@ -111,6 +111,7 @@ export function getNewsletterDeliveryService(redis: ConnectionOptions): Newslett
                     bodyHtml,
                     unsubscribeUrl,
                     isTest
+                    // TYPE-WORKAROUND: service-core declares OpaqueReactElement (Record<string, unknown>) on its DI seam so it never has to import react; the runtime value IS a real React element.
                 }) as unknown as Record<string, unknown>,
             apiKey: env.HOSPEDA_EMAIL_API_KEY,
             senderEmail,

@@ -82,10 +82,7 @@ export async function getDefaultCampaignService(): Promise<NewsletterCampaignSer
     try {
         const redis = await getRedisClient();
         if (redis && env.HOSPEDA_EMAIL_API_KEY) {
-            // Cast: pnpm sometimes resolves ioredis at two patch versions
-            // (5.10.0 here vs the copy bullmq pulls). BullMQ's
-            // `ConnectionOptions` accepts the same instance structurally —
-            // the cast walks past the duplicated-type-identity friction.
+            // TYPE-WORKAROUND: pnpm resolves ioredis at two patch versions (5.10.0 direct vs 5.10.1 via bullmq); the runtime instance is structurally compatible with BullMQ's ConnectionOptions, the cast walks past the duplicated-type-identity friction.
             deliveryService = getNewsletterDeliveryService(
                 redis as unknown as Parameters<typeof getNewsletterDeliveryService>[0]
             );
