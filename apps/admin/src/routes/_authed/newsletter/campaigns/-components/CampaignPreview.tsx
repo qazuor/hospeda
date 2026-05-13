@@ -4,12 +4,14 @@
  *
  * Renders the TipTap-generated HTML inside a card that mimics an email-client
  * preview at ~600 px width. The rendered HTML comes from `renderTiptapContent`
- * (controlled escaping via `@repo/utils`) so usage with __html is intentional
- * and safe — no raw user input is injected.
+ * (controlled escaping via `@repo/utils`); a defense-in-depth pass through
+ * DOMPurify before injection satisfies the Semgrep audit rule and protects
+ * against future regressions of the upstream renderer.
  *
  * @module CampaignPreview
  */
 
+import DOMPurify from 'dompurify';
 import type { ReactNode } from 'react';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -124,12 +126,12 @@ interface RichHtmlContentProps {
  * HTML escaping and only emits a whitelist of known-safe tags.
  */
 function RichHtmlContent({ html }: RichHtmlContentProps) {
+    const sanitized = DOMPurify.sanitize(html);
     return (
         <div
             className="prose prose-sm max-w-none text-foreground [&_a]:text-primary [&_a]:underline"
-            // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml — input is the output of renderTiptapContent (@repo/utils/tiptap-renderer): whitelist-driven HTML escape of admin-typed campaign body, no raw user input.
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted output of renderTiptapContent (controlled escaping in @repo/utils/tiptap-renderer)
-            dangerouslySetInnerHTML={{ __html: html }}
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized by DOMPurify above (defense-in-depth on top of renderTiptapContent's whitelist escaping)
+            dangerouslySetInnerHTML={{ __html: sanitized }}
         />
     );
 }

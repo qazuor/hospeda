@@ -273,6 +273,16 @@
             },
             "sort": {
                 "format": "El formato del ordenamiento no es válido"
+            },
+            "newsletterCampaign": {
+                "titleSearch": {
+                    "max": "El término de búsqueda no puede superar los {{max}} caracteres"
+                }
+            },
+            "newsletterSubscriber": {
+                "emailSearch": {
+                    "max": "El término de búsqueda no puede superar los {{max}} caracteres"
+                }
             }
         }
     },
@@ -1376,6 +1386,24 @@
         },
         "visibility": {
             "invalid": "El visibility no es válido"
+        },
+        "newsletterCampaignLocaleFilter": {
+            "invalid": "Filtro de idioma de campaña inválido"
+        },
+        "newsletterCampaignStatus": {
+            "invalid": "Estado de campaña inválido"
+        },
+        "newsletterChannel": {
+            "invalid": "Canal de newsletter inválido"
+        },
+        "newsletterDeliveryStatus": {
+            "invalid": "Estado de envío inválido"
+        },
+        "newsletterSource": {
+            "invalid": "Origen de suscripción inválido"
+        },
+        "newsletterSubscriberStatus": {
+            "invalid": "Estado de suscriptor inválido"
         }
     },
     "event": {
@@ -2996,6 +3024,41 @@
         },
         "zod": {
             "failed": "La validación del esquema ha fallado"
+        }
+    },
+    "entity": {
+        "newsletterCampaign": {
+            "subject": {
+                "min": "El asunto debe tener al menos {{min}} caracteres",
+                "max": "El asunto no puede superar los {{max}} caracteres"
+            },
+            "title": {
+                "min": "El título debe tener al menos {{min}} caracteres",
+                "max": "El título no puede superar los {{max}} caracteres"
+            }
+        },
+        "newsletterDelivery": {
+            "channel": {
+                "max": "El canal no puede superar los {{max}} caracteres"
+            },
+            "providerMessageId": {
+                "max": "El identificador del proveedor no puede superar los {{max}} caracteres"
+            }
+        },
+        "newsletterSubscriber": {
+            "consentIp": {
+                "max": "La IP de consentimiento no puede superar los {{max}} caracteres"
+            },
+            "consentVersion": {
+                "max": "La versión de consentimiento no puede superar los {{max}} caracteres"
+            },
+            "email": {
+                "email": "El email no es válido",
+                "max": "El email no puede superar los {{max}} caracteres"
+            },
+            "token": {
+                "required": "El token es obligatorio"
+            }
         }
     }
 }
