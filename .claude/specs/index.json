@@ -725,6 +725,14 @@
             "complexity": "medium",
             "status": "draft",
             "path": "SPEC-103-vps-migration-post-merge-cleanup"
+        },
+        {
+            "specId": "SPEC-107",
+            "title": "Beta Tester Docs Screenshots Rollout",
+            "type": "docs",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-107-beta-tester-docs-screenshots"
         }
     ]
 }
