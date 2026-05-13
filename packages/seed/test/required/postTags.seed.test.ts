@@ -1,3 +1,5 @@
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 /**
  * Unit tests for the PostTag seed (SPEC-086 R-4).
  *
@@ -16,8 +18,7 @@
  *
  * References: AC-F20, R-4, tag-seeds.md
  */
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { resolve } from 'node:path';
 import { join } from 'node:path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PostTagModelPort } from '../../src/required/postTags.seed.js';
@@ -424,7 +425,7 @@ describe('seedPostTags (SPEC-086 R-4)', () => {
         it('should create exactly 34 rows when seeding the real data directory', async () => {
             // Use the real data dir — no DB needed because we use a counting stub.
             // This verifies that T-038 created exactly 34 PostTag JSON files.
-            const { resolve } = await import('node:path');
+
             const realDataDir = resolve(import.meta.dirname, '../../src/data/postTag');
 
             const model = buildStubModel();
@@ -435,7 +436,7 @@ describe('seedPostTags (SPEC-086 R-4)', () => {
 
         it('should populate slug field for every PostTag in the real data directory', async () => {
             // Verifies that all 34 real JSON files include a non-empty slug.
-            const { resolve } = await import('node:path');
+
             const realDataDir = resolve(import.meta.dirname, '../../src/data/postTag');
 
             const slugsSeen: string[] = [];

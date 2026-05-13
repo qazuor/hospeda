@@ -87,6 +87,7 @@ vi.mock('@repo/db', async (importOriginal) => {
     };
 });
 
+import * as dbModule from '@repo/db';
 import { AccommodationModel, ConversationModel, MessageModel } from '@repo/db';
 import type { DrizzleClient, SelectConversation } from '@repo/db';
 import { ConversationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
@@ -96,6 +97,7 @@ import type { AccessTokenService } from '../../../src/services/conversation/acce
 import { ConversationService } from '../../../src/services/conversation/conversation.service.js';
 import type { MessageService } from '../../../src/services/conversation/message.service.js';
 import type { NotificationScheduleService } from '../../../src/services/conversation/notification-schedule.service.js';
+import { withServiceTransaction } from '../../../src/utils/transaction.js';
 import { createActor } from '../../factories/actorFactory.js';
 import { expectForbiddenError, expectSuccess } from '../../helpers/assertions.js';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory.js';
@@ -289,7 +291,7 @@ describe('ConversationService', () => {
         } as unknown as MessageService;
 
         // getDb mock
-        const dbModule = await import('@repo/db');
+
         mockGetDb = dbModule.getDb as unknown as Mock;
 
         const loggerMock = createLoggerMock();
@@ -451,7 +453,6 @@ describe('ConversationService', () => {
 
             // Override withServiceTransaction: insert(conversations) → [newConv],
             // insert(messages) → [insertedMessage], update(conversations) → []
-            const { withServiceTransaction } = await import('../../../src/utils/transaction.js');
 
             let insertCallCount = 0;
             asMock(withServiceTransaction).mockImplementationOnce(
@@ -569,7 +570,7 @@ describe('ConversationService', () => {
             });
 
             // withServiceTransaction: override to capture the calls
-            const { withServiceTransaction } = await import('../../../src/utils/transaction.js');
+
             asMock(withServiceTransaction).mockImplementationOnce(
                 async (fn: (ctx: Record<string, unknown>) => Promise<unknown>) => {
                     const fakeTx = {
@@ -687,7 +688,6 @@ describe('ConversationService', () => {
             asMock(conversationModelMock.findById).mockResolvedValue(conversation);
 
             const transactionSpy = vi.fn();
-            const { withServiceTransaction } = await import('../../../src/utils/transaction.js');
 
             asMock(withServiceTransaction).mockImplementationOnce(
                 async (fn: (ctx: Record<string, unknown>) => Promise<unknown>) => {

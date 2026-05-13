@@ -11,6 +11,7 @@
  *   2. No ctx provided (backward compat) → queries use getDb()
  */
 
+import { getDb as _getDb } from '@repo/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Mock @repo/db before importing the module under test ────────────────────
@@ -115,7 +116,7 @@ vi.mock('@repo/db', () => ({
             }
             // Fall back to getDb() as the real impl would.
             // The getDb mock is configured per-test to return a db stub.
-            const { getDb: _getDb } = await import('@repo/db');
+
             return callback((_getDb as () => unknown)());
         }
     ),

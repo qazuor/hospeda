@@ -7,6 +7,7 @@
 
 import { renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useAuthTranslations } from '../../src/hooks/use-auth-translations';
 
 // We need to control the mock behavior per test group,
 // so we define the mock at module level and change its behavior via a variable.
@@ -50,7 +51,6 @@ describe('useAuthTranslations', () => {
     describe('when i18n is available', () => {
         it('returns t function and isI18nAvailable=true', async () => {
             // Arrange
-            const { useAuthTranslations } = await import('../../src/hooks/use-auth-translations');
 
             // Act
             const { result } = renderHook(() => useAuthTranslations());
@@ -62,7 +62,6 @@ describe('useAuthTranslations', () => {
 
         it('delegates to i18n t function', async () => {
             // Arrange
-            const { useAuthTranslations } = await import('../../src/hooks/use-auth-translations');
 
             // Act
             const { result } = renderHook(() => useAuthTranslations());
@@ -77,7 +76,6 @@ describe('useAuthTranslations', () => {
             mockTranslateFn = () => {
                 throw new Error('translation key not found');
             };
-            const { useAuthTranslations } = await import('../../src/hooks/use-auth-translations');
 
             // Act
             const { result } = renderHook(() => useAuthTranslations());
@@ -95,7 +93,6 @@ describe('useAuthTranslations', () => {
 
         it('returns t function and isI18nAvailable=false', async () => {
             // Arrange
-            const { useAuthTranslations } = await import('../../src/hooks/use-auth-translations');
 
             // Act
             const { result } = renderHook(() => useAuthTranslations());
@@ -107,7 +104,6 @@ describe('useAuthTranslations', () => {
 
         it('returns Spanish fallback text for known keys', async () => {
             // Arrange
-            const { useAuthTranslations } = await import('../../src/hooks/use-auth-translations');
 
             // Act
             const { result } = renderHook(() => useAuthTranslations());
@@ -122,7 +118,6 @@ describe('useAuthTranslations', () => {
 
         it('returns the key itself for unknown keys', async () => {
             // Arrange
-            const { useAuthTranslations } = await import('../../src/hooks/use-auth-translations');
 
             // Act
             const { result } = renderHook(() => useAuthTranslations());
@@ -134,7 +129,6 @@ describe('useAuthTranslations', () => {
 
         it('replaces parameters in fallback text', async () => {
             // Arrange
-            const { useAuthTranslations } = await import('../../src/hooks/use-auth-translations');
 
             // Act
             const { result } = renderHook(() => useAuthTranslations());
@@ -150,7 +144,6 @@ describe('useAuthTranslations', () => {
 
         it('replaces {param} placeholders in known fallback text', async () => {
             // Arrange
-            const { useAuthTranslations } = await import('../../src/hooks/use-auth-translations');
 
             // Act - test parameter replacement mechanism
             // Use a known key with manual param check
@@ -180,7 +173,6 @@ describe('useAuthTranslations', () => {
         it('signUp form keys without fallbacks return the key itself', async () => {
             // Arrange
             mockUseTranslationsThrows = true;
-            const { useAuthTranslations } = await import('../../src/hooks/use-auth-translations');
 
             // Act
             const { result } = renderHook(() => useAuthTranslations());

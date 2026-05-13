@@ -1,3 +1,4 @@
+import * as mod from 'drizzle-orm/node-postgres';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 
@@ -24,7 +25,7 @@ describe('initializeDb', () => {
     beforeEach(async () => {
         resetDbClient();
         // Cleans the spy using dynamic import and type assertion
-        const mod = await import('drizzle-orm/node-postgres');
+
         (mod.drizzle as ReturnType<typeof vi.fn>).mockClear();
     });
 
@@ -36,7 +37,7 @@ describe('initializeDb', () => {
         // @ts-expect-error: mock Pool para test
         const client = dbUtils.initializeDb(mockPool);
         expect(client).toBe('MOCK_DB_CLIENT');
-        const mod = await import('drizzle-orm/node-postgres');
+
         expect(mod.drizzle as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
             mockPool,
             expect.any(Object)

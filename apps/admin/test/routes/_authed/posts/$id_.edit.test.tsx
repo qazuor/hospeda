@@ -9,6 +9,7 @@
 
 import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import * as mod from '../../../../src/routes/_authed/posts/$id_.edit';
 
 // -- Mocks ------------------------------------------------------------------
 
@@ -95,7 +96,6 @@ vi.mock('@tanstack/react-router', () => ({
 
 describe('Route /_authed/posts/$id_/edit', () => {
     it("wires EntityEditContent with fieldHandlers that upload as entityType='post'", async () => {
-        const mod = await import('../../../../src/routes/_authed/posts/$id_.edit');
         const Page = (mod.Route as unknown as { options: { component: React.ComponentType } })
             .options.component;
 

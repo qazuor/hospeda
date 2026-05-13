@@ -8,6 +8,7 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { authLogger } from '../src/logger';
 import { SignInForm } from '../src/sign-in-form';
 import type { SignInMethods } from '../src/types';
 
@@ -332,7 +333,7 @@ describe('SignInForm', () => {
         it('handles signIn.email throwing exception gracefully', async () => {
             // Arrange
             const user = userEvent.setup();
-            const { authLogger } = await import('../src/logger');
+
             const mockSignIn = createMockSignIn({
                 email: vi.fn().mockRejectedValue(new Error('Network error'))
             });
@@ -550,7 +551,7 @@ describe('SignInForm', () => {
         it('handles OAuth Error-instance exception showing its message', async () => {
             // Arrange — AUTH-GAP-012: covers `err instanceof Error ? err.message : ...` true branch
             const user = userEvent.setup();
-            const { authLogger } = await import('../src/logger');
+
             const mockSignIn = createMockSignIn({
                 social: vi.fn().mockRejectedValue(new Error('OAuth specific error'))
             });

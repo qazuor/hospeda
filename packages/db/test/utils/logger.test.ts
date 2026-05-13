@@ -1,4 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as mod from '../../src/utils/logger';
 
 let logAction: (table: string, action: string, params: unknown) => void;
 let logError: (table: string, action: string, params: unknown, error: Error) => void;
@@ -13,7 +14,6 @@ let infoSpy: ReturnType<typeof vi.spyOn>;
 let errorSpy: ReturnType<typeof vi.spyOn>;
 
 beforeAll(async () => {
-    const mod = await import('../../src/utils/logger');
     // grab SUT and the exact logger instance it uses
     logAction = mod.logAction;
     logError = mod.logError;
