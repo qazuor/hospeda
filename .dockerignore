@@ -42,6 +42,12 @@ docs
 .remember
 mappings
 
+# Re-include Astro content collections — these Markdown files are app data
+# (source for pages served in production), not documentation. The blanket
+# `**/*.md` rule above would otherwise strip them from the build context and
+# silently produce 404s for `/beta/*` routes.
+!apps/web/src/content/**/*.md
+
 # Local logs and OS junk
 *.log
 npm-debug.log*
