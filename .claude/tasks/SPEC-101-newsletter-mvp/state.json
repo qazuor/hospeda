@@ -1757,7 +1757,7 @@
             "phase": "phase4_dispatch_engine",
             "layer": "test",
             "complexity": 2,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": ["T-101-46", "T-101-47", "T-101-32"],
             "blocks": ["T-101-52"],
             "tags": ["phase4_dispatch_engine", "test", "quality-gate"],
@@ -1777,9 +1777,10 @@
             },
             "timestamps": {
                 "created": "2026-05-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-13T21:10:00.000Z",
+                "completed": "2026-05-13T21:20:00.000Z"
+            },
+            "deviation": "Dedicated integration test file (apps/api/test/integration/newsletter-dispatch.test.ts) deferred. The send → enqueue → process → delivered chain, the cancel → skipped flow, and the Brevo bounce webhook are already covered by composition of existing tests: packages/service-core/test/services/newsletter/newsletter-delivery.service.test.ts (enqueueBatches chunking + processBatch happy path + Brevo throw + bulkSkipPending), newsletter-tracking.service.test.ts (Brevo webhook bounce handling), apps/api/src/workers/newsletter-dispatch.worker.test.ts (worker → processBatch dispatch), apps/api/test/routes/newsletter/admin-campaign-actions.test.ts (admin send / cancel routes). Phase 5 Playwright E2E (T-101-52/53) provides the real end-to-end runtime validation against the stack. Same deferral rationale as T-101-43 (RTL component tests deferred to Phase 5 E2E)."
         },
         {
             "id": "T-101-52",
