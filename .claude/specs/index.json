@@ -741,6 +741,14 @@
             "complexity": "high",
             "status": "draft",
             "path": "SPEC-105-e2e-nightly-suite-repair"
+        },
+        {
+            "specId": "SPEC-107",
+            "title": "Beta Tester Docs Screenshots Rollout",
+            "type": "docs",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-107-beta-tester-docs-screenshots"
         }
     ]
 }

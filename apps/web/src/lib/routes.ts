@@ -32,6 +32,18 @@ export const SESSION_OPTIONAL_SEGMENTS = ['feedback', 'alojamientos', 'guest', '
  */
 export const STATIC_PREFIXES = ['/_astro/', '/favicon', '/api/'] as const;
 
+/**
+ * Top-level URL prefix for the private beta tester documentation site.
+ * Pages under this prefix:
+ * - skip locale enforcement (the docs are Spanish-only, no `/{lang}/` namespace);
+ * - skip session parsing and auth protection (access is via secret URL only);
+ * - receive a `X-Robots-Tag: noindex, nofollow` response header;
+ * - render an isolated `BetaDocLayout` (does NOT extend `BaseLayout`).
+ *
+ * Lifetime: this entire surface is removed when the beta period ends.
+ */
+export const BETA_PREFIX = '/beta' as const;
+
 /** Type representing a protected route segment. */
 export type ProtectedSegment = (typeof PROTECTED_SEGMENTS)[number];
 

@@ -10,6 +10,7 @@ import { DEFAULT_LOCALE, type SupportedLocale, isValidLocale } from './i18n';
 import { webLogger } from './logger';
 import {
     AUTH_SEGMENTS,
+    BETA_PREFIX,
     PROTECTED_SEGMENTS,
     SESSION_OPTIONAL_SEGMENTS,
     STATIC_PREFIXES
@@ -197,6 +198,27 @@ export function isStaticAssetRoute({ path }: { path: string }): boolean {
  */
 export function isServerIslandRoute({ path }: { path: string }): boolean {
     return !!path && path.startsWith('/_server-islands/');
+}
+
+/**
+ * Checks if a URL path belongs to the private beta tester documentation site.
+ * Beta routes live under `/beta` (no `/{lang}/` namespace, Spanish-only).
+ *
+ * @param params - Object containing the URL path string
+ * @returns True if the path is a beta docs route
+ *
+ * @example
+ * ```ts
+ * isBetaRoute({ path: '/beta/' })                    // true
+ * isBetaRoute({ path: '/beta/turista/crear-cuenta/' }) // true
+ * isBetaRoute({ path: '/es/alojamientos/' })         // false
+ * ```
+ */
+export function isBetaRoute({ path }: { path: string }): boolean {
+    if (!path) {
+        return false;
+    }
+    return path === BETA_PREFIX || path.startsWith(`${BETA_PREFIX}/`);
 }
 
 /**

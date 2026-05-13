@@ -1,0 +1,62 @@
+---
+/**
+ * @file pages/beta/[...slug].astro
+ * @description Catch-all route for the private beta tester docs site.
+ *
+ * Lives outside the `/{lang}/` namespace (Spanish-only by product decision).
+ * Middleware (`src/middleware.ts`, Step 3.5) short-circuits locale enforcement
+ * and stamps `X-Robots-Tag: noindex, nofollow` on every response under `/beta`.
+ *
+ * Pages are prerendered at build time so the docs site remains available even
+ * if the SSR server is unhealthy.
+ */
+
+import BetaPrevNext from '@/components/beta/BetaPrevNext.astro';
+import BetaToc from '@/components/beta/BetaToc.astro';
+import BetaDocLayout from '@/layouts/BetaDocLayout.astro';
+import { buildBetaNav, findNeighbours, flattenBetaNav } from '@/lib/beta-nav';
+import { getCollection, render } from 'astro:content';
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+    const docs = await getCollection('beta', (entry) => !entry.data.draft);
+
+    return docs.map((doc) => {
+        const slug = doc.id === 'index' ? undefined : doc.id;
+        return {
+            params: { slug },
+            props: { doc }
+        };
+    });
+}
+
+type Doc = Awaited<ReturnType<typeof getCollection<'beta'>>>[number];
+
+interface Props {
+    readonly doc: Doc;
+}
+
+const { doc } = Astro.props;
+const { Content, headings } = await render(doc);
+
+const allDocs = await getCollection('beta', (entry) => !entry.data.draft);
+const groups = buildBetaNav(allDocs);
+const flat = flattenBetaNav(groups);
+const { prev, next } = findNeighbours(flat, doc.id);
+
+const isIndex = doc.id === 'index';
+---
+
+<BetaDocLayout
+    title={doc.data.title}
+    description={doc.data.description}
+    currentSlug={doc.id}
+    hideToc={isIndex}
+>
+    <Content />
+
+    {!isIndex && <BetaPrevNext prev={prev} next={next} />}
+
+    <BetaToc slot="toc" headings={headings} />
+</BetaDocLayout>
