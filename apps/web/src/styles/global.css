@@ -154,8 +154,9 @@
     --duration-fast: 0.2s;
     --duration-normal: 0.4s;
     --duration-slow: 0.5s;
-    --duration-reveal: 1s;
+    --duration-reveal: 450ms;
     --ease-bounce: cubic-bezier(0.1, 0, 0.3, 1);
+    --ease-reveal: cubic-bezier(0.22, 1, 0.36, 1);
 
     /* --- Z-index --- */
     --z-content: 10;
