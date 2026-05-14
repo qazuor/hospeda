@@ -5,9 +5,9 @@
     "created": "2026-05-14T00:00:00.000Z",
     "summary": {
         "totalTasks": 14,
-        "completed": 11,
+        "completed": 12,
         "inProgress": 0,
-        "pending": 3,
+        "pending": 2,
         "deferred": 0,
         "blocked": 0,
         "executionOrder": [
@@ -495,11 +495,27 @@
             "phase": "phase1_link_cleanup",
             "layer": "docs",
             "complexity": 2,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": [],
             "blocks": [],
             "tags": ["docs", "cleanup"],
-            "files": ["packages/seed/**/*.md", "packages/i18n/**/*.md", "docs/guides/**/*.md"],
+            "files": [
+                "packages/seed/README.md",
+                "packages/seed/docs/quick-start.md",
+                "packages/seed/docs/README.md",
+                "packages/seed/docs/guides/dependencies.md",
+                "packages/seed/docs/guides/creating-seeds.md",
+                "packages/seed/docs/api/seed-structure.md",
+                "packages/i18n/README.md",
+                "packages/i18n/CLAUDE.md",
+                "packages/i18n/docs/README.md",
+                "packages/i18n/docs/guides/usage.md",
+                "docs/guides/error-handling.md",
+                "docs/guides/env-management.md",
+                "docs/guides/debugging.md",
+                "docs/guides/adding-new-entity.md",
+                "docs/guides/README.md"
+            ],
             "acceptanceCriteria": [
                 "pnpm docs:check-links reports 0 broken links in packages/seed/, packages/i18n/, docs/guides/",
                 "Per-batch PR titled docs: repair internal links in seed + i18n + guides"
@@ -508,9 +524,20 @@
             "qualityGate": {
                 "lint": "pass",
                 "typecheck": "n/a",
-                "tests": "pnpm docs:check-links exits 0 in the three dirs"
+                "tests": "broken count in the three dirs: 23 -> 0; total 73 -> 50"
             },
-            "timestamps": { "created": "2026-05-14T00:00:00.000Z" }
+            "timestamps": {
+                "created": "2026-05-14T00:00:00.000Z",
+                "started": "2026-05-14T04:50:00.000Z",
+                "completed": "2026-05-14T05:05:00.000Z"
+            },
+            "findings": {
+                "seedExamplesDir": "packages/seed/docs/examples/ never existed (5 refs). Actual examples are .ts seeders in packages/seed/src/seeders/. Replaced with prose pointing at the source.",
+                "i18nWrongDepth": "packages/i18n/docs/guides/usage.md had `../../packages/i18n/README.md` and `../../packages/i18n/CLAUDE.md` — wrong: from docs/guides/, those resolve to `packages/i18n/packages/i18n/...`. Fixed to `../../README.md` and `../../CLAUDE.md`.",
+                "phantomCrossCutting": "docs/guides/internationalization.md (4 refs in i18n) and docs/api/ServiceOutput.md (1 ref in error-handling) never existed at project level. Remapped to the actual in-package docs: packages/i18n/docs/README.md, packages/service-core/docs/api/ServiceOutput.md.",
+                "phantomDevPaths": "docs/development/code-standards.md, docs/guides/testing-strategy.md, apps/web/docs/development/README.md, apps/web/docs/guides/* never existed. Remapped to .claude/docs/code-standards.md, docs/testing/strategy.md, apps/web/CLAUDE.md, apps/web/STYLE_GUIDE.md respectively.",
+                "miscellaneous": "[@repo/auth-ui]/[@repo/utils] dir links -> their /README.md. seed/docs/README.md two dir refs -> their /README.md. env-management.md `packages/config/src/` link replaced with prose backticks (no need to link)."
+            }
         },
         {
             "id": "T-106-11",

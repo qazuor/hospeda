@@ -4,8 +4,8 @@
 **Started:** 2026-05-14
 **Branch:** `spec/SPEC-106-docs-broken-links-cleanup` (based off `origin/staging`)
 **Total tasks:** 14
-**Completed:** 11 / 14
-**Broken links remaining:** 73 (was 365 at start; -66 web, -44 admin, -36 service-core, -31 api, -27 db, -27 deployment, -19 logger, -15 schemas, -14 runbooks, -13 icons)
+**Completed:** 12 / 14
+**Broken links remaining:** 50 (was 365 at start; -86% closed)
 
 ---
 
@@ -54,7 +54,7 @@ Ordered for risk-management first, then visible-progress.
 | T-106-07 | packages/schemas (15) | **completed** | 1 |
 | T-106-08 | docs/runbooks (14) | **completed** | 1 |
 | T-106-09 | packages/icons (13) | **completed** | 1 |
-| T-106-10 | seed + i18n + docs/guides (23) | pending | 2 |
+| T-106-10 | seed + i18n + docs/guides (23) | **completed** | 2 |
 | T-106-11 | tail dirs (~50) | pending | 2 |
 | T-106-13 | Documentation CI phase gate | pending | 1 |
 
