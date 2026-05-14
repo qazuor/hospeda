@@ -18,6 +18,7 @@
 # genéricos
 **/dist/
 **/build/
+**/tmp/
 dist-ssr
 .output
 
