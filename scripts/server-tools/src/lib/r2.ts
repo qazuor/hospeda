@@ -18,8 +18,10 @@
 import { Buffer } from 'node:buffer';
 import {
     DeleteObjectCommand,
+    GetBucketLifecycleConfigurationCommand,
     GetObjectCommand,
     ListObjectsV2Command,
+    PutBucketLifecycleConfigurationCommand,
     PutObjectCommand,
     S3Client
 } from '@aws-sdk/client-s3';
@@ -144,6 +146,60 @@ export class R2Client {
                 Key: key
             })
         );
+    }
+
+    /**
+     * Replace the bucket's lifecycle configuration with a single rule that
+     * deletes objects under `prefix` after `expirationDays` days.
+     *
+     * Idempotent: existing rules on the bucket are REPLACED. R2 stores at
+     * most one lifecycle config per bucket so the PUT is destructive but
+     * predictable.
+     */
+    async setLifecycleRule(params: {
+        readonly ruleId: string;
+        readonly prefix: string;
+        readonly expirationDays: number;
+    }): Promise<void> {
+        await this.client.send(
+            new PutBucketLifecycleConfigurationCommand({
+                Bucket: this.bucket,
+                LifecycleConfiguration: {
+                    Rules: [
+                        {
+                            ID: params.ruleId,
+                            Status: 'Enabled',
+                            Filter: { Prefix: params.prefix },
+                            Expiration: { Days: params.expirationDays }
+                        }
+                    ]
+                }
+            })
+        );
+    }
+
+    /**
+     * Fetch the bucket's current lifecycle configuration. Returns
+     * `undefined` when the bucket has no lifecycle rules configured (R2
+     * returns a 404-equivalent for that case).
+     */
+    async getLifecycle(): Promise<
+        ReadonlyArray<{ id: string; prefix: string; expirationDays: number }> | undefined
+    > {
+        try {
+            const result = await this.client.send(
+                new GetBucketLifecycleConfigurationCommand({ Bucket: this.bucket })
+            );
+            return (result.Rules ?? []).map((r) => ({
+                id: r.ID ?? '(unnamed)',
+                prefix: r.Filter && 'Prefix' in r.Filter ? (r.Filter.Prefix ?? '') : '',
+                expirationDays: r.Expiration?.Days ?? -1
+            }));
+        } catch (err) {
+            const name = err instanceof Error ? err.name : '';
+            if (name === 'NoSuchLifecycleConfiguration') return undefined;
+            throw err;
+        }
     }
 }
 

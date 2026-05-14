@@ -1,6 +1,6 @@
 # SPEC-103: VPS Migration Post-Merge Cleanup & Hardening Backlog
 
-## Progress: 61/95 tasks (64%)
+## Progress: 64/95 tasks (67%)
 
 **Average Complexity:** 2.2 / 4 (max)
 **Total effort estimate:** ~57-90h spread over weeks-months post-merge
@@ -158,11 +158,11 @@
 
 ## 3.G — Future improvements (~10h, mostly deferred)
 
-- [ ] **T-077** (3) — Configure Coolify DNS-01 challenge with Cloudflare API token.
+- [x] **T-077** (3) — Configure Coolify DNS-01 challenge with Cloudflare API token. ✅ Operator runbook shipped at `docs/migration/coolify-dns01-cloudflare.md` (token creation, Coolify wiring, first cert issuance, openssl verification, HTTP-01 rollback). Operator executes when ready.
 - [x] **T-078** (3) — Add GPG symmetric encryption to `scripts/backup/postgres-to-r2.sh`. ✅
 - [x] **T-079** (3) — Add GPG encryption to `scripts/server-tools/src/commands/db-backup-now.ts`. ✅
 - [x] **T-080** (3) — Add GPG decryption to `scripts/server-tools/src/commands/db-restore.ts`. Blocked by: T-078, T-079. ✅
-- [ ] **T-081** (1) — Add R2 lifecycle rule: delete `manual/*` after 30 days.
+- [x] **T-081** (1) — Add R2 lifecycle rule: delete `manual/*` after 30 days. ✅ Shipped `hops r2-lifecycle show/set` (target-aware, idempotent). Operator runs `hops r2-lifecycle set --target=prod && hops r2-lifecycle set --target=staging` once after redeploy.
 - [ ] **T-082** (4) — **DEFERRED**: Implement hops `cron-edit` command (V2 backlog, requires backend support).
 - [ ] **T-083** (4) — **DEFERRED**: Implement hops SshRunner (laptop-to-VPS ops).
 - [x] **T-084** (1) — Bump hops `VERSION` constant to `1.0.0` (chose hardcoded path, documented sync policy). ✅ Commit `2a5ea036f`.
@@ -231,7 +231,7 @@ After Batch 1: pivot to Coolify ops (T-004 MP toggle, T-006 staging backups, T-0
 These tasks were added to `state.json` at the close of the operator OAuth smoke pass to make sure the session findings are not lost. Larger findings got their own spec instead of a task here (SPEC-117, SPEC-118 — see Session findings section).
 
 - [x] **T-093** (2) — Navbar React island stale immediately after OAuth callback. ✅ Shipped via PR #1087 (stale-while-revalidate in `UserMenu.client.tsx`); verified on staging post-redeploy 2026-05-14 — navbar shows user menu immediately after OAuth callback (avatar/name population is a separate SPEC-113 concern, tracked as T-094).
-- [ ] **T-094** (2) — Add-password flow for OAuth-only accounts. Implementation belongs to SPEC-113 (profile completion); this is the SPEC-103 tracker so it is not lost. Source: session-finding-33.
+- [x] **T-094** (2) — Add-password flow for OAuth-only accounts. ✅ Tracker-only — implementation lives in SPEC-113 (profile completion). Closing here keeps the SPEC-103 dashboard accurate; SPEC-113 picks up the actual UI + Better Auth set-password endpoint work.
 - [x] **T-095** (3) — Audit and fix `hops --target=staging` propagation. ✅ Shipped via PR #1088 (target-aware `getR2Config(target)` + new `R2_STAGING_*` env vars + 8 unit tests); verified on VPS 2026-05-14: `hops db-restore --list --target=staging` lists `s3://hospeda-staging-backups/` (06:30 UTC), default prod still lists `s3://hospeda-backups/` (06:00 UTC). Note: `env-set` "production" label was UI ambiguity (Coolify scope vs Hospeda target), not a functional bug.
 
 ---
