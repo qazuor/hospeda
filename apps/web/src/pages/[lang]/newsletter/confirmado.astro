@@ -15,6 +15,7 @@
  */
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import StatusPage from '@/components/shared/StatusPage.astro';
 import WhatsAppCTA from '@/components/newsletter/WhatsAppCTA.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -33,11 +34,6 @@ const pageDescription = t(
 );
 const homeLink = t('newsletter.verify.homeLink', 'Ir al sitio');
 const preferencesLink = t('newsletter.verify.preferencesLink', 'Gestionar preferencias');
-
-// Split title to underline the last word with a handwritten accent.
-const titleWords = pageTitle.trim().split(/\s+/);
-const titleAccent = titleWords.pop() ?? pageTitle;
-const titleMain = titleWords.join(' ');
 ---
 
 <DefaultLayout
@@ -46,187 +42,49 @@ const titleMain = titleWords.join(' ');
     description={pageDescription}
     noindex={true}
 >
-    <main class="newsletter-confirm">
-        <div class="newsletter-confirm__decoratives" aria-hidden="true">
-            <div class="newsletter-confirm__blob"></div>
-            <span class="newsletter-confirm__dot newsletter-confirm__dot--1"></span>
-            <span class="newsletter-confirm__dot newsletter-confirm__dot--2"></span>
-        </div>
-        <div class="newsletter-confirm__card">
-            <div class="newsletter-confirm__icon-wrap" aria-hidden="true">
-                <CheckCircleIcon size={96} weight="duotone" />
-            </div>
-            <h1 class="newsletter-confirm__title">
-                {titleMain && <>{titleMain}{' '}</>}
-                <span class="newsletter-confirm__title-accent">
-                    {titleAccent}
-                    <svg
-                        class="newsletter-confirm__title-underline"
-                        viewBox="0 0 200 18"
-                        preserveAspectRatio="none"
-                        aria-hidden="true"
-                    >
-                        <path
-                            d="M 4 12 Q 50 2, 100 10 T 196 8"
-                            stroke="currentColor"
-                            stroke-width="4"
-                            stroke-linecap="round"
-                            fill="none"
-                        />
-                    </svg>
-                </span>
-            </h1>
-            <p class="newsletter-confirm__description">{pageDescription}</p>
+    <StatusPage
+        variant="success"
+        Icon={CheckCircleIcon}
+        title={pageTitle}
+        description={pageDescription}
+        hideBlob
+    >
+        <WhatsAppCTA slot="extras" locale={lang} source="verification_success" />
 
-            <WhatsAppCTA locale={lang} source="verification_success" />
-
-            <div class="newsletter-confirm__actions">
-                <a class="newsletter-confirm__link-primary" href={`/${lang}/`}>{homeLink}</a>
-                <a
-                    class="newsletter-confirm__link-secondary"
-                    href={`/${lang}/mi-cuenta/newsletter/`}
-                >
-                    {preferencesLink}
-                </a>
-            </div>
-        </div>
-    </main>
+        <a slot="actions" class="newsletter-confirm__link-primary" href={`/${lang}/`}>
+            {homeLink}
+        </a>
+        <a
+            slot="actions"
+            class="newsletter-confirm__link-secondary"
+            href={`/${lang}/mi-cuenta/newsletter/`}
+        >
+            {preferencesLink}
+        </a>
+    </StatusPage>
 </DefaultLayout>
 
 <style>
-    .newsletter-confirm {
-        position: relative;
-        max-width: 640px;
-        margin: 0 auto;
-        padding: clamp(5rem, 12vw, 10rem) var(--space-4);
-    }
-
-    .newsletter-confirm__decoratives {
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        z-index: 0;
-        overflow: hidden;
-    }
-
-    .newsletter-confirm__blob {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: clamp(280px, 60vw, 520px);
-        height: clamp(280px, 60vw, 520px);
-        border-radius: 50%;
-        background: radial-gradient(
-            circle at 50% 50%,
-            oklch(0.65 0.18 145 / 0.18),
-            oklch(0.65 0.18 145 / 0.06) 55%,
-            transparent 75%
-        );
-        filter: blur(4px);
-    }
-
-    .newsletter-confirm__dot {
-        position: absolute;
-        border-radius: 50%;
-    }
-    .newsletter-confirm__dot--1 {
-        top: 16%;
-        left: 10%;
-        width: 12px;
-        height: 12px;
-        background-color: oklch(0.65 0.18 145 / 0.3);
-    }
-    .newsletter-confirm__dot--2 {
-        bottom: 18%;
-        right: 12%;
-        width: 9px;
-        height: 9px;
-        background-color: oklch(from var(--brand-accent) l c h / 0.3);
-    }
-
-    .newsletter-confirm__card {
-        position: relative;
-        z-index: 1;
-        background-color: var(--surface-elevated);
-        border-radius: var(--radius-lg);
-        padding: var(--space-8) var(--space-6);
-        text-align: center;
-        box-shadow: 0 4px 24px oklch(0 0 0 / 0.06);
-    }
-
-    .newsletter-confirm__icon-wrap {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 128px;
-        height: 128px;
-        margin-bottom: var(--space-5);
-        border-radius: 50%;
-        background-color: oklch(0.65 0.18 145 / 0.12);
-        color: oklch(0.55 0.18 145);
-        box-shadow: 0 8px 24px oklch(0.65 0.18 145 / 0.18);
-    }
-
-    .newsletter-confirm__title-accent {
-        position: relative;
-        display: inline-block;
-    }
-
-    .newsletter-confirm__title-underline {
-        position: absolute;
-        left: -3%;
-        right: -3%;
-        bottom: -0.08em;
-        width: 106%;
-        height: 0.32em;
-        color: oklch(0.55 0.18 145);
-        opacity: 0.7;
-        pointer-events: none;
-    }
-
-    .newsletter-confirm__title {
-        margin: 0 0 var(--space-3);
-        font-family: var(--font-heading);
-        font-size: var(--text-h3);
-        line-height: 1.2;
-    }
-
-    .newsletter-confirm__description {
-        margin: 0 0 var(--space-6);
-        font-size: var(--text-body);
-        line-height: 1.5;
-        color: var(--surface-warm-foreground);
-    }
-
-    .newsletter-confirm__actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-3);
-        justify-content: center;
-        margin-top: var(--space-6);
-    }
-
     .newsletter-confirm__link-primary,
     .newsletter-confirm__link-secondary {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: var(--space-2) var(--space-5);
-        border-radius: var(--radius-button);
-        font-size: var(--text-button);
+        padding: var(--space-2, 0.5rem) var(--space-5, 1.25rem);
+        border-radius: var(--radius-button, 8px);
+        font-size: var(--text-button, 0.9375rem);
         font-weight: 600;
         text-decoration: none;
     }
 
     .newsletter-confirm__link-primary {
-        background-color: var(--primary);
+        background-color: var(--brand-primary);
         color: var(--primary-foreground);
     }
 
     .newsletter-confirm__link-secondary {
         background-color: transparent;
-        color: var(--primary);
-        border: 1px solid var(--primary);
+        color: var(--brand-primary);
+        border: 1px solid var(--brand-primary);
     }
 </style>

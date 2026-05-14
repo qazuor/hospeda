@@ -16,6 +16,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import AuthLayout from '@/layouts/AuthLayout.astro';
+import StatusPage from '@/components/shared/StatusPage.astro';
 import { EmailIcon } from '@repo/icons';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
@@ -37,153 +38,18 @@ const body = t(
 const signInLabel = t('auth-ui.pages.verifyEmailSent.signInLink', 'Ir a iniciar sesión');
 
 const signInHref = buildUrl({ locale, path: 'auth/signin' });
-
-// Split heading to underline the last word with a handwritten accent.
-const headingWords = heading.trim().split(/\s+/);
-const headingAccent = headingWords.pop() ?? heading;
-const headingMain = headingWords.join(' ');
 ---
 
-<AuthLayout locale={locale} title={title} description={description}>
-    <div slot="decoratives" class="verify-sent-deco" aria-hidden="true">
-        <div class="verify-sent-deco__blob"></div>
-        <span class="verify-sent-deco__dot verify-sent-deco__dot--1"></span>
-        <span class="verify-sent-deco__dot verify-sent-deco__dot--2"></span>
-    </div>
-
-    <div class="verify-sent" aria-labelledby="verify-email-sent-heading">
-        <div class="verify-sent__icon-wrap" aria-hidden="true">
-            <EmailIcon size={96} weight="duotone" />
-        </div>
-        <h1 id="verify-email-sent-heading" class="verify-sent__title">
-            {headingMain && <>{headingMain}{' '}</>}
-            <span class="verify-sent__title-accent">
-                {headingAccent}
-                <svg
-                    class="verify-sent__title-underline"
-                    viewBox="0 0 200 18"
-                    preserveAspectRatio="none"
-                    aria-hidden="true"
-                >
-                    <path
-                        d="M 4 12 Q 50 2, 100 10 T 196 8"
-                        stroke="currentColor"
-                        stroke-width="4"
-                        stroke-linecap="round"
-                        fill="none"
-                    />
-                </svg>
-            </span>
-        </h1>
-        <p class="verify-sent__body">{body}</p>
-        <a href={signInHref} class="verify-sent__link">
+<AuthLayout locale={locale} title={title} description={description} bareSlot={true}>
+    <StatusPage
+        variant="info"
+        Icon={EmailIcon}
+        title={heading}
+        description={body}
+        hideBlob
+    >
+        <a slot="footer" href={signInHref}>
             {signInLabel}
         </a>
-    </div>
+    </StatusPage>
 </AuthLayout>
-
-<style is:global>
-    /* Decoratives live in the AuthLayout decoratives slot, outside .auth-card.
-       Marked global so they survive Astro's scoped-style hashing. */
-    .verify-sent-deco {
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        z-index: 0;
-    }
-
-    .verify-sent-deco__blob {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: clamp(360px, 60vw, 720px);
-        height: clamp(360px, 60vw, 720px);
-        border-radius: 50%;
-        background: radial-gradient(
-            circle at 50% 50%,
-            oklch(from var(--brand-primary) l c h / 0.18),
-            oklch(from var(--brand-accent) l c h / 0.07) 55%,
-            transparent 75%
-        );
-        filter: blur(4px);
-    }
-
-    .verify-sent-deco__dot {
-        position: absolute;
-        border-radius: 50%;
-    }
-    .verify-sent-deco__dot--1 {
-        top: 14%;
-        left: 8%;
-        width: 12px;
-        height: 12px;
-        background-color: oklch(from var(--brand-primary) l c h / 0.28);
-    }
-    .verify-sent-deco__dot--2 {
-        bottom: 18%;
-        right: 10%;
-        width: 9px;
-        height: 9px;
-        background-color: oklch(from var(--brand-accent) l c h / 0.3);
-    }
-</style>
-
-<style>
-    .verify-sent {
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .verify-sent__icon-wrap {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 112px;
-        height: 112px;
-        margin-bottom: var(--space-5, 1.25rem);
-        border-radius: 50%;
-        background-color: oklch(from var(--brand-primary) l c h / 0.12);
-        color: var(--brand-primary);
-        box-shadow: 0 8px 24px oklch(from var(--brand-primary) l c h / 0.18);
-    }
-
-    .verify-sent__title {
-        font-size: var(--text-xl, 1.5rem);
-        font-weight: 600;
-        margin: 0 0 var(--space-4, 1rem);
-        color: var(--core-foreground);
-        line-height: 1.25;
-    }
-
-    .verify-sent__title-accent {
-        position: relative;
-        display: inline-block;
-    }
-
-    .verify-sent__title-underline {
-        position: absolute;
-        left: -3%;
-        right: -3%;
-        bottom: -0.08em;
-        width: 106%;
-        height: 0.32em;
-        color: var(--brand-accent);
-        opacity: 0.75;
-        pointer-events: none;
-    }
-
-    .verify-sent__body {
-        color: var(--muted-foreground);
-        line-height: 1.6;
-        margin: 0 0 var(--space-6, 1.5rem);
-    }
-
-    .verify-sent__link {
-        color: var(--primary);
-        font-weight: 600;
-        text-decoration: underline;
-    }
-</style>

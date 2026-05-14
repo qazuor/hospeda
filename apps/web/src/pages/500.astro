@@ -8,6 +8,7 @@
 export const prerender = false;
 
 import ErrorLayout from '@/layouts/ErrorLayout.astro';
+import StatusPage from '@/components/shared/StatusPage.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { RefreshIcon, ChatIcon } from '@repo/icons';
 import { isDevelopment } from '@/lib/env';
@@ -30,116 +31,107 @@ const feedbackParams = new URLSearchParams({
 const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 
 const showDevDetails = isDevelopment();
+const destructiveColor = 'oklch(0.55 0.2 30)';
 ---
 
 <ErrorLayout locale={locale} title={t('error.500.title')} description={t('error.500.description')} noindex={true}>
-	<div slot="decoratives" class="error-deco error-deco--500" aria-hidden="true">
-		<div class="error-deco__blob"></div>
+	<StatusPage
+		variant="error"
+		title={t('error.500.heading')}
+		description={t('error.500.message')}
+		hideBlob
+	>
 		<svg
-			class="error-deco__trail"
-			viewBox="0 0 200 100"
-			preserveAspectRatio="none"
-			aria-hidden="true"
+			slot="illustration"
+			width="120"
+			height="120"
+			viewBox="0 0 120 120"
+			fill="none"
+			xmlns="http://www.w3.org/2000/svg"
 		>
-			<path
-				d="M 10 30 Q 60 90, 110 50 T 190 70"
-				stroke="currentColor"
-				stroke-width="2.5"
-				stroke-dasharray="4 8"
-				stroke-linecap="round"
-				fill="none"
-			/>
+			<circle cx="60" cy="60" r="54" stroke={destructiveColor} stroke-width="1.5" opacity="0.12" />
+			<circle cx="60" cy="60" r="40" stroke={destructiveColor} stroke-width="1.5" opacity="0.08" />
+			<circle cx="60" cy="60" r="20" stroke={destructiveColor} stroke-width="2" fill={`oklch(from ${destructiveColor} l c h / 0.06)`} />
+			<circle cx="60" cy="60" r="8" stroke={destructiveColor} stroke-width="2" fill="none" />
+			<line x1="60" y1="50" x2="60" y2="58" stroke={destructiveColor} stroke-width="2.5" stroke-linecap="round" />
+			<circle cx="60" cy="64" r="1.5" fill={destructiveColor} />
+			<circle cx="60" cy="30" r="3" fill={destructiveColor} opacity="0.15" />
+			<circle cx="60" cy="90" r="3" fill={destructiveColor} opacity="0.15" />
+			<circle cx="30" cy="60" r="3" fill={destructiveColor} opacity="0.15" />
+			<circle cx="90" cy="60" r="3" fill={destructiveColor} opacity="0.15" />
 		</svg>
-		<span class="error-deco__dot error-deco__dot--1"></span>
-		<span class="error-deco__dot error-deco__dot--2"></span>
-		<span class="error-deco__dot error-deco__dot--3"></span>
-	</div>
 
-	<!-- Illustrated icon -->
-	<div class="err500-illustration" aria-hidden="true">
-		<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-			<circle cx="60" cy="60" r="54" stroke="var(--destructive, #ef4444)" stroke-width="1.5" opacity="0.12" />
-			<circle cx="60" cy="60" r="40" stroke="var(--destructive, #ef4444)" stroke-width="1.5" opacity="0.08" />
-			<circle cx="60" cy="60" r="20" stroke="var(--destructive, #ef4444)" stroke-width="2" fill="oklch(from var(--destructive, #ef4444) l c h / 0.06)" />
-			<circle cx="60" cy="60" r="8" stroke="var(--destructive, #ef4444)" stroke-width="2" fill="none" />
-			<line x1="60" y1="50" x2="60" y2="58" stroke="var(--destructive, #ef4444)" stroke-width="2.5" stroke-linecap="round" />
-			<circle cx="60" cy="64" r="1.5" fill="var(--destructive, #ef4444)" />
-			<circle cx="60" cy="30" r="3" fill="var(--destructive, #ef4444)" opacity="0.15" />
-			<circle cx="60" cy="90" r="3" fill="var(--destructive, #ef4444)" opacity="0.15" />
-			<circle cx="30" cy="60" r="3" fill="var(--destructive, #ef4444)" opacity="0.15" />
-			<circle cx="90" cy="60" r="3" fill="var(--destructive, #ef4444)" opacity="0.15" />
-		</svg>
-	</div>
-
-	<div class="err500-code" aria-hidden="true">500</div>
-
-	<h1 class="err500-title">{t('error.500.heading')}</h1>
-	<p class="err500-message">{t('error.500.message')}</p>
-
-	<div class="err500-actions">
-		<GradientButton as="button" id="retry-btn" label={t('error.500.retry')} variant="primary" shape="rounded">
+		<GradientButton
+			slot="actions"
+			as="button"
+			id="retry-btn"
+			label={t('error.500.retry')}
+			variant="primary"
+			shape="rounded"
+		>
 			<RefreshIcon slot="leading" size={18} />
 		</GradientButton>
-		<GradientButton href={feedbackWithParams} label="Reportar problema" variant="outline-primary" shape="rounded">
+		<GradientButton
+			slot="actions"
+			href={feedbackWithParams}
+			label="Reportar problema"
+			variant="outline-primary"
+			shape="rounded"
+		>
 			<ChatIcon slot="leading" size={18} />
 		</GradientButton>
-	</div>
 
-	<a href={homeUrl} class="err500-home-link">
-		{t('error.500.goHome')}
-	</a>
+		<a slot="footer" href={homeUrl}>
+			{t('error.500.goHome')}
+		</a>
 
-	{showDevDetails && (
-		<details class="err500-dev">
-			<summary class="err500-dev__summary">Detalles del error (dev)</summary>
-			<div class="err500-dev__content">
-				<p><strong>URL:</strong> {Astro.url.href}</p>
-				<p><strong>Method:</strong> {Astro.request.method}</p>
-				<p><strong>Timestamp:</strong> {new Date().toISOString()}</p>
-				<p class="err500-dev__hint">Revisá la terminal del dev server para el stack trace completo.</p>
-			</div>
-		</details>
-	)}
+		{showDevDetails && (
+			<details slot="extras" class="err500-dev">
+				<summary class="err500-dev__summary">Detalles del error (dev)</summary>
+				<div class="err500-dev__content">
+					<p><strong>URL:</strong> {Astro.url.href}</p>
+					<p><strong>Method:</strong> {Astro.request.method}</p>
+					<p><strong>Timestamp:</strong> {new Date().toISOString()}</p>
+					<p class="err500-dev__hint">Revisá la terminal del dev server para el stack trace completo.</p>
+				</div>
+			</details>
+		)}
+	</StatusPage>
 </ErrorLayout>
 
-<style is:global>
-	.error-deco--500 .error-deco__blob {
-		background: radial-gradient(
-			circle at 50% 50%,
-			oklch(from var(--destructive, #ef4444) l c h / 0.14),
-			oklch(from var(--destructive, #ef4444) l c h / 0.05) 55%,
-			transparent 75%
-		);
+<style>
+	.err500-dev {
+		width: 100%;
+		text-align: left;
 	}
-
-	.error-deco--500 .error-deco__trail {
-		bottom: 16%;
-		left: 8%;
-		color: var(--destructive, #ef4444);
-		transform: rotate(-12deg);
-		opacity: 0.4;
+	.err500-dev__summary {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		color: var(--core-muted-foreground);
+		cursor: pointer;
+		user-select: none;
+		padding: 0.5rem;
+		border-radius: var(--radius-button, 8px);
 	}
-
-	.error-deco--500 .error-deco__dot--1 {
-		top: 24%;
-		right: 12%;
-		width: 12px;
-		height: 12px;
-		background-color: oklch(from var(--destructive, #ef4444) l c h / 0.28);
+	.err500-dev__summary:hover {
+		background-color: oklch(0.62 0.2 30 / 0.06);
 	}
-	.error-deco--500 .error-deco__dot--2 {
-		top: 32%;
-		right: 22%;
-		width: 9px;
-		height: 9px;
-		background-color: oklch(from var(--brand-accent) l c h / 0.3);
+	.err500-dev__content {
+		margin-top: 0.5rem;
+		padding: 0.75rem 1rem;
+		background-color: oklch(0.62 0.2 30 / 0.05);
+		border: 1px solid oklch(0.62 0.2 30 / 0.12);
+		border-radius: var(--radius-button, 8px);
+		font-family: monospace;
+		font-size: 0.75rem;
+		color: var(--core-muted-foreground);
 	}
-	.error-deco--500 .error-deco__dot--3 {
-		bottom: 26%;
-		left: 18%;
-		width: 14px;
-		height: 14px;
-		background-color: oklch(from var(--destructive, #ef4444) l c h / 0.2);
+	.err500-dev__content p { margin: 0 0 0.25rem; }
+	.err500-dev__content strong { color: var(--core-foreground); }
+	.err500-dev__hint {
+		margin-top: 0.75rem !important;
+		font-style: italic;
+		opacity: 0.7;
 	}
 </style>
 
@@ -148,4 +140,3 @@ const showDevDetails = isDevelopment();
 		window.location.reload();
 	});
 </script>
-

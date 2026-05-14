@@ -17,6 +17,7 @@
  */
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import StatusPage from '@/components/shared/StatusPage.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { AlertCircleIcon } from '@repo/icons';
@@ -52,11 +53,6 @@ const descriptionFb =
 const pageTitle = t(titleKey, titleFb);
 const pageDescription = t(descriptionKey, descriptionFb);
 
-// Split title to underline the last word with a handwritten accent.
-const titleWords = pageTitle.trim().split(/\s+/);
-const titleAccent = titleWords.pop() ?? pageTitle;
-const titleMain = titleWords.join(' ');
-
 const resendLabel = t('newsletter.errorPage.resendButton', 'Reenviar email de confirmación');
 const signInHref = `/${lang}/auth/signin/?redirect=${encodeURIComponent(
     `/${lang}/newsletter/error/?reason=${reason}`
@@ -69,165 +65,36 @@ const signInHref = `/${lang}/auth/signin/?redirect=${encodeURIComponent(
     description={pageDescription}
     noindex={true}
 >
-    <main class="newsletter-error">
-        <div class="newsletter-error__decoratives" aria-hidden="true">
-            <div class="newsletter-error__blob"></div>
-            <span class="newsletter-error__dot newsletter-error__dot--1"></span>
-            <span class="newsletter-error__dot newsletter-error__dot--2"></span>
-        </div>
-        <div class="newsletter-error__card">
-            <div class="newsletter-error__icon-wrap" aria-hidden="true">
-                <AlertCircleIcon size={96} weight="duotone" />
-            </div>
-            <h1 class="newsletter-error__title">
-                {titleMain && <>{titleMain}{' '}</>}
-                <span class="newsletter-error__title-accent">
-                    {titleAccent}
-                    <svg
-                        class="newsletter-error__title-underline"
-                        viewBox="0 0 200 18"
-                        preserveAspectRatio="none"
-                        aria-hidden="true"
+    <StatusPage
+        variant="error"
+        Icon={AlertCircleIcon}
+        title={pageTitle}
+        description={pageDescription}
+        hideBlob
+    >
+        {reason === 'token_expired' && (
+            <Fragment slot="actions">
+                {isAuthenticated ? (
+                    <form
+                        method="post"
+                        action="/api/v1/protected/newsletter/resend-verification"
+                        class="newsletter-error__resend"
                     >
-                        <path
-                            d="M 4 12 Q 50 2, 100 10 T 196 8"
-                            stroke="currentColor"
-                            stroke-width="4"
-                            stroke-linecap="round"
-                            fill="none"
-                        />
-                    </svg>
-                </span>
-            </h1>
-            <p class="newsletter-error__description">{pageDescription}</p>
-
-            {reason === 'token_expired' && (
-                <>
-                    {isAuthenticated ? (
-                        <form
-                            method="post"
-                            action="/api/v1/protected/newsletter/resend-verification"
-                            class="newsletter-error__resend"
-                        >
-                            <button class="newsletter-error__button" type="submit">
-                                {resendLabel}
-                            </button>
-                        </form>
-                    ) : (
-                        <a class="newsletter-error__button" href={signInHref}>
+                        <button class="newsletter-error__button" type="submit">
                             {resendLabel}
-                        </a>
-                    )}
-                </>
-            )}
-        </div>
-    </main>
+                        </button>
+                    </form>
+                ) : (
+                    <a class="newsletter-error__button" href={signInHref}>
+                        {resendLabel}
+                    </a>
+                )}
+            </Fragment>
+        )}
+    </StatusPage>
 </DefaultLayout>
 
 <style>
-    .newsletter-error {
-        position: relative;
-        max-width: 560px;
-        margin: 0 auto;
-        padding: clamp(5rem, 12vw, 10rem) var(--space-4);
-    }
-
-    .newsletter-error__decoratives {
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        z-index: 0;
-        overflow: hidden;
-    }
-
-    .newsletter-error__blob {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: clamp(280px, 60vw, 520px);
-        height: clamp(280px, 60vw, 520px);
-        border-radius: 50%;
-        background: radial-gradient(
-            circle at 50% 50%,
-            oklch(0.62 0.2 30 / 0.16),
-            oklch(0.62 0.2 30 / 0.05) 55%,
-            transparent 75%
-        );
-        filter: blur(4px);
-    }
-
-    .newsletter-error__dot {
-        position: absolute;
-        border-radius: 50%;
-    }
-    .newsletter-error__dot--1 {
-        top: 18%;
-        right: 12%;
-        width: 12px;
-        height: 12px;
-        background-color: oklch(0.62 0.2 30 / 0.3);
-    }
-    .newsletter-error__dot--2 {
-        bottom: 22%;
-        left: 14%;
-        width: 9px;
-        height: 9px;
-        background-color: oklch(from var(--brand-accent) l c h / 0.3);
-    }
-
-    .newsletter-error__card {
-        position: relative;
-        z-index: 1;
-        background-color: var(--surface-elevated);
-        border-radius: var(--radius-lg);
-        padding: var(--space-8) var(--space-6);
-        text-align: center;
-    }
-
-    .newsletter-error__icon-wrap {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 128px;
-        height: 128px;
-        margin-bottom: var(--space-5);
-        border-radius: 50%;
-        background-color: oklch(0.62 0.2 30 / 0.12);
-        color: oklch(0.55 0.2 30);
-        box-shadow: 0 8px 24px oklch(0.62 0.2 30 / 0.18);
-    }
-
-    .newsletter-error__title-accent {
-        position: relative;
-        display: inline-block;
-    }
-
-    .newsletter-error__title-underline {
-        position: absolute;
-        left: -3%;
-        right: -3%;
-        bottom: -0.08em;
-        width: 106%;
-        height: 0.32em;
-        color: oklch(0.55 0.2 30);
-        opacity: 0.7;
-        pointer-events: none;
-    }
-
-    .newsletter-error__title {
-        margin: 0 0 var(--space-3);
-        font-family: var(--font-heading);
-        font-size: var(--text-h3);
-        line-height: 1.2;
-    }
-
-    .newsletter-error__description {
-        margin: 0 0 var(--space-6);
-        font-size: var(--text-body);
-        line-height: 1.5;
-    }
-
     .newsletter-error__resend {
         margin: 0;
     }
@@ -236,12 +103,12 @@ const signInHref = `/${lang}/auth/signin/?redirect=${encodeURIComponent(
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: var(--space-2) var(--space-5);
+        padding: var(--space-2, 0.5rem) var(--space-5, 1.25rem);
         border: none;
-        border-radius: var(--radius-button);
-        background-color: var(--primary);
+        border-radius: var(--radius-button, 8px);
+        background-color: var(--brand-primary);
         color: var(--primary-foreground);
-        font-size: var(--text-button);
+        font-size: var(--text-button, 0.9375rem);
         font-weight: 600;
         text-decoration: none;
         cursor: pointer;
