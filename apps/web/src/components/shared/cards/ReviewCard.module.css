@@ -13,15 +13,18 @@
     min-height: 0;
 }
 
-/* Decorative background quote icon — large, positioned absolute */
+/* Decorative background quote icon — large, positioned absolute in the
+   top-right corner. Sized via clamp so it scales with the slide width and
+   stays prominent. Brand-primary (blue) at 0.13 reads as a soft celeste
+   wash; the previous accent (orange) at 0.09 came across as faded sand. */
 .quoteIcon {
     position: absolute;
-    top: -0.25rem;
-    left: -0.25rem;
-    width: 5rem;
-    height: 5rem;
-    color: var(--brand-accent);
-    opacity: 0.09;
+    top: -0.5rem;
+    right: -0.5rem;
+    width: clamp(8.5rem, 16vw, 12rem);
+    height: clamp(8.5rem, 16vw, 12rem);
+    color: var(--brand-primary);
+    opacity: 0.13;
     pointer-events: none;
     transition: opacity var(--duration-normal) ease;
 }
