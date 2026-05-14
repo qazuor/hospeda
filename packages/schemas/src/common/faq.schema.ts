@@ -28,13 +28,14 @@ export const BaseFaqSchema = z.object({
         .min(10, { message: 'zodError.common.faq.answer.min' })
         .max(2000, { message: 'zodError.common.faq.answer.max' }),
 
+    // Use .nullish() (not .optional()) because Drizzle returns `null` for unset columns.
     category: z
         .string({
             message: 'zodError.common.faq.category.required'
         })
         .min(2, { message: 'zodError.common.faq.category.min' })
         .max(100, { message: 'zodError.common.faq.category.max' })
-        .optional()
+        .nullish()
 });
 export type BaseFaqType = z.infer<typeof BaseFaqSchema>;
 
