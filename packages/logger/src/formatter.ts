@@ -334,8 +334,14 @@ export function formatValue(
         }
 
         if (expandLevels === 0) {
-            // Don't expand at all
-            return '[Object]';
+            // Don't expand visually — serialize compactly (one line, no indent)
+            // so the operator still sees the content. Returning a literal
+            // '[Object]' hides information at the worst possible moment.
+            try {
+                return JSON.stringify(redactedValue);
+            } catch {
+                return Object.prototype.toString.call(redactedValue);
+            }
         }
         // Expand to specified level
         const seen = new WeakSet();
@@ -357,7 +363,13 @@ export function formatValue(
             seen.add(obj as object);
 
             if (level <= 0) {
-                return '[Object]';
+                // Depth budget exhausted — serialize compactly instead of
+                // hiding the content behind '[Object]'.
+                try {
+                    return JSON.stringify(obj);
+                } catch {
+                    return Object.prototype.toString.call(obj);
+                }
             }
 
             if (Array.isArray(obj)) {
