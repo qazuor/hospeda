@@ -312,6 +312,18 @@ const PRIVATE_IP_PATTERNS: readonly RegExp[] = [
 ];
 
 /**
+ * Paths considered healthcheck endpoints. Loopback traffic to these paths bypasses
+ * rate limiting entirely to avoid filling shared buckets with internal probe traffic.
+ */
+const HEALTHCHECK_PATHS: ReadonlySet<string> = new Set([
+    '/',
+    '/health',
+    '/healthz',
+    '/readyz',
+    '/livez'
+]);
+
+/**
  * Returns true when `ip` is a loopback address (IPv4 127.x, IPv6 ::1, or IPv4-mapped IPv6 loopback).
  *
  * @param ip - The IP string to test.
@@ -635,22 +647,30 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
     // Get client IP using shared extraction utility
     const clientIp = getClientIp({ c });
 
-    // Warn once when proxy is not trusted
-    if (clientIp === 'untrusted-proxy') {
-        const store = getStore();
-        const warningLogged = await store.has('__proxy_warning_logged__');
-        if (!warningLogged) {
-            apiLogger.warn(
-                'Rate limiting: API_RATE_LIMIT_TRUST_PROXY is false. ' +
-                    'All requests share one rate limit bucket. ' +
-                    'Set to true when behind a trusted reverse proxy (Cloudflare, Nginx, Coolify Traefik, etc.)'
-            );
-            await store.set(
-                '__proxy_warning_logged__',
-                { count: 1, windowStart: Date.now() },
-                config.windowMs
-            );
-        }
+    // (A) Bypass rate limiting for loopback healthcheck traffic. Docker/Coolify probe the
+    // container every ~30s via http://localhost:3001/ — those hits should never fill a bucket.
+    // We only bypass when BOTH the source is loopback AND the path is a known healthcheck,
+    // so a compromised process opening a local socket can't trivially bypass external limits.
+    if (clientIp.startsWith('internal:') && HEALTHCHECK_PATHS.has(path)) {
+        await next();
+        return;
+    }
+
+    // (D) Surface any remaining 'unknown' fallback in logs. With the trust-chain rewrite this
+    // should be near-impossible in prod (only fires when there is no socket AND no proxy
+    // headers — e.g. a misconfigured test harness). If it appears in monitoring, investigate.
+    if (clientIp === 'unknown') {
+        apiLogger.warn(
+            {
+                event: 'rate_limit.unknown_source',
+                path,
+                method,
+                hasCfConnectingIp: c.req.header('cf-connecting-ip') !== undefined,
+                hasForwardedFor: c.req.header('x-forwarded-for') !== undefined,
+                hasRealIp: c.req.header('x-real-ip') !== undefined
+            },
+            'Rate limiter could not identify request source — falling back to shared "unknown" bucket'
+        );
     }
 
     const store = getStore();

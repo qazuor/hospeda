@@ -5,6 +5,7 @@
  * bypass added in SPEC-110 to eliminate the shared `rl:general:unknown` bucket.
  */
 import type { Context } from 'hono';
+import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Enable rate limiting in this test file
@@ -71,6 +72,7 @@ import {
     getClientIp,
     isLoopbackIp,
     isPrivateIp,
+    rateLimitMiddleware,
     resetRateLimitStore
 } from '../../src/middlewares/rate-limit';
 
@@ -290,5 +292,75 @@ describe('getClientIp — trust chain', () => {
             const c = makeContext({ headers: { 'cf-connecting-ip': '1.1.1.1' } });
             expect(getClientIp({ c })).toBe('1.1.1.1');
         });
+    });
+});
+
+// ─── Healthcheck bypass (A) ───────────────────────────────────────────────────
+
+describe('rateLimitMiddleware — healthcheck bypass', () => {
+    /**
+     * Builds a Hono app that injects a fake socket onto c.req.raw before the
+     * rate-limit middleware runs. This emulates what `@hono/node-server` does
+     * in production.
+     */
+    const buildApp = (socketIp: string): Hono => {
+        const app = new Hono();
+        app.use('*', async (c, next) => {
+            (c.req.raw as unknown as { socket: { remoteAddress: string } }).socket = {
+                remoteAddress: socketIp
+            };
+            await next();
+        });
+        app.use('*', rateLimitMiddleware);
+        app.get('/', (c) => c.text('ok'));
+        app.get('/health', (c) => c.text('ok'));
+        app.get('/api/v1/public/foo', (c) => c.text('ok'));
+        return app;
+    };
+
+    it('bypasses rate limit for loopback + healthcheck path (/)', async () => {
+        const app = buildApp('127.0.0.1');
+        // Send way more than the general bucket allows; none should 429.
+        for (let i = 0; i < 200; i++) {
+            const res = await app.request('/');
+            expect(res.status).toBe(200);
+        }
+    });
+
+    it('bypasses rate limit for loopback + /health', async () => {
+        const app = buildApp('127.0.0.1');
+        for (let i = 0; i < 200; i++) {
+            const res = await app.request('/health');
+            expect(res.status).toBe(200);
+        }
+    });
+
+    it('does NOT bypass for loopback + non-healthcheck path', async () => {
+        const app = buildApp('127.0.0.1');
+        // public limit is 10; the 11th should 429
+        let saw429 = false;
+        for (let i = 0; i < 30; i++) {
+            const res = await app.request('/api/v1/public/foo');
+            if (res.status === 429) {
+                saw429 = true;
+                break;
+            }
+        }
+        expect(saw429).toBe(true);
+    });
+
+    it('does NOT bypass for non-loopback source even on healthcheck path', async () => {
+        // Untrusted external IP hitting / would burn the general bucket.
+        // It should rate-limit normally (not bypass) so it cannot hide behind the path.
+        const app = buildApp('5.6.7.8');
+        let saw429 = false;
+        for (let i = 0; i < 200; i++) {
+            const res = await app.request('/');
+            if (res.status === 429) {
+                saw429 = true;
+                break;
+            }
+        }
+        expect(saw429).toBe(true);
     });
 });
