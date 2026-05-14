@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-111",
+    "title": "Astro server islands runtime crash — manifest.serverIslandMap.get is not a function",
+    "type": "fix",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-14T01:35:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["astro", "web", "server-islands", "build", "runtime", "investigation", "upstream-bug"]
+}
