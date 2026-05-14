@@ -42,7 +42,13 @@ import {
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
-import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
+import type {
+    Actor,
+    AdminSearchExecuteParams,
+    ServiceConfig,
+    ServiceContext,
+    ServiceOutput
+} from '../../types';
 import { ServiceError } from '../../types';
 import { generatePostSlug } from './post.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './post.normalizers';
@@ -333,6 +339,24 @@ export class PostService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<PaginatedListOutput<Post>> {
+        if (!result?.items) return result;
+        return {
+            ...result,
+            items: result.items.map((item) => this.flattenPostTagsRelation(item))
+        };
+    }
+
+    /**
+     * Override admin search execution to flatten the `r_post_post_tag` join rows
+     * into a top-level `PostTag[]` for every item, matching the behavior of
+     * `_afterList` and `_afterSearch`. The base `adminList` flow does NOT invoke
+     * `_afterList`, so this override is required to keep the response shape
+     * consistent with `PostAdminSchema.postTags` (SPEC-086 / SPEC-117 A-2 fix).
+     */
+    protected override async _executeAdminSearch(
+        params: AdminSearchExecuteParams
+    ): Promise<PaginatedListOutput<Post>> {
+        const result = await super._executeAdminSearch(params);
         if (!result?.items) return result;
         return {
             ...result,
