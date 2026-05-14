@@ -70,7 +70,12 @@
     --hospeda-sky-light: oklch(0.88 0.06 259);
     --hospeda-river: oklch(0.63 0.19 259);
     --hospeda-forest: oklch(0.5 0.14 155);
-    --hospeda-sand: oklch(0.93 0.03 85);
+    /* Warm terra/clay tone. Previous value oklch(0.93 0.03 85) was so close to
+       white that pills using this token at 0.15 alpha rendered as invisible
+       ghosts over the card background. Lowered lightness + bumped chroma so
+       category badges (HISTORY / TRADITIONS / ART) and accommodation pills
+       that reference it stay readable. */
+    --hospeda-sand: oklch(0.7 0.12 75);
 
     /* --- Social proof avatar gradient stops --- */
     --avatar-1-from: oklch(0.25 0.08 255);
