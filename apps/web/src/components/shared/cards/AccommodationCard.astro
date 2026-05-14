@@ -304,11 +304,13 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		white-space: nowrap;
 	}
 
-	/* Featured badge */
+	/* Featured badge — right edge matches the actions column above
+	 * (12px from card edge) so favorite, photo-count and featured stack
+	 * along the same vertical guideline. */
 	.acc-card__featured-badge {
 		position: absolute;
 		bottom: 48px;
-		right: 16px;
+		right: 12px;
 		font-family: var(--font-sans);
 		font-weight: 700;
 		font-size: 14px;
@@ -339,7 +341,10 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		}
 	}
 
-	/* Actions (favorite + photo count) */
+	/* Actions (favorite + photo count) — right-aligned column. Items have
+	 * different widths (40px circle button vs. "N fotos" pill) so flex-end
+	 * keeps both flush with the card's right edge, matching the featured
+	 * badge below. */
 	.acc-card__actions {
 		position: absolute;
 		top: 12px;
@@ -347,7 +352,7 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
-		align-items: center;
+		align-items: flex-end;
 	}
 
 	.acc-card__fav-btn {
@@ -373,19 +378,14 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		outline-offset: 2px;
 	}
 
-	/* Photo-count pill: hidden by default on hover-capable devices and
-	 * revealed when the card is hovered or keyboard-focused. The previous
-	 * tiny chip (11px font, 55% bg) was unreadable over busy photos and
-	 * competed with the favorite button for the corner. Now bigger + more
-	 * opaque so the count reads clearly the moment it's shown.
-	 *
-	 * On touch devices (no hover) the pill is always visible — there's no
-	 * hover gesture to discover it otherwise. */
+	/* Photo-count pill: always visible. Bigger + labeled (e.g. "9 fotos")
+	 * so the meaning reads at a glance, but keeps the original translucent
+	 * surface so it doesn't overpower the photo. */
 	.acc-card__photo-count {
 		display: flex;
 		align-items: center;
 		gap: 6px;
-		background-color: oklch(from var(--core-foreground) l c h / 0.78);
+		background-color: oklch(from var(--core-foreground) l c h / 0.55);
 		padding: 6px 12px;
 		border-radius: 9999px;
 		color: var(--primary-foreground);
@@ -393,19 +393,6 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		font-weight: 600;
 		font-size: 13px;
 		line-height: 1.2;
-		opacity: 0;
-		transition: opacity 180ms ease;
-	}
-
-	.acc-card:hover .acc-card__photo-count,
-	.acc-card:focus-within .acc-card__photo-count {
-		opacity: 1;
-	}
-
-	@media (hover: none) {
-		.acc-card__photo-count {
-			opacity: 1;
-		}
 	}
 
 	/* CONTENT AREA */
