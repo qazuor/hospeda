@@ -5,9 +5,9 @@
     "created": "2026-05-14T00:00:00.000Z",
     "summary": {
         "totalTasks": 14,
-        "completed": 8,
+        "completed": 9,
         "inProgress": 0,
-        "pending": 6,
+        "pending": 5,
         "deferred": 0,
         "blocked": 0,
         "executionOrder": [
@@ -378,11 +378,19 @@
             "phase": "phase1_link_cleanup",
             "layer": "docs",
             "complexity": 1,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": [],
             "blocks": [],
             "tags": ["docs", "cleanup"],
-            "files": ["packages/schemas/**/*.md"],
+            "files": [
+                "packages/schemas/docs/quick-start.md",
+                "packages/schemas/src/templates/README.md",
+                "packages/schemas/docs/guides/validation-patterns.md",
+                "packages/schemas/docs/guides/testing.md",
+                "packages/schemas/docs/guides/enums.md",
+                "packages/schemas/docs/guides/creating-schemas.md",
+                "packages/schemas/docs/guides/composition.md"
+            ],
             "acceptanceCriteria": [
                 "pnpm docs:check-links reports 0 broken links in packages/schemas/",
                 "Per-batch PR titled docs(schemas): repair internal links"
@@ -391,9 +399,20 @@
             "qualityGate": {
                 "lint": "pass",
                 "typecheck": "n/a",
-                "tests": "pnpm docs:check-links exits 0 in packages/schemas/"
+                "tests": "broken count in packages/schemas/: 15 -> 0; total 115 -> 100"
             },
-            "timestamps": { "created": "2026-05-14T00:00:00.000Z" }
+            "timestamps": {
+                "created": "2026-05-14T00:00:00.000Z",
+                "started": "2026-05-14T04:05:00.000Z",
+                "completed": "2026-05-14T04:15:00.000Z"
+            },
+            "findings": {
+                "phantomPortal": "7 broken refs to `../portal.md` (never existed) across 5 guides. Remapped all to `../README.md` (the actual docs portal).",
+                "phantomConcepts": "`../concepts/type-inference.md` referenced 3x — there's no concepts/ subdir. Actual file: `../api/type-inference.md`. Remapped.",
+                "phantomApiReadme": "guides/creating-schemas.md referenced `../api/README.md` (never existed). Remapped to `../api/schema-reference.md` (the canonical API entry).",
+                "templatesStubs": "src/templates/README.md had 4 stale refs to a planned (never-shipped) migration project: docs/migration/{phase-0-analysis,README}.md and src/{common,utils}/README.md. Replaced the section with pointers to the actual entry points (docs/quick-start.md, docs/guides/creating-schemas.md, and the source dirs by path).",
+                "miscellaneous": "quick-start.md `[Testing Standards](../../CLAUDE.md#testing-standards)` (path didn't resolve to a file) -> `../../../.claude/docs/testing-standards.md`."
+            }
         },
         {
             "id": "T-106-08",
