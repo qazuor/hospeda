@@ -121,7 +121,10 @@ export type RenderTiptapEmailFn = (input: { content: unknown }) => string;
  * Injected function for rendering the campaign email template to an HTML string.
  *
  * In production this wraps `render(NewsletterCampaign({ ... }))` from
- * `@react-email/render` + the template in `@repo/notifications`.
+ * `@react-email/render` + the template in `@repo/notifications`. The
+ * production implementation is async (so CSS inlining and Tailwind passes
+ * run); the return type accepts `string` too so sync test stubs keep
+ * working without `await` wrappers (SPEC-108 T-108-01).
  * In tests it is a `vi.fn()`.
  */
 export type RenderCampaignEmailFn = (input: {
@@ -129,7 +132,7 @@ export type RenderCampaignEmailFn = (input: {
     bodyHtml: string;
     unsubscribeUrl: string;
     isTest?: boolean;
-}) => string;
+}) => string | Promise<string>;
 
 /**
  * Opaque react element type — avoids importing `react` into `@repo/service-core`.
@@ -599,36 +602,43 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
 
                 // ----------------------------------------------------------------
                 // Step 5: Build per-recipient HTML with individual unsubscribe URL.
+                // `renderCampaignEmailFn` may return `Promise<string>` in
+                // production (async path through `@react-email/render` for CSS
+                // inlining + Tailwind passes) or `string` in tests. The body
+                // of the map is pure (no shared state across iterations) so
+                // running renders concurrently with `Promise.all` is safe.
                 // ----------------------------------------------------------------
-                const recipientData = eligibleDeliveries.map((delivery) => {
-                    const subscriber = activeSubscriberMap.get(delivery.subscriberId);
-                    const email = subscriber?.email ?? '';
-                    const subscriberId = delivery.subscriberId;
-                    const locale = subscriber?.locale ?? 'es';
+                const recipientData = await Promise.all(
+                    eligibleDeliveries.map(async (delivery) => {
+                        const subscriber = activeSubscriberMap.get(delivery.subscriberId);
+                        const email = subscriber?.email ?? '';
+                        const subscriberId = delivery.subscriberId;
+                        const locale = subscriber?.locale ?? 'es';
 
-                    const unsubscribeToken = this.hmacSecret
-                        ? generateUnsubscribeToken({
-                              subscriberId,
-                              channel: 'email',
-                              secret: this.hmacSecret
-                          })
-                        : '';
+                        const unsubscribeToken = this.hmacSecret
+                            ? generateUnsubscribeToken({
+                                  subscriberId,
+                                  channel: 'email',
+                                  secret: this.hmacSecret
+                              })
+                            : '';
 
-                    const unsubscribeUrl = `${this.siteUrl}/${locale}/newsletter/unsubscribe?token=${unsubscribeToken}`;
+                        const unsubscribeUrl = `${this.siteUrl}/${locale}/newsletter/unsubscribe?token=${unsubscribeToken}`;
 
-                    const recipientHtml = this.renderCampaignEmailFn({
-                        subject: campaign.subject,
-                        bodyHtml,
-                        unsubscribeUrl
-                    });
+                        const recipientHtml = await this.renderCampaignEmailFn({
+                            subject: campaign.subject,
+                            bodyHtml,
+                            unsubscribeUrl
+                        });
 
-                    return {
-                        deliveryId: delivery.id,
-                        email,
-                        recipientHtml,
-                        unsubscribeUrl
-                    };
-                });
+                        return {
+                            deliveryId: delivery.id,
+                            email,
+                            recipientHtml,
+                            unsubscribeUrl
+                        };
+                    })
+                );
 
                 // ----------------------------------------------------------------
                 // Step 6: Call the injected sendBatchFn.
