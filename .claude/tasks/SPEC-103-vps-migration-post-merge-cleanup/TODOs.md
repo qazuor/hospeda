@@ -162,7 +162,7 @@
 - [x] **T-078** (3) — Add GPG symmetric encryption to `scripts/backup/postgres-to-r2.sh`. ✅
 - [x] **T-079** (3) — Add GPG encryption to `scripts/server-tools/src/commands/db-backup-now.ts`. ✅
 - [x] **T-080** (3) — Add GPG decryption to `scripts/server-tools/src/commands/db-restore.ts`. Blocked by: T-078, T-079. ✅
-- [x] **T-081** (1) — Add R2 lifecycle rule: delete `manual/*` after 30 days. ✅ Shipped `hops r2-lifecycle show/set` (target-aware, idempotent). Operator runs `hops r2-lifecycle set --target=prod && hops r2-lifecycle set --target=staging` once after redeploy.
+- [x] **T-081** (1) — Add R2 lifecycle rule: delete `manual/*` after 30 days. ✅ Rule applied 2026-05-14 by the operator via the Cloudflare R2 dashboard on both `hospeda-backups` + `hospeda-staging-backups` (prefix `manual/`, 30-day expiration). The `hops r2-lifecycle show/set` command was shipped for future use but requires an admin-scoped R2 token; current token is object-only so `set/show` return Access Denied. The runbook in `docs/migration/coolify-dns01-cloudflare.md` Notes section also covers the dashboard path.
 - [ ] **T-082** (4) — **DEFERRED**: Implement hops `cron-edit` command (V2 backlog, requires backend support).
 - [ ] **T-083** (4) — **DEFERRED**: Implement hops SshRunner (laptop-to-VPS ops).
 - [x] **T-084** (1) — Bump hops `VERSION` constant to `1.0.0` (chose hardcoded path, documented sync policy). ✅ Commit `2a5ea036f`.
