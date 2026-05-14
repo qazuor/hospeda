@@ -58,7 +58,10 @@ the campaign body to HTML once, builds per-recipient `messageVersions`, and
 sends a single batch request to Brevo's `/v3/smtp/email`. Open and click
 tracking are handled by Brevo natively (`trackOpens: true, trackClicks: true`);
 the Brevo webhook posts events back to
-`POST /api/v1/public/webhooks/brevo`.
+`POST /api/v1/public/webhooks/brevo/:token`, where `:token` is a static
+shared secret (`HOSPEDA_BREVO_WEBHOOK_SECRET`) embedded in the URL. See
+SPEC-115 for why URL-embedded auth was chosen over header-based: Brevo
+strips custom auth on dashboard edits, but accepts arbitrary URLs.
 
 ### 4. Token model: HMAC-SHA256 with embedded payload
 
