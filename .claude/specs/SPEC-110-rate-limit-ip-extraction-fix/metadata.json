@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-110",
+    "title": "Rate-Limiter IP Extraction Fix — prevent shared 'unknown' bucket",
+    "type": "fix",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-13T04:50:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["security", "rate-limiting", "redis", "cloudflare", "api", "investigation"]
+}
