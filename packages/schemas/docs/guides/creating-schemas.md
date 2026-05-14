@@ -63,8 +63,8 @@ Each entity typically has:
 
 - TypeScript fundamentals
 - Zod library basics ([Zod Documentation](https://zod.dev))
-- Project structure (see [Portal](../portal.md))
-- Understanding of [Type Inference](../concepts/type-inference.md)
+- Project structure (see [Docs Portal](../README.md))
+- Understanding of [Type Inference](../api/type-inference.md)
 
 ### Project Setup
 
@@ -1657,11 +1657,11 @@ const WithDefaultSchema = z.object({
 - **[Validation Patterns](./validation-patterns.md)**: Explore validation strategies
 - **[Enums Guide](./enums.md)**: Master enumeration usage
 - **[Testing Guide](./testing.md)**: Write comprehensive schema tests
-- **[API Reference](../api/README.md)**: Complete schema reference
+- **[Schema Reference](../api/schema-reference.md)**: Complete schema reference
 
 ## Related Documentation
 
-- **[Portal](../portal.md)**: Package overview
+- **[Docs Portal](../README.md)**: Package overview
 - **[Quick Start](../quick-start.md)**: Get started quickly
-- **[Type Inference](../concepts/type-inference.md)**: Type system deep dive
+- **[Type Inference](../api/type-inference.md)**: Type system deep dive
 - **[Schema Reference](../api/schema-reference.md)**: Complete API docs

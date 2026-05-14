@@ -213,7 +213,7 @@ For each entity:
 
 ## 📚 Additional Resources
 
-- [Phase 0 Analysis](../../../docs/migration/phase-0-analysis.md) - Complete migration analysis
-- [Base Schema Documentation](../common/README.md) - Base schema patterns
-- [OpenAPI Utils](../utils/README.md) - OpenAPI integration helpers
-- [Migration Guide](../../../docs/migration/README.md) - Overall migration strategy
+- [Schemas Quick Start](../../docs/quick-start.md) - Get started with @repo/schemas
+- [Creating Schemas Guide](../../docs/guides/creating-schemas.md) - Patterns and best practices
+- Base schema patterns: see `packages/schemas/src/common/` (`base.schema.ts`, `admin-search.schema.ts`, `audit.schema.ts`)
+- OpenAPI helpers: see `packages/schemas/src/utils/`
