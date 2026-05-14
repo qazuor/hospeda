@@ -226,6 +226,7 @@ describe('ENV_REGISTRY', () => {
                 'HOSPEDA_EMAIL_FROM_NAME',
                 'HOSPEDA_COMMIT_SHA',
                 'HOSPEDA_SENTRY_DSN',
+                'HOSPEDA_SENTRY_ENVIRONMENT',
                 'API_PORT',
                 'API_CORS_ORIGINS',
                 'PUBLIC_API_URL',

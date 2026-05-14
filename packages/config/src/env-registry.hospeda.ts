@@ -1066,6 +1066,22 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'El slug del proyecto que aparece en la URL de Sentry: sentry.io/organizations/<org>/projects/<este-valor>/. Lo usa la herramienta de upload de source maps.'
     },
+    {
+        name: 'HOSPEDA_SENTRY_ENVIRONMENT',
+        description: 'Sentry environment tag (production | staging | development)',
+        descriptionEs:
+            'Tag de entorno en Sentry (production | staging | development) — separa eventos prod y staging cuando ambos corren con NODE_ENV=production.',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'staging',
+        apps: ['api'],
+        category: 'monitoring',
+        howToObtain:
+            'Free-text label applied to all Sentry events. Set to `production` on the prod container and `staging` on the staging container. Takes precedence over NODE_ENV in the Sentry init — lets both deployments run with NODE_ENV=production (preserving prod-like trace/profile sampling) while remaining separable in the Sentry dashboard.',
+        howToObtainEs:
+            'Etiqueta libre que se aplica a todos los eventos de Sentry. Poné `production` en el contenedor prod y `staging` en el de staging. Tiene precedencia sobre NODE_ENV en el init de Sentry — permite que ambos deploys corran con NODE_ENV=production (preservando el sampling de traces/profiles tipo prod) pero queden separables en el dashboard de Sentry.'
+    },
 
     // -------------------------------------------------------------------------
     // Testing
