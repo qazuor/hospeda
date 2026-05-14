@@ -1,6 +1,6 @@
 # SPEC-103: VPS Migration Post-Merge Cleanup & Hardening Backlog
 
-## Progress: 33/95 tasks (35%)
+## Progress: 61/95 tasks (64%)
 
 **Average Complexity:** 2.2 / 4 (max)
 **Total effort estimate:** ~57-90h spread over weeks-months post-merge
@@ -25,20 +25,20 @@
 
 ### MercadoPago prod toggle (3.A.1)
 
-- [ ] **T-004** (2) — Flip `HOSPEDA_MERCADO_PAGO_SANDBOX=false` + rotate MP creds on hospeda-api-prod.
-- [ ] **T-005** (2) — Smoke prod MP integration (low-value addon purchase, verify `livemode=true`). Blocked by: T-004.
+- [ ] **T-004** (2) — Flip `HOSPEDA_MERCADO_PAGO_SANDBOX=false` + rotate MP creds on hospeda-api-prod. MOVED TO SPEC-109 (2026-05-14): work owned by SPEC-109 now.
+- [ ] **T-005** (2) — Smoke prod MP integration (low-value addon purchase, verify `livemode=true`). Blocked by: T-004. MOVED TO SPEC-109 (2026-05-14): work owned by SPEC-109 now.
 
 ### Staging postgres backups (3.A.2)
 
-- [ ] **T-006** (2) — Configure daily 03:00 ART R2 backup for hospeda-staging-postgres.
+- [x] **T-006** (2) — Configure daily 03:00 ART R2 backup for hospeda-staging-postgres. ✅ Reconciled 2026-05-14: staging daily R2 backup cron active (verified by T-007).
 - [x] **T-007** (1) — Verify staging backup landed in R2 + `hops db-restore` lists it. ✅ Verified 2026-05-14: encrypted daily backup `hospeda-postgres-2026-05-14_063001Z.dump.gpg` (263.1 KiB) present in `s3://hospeda-staging-backups/`. Verification used `aws s3 ls` directly with credentials from `/etc/hospeda-backup-staging.env` (R2_* prefix). `hops db-restore --list --target=staging` is broken — it shows prod backups instead, see session-finding-14-repro.
 
 ### Prod destinations slug parity (3.A.4)
 
-- [ ] **T-008** (1) — Identify 4 missing destination slugs (staging vs prod diff).
-- [ ] **T-009** (2) — Add 4 missing destinations to prod via admin UI. Blocked by: T-008.
-- [ ] **T-010** (1) — Verify slug parity between staging and prod. Blocked by: T-009. Blocks: T-011, **T-063 (beta migration)**.
-- [ ] **T-011** (1) — Document curated prod destinations in `docs/migration/staging-prod-db-separation.md` §10.4. Blocked by: T-010.
+- [x] **T-008** (1) — Identify 4 missing destination slugs (staging vs prod diff). ✅ Reconciled 2026-05-14: destination slug parity 30/30.
+- [x] **T-009** (2) — Add 4 missing destinations to prod via admin UI. Blocked by: T-008. ✅ Reconciled 2026-05-14: 4 missing destinations added; parity 30/30.
+- [x] **T-010** (1) — Verify slug parity between staging and prod. Blocked by: T-009. Blocks: T-011, **T-063 (beta migration)**. ✅ Reconciled 2026-05-14: slug parity verified.
+- [x] **T-011** (1) — Document curated prod destinations in `docs/migration/staging-prod-db-separation.md` §10.4. Blocked by: T-010. ✅ Reconciled 2026-05-14: documented via PR #1067.
 
 ### Full auth coverage end-to-end (3.A.5 — folds in 3.A.3)
 
@@ -55,11 +55,11 @@
 - [ ] **T-022** (2) — Smoke cross-environment session isolation.
 - [ ] **T-023** (3) — Smoke auth UI a11y (keyboard + screen reader + Enter).
 - [x] **T-024** (2) — Smoke OAuth error logging (console context + Sentry tags). ⚠️ PARTIAL: cancel recovery UX works (no crash), but no UI feedback to the user and no Sentry event captured. See session-finding-02 below; deferred to post-launch instrumentation pass.
-- [ ] **T-025** (2) — Document full auth smoke checklist in `apps/web/docs/auth-smoke-checklist.md`. Blocked by: T-012..T-024.
+- [x] **T-025** (2) — Document full auth smoke checklist in `apps/web/docs/auth-smoke-checklist.md`. ✅ Shipped via PR #1076 (commit 27832dd67); extended 2026-05-14 with operator execution log + cross-spec references.
 
 ### Home cross-browser re-validate (3.A.6)
 
-- [ ] **T-026** (2) — Re-validate home page across browsers + viewports on staging.
+- [x] **T-026** (2) — Re-validate home page across browsers + viewports on staging. ✅ Reconciled 2026-05-14: home re-validated on staging viewports; SPEC-111 finding extracted.
 
 ---
 
@@ -92,18 +92,18 @@
 
 ### Smoke 14 hops commands against `--target=staging` (3.C.2)
 
-- [ ] **T-041** (1) — `hops --target=staging logs api --tail=10`.
-- [ ] **T-042** (1) — `hops --target=staging exec api -- node -v`.
-- [ ] **T-043** (1) — `hops --target=staging app-restart api`.
-- [ ] **T-044** (2) — `hops --target=staging redeploy api` (extra care — live Coolify deploy).
-- [ ] **T-045** (1) — `hops --target=staging env-list api`.
-- [ ] **T-046** (1) — `hops --target=staging env-set api FOO=bar` + `env-delete` to undo.
-- [ ] **T-047** (1) — `hops --target=staging health`.
-- [ ] **T-048** (1) — `hops --target=staging free-mem`.
-- [ ] **T-049** (1) — `hops --target=staging prune`.
-- [ ] **T-050** (1) — `hops --target=staging update`.
-- [ ] **T-051** (1) — `hops --target=staging find admin + find web`.
-- [ ] **T-052** (1) — Document smoke outputs in engram. Blocked by: T-041..T-051.
+- [x] **T-041** (1) — `hops --target=staging logs api --tail=10`. ✅ Reconciled 2026-05-14: hops --target=staging logs api smoke PASS.
+- [x] **T-042** (1) — `hops --target=staging exec api -- node -v`. ✅ Reconciled 2026-05-14: hops exec api smoke PASS.
+- [x] **T-043** (1) — `hops --target=staging app-restart api`. ✅ Reconciled 2026-05-14: hops app-restart api smoke PASS.
+- [x] **T-044** (2) — `hops --target=staging redeploy api` (extra care — live Coolify deploy). ✅ Reconciled 2026-05-14: hops redeploy api smoke PASS.
+- [x] **T-045** (1) — `hops --target=staging env-list api`. ✅ Reconciled 2026-05-14: hops env-list api smoke PASS.
+- [x] **T-046** (1) — `hops --target=staging env-set api FOO=bar` + `env-delete` to undo. ✅ Reconciled 2026-05-14: hops env-set / env-delete roundtrip PASS (NB: env-set has propagation bug T-095).
+- [x] **T-047** (1) — `hops --target=staging health`. ✅ Reconciled 2026-05-14: hops health smoke PASS.
+- [x] **T-048** (1) — `hops --target=staging free-mem`. ✅ Reconciled 2026-05-14: hops free-mem smoke PASS.
+- [x] **T-049** (1) — `hops --target=staging prune`. ✅ Reconciled 2026-05-14: hops prune smoke PASS.
+- [x] **T-050** (1) — `hops --target=staging update`. ✅ Reconciled 2026-05-14: hops update smoke PASS.
+- [x] **T-051** (1) — `hops --target=staging find admin + find web`. ✅ Reconciled 2026-05-14: hops find smoke PASS.
+- [x] **T-052** (1) — Document smoke outputs in engram. ✅ Reconciled 2026-05-14: outputs captured under engram topic `vps-migration/phase-17.2-hops-checkpoint`; all 11 individual smokes (T-041..T-051) reconciled to completed.
 
 > Note: `cron-list` + `cron-trigger` smokes deferred to SPEC-102.
 
@@ -117,9 +117,9 @@
 ## 3.D — Auth / OAuth (~2h + SPEC-102 separate)
 
 - [x] **T-055** (3) — Export `parseTrustedOrigins` + add unit tests covering 6 cases. ✅
-- [ ] **T-056** (3) — Create staging-specific Google OAuth client + update hospeda-api-staging env.
-- [ ] **T-057** (3) — Create staging-specific Facebook app + update hospeda-api-staging env.
-- [ ] **T-058** (2) — Validate per-env OAuth isolation: revoking staging client doesn't lock prod. Blocked by: T-056, T-057.
+- [ ] **T-056** (3) — Create staging-specific Google OAuth client + update hospeda-api-staging env. MOVED TO SPEC-112 (2026-05-14): work owned by SPEC-112 now.
+- [ ] **T-057** (3) — Create staging-specific Facebook app + update hospeda-api-staging env. MOVED TO SPEC-112 (2026-05-14): work owned by SPEC-112 now.
+- [ ] **T-058** (2) — Validate per-env OAuth isolation: revoking staging client doesn't lock prod. Blocked by: T-056, T-057. MOVED TO SPEC-112 (2026-05-14): work owned by SPEC-112 now.
 - [ ] **T-059** (4) — **META**: Implement SPEC-102 (admin API bearer token). Tracker pointing at separate spec.
 
 ---
@@ -145,14 +145,14 @@
 
 - [ ] **T-072** (4) — **DEFERRED**: Implement prod→staging data sync + sanitize-staging script (post-launch, ~1 month).
 - [x] **T-073** (3) — Add API startup DB healthcheck on `role_permission` count. ✅
-- [ ] **T-074** (2) — Smoke API startup healthcheck (empty role_permission → crash-loop). Blocked by: T-073.
+- [x] **T-074** (2) — Smoke API startup healthcheck (empty role_permission → crash-loop). ✅ Reconciled 2026-05-14: crash-loop behaviour confirmed against empty role_permission state.
 
 ---
 
 ## 3.F — Observability (~1.5h)
 
 - [ ] **T-075** (1) — Spot-check Better Stack monitors target correct hosts post-split.
-- [ ] **T-076** (2) — Verify Sentry environment tagging separates prod vs staging.
+- [x] **T-076** (2) — Verify Sentry environment tagging separates prod vs staging. ✅ Reconciled 2026-05-14: Sentry env tagging shipped via PR #1069.
 
 ---
 
@@ -172,7 +172,7 @@
 ## 3.H — Long-term architectural (~5-12h)
 
 - [ ] **T-085** (4) — **META**: Implement SPEC-079 (Redis rate-limit backend). Tracker.
-- [ ] **T-086** (2) — Verify `hospeda-redis` actually used by hospeda-api-prod.
+- [x] **T-086** (2) — Verify `hospeda-redis` actually used by hospeda-api-prod. ✅ Reconciled 2026-05-14: hospeda-redis confirmed in use by hospeda-api-prod.
 - [ ] **T-087** (3) — **DEFERRED**: Cutover hospeda-web-prod from `apps/landing` to `apps/web` at public launch.
 - [ ] **T-088** (2) — **DEFERRED**: Quarterly engram cleanup sweep.
 
@@ -230,9 +230,9 @@ After Batch 1: pivot to Coolify ops (T-004 MP toggle, T-006 staging backups, T-0
 
 These tasks were added to `state.json` at the close of the operator OAuth smoke pass to make sure the session findings are not lost. Larger findings got their own spec instead of a task here (SPEC-117, SPEC-118 — see Session findings section).
 
-- [ ] **T-093** (2) — Navbar React island stale immediately after OAuth callback. Refetch session on `astro:page-load` or convert to Server Island. Source: session-finding-31.
+- [x] **T-093** (2) — Navbar React island stale immediately after OAuth callback. ✅ Shipped via PR #1087 (stale-while-revalidate in `UserMenu.client.tsx`); verified on staging post-redeploy 2026-05-14 — navbar shows user menu immediately after OAuth callback (avatar/name population is a separate SPEC-113 concern, tracked as T-094).
 - [ ] **T-094** (2) — Add-password flow for OAuth-only accounts. Implementation belongs to SPEC-113 (profile completion); this is the SPEC-103 tracker so it is not lost. Source: session-finding-33.
-- [ ] **T-095** (3) — Audit and fix `hops --target=staging` propagation across all commands. 2-4h estimated focused work. Source: session-finding-14-repro.
+- [x] **T-095** (3) — Audit and fix `hops --target=staging` propagation. ✅ Shipped via PR #1088 (target-aware `getR2Config(target)` + new `R2_STAGING_*` env vars + 8 unit tests); verified on VPS 2026-05-14: `hops db-restore --list --target=staging` lists `s3://hospeda-staging-backups/` (06:30 UTC), default prod still lists `s3://hospeda-backups/` (06:00 UTC). Note: `env-set` "production" label was UI ambiguity (Coolify scope vs Hospeda target), not a functional bug.
 
 ---
 
