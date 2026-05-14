@@ -1,6 +1,6 @@
 # SPEC-103: VPS Migration Post-Merge Cleanup & Hardening Backlog
 
-## Progress: 64/95 tasks (67%)
+## Progress: 67/95 tasks (71%)
 
 **Average Complexity:** 2.2 / 4 (max)
 **Total effort estimate:** ~57-90h spread over weeks-months post-merge
@@ -51,9 +51,9 @@
 - [x] **T-018** (2) — Smoke reset-password edge cases (expired + invalid + used token). ✅ Security PASS (server invalidates used + invalid tokens). Expired token skipped (1h+ wait). UX gap noted in session-finding-04 below.
 - [x] **T-019** (2) — Smoke verify-email + resend flow. ✅ Validated in T-020 step 1.
 - [x] **T-020** (3) — Smoke account-linking cascade (email → +Google → +Facebook = 3 accounts rows). ✅ Verified DB state: 1 user, 3 account rows (credential / google / facebook), all sharing user_id.
-- [ ] **T-021** (2) — Smoke session lifecycle (persistent + TTL expiry + multi-browser).
-- [ ] **T-022** (2) — Smoke cross-environment session isolation.
-- [ ] **T-023** (3) — Smoke auth UI a11y (keyboard + screen reader + Enter).
+- [x] **T-021** (2) — Smoke session lifecycle (persistent + TTL expiry + multi-browser). ✅ 2026-05-14: reload×10 stays signed in; browser restart keeps session (7-day cookie TTL OK); Chrome session not visible in Firefox (multi-browser isolation). 7-day TTL expiry sub-test skipped (not testable inline).
+- [x] **T-022** (2) — Smoke cross-environment session isolation. ✅ 2026-05-14: signed into staging, then `GET api.hospeda.com.ar/api/auth/get-session` in same tab returned null — staging cookies correctly domain-scoped.
+- [ ] **T-023** (3) — Smoke auth UI a11y (keyboard + screen reader + Enter). **DEFERRED 2026-05-14**: skipped by operator decision after marathon session (needs ~25-30 min focused time with screen reader). Rerun in a dedicated session before public launch (Argentina Ley 26.653 + WCAG 2.1 AA). Procedure in `apps/web/docs/auth-smoke-checklist.md`.
 - [x] **T-024** (2) — Smoke OAuth error logging (console context + Sentry tags). ⚠️ PARTIAL: cancel recovery UX works (no crash), but no UI feedback to the user and no Sentry event captured. See session-finding-02 below; deferred to post-launch instrumentation pass.
 - [x] **T-025** (2) — Document full auth smoke checklist in `apps/web/docs/auth-smoke-checklist.md`. ✅ Shipped via PR #1076 (commit 27832dd67); extended 2026-05-14 with operator execution log + cross-spec references.
 
@@ -151,7 +151,7 @@
 
 ## 3.F — Observability (~1.5h)
 
-- [ ] **T-075** (1) — Spot-check Better Stack monitors target correct hosts post-split.
+- [x] **T-075** (1) — Spot-check Better Stack monitors target correct hosts post-split. ✅ 2026-05-14: all monitors point at prod (`hospeda.com.ar`, `api.hospeda.com.ar`, `admin.hospeda.com.ar`) + staging (`staging.*` equivalents). No drift to Vercel-era URLs, raw IPs, or paused entries.
 - [x] **T-076** (2) — Verify Sentry environment tagging separates prod vs staging. ✅ Reconciled 2026-05-14: Sentry env tagging shipped via PR #1069.
 
 ---
